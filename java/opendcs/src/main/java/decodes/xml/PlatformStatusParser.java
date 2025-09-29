@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.xml;
 
 import java.io.IOException;
@@ -5,13 +20,14 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import decodes.db.PlatformStatus;
 import decodes.sql.DbKey;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.xml.ElementIgnorer;
 import ilex.xml.TaggedLongOwner;
@@ -23,12 +39,12 @@ import ilex.xml.XmlObjectParser;
 import ilex.xml.XmlObjectWriter;
 import ilex.xml.XmlOutputStream;
 
-public class PlatformStatusParser 
-	implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner, TaggedLongOwner
+public class PlatformStatusParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner, TaggedLongOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private PlatformStatus platformStatus = null;
 	private SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
-	
+
 	public static final int lastContactTag = 0;
 	public static final int lastMessageTag = 1;
 	public static final int lastFailureCodesTag = 2;
@@ -41,7 +57,7 @@ public class PlatformStatusParser
 		this.platformStatus = platformStatus;
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
-	
+
 	@Override
 	public void set(int tag, String value) throws SAXException
 	{
@@ -64,7 +80,7 @@ public class PlatformStatusParser
 			break;
 		}
 	}
-	
+
 	@Override
 	public void set(int tag, long value)
 	{
@@ -73,16 +89,21 @@ public class PlatformStatusParser
 		case lastScheduleEntryIdTag:
 			platformStatus.setLastScheduleEntryStatusId(DbKey.createDbKey(value));
 			break;
-		}		
+		}
 	}
-	
+
 	private Date str2Date(String s, int tag)
 	{
-		try { return sdf.parse(s.trim()); }
+		try
+		{
+			return sdf.parse(s.trim());
+		}
 		catch(Exception ex)
 		{
-			Logger.instance().warning(myName() + ": Invalid date '" + s + "' tag=" + tag
-				+ " -- required format is '" + sdf.toPattern() + "' -- UTC assumed.");
+			log.atWarn()
+			   .setCause(ex)
+			   .log("{}: Invalid date '{}' tag={} -- required format is '{}' -- UTC assumed.",
+			   		myName(), s, tag, sdf.toPattern());
 			return null;
 		}
 	}
@@ -106,7 +127,7 @@ public class PlatformStatusParser
 			"" + platformStatus.getLastScheduleEntryStatusId());
 		if (platformStatus.getAnnotation() != null)
 			xos.writeElement(XmlDbTags.Annotation_el, platformStatus.getAnnotation());
-	
+
 		xos.endElement(myName());
 	}
 
@@ -142,9 +163,7 @@ public class PlatformStatusParser
 			hier.pushObjectParser(new TaggedStringSetter(this, annotationTag));
 		else
 		{
-			Logger.instance().warning(
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}

@@ -1,8 +1,22 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -10,9 +24,7 @@ import decodes.db.IntervalList;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.IntervalIncrement;
 import ilex.util.TextUtil;
-import ilex.util.Logger;
 import java.io.IOException;
-import java.util.Calendar;
 
 import ilex.xml.*;
 import opendcs.opentsdb.Interval;
@@ -20,9 +32,9 @@ import opendcs.opentsdb.Interval;
 /**
  * This class maps the DECODES XML files into the object model.
  */
-public class IntervalListParser 
-	implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner
+public class IntervalListParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private IntervalList intervals = null;
 	private Interval workingInterval = null;
 
@@ -79,16 +91,14 @@ public class IntervalListParser
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
@@ -136,8 +146,9 @@ public class IntervalListParser
 			throw new SAXException("Unexpected set '" + value + "' in IntervalList.");
 		IntervalIncrement ii = IntervalCodes.getIntervalCalIncr(value);
 		if (ii == null)
-			Logger.instance().warning("Invalid content in Interval '" + workingInterval.getName() + "': '"
-				+ value + "' -- ignored.");
+		{
+			log.warn("Invalid content in Interval '{}': '{}' -- ignored.", workingInterval.getName(), value);
+		}
 		else
 		{
 			workingInterval.setCalConstant(ii.getCalConstant());

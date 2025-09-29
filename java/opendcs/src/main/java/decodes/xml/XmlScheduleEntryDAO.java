@@ -1,8 +1,22 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.xml;
 
 import ilex.util.ByteUtil;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 
 import java.io.EOFException;
 import java.io.File;
@@ -17,6 +31,8 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.SAXException;
 
 import decodes.db.DatabaseObject;
@@ -56,6 +72,7 @@ import opendcs.util.functional.DaoConsumer;
  */
 public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private XmlDatabaseIO parent = null;
 	private RandomAccessFile statusFile = null;
 	private static final int entryLength = 204;
@@ -64,13 +81,13 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 	private static final int maxEntries = 12 * 24 * 120;
 	private static HashMap<String, ScheduleEntryStatus> mostRecentStatus
 		= new HashMap<String, ScheduleEntryStatus>();
-	
+
 	public XmlScheduleEntryDAO(XmlDatabaseIO parent)
 	{
 		this.parent = parent;
 	}
-	
-	
+
+
 	@Override
 	public ArrayList<ScheduleEntry> listScheduleEntries(CompAppInfo app)
 		throws DbIoException
@@ -95,12 +112,13 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 							ret.add(se);
 						}
 						else
-							Logger.instance().warning("Ignoring non-ScheduleEntry "
-								+ "in file '" + f.getPath() + "'");
+						{
+							log.warn("Ignoring non-ScheduleEntry in file '{}'", f.getPath());
+						}
 					}
 					catch (SAXException ex)
 					{
-						Logger.instance().warning("Error parsing '" + f.getPath() + "': " + ex);
+						log.atWarn().setCause(ex).log("Error parsing '{}'", f.getPath());
 					}
 				}
 			}
@@ -108,10 +126,10 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 		}
 		catch (IOException ex)
 		{
-			throw new DbIoException("Cannot list 'schedule' xml directory: " + ex);
+			throw new DbIoException("Cannot list 'schedule' xml directory.", ex);
 		}
 	}
-	
+
 	@Override
 	public ScheduleEntry readScheduleEntry(String name) throws DbIoException
 	{
@@ -144,12 +162,12 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 					return true;
 				}
 				else
-					throw new NoSuchObjectException(f.getPath() 
+					throw new NoSuchObjectException(f.getPath()
 						+ " does not contain a schedule entry.");
 			}
 			catch (Exception ex)
 			{
-				throw new DbIoException("Cannot read '" + f.getPath() + "': " + ex);
+				throw new DbIoException("Cannot read '" + f.getPath() + "'", ex);
 			}
 		}
 		else
@@ -163,7 +181,7 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 		File schedDir = new File(parent.xmldir, XmlDatabaseIO.ScheduleEntryDir);
 		if (!schedDir.isDirectory())
 			schedDir.mkdir();
-		
+
 		File f = new File(schedDir, scheduleEntry.getName() + ".xml");
 		try
 		{
@@ -171,7 +189,7 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 		}
 		catch (IOException ex)
 		{
-			throw new DbIoException("Cannot write '" + f + "': " + ex);
+			throw new DbIoException("Cannot write '" + f + "'", ex);
 		}
 	}
 
@@ -182,15 +200,15 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 		File schedDir = new File(parent.xmldir, XmlDatabaseIO.ScheduleEntryDir);
 		if (!schedDir.isDirectory())
 			schedDir.mkdir();
-		
+
 		this.deleteScheduleStatusFor(scheduleEntry);
 		File f = new File(schedDir, scheduleEntry.getName() + ".xml");
 		f.delete();
 	}
 
 	@Override
-	public synchronized ArrayList<ScheduleEntryStatus> 
-		readScheduleStatus(ScheduleEntry scheduleEntry) 
+	public synchronized ArrayList<ScheduleEntryStatus>
+		readScheduleStatus(ScheduleEntry scheduleEntry)
 		throws DbIoException
 	{
 		if (statusFile == null)
@@ -221,14 +239,14 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 			// Sort into ascending order by last modify time.
 			if (ret.size() > 0)
 			{
-				Collections.sort(ret, 
+				Collections.sort(ret,
 					new Comparator<ScheduleEntryStatus>()
 					{
 						@Override
 						public int compare(ScheduleEntryStatus arg0,
 							ScheduleEntryStatus arg1)
 						{
-							long x = arg0.getLastModified().getTime() 
+							long x = arg0.getLastModified().getTime()
 								- arg1.getLastModified().getTime();
 							return x < 0 ? -1 : x > 0 ? 1 : 0;
 						}
@@ -238,10 +256,10 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 		}
 		catch (IOException ex)
 		{
-			throw new DbIoException("Error reading status file: " + ex);
+			throw new DbIoException("Error reading status file", ex);
 		}
 	}
-	
+
 	/**
 	 * Reads the next ScheduleEntryStatus from the file, starting at the current
 	 * position.
@@ -255,50 +273,44 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 		long entryNum = (int)(startPtr/entryLength);
 		ScheduleEntryStatus ses = new ScheduleEntryStatus(DbKey.createDbKey(entryNum));
 		byte buffer[] = new byte[entryLength];
-		
+
 		try
 		{
 			statusFile.readFully(buffer);
-			
+
 			// A null byte at the start of the record indicates an empty record.
 			if (buffer[0] == 0)
 				return ses;
-			
+
 			ses.setScheduleEntryName(ByteUtil.getCString(buffer, 0));
 
 			long msec = ByteUtil.getInt8_BigEndian(buffer, 32);
 			ses.setRunStart(msec == 0 ? null : new Date(msec));
-			
+
 			msec = ByteUtil.getInt8_BigEndian(buffer, 40);
 			ses.setLastMessageTime(msec == 0 ? null : new Date(msec));
 
 			msec = ByteUtil.getInt8_BigEndian(buffer, 48);
 			ses.setRunStop(msec == 0 ? null : new Date(msec));
-				
+
 			ses.setHostname(ByteUtil.getCString(buffer, 56));
 			ses.setRunStatus(ByteUtil.getCString(buffer, 88));
-			
+
 			ses.setNumMessages(ByteUtil.getInt4_BigEndian(buffer, 120));
 			ses.setNumDecodesErrors(ByteUtil.getInt4_BigEndian(buffer, 124));
 			ses.setNumPlatforms(ByteUtil.getInt4_BigEndian(buffer, 128));
-			
+
 			ses.setLastSource(ByteUtil.getCString(buffer, 132));
 			ses.setLastConsumer(ByteUtil.getCString(buffer, 164));
-			
-//StringBuilder x = new StringBuilder("last 8 bytes of buffer: ");
-//for(int i=0; i<8; i++)
-//	x.append(" " + Integer.toHexString((int)buffer[196+i] & 0xff));
-//Logger.instance().debug3(x.toString());
+
 			msec = ByteUtil.getInt8_BigEndian(buffer, 196);
 			ses.setLastModified(new Date(msec));
-//Logger.instance().debug3("Read lastmod msec=" + msec + " (0x" + Long.toHexString(msec)
-//	+ ") date=" + ses.getLastModified());
-		
+
 			return ses;
 		}
 		catch(EOFException ex)
 		{
-			Logger.instance().debug1("EOF reading schedule entry, startPtr=" + startPtr);
+			log.atDebug().setCause(ex).log("EOF reading schedule entry, startPtr={}", startPtr);
 			return null;
 		}
 	}
@@ -313,10 +325,10 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 		}
 		catch (FileNotFoundException ex)
 		{
-			throw new DbIoException("Cannot open '" + fn + "': " + ex);
+			throw new DbIoException("Cannot open '" + fn + "'", ex);
 		}
 	}
-	
+
 	@Override
 	public synchronized void writeScheduleStatus(ScheduleEntryStatus ses)
 		throws DbIoException
@@ -336,21 +348,12 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 			}
 			else
 				recnum = key.getValue();
-			
+
 			statusFile.seek(recnum * entryLength);
-//Logger.instance().debug3("Writing schedule status entry at position "
-//+ (recnum*entryLength) + ", entryLength=" + entryLength);
 
 			byte strbuf[] = new byte[32];
 			ByteUtil.putCString(ses.getScheduleEntryName(), strbuf, 0, 32);
 			statusFile.write(strbuf);
-//Logger.instance().debug3("   SE-Name='" + ses.getScheduleEntryName() + "', "
-//	+ "LastMod=" + ses.getLastModified()
-//	+ ", host='" + ses.getHostname() + "'");
-//Logger.instance().debug3("   Last Src='" + ses.getLastSource() + "', "
-//	+ "Last Cons='" + ses.getLastConsumer() + "'");
-//Logger.instance().debug3("   msgs=" + ses.getNumMessages() + ", "
-//	+ "Errs=" + ses.getNumDecodesErrors() + ", plats=" + ses.getNumPlatforms());
 
 			statusFile.writeLong(ses.getRunStart().getTime());
 			statusFile.writeLong(
@@ -368,18 +371,15 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 			statusFile.write(strbuf);
 			ByteUtil.putCString(ses.getLastConsumer(), strbuf, 0, 32);
 			statusFile.write(strbuf);
-//Logger.instance().debug3("   lastmod msec=0x" 
-//	+ Long.toHexString(ses.getLastModified().getTime())
-//	+ " writing at position " + statusFile.getFilePointer());
 			statusFile.writeLong(ses.getLastModified().getTime());
 		}
 		catch (IOException ex)
 		{
-			throw new DbIoException("Cannot write Schedule Entry Status: " + ex);
+			throw new DbIoException("Cannot write Schedule Entry Status.", ex);
 		}
 		mostRecentStatus.put(ses.getScheduleEntryName(), ses);
 	}
-	
+
 	/**
 	 * @return record number to write to. This is either the end of the file or
 	 * an empty record previously used.
@@ -399,7 +399,7 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 			ScheduleEntryStatus ses = readNextEntry();
 			if (ses.getScheduleEntryName().length() == 0)
 				return n;
-			if (oldestLMT == null || 
+			if (oldestLMT == null ||
 				(ses.getLastMessageTime() != null
 				&& ses.getLastMessageTime().before(oldestLMT)))
 			{
@@ -411,7 +411,7 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 	}
 
 	@Override
-	public synchronized void deleteScheduleStatusBefore(CompAppInfo appInfo, Date cutoff) 
+	public synchronized void deleteScheduleStatusBefore(CompAppInfo appInfo, Date cutoff)
 		throws DbIoException
 	{
 		if (statusFile == null)
@@ -421,12 +421,11 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 		try
 		{
 			long numEntries = statusFile.length() / entryLength;
-Logger.instance().debug3("deleteScheduleStatusBefore filelen=" + statusFile.length()
-+ ", numEntries=" + numEntries);
+			log.trace("deleteScheduleStatusBefore filelen={}, numEntries={}", statusFile.length(), numEntries);
 			for(long n = 0; n < numEntries; n++)
 			{
 				statusFile.seek(n * entryLength);
-Logger.instance().debug3("Reading entry[" + n + "] at position " + statusFile.getFilePointer());
+				log.trace("Reading entry[{}] at position {}", n, statusFile.getFilePointer());
 				ScheduleEntryStatus ses = readNextEntry();
 				if (ses == null)
 					continue;
@@ -446,8 +445,7 @@ Logger.instance().debug3("Reading entry[" + n + "] at position " + statusFile.ge
 		}
 		catch (IOException ex)
 		{
-			throw new DbIoException("Error in deleteScheduleStatusBefore(" 
-				+ cutoff + "): " + ex);
+			throw new DbIoException("Error in deleteScheduleStatusBefore(" + cutoff + ")", ex);
 		}
 	}
 
@@ -477,8 +475,7 @@ Logger.instance().debug3("Reading entry[" + n + "] at position " + statusFile.ge
 		}
 		catch (IOException ex)
 		{
-			throw new DbIoException("Error in deleteScheduleStatusFor(" 
-				+ seName + "): " + ex);
+			throw new DbIoException("Error in deleteScheduleStatusFor(" + seName + ")", ex);
 		}
 	}
 
@@ -508,7 +505,7 @@ Logger.instance().debug3("Reading entry[" + n + "] at position " + statusFile.ge
 	}
 
 	// The following are only implemented for SQL:
-	
+
 	@Override
 	public ResultSet doQuery(String q) throws DbIoException
 	{
