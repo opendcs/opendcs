@@ -141,16 +141,8 @@ public abstract class TestProg
 			theDb.setWriteModelRunId(modelRunId);
 
 		// Connect to the database!
-		TestProg app;
-		try
-		{
-			appId = theDb.connect(appNameArg.getValue(), props);
-			log.info("Connected with appId={}", appId);
-		}
-		catch(BadConnectException ex)
-		{
-			throw new Exception("Cannot connect to DB", ex);
-		}
+		appId =theDb.getAppId();
+		log.info("Connected with appId={}", appId);
 	}
 
 	public void initDecodes()
