@@ -1,8 +1,22 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.xml;
 
 import ilex.util.EnvExpander;
 import ilex.util.ServerLock;
-import ilex.util.Logger;
 import ilex.util.FileServerLock;
 import ilex.util.TextUtil;
 import ilex.xml.XmlOutputStream;
@@ -15,7 +29,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 
 import decodes.sql.DbKey;
@@ -82,8 +95,7 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 				catch (DbXmlException ex)
 				{
 					String msg = module + ": " + "Error parsing loading app file '"
-						+ f.getPath() + "': " + ex + " -- skipped.";
-					Logger.instance().warning(msg);
+						+ f.getPath() + "' -- skipped.";
 					throw new DbIoException(msg, ex);
 				}
 			}
@@ -104,16 +116,13 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 			for(CompMetaData obj : objs)
 				if (obj instanceof CompAppInfo)
 					return (CompAppInfo)obj;
-			String msg = module + ": File '" + f.getPath() + "' does not contain a loading app.";
-			Logger.instance().warning(msg);
+			String msg = "File '" + f.getPath() + "' does not contain a loading app.";
 			throw new NoSuchObjectException(msg);
 		}
 		catch (DbXmlException ex)
 		{
-			String msg = module + ": " + "Error parsing loading app file '"
-				+ f.getPath() + "': " + ex + " -- skipped.";
-			Logger.instance().warning(msg);
-			throw new DbIoException(msg);
+			String msg = "Error parsing loading app file '" + f.getPath() + "' -- skipped.";
+			throw new DbIoException(msg, ex);
 		}
 	}
 
@@ -122,24 +131,21 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 		throws DbIoException
 	{
 		File f = new File(loadingAppDir, app.getAppName() + ".xml");
-		try
+		
+		ArrayList<CompMetaData> objs = new ArrayList<CompMetaData>();
+		objs.add(app);
+		// Open an output stream wrapped by an XmlOutputStream
+		try (FileOutputStream fos = new FileOutputStream(f))
 		{
-			ArrayList<CompMetaData> objs = new ArrayList<CompMetaData>();
-			objs.add(app);
-			// Open an output stream wrapped by an XmlOutputStream
-			FileOutputStream fos = new FileOutputStream(f);
 			XmlOutputStream xos = 
 				new XmlOutputStream(fos, CompXioTags.compMetaData);
 			xos.writeXmlHeader();
 			compXio.writeApp(xos, app);
-			fos.close();
 		}
 		catch (IOException ex)
 		{
-			String msg = module + ": " + "Error writing loading app to file '"
-				+ f.getPath() + "': " + ex;
-			Logger.instance().warning(msg);
-			throw new DbIoException(msg);
+			String msg = "Error writing loading app to file '" + f.getPath() + "': " + ex;
+			throw new DbIoException(msg, ex);
 		}
 	}
 
@@ -150,9 +156,7 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 		File f = new File(loadingAppDir, app.getAppName() + ".xml");
 		if (!f.delete())
 		{
-			String msg = module + ": " + "Cannot delete loading app file '"
-				+ f.getPath() + "'";
-			Logger.instance().warning(msg);
+			String msg = "Cannot delete loading app file '" + f.getPath() + "'";
 			throw new DbIoException(msg);
 		}
 	}
@@ -238,18 +242,14 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 		ArrayList<CompAppInfo> applist = listComputationApps(false);
 		for(File lf : lockFiles)
 		{
-//System.out.println("Checking lock file '" + lf.getName() + "'");
 			String appName = lf.getName();
 			// Guaranteed from above that it ends in ".lock"
 			appName = appName.substring(0, appName.lastIndexOf('.'));
-//System.out.println("Looking for match for appName '" + appName + "'");
 			for(CompAppInfo cai : applist)
 			{
 				String fn = compressFileName(cai.getAppName());
-//System.out.println("  ... checking '" + fn + "'");
 				if (appName.equals(fn))
 				{
-//System.out.println("This lock is for app '" + appName + "'");
 					ServerLock serverLock = new FileServerLock(lf.getPath());
 					// Don't care about result, the isLocked method reads the lock info.
 					serverLock.isLocked(true);
