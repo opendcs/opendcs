@@ -1,45 +1,27 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $State$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $Log$
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1  2008/04/04 18:21:08  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.6  2004/08/30 14:49:31  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.5  2003/11/15 20:08:25  mjmaloney
-*  Updates for new structures in DECODES Database Version 6.
-*  Parsers now ignore unrecognized elements with a warning. They used to
-*  abort. The new behavior allows easier future enhancements.
-*
-*  Revision 1.4  2002/08/26 17:40:53  chris
-*  Fix up a comment.
-*
-*  Revision 1.3  2002/04/06 15:48:19  mike
-*  Expand newlines in description fields.
-*
-*  Revision 1.2  2001/03/18 22:23:56  mike
-*  Improved output formatting.
-*
-*  Revision 1.1  2001/03/16 22:21:07  mike
-*  Added NetworkLists & corresponding parsers.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import java.util.Iterator;
 import decodes.db.*;
 import ilex.util.TextUtil;
 import ilex.util.AsciiUtil;
-import ilex.util.Logger;
 import java.io.IOException;
 import ilex.xml.*;
 
@@ -49,6 +31,7 @@ import ilex.xml.*;
  */
 public class NetworkListEntryParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private NetworkListEntry networkListEntry; // object that we will build.
 
 	private static final int platformNameTag = 0;
@@ -103,16 +86,14 @@ public class NetworkListEntryParser implements XmlObjectParser, XmlObjectWriter,
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending

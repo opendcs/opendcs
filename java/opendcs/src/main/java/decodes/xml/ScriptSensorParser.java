@@ -1,41 +1,26 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $State$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:08  cvs
-*  Added legacy code to repository
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.6  2004/08/30 14:49:33  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.5  2003/11/15 20:08:27  mjmaloney
-*  Updates for new structures in DECODES Database Version 6.
-*  Parsers now ignore unrecognized elements with a warning. They used to
-*  abort. The new behavior allows easier future enhancements.
-*
-*  Revision 1.4  2001/01/13 01:50:28  mike
-*  dev
-*
-*  Revision 1.3  2001/01/03 02:54:59  mike
-*  dev
-*
-*  Revision 1.2  2000/12/31 23:12:50  mike
-*  dev
-*
-*  Revision 1.1  2000/12/31 22:30:47  mike
-*  dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import java.util.Enumeration;
 import decodes.db.*;
 import ilex.util.TextUtil;
-import ilex.util.Logger;
 import java.io.IOException;
 import ilex.xml.*;
 
@@ -44,6 +29,7 @@ import ilex.xml.*;
  */
 public class ScriptSensorParser implements XmlObjectParser, XmlObjectWriter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private ScriptSensor scriptSensor; // object that we will build.
 
 	/**
@@ -59,7 +45,7 @@ public class ScriptSensorParser implements XmlObjectParser, XmlObjectWriter
 	 * @return name of element parsed by this parser
 	 */
 	public String myName( ) { return XmlDbTags.ScriptSensor_el; }
-		
+
 	/**
 	 * @param ch Characters from file
 	 * @param start start of characters
@@ -92,16 +78,14 @@ public class ScriptSensorParser implements XmlObjectParser, XmlObjectWriter
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
@@ -133,7 +117,7 @@ public class ScriptSensorParser implements XmlObjectParser, XmlObjectWriter
 	 */
 	public void writeXml( XmlOutputStream xos ) throws IOException
 	{
-		xos.startElement(myName(), XmlDbTags.sensorNumber_at, 
+		xos.startElement(myName(), XmlDbTags.sensorNumber_at,
 			"" + scriptSensor.sensorNumber);
 		if (scriptSensor.rawConverter != null)
 		{
