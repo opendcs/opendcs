@@ -1,8 +1,22 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -12,7 +26,6 @@ import decodes.db.*;
 import decodes.db.DecodesScript.DecodesScriptBuilder;
 import ilex.util.TextUtil;
 import ilex.util.AsciiUtil;
-import ilex.util.Logger;
 import java.io.IOException;
 import java.util.List;
 
@@ -23,6 +36,7 @@ import ilex.xml.*;
  */
 public class PlatformConfigParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private PlatformConfig platformConfig; // object that we will build.
 	/**
 	 * Reference to the DecodesScriptBuilder so we can finalized after we've read it in.
@@ -89,9 +103,9 @@ public class PlatformConfigParser implements XmlObjectParser, XmlObjectWriter, T
 			String ns = atts.getValue(XmlDbTags.sensorNumber_at);
 			int snum = -1;
 			try { snum = Integer.parseInt(ns); }
-			catch(NumberFormatException e)
+			catch(NumberFormatException ex)
 			{
-				throw new SAXException("Sensor number must be an integer");
+				throw new SAXException("Sensor number must be an integer", ex);
 			}
 			ConfigSensor cs = new ConfigSensor(platformConfig, snum);
 			platformConfig.addSensor(cs);
@@ -106,7 +120,7 @@ public class PlatformConfigParser implements XmlObjectParser, XmlObjectWriter, T
 			if (nm == null)
 				throw new SAXException(XmlDbTags.DecodesScript_el + " without "
 					+ XmlDbTags.DecodesScript_scriptName_at +" attribute");
-			
+
 			/**
 			 * Since the script data hasn't been read in yet, we punt
 			 * the creation and assignment of the decodes script to the endtag
@@ -122,16 +136,14 @@ public class PlatformConfigParser implements XmlObjectParser, XmlObjectWriter, T
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
@@ -144,24 +156,28 @@ public class PlatformConfigParser implements XmlObjectParser, XmlObjectWriter, T
 			throw new SAXException(
 				"Parse stack corrupted: got end tag for " + localName
 				+ ", expected " + myName());
-		}		
+		}
 		hier.popObjectParser();
-		try {
-			for (int i = 0; i < decodesScriptBuilderList.size(); i++) {
+		try
+		{
+			for (int i = 0; i < decodesScriptBuilderList.size(); i++)
+			{
 				DecodesScriptBuilder sb = decodesScriptBuilderList.get(i);
 				DecodesScriptParser sp = decodesScriptParserList.get(i);
 				DecodesScript ds = sb.build();
 				ds.scriptType = sp.getType();
-				for (ScriptSensor s : sp.getSensors()) {
+				for (ScriptSensor s : sp.getSensors())
+				{
 					s.decodesScript = ds;
 					ds.scriptSensors.add(s);
 				}
 				ds.setDataOrder(sp.getDataOrder());
 				this.platformConfig.addScript(ds);
 			}
-		}catch (DecodesScriptException | IOException ex)
+		}
+		catch (DecodesScriptException | IOException ex)
 		{
-			throw new SAXException("Failed to load Decodes Script",ex);
+			throw new SAXException("Failed to load Decodes Script", ex);
 		}
 	}
 

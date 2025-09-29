@@ -1,8 +1,22 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import java.util.Enumeration;
@@ -10,7 +24,6 @@ import java.util.Iterator;
 
 import decodes.db.*;
 import ilex.util.TextUtil;
-import ilex.util.Logger;
 import ilex.util.StringPair;
 import java.io.IOException;
 import ilex.xml.*;
@@ -20,6 +33,7 @@ import ilex.xml.*;
  */
 public class SiteParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner, TaggedDoubleOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private Site site; // object that we will build.
 	private SiteName workingName;
 	private String propName = null;
@@ -88,7 +102,7 @@ public class SiteParser implements XmlObjectParser, XmlObjectWriter, TaggedStrin
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.elevationUnits_el))
 		{
-			hier.pushObjectParser(new TaggedStringSetter(this, 
+			hier.pushObjectParser(new TaggedStringSetter(this,
 				elevationUnitsTag));
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.timezone_el))
@@ -140,16 +154,14 @@ public class SiteParser implements XmlObjectParser, XmlObjectWriter, TaggedStrin
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
@@ -306,21 +318,21 @@ public class SiteParser implements XmlObjectParser, XmlObjectWriter, TaggedStrin
 			}
 			else
 				xos.writeElement(XmlDbTags.SiteName_el,
-					XmlDbTags.SiteName_nameType_at, nm.getNameType(), 
+					XmlDbTags.SiteName_nameType_at, nm.getNameType(),
 					nm.getNameValue());
 		}
-		
+
 		Enumeration e = site.getPropertyNames();
 		while(e.hasMoreElements())
 		{
 			String nm = (String)e.nextElement();
 			String v = (String)site.getProperty(nm);
-			
-			xos.writeElement(XmlDbTags.SiteProperty_el, 
+
+			xos.writeElement(XmlDbTags.SiteProperty_el,
 				XmlDbTags.propertyName_at, nm, v);
 		}
 		if (site.getPublicName() != null)
-			xos.writeElement(XmlDbTags.SiteProperty_el, 
+			xos.writeElement(XmlDbTags.SiteProperty_el,
 				XmlDbTags.propertyName_at, "PUBLIC_NAME", site.getPublicName());
 		xos.endElement(myName());
 	}

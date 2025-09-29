@@ -1,48 +1,35 @@
 /*
-*  $Id$
-*
-*  $State$
-*
-*  $Log$
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.1  2008/04/04 18:21:08  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.4  2004/08/30 14:49:30  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.3  2003/11/15 20:08:24  mjmaloney
-*  Updates for new structures in DECODES Database Version 6.
-*  Parsers now ignore unrecognized elements with a warning. They used to
-*  abort. The new behavior allows easier future enhancements.
-*
-*  Revision 1.2  2001/06/30 13:37:22  mike
-*  dev
-*
-*  Revision 1.1  2001/01/13 17:22:48  mike
-*  Added parsers for EngineeringUnits
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import java.util.Enumeration;
 import decodes.db.*;
 import ilex.util.TextUtil;
-import ilex.util.IDateFormat;
-import ilex.util.Logger;
 import java.io.IOException;
 import ilex.xml.*;
 
 /**
  * This class maps the DECODES XML representation for EngineeringUnit elements.
  */
-public class EngineeringUnitParser 
-	implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner
+public class EngineeringUnitParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private EngineeringUnit eu; // object that we will build.
 
 	private static final int nameTag = 0;
@@ -104,9 +91,7 @@ public class EngineeringUnitParser
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}

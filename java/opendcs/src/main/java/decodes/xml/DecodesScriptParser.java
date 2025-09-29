@@ -1,60 +1,31 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $State$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $Log$
-*  Revision 1.2  2010/12/23 18:23:56  mmaloney
-*  udpated for groups
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1  2008/04/04 18:21:08  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.9  2006/01/11 19:04:09  mmaloney
-*  dev
-*
-*  Revision 1.8  2004/08/30 14:49:29  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.7  2003/11/15 20:08:23  mjmaloney
-*  Updates for new structures in DECODES Database Version 6.
-*  Parsers now ignore unrecognized elements with a warning. They used to
-*  abort. The new behavior allows easier future enhancements.
-*
-*  Revision 1.6  2003/10/20 20:22:55  mjmaloney
-*  Database changes for DECODES 6.0
-*
-*  Revision 1.5  2001/06/16 20:25:55  mike
-*  dev
-*
-*  Revision 1.4  2001/03/18 22:23:56  mike
-*  Improved output formatting.
-*
-*  Revision 1.3  2001/01/03 02:54:59  mike
-*  dev
-*
-*  Revision 1.2  2000/12/31 23:12:50  mike
-*  dev
-*
-*  Revision 1.1  2000/12/31 22:30:47  mike
-*  dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.Optional;
 import java.util.Vector;
 
 import decodes.db.*;
-import decodes.db.DecodesScript.DecodesScriptBuilder;
 import ilex.util.TextUtil;
-import ilex.util.Logger;
 import java.io.IOException;
 import ilex.xml.*;
 
@@ -63,6 +34,7 @@ import ilex.xml.*;
  */
 public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner, DecodesScriptReader
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private DecodesScript decodesScript = null;
 	private FormatStatement tmpFmt = null;  // Tmp for building label & statement
 	private ArrayList<FormatStatement> statements = new ArrayList<>();
@@ -77,7 +49,7 @@ public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, Ta
 
 	/**
 	 * @param script the object in which to store the data.
-	 * 
+	 *
 	 */
 	public DecodesScriptParser(DecodesScript script)
 	{
@@ -86,7 +58,7 @@ public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, Ta
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 */
 	public DecodesScriptParser( )
 	{
@@ -97,7 +69,7 @@ public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, Ta
 	 * @return name of element parsed by this parser
 	 */
 	public String myName( ) { return XmlDbTags.DecodesScript_el; }
-		
+
 	/**
 	 * @param ch Characters from file
 	 * @param start start of characters
@@ -129,14 +101,14 @@ public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, Ta
 		{
 			String nm = atts.getValue(XmlDbTags.label_at);
 			if (nm == null)
-				throw new SAXException(XmlDbTags.FormatStatement_el + 
+				throw new SAXException(XmlDbTags.FormatStatement_el +
 					" without " + XmlDbTags.label_at +" attribute");
-			/*tmpFmt = new FormatStatement(decodesScript, 
+			/*tmpFmt = new FormatStatement(decodesScript,
 				decodesScript.getFormatStatements().size());*/
 			tmpFmt = new FormatStatement(null, statements.size());
 			tmpFmt.label = nm;
 
-			hier.pushObjectParser(new TaggedStringSetter(this, 
+			hier.pushObjectParser(new TaggedStringSetter(this,
 				formatStatementTag));
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.ScriptSensor_el))
@@ -147,9 +119,9 @@ public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, Ta
 			{
 				snum = Integer.parseInt(ns);
 			}
-			catch(NumberFormatException e)
+			catch(NumberFormatException ex)
 			{
-				throw new SAXException("Sensor number must be an integer");
+				throw new SAXException("Sensor number must be an integer", ex);
 			}
 			ScriptSensor ob = new ScriptSensor(null, snum);
 			sensors.add(ob);
@@ -161,16 +133,14 @@ public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, Ta
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
@@ -227,8 +197,7 @@ public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, Ta
 						&& m != Constants.dataOrderDescending
 						&& m != Constants.dataOrderUndefined)
 						{
-							TopLevelParser.instance().parseWarning(
-								"Invalid dataOrder '" + m + "'");
+							log.warn("Invalid dataOrder '{}'", m);
 							m = Constants.dataOrderUndefined;
 						}
 					}
@@ -282,13 +251,13 @@ public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, Ta
 		for(int i = 0; i < formatStatements.size(); i++)
 		{
 			FormatStatement fs = formatStatements.elementAt(i);
-			xos.writeElement(XmlDbTags.FormatStatement_el, 
+			xos.writeElement(XmlDbTags.FormatStatement_el,
 				XmlDbTags.label_at, fs.label, fs.format);
 		}
 
 		for(int i = 0; i < decodesScript.scriptSensors.size(); i++)
 		{
-			ScriptSensor ss = 
+			ScriptSensor ss =
 				(ScriptSensor)decodesScript.scriptSensors.elementAt(i);
 			ScriptSensorParser p = new ScriptSensorParser(ss);
 			p.writeXml(xos);
@@ -297,9 +266,10 @@ public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, Ta
 	}
 
 	@Override
-	public Optional<FormatStatement> nextStatement(DecodesScript script) throws IOException {
-		// TODO Auto-generated method stub
-		if( currentStatementPosition < statements.size() ) {
+	public Optional<FormatStatement> nextStatement(DecodesScript script) throws IOException
+	{
+		if (currentStatementPosition < statements.size())
+		{
 			int cur = currentStatementPosition;
 			currentStatementPosition++;
 			FormatStatement curStmt = statements.get(cur);
@@ -307,9 +277,11 @@ public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, Ta
 			newStmt.format = curStmt.format;
 			newStmt.label = curStmt.label;
 			return Optional.of(newStmt);
-		} else {
+		}
+		else
+		{
 			return Optional.empty();
 		}
-		
+
 	}
 }

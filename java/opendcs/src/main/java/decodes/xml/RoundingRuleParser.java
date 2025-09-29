@@ -1,33 +1,26 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $State$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:08  cvs
-*  Added legacy code to repository
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.3  2004/08/30 14:49:32  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.2  2003/11/15 20:08:27  mjmaloney
-*  Updates for new structures in DECODES Database Version 6.
-*  Parsers now ignore unrecognized elements with a warning. They used to
-*  abort. The new behavior allows easier future enhancements.
-*
-*  Revision 1.1  2001/03/18 18:24:36  mike
-*  Implemented PerformanceMeasurments objects & parsers.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import java.util.Enumeration;
 import decodes.db.*;
 import ilex.util.TextUtil;
-import ilex.util.IDateFormat;
-import ilex.util.Logger;
 import java.io.IOException;
 import ilex.xml.*;
 
@@ -36,6 +29,7 @@ import ilex.xml.*;
  */
 public class RoundingRuleParser implements XmlObjectParser, XmlObjectWriter, TaggedLongOwner, TaggedDoubleOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private RoundingRule roundingRule; // object that we will build.
 
 	private static final int significantDigitsTag = 0;
@@ -55,7 +49,7 @@ public class RoundingRuleParser implements XmlObjectParser, XmlObjectWriter, Tag
 	 * @return name of element parsed by this parser
 	 */
 	public String myName( ) { return XmlDbTags.RoundingRule_el; }
-		
+
 	/**
 	 * @param ch Characters from file
 	 * @param start start of characters
@@ -80,7 +74,7 @@ public class RoundingRuleParser implements XmlObjectParser, XmlObjectWriter, Tag
 	public void startElement( XmlHierarchyParser hier, String namespaceURI, String localName, String qname, Attributes atts ) throws SAXException
 	{
 		if (localName.equalsIgnoreCase(XmlDbTags.SignificantDigits_el))
-			hier.pushObjectParser(new TaggedLongSetter(this, 
+			hier.pushObjectParser(new TaggedLongSetter(this,
 				significantDigitsTag));
 		else if (localName.equalsIgnoreCase(XmlDbTags.MaxDecimals_el))
 			hier.pushObjectParser(new TaggedLongSetter(this, maxDecimalsTag));
@@ -88,16 +82,14 @@ public class RoundingRuleParser implements XmlObjectParser, XmlObjectWriter, Tag
 			hier.pushObjectParser(new TaggedDoubleSetter(this, upperLimitTag));
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
@@ -145,12 +137,11 @@ public class RoundingRuleParser implements XmlObjectParser, XmlObjectWriter, Tag
 	{
 		switch(tag)
 		{
-		case significantDigitsTag: 
-			roundingRule.sigDigits = (int)v; 
+		case significantDigitsTag:
+			roundingRule.sigDigits = (int)v;
 			break;
-		case maxDecimalsTag: 
+		case maxDecimalsTag:
 			// Ignore max Decimals in rounding rule -- it is no longer used.
-			//roundingRule.maxDecimals = (int)v; 
 			break;
 		}
 	}
@@ -164,15 +155,13 @@ public class RoundingRuleParser implements XmlObjectParser, XmlObjectWriter, Tag
 	{
 		xos.startElement(myName());
 
-		xos.writeElement(XmlDbTags.SignificantDigits_el, 
+		xos.writeElement(XmlDbTags.SignificantDigits_el,
 			""+roundingRule.sigDigits);
 
 		// Max Decimals no longer used in RR
-		//xos.writeElement(XmlDbTags.MaxDecimals_el, 
-		//	""+roundingRule.maxDecimals);
 
 		if (roundingRule.getUpperLimit() != Constants.undefinedDouble)
-			xos.writeElement(XmlDbTags.UpperLimit_el, 
+			xos.writeElement(XmlDbTags.UpperLimit_el,
 				""+roundingRule.getUpperLimit());
 
 		xos.endElement(myName());

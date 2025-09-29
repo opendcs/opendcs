@@ -1,15 +1,31 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.xml;
 
 import java.io.IOException;
 import java.util.Date;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import decodes.db.Constants;
 import decodes.db.ScheduleEntry;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.xml.ElementIgnorer;
 import ilex.xml.TaggedBooleanOwner;
@@ -21,11 +37,11 @@ import ilex.xml.XmlObjectParser;
 import ilex.xml.XmlObjectWriter;
 import ilex.xml.XmlOutputStream;
 
-public class ScheduleEntryParser implements XmlObjectParser, XmlObjectWriter,
-	TaggedBooleanOwner, TaggedStringOwner
+public class ScheduleEntryParser implements XmlObjectParser, XmlObjectWriter, TaggedBooleanOwner, TaggedStringOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private ScheduleEntry schedEntry = null;
-	
+
 	public static final int appNameTag = 0;
 	public static final int rsNameTag = 1;
 	public static final int startTimeTag = 2;
@@ -33,7 +49,7 @@ public class ScheduleEntryParser implements XmlObjectParser, XmlObjectWriter,
 	public static final int enabledTag = 4;
 	public static final int lastModifiedTag = 5;
 	public static final int timeZoneTag = 6;
-	
+
 	/** Switch to set last-modify-time whenever we write.
 	 * If this parser is being used to write a stand-alone ScheduleEntry
 	 * file in an XML database, then we DO want to do this.
@@ -69,10 +85,10 @@ public class ScheduleEntryParser implements XmlObjectParser, XmlObjectWriter,
 			{
 				schedEntry.setStartTime(Constants.defaultDateFormat.parse(value.trim()));
 			}
-			catch(Exception e)
+			catch(Exception ex)
 			{
 				throw new SAXException("Improper start date/time format '" + value
-					+ "' (should be " + Constants.defaultDateFormat + ")");
+					+ "' (should be " + Constants.defaultDateFormat + ")", ex);
 			}
 			break;
 		case lastModifiedTag:
@@ -80,10 +96,10 @@ public class ScheduleEntryParser implements XmlObjectParser, XmlObjectWriter,
 			{
 				schedEntry.setLastModified(Constants.defaultDateFormat.parse(value.trim()));
 			}
-			catch(Exception e)
+			catch(Exception ex)
 			{
 				throw new SAXException("Improper last modified date/time format '" + value
-					+ "' (should be " + Constants.defaultDateFormat + ")");
+					+ "' (should be " + Constants.defaultDateFormat + ")", ex);
 			}
 			break;
 		case runIntervalTag:
@@ -112,7 +128,7 @@ public class ScheduleEntryParser implements XmlObjectParser, XmlObjectWriter,
 		if (schedEntry.getRoutingSpecName() != null)
 			xos.writeElement(XmlDbTags.RoutingSpecName_el, schedEntry.getRoutingSpecName());
 		if (schedEntry.getStartTime() != null)
-			xos.writeElement(XmlDbTags.StartTime_el, 
+			xos.writeElement(XmlDbTags.StartTime_el,
 				Constants.defaultDateFormat.format(schedEntry.getStartTime()));
 		if (schedEntry.getRunInterval() != null)
 			xos.writeElement(XmlDbTags.RunInterval_el, schedEntry.getRunInterval());
@@ -121,9 +137,9 @@ public class ScheduleEntryParser implements XmlObjectParser, XmlObjectWriter,
 			xos.writeElement(XmlDbTags.TimeZone_el, schedEntry.getTimezone());
 		if (setLMTonWrite)
 			schedEntry.setLastModified(new Date());
-		xos.writeElement(XmlDbTags.lastModifyTime_el, 
+		xos.writeElement(XmlDbTags.lastModifyTime_el,
 			Constants.defaultDateFormat.format(schedEntry.getLastModified()));
-	
+
 		xos.endElement(myName());
 	}
 
@@ -176,9 +192,7 @@ public class ScheduleEntryParser implements XmlObjectParser, XmlObjectWriter,
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
