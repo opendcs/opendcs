@@ -1,46 +1,23 @@
-/**
- * $Id$
- * 
- * Open Source Software
- * 
- * $Log$
- * Revision 1.2  2015/06/04 21:37:39  mmaloney
- * Added control buttons to process monitor GUI.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.8  2013/03/25 17:50:54  mmaloney
- * dev
- *
- * Revision 1.7  2013/03/25 17:13:11  mmaloney
- * dev
- *
- * Revision 1.6  2013/03/25 16:58:38  mmaloney
- * dev
- *
- * Revision 1.5  2013/03/25 15:02:20  mmaloney
- * dev
- *
- * Revision 1.4  2013/03/23 18:20:04  mmaloney
- * dev
- *
- * Revision 1.3  2013/03/23 18:01:03  mmaloney
- * dev
- *
- * Revision 1.2  2013/03/23 15:33:55  mmaloney
- * dev
- *
- * Revision 1.1  2013/03/21 18:27:40  mmaloney
- * DbKey Implementation
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.procmonitor;
 
 import ilex.gui.EventsPanel;
 import ilex.util.EnvExpander;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import ilex.util.ProcWaiterThread;
 
 import java.awt.BorderLayout;
@@ -73,6 +50,9 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
@@ -92,9 +72,9 @@ import decodes.util.DecodesSettings;
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
 @SuppressWarnings("serial")
-public class ProcessMonitorFrame 
-	extends TopFrame implements TableModelListener, ListSelectionListener
+public class ProcessMonitorFrame extends TopFrame implements TableModelListener, ListSelectionListener
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private ProcStatTableModel model = null;
 	private EventsPanel eventsPanel = new EventsPanel();
 	private JSplitPane splitPane = null;
@@ -106,7 +86,7 @@ public class ProcessMonitorFrame
 	private ArrayList<ProcessEditDialog> editDialogs = new ArrayList<ProcessEditDialog>();
 	private TimeSeriesDb tsdb = null;
 	private DbPollThread dbPollThread = null;
-	
+
 	/**
 	 * Constructor
 	 */
@@ -130,7 +110,7 @@ public class ProcessMonitorFrame
 				}
 			});
 	}
-	
+
 	private void guiInit()
 	{
 		this.setTitle("Process Monitor");
@@ -150,10 +130,10 @@ public class ProcessMonitorFrame
 		splitPane.setBottomComponent(eventsPanel);
 		scrollPane.setPreferredSize(new Dimension(900, 300));
 		eventsPanel.setPreferredSize(new Dimension(900, 300));
-		
+
 		JPanel buttonPanel = new JPanel(new GridBagLayout());
 		procListPanel.add(buttonPanel, BorderLayout.EAST);
-		
+
 		JButton startButton = new JButton(genericLabels.getString("start"));
 		startButton.addActionListener(
 			new ActionListener()
@@ -168,7 +148,7 @@ public class ProcessMonitorFrame
 			new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 5), 0, 0));
-		
+
 		JButton stopButton = new JButton(genericLabels.getString("stop"));
 		stopButton.addActionListener(
 			new ActionListener()
@@ -230,11 +210,11 @@ public class ProcessMonitorFrame
 			new GridBagConstraints(0, 4, 1, 1, 1.0, 1.0,
 				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 5), 0, 0));
-		
+
 		processTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		processTable.getSelectionModel().addListSelectionListener(this);
 		model.addTableModelListener(this);
-		
+
 		processTable.addMouseListener(
 			new MouseAdapter()
 			{
@@ -245,7 +225,7 @@ public class ProcessMonitorFrame
 				}
 			});
 	}
-	
+
 	protected void deletePressed()
 	{
 		AppInfoStatus sel = getSelectedProc();
@@ -260,7 +240,7 @@ public class ProcessMonitorFrame
 			return;
 		}
 		String appType = sel.getCompAppInfo().getProperty("appType");
-		
+
 		// If this is a compproc, make sure there are no comps assigned to it.
 		if (appType != null && appType.equalsIgnoreCase("ComputationProcess") && tsdb != null)
 		{
@@ -271,12 +251,15 @@ public class ProcessMonitorFrame
 				compFilter.setProcessId(sel.getCompAppInfo().getAppId());
 				if (computationDAO.listCompsForGUI(compFilter).size() > 0)
 				{
-					showError(LoadResourceBundle.sprintf(procmonLabels.getString("cannotDelete_existingComps"), 
+					showError(LoadResourceBundle.sprintf(procmonLabels.getString("cannotDelete_existingComps"),
 						sel.getCompAppInfo().getAppName()));
 					return;
 				}
 			}
-			catch(Exception ex) {}
+			catch(Exception ex)
+			{
+				log.atError().setCause(ex).log("Unable to delete computation process.");
+			}
 			finally { computationDAO.close(); }
 		}
 		else if (appType != null && appType.equalsIgnoreCase("RoutingScheduler"))
@@ -286,16 +269,19 @@ public class ProcessMonitorFrame
 			{
 				if (seDAO.listScheduleEntries(sel.getCompAppInfo()).size() > 0)
 				{
-					showError(LoadResourceBundle.sprintf(procmonLabels.getString("cannotDelete_existingSched"), 
+					showError(LoadResourceBundle.sprintf(procmonLabels.getString("cannotDelete_existingSched"),
 						sel.getCompAppInfo().getAppName()));
 					return;
 				}
 			}
-			catch(Exception ex) {}
+			catch(Exception ex)
+			{
+				log.atError().setCause(ex).log("Unable to delete RoutingScheduler process.");
+			}
 			finally { seDAO.close(); }
 		}
-		if (showConfirm("Confirm", 
-			LoadResourceBundle.sprintf(procmonLabels.getString("confirmDelete"), sel.getCompAppInfo().getAppName()), 
+		if (showConfirm("Confirm",
+			LoadResourceBundle.sprintf(procmonLabels.getString("confirmDelete"), sel.getCompAppInfo().getAppName()),
 			JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION)
 		{
 			LoadingAppDAI laDAO = Database.getDb().getDbIo().makeLoadingAppDAO();
@@ -306,6 +292,7 @@ public class ProcessMonitorFrame
 			}
 			catch(Exception ex)
 			{
+				log.atError().setCause(ex).log("Unable to delete computation error.");
 				showError(LoadResourceBundle.sprintf(procmonLabels.getString("deleteError"), ex.toString()));
 				return;
 			}
@@ -333,10 +320,7 @@ public class ProcessMonitorFrame
 		}
 		catch (DbIoException ex)
 		{
-			String msg = LoadResourceBundle.sprintf(procmonLabels.getString("cannotRead"), ex.toString());
-			Logger.instance().warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			log.atError().setCause(ex).log(LoadResourceBundle.sprintf(procmonLabels.getString("cannotRead"), ex.toString()));
 		}
 		finally
 		{
@@ -345,8 +329,8 @@ public class ProcessMonitorFrame
 
 		CompAppInfo cai = new CompAppInfo();
 		cai.setAppName(newName);
-		
-		ProcessEditDialog dlg = new ProcessEditDialog(this, 
+
+		ProcessEditDialog dlg = new ProcessEditDialog(this,
 			LoadResourceBundle.sprintf(procmonLabels.getString("editProcDialog"), "New Process"));
 		dlg.setEditedObject(cai);
 		editDialogs.add(dlg);
@@ -370,7 +354,7 @@ public class ProcessMonitorFrame
 				return;
 			}
 		}
-		ProcessEditDialog dlg = new ProcessEditDialog(this, 
+		ProcessEditDialog dlg = new ProcessEditDialog(this,
 			LoadResourceBundle.sprintf(procmonLabels.getString("editProcDialog"), sel.getCompAppInfo().getAppName()));
 		dlg.setEditedObject(sel.getCompAppInfo());
 		editDialogs.add(dlg);
@@ -408,7 +392,7 @@ public class ProcessMonitorFrame
 
 		String ev = LoadResourceBundle.sprintf(procmonLabels.getString("startingProc"), procName,
 			startCmd);
-		Logger.instance().info(ev);
+		log.info(ev);
 		addEvent(ev);
 		try
 		{
@@ -434,24 +418,25 @@ public class ProcessMonitorFrame
 				}
 				if (exeEnd > 4 && !sb.toString().toLowerCase().substring(0, exeEnd).endsWith(".bat"))
 					sb.insert(exeEnd, ".bat");
-				Logger.instance().info("Execution of '" + startCmd + "' failed. Windozified to '" + sb.toString() 
-					+ "' and trying again...");
+				log.info("Execution of '{}' failed. Windozified to '{}' and trying again...",
+						 startCmd, sb.toString());
 				startCmd = sb.toString();
 				try
 				{
 					ProcWaiterThread.runBackground(startCmd, procName);
 					return;
 				}
-				catch(IOException ex2) { ex = ex2; }
+				catch(IOException ex2)
+				{
+					ex.addSuppressed(ex2);
+				}
 			}
-			String msg = LoadResourceBundle.sprintf(procmonLabels.getString("cannotStart"), procName,
+			final String msg = LoadResourceBundle.sprintf(procmonLabels.getString("cannotStart"), procName,
 				sel.getCompAppInfo().getAppName(), ex.toString());
-			Logger.instance().warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			log.atError().setCause(ex).log(msg);
 		}
 	}
-	
+
 	private void stopPressed()
 	{
 		AppInfoStatus sel = getSelectedProc();
@@ -467,10 +452,10 @@ public class ProcessMonitorFrame
 				procmonLabels.getString("notRunning"), procName));
 			return;
 		}
-		String q = 
-			sel.getCompLock().isRunningLocally() ? 
+		String q =
+			sel.getCompLock().isRunningLocally() ?
 				LoadResourceBundle.sprintf(procmonLabels.getString("verifyStop"), procName) :
-				LoadResourceBundle.sprintf(procmonLabels.getString("notThisHost"), procName, 
+				LoadResourceBundle.sprintf(procmonLabels.getString("notThisHost"), procName,
 					sel.getCompLock().getHost());
 		int r = showConfirm(genericLabels.getString("confirm"), q, JOptionPane.YES_NO_OPTION);
 		if (r != JOptionPane.YES_OPTION)
@@ -478,7 +463,7 @@ public class ProcessMonitorFrame
 
 		String ev = LoadResourceBundle.sprintf(procmonLabels.getString("stoppingProc"), procName,
 			sel.getCompAppInfo().getAppName());
-		Logger.instance().info(ev);
+		log.info(ev);
 		addEvent(ev);
 
 		LoadingAppDAI loadingAppDAO = decodes.db.Database.getDb().getDbIo().makeLoadingAppDAO();
@@ -490,9 +475,7 @@ public class ProcessMonitorFrame
 		{
 			String msg = LoadResourceBundle.sprintf(procmonLabels.getString("cannotStop"), procName,
 				sel.getCompAppInfo().getAppName(), ex.toString());
-			Logger.instance().warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			log.atWarn().setCause(ex).log(msg);
 		}
 		finally
 		{
@@ -504,8 +487,8 @@ public class ProcessMonitorFrame
 	public void cleanupBeforeExit()
 	{
 	}
-	
-	
+
+
 //	/**
 //	 * @param args
 //	 */
@@ -517,7 +500,7 @@ public class ProcessMonitorFrame
 //		f.setExitOnClose(true);
 //		f.launch(r.x, r.y, r.width, r.height);
 //	}
-	
+
 	public void launch( int x, int y, int w, int h )
 	{
 		setBounds(x,y,w,h);
@@ -538,12 +521,12 @@ public class ProcessMonitorFrame
 	}
 
 	public ProcStatTableModel getModel() { return model; }
-	
+
 	public synchronized void addEvent(String event)
 	{
 		eventsPanel.addLine(event);
 	}
-	
+
 	private AppInfoStatus getSelectedProc()
 	{
 		int idx = processTable.getSelectedRow();
@@ -567,7 +550,7 @@ public class ProcessMonitorFrame
 					{
 						public void run() {	processTable.setRowSelectionInterval(selidx, selidx); }
 					});
-		}	
+		}
 	}
 
 	@Override
@@ -583,7 +566,7 @@ public class ProcessMonitorFrame
 			selectedProc = model.getAppAt(sel);
 		}
 	}
-	
+
 	public void dialogClosed(ProcessEditDialog dlg)
 	{
 		for(Iterator<ProcessEditDialog> pedit = editDialogs.iterator(); pedit.hasNext(); )
@@ -607,4 +590,3 @@ public class ProcessMonitorFrame
 		this.dbPollThread = dbPollThread;
 	}
 }
-
