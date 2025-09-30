@@ -1,26 +1,29 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of this source
-*  code may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.archive;
 
 import java.util.Date;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
 import lrgs.common.DcpMsgIndex;
-import lrgs.common.DapsFailureCode;
 import lrgs.lrgsmain.LrgsConfig;
-
-import ilex.util.Logger;
 
 /**
 This class is used by the archive code to determine what to do with an
@@ -28,6 +31,7 @@ incoming DCP message.
 */
 public class MergeFilter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Result Code: save this new DCP message. */
 	public static final int SAVE_DCPMSG = 0;
 
@@ -42,7 +46,7 @@ public class MergeFilter
 
 	/** Result Code: discard this copy. */
 	public static final int DISCARD = 4;
-	
+
 	private int inputPriorities[];
 
 	private MsgArchive msgArchive;
@@ -57,7 +61,7 @@ public class MergeFilter
 	 * longer than another.
 	 */
 	public int allowLengthDifference = 1;
-	
+
 	private LrgsConfig cfg = null;
 
 	/** Constructor. */
@@ -74,8 +78,9 @@ public class MergeFilter
 			try { mergeTimeThreshold = Integer.parseInt(smt); }
 			catch(Exception ex)
 			{
-				Logger.instance().warning(module + " bad 'mergeTimeThreshold' "
-					+ "value in lrgs.conf '" + smt + "' -- ignored");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("bad 'mergeTimeThreshold' value in lrgs.conf '{}' -- ignored", smt);
 			}
 		}
 	}
@@ -123,9 +128,7 @@ public class MergeFilter
 		if (msgTimeT > now + 1800)
 		{
 			lastCode = 19;
-			Logger.instance().warning(module 
-				+ " discarding msg with future time stamp '"
-				+ headerstr.substring(8, 8+11) + "'");
+			log.warn("discarding msg with future time stamp '{}'", headerstr.substring(8, 8+11));
 			return DISCARD;   // Always ignore dup status msgs.
 		}
 
@@ -140,12 +143,10 @@ public class MergeFilter
 		while(fileStartTime != 0)
 		{
 			// Retrieve the index
-			MsgPeriodArchive mpa = 
+			MsgPeriodArchive mpa =
 				msgArchive.getPeriodArchive(fileStartTime, false);
 			if (mpa == null || fileStartTime != mpa.startTime)
 			{
-//				Logger.instance().debug2(module 
-//					+ " archive missing for start time " + fileStartTime);
 				if (isDapsStatus)
 				{
 					lastCode = 1;
@@ -161,8 +162,6 @@ public class MergeFilter
 			DcpMsgIndex idx = mpa.getIndexEntrySync(idxNum);
 			if (idx == null)
 			{
-//				Logger.instance().debug2(module + " Index " + idxNum 
-//					+ " missing for file start time " + fileStartTime);
 				if (isDapsStatus)
 				{
 					lastCode = 3;
@@ -188,8 +187,6 @@ public class MergeFilter
 				{
 					if (isDapsStatus)
 					{
-//						Logger.instance().debug2(module 
-//							+ " discarding dup DAPS Status Msg: " + headerstr);
 						lastCode = 5;
 						return DISCARD;   // Always ignore dup status msgs.
 					}
@@ -236,9 +233,6 @@ public class MergeFilter
 					}
 					if (thisPri < prevPri)
 					{
-//						Logger.instance().debug2("deleting index "
-//							+ idxNum + " in file " + mpa.myname
-//							+ " -- Priority Override for msg " + headerstr);
 						mpa.deleteMsg(idxNum);
 						if (newFc == 'G')
 						{
@@ -253,46 +247,32 @@ public class MergeFilter
 					}
 					else
 					{
-//						Logger.instance().debug2(module +
-//						 " discarding dup real msg same or worse priority: "
-//							+ headerstr);
 						lastCode = 11;
 						return DISCARD;
 					}
 				}
 				else if (newFc == 'G' && storedFc == '?')
 				{
-//					Logger.instance().debug2(module + " deleting index "
-//						+ idxNum + " in file " + mpa.myname
-//						+ " -- Better Quality '" + headerstr + "'");
 					lastCode = 12;
 					mpa.deleteMsg(idxNum);
 					return OVERWRITE_PREV_BAD;
 				}
 				else if (newFc == '?' && storedFc == 'G')
 				{
-//					Logger.instance().debug2(module 
-//						+ " discarding msg - already have copy with better "
-//						+ "quality: " + headerstr);
 					lastCode = 13;
 					return DISCARD;
 				}
-				else if (newFc == 'M' 
+				else if (newFc == 'M'
 				      && (storedFc == 'G' || storedFc == '?'))
 				{
-//					Logger.instance().debug2(module 
-//						+ " discarding 'M' because already have real: "
-//						+ headerstr);
 					lastCode = 14;
 					return DISCARD;
 				}
 				else if ((newFc == 'G' || newFc == '?')
 				      && storedFc == 'M')
 				{
-					Logger.instance().debug2(module 
-						+ " deleting stored 'Missing' index "
-						+ idxNum + " in file " + mpa.myname
-						+ " -- got real one '" + headerstr + "'");
+					log.trace("deleting stored 'Missing' index {} in file {} -- got real one '{}'",
+							  idxNum, mpa.myname, headerstr);
 					mpa.deleteMsg(idxNum);
 					lastCode = 15;
 					return SAVE_DCPMSG;
@@ -340,10 +320,10 @@ public class MergeFilter
 		if (newMsg.isIridium()
 		 && newMsg.getSequenceNum() == storedIdx.getSequenceNum())
 			return true;
-		
+
 		int deltaT = newTimeT - (int)(storedIdx.getXmitTime().getTime()/1000L);
-		int threshold = 
-			(newFc == 'M' || storedIdx.getFailureCode() == 'M') ? 120 : 
+		int threshold =
+			(newFc == 'M' || storedIdx.getFailureCode() == 'M') ? 120 :
 			mergeTimeThreshold;
 
 		if (deltaT > -threshold && deltaT < threshold

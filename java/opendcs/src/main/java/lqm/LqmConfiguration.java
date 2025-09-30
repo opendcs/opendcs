@@ -1,36 +1,30 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.2  2009/08/24 13:33:20  shweta
-*  Configuration variables added for backup LRIT.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.1  2008/04/04 18:21:10  cvs
-*  Added legacy code to repository
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.3  2004/05/27 13:15:01  mjmaloney
-*  DR fixes.
-*
-*  Revision 1.2  2004/05/19 14:03:44  mjmaloney
-*  dev.
-*
-*  Revision 1.1  2004/05/18 01:01:57  mjmaloney
-*  Created.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
-/*
-*  Orig Author: David Johnson, ILEX Engineering, Inc.
-*/
-
 package lqm;
 
 import java.util.*;
-import java.io.*;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
+import java.io.*;
 
 public class LqmConfiguration
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/// Configuration file to load
 	File cfgFile;
 
@@ -53,11 +47,11 @@ public class LqmConfiguration
 	private long lastLoadMillis;
 
 	private static LqmConfiguration _instance = null;
-	
+
 	 String lritHostNameAlt;
-	
+
 	 int lritPortNumAlt;
-	
+
 	public static LqmConfiguration instance()
 	{
 		if(_instance == null)
@@ -78,7 +72,7 @@ public class LqmConfiguration
 		lritPortNumAlt = 17004;
 		lastLoadMillis = 0L;
 
-	}	
+	}
 
 	/// Loads configuration from specified config file.
 	public void loadConfig()
@@ -86,11 +80,12 @@ public class LqmConfiguration
 	{
 		Properties Prop1 = new Properties();
 		System.out.println(cfgFile);
-		InputStream is = new FileInputStream(cfgFile);
-		Prop1.load(new FileInputStream(cfgFile));
-		is.close();
-		
-		for (Enumeration e = Prop1.propertyNames(); e.hasMoreElements(); ) 
+		try (InputStream is = new FileInputStream(cfgFile))
+		{
+			Prop1.load(new FileInputStream(cfgFile));
+		}
+
+		for (Enumeration e = Prop1.propertyNames(); e.hasMoreElements(); )
 		{
     		String key = (String) e.nextElement();
 
@@ -100,8 +95,7 @@ public class LqmConfiguration
 				try { maxFileAge = Integer.parseInt(val.trim()); }
 				catch(NumberFormatException ex)
 				{
-					Logger.instance().log(Logger.E_WARNING,
-						"Improper maxFileAge value '" + val + "'");
+					log.atWarn().setCause(ex).log("Improper maxFileAge value '{}'", val);
 					maxFileAge = 7;
 				}
 			}
@@ -112,8 +106,7 @@ public class LqmConfiguration
 				if (dcsInputDir.isDirectory() == false)
 					if (dcsInputDir.mkdirs() == false)
 					{
-						Logger.instance().log(Logger.E_FAILURE,
-							"Cannot create input directory '" + val +"'");
+						log.error("Cannot create input directory '{}'", val);
 					}
 			}
 			else if (key.equalsIgnoreCase("dcsDoneDir"))
@@ -123,38 +116,35 @@ public class LqmConfiguration
 				if (dcsDoneDir.isDirectory() == false)
 					if (dcsDoneDir.mkdirs() == false)
 					{
-						Logger.instance().log(Logger.E_FAILURE,
-							"Cannot create done directory '" + val +"'");
+						log.error("Cannot create done directory '{}'", val);
 					}
 			}
 			else if (key.equalsIgnoreCase("lritHostName"))
 			{
 				lritHostName = Prop1.getProperty(key);
-			}	
+			}
 			else if (key.equalsIgnoreCase("lritHostNameAlt"))
 			{
 				lritHostNameAlt = Prop1.getProperty(key);
-			}	
+			}
 			else if (key.equalsIgnoreCase("lritPortNum"))
 			{
 				String val = Prop1.getProperty(key);
 				try { lritPortNum = Integer.parseInt(val.trim()); }
 				catch(NumberFormatException ex)
 				{
-					Logger.instance().log(Logger.E_WARNING,
-						"Improper lritPortNum value '" + val + "'");
+					log.atWarn().setCause(ex).log("Improper lritPortNum value '{}'", val);
 					lritPortNum = 17004;
 				}
 			}
-			
+
 			else if (key.equalsIgnoreCase("lritPortNumAlt"))
 			{
 				String val = Prop1.getProperty(key);
 				try { lritPortNumAlt = Integer.parseInt(val.trim()); }
 				catch(NumberFormatException ex)
 				{
-					Logger.instance().log(Logger.E_WARNING,
-						"Improper lritPortNumAlt value '" + val + "'");
+					log.atWarn().setCause(ex).log("Improper lritPortNumAlt value '{}'", val);
 					lritPortNumAlt = 17004;
 				}
 			}
@@ -177,9 +167,7 @@ public class LqmConfiguration
 			try { loadConfig(); }
 			catch(IOException ex)
 			{
-				Logger.instance().log(Logger.E_FAILURE,
-				  "Cannot load config file '" + cfgFile.getPath()
-				  + "': " + ex);
+				log.atError().setCause(ex).log("Cannot load config file '{}'", cfgFile.getPath());
 				return;
 			}
 		}
@@ -196,12 +184,5 @@ public class LqmConfiguration
 		if (args.length > 0)
 			cfg.setConfigFileName(args[0]);
 		cfg.loadConfig();
-/*
-		System.out.println("maxFileAge=" + cfg.maxFileAge);
-		System.out.println("lastLoadMillis=" + cfg.lastLoadMillis);
-		System.out.println("lritHostName=" + cfg.lritHostName);
-		System.out.println("lritPortNum=" + cfg.lritPortNum);
-		System.out.println("dcsInputDir=" + cfg.dcsInputDir.getPath());
-		System.out.println("dcsDoneDir=" + cfg.dcsDoneDir.getPath());*/
 	}
 }
