@@ -1,406 +1,20 @@
 /*
-*  $Id: TimeSeriesDb.java,v 1.25 2020/02/14 15:15:40 mmaloney Exp $
-*
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
-*
-*  Except for specific contractual terms between ILEX and the federal
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
-*
-*  $Log: TimeSeriesDb.java,v $
-*  Revision 1.25  2020/02/14 15:15:40  mmaloney
-*  dev
-*
-*  Revision 1.24  2020/01/31 19:39:15  mmaloney
-*  Added writeTsdbProperties method.
-*
-*  Revision 1.23  2019/07/02 13:58:33  mmaloney
-*  Added flags2display
-*
-*  Revision 1.22  2019/06/10 19:25:45  mmaloney
-*  Added makeAlarmDAO() and getStorageUnitsFor DataType (stub) methods.
-*
-*  Revision 1.21  2018/12/19 19:56:30  mmaloney
-*  Remove references to classes in oracle.jdbc and oracle.sql, except in HDB branch.
-*
-*  Revision 1.20  2018/12/18 15:22:14  mmaloney
-*  determineTsdbVersion refactored as a static method to allow it to be called
-*  from SqlDatabaseIO.
-*
-*  Revision 1.19  2018/05/23 19:59:01  mmaloney
-*  OpenTSDB Initial Release
-*
-*  Revision 1.18  2018/05/01 17:40:47  mmaloney
-*  Implement model run and flags2string stuff here so it doesn't have to be implemented by a
-*  stub in cwms.
-*
-*  Revision 1.17  2018/02/21 14:34:19  mmaloney
-*  Set autocommit true always.
-*
-*  Revision 1.16  2018/02/19 15:51:35  mmaloney
-*  Added code for Oracle to reclaim tasklist space.
-*
-*  Revision 1.15  2018/02/14 17:03:49  mmaloney
-*  Refactor: Get rid of the 'getNewDataSince()' method because it was unused.
-*
-*  Revision 1.14  2017/10/03 12:33:20  mmaloney
-*  Code cleanup
-*
-*  Revision 1.13  2017/08/22 19:56:39  mmaloney
-*  Refactor
-*
-*  Revision 1.12  2017/05/31 21:20:31  mmaloney
-*  Added rating method to the TSDB object in order to remove dependencies to CWMS
-*  from PythonAlgorithm.
-*
-*  Revision 1.11  2017/04/27 21:04:06  mmaloney
-*  Removed obsolete methods.
-*
-*  Revision 1.10  2017/01/10 21:15:27  mmaloney
-*  Guard against null ptr.
-*
-*  Revision 1.9  2016/12/16 14:36:04  mmaloney
-*  Moved code to adjust comp dependencies when a group is modified to the DAO.
-*
-*  Revision 1.8  2016/11/03 19:03:56  mmaloney
-*  Refactoring for group evaluation to make HDB work the same way as CWMS.
-*
-*  Revision 1.7  2016/06/27 15:29:01  mmaloney
-*  Code cleanup.
-*
-*  Revision 1.6  2015/11/12 15:22:46  mmaloney
-*  Added makeScreeningDAO method.
-*
-*  Revision 1.5  2014/12/19 19:25:35  mmaloney
-*  Handle version change for column name tsdb_group_member_ts data_id vs. ts_id.
-*
-*  Revision 1.4  2014/12/11 20:29:31  mmaloney
-*  Added DacqEventLogging capability.
-*
-*  Revision 1.3  2014/11/19 16:09:48  mmaloney
-*  Additions for dcpmon
-*
-*  Revision 1.2  2014/08/29 18:21:19  mmaloney
-*  For opendcs-oracle, determine _isOracle AFTER connection.
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.133  2013/07/31 15:27:18  mmaloney
-*  Added methods to check for questionable and set questionable.
-*
-*  Revision 1.132  2013/07/25 18:22:05  mmaloney
-*  dev
-*
-*  Revision 1.131  2013/07/24 17:37:48  mmaloney
-*  dev
-*
-*  Revision 1.130  2013/07/24 15:37:57  mmaloney
-*  dev
-*
-*  Revision 1.129  2013/07/24 15:28:39  mmaloney
-*  dev
-*
-*  Revision 1.128  2013/07/24 14:16:20  mmaloney
-*  dev
-*
-*  Revision 1.127  2013/07/24 13:52:28  mmaloney
-*  dev
-*
-*  Revision 1.126  2013/07/24 13:41:54  mmaloney
-*  Cleanup the listCompsForGui stuff. This is all now portable across databases.
-*
-*  Revision 1.125  2013/07/12 11:50:53  mmaloney
-*  Added tasklist queue stuff.
-*
-*  Revision 1.124  2013/05/03 13:05:33  mmaloney
-*  Fixed version reference for CWMS 2.1
-*
-*  Revision 1.123  2013/04/12 17:09:37  mmaloney
-*  column mask on inserts required for VPD
-*
-*  Revision 1.122  2013/03/25 16:58:25  mmaloney
-*  Refactor comp lock stale time.
-*
-*  Revision 1.121  2013/03/21 18:27:39  mmaloney
-*  DbKey Implementation
-*
-*  Revision 1.120  2013/02/20 15:07:24  gchen
-*  Enhance a new feature to allow to use the maxComputationRetries property to limit the number of retries for those failed computations. There will be unlimited retries if maxComputationRetires=0.
-*
-*  This feature will apply to CWMS, and HDB.
-*
-*  Revision 1.119  2012/11/28 23:00:31  mmaloney
-*  Added javadoc
-*
-*  Revision 1.118  2012/11/20 15:58:35  mmaloney
-*  Improve wording of Exception message.
-*
-*  Revision 1.117  2012/10/25 15:04:18  mmaloney
-*  For HDB, if modelRunId is not set for a modeled time series,
-*  set it to the maximum run ID for that model ID.
-*
-*  Revision 1.116  2012/10/24 15:17:29  mmaloney
-*  Changed getDcpXmitSuffix to public for retrieving stats.
-*
-*  Revision 1.115  2012/10/23 20:16:44  mmaloney
-*  In listTimeSeries, if useCache for sites, then replace the site object in the
-*  TSID with the full one from the cache so that TSID has all of the site names
-*  and properties.
-*
-*  Revision 1.114  2012/10/15 15:39:40  shweta
-*  reverted back to 1.112
-*
-*  Revision 1.112  2012/10/04 14:51:15  shweta
-*  set isreloaded flag if computation is reloaded.
-*
-*  Revision 1.111  2012/10/03 14:24:22  mmaloney
-*  Reduce debug.
-*
-*  Revision 1.110  2012/09/11 13:03:34  mmaloney
-*  dev
-*
-*  Revision 1.109  2012/08/29 13:59:49  mmaloney
-*  database version cleanup.
-*
-*  Revision 1.108  2012/08/24 12:58:12  mmaloney
-*  Implement methods to write to the tasklist table from Java.
-*
-*  Revision 1.107  2012/08/23 19:05:16  mmaloney
-*  Enqueue past data to the tasklist table back to notification date/time.
-*
-*  Revision 1.106  2012/08/22 19:56:08  mmaloney
-*  added countCompsUsingGroup method
-*
-*  Revision 1.105  2012/08/22 19:53:00  mmaloney
-*  added countCompsUsingGroup method
-*
-*  Revision 1.104  2012/08/20 20:08:05  mmaloney
-*  Implement HDB Convert2Group utility.
-*
-*  Revision 1.103  2012/08/17 14:22:49  mmaloney
-*  dev
-*
-*  Revision 1.102  2012/08/17 13:21:00  mmaloney
-*  debugs in listCompsForGUI
-*
-*  Revision 1.101  2012/08/13 15:22:03  mmaloney
-*  Needed makeEmptyTsId method so that TsImport can create a time-series if it doesn't
-*  already exist.
-*
-*  Revision 1.100  2012/08/11 20:13:02  mmaloney
-*  When saving a computation, update lastModified in the passed object.
-*
-*  Revision 1.99  2012/08/09 15:41:38  mmaloney
-*  Added makeTimeSeries method. Several utilities were duplicating this code.
-*  Moving it here means that it will be consistent in all programs.
-*
-*  Revision 1.98  2012/07/31 14:50:45  mmaloney
-*  Fix obtainLock bug.
-*
-*  Revision 1.97  2012/07/30 20:58:40  mmaloney
-*  Allow subclass to change 'module'.
-*
-*  Revision 1.96  2012/07/27 19:40:36  mmaloney
-*  getTimeSeriesFor() moved to HDB subclass.
-*
-*  Revision 1.95  2012/07/25 18:40:58  mmaloney
-*  Remove nuisance debugs.
-*
-*  Revision 1.94  2012/07/24 14:29:47  mmaloney
-*  getDataTypesByStandard moved to base class decodes.tsdb.TimeSeriesDb.
-*
-*  Revision 1.93  2012/07/19 14:50:49  mmaloney
-*  Updated for USBR HDB.
-*
-*  Revision 1.92  2012/07/18 13:42:30  mmaloney
-*  Fix timezone issues.
-*
-*  Revision 1.91  2012/07/17 20:57:17  mmaloney
-*  Fix timezone issues.
-*
-*  Revision 1.90  2012/07/17 20:51:18  mmaloney
-*  Fix timezone issues.
-*
-*  Revision 1.89  2012/07/15 21:33:55  mmaloney
-*  Refactor read/write DateFmt. For HDB, always use GMT/UTC.
-*
-*  Revision 1.88  2012/07/15 19:53:46  mmaloney
-*  Refactor read/write DateFmt. For HDB, always use GMT/UTC.
-*
-*  Revision 1.87  2012/07/12 19:43:06  mmaloney
-*  timestamp debugs.
-*
-*  Revision 1.86  2012/07/12 19:20:53  mmaloney
-*  timestamp debugs.
-*
-*  Revision 1.85  2012/07/12 18:30:46  mmaloney
-*  timestamp debugs.
-*
-*  Revision 1.84  2012/07/12 18:10:21  mmaloney
-*  timestamp debugs.
-*
-*  Revision 1.83  2012/07/12 17:23:44  mmaloney
-*  Added debugDateFmt for debug messages
-*
-*  Revision 1.82  2012/07/11 18:39:56  mmaloney
-*  First cut of new daemon to update CP_COMP_DEPENDS.
-*
-*  Revision 1.81  2012/07/11 18:09:07  mmaloney
-*  First cut of new daemon to update CP_COMP_DEPENDS.
-*
-*  Revision 1.80  2012/07/11 15:41:26  mmaloney
-*  First cut of new daemon to update CP_COMP_DEPENDS.
-*
-*  Revision 1.79  2012/07/05 18:27:04  mmaloney
-*  tsKey is stored as a long.
-*
-*  Revision 1.78  2012/06/18 15:15:39  mmaloney
-*  Moved TS ID cache to base class.
-*
-*  Revision 1.77  2012/06/06 19:15:53  mmaloney
-*  writeComputationApp for HDB does auto-sequence.
-*
-*  Revision 1.76  2012/05/30 21:00:50  mmaloney
-*  sql bug fix.
-*
-*  Revision 1.75  2012/05/30 20:27:03  mmaloney
-*  Modifications for TSDB Version 8
-*
-*  Revision 1.74  2012/05/15 14:27:39  mmaloney
-*  1. createTimeSeries calls checkValid, which can throw BadTimeSeriesException.
-*  2. transformTsidByCompParm can throw BadTimeSeriesException because
-*  it calls createTimeSeries if create flag == true.
-*
-*  Revision 1.73  2012/05/09 15:33:03  mmaloney
-*  Read maxval(version) from tsdb_database_version.
-*  This is a work-around to a bug in the updater whereby multiple records were being
-*  written into this table with different version numbers.
-*
-*  Revision 1.72  2012/04/30 18:50:17  mmaloney
-*  fillDependentCompIds must filter on loadingAppId.
-*
-*  Revision 1.71  2012/03/26 19:31:45  mmaloney
-*  comment
-*
-*  Revision 1.70  2011/11/01 22:42:12  mmaloney
-*  added getMediumIdForPlatform
-*
-*  Revision 1.69  2011/10/05 17:07:40  mmaloney
-*  moved determineTsdbVersion to this base-class setConnection method.
-*
-*  Revision 1.68  2011/06/16 14:06:55  mmaloney
-*  move doQuery2 to base class
-*
-*  Revision 1.67  2011/05/31 17:59:33  mmaloney
-*  cwms checks
-*
-*  Revision 1.66  2011/05/16 13:57:27  mmaloney
-*  Don't evaluateCompDepends if CWMS and >= version 7
-*
-*  Revision 1.65  2011/04/26 18:12:02  mmaloney
-*  bug vix.
-*
-*  Revision 1.64  2011/03/18 14:16:46  mmaloney
-*  Made some members public for validations
-*
-*  Revision 1.63  2011/03/01 15:56:44  mmaloney
-*  Implement deleteTimeSeries
-*
-*  Revision 1.62  2011/02/17 19:22:27  mmaloney
-*  bugfix for GUI
-*
-*  Revision 1.61  2011/02/15 16:52:34  mmaloney
-*  Defensive programming: Don't join the task list with any other tables because the
-*  join might fail, leaving bogus tasklist entries on the queue forever.
-*
-*  Revision 1.60  2011/02/08 13:28:56  mmaloney
-*  All tsdb reads must be units-savvy.
-*
-*  Revision 1.59  2011/02/07 18:34:34  mmaloney
-*  Got rid of PgTimeSeriesDb intermediate class.
-*
-*  Revision 1.58  2011/02/02 20:42:11  mmaloney
-*  Implement getValidPartChoices for group editor.
-*
-*  Revision 1.57  2011/02/02 14:38:53  mmaloney
-*  debugs
-*
-*  Revision 1.56  2011/02/01 15:32:23  gchen
-*  *** empty log message ***
-*
-*  Revision 1.55  2011/01/26 20:49:02  mmaloney
-*  Have getValidDurations return getValidIntervalCodes by default.
-*
-*  Revision 1.54  2011/01/26 19:48:46  gchen
-*  Add an abstract method getValidDuration()
-*
-*  Revision 1.53  2011/01/25 15:59:11  mmaloney
-*  For TSDB >= 5 do not cache computations in the resolver.
-*
-*  Revision 1.52  2011/01/24 18:36:11  mmaloney
-*  Fix bug where lock heartbeat timezone was wrong.
-*
-*  Revision 1.51  2011/01/20 13:09:38  mmaloney
-*  Added abstract method listTimeSeries
-*
-*  Revision 1.50  2011/01/18 15:07:54  mmaloney
-*  Count procs using when listing applications
-*
-*  Revision 1.49  2011/01/18 13:15:13  mmaloney
-*  Fix comp parm filtering for site-id for all 3 database types.
-*
-*  Revision 1.48  2011/01/17 20:49:11  mmaloney
-*  Speed up load of computation editor. It was VERY slow because it was doing a one-by-one
-*  query for all computations, and doing a deep read. Now it uses a single query to read
-*  just what it needs to populate the lists.
-*
-*  Revision 1.47  2011/01/12 20:39:28  mmaloney
-*  dev
-*
-*  Revision 1.46  2011/01/12 20:35:03  mmaloney
-*  dev
-*
-*  Revision 1.45  2011/01/10 18:56:46  mmaloney
-*  When looking up a data type, use UPPER
-*
-*  Revision 1.44  2011/01/01 21:28:53  mmaloney
-*  CWMS Testing
-*
-*  Revision 1.43  2010/12/23 18:23:36  mmaloney
-*  udpated for groups
-*
-*  Revision 1.42  2010/12/22 16:55:48  mmaloney
-*  udpated for groups
-*
-*  Revision 1.41  2010/12/21 19:20:52  mmaloney
-*  group computations
-*
-*  Revision 1.40  2010/12/08 13:41:01  mmaloney
-*  Specify Columns in INSERT statements.
-*
-*  Revision 1.39  2010/12/05 15:51:34  mmaloney
-*  Comp Parm Edits for DCSTool 5.0
-*
-*  Revision 1.38  2010/11/28 21:05:24  mmaloney
-*  Refactoring for CCP Time-Series Groups
-*
-*  Revision 1.37  2010/11/05 18:21:29  mmaloney
-*  Modifications for CMWS
-*
-*  Revision 1.36  2010/10/22 18:01:24  mmaloney
-*  CCP Refactoring
-*
-*  Revision 1.35  2010/10/05 21:49:48  mmaloney
-*  Removed extraneous method to write Computation with boolean 'requireCompId'.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.tsdb;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.util.HasProperties;
 import ilex.var.NamedVariable;
@@ -412,7 +26,6 @@ import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
-//import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -424,6 +37,9 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.Properties;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
@@ -482,9 +98,9 @@ Sub classes must override all the abstract methods and provide
 a mechanism to persistently store time series and computational meta
 data.
 */
-public abstract class TimeSeriesDb
-    implements HasProperties, DatabaseConnectionOwner
+public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionOwner
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     public static String module = "tsdb";
 
     /** The application ID of the connected program */
@@ -501,16 +117,6 @@ public abstract class TimeSeriesDb
 
     /** The JDBC connection, must be provided by the connect method. */
     protected Connection conn;
-
-    /** The default statement for queries */
-//    private Statement queryStmt;
-//    private ResultSet queryResults = null;
-//
-//    /** The default statement for modifies */
-//    private Statement modStmt;
-
-    /** The logger */
-    protected Logger logger;
 
     /** Used to format timestamps written to the database. */
     protected SimpleDateFormat writeDateFmt = null;
@@ -535,8 +141,6 @@ public abstract class TimeSeriesDb
     */
     public static boolean sdiIsUnique = false; // default for USBR HDB.
 
-//    private PreparedStatement lockCheckStmt = null;
-
     protected static String curTimeName = "current_timestamp";
     protected static String maxCompRetryTimeFrmt = "INTERVAL '%d hour'";
 
@@ -548,7 +152,6 @@ public abstract class TimeSeriesDb
     protected Properties props = new Properties();
 
     protected String cpCompDepends_col1 = null;
-//    protected TsIdCache tsIdCache = null;
     protected SimpleDateFormat debugDateFmt =
         new SimpleDateFormat("MM/dd/yyyy-HH:mm:ss z");
 
@@ -578,14 +181,10 @@ public abstract class TimeSeriesDb
      */
     public TimeSeriesDb()
     {
-//        DecodesSettings settings = DecodesSettings.instance();
 
         writeModelRunId = Constants.undefinedIntKey;
         testMode = false;
         conn = null;
-//        queryStmt = null;
-//        modStmt = null;
-        logger = Logger.instance();
         tsdbVersion = 1;
 
 
@@ -626,14 +225,13 @@ public abstract class TimeSeriesDb
         String keyGenClass = DecodesSettings.instance().sqlKeyGenerator;
         try
         {
-            keyGenerator = KeyGeneratorFactory.makeKeyGenerator(
-                keyGenClass);
+            keyGenerator = KeyGeneratorFactory.makeKeyGenerator(keyGenClass);
         }
         catch (Exception ex)
         {
             throw new BadConnectException(
                 "Cannot initialize key generator from class '" + keyGenClass
-                    + "' :" + ex.toString());
+                    + "'", ex);
         }
     }
 
@@ -672,18 +270,11 @@ public abstract class TimeSeriesDb
         throws DbIoException
     {
         // OPENDCS assumes that autocommit is on. So do nothing here.
-//        try
-//        {
-//            conn.commit();
-//            conn.clearWarnings();
-//        }
-//        catch(SQLException ex) {}
     }
 
     public void rollback()
     {
-//        try { doModify("ROLLBACK"); }
-//        catch(Exception ex) {}
+        /* do nothing since autocommit is assumed */
     }
 
     /**
@@ -701,7 +292,7 @@ public abstract class TimeSeriesDb
         }
         catch(SQLException ex)
         {
-            Logger.instance().warning("Error retrieving boolean: " + ex);
+            log.atWarn().setCause(ex).log("Error retrieving boolean.");
             return false;
         }
     }
@@ -749,9 +340,8 @@ public abstract class TimeSeriesDb
             }
             catch(Exception ex)
             {
-                String msg = "Cannot determine app ID for name '" + appName + "': " + ex;
-                failure(msg);
-                throw new BadConnectException(msg);
+                String msg = "Cannot determine app ID for name '" + appName + "'";
+                throw new BadConnectException(msg, ex);
             }
         }
 
@@ -763,10 +353,7 @@ public abstract class TimeSeriesDb
         }
         catch(Exception ex)
         {
-            String msg = "Cannot load intervals: " + ex;
-            warning(msg);
-            System.err.println(msg);
-            ex.printStackTrace(System.err);
+            log.atWarn().setCause(ex).log("Cannot load intervals.");
         }
 
         connected = true;
@@ -777,13 +364,16 @@ public abstract class TimeSeriesDb
      */
     public void closeConnection()
     {
-        info("Closing database connection.");
+        log.info("Closing database connection.");
         try
         {
             if (conn != null)
                 conn.close();
         }
-        catch(Exception ex) {}
+        catch(Exception ex)
+        {
+            log.atError().setCause(ex).log("Unable to close connection?");
+        }
         conn = null;
     }
 
@@ -975,20 +565,6 @@ public abstract class TimeSeriesDb
         }
     }
 
-//    /**
-//     * Returns an DataCollection containing zero or more TimeSeries,
-//     * containing all data added or deleted since the last call of this
-//     * method by this application ID.
-//     * <p>
-//     * New values are marked with the DB_ADDED flag. Deleted values
-//     * marked with the DB_DELETED flag.
-//     * @param applicationId used to lookup & save the since time.
-//     * @return DataCollection with newly added or deleted values.
-//     * @throws DbIoException on Database IO error.
-//     */
-//    public abstract DataCollection getNewData( DbKey applicationId )
-//        throws DbIoException;
-
     /**
      * Releases triggers associated with the new data in the passed collection.
      * The implementation may use information contained in the collection's
@@ -1010,7 +586,7 @@ public abstract class TimeSeriesDb
         final String curTimeSqlCommand = this.isOracle() ? "sysdate" : "current_timestamp" ;
         final String intervalSqlCommand = this.isOracle() ? " ?/24 )" : " ? * INTERVAL '1' hour )" ; // Oracle date math
         Connection tcon = getConnection();
-        try(
+        try (
             PreparedStatement deleteNormal = tcon.prepareStatement("delete from CP_COMP_TASKLIST where RECORD_NUM = ?");
             PreparedStatement deleteFailedAfterMaxRetries = tcon.prepareStatement(
                       "delete from CP_COMP_TASKLIST "
@@ -1044,11 +620,10 @@ public abstract class TimeSeriesDb
             {
                 String failRecNumList = rrh.getFailedRecNumList(250);
                 String records[] = failRecNumList.split(",");
-                //Array failRecs = conn.createArrayOf("integer", failRecNumList.split(","));
                 // Add the retry limit for failed computations
                 if (doRetryFailed && maxRetries > 0)
                 {
-                    debug3("updating failed records based on retry count");
+                    log.trace("updating failed records based on retry count");
                     for( String rec: records ){
                         if( "".equalsIgnoreCase(rec) ) continue;
                         deleteFailedAfterMaxRetries.setLong(1,Long.parseLong(rec.trim()));
@@ -1057,7 +632,7 @@ public abstract class TimeSeriesDb
                         deleteFailedAfterMaxRetries.addBatch();
                     }
                     deleteFailedAfterMaxRetries.executeBatch();
-                    info("deleted failed recs past retry in (" + failRecNumList +")" );
+                    log.info("deleted failed recs past retry in ({})", failRecNumList);
                     for( String rec: records){
                         if( "".equalsIgnoreCase(rec) ) continue;
                         //updateFailedRetry.setString(1,curTimeName);
@@ -1067,14 +642,14 @@ public abstract class TimeSeriesDb
 
                     }
                     updateFailedRetry.executeBatch();
-                    info("updated fail time on (" + failRecNumList + "))" );
+                    log.info("updated fail time on ({})", failRecNumList);
                 }
                 else
                 {
                     // DB V5 handles failed computations by setting a FAIL_TIME
                     // on the task list record. Previous version just delete record.
                     if( tsdbVersion >= 4 && doRetryFailed ) {
-                        debug3("updating failed records");
+                        log.trace("updating failed records");
                         for( String rec: records ){
                             //updateFailTime.setString(1, curTimeName);
                             updateFailTime.setLong(1, Long.parseLong(rec.trim()));
@@ -1082,7 +657,7 @@ public abstract class TimeSeriesDb
                             updateFailTime.execute();
                         }
                         updateFailTime.executeBatch();
-                        info("updated fail time on (" + failRecNumList + "))" );
+                        log.info("updated fail time on ({})", failRecNumList);
                     } else {
                         for( String rec: records ){
                             if( "".equalsIgnoreCase(rec) ) continue;
@@ -1091,21 +666,17 @@ public abstract class TimeSeriesDb
                         }
 
                         deleteNormal.executeBatch();
-                        info("deleted failed records: (" +failRecNumList +" )" );
+                        log.info("deleted failed records: ({})", failRecNumList);
                     }
                     commit();
                 }
 
             }
 
-        } catch( SQLException err ){
-                    //warning(err.getLocalizedMessage());
-                    StringWriter sw = new StringWriter();
-                    PrintWriter pw = new PrintWriter(sw);
-                    err.printStackTrace(pw);
-                    warning("removing items from task list failed:");
-                    warning(sw.toString());
-                    throw new DbIoException(err.getLocalizedMessage());
+        }
+        catch(SQLException ex)
+        {
+            throw new DbIoException("Unable to remove items from task list.", ex);
         }
         finally
         {
@@ -1129,7 +700,7 @@ public abstract class TimeSeriesDb
          && System.currentTimeMillis() - lastReclaimMsec > (reclaimTasklistSec*1000L))
         {
              lastReclaimMsec = System.currentTimeMillis();
-             debug1("Relaiming unused CP_COMP_TASKLIST space...");
+             log.debug("Relaiming unused CP_COMP_TASKLIST space...");
              dao.doQuery("ALTER TABLE cp_comp_tasklist ENABLE ROW MOVEMENT");
              dao.doQuery("ALTER TABLE cp_comp_tasklist SHRINK SPACE CASCADE");
              dao.doQuery("ALTER TABLE cp_comp_tasklist DISABLE ROW MOVEMENT");
@@ -1297,15 +868,14 @@ public abstract class TimeSeriesDb
         {
             DatabaseMetaData metaData = con.getMetaData();
             String dbName = metaData.getDatabaseProductName();
-            Logger.instance().info("Connected to database server: "
-                + dbName + " " + metaData.getDatabaseProductVersion());
+            log.info("Connected to database server: {} {}", dbName, metaData.getDatabaseProductVersion());
             tsdb._isOracle = dbName.toLowerCase().contains("oracle");
         }
         catch (SQLException ex)
         {
-            String msg = "determineTsdbVersion() " +
-                "Cannot determine Database Product name and/or version: " + ex;
-            Logger.instance().warning(msg);
+            log.atWarn()
+               .setCause(ex)
+               .log("determineTsdbVersion() Cannot determine Database Product name and/or version");
         }
 
         TimeZone tz = TimeZone.getTimeZone(DecodesSettings.instance().sqlTimeZone);
@@ -1325,7 +895,7 @@ public abstract class TimeSeriesDb
 
         SqlDatabaseIO.readVersionInfo(tsdb, con);
         readVersionInfo(tsdb, con);
-        tsdb.info("Connected to TSDB Version " + tsdb.tsdbVersion + ", Description: " + tsdb.tsdbDescription);
+        log.info("Connected to TSDB Version {}, Description:", tsdb.tsdbVersion, tsdb.tsdbDescription);
         tsdb.readTsdbProperties(con);
         tsdb.cpCompDepends_col1 = tsdb.isHdb() || tsdb.tsdbVersion >= TsdbDatabaseVersion.VERSION_9
             ? "TS_ID" : "SITE_DATATYPE_ID";
@@ -1345,13 +915,11 @@ public abstract class TimeSeriesDb
         int tsdbVersion = TsdbDatabaseVersion.VERSION_2;  // earliest possible value.
         String tsdbDescription = "";
         String q = "SELECT * FROM tsdb_database_version";
-        Statement stmt = null;
-        try
-        {
-            stmt = conn.createStatement();
 
-            ResultSet rs = stmt.executeQuery(q);
-            while (rs != null && rs.next())
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(q);)
+        {
+            while (rs.next())
             {
                 int v = rs.getInt(1);
                 if (v > tsdbVersion)
@@ -1363,18 +931,12 @@ public abstract class TimeSeriesDb
         }
         catch(Exception ex)
         {
-            String msg = "readVersionInfo() " +
-                "Cannot determine TimeSeries Database version: " + ex;
-            Logger.instance().warning(msg);
+            log.atWarn()
+               .setCause(ex)
+               .log("readVersionInfo() Cannot determine TimeSeries Database version. Assuming {}",
+                    TsdbDatabaseVersion.VERSION_2);
+
             tsdbVersion = TsdbDatabaseVersion.VERSION_2;  // earliest possible value.
-        }
-        finally
-        {
-            if (stmt != null)
-            {
-                try { stmt.close(); }
-                catch(Exception ex) {}
-            }
         }
         dco.setTsdbVersion(tsdbVersion, tsdbDescription);
     }
@@ -1382,14 +944,11 @@ public abstract class TimeSeriesDb
     public void readTsdbProperties(Connection con)
     {
         String q = "SELECT prop_name, prop_value FROM tsdb_property";
-        Statement stmt = null;
-        try
+        log.trace("Query1 '{}'", q);
+        try (Statement stmt = con.createStatement();
+             ResultSet rs = stmt.executeQuery(q);)
         {
-            stmt = con.createStatement();
-            debug3("Query1 '" + q + "'");
-            ResultSet rs = stmt.executeQuery(q);
-
-            while (rs != null && rs.next())
+            while (rs.next())
             {
                 String nm = rs.getString(1);
                 String vl = rs.getString(2);
@@ -1398,13 +957,7 @@ public abstract class TimeSeriesDb
         }
         catch(Exception ex)
         {
-            String msg = "readTsdbProperties() " +
-                "Cannot read TimeSeries Database properties: " + ex;
-            logger.warning(msg);
-        }
-        finally
-        {
-            if (stmt != null) try { stmt.close(); } catch(Exception ex) {}
+            log.atWarn().setCause(ex).log("readTsdbProperties() Cannot read TimeSeries Database properties.");
         }
     }
 
@@ -1498,37 +1051,80 @@ public abstract class TimeSeriesDb
         props.remove(name);
     }
 
+    /**
+     *
+     * @deprecated use class logger instance
+     */
+    @Deprecated
     public void debug(String msg)
     {
-        Logger.instance().debug2(module + " " + msg);
+        /* to be removed */
     }
+
+    /**
+     *
+     * @deprecated use class logger instance
+     */
+    @Deprecated
     public void debug1(String msg)
     {
-        Logger.instance().debug1(module + " " + msg);
+        /* to be removed */
     }
+
+    /**
+     *
+     * @deprecated use class logger instance
+     */
+    @Deprecated
     public void debug2(String msg)
     {
-        Logger.instance().debug2(module + " " + msg);
+        /* to be removed */
     }
+
+    /**
+     *
+     * @deprecated use class logger instance
+     */
+    @Deprecated
     public void debug3(String msg)
     {
-        Logger.instance().debug3(module + " " + msg);
+        /* to be removed */
     }
+
+    /**
+     *
+     * @deprecated use class logger instance
+     */
+    @Deprecated
     public void info(String msg)
     {
-        Logger.instance().info(module + " " + msg);
+        /* to be removed */
     }
+
+    /**
+     *
+     * @deprecated use class logger instance
+     */
+    @Deprecated
     public void warning(String msg)
     {
-        Logger.instance().warning(module + " " + msg);
+        /* to be removed */
     }
+
+
     public void failure(String msg)
     {
-        Logger.instance().failure(module + " " + msg);
+        /* to be removed */
     }
+
+    /**
+     *
+     * @deprecated use class logger instance
+     */
+    @Deprecated
     public void fatal(String msg)
     {
-        Logger.instance().fatal(module + " " + msg);
+        /* to be removed */
     }
 
     /**
@@ -1544,164 +1140,6 @@ public abstract class TimeSeriesDb
         tsId.setStorageUnits(this.getStorageUnitsForDataType(tsId.getDataType()));
         return tsId;
     }
-
-//    /**
-//     * Lists the Time Series Groups.
-//     * @param groupType type of groups to list, null to list all groups.
-//     * @return ArrayList of un-expanded TS Groups.
-//     */
-//    public ArrayList<TsGroup> getTsGroupList(String groupType)
-//        throws DbIoException
-//    {
-//        TsGroupDAI tsGroupDAO = makeTsGroupDAO();
-//        try
-//        {
-//            return tsGroupDAO.getTsGroupList(groupType);
-//        }
-//        finally
-//        {
-//            tsGroupDAO.close();
-//        }
-//    }
-
-//    /**
-//     * @return a TsGroup by its unique name.
-//     */
-//    public TsGroup getTsGroupByName(String grpName)
-//        throws DbIoException
-//    {
-//        TsGroupDAI tsGroupDAO = makeTsGroupDAO();
-//        try
-//        {
-//            return tsGroupDAO.getTsGroupByName(grpName);
-//        }
-//        finally
-//        {
-//            tsGroupDAO.close();
-//        }
-//    }
-
-//    /**
-//     * @return a TsGroup by its surrogate key.
-//     */
-//    public TsGroup getTsGroupById(DbKey id)
-//        throws DbIoException
-//    {
-//        if (id == null || id.isNull())
-//            return null;
-//        TsGroupDAI tsGroupDAO = makeTsGroupDAO();
-//        try
-//        {
-//            return tsGroupDAO.getTsGroupById(id);
-//        }
-//        finally
-//        {
-//            tsGroupDAO.close();
-//        }
-//    }
-
-//    /**
-//     * Writes a group to the database.
-//     * @param group the group
-//     */
-//    public void writeTsGroup(TsGroup group)
-//        throws DbIoException
-//    {
-//        // Save ID before write
-//        DbKey id = group.getGroupId();
-//
-//        TsGroupDAI tsGroupDAO = makeTsGroupDAO();
-//        try
-//        {
-//            tsGroupDAO.writeTsGroup(group);
-//        }
-//        finally
-//        {
-//            tsGroupDAO.close();
-//        }
-//
-//        // If previously existed and is used by any comps, then we have
-//        // to re-evalute the computation dependencies with the new group
-//        // definition.
-//        if (!id.isNull())
-//        {
-//            ComputationDAI computationDAO = makeComputationDAO();
-//            CompDependsDAI compDependsDAO = makeCompDependsDAO();
-//            try
-//            {
-//                ArrayList<DbKey> affected = new ArrayList<DbKey>();
-//                affected.add(id);
-//                findAffectedGroups(id, affected);
-//
-//                StringBuilder whereClause = new StringBuilder("where group_id in (");
-//                for(DbKey groupId : affected)
-//                    whereClause.append("" + groupId + ",");
-//                whereClause.deleteCharAt(whereClause.length()-1);
-//                whereClause.append(")");
-//
-//                String q = tsdbVersion < TsdbDatabaseVersion.VERSION_6
-//                    ? ("SELECT DISTINCT COMPUTATION_ID FROM CP_COMP_TS_PARM "
-//                        + whereClause.toString())
-//                    : ("SELECT COMPUTATION_ID FROM CP_COMPUTATION "
-//                        + whereClause.toString());
-//
-//                ArrayList<DbKey> compIds = new ArrayList<DbKey>();
-//                ResultSet rs = doQuery(q);
-//                while (rs.next())
-//                    compIds.add(DbKey.createDbKey(rs, 1));
-//                for(DbKey compId : compIds)
-//                {
-//                    try
-//                    {
-//                        DbComputation comp = computationDAO.getComputationById(compId);
-//                        compDependsDAO.writeCompDepends(comp);
-//                    }
-//                    catch(NoSuchObjectException ex) {}
-//                }
-////                commit();
-//            }
-//            catch(SQLException ex)
-//            {
-//                String msg = " Error setting comp-dependencies: " + ex;
-//                warning(msg);
-//                throw new DbIoException(msg);
-//            }
-//            finally
-//            {
-//                computationDAO.close();
-//                compDependsDAO.close();
-//            }
-//        }
-//    }
-//
-//    /**
-//     * Recursive function to find all of the group IDs that are 'affected' by
-//     * the passed groupId. That is, find groups that either include or exclude
-//     * the passed groupId.
-//     * @param groupId
-//     * @param affectedGroupIds
-//     */
-//    private void findAffectedGroups(DbKey groupId, ArrayList<DbKey> affectedGroupIds)
-//        throws DbIoException, SQLException
-//    {
-//        String q = "select parent_group_id from tsdb_group_member_group "
-//            + "where child_group_id = " + groupId;
-//        ResultSet rs = doQuery(q);
-//        ArrayList<DbKey> tmp = new ArrayList<DbKey>();
-//        while (rs.next())
-//        {
-//            DbKey parentGroupId = DbKey.createDbKey(rs, 1);
-//            tmp.add(parentGroupId);
-//        }
-//        for(DbKey parentGroupId : tmp)
-//        {
-//            if (!affectedGroupIds.contains(parentGroupId))
-//            {
-//                affectedGroupIds.add(parentGroupId);
-//                findAffectedGroups(parentGroupId, affectedGroupIds);
-//            }
-//        }
-//    }
 
     /**
      * @return number of computations that are using the passed group ID.
@@ -1761,16 +1199,15 @@ public abstract class TimeSeriesDb
 
         String q = "SELECT code FROM DataType where lower(standard) = lower("
             + sqlString(dataTypeStandard) + ")";
-        try (DaoBase dao = new DaoBase(this, "tsdb.getDataTypesByStd"))
+        try (DaoBase dao = new DaoBase(this, "tsdb.getDataTypesByStd");
+             ResultSet rs = dao.doQuery(q);)
         {
-            ResultSet rs = dao.doQuery(q);
-            while (rs != null && rs.next())
+            while (rs.next())
                 ret.add(rs.getString(1));
         }
         catch (SQLException ex)
         {
-            String msg = "SQL Error in query '" + q + "': " + ex;
-            warning(msg);
+            log.atWarn().setCause(ex).log("SQL Error in query '{}'", q);
         }
 
         String retString[] = new String[ret.size()];
@@ -1860,7 +1297,7 @@ public abstract class TimeSeriesDb
         }
         catch(Exception ex)
         {
-            warning("fillDependentCompIds: " + ex);
+            log.atWarn().setCause(ex).log("fillDependentCompIds.");
         }
         return cts.getDependentCompIds().size();
     }
@@ -1914,7 +1351,7 @@ public abstract class TimeSeriesDb
             }
             catch(Exception ex)
             {
-                warning("makeTimeSeries - Bad modelId '" + s + "' -- ignored.");
+                log.atWarn().setCause(ex).log("makeTimeSeries - Bad modelId '{}' -- ignored.", s);
             }
             s = tsid.getPart(HdbTsId.MODELRUNID_PART);
             try
@@ -1926,7 +1363,7 @@ public abstract class TimeSeriesDb
             }
             catch(Exception ex)
             {
-                warning("makeTimeSeries - Bad modelRunId '" + s + "' -- ignored.");
+                log.atWarn().setCause(ex).log("makeTimeSeries - Bad modelRunId '{}' -- ignored.", s);
             }
         }
         return ret;
@@ -2015,9 +1452,10 @@ public abstract class TimeSeriesDb
                 s = rs.getString(column);
                 return readDateFmt.parse(s);
             }
-            catch(Exception pex)
+            catch(Exception ex2)
             {
-                warning("Bad date format '" + s + "' (using default): " + pex);
+                ex2.addSuppressed(ex);
+                log.atWarn().setCause(ex2).log("Bad date format '{}' (using default): ", s);
                 return null;
             }
         }
