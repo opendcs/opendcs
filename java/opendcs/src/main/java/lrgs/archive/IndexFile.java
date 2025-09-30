@@ -1,15 +1,4 @@
-/*
-*  $Id$
-*
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of this source
-*  code may be claimed to be proprietary.
-*
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
-*/
+//else Logger.instance().info("MJM ... Seq " + sn + " No Msg!");
 package lrgs.archive;
 
 import java.io.RandomAccessFile;
@@ -18,10 +7,12 @@ import java.io.EOFException;
 import java.io.File;
 import java.util.Date;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsgIndex;
 import ilex.util.ArrayUtil;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 /**
@@ -29,6 +20,7 @@ This class does IO operations on the binary index file.
 */
 public class IndexFile
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Used for random access IO on the file. */
 	private RandomAccessFile raf;
 
@@ -74,14 +66,13 @@ public class IndexFile
 		try { numEntries = (int)(raf.length() / INDEX_SIZE); }
 		catch(IOException ioex) { numEntries = 0; }
 
-		Logger.instance().debug1("Opened index file '" + fn + "' update="
-			+ update + ", len=" + raf.length() + ", num indexes="
-			+ numEntries + ", fileVersion=" + fileVersion);
+		log.debug("Opened index file '{}' update={}, len={}, num indexes={}, fileVersion={}",
+				  fn, update, raf.length(), numEntries, fileVersion);
 	}
 
 	/**
 	 * Writes an index entry to the file at the specified location.
-	 * Note: This may be overwriting a previous entry because we combine 
+	 * Note: This may be overwriting a previous entry because we combine
 	 * DAPS status messages into a single flag word.
 	 */
 	public synchronized void writeIndex( DcpMsgIndex ie, int idxNum )
@@ -90,7 +81,7 @@ public class IndexFile
 		raf.seek(idxNum * INDEX_SIZE);
 		raf.writeInt((int)(ie.getLocalRecvTime().getTime()/1000L));
 		raf.writeInt((int)(ie.getXmitTime().getTime()/1000L));
-		
+
 		if (fileVersion < 7)
 		{
 			raf.writeInt((int)ie.getOffset());
@@ -110,7 +101,7 @@ public class IndexFile
 			raf.writeShort((short)ie.getFlagbits());
 		else
 			raf.writeShort((short)0);
-		
+
 		raf.writeByte((byte)ie.getFailureCode());
 		raf.writeByte(ie.getMergeFilterCode());
 		raf.writeInt(ie.getPrevFileThisDcp());
@@ -127,14 +118,14 @@ public class IndexFile
 		if (idxNum >= numEntries)
 			numEntries = idxNum + 1;
 	}
-	
+
 	/** Called once when this object will no longer be used. */
 	public void close( )
 	{
 		try { raf.close(); }
 		catch(Exception ex) {}
 	}
-	
+
 	/**
 	 * Read a bunch of 'n' index entries into the passed
 	 * array, starting at specified index number.
@@ -200,16 +191,12 @@ public class IndexFile
 		}
 		catch(EOFException eofex)
 		{
-			String msg = "EOF reading index number "
-				+ (startNum + nr) + " from '" + filename 
-				+ "' startNum=" + startNum 
-				+ ", startPtr=" + startPtr
-				+ ", numRequested=" + n
-				+ ", numRead=" + nr 
-				+ ", curPtr=" + raf.getFilePointer() 
-				+ ", numEntries=" + numEntries
-				+ ", fileLen=" + raf.length();
-			Logger.instance().debug3(msg);
+			log.atTrace()
+			   .setCause(eofex)
+			   .log("EOF reading index number {} from '{}'' startNum={}, startPtr={}, numRequested={}" +
+					", numRead={}, curPtr={}, numEntries={}, fileLen={}",
+					(startNum + nr), filename, startNum, startPtr, n, nr,
+					raf.getFilePointer(), numEntries, raf.length());
 		}
 		// Allow other IO exceptions to propegate.
 		return nr;
