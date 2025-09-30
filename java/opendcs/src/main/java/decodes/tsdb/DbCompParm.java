@@ -1,14 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.tsdb;
 
@@ -16,7 +19,9 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.TextUtil;
 import decodes.db.Constants;
 import decodes.db.Site;
@@ -25,31 +30,32 @@ import decodes.db.DataType;
 import decodes.sql.DbKey;
 
 /**
-* This data-structure class holds info for a single computation 
+* This data-structure class holds info for a single computation
 * parameter.
 */
 public class DbCompParm
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Algorithm role name. */
 	private String algoRoleName;
-	 
+
 	/**
 	 * String interval code.
 	 * @see IntervalCodes
 	 */
 	private String interval;
-	
+
 	/** Table selector (used by concrete database implementation).  */
 	private String tableSelector;
-	
+
 	/**
 	 * Signed number of seconds. Offset for retrieving this parameter
 	 * relative to zero-based time.
 	 */
 	private int deltaT;
-	
-	/** 
-	 * Parameter type from the DbAlgoParm record associated with this object. 
+
+	/**
+	 * Parameter type from the DbAlgoParm record associated with this object.
 	 */
 	private String algoParmType;
 
@@ -62,26 +68,26 @@ public class DbCompParm
 	private DbKey dataTypeId = DbKey.NullKey;
 
 	private String deltaTUnits = null;
-	
+
 	/** Transient storage of units within the GUI */
 	private String unitsAbbr = null;
-	
+
 	private DbKey sdi = DbKey.NullKey;
-	
+
 	private Site site = new Site();
-	
+
 	private DataType dataType = null;
-	
+
 	/** OPENDCS6.0 allows Site association in DbCompParm directly */
 	private DbKey siteId = DbKey.NullKey;
-	
+
 	private String parsedParamType = "";
 	private String parsedDuration = "";
 	private String parsedVersion = "";
 	private String parsedLocSpec = "";
 	private String parsedParamSpec = "";
-	
-	
+
+
 	public String getUnitsAbbr()
 	{
 		return unitsAbbr;
@@ -102,7 +108,7 @@ public class DbCompParm
 	 * @see IntervalCodes
 	 * @see decodes.hdb.HdbTableSelector
 	 */
-	public DbCompParm(String algoRoleName, DbKey sdi, String interval, 
+	public DbCompParm(String algoRoleName, DbKey sdi, String interval,
 		String tsel, int deltaT)
 	{
 		this.algoRoleName = algoRoleName;
@@ -169,19 +175,17 @@ public class DbCompParm
 	/**
 	 * @return the site data-type ID.
 	 */
-	public DbKey getSiteDataTypeId() 
+	public DbKey getSiteDataTypeId()
 	{
-//		return siteDatatype.getSDI();
 		return sdi;
 	}
-	
+
 	/**
 	 * Sets the site data-type ID.
 	 * @param id the site data-type ID.
 	 */
 	public void setSiteDataTypeId(DbKey id)
 	{
-//		siteDatatype.setSDI(id);
 		this.sdi = id;
 	}
 
@@ -265,19 +269,18 @@ public class DbCompParm
 		else
 			clearSite();
 	}
-	
+
 	public void clearSite()
 	{
 		site = new Site();
 	}
-	
+
 	/**
 	 * Associates a site name with this param.
 	 * @param siteName the site name
 	 */
 	public void addSiteName(SiteName siteName)
 	{
-//		siteDatatype.addSiteName(siteName);
 		site.addName(siteName);
 	}
 
@@ -286,7 +289,6 @@ public class DbCompParm
 	 */
 	public ArrayList<SiteName> getSiteNames()
 	{
-//		return siteDatatype.getSiteNames();
 		return site.getNameArray();
 	}
 
@@ -299,7 +301,6 @@ public class DbCompParm
 	 */
 	public SiteName getSiteName()
 	{
-//		return siteDatatype.getSiteName();
 		return site.getPreferredName();
 	}
 
@@ -312,14 +313,6 @@ public class DbCompParm
 		if (nameType == null)
 			return site.getPreferredName();
 		return site.getName(nameType);
-		
-//		if (nameType == null)
-//			return getSiteName();
-//
-//		for(SiteName sn : getSiteNames())
-//			if (sn.getNameType().equalsIgnoreCase(nameType))
-//				return sn;
-//		return null;
 	}
 
 	/**
@@ -329,7 +322,6 @@ public class DbCompParm
 	public void setDataType(DataType dataType)
 	{
 		this.dataType = dataType;
-//		siteDatatype.setDataType(dataType);
 		dataTypeId = dataType == null ? Constants.undefinedId : dataType.getId();
 	}
 
@@ -343,10 +335,7 @@ public class DbCompParm
 	public DataType getDataType()
 	{
 		return dataType;
-//		return siteDatatype.getDataType();
 	}
-
-//	public SiteDatatype getSiteDatatype() { return siteDatatype; }
 
 	public String toString()
 	{
@@ -359,8 +348,6 @@ public class DbCompParm
 	{
 		if (!TextUtil.strEqual(this.algoRoleName, rhs.algoRoleName))
 			return false;
-//		if (this.siteDatatype.getSDI() != rhs.siteDatatype.getSDI())
-//			return false;
 		if (!this.sdi.equals(rhs.sdi))
 			return false;
 		if (!TextUtil.strEqual(this.interval, rhs.interval))
@@ -374,7 +361,7 @@ public class DbCompParm
 			? null : this.deltaTUnits;
 		String rhsUnits = rhs.deltaTUnits != null && rhs.deltaTUnits.equalsIgnoreCase("seconds")
 			? null : rhs.deltaTUnits;
-		
+
 		if (!TextUtil.strEqual(thisUnits, rhsUnits))
 			return false;
 		return true;
@@ -404,7 +391,7 @@ public class DbCompParm
     {
     	return parsedParamType;
     }
-    
+
 	/**
 	 * In CWMS, table-selector is ParamType.Duration.Version
      * @return the duration
@@ -414,7 +401,7 @@ public class DbCompParm
     	return parsedDuration;
     }
 
-   
+
 	/**
 	 * In CWMS, table-selector is ParamType.Duration.Version
      * @return the version
@@ -423,13 +410,13 @@ public class DbCompParm
 	{
 		return parsedVersion;
 	}
-	
+
 	/**
 	 * In CWMS LocSpec is 4th field of Table Selector
 	 * @return
 	 */
 	public String getLocSpec() { return parsedLocSpec; }
-	
+
 	/**
 	 * In CWMS ParamSpec is 5th field of Table Selector
 	 * @return
@@ -446,21 +433,21 @@ public class DbCompParm
 	{
 		this.deltaTUnits = deltaTUnits;
 	}
-	
+
 	public DbKey getSiteId()
 	{
 		if (site != null)
 			return site.getId();
 		else return siteId;
 	}
-	
+
 	public void setSiteId(DbKey siteId)
 	{
 		this.siteId = siteId;
 		if (site != null)
 			site.forceSetId(siteId);
 	}
-	
+
 	/**
 	 * ADD the deltaT to the base time to compute param time.
 	 * @param baseTime
@@ -470,22 +457,21 @@ public class DbCompParm
 	{
 		if (deltaTUnits == null || deltaTUnits.trim().length() == 0)
 			return new Date(baseTime.getTime() + deltaT*1000L);
-	
+
 		aggCal.setTime(baseTime);
 		int incr = deltaTUnits2CalConst();
 		if (incr == -1)
 		{
-			Logger.instance().warning("Param '" + getRoleName()
-				+ "' has invalid deltaTUnits '" + deltaTUnits + "' -- deltaT ignored.");
+			log.warn("Param '{}' has invalid deltaTUnits '{}' -- deltaT ignored.", getRoleName(), deltaTUnits);
 			return baseTime;
 		}
 		aggCal.add(incr, deltaT);
 		return aggCal.getTime();
 	}
-	
+
 	private int deltaTUnits2CalConst()
 	{
-		return 
+		return
 			TextUtil.startsWithIgnoreCase(deltaTUnits, "second") ? Calendar.SECOND :
 			TextUtil.startsWithIgnoreCase(deltaTUnits, "minute") ? Calendar.MINUTE :
 			TextUtil.startsWithIgnoreCase(deltaTUnits, "hour") ? Calendar.HOUR :
@@ -495,7 +481,7 @@ public class DbCompParm
 			TextUtil.startsWithIgnoreCase(deltaTUnits, "year") ? Calendar.YEAR :
 			-1;
 	}
-	
+
 	/**
 	 * SUBTRACT the deltaT from the param time to compute base time.
 	 * @param baseTime
@@ -510,8 +496,7 @@ public class DbCompParm
 		int incr = deltaTUnits2CalConst();
 		if (incr == -1)
 		{
-			Logger.instance().warning("Param '" + getRoleName()
-				+ "' has invalid deltaTUnits '" + deltaTUnits + "' -- deltaT ignored.");
+			log.warn("Param '{}' has invalid deltaTUnits '{}' -- deltaT ignored.", getRoleName(), deltaTUnits);
 			return baseTime;
 		}
 		aggCal.add(incr, deltaT * -1);

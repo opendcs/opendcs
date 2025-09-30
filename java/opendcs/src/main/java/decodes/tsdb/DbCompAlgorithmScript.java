@@ -1,7 +1,21 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb;
 
 import ilex.util.TextUtil;
-import ilex.util.Logger;
 
 /**
  * For Python Algorithms, this class will be associated with the DbCompAlgorithm
@@ -19,16 +33,15 @@ public class DbCompAlgorithmScript
 		this.parent = parent;
 		this.scriptType = scriptType;
 	}
-	
+
 	public String getText() { return text; }
-	
+
 	public void addToText(String block)
 	{
 		if (text == null || text.length() == 0)
 			text = block;
 		else
 			text = text + block;
-//Logger.instance().debug1("DbCompAlgorithmScript.addToScript, after adding, text='" + text + "'");
 	}
 
 	public ScriptType getScriptType()
@@ -47,7 +60,7 @@ public class DbCompAlgorithmScript
 		ret.text = this.text;
 		return ret;
 	}
-	
+
 	@Override
 	public boolean equals(Object rhs)
 	{

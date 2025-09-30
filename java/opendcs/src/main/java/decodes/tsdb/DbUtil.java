@@ -1,24 +1,30 @@
 /*
- * This software was written by Cove Software, LLC. under contract to the 
- * U.S. Government. This software is property of the U.S. Government and 
- * may be used by permission only.
- * 
- * No warranty is provided or implied other than specific contractual terms.
- * 
- * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.DacqEventDAI;
 import opendcs.dai.DeviceStatusDAI;
@@ -39,11 +45,9 @@ import decodes.db.SiteName;
 import decodes.polling.DacqEvent;
 import decodes.polling.DeviceStatus;
 import decodes.sql.DbKey;
-import decodes.sql.SqlDatabaseIO;
 import decodes.util.DecodesSettings;
 import ilex.util.CmdLine;
 import ilex.util.CmdLineProcessor;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 /**
@@ -53,8 +57,9 @@ import ilex.util.TextUtil;
  */
 public class DbUtil extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private CmdLineProcessor cmdLineProc = new CmdLineProcessor();
-	private CmdLine listSiteCmd = 
+	private CmdLine listSiteCmd =
 		new CmdLine("list-site", "[startsWith] List sites, optionally starting with a specified string, sorted name.")
 		{
 			public void execute(String[] tokens)
@@ -63,7 +68,7 @@ public class DbUtil extends TsdbAppTemplate
 			}
 		};
 	private CmdLine deletePlatCmd =
-		new CmdLine("delete-platform", 
+		new CmdLine("delete-platform",
 			"[id|site] [platformId or SiteName] - delete platform by ID or site name")
 		{
 			public void execute(String[] tokens)
@@ -72,7 +77,7 @@ public class DbUtil extends TsdbAppTemplate
 			}
 		};
 	private CmdLine deleteSiteCmd =
-		new CmdLine("delete-site", 
+		new CmdLine("delete-site",
 			"[default-site-name] - delete site by its default site name")
 		{
 			public void execute(String[] tokens)
@@ -96,7 +101,7 @@ public class DbUtil extends TsdbAppTemplate
 				doTsAliases(tokens);
 			}
 		};
-	private CmdLine tsListCmd =	
+	private CmdLine tsListCmd =
 		new CmdLine("list-ts", "[contains] List Time Series, optionally with id containing specified string, sorted name.")
 		{
 			public void execute(String[] tokens)
@@ -104,7 +109,7 @@ public class DbUtil extends TsdbAppTemplate
 				doListTS(tokens);
 			}
 		};
-	private CmdLine tsDeleteCmd =	
+	private CmdLine tsDeleteCmd =
 		new CmdLine("delete-ts", "[contains] List Time Series, optionally with id containing specified string, sorted name.")
 		{
 			public void execute(String[] tokens)
@@ -112,7 +117,7 @@ public class DbUtil extends TsdbAppTemplate
 				doDeleteTS(tokens);
 			}
 		};
-	private CmdLine devListCmd =	
+	private CmdLine devListCmd =
 		new CmdLine("list-dev", "List Device Statuses")
 		{
 			public void execute(String[] tokens)
@@ -120,7 +125,7 @@ public class DbUtil extends TsdbAppTemplate
 				doListDev(tokens);
 			}
 		};
-	private CmdLine devUpdateCmd =	
+	private CmdLine devUpdateCmd =
 		new CmdLine("update-dev", "[devname] [procname] [mediumId] [status] List Device Statuses")
 		{
 			public void execute(String[] tokens)
@@ -128,7 +133,7 @@ public class DbUtil extends TsdbAppTemplate
 				doUpdateDev(tokens);
 			}
 		};
-	private CmdLine devEventsContaining =	
+	private CmdLine devEventsContaining =
 		new CmdLine("events-containing", "[string] List events containing a specified string")
 		{
 			public void execute(String[] tokens)
@@ -136,7 +141,7 @@ public class DbUtil extends TsdbAppTemplate
 				devEventsContaining(tokens);
 			}
 		};
-	private CmdLine genEventsCmd =	
+	private CmdLine genEventsCmd =
 		new CmdLine("event", "[priority (I,W,F)] [subsystem] [event text...]")
 		{
 			public void execute(String[] tokens)
@@ -144,7 +149,7 @@ public class DbUtil extends TsdbAppTemplate
 				genEventsCmd(tokens);
 			}
 		};
-	private CmdLine genSchedEventsCmd =	
+	private CmdLine genSchedEventsCmd =
 		new CmdLine("sched-event", "[priority (I,W,F)] schedStatusId platformId(or -1) subsystem [event text...]")
 		{
 			public void execute(String[] tokens)
@@ -152,7 +157,7 @@ public class DbUtil extends TsdbAppTemplate
 				genSchedEventsCmd(tokens);
 			}
 		};
-	private CmdLine versionCmd =	
+	private CmdLine versionCmd =
 		new CmdLine("version", " -- show DECODES and tsdb database versions")
 		{
 			public void execute(String[] tokens)
@@ -160,7 +165,7 @@ public class DbUtil extends TsdbAppTemplate
 				versionCmd(tokens);
 			}
 		};
-	private CmdLine bparamCmd = 
+	private CmdLine bparamCmd =
 		new CmdLine("bparam", " -- show CWMS Base Param - Unit Associations")
 		{
 			public void execute(String[] tokens)
@@ -168,7 +173,7 @@ public class DbUtil extends TsdbAppTemplate
 				bparamCmd(tokens);
 			}
 		};
-	private CmdLine selectCmd = 
+	private CmdLine selectCmd =
 		new CmdLine("select", " -- An arbitrary database SELECT statement.")
 		{
 			public void execute(String[] tokens)
@@ -176,7 +181,7 @@ public class DbUtil extends TsdbAppTemplate
 				selectCmd(tokens);
 			}
 		};
-	private CmdLine alterCmd = 
+	private CmdLine alterCmd =
 		new CmdLine("alter", " -- An arbitrary database ALTER statement.")
 		{
 			public void execute(String[] tokens)
@@ -184,7 +189,7 @@ public class DbUtil extends TsdbAppTemplate
 				updateCmd(tokens);
 			}
 		};
-	private CmdLine updateCmd = 
+	private CmdLine updateCmd =
 		new CmdLine("update", " -- An arbitrary database UPDATE statement.")
 		{
 			public void execute(String[] tokens)
@@ -192,7 +197,7 @@ public class DbUtil extends TsdbAppTemplate
 				updateCmd(tokens);
 			}
 		};
-	private CmdLine insertCmd = 
+	private CmdLine insertCmd =
 		new CmdLine("insert", " -- An arbitrary database INSERT statement.")
 		{
 			public void execute(String[] tokens)
@@ -200,7 +205,7 @@ public class DbUtil extends TsdbAppTemplate
 				insertCmd(tokens);
 			}
 		};
-	private CmdLine deleteCmd = 
+	private CmdLine deleteCmd =
 		new CmdLine("delete", " -- An arbitrary database DELETE statement.")
 		{
 			public void execute(String[] tokens)
@@ -208,7 +213,7 @@ public class DbUtil extends TsdbAppTemplate
 				deleteCmd(tokens);
 			}
 		};
-	private CmdLine dropCmd = 
+	private CmdLine dropCmd =
 		new CmdLine("drop", " -- An arbitrary database DROP statement.")
 		{
 			public void execute(String[] tokens)
@@ -216,7 +221,7 @@ public class DbUtil extends TsdbAppTemplate
 				dropCmd(tokens);
 			}
 		};
-	private CmdLine createCmd = 
+	private CmdLine createCmd =
 		new CmdLine("create", " -- An arbitrary database CREATE statement.")
 		{
 			public void execute(String[] tokens)
@@ -225,8 +230,8 @@ public class DbUtil extends TsdbAppTemplate
 			}
 		};
 
-		
-	private CmdLine hdbRatingCmd = 
+
+	private CmdLine hdbRatingCmd =
 		new CmdLine("hdbRating", " -- Install a test rating in HDB.")
 		{
 			public void execute(String[] tokens)
@@ -235,7 +240,7 @@ public class DbUtil extends TsdbAppTemplate
 			}
 		};
 
-	private CmdLine tsdbStatsCmd = 
+	private CmdLine tsdbStatsCmd =
 		new CmdLine("tsdbStats", " -- Display statistics on OpenTSDB Storage Tables.")
 		{
 			public void execute(String[] tokens)
@@ -243,7 +248,7 @@ public class DbUtil extends TsdbAppTemplate
 				tsdbStats(tokens);
 			}
 		};
-	private CmdLine parmMorphCmd = 
+	private CmdLine parmMorphCmd =
 		new CmdLine("parmMorph", " <Location> <mask> -- apply mask to location and show result.")
 		{
 			public void execute(String[] tokens)
@@ -251,7 +256,7 @@ public class DbUtil extends TsdbAppTemplate
 				parmMorph(tokens);
 			}
 		};
-		
+
 	private CmdLine getDateCmd =
 		new CmdLine("getDate", " <tablename> <columnname> <whereclause>")
 		{
@@ -260,7 +265,7 @@ public class DbUtil extends TsdbAppTemplate
 				getDate(tokens);
 			}
 		};
-	
+
 
 
 
@@ -279,21 +284,21 @@ public class DbUtil extends TsdbAppTemplate
 		String table = tokens[1];
 		String column = tokens[2];
 		String where = tokens[3];
-		
+
 		String q = "select " + column + " from " + table + " where " + where;
 		System.out.println("Executing '" + q + "'");
 		String what = "Executing '" + q + "'";
-		DaoBase dao = new DaoBase(theDb, "DbUtil");
 
-		try
+
+		try (DaoBase dao = new DaoBase(theDb, "DbUtil");
+			ResultSet rs = dao.doQuery(q);)
 		{
-			ResultSet rs = dao.doQuery(q);
 			if (!rs.next())
 			{
 				System.out.println("Query returned no rows.");
 				return;
 			}
-			
+
 			what = "Parsing returned date";
 			Date d = theDb.getFullDate(rs, 1);
 			if (d == null)
@@ -304,12 +309,10 @@ public class DbUtil extends TsdbAppTemplate
 			else
 				System.out.println("Date returned: " + d);
 		}
-		catch (Exception e)
+		catch (Exception ex)
 		{
-			System.err.println("Error while " + what);
-			e.printStackTrace();
+			log.atError().setCause(ex).log("Error while {}", what);
 		}
-		dao.close();
 	}
 
 	protected void parmMorph(String[] tokens)
@@ -325,8 +328,8 @@ public class DbUtil extends TsdbAppTemplate
 		System.out.println("loc='" + loc + "', mask='" + mask + "', result='" + result + "'");
 	}
 
-	
-	
+
+
 	protected void tsdbStats(String[] tokens)
 	{
 		if (!theDb.isOpenTSDB())
@@ -334,13 +337,13 @@ public class DbUtil extends TsdbAppTemplate
 			System.out.println("This command is only available on OpenTSDB.");
 			return;
 		}
-		
+
 		OpenTimeSeriesDAO tsdao = (OpenTimeSeriesDAO)theDb.makeTimeSeriesDAO();
 		try
 		{
 			ArrayList<StorageTableSpec> specs = tsdao.getTableSpecs(OpenTsdb.TABLE_TYPE_NUMERIC);
 			ArrayList<TimeSeriesIdentifier> tsids = tsdao.listTimeSeries();
-			
+
 			System.out.println("" + specs.size() + " storage tables found:");
 			for(StorageTableSpec spec : specs)
 			{
@@ -349,7 +352,7 @@ public class DbUtil extends TsdbAppTemplate
 				ResultSet rs = tsdao.doQuery(q);
 				int totalValues = rs.next() ? rs.getInt(1) : 0;
 
-				System.out.println("" + spec.getTableNum() + ": numTimeSeries=" 
+				System.out.println("" + spec.getTableNum() + ": numTimeSeries="
 					+ spec.getNumTsPresent() + ", estAnnualValues=" + spec.getEstAnnualValues()
 					+ ", currentTotalValues=" + totalValues);
 				for(TimeSeriesIdentifier tsid : tsids)
@@ -367,17 +370,16 @@ public class DbUtil extends TsdbAppTemplate
 				}
 			}
 		}
-		catch (Exception e)
+		catch (Exception ex)
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.atError().setCause(ex).log("Error retrieving stats.");
 		}
 		finally
 		{
 			tsdao.close();
 		}
-		
-		
+
+
 	}
 
 	protected void hdbRatingCmd(String[] tokens)
@@ -385,31 +387,34 @@ public class DbUtil extends TsdbAppTemplate
 		String q = "select a.site_datatype_id from hdb_site_datatype a, hdb_site b "
 			+ "where a.site_id = b.site_id and b.site_common_name = 'TESTSITE1' "
 			+ "and a.datatype_id = 65";
-		DaoBase dao = null;
-		try
+
+		try (DaoBase dao =  new DaoBase(theDb, "test"))
 		{
-			dao = new DaoBase(theDb, "test");
-			
-			ResultSet rs = dao.doQuery(q);
-			if (!rs.next())
+			DbKey sdi = DbKey.NullKey;
+			DbKey ratingId = DbKey.NullKey;
+			try (ResultSet rs = dao.doQuery(q))
 			{
-				System.out.println("Statement '" + q + "' did not return any results.");
-				return;
+				if (!rs.next())
+				{
+					System.out.println("Statement '" + q + "' did not return any results.");
+					return;
+				}
+				sdi = DbKey.createDbKey(rs, 1);
 			}
-			DbKey sdi = DbKey.createDbKey(rs, 1);
-			rs.close();
 			q = "{ call RATINGS.create_site_rating(" + sdi + ", 'Stage Flow', null, null, 7, 'test rating') }";
 			dao.doModify(q);
 			q = "select rating_id from ref_site_rating where indep_site_datatype_id = " + sdi;
-			rs = dao.doQuery(q);
-			if (!rs.next())
+			try (ResultSet rs = dao.doQuery(q))
 			{
-				System.out.println("Statement '" + q + "' did not return any results.");
-				return;
+				if (!rs.next())
+				{
+					System.out.println("Statement '" + q + "' did not return any results.");
+					return;
+				}
+				ratingId = DbKey.createDbKey(rs, 1);
 			}
-			DbKey ratingId = DbKey.createDbKey(rs, 1);
-			rs.close();
-			
+
+
 			double indep[] = { .0001, 1.0, 2.0, 3.0, 4.0, 5.0 };
 			double dep[]   = { 1., 10., 100., 1000., 10000., 100000. };
 			for(int i = 0; i<indep.length; i++)
@@ -420,13 +425,9 @@ public class DbUtil extends TsdbAppTemplate
 		}
 		catch(Exception ex)
 		{
-			System.err.println("Execption in '" + q + "': " + ex);
-			ex.printStackTrace();
+			log.atError().setCause(ex).log("Error running '{}'", q);
 		}
-		finally
-		{
-			dao.close();
-		}
+
 	}
 
 	protected void selectCmd(String[] tokens)
@@ -435,25 +436,21 @@ public class DbUtil extends TsdbAppTemplate
 		for(String t : tokens)
 			sb.append(t + " ");
 		String q = "";
-		
-		DaoBase dao = null;
-		try
+
+		q = sb.toString().trim();
+		if (q.charAt(q.length()-1) == ';')
+			q = q.substring(0, q.length()-1);
+		System.out.println("Executing: " + q);
+		try (DaoBase dao = new DaoBase(theDb, "test");
+			 ResultSet rs = dao.doQuery(q);)
 		{
-			dao = new DaoBase(theDb, "test");
-			q = sb.toString().trim();
-			if (q.charAt(q.length()-1) == ';')
-				q = q.substring(0, q.length()-1);
-			System.out.println("Executing: " + q);
-			
-			ResultSet rs = dao.doQuery(q);
-			
 			ArrayList<String[]> rows = new ArrayList<String[]>();
 			ResultSetMetaData rsmd = rs.getMetaData();
 			int numCols = rsmd.getColumnCount();
 			String[] header = new String[numCols];
 			int[] colWidth = new int[numCols];
 			for(int i=0; i<numCols; i++)
-			{	
+			{
 				header[i] = rsmd.getColumnName(i+1);
 				colWidth[i] = header[i].length();
 			}
@@ -473,7 +470,7 @@ public class DbUtil extends TsdbAppTemplate
 			System.out.println("Result has " + rows.size() + " rows.");
 			System.out.print("| ");
 			for(int c = 0; c<numCols; c++)
-				System.out.print(" " + 
+				System.out.print(" " +
 					TextUtil.setLengthLeftJustify(header[c], colWidth[c]) + " |");
 			System.out.println("");
 			for(String[] row : rows)
@@ -487,25 +484,19 @@ public class DbUtil extends TsdbAppTemplate
 		}
 		catch (Exception ex)
 		{
-			System.err.println("Error in '" + q + "': " + ex);
-			ex.printStackTrace();
-		}
-		finally
-		{
-			dao.close();
+			log.atError().setCause(ex).log("Error in '{}'", q);
 		}
 	}
-	
+
 	protected void updateCmd(String[] tokens)
 	{
 		StringBuilder sb = new StringBuilder();
 		for(String t : tokens)
 			sb.append(t + " ");
 		String q = "";
-		DaoBase dao = null;
-		try
+
+		try (DaoBase dao = new DaoBase(theDb, "test"))
 		{
-			dao = new DaoBase(theDb, "test");
 			q = sb.toString().trim();
 			if (q.charAt(q.length()-1) == ';')
 				q = q.substring(0, q.length()-1);
@@ -515,25 +506,20 @@ public class DbUtil extends TsdbAppTemplate
 		}
 		catch (Exception ex)
 		{
-			System.err.println("Error in '" + q + "': " + ex);
+			log.atError().setCause(ex).log("Error in '{}'", q);
 			ex.printStackTrace();
 		}
-		finally
-		{
-			dao.close();
-		}
 	}
-	
+
 	protected void createCmd(String[] tokens)
 	{
 		StringBuilder sb = new StringBuilder();
 		for(String t : tokens)
 			sb.append(t + " ");
 		String q = "";
-		DaoBase dao = null;
-		try
+
+		try (DaoBase dao = new DaoBase(theDb, "test"))
 		{
-			dao = new DaoBase(theDb, "test");
 			q = sb.toString().trim();
 			if (q.charAt(q.length()-1) == ';')
 				q = q.substring(0, q.length()-1);
@@ -543,12 +529,7 @@ public class DbUtil extends TsdbAppTemplate
 		}
 		catch (Exception ex)
 		{
-			System.err.println("Error in '" + q + "': " + ex);
-			ex.printStackTrace();
-		}
-		finally
-		{
-			dao.close();
+			log.atError().setCause(ex).log("Error in '{}'", q);
 		}
 	}
 
@@ -558,10 +539,9 @@ public class DbUtil extends TsdbAppTemplate
 		for(String t : tokens)
 			sb.append(t + " ");
 		String q = "";
-		DaoBase dao = null;
-		try
+
+		try (DaoBase dao = new DaoBase(theDb, "test"))
 		{
-			dao = new DaoBase(theDb, "test");
 			q = sb.toString().trim();
 			if (q.charAt(q.length()-1) == ';')
 				q = q.substring(0, q.length()-1);
@@ -571,12 +551,7 @@ public class DbUtil extends TsdbAppTemplate
 		}
 		catch (Exception ex)
 		{
-			System.err.println("Error in '" + q + "': " + ex);
-			ex.printStackTrace();
-		}
-		finally
-		{
-			dao.close();
+			log.atError().setCause(ex).log("Error in '{}'", q);
 		}
 	}
 
@@ -586,10 +561,9 @@ public class DbUtil extends TsdbAppTemplate
 		for(String t : tokens)
 			sb.append(t + " ");
 		String q = "";
-		DaoBase dao = null;
-		try
+
+		try (DaoBase dao = new DaoBase(theDb, "test"))
 		{
-			dao = new DaoBase(theDb, "test");
 			q = sb.toString().trim();
 			if (q.charAt(q.length()-1) == ';')
 				q = q.substring(0, q.length()-1);
@@ -599,12 +573,7 @@ public class DbUtil extends TsdbAppTemplate
 		}
 		catch (Exception ex)
 		{
-			System.err.println("Error in '" + q + "': " + ex);
-			ex.printStackTrace();
-		}
-		finally
-		{
-			dao.close();
+			log.atError().setCause(ex).log("Error in '{}'", q);
 		}
 	}
 
@@ -614,10 +583,9 @@ public class DbUtil extends TsdbAppTemplate
 		for(String t : tokens)
 			sb.append(t + " ");
 		String q = "";
-		DaoBase dao = null;
-		try
+
+		try (DaoBase dao = new DaoBase(theDb, "test"))
 		{
-			dao = new DaoBase(theDb, "test");
 			q = sb.toString().trim();
 			if (q.charAt(q.length()-1) == ';')
 				q = q.substring(0, q.length()-1);
@@ -627,17 +595,12 @@ public class DbUtil extends TsdbAppTemplate
 		}
 		catch (Exception ex)
 		{
-			System.err.println("Error in '" + q + "': " + ex);
-			ex.printStackTrace();
-		}
-		finally
-		{
-			dao.close();
+			log.atError().setCause(ex).log("Error in '{}'", q);
 		}
 	}
 
 
-	
+
 
 	protected void bparamCmd(String[] tokens)
 	{
@@ -659,53 +622,53 @@ public class DbUtil extends TsdbAppTemplate
 	protected void doTsAliases(String[] tokens)
 	{
 		String q = "select * from cwms_v_ts_id where aliased_item is not null";
-		DaoBase dao = new DaoBase(theDb, "DbUtil");
-		try
+
+		try(DaoBase dao = new DaoBase(theDb, "DbUtil"))
 		{
-			ResultSet rs = dao.doQuery(q);
-			printRS(rs, q);
+			try (ResultSet rs = dao.doQuery(q))
+			{
+				printRS(rs, q);
+			}
+			catch (Exception ex)
+			{
+				log.atError().setCause(ex).log("Error in '{}'", q);
+			}
+			q = "select * from cwms_v_ts_id2 where aliased_item is not null";
+			try (ResultSet rs = dao.doQuery(q))
+			{
+				printRS(rs, q);
+			}
+			catch (Exception ex)
+			{
+				log.atError().setCause(ex).log("Error in '{}'", q);
+			}
 		}
-		catch (Exception ex)
-		{
-			System.out.println("Query '" + q + "' threw exception: " + ex);
-		}
-		q = "select * from cwms_v_ts_id2 where aliased_item is not null";
-		try
-		{
-			ResultSet rs = dao.doQuery(q);
-			printRS(rs, q);
-		}
-		catch (Exception ex)
-		{
-			System.out.println("Query '" + q + "' threw exception: " + ex);
-		}
-		dao.close();
 	}
 
 	protected void doLocAliases(String[] tokens)
 	{
 		String q = "select * from cwms_v_loc where aliased_item is not null";
-		DaoBase dao = new DaoBase(theDb, "DbUtil");
-		try
+		try (DaoBase dao = new DaoBase(theDb, "DbUtil"))
 		{
-			ResultSet rs = dao.doQuery(q);
-			printRS(rs, q);
+			try (ResultSet rs = dao.doQuery(q);)
+			{
+				printRS(rs, q);
+			}
+			catch (Exception ex)
+			{
+				log.atError().setCause(ex).log("Error in '{}'", q);
+			}
+			q = "select * from cwms_v_loc2 where aliased_item is not null";
+			try (ResultSet rs = dao.doQuery(q);)
+			{
+				printRS(rs, q);
+			}
+			catch (Exception ex)
+			{
+				log.atError().setCause(ex).log("Error in '{}'", q);
+			}
 		}
-		catch (Exception ex)
-		{
-			System.out.println("Query '" + q + "' threw exception: " + ex);
-		}
-		q = "select * from cwms_v_loc2 where aliased_item is not null";
-		try
-		{
-			ResultSet rs = dao.doQuery(q);
-			printRS(rs, q);
-		}
-		catch (Exception ex)
-		{
-			System.out.println("Query '" + q + "' threw exception: " + ex);
-		}
-		dao.close();
+
 	}
 
 	private void printRS(ResultSet rs, String q)
@@ -719,7 +682,7 @@ public class DbUtil extends TsdbAppTemplate
 		while(rs.next())
 			for (int idx = 1; idx <= rsmd.getColumnCount(); idx++)
 				System.out.printf("%s,", rs.getString(idx));
-		   
+
 	}
 
 	@Override
@@ -752,9 +715,9 @@ public class DbUtil extends TsdbAppTemplate
 		cmdLineProc.addCmd(tsdbStatsCmd);
 		cmdLineProc.addCmd(parmMorphCmd);
 		cmdLineProc.addCmd(getDateCmd);
-		
+
 		cmdLineProc.addHelpAndQuitCommands();
-		
+
 		cmdLineProc.prompt = "cmd: ";
 		cmdLineProc.processInput();
 	}
@@ -801,7 +764,7 @@ public class DbUtil extends TsdbAppTemplate
 			deletePlatCmd.usage();
 			return;
 		}
-		
+
 	}
 
 	protected void doListSite(String[] tokens)
@@ -814,7 +777,7 @@ public class DbUtil extends TsdbAppTemplate
 			ArrayList<Site> sa = new ArrayList<Site>();
 			for(Iterator<Site> sit = siteList.iterator(); sit.hasNext(); )
 				sa.add(sit.next());
-			Collections.sort(sa, 
+			Collections.sort(sa,
 				new Comparator<Site>()
 				{
 					@Override
@@ -826,23 +789,22 @@ public class DbUtil extends TsdbAppTemplate
 					}
 				});
 			for(Site s : sa)
-				if (tokens.length == 1 
+				if (tokens.length == 1
 				 || s.getPreferredName().getNameValue().toUpperCase().startsWith(tokens[1].toUpperCase()))
-					System.out.println(s.getKey() + ": " 
+					System.out.println(s.getKey() + ": "
 						+ s.getPreferredName().getNameValue() + " " + s.getDescription());
-			
+
 		}
 		catch (DbIoException ex)
 		{
-			System.err.println(ex);
-			ex.printStackTrace();
+			log.atError().setCause(ex).log("Unable to list sites.");
 		}
 		finally
 		{
 			siteDAO.close();
 		}
 	}
-	
+
 	protected void doDeleteSite(String[] tokens)
 	{
 		if (!deleteSiteCmd.requireTokens(2, tokens))
@@ -850,9 +812,9 @@ public class DbUtil extends TsdbAppTemplate
 		SiteName sn = new SiteName(null,
 			DecodesSettings.instance().siteNameTypePreference,
 			tokens[1]);
-		 
+
 		SiteDAI siteDAO = theDb.makeSiteDAO();
-		
+
 		try
 		{
 			DbKey key = siteDAO.lookupSiteID(sn);
@@ -871,8 +833,7 @@ public class DbUtil extends TsdbAppTemplate
 		}
 		catch (DbIoException ex)
 		{
-			System.out.println("Error deleting site: " + ex);
-			ex.printStackTrace();
+			log.atError().setCause(ex).log("Error deleting site.");
 		}
 		finally
 		{
@@ -886,7 +847,7 @@ public class DbUtil extends TsdbAppTemplate
 		try
 		{
 			ArrayList<TimeSeriesIdentifier> tslist = timeSeriesDAO.listTimeSeries(true);
-			Collections.sort(tslist, 
+			Collections.sort(tslist,
 				new Comparator<TimeSeriesIdentifier>()
 				{
 					@Override
@@ -896,7 +857,7 @@ public class DbUtil extends TsdbAppTemplate
 					}
 				});
 			for(TimeSeriesIdentifier tsid : tslist)
-				if (tokens.length == 1 
+				if (tokens.length == 1
 				 || tsid.getUniqueString().toUpperCase().contains(tokens[1].toUpperCase()))
 				{
 					String m = tsid.getUniqueString() + ", units=" + tsid.getStorageUnits();
@@ -911,8 +872,7 @@ public class DbUtil extends TsdbAppTemplate
 		}
 		catch (DbIoException ex)
 		{
-			System.err.println(ex);
-			ex.printStackTrace();
+			log.atError().setCause(ex).log("Unable to list time series.");
 		}
 		finally
 		{
@@ -928,7 +888,7 @@ public class DbUtil extends TsdbAppTemplate
 		try
 		{
 			TimeSeriesIdentifier tsid = timeSeriesDAO.getTimeSeriesIdentifier(tokens[1]);
-			System.out.print("TS unique name='" + tsid.getUniqueString() 
+			System.out.print("TS unique name='" + tsid.getUniqueString()
 				+ "', key=" + tsid.getKey() + ", confirm delete (y/n):");
 			String s = System.console().readLine();
 			if (s.toLowerCase().startsWith("y"))
@@ -937,15 +897,9 @@ public class DbUtil extends TsdbAppTemplate
 				System.out.println("Deleted");
 			}
 		}
-		catch (DbIoException ex)
+		catch (NoSuchObjectException | DbIoException ex)
 		{
-			System.err.println(ex);
-			ex.printStackTrace();
-		}
-		catch (NoSuchObjectException ex)
-		{
-			System.err.println(ex);
-			ex.printStackTrace();
+			log.atError().setCause(ex).log("Unable to delete time series.");
 		}
 		finally
 		{
@@ -965,15 +919,14 @@ public class DbUtil extends TsdbAppTemplate
 		}
 		catch (DbIoException ex)
 		{
-			System.err.println("Error listing device statuses: " + ex);
-			ex.printStackTrace(System.err);
+			log.atError().setCause(ex).log("Error listing device statuses.");
 		}
 		finally
 		{
 			devStatusDAO.close();
 		}
 	}
-	
+
 	protected void doUpdateDev(String[] tokens)
 	{
 		if (!devUpdateCmd.requireTokens(5, tokens))
@@ -996,18 +949,17 @@ public class DbUtil extends TsdbAppTemplate
 		}
 		catch (DbIoException ex)
 		{
-			System.err.println("Error writing device status: " + ex);
-			ex.printStackTrace(System.err);
+			log.atError().setCause(ex).log("Error writing device status.");
 		}
 		finally
 		{
 			devStatusDAO.close();
 		}
-		
+
 	}
 
 	ArrayList<DacqEvent> devEvents = new ArrayList<DacqEvent>();
-	
+
 	protected void devEventsContaining(String[] tokens)
 	{
 		if (!devUpdateCmd.requireTokens(2, tokens))
@@ -1022,8 +974,7 @@ public class DbUtil extends TsdbAppTemplate
 		}
 		catch (DbIoException ex)
 		{
-			System.err.println("Error reading device events: " + ex);
-			ex.printStackTrace(System.err);
+			log.atError().setCause(ex).log("Error reading device events.");
 		}
 		finally
 		{
@@ -1035,15 +986,10 @@ public class DbUtil extends TsdbAppTemplate
 	{
 		if (!genEventsCmd.requireTokens(3, tokens))
 			return;
-System.out.println("t[0]='" + tokens[0] + "' t[1]='" + tokens[1] + "' t[3]='" + tokens[3] + "'");
+		System.out.println("t[0]='" + tokens[0] + "' t[1]='" + tokens[1] + "' t[3]='" + tokens[3] + "'");
 		char c = tokens[1].toLowerCase().charAt(0);
-		int priority = 
-			c == '3' ? Logger.E_DEBUG3 :
-			c == '2' ? Logger.E_DEBUG2 :
-			c == '1' ? Logger.E_DEBUG1 :
-			c == 'i' ? Logger.E_INFORMATION :
-			c == 'w' ? Logger.E_WARNING : Logger.E_FAILURE;
-System.out.println("priority = " + priority);
+		int priority = -1;
+		System.out.println("priority = " + priority);
 		String subsystem = tokens[2];
 		String evtText = cmdLineProc.inputLine.trim();
 		int space = evtText.indexOf(' ');
@@ -1059,8 +1005,8 @@ System.out.println("priority = " + priority);
 					evtText = evtText.substring(space).trim();
 			}
 		}
-			
-		
+
+
 		DacqEventDAI dacqEventDAO = theDb.makeDacqEventDAO();
 		try
 		{
@@ -1072,7 +1018,7 @@ System.out.println("priority = " + priority);
 		}
 		catch (DbIoException ex)
 		{
-			System.err.println("Error writing event: " + ex);
+			log.atError().setCause(ex).log("Error writing event.");
 			ex.printStackTrace(System.err);
 		}
 		finally
@@ -1083,17 +1029,10 @@ System.out.println("priority = " + priority);
 
 	protected void genSchedEventsCmd(String[] tokens)
 	{
-//		new CmdLine("sched-event", "[priority (I,W,F)] schedStatusId platformId(or -1) subsystem [event text...]")
 		if (!genEventsCmd.requireTokens(6, tokens))
 			return;
 		char c = tokens[1].toLowerCase().charAt(0);
-		int priority = 
-			c == '3' ? Logger.E_DEBUG3 :
-			c == '2' ? Logger.E_DEBUG2 :
-			c == '1' ? Logger.E_DEBUG1 :
-			c == 'i' ? Logger.E_INFORMATION :
-			c == 'w' ? Logger.E_WARNING : Logger.E_FAILURE;
-		
+		int priority = -1;
 		DbKey schedStatusId = DbKey.NullKey;
 		try
 		{
@@ -1103,7 +1042,7 @@ System.out.println("priority = " + priority);
 		}
 		catch(NumberFormatException ex)
 		{
-			System.err.println("Invalid schedStatusId '" + tokens[2] + "' -- must be number");
+			log.atError().setCause(ex).log("Invalid schedStatusId '{}' -- must be number", tokens[2]);
 			return;
 		}
 
@@ -1116,17 +1055,17 @@ System.out.println("priority = " + priority);
 		}
 		catch(NumberFormatException ex)
 		{
-			System.err.println("Invalid platformId '" + tokens[3] + "' -- must be number");
+			log.atError().setCause(ex).log("Invalid platformId '{}' -- must be number", tokens[3]);
 			return;
 		}
-		
+
 		String subsystem = tokens[4];
-		
-		
+
+
 		String evtText = "";
 		for(int i = 5; i<tokens.length; i++)
 			evtText = evtText + tokens[i] + " ";
-		
+
 		DacqEventDAI dacqEventDAO = theDb.makeDacqEventDAO();
 		try
 		{
@@ -1140,15 +1079,14 @@ System.out.println("priority = " + priority);
 		}
 		catch (DbIoException ex)
 		{
-			System.err.println("Error writing event: " + ex);
-			ex.printStackTrace(System.err);
+			log.atError().setCause(ex).log("Error writing event.");
 		}
 		finally
 		{
 			dacqEventDAO.close();
 		}
 	}
-	
+
 	/**
 	 * @param args
 	 */
