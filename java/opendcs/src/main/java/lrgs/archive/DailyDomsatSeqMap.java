@@ -1,14 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.archive;
 
@@ -51,7 +54,7 @@ public class DailyDomsatSeqMap
 	}
 
 
-private int lastSeqNum = -1;
+	private int lastSeqNum = -1;
 
 	/**
 	 * Creates a new entry and adds it to the map.
@@ -60,19 +63,18 @@ private int lastSeqNum = -1;
 	 * @param dayNum Day number of index file where msg is stored.
 	 * @param indexNum Index number within that day's archive file.
 	 */
-	public synchronized void 
+	public synchronized void
 		add(long domsatTime, int seqNum, short dayNum, int indexNum)
 	{
 		if (domsatTime <= 0L)
 			return;
-//if (seqNum == lastSeqNum)
-//Logger.instance().info("MJM: SeqMap dup seq=" + seqNum + " indexNum=" + indexNum);
-lastSeqNum = seqNum;
+
+		lastSeqNum = seqNum;
 
 
 		// Add new entry with (next == -1), meaning end of the chain.
 		int thisLoc = domsatSeqs.size();
-		DomsatSeq thisDs = 
+		DomsatSeq thisDs =
 			new DomsatSeq(domsatTime, seqNum, dayNum, indexNum, -1);
 		domsatSeqs.add(thisDs);
 
@@ -125,7 +127,7 @@ lastSeqNum = seqNum;
 					if (x != -1)
 						xds = domsatSeqs.get(x);
 				}
-	
+
 				// Now prevLoc & prevDs are just before thisDs in time order.
 				thisDs.setNext(prevDs.getNext());
 				prevDs.setNext(thisLoc);
@@ -141,7 +143,7 @@ lastSeqNum = seqNum;
 	 * @param msgs return messages by storing them here
 	 * @return number of messages stored.
 	 */
-	public synchronized int getMsgsBySeqNum(long fromDomsatMsec, 
+	public synchronized int getMsgsBySeqNum(long fromDomsatMsec,
 		long toDomsatMsec, int seqStart, int seqEnd, ArrayList<DcpMsg> msgs)
 		throws ArchiveUnavailableException
 	{
@@ -161,8 +163,6 @@ lastSeqNum = seqNum;
 		if (m < 60*24 && minuteStart[m] != -1)
 		{
 			DomsatSeq domsatSeq = domsatSeqs.get(minuteStart[m]);
-//Logger.instance().info("MJM trying HH:MM " + (m/60) + ":" + (m%60) +
-//"domsatSeq = " + domsatSeq.toString());
 			while(domsatSeq != null && domsatSeq.getDomsatTime()<=toDomsatMsec)
 			{
 				int sn = domsatSeq.getSeqNum();
@@ -170,20 +170,17 @@ lastSeqNum = seqNum;
 
 				if (dt >= fromDomsatMsec && sn >= seqStart && sn <= seqEnd)
 				{
-					DcpMsg msg = getMsg(domsatSeq.getDayNum(), 
+					DcpMsg msg = getMsg(domsatSeq.getDayNum(),
 						domsatSeq.getIndexNum());
 					if (msg != null)
 					{
-//Logger.instance().info("MJM ... Seq " + sn + " Passes! Adding to buffer.");
 						msg.setDomsatTime(new Date(domsatSeq.getDomsatTime()));
 						msg.setSequenceNum(domsatSeq.getSeqNum());
 						msg.flagbits &= (~DcpMsgFlag.MSG_NO_SEQNUM);
 						msgs.add(msg);
 						r++;
 					}
-//else Logger.instance().info("MJM ... Seq " + sn + " No Msg!");
 				}
-//else Logger.instance().info("MJM ... Seq " + sn + " not in range!");
 				int x = domsatSeq.getNext();
 				domsatSeq = x != -1 ? domsatSeqs.get(x) : null;
 			}
@@ -205,14 +202,4 @@ lastSeqNum = seqNum;
 			mpa.readMessage(dmi);
 		return dmi.getDcpMsg();
 	}
-
-	/**
-	 * Find the first DomsatSeq entry after the passed time.
-	 * @param domsatTime the domsat time.
-	 * @return the first DomsatSeq entry after the passed time.
-	 */
-//	public DomsatSeq firstAfterTime(long domsatTime)
-//	{
-//		int min = (int)((domsatTime % MSEC_PER_DAY) / 60000L);
-//	}
 }
