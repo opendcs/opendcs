@@ -1,10 +1,25 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb;
 
-import ilex.util.Logger;
-
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.gui.DecodesInterface;
 import decodes.db.Database;
@@ -22,6 +37,7 @@ import decodes.sql.SqlDatabaseIO;
  */
 public class CleanupPlatforms extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	public CleanupPlatforms()
 	{
@@ -33,7 +49,7 @@ public class CleanupPlatforms extends TsdbAppTemplate
 	protected void runApp() throws Exception
 	{
 		SqlDatabaseIO dbio = (SqlDatabaseIO)Database.getDb().getDbIo();
-		
+
 		HashMap<String, Platform> platnames = new HashMap<String, Platform>();
 		for(Iterator<Platform> pit = Database.getDb().platformList.iterator(); pit.hasNext(); )
 		{
@@ -41,39 +57,34 @@ public class CleanupPlatforms extends TsdbAppTemplate
 			String platname = p.makeFileName();
 			if (p.transportMedia.size() == 0)
 			{
-				Logger.instance().info("Removing platform " + p.getKey() + " '" + platname 
-					+ "' from agency '" + p.getAgency() 
-					+ "' because it has no transport media.");
+				log.info("Removing platform {} '{}' from agency '{}' because it has no transport media.",
+						 p.getKey(), platname, p.getAgency());
 				dbio.deletePlatform(p);
 				continue;
 			}
 			if (p.getConfig() == null)
 			{
-				Logger.instance().info("Removing platform " + p.getKey() + " '" + platname 
-					+ "' from agency '" + p.getAgency() 
-					+ "' because it has no configuration.");
+				log.info("Removing platform {} '{}' from agency '{}' because it has no configuration.",
+						 p.getKey(), platname, p.getAgency());
 				dbio.deletePlatform(p);
 				continue;
 			}
 			if (p.expiration != null)
 			{
-					Logger.instance().info("Removing platform " + p.getKey() + " '" + platname 
-						+ "' from agency '" + p.getAgency() 
-						+ "' it has an expiration date of " + p.expiration);
+					log.info("Removing platform {} '{}' from agency '{}' it has an expiration date of {}",
+							 p.getKey(), platname, p.getAgency(), p.expiration);
 					dbio.deletePlatform(p);
 					continue;
 			}
 			Platform existingPlat = platnames.get(platname);
 			if (existingPlat != null)
 			{
-				Logger.instance().info("Removing platform " + p.getKey() + " '" + platname 
-					+ "' from agency '" + p.getAgency() 
-					+ "' because there is already a platform with that name. The"
-					+ "existing platform has ID="
-					+ existingPlat.getId() + "  and  agency '" + existingPlat.getAgency() + "'");
+				log.info("Removing platform {} '{}' from agency '{}' because there is " +
+						 "already a platform with that name. The existing platform has ID={}  and  agency '{}'",
+						 p.getKey(), platname, p.getAgency(), existingPlat.getId(), existingPlat.getAgency());
 				dbio.deletePlatform(p);
 			}
-			
+
 			// Fell through -- we're keeping this one.
 			platnames.put(platname, p);
 		}

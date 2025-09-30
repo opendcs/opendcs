@@ -1,24 +1,39 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb;
 
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.Properties;
-import java.util.StringTokenizer;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.TimeSeriesDAI;
 import ilex.cmdline.IntegerToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
-import ilex.util.Logger;
 import ilex.var.Variable;
 import decodes.consumer.DataConsumer;
 import decodes.consumer.DataConsumerException;
@@ -41,6 +56,7 @@ import decodes.util.TSUtil;
 
 public class CompTest extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private StringToken formatterArg = null;
 	private StringToken sinceArg = null;
 	private StringToken untilArg = null;
@@ -66,52 +82,52 @@ public class CompTest extends TsdbAppTemplate
 	{
 		DbKey compId = DbKey.createDbKey(compIdArg.getValue());
 		if (compId.isNull())
-			fatal("-C ComputationID  -- Missing required computation ID argument.");
+		{
+			throw new IllegalArgumentException("-C ComputationID  -- Missing required computation ID argument.");
+		}
 		tz = TimeZone.getTimeZone(tzArg.getValue());
 
 		setProperties(cmdLineArgs.getCmdLineProps());
 
 		setOutputFormatter(formatterArg.getValue());
-		
+
 		consumer = new PipeConsumer();
 		consumer.open("", props);
 
 		String s = sinceArg.getValue().trim();
 		Date since = convert2Date(s, false);
-		
+
 		s = untilArg.getValue().trim();
 		Date until = convert2Date(s, true);
 
 		DataCollection dc = new DataCollection();
-		
+
 		ComputationDAI computationDao = theDb.makeComputationDAO();
 
 		// Get the input(s) over the requested time range.
-		Logger.instance().info("Reading compID=" + compId);
+		log.info("Reading compID={}", compId);
 		DbComputation comp = computationDao.getComputationById(compId);
-		Logger.instance().info("Read comp, name=" + comp.getName());
+		log.info("Read comp, name={}", comp.getName());
 		TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
 		for(Iterator<DbCompParm> parmIt = comp.getParms(); parmIt.hasNext(); )
 		{
 			DbCompParm parm = parmIt.next();
-			Logger.instance().info("Processing param '" + parm.getRoleName()
-				+ "', type=" + parm.getAlgoParmType());
+			log.info("Processing param '{}', type={}", parm.getRoleName(), parm.getAlgoParmType());
 			String pt = parm.getAlgoParmType();
 			if (pt == null || pt.length() == 0)
 				continue;
 			if (pt.charAt(0) != 'i' && pt.charAt(0) != 'I')
 				continue;
 
-			Logger.instance().info("Creating time series for role '"
-				+ parm.getRoleName() + "' dataId=" + parm.getSiteDataTypeId()
-				+ ", filling since=" + since + ", until=" + until);
-			CTimeSeries cts = new CTimeSeries(parm.getSiteDataTypeId(), 
+			log.info("Creating time series for role '{}' dataId={}, filling since={}, until={}",
+					 parm.getRoleName(), parm.getSiteDataTypeId(), since, until);
+			CTimeSeries cts = new CTimeSeries(parm.getSiteDataTypeId(),
 				parm.getInterval(), parm.getTableSelector());
 			timeSeriesDAO.fillTimeSeries(cts, since, until);
 			for(int pos=0; pos<cts.size(); pos++)
 				VarFlags.setWasAdded(cts.sampleAt(pos));
 
-			Logger.instance().info("After fill, num values=" + cts.size());
+			log.info("After fill, num values={}", cts.size());
 			dc.addTimeSeries(cts);
 		}
 
@@ -129,7 +145,7 @@ public class CompTest extends TsdbAppTemplate
 		rawMsg.setHeaderLength(0);
 		rawMsg.setPM(GoesPMParser.MESSAGE_TIME, new Variable(now));
 		rawMsg.setPM(GoesPMParser.MESSAGE_LENGTH, new Variable(0L));
-		
+
 		outputTimeSeries(rawMsg, dc.getAllTimeSeries());
 		timeSeriesDAO.close();
 	}
@@ -152,9 +168,7 @@ public class CompTest extends TsdbAppTemplate
 					if (dp.getUnitsAbbr() != null
 					 && dp.getUnitsAbbr().equalsIgnoreCase("omit"))
 					{
-						Logger.instance().log(Logger.E_DEBUG2,
-							"Omitting sensor '" + sensor.getName() 
-							+ "' as per Presentation Group.");
+						log.trace("Omitting sensor '{}' as per Presentation Group.", sensor.getName());
 						toAdd = false;
 					}
 					else
@@ -164,11 +178,11 @@ public class CompTest extends TsdbAppTemplate
 			if (toAdd)
 				decmsg.addTimeSeries(ts);
 		}
-		
+
 		outputFormatter.formatMessage(decmsg, consumer);
 	}
 
-	
+
 	public void setProperties(Properties props)
 	{
 		this.props = props;
@@ -183,7 +197,7 @@ public class CompTest extends TsdbAppTemplate
 		outputFormatter = OutputFormatter.makeOutputFormatter(
 			formatterName, tz, null, props, null);
 	}
-	
+
 	public static Date convert2Date(String s, boolean isTo)
 	{
 		if (timeSdf == null)
@@ -229,16 +243,16 @@ public class CompTest extends TsdbAppTemplate
 			}
 			else
 			{
-				Logger.instance().warning("Unknown time '" + s + "'");
+				log.warn("Unknown time '{}'", s);
 				return isTo ? new Date() : convert2Date("yesterday", false);
 			}
 		}
-		try 
+		try
 		{
 			Date d = timeSdf.parse(s);
 			return d;
 		}
-		catch(ParseException ex) 
+		catch(ParseException ex)
 		{
 			try
 			{
@@ -248,31 +262,30 @@ public class CompTest extends TsdbAppTemplate
 					d.setTime(d.getTime() + (MS_PER_DAY-1));
 				return d;
 			}
-			catch(ParseException ex2) 
+			catch(ParseException ex2)
 			{
-				Logger.instance().warning("Bad time format '" + s + "'");
+				ex2.addSuppressed(ex);
+				log.atWarn().setCause(ex).log("Bad time format '{}' -- using default");
 				return isTo ? new Date() : convert2Date("yesterday", false);
 			}
 		}
-	}
-
-
-	private void fatal(String msg)
-	{
-		Logger.instance().fatal(msg);
-		System.err.println(msg);
-		System.exit(1);
 	}
 
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args)
-		throws Exception
 	{
-		// TODO Auto-generated method stub
+		try
+		{
 		CompTest compTest = new CompTest();
 		compTest.execute(args);
+		}
+		catch (Exception ex)
+		{
+			log.atError().setCause(ex).log("Unable to test computation.");
+			System.exit(1);
+		}
 	}
 
 	/**
@@ -280,16 +293,16 @@ public class CompTest extends TsdbAppTemplate
 	 */
 	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
-		formatterArg = new StringToken("F", "OutputFormat", "", 
+		formatterArg = new StringToken("F", "OutputFormat", "",
 			TokenOptions.optSwitch, "human-readable");
 		cmdLineArgs.addToken(formatterArg);
-		sinceArg = new StringToken("S", "Since Time (dd-MMM-yyyy HH:mm)", "", 
+		sinceArg = new StringToken("S", "Since Time (dd-MMM-yyyy HH:mm)", "",
 			TokenOptions.optSwitch, "yesterday");
 		cmdLineArgs.addToken(sinceArg);
-		untilArg = new StringToken("U", "Until Time", "", 
+		untilArg = new StringToken("U", "Until Time", "",
 			TokenOptions.optSwitch, "now");
 		cmdLineArgs.addToken(untilArg);
-		tzArg = new StringToken("Z", "Time Zone", "", 
+		tzArg = new StringToken("Z", "Time Zone", "",
 			TokenOptions.optSwitch, "UTC");
 		cmdLineArgs.addToken(tzArg);
 		compIdArg = new IntegerToken("C", "Computation ID", "", TokenOptions.optSwitch, -1);
