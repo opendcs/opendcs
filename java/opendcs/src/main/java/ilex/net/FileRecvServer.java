@@ -1,26 +1,30 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.2  2013/02/28 16:38:11  mmaloney
-*  Adjust timeout.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.1  2012/02/21 14:14:17  mmaloney
-*  created
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
-
 package ilex.net;
 
-import ilex.net.BasicServer;
-import ilex.net.BasicSvrThread;
 import ilex.util.FileUtil;
-import ilex.util.Logger;
 
 import java.net.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.*;
 
 /**
@@ -29,12 +33,13 @@ Data sent by the client is saved in a file with name ipaddr-datetime.
 */
 public class FileRecvServer extends BasicServer
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	* Constructor
 	* @param port the port number
 	* @param filename the file to send
 	*/
-	public FileRecvServer( int port) 
+	public FileRecvServer( int port)
 			throws IllegalArgumentException, IOException
 	{
 		super(port);
@@ -47,7 +52,7 @@ public class FileRecvServer extends BasicServer
 	*/
 	protected BasicSvrThread newSvrThread( Socket sock ) throws IOException
 	{
-		System.out.println("New Client");
+		log.info("New Client");
 		return new FileRecvSvrThread(this, sock);
 	}
 
@@ -56,16 +61,15 @@ public class FileRecvServer extends BasicServer
 	* @param args port number on first argument
 	* @throws IOException
 	*/
-	public static void main( String[] args ) 
+	public static void main( String[] args )
 			throws IOException
 	{
-		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
 		int p = Integer.parseInt(args[0]);
 		FileRecvServer tfs = new FileRecvServer(p);
 		tfs.listen();
 	}
-	
-	
+
+
 	//========================================================================
 	// The server thread class
 	//========================================================================
@@ -96,19 +100,16 @@ public class FileRecvServer extends BasicServer
 		*/
 		public void run( )
 		{
-			try
+			try (FileOutputStream fout = new FileOutputStream(theFile);
+				 InputStream is = socket.getInputStream();)
 			{
-				FileOutputStream fout = new FileOutputStream(theFile);
-				InputStream is = socket.getInputStream();
 				FileUtil.copyStream(is, fout, 600000L);
-				fout.close();
 				disconnect();
 			}
 			catch (Exception ex)
 			{
+				log.atError().setCause(ex).log("Unable to copy stream.");
 				disconnect();
-				System.err.println(ex.toString());
-				ex.printStackTrace(System.err);
 			}
 		}
 
@@ -119,6 +120,5 @@ public class FileRecvServer extends BasicServer
 			catch(InterruptedException e) {}
 		}
 	}
-	
-}
 
+}

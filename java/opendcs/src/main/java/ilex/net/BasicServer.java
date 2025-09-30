@@ -1,93 +1,20 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Source$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $State$
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  $Log$
-*  Revision 1.3  2009/08/26 11:04:06  mjmaloney
-*  Collections
-*
-*  Revision 1.2  2008/04/23 11:23:57  cvs
-*  dev
-*
-*  Revision 1.1  2008/04/04 18:21:09  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.22  2007/06/07 11:50:20  mmaloney
-*  Added getPort() method.
-*
-*  Revision 1.21  2005/11/21 19:14:59  mmaloney
-*  LRGS 5.4 release prep
-*
-*  Revision 1.20  2005/07/10 14:21:48  mjmaloney
-*  Don't use IllegalArgumentException -- it's not checked.
-*
-*  Revision 1.19  2005/01/07 18:45:21  mjmaloney
-*  Added getSvrThreads() method to iterate through all clients.
-*
-*  Revision 1.18  2004/08/30 14:50:22  mjmaloney
-*  Javadocs
-*
-*  Revision 1.17  2004/05/25 13:03:59  mjmaloney
-*  LRIT Release Prep
-*
-*  Revision 1.16  2004/05/17 22:59:09  mjmaloney
-*  Default for -h arg set to "localhost"
-*
-*  Revision 1.15  2004/03/01 20:18:16  mjmaloney
-*  Upgraded socket apps to flush data after each interaction.
-*
-*  Revision 1.14  2003/12/18 19:38:55  mjmaloney
-*  Added BasicSvrThread.getParent() and BasicServer.getNumClients() methods.
-*
-*  Revision 1.13  2003/05/01 13:58:56  mjmaloney
-*  Rethrow IOExecption if listen throws for reason other than shutdown.
-*
-*  Revision 1.12  2003/05/01 13:57:05  mjmaloney
-*  No err msg if IOException on listen() because of shutdown.
-*
-*  Revision 1.11  2001/03/13 03:05:29  mike
-*  Fixed bug - was instantiating server thread twice.
-*
-*  Revision 1.10  2000/09/08 13:11:03  mike
-*  Release prep
-*
-*  Revision 1.9  2000/06/07 15:09:00  mike
-*  Removed diagnostic.
-*
-*  Revision 1.8  2000/06/07 12:13:25  mike
-*  Removed stdout message "Added thread"
-*
-*  Revision 1.7  2000/05/31 21:14:27  mike
-*  dev
-*
-*  Revision 1.6  2000/01/19 14:34:37  mike
-*  Debug messages to detect garbage collection.
-*
-*  Revision 1.5  1999/12/06 15:07:08  mike
-*  Removed println diagnostics
-*
-*  Revision 1.4  1999/10/22 17:28:22  mike
-*  10/22/1999
-*
-*  Revision 1.3  1999/10/09 17:03:40  mike
-*  10/9/1999
-*
-*  Revision 1.2  1999/09/30 18:16:44  mike
-*  9/30/1999
-*
-*  Revision 1.1  1999/09/20 17:20:01  mike
-*  Initial
-*
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
-
 package ilex.net;
 
-import ilex.net.BasicSvrThread;
-import ilex.util.Logger;
 import ilex.util.Pair;
 
 import java.net.*;
@@ -97,6 +24,8 @@ import java.util.Objects;
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
@@ -113,7 +42,7 @@ servers. It provides the basic functionality for:
 */
 public abstract class BasicServer
 {
-	public static final org.slf4j.Logger log = LoggerFactory.getLogger(BasicServer.class);
+	public static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The port number to listen on */
 	protected int portNum;
 
@@ -155,10 +84,10 @@ public abstract class BasicServer
 	* host has more than one network connection and you need to specify
 	* which to use.
 	* @param port port to listen on
-	* @param bindaddr used if you have multiple NICs and only want to listen 
+	* @param bindaddr used if you have multiple NICs and only want to listen
 	* on one.
 	*/
-	public BasicServer( int port, InetAddress bindaddr ) 
+	public BasicServer( int port, InetAddress bindaddr )
 		throws IOException
 	{
 		this(port,bindaddr,Pair.of(ServerSocketFactory.getDefault(),null));
@@ -170,7 +99,7 @@ public abstract class BasicServer
 	* host has more than one network connection and you need to specify
 	* which to use.
 	* @param port port to listen on
-	* @param bindaddr used if you have multiple NICs and only want to listen 
+	* @param bindaddr used if you have multiple NICs and only want to listen
 	* on one.
 	* @param socketFactory used to allow setup of SSL for those servers that need it.
 	*/
@@ -196,7 +125,7 @@ public abstract class BasicServer
 	* @throws IOException if can't open.
 	*/
 	protected void makeServerSocket( ) throws IllegalArgumentException, IOException
-	{		
+	{
 		listeningSocket = this.serverSocketFactory.createServerSocket(portNum, portNum, bindaddr);
 	}
 
@@ -221,7 +150,7 @@ public abstract class BasicServer
 			{
 				listeningThread = Thread.currentThread();
 				Socket client = listeningSocket.accept();
-				Logger.instance().info("Socket connection of type: " + client.getClass().getName());
+				log.info("Socket connection of type: {}", client.getClass().getName());
 				listeningThread = null;
 				serviceNewClient(client);
 			}
@@ -262,10 +191,10 @@ public abstract class BasicServer
 		try { Thread.sleep(100L); }
 		catch(InterruptedException ie) {}
 
-		try 
+		try
 		{
 			if (tsock != null)
-				tsock.close(); 
+				tsock.close();
 		}
 		catch(IOException ioe) {}
 	}
@@ -301,7 +230,7 @@ public abstract class BasicServer
 
 	/**
 	 * This method replaces the old 'getSvrThreads' method. The old method
-	 * was unsafe because iterating the list could cause a 
+	 * was unsafe because iterating the list could cause a
 	 * ConcurrentModificationException when a client asynchronously disconnects.
 	 *
 	 * @return a clone of the LinkedList containing the server threads.
@@ -367,7 +296,7 @@ public abstract class BasicServer
 	{
 	}
 
-	
+
 	/**
 	* Override this method to create a new thread object to handle
 	* interaction with a client. You should sub-class BasicSvrThread
