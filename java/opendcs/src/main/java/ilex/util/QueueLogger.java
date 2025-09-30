@@ -1,29 +1,17 @@
 /*
-*	$Id$
-*
-*	$Log$
-*	Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*	OPENDCS 6.0 Initial Checkin
-*	
-*	Revision 1.1  2008/04/04 18:21:10  cvs
-*	Added legacy code to repository
-*	
-*	Revision 1.5  2005/09/28 21:54:54  mmaloney
-*	LRGS 5.3 prep
-*	
-*	Revision 1.4  2005/04/06 12:21:18  mjmaloney
-*	dev
-*	
-*	Revision 1.3  2004/08/30 15:35:16  mjmaloney
-*	Renamed BadIndexException to IndexRangeException because of class with ilex.
-*	var class.
-*	
-*	Revision 1.2  2004/08/30 14:50:30  mjmaloney
-*	Javadocs
-*	
-*	Revision 1.1  2004/05/06 20:57:10  mjmaloney
-*	Implemented QueueLogger to be used by servers that export events.
-*	
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package ilex.util;
 
@@ -33,7 +21,9 @@ import java.util.Vector;
 * Concrete subclass of Logger that stores messages in a queue of fixed
 * size. When size is reached the oldest messages are deleted. Messages
 * can be retrieved by index.
+* @deprecated Existing logging system is getting replaced
 */
+@Deprecated
 public class QueueLogger extends Logger
 {
 	/** Messages stored internally in a vector */

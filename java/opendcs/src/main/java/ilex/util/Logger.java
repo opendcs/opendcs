@@ -30,7 +30,9 @@ import java.io.*;
 * they are E_DEBUG3, E_DEBUG2, E_DEBUG1, E_INFORMATION, E_WARNING,
 * E_FAILURE, and E_FATAL.
 * </p>
+* @deprecated Logging is getting replaced with slf4j and standard logging backend.
 */
+@Deprecated
 public abstract class Logger
 {
 	protected static TimeZone tz;

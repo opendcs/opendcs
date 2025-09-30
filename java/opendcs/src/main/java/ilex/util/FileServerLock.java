@@ -6,6 +6,8 @@ package ilex.util;
 import java.io.*;
 import java.util.Date;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+
 /**
 * ServerLock is used to ensure that only one instance of a given server
 * is running at a time, and to provide an easy mechanism to signal the server
@@ -17,6 +19,7 @@ import java.util.Date;
 */
 public class FileServerLock implements ServerLock
 {
+    private static final org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
     private File myLockFile;
     private int updateSeconds;
     private Thread updateThread;
@@ -88,12 +91,13 @@ public class FileServerLock implements ServerLock
             {
                 // Lock is in use by another instance!
                 if (critical)
-                    System.err.println("Failed to get lock '"
-                        + myLockFile.getName() +
-                        "': This service already running?");
+                {
+                    log.error("Failed to get lock '{}': This service already running?", myLockFile.getName());
+                }
                 else
-                    Logger.instance().info("Non-critical lock '" + myLockFile.getName()
-                        + "' is already used by another process.");
+                {
+                    log.info("Non-critical lock '{}' is already used by another process.", myLockFile.getName());
+                }
                 return false;
             }
 
@@ -106,8 +110,7 @@ public class FileServerLock implements ServerLock
         }
         catch(IOException ex)
         {
-            System.err.println("IOException while trying to get lock '"
-                + myLockFile.getPath() + "': " + ex);
+            log.atError().setCause(ex).log("IOException while trying to get lock '{}'", myLockFile.getPath());
             if (critical)
                 System.exit(1);
             else
@@ -159,18 +162,11 @@ public class FileServerLock implements ServerLock
     */
     private void updateLock( ) throws IOException
     {
-        DataOutputStream outs = null;
-        try
+        try (DataOutputStream outs = new DataOutputStream(new FileOutputStream(myLockFile)))
         {
-            outs = new DataOutputStream(new FileOutputStream(myLockFile));
             outs.writeLong(lastLockMsec = System.currentTimeMillis());
             outs.writeInt(myPID);
             outs.writeUTF(appStatus);
-            outs.close();
-        }
-        finally
-        {
-            if (outs != null) try { outs.close(); } catch(Exception ex) {}
         }
     }
 
@@ -186,10 +182,8 @@ public class FileServerLock implements ServerLock
     {
         if (myLockFile.canRead())
         {
-            DataInputStream ins = null;
-            try
+            try (DataInputStream ins = new DataInputStream(new FileInputStream(myLockFile)))
             {
-                ins = new DataInputStream(new FileInputStream(myLockFile));
                 lastLockMsec = ins.readLong();
                 filePID = ins.readInt();
                 try { appStatus = ins.readUTF(); }
@@ -214,20 +208,14 @@ public class FileServerLock implements ServerLock
                     return true;
                 }
             }
-            catch(IOException ioe)
+            catch(IOException ex)
             {
-                Logger.instance().info(
-                        "isLocked() Lock file I/O Error '" + myLockFile.getName() + ": " + ioe);
-            }
-            finally
-            {
-                try { ins.close(); }
-                catch(IOException ex) {}
+                log.atError().setCause(ex).log("isLocked() Lock file I/O Error '{}'", myLockFile.getName());
             }
         }
         else
         {
-            Logger.instance().info("Lock file '" + myLockFile.getPath() + "' does not exist or is not readable.");
+            log.info("Lock file '{}' does not exist or is not readable.", myLockFile.getPath());
             return false;
         }
 
@@ -267,16 +255,14 @@ public class FileServerLock implements ServerLock
             {
                 active = false;
                 shutdownViaLock = true;
-                Logger.instance().info("Lock file PID change - "
-                    + "Assuming another instance grabbed the lock.");
+                log.info("Lock file PID change - Assuming another instance grabbed the lock.");
             }
             else
             {
                 try { updateLock(); }
                 catch (IOException ioe)
                 {
-                    System.err.println("Error updating server lock file '"
-                        + myLockFile + "': " + ioe);
+                    log.atError().setCause(ioe).log("Error updating server lock file '{}'", myLockFile);
                 }
                 try { Thread.sleep(updateSeconds * (long)1000); }
                 catch(InterruptedException ie) {}
@@ -289,9 +275,7 @@ public class FileServerLock implements ServerLock
             lockable.lockFileRemoved();
         else
         {
-            Logger.instance().info((critical ? "Exiting -- " : "")
-                + "Lock file '"
-                + myLockFile.getPath() + "' removed.");
+            log.info("{}Lock file '{}' removed.", (critical ? "Existing -- " : ""), myLockFile.getPath());
             if (critical)
                 System.exit(0);
         }
@@ -315,30 +299,6 @@ public class FileServerLock implements ServerLock
         System.out.println("locked=" + t);
         System.out.println("lock msec=" + mylock.lastLockMsec + ", or "
             + new Date(mylock.lastLockMsec));
-
-//        if (mylock.obtainLock() == false)
-//        {
-//            System.out.println("Lock '" + args[0] + "' is in use.");
-//            System.out.println("lock msec=" + mylock.lastLockMsec + ", or "
-//                + new Date(mylock.lastLockMsec));
-//            System.exit(0);
-//        }
-//
-//        if (mylock.lastLockMsec > 0L)
-//        {
-//            System.out.println("Lock file exists but is too old.");
-//            System.out.println("lock msec=" + mylock.lastLockMsec + ", or "
-//                + new Date(mylock.lastLockMsec));
-//        }
-//        mylock.releaseOnExit();
-//        System.out.println("I have the lock '" + args[0] + "'.");
-//        for(int i=0; i<90; i++)
-//        {
-//            System.out.println("test " + i);
-//            try { Thread.sleep(1000L); }
-//            catch (InterruptedException e) {}
-//        }
-        System.exit(0);
     }
 
     /**

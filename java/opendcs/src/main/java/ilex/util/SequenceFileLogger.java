@@ -13,7 +13,9 @@ import java.io.*;
 * The logs are give an increasing number with age: the current log is
 * logname, the previous one is logname.1, the one before that is logname.2,
 * etc.
+* @deprecated logging system is getting replaced.
 */
+@Deprecated
 public class SequenceFileLogger extends FileLogger
 {
 	private int numOldLogs;
@@ -67,4 +69,3 @@ public class SequenceFileLogger extends FileLogger
 //try { Thread.sleep(3000L); } catch(InterruptedException ex) {}
 	}
 }
-
