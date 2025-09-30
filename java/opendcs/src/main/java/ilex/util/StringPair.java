@@ -71,4 +71,3 @@ public class StringPair
 		return first.equals(rhs.first) && second.equals(rhs.second);
 	}
 }
-

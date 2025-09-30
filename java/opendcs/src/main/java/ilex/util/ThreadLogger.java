@@ -32,7 +32,9 @@ import java.io.*;
 * <p>
 * If !autoCreate, then the log message is sent to the default logger.
 * Subordinate file loggers create files named: prefix + Thread.getName() + suffix
+* @deprecated logging system is getting replaced.
 */
+@Deprecated
 public class ThreadLogger extends Logger
 {
 	/** Hash on Thread to get corresponding Logger. */

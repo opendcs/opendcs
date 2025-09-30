@@ -28,7 +28,9 @@ import java.util.concurrent.atomic.AtomicReference;
 * length, it will be closed, ".old" will be appended to its name, and
 * then a new log file will be opened with the original name.
 * </p>
+* @deprecated original logging system is getting replaced with standard loggers.
 */
+@Deprecated
 public class FileLogger extends Logger
 {
 	/**

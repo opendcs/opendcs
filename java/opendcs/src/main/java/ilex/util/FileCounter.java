@@ -34,11 +34,14 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+
 /**
 * Implements a file-based persistent counter for returning unique IDs.
 */
 public class FileCounter implements Counter
 {
+	private static org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
 	File file;
 
 	/**
@@ -67,10 +70,9 @@ public class FileCounter implements Counter
 			v = readValue();
 			setNextValue(v+1);
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			Logger.instance().log(Logger.E_FAILURE, 
-				"Cannot read file counter '" + file.getPath() + "': " + e);
+			log.atError().setCause(ex).log("Cannot read file counter '{}'", file.getPath());
 			v = -1;
 		}
 		return v;
@@ -87,10 +89,9 @@ public class FileCounter implements Counter
 		{
 			writeValue(value);
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			Logger.instance().log(Logger.E_FAILURE, 
-				"Cannot increment file counter '" + file.getPath() + "': " + e);
+			log.atError().setCause(ex).log("Cannot increment file counter '{}'", file.getPath());
 		}
 	}
 
@@ -100,10 +101,11 @@ public class FileCounter implements Counter
 	*/
 	private void writeValue( int value ) throws IOException
 	{
-		FileWriter fos = new FileWriter(file);
-		String str = "" + value;
-		fos.write(str, 0, str.length());
-		fos.close();
+		try( FileWriter fos = new FileWriter(file))
+		{
+			String str = "" + value;
+			fos.write(str, 0, str.length());
+		}
 	}
 
 	/**
@@ -112,12 +114,13 @@ public class FileCounter implements Counter
 	*/
 	private int readValue( ) throws IOException, NumberFormatException
 	{
-		FileReader fr = new FileReader(file);
-		char buf[] = new char[20];
-		int len = fr.read(buf, 0, 20);
-		fr.close();
-		String str = new String(buf, 0, len).trim();
-		return Integer.parseInt(str);
+		try (FileReader fr = new FileReader(file))
+		{
+			char buf[] = new char[20];
+			int len = fr.read(buf, 0, 20);
+			String str = new String(buf, 0, len).trim();
+			return Integer.parseInt(str);
+		}
 	}
 
 	/**

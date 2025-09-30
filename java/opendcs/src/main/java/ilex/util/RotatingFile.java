@@ -5,6 +5,9 @@ package ilex.util;
 
 import java.io.*;
 import java.nio.channels.FileLock;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+
 import java.nio.channels.FileChannel;
 
 /**
@@ -14,6 +17,7 @@ import java.nio.channels.FileChannel;
 */
 public class RotatingFile
 {
+	private static final org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
 	private long sizeLimit;
 	private File file;
 	private FileOutputStream stream = null;
@@ -64,9 +68,7 @@ public class RotatingFile
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("IO Error writing to '" + file.getPath()
-				+ "': " + ex);
-			throw ex;
+			throw new IOException("IO error writing to '" + file.getPath() + "'", ex);
 		}
 		finally
 		{

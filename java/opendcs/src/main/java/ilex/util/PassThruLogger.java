@@ -18,7 +18,9 @@ package ilex.util;
  * Use this class when you want to have a module of code with its
  * own log priority that passes through messages to the default
  * Logger instance.
+ * @deprecated logging is getting replaced.
  */
+@Deprecated
 public class PassThruLogger extends Logger
 {
 	private Logger parent = null;

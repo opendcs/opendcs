@@ -16,6 +16,9 @@ import java.util.Formatter;
 import java.util.IllegalFormatException;
 import java.util.Locale;
 import java.util.ResourceBundle;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+
 import java.util.MissingResourceException;
 
 /**
@@ -26,6 +29,7 @@ import java.util.MissingResourceException;
  */
 public class LoadResourceBundle 
 {
+	private static final org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
 	private static Locale defaultLocale = null;
 	
 	/** Empty Constructor
@@ -111,24 +115,20 @@ public class LoadResourceBundle
 		}
 		catch(MissingResourceException ex)
 		{
-			Logger.instance().failure("Cannot load resource bundle '"
-				+ baseName + "', for language '" + language + "': " + ex);
-			try 
+			log.atError()
+			   .setCause(ex)
+			   .log("Cannot load resource bundle '{}', for language '{}'", baseName, language);
+			try
 			{
-				labelDescriptions = ResourceBundle.getBundle(baseName,
-					Locale.US);
+				labelDescriptions = ResourceBundle.getBundle(baseName, Locale.US);
 			}
 			catch(MissingResourceException ex2)
 			{
-				Logger.instance().failure("Cannot load resource bundle '"
-					+ baseName + "', for US English: " + ex2);
+				log.atError().setCause(ex2).log("Cannot load resource bundle '{}', for US English", baseName);
 				return null;
 			}
 		}
-//		Locale test = Locale.getDefault();
-//		System.out.println("Locale country = " + test.getCountry()
-//				+ " /language " + test.getLanguage()
-//				+ " /Locale to string = " + test.toString());
+
 		return new SafeResourceBundle(labelDescriptions);
 	}
 
@@ -141,12 +141,10 @@ public class LoadResourceBundle
 	 */
 	public static String sprintf(String format, Object... args)
 	{
-		try
+		StringBuilder sb = new StringBuilder();
+		try (Formatter fm = new Formatter(sb, defaultLocale);)
 		{
-			StringBuilder sb = new StringBuilder();
-			Formatter fm = new Formatter(sb, defaultLocale);
 			fm.format(format, args);
-			fm.close();
 			return sb.toString();
 		}
 		catch(IllegalFormatException ex)
