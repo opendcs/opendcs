@@ -36,7 +36,9 @@ import java.io.*;
 /**
 * TeeLogger logs to two other Loggers, which it holds internally.
 * The event priority is controlled by the first logger on the constructor.
+* @deprecated Logging system is getting replaced.
 */
+@Deprecated
 public class TeeLogger extends Logger
 {
 	Logger logger1;
@@ -149,4 +151,3 @@ public class TeeLogger extends Logger
 		return logger1.getLogOutput();
 	}
 }
-
