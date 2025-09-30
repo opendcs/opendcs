@@ -1,10 +1,24 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package ilex.gui;
 
 import javax.swing.*;
 
 import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.TimeZone;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -15,7 +29,7 @@ import java.text.SimpleDateFormat;
  * The DateTimeCalendar is a wrapper around the DateCalendar and the
  * TimeSpinner. It creates a JPanel with a JCalendar widget and
  * a time spinner widget.
- * 
+ *
  */
 @SuppressWarnings("serial")
 public class DateTimeCalendar extends JPanel
@@ -29,17 +43,17 @@ public class DateTimeCalendar extends JPanel
 	private FlowLayout panelLayout = new FlowLayout(
 		FlowLayout.CENTER, 4, 0);
 	private SimpleDateFormat sdf;
-	
+
 	/**
-	 * Construct a Calendar - Time Panel. It allows you to select a 
+	 * Construct a Calendar - Time Panel. It allows you to select a
 	 * date from a calendar widget and the time from a time spinner.
 	 * In addition, it allows to set a timezone.
-	 * 
+	 *
 	 * @param text String - label to identified this DateCalendar. Ex. From
 	 * 				It should be provided. Default is no label
-	 * @param dateIn Date - default date for DateCalendar and time Spinner 
+	 * @param dateIn Date - default date for DateCalendar and time Spinner
 	 * 						If null, default to today's date at 00:00:00
-	 * @param dateFmt String - format for JCalendar Date text field 
+	 * @param dateFmt String - format for JCalendar Date text field
 	 * 									Deafult format: MMM d,yyyy
 	 * @param tzid String - the timezone java id, Default is defaultTZ above
 	 */
@@ -48,22 +62,20 @@ public class DateTimeCalendar extends JPanel
 		String dateLabel = text;
 		if (dateLabel == null)
 			dateLabel = "";
-		
+
 		// Default TZ to UTC if not supplied.
 		if (tzid == null || tzid.equals(""))
 			tzObj = TimeZone.getTimeZone(defaultTZ);
 		else
-			tzObj = TimeZone.getTimeZone(tzid);	
+			tzObj = TimeZone.getTimeZone(tzid);
 
 		sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 		sdf.setTimeZone(tzObj);
-		
-//System.out.println("DateTimeCalendar('" + text + "', " + sdf.format(dateIn) + ", " 
-//+ dateFmt + ", " + tzid + ")");
+
 
 		// Default to noon in current day in whatever tz was specified
 		if (dateIn == null)
-		{	
+		{
 			dateIn = new Date();
 			Calendar cal = Calendar.getInstance();
 			cal.setTimeZone(tzObj);
@@ -73,22 +85,16 @@ public class DateTimeCalendar extends JPanel
 			cal.set(Calendar.SECOND, 0);
 			dateIn = cal.getTime();
 		}
-		
+
 		dateCalendar = new DateCalendar(text, dateIn, dateFmt, tzObj);
 		timeSpinner = new TimeSpinner(dateIn);
 		timeSpinner.setTimeZone(tzObj);
-		
-		try
-		{
-			jbInit();
-		} 
-		catch (Exception ex)
-		{
-			ex.printStackTrace();
-		}
+
+		jbInit();
+
 	}
 
-	private void jbInit() throws Exception
+	private void jbInit()
 	{
 		this.setLayout(panelLayout);
 		this.add(dateCalendar);
@@ -105,27 +111,23 @@ public class DateTimeCalendar extends JPanel
 		// Get date from DateCalendar and date from TimeSpinner
 		Date dateFCalendar = dateCalendar.getDate();
 
-//System.out.println("dtc.getDate fromCal=" + sdf.format(dateFCalendar));
 		if (dateFCalendar == null)
 			return null;
 
 		Calendar tempCal1 = Calendar.getInstance();
 		tempCal1.setTimeZone(tzObj);
 		tempCal1.setTime(dateFCalendar);
-//System.out.println("dtc.getDate tempCal1=" + sdf.format(tempCal1.getTime()));
 		timeSpinner.updateCalendar(tempCal1);
-		
+
 		Date ret = tempCal1.getTime();
-//System.out.println("after setting time values: tempCal1=" + sdf.format(ret));
-		
+
 		// Return Date obj
 		return ret;
 	}
 
 	public void setDate(Date dateIn)
 	{
-//System.out.println("dtc.setDate(" + sdf.format(dateIn));
-		//Set DateCalendar with the date and TimeSpinner 
+		//Set DateCalendar with the date and TimeSpinner
 		//with the time, DateCalendar has a setDate()
 		//TimeSpinner has a setTime()
 		dateCalendar.setDate(dateIn);
@@ -137,12 +139,12 @@ public class DateTimeCalendar extends JPanel
 		dateCalendar.setEnabled(tf);
 		timeSpinner.setEnabled(tf);
 	}
-	
+
 	public void stopEditing()
 	{
 		timeSpinner.stopEditing();
 	}
-	
+
 	public static void main(String[] args)
 	{
 		final DateTimeCalendar datetimecalendar = new DateTimeCalendar("(UTC)" , new Date() , "dd/MMM/yyyy", "UTC");
@@ -156,7 +158,7 @@ public class DateTimeCalendar extends JPanel
 		cal.add(Calendar.DAY_OF_MONTH, -1);
 		datetimecalendar.setDate(cal.getTime());
 
-		
+
 		Frame testFrame = new Frame();
 
 		testFrame.setVisible(true);
@@ -175,6 +177,6 @@ public class DateTimeCalendar extends JPanel
 				System.out.println("");
 			}
 		});
-			
+
 	}
 }
