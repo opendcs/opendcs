@@ -1,30 +1,24 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $State$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:10  cvs
-*  Added legacy code to repository
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.3  2004/08/30 14:50:38  mjmaloney
-*  Javadocs
-*
-*  Revision 1.2  2004/04/26 20:02:26  mjmaloney
-*  Dev.
-*
-*  Revision 1.1  2000/12/31 15:56:56  mike
-*  dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package ilex.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import ilex.util.Logger;
-import ilex.xml.XmlObjectParser;
-import ilex.xml.TaggedBooleanOwner;
-import ilex.xml.XmlHierarchyParser;
 
 /**
 * TaggedBooleanSetter is used to set simple boolean elements contained in
@@ -32,10 +26,11 @@ import ilex.xml.XmlHierarchyParser;
 */
 public class TaggedBooleanSetter implements XmlObjectParser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	StringBuffer sb;
 	TaggedBooleanOwner owner;
 	int tag;
-	
+
 	/**
 	* Constructor
 	* @param owner call when content parsed
@@ -62,9 +57,7 @@ public class TaggedBooleanSetter implements XmlObjectParser
 	*/
 	public void startElement( XmlHierarchyParser hier, String namespaceURI, String localName, String qname, Attributes atts ) throws SAXException
 	{
-		Logger.instance().log(Logger.E_WARNING,
-			"Received subordinate element '" + localName 
-			+ "' when expecting simple boolean -- ignored.");
+		log.warn("Received subordinate element '{}' when expecting simple boolean -- ignored.", localName);
 		hier.pushObjectParser(new ElementIgnorer());
 	}
 

@@ -36,5 +36,9 @@ public class IlexException extends Exception
 	{
 		super(msg);
 	}
-}
 
+	public IlexException(String msg, Throwable cause)
+	{
+		super(msg, cause);
+	}
+}
