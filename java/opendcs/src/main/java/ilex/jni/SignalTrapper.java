@@ -39,7 +39,10 @@ import java.io.InputStreamReader;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
+
 
 /**
 * This class uses UNIX native code to trap signals. The signal
@@ -53,6 +56,7 @@ import ilex.util.Logger;
 */
 public class SignalTrapper
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static Thread ht;        // Handler Thread
 	static LinkedList hmap;  // Handler Map
 
@@ -132,9 +136,9 @@ public class SignalTrapper
 
 	static // Static initializer to load native library
 	{
-		String libname = "ilexjni." + getOsSuffix();
-		Logger.instance().info("Loading native library " + libname);
-		System.loadLibrary(libname);
+		
+		log.trace("Native library no longer loaded");
+		//System.loadLibrary(libname);
 	}
 	
 	public static String getOsSuffix()
