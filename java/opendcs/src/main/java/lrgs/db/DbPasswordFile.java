@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.db;
 
 import java.io.File;
@@ -9,12 +24,13 @@ import java.util.Date;
 import java.util.Properties;
 
 import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.lrgsmain.LrgsConfig;
 import ilex.util.AuthException;
 import ilex.util.ByteUtil;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PasswordFile;
 import ilex.util.PasswordFileEntry;
 import ilex.util.PropertiesUtil;
@@ -22,6 +38,7 @@ import ilex.util.TextUtil;
 
 public class DbPasswordFile extends PasswordFile
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private LrgsDatabase lrgsDb = null;
 	public static final String module = "DbPasswordFile";
 	private String columns = "username, pw_hash, dds_perm, is_admin, is_local, props, last_modified";
@@ -32,7 +49,7 @@ public class DbPasswordFile extends PasswordFile
 		super(passwordFile);
 		this.lrgsDb = lrgsDb;
 	}
-	
+
 	/**
 	 * {@inheritDoc}
 	 * This method overrides the read method to read entries from the database.
@@ -40,35 +57,29 @@ public class DbPasswordFile extends PasswordFile
 	 * in the file implementation they reside in separate files.
 	 */
 	@Override
-	public int read( ) 
+	public int read( )
 		throws IOException
 	{
 		entries.clear();
-		Statement stat = null;
+
 		String q = select + " order by username";
-		try
+		log.trace("query: {}", q);
+		try (Statement stat = lrgsDb.createStatement();
+		 	ResultSet rs = stat.executeQuery(q);)
 		{
-			stat = lrgsDb.createStatement();
-			Logger.instance().debug3(module + " query: " + q);
-			ResultSet rs = stat.executeQuery(q);
-			while(rs != null && rs.next())
+			while (rs.next())
+			{
 				rs2pfe(rs); // will also add to the cache.
+			}
 		}
 		catch (Exception ex)
 		{
-			String msg = module + ".read() error in query '" + q + "': " + ex;
-			Logger.instance().warning(msg);
-			throw new IOException(msg);
+			throw new IOException("error in query '" + q + "'", ex);
 		}
-		finally
-		{
-			if (stat != null)
-				try { stat.close(); } catch(Exception ex) {}
-		}
-		
+
 		return entries.size();
 	}
-	
+
 	private PasswordFileEntry rs2pfe(ResultSet rs)
 		throws AuthException, SQLException
 	{
@@ -94,23 +105,21 @@ public class DbPasswordFile extends PasswordFile
 	@Override
 	public void write( ) throws IOException
 	{
-		Statement stat = null;
+
 		String q = "";
-//Logger.instance().info("DbPasswordFile.write() #entries=" + entries.size());
-		try
+
+		try (Statement stat = lrgsDb.createStatement();)
 		{
-			stat = lrgsDb.createStatement();
 			for(PasswordFileEntry pfe : entries.values())
 				if (pfe.isChanged())
 				{
-//Logger.instance().info("Entry for " + pfe.getUsername() + " is changed.");
 					PasswordFileEntry oldPfe = readSingle(pfe.getUsername());
 					if (oldPfe == null)
 					{
 						Properties props = pfe.getProperties();
 						q = "insert into dds_user(" + columns + ") values("
 							+ lrgsDb.sqlString(pfe.getUsername()) + ", "
-							+ (pfe.getShaPassword() == null ? "null" : 
+							+ (pfe.getShaPassword() == null ? "null" :
 								lrgsDb.sqlString(ByteUtil.toHexString(pfe.getShaPassword()))) + ", "
 							+ (pfe.isRoleAssigned("dds") ? "'Y'" : "'N'") + ", "
 							+ (pfe.isRoleAssigned("admin") ? "'Y'" : "'N'") + ", "
@@ -121,66 +130,55 @@ public class DbPasswordFile extends PasswordFile
 					}
 					else
 					{
-//Logger.instance().info("Old Entry: " + oldPfe.toString());
-//Logger.instance().info("New Entry: " + pfe.toString());
-
 						// update
 						int nmods = 0;
 						q = "update dds_user set ";
-						
+
 						StringBuilder sets = new StringBuilder();
-						
+
 						if (!ByteUtil.equals(pfe.getShaPassword(), oldPfe.getShaPassword()))
 						{
-							addSet(sets, "pw_hash = " + 
-								(pfe.getShaPassword()==null ? "null" : 
+							addSet(sets, "pw_hash = " +
+								(pfe.getShaPassword()==null ? "null" :
 									lrgsDb.sqlString(ByteUtil.toHexString(pfe.getShaPassword()))));
 							addSet(sets, "last_modified = " + lrgsDb.sqlDate(new Date()));
 						}
-							
+
 						if (pfe.isRoleAssigned("dds") != oldPfe.isRoleAssigned("dds"))
 							addSet(sets, "dds_perm = " + (pfe.isRoleAssigned("dds") ? "'Y'" : "'N'"));
-						
+
 						if (pfe.isRoleAssigned("admin") != oldPfe.isRoleAssigned("admin"))
 							addSet(sets, "is_admin = " + (pfe.isRoleAssigned("admin") ? "'Y'" : "'N'"));
-						
+
 						if (pfe.isLocal() != oldPfe.isLocal())
 							addSet(sets, "is_local = " + (pfe.isLocal() ? "'Y'" : "'N'"));
-						
+
 						if (!PropertiesUtil.propertiesEqual(pfe.getProperties(), oldPfe.getProperties()))
-							addSet(sets, "props = " + 
-								(pfe.getProperties() == null ? "null" : 
+							addSet(sets, "props = " +
+								(pfe.getProperties() == null ? "null" :
 								lrgsDb.sqlString(PropertiesUtil.props2string(pfe.getProperties()))));
-						
+
 						if (sets.length() == 0)
 							continue; // nothing to change.
-						
+
 						q = q + sets.toString() + " where username = " + lrgsDb.sqlString(pfe.getUsername());
 					}
-//Logger.instance().info("DbPasswordFile.write: " + q);
 					stat.executeUpdate(q);
 				}
 		}
 		catch (Exception ex)
 		{
-			String msg = module + ".write() Error in query '" + q + "': " + ex;
-			Logger.instance().warning(msg);
-			throw new IOException(msg);
-		}
-		finally
-		{
-			if (stat != null)
-				try { stat.close(); } catch(Exception ex) {}
+			throw new IOException("Error in query '" + q + "'", ex);
 		}
 	}
-	
+
 	private void addSet(StringBuilder sets, String setclause)
 	{
 		if (sets.length() > 0)
 			sets.append(", ");
 		sets.append(setclause);
 	}
-	
+
 	/**
 	 * Reads a single entry from the database and does not store it in the entries hash.
 	 * @param username
@@ -188,38 +186,31 @@ public class DbPasswordFile extends PasswordFile
 	 */
 	public PasswordFileEntry readSingle(String username)
 	{
-		String q = select + " where username = '" + username + "'";
-		Statement stat = null;
-		try
+		String q = select + " where username = " + lrgsDb.sqlString(username);
+		log.trace("query: '{}'", q);
+		try (Statement stat = lrgsDb.createStatement();
+			 ResultSet rs = stat.executeQuery(q);)
 		{
-			stat = lrgsDb.createStatement();
-			Logger.instance().debug3(module + " query: " + q);
-			ResultSet rs = stat.executeQuery(q);
-			if (rs != null && rs.next())
+
+			if (rs.next())
 				return rs2pfe(rs);
 			else
 				return null;
 		}
 		catch (Exception ex)
 		{
-			String msg = module + ".readSingle() error in query '" + q + "': " + ex;
-			Logger.instance().warning(msg);
+			log.atWarn().setCause(ex).log("error in query '{}'", q);
 			return null;
 		}
-		finally
-		{
-			if (stat != null)
-				try { stat.close(); } catch(Exception ex) {}
-		}
 	}
-	
+
 	public void print(boolean local)
 	{
 		for(PasswordFileEntry pfe : entries.values())
 			if (pfe.isLocal() == local)
 				System.out.println(pfe.toString());
 	}
-	
+
 	public void importFile(String filename, boolean local)
 		throws IOException
 	{
@@ -238,35 +229,27 @@ public class DbPasswordFile extends PasswordFile
 	{
 		if (entries != null)
 			entries.remove(username);
-		String q = "delete from dds_user where username = '" + username + "'";
-		Statement stat = null;
-		try
+		String q = "delete from dds_user where username = " + lrgsDb.sqlString(username);
+		log.trace("query: '{}'", q);
+		try (Statement stat = lrgsDb.createStatement())
 		{
-			stat = lrgsDb.createStatement();
-			Logger.instance().debug3(module + " query: " + q);
+
 			stat.executeUpdate(q);
 		}
 		catch (Exception ex)
 		{
-			String msg = module + ".rmEntryByName() error in query '" + q + "': " + ex;
-			Logger.instance().warning(msg);
+			log.atWarn().setCause(ex).log("error in query '{}'", q);
 		}
-		finally
-		{
-			if (stat != null)
-				try { stat.close(); } catch(Exception ex) {}
-		}
-
 		return true;
 	}
 
-	
+
 	private static String usage = "java ... DbPasswordFile args, where args can be: \n"
 		+ "    il filename -- import local password file to database\n"
 		+ "    is filename -- import shared password file to database\n"
 		+ "    xl          -- export local users to stdout\n"
 		+ "    xs          -- export shared (non-local) users to stdout\n";
-		
+
 	public static void main(String args[])
 		throws Exception
 	{
@@ -275,12 +258,11 @@ public class DbPasswordFile extends PasswordFile
 			System.err.println(usage);
 			System.exit(1);
 		}
-		
+
 		LrgsConfig.instance().setConfigFileName(EnvExpander.expand("$LRGSHOME/lrgs.conf"));
 		LrgsConfig.instance().loadConfig();
 		LrgsDatabase lrgsDb = new LrgsDatabase();
 		String username = "lrgs_adm";
-		//String password = "";
 		String authFileName = "$LRGSHOME/.lrgsdb.auth";
 		Properties credentials = null;
 		try
@@ -291,17 +273,16 @@ public class DbPasswordFile extends PasswordFile
 		}
 		catch(AuthException ex)
 		{
-			String msg = module + " Cannot read DB auth from file '" 
-				+ authFileName+ "': " + ex + ", using default username and empty password";
-			Logger.instance().warning(msg);
-			throw ex;
-		}		
+			String msg = "Cannot read DB auth from file '"
+					   + authFileName+ "', using default username and empty password";
+			throw new AuthException(msg, ex);
+		}
 
-		Logger.instance().info("Attempting connection to db at '"
-			+ LrgsConfig.instance().dbUrl + "' as user '" + username + "'");
+		log.info("Attempting connection to db at '{}' as user '{}'",
+				 LrgsConfig.instance().dbUrl, username);
 		lrgsDb.connect(credentials);
 		DbPasswordFile dpf = new DbPasswordFile(null, lrgsDb);
-		
+
 		if (args.length == 1 && (args[0].equals("xl") || args[0].equals("xs")))
 		{
 			dpf.read();
