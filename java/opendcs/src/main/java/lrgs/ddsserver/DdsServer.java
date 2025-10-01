@@ -1,14 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of this source
-*  code may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.ddsserver;
 
@@ -19,8 +22,16 @@ import java.util.Iterator;
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 
-import ilex.util.*;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.net.*;
+import ilex.util.Counter;
+import ilex.util.EnvExpander;
+import ilex.util.FileCounter;
+import ilex.util.Pair;
+import ilex.util.QueueLogger;
+import ilex.util.SimpleCounter;
 import lrgs.apistatus.AttachedProcess;
 import lrgs.common.ArchiveUnavailableException;
 import lrgs.archive.MsgArchive;
@@ -36,9 +47,9 @@ import lrgs.lrgsmain.JavaLrgsStatusProvider;
 /**
 Main class for the LRGS DDS server that uses the Java-Only-Archive.
 */
-public class DdsServer extends BasicServer
-    implements Runnable
+public class DdsServer extends BasicServer implements Runnable
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     public static final String module = "DdsSvr";
 
     /** Event number meaning server disabled */
@@ -134,7 +145,7 @@ public class DdsServer extends BasicServer
         statLoggerThread = new LddsLoggerThread(this,
             LrgsConfig.instance().ddsUsageLog);
         statLoggerThread.start();
-        Logger.instance().debug1("Starting DDS Listening thread.");
+        log.debug("Starting DDS Listening thread.");
         GetHostnameThread ght = GetHostnameThread.instance();
         if (!ght.isAlive())
         {
@@ -148,7 +159,7 @@ public class DdsServer extends BasicServer
         }
         catch(IOException ex)
         {
-            Logger.instance().warning("Cannot create File-conIdCounter: " + ex);
+            log.atWarn().setCause(ex).log("Cannot create File-conIdCounter.");
             conIdCounter = new SimpleCounter(1);
         }
     }
@@ -176,7 +187,7 @@ public class DdsServer extends BasicServer
     /** Shuts the application down. */
     public void shutdown()
     {
-        Logger.instance().info(module + " shutting down.");
+        log.info("shutting down.");
         shutdownFlag = true;
         statLoggerThread.shutdown();
         setEnabled(false);
@@ -193,23 +204,18 @@ public class DdsServer extends BasicServer
     {
         try
         {
-            Logger.instance().debug1(module + " New DDS client. "
-                + " KeepAlive=" + sock.getKeepAlive()
-                + " SoLinger=" + sock.getSoLinger()
-                + " SoTimeout=" + sock.getSoTimeout()
-                + " TcpNoDelay=" + sock.getTcpNoDelay()
-                + " ReuseAddress=" + sock.getReuseAddress());
+            log.trace("New DDS client. KeepAlive={} SoLinger={} SoTimeout={} TcpNoDelay={} ReuseAddress={}",
+                      sock.getKeepAlive(), sock.getSoLinger(), sock.getSoTimeout(),
+                      sock.getTcpNoDelay(), sock.getReuseAddress());
         }
         catch(Exception ex)
         {
-            Logger.instance().warning(module
-                + " Exception setting or printing socket options: " + ex);
+            log.atWarn().setCause(ex).log("Exception setting or printing socket options.");
         }
 
         if (!enabled)
         {
-            Logger.instance().warning(module + ":" + EVT_SVR_DISABLED
-                + "- Cannot accept new client, Server disabled.");
+            log.warn("{}:{}- Cannot accept new client, Server disabled.", module, EVT_SVR_DISABLED);
             sock.close();
             return null;
         }
@@ -218,9 +224,8 @@ public class DdsServer extends BasicServer
         int maxcli = LrgsConfig.instance().ddsMaxClients;
         if (maxcli > 0 && numcli >= maxcli)
         {
-            Logger.instance().warning(module + ":" + EVT_MAX_CLIENTS
-                + " Cannot accept new client, already have max of "
-                + maxcli + " connected.");
+            log.warn("{}:{} Cannot accept new client, already have max of {} connected.",
+                     module, EVT_MAX_CLIENTS, maxcli);
             sock.close();
             return null;
         }
@@ -228,15 +233,13 @@ public class DdsServer extends BasicServer
         AttachedProcess ap = statusProvider.getFreeClientSlot();
         if (ap == null)
         {
-            Logger.instance().warning(module + ":" + EVT_MAX_CLIENTS
-                + " Cannot get free client data structure, already have max of "
-                + maxcli + " connected.");
+            log.warn("{}:{} Cannot get free client data structure, already have max of {} connected.",
+                     module, EVT_MAX_CLIENTS, maxcli);
             sock.close();
         }
         else
         {
-            Logger.instance().debug1(module + ":" + (-EVT_MAX_CLIENTS)
-                + " New client accepted");
+            log.debug("{}:{} New client accepted", module, -EVT_MAX_CLIENTS);
         }
 
         try
@@ -246,10 +249,7 @@ public class DdsServer extends BasicServer
             if (id == -1)
             {
                 conIdCounter.setNextValue(1);
-                Logger.instance().warning(module + ":" +
-                        "Re-setting "+
-                        EnvExpander.expand(counterName) +
-                        " to 1.");
+                log.warn("{}:Re-setting {} to 1", module, EnvExpander.expand(counterName));
             }
             id = conIdCounter.getNextValue();
             //End work around
@@ -266,12 +266,8 @@ public class DdsServer extends BasicServer
         }
         catch(Exception ex)
         {
-            String msg = "- Unexpected exception creating new client thread: "
-                + ex;
-            Logger.instance().failure(module + " " + EVT_INTERNAL_CLIENT
-                + msg);
-            System.err.println(msg);
-            ex.printStackTrace(System.err);
+            String msg = "Unexpected exception creating new client thread";
+            log.atError().setCause(ex).log("{}:{} - {}", module, EVT_INTERNAL_CLIENT, msg);
             return null;
         }
     }
@@ -281,31 +277,24 @@ public class DdsServer extends BasicServer
     {
         try
         {
-            Logger.instance().info(module
-                + " ServerSocket.getSoTimeout=" + listeningSocket.getSoTimeout());
-            Logger.instance().info(module
-                + " ServerSocket.getReceiveBufferSize="
-                    + listeningSocket.getReceiveBufferSize());
-            Logger.instance().info(module
-                + " ServerSocket.getReuseAddress="
-                + listeningSocket.getReuseAddress());
+            log.trace("{} ServerSocket.getSoTimeout={}", module, listeningSocket.getSoTimeout());
+            log.trace("{} ServerSocket.getReceiveBufferSize={}", module, listeningSocket.getReceiveBufferSize());
+            log.trace("{} ServerSocket.getReuseAddress={}", module, listeningSocket.getReuseAddress());
         }
         catch(Exception ex)
         {
-            Logger.instance().warning(module
-                + " Error getting or setting server socket params: " + ex);
+            log.atWarn().setCause(ex).log("{} Error getting or setting server socket params.", module);
         }
         try { listen(); }
         catch(IOException ex)
         {
-            Logger.instance().failure(module + ":" + EVT_LISTEN
-                + "- Error on listening socket: " + ex);
+            log.atWarn().setCause(ex).log("{}:{}- Error on listening socket: ", module, EVT_LISTEN);
         }
     }
 
     protected void listenTimeout()
     {
-        Logger.instance().info(module + " listen timeout");
+        log.info("{} listen timeout", module);
     }
 }
 
@@ -315,6 +304,7 @@ public class DdsServer extends BasicServer
 */
 class BackgroundStuff extends Thread
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     DdsServer svr;
 
     BackgroundStuff(DdsServer svr)
@@ -354,10 +344,8 @@ class BackgroundStuff extends Thread
             }
             if (badClient != null) // Found one to hang up on?
             {
-                Logger.instance().debug1(DdsServer.module +
-                    " Hanging up on client '" + badClient.getClientName()
-                    + "' due to inactivity for more than "
-                    + LddsParams.ServerHangupSeconds + " seconds.");
+                log.debug("{} Hanging up on client '{}' due to inactivity for more than {} seconds.",
+                          DdsServer.module, badClient.getClientName(), LddsParams.ServerHangupSeconds);
                 badClient.disconnect();
                 badClient = null;
             }
