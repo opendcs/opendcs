@@ -1,14 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of this source
-*  code may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.ddsserver;
 
@@ -17,11 +20,12 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.IDateFormat;
-import ilex.util.Logger;
 import lrgs.apistatus.AttachedProcess;
 import lrgs.common.ArchiveUnavailableException;
 import lrgs.common.SearchSyntaxException;
@@ -33,10 +37,8 @@ import lrgs.common.DcpMsgFlag;
 import lrgs.common.DcpMsgIndex;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpAddress;
-import lrgs.common.DcpNameMapper;
 import lrgs.common.DcpMsgSource;
 import lrgs.common.LrgsErrorCode;
-import lrgs.common.SearchCriteria;
 import lrgs.archive.MsgArchive;
 import lrgs.archive.MsgFilter;
 import lrgs.archive.SearchHandle;
@@ -45,10 +47,9 @@ import lrgs.archive.SearchHandle;
 This class acts both as the retriever and the source for the new Java-Only-
 Archive.
 */
-public class MessageArchiveRetriever 
-	extends DcpMsgRetriever 
-	implements MsgFilter, DcpMsgSource
+public class MessageArchiveRetriever extends DcpMsgRetriever implements MsgFilter, DcpMsgSource
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private SearchHandle searchHandle;
 
 	/** LrgsSince or null if none specified. */
@@ -74,13 +75,13 @@ public class MessageArchiveRetriever
 
 	/** If true, then force the legacy slower ascending only retrieval. */
 	private boolean _forceAscending = false;
-	
+
 	/** The DDS Version of the client on the other end. */
 	private int ddsVersionNum = 5;
 	private String ddsVersion = "" + ddsVersionNum;
-	
+
 	private boolean goodOnly = false;
-	
+
 	/**
 	 * Constructor.
 	 */
@@ -97,7 +98,7 @@ public class MessageArchiveRetriever
 		lastPath = null;
 		_forceAscending = false;
 	}
-	
+
 	/**
 	 * call 'testCriteria' from the base class.
 	 */
@@ -111,20 +112,18 @@ public class MessageArchiveRetriever
 		if (LrgsUntil != null
 		 && mie.getLocalRecvTime().compareTo(LrgsUntil) > 0)
 			return false;
-		
+
 		// We must not deliver Iridium messages to pre-version-9 clients!
-		if (ddsVersionNum < 10 
+		if (ddsVersionNum < 10
 		 && DcpMsgFlag.isIridium(mie.getFlagbits()))
 			return false;
-		
+
 		// Added in OpenDCS 6.5
 		if (goodOnly && DcpMsgFlag.isGOES(mie.getFlagbits()) && mie.getFailureCode() != 'G')
 			return false;
-//Logger.instance().info("passes: goodOnly=" + goodOnly + ", isGOES=" + DcpMsgFlag.isGOES(mie.getFlagbits()) 
-//+ ", failCode=" + mie.getFailureCode());
 		return testCriteria(mie);
 	}
-	
+
 	/**
 	 * If only DapsSince is specified use it, assume DapsTime <= LrgsTime.
 	 * DapsSince is a Date attribute in the base class.
@@ -136,7 +135,7 @@ public class MessageArchiveRetriever
 			return LrgsSince;
 		return DapsSince;
 	}
-	
+
 	/**
 	 * If LrgsUntil is specified use it, else add a fudge factor to DapsUntil.
 	 * Assumes LrgsTime is not too much later than DapsTime (e.g. 90 seconds).
@@ -159,7 +158,7 @@ public class MessageArchiveRetriever
 		lastMsgDrotTime = (int)(idx.getLocalRecvTime().getTime()/1000L);
 		return idx.getDcpMsg();
 	}
-	
+
 	/**
 	 * Call super.init() to read netlists, addresses, & time ranges.
 	 * Get searchHandle from Message Archive.
@@ -211,9 +210,9 @@ public class MessageArchiveRetriever
 		else if (System.currentTimeMillis() > stopSearchMsec)
 			throw new SearchTimeoutException("Search Time Expired");
 
-		Logger.instance().debug3("Starting search...");
+		log.trace("Starting search...");
 		int result = msgArchive.search(searchHandle, stopSearchMsec);
-		Logger.instance().debug3("Search Result=" + result);
+		log.trace("Search Result={}", result);
 		if (result == MsgArchive.SEARCH_RESULT_MORE
 		 || result == MsgArchive.SEARCH_RESULT_DONE
 		 || result == MsgArchive.SEARCH_RESULT_TIMELIMIT)
@@ -236,11 +235,10 @@ public class MessageArchiveRetriever
 			throw new EndOfArchiveException();
 		}
 		// Should never get here.
-		throw new ArchiveUnavailableException(
-			"Bad return from msgArchive.search: " + result,
+		throw new ArchiveUnavailableException("Bad return from msgArchive.search: " + result,
 			LrgsErrorCode.DDDSINTERNAL);
 	}
-	
+
 
 	public DcpAddress[] getDcpAddresses()
 	{
@@ -262,16 +260,13 @@ public class MessageArchiveRetriever
 		if (lastMsgDrotTime != 0 && lastPath != null)
 		{
 			File lastFile = new File(lastPath);
-			try
+			try (FileWriter fw = new FileWriter(lastFile);)
 			{
-				FileWriter fw = new FileWriter(lastFile);
 				fw.write(IDateFormat.time_t2string(lastMsgDrotTime) + "\n");
-				fw.close();
 			}
 			catch(IOException ex)
 			{
-				Logger.instance().warning("Cannot save last-msg-time in '"
-					+ lastPath + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot save last-msg-time in '{}'", lastPath);
 			}
 			lastMsgDrotTime = 0;
 		}
@@ -289,9 +284,9 @@ public class MessageArchiveRetriever
 		this.clientName = name;
 		attachedProcess.setName(name);
 	}
-	
+
 	public String getClientName() { return clientName; }
-                                                                                
+
 	/**
 	* From DcpMsgSource interface, does nothing.
 	* @param proctype process type
@@ -302,7 +297,7 @@ public class MessageArchiveRetriever
 		attachedProcess.type = proctype;
 		attachedProcess.user = user;
 	}
-                                                                                
+
 	/**
 	* From DcpMsgSource interface, does nothing.
 	*/
@@ -310,7 +305,7 @@ public class MessageArchiveRetriever
 	{
 		return -1;
 	}
- 
+
 	/**
 	* From DcpMsgSource interface, does nothing.
 	*/
@@ -339,20 +334,17 @@ public class MessageArchiveRetriever
 	/**
 	* From DcpMsgSource interface.
 	*/
-	public boolean setSourceLrgsSinceLast() 
+	public boolean setSourceLrgsSinceLast()
 	{
 		File lastFile = new File(lastPath);
-		try
+		try (BufferedReader fr = new BufferedReader(new FileReader(lastFile));)
 		{
-			BufferedReader fr = new BufferedReader(new FileReader(lastFile));
 			String lds = fr.readLine().trim();
-			fr.close();
 			LrgsSince = IDateFormat.parseJulianDate(lds);
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("Cannot read last-msg-time from '"
-				+ lastPath + "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot read last-msg-time from '{}'", lastPath);
 		}
 
 		return true;
@@ -361,8 +353,8 @@ public class MessageArchiveRetriever
 	/**
 	Set option for saving last index.
 	The Java version always saves the file, but instead of containing the
-	index in binary form, it just contains the ASCII date/time of the 
-	LRGS time of the last message retrieved by this user. 
+	index in binary form, it just contains the ASCII date/time of the
+	LRGS time of the last message retrieved by this user.
 	The save is done when the user disconnects.
 	@param path name of file to save last index in
 	@param option must be either SaveLastNever or SaveLastOnGetIndex.
@@ -380,13 +372,13 @@ public class MessageArchiveRetriever
 	{
 		attachedProcess.status = status;
 	}
-                                                                                
+
 
 	/**
 	 * This is part of the MsgFilter interface. It tells MsgArchive whether
 	 * or not to force the legacy ascending-only (slower) retrieval method.
 	 */
-	public boolean forceAscending() 
+	public boolean forceAscending()
 	{
 		return _forceAscending || crit.getAscendingTimeOnly();
 	}
@@ -401,26 +393,25 @@ public class MessageArchiveRetriever
 	 * Sets flag to force (or not force) the legacy ascending-only behavior.
 	 */
 	public void setForceAscending(boolean tf) { _forceAscending = tf; }
-	
-	public void setProtocolVersion(String version) 
+
+	public void setProtocolVersion(String version)
 	{
 		int i=0;
 		while(i<version.length() && Character.isDigit(version.charAt(i)))
 			i++;
-		try 
+		try
 		{
-			ddsVersionNum = Integer.parseInt(version.substring(0, i)); 
+			ddsVersionNum = Integer.parseInt(version.substring(0, i));
 			this.ddsVersion = version;
 		}
 		catch(NumberFormatException ex)
 		{
-			Logger.instance().warning("Invalid DDS Version '" + version + "'");
+			log.atWarn().setCause(ex).log("Invalid DDS Version '{}'", version);
 		}
 	}
 
 	public void setGoodOnly(boolean goodOnly)
 	{
-//Logger.instance().info("MessageArchiveRetriever.setGoodOnly(" + goodOnly + ")");
 		this.goodOnly = goodOnly;
-	}	
+	}
 }
