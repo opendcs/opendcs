@@ -1,70 +1,31 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of this source
-*  code may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  $Log$
-*  Revision 1.2  2016/02/29 22:22:02  mmaloney
-*  Encapsulate 'name'.
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.6  2009/12/09 19:04:32  mjmaloney
-*  GetHostnameThread addition
-*
-*  Revision 1.5  2009/01/26 01:08:19  mjmaloney
-*  Implement Local User Accounts in LRGS
-*
-*  Revision 1.4  2008/06/10 21:39:52  cvs
-*  dev
-*
-*  Revision 1.3  2008/06/03 15:21:19  cvs
-*  dev
-*
-*  Revision 1.2  2008/05/05 15:03:08  cvs
-*  Algorithm Editor Updates
-*
-*  Revision 1.1  2008/04/04 18:21:12  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.4  2007/12/05 15:46:34  mmaloney
-*  dev
-*
-*  Revision 1.3  2005/07/21 15:17:44  mjmaloney
-*  LRGS-5.0
-*
-*  Revision 1.2  2005/07/20 20:18:56  mjmaloney
-*  LRGS 5.0 Release preparation
-*
-*  Revision 1.1  2005/06/30 15:15:28  mjmaloney
-*  Java Archive Development.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.ddsserver;
 
 import java.io.IOException;
-import java.io.File;
-import java.io.OutputStream;
 import java.net.Socket;
-import java.net.InetAddress;
 import java.util.Date;
 import java.util.LinkedList;
 
-import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 
-import ilex.net.*;
-import ilex.util.Logger;
-import ilex.util.QueueLogger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
+import ilex.net.*;
 import lrgs.apistatus.AttachedProcess;
 import lrgs.common.*;
 import lrgs.ldds.LddsThread;
@@ -77,6 +38,7 @@ This subclass of LddsThread uses the Java-Only Archive.
 */
 public class JLddsThread extends LddsThread
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /** The one and only archive object. */
     private MsgArchive msgArchive;
 
@@ -138,7 +100,7 @@ public class JLddsThread extends LddsThread
         String myhostname = getHostName();
         if (user == null)
         {
-            System.err.println("JLddsThread: makeDcpMsgSrc, user is null!");
+            log.error("JLddsThread: makeDcpMsgSrc, user is null!");
         }
         String myusername = user.getName();
         int nsame = 0;
@@ -174,12 +136,11 @@ public class JLddsThread extends LddsThread
         }
         if (nsame > 50)
         {
-            Logger.instance().warning("More than 50 connections with same "
-                + "user/host = " + myusername + "/" + myhostname
-                + " -- Hanging up oldest.");
+            log.warn("More than 50 connections with same user/host = {}/{} -- Hanging up oldest.",
+                     myusername, myhostname);
             oldestPeer.disconnect();
         }
-        MessageArchiveRetriever ret = 
+        MessageArchiveRetriever ret =
             new MessageArchiveRetriever(msgArchive, attachedProcess);
         ret.setForceAscending(user.getDisableBackLinkSearch());
         ret.setGoodOnly(user.isGoodOnly());
@@ -210,14 +171,14 @@ public class JLddsThread extends LddsThread
     public boolean isSameUserMultAttachOK()
     {
         return true;
-    }    
+    }
 
     public void disconnect()
     {
         attachedProcess.pid = -1;
         super.disconnect();
     }
-    
+
     public void setHostName(String hostname)
     {
         super.setHostName(hostname);

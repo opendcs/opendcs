@@ -1,33 +1,21 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
-*  
-*  $Log$
-*  Revision 1.3  2015/04/02 18:19:19  mmaloney
-*  Added debugs.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.2  2014/12/11 20:35:55  mmaloney
-*  dev
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.9  2013/09/26 13:38:09  mmaloney
-*  Refactor to allow the same netlist to be used in multiple groups.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.ddsrecv;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.xml.DomHelper;
 import ilex.xml.XmlOutputStream;
 
@@ -43,6 +31,8 @@ import lrgs.common.BadConfigException;
 import lrgs.common.NetworkList;
 
 import org.opendcs.tls.TlsMode;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -53,6 +43,7 @@ Singleton class holding settings for the DrgsInput application.
 */
 public class DdsRecvSettings
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public ArrayList<DdsRecvConnectCfg> connectCfgs = new ArrayList<DdsRecvConnectCfg>();
 	private static DdsRecvSettings _instance = null;
 	private String cfgFileName = null;
@@ -63,9 +54,9 @@ public class DdsRecvSettings
 	boolean decodesAll = false;
 	boolean decodesProduction = false;
 	private long lastConfigRead = 0L;
-	
+
 	private boolean isReloaded = false;
-	
+
 	private ArrayList<NetlistGroupAssoc> netlistGroupAssociations = new ArrayList<NetlistGroupAssoc>();
 
 	/** Default constructor. */
@@ -90,8 +81,7 @@ public class DdsRecvSettings
 		throws BadConfigException
 	{
 		cfgFileName = filename;
-		Logger.instance().log(Logger.E_INFORMATION,
-			module + ": Parsing '" + filename + "'");
+		log.info("{}: Parsing '{}'", module, filename);
 
 		Document doc;
 		try
@@ -100,7 +90,7 @@ public class DdsRecvSettings
 		}
 		catch(ilex.util.ErrorException ex)
 		{
-			throw new BadConfigException(ex.toString());
+			throw new BadConfigException("Unable to read DdsRecv Settings.", ex);
 		}
 
 		setFromDoc(doc, cfgFileName);
@@ -111,15 +101,13 @@ public class DdsRecvSettings
 	{
 		resetToDefaults();
 		lastConfigRead = System.currentTimeMillis();
-		
+
 		Node ddsrecvElement = doc.getDocumentElement();
 		if (!ddsrecvElement.getNodeName().equalsIgnoreCase("ddsrecvconf"))
 		{
-			String s = module 
-				+ ": Wrong type of configuration file -- Cannot initialize. "
+			String s = "Wrong type of configuration file -- Cannot initialize. "
 				+ "Root element is not 'ddsrecvconf'.";
-			Logger.instance().warning(
-				DdsRecv.module + ":" + DdsRecv.EVT_BAD_CONFIG + "- " + s);
+			log.warn("{}:{} - {}", DdsRecv.module, DdsRecv.EVT_BAD_CONFIG, s);
 			throw new BadConfigException(s);
 		}
 
@@ -138,7 +126,7 @@ public class DdsRecvSettings
 					else if (node.getNodeName().equalsIgnoreCase("networkList"))
 					{
 						String name = DomHelper.getTextContent(node);
-						Element elem = (Element)node;						
+						Element elem = (Element)node;
 						String groupName = DomHelper.findAttr(elem, "group");
 						if (groupName == null || groupName.trim().length() == 0)
 							groupName = NetlistGroupAssoc.DEFAULT_GROUP;
@@ -150,34 +138,32 @@ public class DdsRecvSettings
 						timeout = DomHelper.getIntegerContent(node, timeout, "ddsrecv");
 					}
 					else
-						Logger.instance().warning(
-							"Unrecognized configuration element '"
-							+ node.getNodeName() + " in " + cfgFileName
-							+ " (ignored)");
+					{
+						log.warn("Unrecognized configuration element '{}'' in {} (ignored)",
+								 node.getNodeName(), cfgFileName);
+					}
 				}
 			}
 		}
 
 		if (!readNetworkLists)
 			return;
-		
+
 		// Resolve each named network list and populate networkLists Vector.
 		decodes.db.Database decDb = decodes.db.Database.getDb();
 		if (decDb != null)
 		{
-			Logger.instance().info("DECODES Database is loaded. Will re-read netlists.");
-			try 
+			log.info("DECODES Database is loaded. Will re-read netlists.");
+			try
 			{
 				decDb.networkListList.read();
-				decodes.db.NetworkList.legacyNetlistDir = 
+				decodes.db.NetworkList.legacyNetlistDir =
 					EnvExpander.expand("$LRGSHOME/tmp");
-				Logger.instance().info("After reading, there are " 
-					+ decDb.networkListList.size() + " network lists.");
+				log.info("After reading, there are {} network lists.", decDb.networkListList.size());
 			}
 			catch(decodes.db.DatabaseException ex)
 			{
-				Logger.instance().warning(
-					module + ": Error in DECODES database interface: " + ex);
+				log.atWarn().setCause(ex).log("{}: Error in DECODES database interface.", module);
 				decDb = null;
 			}
 		}
@@ -185,8 +171,9 @@ public class DdsRecvSettings
 		decodesAll = decodesProduction = false;
 		for(NetlistGroupAssoc nga : netlistGroupAssociations)
 		{
-			Logger.instance().info(module + " Evaluating netlist '" +
-				nga.getNetlistName() + "' in group '" + nga.getGroupName() + "'");
+			log.info("{} Evaluating netlist '{}' in group '{}'",
+					 module, nga.getNetlistName(), nga.getGroupName());
+
 			if (nga.getNetlistName().equalsIgnoreCase("<all>")
 			 && decodes.db.Database.getDb() != null)
 			{
@@ -205,20 +192,17 @@ public class DdsRecvSettings
 				// Leave as-is.
 				continue;
 			}
-			Logger.instance().info(module + " Looking for netlist '" +
-				nga.getNetlistName() + "'");
+			log.info("{} Looking for netlist '{}'", module,nga.getNetlistName());
 			// find the list -- either in DECODES database or netlist dir.
 			if (decDb != null)
 			{
 				try
 				{
-					decodes.db.NetworkList decNl = 
+					decodes.db.NetworkList decNl =
 						decDb.networkListList.find(nga.getNetlistName());
 					if (decNl != null)
 					{
-						Logger.instance().info(module 
-							+ " Reading DECODES network list '" + decNl.name
-					 		+ "'");
+						log.info("{} Reading DECODES network list '{}'", module, decNl.name);
 						decNl.read();
 						decNl.prepareForExec();
 						//Code added to check for null on legacyNetworkList
@@ -232,9 +216,10 @@ public class DdsRecvSettings
 				}
 				catch(decodes.db.DatabaseException ex)
 				{
-					Logger.instance().warning(
-						module + ": Can't read network list '" + nga.getNetlistName()
-						+ "' from DECODES database: " + ex);
+					log.atWarn()
+					   .setCause(ex)
+					   .log("{}: Can't read network list '{}' from DECODES database: ",
+					   		module, nga.getNetlistName());
 				}
 			}
 			String path = EnvExpander.expand("$LRGSHOME/netlist/" + nga.getNetlistName());
@@ -245,26 +230,20 @@ public class DdsRecvSettings
 				nlfile = new File(path);
 				if (!nlfile.canRead())
 				{
-					Logger.instance().warning(
-						module + ": Network list '" + nga.getNetlistName()
-						+ "' not found in DECODES database or $LRGSHOME/netlist"
-						+ " -- ignored.");
+					log.warn("{}: Network list '{}' not found in DECODES database or $LRGSHOME/netlist" +
+						 	 " -- ignored.", module, nga.getNetlistName());
 					continue;
 				}
 			}
 			try
 			{
-				Logger.instance().info(module 
-					+ " Reading Legacy network list '" + nlfile.getName()
-			 		+ "'");
+				log.info("{} Reading Legacy network list '{}'", module, nlfile.getName());
 				NetworkList nl = new NetworkList(nlfile);
 				nga.setNetworkList(nl);
 			}
 			catch(IOException ex)
 			{
-				Logger.instance().warning(
-					module + ": Error reading legeacy network list '" 
-						+ path + "': " + ex);
+				log.atWarn().setCause(ex).log("{}: Error reading legeacy network list '{}'", module, path);
 				continue;
 			}
 		}
@@ -278,38 +257,36 @@ public class DdsRecvSettings
 		String ns = DomHelper.findAttr(elem, "number");
 		if (ns == null)
 		{
-			Logger.instance().warning(module + 
-				" Invalid connection element without 'number' attribute.");
+			log.warn("{} Invalid connection element without 'number' attribute.", module);
 			return;
 		}
 		ns = ns.trim();
-			
+
 		try { num = Integer.parseInt(ns); }
 		catch(NumberFormatException ex)
 		{
-			Logger.instance().warning(module + 
-				" invalid connection element in '" + cfgFileName 
-				+ "' - bad or missing 'number' attribute -- skipped");
+			log.atWarn()
+			   .setCause(ex)
+			   .log("{} invalid connection element in '{}' - bad or missing 'number' attribute -- skipped",
+			   		module, cfgFileName);
 			return;
 		}
 
 		String host = DomHelper.findAttr(elem, "host");
 		if (host == null)
 		{
-			Logger.instance().warning(module + 
-				" Invalid connection element without 'host' attribute.");
+			log.warn("{} Invalid connection element without 'host' attribute.", module);
 			return;
 		}
 		host = host.trim();
 		if (host.length() == 0)
 		{
-			Logger.instance().warning(module +
-				" invalid connection element in '" + cfgFileName 
-				+ "' - missing required 'host' attribute -- skipped");
+			log.warn("{} invalid connection element in '{}' - missing required 'host' attribute -- skipped",
+					 module, cfgFileName);
 			return;
 		}
 		DdsRecvConnectCfg cfg = new DdsRecvConnectCfg(num, host);
-		
+
 		// Content elements will contain the optional settings.
 		NodeList children = node.getChildNodes();
 		if (children != null)
@@ -347,21 +324,20 @@ public class DdsRecvSettings
 					else if (child.getNodeName().equalsIgnoreCase("group"))
 						cfg.group = DomHelper.getTextContent(child);
 					else
-						Logger.instance().warning(module +
-							" Unrecognized parameter '" + child.getNodeName()
-							+ " in connection " + num + " -- ignored.");
+					{
+						log.warn("{} Unrecognized parameter '{}'' in connection {} -- ignored.",
+								 module, child.getNodeName(), num);
+					}
 				}
 			}
 
 		DdsRecvConnectCfg old = getConnectCfg(num);
 		if (old != null)
 		{
-			Logger.instance().debug1(module + 
-				" Removing old connection " + num + ": " + old);
+			log.debug("{} Removing old connection {}:{}", module, num, old);
 			connectCfgs.remove(old);
 		}
-		Logger.instance().debug1(module + 
-			" Adding connection " + num + ": " + cfg);
+		log.debug("{} Adding connection {}: {}", module, num, cfg);
 		connectCfgs.add(cfg);
 	}
 
@@ -425,7 +401,7 @@ public class DdsRecvSettings
 		 && decodes.db.Database.getDb().getDbIo().getPlatformListLMT().getTime()
 		 	> lastConfigRead)
 			return true;
-		
+
 		for(NetlistGroupAssoc nga : netlistGroupAssociations)
 		{
 			if (nga.getNetworkList() == null)
@@ -436,29 +412,27 @@ public class DdsRecvSettings
 			{
 				try
 				{
-					Date lastModTime = 
+					Date lastModTime =
 						decNl.getDatabase().getDbIo().getNetworkListLMT(decNl);
 					if (lastModTime == null)
 					{
-						Logger.instance().info(module + 
-							" DECODES Network list '" + nga.getNetworkList().makeFileName()
-							+ "' has been deleted.");
+						log.info("{} DECODES Network list '{}' has been deleted.",
+								 module, nga.getNetworkList().makeFileName());
 						return true;
 					}
 					long curCopyLMT = decNl.lastModifyTime.getTime();
 					if (lastModTime.getTime() > curCopyLMT)
 					{
-						Logger.instance().info(module + 
-							" DECODES Network list '" + nga.getNetworkList().makeFileName()
-							+ "' has changed, forcing connection reconfig.");
+						log.info("{} DECODES Network list '{}' has changed, forcing connection reconfig.",
+								 module, nga.getNetworkList().makeFileName());
 						return true;
 					}
 				}
 				catch(decodes.db.DatabaseException ex)
 				{
-					Logger.instance().info(module + 
-						" DECODES Network list '" + nga.getNetworkList().makeFileName()
-						+ "' can no longer be read.");
+					log.atInfo().setCause(ex).log(
+						"{} DECODES Network list '" + nga.getNetworkList().makeFileName()
+						+ "' can no longer be read.", module, nga.getNetworkList().makeFileName());
 					return true;
 				}
 			}
@@ -468,16 +442,14 @@ public class DdsRecvSettings
 				File file = nga.getNetworkList().getFile();
 				if (!file.canRead())
 				{
-					Logger.instance().info(module + 
-						" Network list '" + nga.getNetworkList().makeFileName()
-						+ "' has been removed, forcing connection reconfig.");
+					log.info("{} Network list '{}' has been removed, forcing connection reconfig.",
+							 module, nga.getNetworkList().makeFileName());
 					return true;
 				}
 				if (file.lastModified() > lastReadTime.getTime())
 				{
-					Logger.instance().info(module + 
-						" Network list file '" + nga.getNetworkList().makeFileName()
-						+ "' has changed, forcing connection reconfig.");
+					log.info("{} Network list file '{}' has changed, forcing connection reconfig.",
+							 module, nga.getNetworkList().makeFileName());
 					return true;
 				}
 			}
@@ -491,9 +463,9 @@ public class DdsRecvSettings
 		XmlOutputStream xos = new XmlOutputStream(os, "ddsrecvconf");
 		xos.startElement("ddsrecvconf");
 		xos.writeElement("timeout", "" + timeout);
-		
+
 		for(NetlistGroupAssoc nga : netlistGroupAssociations)
-			xos.writeElement("networkList", "group", nga.getGroupName(), 
+			xos.writeElement("networkList", "group", nga.getGroupName(),
 				nga.getNetlistName());
 
 		for(DdsRecvConnectCfg drcc : connectCfgs)
@@ -512,7 +484,7 @@ public class DdsRecvSettings
 			xos.writeElement("group", "" + drcc.group);
 			xos.endElement("connection");
 		}
-		
+
 		xos.endElement("ddsrecvconf");
 	}
 
