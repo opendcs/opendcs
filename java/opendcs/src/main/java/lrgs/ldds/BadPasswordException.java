@@ -9,11 +9,15 @@ import lrgs.common.LrgsErrorCode;
  * @author mmaloney
  *
  */
-public class BadPasswordException
-	extends ArchiveException
+public class BadPasswordException extends ArchiveException
 {
 	public BadPasswordException(String reason)
 	{
 		super(reason, LrgsErrorCode.DBADPASSWORD, false);
+	}
+
+	public BadPasswordException(String msg, Throwable cause)
+	{
+		super(msg, LrgsErrorCode.DBADPASSWORD, false, cause);
 	}
 }
