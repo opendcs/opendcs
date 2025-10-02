@@ -5,10 +5,6 @@ main {
   margin-left: 10%;
 }
 
-.active {
-	font-weight: bold !important;
-}
-
 .formAlert {
 	color: red !important;
 	border: none !important;

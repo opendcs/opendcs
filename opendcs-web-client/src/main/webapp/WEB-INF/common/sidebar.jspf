@@ -16,154 +16,45 @@
   --%>
 
 <%-- Main sidebar --%>
-<div
-	class="sidebar sidebar-dark sidebar-main sidebar-expand-md sidebar-fixed">
 
-	<%-- Sidebar mobile toggler --%>
-	<div class="sidebar-mobile-toggler text-center">
-		<a href="#" class="sidebar-mobile-main-toggle"> <i
-			class="bi bi-arrow-left"></i>
-		</a> Navigation <a href="#" class="sidebar-mobile-expand"> <i
-			class="bi bi-fullscreen"></i> <i class="bi bi-fullscreen-exit"></i>
-		</a>
-	</div>
-	<%-- /sidebar mobile toggler --%>
-
-
-	<%-- Sidebar content --%>
-	<div class="sidebar-content">
-		<a href="#" class="nav-link sidebar-control sidebar-main-toggle d-none d-md-block" aria-label="Toggle sidebar">
-			<i class="bi bi-list"></i>
-		</a>
-		<%-- Main navigation --%>
-		<div class="card card-sidebar-mobile">
-			<ul class="nav nav-sidebar" data-nav-type="accordion">
-				<%-- Main --%>
-				
-				<li class="nav-item">
-					
-				</li>
-
-				<li
-					class="nav-item nav-item-submenu <% if (request.getAttribute("tool") == "decodes") { %> nav-item-open <% } else { %> nav-item-closed <% } %>">
-					<a href="#" class="nav-link"><i class="bi bi-files"></i> <span>Decodes
-							Database Editor</span></a>
-					<ul class="nav nav-group-sub" data-submenu-title="rl_edit"
-						style="<% if (request.getAttribute("tool") == "decodes") { %> display:block; <% } else { %> display:none; <% } %>">
-						<li
-							class="nav-item nav-item-submenu <% if (request.getAttribute("page") == "platforms") { %> nav-item-open <% } else { %> nav-item-closed <% } %>">
-							<a href="platforms" class="nav-link"> <i
-								class="bi bi-file-text"></i> <span>Platforms</span>
-						</a>
-						</li>
-						<li
-							class="nav-item nav-item-submenu <% if (request.getAttribute("page") == "sites") { %> nav-item-open <% } else { %> nav-item-closed <% } %>">
-							<a href="sites" class="nav-link"> <i
-								class="bi bi-file-text"></i> <span>Sites</span>
-						</a>
-						</li>
-						<li
-							class="nav-item nav-item-submenu <% if (request.getAttribute("page") == "configs") { %> nav-item-open <% } else { %> nav-item-closed <% } %>">
-							<a href="configs" class="nav-link"> <i
-								class="bi bi-file-text"></i> <span>Configs</span>
-						</a>
-						</li>
-						<li
-							class="nav-item nav-item-submenu <% if (request.getAttribute("page") == "presentation") { %> nav-item-open <% } else { %> nav-item-closed <% } %>">
-							<a href="presentation" class="nav-link"> <i
-								class="bi bi-file-text"></i> <span>Presentation</span>
-						</a>
-						</li>
-						<li
-							class="nav-item nav-item-submenu <% if (request.getAttribute("page") == "routing") { %> nav-item-open <% } else { %> nav-item-closed <% } %>d">
-							<a href="routing" class="nav-link"> <i
-								class="bi bi-file-text"></i> <span>Routing</span>
-						</a>
-						</li>
-						<li
-							class="nav-item nav-item-submenu <% if (request.getAttribute("page") == "sources") { %> nav-item-open <% } else { %> nav-item-closed <% } %>">
-							<a href="sources" class="nav-link"> <i
-								class="bi bi-file-text"></i> <span>Sources</span>
-						</a>
-						</li>
-						<li
-							class="nav-item nav-item-submenu <% if (request.getAttribute("page") == "netlist") { %> nav-item-open <% } else { %> nav-item-closed <% } %>">
-							<a href="netlist" class="nav-link"> <i
-								class="bi bi-file-text"></i> <span>Netlists</span>
-						</a>
-						</li>
-						<li
-							class="nav-item nav-item-submenu <% if (request.getAttribute("page") == "schedule entry") { %> nav-item-open <% } else { %> nav-item-closed <% } %>">
-							<a href="schedule" class="nav-link"> <i
-								class="bi bi-file-text"></i> <span>Schedule Entry</span>
-						</a>
-						</li>
-					</ul>
-				</li>
-				<li
-					class="nav-item nav-item-submenu <% if (request.getAttribute("tool") == "computations") { %> nav-item-open <% } else { %> nav-item-closed <% } %>">
-					<a href="#" class="nav-link"><i class="bi bi-files"></i> <span>Computations</span></a>
-					<ul class="nav nav-group-sub" data-submenu-title="rl_edit"
-						style="<% if (request.getAttribute("tool") == "computations") { %> display:block; <% } else { %> display:none; <% } %>">
-						<li
-							class="nav-item nav-item-submenu <% if (request.getAttribute("page") == "algorithms") { %> nav-item-open <% } else { %> nav-item-closed <% } %>">
-							<a href="algorithms" class="nav-link"> <i
-								class="bi bi-file-text"></i> <span>Algorithms</span>
-						</a>
-						</li>
-						<li
-							class="nav-item nav-item-submenu <% if (request.getAttribute("page") == "computations") { %> nav-item-open <% } else { %> nav-item-closed <% } %>">
-							<a href="computations" class="nav-link"> <i
-								class="bi bi-file-text"></i> <span>Computations</span>
-						</a>
-						</li>
-						<li
-							class="nav-item nav-item-submenu <% if (request.getAttribute("page") == "processes") { %> nav-item-open <% } else { %> nav-item-closed <% } %>">
-							<a href="processes" class="nav-link"> <i
-								class="bi bi-file-text"></i> <span>Processes</span>
-						</a>
-						</li>
-					</ul>
-				</li>
-				<li
-					class="nav-item nav-item-submenu <% if (request.getAttribute("tool") == "rledit") { %> nav-item-open <% } else { %> nav-item-closed <% } %>">
-					<a href="#" class="nav-link"><i class="bi bi-files"></i> <span>Reflist
-							Editor</span></a>
-					<ul class="nav nav-group-sub" data-submenu-title="rl_edit"
-						style="<% if (request.getAttribute("tool") == "rledit") { %> display:block; <% } else { %> display:none; <% } %>">
-						<li
-							class="nav-item nav-item-submenu <% if (request.getAttribute("page") == "enumerations") { %> nav-item-open <% } else { %> nav-item-closed <% } %>">
-							<a href="enumerations" class="nav-link"> <i
-								class="bi bi-file-text"></i> <span>Enumerations</span>
-						</a>
-						</li>
-						<li
-							class="nav-item nav-item-submenu <% if (request.getAttribute("page") == "engineering_units") { %> nav-item-open <% } else { %> nav-item-closed <% } %>">
-							<a href="engineering_units" class="nav-link"> <i
-								class="bi bi-file-text"></i> <span>Engineering
-									Units</span>
-						</a>
-						</li>
-						
-						<li
-							class="nav-item nav-item-submenu <%if (request.getAttribute("page") == "eu_conversions") {%> nav-item-open <%} else {%> nav-item-closed <%}%>">
-							<a href="eu_conversions" class="nav-link"> <i
-								class="bi bi-file-text"></i> <span>EU Conversions</span>
-						</a>
-						</li>
-						<li
-							class="nav-item nav-item-submenu <%if (request.getAttribute("page") == "seasons") {%> nav-item-open <%} else {%> nav-item-closed <%}%>">
-							<a href="seasons" class="nav-link"> <i
-								class="bi bi-file-text"></i> <span>Seasons</span>
-						</a>
-						</li>
-					</ul>
-				</li>
-
-			</ul>
-		</div>
-		<%-- /main navigation --%>
-	</div>
-	<%-- /sidebar content --%>
-</div>
+<nav class="nav navbar-light bg-light d-inline-flex">
+	<ul class="list-unstyled ps-2 flex-column">
+		<li class="nav-item mb-2">
+			<button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#decodes-collapse" aria-expanded="true">
+				Decodes
+			</button>
+			<div id="decodes-collapse" class="collapse <% if (request.getAttribute("tool") == "decodes") { %> show <% }%> ">
+				<a class="nav-link nav-item <% if (request.getAttribute("page") == "platforms") { %>active<% } %>" aria-current="page" href="platforms">Platforms</a>
+				<a class="nav-link nav-item <% if (request.getAttribute("page") == "sites") { %>active<% } %>" href="sites">Sites</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "configs") { %>active<% } %>" href="configs">Configs</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "presentations") { %>active<% } %>" href="presentation">Presentation</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "routing") { %>active<% } %>" href="routing">Routing</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "sources") { %>active<% } %>" href="sources">Data Sources</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "netlist") { %>active<% } %>" href="netlist">Netlists</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "schedule") { %>active<% } %>" href="schedule">Schedule Entry</a>
+			</div>
+		</li>
+		<li class="nav-item  mb-2">
+			<button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#computations-collapse" aria-expanded="true">
+				Computations
+			</button>
+			<div id="computations-collapse" class="collapse <% if (request.getAttribute("tool") == "computations") { %> show <% }%>">
+				<a class="nav-link <% if (request.getAttribute("page") == "algorithm") { %>active<% } %>" aria-current="page" href="algorithms">Algorithms</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "computations") { %>active<% } %>" href="computations">Computations</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "processes") { %>active<% } %>" href="processes">Processes</a>
+			</div>
+		</li>
+		<li class="nav-item mb-2">
+			<button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#reflist-collapse" aria-expanded="true">
+				Reference List
+			</button>
+			<div id="reflist-collapse" class="collapse <% if (request.getAttribute("tool") == "rledit") { %> show <% }%>">
+				<a class="nav-link <% if (request.getAttribute("page") == "enumerations") { %>active<% } %>" aria-current="page" href="enumerations">Enumerations</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "engineering_units") { %>active<% } %>" href="engineering_units">Engineering Units</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "eu_conversions") { %>active<% } %>" href="eu_conversions">Unit Conversions</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "seasons") { %>active<% } %>" href="seasons">Seasons</a>
+			</div>
+		</li>
+	</ul>
+</nav>
 <%-- /main sidebar --%>

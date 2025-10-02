@@ -7,12 +7,12 @@
 	<%@include file="/WEB-INF/common/top-bar.jspf" %>
 
 	<!-- Page content -->
-	<div class="page-content">
+	<div class="page-content d-flex">
 
 		<%@include file="/WEB-INF/common/sidebar.jspf" %>
 
 		<!-- Main content -->
-		<div class="content-wrapper">
+		<div class="container-fluid flex-grow-1">
 			<!-- Page header -->
 			<div class="page-header page-header-light">
 				<div class="page-header-content header-elements-md-inline">
@@ -33,7 +33,7 @@
 				<div class="card large-padding">
 					<div class="card-header header-elements-inline"></div>
 					<table id="sourcesTable"
-						class="table table-striped table-hover datatable-responsive tablerow-cursor w-100">
+						class="table table-striped table-hover table-striped datatable-responsive tablerow-cursor w-100">
 						<thead>
 							<tr>
 								<th>Name</th>
@@ -52,16 +52,14 @@
 				<!-- /basic responsive configuration -->
 			</div>
 			<!-- /Content area -->
-
-
-			<%@include file="/WEB-INF/common/footer.jspf" %>
-
-			<%@include file="/WEB-INF/common/scripts.jspf" %>
-			<script src="../resources/js/sources.js"></script>
-			<script src="/webjars/datatables-rowreorder/js/dataTables.rowReorder.min.js"></script>
 		</div>
 		<!-- /main content -->
 	</div>
+	<%@include file="/WEB-INF/common/footer.jspf" %>
+
+	<%@include file="/WEB-INF/common/scripts.jspf" %>
+	<script src="../resources/js/sources.js"></script>
+	<script src="/webjars/datatables-rowreorder/js/dataTables.rowReorder.min.js"></script>
 	<!-- /page content -->
 	<%@include file="/WEB-INF/data_modals/data_source.jspf" %>
 </body>

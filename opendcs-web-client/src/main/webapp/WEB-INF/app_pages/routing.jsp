@@ -7,12 +7,12 @@
 		<%@include file="/WEB-INF/common/top-bar.jspf" %>
 
 	    <!-- Page content -->
-	    <div class="page-content">
+	    <div class="page-content d-flex">
 
 	        <%@include file="/WEB-INF/common/sidebar.jspf" %>
 
 			<!-- Main content -->
-			<div class="content-wrapper">
+			<div class="container-fluid flex-grow-1">
 				<!-- Page header -->
 				<div class="page-header page-header-light">
 					<div class="page-header-content header-elements-md-inline">
@@ -29,7 +29,7 @@
 					<div class="card large-padding">
 						<div class="card-header header-elements-inline">
 						</div>
-						<table id="routingTable" class="table table-hover datatable-responsive tablerow-cursor w-100">
+						<table id="routingTable" class="table table-hover table-striped datatable-responsive tablerow-cursor w-100">
 							<thead>
 								<tr>
 									<th>Id</th>
@@ -48,11 +48,12 @@
 				</div> <!-- /Content area -->
 
 
-				<%@include file="/WEB-INF/common/footer.jspf" %>
+				
 
 
 			</div> <!-- /main content -->
 		</div> <!-- /page content -->
+		<%@include file="/WEB-INF/common/footer.jspf" %>
 		<%@include file="/WEB-INF/common/scripts.jspf" %>
 		<script src="../resources/js/lib/time.js"></script>
 		<script src="../resources/js/lib/date_utilities.js"></script>
