@@ -5,6 +5,16 @@ main {
   margin-left: 10%;
 }
 
+.theme-icon {
+	width: 24px;
+	height: 24px;
+}
+
+.theme-icon-active {
+	width: 24px;
+	height: 24px;
+}
+
 .formAlert {
 	color: red !important;
 	border: none !important;
@@ -67,35 +77,6 @@ main {
 
 .smallMarginBottom {
     margin-bottom: 5px !important;
-}
-
-@media (min-width: 768px) {
-  .modal-xl {
-    width: 90%;
-   max-width:1400px;
-  }
-}
-
-@media (min-width: 768px) {
-  .modal-med {
-    width: 90%;
-   max-width:1200px;
-  }
-}
-
-@media (min-width: 768px) {
-  .modal-sm-med {
-    width: 70%;
-   max-width:900px;
-  }
-}
-
-@media (min-width: 768px) {
-  .modal-height-xl {
-    height: 80%;
-    min-height: 900px;
-   	max-height: 900px;
-  }
 }
 
 .tablerow-cursor tbody tr {
@@ -191,9 +172,6 @@ main {
 
 #sinceFile {
 	display: none;
-}
-
-element.style {
 }
 
 html .content {
