@@ -17,13 +17,13 @@
 
 <%-- Main sidebar --%>
 
-<nav class="nav navbar-light bg-light d-inline-flex">
+<nav class="nav navbar-light bg-primary d-inline-flex">
 	<ul class="list-unstyled ps-2 flex-column">
 		<li class="nav-item mb-2">
 			<button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#decodes-collapse" aria-expanded="true">
-				Decodes
+				<span class="text-primary-emphasis fw-bold">Decodes</span>
 			</button>
-			<div id="decodes-collapse" class="collapse <% if (request.getAttribute("tool") == "decodes") { %> show <% }%> ">
+			<div id="decodes-collapse" class="bg-primary-subtle text-secondary collapse <% if (request.getAttribute("tool") == "decodes") { %> show <% }%> ">
 				<a class="nav-link nav-item <% if (request.getAttribute("page") == "platforms") { %>active<% } %>" aria-current="page" href="platforms">Platforms</a>
 				<a class="nav-link nav-item <% if (request.getAttribute("page") == "sites") { %>active<% } %>" href="sites">Sites</a>
 				<a class="nav-link <% if (request.getAttribute("page") == "configs") { %>active<% } %>" href="configs">Configs</a>
@@ -36,9 +36,9 @@
 		</li>
 		<li class="nav-item  mb-2">
 			<button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#computations-collapse" aria-expanded="true">
-				Computations
+				<span class="text-primary-emphasis fw-bold">Computations</span>
 			</button>
-			<div id="computations-collapse" class="collapse <% if (request.getAttribute("tool") == "computations") { %> show <% }%>">
+			<div id="computations-collapse" class="bg-primary-subtle text-secondary collapse <% if (request.getAttribute("tool") == "computations") { %> show <% }%>">
 				<a class="nav-link <% if (request.getAttribute("page") == "algorithm") { %>active<% } %>" aria-current="page" href="algorithms">Algorithms</a>
 				<a class="nav-link <% if (request.getAttribute("page") == "computations") { %>active<% } %>" href="computations">Computations</a>
 				<a class="nav-link <% if (request.getAttribute("page") == "processes") { %>active<% } %>" href="processes">Processes</a>
@@ -46,9 +46,9 @@
 		</li>
 		<li class="nav-item mb-2">
 			<button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#reflist-collapse" aria-expanded="true">
-				Reference List
+				<span class="text-primary-emphasis fw-bold">Reference List</span>
 			</button>
-			<div id="reflist-collapse" class="collapse <% if (request.getAttribute("tool") == "rledit") { %> show <% }%>">
+			<div id="reflist-collapse" class="bg-primary-subtle collapse text-secondary <% if (request.getAttribute("tool") == "rledit") { %> show <% }%>">
 				<a class="nav-link <% if (request.getAttribute("page") == "enumerations") { %>active<% } %>" aria-current="page" href="enumerations">Enumerations</a>
 				<a class="nav-link <% if (request.getAttribute("page") == "engineering_units") { %>active<% } %>" href="engineering_units">Engineering Units</a>
 				<a class="nav-link <% if (request.getAttribute("page") == "eu_conversions") { %>active<% } %>" href="eu_conversions">Unit Conversions</a>
