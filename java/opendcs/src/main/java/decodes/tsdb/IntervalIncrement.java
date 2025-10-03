@@ -1,49 +1,44 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.4  2018/05/23 19:59:01  mmaloney
- * OpenTSDB Initial Release
- *
- * Revision 1.3  2017/03/03 19:15:57  mmaloney
- * toMsec() to handle HOUR_OF_DAY.
- *
- * Revision 1.2  2017/02/09 17:26:42  mmaloney
- * Added toMsec method.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.7  2012/10/31 15:15:58  mmaloney
- * Remove unneeded imports.
- *
- * Revision 1.6  2012/10/31 15:15:24  mmaloney
- * Added Id & Log to file header.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb;
 
-import ilex.util.Logger;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
  * Expresses an Interval as a Calandar Constant and a count.
  * For example, the CWMS interval "15Minutes" is expressed as
  * calConstant = MINUTE
  * count = 15
- * This is used for the Calendar math needed to traverse intervals 
+ * This is used for the Calendar math needed to traverse intervals
  * and aggregate periods.
  */
 public class IntervalIncrement
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private int calConstant = Calendar.HOUR_OF_DAY;
 	private int count = 1;
 	private static final IntervalIncrement ONE_HOUR =
 		new IntervalIncrement(Calendar.HOUR_OF_DAY, 1);
-	
+
 	// digits followed by a word, optionally separated by spaces
 	private static final Pattern iipattern =
 		Pattern.compile("(-?\\d+)\\s*([a-zA-Z]+)[\\s,]*");
@@ -53,7 +48,7 @@ public class IntervalIncrement
 		this.calConstant = calConstant;
 		this.count = count;
 	}
-	
+
 	/**
 	 * Parse strings like "5 hour", "5h", "15m", "1 month".
 	 * String must be a digit, optionally followed by whitespace, followed
@@ -65,10 +60,10 @@ public class IntervalIncrement
 	{
 		if (s == null)
 		{
-			Logger.instance().warning("IntervalIncrement.parse called with null	-- using 1 hour");
+			log.warn("IntervalIncrement.parse called with null	-- using 1 hour");
 			return ONE_HOUR;
 		}
-		
+
 		try
 		{
 			IntervalIncrement [] iia = parseMult(s);
@@ -76,12 +71,11 @@ public class IntervalIncrement
 		}
 		catch(NoSuchObjectException ex)
 		{
-			Logger.instance().warning("IntervalIncrement.parse Invalid Interval: " + ex.getMessage()
-				+ " -- using 1 hour");
+			log.atWarn().setCause(ex).log("IntervalIncrement.parse Invalid Interval. -- using 1 hour");
 			return ONE_HOUR;
 		}
 	}
-	
+
 	/**
 	 * Given a string like "h" "hour" "yr" "day" "min", return the
 	 * corresponding Calendar constant
@@ -119,7 +113,7 @@ public class IntervalIncrement
 		else
 			return -1;
 	}
-	
+
 	/**
 	 * Parse multiple interval increments on a single string like
 	 * "5hours 15min", "1mon 3days 12 hours 10m, 15 s".
@@ -139,7 +133,6 @@ public class IntervalIncrement
 			if (iimatcher.groupCount() != 2)
 			{
 				String msg = "Invalid IntervalIncrement string '" + s + "'";
-				Logger.instance().warning(msg);
 				throw new NoSuchObjectException(msg);
 			}
 			String count = iimatcher.group(1);
@@ -148,17 +141,14 @@ public class IntervalIncrement
 			catch(NumberFormatException ex)
 			{
 				// Shouldn't happen, matcher already guarantees it is digits.
-				String msg = "Bad count in Interval Increment String '"
-					+ s + "': " + ex;
-				Logger.instance().warning(msg);
-				throw new NoSuchObjectException(msg);
+				String msg = "Bad count in Interval Increment String '" + s + "'";
+				throw new NoSuchObjectException(msg, ex);
 			}
 			int calConst = str2CalConst(iimatcher.group(2));
 			if (calConst == -1)
 			{
 				String msg = "Bad time-interval string '"
 					+ iimatcher.group(2) + "' in string '" + s + "'";
-				Logger.instance().warning(msg);
 				throw new NoSuchObjectException(msg);
 			}
 			aii.add(new IntervalIncrement(calConst, icount));
@@ -178,7 +168,7 @@ public class IntervalIncrement
 		case Calendar.MINUTE: return "(" + count + " MIN)";
 		case Calendar.DAY_OF_MONTH: return "(" + count + " DAY)";
 		case Calendar.MONTH: return "(" + count + " MON)";
-		default: return "(" + count + " calInc=" + calConstant + ")"; 
+		default: return "(" + count + " calInc=" + calConstant + ")";
 		}
 	}
 	/**
@@ -212,14 +202,14 @@ public class IntervalIncrement
     {
     	this.count = count;
     }
-    
+
     public boolean isLessThanDay()
     {
     	return calConstant == Calendar.HOUR_OF_DAY
     	 || calConstant == Calendar.SECOND
     	 || calConstant == Calendar.MINUTE;
     }
-    
+
     public long toMsec()
     {
     	switch(calConstant)
@@ -227,8 +217,8 @@ public class IntervalIncrement
     	case Calendar.MILLISECOND: return count;
     	case Calendar.SECOND: return count * 1000L;
     	case Calendar.MINUTE: return count * 60000L;
-    	case Calendar.HOUR: 
-    	case Calendar.HOUR_OF_DAY: 
+    	case Calendar.HOUR:
+    	case Calendar.HOUR_OF_DAY:
     		return count * 3600000L;
     	case Calendar.DAY_OF_MONTH:
     	case Calendar.DAY_OF_WEEK:
@@ -238,7 +228,7 @@ public class IntervalIncrement
 
     	return count;
     }
-    
+
     /**
      * Parse a multi-interval ISO 8601 period.
      * @param s
@@ -247,7 +237,7 @@ public class IntervalIncrement
     public static IntervalIncrement[] parseIso8601(String s)
     {
 		ArrayList<IntervalIncrement> aii = new ArrayList<IntervalIncrement>();
-		
+
 		boolean doingTime = false;
 		int count = 0;
 		for(int idx = 0; idx < s.length(); idx++)
@@ -295,7 +285,7 @@ public class IntervalIncrement
 		}
 		return aii.toArray(new IntervalIncrement[aii.size()]);
     }
-    
+
     public static void main(String []args)
     {
     	while(true)
@@ -307,7 +297,7 @@ public class IntervalIncrement
     			System.out.println("" + iia.length + " intervals found: ");
     			for(int i=0; i<iia.length; i++)
     				System.out.println("" + i + ": " + iia[i]);
-    			
+
     			System.out.println("Parsed as single: " + parse(s));
     		}
     		catch(Exception ex)
