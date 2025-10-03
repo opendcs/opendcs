@@ -1,65 +1,17 @@
 /*
-*  $Id: ChannelMap.java,v 1.4 2020/04/28 17:25:35 mmaloney Exp $
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log: ChannelMap.java,v $
-*  Revision 1.4  2020/04/28 17:25:35  mmaloney
-*  Fix isRandom() -- it was assuming channels above 266 are random. Don't do that.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.3  2015/07/27 18:39:32  mmaloney
-*  In the download threads, only have a lock when the file is being actively dowloaded.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.2  2015/03/19 17:56:53  mmaloney
-*  If lock is taken, continue to spawn maintenance thread to check for file changes.
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.6  2013/03/28 19:19:32  mmaloney
-*  User temp files are now placed under DCSTOOL_USERDIR which may be different
-*  from DCSTOOL_HOME on linux/unix multi-user installations.
-*
-*  Revision 1.5  2013/02/28 16:40:21  mmaloney
-*  dev
-*
-*  Revision 1.4  2011/11/16 19:28:21  mmaloney
-*  Fix for new channel map file that DADDS is producing.
-*
-*  Revision 1.3  2009/10/30 18:53:32  mjmaloney
-*  Switch to https://dcs1 urls
-*
-*  Revision 1.2  2008/09/12 15:41:29  mjmaloney
-*  Mods for DCP Monitor 7.5
-*
-*  Revision 1.1  2008/09/08 19:14:03  mjmaloney
-*  LRGS 7 dev
-*
-*  Revision 1.1  2008/04/04 18:21:01  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.6  2007/12/04 14:28:33  mmaloney
-*  added code to download channels from url
-*
-*  Revision 1.7  2005/10/10 19:45:48  mmaloney
-*  dev
-*
-*  Revision 1.6  2005/09/28 21:56:11  mmaloney
-*  Implement stream load method.
-*
-*  Revision 1.5  2005/09/06 15:29:51  mjmaloney
-*  Added decins-6-4.xml build file
-*
-*  Revision 1.4  2004/09/23 13:41:53  mjmaloney
-*  javadoc clean-up
-*
-*  Revision 1.3  2004/03/31 14:16:33  mjmaloney
-*  Updates to DCP Monitor.
-*
-*  Revision 1.2  2004/03/18 16:18:41  mjmaloney
-*  Working server version beta 01
-*
-*  Revision 1.1  2004/02/29 20:48:23  mjmaloney
-*  Alpha version of server complete.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.util;
 
@@ -67,20 +19,22 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
-//import ilex.util.ServerLock;
 
 /**
 Contains an array of channels, baud rates, and types.
 */
 public class ChannelMap
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static ChannelMap _instance = null;
 
 	/** Array of baud rates, indexed by channel number. */
 	private String channelBauds[];
-	
+
 	public static final int NUM_CHANNELS = 1000;
 
 	/** Array of chars for each channel: S=SelfTimed, R=Random */
@@ -90,7 +44,7 @@ public class ChannelMap
 
 	private ChanMaintenanceThread mthread = null;
 
-	
+
 	public static final String module = "ChannelMap";
 
 	/** Constructor called from DcpMonitorConfig. */
@@ -100,7 +54,7 @@ public class ChannelMap
 		channelTypes = new char[NUM_CHANNELS];
 		setMapToDefaults();
 	}
-	
+
 	/** @return the singleton instance of the ChannelMap. */
 	public static ChannelMap instance()
 	{
@@ -121,25 +75,25 @@ public class ChannelMap
 		}
 	}
 
-	/** 
-	  Loads the map from the specified file. 
+	/**
+	  Loads the map from the specified file.
 	  Log messages will be generated for any exceptions encountered.
 	*/
 	public synchronized void loadFromUrl(String urlstr)
 	{
-		Logger.instance().debug3("Loading channel map from URL '"+urlstr+"'");
+		log.trace("Loading channel map from URL '{}'", urlstr);
 
 		try
 		{
 			URL channelMapURL = new URL(urlstr);
-			InputStream istrm = channelMapURL.openStream();
-			load(new LineNumberReader(new InputStreamReader(istrm)));
+			try (InputStream istrm = channelMapURL.openStream())
+			{
+				load(new LineNumberReader(new InputStreamReader(istrm)));
+			}
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Cannot read channel map '" + urlstr
-				+ "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot read channel map '{}'", urlstr);
 		}
 	}
 
@@ -151,20 +105,18 @@ public class ChannelMap
 	 */
 	public boolean load(File file)
 	{
-		Logger.instance().info(
-			"Loading Channel Map from '" + file.getPath() + "'");
-		try
+		log.info("Loading Channel Map from '{}'", file.getPath());
+		try (FileReader reader = new FileReader(file))
         {
-	        return load(new LineNumberReader(new FileReader(file)));
+	        return load(new LineNumberReader(reader));
         }
-        catch (FileNotFoundException ex)
+        catch (IOException ex)
         {
-	        Logger.instance().warning("Cannot load channel map from '"
-	        	+ file.getPath() + "': " + ex);
+	        log.atWarn().setCause(ex).log("Cannot load channel map from '{}'", file.getPath());
 	        return false;
         }
 	}
-	
+
 	private synchronized boolean load(LineNumberReader bfr)
 	{
 		try
@@ -186,42 +138,39 @@ public class ChannelMap
 				catch(Exception ex) { continue; }
 				if (chan < 0)
 				{
-					Logger.instance().warning(module + " Invalid channel number "
-						+ chan + " on line " + bfr.getLineNumber() + " -- skipped.");
+					log.warn("Invalid channel number {} on line {} -- skipped.", chan, bfr.getLineNumber());
 					continue;
 				}
-				
+
 				line = line.substring(idx).trim();
 				if (line.length() == 0)
 				{
-					Logger.instance().warning(module + " Empty channel number "
-						+ chan + " on line " + bfr.getLineNumber() + " -- skipped.");
+					log.warn("Empty channel number {} on line {} -- skipped.", chan, bfr.getLineNumber());
 					continue;
 				}
-				
+
 				channelTypes[chan] = line.charAt(0);
-				
+
 				line = line.substring(1).trim();
 
 				if (line.length() == 0)
 				{
-					Logger.instance().warning(module + " No baud for chan "
-						+ chan + " on line " + bfr.getLineNumber() + " -- skipped.");
+					log.warn(" No baud for chan {} on line {} -- skipped.", chan, bfr.getLineNumber());
 					continue;
 				}
 				if (line.length() > 1 && line.charAt(0) == ',')
 					line = line.substring(2).trim();
-				
+
 				channelBauds[chan] = line;
 			}
 			bfr.close();
-			Logger.instance().info("Channel map successfully loaded.");
+			log.info("Channel map successfully loaded.");
 			_isLoaded = true;
 			return true;
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("Cannot load channel map: " + ex);
+			log.atWarn().setCause(ex).log("Cannot load channel map.");
 			return false;
 		}
 	}
@@ -244,7 +193,7 @@ public class ChannelMap
 			return 0;
 		}
 	}
-	
+
 	/**
 	  Return true if the specified channel is a Random channel.
 	  @param chan the channel number
@@ -268,14 +217,14 @@ public class ChannelMap
 			output.write("channel[" + i + "]: " + channelTypes[i]
 				+ " " + channelBauds[i] + "\n");
 	}
-	
+
 	/**
 	 * Starts a background thread the periodically downloads the Channel Map
 	 * File from https://dcs1.noaa.gov/chans_by_baud.txt
 	 * URL and independently checks a local file for changes.
 	 * The URL is downloaded every 16 hours.
 	 * The file is checked for changes every 10 minutes.
-	 * @param channelsUrl the URL to download Channels from, 
+	 * @param channelsUrl the URL to download Channels from,
 	 * null if no download.
 	 * @param localfn - the local file to check periodically for changes.
 	 */
@@ -287,7 +236,7 @@ public class ChannelMap
 			mthread.start();
 		}
 	}
-	
+
 	/**
 	 * Shuts down the maintenance thread and destroys the singleton instance.
 	 */
@@ -302,8 +251,9 @@ public class ChannelMap
 		_instance = null;
 	}
 
-	private class ChanMaintenanceThread extends Thread
+	private static class ChanMaintenanceThread extends Thread
 	{
+		private static final Logger log = OpenDcsLoggerFactory.getLogger();
 		String localfn;
 		File channelsfile;
 		String url;
@@ -323,16 +273,15 @@ public class ChannelMap
 
 		public void run()
 		{
-			Logger.instance().debug1("Starting CDT Maintenance Thread, url='"
-				+ url + "', localfile='" + localfn + "'"
-				+ ", localpath=" + channelsfile.getPath());
+			log.debug("Starting CDT Maintenance Thread, url='{}', localfile='{}', localpath={}",
+					  url, localfn, channelsfile.getPath());
 
 			if (channelsfile.canRead())
 				lastDownload = channelsfile.lastModified();
 
 			while(!shutdown)
 			{
-				if (channelsfile.canRead() && 
+				if (channelsfile.canRead() &&
 					channelsfile.lastModified() > lastLoad)
 				{
 					lastLoad = System.currentTimeMillis();
@@ -342,7 +291,7 @@ public class ChannelMap
 				 && System.currentTimeMillis() - lastDownload > Pdt.downloadIntervalMsec)
 				{
 					lastDownload = System.currentTimeMillis();
-					DownloadChannelMapThread downloadThread = 
+					DownloadChannelMapThread downloadThread =
 						new DownloadChannelMapThread(url, localfn, cmap);
 					downloadThread.start();
 				}
@@ -350,17 +299,16 @@ public class ChannelMap
 				try { sleep(interval); }
 				catch(InterruptedException ex) {}
 			}
-			Logger.instance().debug1("CDT Maintenance thread stopped.");
+			log.debug("CDT Maintenance thread stopped.");
 		}
 	}
-	
+
 	/**
 	 * Usage ChannelMap url localfile
 	 * @param args
 	 */
 	public static void main(String args[])
 	{
-		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
 		ChannelMap cm = instance();
 		cm.startMaintenanceThread(args[0], args[1]);
 		while(!cm._isLoaded)
