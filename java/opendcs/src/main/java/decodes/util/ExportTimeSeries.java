@@ -1,20 +1,17 @@
 /*
- * $Id: ExportTimeSeries.java,v 1.3 2020/02/20 15:29:13 mmaloney Exp $
- *
- *
- * $Log: ExportTimeSeries.java,v $
- * Revision 1.3  2020/02/20 15:29:13  mmaloney
- * Added all and group options.
- *
- * Revision 1.2  2019/12/11 19:05:24  mmaloney
- * Added setOutputStream method for Test Runner.
- *
- * Revision 1.1  2017/08/22 19:49:55  mmaloney
- * Refactor
- *
- *
- *
- * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.util;
 
@@ -30,11 +27,13 @@ import java.util.GregorianCalendar;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import ilex.cmdline.*;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.Variable;
 import decodes.consumer.DataConsumer;
@@ -64,9 +63,9 @@ import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 import decodes.tsdb.TsdbAppTemplate;
 
-public class ExportTimeSeries
-	extends TsdbAppTemplate
+public class ExportTimeSeries extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private StringToken sinceArg = new StringToken("S", "Since Time dd-MMM-yyyy/HH:mm", "", TokenOptions.optSwitch, "");
 	private StringToken untilArg = new StringToken("U", "Until Time dd-MMM-yyyy/HH:mm", "", TokenOptions.optSwitch, "");
 	private StringToken fmtArg = new StringToken("F", "OutputFormat", "", TokenOptions.optSwitch, "Human-Readable");
@@ -172,8 +171,7 @@ public class ExportTimeSeries
 					{
 						CTimeSeries ts = theDb.makeTimeSeries(tsid);
 						int nvalues = tsDAO.fillTimeSeries(ts, since, until);
-						Logger.instance().info("Read " + nvalues + " values for time series "
-							+ tsid.getUniqueString());
+						log.info("Read {} values for time series '{}'", nvalues, tsid.getUniqueString());
 						ctss.add(ts);
 					}
 					break; // No need to continue, we have all time series now.
@@ -186,7 +184,7 @@ public class ExportTimeSeries
 					groupDAO.close();
 					if (grp == null)
 					{
-						Logger.instance().warning("No such time series group: " + groupName + " -- skipped.");
+						log.warn("No such time series group: {} -- skipped.", groupName);
 						continue;
 					}
 					ArrayList<TimeSeriesIdentifier> tsids = theDb.expandTsGroup(grp);
@@ -194,8 +192,7 @@ public class ExportTimeSeries
 					{
 						CTimeSeries ts = theDb.makeTimeSeries(tsid);
 						int nvalues = tsDAO.fillTimeSeries(ts, since, until);
-						Logger.instance().info("Read " + nvalues + " values for time series "
-							+ tsid.getUniqueString());
+						log.info("Read {} values for time series '{}'", nvalues, tsid.getUniqueString());
 						ctss.add(ts);
 					}
 				}
@@ -205,12 +202,12 @@ public class ExportTimeSeries
 					{
 						CTimeSeries ts = theDb.makeTimeSeries(outTS);
 						int nvalues = tsDAO.fillTimeSeries(ts, since, until);
-						Logger.instance().info("Read " + nvalues + " values for time series " + outTS);
+						log.info("Read {} values for time series '{}'", nvalues, outTS);
 						ctss.add(ts);
 					}
 					catch(NoSuchObjectException ex)
 					{
-						Logger.instance().warning("No time series for '" + outTS + "': " + ex);
+						log.atWarn().setCause(ex).log("No time series for '{}'", outTS);
 					}
 				}
 			}
@@ -269,8 +266,7 @@ public class ExportTimeSeries
 		}
 		catch (InvalidDatabaseException ex)
 		{
-			Logger.instance().warning("Cannot initialize presentation group '"
-				+ groupName + ": " + ex);
+			log.atWarn().setCause(ex).log("Cannot initialize presentation group '{}'", groupName);
 			presGroup = null;
 		}
 	}
@@ -293,9 +289,7 @@ public class ExportTimeSeries
 					if (dp.getUnitsAbbr() != null
 					 && dp.getUnitsAbbr().equalsIgnoreCase("omit"))
 					{
-						Logger.instance().log(Logger.E_DEBUG2,
-							"Omitting sensor '" + sensor.getName()
-							+ "' as per Presentation Group.");
+						log.trace("Omitting sensor '{}' as per Presentation Group.", sensor.getName());
 						toAdd = false;
 					}
 					else
@@ -354,7 +348,7 @@ public class ExportTimeSeries
 			}
 			else
 			{
-				Logger.instance().warning("Unknown time '" + s + "'");
+				log.warn("Unknown time '{}'", s);
 				return isTo ? new Date() : convert2Date("yesterday", false);
 			}
 		}
@@ -375,7 +369,8 @@ public class ExportTimeSeries
 			}
 			catch(ParseException ex2)
 			{
-				Logger.instance().warning("Bad time format '" + s + "'");
+				ex2.addSuppressed(ex);
+				log.atWarn().setCause(ex).log("Bad time format '{}'", s);
 				return isTo ? new Date() : convert2Date("yesterday", false);
 			}
 		}

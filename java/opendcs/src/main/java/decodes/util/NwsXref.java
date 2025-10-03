@@ -1,28 +1,21 @@
-/**
- * $Id$
- * 
- * Open source software.
- * Author: Mike Maloney, Cove Software, LLC
- * 
- * $Log$
- * Revision 1.2  2015/03/19 17:56:53  mmaloney
- * If lock is taken, continue to spawn maintenance thread to check for file changes.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.2  2013/03/28 19:19:32  mmaloney
- * User temp files are now placed under DCSTOOL_USERDIR which may be different
- * from DCSTOOL_HOME on linux/unix multi-user installations.
- *
- * Revision 1.1  2013/02/28 16:39:58  mmaloney
- * Created.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.util;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 
 import java.io.File;
 import java.io.FileReader;
@@ -34,6 +27,9 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Random;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.common.DcpAddress;
 
 /**
@@ -43,6 +39,7 @@ import lrgs.common.DcpAddress;
  */
 public class NwsXref
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private HashMap<DcpAddress, NwsXrefEntry> dcpAddrMap
 		= new HashMap<DcpAddress, NwsXrefEntry>();
 	private HashMap<String, NwsXrefEntry> nwsNameMap
@@ -54,7 +51,7 @@ public class NwsXref
 	private int badLines = 0;
 	private MaintenanceThread mthread = null;
 
-	
+
 	/** For singleton, use instance() method. */
 	private NwsXref()
 	{
@@ -76,7 +73,7 @@ public class NwsXref
 	 */
 	public synchronized boolean load(File file)
 	{
-		Logger.instance().info("Loading NwsXref from '" + file.getPath() + "'");
+		log.info("Loading NwsXref from '{}'", file.getPath());
 
 		ArrayList<NwsXrefEntry> entries = new ArrayList<NwsXrefEntry>();
 
@@ -84,9 +81,9 @@ public class NwsXref
 		// line of hyphens.
 		boolean afterHeader = false;
 		badLines = 0;
-		try
+		try (FileReader reader = new FileReader(file))
 		{
-			LineNumberReader lnr = new LineNumberReader(new FileReader(file));
+			LineNumberReader lnr = new LineNumberReader(reader);
 			String line;
 			while( (line = lnr.readLine() ) != null)
 			{
@@ -97,7 +94,7 @@ public class NwsXref
 						afterHeader = true;
 					continue;
 				}
-				
+
 				NwsXrefEntry entry = NwsXrefEntry.fromFileLine(line);
 				if (entry != null)
 				{
@@ -110,8 +107,7 @@ public class NwsXref
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("IO Error reading NwsXref File '" 
-				+ file.getPath() + "': " + ex + " -- Old NwsXref restored.");
+			log.atWarn().setCause(ex).log("IO Error reading NwsXref File '{}' -- Old NwsXref restored.", file.getPath());
 			return false;
 		}
 		dcpAddrMap.clear();
@@ -123,9 +119,8 @@ public class NwsXref
 			nwsNameMap.put(entry.getNwsId(), entry);
 			usgsNumMap.put(entry.getUsgsNum(), entry);
 		}
-		Logger.instance().info(
-			"Parsed NwsXref File '" + file.getPath() + "' - " + entries.size()
-			+ " entries.");
+		log.info(
+			"Parsed NwsXref File '{}' - {} entries.", file.getPath(), entries.size());
 		_isLoaded = true;
 		return true;
 	}
@@ -160,7 +155,7 @@ public class NwsXref
 			mthread.start();
 		}
 	}
-	
+
 	/**
 	 * Shuts down the maintenance thread and destroys the singleton instance.
 	 */
@@ -197,10 +192,9 @@ public class NwsXref
 
 		public void run()
 		{
-			Logger.instance().debug1("Starting NwsXref Maintenance Thread, url='"
-				+ url + "', localfile='" + localfn + "'"
-				+ ", localpath=" + localfile.getPath());
-			
+			log.debug("Starting NwsXref Maintenance Thread, url='{}', localfile='{}', localpath={}",
+					  url, localfn, localfile.getPath());
+
 			if (localfile.canRead())
 				lastDownload = localfile.lastModified();
 
@@ -215,7 +209,7 @@ public class NwsXref
 				 && System.currentTimeMillis() - lastDownload > Pdt.downloadIntervalMsec)
 				{
 					lastDownload = System.currentTimeMillis();
-					DownloadNwsXrefThread lpt = 
+					DownloadNwsXrefThread lpt =
 						new DownloadNwsXrefThread(url, localfn, xref);
 					lpt.start();
 				}
@@ -225,7 +219,7 @@ public class NwsXref
 			}
 		}
 	}
-	
+
 	public void printMe()
 	{
 		System.out.println("Total Lines: "+ dcpAddrMap.size());
@@ -244,16 +238,15 @@ public class NwsXref
 		for(NwsXrefEntry entry : values)
 			System.out.println(entry.toString());
 	}
-	
+
 	public int size() { return dcpAddrMap.size(); }
-	
+
 	/**
 	 * args: url localfile
 	 */
 	public static void main(String args[])
 		throws Exception
 	{
-		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
 
 		NwsXref xref = instance();
 		xref.startMaintenanceThread(args[0], args[1]);
@@ -263,12 +256,12 @@ public class NwsXref
 			System.out.println("Awaiting _isLoaded");
 		}
 
-			
-			//"http://www.nws.noaa.gov/oh/hads/USGS/ALL_USGS-HADS_SITES.txt", 
+
+			//"http://www.nws.noaa.gov/oh/hads/USGS/ALL_USGS-HADS_SITES.txt",
 		System.out.println("Press enter to exit ...");
 		System.console().readLine();
 		xref.stopMaintenanceThread();
-		
+
 		System.exit(0);
 	}
 }
