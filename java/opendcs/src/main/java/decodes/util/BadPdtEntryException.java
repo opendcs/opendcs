@@ -11,4 +11,9 @@ public class BadPdtEntryException extends WarningException
 	{
 		super(msg);
 	}
+
+	public BadPdtEntryException(String msg, Throwable cause)
+	{
+		super(msg, cause);
+	}
 }
