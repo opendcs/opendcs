@@ -53,3 +53,4 @@
 		window.API_URL = new URL(apiBasePath, origin).href;
 	})();
 </script>
+<script src="../resources/js/main.js"></script>

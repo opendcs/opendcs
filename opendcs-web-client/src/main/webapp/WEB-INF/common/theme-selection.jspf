@@ -1,0 +1,23 @@
+<li class="nav-item dropdown dropstart ">                          
+    <button class="btn btn-link nav-link py-2 px-0 px-lg-2 dropdown-toggle d-flex align-items-center dropdown-item"
+                id="bd-theme-select"
+                type="button"
+                aria-expanded="false"
+                data-bs-toggle="dropdown"
+                data-bs-display="static"
+                aria-label="Theme">
+        <span class="d-lg-none ms-2" id="bd-theme-text">Theme</span>
+        Theme
+    </button>
+    <ul class="dropdown-menu" aria-labelledby="bd-theme-text">
+        <li><button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-link="/webjars/bootstrap/css/bootstrap.min.css" aria-pressed="false">
+            Default Bootstrap
+            </button>
+        </li>
+        <li>
+            <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-link="/webjars/bootswatch/dist/cerulean/bootstrap.css" aria-pressed="false">
+            Cerulean
+            </button>
+        </li>
+    </ul>
+</li>

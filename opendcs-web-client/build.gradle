@@ -42,8 +42,8 @@ dependencies {
     runtimeOnly("org.webjars:pickadate.js:3.6.4")
     runtimeOnly("org.webjars:bootstrap-daterangepicker:3.1")
     runtimeOnly("org.webjars:momentjs:2.30.1-1")
-
-    runtimeOnly("org.webjars:bootswatch-cerulean:5.3.3")
+    runtimeOnly("org.webjars.npm:bootswatch:5.3.5")
+    runtimeOnly("org.webjars.npm:bootstrap-icons:1.13.1")
 
 
 

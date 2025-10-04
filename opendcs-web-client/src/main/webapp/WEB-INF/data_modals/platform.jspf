@@ -7,7 +7,7 @@
                 <h6 class="modal-title" id="platformTitle">Platforms</h6>
             </div>
             <div id="displayedPlatformId" class="displayNone"></div>
-            <div class="modal-body grey-background total_height-header-footer">
+            <div class="modal-body bg-secondary-subtle total_height-header-footer">
                 <div class="row h-100">
                     <div class="col-lg-5 h-100">
                         <div class="row h-50 p-1">

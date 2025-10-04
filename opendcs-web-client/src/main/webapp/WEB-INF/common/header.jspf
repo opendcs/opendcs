@@ -19,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <link rel="icon" type="image/png" href="../resources/img/odcs-favicon.png"/>
   <%-- Global stylesheets --%> 
-  <link href="../resources/css/select.dataTables.css" rel="stylesheet" type="text/css"/>
+  <link id="theme-link" href="/webjars/bootswatch/dist/cerulean/bootstrap.css" rel="stylesheet" type="text/css"/>  
   <!--<link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>-->
   <link href="/webjars/bootswatch-cerulean/bootstrap.css" rel="stylesheet" type="text/css"/>
 
@@ -29,11 +29,9 @@
   <link href="/webjars/datatables.net-select-bs5/css/select.bootstrap5.min.css" rel="stylesheet" type="text/css"/>
 
   <%-- Global stylesheets --%>
-  <link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.min.css">
-  <link href="../resources/css/select.dataTables.css" rel="stylesheet" type="text/css"/>
-  
-  
+
   <link href="/webjars/bootstrap-daterangepicker/css/bootstrap-daterangepicker.css" rel="stylesheet" type="text/css"/>
+  <link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.min.css">
 
   <link href="/resources/css/main.css" rel="stylesheet" type="text/css"/>
   <link href="/resources/css/opendcs-shim.css" rel="stylesheet" type="text/css"/>

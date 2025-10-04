@@ -31,16 +31,16 @@
                             
 
                             <button class="btn btn-link nav-link py-2 px-0 px-lg-2 dropdown-toggle d-flex align-items-center"
-                                        id="bd-theme"
+                                        id="bd-theme-mode"
                                         type="button"
                                         aria-expanded="false"
                                         data-bs-toggle="dropdown"
                                         data-bs-display="static"
                                         aria-label="Toggle theme (auto)">
                                 <svg class="bi my-1 theme-icon-active"><use href="#circle-half"></use></svg>
-                                <span class="d-lg-none ms-2" id="bd-theme-text">Toggle theme</span>
+                                <span class="d-lg-none ms-2" id="bd-theme-mode-text">Toggle theme</span>
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="bd-theme-text">
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="bd-theme-mode-text">
                                 <li>
                                     <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="light" aria-pressed="false">
                                     <svg class="bi me-2 opacity-50 theme-icon"><use href="#sun-fill"></use></svg>
@@ -66,17 +66,21 @@
                         </li>
                         <li class="nav-item dropdown ">
                             <button class="btn btn-link nav-link py-2 px-0 px-lg-2 dropdown-toggle d-flex align-items-center"
-                                        id="bd-theme"
+                                        id="user-settings"
                                         type="button"
                                         aria-expanded="false"
                                         data-bs-toggle="dropdown"
-                                        data-bs-display="static"
+                                        
                                         aria-label="User Settings">
                                 <i class="bi my-1 bi-person-gear theme-icon"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li><a class="dropdown-item" href="#">Profile</a></li>
                                 <li><a class="dropdown-item" href="#">Admin</a></li>
+                                <li>
+                                    <hr class="dropdown-divider"/>
+                                </li>
+                                <%@include file="/WEB-INF/common/theme-selection.jspf"%>
                                 <li>
                                     <hr class="dropdown-divider"/>
                                 </li>
@@ -88,4 +92,4 @@
             </nav>
 
             <%-- /main navbar --%>
-                <script src="../resources/js/main.js"></script>
+                
