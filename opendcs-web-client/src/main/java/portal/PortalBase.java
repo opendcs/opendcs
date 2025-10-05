@@ -72,7 +72,7 @@ public class PortalBase extends HttpServlet {
     
     private String apiBaseUrl;
     
-    private static List<Theme> themes = ThemeSet.getAllThemes();
+    private static final List<Theme> themes = ThemeSet.getAllThemes();
     /**
      * Creates a new PortalBase
      *
@@ -100,7 +100,7 @@ public class PortalBase extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
         String destination = this.getDestination();
-         request.setAttribute("themes",  themes);
+        request.setAttribute("themes",  themes);
         request.setAttribute("tool",  this.getTool());
         request.setAttribute("page",  this.getPage());
         request.setAttribute("api_swaggerui_url", this.getApiBaseUrl());
