@@ -23,8 +23,10 @@ plugins {
 dependencies {
     implementation(libs.servlet.api)
     implementation(libs.slf4j.api)
-    implementation(libs.jstl)
-    implementation(libs.slf4j.jdk14)
+    implementation(libs.auto.service)
+    annotationProcessor(libs.auto.service)
+    runtimeClasspath(libs.jstl)
+    runtimeClasspath(libs.slf4j.jdk14)
 
     runtimeOnly("org.webjars:bootstrap:5.3.8")
     constraints {
