@@ -21,7 +21,7 @@
 				<!-- Content area -->
 				<div class="content">
 					<!-- Basic responsive configuration -->
-					<div class="card large-padding h-100">
+					<div class="card large-padding border-primary">
 						<table id="mainTable" class="table table-hover table-striped datatable-responsive w-100 tablerow-cursor">
 							<caption class="captionTitleCenter">Computations
 								<button class="btn btn-secondary float-right captionButton mr-3" id="addButton">+</button>

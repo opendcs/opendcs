@@ -31,7 +31,7 @@
 				<!-- Content area -->
 				<div class="content">
 					<!-- Basic responsive configuration -->
-					<div class="card large-padding">
+					<div class="card large-padding border-primary">
 						<div class="form-group row mb-2">
 							<label class="col-form-label col-lg-5 text-right">Enumeration</label>
 		                    <div class="col-lg-3">

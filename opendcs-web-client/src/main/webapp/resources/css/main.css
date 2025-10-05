@@ -174,10 +174,6 @@ main {
 	display: none;
 }
 
-html .content {
-	background-color: #dedede;
-}
-
 .dataTable td {
 	padding-top: 0.30rem;
 	padding-bottom: 0.30rem;
@@ -195,7 +191,6 @@ html .content {
 
 .card {
 	margin-bottom: 0.50rem;
-	background-color: #f7fdff;
 }
 
 .card.opendcs_y_scrollable {
@@ -330,13 +325,6 @@ html .content {
 	height: 90%;
 }
 
-.dataTable tbody tr.over {
-  background-color: #ffa;
-}
-
-.dataTable tbody tr.over i {
-  pointer-events: none;
-}
 
 .rowToBeDeleted, .rowToBeDeleted [data-modified=true] {
 	background-color: #f0756c !important;

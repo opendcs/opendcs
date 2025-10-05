@@ -26,7 +26,7 @@
 				<!-- Content area -->
 				<div class="content">
 					<!-- Basic responsive configuration -->
-					<div class="card large-padding">
+					<div class="card large-padding border-primary">
 						<div class="card-header header-elements-inline">
 						</div>
 						<table id="routingTable" class="table table-hover table-striped datatable-responsive tablerow-cursor w-100">
