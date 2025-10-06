@@ -15,7 +15,7 @@
 */
 package ilex.cmdline;
 
-import java.util.TimeZone;
+import java.util.Arrays;
 
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
