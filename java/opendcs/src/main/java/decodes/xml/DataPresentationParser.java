@@ -1,37 +1,28 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $State$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:07  cvs
-*  Added legacy code to repository
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.4  2006/05/11 13:32:35  mmaloney
-*  DataTypes are now immutable! Modified all references. Modified SQL IO code.
-*
-*  Revision 1.3  2004/08/30 14:49:28  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.2  2003/11/15 20:08:22  mjmaloney
-*  Updates for new structures in DECODES Database Version 6.
-*  Parsers now ignore unrecognized elements with a warning. They used to
-*  abort. The new behavior allows easier future enhancements.
-*
-*  Revision 1.1  2001/03/18 18:24:36  mike
-*  Implemented PerformanceMeasurments objects & parsers.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import java.text.NumberFormat;
-import java.util.Enumeration;
 import decodes.db.*;
 import ilex.util.TextUtil;
-import ilex.util.Logger;
 import ilex.util.StringPair;
 
 import java.io.IOException;
@@ -40,10 +31,10 @@ import ilex.xml.*;
 /**
  * This class maps the DECODES XML representation for DataPresentation elements.
  */
-public class DataPresentationParser 
-	implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner, 
-	TaggedLongOwner, TaggedDoubleOwner
+public class DataPresentationParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner,
+											   TaggedLongOwner, TaggedDoubleOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private DataPresentation dataPresentation; // object that we will build.
 
 	private static final int equipmentModelNameTag = 0;
@@ -65,7 +56,7 @@ public class DataPresentationParser
 	 * @return name of element parsed by this parser
 	 */
 	public String myName( ) { return XmlDbTags.DataPresentation_el; }
-		
+
 	/**
 	 * @param ch Characters from file
 	 * @param start start of characters
@@ -88,13 +79,12 @@ public class DataPresentationParser
 	 */
 	public void startElement( XmlHierarchyParser hier, String namespaceURI, String localName, String qname, Attributes atts ) throws SAXException
 	{
-//Logger.instance().info("DPP got startElement for '" + localName + "'");
 		if (localName.equalsIgnoreCase(XmlDbTags.DataType_el))
 		{
 			String st = atts.getValue(XmlDbTags.DataType_standard_at);
 			String cd = atts.getValue(XmlDbTags.DataType_code_at);
 			String nm = atts.getValue(XmlDbTags.name_at);
-//Logger.instance().info("DPP data type st='" + st + "', cd='" + cd + "', nm='" + nm + "'");
+
 			if (st == null)
 				throw new SAXException(XmlDbTags.DataType_el + " without "
 					+ XmlDbTags.DataType_standard_at +" attribute");
@@ -105,8 +95,6 @@ public class DataPresentationParser
 			if (nm != null)
 			{
 				dataPresentation.getDataType().setDisplayName(nm);
-//Logger.instance().info("DT " + dataPresentation.getDataType() + ", set displayNmae='" + nm
-//+ "', from dt='" + dataPresentation.getDataType().getDisplayName() + "'");
 			}
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.UnitsAbbr_el))
@@ -115,12 +103,12 @@ public class DataPresentationParser
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.EquipmentModelName_el))
 		{
-			hier.pushObjectParser(new TaggedStringSetter(this, 
+			hier.pushObjectParser(new TaggedStringSetter(this,
 				equipmentModelNameTag));
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.MaxDecimals_el))
 		{
-			hier.pushObjectParser(new TaggedLongSetter(this, 
+			hier.pushObjectParser(new TaggedLongSetter(this,
 				maxDecimalsTag));
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.MinValue_el))
@@ -135,15 +123,10 @@ public class DataPresentationParser
 		{
 			// silently ignore
 			hier.pushObjectParser(new ElementIgnorer());
-//			RoundingRule rr = new RoundingRule(dataPresentation);
-//			dataPresentation.addRoundingRule(rr);
-//			hier.pushObjectParser(new RoundingRuleParser(rr));
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
@@ -193,9 +176,6 @@ public class DataPresentationParser
 		case unitsAbbrTag:
 			dataPresentation.setUnitsAbbr(str);
 			break;
-//		case equipmentModelNameTag:
-//			dataPresentation.setEquipmentModelName(str);
-//			break;
 		}
 	}
 
@@ -230,7 +210,7 @@ public class DataPresentationParser
 			String cod = dataPresentation.getDataType().getCode();
 			String nm = dataPresentation.getDataType().getDisplayName();
 			if (nm == null)
-				xos.startElement(XmlDbTags.DataType_el, 
+				xos.startElement(XmlDbTags.DataType_el,
 					XmlDbTags.DataType_standard_at, std,
 					XmlDbTags.DataType_code_at, cod);
 			else
@@ -247,30 +227,19 @@ public class DataPresentationParser
 		if (dataPresentation.getUnitsAbbr() != null)
 			xos.writeElement(XmlDbTags.UnitsAbbr_el,dataPresentation.getUnitsAbbr());
 
-//		if (dataPresentation.getEquipmentModelName() != null)
-//			xos.writeElement(XmlDbTags.EquipmentModelName_el,
-//				dataPresentation.getEquipmentModelName());
-
 		if (dataPresentation.getMaxDecimals() != Integer.MAX_VALUE)
 			xos.writeElement(XmlDbTags.MaxDecimals_el,
 				"" + dataPresentation.getMaxDecimals());
 
-//		for(int i = 0; i < dataPresentation.roundingRules.size(); i++)
-//		{
-//			RoundingRule rr = (RoundingRule)
-//				dataPresentation.roundingRules.elementAt(i);
-//			RoundingRuleParser p = new RoundingRuleParser(rr);
-//			p.writeXml(xos);
-//		}
 		NumberFormat numFmt = NumberFormat.getNumberInstance();
 		numFmt.setGroupingUsed(false);
 		numFmt.setMaximumFractionDigits(5);
-		
+
 		if (dataPresentation.getMinValue() != Constants.undefinedDouble)
-			xos.writeElement(XmlDbTags.MinValue_el, 
+			xos.writeElement(XmlDbTags.MinValue_el,
 				numFmt.format(dataPresentation.getMinValue()));
 		if (dataPresentation.getMaxValue() != Constants.undefinedDouble)
-			xos.writeElement(XmlDbTags.MaxValue_el, 
+			xos.writeElement(XmlDbTags.MaxValue_el,
 				numFmt.format(dataPresentation.getMaxValue()));
 
 		xos.endElement(myName());

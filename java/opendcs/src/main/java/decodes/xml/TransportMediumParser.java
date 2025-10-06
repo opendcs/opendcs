@@ -1,91 +1,37 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $State$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $Log$
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.2  2013/03/21 18:27:39  mmaloney
-*  DbKey Implementation
-*
-*  Revision 1.1  2008/04/04 18:21:08  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.17  2004/08/30 14:49:33  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.16  2004/06/03 15:15:10  mjmaloney
-*  Fixed import export bugs for SQL database.
-*
-*  Revision 1.15  2004/04/27 17:15:55  mjmaloney
-*  Update to data presentations.
-*  Added time zone to transport medium.
-*
-*  Revision 1.14  2003/11/15 20:08:28  mjmaloney
-*  Updates for new structures in DECODES Database Version 6.
-*  Parsers now ignore unrecognized elements with a warning. They used to
-*  abort. The new behavior allows easier future enhancements.
-*
-*  Revision 1.13  2003/10/20 20:22:56  mjmaloney
-*  Database changes for DECODES 6.0
-*
-*  Revision 1.12  2002/09/20 02:00:08  mjmaloney
-*  SQL Dev
-*
-*  Revision 1.11  2002/03/31 21:09:42  mike
-*  bug fixes
-*
-*  Revision 1.10  2001/07/04 00:42:27  mike
-*  dev
-*
-*  Revision 1.9  2001/06/24 02:29:36  mike
-*  dev
-*
-*  Revision 1.8  2001/06/20 13:50:04  mike
-*  dev
-*
-*  Revision 1.7  2001/06/16 20:25:55  mike
-*  dev
-*
-*  Revision 1.6  2001/06/05 15:17:30  mike
-*  dev
-*
-*  Revision 1.5  2001/05/04 18:57:33  mike
-*  dev
-*
-*  Revision 1.4  2001/01/04 01:33:30  mike
-*  dev
-*
-*  Revision 1.3  2001/01/03 02:54:59  mike
-*  dev
-*
-*  Revision 1.2  2000/12/31 23:12:50  mike
-*  dev
-*
-*  Revision 1.1  2000/12/31 15:55:52  mike
-*  dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import decodes.db.*;
 import ilex.util.TextUtil;
 import ilex.util.IDateFormat;
-import ilex.util.Logger;
 import java.io.IOException;
 import ilex.xml.*;
 
 /**
  * This class maps the DECODES XML representation for TransportMedium elements.
  */
-public class TransportMediumParser 
-	implements XmlObjectParser, XmlObjectWriter, 
-	TaggedStringOwner, TaggedLongOwner, TaggedBooleanOwner
+public class TransportMediumParser implements XmlObjectParser, XmlObjectWriter,
+											  TaggedStringOwner, TaggedLongOwner, TaggedBooleanOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private TransportMedium transportMedium; // object that we will build.
 
 	private static final int channelNumTag = 1;
@@ -106,7 +52,7 @@ public class TransportMediumParser
 	private static final int doLoginTag = 14;
 	private static final int usernameTag = 15;
 	private static final int passwordTag = 16;
-	
+
 	/**
 	 * @param ob the object in which to store the data.
 	 */
@@ -180,7 +126,7 @@ public class TransportMediumParser
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.DecodesScript_el))
 		{
-			// Note: this is just a name reference to a script that must 
+			// Note: this is just a name reference to a script that must
 			// exist in the PlatformConfig object.
 			String nm = atts.getValue(XmlDbTags.DecodesScript_scriptName_at);
 			if (nm == null)
@@ -221,16 +167,14 @@ public class TransportMediumParser
 			hier.pushObjectParser(new TaggedStringSetter(this, passwordTag));
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
@@ -274,10 +218,9 @@ public class TransportMediumParser
 				transportMedium.assignedTime =
 					IDateFormat.getSecondOfDay(str);
 			}
-			catch(IllegalArgumentException e)
+			catch(IllegalArgumentException ex)
 			{
-				throw new SAXException("Illegal assignedTime: "
-					+ e.toString());
+				throw new SAXException("Illegal assignedTime: '" + str + "'", ex);
 			}
 			break;
 		case transmitWindowTag:
@@ -286,10 +229,9 @@ public class TransportMediumParser
 				transportMedium.transmitWindow =
 					IDateFormat.getSecondOfDay(str);
 			}
-			catch(IllegalArgumentException e)
+			catch(IllegalArgumentException ex)
 			{
-				throw new SAXException("Illegal transmitWindow: "
-					+ e.toString());
+				throw new SAXException("Illegal transmitWindow: '" + str + "'", ex);
 			}
 			break;
 		case transmitIntervalTag:
@@ -298,22 +240,21 @@ public class TransportMediumParser
 				transportMedium.transmitInterval =
 					IDateFormat.getSecondOfDay(str);
 			}
-			catch(IllegalArgumentException e)
+			catch(IllegalArgumentException ex)
 			{
-				throw new SAXException("Illegal transmitInterval: "
-					+ e.toString());
+				throw new SAXException("Illegal transmitInterval: '" + str + "'", ex);
 			}
 			break;
 		case preambleTag:
 			transportMedium.setPreamble(Character.toUpperCase(str.charAt(0)));
 			break;
 		case dataOrderTag:
-			if (str != null && str.length() > 0 
-			 && str.charAt(0) != Constants.dataOrderUndefined)
-				Logger.instance().log(Logger.E_DEBUG1,
-					"DataOrder='" + str.charAt(0) 
-					+ "' element under TransportMedium no longer "
-					+ "supported, use value in DecodesScript. -- ignored");
+			if (str != null && str.length() > 0 && str.charAt(0) != Constants.dataOrderUndefined)
+			 {
+				log.debug("DataOrder='{}' element under TransportMedium no " +
+						  "longer supported, use value in DecodesScript. -- ignored",
+						  str.charAt(0));
+			 }
 			break;
 		case timeZoneTag:
 			transportMedium.setTimeZone(str);
@@ -333,7 +274,7 @@ public class TransportMediumParser
 			break;
 		}
 	}
-	
+
 	/**
 	  Called from TaggedLongSetter.
 	  @param tag integer tag defined above
@@ -360,7 +301,7 @@ public class TransportMediumParser
 			break;
 		}
 	}
-	
+
 	@Override
 	public void set(int tag, boolean value)
 	{
@@ -385,7 +326,7 @@ public class TransportMediumParser
 
 		if (transportMedium.scriptName != null)
 			xos.writeElement(XmlDbTags.DecodesScript_el,
-				XmlDbTags.DecodesScript_scriptName_at, 
+				XmlDbTags.DecodesScript_scriptName_at,
 				transportMedium.scriptName, null);
 
 		if (transportMedium.equipmentModel != null)
@@ -419,8 +360,8 @@ public class TransportMediumParser
 		String tz = transportMedium.getTimeZone();
 		if (tz != null)
 			xos.writeElement(XmlDbTags.TimeZone_el, tz);
-		
-		if (transportMedium.getLoggerType() != null 
+
+		if (transportMedium.getLoggerType() != null
 		 && transportMedium.getLoggerType().length() > 0)
 			xos.writeElement(XmlDbTags.loggerType_el, transportMedium.getLoggerType());
 		if (transportMedium.getBaud() != 0)
@@ -440,7 +381,7 @@ public class TransportMediumParser
 			 && transportMedium.getPassword().length() > 0)
 				xos.writeElement(XmlDbTags.password_el, transportMedium.getPassword());
 		}
-		
+
 		xos.endElement(myName());
 	}
 

@@ -1,16 +1,24 @@
 /*
-*  $Id$
-*  
-*  Open source software
-*  
-*  $Log$
-*  Revision 1.5  2013/03/21 18:27:40  mmaloney
-*  DbKey Implementation
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
 import ilex.util.PropertiesUtil;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -22,7 +30,6 @@ import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.xml.CompXio;
 import decodes.tsdb.xml.CompXioTags;
 import ilex.util.TextUtil;
-import ilex.util.Logger;
 import java.io.IOException;
 import java.util.Properties;
 
@@ -33,6 +40,7 @@ import ilex.xml.*;
  */
 public class DatabaseParser implements XmlObjectParser, XmlObjectWriter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The database we parse records into and out of. */
 	private Database theDb;
 	private Date fileLMT = new Date();
@@ -67,7 +75,7 @@ public class DatabaseParser implements XmlObjectParser, XmlObjectWriter
 	public String myName( ) { return XmlDbTags.Database_el; }
 
 	public void setFileLMT(Date lmt) { fileLMT = lmt; }
-	
+
 	/**
 	 * @param ch Characters from file
 	 * @param start start of characters
@@ -89,14 +97,13 @@ public class DatabaseParser implements XmlObjectParser, XmlObjectWriter
 	 * @param atts attributes for this element
 	 * @throws SAXException on parse error
 	 */
-	public void startElement( XmlHierarchyParser hier, String namespaceURI, 
-		String localName, String qname, Attributes atts ) 
+	public void startElement( XmlHierarchyParser hier, String namespaceURI,
+		String localName, String qname, Attributes atts )
 			throws SAXException
 	{
 		if (elementFilter != null && !elementFilter.acceptElement(localName))
 		{
-			Logger.instance().info("DatabaseParser: Ignoring element '" + localName 
-				+ "' because filter returned false.");
+			log.info("DatabaseParser: Ignoring element '{}' because filter returned false.", localName);
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.Platform_el))
@@ -194,7 +201,7 @@ public class DatabaseParser implements XmlObjectParser, XmlObjectWriter
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.ScheduleEntry_el))
 		{
-			ScheduleEntry se = 
+			ScheduleEntry se =
 				new ScheduleEntry(
 					XmlUtils.getAttrIgnoreCase(atts, XmlDbTags.name_at));
 			theDb.schedEntryList.add(se);
@@ -211,32 +218,17 @@ public class DatabaseParser implements XmlObjectParser, XmlObjectWriter
 			}
 			catch(NumberFormatException ex)
 			{
-				throw new SAXException("Invalid non-numeric platform id in " + localName);
+				throw new SAXException("Invalid non-numeric platform id in " + localName, ex);
 			}
 		}
-		
-//		else if (localName.equalsIgnoreCase(XmlDbTags.PMConfigList_el))
-//		{
-//			hier.pushObjectParser(new PMConfigListParser());
-//		}
-//		else if (localName.equalsIgnoreCase(XmlDbTags.PMConfig_el))
-//		{
-//			String type = atts.getValue(
-//				XmlDbTags.TransportMedium_mediumType_at);
-//			if (type == null)
-//				throw new SAXException("PMConfig without " +
-//					XmlDbTags.TransportMedium_mediumType_at + " attribute");
-//			PMConfig cfg = new PMConfig(type);
-//			hier.pushObjectParser(new PMConfigParser(cfg));
-//		}
+
 		else
-			throw new SAXException("Invalid element '" + localName
-				+ "' under " + myName());
+			throw new SAXException("Invalid element '" + localName + "' under " + myName());
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
@@ -291,7 +283,7 @@ public class DatabaseParser implements XmlObjectParser, XmlObjectWriter
 				p.writeXml(xos);
 			}
 		}
-		
+
 		if (theDb.dataSourceList.size() > 0)
 		{
 			for(Iterator<DataSource> it = theDb.dataSourceList.iterator();
@@ -343,13 +335,13 @@ public class DatabaseParser implements XmlObjectParser, XmlObjectWriter
 			EnumListParser p = new EnumListParser(theDb);
 			p.writeXml(xos);
 		}
-		
+
 		if (IntervalList.instance().getList().size() > 0)
 		{
 			IntervalListParser p = new IntervalListParser(IntervalList.instance());
 			p.writeXml(xos);
 		}
-		
+
 		if (theDb.loadingAppList.size() > 0)
 		{
 			CompXio compXio = new CompXio("DecodesDbParser", null);
@@ -363,25 +355,10 @@ public class DatabaseParser implements XmlObjectParser, XmlObjectWriter
 
 		for(ScheduleEntry se : theDb.schedEntryList)
 		{
-			// This is used by export, so don't set LMT when writing 
+			// This is used by export, so don't set LMT when writing
 			ScheduleEntryParser seParser = new ScheduleEntryParser(se, false);
 			seParser.writeXml(xos);
 		}
-
-//		for(PlatformStatus ps : theDb.platformStatusList)
-//		{
-//			// This is used by export, so don't set LMT when writing 
-//			PlatformStatusParser psParser = new PlatformStatusParser(os);
-//			psParser.writeXml(xos);
-//		}
-
-		
-//		if (theDb.pMConfigList.size() > 0)
-//		{
-//			PMConfigListParser p = new PMConfigListParser();
-//			p.writeXml(xos);
-//		}
-
 		xos.endElement(myName());
 	}
 
