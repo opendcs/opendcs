@@ -1,11 +1,25 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.ldds;
 
 import java.io.IOException;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.common.*;
 
 /**
@@ -14,6 +28,7 @@ for each request.
 */
 public class CmdGetNextDcpMsg extends LddsCommand
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** @return "CmdGetNextDcpMsg"; */
 	public String cmdType()
 	{
@@ -46,27 +61,26 @@ public class CmdGetNextDcpMsg extends LddsCommand
 		if (!ldds.getStatusProvider().isUsable())
 		{
 			String emsg = "This LRGS is not currently usable.";
-			Logger.instance().warning(
-				"Failing message retrieval from " + ldds.getName() + " "+emsg);
+			log.warn("Failing message retrieval from {} {}", ldds.getName(), emsg);
 			throw new ArchiveException(emsg, LrgsErrorCode.DDDSINTERNAL, true);
 		}
 
 		// Get message, every 5 seconds, check for stop message.
 		DcpMsgIndex idx = new DcpMsgIndex();
-		Logger.instance().debug3("GetNextDcpMsg executing");
+		log.trace("GetNextDcpMsg executing");
 		long start = System.currentTimeMillis();
 		long stopSearchMsec = start + 45000L;
 		while(true)
 		{
-			try 
+			try
 			{
 				int x = ldds.msgretriever.getNextPassingIndex(idx, stopSearchMsec);
-				
+
 				// Must not deliver Iridium messages to pre DDS v10 clients.
 				if (DcpMsgFlag.isIridium(idx.getFlagbits())
 				 && ldds.user.getClientDdsVersionNum() < 10)
 					continue;
-				
+
 				DcpMsg msg = ldds.msgretriever.readMsg(idx);
 				ldds.lastSeqNum = msg.getSequenceNum();
 
@@ -79,17 +93,13 @@ public class CmdGetNextDcpMsg extends LddsCommand
 				if (msgdata != null)
 					for(int i=0; i<msgdata.length; i++)
 						md[40+i] = msgdata[i];
-				
+
 				LddsMessage lm = new LddsMessage(LddsMessage.IdDcp, "");
 				lm.MsgLength = md.length;
 				lm.MsgData = md;
 				ldds.send(lm);
-
-				Logger.instance().log(Logger.E_DEBUG3,
-					"con(" + ldds.getUniqueID() 
-					+ ") Successfully retrieved and sent DCP " +
-					msg.getDcpAddress() + " message to " + 
-					ldds.getClientName() + "idx=" + x);
+				log.trace("con({}) Successfully retrieved and sent DCP {} message to {} idx={}",
+						  ldds.getUniqueID(), msg.getDcpAddress(), ldds.getClientName(), x);
 				return 1;
 			}
 			catch(NoSuchMessageException nsme)
@@ -99,45 +109,32 @@ public class CmdGetNextDcpMsg extends LddsCommand
 				// to read the oldest messages and it got overwritten after
 				// getting the index but before reading the message. If this
 				// happens, just stay in the loop and get another index.
-				Logger.instance().warning(LddsParams.module
-					+ " Bad message skipped. idx.offset = " +
-					 idx.getOffset() + ": " + nsme);
+				log.atWarn().setCause(nsme).log("Bad message skipped. idx.offset = {}", idx.getOffset());
 				continue;
 			}
-			catch(UntilReachedException urex)
+			catch(UntilReachedException | EndOfArchiveException ex)
 			{
-				Logger.instance().debug2("DDS Connection '" + ldds.getName()
-					+ "' " + urex);
-				throw urex; // just propegate
-			}
-			catch(EndOfArchiveException eoaex)
-			{
-				Logger.instance().debug2("DDS Connection '" + ldds.getName()
-					+ "' " + eoaex);
-				throw eoaex;  // just propegate
+				log.atTrace().setCause(ex).log("DDS Connection '{}'", ldds.getName());
+				throw ex; // just propagate
 			}
 			catch(SearchTimeoutException stex)
 			{
-				Logger.instance().debug1("DDS Connection '" + ldds.getName()
-					+ "' " + stex);
+				log.atDebug().setCause(stex).log("DDS Connection '{}'", ldds.getName());
 
 				if (ldds.ins.isMsgAvailable())
 				{
-					Logger.instance().debug3(cmdType() + 
-						" aborting to service another client message from "
-							+ ldds.getClientName());
+					log.trace("{} aborting to service another client message from {}",
+							  cmdType(), ldds.getClientName());
 					return 0;
 				}
-				// Terminate after 45 sec so that we stay reasonably 
+				// Terminate after 45 sec so that we stay reasonably
 				// responsive to client.
 				if (System.currentTimeMillis() - start > 45000L)
 					throw stex;
 			}
 			catch(ArchiveException iae)
 			{
-				Logger.instance().debug1("DDS Connection '" + ldds.getName()
-					+ "' " + iae);
-				throw iae;  // just propegate
+				throw iae;  // just propagate
 			}
 		}
 	}

@@ -32,7 +32,7 @@ public class LddsRequestException extends ArchiveException
 	*/
 	public LddsRequestException(String msg, int errorCode, boolean hangup)
 	{
-		super(msg, errorCode, hangup);
+		this(msg, errorCode, hangup, null);
 	}
 
 	public LddsRequestException(String msg, int errorCode, boolean hangup, Throwable cause)
