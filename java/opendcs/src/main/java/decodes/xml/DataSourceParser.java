@@ -1,15 +1,26 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import java.util.Enumeration;
 import decodes.db.*;
 import ilex.util.TextUtil;
-import ilex.util.IDateFormat;
-import ilex.util.Logger;
 import java.io.IOException;
 import ilex.xml.*;
 
@@ -18,6 +29,7 @@ import ilex.xml.*;
  */
 public class DataSourceParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private DataSource dataSource; // object that we will build.
 	private int sequenceNum;
 
@@ -37,7 +49,7 @@ public class DataSourceParser implements XmlObjectParser, XmlObjectWriter, Tagge
 	 * @return name of element parsed by this parser
 	 */
 	public String myName( ) { return XmlDbTags.DataSource_el; }
-		
+
 	/**
 	 * @param ch Characters from file
 	 * @param start start of characters
@@ -75,16 +87,15 @@ public class DataSourceParser implements XmlObjectParser, XmlObjectWriter, Tagge
 			{
 				sequenceNum = Integer.parseInt(seqs);
 			}
-			catch(NumberFormatException e)
+			catch(NumberFormatException ex)
 			{
-				throw new SAXException(
-					"DataSourceGroupMember sequenceNum must be an integer ("+seqs+")");
+				throw new SAXException("DataSourceGroupMember sequenceNum must be an integer ("+seqs+")", ex);
 			}
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.DataSource_el))
 		{
 			if (sequenceNum == -1)
-				throw new SAXException(XmlDbTags.DataSource_el + 
+				throw new SAXException(XmlDbTags.DataSource_el +
 					" must be preceeded by " + XmlDbTags.DataSourceGroupMember_el);
 
 			// Recursion: get attributes, make new DS, add to group & parse.
@@ -92,9 +103,9 @@ public class DataSourceParser implements XmlObjectParser, XmlObjectWriter, Tagge
 			String tp = atts.getValue(XmlDbTags.type_at);
 			if (nm == null || tp == null)
 				throw new SAXException(XmlDbTags.DataSource_el + " without "
-					+ XmlDbTags.name_at +" or " + XmlDbTags.type_at 
+					+ XmlDbTags.name_at +" or " + XmlDbTags.type_at
 					+ " attribute");
-			
+
 			// In order to keep things normalized, if this new member
 			// data source already exists in the db cache, use the cache version,
 			// and parse into it.
@@ -106,12 +117,12 @@ public class DataSourceParser implements XmlObjectParser, XmlObjectWriter, Tagge
 			{
 				ds = new DataSource(nm, tp);
 				dsl.add(ds);
-Logger.instance().debug3("Added member data source '" + ds.getName() + "' to cache list.");
+				log.trace("Added member data source '{}' to cache list.", ds.getName());
 			}
 			else
 			{
 				ds.dataSourceType = tp;
-Logger.instance().debug3("Referenced existing member data source '" + ds.getName() + "' from cache list.");
+				log.trace("Referenced existing member data source '{}' from cache list.", ds.getName());
 			}
 
 			dataSource.addGroupMember(sequenceNum, ds);
@@ -119,16 +130,14 @@ Logger.instance().debug3("Referenced existing member data source '" + ds.getName
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
@@ -185,7 +194,7 @@ Logger.instance().debug3("Referenced existing member data source '" + ds.getName
 	 */
 	public void writeXml( XmlOutputStream xos ) throws IOException
 	{
-		xos.startElement(myName(), 
+		xos.startElement(myName(),
 			XmlDbTags.name_at, dataSource.getName(),
 			XmlDbTags.type_at, dataSource.dataSourceType);
 

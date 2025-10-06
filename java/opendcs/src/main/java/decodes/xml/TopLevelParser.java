@@ -1,19 +1,26 @@
 /*
-*  $Id$
-*  
-*  Open Source Software
-*  
-*  $Log$
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  Revision 1.5  2013/03/21 18:27:39  mmaloney
-*  DbKey Implementation
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
 import java.net.URL;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.MDC;
+import org.slf4j.MDC.MDCCloseable;
 import org.xml.sax.*;
 
 import java.util.Date;
@@ -23,7 +30,6 @@ import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.xml.CompXio;
 import decodes.tsdb.xml.CompXioTags;
 import ilex.util.TextUtil;
-import ilex.util.Logger;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -40,6 +46,7 @@ import ilex.xml.*;
  */
 public class TopLevelParser implements XmlObjectParser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private DatabaseObject topLevelObject;  // Object currently being parsed
 	private XMLReader parser;               // SAX parser object
 	private XmlHierarchyParser xhp;         // Manages hierarchy of parsers
@@ -100,20 +107,14 @@ public class TopLevelParser implements XmlObjectParser
 	 */
 	public DatabaseObject parse( File input ) throws IOException, SAXException
 	{
-		FileInputStream fis = null;
 		inputName = input.getName();
 		inputFile = input;
 		xhp.setFileName(input.getName());
-		try
+		try (MDCCloseable mdc = MDC.putCloseable("xml-export-file", input.toString());
+			 FileInputStream fis = new FileInputStream(input))
 		{
-			fis = new FileInputStream(input);
 			DatabaseObject ret = parse(fis);
 			return ret;
-		}
-		finally
-		{
-			if (fis != null)
-				fis.close();
 		}
 	}
 
@@ -125,20 +126,14 @@ public class TopLevelParser implements XmlObjectParser
 	 */
 	public DatabaseObject parse( URL input ) throws IOException, SAXException
 	{
-		InputStream fis = null;
 		inputName = input.toString();
 		inputFile = null;
 		xhp.setFileName(input.toString());
-		try
+		try (MDCCloseable mdc = MDC.putCloseable("xml-export-file", input.toString());
+			 InputStream fis = input.openStream())
 		{
-			fis = input.openStream();
 			DatabaseObject ret = parse(fis);
 			return ret;
-		}
-		finally
-		{
-			if (fis != null)
-				fis.close();
 		}
 	}
 
@@ -152,7 +147,10 @@ public class TopLevelParser implements XmlObjectParser
 	{
 		topLevelObject = null;    // New object will be created.
 		xhp.pushObjectParser(this);
-		parser.parse(new InputSource(is));
+		try (MDCCloseable mdc = MDC.putCloseable("xml-export-file", "input-stream"))
+		{
+			parser.parse(new InputSource(is));
+		}
 		inputName = "";
 		return topLevelObject;
 	}
@@ -166,22 +164,16 @@ public class TopLevelParser implements XmlObjectParser
 	 */
 	public void parse( File input, DatabaseObject ob ) throws IOException, SAXException
 	{
-		FileInputStream fis = null;
 		inputName = input.getName();
 		inputFile = input;
 		xhp.setFileName(input.getName());
-		try
+		try (MDCCloseable mdc = MDC.putCloseable("xml-export-file", input.getAbsolutePath());
+			 FileInputStream fis =  new FileInputStream(input))
 		{
-			fis = new FileInputStream(input);
 			parse(fis, ob);
 		}
-		finally
-		{
-			if (fis != null)
-				fis.close();
-		}
 	}
-	
+
 	public Date getFileLMT()
 	{
 		if (inputFile == null)
@@ -199,19 +191,13 @@ public class TopLevelParser implements XmlObjectParser
 	 */
 	public void parse( URL input, DatabaseObject ob ) throws IOException, SAXException
 	{
-		InputStream fis = null;
 		inputName = input.toString();
 		inputFile = null;
 		xhp.setFileName(input.toString());
-		try
+		try (MDCCloseable mdc = MDC.putCloseable("xml-export-file", input.toString());
+			 InputStream fis = input.openStream())
 		{
-			fis = input.openStream();
 			parse(fis, ob);
-		}
-		finally
-		{
-			if (fis != null)
-				fis.close();
 		}
 	}
 
@@ -226,7 +212,10 @@ public class TopLevelParser implements XmlObjectParser
 	{
 		topLevelObject = ob;         // Use caller-provided object
 		xhp.pushObjectParser(this);
-		parser.parse(new InputSource(is));
+		try (MDCCloseable mdc = MDC.putCloseable("xml-export-file", "input-stream"))
+		{
+			parser.parse(new InputSource(is));
+		}
 		inputName = "";
 	}
 
@@ -237,10 +226,14 @@ public class TopLevelParser implements XmlObjectParser
 	 * @param topLevelObject the object to write in the file
 	 * @throws IOException on IO error
 	 */
-	public static void write( File output, Object topLevelObject ) 
+	public static void write( File output, Object topLevelObject )
 		throws IOException
 	{
-		write(new FileOutputStream(output), topLevelObject);
+		try (MDCCloseable mdc = MDC.putCloseable("xml-export-file", output.getAbsolutePath());
+			OutputStream out = new FileOutputStream(output))
+		{
+			write(out, topLevelObject);
+		}
 	}
 
 	/**
@@ -282,10 +275,6 @@ public class TopLevelParser implements XmlObjectParser
 		else if (topLevelObject instanceof PresentationGroup)
 			xow = new PresentationGroupParser(
 				(PresentationGroup)topLevelObject);
-//		else if (topLevelObject instanceof PMConfigList)
-//			xow = new PMConfigListParser();
-//		else if (topLevelObject instanceof PMConfig)
-//			xow = new PMConfigParser((PMConfig)topLevelObject);
 		else if (topLevelObject instanceof PlatformConfig)
 			xow = new PlatformConfigParser((PlatformConfig)topLevelObject);
 		else if (topLevelObject instanceof EquipmentModel)
@@ -310,8 +299,7 @@ public class TopLevelParser implements XmlObjectParser
 		else if (topLevelObject instanceof PlatformStatus)
 			xow = new PlatformStatusParser((PlatformStatus)topLevelObject);
 		else
-			throw new IOException(
-				"Invalid top-level object type for XML file.");
+			throw new IOException("Invalid top-level object type for XML file.");
 
 		XmlOutputStream xos = new XmlOutputStream(os, xow.myName());
 		xos.xmlDtdUri = null; // This will force standalone=true
@@ -340,7 +328,7 @@ public class TopLevelParser implements XmlObjectParser
 	 * @param atts attributes for this element
 	 * @throws SAXException on parse error
 	 */
-	public void startElement( XmlHierarchyParser hier, String namespaceURI, 
+	public void startElement( XmlHierarchyParser hier, String namespaceURI,
 		String localName, String qname, Attributes atts )
 			throws SAXException
 	{
@@ -360,8 +348,8 @@ public class TopLevelParser implements XmlObjectParser
 		}
 		else if (elementFilter != null && !elementFilter.acceptElement(localName))
 		{
-			Logger.instance().info("In file '" + inputFile.getPath() 
-				+ "', Ignoring element '" + localName + "' because filter returned false.");
+			log.info("In file '{}', Ignoring element '{}' because filter returned false.",
+					 inputFile.getPath(), localName);
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.EnumList_el))
@@ -404,12 +392,15 @@ public class TopLevelParser implements XmlObjectParser
 				top.lastModifyTime = this.getFileLMT();
 				topLevelObject = top;
 			}
-			//top.platformId = pid;
-            try {
+
+            try
+			{
                 top.setId(pid);
             }
-            catch (DatabaseException e) {
+            catch (DatabaseException ex)
+			{
                 // this shouldn't happen.
+				log.atError().setCause(ex).log("Unable to set ID. This error should not happen.");
             }
 
 			hier.pushObjectParser(new PlatformParser(top));
@@ -597,7 +588,6 @@ public class TopLevelParser implements XmlObjectParser
 				topLevelObject = top;
 			}
 
-			// Database.getDb().dataSourceList.add(top);
 			hier.pushObjectParser(new DataSourceParser(top));
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.Site_el))
@@ -646,7 +636,7 @@ public class TopLevelParser implements XmlObjectParser
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.ScheduleEntry_el))
 		{
-			ScheduleEntry se = 
+			ScheduleEntry se =
 				new ScheduleEntry(
 					XmlUtils.getAttrIgnoreCase(atts, XmlDbTags.name_at));
 			topLevelObject = se;
@@ -661,19 +651,18 @@ public class TopLevelParser implements XmlObjectParser
 				topLevelObject = ps;
 				hier.pushObjectParser(new PlatformStatusParser(ps));
 			}
-			catch(NumberFormatException ex)
+			catch (NumberFormatException ex)
 			{
-				throw new SAXException("Invalid non-numeric platform id in " + localName);
+				throw new SAXException("Invalid non-numeric platform id in " + localName, ex);
 			}
 		}
 		else
-			throw new SAXException("Invalid top-level element '" + localName
-				+ "'");
+			throw new SAXException("Invalid top-level element '" + localName + "'");
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
@@ -699,23 +688,6 @@ public class TopLevelParser implements XmlObjectParser
 	 */
 	public Object getTopLevelObject( ) { return topLevelObject; }
 
-	/**
-	 * Convenience method for parsers to log warnings.
-	 * @param msg the message
-	 */
-	public void parseWarning( String msg )
-	{
-		Logger.instance().log(Logger.E_WARNING, inputName + ": " + msg);
-	}
-
-	/**
-	 * Convenience method for parsers to log errors.
-	 * @param msg the message
-	 */
-	public void parseFailure( String msg )
-	{
-		Logger.instance().log(Logger.E_FAILURE, inputName + ": " + msg);
-	}
 
   	/**
 	 * Test main: Parses all files given on command line and prints them
@@ -735,7 +707,7 @@ public class TopLevelParser implements XmlObjectParser
 			TopLevelParser.write(System.out, tlp.topLevelObject);
 		}
 	}
-	
+
 	public ElementFilter getElementFilter()
 	{
 		return elementFilter;

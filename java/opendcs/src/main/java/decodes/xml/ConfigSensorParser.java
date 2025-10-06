@@ -1,8 +1,22 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import java.util.Enumeration;
@@ -10,7 +24,6 @@ import java.util.Iterator;
 import decodes.db.*;
 import ilex.util.TextUtil;
 import ilex.util.IDateFormat;
-import ilex.util.Logger;
 import ilex.util.StringPair;
 
 import java.io.IOException;
@@ -19,10 +32,10 @@ import ilex.xml.*;
 /**
  * This class maps the DECODES XML representation for Site elements.
  */
-public class ConfigSensorParser 
-	implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner, 
-	TaggedDoubleOwner, TaggedLongOwner
+public class ConfigSensorParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner,
+										   TaggedDoubleOwner, TaggedLongOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private ConfigSensor configSensor; // object that we will build.
 	private String propName;     // Tmp storage while waiting for value parse.
 
@@ -49,7 +62,7 @@ public class ConfigSensorParser
 	 * @return name of top element for this parser.
 	 */
 	public String myName( ) { return XmlDbTags.ConfigSensor_el; }
-		
+
 	/**
 	 * @param ch Characters from file
 	 * @param start start of characters
@@ -78,27 +91,27 @@ public class ConfigSensorParser
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.recordingMode_el))
 		{
-			hier.pushObjectParser(new TaggedStringSetter(this, 
+			hier.pushObjectParser(new TaggedStringSetter(this,
 				recordingModeTag));
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.recordingInterval_el))
 		{
-			hier.pushObjectParser(new TaggedStringSetter(this, 
+			hier.pushObjectParser(new TaggedStringSetter(this,
 				recordingIntervalTag));
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.timeOfFirstSample_el))
 		{
-			hier.pushObjectParser(new TaggedStringSetter(this, 
+			hier.pushObjectParser(new TaggedStringSetter(this,
 				timeOfFirstSampleTag));
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.AbsoluteMin_el))
 		{
-			hier.pushObjectParser(new TaggedDoubleSetter(this, 
+			hier.pushObjectParser(new TaggedDoubleSetter(this,
 				absoluteMinTag));
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.AbsoluteMax_el))
 		{
-			hier.pushObjectParser(new TaggedDoubleSetter(this, 
+			hier.pushObjectParser(new TaggedDoubleSetter(this,
 				absoluteMaxTag));
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.DataType_el))
@@ -112,7 +125,7 @@ public class ConfigSensorParser
 				throw new SAXException(XmlDbTags.DataType_el + " without "
 					+ XmlDbTags.DataType_code_at +" attribute");
 			DataType dt = DataType.getDataType(st, cd);
-			
+
 			String nm = atts.getValue(XmlDbTags.name_at);
 			if (nm != null)
 				dt.setDisplayName(nm);
@@ -123,7 +136,7 @@ public class ConfigSensorParser
 		{
 			propName = atts.getValue(XmlDbTags.propertyName_at);
 			if (propName == null)
-				throw new SAXException(XmlDbTags.ConfigSensorProperty_el 
+				throw new SAXException(XmlDbTags.ConfigSensorProperty_el
 					+ " without " + XmlDbTags.propertyName_at +" attribute");
 			hier.pushObjectParser(new TaggedStringSetter(this, propertyTag));
 		}
@@ -143,9 +156,8 @@ public class ConfigSensorParser
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn(
+				"Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
@@ -194,7 +206,7 @@ public class ConfigSensorParser
 		{
 		case sensorNameTag:
 			//if (!TextUtil.containsNoWhitespace(str))
-			//	throw new SAXException(XmlDbTags.sensorName_el + 
+			//	throw new SAXException(XmlDbTags.sensorName_el +
 			//		" must be non-blank and contain no white-space.");
 			configSensor.sensorName = str;
 			break;
@@ -216,25 +228,23 @@ public class ConfigSensorParser
 		case recordingIntervalTag:
 			try
 			{
-				configSensor.recordingInterval = 
+				configSensor.recordingInterval =
 					IDateFormat.getSecondOfDay(str);
 			}
-			catch(IllegalArgumentException e)
+			catch(IllegalArgumentException ex)
 			{
-				throw new SAXException("Illegal recordingInterval: "
-					+ e.toString());
+				throw new SAXException("Illegal recordingInterval: " + str, ex);
 			}
 			break;
 		case timeOfFirstSampleTag:
 			try
 			{
-				configSensor.timeOfFirstSample = 
+				configSensor.timeOfFirstSample =
 					IDateFormat.getSecondOfDay(str);
 			}
-			catch(IllegalArgumentException e)
+			catch(IllegalArgumentException ex)
 			{
-				throw new SAXException("Illegal timeOfFirstSample: "
-					+ e.toString());
+				throw new SAXException("Illegal timeOfFirstSample: " + str, ex);
 			}
 			break;
 
@@ -299,13 +309,13 @@ public class ConfigSensorParser
 		for(Iterator<DataType> it = configSensor.getDataTypes(); it.hasNext(); )
 		{
 			DataType dt = it.next();
-			
+
 			String std = dt.getStandard();
 			String cod = dt.getCode();
 			String nm = dt.getDisplayName();
 
 			if (nm == null)
-				xos.startElement(XmlDbTags.DataType_el, 
+				xos.startElement(XmlDbTags.DataType_el,
 					XmlDbTags.DataType_standard_at, std,
 					XmlDbTags.DataType_code_at, cod);
 			else
@@ -319,21 +329,21 @@ public class ConfigSensorParser
 			xos.endElement(XmlDbTags.DataType_el);
 		}
 		if (configSensor.recordingMode != Constants.recordingModeUndefined)
-			xos.writeElement(XmlDbTags.recordingMode_el, 
+			xos.writeElement(XmlDbTags.recordingMode_el,
 				"" + configSensor.recordingMode);
 		if (configSensor.recordingInterval != -1)
-			xos.writeElement(XmlDbTags.recordingInterval_el, 
+			xos.writeElement(XmlDbTags.recordingInterval_el,
 				IDateFormat.printSecondOfDay(configSensor.recordingInterval, true));
 		if (configSensor.timeOfFirstSample != -1)
-			xos.writeElement(XmlDbTags.timeOfFirstSample_el, 
+			xos.writeElement(XmlDbTags.timeOfFirstSample_el,
 				IDateFormat.printSecondOfDay(configSensor.timeOfFirstSample, true));
 
 		if (configSensor.absoluteMin != Constants.undefinedDouble)
-			xos.writeElement(XmlDbTags.AbsoluteMin_el, 
+			xos.writeElement(XmlDbTags.AbsoluteMin_el,
 				""+configSensor.absoluteMin);
 
 		if (configSensor.absoluteMax != Constants.undefinedDouble)
-			xos.writeElement(XmlDbTags.AbsoluteMax_el, 
+			xos.writeElement(XmlDbTags.AbsoluteMax_el,
 				""+configSensor.absoluteMax);
 
 		boolean wroteStatCode = false;
@@ -362,7 +372,7 @@ public class ConfigSensorParser
 					xos.writeElement(XmlDbTags.UsgsStatCode_el, v);
 			}
 			else
-				xos.writeElement(XmlDbTags.ConfigSensorProperty_el, 
+				xos.writeElement(XmlDbTags.ConfigSensorProperty_el,
 					XmlDbTags.propertyName_at, nm, v);
 		}
 		xos.endElement(myName());

@@ -1,41 +1,26 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $State$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:08  cvs
-*  Added legacy code to repository
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.6  2007/09/27 20:21:55  mmaloney
-*  dev
-*
-*  Revision 1.5  2004/08/30 14:49:32  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.4  2003/11/15 20:08:27  mjmaloney
-*  Updates for new structures in DECODES Database Version 6.
-*  Parsers now ignore unrecognized elements with a warning. They used to
-*  abort. The new behavior allows easier future enhancements.
-*
-*  Revision 1.3  2001/12/02 13:57:21  mike
-*  dev
-*
-*  Revision 1.2  2001/03/18 18:24:36  mike
-*  Implemented PerformanceMeasurments objects & parsers.
-*
-*  Revision 1.1  2001/03/17 01:00:27  mike
-*  dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import java.util.Enumeration;
 import decodes.db.*;
 import ilex.util.TextUtil;
-import ilex.util.Logger;
 import java.io.IOException;
 import ilex.xml.*;
 
@@ -44,6 +29,7 @@ import ilex.xml.*;
  */
 public class PresentationGroupParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner, TaggedBooleanOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private PresentationGroup presentationGroup; // object that we will build.
 
 	private static final int inheritsFromTag = 0;
@@ -63,7 +49,7 @@ public class PresentationGroupParser implements XmlObjectParser, XmlObjectWriter
 	 * @return name of element parsed by this parser
 	 */
 	public String myName( ) { return XmlDbTags.PresentationGroup_el; }
-		
+
 	/**
 	 * @param ch Characters from file
 	 * @param start start of characters
@@ -104,16 +90,14 @@ public class PresentationGroupParser implements XmlObjectParser, XmlObjectWriter
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
@@ -154,20 +138,7 @@ public class PresentationGroupParser implements XmlObjectParser, XmlObjectWriter
 			presentationGroup.inheritsFrom = str;
 			break;
 		case lastModifyTimeTag:
-/*
-MJM 20031023 - Don't use LMT contained in XML. It may not agree with the
-File.lastModified() calls used elsewhere.
-			try
-			{
-				presentationGroup.lastModifyTime
-					= Constants.defaultDateFormat.parse(str);
-			}
-			catch(Exception e)
-			{
-				throw new SAXException("Improper date format '" + str
-					+ "' (should be " + Constants.defaultDateFormat + ")");
-			}
-*/
+			/** ignore, other code uses File operations to determine modified time.*/
 			break;
 		}
 	}
@@ -195,7 +166,7 @@ File.lastModified() calls used elsewhere.
 	 */
 	public void writeXml( XmlOutputStream xos ) throws IOException
 	{
-		xos.startElement(myName(), XmlDbTags.name_at, 
+		xos.startElement(myName(), XmlDbTags.name_at,
 			presentationGroup.groupName);
 
 		if (presentationGroup.inheritsFrom != null)
@@ -203,13 +174,9 @@ File.lastModified() calls used elsewhere.
 			presentationGroup.inheritsFrom);
 		xos.writeElement(XmlDbTags.isProduction_el,
 			presentationGroup.isProduction ? "true" : "false");
-/*
-MJM 20031023 - Don't save LMT in file.
-		if (presentationGroup.lastModifyTime != null)
-			xos.writeElement(XmlDbTags.lastModifyTime_el,
-				Constants.defaultDateFormat.format(
-					presentationGroup.lastModifyTime));
-*/
+		/*
+		MJM 20031023 - Don't save LMT in file.
+		*/
 
 		for(int i = 0; i < presentationGroup.dataPresentations.size(); i++)
 		{
