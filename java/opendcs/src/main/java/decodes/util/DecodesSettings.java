@@ -17,6 +17,8 @@ package decodes.util;
 
 import java.util.Properties;
 
+import org.opendcs.database.api.OpenDcsDao;
+import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -42,7 +44,7 @@ import decodes.launcher.Profile;
  * <p>
  * Singleton access can be gained through the instance() method.
  */
-public class DecodesSettings implements PropertiesOwner
+public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static DecodesSettings _instance = null;
