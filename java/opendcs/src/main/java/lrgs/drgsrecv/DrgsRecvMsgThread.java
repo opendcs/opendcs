@@ -6,7 +6,7 @@
 *  source code for your own purposes, except that no part of the information
 *  contained in this file may be claimed to be proprietary.
 *
-*  Except for specific contractual terms between ILEX and the federal 
+*  Except for specific contractual terms between ILEX and the federal
 *  government, this source code is provided completely without warranty.
 *  For more information contact: info@ilexeng.com
 */
@@ -15,7 +15,6 @@ package lrgs.drgsrecv;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.text.ParseException;
@@ -29,9 +28,6 @@ import ilex.net.BasicClient;
 import ilex.util.ByteUtil;
 import ilex.util.EnvExpander;
 import ilex.util.IDateFormat;
-import ilex.util.Logger;
-import ilex.util.StderrLogger;
-import ilex.util.FileLogger;
 
 import lrgs.archive.MsgArchive;
 import lrgs.common.DcpAddress;
@@ -54,9 +50,7 @@ DRGS. This class connects and continually reads and parses the message
 data. It converts it into an LRGS-style DcpMsg structure and then passes
 it to the archive process for saving.
 */
-public class DrgsRecvMsgThread 
-	extends BasicClient
-	implements Runnable, LrgsInputInterface
+public class DrgsRecvMsgThread extends BasicClient implements Runnable, LrgsInputInterface
 {
 	private int myConnectNum;
 	private int mySlot;
@@ -91,7 +85,6 @@ public class DrgsRecvMsgThread
 
 	protected String status;
 	protected String myName;
-//	private boolean drgsCrLfPoll = false;
 
 	private File cfgFile; // Configuration file containing chan assigns.
 	private int chanArray[];
@@ -125,7 +118,6 @@ public class DrgsRecvMsgThread
 
 	protected int dataSourceId = lrgs.db.LrgsConstants.undefinedId;
 	protected LrgsMain lrgsMain;
-	protected FileLogger activityLogger;
 	protected boolean wasNone = false;
 	protected DrgsConnectCfg myCfg = null;
 	public int myType = DL_DRGSCON;
@@ -175,9 +167,8 @@ public class DrgsRecvMsgThread
 		sourceCode[1] = (byte)'R';
 		this.lrgsMain = lrgsMain;
 		channelOutage = null;
-		activityLogger = null;
 
-		// MJM date format and number formats must be instance variables 
+		// MJM date format and number formats must be instance variables
 		// to avoid thread clashes.
 		carrierDateFmt = new SimpleDateFormat("yyDDDHHmmssSSS");
 		carrierDateFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -206,9 +197,8 @@ public class DrgsRecvMsgThread
 
 		lastResponseTime = System.currentTimeMillis();
 
-Logger.instance().info(module + " " + myName + " starting"
-+ ", isShutdown=" + _isShutdown + ", isEnabled=" + isEnabled()
-+ ", isConnected=" + isConnected());
+		log.info("{} starting{}, isShutdown={}, isEnabled={}, isConnected={}",
+				 myName, _isShutdown, isEnabled(), isConnected());
 		while(!_isShutdown)
 		{
 			long now = System.currentTimeMillis();
@@ -216,7 +206,7 @@ Logger.instance().info(module + " " + myName + " starting"
 			// checkConfig is a hook used by LritDamsNtReceiver. For DRGS, the checkconfig
 			// is handled by the parent.
 			checkConfig();
-			
+
 			if (configChanged)
 			{
 				configChanged = false;
@@ -236,8 +226,8 @@ Logger.instance().info(module + " " + myName + " starting"
 			}
 			else
 			{
-				try 
-				{ 
+				try
+				{
 					DcpMsg msg = getMsg();
 					if (msg != null)
 					{
@@ -245,15 +235,12 @@ Logger.instance().info(module + " " + myName + " starting"
 							continue;
 						msg.setSequenceNum(this.getNextSeqNum());
 						msgArchive.archiveMsg(msg, this);
-						if (activityLogger != null)
-							activityLogger.info(msg.getHeader());
 					}
 					else if (now - lastResponseTime > LrgsConfig.instance().getDamsNtTimeout() * 1000L)
 					{
 						// More than 20 seconds since either msg or NONE.
 						status = "Timeout";
-						log(Logger.E_WARNING, DrgsRecv.EVT_TIMEOUT,
-						  "Timeout on DAMS-NT Messge Socket -- disconnecting.");
+						log.warn("{} Timeout on DAMS-NT Messge Socket -- disconnecting.", DrgsRecv.EVT_TIMEOUT);
 						disconnect();
 					}
 					else
@@ -264,13 +251,12 @@ Logger.instance().info(module + " " + myName + " starting"
 				}
 				catch(IOException ex)
 				{
-					log(Logger.E_WARNING, DrgsRecv.EVT_SOCKIO,
-						"Error on DAMS-NT Messge Socket: " + ex);
+					log.atWarn().setCause(ex).log("{} Error on DAMS-NT Messge Socket: ", DrgsRecv.EVT_SOCKIO);
 					disconnect();
 				}
 			}
 		}
-		log(Logger.E_INFORMATION, 0, "Disconnecting and exiting.");
+		log.info("Disconnecting and exiting.");
 		disconnect();
 		status = "Shutdown";
 		_isShutdown = true;
@@ -286,20 +272,16 @@ Logger.instance().info(module + " " + myName + " starting"
 
 	protected boolean checkMsgOk(DcpMsg msg)
 	{
-		//If Drgs receives msgs older than an hour ago 
-		//- ignore then Check Msg Date 
+		//If Drgs receives msgs older than an hour ago
+		//- ignore then Check Msg Date
 		Date msgDate = msg.getDapsTime();
 		long currentTime = System.currentTimeMillis();
 		if (msgDate != null)
 		{
 			if ((currentTime - msgDate.getTime()) > 3600000 )
 			{
-				log(Logger.E_WARNING, DrgsRecv.EVT_MSG_TOO_OLD,
-					"Received msg older than an hour ago. DCP"
-					+ " address: " + msg.getDcpAddress()
-					+ ", msgtime=" + debugDateFmt.format(msgDate)
-					+ ", curtime=" + debugDateFmt.format(
-						new Date(currentTime)));
+				log.warn("{} Received msg older than an hour ago. DCP address: {}, msgtime={}, curtime={}",
+						 DrgsRecv.EVT_MSG_TOO_OLD, msg.getDcpAddress(), msgDate, new Date(currentTime));
 				return false;
 			}
 		}
@@ -340,13 +322,13 @@ Logger.instance().info(module + " " + myName + " starting"
 		}
 
 		myName = myType == LrgsInputInterface.DL_NETDCPCONT ? "NetDCP:" :
-			myType == LrgsInputInterface.DL_NETDCPPOLL ? "PolledDCP:" 
+			myType == LrgsInputInterface.DL_NETDCPPOLL ? "PolledDCP:"
 			: "DRGS:";
-		myName = myName + 
+		myName = myName +
 			(cfg.name == null ? (cfg.host+":"+cfg.msgPort) : cfg.name);
 
 		if (!noChannelFile)
-			loadChannels(cfg.cfgFile != null ? cfg.cfgFile 
+			loadChannels(cfg.cfgFile != null ? cfg.cfgFile
 				: ("$LRGSHOME/" + cfg.name + ".cfg"));
 
 		if (cfg.drgsSourceCode != null && cfg.drgsSourceCode.length >= 2)
@@ -354,48 +336,29 @@ Logger.instance().info(module + " " + myName + " starting"
 			sourceCode[0] = cfg.drgsSourceCode[0];
 			sourceCode[1] = cfg.drgsSourceCode[1];
 		}
-		dataSourceId = 
+		dataSourceId =
 			lrgsMain.getDbThread().getDataSourceId(DL_DRGS_TYPESTR, cfg.host);
-
-		String activityLogName = LrgsConfig.instance().getMiscProp(
-			"drgsActivityLog");
-		if (activityLogName != null && activityLogName.trim().length() > 0)
-		{
-			String nm = "DRGS-";
-			if (cfg.drgsSourceCode != null) nm += cfg.drgsSourceCode;
-			try { activityLogger = new FileLogger(nm, activityLogName); }
-			catch(IOException ex)
-			{
-				Logger.instance().warning("Cannot create DRGS activity log '"
-					+ activityLogName + "': " + ex);
-				activityLogger = null;
-			}
-		}
-		else
-			activityLogger = null;
 	}
 
 	public DrgsConnectCfg getConfig() { return myCfg; }
-	
+
 	public int getDataSourceId() { return dataSourceId; }
 
 	protected void tryConnect()
 	{
-		log(Logger.E_DEBUG1, 0, "Attempting connection.");
+		log.debug("Attempting connection.");
 		status = "Connecting";
-		try 
+		try
 		{
-			connect(); 
-//			socket.setTcpNoDelay(true);
+			connect();
 		}
 		catch(IOException ex)
 		{
-			log(Logger.E_WARNING, DrgsRecv.EVT_CANNOT_CONNECT,
-				"Connection failed: " + ex);
+			log.atWarn().setCause(ex).log("{}: Connection failed", DrgsRecv.EVT_CANNOT_CONNECT);
 			status = "Bad-Connect";
 			return;
 		}
-		log(Logger.E_INFORMATION, DrgsRecv.EVT_CONNECTED, "Connected.");
+		log.info("{}: Connected.", DrgsRecv.EVT_CONNECTED);
 		status = "Connected";
 
 		// Start with clean slate:
@@ -425,9 +388,9 @@ Logger.instance().info(module + " " + myName + " starting"
 		boolean stateComplete = true;
 		while(stateComplete && isEnabled())
 		{
-			/* In all states, true return means that the state 
+			/* In all states, true return means that the state
 			   was completed and a transition was made.
-			   False means available input was exhausted and 
+			   False means available input was exhausted and
 			   to try again later.
 			*/
 			if (state == HUNT_STATE)
@@ -469,8 +432,7 @@ Logger.instance().info(module + " " + myName + " starting"
 			{
 				if (workingMsg == null)
 				{
-					Logger.instance().warning("DrgsMsgRcvThread: "
-						+ "internal error: state=EXTENDED_QUAL_STATE but workingMsg=null!");
+					log.warn("DrgsMsgRcvThread: internal error: state=EXTENDED_QUAL_STATE but workingMsg=null!");
 					state = HUNT_STATE;
 					return null;
 				}
@@ -482,9 +444,10 @@ Logger.instance().info(module + " " + myName + " starting"
 					try { ret.setOrigAddress(new DcpAddress(new String(origAddr))); }
 					catch(Exception ex)
 					{
-						Logger.instance().warning("DrgsMsgRcvThread: EXTENDED_QUAL_STATE ret is "
-							+ (ret==null?"":"NOT") + " null. stateComplete=" + stateComplete
-							+ ". msgHasExtendedQual=" + msgHasExtendedQual);
+						log.atWarn()
+						   .setCause(ex)
+						   .log("EXTENDED_QUAL_STATE ret is {} null. stateComplete{}, msgHasExtendedQual={}",
+						   		(ret==null?"":"NOT"), stateComplete, msgHasExtendedQual);
 					}
 					numThisHour++;
 					return ret;
@@ -497,7 +460,7 @@ Logger.instance().info(module + " " + myName + " starting"
 
 	/**
 	  Seek for the 4-byte sync pattern, change states when it is found.
-	  Return true if pattern found, false if available input exhausted without 
+	  Return true if pattern found, false if available input exhausted without
 	  success, which means that caller should pause before trying again.
 	*/
 	private boolean huntState()
@@ -514,8 +477,9 @@ Logger.instance().info(module + " " + myName + " starting"
 
 			// Alert user if we read excessive amounts of data with no sync.
 			if ((++totalReadBeforeSync % 100) == 0)
-				log(Logger.E_DEBUG1, 0, "Skipped "
-					+ totalReadBeforeSync + " bytes looking for sync. c=" + (int)c);
+			{
+				log.debug("Skipped {} bytes looking for sync. c={}", totalReadBeforeSync, (int)c);
+			}
 
 			spr[startIndex++] = c;
 			if (c == startPattern[startIndex-1])
@@ -525,10 +489,13 @@ Logger.instance().info(module + " " + myName + " starting"
 					// Success! found complete start pattern.
 					startIndex = 0;
 					if (totalReadBeforeSync > 4)
-						log(Logger.E_DEBUG2, 0, "Skipped "
-							+ (totalReadBeforeSync-4) + " bytes before sync.");
+					{
+						log.trace("Skipped {} bytes before sync.", (totalReadBeforeSync-4));
+					}
 					else
-						log(Logger.E_DEBUG3, 0, "Acquired sync.");
+					{
+						log.trace("Acquired sync.");
+					}
 					totalReadBeforeSync = 0;
 					state = HEADER_STATE;
 					return true;
@@ -546,10 +513,10 @@ Logger.instance().info(module + " " + myName + " starting"
 					// Found complete NONE pattern.
 					noneIndex = 0;
 					if (totalReadBeforeSync > 4)
-						log(Logger.E_DEBUG1, 0, "Skipped "
-							+ (totalReadBeforeSync-4) + " bytes before NONE.");
+					{
+						log.debug("Skipped {} bytes before NONE.", (totalReadBeforeSync-4));
+					}
 					totalReadBeforeSync = 0;
-//					log(Logger.E_DEBUG1, 0, "NONE pattern received.");
 					state = TERMCRLF_STATE;
 					wasNone = true;
 					return true;
@@ -561,12 +528,12 @@ Logger.instance().info(module + " " + myName + " starting"
 		return false;
 	}
 
-	/** 
+	/**
 	  Called on start-pattern mismatch. We may have already read part of the
 	  good sync pattern so shift my scratch-pad spr buffer.
 	  Example: startPattern:   0 B 0 A
 	           data on stream: 0 B 0 B 0 A
-	  The match fails on the 4th char, but we can't just discard all 4, 
+	  The match fails on the 4th char, but we can't just discard all 4,
 	  instead we shift by 2 chars and keep going.
 	*/
 	private void shiftStartPattern()
@@ -628,15 +595,14 @@ Logger.instance().info(module + " " + myName + " starting"
 		if (n != 51)
 		{
 			// This should not happen, we checked above for 51 bytes avail.
-			log(Logger.E_WARNING, DrgsRecv.EVT_BAD_HEADER,
-				"Socket error, 51 available but failed to read 51 -- skipped");
+			log.warn("{}: Socket error, 51 available but failed to read 51 -- skipped", DrgsRecv.EVT_BAD_HEADER);
 			state = HUNT_STATE;
 			return false;
 		}
 		try { workingMsg = parseHeader(headerBuf); }
 		catch(BadHeader ex)
 		{
-			log(Logger.E_WARNING, 0, ex.toString());
+			log.atWarn().setCause(ex).log("bad header, looking for next message.");
 			state = HUNT_STATE;
 			return false;
 		}
@@ -653,8 +619,6 @@ Logger.instance().info(module + " " + myName + " starting"
 	private DcpMsg parseHeader(byte[] buf)
 		throws BadHeader
 	{
-//log(Logger.E_DEBUG3, 0, "parseHeader: header='"
-//+ new String(buf, 4, 51) + "'");
 		// Get length from DAMS-NT header & validate
 		dataLength = 0;
 		for(int i=0; i<5; i++)
@@ -665,7 +629,7 @@ Logger.instance().info(module + " " + myName + " starting"
 				digit = (byte)'0';
 
 			if (!Character.isDigit((char)digit))
-				throw new BadHeader("Non-digit '" + (char)digit 
+				throw new BadHeader("Non-digit '" + (char)digit
 					+ "' in msg length field -- message skipped.");
 			dataLength = (dataLength*10) + ((int)digit - (int)'0');
 		}
@@ -684,13 +648,13 @@ Logger.instance().info(module + " " + myName + " starting"
 				throw new BadHeader("Non hex-digit in DCP address field '"
 				+ (char)domsatData[i] + "' -- message skipped.");
 		}
-		
+
 		// Msg Start Time YYDDDHHMMSS
 		for(int i=0; i<11; i++)
 		{
 			byte digit = buf[15+i];
 			if (!Character.isDigit((char)digit))
-				throw new BadHeader("Non-digit '" + (char)digit 
+				throw new BadHeader("Non-digit '" + (char)digit
 					+ "' in msg start-time field -- message skipped.");
 			domsatData[8+i] = digit;
 		}
@@ -743,13 +707,11 @@ Logger.instance().info(module + " " + myName + " starting"
 		for(int i=0; i<5; i++)
 			domsatData[32+i] = buf[50+i];
 
-//log(Logger.E_DEBUG1, 0, 
-//"parseHeader domsatheader='" + new String(domsatData, 0, 37) + "'");
 		// Make DcpMsg for return
 		DcpMsg ret = new DcpMsg();
-		ret.flagbits = 
+		ret.flagbits =
 			  DcpMsgFlag.MSG_PRESENT
-			| DcpMsgFlag.SRC_DRGS 
+			| DcpMsgFlag.SRC_DRGS
 			| DcpMsgFlag.MSG_NO_SEQNUM
 			| DcpMsgFlag.HAS_CARRIER_TIMES
 			| getMsgTypeFlag();
@@ -764,7 +726,7 @@ Logger.instance().info(module + " " + myName + " starting"
 			if (origAddr[i] != buf[42+i])
 				ret.flagbits |= DcpMsgFlag.ADDR_CORRECTED;
 		}
-		
+
 		// MJM bug fix for NAE Dams-NT DCPs.
 		if (getMsgTypeFlag() == DcpMsgFlag.MSG_TYPE_NETDCP)
 		{
@@ -773,21 +735,19 @@ Logger.instance().info(module + " " + myName + " starting"
 			{
 				ret.setXmitTime(domsatDateFmt.parse(ts));
 			}
-			catch (ParseException e)
+			catch (ParseException ex)
 			{
-				Logger.instance().warning(module + " bad time in msg '" + ts 
-					+ "' -- using current time.");
+				log.atWarn().setCause(ex).log(" bad time in msg '{}' -- using current time.", ts);
 				ret.setXmitTime(new Date());
 			}
 		}
 
 		if (ret.getDcpAddress() == null)
 			ret.setDcpAddress(new DcpAddress(new String(domsatData,0,8)));
-		
+
 		ret.setLocalReceiveTime(new Date());
 		ret.setSeqFileName(null);
 		ret.setDataSourceId(dataSourceId);
-//log(Logger.E_INFORMATION,0,"dataSourceId = " + dataSourceId);
 
 		// baud
 		String bs = new String(buf, 11, 4);
@@ -795,8 +755,10 @@ Logger.instance().info(module + " " + myName + " starting"
 		try { ret.setBaud(Integer.parseInt(bs)); }
 		catch(NumberFormatException ex)
 		{
-			Logger.instance().warning(getInputName() 
-				+ " Invalid baud rate '" +bs+ "': Assuming 300.");
+			log.atWarn()
+			   .setCause(ex)
+			   .addKeyValue("LrgsInputName", getInputName())
+			   .log("Invalid baud rate '{}': Assuming 300.", bs);
 			ret.setBaud(300);
 		}
 
@@ -805,7 +767,7 @@ Logger.instance().info(module + " " + myName + " starting"
 
 		return ret;
 	}
-	
+
 	protected int getMsgTypeFlag()
 	{
 		return DcpMsgFlag.MSG_TYPE_GOES;
@@ -865,9 +827,8 @@ Logger.instance().info(module + " " + myName + " starting"
 		}
 		if ( n != 29 )
 		{
-			log(Logger.E_WARNING, DrgsRecv.EVT_CARRIER_TIMES,
-				"Bad date format on carrier times '" +
-				(new String(carrierBuf)) + "'");
+			log.warn("{}: Bad date format on carrier times '{}'",
+					 DrgsRecv.EVT_CARRIER_TIMES, (new String(carrierBuf)));
 			state = HUNT_STATE;
 			computeCarrierTimes(workingMsg);
 			return true;
@@ -876,12 +837,14 @@ Logger.instance().info(module + " " + myName + " starting"
 		input.read(carrierBuf,n,1);
 		Date sd = parseCarrierTime(new String(carrierBuf, 0, 14));
 		Date ed = parseCarrierTime(new String(carrierBuf, 15, 14));
-		if ( sd == null || ed == null ) {
-			log(Logger.E_WARNING, DrgsRecv.EVT_CARRIER_TIMES,
-				"Bad date format on carrier times '" + 
-				(new String(carrierBuf)) );
+		if (sd == null || ed == null)
+		{
+			log.warn("{} :Bad date format on carrier times '{}'",
+					 DrgsRecv.EVT_CARRIER_TIMES,(new String(carrierBuf)) );
 			computeCarrierTimes(workingMsg);
-		} else {
+		}
+		else
+		{
 			workingMsg.setCarrierStart(sd);
 			workingMsg.setCarrierStop(ed);
 		}
@@ -889,8 +852,8 @@ Logger.instance().info(module + " " + myName + " starting"
 		extQualIdx = 0;
 		return true;
 	}
-	
-	private boolean extendedQualState() 
+
+	private boolean extendedQualState()
 		throws IOException
 	{
 		// Scan ahead to see if we have a complete line. If not, return false.
@@ -904,7 +867,7 @@ Logger.instance().info(module + " " + myName + " starting"
 			if (c != '\r')
 				extQualBuf[extQualIdx++] = (byte)c;
 		}
-		
+
 		if (c == '\n') // means we have a complete line.
 		{
 			// Parse it.
@@ -929,7 +892,7 @@ Logger.instance().info(module + " " + myName + " starting"
 				if (values.length >= 5)
 				{
 					int typ = Integer.parseInt(values[4]);
-					int f = 
+					int f =
 						typ == 0 ? (DcpMsgFlag.BAUD_100|DcpMsgFlag.PLATFORM_TYPE_CS1) :
 						typ == 1 ? (DcpMsgFlag.BAUD_300|DcpMsgFlag.PLATFORM_TYPE_CS1) :
 						typ == 2 ? (DcpMsgFlag.BAUD_300|DcpMsgFlag.PLATFORM_TYPE_CS2) :
@@ -960,8 +923,9 @@ Logger.instance().info(module + " " + myName + " starting"
 			}
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().warning(module + " Bad DAMS-NT extended quality line '" + line 
-					+ "' in the " + field + " field: " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Bad DAMS-NT extended quality line '{}' in the {} field.", line, field);
 			}
 			state = HUNT_STATE;
 			extQualIdx = 0;
@@ -970,7 +934,7 @@ Logger.instance().info(module + " " + myName + " starting"
 		else if (extQualIdx >= extQualBuf.length)
 		{
 			// Line too long. Issue warning and go into hunt mode
-			Logger.instance().warning(module + " Extended quality line too long. Skipping.");
+			log.warn("Extended quality line too long. Skipping.");
 			state = HUNT_STATE;
 			extQualIdx = 0;
 			return true;
@@ -980,9 +944,9 @@ Logger.instance().info(module + " " + myName + " starting"
 	}
 
 
-	
+
 	/**
- 	* A SimpleDateFormat object is not thread-safe and must be in a 
+ 	* A SimpleDateFormat object is not thread-safe and must be in a
  	* synchronized object if used by multiple threads.
 	* MJM - no need for synchronized because formatter is now an instance var.
 	* This method is now just a wrapper to catch exceptions.
@@ -990,7 +954,7 @@ Logger.instance().info(module + " " + myName + " starting"
 	public Date parseCarrierTime(String ct)
 		throws IOException
 	{
-		try 
+		try
 		{
 			Date d = carrierDateFmt.parse(ct);
 			return(d);
@@ -1000,12 +964,12 @@ Logger.instance().info(module + " " + myName + " starting"
 			return null;
 		}
 	}
-	
+
 	public String formatCarrierTime(Date d)
 	{
 		 return carrierDateFmt.format(d);
 	}
-	
+
 	/**
 	  Gobble the terminating CR/LF after the message, set the last response
 	  time variable. Then go back to hunt state.
@@ -1024,9 +988,8 @@ Logger.instance().info(module + " " + myName + " starting"
 			byte lf = (byte)input.read();
 			if (cr != (byte)'\r' || lf != (byte)'\n')
 			{
-				log(Logger.E_DEBUG2, 0,
-					"Improper terminating sequence, expected 0x0D0A, got 0x"
-					+ ByteUtil.toHexChar(cr) + ByteUtil.toHexChar(lf));
+				log.trace("Improper terminating sequence, expected 0x0D0A, got 0x{}",
+						  ByteUtil.toHexChar(cr) + ByteUtil.toHexChar(lf));
 				state = HUNT_STATE;
 			}
 			else
@@ -1036,23 +999,17 @@ Logger.instance().info(module + " " + myName + " starting"
 					state = HUNT_STATE;
 				}
 				else
-					state = 
+					state =
 						msgHasCarrierTimes ? CARRIERTIMES_STATE : HUNT_STATE;
 			}
-if (state == CARRIERTIMES_STATE)
-log(Logger.E_DEBUG2, 0, "Got term CRLF, entering CARRIERTIMES_STATE");
+			if (state == CARRIERTIMES_STATE)
+			{
+				log.trace("Got term CRLF, entering CARRIERTIMES_STATE");
+			}
 
 			return true;
 		}
 		return false;
-	}
-
-	/** Prints a log message with a host/port prefix. */
-	protected void log(int level, int evtNum, String text)
-	{
-		Logger.instance().log(level, module
-			+ (evtNum == 0 ? "" : (":" + evtNum + "-"))
-			+ " " + getName() + ": " + text);
 	}
 
 	/** Returns string of the form "DRGS:host:port". */
@@ -1060,18 +1017,6 @@ log(Logger.E_DEBUG2, 0, "Got term CRLF, entering CARRIERTIMES_STATE");
 	{
 		return myName;
 	}
-
-
-//	/** This method is for debug only, dumps the message to System.out. */
-//	private void dumpMsg(DcpMsg msg)
-//	{
-//		java.io.PrintStream out = System.out;
-//		out.println("--------------------");
-//		out.println("flag = 0x" + Integer.toHexString(msg.flagbits));
-//		out.println("time = " + 
-//			IDateFormat.toString(msg.getLocalReceiveTime(), false));
-//		out.println(msg.toString() + "\n\n");
-//	}
 
 	//=================================================================
 	// The following methods are from the LrgsInputInterface interface
@@ -1094,7 +1039,7 @@ log(Logger.E_DEBUG2, 0, "Got term CRLF, entering CARRIERTIMES_STATE");
 	{
 		mySlot = slot;
 	}
-	
+
 	/** @return the slot number that this interface was given at startup */
 	public int getSlot() { return mySlot; }
 
@@ -1132,16 +1077,16 @@ log(Logger.E_DEBUG2, 0, "Got term CRLF, entering CARRIERTIMES_STATE");
 	}
 
 	public boolean isShutdown() { return _isShutdown; }
-	
+
 	/**
-	 * Enable or Disable the interface. 
+	 * Enable or Disable the interface.
 	 * The interface should only attempt to archive messages when enabled.
 	 * @param enabled true if the interface is to be enabled, false if disabled.
 	 */
 	public void enableLrgsInput(boolean enabled)
 	{
 		this._enabled = enabled;
-		Logger.instance().info(module + " " + myName + " Enabled set to " + enabled);
+		log.info("{} Enabled set to {}", myName, enabled);
 	}
 
 	/**
@@ -1169,8 +1114,8 @@ log(Logger.E_DEBUG2, 0, "Got term CRLF, entering CARRIERTIMES_STATE");
 	{
 		return DL_STRSTAT;
 	}
-	
-	
+
+
 	private static final long MS_PER_HR = 3600*1000L;
 
 	/**
@@ -1179,16 +1124,16 @@ log(Logger.E_DEBUG2, 0, "Got term CRLF, entering CARRIERTIMES_STATE");
 	public String getStatus()
 	{
 		long now = System.currentTimeMillis();
-		
+
 		if (now/MS_PER_HR > lastStatusTime/MS_PER_HR)  // Hour just changed
 		{
-			String s = 
+			String s =
 				(this instanceof lrgs.lrit.LritDamsNtReceiver) ? "lritMinHourly" : "drgsMinHourly";
-				
-Logger.instance().debug3("Looking for property '" + s + "'");
 
-			int minHourly = 
-				(this instanceof lrgs.lrit.LritDamsNtReceiver) ? 
+			log.trace("Looking for property '{}'", s);
+
+			int minHourly =
+				(this instanceof lrgs.lrit.LritDamsNtReceiver) ?
 					LrgsConfig.instance().lritMinHourly : LrgsConfig.instance().drgsMinHourly;
 			if (minHourly > 0                               // Feature Enabled
 			 && isConnected()
@@ -1196,17 +1141,15 @@ Logger.instance().debug3("Looking for property '" + s + "'");
 			{
 				if (numThisHour < minHourly)
 				{
-					Logger.instance().warning(module + " " + getInputName()
-						+ " for hour ending " + new Date((now / MS_PER_HR) * MS_PER_HR)
-						+ " number of messages received=" + numThisHour 
-						+ " which is under minimum threshold of " + minHourly);
+					log.warn("{} for hour ending {} number of messages received={} " +
+							 "which is under minimum threshold of {}",
+							 getInputName(), new Date((now / MS_PER_HR) * MS_PER_HR), numThisHour, minHourly);
 				}
 				if (numThisHour < (numLastHour/2))
 				{
-					Logger.instance().warning(module + " " + getInputName()
-						+ " for hour ending " + new Date((now / MS_PER_HR) * MS_PER_HR)
-						+ " number of messages received=" + numThisHour 
-						+ " which is under half previous hour's total of " + numLastHour);
+					log.warn("{} for hour ending {} number of messages received={} " +
+							 "which is under half previous hour's total of {}",
+							 getInputName(), new Date((now / MS_PER_HR) * MS_PER_HR), numThisHour, numLastHour);
 				}
 			}
 
@@ -1214,8 +1157,8 @@ Logger.instance().debug3("Looking for property '" + s + "'");
 			numLastHour = numThisHour;
 			numThisHour = 0;
 		}
-		
-		
+
+
 		lastStatusTime = now;
 		return status;
 	}
@@ -1228,11 +1171,11 @@ Logger.instance().debug3("Looking for property '" + s + "'");
 	 */
 	private void computeCarrierTimes(DcpMsg msg)
 	{
-		long durationMsec = 
+		long durationMsec =
 			(msg.getDcpDataLength() * 8 * 1000L) / msg.getBaud();
 
 		// Figure the overhead.
-		long overheadMsec = (msg.getBaud() == 100) ? 1750 : 
+		long overheadMsec = (msg.getBaud() == 100) ? 1750 :
 			(msg.getBaud() == 1200) ? 550 : 950;
 
 		Date d = msg.getDapsTime();
@@ -1249,13 +1192,13 @@ Logger.instance().debug3("Looking for property '" + s + "'");
 			cfgFileName = "$LRGSHOME/" + myName + ".cfg";
 		cfgFile = new File(EnvExpander.expand(cfgFileName));
 		if (!cfgFile.canRead())
-			log(Logger.E_DEBUG1, DrgsRecv.EVT_BAD_CONFIG,
-				"Cannot read channel config '" + cfgFileName + "'");
-		Vector<Integer> chanvec = new Vector<>();
-		BufferedReader br = null;
-		try
 		{
-			br = new BufferedReader(new FileReader(cfgFile));
+			log.debug("{}: Cannot read channel config '{}'", DrgsRecv.EVT_BAD_CONFIG, cfgFileName);
+		}
+		Vector<Integer> chanvec = new Vector<>();
+
+		try (BufferedReader br = new BufferedReader(new FileReader(cfgFile)))
+		{
 			String line;
 			while( (line = br.readLine()) != null)
 			{
@@ -1277,8 +1220,6 @@ Logger.instance().debug3("Looking for property '" + s + "'");
 					catch(Exception ex) {}
 				}
 			}
-			br.close();
-			br = null;
 			synchronized(cfgFile)
 			{
 				chanArray = new int[chanvec.size()];
@@ -1287,25 +1228,19 @@ Logger.instance().debug3("Looking for property '" + s + "'");
 					chanArray[i] = ((Integer)chanvec.get(i)).intValue();
 				}
 			}
-			Logger.instance().debug1("DRGS " + getName() + " monitoring "
-				+ chanArray.length + " channels: ");
+			log.debug("{} monitoring {} channels:", getName(), chanArray.length);
 			for(int i=0; i<chanArray.length; i++)
 			{
-				Logger.instance().debug1("" + chanArray[i]);
+				log.debug("{}", chanArray[i]);
 			}
-					
+
 		}
 		catch(IOException ex)
 		{
-			log(Logger.E_DEBUG1, DrgsRecv.EVT_BAD_CONFIG,
-				"Error reading channel config '" + cfgFileName + "': " + ex);
-			if (br != null)
-			{
-				try { br.close(); } catch(Exception ex2) {}
-			}
+			log.debug("{}: Error reading channel config '{}'", DrgsRecv.EVT_BAD_CONFIG, cfgFileName);
 		}
 	}
-	
+
 	protected int getNextSeqNum()
 	{
 		seqNum = (seqNum + 1) % 100000;
@@ -1337,18 +1272,9 @@ Logger.instance().debug3("Looking for property '" + s + "'");
 		}
 	}
 
-//	private void doPoll()
-//	{
-//		try { output.write(crlf); }
-//		catch(IOException ex)
-//		{
-//			Logger.instance().warning("IO Error writing DRGS cr/lf poll: " + ex);
-//		}
-//	}
-	
 	/** @return DRGS never receives APR messages */
 	public boolean getsAPRMessages() { return false; }
-	
+
 	public boolean isEnabled() { return _enabled; }
 
 	@Override
@@ -1356,7 +1282,7 @@ Logger.instance().debug3("Looking for property '" + s + "'");
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
 	/**
 	 * Test main program for parsing data captured from a file.
 	 * @param args
@@ -1364,13 +1290,11 @@ Logger.instance().debug3("Looking for property '" + s + "'");
 	public static void main(String args[])
 		throws Exception
 	{
-		Logger.setLogger(new StderrLogger("DAMS-NT-Test"));
-		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
 		DrgsRecvMsgThread me = new DrgsRecvMsgThread(null, null);
 		me.testFileInput(args[0]);
-		
+
 	}
-	
+
 	private void testFileInput(String filename) throws Exception
 	{
 		this.input = new FileInputStream(filename);
