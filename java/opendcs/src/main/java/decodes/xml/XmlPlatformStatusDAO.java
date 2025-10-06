@@ -1,11 +1,26 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.xml;
-
-import ilex.util.Logger;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.SAXException;
 
 import decodes.db.DatabaseObject;
@@ -15,9 +30,9 @@ import decodes.tsdb.DbIoException;
 import opendcs.dai.PlatformStatusDAI;
 
 
-public class XmlPlatformStatusDAO 
-	implements PlatformStatusDAI
+public class XmlPlatformStatusDAO implements PlatformStatusDAI
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private XmlDatabaseIO parent = null;
 	private File psDir = null;
 
@@ -39,16 +54,17 @@ public class XmlPlatformStatusDAO
 			if (dbo instanceof PlatformStatus)
 				return (PlatformStatus)dbo;
 			else
-				Logger.instance().warning("Ignoring non-PlatformStatus "
-					+ "in file '" + f.getPath() + "'");
+			{
+				log.warn("Ignoring non-PlatformStatus in file '{}'",f.getPath());
+			}
 		}
 		catch (Exception ex)
 		{
-			Logger.instance().warning("Error reading '" + f.getPath() + "': " + ex);
+			log.atWarn().setCause(ex).log("Error reading '{}'", f.getPath());
 		}
 		return null;
 	}
-	
+
 	private String makeFileName(DbKey platformId)
 	{
 		return "ps-" + platformId + ".xml";
@@ -64,7 +80,7 @@ public class XmlPlatformStatusDAO
 		}
 		catch (IOException ex)
 		{
-			throw new DbIoException("Cannot write '" + f.getPath() + "': " + ex);
+			throw new DbIoException("Cannot write '" + f.getPath() + "'", ex);
 		}
 	}
 
@@ -85,19 +101,20 @@ public class XmlPlatformStatusDAO
 					if (dbo instanceof PlatformStatus)
 						ret.add((PlatformStatus)dbo);
 					else
-						Logger.instance().warning("Ignoring non-PlatformStatus "
-							+ "in file '" + f.getPath() + "'");
+					{
+						log.warn("Ignoring non-PlatformStatus in file '{}'", f.getPath());
+					}
 				}
 				catch (SAXException ex)
 				{
-					Logger.instance().warning("Error parsing '" + f.getPath() + "': " + ex);
+					log.atWarn().setCause(ex).log("Error parsing '{}'", f.getPath());
 				}
 			}
 			return ret;
 		}
 		catch (IOException ex)
 		{
-			throw new DbIoException("Cannot list '" + psDir.getPath() + "' xml directory: " + ex);
+			throw new DbIoException("Cannot list '" + psDir.getPath() + "' xml directory", ex);
 		}
 	}
 

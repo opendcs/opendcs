@@ -1,49 +1,27 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $State$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:08  cvs
-*  Added legacy code to repository
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.8  2004/08/30 14:49:33  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.7  2004/06/03 15:15:10  mjmaloney
-*  Fixed import export bugs for SQL database.
-*
-*  Revision 1.6  2003/11/15 20:08:27  mjmaloney
-*  Updates for new structures in DECODES Database Version 6.
-*  Parsers now ignore unrecognized elements with a warning. They used to
-*  abort. The new behavior allows easier future enhancements.
-*
-*  Revision 1.5  2002/05/19 00:22:19  mjmaloney
-*  Deprecated decodes.db.TimeZone and decodes.db.TimeZoneList.
-*  These are now replaced by the java.util.TimeZone class.
-*
-*  Revision 1.4  2001/12/02 13:57:21  mike
-*  dev
-*
-*  Revision 1.3  2001/11/15 01:55:04  mike
-*  Implemented RoutingSpec Edit Screens
-*
-*  Revision 1.2  2001/03/16 22:21:07  mike
-*  Added NetworkLists & corresponding parsers.
-*
-*  Revision 1.1  2001/03/16 19:53:18  mike
-*  Implemented XML parsers for routing specs
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
-import org.opendcs.utils.Property;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import java.util.Enumeration;
 import decodes.db.*;
 import ilex.util.TextUtil;
-import ilex.util.Logger;
 import java.io.IOException;
 import ilex.xml.*;
 
@@ -52,6 +30,7 @@ import ilex.xml.*;
  */
 public class RoutingSpecParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner, TaggedBooleanOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private RoutingSpec routingSpec; // object that we will build.
 	private String propName;         // Tmp storage while wating for value.
 
@@ -171,16 +150,14 @@ public class RoutingSpecParser implements XmlObjectParser, XmlObjectWriter, Tagg
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
@@ -250,7 +227,7 @@ public class RoutingSpecParser implements XmlObjectParser, XmlObjectWriter, Tagg
 				break;
 			case lastModifyTimeTag: // MJM 20031023 - Don't use the LMT contained in XML file. It may not agree
 				break;
-		
+
 		}
 	}
 
@@ -298,12 +275,9 @@ public class RoutingSpecParser implements XmlObjectParser, XmlObjectWriter, Tagg
 			""+routingSpec.enableEquations);
 		xos.writeElement(XmlDbTags.UsePerformanceMeasurements_el,
 			""+routingSpec.usePerformanceMeasurements);
-/*
-MJM 20031023 - Don't save LMT in XML.
-		if (routingSpec.lastModifyTime != null)
-			xos.writeElement(XmlDbTags.lastModifyTime_el,
-				Constants.defaultDateFormat.format(routingSpec.lastModifyTime));
-*/
+		/*
+		MJM 20031023 - Don't save LMT in XML.
+		*/
 		if (routingSpec.outputFormat != null)
 			xos.writeElement(XmlDbTags.OutputFormat_el,
 				routingSpec.outputFormat);

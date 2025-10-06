@@ -1,66 +1,28 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $State$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $Log$
-*  Revision 1.2  2008/12/29 15:30:40  mjmaloney
-*  dev
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1  2008/04/04 18:21:08  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.13  2006/02/27 16:15:01  mmaloney
-*  dev
-*
-*  Revision 1.12  2005/03/15 16:52:03  mjmaloney
-*  Rename Enum to DbEnum for Java 5 compatibility
-*
-*  Revision 1.11  2005/03/15 16:11:30  mjmaloney
-*  Modify 'Enum' for Java 5 compat.
-*
-*  Revision 1.10  2004/08/30 14:49:30  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.9  2003/11/15 20:08:24  mjmaloney
-*  Updates for new structures in DECODES Database Version 6.
-*  Parsers now ignore unrecognized elements with a warning. They used to
-*  abort. The new behavior allows easier future enhancements.
-*
-*  Revision 1.8  2003/10/20 20:22:55  mjmaloney
-*  Database changes for DECODES 6.0
-*
-*  Revision 1.7  2002/03/31 21:09:42  mike
-*  bug fixes
-*
-*  Revision 1.6  2001/01/04 01:33:30  mike
-*  dev
-*
-*  Revision 1.5  2001/01/03 02:54:59  mike
-*  dev
-*
-*  Revision 1.4  2000/12/31 23:12:50  mike
-*  dev
-*
-*  Revision 1.3  2000/12/31 15:55:51  mike
-*  dev
-*
-*  Revision 1.2  2000/12/29 02:50:03  mike
-*  dev
-*
-*  Revision 1.1  2000/12/28 14:01:19  mike
-*  First working version.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import java.util.Collection;
 import java.util.Iterator;
 import decodes.db.*;
 import ilex.util.TextUtil;
-import ilex.util.Logger;
 import java.io.IOException;
 import ilex.xml.*;
 
@@ -70,6 +32,7 @@ import ilex.xml.*;
  */
 public class EnumParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private decodes.db.DbEnum dbenum; // Enum object that we will build.
 	private static final int defaultValueTag = 1;
 
@@ -90,7 +53,7 @@ public class EnumParser implements XmlObjectParser, XmlObjectWriter, TaggedStrin
 	 * @return name of element parsed by this parser
 	 */
 	public String myName( ) { return XmlDbTags.Enum_el; }
-		
+
 	/**
 	 * @param ch Characters from file
 	 * @param start start of characters
@@ -117,18 +80,16 @@ public class EnumParser implements XmlObjectParser, XmlObjectWriter, TaggedStrin
 		{
 			String key = atts.getValue(XmlDbTags.EnumValue_value_at);
 			if (key == null)
-				throw new SAXException( "Enum without " 
+				throw new SAXException( "Enum without "
 					+ XmlDbTags.EnumValue_value_at +" attribute");
 			EnumValue v = null;
 			try
 			{
 				v = dbenum.addValue(key, null, null, null);
-//Logger.instance().debug3("Added to enum '" + dbenum.enumName + "' value '" 
-//+ v.value + "' new size=" + dbenum.size());
 			}
 			catch(ValueAlreadyDefinedException ex)
 			{
-				throw new SAXException(ex.toString());
+				throw new SAXException("Enum '" + key + "' already defined.", ex);
 			}
 			hier.pushObjectParser(new EnumValueParser(v));
 		}
@@ -138,16 +99,14 @@ public class EnumParser implements XmlObjectParser, XmlObjectWriter, TaggedStrin
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
@@ -196,7 +155,7 @@ public class EnumParser implements XmlObjectParser, XmlObjectWriter, TaggedStrin
 	public void writeXml( XmlOutputStream xos ) throws IOException
 	{
 		xos.startElement( myName(),  XmlDbTags.name_at, dbenum.enumName);
-		
+
 		String def = dbenum.getDefault();
 		if (def != null && def.trim().length() > 0)
 			xos.writeElement(XmlDbTags.EnumDefaultValue_el, def);

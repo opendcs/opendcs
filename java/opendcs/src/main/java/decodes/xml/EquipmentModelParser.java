@@ -1,52 +1,28 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $State$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:08  cvs
-*  Added legacy code to repository
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.9  2004/08/30 14:49:30  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.8  2003/11/15 20:08:25  mjmaloney
-*  Updates for new structures in DECODES Database Version 6.
-*  Parsers now ignore unrecognized elements with a warning. They used to
-*  abort. The new behavior allows easier future enhancements.
-*
-*  Revision 1.7  2002/04/06 15:48:19  mike
-*  Expand newlines in description fields.
-*
-*  Revision 1.6  2001/03/23 22:06:36  mike
-*  PlatformConfig can now be top-level parser.
-*
-*  Revision 1.5  2001/03/18 22:23:56  mike
-*  Improved output formatting.
-*
-*  Revision 1.4  2001/01/04 01:33:30  mike
-*  dev
-*
-*  Revision 1.3  2001/01/03 02:54:59  mike
-*  dev
-*
-*  Revision 1.2  2000/12/31 23:12:50  mike
-*  dev
-*
-*  Revision 1.1  2000/12/31 22:30:47  mike
-*  dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import java.util.Enumeration;
 import decodes.db.*;
 import ilex.util.TextUtil;
 import ilex.util.AsciiUtil;
-import ilex.util.IDateFormat;
-import ilex.util.Logger;
 import java.io.IOException;
 import ilex.xml.*;
 
@@ -55,6 +31,7 @@ import ilex.xml.*;
  */
 public class EquipmentModelParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private EquipmentModel equipmentModel; // object that we will build.
 	private String propName;     // Tmp storage while waiting for value parse.
 
@@ -78,7 +55,7 @@ public class EquipmentModelParser implements XmlObjectParser, XmlObjectWriter, T
 	 * @return name of element parsed by this parser
 	 */
 	public String myName( ) { return XmlDbTags.EquipmentModel_el; }
-		
+
 	/**
 	 * @param ch Characters from file
 	 * @param start start of characters
@@ -122,22 +99,20 @@ public class EquipmentModelParser implements XmlObjectParser, XmlObjectWriter, T
 		{
 			propName = atts.getValue(XmlDbTags.propertyName_at);
 			if (propName == null)
-				throw new SAXException(XmlDbTags.EquipmentProperty_el 
+				throw new SAXException(XmlDbTags.EquipmentProperty_el
 					+ " without " + XmlDbTags.propertyName_at +" attribute");
 			hier.pushObjectParser(new TaggedStringSetter(this, propertyTag));
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
@@ -207,14 +182,14 @@ public class EquipmentModelParser implements XmlObjectParser, XmlObjectWriter, T
 			"" + equipmentModel.name);
 
 		if (equipmentModel.equipmentType != null)
-			xos.writeElement(XmlDbTags.equipmentType_el, 
+			xos.writeElement(XmlDbTags.equipmentType_el,
 				equipmentModel.equipmentType);
 		if (equipmentModel.company != null)
 			xos.writeElement(XmlDbTags.company_el, equipmentModel.company);
 		if (equipmentModel.model != null)
 			xos.writeElement(XmlDbTags.model_el, equipmentModel.model);
 		if (equipmentModel.description != null)
-			xos.writeElement(XmlDbTags.description_el, 
+			xos.writeElement(XmlDbTags.description_el,
 				AsciiUtil.bin2ascii(equipmentModel.description.getBytes()));
 
 		Enumeration e = equipmentModel.properties.propertyNames();
@@ -222,8 +197,8 @@ public class EquipmentModelParser implements XmlObjectParser, XmlObjectWriter, T
 		{
 			String nm = (String)e.nextElement();
 			String v = (String)equipmentModel.properties.getProperty(nm);
-			
-			xos.writeElement(XmlDbTags.EquipmentProperty_el, 
+
+			xos.writeElement(XmlDbTags.EquipmentProperty_el,
 				XmlDbTags.propertyName_at, nm, v);
 		}
 		xos.endElement(myName());

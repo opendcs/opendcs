@@ -1,15 +1,29 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
 import java.io.IOException;
 import java.util.Enumeration;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
-import ilex.util.Logger;
+
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import ilex.xml.*;
@@ -19,9 +33,9 @@ import decodes.db.*;
 /**
  * This class maps the DECODES XML representation for Site elements.
  */
-public class PlatformSensorParser implements XmlObjectParser, XmlObjectWriter, 
-	TaggedStringOwner, TaggedLongOwner
+public class PlatformSensorParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner, TaggedLongOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private PlatformSensor platformSensor; // object that we will build.
 	private String propName; // Tmp storage while waiting for value parse.
 
@@ -42,7 +56,7 @@ public class PlatformSensorParser implements XmlObjectParser, XmlObjectWriter,
 	 * @return name of element parsed by this parser
 	 */
 	public String myName( ) { return XmlDbTags.PlatformSensor_el; }
-		
+
 	/**
 	 * @param ch Characters from file
 	 * @param start start of characters
@@ -75,7 +89,7 @@ public class PlatformSensorParser implements XmlObjectParser, XmlObjectWriter,
 		{
 			propName = atts.getValue(XmlDbTags.propertyName_at);
 			if (propName == null)
-				throw new SAXException(XmlDbTags.PlatformSensorProperty_el 
+				throw new SAXException(XmlDbTags.PlatformSensorProperty_el
 					+ " without " + XmlDbTags.propertyName_at +" attribute");
 			hier.pushObjectParser(new TaggedStringSetter(this, propertyTag));
 		}
@@ -85,16 +99,14 @@ public class PlatformSensorParser implements XmlObjectParser, XmlObjectWriter,
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
@@ -135,7 +147,7 @@ public class PlatformSensorParser implements XmlObjectParser, XmlObjectWriter,
 				throw new SAXException("Property value without name!");
 			else if (propName.equalsIgnoreCase("DDNO"))
 			{
-				try 
+				try
 				{
 					platformSensor.setUsgsDdno(Integer.parseInt(str));
 					propName = null;
@@ -154,7 +166,7 @@ public class PlatformSensorParser implements XmlObjectParser, XmlObjectWriter,
 	 * @param tag the tag defined above
 	 * @param v the long-integer content of the element
 	 */
-	public void set( int tag, long v) 
+	public void set( int tag, long v)
 	{
 		switch(tag)
 		{
@@ -170,7 +182,7 @@ public class PlatformSensorParser implements XmlObjectParser, XmlObjectWriter,
 	 */
 	public void writeXml( XmlOutputStream xos ) throws IOException
 	{
-		xos.startElement(myName(), XmlDbTags.sensorNumber_at, 
+		xos.startElement(myName(), XmlDbTags.sensorNumber_at,
 			"" + platformSensor.sensorNumber);
 		if (platformSensor.site != null)
 		{
@@ -201,7 +213,7 @@ public class PlatformSensorParser implements XmlObjectParser, XmlObjectWriter,
 		{
 			String nm = (String)e.nextElement();
 			String v = (String)platformSensor.getProperties().getProperty(nm);
-			xos.writeElement(XmlDbTags.PlatformSensorProperty_el, 
+			xos.writeElement(XmlDbTags.PlatformSensorProperty_el,
 				XmlDbTags.propertyName_at, nm, v);
 		}
 		xos.endElement(myName());
