@@ -1,34 +1,27 @@
 /*
-* $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-* $Log$
-* Revision 1.5  2010/08/19 14:39:54  mmaloney
-* Before searching for a DECODES network list, must read the list from the DB.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-* Revision 1.4  2009/08/12 19:44:17  mjmaloney
-* usgs merge
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-* Revision 1.3  2009/01/22 00:32:17  mjmaloney
-* DB Caching improvements to make msgaccess start quicker.
-* Remove the need to cache the entire database.
-*
-* Revision 1.2  2008/05/29 22:37:09  cvs
-* dev
-*
-* Revision 1.2  2004/07/07 20:51:14  mike
-* dev
-*
-* Revision 1.1  2004/07/06 19:16:26  mike
-* dev
-*
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.gui;
 
 import java.io.File;
 import java.io.IOException;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.InvalidDatabaseException;
@@ -38,6 +31,7 @@ Contains static methods for finding network lists.
 */
 public class NetlistFinder
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	* Finds a network list.
 	* @returns File object representing the readable network list or null
@@ -50,14 +44,14 @@ public class NetlistFinder
 		if (name.equalsIgnoreCase("<all>")
 		 || name.equalsIgnoreCase("<production>"))
 			return null;
-		
-		Logger.instance().debug3("Looking for network list '" + name + "'");
+
+		log.trace("Looking for network list '{}'", name);
 		File f = new File(name);
-		Logger.instance().debug3("   Checking '" + f.getPath() + "'");
+		log.trace("Checking '{}'", f.getPath());
 		if (f.canRead())
 			return f;
 		f = new File(EnvExpander.expand("$DECODES_INSTALL_DIR/netlist/"+name));
-		Logger.instance().debug3("   Checking '" + f.getPath() + "'");
+		log.trace("Checking '{}'", f.getPath());
 		if (f.canRead())
 		{
 			return f;
@@ -67,7 +61,7 @@ public class NetlistFinder
 		Database db = Database.getDb();
 		if (db == null)
 		{
-			Logger.instance().failure("Unable to find netlist. Database is not available.");
+			log.error("Unable to find netlist. Database is not available.");
 			return null;
 		}
 		try
@@ -76,7 +70,7 @@ public class NetlistFinder
 			decodes.db.NetworkList nl = db.networkListList.find(name);
 			if (nl != null)
 			{
-				Logger.instance().debug3("   Found DECODES netlist by that name.");
+				log.trace("Found DECODES netlist by that name.");
 
 				nl.prepareForExec();
 				lrgs.common.NetworkList lln = nl.legacyNetworkList;
@@ -84,28 +78,26 @@ public class NetlistFinder
 				if (!tmpdir.isDirectory())
 					tmpdir.mkdirs();
 				f = new File(tmpdir, name);
-				Logger.instance().debug3("   Creating '" + f.getPath() + "'");
+				log.trace("Creating '{}'", f.getPath());
 				lln.saveFile(f);
 				return f;
 			}
 		}
 		catch(InvalidDatabaseException ex)
 		{
-			Logger.instance().warning(
-				"Cannot construct legacy netlist file for '" + name + "': "
-				+ ex);
+			log.atWarn().setCause(ex).log("Cannot construct legacy netlist file for '{}'", name);
 			return null;
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning(
-				"Cannot write legacy netlist file '" + name + "' in dir '" 
-				+ tmpdirname + "': " + ex);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Cannot write legacy netlist file '{}' in dir '{}'", name, tmpdirname);
 			return null;
 		}
 		catch(DatabaseException ex)
 		{
-			Logger.instance().warning("Cannot load network lists from DECODES database: " + ex);
+			log.atWarn().setCause(ex).log("Cannot load network lists from DECODES database.");
 		}
 		return null;
 	}
