@@ -1,11 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. 
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.util;
 
@@ -17,21 +23,26 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.common.DcpMsgFlag;
-import decodes.decoder.FunctionList;
 import decodes.gui.TopFrame;
-import ilex.util.Logger;
 import decodes.launcher.AlarmEditLauncherAction;
 import decodes.launcher.EventMonLauncherAction;
 import decodes.launcher.LauncherAction;
 import decodes.tsdb.groupedit.TsDbGrpEditor;
-import decodes.util.DecodesVersion;
 import ilex.util.EnvExpander;
 
+/**
+ * @deprecated Do not add additional elements to this class unless we cannot find another way to handled the situation.
+ */
+@Deprecated
 public class ResourceFactory
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static ResourceFactory _instance = null;
-	
+
 	protected ResourceFactory()
 	{
 	}
@@ -53,7 +64,7 @@ public class ResourceFactory
 		else
 			return new lrgs.gui.SearchCriteriaEditFrame(f);
 	}
-	
+
 	public int getFlagRev()
 	{
 		return DcpMsgFlag.myFlagRev;
@@ -87,21 +98,21 @@ public class ResourceFactory
 	{
 		return EnvExpander.expand("$DCSTOOL_HOME/icons/setup48x48.gif");
 	}
-	
+
 	public JButton[] additionalSetupButtons()
 	{
 		return new JButton[0];
 	}
-	
+
 	public void initDbResources()
 		throws decodes.db.DatabaseException
 	{
 		DcpMsgFlag.setFlagRev(0x4b);
 	}
-	
+
 	public ArrayList<LauncherAction> getDacqLauncherActions()
 	{
-Logger.instance().info("getDacqLauncherActions");
+		log.info("getDacqLauncherActions");
 		ArrayList<LauncherAction> ret = new ArrayList<LauncherAction>();
 		if (DecodesSettings.instance().showEventMonitor)
 			ret.add(new EventMonLauncherAction());

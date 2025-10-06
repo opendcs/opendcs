@@ -1,9 +1,23 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.util;
 
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
 import ilex.util.ServerLock;
-import ilex.util.Logger;
 import ilex.util.FileServerLock;
 
 import java.io.BufferedInputStream;
@@ -16,12 +30,16 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 /**
-An instance of this class downloads the NWS Cross Reference file from 
+An instance of this class downloads the NWS Cross Reference file from
 http://www.nws.noaa.gov/oh/hads/USGS/ALL_USGS-HADS_SITES.txt
 */
 public class DownloadNwsXrefThread extends Thread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	String purlstr;
 	String localfn;
 	private static final SimpleDateFormat dayFormat =
@@ -29,7 +47,7 @@ public class DownloadNwsXrefThread extends Thread
 	public static final long MS_PER_DAY = 1000L*3600L*24L;
 	private NwsXref cmap;
 
-	/** 
+	/**
 	 * Constructor.
 	 * @param purlstr URL to download from
 	 * @param localfn name of local file to download to.
@@ -58,76 +76,57 @@ public class DownloadNwsXrefThread extends Thread
 		mylock.setCritical(false);
 		if (!mylock.obtainLock())
 		{
-			Logger.instance().warning("Cannot download NWS Xref because lock file '" + lockpath
-				+ "' is either taken by another process or is unwritable.");
+			log.warn("Cannot download NWS Xref because lock file '{}' is " +
+				 "either taken by another process or is unwritable.", lockpath);
 			return;
 		}
-		Logger.instance().info("Obtained lock file '" + lockpath + "' -- proceeding with download.");
-		
-		BufferedInputStream bis = null;
-		BufferedOutputStream bos = null;
+		log.info("Obtained lock file '{}' -- proceeding with download.", lockpath);
+
 		long now = System.currentTimeMillis();
 		File localFile = new File(EnvExpander.expand(localfn)
 			+ "." + dayFormat.format(new Date(now)));
-		Logger.instance().info("Downloading '" + purlstr
-			+ "' to '" + localFile.getPath() + "'");
+		log.info("Downloading '{}' to '{}'", purlstr, localFile.getPath());
 		try
 		{
 			URL url = new URL(purlstr);
-			bis = new BufferedInputStream(url.openStream());
-			bos = new BufferedOutputStream(new FileOutputStream(localFile));
-			// Note copyStream will close when done.
-			FileUtil.copyStream(bis, bos); 
-			bis = null;
-			bos = null;
+
+			try (BufferedInputStream bis = new BufferedInputStream(url.openStream());
+				 BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(localFile));)
+			{
+				// Note copyStream will close when done.
+				FileUtil.copyStream(bis, bos);
+			}
 
 			File current = new File(EnvExpander.expand(localfn));
 			if (localFile.length() < current.length()*.9)
 			{
-				Logger.instance().warning("Download '" + localFile.getPath()
-					+ "' resulted in a file that is less than 90% the previous "
-					+ "download. Assuming incomplete download.");
+				log.warn("Download '{}' resulted in a file that is less than 90% the previous " +
+						 "download. Assuming incomplete download.", localFile.getPath());
 			}
 			else
 			{
-				Logger.instance().info("NwsXref Download complete, file size=" 
-					+ localFile.length());
-				Logger.instance().info("Copying NwsXref to " +
-						"'"+current.getPath()+"'");
+				log.info("NwsXref Download complete, file size={}", localFile.length());
+				log.info("Copying NwsXref to '{}'", current.getPath());
 				FileUtil.copyFile(localFile, current);
 				cmap.load(current);
 			}
 		}
 		catch(MalformedURLException ex)
 		{
-			Logger.instance().warning("Cannot read NwsXref from '" + purlstr
-				+ "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot read NwsXref from '{}'", purlstr);
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("Cannot download NwsXref from '" + 
-					purlstr
-				+ "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot download NwsXref from '{}'",purlstr);
 		}
-		finally
-		{
-			if (bis != null)
-			{
-				try{ bis.close(); } catch(IOException ex) {}
-			}
-			if (bos != null)
-			{
-				try{ bos.close(); } catch(IOException ex) {}
-			}
-		}
+
 		for(int i=5; i<60; i++)
 		{
 			File oldFile = new File(EnvExpander.expand(localfn)
 				+ "." + dayFormat.format(new Date(now - i * MS_PER_DAY)));
 			if (oldFile.exists())
 			{
-				Logger.instance().info("Deleting old NwsXref '" 
-					+ oldFile.getName() + "'");
+				log.info("Deleting old NwsXref '{}'", oldFile.getName());
 				oldFile.delete();
 			}
 		}
