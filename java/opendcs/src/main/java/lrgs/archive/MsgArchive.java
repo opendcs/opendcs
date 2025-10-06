@@ -1,20 +1,22 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of this source
-*  code may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.archive;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.util.Date;
@@ -22,13 +24,15 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.util.ChannelMap;
 import decodes.util.Pdt;
 import decodes.util.PdtEntry;
 
 import ilex.util.EnvExpander;
 import ilex.util.IDateFormat;
-import ilex.util.Logger;
 
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
@@ -46,15 +50,15 @@ import lrgs.lrgsmain.LrgsInputInterface;
 /**
 Top-level archive for the DCS Toolkit.
 */
-public class MsgArchive
-	implements MsgValidatee
+public class MsgArchive implements MsgValidatee
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Used for log messages. */
 	public static final String module = "Archive";
 
 	/** Event Num for bad index file. */
 	public static final int EVT_BAD_INDEX = 1;
-	
+
 	/** Event Num for bad minute file. */
 	public static final int EVT_BAD_MINUTE_FILE = 2;
 
@@ -72,7 +76,7 @@ public class MsgArchive
 	public static final String lrgs6namePrefix = "arch-";
 	public static final String lrgs7namePrefix = "archv-";
 
-	/** Used to format and parse the date suffixes for archive files. */
+	/** Used to and parse the date suffixes for archive files. */
 	public static SimpleDateFormat nameDateFormat
 		= new SimpleDateFormat("yyyyMMdd");
 	static
@@ -82,64 +86,61 @@ public class MsgArchive
 
 	/** Number of periods to keep (1 period = 1 index file).  */
 	private int numPeriods;
-	
+
 	/** IndexPtr entries hashed by DCP address.  */
 	IndexPtrHash lastMsgHash = new IndexPtrHash();
-	
-	/** time_t that the last message archive was called.  */
-//	private int lastArchiveSec;
-	
+
 	/** Vector of MsgPeriodArchive objects.  */
 	private PeriodArchiveVec periodArchives;
 
 	/** The current period archive being written to.  */
 	private MsgPeriodArchive currentArchive;
-	
+
 	/** Used to periodically save hash, and cleanup cache. */
 	private CheckpointThread checkpointThread;
 
 	/** Merge Filter */
 	private MergeFilter mergeFilter;
 
-	/** 
-	 * Return value to search() when search is complete. 
+	/**
+	 * Return value to search() when search is complete.
 	 * This means that no indexes have been returned and no further calls should
 	 * be made.
 	 */
 	public static final int SEARCH_RESULT_DONE = 1;
 
-	/** 
-	 * Return value to search() meaning to keep calling for more data. 
+	/**
+	 * Return value to search() meaning to keep calling for more data.
 	 * This means one or more indexes have been returned. When these
 	 * are processed, call again for more.
 	 */
 	public static final int SEARCH_RESULT_MORE = 2;
 
-	/** 
+	/**
 	 * Special case for real-time retrieval (no until time). No messages
 	 * have been returned, and caller should pause before trying again.
 	 */
 	public static final int SEARCH_RESULT_PAUSE = 3;
-	
+
 	/**
 	 * The 45 second timeout was reached before any messages were found.
 	 */
 	public static final int SEARCH_RESULT_TIMELIMIT = 4;
 
-	/** We report the archive status to the status-provicer.  */
+	/** We report the archive status to the status-provider.  */
 	private JavaLrgsStatusProvider statusProvider;
 
 	private DailyDomsatSeqMap todaySeqMap;
 	private DailyDomsatSeqMap yesterdaySeqMap;
 	private static final int SPD = 3600*24;
-	
+
 	private MsgValidator validator = null;
-	
+
 	private HashMap<DcpAddress, Date> lastRealGoesTime = new HashMap<DcpAddress, Date>();
 
 	/**
 	 * Constructor -- set defaults.
-	 * @param archiveDirName name of acrhive directory (may contain $env-var)
+	 * @param archiveDirName name of archive directory (may contain $env-var)
 	 */
 	public MsgArchive(String archiveDirName)
 	{
@@ -179,7 +180,7 @@ public class MsgArchive
 	public synchronized void init( )
 		throws InvalidArchiveException
 	{
-		Logger.instance().debug1(module + " MsgArchive.init()");
+		log.debug("MsgArchive.init()");
 
 		if (!archiveDir.isDirectory())
 			if (!archiveDir.mkdirs())
@@ -189,7 +190,7 @@ public class MsgArchive
 
 		String files[] = archiveDir.list();
 		if (files == null) // means archiveDir is not a directory
-			throw new InvalidArchiveException("Archive Directory '" 
+			throw new InvalidArchiveException("Archive Directory '"
 				+ archiveDir.getPath() + "' cannot be listed.");
 
 		int now = (int)(System.currentTimeMillis() / 1000L);
@@ -206,7 +207,7 @@ public class MsgArchive
 				continue;
 
 			if (files[i].endsWith(MsgPeriodArchive.MSG_EXT)
-			 && files[i].length() == 
+			 && files[i].length() ==
 				npl + 8 + MsgPeriodArchive.MSG_EXT.length())
 			{
 				int startTime = 0;
@@ -217,48 +218,43 @@ public class MsgArchive
 				}
 				catch(ParseException pex)
 				{
-					Logger.instance().warning(module + " File '" + files[i] 
-						+ "' contains a date field that could not be parsed: "
-						+ pex);
+					log.atWarn()
+					   .setCause(pex)
+					   .log("File '{}' contains a date field that could not be parsed: ", files[i]);
 					continue;
 				}
-				String arcRootPath = archiveDir.getPath() + File.separator 
+				String arcRootPath = archiveDir.getPath() + File.separator
 					+ files[i].substring(0, npl+8);
-				Logger.instance().debug1(module 
-					+ " Initializing archive with root '" + arcRootPath + "'");
-				boolean isCurrent = 
+				log.debug("Initializing archive with root '{}'", arcRootPath);
+				boolean isCurrent =
 					now - startTime < MsgPeriodArchive.periodDuration;
 				try
 				{
 					MsgPeriodArchive arc=periodArchives.findByStart(startTime);
 					if (arc != null)
 					{
-						Logger.instance().warning(module 
-							+ " Archive with start time=" + startTime
-							+ " already exists. Ignoring '"
-							+ arcRootPath + "'");
+						log.warn(" Archive with start time={} already exists. Ignoring '{}'",
+								 startTime, arcRootPath);
 						continue;
 					}
-			
+
 					arc = new MsgPeriodArchive(arcRootPath, startTime, isCurrent);
 					periodArchives.insert(arc);
 					if (isCurrent)
 					{
-						Logger.instance().debug1(module + " Current archive is "
-							+ arcRootPath);
+						log.debug("Current archive is {}", arcRootPath);
 						currentArchive = arc;
 					}
 				}
 				catch(IOException ioex)
 				{
-					Logger.instance().failure(module + ":" + EVT_BAD_ARCHIVE
-						+ "- Could not create archive for '"
-						+ arcRootPath + "': " + ioex);
+					log.atError().setCause(ioex).log("{}- Could not create archive for '{}'", EVT_BAD_ARCHIVE, arcRootPath);
 				}
 			}
 			else
-				Logger.instance().debug1(module 
-					+ " MsgArchive.init() skipping '" + files[i] + "'");
+			{
+				log.debug("MsgArchive.init() skipping '{}'", files[i]);
+			}
 		}
 
 		// Read the hash table into memory
@@ -269,7 +265,7 @@ public class MsgArchive
 		// the most recent archive and update the hash.
 		if (currentArchive != null)
 		{
-			Logger.instance().info(module + " scanning current index.");
+			log.info("scanning current index.");
 			DcpMsgIndex ibuf[] = new DcpMsgIndex[1024];
 			for(int i=0; i<ibuf.length; i++)
 				ibuf[i] = null;
@@ -286,10 +282,6 @@ public class MsgArchive
 					{
 						DcpAddress daddr = ibuf[i].getDcpAddress();
 						IndexPtr lastPtr = lastMsgHash.get(daddr);
-//if (daddr.toString().startsWith("30003401"))
-//Logger.instance().info("MsgArchive.init indexNum " + (idxnum+i) + " addr=" 
-//	+ daddr.toString()
-//	+ " lastPtr=" + (lastPtr == null ? "null" : lastPtr.toString()));
 						if (lastPtr == null
 						 || lastPtr.indexFileStartTime < curStart
 						 || (lastPtr.indexFileStartTime == curStart
@@ -299,10 +291,10 @@ public class MsgArchive
 							lastPtr = new IndexPtr(curStart, idxnum+i,
 								(int)(ibuf[i].getLocalRecvTime().getTime()/1000L),
 								ibuf[i].getFlagbits(), 10000);
-				
+
 							lastMsgHash.put(daddr, lastPtr);
 						}
-						
+
 						char fc = ibuf[i].getFailureCode();
 						if ((ibuf[i].getFlagbits() & DcpMsgFlag.MSG_TYPE_MASK)
 							== DcpMsgFlag.MSG_TYPE_GOES
@@ -317,50 +309,38 @@ public class MsgArchive
 					if (nr != ibuf.length)
 						break;
 					idxnum += nr;
-					Logger.instance().debug1(module + " read " + idxnum + " indexes.");
+					log.debug("read {} indexes.", idxnum);
 				}
 			}
 			catch(IOException ex)
 			{
-				Logger.instance().warning(module + " IO Error scanning index: "+ex);
+				log.atWarn().setCause(ex).log("IO Error scanning index.");
 			}
-			Logger.instance().info(module + " scan complete, " + idxnum + " indexes read.");
+			log.info("scan complete, {} indexes read.", idxnum);
 		}
 
 		if (LrgsConfig.instance().getDoPdtValidation())
 		{
-			Logger.instance().info(module + " Loading PDT.");
+			log.info(" Loading PDT.");
 			Pdt.instance().startMaintenanceThread(LrgsConfig.instance().getPdtUrl(),
 				EnvExpander.expand("$LRGSHOME/pdt"));
 			long start = System.currentTimeMillis();
-//			while(System.currentTimeMillis() - start < 60000L
-//			 && !Pdt.instance().isLoaded());
-//			if (!Pdt.instance().isLoaded())
-//				Logger.instance().warning(module 
-//					+ " PDT still not loaded after 60 seconds "
-//					+ "-- proceeding without it.");
-	
-			Logger.instance().info(module + " Loading Channel Map.");
+
+			log.info("Loading Channel Map.");
 			ChannelMap.instance().startMaintenanceThread(
 				LrgsConfig.instance().getChannelMapUrl(),
 				EnvExpander.expand("$LRGSHOME/cdt"));
 			start = System.currentTimeMillis();
-//			while(System.currentTimeMillis() - start < 10000L
-//			 && !ChannelMap.instance().isLoaded());
-//			if (!ChannelMap.instance().isLoaded())
-//				Logger.instance().warning(module 
-//					+ " ChannelMap still not loaded after 10 seconds "
-//					+ "-- proceeding without it.");
-		}		
+		}
 		validator = new MsgValidator(this, Pdt.instance(), ChannelMap.instance());
 
 		checkpointThread = new CheckpointThread(this);
 		checkpointThread.start();
-		
+
 		if (LrgsConfig.instance().getDoPdtValidation())
 			validator.startCheckMissingThread();
 	}
-	
+
 	/**
 	 * Saves IndexPtr to disk.
 	 * Calls active MsgPeriodArchive's finish() method.
@@ -382,6 +362,7 @@ public class MsgArchive
 	 * Archive a DCP message.
 	 * @param msg the message.
 	 * @param src the input device that generated the msg.
+	 * @return true if message was archived, false if it was discarded.
 	 */
 	public synchronized void archiveMsg( DcpMsg msg, LrgsInputInterface src)
 	{
@@ -390,9 +371,8 @@ public class MsgArchive
 		{
 			if (msg.isDapsStatusMsg())
 			{
-				Logger.instance().debug2("Ignoring DAPS Status Msg from source "
-					+ src.getInputName() + " with failure code '" 
-					+ msg.getFailureCode() + "'");
+				log.trace("Ignoring DAPS Status Msg from source {} with failure code '{}'",
+						  src.getInputName(), msg.getFailureCode());
 				return;
 			}
 			if (msg.isGoesMessage())
@@ -404,7 +384,7 @@ public class MsgArchive
 					| (isRandom ? DcpMsgFlag.MSG_TYPE_GOES_RD : DcpMsgFlag.MSG_TYPE_GOES_ST));
 			}
 		}
-		
+
 		// Make sure I have a valid archive for the current time.
 		Date now = new Date();
 		checkCurrentArchive((int)(now.getTime()/1000L));
@@ -417,13 +397,13 @@ public class MsgArchive
 			if (z == null || xmitTime.after(z))
 				lastRealGoesTime.put(msg.getDcpAddress(), xmitTime);
 		}
-		
+
 		if (LrgsConfig.instance().getDoPdtValidation())
 		{
 			validator.validateMsg(msg, src, now);
 		}
 	}
-	
+
 	/** Callback for MsgValidator */
 	public void useValidationResults(char failureCode, String explanation,
 			DcpMsg msg, LrgsInputInterface src, Date t, PdtEntry pdtEntry)
@@ -436,26 +416,22 @@ public class MsgArchive
 			Date z = lastRealGoesTime.get(dcpAddr);
 			if (z != null && z.before(too_old))
 			{
-//				Logger.instance().debug1(
-//					module + " DCP " + dcpAddr + " Missing squelched for inactive platform.");
 				return;
 			}
 			else if (z == null)
 			{
-				
+
 				IndexPtr lastPtr = lastMsgHash.get(dcpAddr);
-	
+
 				if (lastPtr == null)
 				{
-//					Logger.instance().debug1(
-//						module + " DCP " + dcpAddr + " Missing squelched for never-seen platform.");
 					lastRealGoesTime.put(dcpAddr, new Date(0L));
 					return;
 				}
-	
+
 				int fileStartTime = lastPtr.indexFileStartTime;
 				int idxNum = lastPtr.indexNumber;
-	
+
 				// 48 hours ago
 				Pdt pdt = Pdt.instance();
 				while (fileStartTime > 0)
@@ -464,33 +440,23 @@ public class MsgArchive
 					MsgPeriodArchive mpa = getPeriodArchive(fileStartTime, false);
 					if (mpa == null || fileStartTime != mpa.startTime)
 					{
-						Logger.instance().debug1(
-							module + " DCP " + dcpAddr
-							+ " Inactive -- Fell off archive");
+						log.debug("DCP {} Inactive -- Fell off archive", dcpAddr);
 						pdtEntry.active_flag = 'N';
 						return;
 					}
 					DcpMsgIndex idx = mpa.getIndexEntrySync(idxNum);
 					if (idx == null)
 					{
-//						Logger.instance().debug1(
-//							module + " Missing squelched -- invalid index ptr");
 						pdtEntry.active_flag = 'N';
 						return;
 					}
 					if (!dcpAddr.equals(idx.getDcpAddress()))
 					{
-//						Logger.instance().debug1(
-//							module + " Missing squelched DCP " + dcpAddr
-//							+ " -- invalid dcp addr");
 						pdtEntry.active_flag = 'N';
 						return;
 					}
 					if (idx.getXmitTime().before(too_old))
 					{
-//						Logger.instance().debug1(
-//							module + " Missing squelched: DCP " + dcpAddr
-//							+ " Inactive -- last msg > 48 hrs ago");
 						pdtEntry.active_flag = 'N';
 						return;
 					}
@@ -498,13 +464,9 @@ public class MsgArchive
 					if (fc == 'G' || fc == '?')
 					{
 						lastRealGoesTime.put(dcpAddr, idx.getXmitTime());
-//						Logger.instance().debug1(
-//							module + " DCP " + dcpAddr
-//							+ " Missing - last msg received at "
-//							+ idx.getXmitTime());
 						break; // We have a real msg within the last 48 hours!
 					}
-	
+
 					fileStartTime = idx.getPrevFileThisDcp();
 					idxNum = idx.getPrevIdxNumThisDcp();
 				}
@@ -513,7 +475,7 @@ public class MsgArchive
 		DcpMsg statmsg = makeStatMsg(msg, failureCode, explanation);
 		doArchiveMsg(statmsg, src, t);
 	}
-	
+
 	/**
 	 * This method does the actual archiving and merge-filtering.
 	 * @param msg The message to archive
@@ -535,7 +497,7 @@ public class MsgArchive
 			lastPtr = new IndexPtr(0, 0, 0, 0, 0);
 			lastMsgHash.put(addr, lastPtr);
 		}
-		
+
 		int mergeResult = MergeFilter.SAVE_DCPMSG;
 		msg.mergeFilterCode = 0;
 		int seqNum = msg.getSequenceNum();
@@ -543,7 +505,7 @@ public class MsgArchive
 		int domsatTT = 0;
 
 		mergeResult = mergeFilter.getMergeResult(msg, lastPtr, origPtr);
-		
+
 		msg.mergeFilterCode = mergeFilter.lastCode;
 		domsatTT = msg.getDomsatTime() == null ? 0
 			: (int)(msg.getDomsatTime().getTime()/1000L);
@@ -551,16 +513,12 @@ public class MsgArchive
 		// Get ptr to previous msg from this DCP.
 		if (!msg.isGoesMessage())
 		{
-			Logger.instance().debug1(module + 
-				(mergeResult == MergeFilter.DISCARD ? " NOT" : "")
-				+ " Archiving NON-GOES message for address '" + addr.toString()
-				+ "' from input slot " 
-				+ slot + ", len=" + msg.getMsgLength() + ", timestamp="
-				+ msg.getDapsTime()+ ", failcode=" 
-				+ msg.getFailureCode() + ", lastPtr=" + lastMsgHash.get(addr)
-				+ ", mergeResult=" + mergeResult
-				+ ", mergeFilterCode=" + msg.mergeFilterCode
-				+ ", seqNum=" + msg.getSequenceNum());
+			log.debug("{} Archiving NON-GOES message for address '{}' " +
+					  "from input slot {}, len={}, timestamp={}, failcode={}, " +
+					  "lastPtr={}, mergeResult={}, mergeFilterCode={}, seqNum={}",
+					  (mergeResult == MergeFilter.DISCARD ? " NOT" : ""), addr.toString(),
+					  slot, msg.getMsgLength(), msg.getDapsTime(), msg.getFailureCode(),
+					  lastMsgHash.get(addr), mergeResult, msg.mergeFilterCode, msg.getSequenceNum());
 		}
 
 		if (mergeResult != MergeFilter.DISCARD)
@@ -573,17 +531,16 @@ public class MsgArchive
 			if (domsatTT > 0 && seqNum >= 0
 			 && (msg.flagbits & DcpMsgFlag.MSG_NO_SEQNUM) == 0)
 			{
-//Logger.instance().info("MJM First mapping seq # " + seqNum);
 				if (domsatTT >= todaySeqMap.startTime
 				 && domsatTT < todaySeqMap.startTime + SPD)
-					todaySeqMap.add(domsatTT*1000L, seqNum, 
+					todaySeqMap.add(domsatTT*1000L, seqNum,
 						(short)(domsatTT / SPD), lastPtr.indexNumber);
 				else if (domsatTT >= yesterdaySeqMap.startTime
 				      && domsatTT < yesterdaySeqMap.startTime + SPD)
-					yesterdaySeqMap.add(domsatTT*1000L, seqNum, 
+					yesterdaySeqMap.add(domsatTT*1000L, seqNum,
 						(short)(domsatTT / SPD), lastPtr.indexNumber);
 			}
-			
+
 			// MJM 2011 11/16 If we get a real GOES msg, mark the pdt as active.
 			if (msg.isGoesMessage())
 			{
@@ -596,33 +553,26 @@ public class MsgArchive
 				}
 			}
 		}
-		else 
+		else
 		{
 			// This msg WAS discarded. If this one HAS a domsat seqnum and
 			// the one we're replacing DOES NOT have one. THEN store this
 			// seqnum refering to the msg already in storage.
 
-//			Logger.instance().debug3(module + 
-//				" Discarding duplicate or redundant msg from " + addr);
 
 			if (domsatTT > 0 && seqNum >= 0
 			 && (msg.flagbits & DcpMsgFlag.MSG_NO_SEQNUM) == 0)
 			{
 				if ((origPtr.flagBits & DcpMsgFlag.MSG_NO_SEQNUM) != 0)
 				{
-// Logger.instance().info("MJM RE mapping seq # " + seqNum +
-// " because previously-saved msg does NOT have seq#. this.flags=0x"
-// + Integer.toHexString(msg.flagbits) + ", prev.flags=0x" 
-// + Integer.toHexString(origPtr.flagBits));
-
 					short idxDayNum = (short)(origPtr.indexFileStartTime / SPD);
 					if (domsatTT >= todaySeqMap.startTime
 					 && domsatTT < todaySeqMap.startTime + SPD)
-						todaySeqMap.add(domsatTT*1000L, seqNum, 
+						todaySeqMap.add(domsatTT*1000L, seqNum,
 							idxDayNum, origPtr.indexNumber);
 					else if (domsatTT >= yesterdaySeqMap.startTime
 					      && domsatTT < yesterdaySeqMap.startTime + SPD)
-						yesterdaySeqMap.add(domsatTT*1000L, seqNum, 
+						yesterdaySeqMap.add(domsatTT*1000L, seqNum,
 							idxDayNum, origPtr.indexNumber);
 
 					// Now mark the old message as HAVING a sequence num.
@@ -635,25 +585,18 @@ public class MsgArchive
 							seqNum, domsatTT*1000L);
 					}
 				}
-				else
-				{
-// Logger.instance().info("MJM NOT mapping seq # " + seqNum +
-// " because prev-saved msg already has seq#. this.flags=0x"
-// + Integer.toHexString(msg.flagbits) + ", prev.flags=0x" 
-// + Integer.toHexString(origPtr.flagBits));
-				}
 			}
 		}
 
 		if (slot != -1)
-			statusProvider.receivedMsg(slot, nowTT, msg.getFailureCode(), 
-				msg.getSequenceNum(), 
+			statusProvider.receivedMsg(slot, nowTT, msg.getFailureCode(),
+				msg.getSequenceNum(),
 				mergeResult != MergeFilter.DISCARD ? lastPtr.indexNumber : -1,
 				mergeResult);
 
 		return mergeResult != MergeFilter.DISCARD;
 	}
-	
+
 	/**
 	 * A synchronized wrapper around checkCurrentArchive so it can be called
 	 * from LrgsMain at the beginning of every day.
@@ -664,40 +607,39 @@ public class MsgArchive
 	{
 		checkCurrentArchive((int)(System.currentTimeMillis()/1000L));
 	}
-	
+
 	/**
 	 * Use current time and lastArchiveSec to determine if it's time to
-	 * start a new MsgPeriodArchive. If so, do it. 
+	 * start a new MsgPeriodArchive. If so, do it.
 	 */
 	private void checkCurrentArchive(int now)
 	{
-		if (currentArchive == null 
+		if (currentArchive == null
 		 || now >= currentArchive.startTime + MsgPeriodArchive.periodDuration)
 		{
-			int startTime = (now / MsgPeriodArchive.periodDuration) 
+			int startTime = (now / MsgPeriodArchive.periodDuration)
 				* MsgPeriodArchive.periodDuration;
-			String arcRootPath = archiveDir.getPath() + File.separator 
-				+ lrgs7namePrefix 
+			String arcRootPath = archiveDir.getPath() + File.separator
+				+ lrgs7namePrefix
 				+ nameDateFormat.format(new Date(startTime*1000L));
 			try
 			{
 				if (currentArchive != null)
 				{
-					lastMsgHash.saveIndexPtrHash(currentArchive.getRootPath() 
+					lastMsgHash.saveIndexPtrHash(currentArchive.getRootPath()
 						+ MsgPeriodArchive.IHASH_EXT, this);
 					currentArchive.finish();
 				}
-				currentArchive = 
+				currentArchive =
 					new MsgPeriodArchive(arcRootPath, startTime, true);
-				Logger.instance().info("Adding log with root path '"
-					+ arcRootPath + "'");
+				log.info("Adding log with root path '{}'", arcRootPath);
 				periodArchives.add(currentArchive);
 			}
 			catch(IOException ioex)
 			{
-				Logger.instance().failure(module + ":" + EVT_BAD_ARCHIVE
-					+ "- Cannot create archive at '"
-					+ arcRootPath + "': " + ioex);
+				log.atError()
+				   .setCause(ioex)
+				   .log("{}- Cannot create archive at '", EVT_BAD_ARCHIVE, arcRootPath);
 				currentArchive = null;
 			}
 		}
@@ -710,13 +652,12 @@ public class MsgArchive
 		}
 		else if (currentArchive.startTime > todaySeqMap.startTime)
 		{
-			Logger.instance().info(module 
-				+ " Rotating DOMSAT Sequence Map");
+			log.info("Rotating DOMSAT Sequence Map");
 			yesterdaySeqMap = todaySeqMap;
 			todaySeqMap = new DailyDomsatSeqMap(currentArchive.startTime, this);
 		}
 	}
-	
+
 	/**
 	 * Returns the specific MsgPeriodArchive that would contain the first
 	 * message with a time equal or greater than the passed time.
@@ -748,7 +689,7 @@ public class MsgArchive
 	 *    then seek backward through the linked list of indexes.
 	 * <p>
 	 * The first choice is better if there are many DCPs or if we are searching
-	 * for a time range that occurred far in the past. 
+	 * for a time range that occurred far in the past.
 	 */
 	public SearchHandle startSearch( MsgFilter filter )
 	{
@@ -781,10 +722,10 @@ public class MsgArchive
 
 		// Compute pointer read range as a number of minutes.
 		long now = System.currentTimeMillis();
-		long sincel = (since == null) ? now - (numPeriods*24*60*60*1000L) 
+		long sincel = (since == null) ? now - (numPeriods*24*60*60*1000L)
 			: since.getTime();
 		int r = (int)((now - sincel) / 60000L);
-		
+
 		double t = .5;
 
 		// Compute m = Number of minutes in since ... until
@@ -794,18 +735,15 @@ public class MsgArchive
 		// Weighted approx # read for a pointer search:
 		int wnrp = (int)(n * 12 * (r/1440.0) * t);
 
-		Logger.instance().debug2(module + " startSearch: n=" + n + ", t=" + t
-			+ ", r=" + r + ", m=" + m
-			+ ", n * 12 * (r/1440.0) * t = " + wnrp);
+		log.trace("startSearch: n={}, t={}, r={}, m={}, n * 12 * (r/1440.0) * t = {}", n, t ,r, m, wnrp);
 		if (wnrp < m)
 		{
-			Logger.instance().debug2(module 
-				+ " Starting BACKWARD POINTER Search");
+			log.trace("Starting BACKWARD POINTER Search");
 			handle.searchMethod = SearchHandle.SM_BACKREF;
 		}
 		else
 		{
-			Logger.instance().debug2(module + " Starting FORWARD INDEX Search");
+			log.trace("Starting FORWARD INDEX Search");
 			handle.searchMethod = SearchHandle.SM_INDEXSEARCH;
 			startIndexSearch(handle);
 		}
@@ -822,10 +760,6 @@ public class MsgArchive
 	{
 		Date since = handle.filter.getSinceTime();
 		int sinceSec = since == null ? 0 : (int)(since.getTime() / 1000L);
-
-//String msg = module + " MsgArchive.startIndexSearch sinceSec=" 
-//+ sinceSec + " since='" + since + "'";
-//Logger.instance().debug1(msg);
 
 		MsgPeriodArchive mpa = getPeriodArchive(sinceSec, true);
 		if (mpa == null)
@@ -853,38 +787,27 @@ public class MsgArchive
 		long start = System.currentTimeMillis();
 		if (handle.searchMethod == SearchHandle.SM_INDEXSEARCH)
 		{
-//Logger.instance().info("Doing SM_INDEXSEARCH");
-			MsgPeriodArchive mpa = 
+			MsgPeriodArchive mpa =
 				getPeriodArchive(handle.periodStartTime, true);
 			if (mpa == null)
 			{
-				String msg = "No archive for start time="
-					+ IDateFormat.time_t2string(handle.periodStartTime);
-				Logger.instance().warning(module + " " + msg);
-				throw new ArchiveUnavailableException(msg,
-					LrgsErrorCode.DBADSINCE);
+				String msg = "No archive for start time=" + IDateFormat.time_t2string(handle.periodStartTime);
+				throw new ArchiveUnavailableException(msg, LrgsErrorCode.DBADSINCE);
 			}
-			try 
+			try
 			{
 				int result;
-				while((result = mpa.searchIndex(handle, stopSearchMsec)) 
+				while((result = mpa.searchIndex(handle, stopSearchMsec))
 					== MsgArchive.SEARCH_RESULT_MORE
 					&& handle.capacity() > 0)
 				{
 					mpa = getPeriodArchive(handle.periodStartTime, true);
 				}
-				
-//if (handle.filter.getClientName().contains("verizon.net"))
-//Logger.instance().info("SM_INDEXSEARCH returning result " + result 
-//+ ", handle.idxBufFillLength=" + handle.idxBufFillLength
-//+ ", handle.nextIdxBufNum=" + handle.nextIdxBufNum);
 				return result;
 			}
 			catch(ArchiveUnavailableException ex)
 			{
-				Logger.instance().warning(module + " Corrupt period "
-					+ mpa.myname);
-				throw ex;
+				throw new ArchiveUnavailableException("Corrupt period " + mpa.myname, ex);
 			}
 		}
 		else if (handle.searchMethod == SearchHandle.SM_BACKREF)
@@ -903,7 +826,6 @@ public class MsgArchive
 		throws ArchiveUnavailableException, SearchTimeoutException
 	{
 		// client name is hostname plus unique numeric ID.
-//boolean isTestClient = handle.filter.getClientName().contains("verizon.net");
 
 		DcpAddress[] addresses = handle.filter.getDcpAddresses();
 		Date since = handle.filter.getSinceTime();
@@ -911,11 +833,7 @@ public class MsgArchive
 		MsgPeriodArchive mpa = null;
 		long searchEnd = searchStart + 45000L;
 
-//if (isTestClient)
-//Logger.instance().info("doBackRefSearch: addresses.length = "
-//+ addresses.length + ", curaddr=" + handle.curaddr);
-
-		while(handle.curaddr < addresses.length 
+		while(handle.curaddr < addresses.length
 		   && handle.capacity() > 0
 		   && System.currentTimeMillis() < searchEnd)
 		{
@@ -925,21 +843,16 @@ public class MsgArchive
 				if (++handle.curaddr < addresses.length)
 				{
 					DcpAddress addr = addresses[handle.curaddr];
-//if (isTestClient)
-//Logger.instance().info(module 
-//+ " Starting ptr search for '" + addr + "'");
 					IndexPtr idxPtr = lastMsgHash.get(addr);
 					if (idxPtr != null)
 					{
 						handle.periodStartTime = idxPtr.indexFileStartTime;
 						handle.nextIndexNum = idxPtr.indexNumber;
-//if (isTestClient)
-//Logger.instance().info(module + " periodStartTime=" + handle.periodStartTime
-//+ ", indexNum=" + handle.nextIndexNum);
 					}
 					else
-						Logger.instance().debug1(
-							module + " No idxPtr entry for '" + addr + "'");
+					{
+						log.debug("No idxPtr entry for '{}'", addr);
+					}
 				}
 				continue;
 			}
@@ -947,36 +860,25 @@ public class MsgArchive
 			if (mpa == null || handle.periodStartTime != mpa.startTime)
 			{
 				if (handle.periodStartTime == 0
-				 || (mpa = getPeriodArchive(handle.periodStartTime, false)) 
+				 || (mpa = getPeriodArchive(handle.periodStartTime, false))
 						== null
 				 || handle.periodStartTime != mpa.startTime)
 				{
 					handle.nextIndexNum = -1; // Done with this address.
-//if (isTestClient)
-//Logger.instance().debug1(module + " done with address '" 
-//+ addresses[handle.curaddr] + "'");
 					continue;
 				}
 			}
-	
-//if (isTestClient)
-//Logger.instance().info(module + " Retrieving index "
-//+ handle.nextIndexNum + " in file " + mpa.myname);
 			DcpMsgIndex dmi = mpa.getIndexEntrySync(handle.nextIndexNum);
 			if (dmi == null)
 			{
-				Logger.instance().warning(
-					"Corrupt pointer for dcp '"
-					+ addresses[handle.curaddr].toString() + "' in archive "
-					+ mpa.myname + "' index num=" + handle.nextIndexNum);
+				log.warn("Corrupt pointer for dcp '{}' in archive '{}' index num={}",
+						 addresses[handle.curaddr].toString(), mpa.myname, handle.nextIndexNum);
 				handle.nextIndexNum = -1; // Skip rest of this address.
 				continue;
 			}
-				
+
 			if (dmi.getXmitTime().getTime()/1000 < sinceTT)
 			{
-//if (isTestClient)
-//Logger.instance().info("doBackRefSearch stopped because time before sinceTT");
 				handle.nextIndexNum = -1; // Done with this address.
 				continue;
 			}
@@ -987,40 +889,31 @@ public class MsgArchive
 				mpa.readMessage(dmi);
 				handle.addIndex(dmi);
 			}
-//else if (isTestClient)
-//Logger.instance().info("doBackRefSearch not including following index because it doesn't pass crit: " + dmi.toString());
-
 
 			handle.periodStartTime = dmi.getPrevFileThisDcp();
 			handle.nextIndexNum = dmi.getPrevIdxNumThisDcp();
 		}
-//if (isTestClient)
-//Logger.instance().info("doBackRefSearch loop stopped: curaddr=" 
-//+handle.curaddr + ", addresses.length=" + addresses.length
-//+", capacity=" + handle.capacity() 
-//+ ", curtime=" + System.currentTimeMillis()
-//+ ",searchEnd=" + searchEnd);
 
 		if (!handle.isEmpty() || handle.curaddr < addresses.length)
 			return SEARCH_RESULT_MORE;
 		else
 			return SEARCH_RESULT_DONE;
 	}
-	
+
 	/**
 	 * Called periodically to checkpoint certain transient info to the disk.
 	 */
 	public void checkpoint()
 	{
-		Logger.instance().debug3(module + " MsgArchive.checkpoint()");
+		log.trace("MsgArchive.checkpoint()");
 		lastMsgHash.saveIndexPtrHash(archiveDir + "/index-hash", this);
 
-		int startTimeCutoff = 
+		int startTimeCutoff =
 			(int)(System.currentTimeMillis() / 1000L)
 			- (numPeriods * MsgPeriodArchive.periodDuration);
 		String cutoffStr = nameDateFormat.format(
 			new Date(startTimeCutoff*1000L));
-	
+
 		periodArchives.checkpointAll(startTimeCutoff, cutoffStr);
 	}
 
@@ -1056,19 +949,19 @@ public class MsgArchive
 		int r = 0;
 		int tt = (int)(fromDomsatTime / 1000L) - 15;
 		if (yesterdaySeqMap != null
-		 && tt >= yesterdaySeqMap.startTime 
+		 && tt >= yesterdaySeqMap.startTime
 		 && tt < yesterdaySeqMap.startTime + SPD)
 			r += yesterdaySeqMap.getMsgsBySeqNum(fromDomsatTime, untilDomsatTime,
 				seqStart, seqEnd, msgs);
 		tt = (int)(untilDomsatTime / 1000L) + 15;
 		if (todaySeqMap != null
-		 && tt >= todaySeqMap.startTime 
+		 && tt >= todaySeqMap.startTime
 		 && tt < todaySeqMap.startTime + SPD)
 			r += todaySeqMap.getMsgsBySeqNum(fromDomsatTime, untilDomsatTime,
 				seqStart, seqEnd, msgs);
 		return r;
 	}
-	
+
 	/**
 	 * Make a DAPS Status Message.
 	 * @param origMsg the original real DCP message.
@@ -1098,6 +991,7 @@ public class MsgArchive
 
 class CheckpointThread extends Thread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	boolean shutdown;
 	MsgArchive archive;
 
@@ -1112,8 +1006,7 @@ class CheckpointThread extends Thread
 
 	public void run()
 	{
-		Logger.instance().debug1(MsgArchive.module 
-			+ " MsgArchive checkpoint thread starting.");
+		log.debug("MsgArchive checkpoint thread starting.");
 		while(!shutdown)
 		{
 			try{ sleep(60000L); }

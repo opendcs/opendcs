@@ -1,14 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of this source
-*  code may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.archive;
 
@@ -20,22 +23,24 @@ import java.io.FileNotFoundException;
 import java.io.EOFException;
 import java.util.Date;
 
-import lrgs.common.DcpAddress;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
 import ilex.util.ArrayUtil;
 import ilex.util.ByteUtil;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.xml.XmlOutputStream;
 import lrgs.ldds.ExtBlockXmlParser;
 import lrgs.ldds.ProtocolError;
 
 /**
-IO Methods for reading and writing periodic files contining DCP messages.
+IO Methods for reading and writing periodic files containing DCP messages.
 */
 public class MsgFile
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Used for the I/O */
 	private RandomAccessFile raf;
 	private byte buf[];
@@ -46,32 +51,32 @@ public class MsgFile
 	/** Size of header on each message */
 	private int headerSize;
 
-	private static final byte MSG_STARTPATTERN[] = 
+	private static final byte MSG_STARTPATTERN[] =
 		{ (byte)0x1f, (byte)0x2e, (byte)0x3d, (byte)0x4c} ;
-	
+
 	/** For v7 files, used to parse & write XML blocks */
 	private ExtBlockXmlParser xmlParser = null;
 	private ByteArrayOutputStream baos = null;
 	private XmlOutputStream xos = null;
-	public static final byte[] msgStartTag = 
+	public static final byte[] msgStartTag =
 		("<" + ExtBlockXmlParser.DcpMsgElem).getBytes();
-	public static final byte[] msgEndTag = 
+	public static final byte[] msgEndTag =
 		("</" + ExtBlockXmlParser.DcpMsgElem + ">").getBytes();
-	public static final byte[] flagStart = 
+	public static final byte[] flagStart =
 		(" " + ExtBlockXmlParser.flagsAttr + "=\"").getBytes();
-	public static final byte[] domSeqStart = 
+	public static final byte[] domSeqStart =
 		("<" + ExtBlockXmlParser.DomsatSeqElem + ">").getBytes();
-	public static final byte[] domTimeStart = 
+	public static final byte[] domTimeStart =
 		("<" + ExtBlockXmlParser.DomsatTimeElem + ">").getBytes();
 
 	private byte[] xmlMsgBuf = null;
-	
+
 	public MsgFile(File file, boolean writable)
 		throws FileNotFoundException
 	{
 		this.file = file;
 		String fn = file.getName();
-		
+
 		if (TextUtil.startsWithIgnoreCase(fn, "archv"))
 		{
 			fileVersion = 7;
@@ -86,26 +91,22 @@ public class MsgFile
 			fileVersion = 5;
 
 		headerSize = (fileVersion == 6) ? 84 : (fileVersion == 5) ? 20 : 0;
-		Logger.instance().debug1("Opening '" + file.getPath() 
-			+ "' fileVersion="
-			+ fileVersion + ", headerSize = " + headerSize);
+		log.debug("Opening '{}' fileVersion={}, headerSize = {}", file.getPath(), fileVersion, headerSize);
 
 // Note "rw" is 5 to 10 times faster than "rws". Since we intend
 // All of the file io to be done in a single JVM process, "rw" should work
 // just fine.
-//		raf = new RandomAccessFile(file, writable ? "rws" : "r");
 		raf = new RandomAccessFile(file, writable ? "rw" : "r");
 		buf = new byte[4];
 		try
 		{
 			long fileLen = raf.length();
-			Logger.instance().debug1("Opened '" + file.getPath() + "' len="
-				+ fileLen + ", writable=" + writable
-				+ ", fileVersion=" + fileVersion);
+			log.debug("Opened '{}' len={}, writable={}, fileVersion={}",
+					  file.getPath(), fileLen, writable, fileVersion);
 		}
 		catch(IOException ex)
 		{
-			warning("Opened file but couldn't determine size: " + ex);
+			log.atWarn().setCause(ex).log("Opened file but couldn't determine size.");
 		}
 	}
 
@@ -133,7 +134,7 @@ public class MsgFile
 			writeMsgXml(msg);
 			return offset;
 		}
-		
+
 		raf.write(MSG_STARTPATTERN);
 		raf.writeInt(msg.flagbits);
 		Date d = msg.getLocalReceiveTime();
@@ -165,7 +166,7 @@ public class MsgFile
 
 		return offset;
 	}
-	
+
 	/**
 	 * Marks the flag bits in a message indicating that it has been
 	 * deleted.
@@ -183,8 +184,7 @@ public class MsgFile
 		raf.read(buf, 0, 4);
 		if (!matchStartPattern(buf))
 		{
-			warning("Attempt to delete message at location "
-				+ loc + " but start pattern not found.");
+			log.warn("Attempt to delete message at location {} but start pattern not found.", loc);
 			return;
 		}
 		int flagbits = raf.readInt() | DcpMsgFlag.MSG_DELETED;
@@ -202,19 +202,17 @@ public class MsgFile
 		throws EOFException, IOException
 	{
 		raf.seek(loc);
-		
+
 		if (fileVersion >= 7)
 		{
 			addDomsatSequenceXml(loc, seq, domtim);
 			return;
 		}
-		
+
 		raf.read(buf, 0, 4);
 		if (!matchStartPattern(buf))
 		{
-			warning(
-				"MsgFile: Attempt to add seq# at location "
-				+ loc + " but start pattern not found.");
+			log.warn("MsgFile: Attempt to add seq# at location {} but start pattern not found.", loc);
 			return;
 		}
 		int flagbits = raf.readInt() & (~DcpMsgFlag.MSG_NO_SEQNUM);
@@ -234,7 +232,7 @@ public class MsgFile
 		try { raf.close(); }
 		catch(Exception ex) {}
 	}
-	
+
 	/**
 	 * Reads a message from the file at a specific location.
 	 * If the location does not start with a valid start-pattern, this
@@ -245,7 +243,7 @@ public class MsgFile
 	{
 		if (fileVersion == 7)
 			return readMsgXml(loc);
-		
+
 		long origLoc = loc;
 		long fileLen = raf.length();
 		int n = 0;
@@ -269,7 +267,9 @@ public class MsgFile
 			}
 		}
 		if (slide > 0)
-			warning("Skipped " + slide + " bytes, origloc=" + origLoc);
+		{
+			log.warn("Skipped {} bytes, origloc={}", slide, origLoc);
+		}
 		DcpMsg msg = new DcpMsg();
 		msg.flagbits = raf.readInt();
 		msg.setLocalReceiveTime(new Date(raf.readInt()*1000L));
@@ -295,7 +295,7 @@ public class MsgFile
 		loc += (headerSize - 4);
 		if (fileLen - loc < len)
 			throw new EOFException(
-				"EOF-Data: origloc=" + origLoc 
+				"EOF-Data: origloc=" + origLoc
 				+ ", loc=" + loc + ", len=" + len + ", filelen="+fileLen);
 		byte startPatternBuf[] = new byte[len];
 		raf.read(startPatternBuf);
@@ -305,7 +305,7 @@ public class MsgFile
 
 	/**
 	 * Returns the current location in the file.
-	 * If reading a file sequentially, call this method after readMsg to 
+	 * If reading a file sequentially, call this method after readMsg to
 	 * get the first byte position after the file just read.
 	 * @return current location in message file.
 	 */
@@ -349,19 +349,16 @@ public class MsgFile
 		else
 			return 4;
 	}
-	
+
 	private void writeMsgXml(DcpMsg msg)
 		throws IOException
 	{
 		baos.reset();
 		if (!xmlParser.addMsg(xos, msg, file.getName()))
 			return;
-//		if (!msg.isGoesMessage())
-//			Logger.instance().info("MsgFile Writing NON-GOES message:\n" 
-//				+ new String(baos.toByteArray()));
 		raf.write(baos.toByteArray());
 	}
-	
+
 	private void markMsgDeletedXml(long loc)
 		throws IOException
 	{
@@ -370,12 +367,11 @@ public class MsgFile
 		int idx = ByteUtil.indexOf(xmlMsgBuf, numRead, flagStart);
 		if (idx < 0 || idx+flagStart.length+10 >= numRead)
 		{
-			warning("markMsgDeletedXml - no flags found at location " + loc
-				+ ", numRead=" + numRead + ", 1st 32 bytes '"
-				+ new String(xmlMsgBuf, 0, (numRead < 32 ? numRead : 32)));
+			log.warn("markMsgDeletedXml - no flags found at location {}, numRead={}, 1st 32 bytes '{}'",
+					 loc, numRead, new String(xmlMsgBuf, 0, (numRead < 32 ? numRead : 32)));
 			return;
 		}
-		
+
 		// Get old flag value & convert to hex number. Add 2 to skip "0x".
 		try
 		{
@@ -388,10 +384,10 @@ public class MsgFile
 		}
 		catch(NumberFormatException ex)
 		{
-			warning("markMsgDeletedXml failed at location " + loc + ": " + ex);
+			log.atWarn().setCause(ex).log("markMsgDeletedXml failed at location {}", loc);
 		}
 	}
-	
+
 	private void addDomsatSequenceXml(long loc, int seq, long domtim)
 		throws IOException
 	{
@@ -401,10 +397,9 @@ public class MsgFile
 		String seqstr = ExtBlockXmlParser.formatDomsatSeq(seq);
 		if (idx < 0 || idx+domSeqStart.length+5 >= numRead)
 		{
-			warning("addDomsatSequenceXml - no domsat seq found at location "
-				+ loc + "idx=" + idx + ", numRead=" + numRead 
-				+ ", 1st 120 bytes:" 
-				+ new String(xmlMsgBuf, 0, numRead < 120 ? numRead : 120));
+			log.warn("addDomsatSequenceXml - no domsat seq found at location {}, " +
+					 "idx={}, numRead={}, 1st 120 bytes:{}",
+					 idx, numRead, new String(xmlMsgBuf, 0, numRead < 120 ? numRead : 120));
 			return;
 		}
 		raf.seek(loc+idx+domSeqStart.length);
@@ -414,24 +409,17 @@ public class MsgFile
 		String timstr = xmlParser.formatDate(new Date(domtim));
 		if (idx < 0 || idx+domTimeStart.length+timstr.length() >= numRead)
 		{
-			warning("addDomsatSequenceXml - no domsat time found at location "
-				+ loc);
+			log.warn("addDomsatSequenceXml - no domsat time found at location {}", loc);
 			return;
 		}
 		raf.seek(loc+idx+domTimeStart.length);
 		raf.write(timstr.getBytes());
-	}
-	
-	private void warning(String s)
-	{
-		Logger.instance().warning("MsgFile(" + file.getName() + "): " + s);
 	}
 
 	private DcpMsg readMsgXml(long loc)
 		throws IOException, EOFException
 	{
 		raf.seek(loc);
-//		int off = 0;
 		int totalLen = 0;
 		int endTagIdx = -1;
 		int numRead = 0;
@@ -443,24 +431,22 @@ public class MsgFile
 			totalLen += numRead;
 			endTagIdx = ByteUtil.indexOf(xmlMsgBuf, totalLen, msgEndTag);
 		} while(endTagIdx == -1 && numRead == 1024);
-		
+
 		if (endTagIdx == -1)
 			throw new EOFException("No end tag found from location " + loc);
-		
+
 		int startIdx = ByteUtil.indexOf(xmlMsgBuf, totalLen, msgStartTag);
 		if (startIdx != 0)
-			warning("Msg at location " + loc
-				+ " didn't start with correct tag, wasted " + startIdx
-				+ " bytes.");
+		{
+			log.warn("Msg at location {} didn't start with correct tag, wasted {} bytes.", loc, startIdx);
+		}
 		if (startIdx >= endTagIdx)
 		{
-			warning("No valid message at loc=" + loc + ", startIdx="
-				+ startIdx + ", endTagIdx=" + endTagIdx
-				+ ", 1st 32 bytes '" + new String(xmlMsgBuf, 0, 
-					totalLen>32 ? 32 : totalLen) + "'");
+			log.warn("No valid message at loc={}, startIdx={}, endTagIdx={}, 1st 32 bytes '{}'",
+					 loc, startIdx, endTagIdx, new String(xmlMsgBuf, 0, totalLen>32 ? 32 : totalLen));
 			return null;
 		}
-		
+
 		// endTagIdx is the position where the string </DcpMsg> starts.
 		// So we must adjust the seek position to just after the string
 		// for programs like MsgFileDump that read without an index.
@@ -468,18 +454,14 @@ public class MsgFile
 		while(eom < totalLen && Character.isWhitespace((char)xmlMsgBuf[eom]))
 			eom++;
 		raf.seek(loc + eom);
-		
-		byte[] msgBuf = ArrayUtil.getField(xmlMsgBuf, startIdx, 
+
+		byte[] msgBuf = ArrayUtil.getField(xmlMsgBuf, startIdx,
 			endTagIdx + msgEndTag.length - startIdx);
-//warning("readMsgXml loc=" + loc + ", startIdx=" + startIdx + ", endTagIdx=" 
-//+ endTagIdx + ", totalLen=" + totalLen + ", 1st 32 bytes '"
-//+ new String(xmlMsgBuf, 0, 32) + "'");
+
 		try { return xmlParser.parseDcpMsg(msgBuf); }
 		catch(ProtocolError ex)
 		{
-			String errmsg = "Can't parse DcpMsg from data: " + ex;
-			warning(errmsg);
-			throw new IOException(errmsg);
+			throw new IOException("Can't parse DcpMsg from data.", ex);
 		}
 	}
 }

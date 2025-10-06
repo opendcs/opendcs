@@ -1,26 +1,31 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of this source
-*  code may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.archive;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Vector;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Date;
 import java.util.TimeZone;
 import java.text.SimpleDateFormat;
 
-import ilex.util.Logger;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
 import lrgs.common.DcpMsgIndex;
@@ -33,6 +38,7 @@ An archive for a specific period.
 */
 public class MsgPeriodArchive
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String module = "PerArch";
 
 	/**
@@ -45,13 +51,13 @@ public class MsgPeriodArchive
 	String myname;
 
 	/** Static date formatter used for date string. */
-	static SimpleDateFormat startFmt = 
+	static SimpleDateFormat startFmt =
 		new SimpleDateFormat("yyyy/MM/dd");
 
 	/** Static date formatter used for debug messages. */
-	static SimpleDateFormat debugFmt = 
+	static SimpleDateFormat debugFmt =
 		new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
-	
+
 	static
 	{
 		startFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -62,17 +68,12 @@ public class MsgPeriodArchive
 	 * Time duration of this file (1 day).
 	 */
 	public static final int periodDuration = 3600*24;
-	
-	/**
-	 * Temporary storage when reading blocks of indexes.
-	 */
-//	private DcpMsgIndex[] indexBuf;
 
 	private static final int INDEX_BUF_SIZE = 100;
 
 	/** Object used to read/write the indexes */
 	IndexFile indexFile;
-	
+
 	private MsgIndexMinute[] minuteIndex;
 
 	public static final int MIN_PER_DAY = 60*24;
@@ -92,14 +93,14 @@ public class MsgPeriodArchive
 		}
 
 		public int getStartIndexNum() { return startIndexNum; }
-		
+
 		/** Remove entries up to but not including the specified index. */
-		private void rmBefore(int idx) 
+		private void rmBefore(int idx)
 		{
 			removeRange(0,idx);
 			startIndexNum += idx;
 		}
-		
+
 		public synchronized boolean add(DcpMsgIndex idx)
 		{
 			if (size() >= CACHE_MAX_SIZE)
@@ -120,7 +121,7 @@ public class MsgPeriodArchive
 	};
 	private Cache cache;
 
-	
+
 	/** Object used to read/write the messages */
 	private MsgFile msgFile;
 
@@ -132,7 +133,7 @@ public class MsgPeriodArchive
 	public static final String MINUTE_EXT = ".min";
 	public static final String INDEX_EXT =  ".idx";
 	public static final String IHASH_EXT = ".ihash";
-	
+
 	/**
 	 * Constructor.
 	 * Load MsgIndexMinute array from disk.
@@ -141,7 +142,7 @@ public class MsgPeriodArchive
 	 * three files making up this period. The message file will have extension
 	 * '.msg', the index file '.idx', and the minute file '.min'.
 	 *
-	 * @param rootPath the root path name for files for this period. 
+	 * @param rootPath the root path name for files for this period.
 	 * @param startTime unique start time for this period (unix time_t)
 	 * @param isCurrent if true, open files read/write. Else read-only.
 	 */
@@ -149,20 +150,13 @@ public class MsgPeriodArchive
 		throws IOException
 	{
 		module = module + "(" + startFmt.format(new Date(startTime * 1000L)) + ")";
-		Logger.instance().info(module 
-			+ " New archive '" + rootPath + "' start time=" + startTime
-			+ ", isCurrent=" + isCurrent);
+		log.info("New archive '{}' start time={}, isCurrent={}", rootPath, startTime, isCurrent);
 
 		this.rootPath = rootPath;
 		this.startTime = startTime;
-		this.myname = "DayArchive(" + 
+		this.myname = "DayArchive(" +
 			startFmt.format(new Date(startTime * 1000L)) + ")";
 		this.isCurrent = isCurrent;
-
-		// Allocate a buffer of indexes for searching.
-//		indexBuf = new DcpMsgIndex[INDEX_BUF_SIZE];
-//		for(int i=0; i<INDEX_BUF_SIZE; i++)
-//			indexBuf[i] = null;
 
 		// Make a MsgIndexMinute entry for each minute in this period.
 		int numMinutes = periodDuration/60;
@@ -175,27 +169,20 @@ public class MsgPeriodArchive
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().info(module + 
-				" Cannot initialize minute index. Assuming new period.");
+			log.atWarn().setCause(ex).log("Cannot initialize minute index. Assuming new period.");
 		}
 
 		// Instantiate the read/write objects for the message & index files.
 		try { indexFile = new IndexFile(rootPath + INDEX_EXT, isCurrent); }
 		catch(IOException ioex)
 		{
-			Logger.instance().warning(module + 
-				" Cannot open index file '" + rootPath + INDEX_EXT 
-				+ "': " + ioex);
-			throw ioex;
+			throw new IOException("Cannot open index file ''" + rootPath + INDEX_EXT +"'", ioex);
 		}
 
 		try { msgFile = new MsgFile(new File(rootPath + MSG_EXT), isCurrent); }
 		catch(IOException ioex)
 		{
-			Logger.instance().warning(module + 
-				" Cannot open message file '" + rootPath + MSG_EXT 
-				+ "': " + ioex);
-			throw ioex;
+			throw new IOException(" Cannot open message file '" + rootPath + MSG_EXT + "'", ioex);
 		}
 
 		// The cache is used for recent entries for very fast retrieval.
@@ -204,8 +191,7 @@ public class MsgPeriodArchive
 		if (isCurrent)
 		{
 			cache = new Cache(indexFile.getNumEntries());
-			Logger.instance().debug1(module + " Cache starting at index number "
-				+ cache.getStartIndexNum());
+			log.debug(" Cache starting at index number {}", cache.getStartIndexNum());
 		}
 	}
 
@@ -221,25 +207,17 @@ public class MsgPeriodArchive
 		int idxNum = 0;
 		try
 		{
-//			if (!msg.isGoesMessage())
-//				Logger.instance().info(module + " Archiving NON-GOES message "
-//				+ "with DCP Address=" + msg.getDcpAddress() 
-//				+ ", flag=0x" + Integer.toHexString(msg.flagbits));
 			int loc = (int)msgFile.writeMsg(msg);
-//			Logger.instance().info(module + " Archived message at location " + loc);
 
-			DcpMsgIndex idx = new DcpMsgIndex(msg, 
+			DcpMsgIndex idx = new DcpMsgIndex(msg,
 				prevPtr.indexFileStartTime, prevPtr.indexNumber, loc);
 			idxNum = addIndex(idx);
-//Logger.instance().debug3(module + " Created new index #" + idxNum + ", failcode="+idx.getFailureCode());
+
 			return idxNum;
 		}
 		catch(IOException ioex)
 		{
-			Logger.instance().warning(
-				module + ":" + MsgArchive.EVT_BAD_INDEX
-				+ "- Could not add message to archive: "
-				+ ioex);
+			log.atWarn().setCause(ioex).log("{}- Could not add message to archive: ", MsgArchive.EVT_BAD_INDEX);
 		}
 		return -1;
 	}
@@ -254,41 +232,39 @@ public class MsgPeriodArchive
 		DcpMsgIndex idx = getIndexEntry(indexNum);
 		if (idx == null)
 		{
-			Logger.instance().warning(
-				module + ":" + MsgArchive.EVT_BAD_INDEX
-				+ "- deletemsg(indexNum=" + indexNum + ") Could not read index.");
+			log.warn("{}- deletemsg(indexNum={}) Could not read index.", MsgArchive.EVT_BAD_INDEX, indexNum);
 			return;
 		}
-		
+
 		idx.setFlagbits(idx.getFlagbits() | DcpMsgFlag.MSG_DELETED);
 		try { indexFile.writeIndex(idx, indexNum); }
 		catch(IOException ioex)
 		{
-			Logger.instance().warning(
-				module + ":" + MsgArchive.EVT_BAD_INDEX
-				+ "- deletemsg(indexNum=" + indexNum + ") Could not write deleted index :"
-				+ ioex);
+			log.atWarn()
+			   .setCause(ioex)
+			   .log("{}- deletemsg(indexNum={}) Could not write deleted index.",
+			   		MsgArchive.EVT_BAD_INDEX, indexNum);
 			return;
 		}
-		
+
 		if (idx.getDcpMsg() != null)
 			idx.getDcpMsg().flagbits |= DcpMsgFlag.MSG_DELETED;
 		try { msgFile.markMsgDeleted(idx.getOffset()); }
 		catch(IOException ioex)
 		{
-			Logger.instance().warning(
-				module + ":" + MsgArchive.EVT_BAD_INDEX
-				+ "- deletemsg(indexNum=" + indexNum + ") Could mark message deleted at offset="
-				+ idx.getOffset() + ": " + ioex);
+			log.atWarn()
+			   .setCause(ioex)
+			   .log("{}- deletemsg(indexNum={}) Could not mark message deleted at offset={}",
+			   		MsgArchive.EVT_BAD_INDEX, indexNum, idx.getOffset());
 		}
 	}
 
-	public synchronized void addDomsatSequence(int indexNum, int seqNum, 
+	public synchronized void addDomsatSequence(int indexNum, int seqNum,
 		long domsatTime)
 	{
 		if (!isCurrent)
 			return;
-		
+
 		DcpMsgIndex idx = null;
 		try
 		{
@@ -301,11 +277,10 @@ public class MsgPeriodArchive
 		}
 		catch(IOException ioex)
 		{
-			Logger.instance().warning(
-				module + ":" + MsgArchive.EVT_BAD_INDEX
-				+ "- Index File for '" + rootPath 
-				+ "' Could not add Domsat Seq# to index number " + indexNum
-				+ ": " + ioex);
+			log.atWarn()
+			   .setCause(ioex)
+			   .log("{}- Index File for '{}' Could not add Domsat Seq# to index number {}",
+			   		MsgArchive.EVT_BAD_INDEX, rootPath, indexNum);
 		}
 		try
 		{
@@ -320,11 +295,10 @@ public class MsgPeriodArchive
 		}
 		catch(IOException ioex)
 		{
-			Logger.instance().warning(
-				module + ":" + MsgArchive.EVT_BAD_INDEX
-				+ "- Msg File for '" + rootPath 
-				+ "' Could not add Domsat Seq# to index number " + indexNum
-				+ ": " + ioex);
+			log.atWarn()
+			   .setCause(ioex)
+			   .log("{}- Msg File for '{}' Could not add Domsat Seq# to index number {}",
+			   		MsgArchive.EVT_BAD_INDEX, rootPath, indexNum);
 		}
 	}
 
@@ -339,14 +313,14 @@ public class MsgPeriodArchive
 		try { indexFile.writeIndex(idx, indexNum); }
 		catch(IOException ioex)
 		{
-			Logger.instance().failure(
-				module + ":" + MsgArchive.EVT_BAD_INDEX
-				+ "- Cannot save index number "
-				+ indexNum + " index file will be corrupt: " + ioex);
+			log.atError()
+			   .setCause(ioex)
+			   .log("{}- Cannot save index number {} index file will be corrupt: ",
+			   		MsgArchive.EVT_BAD_INDEX, indexNum);
 		}
 		cache.add(idx);
-		updateIndexMinute(indexNum, 
-			(int)(idx.getLocalRecvTime().getTime()/1000L), 
+		updateIndexMinute(indexNum,
+			(int)(idx.getLocalRecvTime().getTime()/1000L),
 			(int)(idx.getXmitTime().getTime()/1000L));
 		return indexNum;
 	}
@@ -363,7 +337,7 @@ public class MsgPeriodArchive
 	}
 
 	/**
-	 * Determine the 'minute' from recvTime and retrieve the 
+	 * Determine the 'minute' from recvTime and retrieve the
 	 * MsgIndexMinute from the array. If the new dapsTime &lt; the one
 	 * in the entry, update and save.
 	 * @param indexNum the new index number
@@ -385,22 +359,20 @@ public class MsgPeriodArchive
 				minuteIndex[minuteNum].oldestDapsTime = dapsTime;
 		}
 	}
-	
+
 	/**
-	 * Called on the current archive when a new period is starting and 
+	 * Called on the current archive when a new period is starting and
 	 * this period is finished (i.e. end of day).
 	 * Flushes the minute archive to disk.
 	 * Re-opens index and message files read-only.
 	 */
 	public synchronized void finish( )
 	{
-		Logger.instance().info("Archive " + myname + " is finished ... "
-			+ " re-opening read-only.");
+		log.info("Archive {} is finished ...  re-opening read-only.", myname);
 		try { MinuteFile.save(rootPath + MINUTE_EXT, minuteIndex); }
 		catch(IOException ex)
 		{
-			Logger.instance().warning(module 
-				+ " Cannot save minute index: " + ex);
+			log.atWarn().setCause(ex).log("Cannot save minute index.");
 		}
 		indexFile.close();
 		indexFile = null;
@@ -411,16 +383,12 @@ public class MsgPeriodArchive
 		try { indexFile = new IndexFile(rootPath + INDEX_EXT, false); }
 		catch(IOException ioex)
 		{
-			Logger.instance().warning(module + 
-				" Cannot open index file '" + rootPath + INDEX_EXT 
-				+ "': " + ioex);
+			log.atWarn().setCause(ioex).log("Cannot open index file '{}{}'", rootPath, INDEX_EXT);
 		}
 		try { msgFile = new MsgFile(new File(rootPath + MSG_EXT), false); }
 		catch(IOException ioex)
 		{
-			Logger.instance().warning(module + 
-				" Cannot open message file '" + rootPath + MSG_EXT 
-				+ "': " + ioex);
+			log.atWarn().setCause(ioex).log(" Cannot open message file '{}{}'", rootPath, MSG_EXT);
 		}
 	}
 
@@ -429,7 +397,6 @@ public class MsgPeriodArchive
 	 */
 	public void close()
 	{
-//		indexBuf = null;
 		indexFile.close();
 		minuteIndex = null;
 		cache = null;
@@ -438,19 +405,18 @@ public class MsgPeriodArchive
 
 	/**
 	 * This method is called periodically to checkpoint critical info to disk
-	 * and other periodic maintenance, like flushing old entries from the 
+	 * and other periodic maintenance, like flushing old entries from the
 	 * cache.
 	 */
 	public synchronized void checkpoint()
 	{
-		Logger.instance().debug3("MsgPeriodArchive.checkpoint()");
+		log.trace("MsgPeriodArchive.checkpoint()");
 		if (isCurrent)
 		{
 			try { MinuteFile.save(rootPath + MINUTE_EXT, minuteIndex); }
 			catch(IOException ex)
 			{
-				Logger.instance().warning(module + 
-					" Cannot checkpoint minute index: " + ex);
+				log.atWarn().setCause(ex).log("Cannot checkpoint minute index.");
 			}
 		}
 		if (cache != null)
@@ -458,7 +424,7 @@ public class MsgPeriodArchive
 			// Keep this cache until an hour after the day is over.
 			if (!isCurrent
 			 && cache != null
-			 && System.currentTimeMillis()/1000L > 
+			 && System.currentTimeMillis()/1000L >
 				startTime + periodDuration + 3600L)
 			{
 				// More than 1 hr past end of period: no more caching.
@@ -474,8 +440,7 @@ public class MsgPeriodArchive
 	*/
 	public void delete()
 	{
-		Logger.instance().info(module 
-			+ " Deleting Day Archive '" + rootPath + "'");
+		log.info("Deleting Day Archive '{}'", rootPath);
 		close();
 		File f = new File(rootPath + MSG_EXT);
 		if (f.exists())
@@ -492,21 +457,16 @@ public class MsgPeriodArchive
 	}
 
 	/**
-	 * Initialize an Index search. Use the since time to calculate the earliest 
+	 * Initialize an Index search. Use the since time to calculate the earliest
 	 * minute that can contain a message. Get it's startIndexNum from
-	 * the MsgIndexMinute array. 
+	 * the MsgIndexMinute array.
 	 */
 	public void startIndexSearch( SearchHandle handle )
 	{
-//boolean testcli = handle.filter.getClientName().contains("OISIN2");
-//boolean testcli = handle.filter.getClientName().contains("no match");
-//if (testcli)
-//Logger.instance().info("starting index search for " + handle.filter.getClientName());
 		Date d = handle.filter.getSinceTime();
 		if (d == null)
 		{
-			Logger.instance().debug1(module + " " + myname 
-				+ " startIndexSearch with null since time.");
+			log.debug("{} startIndexSearch with null since time.", myname);
 			handle.nextIndexNum = 0;
 		}
 		else
@@ -523,32 +483,27 @@ public class MsgPeriodArchive
 			handle.nextIndexNum = minuteIndex[handle.minIdx].startIndexNum;
 			while(handle.nextIndexNum == -1 && handle.minIdx < MIN_PER_DAY-1)
 			{
-				handle.nextIndexNum = 
+				handle.nextIndexNum =
 					minuteIndex[++handle.minIdx].startIndexNum;
 			}
 			if (handle.nextIndexNum == -1 && handle.minIdx == MIN_PER_DAY-1)
 			{
 				// Fell through -- no indexes this day. Set to # indexes which
 				// will cause searchIndex to cycle to the next period.
-				Logger.instance().debug1(module 
-					+ "No indexes since specified time. "
-					+ "Will drop through to next day.");
+				log.debug("No indexes since specified time. Will drop through to next day.");
 				handle.nextIndexNum = getNumIndexes();
 			}
 
-			Logger.instance().debug1(module + " " +
-				myname + " startIndexSearch sincetime=" + debugFmt.format(d)
-				+ ", minIdx=" + handle.minIdx + ", start idx="
-				+ handle.nextIndexNum + ", num indexes in file="
-				+ getNumIndexes());
+			log.debug("{} startIndexSearch sincetime={}, minIdx={}, start idx={}, num indexes in file={}",
+					  myname, d, handle.minIdx, handle.nextIndexNum, getNumIndexes());
 
 		}
 		handle.flushBuffer();
 		handle.methodVar = null; // Not used for this type of search
 	}
-	
+
 	/**
-	 * Efficiently read a bunch of indexes from this archive, delegated 
+	 * Efficiently read a bunch of indexes from this archive, delegated
 	 * from MsgArchive. This method handles the forward index-file search
 	 * algorithm.
 	 * @param handle the search handle
@@ -565,28 +520,13 @@ public class MsgPeriodArchive
 		if (untilD != null)
 			untilTt = (int)(untilD.getTime() / 1000L);
 		int numAdded = 0;
-int skipped = 0;
-//boolean testcli = handle.filter.getClientName().contains("put ip or hostname here");
-//boolean testcli = handle.filter.getClientName().contains("localhost");
-//boolean testcli = handle.filter.getClientName().contains("OISIN2");
+		int skipped = 0;
 
-//if (testcli)
-//Logger.instance().info(module+" MJM "+myname+".searchIndex untilTt=" 
-//+ untilTt + "(" + (untilD==null?"null":debugFmt.format(untilD)) +")"
-//+ ", numIndexes=" + numIndexes
-//+ ", nextIndex=" + handle.nextIndexNum);
-		
 		DcpMsgIndex indexBuf[] = new DcpMsgIndex[INDEX_BUF_SIZE];
 		for(int i=0;i<INDEX_BUF_SIZE; i++) indexBuf[i] = null;
 
 		boolean settlingDelayHit = false;
-		
-//boolean debug = handle.nextIndexNum == 0;
-//if (debug)
-//{
-//  Logger.instance().debug1("searchIndex for " + getRootPath() 
-//	+ " nextIndexNum=0, minIdx=" + handle.minIdx);
-//}
+
 	  retrieve_loop:
 		while(handle.nextIndexNum < numIndexes        // indexes left in file
 		   && handle.capacity() > 0                   // room for more in handle
@@ -595,49 +535,16 @@ int skipped = 0;
 			// Is this the start of a new minute?
 			int minuteEndIndexNum = getMinuteEndIndexNum(handle.minIdx);
 
-//if (testcli)
-//Logger.instance().info(module + " MJM Minute Loop "
-//+ (handle.minIdx/60) + ":" + (handle.minIdx%60) 
-//+ " nextIndexNum=" + handle.nextIndexNum
-//+ " minuteEndIndexNum=" + minuteEndIndexNum
-//+ " endSearch=" + stopSearchMsec
-//+ " now=" + System.currentTimeMillis());
-
 			if (handle.minIdx < MIN_PER_DAY-1
 			 && handle.nextIndexNum > minuteEndIndexNum)
 			{
-//if (debug)
-//{
-//	Logger.instance().debug1("Starting new minute minIdx=" + handle.minIdx);
-//}
 				// Now in a new minute!
-
-				/*
-				  Don't bother reading minutes where oldestDapsTime > UNTIL. 
-				  So historical searches (e.g. 1 hours worth 5 days ago), 
-				  will still have to check all minutes, but most minutes will 
-				  fail this test so it won't have to actually read any
-				  index entries.
-				*/
-				while(++handle.minIdx < MIN_PER_DAY
-				  &&   (   minuteIndex[handle.minIdx].isEmpty()
-					    || minuteIndex[handle.minIdx].oldestDapsTime > untilTt))
-				{
-//if (debug)
-//Logger.instance().debug1(module + " MJM Skipping empty or out-of-range minute "
-//+ (handle.minIdx/60) + ":" + (handle.minIdx%60) 
-//+ " start=" + minuteIndex[handle.minIdx].startIndexNum
-//+ " oldest=" + minuteIndex[handle.minIdx].oldestDapsTime);
-				}
 
 				// We're now either at EOF or in a new minute. Set handle next:
 				if (handle.minIdx < MIN_PER_DAY)
 				{
 					handle.nextIndexNum = minuteIndex[handle.minIdx].startIndexNum;
 					minuteEndIndexNum = getMinuteEndIndexNum(handle.minIdx);
-//if (debug)
-//Logger.instance().debug1(module + " handle.nextIndexNum=" + handle.nextIndexNum
-//+ " minuteEndIndexNum=" + minuteEndIndexNum);
 				}
 				else // fell off end of file.
 				{
@@ -653,20 +560,15 @@ int skipped = 0;
 			else if (n > INDEX_BUF_SIZE)
 	 			n = INDEX_BUF_SIZE;
 			int nr = 0;
-			try 
+			try
 			{
 				nr = indexFile.readIndexes(handle.nextIndexNum, n, indexBuf);
-//if (debug)
-//Logger.instance().debug1(module + " MJM Read " + nr 
-//+ " indexes from file (requested " + n + ") starting at " + handle.nextIndexNum);
 			}
 			catch(IOException ex)
 			{
-				String msg = myname + " Corrupt index file: " + ex;
-				Logger.instance().failure(
-					module + ":" + MsgArchive.EVT_BAD_INDEX + "- " + msg);
-				throw new ArchiveUnavailableException(msg, 
-					LrgsErrorCode.DARCFILEIO);
+				String msg = myname + " Corrupt index file.";
+				log.atError().setCause(ex).log("{}- {}", MsgArchive.EVT_BAD_INDEX, msg);
+				throw new ArchiveUnavailableException(msg, LrgsErrorCode.DARCFILEIO, ex);
 			}
 			long now = System.currentTimeMillis();
 			for(int i = 0; i<nr && handle.capacity() > 0; i++)
@@ -681,12 +583,6 @@ int skipped = 0;
 				 && handle.filter.realTimeSettlingDelay()
 				 && (dmi.getLocalRecvTime().getTime() > now-30000L))
 				{
-					
-//if (testcli)
-//Logger.instance().info(
-//"Archive: Hit settling delay for msg from " + 
-//dmi.getDcpAddress() + " with local rcv time=" + 
-//dmi.getLocalRecvTime() + ", and xmit time=" + dmi.getXmitTime());
 					settlingDelayHit = true;
 					break retrieve_loop;
 				}
@@ -695,8 +591,6 @@ int skipped = 0;
 				handle.nextIndexNum++;
 				indexBuf[i] = null;
 
-//if (debug && dmi.getOffset() == 0L)
-//Logger.instance().debug1("Reading 1st msg in file");
 				if (dmi != null
 				 && (dmi.getFlagbits() & DcpMsgFlag.MSG_DELETED) == 0
 				 && handle.filter.passes(dmi)
@@ -709,20 +603,17 @@ int skipped = 0;
 						handle.addIndex(dmi);
 						numAdded++;
 					}
-					catch(IOException ex) 
+					catch(IOException ex)
 					{ // shouldn't happen unless someone deleted msg file.
-						String msg = myname + 
-							" Corrupt index or message file idxnum="
-							+ (handle.nextIndexNum-1) + ": " + ex;
-						Logger.instance().failure(module + " " + msg);
+						log.atError()
+						   .setCause(ex)
+						   .log("{} Corrupt index or message file idxnum={}", myname,  (handle.nextIndexNum-1));
 						continue;
-						//throw new ArchiveUnavailableException(msg,
-						//	LrgsErrorCode.DARCFILEIO);
 					}
 				}
 			}
 		}
-		
+
 		// Four possibilities for breaking out of loop:
 		//   1. Handle's buffer is full (capacity == 0)
 		//   2. Out of time & must return whatever results I have now.
@@ -732,34 +623,23 @@ int skipped = 0;
 		// Fell through: Either handle-full or End of this archive reached.
 		if (handle.capacity() == 0)
 		{
-//if (testcli)
-//Logger.instance().info(module + " MJM returning SEARCH_RESULT_MORE");
 			return MsgArchive.SEARCH_RESULT_MORE;
 		}
-		
+
 		// Out of time & must return results to client.
 		if (System.currentTimeMillis() >= stopSearchMsec)
 		{
-//if (testcli)
-//Logger.instance().info(module + 
-//" MJM search stopped because search-time-limit exceeded.");
 			return MsgArchive.SEARCH_RESULT_TIMELIMIT;
 		}
 
 		if (settlingDelayHit)
 		{
-//if (testcli)
-//Logger.instance().info(module + " " + myname
-//+ " MJM settlingDelayHit numIndexes=" + numIndexes
-//+ ", nextIndex=" + handle.nextIndexNum
-//+ ", skipped=" + skipped + " returning SEARCH_RESULT_PAUSE");
-
 			// No until specified -- tell caller to pause before trying again.
 			return MsgArchive.SEARCH_RESULT_PAUSE;
 		}
 
 		// Otherwise, I hit the end of this file.
-		
+
 		// If I'm not the current archive, jump to the next archive.
 		if (!isCurrent)
 		{
@@ -767,19 +647,8 @@ int skipped = 0;
 			handle.nextIndexNum = 0;
 			handle.minIdx = 0;
 
-//if (testcli)
-//Logger.instance().info(module + " MJM " +
-//myname + " End of non-current archive, switching to archive with start="
-//+ debugFmt.format(new Date(handle.periodStartTime*1000L)));
-
 			return MsgArchive.SEARCH_RESULT_MORE;
 		}
-
-//if (testcli)
-//Logger.instance().info(module + " MJM " + myname 
-//+ " End of current archive loop, handle filled with " + handle.idxBufFillLength 
-//+ ", nextIdxBufNum=" + handle.nextIdxBufNum
-//+ ", untilTt=" + untilTt + ", numAdded=" + numAdded);
 
 		// Otherwise, end of current archive.
 		//if (handle.isEmpty())
@@ -787,26 +656,16 @@ int skipped = 0;
 		{
 			if (untilTt == Integer.MAX_VALUE)
 			{
-//if (testcli)
-//Logger.instance().info(module + " " + myname
-//+ " numIndexes=" + numIndexes
-//+ ", nextIndex=" + handle.nextIndexNum
-//+ ", skipped=" + skipped + " returning SEARCH_RESULT_PAUSE");
-
-			  // No until specified -- tell caller to pause before trying again.
+				// No until specified -- tell caller to pause before trying again.
 				return MsgArchive.SEARCH_RESULT_PAUSE;
 			}
 			else
 			{
-//if (testcli)
-//Logger.instance().info(module + " " + myname + " returning SEARCH_RESULT_DONE");
 				return MsgArchive.SEARCH_RESULT_DONE;
 			}
 		}
 		else
 		{
-//if (testcli)
-//Logger.instance().info(module + " " + myname + " FINAL returning SEARCH_RESULT_MORE");
 			return MsgArchive.SEARCH_RESULT_MORE;
 		}
 
@@ -830,7 +689,7 @@ TODO:
 	}
 
 	/**
-	 * Returns the index from the number. If currently in the cache, just 
+	 * Returns the index from the number. If currently in the cache, just
 	 * return the reference. Else, read it from disk, construct, & return it.
 	 * @return the index entry
 	 */
@@ -845,7 +704,7 @@ TODO:
 		{
 			return dmi;
 		}
-		else 
+		else
 		{
 			DcpMsgIndex ret[] = new DcpMsgIndex[1];
 			ret[0] = new DcpMsgIndex();
@@ -858,8 +717,7 @@ TODO:
 			}
 			catch(IOException ex)
 			{
-				Logger.instance().warning(module + " Archive " + myname +
-					" error reading index " + idxNum + ": " + ex);
+				log.atWarn().setCause(ex).log("Archive {} error reading index {}", myname, idxNum);
 				return null;
 			}
 		}
@@ -881,9 +739,9 @@ TODO:
 		catch(IOException ex)
 		{
 			throw new ArchiveUnavailableException(
-				"Corrupt archive " + myname 
-				+ " cannot read message for existing index at offset " 
-				+ dmi.getOffset() + ": " + ex, LrgsErrorCode.DARCFILEIO);
+				"Corrupt archive " + myname
+				+ " cannot read message for existing index at offset "
+				+ dmi.getOffset(), LrgsErrorCode.DARCFILEIO, ex);
 		}
 	}
 

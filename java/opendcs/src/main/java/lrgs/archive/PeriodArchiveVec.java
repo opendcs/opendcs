@@ -1,55 +1,33 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  $Log$
-*  Revision 1.4  2012/05/15 15:13:02  mmaloney
-*  Null pointer bug fix.
-*
-*  Revision 1.3  2008/09/05 13:03:34  mjmaloney
-*  LRGS 7 dev
-*
-*  Revision 1.2  2008/08/19 15:04:37  mjmaloney
-*  dev
-*
-*  Revision 1.1  2008/04/04 18:21:11  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.5  2007/02/14 15:38:20  mmaloney
-*  Implemented Outage Recovery
-*
-*  Revision 1.4  2007/01/12 21:45:18  mmaloney
-*  Archive file changes for LRGS Version 6.
-*
-*  Revision 1.3  2006/11/11 16:11:53  mmaloney
-*  dev
-*
-*  Revision 1.2  2006/10/18 18:11:48  mmaloney
-*  dev
-*
-*  Revision 1.1  2005/12/14 21:20:24  mmaloney
-*  Fix the 'synchronizing' in MsgArchive, particularly at GMT midnight.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.archive;
 
 import java.util.Date;
 import java.util.Vector;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Iterator;
 
-import ilex.util.Logger;
 import lrgs.common.DcpMsgIndex;
 
 public class PeriodArchiveVec
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "ArchiveVec";
 
 	private Vector<MsgPeriodArchive> avec;
@@ -106,9 +84,6 @@ public class PeriodArchiveVec
 			return null;
 
 		MsgPeriodArchive mpa = avec.get(0);
-//Logger.instance().info("PeriodArchiveVec.getPeriodArchive("
-//+ sinceSec + ", " + earliest + ") earliest archive starts at "
-//+ mpa.startTime);
 
 		// Find the earliest period that contains since.
 		// Assume archives are in time order in the vector.
@@ -134,9 +109,8 @@ public class PeriodArchiveVec
 			MsgPeriodArchive arc = it.next();
 			if (arc.startTime < cutoffTT)
 			{
-				Logger.instance().info(module + " Deleting old archive "
-					+ arc.myname + ", start=" + arc.startTime
-					+ ", cutoff=" + cutoffStr + " (" + cutoffStr + ")");
+				log.info(" Deleting old archive {}, start={}, cutoff={}({})",
+						 arc.myname, arc.startTime, cutoffStr, cutoffTT);
 				arc.delete();
 				it.remove();
 			}

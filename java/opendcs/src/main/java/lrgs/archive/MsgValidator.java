@@ -1,6 +1,18 @@
-/**
- * $Id$
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.archive;
 
 import java.text.NumberFormat;
@@ -14,7 +26,6 @@ import decodes.util.ChannelMap;
 import decodes.util.Pdt;
 import decodes.util.PdtEntry;
 import ilex.util.IDateFormat;
-import ilex.util.Logger;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsgFlag;
 import lrgs.common.DcpMsg;
@@ -32,7 +43,7 @@ public class MsgValidator
 	private MsgValidatee caller;
 	private Pdt pdt;
 	private ChannelMap channelMap;
-	
+
 	public static final int SEC_PER_DAY = 86400;
 	public static final double msecPerBit100 = 1000./100.;
 	public static final double msecPerBit300 = 1000./300.;
@@ -42,31 +53,31 @@ public class MsgValidator
 	private NumberFormat lenFormat;
 	private CheckMissingThread checkMissingThread = null;
 	private XmitWindow lastXmitWindow = null;
-	
+
 	private boolean _extraChecks = false;
-	
+
 	private long maxCarrierMS = 1500L;
-	
+
 	/** Anything < this will generate a warning */
 	private int minSignalStrength = 35;
-	
+
 	/** Maximum allowable frequency offset (either + or -) in 50*Hz. */
 	private int maxFreqOffset = 2;
-	
+
 	/** Minimum allowable battery voltage */
 	private double minBattVolt = 11.0;
-	
+
 	/**
 	An array of these objects is used to keep track of expected messages.
 	*/
 	class ExpectedMsg
 	{
 		/** Message expected by this (second-of-day) time */
-		int endSod; 
+		int endSod;
 
 		/** The PDT Schedule entry with dcp addr, channel, etc. */
 		PdtEntry pdtEntry;
-		
+
 		ExpectedMsg(int endSod, PdtEntry pdtEntry)
 		{
 			this.endSod = endSod;
@@ -77,7 +88,7 @@ public class MsgValidator
 	/** An array of messages expected in the next minute. */
 	private LinkedList<ExpectedMsg> expectedMsgList = new LinkedList<ExpectedMsg>();
 
-	
+
 	public MsgValidator(MsgValidatee caller, Pdt pdt, ChannelMap channelMap)
 	{
 		setCaller(caller);
@@ -91,47 +102,47 @@ public class MsgValidator
 		lenFormat.setMinimumIntegerDigits(5);
 		lenFormat.setGroupingUsed(false);
 	}
-	
+
 	public synchronized void setCaller(MsgValidatee caller)
 	{
 		this.caller = caller;
 	}
-	
+
 	/**
 	 * Validate a message, issuing callbacks for any problems found.
 	 * @param msg The message to validate
 	 * @param src from a DRGS this is original address, null for other apps.
 	 * @param localRecvTime message local receive-time
 	 */
-	public synchronized void validateMsg(DcpMsg msg, 
+	public synchronized void validateMsg(DcpMsg msg,
 		LrgsInputInterface src, Date localRecvTime)
 	{
 		if (!pdt.isLoaded())
 			return;
-		
+
 		lastXmitWindow = null;
 		DcpAddress dcpAddress = msg.getDcpAddress();
 		PdtEntry pdtEntry = pdt.find(dcpAddress);
 		if (pdtEntry == null)
 		{
-			caller.useValidationResults('I', 
-				"Invalid DCP Address " + dcpAddress.toString(), 
+			caller.useValidationResults('I',
+				"Invalid DCP Address " + dcpAddress.toString(),
 				msg, src, localRecvTime, null);
 			return;
 		}
-			
+
 		int chan = msg.getGoesChannel();
-		int expChan = channelMap.isRandom(chan) ? 
+		int expChan = channelMap.isRandom(chan) ?
 			pdtEntry.rd_channel : pdtEntry.st_channel;
 		if (chan != expChan)
 		{
 			caller.useValidationResults('W',
-				"Wrong channel -- expected " + expChan, msg, src, 
+				"Wrong channel -- expected " + expChan, msg, src,
 				localRecvTime, pdtEntry);
 		}
 
 		boolean isRandom = channelMap.isRandom(chan);
-		
+
 		// Check this entry off of the expected list, if it's there.
 		if (!isRandom)
 			for(Iterator<ExpectedMsg> expit = expectedMsgList.iterator();
@@ -145,10 +156,10 @@ public class MsgValidator
 				}
 			}
 
-		if ((msg.flagbits & DcpMsgFlag.ADDR_CORRECTED) != 0 
+		if ((msg.flagbits & DcpMsgFlag.ADDR_CORRECTED) != 0
 		 && msg.getOrigAddress() != null)
-			caller.useValidationResults('A', 
-				"Address corrected, original=" + msg.getOrigAddress(), 
+			caller.useValidationResults('A',
+				"Address corrected, original=" + msg.getOrigAddress(),
 				msg, src, localRecvTime, pdtEntry);
 
 		int xi = pdtEntry.st_xmit_interval;
@@ -169,7 +180,7 @@ public class MsgValidator
 				+ windows_since_base * xi;
 			long expected_end_tt = expected_start_tt + pdtEntry.st_xmit_window;
 			lastXmitWindow = new XmitWindow(pdtEntry.st_first_xmit_sod,
-				pdtEntry.st_xmit_window, pdtEntry.st_xmit_interval, 
+				pdtEntry.st_xmit_window, pdtEntry.st_xmit_interval,
 				(int)(expected_start_tt % SEC_PER_DAY));
 			msg.setXmitWindow(lastXmitWindow);
 
@@ -182,23 +193,23 @@ public class MsgValidator
 			{
 				int baud = msg.getBaud();
 				double bitlen = msg.getData().length * 8;
-				long durmsec = (long)(bitlen * 
+				long durmsec = (long)(bitlen *
 					(baud == 100 ? msecPerBit100 :
 					 baud == 1200 ? msecPerBit1200: msecPerBit300));
 				end_msec = xmitmsec + durmsec;
 			}
-			
+
 			if (xmitmsec < expected_start_tt*1000L) // Early
 			{
 				if (end_msec < expected_start_tt*1000L) // U=way early
 				{
-					String errmsg = 
+					String errmsg =
 						"Very Early: nearest window for ("
-						+ (cstart==null?"DAPS":"CARRIER") + ") " 
+						+ (cstart==null?"DAPS":"CARRIER") + ") "
 						+ errmsgDateFmt.format(xmitTime)
-						+ " is " 
+						+ " is "
 						+ IDateFormat.printSecondOfDay(expected_start_tt, true)
-						+ "-" 
+						+ "-"
 						+ IDateFormat.printSecondOfDay(expected_end_tt, true);
 					caller.useValidationResults('U', errmsg,
 						msg, src, localRecvTime, pdtEntry);
@@ -206,9 +217,9 @@ public class MsgValidator
 				else
 				{
 					caller.useValidationResults('T',
-						"Early: Expected window is " 
-						+ IDateFormat.printSecondOfDay(expected_start_tt, true) 
-						+ "-" 
+						"Early: Expected window is "
+						+ IDateFormat.printSecondOfDay(expected_start_tt, true)
+						+ "-"
 						+ IDateFormat.printSecondOfDay(expected_end_tt,	true),
 						msg, src, localRecvTime, pdtEntry);
 				}
@@ -218,22 +229,22 @@ public class MsgValidator
 				if (end_msec > expected_end_tt*1000L) // Ended late
 				{
 					caller.useValidationResults('T',
-						"Late: Expected window is " 
-						+ IDateFormat.printSecondOfDay(expected_start_tt, true) 
-						+ "-" 
+						"Late: Expected window is "
+						+ IDateFormat.printSecondOfDay(expected_start_tt, true)
+						+ "-"
 						+ IDateFormat.printSecondOfDay(expected_end_tt, true),
 						msg, src, localRecvTime, pdtEntry);
 				}
 			}
 			else // start was after expected end.
 			{
-				String errmsg = 
+				String errmsg =
 					"Very Late: nearest window for ("
 					+ (cstart==null?"DAPS":"CARRIER") + ") "
 					+ errmsgDateFmt.format(xmitTime)
-					+ " is " 
+					+ " is "
 					+ IDateFormat.printSecondOfDay(expected_start_tt, true)
-					+ "-" 
+					+ "-"
 					+ IDateFormat.printSecondOfDay(expected_end_tt, true);
 				caller.useValidationResults('U', errmsg,
 					msg, src, localRecvTime, pdtEntry);
@@ -241,51 +252,51 @@ public class MsgValidator
 	 	}
 		if (!_extraChecks)
 			return;
-		
+
 		Date xmitTime = msg.getXmitTime();
 		Date cstart = msg.getCarrierStart();
 		if (xmitTime != null && cstart != null)
 		{
 			long carrierMsec = xmitTime.getTime() - cstart.getTime();
 			if (carrierMsec > maxCarrierMS)
-				caller.useValidationResults('C', 
+				caller.useValidationResults('C',
 					"Excessive carrier: " + carrierMsec + " ms."
 					+ ", xmitTime=" + xmitTime + ", carrierStart=" + cstart,
 					msg, src, localRecvTime, pdtEntry);
 		}
-		
+
 		int ss = msg.getSignalStrength();
 		if (ss < minSignalStrength)
-			caller.useValidationResults('S', 
+			caller.useValidationResults('S',
 				"Low signal strength: " + ss + " dB.",
 				msg, src, localRecvTime, pdtEntry);
-	
+
 		int fo = msg.getFrequencyOffset();
 		if (fo > maxFreqOffset || fo < -maxFreqOffset)
-			caller.useValidationResults('F', 
+			caller.useValidationResults('F',
 				"Excessive Frequency Offset: " + fo + " ("
 				+ (fo*50) + " Hz.)",
 				msg, src, localRecvTime, pdtEntry);
-		
+
 		char mi = msg.getModulationIndex();
 		if (mi != 'N')
-			caller.useValidationResults('X', 
+			caller.useValidationResults('X',
 				"Bad modulation index code: " + mi,
 				msg, src, localRecvTime, pdtEntry);
-		
+
 		double bv = msg.getBattVolt();
 		if (bv < -.1 || (bv > .1 && bv < minBattVolt))
-			caller.useValidationResults('V', 
+			caller.useValidationResults('V',
 				"Low battery voltage: " + bv,
 				msg, src, localRecvTime, pdtEntry);
 	}
-	
-	
+
+
 
 	/**
 	 * Add to the expected array all messages expected by the minute that
 	 * ends with the specified time.
-	 * @param sod second-of-day of the minute-end 
+	 * @param sod second-of-day of the minute-end
 	 */
 	public synchronized void findExpectedBy(int sod)
 	{
@@ -324,7 +335,7 @@ public class MsgValidator
 	{
 		if (!pdt.isLoaded())
 			return;
-		
+
 		for(Iterator<ExpectedMsg> expit = expectedMsgList.iterator();
 			expit.hasNext(); )
 		{
@@ -337,7 +348,7 @@ public class MsgValidator
 					+ expected.pdtEntry.dcpAddress.toString()
 					+ " expected by "
 					+ IDateFormat.printSecondOfDay(expected.endSod, true);
-				String msgData = expected.pdtEntry.dcpAddress.toString() 
+				String msgData = expected.pdtEntry.dcpAddress.toString()
 					+ formatDomsatDate(msgTime)
 					+ "M00+0NN"
 					+ fmtChan(expected.pdtEntry.st_channel)
@@ -347,8 +358,8 @@ public class MsgValidator
 				byte[] md = msgData.getBytes();
 				DcpMsg msg = new DcpMsg(md, md.length, 0);
 				msg.setBaud(expected.pdtEntry.baud);
-				
-				caller.useValidationResults('M', body, msg, 
+
+				caller.useValidationResults('M', body, msg,
 					(LrgsInputInterface)null, msgTime, expected.pdtEntry);
 				expit.remove();
 			}
@@ -360,7 +371,7 @@ public class MsgValidator
 		checkMissingThread = new CheckMissingThread(this);
 		checkMissingThread.start();
 	}
-	
+
 	/**
 	 * @return String in the format cccS, where ccc is 3-digit channel number
 	 * and S is the spacecraft designator.
@@ -375,7 +386,7 @@ public class MsgValidator
 		b[3] = (chan%2 == 1 ? (byte)'E' : (byte)'W');
 		return new String(b);
 	}
-	
+
 	public String formatLength(int len)
 	{
 		synchronized(lenFormat)
@@ -514,7 +525,7 @@ class CheckMissingThread
 
 				int daynum = (int)(now / DrgsRecv.MS_PER_DAY);
 				int prevMin = min - 1;
-				if (prevMin <= 0) 
+				if (prevMin <= 0)
 				{
 					prevMin += (60*24);
 					daynum--;
