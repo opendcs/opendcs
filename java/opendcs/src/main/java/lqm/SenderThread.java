@@ -1,38 +1,36 @@
 /*
- *  $Id$
- *
- *  $Log$
- *  Revision 1.2  2009/08/24 13:34:02  shweta
- *  Code added to send messages to  backup LRIT.
- *
- *  Revision 1.1  2008/04/04 18:21:10  cvs
- *  Added legacy code to repository
- *
- *  Revision 1.3  2004/05/24 17:11:08  mjmaloney
- *  release prep
- *
- *  Revision 1.2  2004/05/19 14:03:45  mjmaloney
- *  dev.
- *
- *  Revision 1.1  2004/05/18 01:01:58  mjmaloney
- *  Created.
- *
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lqm;
 
 import java.util.LinkedList;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.*;
 import java.util.*;
 
-import lritdcs.Constants;
 import ilex.net.BasicClient;
-import ilex.util.Logger;
 
 /**
 This class sends queued notifications to the LRIT process via a socket.
  */
 public class SenderThread extends Thread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/// Last time this object retrieved its configuration.
 	long lastConfigGet;
 
@@ -61,7 +59,7 @@ public class SenderThread extends Thread
 
 	public void run()
 	{
-		Logger.instance().log(Logger.E_INFORMATION, "SenderThread starting...");
+		log.info("SenderThread starting...");
 		_shutdown = false;
 		configure();
 		while(!_shutdown)
@@ -77,12 +75,13 @@ public class SenderThread extends Thread
 						while (!bc.isConnected())
 						{
 							connectToLrit();
-							if (!bc.isConnected()) 
+							if (!bc.isConnected())
 								continue;
 						}
-					} catch (Exception ex) {
-						//ex.printStackTrace();
-						Logger.instance().failure(" Error on LRIT socket: " + ex);
+					}
+					catch (Exception ex)
+					{
+						log.atError().setCause(ex).log("Error on LRIT socket.");
 					}
 				}
 			};
@@ -94,39 +93,41 @@ public class SenderThread extends Thread
 						while (!bcAlt.isConnected())
 						{
 							connectToLritAlt();
-							if (!bcAlt.isConnected()) 
+							if (!bcAlt.isConnected())
 								continue;
 						}
-					} catch (Exception ex) {						
-						Logger.instance().failure(" Error on Backup LRIT socket: " + ex);
-					}					
+					}
+					catch (Exception ex)
+					{
+						log.atError().setCause(ex).log("Error on Backup LRIT socket.");
+					}
 				}
 			};
 			lritBackupThread.start();
 
 			String s= "";
-			try 
+			try
 			{
 				synchronized(this) {
-					s = (String)sendQueue.removeFirst(); 
+					s = (String)sendQueue.removeFirst();
 				}
 
 				if(bc.isConnected())
-				{					
+				{
 					pw.write(s);
 					pw.newLine();
-					pw.flush();				
-					Logger.instance().info("Message '" + s + "' sent to LRIT.");
+					pw.flush();
+					log.info("Message '{}' sent to LRIT.", s);
 				}
 
 					if(bcAlt.isConnected())
-					{						
+					{
 						pwAlt.write(s);
 						pwAlt.newLine();
-						pwAlt.flush();				
-						Logger.instance().info("Message '" + s + "' sent to Backup LRIT .");
+						pwAlt.flush();
+						log.info("Message '{}' sent to Backup LRIT .", s);
 					}
-				
+
 
 			}
 			catch(NoSuchElementException ex)
@@ -134,10 +135,10 @@ public class SenderThread extends Thread
 				try{ Thread.sleep(1000L); }
 				catch(InterruptedException iZex){ };
 
-			}	
+			}
 			catch(IOException ex)
 			{
-				Logger.instance().warning("IO Error on LRIT socket: " + ex );
+				log.atWarn().setCause(ex).log("IO Error on LRIT socket.");
 				bc.disconnect();
 				bcAlt.disconnect();
 			}
@@ -153,9 +154,8 @@ public class SenderThread extends Thread
 	public synchronized void sendResult(String filename, boolean success)
 	{
 		String s = "FILE " + filename + (success ? " G" : " B");
+		log.info("Queueing message '{}'", s);
 		sendQueue.add(s);
-		Logger.instance().log(Logger.E_INFORMATION,
-				"Queueing message '" + s + "'");
 	}
 
 	public synchronized void sendStatus(String msg)
@@ -164,8 +164,8 @@ public class SenderThread extends Thread
 	}
 
 	public void configure()
-	{	
-		Logger.instance().log(Logger.E_INFORMATION, "Getting configuration");
+	{
+		log.info("Getting configuration");
 		if(bc != null)
 			bc.disconnect();
 
@@ -175,27 +175,22 @@ public class SenderThread extends Thread
 		LqmConfiguration cfg = LqmConfiguration.instance();
 		bc = new BasicClient(cfg.lritHostName, cfg.lritPortNum);
 		bcAlt = new BasicClient(cfg.lritHostNameAlt, cfg.lritPortNumAlt);
-		Logger.instance().log(Logger.E_INFORMATION, "Configuration updated");
+		log.info("Configuration updated");
 		lastConfigGet = System.currentTimeMillis();
 	}
 
 	public void connectToLrit()
 	{
 		try
-		{ 
-			Logger.instance().log(Logger.E_INFORMATION, "Connecting to " 
-					+ bc.getHost() + " at " + bc.getPort());
-			bc.connect(); 
-			pw = new BufferedWriter(
-					new OutputStreamWriter(bc.getOutputStream()));
-			Logger.instance().log(Logger.E_INFORMATION, "Connected to " 
-					+ bc.getHost() + " at " + bc.getPort());
+		{
+			log.info("Connecting to {} at {}", bc.getHost(), bc.getPort());
+			bc.connect();
+			pw = new BufferedWriter(new OutputStreamWriter(bc.getOutputStream()));
+			log.info("Connected to {} at {}", bc.getHost(), bc.getPort());
 		}
 		catch(IOException ex)
 		{
-			//ex.printStackTrace();
-			Logger.instance().log(Logger.E_FAILURE,
-					"Can't connect to server " + bc.getName() + ": " + ex);
+			log.atError().setCause(ex).log("Can't connect to server {}", bc.getName());
 			try{ Thread.sleep(10000); }
 			catch(InterruptedException iZex2){ };
 		}
@@ -205,19 +200,15 @@ public class SenderThread extends Thread
 	public void connectToLritAlt()
 	{
 		try
-		{ 
-			Logger.instance().log(Logger.E_INFORMATION, "Connecting to " 
-					+ bcAlt.getHost() + " at " + bcAlt.getPort());
-			bcAlt.connect(); 
-			pwAlt = new BufferedWriter(
-					new OutputStreamWriter(bcAlt.getOutputStream()));
-			Logger.instance().log(Logger.E_INFORMATION, "Connected to " 
-					+ bcAlt.getHost() + " at " + bcAlt.getPort());
+		{
+			log.info("Connecting to {} at {}", bcAlt.getHost(), bcAlt.getPort());
+			bcAlt.connect();
+			pwAlt = new BufferedWriter(new OutputStreamWriter(bcAlt.getOutputStream()));
+			log.info("Connected to {} at {}", bcAlt.getHost(), bcAlt.getPort());
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().log(Logger.E_FAILURE,
-					"Can't connect to server " + bcAlt.getName() + ": " + ex);
+			log.atError().setCause(ex).log("Can't connect to server {}", bcAlt.getName());
 			try{ Thread.sleep(10000); }
 			catch(InterruptedException iZex2){ };
 		}
