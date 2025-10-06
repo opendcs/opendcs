@@ -10,6 +10,9 @@ import java.net.*;
 import java.text.*;
 import java.util.*;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.datasource.IridiumPMParser;
 import ilex.util.Location;
 import ilex.util.EnvExpander;
@@ -25,6 +28,7 @@ import lrgs.lrgsmain.*;
  */
 public class SbdSessionThread extends BasicSvrThread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private IridiumSbdInterface parent;
 	private int sessionNum;
 	private DcpMsg dcpMsg = new DcpMsg();
@@ -40,7 +44,7 @@ public class SbdSessionThread extends BasicSvrThread
 	private IridiumPMParser iridiumPMP = new IridiumPMParser();
 	private Location location = null;
 	private boolean showPayloadIE = true;
-	
+
 	/**
 	 * Construct thread to read a single message from the SBD Gateway
 	 * @param svr the parent listening svr
@@ -49,7 +53,7 @@ public class SbdSessionThread extends BasicSvrThread
 	 * @param sessionNum Unique session number provided by parent
 	 * @throws IOException on failure to initialize
 	 */
-	SbdSessionThread(BasicServer svr, Socket socket, 
+	SbdSessionThread(BasicServer svr, Socket socket,
 		IridiumSbdInterface parent, int sessionNum)
 		throws IOException
 	{
@@ -61,7 +65,7 @@ public class SbdSessionThread extends BasicSvrThread
 		seqNumNF.setMinimumIntegerDigits(5);
 		latLonFormat.setGroupingUsed(false);
 		latLonFormat.setMaximumFractionDigits(5); // we get resolution to 1/60000 deg.
-		
+
 		// Initialize DCP Message that this thread will build.
 		dcpMsg.flagbits = DcpMsgFlag.MSG_PRESENT | DcpMsgFlag.SRC_IRIDIUM | DcpMsgFlag.MSG_TYPE_IRIDIUM;
 		dcpMsg.setDataSourceId(parent.getDataSourceId());
@@ -69,7 +73,7 @@ public class SbdSessionThread extends BasicSvrThread
 		this.parent = parent;
 		socket.setSoTimeout(90000); // timeout after 90 idle seconds.
 		this.iStream = socket.getInputStream();
-		
+
 		capFile = cfg.iridiumCaptureFile;
 		if (capFile != null && capFile.length() > 0)
 		{
@@ -78,8 +82,8 @@ public class SbdSessionThread extends BasicSvrThread
 			Properties props = new Properties(System.getProperties());
 			props.setProperty("SESSION", "" + sessionNum);
 			capFile = EnvExpander.expand(capFile, props);
-			parent.debug1("New client, captururing data to '" + capFile + "', sessionProp='"
-				+ props.getProperty("SESSION") + "'");
+			log.debug("New client, captururing data to '{}', sessionProp='{}'",
+					  capFile, props.getProperty("SESSION"));
 			try
 			{
 				capOutput = new BufferedOutputStream(
@@ -88,13 +92,14 @@ public class SbdSessionThread extends BasicSvrThread
 			}
 			catch(IOException ex)
 			{
-				parent.warning("Error opening capture file '" + capFile + "': " + ex
-					+ " -- capture disabled.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Error opening capture file '{}' -- capture disabled.", capFile);
 				capOutput = null;
 			}
 		}
 	}
-	
+
 	/**
 	 * Read the next byte from the socket. Handle -1 meaning Client Hangup
 	 * @return the byte as an integer
@@ -132,14 +137,18 @@ public class SbdSessionThread extends BasicSvrThread
 		}
 		catch(SBDFormatException ex)
 		{
-			parent.failure(IridiumEvent.BadMessageFormat, 
-				"session " + sessionNum + ": Format Error on connection to " + getClientName() + ": " + ex);
+			log.atError()
+			   .setCause(ex)
+			   .log("{}: session {}: Format Error on connection to {}",
+			   		IridiumEvent.BadMessageFormat, sessionNum, getClientName());
 			ignoreRestOfMessage();
 		}
 		catch(Exception ex)
 		{
-			parent.failure(IridiumEvent.ClientHangup, 
-				"session " + sessionNum + ": Error on connection to " + getClientName() + ": " + ex);
+			log.atError()
+			   .setCause(ex)
+			   .log("{} session {}: Error on connection to {}",
+			   		IridiumEvent.ClientHangup, sessionNum, getClientName());
 		}
 		try { disconnect(); }
 		catch(Exception ex) {}
@@ -152,14 +161,16 @@ public class SbdSessionThread extends BasicSvrThread
 	 */
 	private void termination(IridiumEvent evt, Exception ex)
 	{
-		parent.failure(evt, "session " + sessionNum + ": Client "
-			+ (ex == null ? "termination" : ("error: " + ex)));
+		log.atError()
+		   .setCause(ex)
+		   .log("{} session {}: Client {}.",
+		   		evt, sessionNum, (ex == null ? "termination" : "error"));
 	}
 
 	@Override
 	public void disconnect( )
 	{
-		parent.debug1("session " + sessionNum + ": Disconnecting");
+		log.debug("session {}: Disconnecting", sessionNum);
 		super.disconnect();
 		parent.threadComplete(sessionNum);
 		if (capOutput != null)
@@ -169,7 +180,7 @@ public class SbdSessionThread extends BasicSvrThread
 		}
 	}
 
-	
+
 	/**
 	 * State method to handle the initial header for the entire message.
 	 * See Iridium spec for details
@@ -181,8 +192,7 @@ public class SbdSessionThread extends BasicSvrThread
 	{
 		int sbdProtocol = nextByte();
 		numMsgBytes = (nextByte() << 8) + nextByte();
-		parent.debug1("session " + sessionNum + " SBD header: protocol=" 
-			+ sbdProtocol + ", numBytes = " + numMsgBytes);
+		log.debug("session {} SBD header: protocol={}, numBytes = {}", sessionNum, sbdProtocol, numMsgBytes);
 	}
 
 	/**
@@ -213,12 +223,11 @@ public class SbdSessionThread extends BasicSvrThread
 		long xmitTime = ((long)nextByte() << 24) + (nextByte()<<16) + (nextByte()<<8)
 			+ nextByte();
 		dcpMsg.setXmitTime(new Date(xmitTime * 1000L));
-		parent.debug1("Read IE1 Header, cdrRef=" + dcpMsg.getCdrReference()
-			+ ", emei='" + dcpMsg.getDcpAddress() + "', mtmsm=" + dcpMsg.getMtmsm() + ", momsm=" + 
-			dcpMsg.getSequenceNum()
-			+ ", sessionTime=" + new Date(xmitTime*1000L));
+		log.debug("Read IE1 Header, cdrRef={}, emei='{}', mtmsm={}, momsm={}, sessionTime={}",
+				  dcpMsg.getCdrReference(), dcpMsg.getDcpAddress(), dcpMsg.getMtmsm(),
+				  dcpMsg.getSequenceNum(), new Date(xmitTime*1000L));
 	}
-	
+
 	/**
 	 * Retrieve the data for the message proper.
 	 * @throws EOFException
@@ -228,11 +237,11 @@ public class SbdSessionThread extends BasicSvrThread
 	private void getMessageProper()
 		throws EOFException, IOException, SBDFormatException
 	{
-		
+
 		ByteArrayOutputStream msgPropStream = new ByteArrayOutputStream();
 		while(byteCount < numMsgBytes + 3)
 			nextInfoElem(msgPropStream);
-		
+
 		byte msgPropBytes[] = msgPropStream.toByteArray();
 
 		StringBuffer hdr = new StringBuffer();
@@ -249,7 +258,7 @@ public class SbdSessionThread extends BasicSvrThread
 		hdr.append(seqNumNF.format(dcpMsg.getMtmsm()));
 		hdr.append(",CDR=");
 		hdr.append((new DcpAddress(dcpMsg.getCdrReference()).toString()));
-		
+
 		if (location != null)
 			hdr.append(",LAT=" + latLonFormat.format(location.getLatitude())
 				+ ",LON=" + latLonFormat.format(location.getLongitude())
@@ -257,16 +266,17 @@ public class SbdSessionThread extends BasicSvrThread
 		hdr.append(",PLEN=");
 		hdr.append(payloadBytes);
 		hdr.append(" ");
-		
+
 		ByteArrayOutputStream msgStream = new ByteArrayOutputStream();
 		msgStream.write(hdr.toString().getBytes());
 		msgStream.write(msgPropBytes);
 
 		byte[] messageData = msgStream.toByteArray();
 		if (byteCount != numMsgBytes + 3)
-			parent.warning("Iridium format problem: num bytes from hdr=" + numMsgBytes
-				+ ", bytes read=" + byteCount
-				+ ", should be " + (numMsgBytes+3));
+		{
+			log.warn("Iridium format problem: num bytes from hdr={}, bytes read={}, should be {}",
+					 numMsgBytes, byteCount, (numMsgBytes+3));
+		}
 		dcpMsg.setData(messageData);
 	}
 
@@ -281,23 +291,22 @@ public class SbdSessionThread extends BasicSvrThread
 		throws EOFException, IOException, SBDFormatException
 	{
 		int ieStart = byteCount;
-		
+
 		byte elemHdr[] = new byte[3];
 		for(int i=0; i<3; i++)
 			elemHdr[i] = (byte)nextByte();
-		
+
 		int elemLen = (((int)elemHdr[1] & 255)<<8) + ((int)elemHdr[2] & 255);
-		
-		parent.debug1("Start pos=" + ieStart 
-			+ ", IE[" + (int)elemHdr[0] + "] len=" + elemLen
-			+ ", bytes(hex): " + Integer.toHexString((int)(elemHdr[0]&0xff))
-			+ " " + Integer.toHexString((int)(elemHdr[1]&0xff))
-			+ " " + Integer.toHexString((int)(elemHdr[2]&0xff)));
-		
+
+		log.debug("Start pos={}, IE[{}] len={}, bytes(hex): {}",
+				  ieStart, (int)elemHdr[0], elemLen,
+				  Integer.toHexString((int)(elemHdr[0]&0xff)) + " " + Integer.toHexString((int)(elemHdr[1]&0xff)) +
+				  " " + Integer.toHexString((int)(elemHdr[2]&0xff)));
+
 		if (elemHdr[0] == 3 && elemLen == 11)
 		{
 			int firstByte = nextByte();
-			
+
 			// Latitude in minutes/1000:
 			boolean latPositive = (firstByte & 0x2) == 0;
 			double lat = (double)nextByte() + ((nextByte()<<8) + nextByte()) / 60000.;
@@ -307,23 +316,23 @@ public class SbdSessionThread extends BasicSvrThread
 			boolean lonPositive = (firstByte & 0x1) == 0;
 			double lon = (double)nextByte() + ((nextByte()<<8) + nextByte()) / 60000.;
 			if (!lonPositive) lon = -lon;
-			
+
 			double rad = (double)((nextByte()<<24) + (nextByte()<<16) + (nextByte()<<8) + nextByte());
 			location = new Location();
 			location.setLatitude(lat);
 			location.setLongitude(lon);
 			location.setRadius(rad);
-			parent.debug1("Received location: " + location);
+			log.debug("Received location: {}", location);
 		}
 		else
 		{
 			if (byteCount-3 + elemLen > numMsgBytes)
 				throw new SBDFormatException(
-					"IE[" + (int)elemHdr[0] 
+					"IE[" + (int)elemHdr[0]
 					+ "] length too long. Starts at pos=" + byteCount
 					+ " with length=" + elemLen + " but total msg len="
 					+ numMsgBytes);
-			
+
 			// 2 is Payload IE
 			if (elemHdr[0] == 2)
 			{
@@ -340,7 +349,7 @@ public class SbdSessionThread extends BasicSvrThread
 				baos.write(nextByte());
 		}
 	}
-	
+
 	private void capture(int b)
 	{
 		if (capOutput != null)
@@ -350,8 +359,10 @@ public class SbdSessionThread extends BasicSvrThread
 			}
 			catch (IOException ex)
 			{
-				parent.warning("Error writing to capture file '" + capFile
-					+ "': " + ex + " -- capture disabled for remainder of data.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Error writing to capture file '{}': -- capture disabled for remainder of data.",
+				   		capFile);
 				try { capOutput.close(); } catch(IOException ex2) {}
 				capOutput = null;
 			}
@@ -359,18 +370,18 @@ public class SbdSessionThread extends BasicSvrThread
 
 	private void ignoreRestOfMessage()
 	{
-		parent.warning("Ignoring rest of message.");
+		log.warn("Ignoring rest of message.");
 		ignoreRest = true;
 		int nbytes = 0;
-		try 
+		try
 		{
 			while(nextByte() != -1)
 				nbytes++;
 		}
 		catch(IOException ex) {}
-		parent.warning("" + nbytes + " ignored after format error.");
+		log.warn("{} ignored after format error.", nbytes);
 	}
-	
 
-	
+
+
 }

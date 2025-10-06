@@ -1,21 +1,34 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.lddc;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.TimeZone;
 
 import org.opendcs.utils.WebUtility;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.text.SimpleDateFormat;
 import java.text.DecimalFormat;
 
 import decodes.util.ResourceFactory;
-import ilex.util.*;
 import ilex.cmdline.*;
+import ilex.util.AsciiUtil;
 import lrgs.common.*;
 import lrgs.ldds.LddsClient;
 import lrgs.ldds.LddsParams;
@@ -30,6 +43,7 @@ criteria, and various formatting options.
 */
 public class GetDcpMessages extends Thread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String user;
 	private String crit;
 	private LddsClient lddsClient;
@@ -115,7 +129,7 @@ public class GetDcpMessages extends Thread
 	public void setTimeout(int t) { timeout = t; }
 
 	/**
-	 * Adds a network list to be sent to the server. 
+	 * Adds a network list to be sent to the server.
 	 */
 	public void addNetworkList(String netlistName)
 	{
@@ -136,7 +150,7 @@ public class GetDcpMessages extends Thread
 				lddsClient.sendAuthHello(user, passwd);
 			else
 				lddsClient.sendHello(user);
-	
+
 			// MsgBlock retrieval only supported in protoversion 4 and higher
 			if (lddsClient.getServerProtoVersion() < 4)
 				singleMode = true;
@@ -151,10 +165,9 @@ public class GetDcpMessages extends Thread
 			if (crit != null)
 				lddsClient.sendSearchCrit(crit);
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			Logger.instance().log(Logger.E_FATAL, "Cannot initialize: " + e);
-			//e.printStackTrace(System.err);
+			log.atError().setCause(ex).log("Cannot initialize.");
 			return;
 		}
 
@@ -179,7 +192,7 @@ public class GetDcpMessages extends Thread
 					if (total > maxData && maxData > 0)
 					{
 						done = true;
-						System.out.println("Max data limit reached (" + maxData + ")");
+						log.info("Max data limit reached ({})", maxData);
 					}
 					endTime = System.currentTimeMillis() + (timeout*1000L);
 					if (waitMsec > 0)
@@ -200,16 +213,12 @@ public class GetDcpMessages extends Thread
 				{
 					if (System.currentTimeMillis() > endTime)
 					{
-						String s = "No message received in " + timeout 
-							+ " seconds, exiting.";
-						System.err.println(s);
-						Logger.instance().log(Logger.E_FATAL, s);
+						log.atError().setCause(se).log("No message received in {} seconds, exiting.", timeout);
 						done = true;
 					}
 					else
 					{
-						Logger.instance().log(Logger.E_DEBUG1,
-							"Server caught up to present, pausing...");
+						log.atDebug().setCause(se).log("Server caught up to present, pausing...");
 						try { Thread.sleep(1000L); }
 						catch(InterruptedException ie) {}
 						continue;
@@ -217,16 +226,18 @@ public class GetDcpMessages extends Thread
 				}
 				if (se.Derrno == LrgsErrorCode.DUNTIL
 				 || se.Derrno == LrgsErrorCode.DUNTILDRS)
-					System.err.println(
-						"Until time reached. Normal termination");
+				{
+					log.info("Until time reached. Normal termination");
+				}
 				else
-					System.err.println(se.toString());
+				{
+					log.atError().setCause(se).log("Abnormal server error.");
+				}
 				done = true;
 			}
-			catch(Exception e)
+			catch(Exception ex)
 			{
-				Logger.instance().log(Logger.E_FATAL, e.toString());
-				e.printStackTrace(System.err);
+				log.atError().setCause(ex).log("Unexpected error.");
 				goodbye = false;
 				done = true;
 			}
@@ -249,7 +260,7 @@ public class GetDcpMessages extends Thread
 	 */
 	protected void outputMessage(DcpMsg msg)
 	{
-		if ( specialFormat1 ) 
+		if ( specialFormat1 )
 		{
 			String header=sdf.format(msg.getLocalReceiveTime())+":"+
 				sdf.format(msg.getCarrierStart())+":"+
@@ -262,7 +273,7 @@ public class GetDcpMessages extends Thread
 			System.out.print(msg.toString());
 			System.out.println("");
 		}
-		else 
+		else
 		{
 			if (before != null)
 			{
@@ -271,12 +282,12 @@ public class GetDcpMessages extends Thread
 			}
 			if (extendedMode && verbose)
 			{
-				System.out.println("localReceiveTime=" 
+				System.out.println("localReceiveTime="
 					+ msg.getLocalReceiveTime());
-				System.out.println("Flag=0x" + Integer.toHexString(msg.flagbits) 
-					+ ",   sequenceNum=" + msg.getSequenceNum() 
+				System.out.println("Flag=0x" + Integer.toHexString(msg.flagbits)
+					+ ",   sequenceNum=" + msg.getSequenceNum()
 					+ ",   filterCode=" + (int)msg.mergeFilterCode);
-				System.out.println("baud=" + msg.getBaud() 
+				System.out.println("baud=" + msg.getBaud()
 					+ ",   carrierStart=" + msg.getCarrierStart()
 					+ ",   carrierStop=" + msg.getCarrierStop());
 				System.out.println("domsatTime=" + msg.getDomsatTime()
@@ -297,7 +308,7 @@ public class GetDcpMessages extends Thread
 		}
 		System.out.flush();
 	}
-	
+
 	// ========================= main ====================================
 	static ApplicationSettings settings = new ApplicationSettings();
 	static StringToken hostArg = new StringToken(
@@ -333,7 +344,7 @@ public class GetDcpMessages extends Thread
 	static BooleanToken specialFormat1Arg = new BooleanToken(
 		"F1", "extended", "", TokenOptions.optSwitch,false);
 	static StringToken netlistArg = new StringToken(
-		"N", "Network Lists to Send", "", 
+		"N", "Network Lists to Send", "",
 		TokenOptions.optSwitch|TokenOptions.optMultiple, "");
 	static IntegerToken waitArg = new IntegerToken(
 		"w", "Wait Msec after each msg", "", TokenOptions.optSwitch, 0);
@@ -372,7 +383,7 @@ public class GetDcpMessages extends Thread
 	/**
 	  Main method.
 	  <pre>
-	  Usage: GetDcpMessages -p port -h host -u user -f searchcrit -v 
+	  Usage: GetDcpMessages -p port -h host -u user -f searchcrit -v
 		-b before -a after
 		... where:
 			-p port defaults to 16003.
@@ -399,20 +410,11 @@ public class GetDcpMessages extends Thread
 	  </pre>
 	  @param args command line arguments.
 	*/
-	public static void main(String args[]) 
+	public static void main(String args[])
 	{
 		try
 		{
 			settings.parseArgs(args);
-			
-			String lf = logArg.getValue();
-			if (lf != null && lf.length() > 0)
-				Logger.setLogger(new FileLogger("GetDcpMessages", lf));
-			int dba = debugArg.getValue();
-			if (dba > 0)
-				Logger.instance().setMinLogPriority(
-					dba == 1 ? Logger.E_DEBUG1 :
-					dba == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
 
 			String crit = searchcritArg.getValue();
 			if (crit != null && crit.length() == 0)
@@ -420,7 +422,7 @@ public class GetDcpMessages extends Thread
 
 			GetDcpMessages gdm = new GetDcpMessages(
 				hostArg.getValue(), portArg.getValue(), tlsArg.getValue(),userArg.getValue(),
-				crit, verboseArg.getValue(), beforeArg.getValue(), 
+				crit, verboseArg.getValue(), beforeArg.getValue(),
 				afterArg.getValue(), newlineArg.getValue(), unixArg.getValue());
 			gdm.timeout = timeoutArg.getValue();
 			gdm.setSingleMode(singleArg.getValue());
@@ -440,10 +442,9 @@ public class GetDcpMessages extends Thread
 
 			gdm.start();
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			System.out.println("Exception while attempting to start gdm: " 
-				+ e);
+			log.atError().setCause(ex).log("Unable to retrieve any DCP Messages.");
 		}
 	}
 }

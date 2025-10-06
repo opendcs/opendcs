@@ -1,14 +1,22 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package lrgs.ldds;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.StringTokenizer;
-import java.util.TimeZone;
-import java.text.SimpleDateFormat;
 
 import lrgs.common.ArchiveException;
 import lrgs.common.LrgsErrorCode;
@@ -18,7 +26,9 @@ import lrgs.db.Outage;
 
 /**
 This class asserts new Outages on the LRGS server.
+@deprecated outage mechanism no longer supported
 */
+@Deprecated
 public class CmdAssertOutages extends CmdAdminCmd
 {
 	byte data[];
@@ -52,9 +62,7 @@ public class CmdAssertOutages extends CmdAdminCmd
 		catch(ProtocolError ex)
 		{
 			String msg = "Cannot parse outages: " + ex;
-			ldds.warning(msg);
-			throw new 
-				LddsRequestException(msg, LrgsErrorCode.DPARSEERROR, false);
+			throw new LddsRequestException(msg, LrgsErrorCode.DPARSEERROR, false, ex);
 		}
 
 		LrgsDatabaseThread ldt = LrgsDatabaseThread.instance();
