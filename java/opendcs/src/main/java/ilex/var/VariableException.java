@@ -32,5 +32,10 @@ public class VariableException extends Exception
 	{
 		super(msg);
 	}
+
+	public VariableException(String msg, Throwable cause)
+	{
+		super(msg, cause);
+	}
 }
 

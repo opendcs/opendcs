@@ -1,50 +1,23 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Source$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $State$
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:10  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.9  2004/08/30 14:50:40  mjmaloney
-*  Javadocs
-*
-*  Revision 1.8  2004/01/29 16:27:56  mjmaloney
-*  XmlHierarchyParser can now set file-name by a delegation Locator.
-*
-*  Revision 1.7  2004/01/27 15:28:48  mjmaloney
-*  dev
-*
-*  Revision 1.6  2002/07/07 14:24:29  chris
-*  Cosmetic changes only:  I added considerable javadoc comments describing
-*  this class.
-*
-*  Revision 1.5  2001/04/23 17:33:19  mike
-*  dev
-*
-*  Revision 1.4  2001/04/11 22:44:20  mike
-*  Added StringBufferErrorHandler.
-*
-*  Revision 1.3  2001/01/08 15:38:45  mike
-*  dev
-*
-*  Revision 1.2  2000/12/29 02:50:07  mike
-*  dev
-*
-*  Revision 1.1  2000/12/21 21:30:11  mike
-*  Created
-*
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package ilex.xml;
 
 import org.xml.sax.*;
 import java.util.Stack;
 import java.util.EmptyStackException;
-import ilex.xml.XmlObjectParser;
 
 /**
 * XmlHierarchyParser parses an XML document by using a hierarchy of object
@@ -122,7 +95,7 @@ public class XmlHierarchyParser implements ContentHandler
 		}
 		catch(EmptyStackException ex)
 		{
-			throw new SAXException("Attempt to pop an empty parser stack");
+			throw new SAXException("Attempt to pop an empty parser stack", ex);
 		}
 	}
 
@@ -189,18 +162,17 @@ public class XmlHierarchyParser implements ContentHandler
 		}
 		catch(EmptyStackException ex)
 		{
-			throw new SAXException(
-				"Elements found after top level element ended.");
+			throw new SAXException("Elements found after top level element ended.", ex);
 		}
 		catch(SAXException ex)
 		{
 			// Add location information to application exceptions.
-			errorHandler.error(new SAXParseException(ex.getMessage(), locator));
+			errorHandler.error(new SAXParseException(ex.getMessage(), locator, ex));
 		}
 	}
 
     /**
-	* Called when SAX sees an end tag. 
+	* Called when SAX sees an end tag.
 	* Delegate this info to the top parser on the stack.
 	* @param namespaceURI passed to top parser
 	* @param localName passed to top parser
@@ -217,13 +189,12 @@ public class XmlHierarchyParser implements ContentHandler
 		}
 		catch(EmptyStackException ex)
 		{
-			throw new SAXException(
-				"End-Element found after top level element ended.");
+			throw new SAXException("End-Element found after top level element ended.", ex);
 		}
 		catch(SAXException ex)
 		{
 			// Add location information to application exceptions.
-			errorHandler.error(new SAXParseException(ex.getMessage(), locator));
+			errorHandler.error(new SAXParseException(ex.getMessage(), locator, ex));
 		}
 	}
 
@@ -244,13 +215,12 @@ public class XmlHierarchyParser implements ContentHandler
 		}
 		catch(EmptyStackException ex)
 		{
-			throw new SAXException(
-				"Characters found after top level element ended.");
+			throw new SAXException("Characters found after top level element ended.", ex);
 		}
 		catch(SAXException ex)
 		{
 			// Add location information to application exceptions.
-			errorHandler.error(new SAXParseException(ex.getMessage(), locator));
+			errorHandler.error(new SAXParseException(ex.getMessage(), locator, ex));
 		}
 	}
 
@@ -272,13 +242,12 @@ public class XmlHierarchyParser implements ContentHandler
 		}
 		catch(EmptyStackException ex)
 		{
-			throw new SAXException(
-				"Whitespace found after top level element ended.");
+			throw new SAXException("Whitespace found after top level element ended.", ex);
 		}
 		catch(SAXException ex)
 		{
 			// Add location information to application exceptions.
-			errorHandler.error(new SAXParseException(ex.getMessage(), locator));
+			errorHandler.error(new SAXParseException(ex.getMessage(), locator, ex));
 		}
 	}
 
