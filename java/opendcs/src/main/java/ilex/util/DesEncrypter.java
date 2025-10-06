@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package ilex.util;
 
@@ -11,19 +23,23 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+
 import java.security.spec.KeySpec;
 import java.security.spec.AlgorithmParameterSpec;
 
 /**
 Encrypts a string using a passphrase.
 */
-public class DesEncrypter 
+public class DesEncrypter
 {
+	private static final org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
 	private Cipher ecipher;
 	private Cipher dcipher;
 
 	// 8-byte Salt
-	private byte[] salt = 
+	private byte[] salt =
 	{
 		(byte)0xA9, (byte)0x9B, (byte)0xC8, (byte)0x32,
 		(byte)0x56, (byte)0x35, (byte)0xE3, (byte)0x03
@@ -33,18 +49,18 @@ public class DesEncrypter
 	private int iterationCount = 19;
 
 	/**
-	 * Construct an object to handle both encryption and decryption using DES
+	 * Construct an object to handle both encryption & decryption using DES
 	 * with the passed passPhrase.
 	 * @param passPhrase the secret pass phrase.
 	 * @throws AuthException if any errors occur in the underlying DES classes.
 	 */
-	public DesEncrypter(String passPhrase) 
+	public DesEncrypter(String passPhrase)
 		throws AuthException
 	{
-		try 
+		try
 		{
 			// Create the key
-			KeySpec keySpec = 
+			KeySpec keySpec =
 				new PBEKeySpec(passPhrase.toCharArray(), salt, iterationCount);
 			SecretKey key = SecretKeyFactory.getInstance(
 				"PBEWithMD5AndDES").generateSecret(keySpec);
@@ -52,7 +68,7 @@ public class DesEncrypter
 			dcipher = Cipher.getInstance(key.getAlgorithm());
 
 			// Prepare the parameter to the ciphers
-			AlgorithmParameterSpec paramSpec = 
+			AlgorithmParameterSpec paramSpec =
 				new PBEParameterSpec(salt, iterationCount);
 
 			// Create the ciphers
@@ -63,14 +79,8 @@ public class DesEncrypter
 		{
 			String msg = "Cannot construct DesEncrypter: " + ex;
 			Logger.instance().warning(msg);
-			throw new AuthException(msg);
+			throw new AuthException(msg, ex);
 		}
-		// Note: Exceptions that might be thrown include:
-	//	java.security.InvalidAlgorithmParameterException
-		//	java.security.spec.InvalidKeySpecException
-		//	javax.crypto.NoSuchPaddingException
-		//	java.security.NoSuchAlgorithmException
-		//	java.security.InvalidKeyException
 	}
 
 	/**
@@ -78,9 +88,9 @@ public class DesEncrypter
 	 * @param str the string to encrypt.
 	 * @return BASE-64 encoding of the encrypted string.
 	 */
-	public String encrypt(String str) 
+	public String encrypt(String str)
 	{
-		try 
+		try
 		{
 			// Encode the string into bytes using utf-8
 			byte[] utf8 = str.getBytes("UTF8");
@@ -92,21 +102,18 @@ public class DesEncrypter
 			//return new sun.misc.BASE64Encoder().encode(enc);
 			return new String(Base64.encodeBase64(enc), "UTF8");
 		}
-		catch (BadPaddingException e) 
+		catch (BadPaddingException e)
 		{
 			// Won't happen -- Only applies to decryption.
 		}
-		catch (IllegalBlockSizeException e) 
+		catch (IllegalBlockSizeException e)
 		{
 			// Won't happen -- We're not doing block encryption.
 		}
-		catch (UnsupportedEncodingException e) 
+		catch (UnsupportedEncodingException e)
 		{
 			// Won't happen, UTF8 is always supported.
 		}
-		//catch (java.io.IOException e) 
-		//{
-		//}
 		return null;
 	}
 
@@ -116,10 +123,10 @@ public class DesEncrypter
 	 * @return the decrypted string.
 	 * @throws AuthException if any error occurs in the underlying DES classes.
 	 */
-	public String decrypt(String str) 
+	public String decrypt(String str)
 		throws AuthException
 	{
-		try 
+		try
 		{
 			// Decode base64 to get bytes
 			//byte[] dec = new sun.misc.BASE64Decoder().decodeBuffer(str);
@@ -131,22 +138,19 @@ public class DesEncrypter
 			// Decode using utf-8
 			return new String(utf8, "UTF8");
 		}
-		catch (BadPaddingException ex) 
+		catch (BadPaddingException ex)
 		{
 			// Means padding chars were not included properly in 'str'.
-			throw new AuthException("Cannot decrypt: " + ex);
+			throw new AuthException("Cannot decrypt", ex);
 		}
-		catch (IllegalBlockSizeException e) 
+		catch (IllegalBlockSizeException e)
 		{
 			// Won't happen, we're not doing block decryption.
 		}
-		catch (UnsupportedEncodingException e) 
+		catch (UnsupportedEncodingException e)
 		{
 			// Won't happen -- UTF8 is always supported.
 		}
-		//catch (java.io.IOException e) 
-		//{
-		//}
 		return null;
 	}
 
@@ -161,14 +165,14 @@ public class DesEncrypter
 
 		// Create encrypter/decrypter class
 		DesEncrypter encrypter = new DesEncrypter(args[1]);
-	
+
 		// Encrypt
 		String encrypted = encrypter.encrypt(args[0]);
 
 		System.out.println("Encrpyted '" + args[0] + "' with key '" + args[1]
 			+ "': ");
 		System.out.println(encrypted);
-	
+
 		// Decrypt
 		String decrypted = encrypter.decrypt(encrypted);
 		System.out.println(decrypted);
