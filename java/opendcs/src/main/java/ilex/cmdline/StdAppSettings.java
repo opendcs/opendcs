@@ -107,20 +107,6 @@ public class StdAppSettings extends ApplicationSettings
 		return null;
 	}
 
-    /**
-     * @return the service specified on the command line, or null if none.
-     */
-//	public String getService()
-//	{
-//		if (service_arg == null)
-//			return null;
-//
-//		String r = service_arg.getValue();
-//		if (r != null && r.length() > 0)
-//			return r;
-//		return null;
-//	}
-
 	/**
 	 * @return the name of the properties file specified on the command
 	 * line or null if none was.

@@ -1,10 +1,23 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package ilex.gui;
 
 import javax.swing.JPanel;
 
 import java.awt.GridBagConstraints;
-
-import javax.swing.JComponent;
 
 import java.awt.GridBagLayout;
 
@@ -20,7 +33,6 @@ import javax.swing.*;
 import java.util.Locale;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.TimeZone;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowAdapter;
@@ -48,17 +60,17 @@ public class DateCalendar extends JPanel
 
 	/**
 	 * Constructor for DateCalendar.
-	 * 
+	 *
 	 * @param label
 	 *            String label to identified this DateCalendar. Ex. From
 	 * @param dateIn
 	 *            Date default for DateCalendar
 	 * @param dateFmt
 	 *            String format for date
-	 * @param tzObj object
+	 * @param timezone object
 	 */
 	public DateCalendar(String label, Date dateIn, String dateFmt, TimeZone tzObj)
-	{		 
+	{
 		dateLabel = label;
 		if (dateLabel == null)
 			dateLabel = "";
@@ -66,34 +78,29 @@ public class DateCalendar extends JPanel
 			dateIn = new Date();
 		if (tzObj == null)
 			tzObj = TimeZone.getTimeZone("UTC");
-	
+
 		sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 		sdf.setTimeZone(tzObj);
 
 		textFieldEditor = new JTextFieldDateEditor(false, dateFmt, null, ' ', tzObj);
-		
-//System.out.println("DateCalendar ctor creating JDateChooser with date='" + sdf.format(dateIn) + "'"); 
+
+
 		dateComponent = new JDateChooser(dateIn, dateFmt, textFieldEditor);
-		
-		try
-		{
-			jbInit();
-		} 
-		catch (Exception ex)
-		{
-			ex.printStackTrace();
-		}
+
+
+		jbInit();
+
 	}
 
 	// Add components to JPanel
-	private void jbInit() throws Exception
+	private void jbInit()
 	{
 		this.setLayout(gridBagLayoutMain);
 		textLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 		textLabel.setText(dateLabel + ": ");
 
 		this.add(textLabel, new GridBagConstraints(0, 0, 1, 1, 0.5, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
 				new Insets(0, 2, 0, 0), 5, 0));
 
 		this.add(dateComponent, new GridBagConstraints(1, 0, 1, 1, 0.5, 0.0,
@@ -104,7 +111,7 @@ public class DateCalendar extends JPanel
 
 	/**
 	 * This method returns the DateCalendar display object.
-	 * 
+	 *
 	 * @return JPanel the DateCalendar panel
 	 */
 	public JPanel getDateCalendarPanel()
@@ -114,7 +121,7 @@ public class DateCalendar extends JPanel
 
 	/**
 	 * This method returns the date set by DateCalendar
-	 * 
+	 *
 	 * @return Date date set by DateCalendar
 	 */
 	public Date getDate()
@@ -122,7 +129,6 @@ public class DateCalendar extends JPanel
 		if (dateComponent != null)
 		{
 			Date r = dateComponent.getDate();
-//System.out.println("DateCalendar.getDate returning " + sdf.format(r));
 			return r;
 		}
 		else
@@ -131,7 +137,7 @@ public class DateCalendar extends JPanel
 
 	/**
 	 * This method sets the DateCalendar date
-	 * 
+	 *
 	 * @param dateIn
 	 *            Date used to set DateCalendar date
 	 */
@@ -139,14 +145,13 @@ public class DateCalendar extends JPanel
 	{
 		Calendar cal = Calendar.getInstance();
 		cal.set(Calendar.HOUR_OF_DAY, 12);
-//System.out.println("DateCalendar.setDate to " + sdf.format(dateIn));
 		if (dateComponent != null)
 			dateComponent.setDate(dateIn);
 	}
 
 	/**
 	 * Sets the locale. (for internationalization)
-	 * 
+	 *
 	 * @param locale
 	 *            Locale
 	 */
@@ -159,10 +164,10 @@ public class DateCalendar extends JPanel
 	{
 		dateComponent.setEnabled(tf);
 	}
-	
+
 	/**
-	 * Main used ONLY for testing Purporses.
-	 * 
+	 * Main used ONLY for testing Purposes.
+	 *
 	 * @param args String[]
 	 */
 	public static void main(String[] args)
