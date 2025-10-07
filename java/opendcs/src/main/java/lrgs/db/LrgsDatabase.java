@@ -1,13 +1,17 @@
 /*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.db;
 
@@ -19,33 +23,39 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.ldds.BadPasswordException;
 import lrgs.lrgsmain.LrgsConfig;
 import decodes.db.DatabaseException;
 import decodes.sql.KeyGenerator;
 import decodes.sql.KeyGeneratorFactory;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 /**
  * This is the base class for the LRGS database implementation.
- * This class contains all methods needed to insert, update, 
+ * This class contains all methods needed to insert, update,
  * retrieve and delete from the lrgs database tables.
- *  
+ *
 */
 public class LrgsDatabase
 {
-	/** The JDBC connection, must be provided by the connect method. */
+	/** The logger */
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
+	/** The JDBC connection, must be provided by the connect method.
+	 * @deprecated even the Lrgs Database needs to be moved to a connection pool. However, plans to come later.
+	 *
+	 */
+	@Deprecated
 	private Connection conn;
 
 	/** The default statement for queries */
@@ -54,12 +64,11 @@ public class LrgsDatabase
 	/** The default statement for modifies */
 	private Statement modStmt;
 
-	/** The logger */
-	private Logger logger;
-	
+
+
 	/** Used to format timestamps written to the database */
 	private SimpleDateFormat dateFmt;
-	
+
 	/** Used to format timestamps read from the database */
 	private SimpleDateFormat readDateFmt;
 
@@ -77,7 +86,7 @@ public class LrgsDatabase
 
 	/** The URL we're currently connected to. */
 	private String dbUrl;
-	
+
 	private String myHostName = "unknown";
 
 	/**
@@ -85,7 +94,6 @@ public class LrgsDatabase
 	 */
 	public LrgsDatabase()
 	{
-		logger = Logger.instance();
 		LrgsConfig cfg = LrgsConfig.instance();
 		dateFmt = new SimpleDateFormat(cfg.sqlWriteDateFormat);
 		readDateFmt = new SimpleDateFormat(cfg.sqlReadDateFormat);
@@ -100,28 +108,28 @@ public class LrgsDatabase
 
 	/**
 	 * This method returns the current JDBC connection.
-	 * 
+	 *
 	 * @return Connection the JDBC Database Connection object
 	 */
-	public Connection getConnection() 
-	{ 
+	public Connection getConnection()
+	{
 		return conn;
 	}
-	
+
 	public synchronized Statement createStatement()
 		throws SQLException
 	{
 		return conn.createStatement();
 	}
-	
+
 	/**
 	 * This method returns a KeyGenerator interface by using SQL sequences.
-	 *  
+	 *
 	 * @return KeyGenerator interface by using SQL sequences
 	 */
-	public KeyGenerator getKeyGenerator() 
+	public KeyGenerator getKeyGenerator()
 	{
-		return keyGenerator; 
+		return keyGenerator;
 	}
 
 	/**
@@ -132,7 +140,7 @@ public class LrgsDatabase
 	 * statement and do the inside query yourself. Likewise, if called
 	 * from multiple threads, an external synchronization mechanism is
 	 * needed.
-	 * 
+	 *
 	 * @param q the query
 	 * @return the result set
 	 */
@@ -144,21 +152,20 @@ public class LrgsDatabase
 			if (queryStmt != null)
 				queryStmt.close();
 			queryStmt = createStatement();
-			Logger.instance().debug3("Querying '" + q + "'");
+			log.trace("Querying '{}'", q);
 			return queryStmt.executeQuery(q);
 		}
 		catch(SQLException ex)
 		{
-			String msg = "SQL Error in query '" + q + "': " + ex;
-			Logger.instance().warning(msg);
-			throw new LrgsDatabaseException(msg);
+			String msg = "SQL Error in query '" + q + "'";
+			throw new LrgsDatabaseException(msg, ex);
 		}
 	}
 
 	/**
 	* Executes an UPDATE or INSERT query.
 	* Thread safe: internally synchronized on the modify-statement.
-	* 
+	*
 	* @param q the query string
 	* @throws DatabaseException  if the update fails.
 	* @return number of records modified
@@ -170,23 +177,17 @@ public class LrgsDatabase
 		{
 			modStmt = createStatement();
 			if (!q.equals("COMMIT"))
-				logger.debug2("Executing statement '" + q + "'");
+			{
+				log.trace("Executing statement '{}'", q);
+			}
 			int numChanged = modStmt.executeUpdate(q);
 			modStmt.close();
 			return numChanged;
-// Don't do this. Some queries are OK if they modify nothing.
-//			if (numChanged == 0) 
-//			{
-//				String msg = "Failure in modify query '" + q + "'";
-//				Logger.instance().warning(msg);
-//				throw new DbIoException(msg);
-//			}
 		}
 		catch(SQLException ex)
 		{
-			String msg = "SQL Error in modify query '" + q + "': " + ex;
-			Logger.instance().warning(msg);
-			throw new LrgsDatabaseException(msg);
+			String msg = "SQL Error in modify query '" + q + "'";
+			throw new LrgsDatabaseException(msg, ex);
 		}
 	}
 
@@ -196,7 +197,7 @@ public class LrgsDatabase
 	* "NULL" (without the quotes).  If the argument is not null, then
 	* this returns a formated version of the date/time, enclosed in
 	* single quotes.
-	* 
+	*
 	* @param d the date value
 	* @return String suitable for use in a SQL statement
 	*/
@@ -209,9 +210,9 @@ public class LrgsDatabase
 
 	/**
 	 * This method converts a boolean type to a DB String representation.
-	 * 
-	 * @param v value from user to be converted to SQL representation 
-	 * @return string representation for a boolean value in this db. 
+	 *
+	 * @param v value from user to be converted to SQL representation
+	 * @return string representation for a boolean value in this db.
 	 * */
 	public String sqlBoolean(boolean v)
 	{
@@ -220,7 +221,7 @@ public class LrgsDatabase
 
 	/**
 	 * This method returns a string representation for a given string value.
-	 * 
+	 *
 	 * @param field the value to be saved in the database
 	 * @return string representation for an string value in this db
 	 */
@@ -228,7 +229,7 @@ public class LrgsDatabase
 	{
 		if (field == null)
 			return "NULL";
-		else 
+		else
 		{
 			// Have to escape any single quotes in the string.
 			if (field.indexOf('\'') >= 0)
@@ -242,12 +243,12 @@ public class LrgsDatabase
 			return "'" + field + "'";
 		}
 	}
-	
+
 	/**
 	 * This method returns a string representation for a given value.
-	 * 
+	 *
 	 * @param field the value to be saved in the database
-	 * @return string representation for a char value in this db. 
+	 * @return string representation for a char value in this db.
 	 * */
 	public String sqlChar(char field)
 	{
@@ -257,7 +258,7 @@ public class LrgsDatabase
 	/**
 	 * This method returns a boolean representation
 	 * for a given SQL ResultSet value.
-	 * 
+	 *
 	 * @param rs the result set
 	 * @param column the identifier that contains the SQL value
 	 * @return boolean value from the result set.
@@ -274,15 +275,15 @@ public class LrgsDatabase
 		}
 		catch(SQLException ex)
 		{
-			Logger.instance().warning("Error retrieving boolean: " + ex);
+			log.atWarn().setCause(ex).log("Error retrieving boolean.");
 			return false;
 		}
 	}
-	
+
 	/**
 	 * This method returns a char representation
 	 * for a given SQL ResultSet value.
-	 * 
+	 *
 	 * @param rs the result set
 	 * @param column the identifier that contains the SQL value
 	 * @return char value from the result set.
@@ -304,12 +305,12 @@ public class LrgsDatabase
 		}
 		catch(SQLException ex)
 		{
-			Logger.instance().warning("Error retrieving char: " + ex);
+			log.atWarn().setCause(ex).log("Error retrieving char.");
 			return '\0';
 		}
 		return returnValue;
 	}
-	
+
 	/**
 	 * Commit a database transaction.
 	 */
@@ -321,7 +322,10 @@ public class LrgsDatabase
 			conn.commit();
 			conn.clearWarnings();
 		}
-		catch(SQLException ex) {}
+		catch(SQLException ex)
+		{
+			throw new LrgsDatabaseException("Unable to commit changes.", ex);
+		}
 	}
 
 	/**
@@ -330,13 +334,16 @@ public class LrgsDatabase
 	public void rollback()
 	{
 		try { doModify("ROLLBACK"); }
-		catch(Exception ex) {}
+		catch(Exception ex)
+		{
+			log.atError().setCause(ex).log("Unable to rollback changes.");
+		}
 	}
 
 	/**
 	 * This method returns a Date representation
 	 * for a given SQL ResultSet value.
-	 * 
+	 *
 	 * @param rs the result set
 	 * @param column the identifier that contains the SQL value
 	 * @return a full date, including time information.
@@ -368,21 +375,21 @@ public class LrgsDatabase
 		}
 		catch(SQLException ex2)
 		{
-			Logger.instance().warning("Error retrieving date/time: " + ex2);
+			log.atWarn().setCause(ex2).log("Error retrieving date/time.");
 			return null;
 		}
 	}
-	
+
 	private boolean isOracle()
 	{
 		return dbUrl != null && dbUrl.toLowerCase().contains("oracle");
 	}
 
 	/**
-	 * Establish connection to the LRGS Database. The credentials property 
+	 * Establish connection to the LRGS Database. The credentials property
 	 * set contains username, password, etc, for connecting to database.
 	 * In addition this method reads the values from the lrgs_database table.
-	 * 
+	 *
 	 * @param credentials must contain all needed login parameters.
 	 * @throws LrgsDatabaseException if failure to connect.
 	 */
@@ -395,18 +402,18 @@ public class LrgsDatabase
 		String username = credentials.getProperty("username");
 		String password = credentials.getProperty("password");
 
-		try 
+		try
 		{
-			Class.forName(driverClass);		
+			Class.forName(driverClass);
 			conn = DriverManager.getConnection(dbUrl, username, password);
 		}
-		catch (Exception ex) 
+		catch (Exception ex)
 		{
 			conn = null;
 			throw new LrgsDatabaseException(
 				"Error getting JDBC connection using driver '"
 				+ driverClass + "' to database at '" + dbUrl
-				+ "' for user '" + username + "': " + ex.toString());
+				+ "' for user '" + username + "'", ex);
 		}
 
 		try
@@ -414,58 +421,55 @@ public class LrgsDatabase
 			keyGenerator = KeyGeneratorFactory.makeKeyGenerator(
 				keyGeneratorClass);
 		}
-		catch (Exception ex) 
+		catch (Exception ex)
 		{
 			conn = null;
 			throw new LrgsDatabaseException(
 				"Cannot initialize key generator from class '"
-				+ keyGeneratorClass + "' :"
-				+ ex.toString());
+				+ keyGeneratorClass + "'", ex);
 		}
-		
+
 		if (isOracle())
 		{
 			String q = "alter session set nls_timestamp_format = 'YYYY-MM-DD HH24:MI:SS'";
 			doQuery(q);
 			readDateFmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			dateFmt = new SimpleDateFormat("''yyyy-MM-dd HH:mm:ss''");
-			Logger.instance().info("dateFmtSpec=" + dateFmt.toPattern() + ", current time="
-				+ dateFmt.format(new Date()));
+			log.info("dateFmtSpec={}, current time={}", dateFmt.toPattern(), dateFmt.format(new Date()));
 			readDateFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 			dateFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 		}
-		
+
 		// Read the Information from the lrgs_database table and
 		// store the values in the local private variables.
 		getLrgsDatabase();
 
-		Logger.instance().info("Connected to LRGS database version " + db_ver);
+		log.info("Connected to LRGS database version {}", db_ver);
 	}
 
 	/**
-	 * Get the information from the lrgs_database table and 
+	 * Get the information from the lrgs_database table and
 	 * set the following private members: db_ver, db_createTime,
 	 * db_createdBy and db_description.
-	 * 
+	 *
 	 * @throws LrgsDatabaseException exception thrown in case of error while reading from DB
 	 */
 	private void getLrgsDatabase() throws LrgsDatabaseException
 	{
-		String q = 
-		"SELECT db_ver, create_time, created_by, description FROM lrgs_database ";			
+		String q =
+		"SELECT db_ver, create_time, created_by, description FROM lrgs_database ";
 
-		try
+		try (ResultSet rs = doQuery(q))
 		{
-			ResultSet rs = doQuery(q);
 			if (!rs.next())
 			{   // Lrgs_database table cannot be empty
 				String msg = "Lrgs_database table is empty";
 				throw new LrgsDatabaseException(msg);
-			} 
+			}
 			else
 			{
 				// Set the local values.
-				db_ver = rs.getInt(1);            	// the database_ver    
+				db_ver = rs.getInt(1);            	// the database_ver
 				db_createTime = getFullDate(rs, 2);	// the create_time
 				db_createBy = rs.getString(3);    	// created by value
 				db_description = rs.getString(4); 	// description
@@ -473,17 +477,16 @@ public class LrgsDatabase
 		}
 		catch(SQLException ex)
 		{
-			String msg = "Error while reading the lrgs_database table " + ex;
-			logger.failure(msg);
+			String msg = "Error while reading the lrgs_database table";
 			closeConnection();
-			throw new LrgsDatabaseException(msg);
+			throw new LrgsDatabaseException(msg, ex);
 		}
 	}
 
 	/**
 	 * This method reads a Data Source object from the lrgs data_source table.
 	 * It fills out a Data Source object with the values read from the table.
-	 * 
+	 *
 	 * @param type the type value to search for
 	 * @param name the name value to search for
 	 * @return DataSource the Data Source object read from DB, or null if no Data Source is found
@@ -492,33 +495,32 @@ public class LrgsDatabase
 	public DataSource getDataSource(String type, String name) throws LrgsDatabaseException
 	{
 		DataSource dataSource = null;
-		String q = 
+		String q =
 			"SELECT data_source_id, lrgs_host, data_source_name, data_source_type " +
 			"FROM data_source WHERE data_source_type = " +
 			sqlString(type) + " AND data_source_name = " + sqlString(name) + "";
-		
-		try
+
+		try (ResultSet rs = doQuery(q);)
 		{
-			ResultSet rs = doQuery(q);
-			if (rs != null && rs.next())
+
+			if (rs.next())
 			{
 				// Set DataSource object.
-				dataSource = new DataSource(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4) );	
-			}			
+				dataSource = new DataSource(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4) );
+			}
 		}
 		catch(SQLException ex)
 		{
-			String msg = "Error while reading the data_source table " + ex;
-			logger.failure(msg);
+			String msg = "Error while reading the data_source table.";
 			closeConnection();
-			throw new LrgsDatabaseException(msg);
-		}		
+			throw new LrgsDatabaseException(msg, ex);
+		}
 		return dataSource;
 	}
 
 	/**
 	 * This method returns all the Data Source records found on the data_source table.
-	 * 
+	 *
 	 * @return List of DataSource objects, an empty list if no Data Sources are found
 	 * @throws LrgsDatabaseException exception thrown in case of error while reading from DB
 	 */
@@ -526,14 +528,14 @@ public class LrgsDatabase
 	{
 		ArrayList<DataSource> dataSourceList = new ArrayList<DataSource>();
 		DataSource dataSource = null;
-		String q = 
+		String q =
 			"SELECT data_source_id, lrgs_host, data_source_name, data_source_type " +
 			"FROM data_source";
 		if (localOnly)
 			q = q + " WHERE lrgs_host = " + sqlString(myHostName);
-		try
+		try (ResultSet rs = doQuery(q))
 		{
-			ResultSet rs = doQuery(q);
+
 			// Set DataSource Array List.
 			while(rs.next())
 			{
@@ -543,17 +545,16 @@ public class LrgsDatabase
 		}
 		catch(SQLException ex)
 		{
-			String msg = "Error while reading the data_source table " + ex;
-			logger.failure(msg);
+			String msg = "Error while reading the data_source table.";
 			closeConnection();
-			throw new LrgsDatabaseException(msg);
-		}		
+			throw new LrgsDatabaseException(msg, ex);
+		}
 		return dataSourceList;
 	}
-	
+
 	/**
 	 * This method saves a Data Source object in the lrgs data_source table.
-	 * 
+	 *
 	 * @param dataSource the Data Source object containing the information
 	 * @throws LrgsDatabaseException exception if it fails to save the Data Source object
 	 */
@@ -577,10 +578,10 @@ public class LrgsDatabase
 				if (dataSourceID != LrgsConstants.undefinedId)
 				{
 					// Object to modify, name and type cannot be null.
-					String q = "UPDATE data_source SET data_source_name = " + 
+					String q = "UPDATE data_source SET data_source_name = " +
 						sqlString(dataSourceName) + ", data_source_type = " +
 						sqlString(dataSourceType) +
-						" WHERE data_source_id = " + dataSourceID;				
+						" WHERE data_source_id = " + dataSourceID;
 					n = doModify(q);
 					commit();
 					if (n > 0)
@@ -591,10 +592,10 @@ public class LrgsDatabase
 					dataSourceID = (int)keyGenerator.getKey(table, conn).getValue();
 					dataSource.setDataSourceId(dataSourceID);
 				}
-				
-				String q = 
+
+				String q =
 					"INSERT INTO data_source(data_source_id, lrgs_host, data_source_name, "+
-					"data_source_type) VALUES (" + dataSourceID + ", " 
+					"data_source_type) VALUES (" + dataSourceID + ", "
 					+ sqlString(dataSource.getLrgsHost()) + ", "
 					+ sqlString(dataSourceName) + ", " + sqlString(dataSourceType) + ")";
 				doModify(q);
@@ -602,21 +603,21 @@ public class LrgsDatabase
 			}
 			catch(DatabaseException ex)
 			{
-				throw new LrgsDatabaseException("Cannot save data source:" + ex);
+				throw new LrgsDatabaseException("Cannot save data source", ex);
 			}
 		}
 	}
-	
+
 	/**
 	 * This method stores the Dds Connection Stats information in the
 	 * lrgs dds_connection table.
-	 * 
-	 * @param stats the DdsConnectionStats object containing the data to be 
+	 *
+	 * @param stats the DdsConnectionStats object containing the data to be
 		saved
-	 * @throws LrgsDatabaseException exception if it fails to save the Dds 
+	 * @throws LrgsDatabaseException exception if it fails to save the Dds
 		Connection Stats object
 	 */
-	public void logDdsConn(DdsConnectionStats stats) 
+	public void logDdsConn(DdsConnectionStats stats)
 		throws LrgsDatabaseException
 	{
 		// If we have a valid DdsConnectionStats object.
@@ -636,15 +637,15 @@ public class LrgsDatabase
 					String fromIpAddr = stats.getFromIpAddr();
 					if (fromIpAddr != null && fromIpAddr.length() > 64)
 						fromIpAddr = fromIpAddr.substring(0,64);
-					String q = 
+					String q =
 			"INSERT INTO dds_connection(connection_id, lrgs_host, start_time, " +
 			"end_time, from_ip_addr, success_code, username, " +
-			"msgs_received, admin_done, protocol_version, last_activity) VALUES (" 
+			"msgs_received, admin_done, protocol_version, last_activity) VALUES ("
 			+ connectionID + ", " + sqlString(myHostName) + ", " +
-			sqlDate(stats.getStartTime()) + ", " + sqlDate(stats.getEndTime()) + 
-			", " + sqlString(stats.getFromIpAddr()) + ", " + sqlChar(stats.getSuccessCode()) + 
-			", " + sqlString(stats.getUserName()) + ", " + stats.getMsgsReceived() + 
-			", " + sqlBoolean(stats.isAdmin_done()) 
+			sqlDate(stats.getStartTime()) + ", " + sqlDate(stats.getEndTime()) +
+			", " + sqlString(stats.getFromIpAddr()) + ", " + sqlChar(stats.getSuccessCode()) +
+			", " + sqlString(stats.getUserName()) + ", " + stats.getMsgsReceived() +
+			", " + sqlBoolean(stats.isAdmin_done())
 			+ ", " + stats.getProtocolVersion()
 			+ ", " + sqlDate(stats.getLastActivity())
 			+ ")";
@@ -655,35 +656,35 @@ public class LrgsDatabase
 				catch(DatabaseException ex)
 				{
 					throw new LrgsDatabaseException("Cannot create key for table '" + table
-						+ "': " + ex);					
+						+ "'", ex);
 				}
 			}
 			else
 			{
 				// Object to modify.
-				String q = "UPDATE dds_connection SET start_Time = " + sqlDate(stats.getStartTime()) + 
+				String q = "UPDATE dds_connection SET start_Time = " + sqlDate(stats.getStartTime()) +
 					", end_time = " + sqlDate(stats.getEndTime()) + ", from_ip_addr = " +
 					sqlString(stats.getFromIpAddr()) + ", success_code = " + sqlChar(stats.getSuccessCode()) +
-					", username = " + sqlString(stats.getUserName()) + ", msgs_received = " + 
+					", username = " + sqlString(stats.getUserName()) + ", msgs_received = " +
 					stats.getMsgsReceived() + ", admin_done = " + sqlBoolean(stats.isAdmin_done())
 					+ ", protocol_version = " + stats.getProtocolVersion()
 					+ ", last_activity = " + sqlDate(stats.getLastActivity())
-					+ " WHERE connection_id = " + connectionID;				
+					+ " WHERE connection_id = " + connectionID;
 				doModify(q);
 				commit();
 			}
 		}
 	}
-	
+
 	/**
-	 * This method returns all the Dds Connection Stats records found on the 
+	 * This method returns all the Dds Connection Stats records found on the
 	 * dds_connection table based on the given start and end time. If both start
-	 * and end time are given returns all records in between those two dates. 
+	 * and end time are given returns all records in between those two dates.
 	 * In addition, it will return all records where end time is null. If
-	 * startTime is null, returns all records until endTime. If endTime is null, 
+	 * startTime is null, returns all records until endTime. If endTime is null,
 	 * returns all records after the start time. If both times are null, returns
 	 * all records.
-	 * 
+	 *
 	 * @param startTime specifies the time to start reading Dds Connection records
 	 * @param endTime specifies the time to stop reading Dds Connection records
 	 * @return List of DdsConnectionStats objects
@@ -694,8 +695,8 @@ public class LrgsDatabase
 		ArrayList<DdsConnectionStats> ddsConnectionStatsList = new ArrayList<DdsConnectionStats>();
 		DdsConnectionStats ddsConnectionStats = null;
 		StringBuffer q = new StringBuffer();
-		
-		q.append( 
+
+		q.append(
 			"SELECT connection_id, lrgs_host, start_time, end_time, from_ip_addr, success_code, " +
 			" username, msgs_received, admin_done, protocol_version, last_activity" +
 			" FROM dds_connection");
@@ -714,9 +715,9 @@ public class LrgsDatabase
 			q.append(" WHERE start_time >= " + sqlDate(startTime));
 		}
 
-		try
+		try (ResultSet rs = doQuery(q.toString()))
 		{
-			ResultSet rs = doQuery(q.toString());
+
 			// Set DdsConnectionStats Array List.
 			while(rs.next())
 			{
@@ -731,22 +732,21 @@ public class LrgsDatabase
 		}
 		catch(SQLException ex)
 		{
-			String msg = "Error while reading the dds_connection table " + ex;
-			logger.failure(msg);
+			String msg = "Error while reading the dds_connection table";
 			closeConnection();
-			throw new LrgsDatabaseException(msg);
-		}		
+			throw new LrgsDatabaseException(msg, ex);
+		}
 		return ddsConnectionStatsList;
 	}
 
 	/**
 	 * This method stores the Dds Period Stats information in the
 	 * lrgs dds_period_Stats table.
-	 * 
+	 *
 	 * @param stats the DdsPeriodStats object containing the data to be saved
 	 * @throws LrgsDatabaseException exception if it fails to save the Dds Period Stats object
 	 */
-	public void logDdsPeriodStats(DdsPeriodStats stats) 
+	public void logDdsPeriodStats(DdsPeriodStats stats)
 		throws LrgsDatabaseException
 	{
 		// If we have a valid DdsPeriodStats object.
@@ -758,15 +758,15 @@ public class LrgsDatabase
 			if (!ddsPeriodStatExists(stats.getStartTime()))
 			{
 				// New Object to insert
-				String q = 
+				String q =
 			"INSERT INTO dds_period_stats(start_time, lrgs_host, period_duration, " +
 			"num_auth, num_unauth, bad_passwords, bad_usernames, " +
 			"max_clients, min_clients, ave_clients, msgs_delivered) " +
-			"VALUES (" + sqlDate(stats.getStartTime()) + ", " + sqlString(myHostName) + ", " + 
-			sqlChar(stats.getPeriodDuration()) + ", " + 
+			"VALUES (" + sqlDate(stats.getStartTime()) + ", " + sqlString(myHostName) + ", " +
+			sqlChar(stats.getPeriodDuration()) + ", " +
 			stats.getNumAuth() + ", " + stats.getNumUnAuth() +
-			", " + stats.getBadPasswords() + ", " + stats.getBadUsernames() + 
-			", " + stats.getMaxClients() + ", " + stats.getMinClients() + 
+			", " + stats.getBadPasswords() + ", " + stats.getBadUsernames() +
+			", " + stats.getMaxClients() + ", " + stats.getMinClients() +
 			", " + stats.getAveClients() + ", " + stats.getMsgsDelivered()+ ")";
 					doModify(q);
 					commit();
@@ -774,28 +774,28 @@ public class LrgsDatabase
 			else
 			{
 				// Object to modify.
-				String q = "UPDATE dds_period_stats SET period_duration = " + 
-						sqlChar(stats.getPeriodDuration()) + 
-						", num_auth = " + stats.getNumAuth() + 
+				String q = "UPDATE dds_period_stats SET period_duration = " +
+						sqlChar(stats.getPeriodDuration()) +
+						", num_auth = " + stats.getNumAuth() +
 						", num_unauth = " + stats.getNumUnAuth() +
 						", bad_passwords = " + stats.getBadPasswords() +
-						", bad_usernames = " + stats.getBadUsernames() + 
+						", bad_usernames = " + stats.getBadUsernames() +
 						", max_clients = " + stats.getMaxClients() +
 						", min_clients = " + stats.getMinClients() +
 						", ave_clients = " + stats.getAveClients() +
 						", msgs_delivered = " + stats.getMsgsDelivered() +
 						" WHERE start_time = " + sqlDate(stats.getStartTime())
-						+ " and lrgs_host = " + sqlString(myHostName);				
+						+ " and lrgs_host = " + sqlString(myHostName);
 				doModify(q);
 				commit();
 			}
 		}
 	}
-	
+
 	/**
 	 * This method is used to verify if the DdsPeriodStats object exists in
 	 * the Database or not.
-	 * 
+	 *
 	 * @param startTime the time to look up
 	 * @return boolean returns true if Dds Period exists false otherwise
 	 * @throws LrgsDatabaseException exception thrown in case of error while reading from DB
@@ -805,31 +805,29 @@ public class LrgsDatabase
 		boolean returnValue = false;
 		String  q = "SELECT start_time FROM dds_period_stats WHERE start_time = " + sqlDate(startTime)
 			+ " and lrgs_host = " + sqlString(myHostName);
-		try
+		try (ResultSet rs = doQuery(q))
 		{
-			ResultSet rs = doQuery(q);
+
 			if (rs.next())
 			{
 				returnValue = true;
 			}
-		} catch (LrgsDatabaseException e)
+		}
+		catch (SQLException ex)
 		{
-			throw new LrgsDatabaseException(e.getMessage());
-		} catch (SQLException e)
-		{
-			throw new LrgsDatabaseException(e.getMessage());
-		}		
+			throw new LrgsDatabaseException("Error with query '" + q + "'", ex);
+		}
 		return returnValue;
 	}
-	
+
 	/**
-	 * This method returns all the Dds Period Stats records found on the 
+	 * This method returns all the Dds Period Stats records found on the
 	 * dds_period_stats table based on the given start and end time.
-	 * If both start and end time are given returns all records in between 
-	 * those two dates. If startTime is null, returns all records until 
-	 * endTime. If endTime is null, returns all records after the start time. 
+	 * If both start and end time are given returns all records in between
+	 * those two dates. If startTime is null, returns all records until
+	 * endTime. If endTime is null, returns all records after the start time.
 	 * If both times are null, returns all records.
-	 * 
+	 *
 	 * @param startTime specifies the time to start reading Dds Period Stats records
 	 * @param endTime specifies the time to stop reading Dds Period Stats records
 	 * @return List of DdsPeriodStats objects, empty list if no records found
@@ -838,7 +836,7 @@ public class LrgsDatabase
 	public List<DdsPeriodStats> getPeriodStats(Date startTime, Date endTime)
 		throws LrgsDatabaseException
 	{
-		ArrayList<DdsPeriodStats> ddsPeriodStatsList = 
+		ArrayList<DdsPeriodStats> ddsPeriodStatsList =
 			new ArrayList<DdsPeriodStats>();
 		DdsPeriodStats ddsPeriodStats = null;
 		StringBuffer q = new StringBuffer();
@@ -860,27 +858,25 @@ public class LrgsDatabase
 		{
 			q.append(" WHERE start_time >= " + sqlDate(startTime));
 		}
-		
-		try
+
+		try (ResultSet rs = doQuery(q.toString()))
 		{
-			ResultSet rs = doQuery(q.toString());
 			// Set DdsPeriodStats Array List.
 			while(rs.next())
 			{
 				ddsPeriodStats = new DdsPeriodStats(getFullDate(rs, 1), rs.getString(2),
-					getChar(rs, 3), rs.getInt(4), rs.getInt(5), rs.getInt(6), 
-					rs.getInt(7), rs.getInt(8), rs.getInt(9), rs.getDouble(10), 
+					getChar(rs, 3), rs.getInt(4), rs.getInt(5), rs.getInt(6),
+					rs.getInt(7), rs.getInt(8), rs.getInt(9), rs.getDouble(10),
 					rs.getInt(11));
 				ddsPeriodStatsList.add(ddsPeriodStats);
 			}
 		}
 		catch(SQLException ex)
 		{
-			String msg = "Error while reading the dds_period_stats table " + ex;
-			logger.failure(msg);
+			String msg = "Error while reading the dds_period_stats table.";
 			closeConnection();
-			throw new LrgsDatabaseException(msg);
-		}		
+			throw new LrgsDatabaseException(msg, ex);
+		}
 		return ddsPeriodStatsList;
 	}
 
@@ -890,336 +886,80 @@ public class LrgsDatabase
 	 * on these tables depending on the outageType field. If outageType is S "System"
 	 * the information will be stored on the system_outage table, if the outageType is
 	 * G "Domsat Gap" the information will be stored on the domsat_gap table and if
-	 * the outageType is C "Dams-nt outage" the information will be stored on the 
+	 * the outageType is C "Dams-nt outage" the information will be stored on the
 	 * damsnt_outage table.
-	 * 
+	 *
 	 * @param outage the Outage object containing the data to be saved
 	 * @throws LrgsDatabaseException exception if it fails to save the Outage object
 	 */
 	public void saveOutage(Outage outage) throws LrgsDatabaseException
 	{
 		//MJM OpenDCS 6.2 does not support Outage recovery
-
-//		if (outage == null)
-//			return;
-//
-//		if (!outage.getInDb())
-//		{
-//			// New Object to insert
-//			// Get outageID from OutageIdseq
-//			String table = LrgsConstants.outageTable;
-//			// Check the outage Type.					
-//			if (outage.getOutageType() == LrgsConstants.systemOutageType)
-//			{ // Outage Type = S - store in system_outage
-//				saveSystemOutage(outage);						
-//			}
-//			else if (outage.getOutageType() 
-//				== LrgsConstants.domsatGapOutageType)
-//			{ // Outage Type = G - store in domsat_gap
-//				saveDomsatGapOutage(outage);
-//			} 
-//			else if (outage.getOutageType() 
-//				== LrgsConstants.damsntOutageType)
-//			{ // Outage Type = C - store in damsnt_outage
-//				saveDamsntOutage(outage);
-//			}
-//			outage.setInDb(true);
-//		}
-//		else
-//		{
-//			// Object to modify.
-//			// Outage Type = S - store in system_outage
-//			if (outage.getOutageType() == LrgsConstants.systemOutageType)
-//			{
-//				updateSystemOutage(outage);
-//			}
-//			else if (outage.getOutageType() 
-//				== LrgsConstants.domsatGapOutageType)
-//			{ // Outage Type = G - store in domsat_gap
-//				updateDomsatGapOutage(outage);
-//			}
-//			else if (outage.getOutageType() == LrgsConstants.damsntOutageType)
-//			{ // Outage Type = C - store in damsnt_outage
-//				updateDamsntOutage(outage);
-//			}
-//		}
 	}
 
 	/**
-	 * Update the Damsnt Outage table.
-	 * 
-	 * @param outage object to update
-	 * @param outageID unique id
-	 * @throws LrgsDatabaseException exception if it fails to update the 
-	 *  Outage object
-	 */
-	private void updateDamsntOutage(Outage outage) 
-		throws LrgsDatabaseException
-	{
-		//MJM OpenDCS 6.2 does not support Outage recovery
-
-//		String q = "UPDATE damsnt_outage SET data_source_id = " +
-//		outage.getSourceId() +
-//		", begin_Time = " + sqlDate(outage.getBeginTime()) + 
-//		", end_time = " + sqlDate(outage.getEndTime()) + 
-//		", status_code = " + sqlChar(outage.getStatusCode())+
-//		" WHERE outage_id = " + outage.getOutageId();
-//		doModify(q);
-//		commit();
-	}
-
-	/**
-	 * Update the Domsat Gap table.
-	 * 
-	 * @param outage object to update
-	 * @param outageID unique id
-	 * @throws LrgsDatabaseException exception if it fails to update the 
-	 *  Outage object
-	 */
-	private void updateDomsatGapOutage(Outage outage) 
-		throws LrgsDatabaseException
-	{
-		//MJM OpenDCS 6.2 does not support Outage recovery
-
-//		String q = "UPDATE domsat_gap SET " +
-//		" begin_Time = " + sqlDate(outage.getBeginTime()) +
-//		", begin_seq = " + outage.getBeginSeq() +
-//		", end_time = " + sqlDate(outage.getEndTime()) +
-//		", end_seq = " + outage.getEndSeq() +
-//		", status_code = " + sqlChar(outage.getStatusCode())+
-//		" WHERE outage_id = " + outage.getOutageId();
-//		doModify(q);
-//		commit();
-	}
-	
-	/**
-	 * Update the System Outage table.
-	 * 
-	 * @param outage object to update
-	 * @param outageID unique id
-	 * @throws LrgsDatabaseException exception if it fails to update the 
-	 *  Outage object
-	 */
-	private void updateSystemOutage(Outage outage) 
-		throws LrgsDatabaseException
-	{
-		//MJM OpenDCS 6.2 does not support Outage recovery
-
-//		String q = "UPDATE system_outage SET begin_Time = " 
-//			+ sqlDate(outage.getBeginTime()) + 
-//			", end_time = " + sqlDate(outage.getEndTime()) + 
-//			", status_code = " + sqlChar(outage.getStatusCode())+
-//			" WHERE outage_id = " + outage.getOutageId();
-//		doModify(q);
-//		commit();
-	}
-
-	/**
-	 * Insert the Damsnt Outage table.
-	 * 
-	 * @param outage object to update
-	 * @param outageID unique id
-	 * @throws LrgsDatabaseException exception if it fails to insert the 
-	 *  Outage object
-	 */
-	private void saveDamsntOutage(Outage outage) 
-		throws LrgsDatabaseException
-	{
-		//MJM OpenDCS 6.2 does not support Outage recovery
-
-//		String q = 
-//			"INSERT INTO damsnt_outage(outage_id, data_source_id, " +
-//			"begin_time, end_time, status_code) VALUES (" 
-//			+ outage.getOutageId()+ ", " +
-//			outage.getSourceId() + ", " + sqlDate(outage.getBeginTime()) + 
-//			", " + sqlDate(outage.getEndTime()) + 
-//			", " + sqlChar(outage.getStatusCode()) + ")";
-//		doModify(q);
-//		commit();
-//		outage.setInDb(true);
-	}
-
-	/**
-	 * Insert the Domsat Gap table.
-	 * 
-	 * @param outage object to update
-	 * @param outageID unique id
-	 * @throws LrgsDatabaseException exception if it fails to insert the 
-	 *  Outage object
-	 */
-	private void saveDomsatGapOutage(Outage outage) 
-		throws LrgsDatabaseException
-	{
-		//MJM OpenDCS 6.2 does not support Outage recovery
-
-//		String q = 
-//			"INSERT INTO domsat_gap(outage_id, begin_time, " +
-//			"begin_seq, end_time, end_seq, status_code) " +
-//			"VALUES (" + outage.getOutageId() + ", " +
-//			sqlDate(outage.getBeginTime()) +
-//			", " + outage.getBeginSeq() +
-//			", " + sqlDate(outage.getEndTime()) + 
-//			", " + outage.getEndSeq() +
-//			", " + sqlChar(outage.getStatusCode()) + ")";
-//		doModify(q);
-//		commit();
-//		outage.setInDb(true);
-	}
-
-	/**
-	 * Insert the System Outage table.
-	 * 
-	 * @param outage object to update
-	 * @param outageID unique id
-	 * @throws LrgsDatabaseException exception if it fails to insert the 
-	 *  Outage object
-	 */
-	private void saveSystemOutage(Outage outage) 
-		throws LrgsDatabaseException
-	{
-		//MJM OpenDCS 6.2 does not support Outage recovery
-
-//		String q = 
-//			"INSERT INTO system_outage(outage_id, begin_time, " +
-//			"end_time, status_code) VALUES (" + outage.getOutageId() + ", " +
-//			sqlDate(outage.getBeginTime()) + ", " + 
-//			sqlDate(outage.getEndTime()) + 
-//			", " + sqlChar(outage.getStatusCode()) + ")";
-//		doModify(q);
-//		commit();
-//		outage.setInDb(true);
-	}
-	
-	/**
-	 * This method returns all the Outage records found on the 
+	 * This method returns all the Outage records found on the
 	 * system_outage, domsat_gap and damsnt_outage tables, based
 	 * on the given start and end time.
-	 * If both start and end time are given returns all records in between 
-	 * those two dates. If startTime is null, returns all records until 
-	 * endTime. If endTime is null, returns all records after the start time. 
+	 * If both start and end time are given returns all records in between
+	 * those two dates. If startTime is null, returns all records until
+	 * endTime. If endTime is null, returns all records after the start time.
 	 * If both times are null, returns all records.
-	 * 
+	 *
 	 * @param startTime specifies the time to start reading Outage records
 	 * @param endTime specifies the time to stop reading Outage records
 	 * @return List of Outages objects, empty list if no records found
-	 * @throws LrgsDatabaseException exception thrown in case of error while 
+	 * @throws LrgsDatabaseException exception thrown in case of error while
 	 *  reading from DB
 	 */
-	public ArrayList<Outage> getOutages(Date startTime, Date endTime) 
+	public ArrayList<Outage> getOutages(Date startTime, Date endTime)
 		throws LrgsDatabaseException
 	{
 		//MJM OpenDCS 6.2 does not support Outage recovery
 
 		ArrayList<Outage> outageList = new ArrayList<Outage>();
 
-//		// Select from system_outage table
-//		outageList = selectSystemOutage(startTime, endTime, outageList);
-//		// Select from domsat_gap table
-//		outageList = selectDomsatGap(startTime, endTime, outageList);
-//		// Select from damsnt_outage table
-//		outageList = selectDamsntOutage(startTime, endTime, outageList);
-//
-//		Collections.sort(outageList);
-		return outageList;
-	}
-
-	/**
-	 * This method retrieves outage information from the system_outage table.
-	 *   
-	 * @param startTime specifies the time to start reading Outage records
-	 * @param endTime specifies the time to stop reading Outage records
-	 * @param outageList the outage list to be filled with the table info
-	 * @return outageList the outage list containing the info
-	 * @throws LrgsDatabaseException exception thrown in case of error while 
-	 *  reading from DB
-	 * @deprecated @since 6.2
-	 */
-	@Deprecated /*(forRemoval = true, since = "6.2")*/
-	private ArrayList<Outage> selectSystemOutage(Date startTime, Date endTime, 
-		ArrayList<Outage> outageList) throws LrgsDatabaseException
-	{
-		//MJM OpenDCS 6.2 does not support Outage recovery
-		return outageList;
-	}
-	
-	/**
-	 * This method retrieves outage information from the Domsat Gap table.
-	 *   
-	 * @param startTime specifies the time to start reading Outage records
-	 * @param endTime specifies the time to stop reading Outage records
-	 * @param outageList the outage list to be filled with the table info
-	 * @return outageList the outage list containing the info
-	 * @throws LrgsDatabaseException exception thrown in case of error while reading from DB
-	 * @deprecated @since 6.2
-	 */
-	@Deprecated /*(forRemoval = true, since = "6.2")*/
-	private ArrayList<Outage>  selectDomsatGap(Date startTime, Date endTime, 
-		ArrayList<Outage> outageList) 
-		throws LrgsDatabaseException
-	{
-		//MJM OpenDCS 6.2 does not support Outage recovery
-		return outageList;
-	}
-	
-	/**
-	 * This method retrieves outage information from the damsnt_outage table.
-	 *   
-	 * @param startTime specifies the time to start reading Outage records
-	 * @param endTime specifies the time to stop reading Outage records
-	 * @param outageList the outage list to be filled with the table info
-	 * @return outageList the outage list containing the info
-	 * @throws LrgsDatabaseException exception thrown in case of error while 
-	 *  reading from DB
-	 * @deprecated @since 6.2
-	 */
-	@Deprecated /*(forRemoval = true, since = "6.2")*/
-	private ArrayList<Outage> selectDamsntOutage(Date startTime, Date endTime, 
-		ArrayList<Outage> outageList) 
-		throws LrgsDatabaseException
-	{
-		//MJM OpenDCS 6.2 does not support Outage recovery
 		return outageList;
 	}
 
 	/**
 	 * This method deletes a Data Source record from the lrgs data_source table.
-	 *   
+	 *
 	 * @param dataSource the Data Source object to be deleted
-	 * @throws LrgsDatabaseException exception thrown in case of error while 
-	 *  deleting from DB 
+	 * @throws LrgsDatabaseException exception thrown in case of error while
+	 *  deleting from DB
 	 */
-	public void deleteDataSource(DataSource dataSource) 
+	public void deleteDataSource(DataSource dataSource)
 		throws LrgsDatabaseException
 	{
 		// Verify that we have a valid Data Source object.
 		if (dataSource != null)
 		{
-			String q = 
-				"DELETE FROM data_source WHERE data_source_id = " + 
+			String q =
+				"DELETE FROM data_source WHERE data_source_id = " +
 				dataSource.getDataSourceId();
 			try
 			{
 				doModify(q);
 				commit();
 				dataSource.setDataSourceId(LrgsConstants.undefinedId);
-			} catch (LrgsDatabaseException e)
+			} catch (LrgsDatabaseException ex)
 			{
-				String msg = "Error while deleting from the data_source table " 
-					+ e;
-				throw new LrgsDatabaseException(msg);
+				String msg = "Error while deleting from the data_source table";
+				throw new LrgsDatabaseException(msg, ex);
 			}
 		}
 	}
-	
+
 	/**
 	 * This method deletes Dds stats records from the lrgs dds_connection and/or
 	 * dds_period_stats tables. It deletes records based on the given date.
-	 * For the dds_connection table it deletes all the records before the specified 
+	 * For the dds_connection table it deletes all the records before the specified
 	 * date using the end_time field. For the dds_period_stats records table it deletes
-	 * all the records before the given date using the start_time field.   
-	 *   
-	 * @param beforeDate specifies the date used to removed records 
-	 * @throws LrgsDatabaseException exception thrown in case of error while deleting from DB 
+	 * all the records before the given date using the start_time field.
+	 *
+	 * @param beforeDate specifies the date used to removed records
+	 * @throws LrgsDatabaseException exception thrown in case of error while deleting from DB
 	 */
 	public void deleteDdsStatsBefore(Date beforeDate) throws LrgsDatabaseException
 	{
@@ -1233,47 +973,47 @@ public class LrgsDatabase
 
 	/**
 	 * Delete records from the dds_period_stats table.
-	 * 
+	 *
 	 * @param beforeDate specifies to delete records before this date
-	 * @throws LrgsDatabaseException exception thrown in case of error while deleting from DB 
+	 * @throws LrgsDatabaseException exception thrown in case of error while deleting from DB
 	 */
 	private void deleteFromDdsPeriodStats(Date beforeDate) throws LrgsDatabaseException
 	{
-		String q = 
-			"DELETE FROM dds_period_stats WHERE start_time <= " + 
+		String q =
+			"DELETE FROM dds_period_stats WHERE start_time <= " +
 			sqlDate(beforeDate) + " and lrgs_host = " + sqlString(myHostName);
 		try
 		{
 			doModify(q);
 			commit();
 
-		} catch (LrgsDatabaseException e)
+		} catch (LrgsDatabaseException ex)
 		{
-			String msg = "Error while deleting from the dds_period_stats table " + e;
-			throw new LrgsDatabaseException(msg);
+			String msg = "Error while deleting from the dds_period_stats table";
+			throw new LrgsDatabaseException(msg, ex);
 		}
 	}
 
 	/**
 	 * Delete records from the dds_connection table.
-	 * 
+	 *
 	 * @param beforeDate specifies to delete records before this date
 	 * @throws LrgsDatabaseException exception thrown in case of error while deleting from DB
 	 */
 	private void deleteFromDdsConnection(Date beforeDate) throws LrgsDatabaseException
 	{
-		String q = 
-			"DELETE FROM dds_connection WHERE end_time <= " + 
+		String q =
+			"DELETE FROM dds_connection WHERE end_time <= " +
 			sqlDate(beforeDate);
 		try
 		{
 			doModify(q);
 			commit();
 
-		} catch (LrgsDatabaseException e)
+		} catch (LrgsDatabaseException ex)
 		{
-			String msg = "Error while deleting from the dds_connection table " + e;
-			throw new LrgsDatabaseException(msg);
+			String msg = "Error while deleting from the dds_connection table";
+			throw new LrgsDatabaseException(msg, ex);
 		}
 	}
 
@@ -1281,9 +1021,9 @@ public class LrgsDatabase
 	 * This method deletes an Outage record from the lrgs Database. It will
 	 * remove from one of the following tables depending on the Outage type:
 	 * system_outage, domsat_gap or damsnt.
-	 *   
+	 *
 	 * @param outage the Outage object to be deleted
-	 * @throws LrgsDatabaseException exception thrown in case of error while deleting from DB 
+	 * @throws LrgsDatabaseException exception thrown in case of error while deleting from DB
 	 * @deprecated @since 6.2
 	 */
 	@Deprecated /*(forRemoval = true, since = "6.2")*/
@@ -1309,79 +1049,79 @@ public class LrgsDatabase
 
 	/**
 	 * Delete records from the Damsnt Outage table.
-	 * 
+	 *
 	 * @param outage the object to delete
-	 * @throws LrgsDatabaseException exception thrown in case of error while 
+	 * @throws LrgsDatabaseException exception thrown in case of error while
 	 *  deleting from DB
 	 * @deprecated @since 6.2
 	 */
 	@Deprecated /*(forRemoval = true, since = "6.2")*/
-	private void deleteFromDamsntOutage(Outage outage) 
+	private void deleteFromDamsntOutage(Outage outage)
 		throws LrgsDatabaseException
 	{
-		String q = 
-			"DELETE FROM damsnt_outage WHERE outage_id = " + 
+		String q =
+			"DELETE FROM damsnt_outage WHERE outage_id = " +
 			outage.getOutageId();
 		try
 		{
 			doModify(q);
 			commit();
-		} catch (LrgsDatabaseException e)
+		} catch (LrgsDatabaseException ex)
 		{
-			String msg = "Error while deleting from the damsnt_outage table " + e;
-			throw new LrgsDatabaseException(msg);
+			String msg = "Error while deleting from the damsnt_outage table";
+			throw new LrgsDatabaseException(msg, ex);
 		}
 	}
 
 	/**
 	 * Delete records from the Domsat Gap table.
-	 * 
+	 *
 	 * @param outage the object to delete
-	 * @throws LrgsDatabaseException exception thrown in case of error while 
+	 * @throws LrgsDatabaseException exception thrown in case of error while
 	 *  deleting from DB
 	 * @deprecated @since 6.2
 	 */
 	@Deprecated /*(forRemoval = true, since = "6.2")*/
 	private void deleteFromDomsatGap(Outage outage) throws LrgsDatabaseException
 	{
-		String q = 
-			"DELETE FROM domsat_gap WHERE outage_id = " + 
+		String q =
+			"DELETE FROM domsat_gap WHERE outage_id = " +
 			outage.getOutageId();
 		try
 		{
 			doModify(q);
 			commit();
-		} catch (LrgsDatabaseException e)
+		} catch (LrgsDatabaseException ex)
 		{
-			String msg = "Error while deleting from the domsat_gap table " + e;
-			throw new LrgsDatabaseException(msg);
+			String msg = "Error while deleting from the domsat_gap table";
+			throw new LrgsDatabaseException(msg, ex);
 		}
 	}
 
 	/**
 	 * Delete records from the System Outage table.
-	 * 
+	 *
 	 * @param outage the object to delete
-	 * @throws LrgsDatabaseException exception thrown in case of error while 
+	 * @throws LrgsDatabaseException exception thrown in case of error while
 	 *  deleting from DB
 	 */
-	private void deleteFromSystemOutage(Outage outage) 
+	private void deleteFromSystemOutage(Outage outage)
 		throws LrgsDatabaseException
 	{
-		String q = 
-			"DELETE FROM system_outage WHERE outage_id = " + 
+		String q =
+			"DELETE FROM system_outage WHERE outage_id = " +
 			outage.getOutageId();
 		try
 		{
 			doModify(q);
 			commit();
-		} catch (LrgsDatabaseException e)
+		} catch (LrgsDatabaseException ex)
 		{
-			String msg = "Error while deleting from the system_outage table " + e;
-			throw new LrgsDatabaseException(msg);
+			String msg = "Error while deleting from the system_outage table";
+			throw new LrgsDatabaseException(msg, ex);
 		}
 	}
-	
+
 	/**
 	 * Unconditionally close the connection.
 	 */
@@ -1389,16 +1129,22 @@ public class LrgsDatabase
 	{
 		if (conn != null)
 		{
-			Logger.instance().info("LrgsDatabase.closeConnection()");
-			try { conn.close(); }
-			catch(Exception ex) {}
+			log.info("LrgsDatabase.closeConnection()");
+			try
+			{
+				conn.close();
+			}
+			catch(Exception ex)
+			{
+				log.atError().setCause(ex).log("Unable to close connection.");
+			}
 			conn = null;
 		}
 	}
 
 	/**
 	 * Verify if there is a current connection to the database.
-	 * 
+	 *
 	 * @return true if the database is currently connected. False otherwise.
 	 */
 	public boolean isConnected()
@@ -1406,8 +1152,7 @@ public class LrgsDatabase
 		try { return conn != null && !conn.isClosed(); }
 		catch(Exception ex)
 		{
-			Logger.instance().warning(
-				"Error testing whether connection closed: " + ex);
+			log.atWarn().setCause(ex).log("Error testing whether connection closed.");
 			closeConnection();
 			return false;
 		}
@@ -1415,7 +1160,7 @@ public class LrgsDatabase
 
 	/**
 	 * This method returns the Lrgs Database version.
-	 * 
+	 *
 	 * @return db_ver database version number
 	 */
 	public int getDatabaseVersion()
@@ -1425,27 +1170,27 @@ public class LrgsDatabase
 
 	/**
 	 * This method returns the Lrgs Database created time.
-	 *  
+	 *
 	 * @return db_createTime database creation time
 	 */
 	public Date getDatabaseCreateTime()
 	{
 		return db_createTime;
 	}
-	
+
 	/**
 	 * This method returns the Lrgs Database created-by value.
-	 * 
+	 *
 	 * @return db_createby database createdby user value
 	 */
 	public String getDatabaseCreateBy()
 	{
 		return db_createBy;
 	}
-	
+
 	/**
 	 * This method returns the Lrgs Database description value.
-	 * 
+	 *
 	 * @return db_description database description value
 	 */
 	public String getDatabaseDescription()
@@ -1457,14 +1202,14 @@ public class LrgsDatabase
 	public String getDbUrl() { return dbUrl; }
 
 	/**
-	 * This method sets the dds_connection end_time field to the 
-	 * given date for all records that have a null value on end_time. 
-	 * 
+	 * This method sets the dds_connection end_time field to the
+	 * given date for all records that have a null value on end_time.
+	 *
 	 * @param inDate date to be used to set the end_time
-	 * @throws LrgsDatabaseException exception thrown in case of error 
+	 * @throws LrgsDatabaseException exception thrown in case of error
 	 * while updating the DB
 	 */
-	public void terminateConnection(Date inDate) 
+	public void terminateConnection(Date inDate)
 		throws LrgsDatabaseException
 	{
 		if (inDate != null)
@@ -1480,7 +1225,7 @@ public class LrgsDatabase
 	{
 		return myHostName;
 	}
-	
+
 	/**
 	 * This method implemented for the NOAA password checker.
 	 * Hard-coded limits: new PW cannot match a password within last 2 years or 8 previous passwords.
@@ -1488,7 +1233,7 @@ public class LrgsDatabase
 	 * If no match found, the new password is saved in the database with the current time.
 	 * @param username the user name
 	 * @param hexPwHash the new password has as a hex string
-	 * 
+	 *
 	 * @throws BadPasswordException if password is in the history
 	 */
 	public void checkHistoricalPassword(String username, String hexPwHash)
@@ -1496,40 +1241,35 @@ public class LrgsDatabase
 	{
 		String q = "select set_time, pw_hash from pw_history where username = " + sqlString(username)
 			+ " order by set_time";
-		Logger.instance().debug3("checkHistoricalPassword '" + q + "'");
-		Statement stat = null;
+		log.trace("checkHistoricalPassword '" + q + "'");
+
 		Calendar cal = Calendar.getInstance();
 		cal.add(Calendar.YEAR, -2);
 		Date cutoff = cal.getTime();
-		try
+		ArrayList<OldPasswordHash> ophs = new ArrayList<OldPasswordHash>();
+		try (Statement stat = createStatement();
+			 ResultSet rs = stat.executeQuery(q);)
 		{
-			stat = createStatement();
-			ResultSet rs = stat.executeQuery(q);
-			ArrayList<OldPasswordHash> ophs = new ArrayList<OldPasswordHash>();
-			while(rs != null && rs.next())
+			while(rs.next())
+			{
 				ophs.add(new OldPasswordHash(this.getFullDate(rs,  1), rs.getString(2)));
+			}
 
-//System.out.println("Read " + ophs.size() + " old passwords for user '" + username + "'");
-//for(OldPasswordHash oph : ophs)
-//System.out.println("" + oph.getSetTime() + " " + oph.getPwHash());
-			
-			// Trim old passwords 
+			// Trim old passwords
 			while(ophs.size() > 8 && ophs.get(0).getSetTime().before(cutoff))
 			{
 				q = "delete from pw_history where username = " + sqlString(username)
 					+ " and set_time = " + sqlDate(ophs.get(0).getSetTime());
 				stat.executeUpdate(q);
-//System.out.println("Removing " + ophs.get(0).getSetTime());
 				ophs.remove(0);
 			}
-			
-//System.out.println("Checking for match to: " + hexPwHash);
+
 			// Now check for a match
 			for(OldPasswordHash oph : ophs)
 				if (oph.getPwHash().equals(hexPwHash))
 					throw new BadPasswordException("This password matches the password set on "
 						+ oph.getSetTime());
-			
+
 			// No match. Insert the new entry.
 			q = "insert into pw_history(username, set_time, pw_hash) values("
 				+ sqlString(username) + ", " + sqlDate(new Date()) + ", " + sqlString(hexPwHash) + ")";
@@ -1537,49 +1277,33 @@ public class LrgsDatabase
 		}
 		catch(SQLException ex)
 		{
-			String msg = "SQL Error in query '" + q + "': " + ex;
-			Logger.instance().warning(msg);
-			throw new BadPasswordException(msg);
-		}
-		finally
-		{
-			if (stat != null)
-				try {stat.close(); } catch(Exception ex) {}
+			String msg = "SQL Error in query '" + q + "'";
+			throw new BadPasswordException(msg, ex);
 		}
 	}
-	
+
 	/**
 	 * @param username
 	 * @return number of consecutive bad passwords after all other sessions.
 	 */
 	public int getNumConsecutiveBadPasswords(String username)
 	{
-		Statement stat = null;
+
 		String q = "select count(*) from dds_connection where username = " + sqlString(username)
 			+ " and success_code = 'P' and start_time > (select max(start_time) from dds_connection "
 			+ "where username = " + sqlString(username) + " and success_code != 'P')";
-		try
+		try (Statement stat = createStatement();
+			 ResultSet rs = stat.executeQuery(q);)
 		{
-			stat = createStatement();
-			ResultSet rs = stat.executeQuery(q);
-			if (rs != null && rs.next())
+			if (rs.next())
 				return rs.getInt(1);
 			else
 				return 0;
 		}
 		catch(Exception ex)
 		{
-			String msg = "SQL Error in query '" + q + "': " + ex;
-			Logger.instance().warning(msg);
+			log.atWarn().setCause(ex).log("SQL Error in query '{}'", q);
 			return 0;
 		}
-		finally
-		{
-			if (stat != null)
-				try {stat.close(); } catch(Exception ex) {}
-		}
-
 	}
-	
-	
 }

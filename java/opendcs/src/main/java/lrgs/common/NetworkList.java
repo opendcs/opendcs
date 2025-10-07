@@ -1,7 +1,18 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
-
 package lrgs.common;
 
 import java.util.Comparator;
@@ -35,7 +46,7 @@ public class NetworkList extends Vector<NetworkListItem>
 	private Object handle;
 
 	/** The time this list was loaded from the file. */
-	private Date lastReadTime; 
+	private Date lastReadTime;
 
 	/**
 		Instantiate an empty NetworkList object.
@@ -73,33 +84,33 @@ public class NetworkList extends Vector<NetworkListItem>
 		if (file == null)
 			file = input;
     	exlist = null;    // Toss old exceptions, if any.
-   		LineNumberReader rdr = new LineNumberReader(
-   			new FileReader(input));
-   		String ln;
-   		while( (ln = rdr.readLine()) != null)
-   		{
-			if (ln.length() <= 0
-   			 || ln.charAt(0) == '#') // skip comment lines.
-   				continue;
-   			else
-   			{
-   				NetworkListItem nli;
-   				try
-   				{
-   					nli = new NetworkListItem(ln);
-   					addElement(nli); // Add new element to the end of vector
-   				}
-   				catch(IllegalArgumentException e)
-   				{
-   					if (exlist == null)
-   						exlist = new FileExceptionList(input);
-   					exlist.add(new FileException(rdr.getLineNumber(), e));
-   					//System.err.println("Line " + rdr.getLineNumber()
-   					//	+ ": " + e);
-   				}
-   			}
-   		}
-		rdr.close();
+   		try (LineNumberReader rdr = new LineNumberReader(new FileReader(input)))
+		{
+			String ln;
+			while( (ln = rdr.readLine()) != null)
+			{
+				if (ln.length() <= 0
+					|| ln.charAt(0) == '#') // skip comment lines.
+					continue;
+				else
+				{
+					NetworkListItem nli;
+					try
+					{
+						nli = new NetworkListItem(ln);
+						addElement(nli); // Add new element to the end of vector
+					}
+					catch(IllegalArgumentException e)
+					{
+						if (exlist == null)
+							exlist = new FileExceptionList(input);
+						exlist.add(new FileException(rdr.getLineNumber(), e));
+						//System.err.println("Line " + rdr.getLineNumber()
+						//	+ ": " + e);
+					}
+				}
+			}
+		}
 		lastReadTime = new Date();
     	return true;
     }
@@ -113,10 +124,11 @@ public class NetworkList extends Vector<NetworkListItem>
 
     public void saveFile(File output) throws IOException
     {
-    	FileWriter fw = new FileWriter(output);
-    	fw.write(toFileString());
-    	fw.flush();
-    	fw.close();
+    	try (FileWriter fw = new FileWriter(output))
+		{
+			fw.write(toFileString());
+			fw.flush();
+		}
     }
 
     public int getNumExceptions() {
@@ -268,10 +280,10 @@ public class NetworkList extends Vector<NetworkListItem>
 	}
 
 	/**
-	 * @return the File from which this network list was loaded. 
+	 * @return the File from which this network list was loaded.
 	 */
 	public File getFile() { return file; }
-	
+
 	public boolean containsDcpAddr(DcpAddress addr)
 	{
 		for(NetworkListItem nli : this)
@@ -280,4 +292,3 @@ public class NetworkList extends Vector<NetworkListItem>
 		return false;
 	}
 }
-
