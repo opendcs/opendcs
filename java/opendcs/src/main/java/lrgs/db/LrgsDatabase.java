@@ -324,7 +324,9 @@ public class LrgsDatabase
 		}
 		catch(SQLException ex)
 		{
-			throw new LrgsDatabaseException("Unable to commit changes.", ex);
+			log.atError()
+			   .setCause(ex)
+			   .log("Unable to commit changes. Future version of OpenDCS Will throw an exception");
 		}
 	}
 
