@@ -1,51 +1,26 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.2  2017/03/24 11:58:46  mmaloney
-*  Added getLongIntContent()
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.2  2008/09/05 12:55:05  mjmaloney
-*  Handle null & untrimmed strings in getIntegerContent
-*
-*  Revision 1.1  2008/04/04 18:21:10  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.7  2007/10/23 20:36:18  mmaloney
-*  commented out info lines
-*
-*  Revision 1.6  2007/09/29 21:58:41  mmaloney
-*  dev
-*
-*  Revision 1.5  2007/02/16 22:23:49  mmaloney
-*  Added provisions for default values.
-*
-*  Revision 1.4  2007/01/30 18:40:34  mmaloney
-*  Added method to support outage functions.
-*
-*  Revision 1.3  2006/06/02 20:05:01  mmaloney
-*  Added DomHelper write methods.
-*
-*  Revision 1.2  2004/08/30 14:50:37  mjmaloney
-*  Javadocs
-*
-*  Revision 1.1  2003/03/27 13:52:01  mjmaloney
-*  Created DomHelper
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package ilex.xml;
 
 import org.xml.sax.SAXException;
 import ilex.util.ErrorException;
-import ilex.util.Logger;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.Source;
 import javax.xml.transform.Result;
@@ -57,16 +32,17 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import java.text.DateFormat;
 import java.text.ParseException;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Element;
-import org.w3c.dom.Attr;
 import org.w3c.dom.NamedNodeMap;
 
 /**
@@ -74,8 +50,9 @@ import org.w3c.dom.NamedNodeMap;
 */
 public abstract class DomHelper
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static DocumentBuilderFactory factory = null;
-	public static SimpleDateFormat dateFormat = 
+	public static SimpleDateFormat dateFormat =
 		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
 
 	/**
@@ -86,12 +63,9 @@ public abstract class DomHelper
 	* @param filename the file name
 	* @return @throws ErrorException
 	*/
-	public static Document readFile( String moduleName, String filename ) 
+	public static Document readFile( String moduleName, String filename )
 		throws ErrorException
 	{
-//		Logger.instance().log(Logger.E_INFORMATION,
-//			moduleName + ": Parsing '" + filename + "'");
-
 		try
 		{
 			if (factory == null)
@@ -102,23 +76,16 @@ public abstract class DomHelper
 		}
 		catch(SAXException ex)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				moduleName + ": SAXException parsing '" + filename + "': "+ex);
-			throw new ErrorException(ex.toString());
+
+			throw new ErrorException("SAXException parsing " + filename, ex);
 		}
 		catch(ParserConfigurationException ex)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				moduleName + ": ParserConfigurationException parsing '" 
-				+ filename + "': " + ex);
-			ex.printStackTrace(System.err);
-			throw new ErrorException(ex.toString());
+			throw new ErrorException("ParserConfigurationException parsing '" + filename + "'", ex);
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				moduleName + ": IOException parsing '" + filename + "': " + ex);
-			throw new ErrorException(ex.toString());
+			throw new ErrorException("IOException parsing '" + filename + "'", ex);
 		}
 	}
 
@@ -130,10 +97,10 @@ public abstract class DomHelper
 	* @param filename the file name
 	* @return @throws ErrorException
 	*/
-	public static Document readStream(String moduleName, InputStream strm) 
+	public static Document readStream(String moduleName, InputStream strm)
 		throws ErrorException
 	{
-		Logger.instance().debug1(moduleName + " Parsing stream.");
+		log.debug("Parsing stream.");
 
 		try
 		{
@@ -145,23 +112,15 @@ public abstract class DomHelper
 		}
 		catch(SAXException ex)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				moduleName + ": SAXException parsing input stream: "+ex);
-			throw new ErrorException(ex.toString());
+			throw new ErrorException("Error parsing input stream.", ex);
 		}
 		catch(ParserConfigurationException ex)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				moduleName + ": ParserConfigurationException parsing " 
-				+ "input stream: " + ex);
-			ex.printStackTrace(System.err);
-			throw new ErrorException(ex.toString());
+			throw new ErrorException("ParserConfigurationException parsing input stream", ex);
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				moduleName + ": IOException parsing input stream: " + ex);
-			throw new ErrorException(ex.toString());
+			throw new ErrorException("IOException parsing input stream.", ex);
 		}
 	}
 
@@ -225,7 +184,7 @@ public abstract class DomHelper
 						for(int j=0; j<n; j++)
 						{
 							Node attr = nnm.item(j);
-							sb.append(" " + attr.getNodeName() 
+							sb.append(" " + attr.getNodeName()
 								+ "=\"" + attr.getTextContent() + "\"");
 						}
 					}
@@ -254,13 +213,13 @@ public abstract class DomHelper
 		try { return Integer.parseInt(s.trim()); }
 		catch(NumberFormatException ex)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				mod + ": Excpected integer for '" + node.getNodeName()
-				+ "', using default of " + defaultValue);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Expected integer for '{}', using default of '{}", node.getNodeName(), defaultValue);
 			return defaultValue;
 		}
 	}
-	
+
 	public static double getDoubleContent(Node node, double defaultValue, String mod)
 	{
 		String s = getTextContent(node);
@@ -269,9 +228,9 @@ public abstract class DomHelper
 		try { return Double.parseDouble(s.trim()); }
 		catch(NumberFormatException ex)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				mod + ": Excpected double for '" + node.getNodeName()
-				+ "', using default of " + defaultValue);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Expected double for '{}', using default of {}", node.getNodeName(), defaultValue);
 			return defaultValue;
 		}
 
@@ -293,15 +252,15 @@ public abstract class DomHelper
 		try { return Long.parseLong(s.trim()); }
 		catch(NumberFormatException ex)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				mod + ": Excpected integer for '" + node.getNodeName()
-				+ "', using default of " + defaultValue);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Expected integer for '{}', using default of {}", node.getNodeName(), defaultValue);
 			return defaultValue;
 		}
 	}
 
-	
-	
+
+
 	/**
 	* Gets the content of this node and converts to a boolean.
 	* Strings starting with y, Y, t, T, or have a value "on" will return true.
@@ -318,9 +277,7 @@ public abstract class DomHelper
 		String s = getTextContent(node);
 		if (s.length() == 0)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				mod + ": Excpected boolean for '" + node.getNodeName()
-				+ "', using default of " + defVal);
+			log.warn("Expected boolean for '{}', using default of {}", node.getNodeName(), defVal);
 			return defVal;
 		}
 		s = s.toLowerCase();
@@ -329,17 +286,13 @@ public abstract class DomHelper
 			return true;
 		if (c == 'f' || c == 'n' || s.equals("off"))
 			return false;
-		Logger.instance().log(Logger.E_WARNING,
-			mod + ": Unrecognized boolean value '" + s + "' for '"
-			 + node.getNodeName() + "', using default of " + defVal);
+		log.warn("Unrecognized boolean value '{}' for '{}', using default of {}", s, node.getNodeName(), defVal);
 		return defVal;
 	}
 
 	public static <T extends Enum<T>> T getEnum(Node node, Class<T> enumType)
 	{
 		String s = getTextContent(node);
-		System.out.println(node.toString());
-		System.out.println(s);
 		return Enum.valueOf(enumType, s);
 	}
 
@@ -364,16 +317,13 @@ public abstract class DomHelper
 		String s = getTextContent(node);
 		if (s.length() == 0)
 		{
-			Logger.instance().warning(
-				mod + ": Excpected date for '" + node.getNodeName() + "'");
+			log.warn("Expected date for '{}'", node.getNodeName());
 			return null;
 		}
 		try { return df.parse(s); }
 		catch(ParseException ex)
 		{
-			Logger.instance().warning(
-				mod + ": cannot parse date '" + s + "' for '"
-			 	+ node.getNodeName() + "': " + ex);
+			log.atWarn().setCause(ex).log("cannot parse date '{}' for '{}'", s, node.getNodeName());
 			return null;
 		}
 	}
@@ -386,7 +336,6 @@ public abstract class DomHelper
 	 */
 	public static String findAttr(Element elem, String name)
 	{
-//System.out.println("Searching for attr '" + name + "'");
 		NamedNodeMap nnm = elem.getAttributes();
 		if (nnm == null)
 			return null;
@@ -394,12 +343,10 @@ public abstract class DomHelper
 		for(int i=0; i<n; i++)
 		{
 			Node child = nnm.item(i);
-//System.out.println("attr type=" + child.getNodeType() + ", name=" + child.getNodeName());
 			if (child.getNodeName().equalsIgnoreCase(name))
-//{
-//System.out.println("found match, returning '" + child.getTextContent() + "'");
+			{
 				return child.getTextContent();
-//}
+			}
 		}
 		return null;
 	}
@@ -413,19 +360,17 @@ public abstract class DomHelper
 	 */
 	public static Node findNode(Element parent, String name, short type)
 	{
-//System.out.println("findNode looking for type=" + type + ", name=" + name);
 		NodeList children = parent.getChildNodes();
 		for(int i=0; children != null && i<children.getLength(); i++)
 		{
 			Node child = children.item(i);
-//System.out.println("child type=" + child.getNodeType() + ", name=" + child.getNodeName());
 			if (child.getNodeType() == type
 			 && name.equalsIgnoreCase(child.getNodeName()))
 				return child;
 		}
 		return null;
 	}
-	
+
 
 	/**
 	 * @return a new, empty document.
@@ -443,11 +388,7 @@ public abstract class DomHelper
 		}
 		catch(ParserConfigurationException ex)
 		{
-			String msg = "Cannot make new DOM Document: " + ex;
-			Logger.instance().warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
-			throw new ErrorException(msg);
+			throw new ErrorException("Cannot make new DOM Document.", ex);
 		}
 	}
 
@@ -459,53 +400,27 @@ public abstract class DomHelper
 	public static void writeDocument(Document doc, String filename)
 		throws ErrorException
 	{
-		FileOutputStream fos = null;
-		try
+		try (FileOutputStream fos = new FileOutputStream(filename))
 		{
-System.err.println("writeDocument opening...");
 			TransformerFactory tranFactory = TransformerFactory.newInstance();
 			Transformer trans = tranFactory.newTransformer();
 			Source src = new DOMSource(doc);
-			fos = new FileOutputStream(filename);
-//			Result dest = new StreamResult(fos);
 			Result dest = new StreamResult(System.out);
-
-//			trans.setOutputProperty(OutputKeys.STANDALONE, "yes");
-//			trans.setOutputProperty(OutputKeys.INDENT, "yes");
 			trans.setOutputProperty("indent", "yes");
-//			trans.setOutputProperty("indent-amount", "2");
-			trans.setOutputProperty(
-				"{ http://xml.apache.org/xslt }indent-amount", "2");
-
-System.err.println("writeDocument trasnforming...");
+			trans.setOutputProperty("{ http://xml.apache.org/xslt }indent-amount", "2");
 			trans.transform(src, dest);
-System.err.println("writeDocument done.");
 		}
 		catch(TransformerConfigurationException ex)
 		{
-			String msg = "Cannot make new transformer: " + ex;
-			Logger.instance().warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
-			throw new ErrorException(msg);
+			throw new ErrorException("Cannot make new transformer.", ex);
 		}
 		catch(IOException ex)
 		{
-			String msg = "Cannot open '" + filename + "' for writing: " + ex;
-			throw new ErrorException(msg);
+			throw new ErrorException("Cannot open '" + filename + "' for writing.", ex);
 		}
 		catch(TransformerException ex)
 		{
-			String msg = "Error in transformer: " + ex;
-			Logger.instance().warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
-			throw new ErrorException(msg);
-		}
-		finally
-		{
-			if (fos != null)
-				try { fos.close(); } catch(Exception fex) {}
+			throw new ErrorException("Error in transformer.", ex);
 		}
 	}
 }

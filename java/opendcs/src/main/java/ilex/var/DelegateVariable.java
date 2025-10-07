@@ -270,12 +270,10 @@ public abstract class DelegateVariable implements IVariable
 			try { return getIntElement(0); }
 			catch(VariableException bie)
 			{
-				throw new NoConversionException(
-					"Cannot get value for zero-length array");
+				throw new NoConversionException("Cannot get value for zero-length array", bie);
 			}
 		}
-		throw new NoConversionException(
-			"Code error: No override in simple type Variable.");
+		throw new NoConversionException("Code error: No override in simple type Variable.");
 	}
 
 	/**
@@ -305,8 +303,7 @@ public abstract class DelegateVariable implements IVariable
 			try { return getLongElement(0); }
 			catch(VariableException bie)
 			{
-				throw new NoConversionException(
-					"Cannot get value for zero-length array");
+				throw new NoConversionException("Cannot get value for zero-length array", bie);
 			}
 		}
 		throw new NoConversionException(
@@ -588,7 +585,7 @@ public abstract class DelegateVariable implements IVariable
 	* @throws BadArgumentException
 	*/
 	public abstract DelegateVariable divideBy( IVariable v ) throws NoConversionException, BadArgumentException;
-	
+
 	/**
 	* @param v
 	* @return @throws NoConversionException
@@ -602,7 +599,7 @@ public abstract class DelegateVariable implements IVariable
 	* @throws BadArgumentException
 	*/
 	public abstract DelegateVariable multiplyBy( IVariable v ) throws NoConversionException, BadArgumentException;
-	
+
 	/**
 	* @param v
 	* @return @throws NoConversionException

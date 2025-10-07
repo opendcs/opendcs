@@ -33,5 +33,9 @@ public class ErrorException extends IlexException
 	{
 		super("Error: " + msg);
 	}
-}
 
+	public ErrorException(String msg, Throwable cause)
+	{
+		super(msg, cause);
+	}
+}
