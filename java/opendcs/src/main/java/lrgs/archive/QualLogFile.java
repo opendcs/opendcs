@@ -1,52 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  $Log$
-*  Revision 1.2  2015/04/02 18:27:04  mmaloney
-*  Store & retrieve EDL file statistics.
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.4  2010/10/22 18:02:24  mmaloney
-*  fixed header line
-*
-*  Revision 1.3  2009/04/07 14:17:05  mjmaloney
-*  Save Iridium Quality stats in quality.log
-*
-*  Revision 1.2  2008/05/21 21:10:33  cvs
-*  dev
-*
-*  Revision 1.1  2008/04/04 18:21:11  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.7  2007/09/07 19:16:38  mmaloney
-*  LRGS Updates
-*
-*  Revision 1.6  2007/02/22 00:36:54  mmaloney
-*  Release preparation for LRGS 6.0
-*
-*  Revision 1.5  2006/06/28 16:00:45  mmaloney
-*  Bug fixes.
-*
-*  Revision 1.4  2005/09/11 21:40:31  mjmaloney
-*  dev
-*
-*  Revision 1.3  2005/07/20 20:18:55  mjmaloney
-*  LRGS 5.0 Release preparation
-*
-*  Revision 1.2  2005/07/15 18:15:05  mjmaloney
-*  Implemented quality logging.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.archive;
 
@@ -57,14 +22,16 @@ import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.Date;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.statusxml.LrgsStatusSnapshotExt;
 
@@ -73,6 +40,7 @@ This class contains methods for reading and writing the quality log file.
 */
 public class QualLogFile
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final String module = "QualLog";
 	private File file;
 	private SimpleDateFormat sdf;
@@ -98,7 +66,7 @@ public class QualLogFile
 
 	private void openLog(boolean append)
 	{
-		try 
+		try
 		{
 			output = new PrintStream(new FileOutputStream(file, append), true);
 			if (file.length() == 0L)
@@ -111,8 +79,7 @@ public class QualLogFile
 		}
 		catch(FileNotFoundException ex)
 		{
-			Logger.instance().warning(module + " Cannot open quality log '"
-				+ file.getPath() + "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot open quality log '{}'", file.getPath());
 			output = null;
 		}
 	}
@@ -122,10 +89,10 @@ public class QualLogFile
 	 */
 	public void close()
 	{
-		try 
+		try
 		{
-			if (output != null) 
-				output.close(); 
+			if (output != null)
+				output.close();
 			output = null;
 		}
 		catch(Exception ex) {}
@@ -189,8 +156,8 @@ public class QualLogFile
 				edlIdx = i;
 		}
 
-Logger.instance().info("Reading quality log, domsatIdx=" + domsatIdx
-	+ ", ddsIdx=" + ddsIdx + ", drgsIdx=" + drgsIdx + ", edlIdx=" + edlIdx);
+		log.info("Reading quality log, domsatIdx={}, ddsIdx={}, drgsIdx={}, edlIdx={}",
+				 domsatIdx, ddsIdx, drgsIdx, edlIdx);
 
 		// We only are interested in last 24 hours.
 		long cutoff = (System.currentTimeMillis() / 3600000L) * 3600000L;
@@ -221,9 +188,9 @@ Logger.instance().info("Reading quality log, domsatIdx=" + domsatIdx
 				if (drgsIdx != -1)
 				{
 					lsse.downlinkQMs[drgsIdx].dl_qual[h].containsData = true;
-					lsse.downlinkQMs[drgsIdx].dl_qual[h].numGood 
+					lsse.downlinkQMs[drgsIdx].dl_qual[h].numGood
 						+= qle.drgsGood;
-					lsse.downlinkQMs[drgsIdx].dl_qual[h].numDropped 
+					lsse.downlinkQMs[drgsIdx].dl_qual[h].numDropped
 						+= qle.drgsErr;
 					if (qle.drgsGood > 0)
 						lsse.lss.downLinks[drgsIdx].lastMsgRecvTime
@@ -232,9 +199,9 @@ Logger.instance().info("Reading quality log, domsatIdx=" + domsatIdx
 				if (domsatIdx != -1)
 				{
 					lsse.downlinkQMs[domsatIdx].dl_qual[h].containsData = true;
-					lsse.downlinkQMs[domsatIdx].dl_qual[h].numGood += 
+					lsse.downlinkQMs[domsatIdx].dl_qual[h].numGood +=
 						qle.domsatGood;
-					lsse.downlinkQMs[domsatIdx].dl_qual[h].numDropped += 
+					lsse.downlinkQMs[domsatIdx].dl_qual[h].numDropped +=
 						qle.domsatErr;
 					lsse.domsatDropped[h] += qle.domsatDropped;
 					if (qle.domsatGood > 0)
@@ -254,9 +221,9 @@ Logger.instance().info("Reading quality log, domsatIdx=" + domsatIdx
 				if (lritIdx != -1)
 				{
 					lsse.downlinkQMs[lritIdx].dl_qual[h].containsData = true;
-					lsse.downlinkQMs[lritIdx].dl_qual[h].numGood += 
+					lsse.downlinkQMs[lritIdx].dl_qual[h].numGood +=
 						qle.lritGood;
-					lsse.downlinkQMs[lritIdx].dl_qual[h].numDropped += 
+					lsse.downlinkQMs[lritIdx].dl_qual[h].numDropped +=
 						qle.lritErr;
 					if (qle.lritGood > 0)
 						lsse.lss.downLinks[lritIdx].lastMsgRecvTime
@@ -265,9 +232,9 @@ Logger.instance().info("Reading quality log, domsatIdx=" + domsatIdx
 				if (noaaportIdx != -1)
 				{
 					lsse.downlinkQMs[noaaportIdx].dl_qual[h].containsData=true;
-					lsse.downlinkQMs[noaaportIdx].dl_qual[h].numGood += 
+					lsse.downlinkQMs[noaaportIdx].dl_qual[h].numGood +=
 						qle.noaaportGood;
-					lsse.downlinkQMs[noaaportIdx].dl_qual[h].numDropped += 
+					lsse.downlinkQMs[noaaportIdx].dl_qual[h].numDropped +=
 						qle.noaaportErr;
 					if (qle.noaaportGood > 0)
 						lsse.lss.downLinks[noaaportIdx].lastMsgRecvTime
@@ -276,37 +243,34 @@ Logger.instance().info("Reading quality log, domsatIdx=" + domsatIdx
 				if (netbackIdx != -1)
 				{
 					lsse.downlinkQMs[netbackIdx].dl_qual[h].containsData = true;
-					lsse.downlinkQMs[netbackIdx].dl_qual[h].numGood += 
+					lsse.downlinkQMs[netbackIdx].dl_qual[h].numGood +=
 						qle.netbackGood;
-					lsse.downlinkQMs[netbackIdx].dl_qual[h].numDropped += 
+					lsse.downlinkQMs[netbackIdx].dl_qual[h].numDropped +=
 						qle.netbackErr;
 				}
 
 				if (gr3110Idx != -1)
 				{
 					lsse.downlinkQMs[gr3110Idx].dl_qual[h].containsData = true;
-					lsse.downlinkQMs[gr3110Idx].dl_qual[h].numGood += 
+					lsse.downlinkQMs[gr3110Idx].dl_qual[h].numGood +=
 						qle.gr3110Count;
 				}
 				if (iridiumIdx != -1)
 				{
 					lsse.downlinkQMs[iridiumIdx].dl_qual[h].containsData = true;
-					lsse.downlinkQMs[iridiumIdx].dl_qual[h].numGood += 
+					lsse.downlinkQMs[iridiumIdx].dl_qual[h].numGood +=
 						qle.iridiumCount;
 				}
 				if (edlIdx != -1)
 				{
 					lsse.downlinkQMs[edlIdx].dl_qual[h].containsData = true;
 					lsse.downlinkQMs[edlIdx].dl_qual[h].numGood += qle.edlCount;
-//Logger.instance().info("QualLogFile found EDL count for hour=" + h + ", v=" + qle.edlCount
-//+ ", tally now=" + lsse.downlinkQMs[edlIdx].dl_qual[h].numGood);
 				}
 			}
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("Cannot initialize quality measurements: "
-				+ ex);
+			log.atWarn().setCause(ex).log("Cannot initialize quality measurements.");
 		}
 		try { if (lnr != null) lnr.close(); }
 		catch(Exception ex) {}
@@ -333,8 +297,7 @@ Logger.instance().info("Reading quality log, domsatIdx=" + domsatIdx
 		}
 		catch(ParseException ex)
 		{
-			Logger.instance().warning("Invalid date in " 
-				+ file.getName() + "(" + linenum + "): " + ex);
+			log.atWarn().setCause(ex).log("Invalid date in '{}({})'", file.getName(), linenum);
 			return null;
 		}
 		try
@@ -372,8 +335,7 @@ Logger.instance().info("Reading quality log, domsatIdx=" + domsatIdx
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Parse error in " 
-				+ file.getName() + "(" + linenum + "): " + ex);
+			log.atWarn().setCause(ex).log("Parse error in '{}({})'", file.getName(), linenum);
 			return null;
 		}
 		return qle;
