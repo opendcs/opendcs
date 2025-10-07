@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package ilex.gui;
 
 import java.awt.*;
@@ -8,8 +23,6 @@ import java.net.URL;
 import java.net.URLConnection;
 
 import ilex.util.AsciiUtil;
-import ilex.util.FileUtil;
-import ilex.util.ZipMonitor;
 
 /**
 This class opens a model dialog and starts a thread to download an URL
@@ -51,13 +64,10 @@ public class MultFileDownloadDialog extends JDialog
 	public MultFileDownloadDialog(Frame frame, String title, boolean modal)
 	{
 		super(frame, title, modal);
-		try {
-			jbInit();
-			pack();
-		}
-		catch(Exception ex) {
-			ex.printStackTrace();
-		}
+
+		jbInit();
+		pack();
+
 		cancelledFlag = false;
 		downloadThread = null;
 		thisFileProgressBar.setMinimum(0);
@@ -123,7 +133,7 @@ public class MultFileDownloadDialog extends JDialog
 	}
 
 	/** JBuilder component initialization */
-	private void jbInit() throws Exception
+	private void jbInit()
 	{
 		panel1.setLayout(borderLayout1);
 		cancelButton.setText("Cancel");
@@ -281,14 +291,6 @@ public class MultFileDownloadDialog extends JDialog
 		dispose();
 	}
 
-	//public static void main(String args[])
-	//{
-		//String url = args[0];
-		//String local = "downloaded";
-		//MultFileDownloadDialog dlg = new MultFileDownloadDialog();
-		//dlg.setCloseOnComplete(true);
-		//dlg.downloadFile(url, local);
-	//}
 }
 
 /**
@@ -314,7 +316,7 @@ class mDownloadThread extends Thread
 	  @param files an array of filenames
 	  @param localdir the name of the local directory to download to
 	*/
-	mDownloadThread(MultFileDownloadDialog parent, String urldir, 
+	mDownloadThread(MultFileDownloadDialog parent, String urldir,
 		String files[], String localdir)
 	{
 		this.parent = parent;
@@ -336,7 +338,6 @@ class mDownloadThread extends Thread
 
 				String urlstr = urldir + "/" + filename;
 				URL url = new URL(urlstr);
-//System.out.println("Opening '" + urlstr + "'");
 				URLConnection urlcon = url.openConnection();
 				int len = urlcon.getContentLength();
 				parent.setCurrentFile(filename, len);
@@ -344,7 +345,6 @@ class mDownloadThread extends Thread
 				istrm = new BufferedInputStream(urlcon.getInputStream(),
 					BUF_LEN);
 
-//System.out.println("writing '" + localdir + File.separator + filename + "'");
 				ostrm = new BufferedOutputStream(
 					new FileOutputStream(localdir + File.separator + filename),
 					BUF_LEN);
