@@ -1,33 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Source$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $State$
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:15  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.6  2004/08/30 14:51:49  mjmaloney
-*  Javadocs
-*
-*  Revision 1.5  2000/09/08 19:49:56  mike
-*  Release prep.
-*
-*  Revision 1.4  2000/09/08 17:12:20  mike
-*  Truncate error message at first null byte.
-*
-*  Revision 1.3  2000/03/31 16:09:57  mike
-*  Error codes are now in lrgs.common.LrgsErrorCode
-*
-*  Revision 1.2  2000/01/19 14:34:52  mike
-*  Debug messages to detect garbage collection.
-*
-*  Revision 1.1  2000/01/07 19:10:00  mike
-*  Generalizing client interface
-*
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.ldds;
 
@@ -61,6 +45,11 @@ public class ServerError extends Exception
 		// Initialize super class Exception with complete string
 		super(msg);
 		set(msg);
+	}
+
+	public ServerError(String msg, Throwable cause)
+	{
+		super(msg, cause);
 	}
 
 	/**
@@ -161,4 +150,3 @@ public class ServerError extends Exception
 //		System.out.println("se='" + se + "'");
 //	}
 }
-

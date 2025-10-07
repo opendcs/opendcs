@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package lrgs.ldds;
 
@@ -12,16 +24,24 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
-import java.util.Vector;
 import java.util.zip.GZIPInputStream;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 
 import org.opendcs.tls.TlsMode;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
-import ilex.util.*;
 import ilex.net.BasicClient;
+import ilex.util.ArrayUtil;
+import ilex.util.AuthException;
+import ilex.util.ByteUtil;
+import ilex.util.DesEncrypter;
+import ilex.util.EnvExpander;
+import ilex.util.IDateFormat;
+import ilex.util.PasswordFileEntry;
+import ilex.util.TextUtil;
 import lrgs.common.*;
 import lrgs.apiadmin.AuthenticatorString;
 import lrgs.db.Outage;
@@ -40,6 +60,7 @@ import decodes.db.TransportMedium;
 */
 public class LddsClient extends BasicClient
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /** Input stream coming from the server */
     private LddsInputStream linput;
 
@@ -168,8 +189,7 @@ public class LddsClient extends BasicClient
     */
     public void connect() throws IOException, UnknownHostException
     {
-        Logger.instance().debug2(module +
-            "Connecting to '" + host + "', port " + port);
+        log.debug("Connecting to '{}:{}", host, port);
         super.connect();
         socket.setTcpNoDelay(true);
         socket.setSoTimeout(60000);
@@ -194,13 +214,13 @@ public class LddsClient extends BasicClient
         {
             if (linput != null)
             {
-                Logger.instance().debug2(module +
-                    "Disconnecting from '" + host + "', port " + port);
+                log.trace("Disconnecting from '{}:{}'", host, port);
                 linput.close();
             }
             else
-                Logger.instance().debug2(module +
-                    "Already disconnected from '" + host + "', port " + port);
+            {
+                log.trace("Already disconnected from '{}:{}'", host, port);
+            }
             super.disconnect();
         }
         catch(Exception e) {}
@@ -276,9 +296,7 @@ public class LddsClient extends BasicClient
             debug.println("sendHello("+name+")");
         }
 
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") sendHello("
-            + name + ")");
+        log.trace("DDS Connection ({}:{}) sendHello({})", host, port, name);
 
         LddsMessage msg = new LddsMessage(LddsMessage.IdHello,
             name + " " + DdsVersion.getVersion());
@@ -322,16 +340,15 @@ public class LddsClient extends BasicClient
             }
             catch(NumberFormatException ex)
             {
-                Logger.instance().warning(module +
-                    "Invalid protocol version '" + s
-                    + "' returned by server. Assuming protoVersion=3");
+                log.atWarn()
+                   .setCause(ex)
+                   .log("Invalid protocol version '{}' returned by server. Assuming protoVersion=3", s);
                 serverProtoVersion = DdsVersion.version_1;
             }
         }
 
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") Hello response '"
-            + resp+ "', protocolVersion=" + serverProtoVersion);
+        log.trace("DDS Connection ({}:{}) Hello response '{}', protocolVersion={}",
+                  host, port, resp, serverProtoVersion);
         userName = name;
     }
 
@@ -359,9 +376,7 @@ public class LddsClient extends BasicClient
             debug.println("sendAuthHello("+name+")");
         }
 
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") sendAuthHello("
-            + name + ")");
+        log.trace("DDS Connection ({}:{}) sendAuthHello({})", host, port, name);
 
         if (name == null || TextUtil.isAllWhitespace(name))
         {
@@ -382,7 +397,7 @@ public class LddsClient extends BasicClient
         }
         catch(AuthException ex)
         {
-            throw new ProtocolError("Invalid username or password: " + ex);
+            throw new ProtocolError("Invalid username or password", ex);
         }
         userName = name;
 
@@ -409,8 +424,7 @@ public class LddsClient extends BasicClient
         catch(Exception ex)
         {
             sessionKey = null;
-            throw new ServerError(
-                "Client-side reject: cannot build authenticator: " + ex);
+            throw new ServerError("Client-side reject: cannot build authenticator.", ex);
         }
         String tstr = goesDateFormat.format(now);
 
@@ -431,7 +445,7 @@ public class LddsClient extends BasicClient
         }
 
         String resp = ByteUtil.getCString(msg.MsgData, 0);
-        Logger.instance().debug1("AuthHello response '" + resp + "'");
+        log.debug("AuthHello response '{}'", resp);
 
         // '?' means that server refused the login.
         if (resp.length() > 0 && resp.charAt(0) == '?')
@@ -470,15 +484,15 @@ public class LddsClient extends BasicClient
         }
         catch(NumberFormatException ex)
         {
-            Logger.instance().warning(module +
-                "Invalid protocol version '" + serverProtoVersionStr
-                + "' returned by server. Assuming protoVersion=3");
+            log.atWarn()
+               .setCause(ex)
+               .log("Invalid protocol version '{}' returned by server. Assuming protoVersion=3",
+                    serverProtoVersionStr);
             serverProtoVersion = DdsVersion.version_3;
         }
 
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") AuthHello response '"
-            + resp+ "', protocolVersion=" + serverProtoVersion);
+        log.trace("DDS Connection ({}:{}) AuthHello response '{}', protocolVersion={}",
+                  host, port, resp, serverProtoVersion);
 
         userName = pfe.getUsername();
 
@@ -499,8 +513,7 @@ public class LddsClient extends BasicClient
             debug.println("sendGoodbye()");
         }
 
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") sendGoodbye()");
+        log.trace("DDS Connection ({}:{}) sendGoodbye()", host, port);
 
         LddsMessage msg = new LddsMessage(LddsMessage.IdGoodbye, null);
         sendData(msg.getBytes());
@@ -522,8 +535,7 @@ public class LddsClient extends BasicClient
         {
             debug.println("Goodbye action complete");
         }
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") Goodbye response OK");
+        log.trace("DDS Connection ({}:{}) Goodbye response OK", host, port);
     }
 
 
@@ -556,9 +568,7 @@ public class LddsClient extends BasicClient
         {
             debug.println("getSearchCrit("+localfile+")");
         }
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") getSearchCrit("
-            + localfile + ")");
+        log.trace("DDS Connection ({}:{}) getSearchCrit({})", host, port, localfile);
 
         // Send request
         LddsMessage msg = new LddsMessage(LddsMessage.IdCriteria, "?");
@@ -590,13 +600,14 @@ public class LddsClient extends BasicClient
                 + " bytes to " + localfile);
         }
 
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") Saving "
-            + (msg.MsgData.length - 50) + " bytes to " + localfile);
+        log.trace("DDS Connection ({}:{}) Saving {} bytes to {}",
+                  host, port, (msg.MsgData.length - 50), localfile);
 
         File file = new File(localfile);
-        FileOutputStream fos = new FileOutputStream(file);
-        fos.write(ArrayUtil.getField(msg.MsgData, 50, msg.MsgData.length-50));
+        try (FileOutputStream fos = new FileOutputStream(file))
+        {
+            fos.write(ArrayUtil.getField(msg.MsgData, 50, msg.MsgData.length-50));
+        }
     }
 
     /**
@@ -630,9 +641,8 @@ public class LddsClient extends BasicClient
             debug.println("sendSearchCrit("+localfile+")");
         }
 
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") sendSearchCrit("
-            + localfile + ")");
+        log.trace(
+            "DDS Connection ({}:{}) sendSearchCrit({})", host, port, localfile);
 
         // Read contents of specified searchcrit file into memory.
         File f = new File(localfile);
@@ -643,7 +653,7 @@ public class LddsClient extends BasicClient
         }
         catch(SearchSyntaxException ex)
         {
-            throw new IOException("Bad SearchCriteria format: " + ex);
+            throw new IOException("Bad SearchCriteria format", ex);
         }
     }
 
@@ -784,8 +794,7 @@ public class LddsClient extends BasicClient
                 toSend.NetlistFiles.set(i, listname);
             }
         }
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") sendSearchCrit(OBJECT)");
+        log.trace("DDS Connection ({}:{}) sendSearchCrit(OBJECT)", host, port);
 
         // If there are too many explicit DCP addresses, convert them to
         // temporary network lists and send them first.
@@ -853,10 +862,8 @@ public class LddsClient extends BasicClient
                 data.length + " bytes)");
         }
 
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") "
-            + "Sending criteria message (filesize = " +
-                data.length + " bytes)");
+        log.trace("DDS Connection ({}:{}) Sending criteria message (filesize = {} bytes)",
+                  host, port, data.length);
 
         sendData(msg.getBytes());
 
@@ -876,9 +883,7 @@ public class LddsClient extends BasicClient
         {
             debug.println("Successfully sent searchcrit.");
         }
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") "
-            + "Successfully sent searchcrit.");
+        log.trace("DDS Connection ({}:{}) Successfully sent searchcrit.", host, port);
 
         // MJM 20080619 - Just sent new crit, clear any buffered messages.
         flushBufferedMessages();
@@ -1003,9 +1008,7 @@ public class LddsClient extends BasicClient
             debug.println("Requesting DCP Message...");
         }
 
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") "
-            + "Requesting DCP Message...");
+        log.trace("DDS Connection ({}:{}}) Requesting DCP Message...", host, port);
 
         // Request Dcp Message
         LddsMessage msg = new LddsMessage(LddsMessage.IdDcp, "");
@@ -1072,24 +1075,19 @@ public class LddsClient extends BasicClient
                 }
             }
 
-            Logger.instance().warning(module +
-                "DDS Connection (" + host + ":" + port + ") "
-                + "Too-Short DCP message response: id='"
-                + msg.MsgId + "' length=" + msg.MsgLength + " -- skipped.");
+            log.warn("DDS Connection ({}:{}) Too-Short DCP message response: id='{}' length={} -- skipped.",
+                     host, port, msg.MsgId, msg.MsgLength);
 
             if (msg.MsgLength > 40)
             {
                 String d = new String(
                     ArrayUtil.getField(msg.MsgData, 40, msg.MsgLength - 40));
-                Logger.instance().warning(module +
-                    "Complete response '" + d + "'");
+                log.warn("Complete response '{}'", d);
             }
 
             throw new ProtocolError("Too-Short DCP message response received");
         }
-//        DcpMsg ret =
-//            new DcpMsg(ArrayUtil.getField(msg.MsgData, 40, msg.MsgLength-40),
-//                msg.MsgLength - 40);
+
         DcpMsg ret = new DcpMsg(msg.MsgData, msg.MsgLength-40, 40);
         ret.flagbits = DcpMsgFlag.MSG_PRESENT |  DcpMsgFlag.SRC_DDS
             | DcpMsgFlag.MSG_NO_SEQNUM;
@@ -1101,10 +1099,8 @@ public class LddsClient extends BasicClient
             debug.println("Response received: fn = " +
                 ret.getSeqFileName() + ", length = " + (msg.MsgLength - 40));
         }
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") "
-            + "Response received: fn = " +
-                ret.getSeqFileName() + ", length = " + (msg.MsgLength - 40));
+        log.trace("DDS Connection ({}:{}) Response received: fn = {}, length = {}",
+                  host, port, ret.getSeqFileName(), (msg.MsgLength - 40));
 
         return ret;
     }
@@ -1131,9 +1127,7 @@ public class LddsClient extends BasicClient
     {
         if (debug != null)
             debug.println("abortDcpMsgRequest()");
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") "
-            + "abortDcpMsgRequest()");
+        log.trace("DDS Connection ({}:{}) abortDcpMsgRequest()", host, port);
 
         if (linput == null)
             return null;
@@ -1205,9 +1199,7 @@ public class LddsClient extends BasicClient
             debug.println("getNetList("+serverfile+ ", "
                 + localfile.getName() + ")");
         }
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") "
-            + "getNetList("+serverfile+ ", " + localfile.getName() + ")");
+        log.trace("DDS Connection ({}:{}) getNetList({},{})", host, port, serverfile, localfile.getName());
 
         // Send request
         LddsMessage msg = new LddsMessage(LddsMessage.IdGetNetlist,
@@ -1237,14 +1229,13 @@ public class LddsClient extends BasicClient
             debug.println("Saving " + (msg.MsgLength - 64)
                 + " bytes to " + localfile.getName());
         }
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") "
-            + "Saving " + (msg.MsgLength - 64)
-                + " bytes to " + localfile.getName());
+        log.trace("DDS Connection ({}:{}) Saving {} bytes to {}",
+                  host, port, (msg.MsgLength - 64), localfile.getName());
 
-        FileOutputStream fos = new FileOutputStream(localfile);
-        fos.write( ArrayUtil.getField(msg.MsgData, 64, msg.MsgData.length-64));
-        fos.close();
+        try (FileOutputStream fos = new FileOutputStream(localfile))
+        {
+            fos.write( ArrayUtil.getField(msg.MsgData, 64, msg.MsgData.length-64));
+        }
     }
 
     /**
@@ -1268,15 +1259,14 @@ public class LddsClient extends BasicClient
             debug.println("sendNetList("+localfile.getName()
                 +", " + serverfile + ")");
         }
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") "
-            + "sendNetList("+localfile.getName() +", " + serverfile + ")");
+        log.trace("DDS Connection ({}:{}) sendNetList({},{})", host, port, localfile.getName(), serverfile);
 
         // Read contents of specified searchcrit file into memory.
-        FileInputStream fis = new FileInputStream(localfile);
         byte data[] = new byte[(int)localfile.length()];
-        fis.read(data);
-        fis.close();
+        try (FileInputStream fis = new FileInputStream(localfile))
+        {
+            fis.read(data);
+        }
 
         // Construct an empty criteria message big enought for this file.
         LddsMessage msg = new LddsMessage(LddsMessage.IdPutNetlist, "");
@@ -1301,10 +1291,7 @@ public class LddsClient extends BasicClient
             debug.println("Sending netlist message (total length=" +
                 msg.MsgLength + ")");
         }
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") "
-            + "Sending netlist message (total length=" +
-                msg.MsgLength + ")");
+        log.trace("DDS Connection ({}:{}) Sending netlist message (total length={})", host, port, msg.MsgLength);
 
         sendData(msg.getBytes());
 
@@ -1319,8 +1306,7 @@ public class LddsClient extends BasicClient
         {
             throw new ServerError(new String(msg.MsgData));
         }
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") Netlist response OK");
+        log.trace("DDS Connection ({}:{}) Netlist response OK", host, port);
     }
 
     /**
@@ -1342,9 +1328,7 @@ public class LddsClient extends BasicClient
         {
             debug.println("sendNetList from NetworkList object in memory");
         }
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") "
-            + "sendNetList from NetworkList object in memory");
+        log.trace("DDS Connection ({}:{}) sendNetList from NetworkList object in memory", host, port);
 
         // Construct an empty criteria message big enought for this file.
         LddsMessage msg = new LddsMessage(LddsMessage.IdPutNetlist, "");
@@ -1383,9 +1367,8 @@ public class LddsClient extends BasicClient
             debug.println("Sending netlist message (total length=" +
                 msg.MsgLength + ")");
         }
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") "
-            + "Sending netlist message (total length=" + msg.MsgLength + ")");
+        log.trace("DDS Connection ({}:{}) Sending netlist message (total length={}()",
+                  host, port, msg.MsgLength);
         sendData(msg.getBytes());
 
         // Get response.
@@ -1399,8 +1382,7 @@ public class LddsClient extends BasicClient
         {
             throw new ServerError(new String(msg.MsgData));
         }
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") netlist response OK");
+        log.trace("DDS Connection ({}:{}) netlist response OK", host, port);
     }
 
 
@@ -1446,9 +1428,7 @@ public class LddsClient extends BasicClient
             debug.println("Requesting DCP Message Block...");
         }
 
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") "
-            + "Requesting DCP Message Block...");
+        log.trace("DDS Connection ({}:{}) Requesting DCP Message Block...", host, port);
 
         // Request Dcp Message
         LddsMessage msg = new LddsMessage(LddsMessage.IdDcpBlock, "");
@@ -1474,9 +1454,7 @@ public class LddsClient extends BasicClient
         // Check for asynchronous disconnection.
         if (linput == null)
         {
-            Logger.instance().debug2(module +
-                "DDS Connection (" + host + ":" + port + ") "
-                + "receiveDcpMsgBlock asynchronous disconect, aborting.");
+            log.trace("DDS Connection ({}:{}) receiveDcpMsgBlock asynchronous disconect, aborting.", host, port);
             return null;
         }
 
@@ -1494,15 +1472,11 @@ public class LddsClient extends BasicClient
         if (msg.MsgData[0] == (byte)'?')
         {
             String err = new String(msg.MsgData);
-            Logger.instance().debug2(module +
-                "DDS Connection (" + host + ":" + port + ") ServerError: "
-                + err);
+            log.trace("DDS Connection ({}:{}) ServerError: {}", host, port, err);
             throw new ServerError(err);
         }
 
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") "
-            + "received block response, length=" + msg.MsgLength);
+        log.trace("DDS Connection ({}:{}) received block response, length={}", host, port, msg.MsgLength);
 
         return lddsMsg2DcpMsgBlock(msg);
     }
@@ -1510,8 +1484,7 @@ public class LddsClient extends BasicClient
     private DcpMsg[] lddsMsg2DcpMsgBlock(LddsMessage msg)
         throws ProtocolError
     {
-        Logger.instance().debug3(module +
-            "Parsing block response. Total length = " + msg.MsgLength);
+        log.trace("Parsing block response. Total length = {}", msg.MsgLength);
 
         // Got response, parse it into an array of DCP Messages.
         ArrayList<DcpMsg> v = new ArrayList<DcpMsg>();
@@ -1521,15 +1494,10 @@ public class LddsClient extends BasicClient
         {
             if (msg.MsgLength - msgStart < DcpMsg.DCP_MSG_MIN_LENGTH)
             {
-                Logger.instance().failure(
-                    "DDS Connection (" + host + ":" + port
-                    + ") Response to IdDcpBlock incomplete. "
-                    + "Need at least 37 bytes. Only have "
-                    + (msg.MsgLength - msgStart) + " at location "
-                    + msgStart);
-                Logger.instance().failure("Response='"
-                    + new String(msg.MsgData, msgStart,msg.MsgLength-msgStart)
-                    + "'");
+                log.error("DDS Connection ({}:{}) Response to IdDcpBlock incomplete. " +
+                          "Need at least 37 bytes. Only have {} at location {}",
+                          host, port, (msg.MsgLength - msgStart), msgStart);
+                log.error("Response='{}'", new String(msg.MsgData, msgStart,msg.MsgLength-msgStart));
                 garbled = true;
             }
             int msglen = 0;
@@ -1542,12 +1510,11 @@ public class LddsClient extends BasicClient
             {
                 String lenfield = new String(ArrayUtil.getField(msg.MsgData,
                     msgStart + DcpMsg.IDX_DATALENGTH, 5));
-                Logger.instance().failure(module +
-                    "DDS Connection (" + host + ":" + port
-                    + ") Response to IdDcpBlock contains bad length field '"
-                    + lenfield
-                    + "' requires a 5-digit 0-filled integer, msgnum="
-                    + msgnum + ", msgStart=" + msgStart);
+                log.atError()
+                   .setCause(nfe)
+                   .log("DDS Connection ({}:{}) Response to IdDcpBlock contains bad " +
+                        "length field '{}' requires a 5-digit 0-filled integer, msgnum={}, msgStart={}",
+                        host, port, lenfield, msgnum, msgStart);
                 garbled = true;
             }
 
@@ -1562,8 +1529,7 @@ public class LddsClient extends BasicClient
             msgStart += (DcpMsg.DCP_MSG_MIN_LENGTH + msglen);
         }
 
-        Logger.instance().debug2(module +
-            "Message Block Response contained " + v.size() + " dcp msgs.");
+        log.trace("Message Block Response contained {} dcp msgs.", v.size());
 
         if (v.size() == 0)
         {
@@ -1584,9 +1550,7 @@ public class LddsClient extends BasicClient
         {
             debug.println("abortDcpMsgBlockRequest()");
         }
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") "
-            + "abortDcpMsgBlockRequest()");
+        log.trace("DDS Connection ({}:{}) abortDcpMsgBlockRequest()", host, port);
 
         if (linput == null)
         {
@@ -1837,9 +1801,7 @@ public class LddsClient extends BasicClient
             debug.println("getConfig(" + cfgType + ")");
         }
 
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") "
-            + "getConfig(" + cfgType + ")");
+        log.trace("DDS Connection ({}:{}) getConfig({})", host, port, cfgType);
 
         // Send request
         LddsMessage msg = new LddsMessage(LddsMessage.IdRetConfig, cfgType);
@@ -1877,9 +1839,7 @@ public class LddsClient extends BasicClient
         {
             debug.println("installConfig(" + cfgType + ")");
         }
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") "
-            + "installConfig(" + cfgType + ")");
+        log.trace("DDS Connection ({}:{}) installConfig({})", host, port, cfgType);
 
         // Construct an empty criteria message big enought for this file.
         LddsMessage msg = new LddsMessage(LddsMessage.IdInstConfig, "");
@@ -1903,10 +1863,8 @@ public class LddsClient extends BasicClient
         if (debug != null)
             debug.println("Sending config " + cfgType + " (total length=" +
                 msg.MsgLength + ")");
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") "
-                + "Sending config " + cfgType + " (total length=" +
-                msg.MsgLength + ")");
+        log.trace("DDS Connection ({}:{}) Sending config {} (total length={})",
+                  host, port, cfgType, msg.MsgLength);
 
         try
         {
@@ -1915,7 +1873,7 @@ public class LddsClient extends BasicClient
         }
         catch(Exception ex)
         {
-            throw new AuthException("Config Send Failed: " + ex);
+            throw new AuthException("Config Send Failed.", ex);
         }
 
         if (msg.MsgId != LddsMessage.IdInstConfig)
@@ -1927,8 +1885,7 @@ public class LddsClient extends BasicClient
         {
             throw new AuthException(new String(msg.MsgData));
         }
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") Inst Cfg response OK");
+        log.trace("DDS Connection ({}:{}) Inst Cfg response OK", host, port);
     }
 
 
@@ -1960,10 +1917,8 @@ public class LddsClient extends BasicClient
     public byte[] getMsgBlockExtXml(int timeout)
         throws IOException, ProtocolError, ServerError
     {
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") "
-            + "Requesting DCP Message Block Ext (timeout="
-            + timeout + ")...");
+        log.trace("DDS Connection ({}:{}) Requesting DCP Message Block Ext (timeout={})...",
+                  host, port, timeout);
 
         LddsMessage req = new LddsMessage(LddsMessage.IdDcpBlockExt, "");
 
@@ -1995,7 +1950,7 @@ public class LddsClient extends BasicClient
         }
         catch(IOException ex)
         {
-            throw new ProtocolError("Error unpacking compressed block: " + ex);
+            throw new ProtocolError("Error unpacking compressed block", ex);
         }
     }
 
@@ -2108,13 +2063,13 @@ public class LddsClient extends BasicClient
         }
         catch(IOException ex)
         {
-            throw new ProtocolError("Error unpacking compressed outages: "+ex);
+            throw new ProtocolError("Error unpacking compressed outages.", ex);
         }
 
         try { return getOutageXmlParser().parse(respData); }
         catch(IOException ex)
         {
-            Logger.instance().warning("Unparsable outages: " + ex);
+            log.atWarn().setCause(ex).log("Unparsable outages.");
             return new ArrayList<Outage>();
         }
     }
@@ -2167,12 +2122,10 @@ public class LddsClient extends BasicClient
     public LddsMessage serverExec(LddsMessage msg)
         throws IOException, ProtocolError, ServerError
     {
-        Logger.instance().debug3("serverExec: sending LddsMessage type="
-            + msg.MsgId + ", length=" + msg.MsgLength);
+        log.trace("serverExec: sending LddsMessage type={}, length={}", msg.MsgId, msg.MsgLength);
         sendData(msg.getBytes());
         LddsMessage ret = linput.getMessage();
-        Logger.instance().debug3("serverExec: response LddsMessage type="
-            + ret.MsgId + ", length=" + ret.MsgLength);
+        log.trace("serverExec: response LddsMessage type={}, length={}", ret.MsgId, ret.MsgLength);
 
         if ((char)ret.MsgData[0] == '?')
         {
@@ -2215,19 +2168,14 @@ public class LddsClient extends BasicClient
                 }
                 catch(BadConfigException ex)
                 {
-                    Logger.instance().warning(module + " Ignoring user spec '"
-                        + line + "': " + ex);
+                    log.atWarn().setCause(ex).log("Ignoring user spec '{}'", line);
                 }
             }
             return userList;
         }
         catch(Exception ex)
         {
-            String m = "Cannot list users: " + ex;
-            Logger.instance().warning(m);
-            System.err.println(m);
-            ex.printStackTrace();
-            throw new AuthException(m);
+            throw new AuthException("Cannot list users.", ex);
         }
     }
 
@@ -2313,7 +2261,7 @@ public class LddsClient extends BasicClient
         }
         catch(Exception ex)
         {
-            throw new AuthException("Cannot remove DDS user: " + ex);
+            throw new AuthException("Cannot remove DDS user.", ex);
         }
     }
 
