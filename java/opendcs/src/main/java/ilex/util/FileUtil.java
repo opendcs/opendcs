@@ -1,59 +1,35 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.3  2014/11/19 16:12:28  mmaloney
-*  removed debugs.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.2  2014/10/07 12:49:20  mmaloney
-*  added getFileBytes
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.3  2011/01/14 21:03:03  sparab
-*  *** empty log message ***
-*
-*  Revision 1.2  2010/11/15 21:30:51  sparab
-*  Added copyStream(InputStream in, OutputStream out,int timeout) for copying streams till a timeout is reached
-*
-*  Revision 1.1  2008/04/04 18:21:10  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.7  2008/01/14 14:57:46  mmaloney
-*  dev
-*
-*  Revision 1.6  2006/07/19 21:29:59  mmaloney
-*  dev
-*
-*  Revision 1.5  2005/12/10 21:43:57  mmaloney
-*  dev
-*
-*  Revision 1.4  2005/10/10 19:47:47  mmaloney
-*  dev
-*
-*  Revision 1.3  2004/11/14 21:51:28  mjmaloney
-*  dos2unix
-*
-*  Revision 1.2  2004/11/10 16:27:10  mjmaloney
-*  Added unzip capability
-*
-*  Revision 1.1  2004/08/26 14:14:37  mjmaloney
-*  Added FileUtil
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package ilex.util;
 
 import java.io.*;
 import java.util.Enumeration;
 import java.util.zip.ZipFile;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.zip.ZipEntry;
 
 /**
 A collection of utilities to manipulate files.
 */
-public class FileUtil
+public final class FileUtil
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	  Copies a file.
 	  @param from the file being copied
@@ -67,13 +43,10 @@ public class FileUtil
 		if (from.equals(to))
 			return 0;
 
-		FileOutputStream fos = null;
-		FileInputStream fis = null;
 		int total = 0;
-		try
+		try (FileOutputStream fos = new FileOutputStream(to);
+			 FileInputStream fis = new FileInputStream(from);)
 		{
-			fos = new FileOutputStream(to);
-			fis = new FileInputStream(from);
 			byte buf[] = new byte[4096];
 			int len;
 			while((len = fis.read(buf)) > 0)
@@ -81,28 +54,13 @@ public class FileUtil
 				total += len;
 				fos.write(buf, 0, len);
 			}
-			fos.close();
-			fis.close();
-		}
-		finally
-		{
-			if (fis != null)
-			{
-				try { fis.close(); }
-				catch(IOException ex) {}
-			}
-			if (fos != null)
-			{
-				try { fos.close(); }
-				catch(IOException ex) {}
-			}
 		}
 		return total;
 	}
 
 	/**
 	 * Retrieve contents of given file as a String.
-	 * 
+	 *
 	 * @param f The file desired.
 	 * @return contents if it can be read.
 	 * @throws IOException
@@ -120,24 +78,28 @@ public class FileUtil
 			}
 			return sb.toString();
 		}
-		
+
 	}
-	
+
 	public static byte[] getfileBytes(File f)
 		throws IOException
 	{
 		byte ret[] = new byte[(int)f.length()];
-		BufferedInputStream bis = new BufferedInputStream(new FileInputStream(f));
-		int b = 0;
-		for(int idx = 0; idx < ret.length && (b = bis.read()) != -1; idx++)
-			ret[idx] = (byte)b;
-		bis.close();
+		try( BufferedInputStream bis = new BufferedInputStream(new FileInputStream(f)))
+		{
+			int b = 0;
+			for(int idx = 0; idx < ret.length && (b = bis.read()) != -1; idx++)
+			{
+				ret[idx] = (byte)b;
+			}
+		}
 		return ret;
 	}
 
 	/**
 	  Copies an input stream to an output stream.
 	  Both streams are closed after the transfer is complete.
+	  TODO: update all usages to handle stream closing and remove from this block.
 	  @param in the intput stream
 	  @param out the output stream
 	*/
@@ -157,12 +119,12 @@ public class FileUtil
 	}
 
 	/**
-	  Copies an input stream to an output stream until timeout or 
+	  Copies an input stream to an output stream until timeout or
 	  the End of stream is reached.
 	  I/O streams are not closed after the copying completes.
 	  @param in the intput stream
 	  @param out the output stream
-	  @param timeout time in milliseconds to timeout 
+	  @param timeout time in milliseconds to timeout
 	*/
 	public static void copyStream(InputStream in, OutputStream out,long timeout)
 		throws IOException
@@ -172,7 +134,7 @@ public class FileUtil
 		int total = 0;
 		long start_time = System.currentTimeMillis();
 		long elapsed = 0L;
-		
+
 		while((len = in.read(buffer)) >= 0 && elapsed < timeout)
 		{
 			if (len > 0)
@@ -187,7 +149,7 @@ public class FileUtil
 			elapsed = System.currentTimeMillis() - start_time;
 		}
 	}
-	
+
 
 	/**
 	  Moves a file.
@@ -211,12 +173,12 @@ public class FileUtil
 	  @param f the File object representing the file or directory to be deleted.
 	  @return true if directory was successfully deleted.
 	*/
-	public static boolean deleteDir(File f) 
+	public static boolean deleteDir(File f)
 	{
-		if (f.isDirectory()) 
+		if (f.isDirectory())
 		{
 			String[] children = f.list();
-			for (int i=0; i<children.length; i++) 
+			for (int i=0; i<children.length; i++)
 			{
 				boolean success = deleteDir(new File(f, children[i]));
 				if (!success)
@@ -233,16 +195,15 @@ public class FileUtil
 	  @param targetdir the target directory
 	  @param monitor if not null, call back with status.
 	*/
-	public static void unzip(String zipname, String targetdir, 
+	public static void unzip(String zipname, String targetdir,
 		ZipMonitor monitor)
 	{
 		if (monitor != null)
 			monitor.setZipStatus("Opening " + zipname);
-		ZipFile zipfile = null;
-		try
+
+		try (ZipFile zipfile = new ZipFile(zipname))
 		{
 			int numFiles = 0;
-			zipfile = new ZipFile(zipname);
 			if (monitor != null)
 				monitor.setNumZipEntries(zipfile.size());
 			for(Enumeration entries = zipfile.entries();
@@ -268,17 +229,10 @@ public class FileUtil
 		}
 		catch(IOException ex)
 		{
+			log.atError().setCause(ex).log("Unzip failed.");
 			if (monitor != null)
-				monitor.zipFailed(ex);
-			else
-				System.err.println("Unzip failed: " + ex);
-		}
-		finally
-		{
-			if (zipfile != null)
 			{
-				try { zipfile.close(); }
-				catch(IOException ex) {}
+				monitor.zipFailed(ex);
 			}
 		}
 	}

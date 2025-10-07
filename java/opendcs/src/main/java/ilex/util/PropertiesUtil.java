@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package ilex.util;
 
@@ -7,6 +19,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Properties;
 import java.util.StringTokenizer;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+
 import java.util.Enumeration;
 
 import decodes.util.PropertySpec;
@@ -15,11 +30,12 @@ import decodes.util.PropertySpec;
 A collection of static utility methods for manipulating java.util.Properties
 sets.
 */
-public class PropertiesUtil
+public final class PropertiesUtil
 {
+	private static final org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String possibleDelims  = ",;|#+!~^&*";
 	public static final String possibleAssigns = "=:><`()[]";
-	
+
 	/**
 	* Returns true if two properties sets are the same. Meaning they have
 	* exactly the same keys and values.
@@ -34,10 +50,10 @@ public class PropertiesUtil
 			return p2 == null;
 		else if (p2 == null)
 			return false;
-		
+
 		if (p1.size() != p2.size())
 		{
-Logger.instance().debug3("differing num of props p1='" + props2string(p1) + "' p2='" + props2string(p2) + "'");
+			log.trace("differing num of props p1='{}' p2='{}'", props2string(p1), props2string(p2));
 			return false;
 		}
 		for(Enumeration it = p1.keys(); it.hasMoreElements();)
@@ -47,7 +63,7 @@ Logger.instance().debug3("differing num of props p1='" + props2string(p1) + "' p
 			Object v2 = p2.get(k);
 			if (v2 == null || !v1.equals(v2))
 			{
-Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 + "'");
+				log.trace("Property {} values differ '{}' '{}", k, v1, v2);
 				return false;
 			}
 		}
@@ -95,14 +111,13 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 
 		if (dIdx == possibleDelims.length())
 		{
-			Logger.instance().warning("Cannot encode props because values contain "
-				+ "all possible delims " + possibleDelims);
+			log.warn("Cannot encode props because values contain all possible delims {}", possibleDelims);
 			dIdx = aIdx = 0;
 		}
 		if (aIdx == possibleAssigns.length())
 		{
-			Logger.instance().warning("Cannot encode props because values contain"
-				+ " all possible assignment operators " + possibleAssigns);
+			log.warn("Cannot encode props because values contain all possible assignment operators {}",
+					 possibleAssigns);
 			dIdx = aIdx = 0;
 		}
 		StringBuffer ret = new StringBuffer();
@@ -145,7 +160,7 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 		s = s.trim();
 		if (s.length() < 3) // Would have to have at least one name=value
 			return ret;
-		
+
 		char delim = ',';
 		char assign = '=';
 		if (!Character.isLetterOrDigit(s.charAt(0)))
@@ -156,8 +171,7 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 		}
 
 		StringTokenizer tokenizer = new StringTokenizer(s, "" + delim);
-//			TextUtil.collapseWhitespace(s), ",");
-	
+
 		while(tokenizer.hasMoreTokens())
 		{
 			String tok = tokenizer.nextToken().trim();
@@ -165,7 +179,7 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 			if (ei == -1)
 				ret.setProperty(tok, "");
 			else
-				ret.setProperty(tok.substring(0,ei).trim(), 
+				ret.setProperty(tok.substring(0,ei).trim(),
 					tok.substring(ei+1).trim());
 		}
 		return ret;
@@ -190,10 +204,10 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 	*/
 	public static String getIgnoreCase( Properties pr, String key, String defaultValue)
 	{
-		Enumeration en = pr.propertyNames();		
+		Enumeration en = pr.propertyNames();
 		while(en.hasMoreElements())
 		{
-			String k = (String)en.nextElement();			
+			String k = (String)en.nextElement();
 			if (key.trim().equalsIgnoreCase(k.trim()))
 				return pr.getProperty(k);
 		}
@@ -201,7 +215,7 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 	}
 
 	/**
-	* Search for a property, remove it and return its value, ignoring case in 
+	* Search for a property, remove it and return its value, ignoring case in
 	* the name.
 	* @param pr the Properties
 	* @param key the key
@@ -248,10 +262,10 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 		// Use reflection to get declared public fields to match property names.
 		Class<?> cls = obj.getClass();
 		Properties otherProps = null;
-		try 
+		try
 		{
 			Field opf = cls.getField("otherProps");
-			otherProps = (Properties)opf.get(obj); 
+			otherProps = (Properties)opf.get(obj);
 		}
 		catch(Throwable ex)
 		{
@@ -259,7 +273,7 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 		}
 
 		Field[] fields = cls.getDeclaredFields();
-		
+
 		Enumeration<?> names = props.propertyNames();
 	  nextName:
 		while(names.hasMoreElements())
@@ -273,7 +287,7 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 				// Only look at non-final public fields.
 				Field fld = fields[fidx];
 				int mods = fld.getModifiers();
-				if (!Modifier.isPublic(mods) 
+				if (!Modifier.isPublic(mods)
 				 || Modifier.isFinal(mods)
 				 || Modifier.isStatic(mods))
 					continue;
@@ -311,23 +325,20 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 						}
 						else
 						{
-							Logger.instance().warning(
-								"Unsupported field type '" + ftyp 
-								+ "' for field '" + fname + "' - skipped.");
+							log.warn("Unsupported field type '{} for field '{}' - skipped.", ftyp, fname);
 						}
 					}
 					catch(NumberFormatException ex)
 					{
-						Logger.instance().warning(
-							"Field '" + fname 
-							+ "' requires a number. Illegal value '"
-							+ pval + "' skipped.");
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Field '{}' requires a number. Illegal value '{}' skipped.", fname, pval);
 					}
 					catch(IllegalAccessException ex)
 					{
-						Logger.instance().warning(
-							"Internal problem processing field '" + pname 
-							+ "' - skipped: " + ex);
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Internal problem processing field '{}' - skipped.", pname);
 					}
 					break;
 				}
@@ -340,9 +351,7 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 							continue nextName;
 				if (otherProps != null)
 					otherProps.setProperty(pname, pval);
-				Logger.instance().debug1("Property '" + pname 
-					+ "' does not match public attribute in "
-					+ cls.getName());
+				log.debug("Property '{}' does not match public attribute in {}", pname, cls.getName());
 			}
 		}
 	}
@@ -358,10 +367,10 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 		// Use reflection to get declared public fields to match property names.
 		Class<?> cls = obj.getClass();
 
-		try 
+		try
 		{
 			Field opf = cls.getField("otherProps");
-			Properties otherProps = (Properties)opf.get(obj); 
+			Properties otherProps = (Properties)opf.get(obj);
 			Enumeration<?> penum = otherProps.propertyNames();
 			while(penum.hasMoreElements())
 			{
@@ -379,7 +388,7 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 			// Only look at public fields.
 			Field fld = fields[fidx];
 			int mods = fld.getModifiers();
-			if (!Modifier.isPublic(mods) 
+			if (!Modifier.isPublic(mods)
 			 || Modifier.isFinal(mods)
 			 || Modifier.isStatic(mods))
 				continue;
@@ -433,21 +442,17 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 				{
 					props.setProperty(pname, ((Enum<?>)fld.get(obj)).name());
 				}
-				
+
 				//kludge added by Shweta to get rid of warning errors. needs to be correctly implemented
 				else if(ftyp.equals("decodes.sql.DbKey")){}
 				else if (!pname.equals("otherProps"))
-				{					
-					Logger.instance().warning(
-						"Unsupported field type '" + ftyp 
-						+ "' for field '" + fname + "' - skipped.");
+				{
+					log.warn("Unsupported field type '{}' for field '{}' - skipped.", ftyp, fname);
 				}
 			}
 			catch(IllegalAccessException ex)
 			{
-				Logger.instance().warning(
-					"IllegalAccessException in field '" + fname
-					+ "' - skipped.");
+				log.atWarn().setCause(ex).log("IllegalAccessException in field '{}' - skipped.", fname);
 			}
 		}
 	}
@@ -488,7 +493,7 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 			ret[i+specs1.length] = specs2[i];
 		return ret;
 	}
-	
+
 	public static void main(String args[])
 	{
 		System.out.println("Enter properties encoded as a string. Blank line when done.");

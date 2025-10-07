@@ -1,8 +1,25 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package ilex.util;
 
 import java.io.Console;
 import java.io.File;
 import java.io.IOException;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 import ilex.cmdline.*;
 
@@ -13,7 +30,7 @@ script.
 */
 public class PasswordFileEditor extends CmdLineProcessor
 {
-
+	private static final org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The PasswordFile to edit */
 	PasswordFile passwordFile;
 	/** True if file has been modified. */
@@ -113,7 +130,7 @@ public class PasswordFileEditor extends CmdLineProcessor
 
 
 		addCmd(
-			new CmdLine("addprop", 
+			new CmdLine("addprop",
 				"<username> <name=value>   - Assigns a property to a user")
 			{
 				public void execute(String[] tokens)
@@ -124,7 +141,7 @@ public class PasswordFileEditor extends CmdLineProcessor
 			});
 
 		addCmd(
-			new CmdLine("rmprop", 
+			new CmdLine("rmprop",
 				"<username> <name>   - Removes a property from a user")
 			{
 				public void execute(String[] tokens)
@@ -164,9 +181,9 @@ public class PasswordFileEditor extends CmdLineProcessor
 			passwordFile.read();
 			modified = false;
 		}
-		catch (IOException e)
+		catch (IOException ex)
 		{
-			System.out.println(e);
+			log.atError().setCause(ex).log("Unable to read password file.");
 		}
 	}
 
@@ -178,9 +195,9 @@ public class PasswordFileEditor extends CmdLineProcessor
 			modified = false;
 			System.out.println("Wrote " + passwordFile.getFile());
 		}
-		catch (IOException e)
+		catch (IOException ex)
 		{
-			System.out.println(e);
+			log.atError().setCause(ex).log("Unable to write password file.");
 		}
 	}
 
@@ -192,7 +209,7 @@ public class PasswordFileEditor extends CmdLineProcessor
 		PasswordFileEntry pfe = passwordFile.getEntryByName(user);
 		if (pfe != null)
 		{
-			System.out.println("A record already exists for user '" 
+			System.out.println("A record already exists for user '"
 				+ user + "'");
 			return;
 		}
@@ -203,7 +220,7 @@ public class PasswordFileEditor extends CmdLineProcessor
 		}
 		catch(AuthException ex)
 		{
-			System.out.println("Error: " + ex);
+			log.atError().setCause(ex).log("Unable to add user.");
 		}
 		if (doPasswd(user))
 			modified = true;
@@ -219,7 +236,7 @@ public class PasswordFileEditor extends CmdLineProcessor
 		PasswordFileEntry pfe = passwordFile.getEntryByName(user);
 		if (pfe == null)
 		{
-			System.out.println("No such record exists for user '" 
+			System.out.println("No such record exists for user '"
 				+ user + "'");
 			return;
 		}
@@ -340,7 +357,7 @@ public class PasswordFileEditor extends CmdLineProcessor
 			System.out.println("No such user '" + user + "'");
 			return;
 		}
-		
+
 		// User name has to be the 2nd arg.
 		int idx = inputLine.indexOf(user);
 		idx += user.length();
@@ -396,10 +413,10 @@ public class PasswordFileEditor extends CmdLineProcessor
 	* @param echo
 	* @return the response
 	*/
-	private String getResponse(String prompt, boolean echo) 
+	private String getResponse(String prompt, boolean echo)
 	{
 		Console console = System.console();
-		if (console != null) 
+		if (console != null)
 		{
 			if (echo) {
 				return console.readLine(prompt);
@@ -409,17 +426,18 @@ public class PasswordFileEditor extends CmdLineProcessor
 				return new String(pwd);
 			}
 		}
-		else 
+		else
 		{
 			// console is null (non-interactive env)
 			System.out.print(prompt);
 			System.out.flush();
-			try 
+			try
 			{
-			return input.readLine();  
-			} catch (IOException e) 
+				return input.readLine();
+			}
+			catch (IOException ex)
 			{
-			System.out.println("Error reading input");	
+				log.atError().setCause(ex).log("Error reading input");
 			return null;
 			}
 		}

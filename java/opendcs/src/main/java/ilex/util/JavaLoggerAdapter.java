@@ -1,15 +1,15 @@
 /**
  * $Id$
- * 
+ *
  * Copyright 2018 United States Government
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
  * file except in compliance with the License. You may obtain a copy of the License at
  *    http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software distributed under 
- * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF 
- * ANY KIND, either express or implied. See the License for the specific language governing 
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+ * ANY KIND, either express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
- * 
+ *
  * $Log$
  * Revision 1.17  2019/01/18 16:10:27  mmaloney
  * dev
@@ -73,23 +73,24 @@ import java.util.logging.LogRecord;
 import java.util.logging.LogManager;
 
 /**
- * This class is an adapter to make the log messages from libraries that use 
+ * This class is an adapter to make the log messages from libraries that use
  * "java.util.logging" visible in OpenDCS. It funnels log messages to the
  * OpenDCS logging infrastructure.
  * @author mmaloney
+ * @deprecated will be replace by sfl4j bridges, currently a noop
  */
+@Deprecated
 public class JavaLoggerAdapter extends Handler
 {
 	private final static String globalName = java.util.logging.Logger.GLOBAL_LOGGER_NAME;
-	private static ilex.util.Logger ilexLogger = null;
 	private static final JavaLoggerAdapter _instance = new JavaLoggerAdapter();
 	private static Formatter myFormatter = null;
 	private static boolean initialized = false;
 	private static boolean doForward = true;
-	
+
 	/** Singleton access only */
 	public static JavaLoggerAdapter instance() { return _instance; }
-	
+
 	private JavaLoggerAdapter()
 	{
 	}
@@ -103,44 +104,15 @@ public class JavaLoggerAdapter extends Handler
 	 */
 	public static void initialize(ilex.util.Logger ilexLogger, boolean _doForward, String ... paths)
 	{
-		if (initialized)
-			return;
-		initialized = true;
-		doForward = _doForward;
-		JavaLoggerAdapter.ilexLogger = ilexLogger;
-		
-		java.util.logging.Logger globalLogger = java.util.logging.Logger.getLogger("");//LogManager.getLogManager().getLogger(globalName);
-		
-		globalLogger.addHandler(instance());
-		globalLogger.setLevel(Level.ALL);
+		/* do nothing */
 	}
 
 	@Override
 	public void publish(LogRecord record)
 	{
-		if (!doForward)
-			return;
-		if (myFormatter == null)
-			myFormatter = new JavaLoggerFormatter();
-		String s = myFormatter.format(record);
-//if (record.getLoggerName().contains("ConnectionPersistenceManager")
-// || record.getLoggerName().contains("AbstractCwmsDbDao"))
-//	System.err.println("JavaLoggerAdapter '" + s + "'");
-		
-		ilexLogger.log(mapPriority(record), s);
+		/* do nothing */
 	}
-	
-	private int mapPriority(LogRecord record)
-	{
-		if (record.getLevel() == Level.SEVERE) return Logger.E_FAILURE;
-		if (record.getLevel() == Level.WARNING) return Logger.E_WARNING;
-		if (record.getLevel() == Level.INFO
-		 || record.getLevel() == Level.CONFIG) return Logger.E_INFORMATION;
-		if (record.getLevel() == Level.FINE) return Logger.E_DEBUG1;
-		if (record.getLevel() == Level.FINER) return Logger.E_DEBUG2;
-		if (record.getLevel() == Level.FINEST) return Logger.E_DEBUG3;
-		return Logger.E_INFORMATION;
-	}
+
 
 	@Override
 	public void flush()
@@ -154,31 +126,7 @@ public class JavaLoggerAdapter extends Handler
 		// Nothing to do
 	}
 
-	public static void main(String[] args)
-	{
-		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
-		Logger.instance().info("Before initialize -- message direct to Ilex Logger.");
-		
-		JavaLoggerAdapter.initialize(Logger.instance(), true, "");
-		
-		Logger.instance().info("After initialize -- message direct to Ilex Logger.");
-		
-		java.util.logging.Logger rootLogger = java.util.logging.Logger.getLogger("");
-		
-		rootLogger.log(Level.INFO, "INFO message sent to java root logger.");
-		
-		String cname = JavaLoggerAdapter.class.getName();
-		java.util.logging.Logger myLogger = java.util.logging.Logger.getLogger(cname);
-		myLogger.setLevel(Level.FINEST);
-		myLogger.log(Level.SEVERE, "SEVERE for cname=" + cname);
-		myLogger.log(Level.WARNING, "WARNING for cname=" + cname);
-		myLogger.log(Level.INFO, "INFO for cname=" + cname);
-		myLogger.log(Level.CONFIG, "CONFIG for cname=" + cname);
-		myLogger.log(Level.FINE, "FINE for cname=" + cname);
-		myLogger.log(Level.FINER, "FINER for cname=" + cname);
-		myLogger.log(Level.FINEST, "FINEST for cname=" + cname);
-		Logger.instance().debug3("Direct DEBUG_3 message to IlexLogger.");
-	}
+
 }
 
 class JavaLoggerFormatter
@@ -188,23 +136,23 @@ class JavaLoggerFormatter
 	public String format(LogRecord record)
 	{
     	String msg = record.getMessage();
-        try 
+        try
         {
             Object parameters[] = record.getParameters();
             if ((parameters != null && parameters.length > 0)
-             &&    (msg.indexOf("{0") >= 0 || msg.indexOf("{1") >=0 
+             &&    (msg.indexOf("{0") >= 0 || msg.indexOf("{1") >=0
                  || msg.indexOf("{2") >= 0 || msg.indexOf("{3") >=0))
             {
             	msg = java.text.MessageFormat.format(msg, parameters);
             }
         } catch (Exception ex) { msg = record.getMessage(); }
-		
+
         Throwable t = record.getThrown();
         if (t != null)
         	msg = msg + " (" + t.toString() + ")";
-        
+
         String ret = record.getLoggerName() + ": " + msg;
-//System.err.println("JavaLoggerFormatter returning '" + ret + "'");
+
 		return ret;
 	}
 }

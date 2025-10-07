@@ -68,6 +68,7 @@ import java.util.Calendar;
 import java.util.TimeZone;
 
 import org.opendcs.utils.Property;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 import java.util.Properties;
 import java.io.IOException;
@@ -89,6 +90,7 @@ Java programs unless you use a -Dname=value on the command line.
 */
 public class EnvExpander
 {
+	private static final org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	Expands a string using System properties.
 	@param str the string
@@ -110,7 +112,7 @@ public class EnvExpander
 		return expand(str, props, new Date());
 	}
 
-	
+
 	/**
 	Expands a string using explicit properties set and explicit date/time.
 	On Unix systems, also allow ~ and ~myname, which get expanded to the
@@ -126,16 +128,16 @@ public class EnvExpander
 	{
 		String tzname = props.getProperty("TZ");
 		return(expand( str, props, date, tzname ));
-		
+
 	}
 	public static String expand( String str, Properties props, Date date,
 				String tzname )
 	{
 		TimeZone tz;
-		
+
 		if (str == null)
 			return null;
-		if ( tzname == null ) 
+		if ( tzname == null )
 			tz = TimeZone.getDefault();
 		else
 			tz = TimeZone.getTimeZone(tzname);
@@ -162,12 +164,12 @@ public class EnvExpander
 					i++;
 				}
 			}
-			else if (c == '$' 
-			      && (i+1) < length 
+			else if (c == '$'
+			      && (i+1) < length
 			      && Character.isLetter(str.charAt(i+1)))
 			{
-				int j = i+2; 
-				while(j < length 
+				int j = i+2;
+				while(j < length
 				   && (Character.isLetterOrDigit(str.charAt(j))
 				     || str.charAt(j) == '_' || str.charAt(j) == '.'))
 					j++;
@@ -175,7 +177,7 @@ public class EnvExpander
 				if ( j < length
 					&&	name.equalsIgnoreCase("date") && str.charAt(j) == '(') {
 					j++;
-					while(j < length  && str.charAt(j) != ')' ) 
+					while(j < length  && str.charAt(j) != ')' )
 						j++;
 					j++;
 					name = str.substring(i+1, j);
@@ -266,16 +268,17 @@ public class EnvExpander
 				 */
 				if (val == name)
 				{
-					final String msg = "property value source was not set. Assuming original behavior and retrieving '%1$s' from provided properties object." +
-											  "This will be removed in future releases and you should update values to ${java.%1$s} at your earliest convenience.";
-					Logger.instance().warning(String.format(msg,name));
+					log.warn("property value source was not set. Assuming original behavior and retrieving '{}' " +
+							 "from provided properties object. This will be removed in future releases and you " +
+							"should update values to ${java.{}} at your earliest convenience.",
+							name, name);
 					// revert to original behavior.
 					val = props.getProperty(name);
 				}
 			}
 			catch(IOException ex)
 			{
-				Logger.instance().warning("Could not expand value for property " + name + ": " + ex.getLocalizedMessage());
+				log.atWarn().setCause(ex).log("Could not expand value for property {}", name);
 			}
 		}
 		return val;
@@ -287,7 +290,7 @@ public class EnvExpander
 	*/
 	public static void main( String[] args )
 	{
-		System.out.println("Expanded '" + args[0] + "' to '" 
+		System.out.println("Expanded '" + args[0] + "' to '"
 			+ expand(args[0]) + "'");
 	}
 }

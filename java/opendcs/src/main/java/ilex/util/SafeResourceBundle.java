@@ -1,14 +1,17 @@
 /*
-*  $Id$
-*
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
-*
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package ilex.util;
 
@@ -16,9 +19,11 @@ import java.util.Enumeration;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-public class SafeResourceBundle
-	extends ResourceBundle
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+
+public class SafeResourceBundle extends ResourceBundle
 {
+	private static final org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
 	ResourceBundle theBundle;
 
 	public SafeResourceBundle(ResourceBundle theBundle)
@@ -40,16 +45,14 @@ public class SafeResourceBundle
 		try
 		{
 			Object ret = theBundle.getObject(key);
-			if (ret != null) 
+			if (ret != null)
 				return ret;
-			Logger.instance().warning("Unknown resource key '" + key 
-				+ "' - not found in resource file.");
+			log.warn("Unknown resource key '{}' - not found in resource file.", key);
 			return key;
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Bad resource key '" + key 
-				+ "': " + ex);
+			log.atWarn().setCause(ex).log("Bad resource key '{}'", key);
 			return "bad-key:" + key;
 		}
 	}
