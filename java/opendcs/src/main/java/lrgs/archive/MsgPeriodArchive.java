@@ -539,7 +539,18 @@ public class MsgPeriodArchive
 			 && handle.nextIndexNum > minuteEndIndexNum)
 			{
 				// Now in a new minute!
-
+				/*
+				  Don't bother reading minutes where oldestDapsTime > UNTIL.
+				  So historical searches (e.g. 1 hours worth 5 days ago),
+				  will still have to check all minutes, but most minutes will
+				  fail this test so it won't have to actually read any
+				  index entries.
+				*/
+				while (++handle.minIdx < MIN_PER_DAY &&
+				     (minuteIndex[handle.minIdx].isEmpty() || minuteIndex[handle.minIdx].oldestDapsTime > untilTt))
+				{
+					log.trace("Still looping through minute index.");
+				}
 				// We're now either at EOF or in a new minute. Set handle next:
 				if (handle.minIdx < MIN_PER_DAY)
 				{
