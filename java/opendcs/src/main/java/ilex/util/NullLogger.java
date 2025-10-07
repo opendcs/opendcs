@@ -29,7 +29,9 @@ import java.util.Date;
 
 /**
 * Subclass of Logger that throws log messages away.
+* @deprecated logging is getting replaced
 */
+@Deprecated
 public class NullLogger extends Logger
 {
   /**
@@ -55,4 +57,3 @@ public class NullLogger extends Logger
 	{
 	}
 }
-

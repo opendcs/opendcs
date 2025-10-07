@@ -31,7 +31,9 @@ package ilex.util;
 /**
 * Concrete subclass of Logger that Logs messages to standard error
 * (i.e. System.err).
+* @deprecated logging system is getting replaced.
 */
+@Deprecated
 public class StderrLogger extends Logger
 {
     /**
@@ -60,4 +62,3 @@ public class StderrLogger extends Logger
 		System.err.println(standardMessage(priority, text));
 	}
 }
-
