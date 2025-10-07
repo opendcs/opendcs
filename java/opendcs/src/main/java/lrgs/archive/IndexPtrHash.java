@@ -1,14 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.archive;
 
@@ -28,32 +31,35 @@ import java.util.Iterator;
 import java.util.Date;
 import java.util.TimeZone;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsgFlag;
 import decodes.util.Pdt;
 
 public class IndexPtrHash
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static String module = "IndexHashIo";
-	
+
 	/** IndexPtr entries hashed by DCP address.  */
 	private HashMap<DcpAddress, IndexPtr> theHash
 		= new HashMap<DcpAddress, IndexPtr>();
 
 	public IndexPtrHash()
 	{
-		
+
 	}
-	
+
 	/**
 	 * Saves the hash map of index pointers.
 	 */
-	public synchronized void saveIndexPtrHash(String filePath, 
+	public synchronized void saveIndexPtrHash(String filePath,
 		MsgArchive msgArchive)
 	{
-		DataOutputStream dos = null;
-		
+
+
 		// First trim the hash. Otherwise over time it fills up with
 		// invalid DCP addresses and entries where the last receive time
 		// is older than the beginning of the archive.
@@ -74,24 +80,18 @@ public class IndexPtrHash
 				theHash.remove(addr);
 			}
 		}
-		try
-		{
-			File hashFile = new File(filePath);
-			Logger.instance().debug3(module 
-				+ " Saving '" + hashFile.getPath() 
-				+ "' msgTimeCutoff=" + msgTimeCutoff +" (" 
-				+ (new Date(msgTimeCutoff*1000L))
-				+ ") pdtIsValid=" + pdtIsValid);
-			dos = new DataOutputStream(
+		File hashFile = new File(filePath);
+		log.trace(" Saving '{}' msgTimeCutoff={} ({}) pdtIsValid={}",
+				  hashFile.getPath(), msgTimeCutoff, msgTimeCutoff,
+				  new Date(msgTimeCutoff*1000L), pdtIsValid);
+		try (DataOutputStream dos =  new DataOutputStream(
 				new BufferedOutputStream(
-					new FileOutputStream(hashFile)));
+					new FileOutputStream(hashFile))))
+		{
 			for(Iterator<DcpAddress> it=theHash.keySet().iterator();it.hasNext();)
 			{
 				DcpAddress addr = it.next();
 				IndexPtr ip = theHash.get(addr);
-//if (addr.toString().startsWith("30003401"))
-//Logger.instance().debug1("Saving idx ptr for addr '"
-//+ addr.toString() + "' ptr=" + ip);
 				dos.writeUTF(addr.toString());
 				dos.writeInt(ip.indexFileStartTime);
 				dos.writeInt(ip.indexNumber);
@@ -99,30 +99,22 @@ public class IndexPtrHash
 				int flag_len = ip.flagBits | (ip.msgLength << 16);
 				dos.writeInt(flag_len);
 			}
-			dos.close();
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning(module + ":" + MsgArchive.EVT_BAD_HASH 
-				+ "- Cannot save index pointer hash: " + ex);
-			if (dos != null)
-			{
-				try { dos.close(); }
-				catch(IOException ignore) {}
-			}
+			log.atWarn().setCause(ex).log("{} - Cannot save index pointer hash", MsgArchive.EVT_BAD_HASH);
 		}
 	}
 
 	public synchronized void loadIndexPtrHash(File archiveDir, String fileName)
 	{
-		DataInputStream dis = null;
+
 		File hashFile = new File(archiveDir, fileName);
-		try
-		{
-			theHash.clear();
-			dis = new DataInputStream(
+		theHash.clear();
+		try (DataInputStream dis = new DataInputStream(
 				new BufferedInputStream(
-					new FileInputStream(hashFile)));
+					new FileInputStream(hashFile))))
+		{
 			while(true)
 			{
 				String straddr = dis.readUTF();
@@ -132,45 +124,32 @@ public class IndexPtrHash
 				int flag_len = dis.readInt();
 				int flagBits = flag_len & 0xffff;
 				int len = (flag_len>>16) & 0xffff;
-				theHash.put(new DcpAddress(straddr), 
+				theHash.put(new DcpAddress(straddr),
 					new IndexPtr(start, num, time, flagBits, len));
 			}
 		}
 		catch(EOFException ex)
 		{
-			try { dis.close(); }
-			catch(IOException ignore){}
+			/* expected */
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning(module + ":" + MsgArchive.EVT_BAD_HASH
-				+ "- Error loading index pointer hash ("
-				+ theHash.size() + " elements loaded): " + ex);
-			if (dis != null)
-			{
-				try { dis.close(); }
-				catch(IOException ignore){}
-			}
+			log.warn("{}- Error loading index pointer hash ({} elements loaded): ",
+					 MsgArchive.EVT_BAD_HASH, theHash.size());
 		}
-		Logger.instance().info(module
-			+ " loaded index pointer hash ("
-			+ theHash.size() + " elements loaded) from "
-			+ hashFile.getPath());
+		log.info("loaded index pointer hash ({} elements loaded) from {}", theHash.size(), hashFile.getPath());
 	}
-	
+
 	public synchronized IndexPtr get(DcpAddress addr)
 	{
 		return theHash.get(addr);
 	}
-	
+
 	public synchronized void put(DcpAddress addr, IndexPtr lastPtr)
 	{
-//if (addr.toString().startsWith("30003401"))
-//Logger.instance().info("Putting address '" + addr.toString() + "' into hash with ptr: "
-//+ lastPtr);
 		theHash.put(addr, lastPtr);
 	}
-	
+
 	/**
 	 * Test main program. Pass filename on command line, prints hash.
 	 */
@@ -193,7 +172,7 @@ public class IndexPtrHash
 
 			System.out.println(addr.toString()
 				+ " last@" + sdf.format(fstart) + " #" + ip.indexNumber
-				+ " mtime=" + sdf2.format(mtime) 
+				+ " mtime=" + sdf2.format(mtime)
 				+ " flags=0x" + Integer.toHexString(ip.flagBits)
 				+ " len=" + ip.msgLength);
 		}
