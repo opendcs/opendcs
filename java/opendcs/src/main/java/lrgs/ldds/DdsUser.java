@@ -1,5 +1,17 @@
 /*
-* $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.ldds;
 
@@ -36,9 +48,9 @@ public class DdsUser
 
 	/** Description of this user. */
 	public String desc;
-	
+
 	public boolean isLocal = false;
-	
+
 	private String fname = null;
 	private String lname = null;
 	private String org = null;
@@ -60,7 +72,7 @@ public class DdsUser
 		desc = "";
 	}
 
-	/** 
+	/**
 	 * Construct with a string specification in the form:
 	 * <p>name +|- perm[,perm]...
 	 * @param spec the string specification
@@ -92,7 +104,7 @@ public class DdsUser
 		this.suspended = rhs.suspended;
 		this.goodOnly = rhs.goodOnly;
 	}
-	
+
 	public boolean isAdmin()
 	{
 		if (perms == null)
@@ -160,10 +172,10 @@ public class DdsUser
 
 		if (desc != null && desc.trim().length() > 0)
 			props.setProperty("desc", desc);
-		
+
 		if (isLocal)
 			props.setProperty("local", "true");
-		
+
 		if (fname != null && fname.trim().length() > 0)
 			props.setProperty("fname", fname);
 		if (lname != null && lname.trim().length() > 0)
@@ -178,7 +190,7 @@ public class DdsUser
 			props.setProperty("suspended", "true");
 		if (goodOnly)
 			props.setProperty("goodOnly", "true");
-		
+
 		return PropertiesUtil.props2string(props);
 	}
 
@@ -190,7 +202,6 @@ public class DdsUser
 	public void fromString(String userSpec)
 		throws BadConfigException
 	{
-//System.out.println("userSpec='" + userSpec + "'");
 		hasPassword = false;
 		perms = null;
 		StringTokenizer st = new StringTokenizer(userSpec);
@@ -208,11 +219,11 @@ public class DdsUser
 		if (!st.hasMoreTokens())
 			return;
 		x = st.nextToken();
-//System.out.println("permsString='" + x + "'");
+
 		perms=x.split(",");
-		
+
 		// Must have at least 3 space delimited tokens. Find the beginning of the 3rd token.
-//System.out.println("entire userSpec='" + userSpec + "'");
+
 		int idx = userSpec.indexOf(' ');
 		while(idx < userSpec.length() && Character.isWhitespace(userSpec.charAt(idx)))
 			idx++;
@@ -224,9 +235,8 @@ public class DdsUser
 			idx++;
 		while(idx < userSpec.length() && Character.isWhitespace(userSpec.charAt(idx)))
 			idx++;
-	
+
 		String pstr = userSpec.substring(idx);
-//System.out.println("user spec propstr = '" + pstr + "'");
 		Properties props = PropertiesUtil.string2props(pstr);
 		ipAddr = PropertiesUtil.getIgnoreCase(props, "ipaddr");
 		x = PropertiesUtil.getIgnoreCase(props, "maxdcps");
@@ -248,10 +258,8 @@ public class DdsUser
 		email = PropertiesUtil.getIgnoreCase(props, "email");
 		tel = PropertiesUtil.getIgnoreCase(props, "tel");
 		suspended = TextUtil.str2boolean(PropertiesUtil.getIgnoreCase(props, "suspended"));
-		goodOnly = TextUtil.str2boolean(PropertiesUtil.getIgnoreCase(props, "goodOnly"));	
-//System.out.println("DdsUser.fromString: " + userSpec + ", goodOnly=" + goodOnly);
+		goodOnly = TextUtil.str2boolean(PropertiesUtil.getIgnoreCase(props, "goodOnly"));
 
-//System.out.println("fromString, after parse, username=" + userName + ", suspended=" + suspended);
 	}
 
 	public boolean hasPerm(String perm)
@@ -300,7 +308,7 @@ public class DdsUser
 				sb.append(';');
 			sb.append(t);
 		}
-		
+
 		ipAddr = sb.toString();
 	}
 

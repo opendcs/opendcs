@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.ldds;
 
@@ -8,8 +20,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import lrgs.common.ArchiveException;
@@ -33,15 +47,16 @@ The file-names may vary from system to system because the main config file
 can be specified on the command line argument, and the others can be
 specified in the main config file.
 <p>
-The response message (sent back to the client) contains the same 64-byte 
+The response message (sent back to the client) contains the same 64-byte
 field followed by the variable length file contents.
 <p>
 If an error occurs, the 64-byte field will contain a question mark
-followed by two comma-separated integer fields corresponding to 
+followed by two comma-separated integer fields corresponding to
 'derrno' and 'errno'.
 */
 public class CmdReturnConfig extends CmdAdminCmd
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String cfgType;
 
 	/** @return "CmdReturnConfig"; */
@@ -105,15 +120,13 @@ public class CmdReturnConfig extends CmdAdminCmd
 
 		if (!f.canRead())
 			throw new LddsRequestException("Connot read config type '"
-				+ cfgType + "' file='" + f.getPath() + "'", 
+				+ cfgType + "' file='" + f.getPath() + "'",
 				LrgsErrorCode.DDDSINTERNAL, false);
 
-		try
+		try (FileInputStream fis = new FileInputStream(f))
 		{
-			FileInputStream fis = new FileInputStream(f);
 			byte filedata[] = new byte[(int)f.length()];
 			fis.read(filedata);
-			fis.close();
 
 			byte msgdata[] = new byte[64+filedata.length];
 			int i;
@@ -129,14 +142,11 @@ public class CmdReturnConfig extends CmdAdminCmd
 			msg.MsgData = msgdata;
 			ldds.send(msg);
 
-			Logger.instance().debug2(
-				"Successfully retrieved and sent config " + cfgType
-				+ ", file=" + f.getPath());
+			log.trace("Successfully retrieved and sent config {}, file={}", cfgType, f.getPath());
 		}
 		catch(IOException ioe)
 		{
-			throw new NoSuchFileException("Cannot send config '"
-				+ cfgType + "', file=" + f.getPath() + ": " + ioe.toString());
+			throw new NoSuchFileException("Cannot send config '" + cfgType + "', file=" + f.getPath(), ioe);
 		}
 		return 0;
 	}
@@ -152,7 +162,6 @@ public class CmdReturnConfig extends CmdAdminCmd
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
 		String files[] = nldir.list();
-//Logger.instance().info("Listed '" + nldir.getPath() + "' returned " + files.length + " files.");
 		int nret = 0;
 		try
 		{
@@ -164,7 +173,6 @@ public class CmdReturnConfig extends CmdAdminCmd
 		  nextFile:
 			for(int i=0; files != null && i < files.length; i++)
 			{
-//Logger.instance().info("Testing network list '" + files[i] + "'");
 				for(int ki = 0; ki<knownFiles.length; ki++)
 					if (knownFiles[ki].equals(files[i]))
 						continue nextFile;
@@ -177,14 +185,10 @@ public class CmdReturnConfig extends CmdAdminCmd
 			msg.MsgLength = msg.MsgData.length;
 			ldds.send(msg);
 
-//			Logger.instance().info(
-//				"Successfully retrieved and sent list of " + nret 
-//					+ " netlists.");
 		}
 		catch(IOException ex)
 		{
-			throw new NoSuchFileException("Error listing directory '"
-				+ nldir.getPath() + "': " + ex);
+			throw new NoSuchFileException("Error listing directory '" + nldir.getPath(), ex);
 		}
 	}
 
