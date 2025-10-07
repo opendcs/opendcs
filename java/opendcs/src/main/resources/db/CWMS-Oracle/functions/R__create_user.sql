@@ -44,12 +44,19 @@ begin
 end check_dynamic_sql;
 /
 
-create or replace procedure create_user(username varchar2, password varchar2) authid current_user
+create or replace procedure create_user(p_username varchar2, p_password varchar2) authid current_user
 is
     l_sql varchar2(512);
+    l_exists number;
 begin
-    l_sql := 'create user ' || username || ' identified by "' || password || '"';
+    select count(*) into l_exists from all_users where upper(username) = upper(p_username);
+    if l_exists = 0 then
+        l_sql := 'create user ' || p_username || ' identified by "' || p_password || '"';
+    else
+        l_sql := 'alter user ' || p_username || ' identified by "' || p_password || '"';
+    end if;
     check_dynamic_sql(l_sql);
     execute immediate l_sql;
+
 end;
 /

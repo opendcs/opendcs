@@ -1,10 +1,30 @@
+/*
+* Copyright 2024-2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package org.opendcs.spi.database;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.jdbi.v3.core.Jdbi;
 
@@ -90,6 +110,24 @@ public interface MigrationProvider
         roles.add("OTSDB_MGR");
         roles.add("OTSDB_ADMIN");
         return roles;
+    }
+
+    /**
+     * Retrieve the legacy database version so we can appropraitely baseline
+     * @param jdbi
+     * @return Legacy version appropriate for Flyway to pick up, or none if it can't be found.
+     */
+    default Optional<String> getLegacyVersion(Jdbi jdbi)
+    {
+        return jdbi.withHandle(h ->
+        {
+            int version = h.select("select version_num from decodesdatabaseversion order by version_num desc")
+                           .mapTo(Integer.class)
+                           .first();
+            String baselineVersion = String.format("%.01f", version/1.0f);
+
+            return Optional.of(baselineVersion);
+        });
     }
 
     /**
