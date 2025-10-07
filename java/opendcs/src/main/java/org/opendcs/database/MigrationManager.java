@@ -1,3 +1,18 @@
+/*
+* Copyright 2024-2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package org.opendcs.database;
 
 import java.util.Iterator;
@@ -30,6 +45,7 @@ public final class MigrationManager
     private final FluentConfiguration flywayConfig;
     private final String implementation;
     private final MigrationProvider migrationProvider;
+
 
     public MigrationManager(DataSource ds, String implementation) throws NoMigrationProvider
     {
@@ -77,8 +93,21 @@ public final class MigrationManager
 
     public void migrate()
     {
-        flywayConfig.placeholders(migrationProvider.getPlaceholderValues())
-                    .load()
+        flywayConfig.placeholders(migrationProvider.getPlaceholderValues());
+        final boolean baselineOnMigrate =
+            Boolean.parseBoolean(System.getProperty("opendcs.flyway.baseline",
+                                    System.getProperty("OPENDCS.FLYWAY.BASELINE", // so apparently the CommandLineArgs class upper cases every -D
+                                     System.getenv("OPENDCS_FLYWAY_BASELINE"))));
+        if (baselineOnMigrate)
+        {
+            String baselineVersion
+                 = migrationProvider.getLegacyVersion(jdbi)
+                                    .orElseThrow(
+                                    () -> new RuntimeException("Baseline on migrate requested but unable to determine legacy version"));
+            flywayConfig.baselineOnMigrate(true).baselineVersion(baselineVersion);
+        }
+
+        flywayConfig.load()
                     .migrate();
     }
 
@@ -86,7 +115,7 @@ public final class MigrationManager
     {
         return jdbi;
     }
-    
+
     public void createUser(String username, String password, List<String> roles)
     {
         migrationProvider.createUser(jdbi, username, password, roles);
