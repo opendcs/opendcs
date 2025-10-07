@@ -1,54 +1,33 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of this source
-*  code may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  $Log$
-*  Revision 1.4  2008/09/15 17:55:29  mjmaloney
-*  dev
-*
-*  Revision 1.3  2008/09/12 19:30:26  mjmaloney
-*  dev
-*
-*  Revision 1.2  2008/09/05 13:03:34  mjmaloney
-*  LRGS 7 dev
-*
-*  Revision 1.1  2008/04/04 18:21:11  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.4  2005/11/21 19:13:41  mmaloney
-*  LRGS 5.4 prep
-*
-*  Revision 1.3  2005/06/28 17:37:00  mjmaloney
-*  Java-Only-Archive implementation.
-*
-*  Revision 1.2  2005/06/23 15:47:16  mjmaloney
-*  Java archive search algorithms.
-*
-*  Revision 1.1  2005/06/06 21:15:27  mjmaloney
-*  Added new Java-Only Archiving Package
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.archive;
 
-import lrgs.common.DcpMsgIndex;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
-import ilex.util.Logger;
+import lrgs.common.DcpMsgIndex;
 
 /**
 This object holds variables that are opaque to the application. They
-are used by the archiving classes to keep track of the progress of a 
+are used by the archiving classes to keep track of the progress of a
 search.
 */
 public class SearchHandle
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Indicates the method to be used in the search (opaque to app) */
 	int searchMethod;
 
@@ -63,16 +42,16 @@ public class SearchHandle
 
 	/** Uniquely specifies a period archive */
 	int periodStartTime;
-	
+
 	/** The next index number to return in that archive */
 	int nextIndexNum;
-	
+
 	/** For standard searches, this is the minute number currently used. */
 	int minIdx;
 
 	/** Filter being used in this search */
 	MsgFilter filter;
-	
+
 	/** For reverse ptr search, index of current address being retrieved. */
 	int curaddr;
 
@@ -89,12 +68,12 @@ public class SearchHandle
 
 	/** The number of indexes to allocate in the buffer. */
 	public static final int INDEX_BUF_MAX = 64;
-	
+
 	/**
 	 * Number of valid indexes currently in the buffer.
 	 */
 	int idxBufFillLength;
-	
+
 	/**
 	 * Next index in the buffer to retrieve from.
 	 */
@@ -150,8 +129,10 @@ public class SearchHandle
 		}
 		DcpMsgIndex ret = idxBuf[nextIdxBufNum];
 		idxBuf[nextIdxBufNum++] = null;
-if (ret == null)
-Logger.instance().warning("SearchHandle buf problem: buffer contains null at index=" + (nextIdxBufNum-1));
+		if (ret == null)
+		{
+			log.warn("SearchHandle buf problem: buffer contains null at index={}", (nextIdxBufNum-1));
+		}
 		return ret;
 	}
 
@@ -161,10 +142,10 @@ Logger.instance().warning("SearchHandle buf problem: buffer contains null at ind
 	 */
 	public void addIndex(DcpMsgIndex idx)
 	{
-if (idx==null)
-Logger.instance().warning("SearchHandle addIndex called with null!");
-//else
-//Logger.instance().info("Adding index[" + idxBufFillLength + "] to handle: " + idx.toString());
+		if (idx==null)
+		{
+			log.warn("SearchHandle addIndex called with null!");
+		}
 		idxBuf[idxBufFillLength++] = idx;
 	}
 }
