@@ -9,7 +9,6 @@ var mainTable;
  */
 var mainTableInlineOptions = {};
 
-
 /**
  * Save queue based on the seasons that need to be saved.  Multiple seasons
  * can be edited before selecting save, so multiple seasons need to be saved.
@@ -200,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 var curSeason = response[x];
 
                 var timezone = curSeason.tz != null ? curSeason.tz : "";
-                var newRow = ['<i class="move-cursor icon-arrow-resize8 mr-3 icon-1x"></i>', curSeason.abbr, curSeason.abbr, curSeason.name, curSeason.start, curSeason.end, timezone, createActionDropdown(actions)];
+                var newRow = ['<i class="move-cursor icon-arrow-resize8 me-3 icon-1x"></i>', curSeason.abbr, curSeason.abbr, curSeason.name, curSeason.start, curSeason.end, timezone, createActionDropdown(actions)];
                 mainTable.row.add(newRow);
                 makeTableInline("mainTable", mainTableInlineOptions);
                 mainTable.draw(false);

@@ -17,7 +17,7 @@
 								<span class="font-weight-semibold">OpenDCS</span> - Presentation
 							</h4>
 							<a href="#" class="header-elements-toggle text-default d-md-none">
-								<i class="icon-more"></i>
+								<i class="bi bi-three-dots-vertical"></i>
 							</a>
 						</div>
 					</div>
@@ -57,7 +57,7 @@
 	<!-- /theme JS files -->
 	<!-- Presentation modal -->
 	<div id="modal_presentation" class="modal fade" tabindex="-1"
-		data-keyboard="false" data-backdrop="static">
+		data-bs-keyboard="false" data-bs-backdrop="static">
 		<div class="modal-dialog modal-dialog-scrollable opendcs-modal-90">
 			<div class="modal-content">
 				<div class="modal-header bg-secondary">
@@ -84,10 +84,10 @@
 						<div class="text-right col-lg-1">
 							<!-- <input type="checkbox" id="isProductionCheckbox" name="isProductionCheckbox"> -->
 							<!-- <label class="col-form-label col-lg-4">Enabled</label> -->
-							<div class="form-check form-check-switchery"">
+							<div class="form-check form-switch"">
 								<label class="form-check-label"> <input type="checkbox"
-									id="isProductionSwitch" class="form-check-input-switchery"
-									data-fouc>
+									id="isProductionSwitch" class="form-check-input"
+									>
 								</label>
 							</div>
 						</div>
@@ -115,9 +115,8 @@
 					</table>
 				</div>
 				<div class="modal-footer">
-					<!--<button type="button" class="btn btn-link" data-dismiss="modal">Close</button>-->
 					<button type="button" class="btn btn-secondary"
-						id="cancelPresentationModalButton" data-dismiss="modal">Cancel</button>
+						id="cancelPresentationModalButton" data-bs-dismiss="modal">Cancel</button>
 					<button type="button" class="btn btn-success"
 						id="savePresentationModalButton">Save</button>
 				</div>
@@ -126,9 +125,8 @@
 	</div>
 	<!-- /presentation modal -->
 	<jsp:include page="/resources/jsp/includes/decodes.jsp" />
-	<script src="/webjars/switchery/switchery.js"></script>
-	<script src="/webjars/bootstrap-switch/js/bootstrap-switch.min.js"></script>
-	<script src="../resources/js/presentation.js"></script>
+
+<script src="../resources/js/presentation.js"></script>
 	<script src="../resources/js/datatables/helpers.js"></script>
 	<script src="../resources/js/lib/dom_utilities.js"></script>
 </html>

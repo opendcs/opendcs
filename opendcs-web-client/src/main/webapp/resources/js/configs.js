@@ -227,12 +227,10 @@ function updateConfigsTable(allConfigs)
 
         var actions = [{
             "type": "delete",
-            "onclick_deprecated": "deleteSourceFromRow(event, this)",
-            "onclick": `deleteOpendcsObject_default(event, this, ${JSON.stringify(params)})`
+            "params": params
         },
         {
-            "type": "copy",
-            "onclick": "copyRow(event, this)"
+            "type": "copy", "params": {}
         }];
 
         configsTable.row.add([curConfig.configId, curConfig.name, curConfig.equipmentId, curConfig.numPlatforms, curConfig.description, createActionDropdown(actions)]);
@@ -418,7 +416,7 @@ function openDecodingScriptDialog(rowClicked)
                 "onclick": null
             }];
             clickedScriptData.object.formatStatements.forEach(fs => {
-                var newRow = ['<i class="move-cursor icon-arrow-resize8 mr-3 icon-1x"></i>', fs.label, fs.format, createActionDropdown(actions)];
+                var newRow = ['<i class="move-cursor icon-arrow-resize8 me-3 icon-1x"></i>', fs.label, fs.format, createActionDropdown(actions)];
                 formatStatementsTable.row.add(newRow);
             });
 
@@ -1574,3 +1572,12 @@ function readFileContent(file) {
     })
 }
 
+
+
+// Copy row functionality (In the dropdown menu) for this page.
+window.OpenDCS = window.OpenDCS || {};
+OpenDCS.onCopyRow = function(e, el, params) {
+    if (typeof copyRow === "function") {
+        return copyRow(e, el);
+    }
+};

@@ -12,8 +12,8 @@
 				<div class="page-header page-header-light">
 				    <div class="page-header-content header-elements-md-inline">
 				        <div class="page-title d-flex">
-				            <h4><i class="icon-arrow-left52 mr-2"></i> <span class="font-weight-semibold">OpenDCS</span> - Netlists</h4>
-				            <a href="#" class="header-elements-toggle text-default d-md-none"><i class="icon-more"></i></a>
+				            <h4><i class="bi bi-arrow-left mr-2"></i> <span class="font-weight-semibold">OpenDCS</span> - Netlists</h4>
+				            <a href="#" class="header-elements-toggle text-default d-md-none"><i class="bi bi-three-dots-vertical"></i></a>
 				        </div>
 				    </div>  
 				</div>
@@ -49,7 +49,7 @@
 	    <!-- /page content -->
 	</body>
 	 <!-- Netlist modal -->
-	<div id="modal_netlist" class="modal fade" tabindex="-1" data-keyboard="false" data-backdrop="static">
+	<div id="modal_netlist" class="modal fade" tabindex="-1" data-bs-keyboard="false" data-bs-backdrop="static">
 	    <div class="modal-dialog modal-dialog-scrollable opendcs-modal-90">
 	        <div class="modal-content h-100">
 	            <div class="modal-header opendcs-modal-header-medium bg-secondary">
@@ -94,8 +94,7 @@
 	                </div>
 	            </div>
 	            <div class="modal-footer">
-	                <!-- <button type="button" class="btn btn-danger  mr-auto" id="deleteNetlistModalButton">Delete</button> -->
-	                <button type="button" class="btn btn-secondary" id="cancelNetlistModalButton" data-dismiss="modal">Cancel</button>
+	                <button type="button" class="btn btn-secondary" id="cancelNetlistModalButton" data-bs-dismiss="modal">Cancel</button>
 	                <button type="button" class="btn btn-success" id="saveNetlistModalButton">Save</button>
 	            </div>
 	        </div>

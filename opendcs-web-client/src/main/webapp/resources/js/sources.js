@@ -153,12 +153,10 @@ function updateSourcesTable(responseJson)
         };
 
         var actions = [{
-            "type": "delete",
-            "onclick": `deleteOpendcsObject_default(event, this, ${JSON.stringify(params)})`
+            "type": "delete", "params": params
         },
         {
-            "type": "copy",
-            "onclick": "copyRow(event, this)"
+            "type": "copy", "params": {}
         }];
         sourcesTable.row.add([curSource.name, curSource.type, curSource.arguments, curSource.usedBy, createActionDropdown(actions), curSource.dataSourceId]);
     }
@@ -625,3 +623,12 @@ function initializeDataTables()
             });
     $('#sourcesTable').on('click', 'tbody tr', openSourcesDialog);
 }
+
+
+// Register page-specific copy handler with new delegated dropdown API
+window.OpenDCS = window.OpenDCS || {};
+OpenDCS.onCopyRow = function(e, el, params) {
+    if (typeof copyRow === "function") {
+        return copyRow(e, el);
+    }
+};

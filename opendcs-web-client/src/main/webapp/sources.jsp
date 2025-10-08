@@ -21,7 +21,7 @@
 							<span class="font-weight-semibold">OpenDCS</span> - Sources
 						</h4>
 						<a href="#" class="header-elements-toggle text-default d-md-none"><i
-							class="icon-more"></i></a>
+							class="bi bi-three-dots-vertical"></i></a>
 					</div>
 				</div>
 			</div>
@@ -65,7 +65,7 @@
 
 <!-- Success modal -->
 <div id="modal_success" class="modal fade sourceDialog" tabindex="-1"
-	data-keyboard="false" data-backdrop="static">
+	data-bs-keyboard="false" data-bs-backdrop="static">
 	<div class="modal-dialog modal-dialog-scrollable opendcs-modal-90">
 		<div class="modal-content h-100">
 			<div class="modal-header opendcs-modal-header-medium bg-secondary">
@@ -136,7 +136,7 @@
 
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary"
-					id="cancelSourcesModalButton" data-dismiss="modal">Cancel</button>
+					id="cancelSourcesModalButton" data-bs-dismiss="modal">Cancel</button>
 				<button type="button" class="btn btn-success"
 					id="saveSourcesModalButton">Save</button>
 			</div>
@@ -148,6 +148,6 @@
 <jsp:include page="/resources/jsp/includes/decodes.jsp" />
 <script src="../resources/js/datatables/helpers.js"></script>
 <script src="../resources/js/sources.js"></script>
-<script src="/webjars/datatables-rowreorder/js/dataTables.rowReorder.min.js"></script>
+<script src="../resources/js/datatables/dataTables.rowReorder.min.js"></script>
 
 </html>

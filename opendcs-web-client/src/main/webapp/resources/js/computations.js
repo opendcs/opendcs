@@ -79,12 +79,10 @@ var params = {
  */
 var dtActions = [
     {
-        "type": "delete",
-        "onclick": `deleteOpendcsObject_default(event, this, ${JSON.stringify(params)})`
+        "type": "delete", "params": params
     },
     {
-        "type": "copy",
-        "onclick": "copyRow(event, this)"
+        "type": "copy", "params": {}
     }];
 
 /**
@@ -924,7 +922,7 @@ document.addEventListener('DOMContentLoaded', function() {
             for (var x = 0; x < computationRefs.length; x++)
             {
                 var curRow = computationRefs[x];
-                var isProdDisplay = curRow.enabled ? '<i class="icon-checkmark4 mr-3 icon-1x"></i>' : "";
+                var isProdDisplay = curRow.enabled ? '<i class="icon-checkmark4 me-3 icon-1x"></i>' : "";
                 var newRow = [curRow.computationId, curRow.name, curRow.algorithmName, curRow.processName, isProdDisplay, curRow.description, createActionDropdown(dtActions)];
                 mainTable.row.add(newRow);
                 mainTable.draw(false);
@@ -1138,3 +1136,11 @@ function copyRow(event, clickedLink)
     event.stopPropagation();
     beginOpenMainTableDialog(clickedLink.closest("tr"), true);
 }
+
+// Copy row functionality (In the dropdown menu) for this page.
+window.OpenDCS = window.OpenDCS || {};
+OpenDCS.onCopyRow = function(e, el, params) {
+    if (typeof copyRow === "function") {
+        return copyRow(e, el);
+    }
+};

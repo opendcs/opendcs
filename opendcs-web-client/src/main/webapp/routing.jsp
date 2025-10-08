@@ -1,7 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="en">
-	<jsp:include page="/resources/jsp/headers/decodes.jsp" />   
+	<jsp:include page="/resources/jsp/headers/decodes.jsp" />
+
 	<body class="navbar-top">
 		<!-- Main navbar -->
 		<jsp:include page="/resources/jsp/menus/decodes/main.jsp" />   
@@ -18,7 +19,7 @@
 					<div class="page-header-content header-elements-md-inline">
 						<div class="page-title d-flex">
 							<h4><span class="font-weight-semibold">OpenDCS</span> - Routing</h4>
-							<a href="#" class="header-elements-toggle text-default d-md-none"><i class="icon-more"></i></a>
+							<a href="#" class="header-elements-toggle text-default d-md-none"><i class="bi bi-three-dots-vertical"></i></a>
 						</div>
 					</div>  
 				</div> <!-- /page header -->
@@ -57,7 +58,7 @@
 
 
 	<!-- Routing modal -->
-	<div id="modal_routing" class="modal fade" tabindex="-1" data-keyboard="false" data-backdrop="static">
+	<div id="modal_routing" class="modal fade" tabindex="-1" data-bs-keyboard="false" data-bs-backdrop="static">
 		<div class="modal-dialog modal-dialog-scrollable opendcs-modal-90">
 			<div class="modal-content h-100">
 				<div class="modal-header bg-secondary">
@@ -126,21 +127,21 @@
 								<div class="form-group row">
 									<div class="text-right nobr col-6">
 									
-										<div class="form-check form-check-switchery">
+										<div class="form-check form-switch">
 											<label class="form-check-label float-left">
 											In-line computations
 											</label>
-												<input type="checkbox" id="inlineComputationsCheckbox" class="form-check-input-switchery" data-fouc>
+												<input type="checkbox" id="inlineComputationsCheckbox" class="form-check-input" >
 												
 											
 										</div>
 									</div>
 									<div class="text-right nobr col-4">
-										<div class="form-check form-check-switchery">
+										<div class="form-check form-switch">
 											<label class="form-check-label float-left">
 												Is Production
 											</label>
-												<input type="checkbox" id="isProductionCheckbox" class="form-check-input-switchery" data-fouc>
+												<input type="checkbox" id="isProductionCheckbox" class="form-check-input" >
 												
 											
 										</div>
@@ -278,29 +279,29 @@
 									<div class="form-group pt-2">
 											<label class="font-weight-semibold">Platform/Message Types</label>
 												
-											<div class="form-check form-check-switchery">
+											<div class="form-check form-switch">
 												<label class="form-check-label">
-													<input type="checkbox" id="goesSelfTimedCheckbox" class="form-check-input-switchery" data-fouc>
+													<input type="checkbox" id="goesSelfTimedCheckbox" class="form-check-input" >
 													GOES Self Timed
 												</label>
 											</div>
-											<div class="form-check form-check-switchery">
+											<div class="form-check form-switch">
 												<label class="form-check-label">
-													<input type="checkbox" id="goesRandomCheckbox" class="form-check-input-switchery" data-fouc>
+													<input type="checkbox" id="goesRandomCheckbox" class="form-check-input" >
 													GOES Random
 												</label>
 											</div>
-											<div class="form-check form-check-switchery">
+											<div class="form-check form-switch">
 												<label class="form-check-label">
-													<input type="checkbox" id="qualityNotificationsCheckbox" class="form-check-input-switchery" data-fouc>
+													<input type="checkbox" id="qualityNotificationsCheckbox" class="form-check-input" >
 													Quality Notifications
 												</label>
 											</div>
 											<div class="row">
 												<div class="col-6">
-													<div class="form-check form-check-switchery">
+													<div class="form-check form-switch">
 														<label class="form-check-label">
-															<input type="checkbox" id="goesSpacecraftCheckbox" class="form-check-input-switchery" data-fouc>
+															<input type="checkbox" id="goesSpacecraftCheckbox" class="form-check-input" >
 															GOES Spacecraft
 														</label>
 													</div>
@@ -312,23 +313,23 @@
 													</select>
 												</div>
 											</div>
-											<div class="form-check form-check-switchery">
+											<div class="form-check form-switch">
 												<label class="form-check-label">
-													<input type="checkbox" id="iridiumCheckbox" class="form-check-input-switchery" data-fouc>
+													<input type="checkbox" id="iridiumCheckbox" class="form-check-input" >
 													Iridium
 												</label>
 											</div>
-											<div class="form-check form-check-switchery">
+											<div class="form-check form-switch">
 												<label class="form-check-label">
-													<input type="checkbox" id="networkModemDcpCheckbox" class="form-check-input-switchery" data-fouc>
+													<input type="checkbox" id="networkModemDcpCheckbox" class="form-check-input" >
 													Network/Modem DCP
 												</label>
 											</div>
 											<div class="row">
 												<div class="col-6">
-													<div class="form-check form-check-switchery">
+													<div class="form-check form-switch">
 														<label class="form-check-label">
-															<input type="checkbox" id="parityCheckbox" class="form-check-input-switchery" data-fouc>
+															<input type="checkbox" id="parityCheckbox" class="form-check-input" >
 															Parity
 														</label>
 													</div>
@@ -347,8 +348,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<!--<button type="button" class="btn btn-link" data-dismiss="modal">Close</button>-->
-					<button type="button" class="btn btn-secondary" id="cancelRoutingModalButton" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-secondary" id="cancelRoutingModalButton" data-bs-dismiss="modal">Cancel</button>
 					<button type="button" class="btn btn-success" id="saveRoutingModalButton">Save</button>
 				</div>
 			</div>
@@ -357,7 +357,7 @@
 	<!-- /routing modal -->
 
 	<!-- Platform selection modal -->
-	<div id="modal_platformselection" class="modal fade" tabindex="-1" data-keyboard="false" data-backdrop="static">
+	<div id="modal_platformselection" class="modal fade" tabindex="-1" data-bs-keyboard="false" data-bs-backdrop="static">
 	    <div class="modal-dialog modal-dialog-scrollable opendcs-modal-90">
 	        <div class="modal-content">
 	            <div class="modal-header bg-secondary">
@@ -420,8 +420,7 @@
 	            </div>
 	      
 	            <div class="modal-footer">
-	                <!-- <button type="button" class="btn btn-danger  mr-auto" id="deleteNetlistModalButton">Delete</button> -->
-	                <button type="button" class="btn btn-secondary" id="cancelPlatformModalButton" data-dismiss="modal">Cancel</button>
+	                <button type="button" class="btn btn-secondary" id="cancelPlatformModalButton" data-bs-dismiss="modal">Cancel</button>
 	                <button type="button" class="btn btn-success" id="addPlatformModalButton">Update</button>
 	            </div>
 	        </div>
@@ -430,11 +429,10 @@
 	<!-- /platform selection modal -->
 
 
-<jsp:include page="/resources/jsp/includes/decodes.jsp" /> 
-<script src="/webjars/switchery/switchery.js"></script>
-<script src="/webjars/bootstrap-switch/js/bootstrap-switch.min.js"></script>
-<script src="/webjars/uniform/jquery.uniform.min.js"></script>
-<script src="/webjars/datatables/js/dataTables.min.js"></script>
+<jsp:include page="/resources/jsp/includes/decodes.jsp" />
+
+
+<script src="../resources/js/datatables/datatables.js"></script>
 <script src="../resources/js/datatables/helpers.js"></script>
 <script src="../resources/js/lib/time.js"></script>
 <script src="../resources/js/lib/dom_utilities.js"></script>

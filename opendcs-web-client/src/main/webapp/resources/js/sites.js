@@ -73,12 +73,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         var selectBox = createSelectBox("displayedTypeSelect", 
                 options, 
-                ["float-right"],
+                ["float-end"],
                 changeSiteNameType,
                 null,
                 null
         );
-        var fullDiv = createElement("div", null, ["float-left", "row", "w-50"], null);
+        var fullDiv = createElement("div", null, ["float-start", "row", "w-50"], null);
         var labelDiv = createElement("div", null, ["col-lg-6", "text-right", "justify-content-center", "align-self-center"], "Displayed Type");
         var selectDiv = createElement("div", null, ["col-lg-6"], selectBox);
         fullDiv.append(labelDiv);
@@ -151,18 +151,15 @@ function updateSitesTable(responseJson)
                 }
             }
 
-            var params = {
-                "objectType": "site",
-                "objectTypeDisplayName": "Site",
-                "objectIdIndex": 0,
-                "objectNameIndex": 1,
-                "urlIdName": "siteid"
-            };
-
             var actions = [{
-                "type": "delete",
-                "onclick": `deleteOpendcsObject_default(event, this, ${JSON.stringify(params)})`
-
+                type: 'delete',
+                params: {
+                    objectType: 'site',
+                    objectTypeDisplayName: 'site',
+                    objectIdIndex: 0,
+                    objectNameIndex: 1,
+                    urlIdName: 'siteid'
+                }
             }];
             var newRow = [curSite.siteId,
                 displayedSiteName,

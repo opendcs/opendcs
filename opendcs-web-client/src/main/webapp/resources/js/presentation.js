@@ -25,10 +25,8 @@ var openDcsData;
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log("Loaded presentation.js.");
-    var elems = Array.prototype.slice.call(document.querySelectorAll('.form-check-input-switchery'));
-    elems.forEach(function(html) {
-        var switchery = new Switchery(html);
-    });
+
+
 
     openDcsData = new OpenDcsData();
     show_waiting_modal();
@@ -59,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
     );
 
     initializeEvents();
-    initializeDataTables()    
+    initializeDataTables();
 });
 
 /**
@@ -103,11 +101,9 @@ function updatePresentationTable(allPresentations)
                 "urlIdName": "groupid"
         };
         var actions = [{
-            "type": "delete",
-            "onclick": `deleteOpendcsObject_default(event, this, ${JSON.stringify(params)})`
+            "type": "delete", "params": params
         },{
-            "type": "copy",
-            "onclick": "copyRow(event, this)"
+            "type": "copy", "params": {}
         }];
         presentationTable.row.add([curPresentation.groupId, curPresentation.name, curPresentation.inheritsFrom, curPresentation.lastModified, isProdDisplay, createActionDropdown(actions)]);
     }
@@ -429,3 +425,11 @@ function initializeDataTables()
                     ]
             });
 }
+
+// Copy row functionality (In the dropdown menu) for this page.
+window.OpenDCS = window.OpenDCS || {};
+OpenDCS.onCopyRow = function(e, el, params) {
+    if (typeof copyRow === "function") {
+        return copyRow(e, el);
+    }
+};

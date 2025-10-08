@@ -18,7 +18,7 @@
 					<div class="page-header-content header-elements-md-inline">
 						<div class="page-title d-flex">
 							<h4><span class="font-weight-semibold">OpenDCS</span> - Configs</h4>
-							<a href="#" class="header-elements-toggle text-default d-md-none"><i class="icon-more"></i></a>
+							<a href="#" class="header-elements-toggle text-default d-md-none"><i class="bi bi-three-dots-vertical"></i></a>
 						</div>
 					</div>  
 				</div> <!-- /page header -->
@@ -55,7 +55,7 @@
 	</body>
 
 	<!-- Success modal -->
-	<div id="modal_config" class="modal fade" tabindex="-1" data-keyboard="false" data-backdrop="static">
+	<div id="modal_config" class="modal fade" tabindex="-1" data-bs-keyboard="false" data-bs-backdrop="static">
 		<div class="modal-dialog modal-dialog-scrollable opendcs-modal-90">
 			<div class="modal-content">
 				<div class="modal-header bg-secondary">
@@ -125,8 +125,7 @@
 				</div>
 
 				<div class="modal-footer">
-					<!--<button type="button" class="btn btn-link" data-dismiss="modal">Close</button>-->
-					<button type="button" class="btn btn-secondary" id="cancelConfigsModalButton" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-secondary" id="cancelConfigsModalButton" data-bs-dismiss="modal">Cancel</button>
 					<button type="button" class="btn btn-success" id="saveConfigsModalButton">Save</button>
 				</div>
 			</div>
@@ -136,7 +135,7 @@
 	<!-- /success modal -->
 	
 	<!-- Config Sensor modal -->
-	<div id="modal_configsensor" class="modal fade" data-keyboard="false" data-backdrop="static">
+	<div id="modal_configsensor" class="modal fade" data-bs-keyboard="false" data-bs-backdrop="static">
 		<div class="modal-dialog modal-sm-med modal-dialog-scrollable">
 			<div class="modal-content h-100">
 				<div class="modal-header bg-secondary">
@@ -220,7 +219,7 @@
 							<label data-mediumtype="polled-tcp" class="col-form-label col-lg-3 text-right">1st Sample Time</label>
 							<div class="col-lg-6 input-group">
 								<span class="input-group-prepend">
-									<span class="input-group-text"><i class="icon-watch2"></i></span>
+									<span class="input-group-text"><i class="bi bi-clock"></i></span>
 								</span>
 								<input type="text" class="form-control" id="firstSampleTime" value="00:00:00">
 							</div>
@@ -230,7 +229,7 @@
 							<label data-mediumtype="polled-tcp" class="col-form-label col-lg-3 text-right">Sampling Interval</label>
 							<div class="col-lg-6 input-group">
 								<span class="input-group-prepend">
-									<span class="input-group-text"><i class="icon-watch2"></i></span>
+									<span class="input-group-text"><i class="bi bi-clock"></i></span>
 								</span>
 								<input type="text" class="form-control" id="samplingInterval" value="00:00:00">
 							</div>
@@ -267,7 +266,7 @@
 	
 	
 	<!-- Decoding Script modal -->
-	<div id="modal_decodingscript" class="modal fade" data-keyboard="false" data-backdrop="static">
+	<div id="modal_decodingscript" class="modal fade" data-bs-keyboard="false" data-bs-backdrop="static">
 		<div class="modal-dialog modal-med">
 			<div class="modal-content h-100">
 				<div class="modal-header bg-secondary">
@@ -340,8 +339,8 @@
 					  		<legend class="text-uppercase font-size-sm font-weight-bold">Sample Message</legend>
 							
 								<ul class="nav nav-tabs">
-									<li class="nav-item"><a href="#lrgsTab" class="nav-link rounded-top active" data-toggle="tab">Load From LRGS</a></li>
-									<li class="nav-item"><a href="#fileTab" class="nav-link rounded-top" data-toggle="tab">Load From File</a></li>
+									<li class="nav-item"><a href="#lrgsTab" class="nav-link rounded-top active" data-bs-toggle="tab">Load From LRGS</a></li>
+									<li class="nav-item"><a href="#fileTab" class="nav-link rounded-top" data-bs-toggle="tab">Load From File</a></li>
 								</ul>
 
 								<div class="tab-content">
@@ -403,14 +402,7 @@
 	<!-- /decoding script modal -->
 	
 	<jsp:include page="/resources/jsp/includes/decodes.jsp" /> 
-	
-	<script src="/webjars/momentjs/moment.min.js"></script>
-	<script src="/webjars/bootstrap-daterangepicker/js/bootstrap-daterangepicker.js"></script>
-	<script src="../resources/js/plugins/pickers/anytime.min.js"></script>
-	<script src="/webjars/pickadate.js/picker.js"></script>
-	<script src="/webjars/pickadate.js/picker.date.js"></script>
-	<script src="/webjars/pickadate.js/picker.time.js"></script>
-	<script src="/webjars/pickadate.js/legacy.js"></script>
+
 	<script src="../resources/js/configs.js"></script>
 	<script src="../resources/js/datatables/helpers.js"></script>
 	<script src="../resources/js/lib/object_utilities.js"></script>

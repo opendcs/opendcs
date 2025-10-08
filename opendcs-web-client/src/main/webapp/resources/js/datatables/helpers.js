@@ -48,6 +48,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     setPropSpecsMeta();
+    document
+        .querySelectorAll('.dataTables_wrapper [onclick*="clickedDropdown"]')
+        .forEach(el => el.removeAttribute('onclick'));
 });
 
 
@@ -63,42 +66,63 @@ document.addEventListener('DOMContentLoaded', function() {
  *                   ]
  * @returns
  */
-function createActionDropdown(applicableActions)
-{
-    var actionRefs = {
-            "delete": {
-                "target": "<!-- DELETE_HTML -->",
-                "html": '<a <!-- ONCLICK --> class="dropdown-item" data-ignorefocusout="true" action_type="delete_row"><i class="icon-cancel-circle2"></i> Delete</a>',
-                "default_onclick": "deleteRow_default(event, this)"
-            },
-            "copy": {
-                "target": "<!-- COPY_HTML -->",
-                "html": '<a <!-- ONCLICK --> class="dropdown-item" data-ignorefocusout="true" action_type="copy_row"><i class="icon-cancel-circle2"></i> Copy</a>',
-                "default_onclick": "copyRow_default(event, this)"
+
+function createActionDropdown(applicableActions) {
+    // normalize actions array
+    const actions = Array.isArray(applicableActions) ? applicableActions : [];
+
+    function actionItem({ type, onclick, params }) {
+        // prefer data-params (robust), fallback to onclick string/function
+        let attr = '';
+        if (params && typeof params === 'object') {
+            const json = JSON.stringify(params).replace(/"/g, '&quot;'); // safe in HTML
+            attr = `data-params="${json}"`;
+        } else if (onclick) {
+            if (typeof onclick === 'function') {
+                // register function once and call via global registry
+                window.OpenDCS = window.OpenDCS || {};
+                OpenDCS.actionHandlers = OpenDCS.actionHandlers || {};
+                const id = 'h_' + Math.random().toString(36).slice(2);
+                OpenDCS.actionHandlers[id] = onclick;
+                attr = `onclick="OpenDCS.actionHandlers['${id}'](event, this)"`;
+            } else {
+                // string like "deleteRow_default(event, this)"
+                attr = `onclick="${onclick}"`;
             }
-    };
+        } else {
+            // default fallbacks by type
+            const def = type === 'delete'
+                ? `deleteRow_default(event, this)`
+                : `copyRow_default(event, this)`;
+            attr = `onclick="${def}"`;
+        }
 
-    var actionDropdownHtml = '<div class="list-icons float-right">'
-        + '<div class="dropdown">'
-        + '    <a href="javascript:void(0)" class="list-icons-item" data-toggle="dropdown" onclick="clickedDropdown(event, this)" data-ignorefocusout="true">'
-        + '    <i class="icon-menu9"></i>'
-        + '</a>'
-        + '<div class="dropdown-menu dropdown-menu-right">'
-        + "<!-- COPY_HTML -->"
-        + "<!-- DELETE_HTML -->"
-        + '</div>'
-        + '</div>'
-        + '</div>';
+        const icon = type === 'delete'
+            ? '<i class="bi bi-x-circle"></i> Delete'
+            : '<i class="bi bi-files"></i> Copy';
 
-    applicableActions.forEach(applicAction => {
+        const act = type === 'delete' ? 'delete_row' : 'copy_row';
 
-        var type = applicAction["type"];
-        var onclick = applicAction["onclick"] != null ? applicAction["onclick"] : actionRefs[type]["default_onclick"];
-        actionDropdownHtml = actionDropdownHtml.replace(actionRefs[type]["target"], actionRefs[type]["html"].replace("<!-- ONCLICK -->", `onclick='${onclick}'`));
-    });
+        return `<a class="dropdown-item" ${attr} data-ignorefocusout="true" action_type="${act}">${icon}</a>`;
+    }
 
-    return actionDropdownHtml;
+    const items = actions.map(actionItem).join('');
+
+    return `
+    <div class="list-icons float-end">
+      <div class="dropdown dropstart">
+        <a href="javascript:void(0)" class="list-icons-item dropdown-toggle"
+           data-bs-toggle="dropdown" data-bs-boundary="viewport"
+           aria-haspopup="true" aria-expanded="false">
+          <i class="bi bi-three-dots-vertical"></i>
+        </a>
+        <div class="dropdown-menu dropdown-menu-end">
+          ${items}
+        </div>
+      </div>
+    </div>`;
 }
+
 
 function setPropSpecsMeta()
 {
@@ -153,7 +177,7 @@ function addBlankRowToDataTable(targetTable, redraw, action, inlineOptions, drag
     }
     if (dragIcon != null)
     {
-        emptyRow[0] = '<i class="move-cursor icon-arrow-resize8 mr-3 icon-1x"></i>';
+        emptyRow[0] = '<i class="move-cursor icon-arrow-resize8 me-3 icon-1x"></i>';
     }
     targetDataTable.row.add(emptyRow);
     if (redraw)
@@ -297,6 +321,64 @@ function deleteOpendcsObject_default(event, clickedLink, params)
     event.stopPropagation();
 }
 
+// Delegated handler for Delete action inside DataTables menus
+document.addEventListener('click', function (e) {
+    const a = e.target.closest('.dataTables_wrapper .dropdown-menu .dropdown-item[action_type="delete_row"]');
+    if (!a) return;
+
+    e.preventDefault();      // no navigation
+    e.stopPropagation();     // don't go through into row handlers
+
+    // Use data-params
+    let params = null;
+    const raw = a.getAttribute('data-params');
+    if (raw) {
+        try { params = JSON.parse(raw); } catch (_) { params = null; }
+    }
+
+    if (params) {
+        deleteOpendcsObject_default(e, a, params);
+    } else if (typeof a.onclick === 'function') {
+        // fallback: inline onclick string case
+    } else {
+        // default behavior
+        deleteRow_default(e, a);
+    }
+}, true);
+
+/**
+ * Delegated handler for Copy action inside DataTables menus
+ * Pages can provide a hook: OpenDCS.onCopyRow(e, el, params)
+ * If not provided, we fallback to legacy global copyRow(e, el) or copyRow_default.
+ */
+document.addEventListener('click', function (e) {
+    const a = e.target.closest('.dataTables_wrapper .dropdown-menu .dropdown-item[action_type="copy_row"]');
+    if (!a) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    let params = null;
+    const raw = a.getAttribute('data-params');
+    if (raw) {
+        try { params = JSON.parse(raw); } catch (_) { params = null; }
+    }
+
+    try {
+        if (window.OpenDCS && typeof window.OpenDCS.onCopyRow === 'function') {
+            return window.OpenDCS.onCopyRow(e, a, params);
+        } else if (typeof window.copyRow === 'function') {
+            // legacy page-specific handler
+            return window.copyRow(e, a);
+        } else {
+            // default no-op
+            return copyRow_default(e, a);
+        }
+    } catch (err) {
+        console.error('Error handling copy action:', err);
+    }
+}, true);
+
 function toggleRowMarkedForDeletion(jqRow)
 {
     var curDeleteValue = $(jqRow).attr("delete");
@@ -363,7 +445,7 @@ function addElementToDataTableHeader(datatableId, element)
     var targetSelector = "#" + datatableId + "_wrapper .dataTables_filter";
     element.appendTo(targetSelector);
     $(targetSelector).addClass("w-50");
-    $("#" + datatableId + "_wrapper" + " .dataTables_filter label").addClass("float-left");
+    $("#" + datatableId + "_wrapper" + " .dataTables_filter label").addClass("float-start");
 }
 
 function makeTableInline(tableId, inlineOptions, runAtEndClick, runAtEndFocusOut)
@@ -428,6 +510,7 @@ function makeTableInline(tableId, inlineOptions, runAtEndClick, runAtEndFocusOut
                             selectHtml += `<option value="${d}" ${selectedFlag}>${d}</option>`;
                         })
                         selectHtml += "</select>";
+                        //TODO: Need to sanitize for code injection.
                         thisPosition.empty().append($(selectHtml));
                     }
                     else if (forcedParam == "e" && splitForcedParam.length > 1)
@@ -447,6 +530,7 @@ function makeTableInline(tableId, inlineOptions, runAtEndClick, runAtEndFocusOut
                                 selectHtml += `<option value="${s}" ${selectedFlag}>${s}</option>`;
                             })
                             selectHtml += "</select>";
+                            //TODO: Need to sanitize for code injection.
                             thisPosition.empty().append($(selectHtml));
                         }
                         else if (selectType == "transportmediumtype")
@@ -463,6 +547,8 @@ function makeTableInline(tableId, inlineOptions, runAtEndClick, runAtEndFocusOut
                                 selectHtml += `<option value="${tmt}" ${selectedFlag}>${tmt}</option>`;
                             })
                             selectHtml += "</select>";
+
+                            //TODO: Need to sanitize for code injection.
                             thisPosition.empty().append($(selectHtml));
                         }
 
@@ -529,7 +615,6 @@ function makeTableInline(tableId, inlineOptions, runAtEndClick, runAtEndFocusOut
                                     selectHtml += `<option value="${d}" ${selectedFlag}>${d}</option>`;
                                 })
                                 selectHtml += "</select>";
-
                                 //TODO: Need to sanitize for code injection.
                                 thisPosition.empty().append($(selectHtml));
                                 break;
@@ -608,6 +693,7 @@ function makeTableInline(tableId, inlineOptions, runAtEndClick, runAtEndFocusOut
                                 selectHtml += `</select>
                                     <input id="${inputId2}" type="text" name="format" value="" />
                                     </div>`;
+                                //TODO: Need to sanitize for code injection.
                                 thisPosition.empty().append($(selectHtml));
 
 
@@ -1236,19 +1322,11 @@ function handleDrop(e) {
 
     if (dragDatatable["source"]["jqTable"].is(dragDatatable["destination"]["jqTable"]) && !dragDatatable["source"]["jqRow"].is(dragDatatable["destination"]["jqRow"])) {
 
-        // If selected rows and dragged item is selected then move selected rows
-        //if (selectedRows.count() > 0 && $(dragSrcRow).hasClass('selected')) {
-        //if (selectedRow != null)
-        //if (dragSrcRow != null)
-        //{
         var sourceIndex = dragDatatable["source"]["dtRowIndex"];
         var targetIndex = dragDatatable["destination"]["dtRowIndex"];
         //row style swap
         var sourceBgColors = getRowTdBackgroundColors(dragDatatable["source"].jqRow);
         var destinationBgColors = getRowTdBackgroundColors(dragDatatable["destination"].jqRow);
-
-        //var sourceSelected = doesRowHaveClass(dragDatatable["source"].jqRow, "selected");
-        //var destinationSelected = doesRowHaveClass(dragDatatable["destination"].jqRow, "selected");
 
         var sourceSelected = isRowIndexSelected(dragDatatable["source"]["dtTable"], sourceIndex); //doesRowHaveClass(dragDatatable["source"].jqRow, "selected");
         var destinationSelected = isRowIndexSelected(dragDatatable["destination"]["dtTable"], targetIndex); //doesRowHaveClass(dragDatatable["destination"].jqRow, "selected");
@@ -1269,15 +1347,12 @@ function handleDrop(e) {
                 var nextRowBgColors = getRowTdBackgroundColors($(jqRows[x+1]));
                 setRowTdBackgroundColors($(jqRows[x]), nextRowBgColors);
 
-                //if (doesRowHaveClass($(jqRows[x+1]), "selected"))
                 if (isRowIndexSelected(dragDatatable["source"]["dtTable"], x+1))
                 {
-                    //$(jqRows[x]).addClass("selected");
                     dragDatatable["source"]["dtTable"].row(x).select();
                 }
                 else
                 {
-                    //$(jqRows[x]).removeClass("selected");
                     dragDatatable["source"]["dtTable"].row(x).deselect();
                 }
 
@@ -1291,9 +1366,6 @@ function handleDrop(e) {
                 }
 
             }
-            //var nextRow = dragDatatable["source"]["dtTable"].row(x+1).data();
-            //dragDatatable["destination"]["dtTable"].row(targetIndex).data(dragDatatable["source"]["dtRowData"]);
-            //setRowTdBackgroundColors(dragDatatable["destination"].jqRow, sourceBgColors);
         }
         else
         {
@@ -1306,16 +1378,12 @@ function handleDrop(e) {
                 var nextRowBgColors = getRowTdBackgroundColors($(jqRows[x-1]));
                 setRowTdBackgroundColors($(jqRows[x]), nextRowBgColors);
 
-
-                //if (doesRowHaveClass($(jqRows[x+1]), "selected"))
                 if (isRowIndexSelected(dragDatatable["source"]["dtTable"], x-1))
                 {
-                    //$(jqRows[x]).addClass("selected");
                     dragDatatable["source"]["dtTable"].row(x).select();
                 }
                 else
                 {
-                    //$(jqRows[x]).removeClass("selected");
                     dragDatatable["source"]["dtTable"].row(x).deselect();
                 }
 
@@ -1329,15 +1397,11 @@ function handleDrop(e) {
                 }
 
             }
-            //var nextRow = dragDatatable["source"]["dtTable"].row(x+1).data();
-            //dragDatatable["destination"]["dtTable"].row(targetIndex).data(dragDatatable["source"]["dtRowData"]);
-
         }
         dragDatatable["destination"]["dtTable"].row(targetIndex).data(dragDatatable["source"]["dtRowData"]);
         setRowTdBackgroundColors(dragDatatable["destination"].jqRow, sourceBgColors);
         if (sourceSelected)
         {
-            //dragDatatable["source"].jqRow.removeClass("selected");
             dragDatatable["destination"].dtRow.select();
         }
         else
@@ -1346,39 +1410,6 @@ function handleDrop(e) {
         }
         setRowMarkedForDeletion(dragDatatable["destination"].jqRow, sourceMarkedForDeletion);
         dragDatatable["destination"]["dtTable"].draw(); 
-    }
-    return false;
-}
-
-function handleDrop_deprecated(e) {
-    // this / e.target is current target element.
-
-    if (e.stopPropagation) {
-        e.stopPropagation(); // stops the browser from redirecting.
-    }
-
-    // Get destination table id, row
-    var dstTable = $(this.closest('table')).attr('id');
-
-    // No need to process if src and dst table are the same
-    if (srcTable == dstTable) {
-
-        if (dragSrcRow != null)
-        {
-            var targetDrag = this;
-            var frmtDragData = formatStatementsTable.row($(dragSrcRow)).data();
-            var targetDragData = formatStatementsTable.row($(this)).data();
-
-            var srcDragSiteName = frmtDragData[0];
-            
-            alert("New Data: " + JSON.stringify(newData));
-
-            updateRowClickEvents();
-            
-            dragSrcRow = null;
-            
-        } 
-        
     }
     return false;
 }
@@ -1396,7 +1427,6 @@ function handleDragEnd(e) {
     });
     
 }
-
 
 /**
  * Filters platforms in the netlist display based on the selected transport medium type.  NOTE - it will display the values that are passed and filter out all other values (not displaying them).
@@ -1550,3 +1580,59 @@ function getRowWithColumnData(table, cellValue, columnNumber)
     }
     return null;
 }
+
+/* === Bootstrap 5 dropdown shielding for DataTables rows (one true handler) === */
+/* NOTE - might not be the best way, but for now it gets us going */
+(function () {
+    if (window.__opendcsDropdownShieldDT) return;
+    window.__opendcsDropdownShieldDT = true;
+
+    let lastHandledTs = 0;
+
+    document.addEventListener('click', function (e) {
+        const t = e.target;
+        if (!t) return;
+
+        // Only inside DataTables UI
+        const inDT = t.closest && t.closest('.dataTables_wrapper');
+        if (!inDT) return;
+
+        // Stop duplicate listeners on the same event
+        if (e.timeStamp && e.timeStamp === lastHandledTs) return;
+        lastHandledTs = e.timeStamp;
+
+        // If the click is on a DT dropdown toggle, this manages it
+        const toggle = t.closest('[data-bs-toggle="dropdown"]');
+        if (toggle) {
+            // If already open, DO NOT toggle again (prevents instant close)
+            const alreadyOpen =
+                toggle.getAttribute('aria-expanded') === 'true' ||
+                (bootstrap.Dropdown.getInstance(toggle)?._menu?.classList?.contains('show'));
+
+            e.preventDefault();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+            e.stopPropagation();
+
+            const dd = bootstrap.Dropdown.getOrCreateInstance(toggle, {
+                autoClose: true,
+                popperConfig: {
+                    strategy: 'fixed',
+                    modifiers: [
+                        { name: 'offset', options: { offset: [0, 8] } },
+                        { name: 'preventOverflow', options: { boundary: 'viewport' } },
+                        { name: 'computeStyles', options: { adaptive: false } },
+                    ],
+                },
+            });
+
+            if (!alreadyOpen) dd.show(); // open once; don't close immediately
+            return;
+        }
+
+        // Clicks inside menu: stop row/cell handlers from hijacking
+        if (t.closest('.dropdown-menu')) {
+            e.stopPropagation();
+            return;
+        }
+    }, true);
+})();

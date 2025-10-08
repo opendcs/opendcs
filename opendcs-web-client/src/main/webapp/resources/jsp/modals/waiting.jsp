@@ -17,7 +17,7 @@
 
 <%-- Waiting modal --%>
 <div id="modal_waiting" class="modal fade" tabindex="-1"
-	data-keyboard="false" data-backdrop="static">
+	data-bs-keyboard="false" data-bs-backdrop="static">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header bg-secondary">

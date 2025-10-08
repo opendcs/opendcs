@@ -21,7 +21,7 @@
 							<span class="font-weight-semibold">OpenDCS</span> - Platforms
 						</h4>
 						<a href="#" class="header-elements-toggle text-default d-md-none"><i
-							class="icon-more"></i></a>
+							class="bi bi-three-dots-vertical"></i></a>
 					</div>
 				</div>
 			</div>
@@ -67,7 +67,7 @@
 
 <!-- Platform modal -->
 <div id="modal_platform" class="modal fade" tabindex="-1"
-	data-keyboard="false" data-backdrop="static">
+	data-bs-keyboard="false" data-bs-backdrop="static">
 	<div class="modal-dialog modal-dialog-scrollable opendcs-modal-90"
 		class_old="modal-dialog modal-xl modal-height-xl">
 		<div class="modal-content h-100">
@@ -92,7 +92,7 @@
 										<div class="col-lg-9">
 											<select id="siteSelectbox" name="siteSelectbox"
 												data-placeholder="Select a site"
-												class="form-control select-clear" data-fouc>
+												class="form-control select-clear" >
 												<option></option>
 											</select>
 										</div>
@@ -117,13 +117,13 @@
 										<div class="col-lg-8">
 											<select id="configSelectbox" name="configSelectbox"
 												data-placeholder="Select a config"
-												class="form-control select-clear" data-fouc>
+												class="form-control select-clear" >
 												<option></option>
 											</select>
 										</div>
 										<div class="col-lg-1">
 											<span class="w-100 h-100 pointerCursor"> <i
-												id="editConfig" class="icon-pencil7"></i>
+												id="editConfig" class="bi bi-pencil"></i>
 											</span>
 										</div>
 									</div>
@@ -147,11 +147,11 @@
 
 									<div class="form-group row">
 										<label class="col-form-label col-lg-3">Production</label>
-										<div class="col-lg-9 form-check form-check-switchery"
+										<div class="col-lg-9 form-check form-switch"
 											id="isProductionDiv">
 											<label class="form-check-label"> <input
 												type="checkbox" id="isProduction"
-												class="form-check-input-switchery" data-fouc>
+												class="form-check-input" >
 											</label>
 
 										</div>
@@ -251,10 +251,8 @@
 			</div>
 
 			<div class="modal-footer pt-3">
-				<!--<button type="button" class="btn btn-link" data-dismiss="modal">Close</button>-->
-				<!-- <button type="button" class="btn btn-danger  mr-auto" id="deleteSourceModalButton">Delete</button>-->
 				<button type="button" class="btn btn-secondary"
-					id="cancelSiteModalButton" data-dismiss="modal">Cancel</button>
+					id="cancelSiteModalButton" data-bs-dismiss="modal">Cancel</button>
 				<button type="button" class="btn btn-success"
 					id="savePlatformModalButton">Save</button>
 			</div>
@@ -264,7 +262,7 @@
 
 	<!-- Transport Media modal -->
 	<div id="modal_transportmedia" class="modal fade" tabindex="-1"
-		data-keyboard="false" data-backdrop="static">
+		data-bs-keyboard="false" data-bs-backdrop="static">
 		<div
 			class="modal-dialog modal-dialog-scrollable opendcs-modal-tall-narrow">
 			<div class="modal-content h-100">
@@ -288,12 +286,6 @@
 										class="selectpicker form-control">
 									</select>
 								</div>
-								<!-- 
-							<label class="col-form-label col-lg-3">Medium Type</label>
-							<div class="col-lg-9">
-								<input id="mediumTypeTextbox" type="text" class="form-control" required placeholder="Enter The Medium Type.">
-							</div>
-							-->
 							</div>
 							<div class="form-group row mb-2">
 								<label data-mediumtype="data-logger,iridium,other,shef"
@@ -371,18 +363,6 @@
 										class="form-control" required placeholder="(HH:MM:SS)">
 								</div>
 							</div>
-							<!-- 
-							<div class="form-group row mb-2">
-								<label class="col-form-label col-lg-3">Preamble</label>
-								<div class="col-lg-9">
-									<select id="preambleSelectbox" class="selectpicker form-control">
-			                      		<option value="L">Long</option>
-			                      		<option value="S">Short</option>
-			                      		<option value="U">Unknown</option>
-			                        </select>
-								</div>
-							</div>
-							-->
 						</div>
 						<div class="card col-lg-12 p-2 h-100 overflow-auto"
 							data-mediumtype="incoming-tcp,polled-tcp">
@@ -407,12 +387,12 @@
 							</div>
 							<div class="form-group row mb-2">
 								<label class="col-form-label col-lg-3">Do Login</label>
-								<div class="col-lg-9 form-check form-check-switchery"
+								<div class="col-lg-9 form-check form-switch"
 									id="doLoginDiv">
 									<label class="form-check-label"> <input
 										onclick="doLoginClicked(event, this)" type="checkbox"
-										id="doLoginEnabled" class="form-check-input-switchery"
-										data-fouc>
+										id="doLoginEnabled" class="form-check-input"
+										>
 									</label>
 
 								</div>
@@ -522,12 +502,12 @@
 							</div>
 							<div class="form-group row mb-2">
 								<label class="col-form-label col-lg-3">Do Login</label>
-								<div class="col-lg-9 form-check form-check-switchery"
+								<div class="col-lg-9 form-check form-switch"
 									id="doLoginDiv">
 									<label class="form-check-label"> <input
 										onclick="doLoginClicked(event, this)" type="checkbox"
-										id="doLoginEnabled" class="form-check-input-switchery"
-										data-fouc>
+										id="doLoginEnabled" class="form-check-input"
+										>
 									</label>
 
 								</div>
@@ -550,8 +530,6 @@
 					</div>
 				</div>
 				<div class="modal-footer pt-3">
-					<!--<button type="button" class="btn btn-link" data-dismiss="modal">Close</button>-->
-					<!-- <button type="button" class="btn btn-danger  mr-auto" id="deleteSourceModalButton">Delete</button>-->
 					<button type="button" class="btn btn-secondary"
 						id="transportMediaModalCancel">Cancel</button>
 					<button type="button" class="btn btn-success"
@@ -567,8 +545,8 @@
 
 
 <!-- Platform Sensor modal -->
-<div id="modal_platformsensor" class="modal fade" data-keyboard="false"
-	data-backdrop="static">
+<div id="modal_platformsensor" class="modal fade" data-bs-keyboard="false"
+	data-bs-backdrop="static">
 	<div
 		class="modal-dialog modal-dialog-scrollable opendcs-modal-tall-narrow">
 		<div class="modal-content h-100">
@@ -596,7 +574,7 @@
 							<div class="col-6">
 								<select id="actualSiteSelectbox" name="actualSiteSelectbox"
 									data-placeholder="(inherited)"
-									class="form-control select-clear" data-fouc>
+									class="form-control select-clear" >
 									<option data-site_id="-1"></option>
 								</select>
 							</div>
@@ -643,7 +621,7 @@
 					</div>
 
 				</div>
-				<div class="form-group row  flex-grow-1">
+				<div class="form-group row flex-grow-1">
 					<div class="col-lg-12">
 						<div class="card w-100 h-100">
 							<table id="platformSensorPropertiesTable"
@@ -669,8 +647,6 @@
 				</div>
 			</div>
 			<div class="modal-footer">
-				<!--<button type="button" class="btn btn-link" data-dismiss="modal">Close</button>-->
-				<!-- <button type="button" class="btn btn-danger  mr-auto" id="deleteSourceModalButton">Delete</button>-->
 				<button type="button" class="btn btn-secondary"
 					id="platformSensorModalCancel">Cancel</button>
 				<button type="button" class="btn btn-success"
@@ -681,14 +657,10 @@
 </div>
 <!-- /platform sensor modal -->
 
-
 <jsp:include page="/resources/jsp/includes/decodes.jsp" />
 
-<script src="/webjars/switchery/switchery.js"></script>
-<script src="/webjars/bootstrap-switch/js/bootstrap-switch.min.js"></script>
-<script src="/webjars/uniform/jquery.uniform.min.js"></script>
 <script src="../resources/js/datatables/helpers.js"></script>
-<script src="/webjars/datatables/js/dataTables.min.js"></script>
+<script src="../resources/js/datatables/datatables.js"></script>
 <script src="../resources/js/lib/dom_utilities.js"></script>
 <script src="../resources/js/lib/object_utilities.js"></script>
 <script src="../resources/js/lib/date_utilities.js"></script>

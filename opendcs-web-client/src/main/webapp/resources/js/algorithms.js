@@ -90,12 +90,10 @@ var params = {
  */
 var dtActions = [
     {
-        "type": "delete",
-        "onclick": `deleteOpendcsObject_default(event, this, ${JSON.stringify(params)})`
+        "type": "delete", "params": params
     },
     {
-        "type": "copy",
-        "onclick": "copyRow(event, this)"
+        "type": "copy", "params": {}
     }];
 
 
@@ -471,3 +469,11 @@ function copyRow(event, clickedLink)
     event.stopPropagation();
     beginOpenMainTableDialog(clickedLink.closest("tr"), true);
 }
+
+// Copy row functionality (In the dropdown menu) for this page.
+window.OpenDCS = window.OpenDCS || {};
+OpenDCS.onCopyRow = function(e, el, params) {
+    if (typeof copyRow === "function") {
+        return copyRow(e, el);
+    }
+};

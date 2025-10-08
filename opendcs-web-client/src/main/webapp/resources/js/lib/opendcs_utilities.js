@@ -622,3 +622,32 @@ function handleErrorResponse(response, showAlert, showAlertDetails)
         show_notification_modal("Error", "An error occurred.", "There was an error with the operation.", "OK", "bg-danger", "bg-danger");
     }
 }
+
+/* Bootstrap 5 modal jQuery-compatibility shim
+   NOTE - Not the best solution, but it gets us going.
+   ------------------------------------------------------------------
+   Helps older code that does $('#modal').modal('show'|'hide') while
+   the app uses Bootstrap 5. If $.fn.modal is missing, route calls to bootstrap.Modal.
+*/
+(function($, bootstrap){
+    if (!$ || !bootstrap) return;
+    if (!$.fn.modal) {
+        $.fn.modal = function(actionOrOptions){
+            return this.each(function(){
+                var el = this;
+                try {
+                    var inst = bootstrap.Modal.getOrCreateInstance(el, (typeof actionOrOptions === 'object') ? actionOrOptions : undefined);
+                    if (typeof actionOrOptions === 'string') {
+                        var action = actionOrOptions.toLowerCase();
+                        if (action === 'show') { inst.show(); }
+                        else if (action === 'hide') { inst.hide(); }
+                        else if (action === 'toggle') { inst.toggle(); }
+                        else if (action === 'dispose') { inst.dispose(); }
+                    }
+                } catch(e) {
+                    console.error('Modal shim error:', e);
+                }
+            });
+        };
+    }
+})(window.jQuery, window.bootstrap);

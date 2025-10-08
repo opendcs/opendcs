@@ -136,11 +136,9 @@ function updateRoutingTable(responseJson)
 
         var actions = [{
             "type": "delete",
-            "onclick_deprecated": "openDeleteModal(event, this)",
-            "onclick": `deleteOpendcsObject_default(event, this, ${JSON.stringify(params)})`
+            "params": params
         },{
-            "type": "copy",
-            "onclick": "copyRow(event, this)"
+            "type": "copy", "params": {}
         }];
 
         routingTable.row.add([curRouting.routingId, 
@@ -885,12 +883,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         $("#modal_platformselection").modal("hide");
     });
-    
-    
-    var elems = Array.prototype.slice.call(document.querySelectorAll('.form-check-input-switchery'));
-    elems.forEach(function(html) {
-        var switchery = new Switchery(html);
-    });
 
     
 
@@ -1218,3 +1210,12 @@ document.addEventListener('DOMContentLoaded', function() {
         openSaveModal();
     });
 });
+
+
+// Copy row functionality (In the dropdown menu) for this page.
+window.OpenDCS = window.OpenDCS || {};
+OpenDCS.onCopyRow = function(e, el, params) {
+    if (typeof copyRow === "function") {
+        return copyRow(e, el);
+    }
+};

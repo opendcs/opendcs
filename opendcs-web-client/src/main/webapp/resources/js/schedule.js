@@ -344,12 +344,10 @@ function updateScheduleEntryTable(responseJson)
         };
 
         var actions = [{
-            "type": "delete",
-            "onclick": `deleteOpendcsObject_default(event, this, ${JSON.stringify(params)})`,
+            "type": "delete", "params": params,
         },
         {
-            "type": "copy",
-            "onclick": "copyRow(event, this)"
+            "type": "copy", "params": {}
         }
         ];
         var isEnabled = curEntry.enabled ? '<i class="icon-checkmark4 mr-3 icon-1x"></i>' : "";
@@ -497,26 +495,13 @@ function getSelectedScheduleRadioButton()
  */
 function initializeExecutionSchedule()
 {
-    var elems = Array.prototype.slice.call(document.querySelectorAll('.form-check-input-switchery'));
-    //initialize the switches in the execution schedule.
-    elems.forEach(function(html) {
-        var switchery = new Switchery(html);
-    });
 
-    $('.form-check-input-styled-primary').uniform({
-        wrapperClass: 'border-primary text-primary'
-    });
 
-    // Danger
-    $('.form-check-input-styled-danger').uniform({
-        wrapperClass: 'border-danger text-danger'
-    });
+    $('.form-check-input-styled-primary')
 
-    // Success
-    $('.form-check-input-styled-success').uniform({
-        wrapperClass: 'border-success text-success'
-    });
+    $('.form-check-input-styled-danger')
 
+    $('.form-check-input-styled-success')
     enableRunEveryElements(false);
 
     $('input[type=radio][name=runFreq]').change(function() {
@@ -585,3 +570,12 @@ function initializeDataTables()
             });
     $('#scheduleEntryTable').on('click', 'tbody tr', openScheduleDialog);
 }
+
+
+// Copy row functionality (In the dropdown menu) for this page.
+window.OpenDCS = window.OpenDCS || {};
+OpenDCS.onCopyRow = function(e, el, params) {
+    if (typeof copyRow === "function") {
+        return copyRow(e, el);
+    }
+};

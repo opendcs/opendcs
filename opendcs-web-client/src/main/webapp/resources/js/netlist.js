@@ -37,7 +37,7 @@ let netlistListTable;
 let curNetlistDetails = undefined;
 
 /**
- * The list of GOES transport medium types.  
+ * The list of GOES transport medium types.
  * TODO: This needs to be hard coded for now, but should not be eventually.
  */
 let goesTms =     ["goes",
@@ -45,7 +45,7 @@ let goesTms =     ["goes",
     "goes-random"];
 
 /**
- * The list of transport medium types that should be ignored.  
+ * The list of transport medium types that should be ignored.
  * TODO: This maybe should be a value that the user can select in a preference
  * page.
  */
@@ -291,11 +291,11 @@ function updateNetlistsTable(netlistJson)
         };
         let actions = [{
             "type": "delete",
-            "onclick": `deleteOpendcsObject_default(event, this, ${JSON.stringify(params)})`,
+            "params": params,
         },
         {
             "type": "copy",
-            "onclick": "copyRow(event, this)"
+            "params": {}
         }
         ];
         netlistListTable.row.add([curNetlist.name, curNetlist.transportMediumType, curNetlist.numPlatforms, curNetlist.netlistId, createActionDropdown(actions)]);
@@ -741,3 +741,11 @@ function initializeDataTables()
     });
     nlTable.init();
 }
+
+// Copy row functionality (In the dropdown menu) for this page.
+window.OpenDCS = window.OpenDCS || {};
+OpenDCS.onCopyRow = function(e, el, params) {
+    if (typeof copyRow === "function") {
+        return copyRow(e, el);
+    }
+};

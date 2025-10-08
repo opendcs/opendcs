@@ -17,12 +17,12 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
 <div id="notificationModal" class="modal fade" tabindex="-1"
-	data-backdrop="static" data-keyboard="false">
+	data-bs-backdrop="static" data-bs-keyboard="false">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header" id="notificationModalTitleDiv">
 				<h6 class="modal-title" id="notificationModalTitle"></h6>
-				<%--<button type="button" class="close" data-dismiss="modal">&times;</button>--%>
+				<%--<button type="button" class="close" data-bs-dismiss="modal">&times;</button>--%>
 			</div>
 
 			<div class="modal-body">
@@ -31,7 +31,7 @@
 			</div>
 
 			<div class="modal-footer">
-				<button type="button" data-dismiss="modal" class="btn">OK</button>
+				<button type="button" data-bs-dismiss="modal" class="btn">OK</button>
 			</div>
 		</div>
 	</div>

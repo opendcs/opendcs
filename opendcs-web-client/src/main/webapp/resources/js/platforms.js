@@ -226,12 +226,10 @@ function updatePlatformsTable()
         };
 
         var actions = [{
-            "type": "delete",
-            "onclick": `deleteOpendcsObject_default(event, this, ${JSON.stringify(params)})`
+            "type": "delete", "params": params
         },
         {
-            "type": "copy",
-            "onclick": "copyRow(event, this)"
+            "type": "copy", "params": {}
         }];
         var curConfigName = "";
         for (var x = 0; x < openDcsData.data.configrefs.data.length; x++)
@@ -941,7 +939,6 @@ function initializeEvents()
                         "transportInterval": transportInterval,
                         "transportWindow": transportWindow,
                         "username": curTmRow[13]
-                //"preamble": curTmRow[10] //TODO: NEED THIS STILL
                 };
 
                 changeObjectPropertyValueToNewValue(newTransportMedia, "", null);
@@ -1023,10 +1020,7 @@ function initializeEvents()
 /*****************Initialize Elements***********************/
 function initializeElements()
 {
-    var elems = Array.prototype.slice.call(document.querySelectorAll('.form-check-input-switchery'));
-    elems.forEach(function(html) {
-        var switchery = new Switchery(html);
-    });
+    var elems = Array.prototype.slice.call(document.querySelectorAll('.form-check-input'));
 }
 
 /** **************Initialize Datatables******************* */
@@ -1195,3 +1189,11 @@ function initializeDataTables()
     });
 
 }
+
+// Register page-specific copy handler with new delegated dropdown API
+window.OpenDCS = window.OpenDCS || {};
+OpenDCS.onCopyRow = function(e, el, params) {
+    if (typeof copyRow === "function") {
+        return copyRow(e, el);
+    }
+};

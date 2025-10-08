@@ -18,7 +18,7 @@
 					<div class="page-header-content header-elements-md-inline">
 						<div class="page-title d-flex">
 							<h4><span class="font-weight-semibold">OpenDCS</span> - Seasons</h4>
-							<a href="#" class="header-elements-toggle text-default d-md-none"><i class="icon-more"></i></a>
+							<a href="#" class="header-elements-toggle text-default d-md-none"><i class="bi bi-three-dots-vertical"></i></a>
 						</div>
 					</div>  
 				</div> <!-- /page header -->
@@ -61,12 +61,10 @@
 	
 	
 	
-	<jsp:include page="/resources/jsp/includes/decodes.jsp" /> 
-	
-<script src="/webjars/switchery/switchery.js"></script>
-<script src="/webjars/bootstrap-switch/js/bootstrap-switch.min.js"></script>
-<script src="/webjars/uniform/jquery.uniform.min.js"></script>
-	<script src="../resources/js/datatables/helpers.js"></script>
+	<jsp:include page="/resources/jsp/includes/decodes.jsp" />
+
+
+<script src="../resources/js/datatables/helpers.js"></script>
 	<script src="../resources/js/lib/dom_utilities.js"></script>
 	<script src="../resources/js/lib/object_utilities.js"></script>
 	<script src="../resources/js/lib/date_utilities.js"></script>

@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     var description = item.description != null ? item.description : "";
                     var javaClass = item.execClassName != null ? item.execClassName : "";
                     var options = item.editClassName != null ? item.editClassName : "";
-                    var newRow = ['<i class="move-cursor icon-arrow-resize8 mr-3 icon-1x"></i>', "", key, description, javaClass, item.editClassName, createActionDropdown(actions)];
+                    var newRow = ['<i class="move-cursor icon-arrow-resize8 me-3 icon-1x"></i>', "", key, description, javaClass, item.editClassName, createActionDropdown(actions)];
                     enumerationTable.row.add(newRow);
                     makeTableInline("enumerationTable", enumerationTableInlineOptions);
                     enumerationTable.draw(false);

@@ -14,7 +14,7 @@
 					<div class="page-header-content header-elements-md-inline">
 						<div class="page-title d-flex">
 							<h4><span class="font-weight-semibold">OpenDCS</span> - Computations</h4>
-							<a href="#" class="header-elements-toggle text-default d-md-none"><i class="icon-more"></i></a>
+							<a href="#" class="header-elements-toggle text-default d-md-none"><i class="bi bi-three-dots-vertical"></i></a>
 						</div>
 					</div>  
 				</div> <!-- /page header -->
@@ -44,7 +44,7 @@
 			</div> <!-- /main content -->
 		</div> <!-- /page content -->
 		<!-- Computation modal -->
-		<div id="modal_main" class="modal fade" tabindex="-1" data-keyboard="false" data-backdrop="static">
+		<div id="modal_main" class="modal fade" tabindex="-1" data-bs-keyboard="false" data-bs-backdrop="static">
 			<div class="modal-dialog modal-dialog-scrollable opendcs-modal-90" class_old="modal-dialog modal-xl modal-height-xl">
 				<div class="modal-content h-100">
 					<div class="modal-header bg-secondary">
@@ -60,9 +60,9 @@
 											<table class="table table-hover datatable-responsive dataTable no-footer mb-1">
 												<caption class="captionTitleCenter">Details
 													<div class="float-right">
-														<div class="form-check form-check-switchery"">
+														<div class="form-check form-switch"">
 															<label class="form-check-label">
-																<input type="checkbox" id="enabledCheckbox" class="form-check-input-switchery" data-fouc>
+																<input type="checkbox" id="enabledCheckbox" class="form-check-input" >
 															</label>
 														</div>
 													</div>
@@ -154,7 +154,7 @@
 						</div>
 					</div>
 					<div class="modal-footer pt-3">
-						<button type="button" class="btn btn-secondary" id="cancelButton" data-dismiss="modal">Cancel</button>
+						<button type="button" class="btn btn-secondary" id="cancelButton" data-bs-dismiss="modal">Cancel</button>
 						<button type="button" class="btn btn-success" id="saveButton">Save</button>
 					</div>
 				</div>
@@ -163,7 +163,7 @@
 	</div>
 	<!-- /computation modal -->
 	<!-- Algorithm modal -->
-	<div id="modal_algorithm" class="modal fade" tabindex="-1" data-keyboard="false" data-backdrop="static">
+	<div id="modal_algorithm" class="modal fade" tabindex="-1" data-bs-keyboard="false" data-bs-backdrop="static">
 		<div class="modal-dialog modal-dialog-scrollable opendcs-modal-90" class_old="modal-dialog modal-xl modal-height-xl">
 			<div class="modal-content h-100">
 				<div class="modal-header bg-secondary">
@@ -192,7 +192,7 @@
 					</div>
 				</div>
 				<div class="modal-footer pt-3">
-					<button type="button" class="btn btn-secondary" id="cancelAlgoButton" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-secondary" id="cancelAlgoButton" data-bs-dismiss="modal">Cancel</button>
 					<button type="button" class="btn btn-success" id="submitAlgoButton">Submit</button>
 				</div>
 			</div>
@@ -200,10 +200,9 @@
 	</div>
 	<!-- /algorithm modal -->
 	</body>
-	<jsp:include page="/resources/jsp/includes/decodes.jsp" /> 
-	<script src="/webjars/switchery/switchery.js"></script>
-	<script src="/webjars/bootstrap-switch/js/bootstrap-switch.min.js"></script>
-	<script src="/webjars/uniform/jquery.uniform.min.js"></script>
+	<jsp:include page="/resources/jsp/includes/decodes.jsp" />
+
+
 	<script src="../resources/js/datatables/helpers.js"></script>
 	<script src="../resources/js/lib/dom_utilities.js"></script>
 	<script src="../resources/js/lib/object_utilities.js"></script>

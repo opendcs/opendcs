@@ -21,7 +21,7 @@
 							<span class="font-weight-semibold">OpenDCS</span> - Sites
 						</h4>
 						<a href="#" class="header-elements-toggle text-default d-md-none"><i
-							class="icon-more"></i></a>
+							class="bi bi-three-dots-vertical"></i></a>
 					</div>
 				</div>
 			</div>
@@ -64,7 +64,7 @@
 
 <!-- Site modal -->
 <div id="modal_site" class="modal fade" tabindex="-1"
-	data-keyboard="false" data-backdrop="static">
+	data-bs-keyboard="false" data-bs-backdrop="static">
 	<div
 		class="modal-dialog modal-dialog-scrollable modal-med opendcs-modal-90">
 		<div class="modal-content">
@@ -232,10 +232,8 @@
 			</div>
 
 			<div class="modal-footer">
-				<!--<button type="button" class="btn btn-link" data-dismiss="modal">Close</button>-->
-				<!-- <button type="button" class="btn btn-danger  mr-auto" id="deleteSourceModalButton">Delete</button>-->
 				<button type="button" class="btn btn-secondary"
-					id="cancelSiteModalButton" data-dismiss="modal">Cancel</button>
+					id="cancelSiteModalButton" data-bs-dismiss="modal">Cancel</button>
 				<button type="button" class="btn btn-success"
 					id="saveSiteModalButton">Save</button>
 			</div>
@@ -246,10 +244,9 @@
 
 <jsp:include page="/resources/jsp/includes/decodes.jsp" />
 
-<script src="/webjars/jquery-validation/jquery.validate.min.js"></script>
 <script src="../resources/js/lib/time.js"></script>
 <script src="../resources/js/datatables/helpers.js"></script>
-<script src="/webjars/datatables/js/dataTables.min.js"></script>
+<script src="../resources/js/datatables/datatables.js"></script>
 <script src="../resources/js/lib/dom_utilities.js"></script>
 <script src="../resources/js/sites.js"></script>
 </html>

@@ -178,11 +178,11 @@
         <servlet-name>Error</servlet-name>
         <url-pattern>/portal/error</url-pattern>
     </servlet-mapping>
-    
+
     <servlet>
         <servlet-name>WebjarsServlet</servlet-name>
         <servlet-class>org.webjars.servlet.WebjarsServlet</servlet-class>
-        <load-on-startup>2</load-on-startup>
+        <load-on-startup>1</load-on-startup>
     </servlet>
     <servlet-mapping>
         <servlet-name>WebjarsServlet</servlet-name>

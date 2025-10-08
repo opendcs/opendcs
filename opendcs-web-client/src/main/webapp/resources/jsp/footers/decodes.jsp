@@ -19,8 +19,8 @@
 <div class="navbar navbar-expand-lg navbar-light">
 	<div class="text-center d-lg-none w-100">
 		<button type="button" class="navbar-toggler dropdown-toggle"
-			data-toggle="collapse" data-target="#navbar-footer">
-			<i class="icon-unfold mr-2"></i> Footer
+			data-bs-toggle="collapse" data-bs-target="#navbar-footer">
+			<i class="fa-chevron-down me-2"></i> Footer
 		</button>
 	</div>
 
@@ -34,7 +34,7 @@
 				   class="nav-link"
 				   target="_blank"
 				   rel="noopener">
-					<i class="icon-code"></i>
+					<i class="bi bi-code-slash"></i>
 					<span>API Swagger UI </span>
 				</a>
 		</ul>
@@ -54,3 +54,5 @@
 </script>
 
 <%-- /footer --%>
+
+<script src="${pageContext.request.contextPath}/resources/js/sidebar.js"></script>

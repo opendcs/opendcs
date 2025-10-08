@@ -15,17 +15,9 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log("dom_utilities.js");
-    var elems = Array.prototype.slice.call(document.querySelectorAll('.form-check-input-switchery'));
-    elems.forEach(function(html) {
-        var switchery = new Switchery(html);
-    });
 
-    if ($().select2) {
-        console.warn('Warning - select2.min.js is loaded.');
-        //Select with search
-        $('.select-search').select2();
-    }
 });
+
 function createElement(elementType, attributes, classes, innerHtml)
 {
     var element = $("<" + elementType + ">");

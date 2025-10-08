@@ -22,7 +22,7 @@
 							Entry
 						</h4>
 						<a href="#" class="header-elements-toggle text-default d-md-none"><i
-							class="icon-more"></i></a>
+							class="bi bi-three-dots-vertical"></i></a>
 					</div>
 				</div>
 			</div>
@@ -68,7 +68,7 @@
 
 <!-- Schedule Modal -->
 <div id="modal_schedule" class="modal fade" tabindex="-1"
-	data-keyboard="false" data-backdrop="static">
+	data-bs-keyboard="false" data-bs-backdrop="static">
 	<div class="modal-dialog modal-dialog-scrollable opendcs-modal-90">
 		<div class="modal-content">
 			<div class="modal-header bg-secondary">
@@ -86,11 +86,11 @@
 
 								<div class="form-group row">
 									<label class="col-form-label col-lg-4">Enabled</label>
-									<div class="col-lg-8 form-check form-check-switchery"
+									<div class="col-lg-8 form-check form-switch"
 										id="editCbtDiv">
 										<label class="form-check-label"> <input
 											type="checkbox" id="scheduleEntryEnabled"
-											class="form-check-input-switchery" data-fouc>
+											class="form-check-input" >
 										</label>
 
 									</div>
@@ -147,7 +147,7 @@
 												<label class="form-check-label exec-schedule-check"> <input
 													type="radio" name="runFreq"
 													class="form-check-input-styled-primary" value="continuous"
-													checked data-fouc> Run Continuously
+													checked > Run Continuously
 												</label>
 											</div>
 										</div>
@@ -159,7 +159,7 @@
 												<label class="form-check-label exec-schedule-check"> <input
 													type="radio" name="runFreq"
 													class="form-check-input-styled-primary" value="once"
-													data-fouc> Run Once
+													> Run Once
 												</label>
 											</div>
 											<div class="col-md-9">
@@ -184,7 +184,7 @@
 												<label class="form-check-label exec-schedule-check"> <input
 													type="radio" name="runFreq"
 													class="form-check-input-styled-primary" value="runevery"
-													data-fouc> Run Every
+													> Run Every
 												</label>
 											</div>
 											<div class="col-md-9">
@@ -224,10 +224,8 @@
 			</div>
 
 			<div class="modal-footer mt-3">
-				<!--<button type="button" class="btn btn-link" data-dismiss="modal">Close</button>-->
-				<!-- <button type="button" class="btn btn-danger  mr-auto" id="deleteSourceModalButton">Delete</button> -->
 				<button type="button" class="btn btn-secondary"
-					id="cancelModalButton" data-dismiss="modal">Cancel</button>
+					id="cancelModalButton" data-bs-dismiss="modal">Cancel</button>
 				<button type="button" class="btn btn-success" id="saveModalButton">Save</button>
 			</div>
 		</div>
@@ -238,9 +236,7 @@
 
 <jsp:include page="/resources/jsp/includes/decodes.jsp" />
 
-<script src="/webjars/switchery/switchery.js"></script>
-<script src="/webjars/bootstrap-switch/js/bootstrap-switch.min.js"></script>
-<script src="/webjars/uniform/jquery.uniform.min.js"></script>
+
 <script src="../resources/js/schedule.js"></script>
 <script src="../resources/js/lib/time.js"></script>
 <script src="../resources/js/datatables/helpers.js"></script>

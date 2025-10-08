@@ -43,8 +43,7 @@ var dtActions = [
         "onclick": "deleteRow(event, this)"
     },
     {
-        "type": "copy",
-        "onclick": "copyRow(event, this)"
+        "type": "copy", "params": {}
     }];
 
 /**
@@ -116,11 +115,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     "urlIdName": "appid"
             };
             var actions = [{
-                "type": "delete",
-                "onclick": `deleteOpendcsObject_default(event, this, ${JSON.stringify(params)})`
+                "type": "delete", "params": params
             },{
-                "type": "copy",
-                "onclick": "copyRow(event, this)"
+                "type": "copy", "params": {}
             }];
             var newRow = [curRow.appId, curRow.appName, "", curRow.comment, createActionDropdown(actions)];
             mainTable.row.add(newRow);
@@ -348,3 +345,11 @@ function copyRow(event, clickedLink)
     event.stopPropagation();
     openMainTableDialog(clickedLink.closest("tr"), true);
 }
+
+// Register page-specific copy handler with new delegated dropdown API
+window.OpenDCS = window.OpenDCS || {};
+OpenDCS.onCopyRow = function(e, el, params) {
+    if (typeof copyRow === "function") {
+        return copyRow(e, el);
+    }
+};

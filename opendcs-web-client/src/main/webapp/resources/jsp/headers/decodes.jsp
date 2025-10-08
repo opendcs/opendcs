@@ -1,5 +1,5 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-	pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%--
   ~  Copyright 2023 OpenDCS Consortium
   ~
@@ -19,12 +19,20 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <link rel="icon" type="image/png" href="../resources/img/odcs-favicon.png"/>
-  <%-- Global stylesheets --%>
-  <link href="../resources/css/select.dataTables.css" rel="stylesheet" type="text/css"/>
-  <link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
-  <link href="/webjars/bootstrap-daterangepicker/css/bootstrap-daterangepicker.css" rel="stylesheet" type="text/css"/>
-  <link href="../resources/css/main.css" rel="stylesheet" type="text/css"/>
-  <%-- <meta http-equiv="Content-Security-Policy" content="script-src 'self'"> --%>
+  <link rel="icon" type="image/png" href="<c:url value='/resources/img/odcs-favicon.png'/>"/>
+
+  <!-- Styles -->
+  <link href="<c:url value='/webjars/bootstrap/5.3.8/css/bootstrap.min.css'/>" rel="stylesheet" type="text/css"/>
+
+  <link href="<c:url value='/webjars/datatables.net-bs5/1.13.8/css/dataTables.bootstrap5.min.css'/>" rel="stylesheet" type="text/css"/>
+  <link href="<c:url value='/webjars/datatables.net-responsive-bs5/2.5.0/css/responsive.bootstrap5.min.css'/>" rel="stylesheet" type="text/css"/>
+  <link href="<c:url value='/webjars/datatables.net-buttons-bs5/2.4.2/css/buttons.bootstrap5.min.css'/>" rel="stylesheet" type="text/css"/>
+  <link href="<c:url value='/webjars/datatables.net-select-bs5/1.4.0/css/select.bootstrap5.min.css'/>" rel="stylesheet" type="text/css"/>
+
+  <link href="<c:url value='/webjars/bootstrap-daterangepicker/3.1.0/daterangepicker.css'/>" rel="stylesheet" type="text/css"/>
+
+  <link href="<c:url value='/resources/css/main.css'/>" rel="stylesheet" type="text/css"/>
+  <link href="<c:url value='/resources/css/opendcs-shim.css'/>" rel="stylesheet" type="text/css"/>
+
   <title>OpenDCS Web Client</title>
 </head>

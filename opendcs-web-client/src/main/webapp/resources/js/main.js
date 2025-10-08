@@ -1,9 +1,11 @@
 document.addEventListener("DOMContentLoaded", function(event) {
 	console.log("loaded main.js.");
-	
-	//This runs the logout functionality.  It is in main.js, which is loaded 
+
+	//This runs the logout functionality.  It is in main.js, which is loaded
 	//into any page.
-	$("#logoutButton").on("click", function() {
+	$(document).on('click', '#logoutButton', function (e) {
+		e.preventDefault();
+		console.log("Logging out.");
         sessionStorage.removeItem("token");
         window.location = "login";
     });
