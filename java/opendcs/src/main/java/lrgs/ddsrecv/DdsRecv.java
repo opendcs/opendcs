@@ -1,30 +1,36 @@
 /*
- *  $Id$
- *
- *  This is open-source software written by ILEX Engineering, Inc., under
- *  contract to the federal government. You are free to copy and use this
- *  source code for your own purposes, except that no part of the information
- *  contained in this file may be claimed to be proprietary.
- *
- *  Except for specific contractual terms between ILEX and the federal
- *  government, this source code is provided completely without warranty.
- *  For more information contact: info@ilexeng.com
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.ddsrecv;
 
 import ilex.util.EnvExpander;
 import ilex.util.IDateFormat;
-import ilex.util.Logger;
 
 import java.io.File;
 import java.util.Date;
 import java.util.Iterator;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.MDC;
+import org.slf4j.MDC.MDCCloseable;
+
 import lrgs.archive.MsgArchive;
 import lrgs.common.BadConfigException;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
-import lrgs.common.NetworkList;
 import lrgs.common.SearchCriteria;
 import lrgs.lrgsmain.LrgsConfig;
 import lrgs.lrgsmain.LrgsInputException;
@@ -46,6 +52,7 @@ import lrgs.lrgsmain.LrgsMain;
  */
 public class DdsRecv extends Thread implements LrgsInputInterface
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /** Module name */
     public static String module = "DdsRecv";
 
@@ -145,7 +152,7 @@ public class DdsRecv extends Thread implements LrgsInputInterface
             rt = System.currentTimeMillis() - 3600000L;
         }
         lastMsgRecvTime = rt;
-        Logger.instance().debug1("LastMsgRecvTime set to " + lastMsgRecvTime);
+        log.debug("{}: LastMsgRecvTime set to {}", module, lastMsgRecvTime);
     }
 
     /**
@@ -153,34 +160,37 @@ public class DdsRecv extends Thread implements LrgsInputInterface
      */
     public void run()
     {
-        Logger.instance().debug1(module + " starting.");
-
-        checkConfig();
-
-        recvConList.start();
-        long lastCfgCheck = 0L;
-        statusCode = DL_STRSTAT;
-        status = "Active";
-        while (!isShutdown)
+        try (MDCCloseable mdc = MDC.putCloseable("LrgsInput", module))
         {
-            if (System.currentTimeMillis() - lastCfgCheck > cfgCheckTime)
-            {
-                checkConfig();
+            log.trace("starting.");
 
-                lastCfgCheck = System.currentTimeMillis();
-            }
-            if (LrgsConfig.instance().enableDdsRecv)
+            checkConfig();
+
+            recvConList.start();
+            long lastCfgCheck = 0L;
+            statusCode = DL_STRSTAT;
+            status = "Active";
+            while (!isShutdown)
             {
-                status = "Active";
-                statusCode = DL_STRSTAT;
-                getSomeData();
-            }
-            else
-            {
-                status = "Disabled";
-                statusCode = DL_DISABLED;
-                // Logger.instance().debug3(module + " not enabled.");
-                try { sleep(1000L); } catch (InterruptedException ex) {}
+                if (System.currentTimeMillis() - lastCfgCheck > cfgCheckTime)
+                {
+                    checkConfig();
+
+                    lastCfgCheck = System.currentTimeMillis();
+                }
+                if (LrgsConfig.instance().enableDdsRecv)
+                {
+                    status = "Active";
+                    statusCode = DL_STRSTAT;
+                    getSomeData();
+                }
+                else
+                {
+                    status = "Disabled";
+                    statusCode = DL_DISABLED;
+                    // Logger.instance().debug3(module + " not enabled.");
+                    try { sleep(1000L); } catch (InterruptedException ex) {}
+                }
             }
         }
     }
@@ -199,24 +209,20 @@ public class DdsRecv extends Thread implements LrgsInputInterface
             if (con == null)
             {
                 if (isSecondary)
-                    Logger.instance().debug3(
-                        module + ":" + EVT_NO_CONNECTIONS
-                            + " No 'Secondary Group' DDS Connections available to receive data.");
+                    log.trace("{}:{} No 'Secondary Group' DDS Connections available to receive data.",
+                              module, EVT_NO_CONNECTIONS);
                 else
-                    Logger.instance().debug3(
-                        module + ":" + EVT_NO_CONNECTIONS
-                            + " No 'Primary Group' DDS Connections available to receive data.");
+                    log.trace(" No 'Primary Group' DDS Connections available to receive data.",
+                              module, EVT_NO_CONNECTIONS);
 
                 try { sleep(1000L); } catch (InterruptedException ex) {}
                 return;
             }
-            Logger.instance().debug3(
-                module + ":" + (-EVT_NO_CONNECTIONS) + " DDS Connections ARE available to receive data.");
+            log.trace("{}:{} DDS Connections ARE available to receive data.", module, -EVT_NO_CONNECTIONS);
             // We now have a new connection. Send it the search criteria.
             SearchCriteria searchCrit = buildSearchCrit();
-            Logger.instance().debug1(
-                module + " Sending searchcrit to connection '" + con.getName() + "': "
-                    + searchCrit.toString());
+            log.debug("{} Sending searchcrit to connection '{}': {}",
+                      module, con.getName(), searchCrit.toString());
             if (!con.sendSearchCriteria(searchCrit))
             {
                 recvConList.currentConnection = null;
@@ -225,7 +231,6 @@ public class DdsRecv extends Thread implements LrgsInputInterface
         }
         try
         {
-            // Logger.instance().info("trying getDcpMsg from " + con.getName());
             DcpMsg dcpMsg = con.getDcpMsg();
             if (dcpMsg != null)
             {
@@ -243,9 +248,10 @@ public class DdsRecv extends Thread implements LrgsInputInterface
         {
             if (!isShutdown)
             {
-                String msg = "- Connection to " + con.getName()
-                    + " failed -- will switch to different connection.";
-                Logger.instance().warning(module + ":" + EVT_CONNECTION_FAILED + msg);
+                log.atWarn()
+                   .setCause(ex)
+                   .log("{}- Connection to {} failed -- will switch to different connection.",
+                       EVT_CONNECTION_FAILED, con.getName());
             }
             recvConList.currentConnection = null;
         }
@@ -307,8 +313,7 @@ public class DdsRecv extends Thread implements LrgsInputInterface
                         if (tn != -1)
                             searchCrit.addSource(tn);
                         else
-                            Logger.instance().warning(module + " invalid source specified '"
-                                + nga.getNetlistName() + "'");
+                            log.warn("{} invalid source specified '{}'", module, nga.getNetlistName());
                     }
                     else if (nga.getNetworkList() != null)
                         searchCrit.addNetworkList(nga.getNetworkList().makeFileName());
@@ -320,9 +325,9 @@ public class DdsRecv extends Thread implements LrgsInputInterface
                 searchCrit.addNetworkList("<production>");
         }
 
-        catch (Exception e)
+        catch (Exception ex)
         {
-            // TODO: handle exception
+            log.atError().setCause(ex).log("Unable to build search criteria.");
         }
         return searchCrit;
     }
@@ -333,7 +338,7 @@ public class DdsRecv extends Thread implements LrgsInputInterface
      */
     protected void checkConfig()
     {
-        Logger.instance().debug3(module + " checkConfig");
+        log.trace("{} checkConfig", module);
         String fn = EnvExpander.expand(LrgsConfig.instance().ddsRecvConfig);
         File cf = new File(fn);
 
@@ -350,17 +355,16 @@ public class DdsRecv extends Thread implements LrgsInputInterface
                     {
                         ddsRecvSettings.setFromFile(fn);
                         ddsRecvSettings.setReloaded(true);
-                        Logger.instance().info(
-                            module + ":" + (-EVT_BAD_CONFIG) + " Loaded Config File '" + cf + "'");
+                        log.info("{}:{} Loaded Config File '{}'", module, (-EVT_BAD_CONFIG), cf);
 
                     }
 
                 }
                 catch (BadConfigException ex)
                 {
-                    Logger.instance().failure(
-                        module + ":" + EVT_BAD_CONFIG + " Cannot read DDS Recv Config File '" + cf + "': "
-                            + ex);
+                    log.atError()
+                       .setCause(ex)
+                       .log("{}:{} Cannot read DDS Recv Config File '{}'", module, EVT_BAD_CONFIG, cf);
                 }
             }
 
@@ -373,12 +377,12 @@ public class DdsRecv extends Thread implements LrgsInputInterface
                     {
                         sleep(5000L);
                     }
-                    catch (Exception ex2)
+                    catch (Exception ex)
                     {
 
-                        Logger.instance().failure(
-                            module + ":" + EVT_BAD_CONFIG + " Cannot read DDS Recv Config File '" + cf
-                                + "': " + ex2);
+                        log.atError()
+                           .setCause(ex)
+                           .log("{}:{} Cannot read DDS Recv Config File '{}'", module, EVT_BAD_CONFIG, cf);
                     }
                     continue;
                 }
@@ -538,7 +542,7 @@ public class DdsRecv extends Thread implements LrgsInputInterface
         if (now/MS_PER_HR > lastStatusTime/MS_PER_HR)  // Hour just changed
         {
             String s = "ddsMinHourly";
-            Logger.instance().debug3("Looking for property '" + s + "'");
+            log.trace("Looking for property '{}'", s);
             int minHourly = LrgsConfig.instance().ddsMinHourly;
             if (minHourly > 0                          // Feature Enabled
              && enableTime != 0L                       // Currently Enabled
@@ -546,17 +550,15 @@ public class DdsRecv extends Thread implements LrgsInputInterface
             {
                 if (numThisHour < minHourly)
                 {
-                    Logger.instance().warning(module + " " + getInputName()
-                        + " for hour ending " + new Date((now / MS_PER_HR) * MS_PER_HR)
-                        + " number of messages received=" + numThisHour
-                        + " which is under minimum threshold of " + minHourly);
+                    log.warn("{} {} for hour ending {} number of messages received={} " +
+                             "which is under minimum threshold of {}",
+                             module, getInputName(), new Date((now / MS_PER_HR) * MS_PER_HR), numThisHour, minHourly);
                 }
                 if (numThisHour < (numLastHour/2))
                 {
-                    Logger.instance().warning(module + " " + getInputName()
-                        + " for hour ending " + new Date((now / MS_PER_HR) * MS_PER_HR)
-                        + " number of messages received=" + numThisHour
-                        + " which is under half previous hour's total of " + numLastHour);
+                    log.warn("{} {} for hour ending {} number of messages received={} " +
+                             "which is under half previous hour's total of {}",
+                             module, getInputName(), new Date((now / MS_PER_HR) * MS_PER_HR), numThisHour, numLastHour);
                 }
             }
 

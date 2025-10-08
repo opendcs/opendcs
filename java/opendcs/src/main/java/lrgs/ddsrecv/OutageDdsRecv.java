@@ -1,33 +1,29 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.ddsrecv;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Date;
 
-import ilex.util.EnvExpander;
 import ilex.util.IDateFormat;
-import ilex.util.Logger;
-import lrgs.common.BadConfigException;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
-import lrgs.common.NetworkList;
 import lrgs.common.SearchCriteria;
 import lrgs.lrgsmain.LrgsConfig;
 import lrgs.lrgsmain.LrgsMain;
-import lrgs.lrgsmain.LrgsInputException;
 import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.archive.MsgArchive;
 import lrgs.db.Outage;
@@ -45,7 +41,9 @@ receives data that has been dropped.
 <p>
 This object is used when the configuration "enableNetbackRecv" variable
 is set to true. If false, the base class 'DdsRecv' module is used.
+@deprecated outage system no longer supported
 */
+@Deprecated
 public class OutageDdsRecv
 	extends DdsRecv
 {
@@ -58,7 +56,7 @@ public class OutageDdsRecv
 	private boolean domsatSeqRecvd[] = null;
 
 	/**
-	 * Constructor 
+	 * Constructor
 	 * @param lrgsMain the program main object.
 	 * @param msgArchive used to store incoming messages.
 	 */
@@ -81,16 +79,12 @@ public class OutageDdsRecv
 	{
 		if (rt == 0L)
 		{
-			Logger.instance().info(module + " Initializing for first time. Will"
-				+ " start retrieval 1 hour ago.");
 			rt = System.currentTimeMillis() - 3600000L;
 		}
-		else
-			Logger.instance().info(module + " Initializing at time "
-				+ (new Date(rt)));
+
 
 		super.setLastMsgRecvTime(rt);
-	
+
 		// Assert a new System outage from where we left off.
 		Outage sysOutage = new Outage();
 		sysOutage.setOutageType(LrgsConstants.systemOutageType);
@@ -99,12 +93,12 @@ public class OutageDdsRecv
 		dbThread.assertOutage(sysOutage);
 	}
 
-	/** 
- 	* Thread run method 
+	/**
+ 	* Thread run method
 	*/
 	public void run()
 	{
-		Logger.instance().debug1(module + " starting.");
+
 		checkConfig();
 
 		recvConList.start();
@@ -115,15 +109,13 @@ public class OutageDdsRecv
 		 && !cfg.enableDrgsRecv
 		 && !cfg.enableDomsatRecv)
 		{
-			Logger.instance().warning(module +
-				" No satellite links enabled. Asserting continuous real-time "
-				+ "outage.");
+
 			Outage rtOut = new Outage();
 			rtOut.setOutageType(LrgsConstants.realTimeOutageType);
 			rtOut.setBeginTime(new Date());
 			dbThread.assertOutage(rtOut);
 		}
-		
+
 		statusCode = DL_STRSTAT;
 		status = "Waiting";
 		while(!isShutdown)
@@ -183,8 +175,7 @@ public class OutageDdsRecv
 	{
 		if (currentOutage != null)
 		{
-			Logger.instance().info(module + " Aborting outage: " + currentOutage
-				+ ", newstat=" + newstat);
+
 			status = "Waiting";
 			char stat = currentOutage.getStatusCode();
 			if (stat != newstat)
@@ -196,7 +187,7 @@ public class OutageDdsRecv
 				{
 					// For DOMSAT outages partially recovered, adjust start
 					// & end sequence nums if possible.
-					if (currentOutage.getOutageType() 
+					if (currentOutage.getOutageType()
 						== LrgsConstants.domsatGapOutageType
 					 && newstat == LrgsConstants.outageStatusPartial)
 					{
@@ -212,9 +203,7 @@ public class OutageDdsRecv
 						int beg = currentOutage.getBeginSeq();
 						currentOutage.setBeginSeq(beg + first);
 						currentOutage.setEndSeq(beg + last);
-						Logger.instance().info(
-		"DOMSAT outage range adjusted to " + currentOutage.getBeginSeq()
-							+ " ... " + currentOutage.getEndSeq());
+
 					}
 					dbThread.changeOutageStatus(currentOutage, newstat);
 				}
@@ -262,7 +251,7 @@ public class OutageDdsRecv
 			outageCrit.seqStart = currentOutage.getBeginSeq();
 			outageCrit.seqEnd = currentOutage.getEndSeq();
 			domsatOutageTried = new ArrayList<DdsRecvConnection>();
-			domsatSeqRecvd = 
+			domsatSeqRecvd =
 				new boolean[(outageCrit.seqEnd - outageCrit.seqStart) + 1];
 			for(int i=0; i<domsatSeqRecvd.length; i++)
 				domsatSeqRecvd[i] = false;
@@ -270,7 +259,7 @@ public class OutageDdsRecv
 			break;
 		case LrgsConstants.damsntOutageType:
 			{
-				LrgsInputInterface lii = 
+				LrgsInputInterface lii =
 					lrgsMain.getLrgsInputById(currentOutage.getSourceId());
 				if (lii instanceof DrgsRecvMsgThread)
 				{
@@ -299,7 +288,7 @@ public class OutageDdsRecv
 			status = "R:DcpOtg";
 			break;
 		}
-		Logger.instance().info("OutageDdsRecv.initOutage: " + currentOutage);
+
 	}
 
 	// Called from getSomeData() when we have selected a new connection.
@@ -370,7 +359,7 @@ public class OutageDdsRecv
 			break;
 		case LrgsConstants.domsatGapOutageType:
 		{
-			String conName = recvConList.currentConnection != null ? 
+			String conName = recvConList.currentConnection != null ?
 				recvConList.currentConnection.getName() : "(?)";
 			if (!checkDomsatResults(conName))
 				// Force it to try same outage with different connection.
@@ -399,7 +388,7 @@ public class OutageDdsRecv
 			break;
 		case LrgsConstants.missingDCPMsgOutageType:
 			abortCurrentOutage(
-				numRealMsgsRecovered > 0 ? 
+				numRealMsgsRecovered > 0 ?
 					LrgsConstants.outageStatusRecovered :
 					LrgsConstants.outageStatusFailed);
 			break;
@@ -417,14 +406,14 @@ public class OutageDdsRecv
 		if (currentOutage.getOutageType() != LrgsConstants.domsatGapOutageType)
 			return super.getConnection();
 
-		DdsRecvConnection con = 
+		DdsRecvConnection con =
 			recvConList.getUntriedConnection(domsatOutageTried);
 		if (con != null)
 			domsatOutageTried.add(con);
 		else // No untried connections available.
 		{
 			checkDomsatResults("final");
-	
+
 			char code = (totalNumRecovered > 0)
 				? LrgsConstants.outageStatusPartial
 				: LrgsConstants.outageStatusFailed;
@@ -450,12 +439,7 @@ public class OutageDdsRecv
 			else
 				numMissed++;
 		}
-		Logger.instance().info("DOMSAT Outage response (" 
-			+ conName + ") "
-			+ " dropped=" + domsatSeqRecvd.length
-			+ ", Seq#Recvd=" + numRecvd 
-			+ ", Seq#Missed=" + numMissed
-			+ ", totalRecovered=" + totalNumRecovered);
+
 
 		return totalNumRecovered >= domsatSeqRecvd.length;
 	}
