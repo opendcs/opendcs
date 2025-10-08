@@ -80,9 +80,7 @@
                             <label data-mediumtype="polled-tcp" class="col-form-label col-lg-3 text-right">1st Sample Time</label>
                             <div class="col-lg-6 input-group">
                                 <span class="input-group-prepend">
-                                    <span class="input-group-text">
-                                        <i class="icon-watch2"></i>
-                                    </span>
+                                    <span class="input-group-text"><i class="bi bi-clock"></i></span>
                                 </span>
                                 <input type="text" class="form-control" id="firstSampleTime" value="00:00:00"/>
                             </div>
@@ -92,9 +90,7 @@
                             <label data-mediumtype="polled-tcp" class="col-form-label col-lg-3 text-right">Sampling Interval</label>
                             <div class="col-lg-6 input-group">
                                 <span class="input-group-prepend">
-                                    <span class="input-group-text">
-                                        <i class="icon-watch2"></i>
-                                    </span>
+                                    <span class="input-group-text"><i class="bi bi-clock"></i></span>
                                 </span>
                                 <input type="text" class="form-control" id="samplingInterval" value="00:00:00"/>
                             </div>
@@ -103,19 +99,8 @@
                         <div class="form-group row">
                             <div class="card col-lg-12 p-3">
                                 <table id="sensorPropertiesTable" class="table table-hover datatable-responsive co-8 border">
-                                    <caption class="captionTitleCenter">Properties
-											
-                                                                            
-                                                                            
-                                                                        
-                                                                    
-                                                                
-                                                            
-                                                        
-                                                    
-                                                
-                                            
-                                        
+                                    <caption class="captionTitleCenter">
+                                        Properties
                                         <button class="btn btn-secondary float-right captionButton" id="addSensorPropertyButton">+</button>
                                     </caption>
                                     <thead>

@@ -17,7 +17,7 @@
 
 	<body>
 
-		<jsp:include page="/resources/jsp/menus/decodes/main.jsp" />   
+			<%@include file="/WEB-INF/common/top-bar.jspf" %>
 
    		<!-- Page content -->
    		<div class="page-content">
@@ -79,7 +79,7 @@
     <!-- /page content -->
 	<%@include file="/WEB-INF/common/scripts.jspf" %>
 	<script src="../resources/js/login.js"></script>
-<link rel="stylesheet" type="text/css" href="../resources/css/login-form.css">
+	<link rel="stylesheet" type="text/css" href="../resources/css/login-form.css">
 </body>
 <!-- /theme JS files -->
 	<% if (Objects.equals(authType, "sso") && authBasePath != null) { %>

@@ -12,8 +12,8 @@
 <script src="/webjars/d3js/d3.min.js"></script>
 
 <!-- Date handling -->
-<script src="/webjars/moment/min/moment.min.js"></script>
-<script src="/webjars/bootstrap-daterangepicker/daterangepicker.js"></script>
+<script src="/webjars/momentjs/moment.min.js"></script>
+<script src="/webjars/bootstrap-daterangepicker/js/bootstrap-daterangepicker.js"></script>
 
 <%-- Datatables files --%>
 <script src="/webjars/datatables.net/js/jquery.dataTables.min.js"></script>
@@ -44,3 +44,12 @@
 <%@include file="/WEB-INF/common/modals/waiting.jspf" %>
 <%@include file="/WEB-INF/common/modals/notification.jspf" %>
 <%@include file="/WEB-INF/common/modals/yesno.jspf" %>
+
+<!-- API base -->
+<script>
+	(function () {
+		var origin = window.location.origin;
+		var apiBasePath = "<%= getServletConfig().getServletContext().getInitParameter("api_base_path") %>";
+		window.API_URL = new URL(apiBasePath, origin).href;
+	})();
+</script>

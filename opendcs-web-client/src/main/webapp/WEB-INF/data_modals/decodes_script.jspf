@@ -69,10 +69,10 @@
                             <legend class="text-uppercase font-size-sm font-weight-bold">Sample Message</legend>
                             <ul class="nav nav-tabs">
                                 <li class="nav-item">
-                                    <a href="#lrgsTab" class="nav-link rounded-top active" data-toggle="tab">Load From LRGS</a>
+                                    <a href="#lrgsTab" class="nav-link rounded-top active" data-bs-toggle="tab">Load From LRGS</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="#fileTab" class="nav-link rounded-top" data-toggle="tab">Load From File</a>
+                                    <a href="#fileTab" class="nav-link rounded-top" data-bs-toggle="tab">Load From File</a>
                                 </li>
                             </ul>
                             <div class="tab-content">

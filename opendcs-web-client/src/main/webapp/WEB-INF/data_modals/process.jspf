@@ -37,7 +37,7 @@
                                         <div class="col-lg-2 float-left">
                                             <div class="form-check form-switch">
                                                 <label class="form-check-label">
-                                                    <input type="checkbox" id="manualEditCheckbox" class="form-check-input" data-bs-focus="true"/>
+                                                    <input type="checkbox" id="manualEditCheckbox" class="form-check-input"/>
                                                 </label>
                                             </div>
                                         </div>

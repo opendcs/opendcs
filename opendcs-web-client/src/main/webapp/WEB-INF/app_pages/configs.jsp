@@ -53,8 +53,7 @@
 			</div> <!-- /main content -->
 		</div> <!-- /page content -->
 		<%@include file="/WEB-INF/common/scripts.jspf" %> 
-		<script src="/webjars/momentjs/moment.min.js"></script>
-		<script src="/webjars/bootstrap-daterangepicker/js/bootstrap-daterangepicker.js"></script>
+
 		<script src="../resources/js/plugins/pickers/anytime.min.js"></script>
 		<script src="/webjars/pickadate.js/picker.js"></script>
 		<script src="/webjars/pickadate.js/picker.date.js"></script>

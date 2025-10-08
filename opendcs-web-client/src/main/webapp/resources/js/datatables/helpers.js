@@ -638,7 +638,7 @@ function makeTableInline(tableId, inlineOptions, runAtEndClick, runAtEndFocusOut
 
                                 var objHtml = `
                                     <div data-type="special_select" id="${inputId}">
-                                    <select class="form-control select-search" data-fouc>
+                                    <select class="form-control select-search">
 
                                     ${optionGroupHtml}
 

@@ -26,9 +26,7 @@
                     <div class="text-right col-lg-1">
                         <div class="form-check form-switch">
                             <label class="form-check-label">
-                                <input type="checkbox"
-									id="isProductionSwitch" class="form-check-input"
-									data-focus="true"/>
+                                <input type="checkbox" id="isProductionSwitch" class="form-check-input"/>
                             </label>
                         </div>
                     </div>

@@ -136,8 +136,7 @@
                                 <label class="form-check-label">
                                     <input
 										onclick="doLoginClicked(event, this)" type="checkbox"
-										id="doLoginEnabled" class="form-check-input"
-										data-bs-focus="true"/>
+										id="doLoginEnabled" class="form-check-input"/>
                                 </label>
                             </div>
                         </div>
@@ -245,8 +244,7 @@
                                 <label class="form-check-label">
                                     <input
 										onclick="doLoginClicked(event, this)" type="checkbox"
-										id="doLoginEnabled" class="form-check-input"
-										data-bs-focus="true"/>
+										id="doLoginEnabled" class="form-check-input"/>
                                 </label>
                             </div>
                         </div>

@@ -28,7 +28,7 @@ public class Error extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // reading the user input
 
-        String destination = "/error.jsp";
+        String destination = "/WEB-INF/app_pages/error.jsp";
 
         RequestDispatcher rd = getServletContext().getRequestDispatcher(destination);
         rd.forward(request, response);           

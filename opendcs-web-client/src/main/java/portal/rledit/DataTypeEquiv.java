@@ -27,7 +27,7 @@ import portal.PortalBase;
  * @author Will Jonassen
  *
  */
-@WebServlet("/data_type_equiv.jsp")
+@WebServlet("/data_type_equiv")
 public class DataTypeEquiv extends PortalBase {
 
     /**

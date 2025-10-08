@@ -22,13 +22,10 @@
                                         <div class="col-lg-9">
                                             <select id="siteSelectbox" name="siteSelectbox"
 												data-placeholder="Select a site"
-												class="form-control select-clear" data-bs-focus="true">
+												class="form-control select-clear">
                                                 <option></option>
                                             </select>
                                         </div>
-                                        <!-- 
-										<div class="col-lg-9"><select id="siteSelectbox" name="siteSelectbox" class="form-control"><option value=""></option></select></div>
-										-->
                                     </div>
                                     <div class="form-group row">
                                         <label class="col-form-label col-lg-3">Designator</label>
@@ -43,14 +40,14 @@
                                         <div class="col-lg-8">
                                             <select id="configSelectbox" name="configSelectbox"
 												data-placeholder="Select a config"
-												class="form-control select-clear" data-bs-focus="true">
+												class="form-control select-clear">
                                                 <option></option>
                                             </select>
                                         </div>
                                         <div class="col-lg-1">
                                             <span class="w-100 h-100 pointerCursor">
                                                 <i
-												id="editConfig" class="icon-pencil7"></i>
+												id="editConfig" class="bi bi-pencil"></i>
                                             </span>
                                         </div>
                                     </div>
@@ -77,7 +74,7 @@
                                             <label class="form-check-label">
                                                 <input
 												type="checkbox" id="isProduction"
-												class="form-check-input" data-bs-focus="true"/>
+												class="form-check-input"/>
                                             </label>
                                         </div>
                                     </div>
@@ -90,13 +87,6 @@
 									class="table table-hover datatable-responsive co-8 border">
                                     <caption class="captionTitleCenter">
 										Properties
-										
-                                                    
-                                                    
-                                                
-                                                
-                                            
-                                        
                                         <button function="addBlankRow" 
 											class="btn btn-secondary float-right captionButton mt-1"
 											id="addPropertyButton">+</button>
@@ -120,14 +110,6 @@
 									class="table table-hover datatable-responsive border tablerow-cursor">
                                     <caption id="siteNamesCaption" class="captionTitleCenter">
 										Platform Sensor Information
-										
-                                                    
-                                                    
-                                                
-                                                
-                                            
-                                        
-                                        <!-- <button class="btn btn-secondary float-right captionButton" id="addSensorButton">+</button> -->
                                     </caption>
                                     <thead>
                                         <tr>
@@ -152,13 +134,6 @@
 									class="table table-hover datatable-responsive co-8 border tablerow-cursor">
                                     <caption class="captionTitleCenter">
 										Transport Media
-										
-                                                    
-                                                    
-                                                
-                                                
-                                            
-                                        
                                         <button class="btn btn-secondary float-right captionButton"
 											id="addTransportMediaButton">+</button>
                                     </caption>
