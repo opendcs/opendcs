@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.common;
 
@@ -13,6 +25,9 @@ import java.util.Date;
 import java.util.Calendar;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.archive.XmitWindow;
 import decodes.consumer.HtmlFormatter;
 import decodes.db.Constants;
@@ -21,13 +36,13 @@ import ilex.util.ArrayUtil;
 import ilex.util.ByteUtil;
 import ilex.util.IDateFormat;
 import ilex.util.TwoDigitYear;
-import ilex.util.Logger;
 
 /**
 Data Structure that holds a single DCP Message
 */
 public class DcpMsg
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	 * Primary database key for this record. This will be undefinedId for messages
 	 * not stored in a database.
@@ -39,7 +54,7 @@ public class DcpMsg
 	  array of bytes.
 	*/
 	private byte[] data = null;
-	
+
 	/** The flag bits */
 	public int flagbits = 0;
 
@@ -68,43 +83,43 @@ public class DcpMsg
 
 	/** The database ID of the data source from whence this message came */
 	private int dataSourceId;
-	
+
 	/** GOES time stamp from header, or SBD session time. */
 	private Date xmitTime;
-	
+
 	/** Iridium SBD Mobile Terminated Msg Sequence Number */
 	private int mtmsm;
 
 	/** Iridium SBD CDR Reference Number */
 	private long cdrReference;
-	
+
 	/** For GOES: DCP Address, For Iridium SBD, International Mobile Equip ID */
 	private DcpAddress dcpAddress = null;
-	
+
 	/** For Iridium SBD, store the session status. */
 	private int sessionStatus = 0;
-	
+
 	/** reserved for future use. */
 	public byte reserved[];
 
-	/** 
+	/**
 	 * Max length that can be stored. The upper limit is based on:
 	 * - 5 digit length field in DDS imposes limit to 99800
 	 */
 	public static final int MAX_DATA_LENGTH = 99800;
-	
+
 	/** transient storage for DRGS interface. Original address is NOT saved. */
 	private DcpAddress origAddress = null;
-	
+
 	/** transient storage for battery voltage, used by DCP Monitor. */
 	private double battVolt = 0.0;
-	
+
 	/** Failure code for non-GOES messages */
 	private char failureCode = (char)0;
-	
+
 	/** Set after header is parsed */
 	private int headerLength = 0;
-	
+
 	/** Max number of failure codes any messge can have */
 	public static final int MAX_FAILURE_CODES = 8;
 
@@ -112,30 +127,30 @@ public class DcpMsg
 	private char xmitFailureCodes[] = new char[MAX_FAILURE_CODES];
 
 	private XmitWindow xmitWindow = null;
-	
+
 	private int msgLength = 0;
-	
+
 	/** When read from DCP Mon database, this indicates the table it was read from */
 	private int dayNumber = 0;
-	
+
 	// New fields added for OpenDCS 6.6 LRGS HRIT and DAMS-NT
 	private double goesSignalStrength = 0.;
 	private double goesFreqOffset = 0.;
 	private double goesGoodPhasePct = 0.;
 	private double goesPhaseNoise = 0.;
-	
+
 	private static SimpleDateFormat timeSdfSec = new SimpleDateFormat("HH:mm:ss");
 	private static SimpleDateFormat timeSdfMS = new SimpleDateFormat("HH:mm:ss.SSS");
 	static NumberFormat bvFormat = NumberFormat.getNumberInstance();
 	static
 	{
-		timeSdfSec.setTimeZone(TimeZone.getTimeZone("UTC")); 
-		timeSdfMS.setTimeZone(TimeZone.getTimeZone("UTC")); 
+		timeSdfSec.setTimeZone(TimeZone.getTimeZone("UTC"));
+		timeSdfMS.setTimeZone(TimeZone.getTimeZone("UTC"));
 		bvFormat.setGroupingUsed(false);
 		bvFormat.setMaximumFractionDigits(1);
 	}
 
-	
+
 	// Constructors ===============================================
 
 	/** Allocate an empty DCP message */
@@ -153,8 +168,8 @@ public class DcpMsg
 			xmitFailureCodes[i] = '\0';
 	}
 
-	/** 
-	  Use the passed byte array to allocate a new DCP Message 
+	/**
+	  Use the passed byte array to allocate a new DCP Message
 	  @param data the data bytes
 	  @param offset in data where this message starts
 	  @param size number of data bytes in this message
@@ -164,8 +179,8 @@ public class DcpMsg
 		this();
 		set(data, size, offset);
 	}
-	
-	/** 
+
+	/**
 	  The above constructor assumes message type is GOES (a 0 in the
 	  type-bits of the flag). This causes problems in the set() method
 	  because it tries to parse the DCP address.
@@ -185,7 +200,7 @@ public class DcpMsg
 	/**
 	  @return the entire length of the data, including header.
 	*/
-	public int getMsgLength() 
+	public int getMsgLength()
 	{
 		return msgLength;
 		// In new DCP Mon, a very long message may be only partially read
@@ -206,7 +221,7 @@ public class DcpMsg
 	/** @return the local receive time as a unix time_t. */
 	public Date getLocalReceiveTime() { return localRecvTime; }
 
-	/** 
+	/**
 	 * @return the sequence number associated with this message, or -1 if none.
 	 */
 	public int getSequenceNum()
@@ -233,7 +248,7 @@ public class DcpMsg
 	private void set(byte data[], int size, int offset)
 	{
 //MJM 20160831 Not sure what this code was for. Should never be called with < 0
-//		if (isGoesMessage() 
+//		if (isGoesMessage()
 //		 && (size > MAX_DATA_LENGTH || size < 0))
 //		{
 //			Logger.instance().warning("Cannot set DcpMsg data, invalid size="
@@ -247,7 +262,7 @@ public class DcpMsg
 //			}
 //			else
 //			{
-//				try 
+//				try
 //				{
 //					size = 37 + Integer.parseInt(new String(ml));
 //					Logger.instance().warning("Parsed msg length = " + size);
@@ -263,8 +278,7 @@ public class DcpMsg
 //Do this regardless of type.
 		if (size > MAX_DATA_LENGTH)
 		{
-			Logger.instance().warning("DcpMsg too big (" + size + "). Truncated to max len="  
-				+ MAX_DATA_LENGTH); 
+			log.warn("DcpMsg too big ({}). Truncated to max len={}", size, MAX_DATA_LENGTH);
 			ArrayUtil.getField(data, 0, size = MAX_DATA_LENGTH);
 		}
 		byte[] buf  = new byte[size];
@@ -298,13 +312,12 @@ public class DcpMsg
 	  @return a subset of the data as a new byte array, or
 	  null if either of the indices are outside the array bounds.
 	*/
-	public byte[] getField(int start, int length) 
+	public byte[] getField(int start, int length)
 	{
 		byte ret[] = ArrayUtil.getField(data, start, length);
 		if (ret == null)
 		{
-			Logger.instance().warning("Invalid msg length=" + data.length
-				+ ", field=" + start + "..." + (start+length));
+			log.warn("Invalid msg length={}, field={}...{}", data.length, start, (start+length));
 		}
 		return ret;
 	}
@@ -312,7 +325,7 @@ public class DcpMsg
 	/**
 	  @return address of DCP that sent this message.
 	*/
-	public DcpAddress getGoesDcpAddress() 
+	public DcpAddress getGoesDcpAddress()
 	{
 		byte addrfield[] = getField(IDX_DCP_ADDR, 8);
 		if (addrfield == null)
@@ -381,7 +394,7 @@ public class DcpMsg
 	{
 		if (!isGoesMessage())
 			return failureCode;
-				
+
 		byte field[] = getField(IDX_FAILCODE, 1);
 		if (field == null)
 			return '-';
@@ -396,7 +409,7 @@ public class DcpMsg
 		char c = getFailureCode();
 		return isGoesMessage() && !(c == 'G' || c == '?');
 	}
-	
+
 	/** @return true if this is a GOES message from any source */
 	public boolean isGoesMessage()
 	{
@@ -460,7 +473,7 @@ public class DcpMsg
 	{
 		if (!DcpMsgFlag.isGOES(flagbits))
 			return 0;
-		
+
 		byte field[] = getField(IDX_GOESCHANNEL, 3);
 		if (field == null)
 			return 0;
@@ -507,7 +520,7 @@ public class DcpMsg
 	{
 		if (!isGoesMessage())
 			return this.getMsgLength();
-		
+
 		byte field[] = getField(IDX_DATALENGTH, 5);
 		if (field == null)
 			return 0;
@@ -519,8 +532,8 @@ public class DcpMsg
 	}
 
 	/**
-	  @return the message-proper. That is, the data actually sent by 
-	  the DCP.  Note that due to possible transmission errors, the 
+	  @return the message-proper. That is, the data actually sent by
+	  the DCP.  Note that due to possible transmission errors, the
 	  length may not be equal to the value returned by getDcpDataLength.
 	*/
 	public byte[] getDcpData()
@@ -577,24 +590,8 @@ public class DcpMsg
 	*/
 	public String makeFileName(int sequence)
 	{
-		
+
 		return getDcpAddress().toString() + "-" + sequence;
-/*
-		try
-		{
-			StringBuffer sb = new StringBuffer(getDcpAddress().toString());
-			sb.append('.');
-			int x = sequence % 65536;
-			sb.append((char)((int)'a' + (x/676)));
-			sb.append((char)((int)'a' + ((x%676)/26)));
-			sb.append((char)((int)'a' + (x%26)));
-			return new String(sb);
-		}
-		catch (Exception e)
-		{
-			return "tmpdcpfile";
-		}
-*/
 	}
 
 	public void setBaud(int b)
@@ -753,7 +750,7 @@ public class DcpMsg
     {
 	    return dcpAddress;
     }
-    
+
 	public byte[] getData() { return data; }
 
 	/**
@@ -806,7 +803,7 @@ public class DcpMsg
     		setFailureCode(sessionStatus <= 2 ? 'G' : '?');
 
     }
-    
+
     public void setFailureCode(char fc)
     {
     	this.failureCode = fc;
@@ -830,7 +827,7 @@ public class DcpMsg
     	if (DcpMsgFlag.isNetDcp(flagbits))
     		setFailureCode('G');
     }
-    
+
     /**
      * @return the length of the message-proper, not including any header.
      */
@@ -838,12 +835,12 @@ public class DcpMsg
     {
     	return getMsgLength() - headerLength;
     }
-    
+
     public void setHeaderLength(int headerLength)
     {
     	this.headerLength = headerLength;
     }
-    
+
     public int getHeaderLength() { return headerLength; }
 
     /**
@@ -901,10 +898,10 @@ public class DcpMsg
 				return;
 			}
 	}
-	
+
 	/** These character codes indicate various types of errors */
 	public static final String badCodes = "?MTUBIQW";
-	
+
 	public boolean hasAnyXmitErrors()
 	{
 		for(int i=0; i < xmitFailureCodes.length; i++)
@@ -922,7 +919,7 @@ public class DcpMsg
 	{
 		int f = getFlagbits();
 		return (f & DcpMsgFlag.HAS_CARRIER_TIMES) != 0
-			&& (f & DcpMsgFlag.CARRIER_TIME_EST) == 0; 
+			&& (f & DcpMsgFlag.CARRIER_TIME_EST) == 0;
 	}
 
 	public XmitWindow getXmitTimeWindow()
@@ -960,7 +957,7 @@ public class DcpMsg
 	{
 		this.dayNumber = dayNumber;
 	}
-	
+
 	public String getStartTimeStr()
 	{
 		if (carrierStart != null)
@@ -996,12 +993,15 @@ public class DcpMsg
             else // 1200
             	dursec += .298;
 			Date stop = new Date(getXmitTime().getTime() + (long)(dursec*1000));
-			synchronized(timeSdfSec) { ret = timeSdfSec.format(stop); }
-			System.out.println("getStopTimeStr() computed="+stop+", fmt='" + timeSdfSec.format(stop) + ", ret='" + ret + "'");
+			synchronized(timeSdfSec)
+			{
+				ret = timeSdfSec.format(stop);
+			}
+			log.trace("getStopTimeStr() computed={}, fmt='{}', ret='{}'", stop, timeSdfSec.format(stop), ret);
 		}
 		return ret;
 	}
-	
+
 	public String getWindowStartStr()
 	{
 		if (xmitWindow == null)
@@ -1016,14 +1016,14 @@ public class DcpMsg
 		return IDateFormat.printSecondOfDay(
 			xmitWindow.thisWindowStart + xmitWindow.windowLengthSec, true);
 	}
-	
+
 	public String getBattVoltStr()
 	{
 		if (battVolt < .01)
 			return "N/A";
 		synchronized(bvFormat) { return bvFormat.format(battVolt); }
 	}
-	
+
 	/**
 	 * This method is used by the Html formatter and the DCP Monitor JSF code to
 	 * print a block of data for display on an HTML page.
@@ -1042,7 +1042,7 @@ public class DcpMsg
 				if (span > longestSpan)
 					longestSpan = span;
 				span = 0;
-				if (c == '\n' || c == '\r') 
+				if (c == '\n' || c == '\r')
 					newlines++;
 			}
 			else
@@ -1057,21 +1057,20 @@ public class DcpMsg
 		else if (newlines > 2)
 			// Preserve line breaks in formatted ascii messages like RAWS data.
 			msgStr = "<pre>" + msgStr + "</pre>";
-Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + newlines + ", longestSpan=" + longestSpan);
+		log.info("writeRaw: msglen={}, newlines={}, longestSpan={}", msgStr.length(), newlines, longestSpan);
 
 		return msgStr;
 	}
-	
+
 	public String getSource()
 	{
 		if (DcpMsgFlag.isGOES(flagbits))
 			return "GOES";
 		else if (isIridium())
 			return "Iridium";
-		LineNumberReader lnr = new LineNumberReader(new InputStreamReader(
-			new ByteArrayInputStream(data)));
+
 		String line;
-		try
+		try (LineNumberReader lnr = new LineNumberReader(new InputStreamReader(new ByteArrayInputStream(data)));)
 		{
 			while((line = lnr.readLine()) != null && line.startsWith("//"))
 			{
@@ -1080,17 +1079,20 @@ Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + n
 					return line.substring(6).trim();
 			}
 		}
-		catch (IOException e) { /* Won't happen */ }
-		finally { try { lnr.close(); } catch(Exception ex) {} }
+		catch (IOException ex)
+		{
+			/* Won't happen */
+			log.atError().setCause(ex).log("IOException reading from a byte array stream.");
+		}
 		return "";
 	}
-	
+
 	public boolean isIridium()
 	{
 		return DcpMsgFlag.isIridium(flagbits)
 			|| (data[0] == (byte)'I' && data[1] == (byte)'D' && data[2] == (byte)'=');
 	}
-	
+
 	public double getGoesSignalStrength()
 	{
 		return goesSignalStrength;
