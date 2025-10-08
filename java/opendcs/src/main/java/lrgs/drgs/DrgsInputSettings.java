@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.drgs;
 
@@ -8,12 +20,14 @@ import java.util.Iterator;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Element;
 
-import ilex.util.Logger;
 import ilex.util.ByteUtil;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
@@ -26,6 +40,7 @@ Singleton class holding settings for the DrgsInput application.
 */
 public class DrgsInputSettings
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private int debugLevel;
 	public Vector<DrgsConnectCfg> connections;
 	private static DrgsInputSettings _instance;
@@ -43,12 +58,12 @@ public class DrgsInputSettings
 
 	/** Flag indicating we should re-read the PDT from the specified URL. */
 	public boolean readPdtFlag;
-	
+
 	/** Flag indicating we should save pollingPeriod (default=false), will
 	 * be set to true for the Network DCP configurations.
 	 */
 	public boolean savePollingPeriod = false;
-	
+
 	/** Timeout period for this connection, default = 20 sec. */
 	public long timeoutMsec = 20000L;
 
@@ -63,8 +78,8 @@ public class DrgsInputSettings
 
 	/**
 	 * Returns the singleton instance for use with the DRGS interface.
-	 * Note that the Network DCPs will use a separate instance. 
-	 * @return singleton instance. 
+	 * Note that the Network DCPs will use a separate instance.
+	 * @return singleton instance.
 	 * */
 	public static DrgsInputSettings instance()
 	{
@@ -84,8 +99,7 @@ public class DrgsInputSettings
 		resetToDefaults();
 
 		cfgFileName = filename;
-		Logger.instance().log(Logger.E_INFORMATION,
-			module + ": Parsing '" + filename + "'");
+		log.info("Parsing '{}'", filename);
 
 		Document doc;
 		try
@@ -94,7 +108,7 @@ public class DrgsInputSettings
 		}
 		catch(ilex.util.ErrorException ex)
 		{
-			throw new BadConfigException(ex.toString());
+			throw new BadConfigException("Unable to read config file", ex);
 		}
 		setFromDoc(doc, cfgFileName);
 	}
@@ -106,10 +120,8 @@ public class DrgsInputSettings
 		Node drgsElement = doc.getDocumentElement();
 		if (!drgsElement.getNodeName().equalsIgnoreCase("drgsconf"))
 		{
-			String s = module 
-				+ ": Wrong type of configuration file -- Cannot initialize. "
-				+ "Root element is not 'drgsconf'.";
-			Logger.instance().log(Logger.E_WARNING, s);
+			String s = "Wrong type of configuration file -- Cannot initialize. " +
+					   "Root element is not 'drgsconf'.";
 			throw new BadConfigException(s);
 		}
 
@@ -130,7 +142,7 @@ public class DrgsInputSettings
 					}
 					else if (node.getNodeName().equalsIgnoreCase("validate"))
 					{
-						pdtUrl = 
+						pdtUrl =
 							"https://dcs1.noaa.gov/pdts_compressed.txt";
 						cdtUrl =
 							"https://dcs1.noaa.gov/chans_by_baud.txt";
@@ -155,9 +167,9 @@ public class DrgsInputSettings
 							readPdtFlag = false;
 
 						enableValidate = enable;
-						Logger.instance().info("Validation is "
-							+ (enableValidate ? "ENABLED" : "NOT-ENABLED")
-							+ ", pdturl='" + pdtUrl + "'");
+						log.info("Validation is {}, pdturl='{}'",
+								 (enableValidate ? "ENABLED" : "NOT-ENABLED"),
+								 pdtUrl);
 					}
 				}
 			}
@@ -173,23 +185,21 @@ public class DrgsInputSettings
 		try { num = Integer.parseInt(ns); }
 		catch(NumberFormatException ex)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"DrgsInputSettings invalid connection element in '"
-				+ cfgFileName 
-				+ "' - bad or missing 'number' attribute -- skipped");
+			log.warn("DrgsInputSettings invalid connection element in '{}' - bad " +
+					 "or missing 'number' attribute -- skipped",
+					 cfgFileName);
 			return;
 		}
 		String host = elem.getAttribute("host").trim();
 		if (host.length() == 0)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"DrgsInputSettings invalid connection element in '"
-				+ cfgFileName 
-				+ "' - missing required 'host' attribute -- skipped");
+			log.warn("DrgsInputSettings invalid connection element in '{}' - " +
+					 "missing required 'host' attribute -- skipped",
+					 cfgFileName);
 			return;
 		}
 		DrgsConnectCfg cfg = new DrgsConnectCfg(num, host);
-		
+
 		// Content elements will contain the optional settings.
 		NodeList children = node.getChildNodes();
 		if (children != null)
@@ -232,21 +242,20 @@ public class DrgsInputSettings
 						"pollingPeriod"))
 						cfg.pollingPeriod = DomHelper.getIntegerContent(child,
 							0, module);
-					else						
-						Logger.instance().warning("Unrecognized element '"
-							+ child.getNodeName() + "' ignored DRGS Config.");
+					else
+					{
+						log.warn("Unrecognized element '{}' ignored DRGS Config.", child.getNodeName());
+					}
 				}
 			}
 
 		DrgsConnectCfg old = getConnectCfg(num);
 		if (old != null)
 		{
-			Logger.instance().log(Logger.E_DEBUG1,
-				"Removing old connection " + num + ": " + old);
+			log.debug("Removing old connection {}: {}", num, old);
 			connections.remove(old);
 		}
-		Logger.instance().log(Logger.E_DEBUG1,
-			"Adding drgs config " + num + ": " + cfg);
+		log.debug("Adding drgs config {}: {}", num, cfg);
 		connections.add(cfg);
 	}
 
@@ -256,13 +265,8 @@ public class DrgsInputSettings
 	/** Sets the debug level.
 	  @param dbl should be 0 (no debug), 1, 2, or 3 (most verbose)
 	*/
-	public void setDebugLevel(int dbl) 
+	public void setDebugLevel(int dbl)
 	{
-//		debugLevel = dbl; 
-//		Logger.instance().setMinLogPriority(
-//				dbl <= 0 ? Logger.E_INFORMATION :
-//				dbl == 1 ? Logger.E_DEBUG1 :
-//				dbl == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
 	}
 
 	/**
@@ -317,7 +321,7 @@ public class DrgsInputSettings
 	{
 		XmlOutputStream xos = new XmlOutputStream(os, "drgsconf");
 		xos.startElement("drgsconf");
-		
+
 		if (!savePollingPeriod)
 		{
 			int n = 1;
@@ -332,7 +336,7 @@ public class DrgsInputSettings
 				atts[n++] = new StringPair("cdturl", cdtUrl);
 			xos.writeElement("validate", atts, null);
 		}
-		
+
 		for(DrgsConnectCfg dcc : connections)
 		{
 			xos.startElement("connection",
@@ -343,7 +347,7 @@ public class DrgsInputSettings
 			xos.writeElement("msgport", ""+dcc.msgPort);
 			xos.writeElement("evtport", ""+dcc.evtPort);
 			xos.writeElement("evtenabled", ""+dcc.evtEnabled);
-			xos.writeElement("startpattern", 
+			xos.writeElement("startpattern",
 				ByteUtil.toHexString(dcc.startPattern));
 			if (dcc.drgsSourceCode != null)
 				xos.writeElement("sourcecode", new String(dcc.drgsSourceCode));
@@ -359,4 +363,3 @@ public class DrgsInputSettings
 
 	public void setModule(String module) { this.module = module; }
 }
-
