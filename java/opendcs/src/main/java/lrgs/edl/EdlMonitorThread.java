@@ -1,13 +1,14 @@
 /*
  * $Id$
- * 
+ *
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
- * No warranty is provided or implied other than specific contractual terms 
+ * No warranty is provided or implied other than specific contractual terms
  * between COVE and Alberta ESRD.
  *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
- * 
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,6 +28,9 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Date;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.datasource.EdlPMParser;
 import decodes.datasource.GoesPMParser;
 import decodes.datasource.HeaderParseException;
@@ -38,26 +42,25 @@ import lrgs.lrgsmain.LrgsConfig;
 import ilex.util.DirectoryMonitorThread;
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
-import ilex.util.Logger;
 import ilex.var.Variable;
 
 
-public class EdlMonitorThread
-	extends DirectoryMonitorThread
+public class EdlMonitorThread extends DirectoryMonitorThread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private File doneDir = null;
 	private EdlInputInterface parent = null;
 	private EdlPMParser pmParser = new EdlPMParser();
 	private static String module = "EdlMonitor";
 	private long startTime;
-	
+
 	public EdlMonitorThread(EdlInputInterface parent)
 	{
 		this.parent = parent;
 		configure();
 		startTime = System.currentTimeMillis();
 	}
-	
+
 	/**
 	 * Configure the monitor once upon starting up.
 	 */
@@ -65,7 +68,7 @@ public class EdlMonitorThread
 	{
 		this.setSleepEveryCycle(true);
 		this.setSleepInterval(1000L);
-		
+
 		this.myDirs.clear();
 		File topdir = new File(EnvExpander.expand(LrgsConfig.instance().edlIngestDirectory));
 		if (!topdir.isDirectory())
@@ -73,19 +76,19 @@ public class EdlMonitorThread
 		this.addDirectory(topdir);
 		if (LrgsConfig.instance().edlIngestRecursive)
 			expand(myDirs.get(0));
-		
+
 		doneDir = null;
 		if (LrgsConfig.instance().edlDoneDirectory != null
 		 && LrgsConfig.instance().edlDoneDirectory.trim().length() > 0)
 		{
 			String exp = EnvExpander.expand(LrgsConfig.instance().edlDoneDirectory.trim());
-			Logger.instance().info(module + " configuring with edlDoneDirecgtory='" +
-				LrgsConfig.instance().edlDoneDirectory + "' expanded='" + exp + "'");
+			log.info("configuring with edlDoneDirecgtory='{}' expanded='{}'",
+					 LrgsConfig.instance().edlDoneDirectory, exp);
 			doneDir = new File(exp);
 			if (!doneDir.isDirectory())
 				doneDir.mkdirs();
 		}
-		
+
 		this.setFilenameFilter(null);
 		if (LrgsConfig.instance().edlFilenameSuffix != null
 		 && LrgsConfig.instance().edlFilenameSuffix.trim().length() > 0)
@@ -100,11 +103,10 @@ public class EdlMonitorThread
 					}
 				});
 		}
-		Logger.instance().debug1(module + " After configuration, there are " + myDirs.size()
-			+ " directories in the list.");
+		log.debug("After configuration, there are {} directories in the list.", myDirs.size());
 
 	}
-	
+
 	/**
 	 * Recursively expand the top dir.
 	 * @param dir
@@ -124,15 +126,15 @@ public class EdlMonitorThread
 	@Override
 	protected void processFile(File file)
 	{
-		Logger.instance().debug1(module + " Processing file '" + file.getPath() + "'");
+		log.debug("Processing file '{}'", file.getPath());
 		try
 		{
 			byte[] fileBytes = FileUtil.getfileBytes(file);
-			
+
 			// Wrap with RawMessage and use the Decodes EdlPMParser to parse the header.
 			RawMessage rawMsg = new RawMessage(fileBytes, fileBytes.length);
 			pmParser.parsePerformanceMeasurements(rawMsg);
-			
+
 			DcpMsg msg = new DcpMsg(
 				DcpMsgFlag.MSG_PRESENT
 				| DcpMsgFlag.SRC_NETDCP
@@ -142,25 +144,25 @@ public class EdlMonitorThread
 				fileBytes, fileBytes.length, 0);
 			Date now = new Date();
 			msg.setLocalReceiveTime(now);
-			
+
 			Variable dv = rawMsg.getPM(EdlPMParser.POLL_START);
 			if (dv != null)
 				try { msg.setCarrierStart(dv.getDateValue()); } catch(Exception ex) {}
-			
+
 			dv = rawMsg.getPM(EdlPMParser.POLL_STOP);
 			if (dv == null)
 				dv = rawMsg.getPM(EdlPMParser.END_TIME_STAMP);
 			if (dv == null)
 				dv = rawMsg.getPM(GoesPMParser.MESSAGE_TIME);
 			if (dv != null)
-				try 
+				try
 				{
 					msg.setCarrierStop(dv.getDateValue());
 					msg.setXmitTime(dv.getDateValue());
 				} catch(Exception ex) {}
 			else
 				msg.setXmitTime(now);
-			
+
 			msg.setDataSourceId(parent.getDataSourceId());
 			Variable stationVar = rawMsg.getPM(EdlPMParser.STATION);
 			if (stationVar == null)
@@ -174,21 +176,21 @@ public class EdlMonitorThread
 		}
 		catch (IOException ex)
 		{
-			Logger.instance().warning(module + " Error reading file '" + file.getPath() + "': " + ex);
+			log.atWarn().setCause(ex).log("Error reading file '{}'", file.getPath());
 		}
 		catch (HeaderParseException ex)
 		{
-			Logger.instance().warning(module + " Error parsing header for '" + file.getPath() + "': " + ex);
+			log.atWarn().setCause(ex).log("Error parsing header for '{}'", file.getPath());
 		}
-		
+
 		if (doneDir != null)
 			try
 			{
 				FileUtil.moveFile(file, new File(doneDir, file.getName()));
 			}
-			catch (IOException e)
+			catch (IOException ex)
 			{
-				Logger.instance().warning("Cannot move '" + file.getPath() + "' to " + doneDir.getPath());
+				log.atWarn().setCause(ex).log("Cannot move '{}' to '{}'", file.getPath(), doneDir.getPath());
 				file.delete();
 			}
 		else
@@ -198,7 +200,7 @@ public class EdlMonitorThread
 	@Override
 	protected void finishedScan()
 	{
-		Logger.instance().debug3(module + " finished scan.");
+		log.trace("finished scan.");
 	}
 
 	@Override

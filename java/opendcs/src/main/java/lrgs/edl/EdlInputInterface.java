@@ -1,13 +1,14 @@
 /*
  * $Id$
- * 
+ *
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
- * No warranty is provided or implied other than specific contractual terms 
+ * No warranty is provided or implied other than specific contractual terms
  * between COVE and Alberta ESRD.
  *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
- * 
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +25,9 @@ package lrgs.edl;
 
 import java.util.Date;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.common.DcpMsg;
 import lrgs.lrgsmain.LrgsConfig;
 import lrgs.lrgsmain.LrgsInputException;
@@ -35,10 +38,9 @@ import lrgs.lrgsmain.LrgsMain;
  * Watches hot directories for incoming EDL (Electronic Data Logger) files and ingests
  * them into the LRGS archive.
  */
-public class EdlInputInterface
-	extends Thread
-	implements LrgsInputInterface
+public class EdlInputInterface extends Thread implements LrgsInputInterface
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private LrgsMain lrgsMain;
 	private int slot = -1;
 	private int statusCode = 0;
@@ -48,29 +50,29 @@ public class EdlInputInterface
 	private boolean _shutdown = false;
 	private long lastConfigCheck = 0L;
 	private int count = 0;
-	
+
 	private long enableTime = System.currentTimeMillis();
 	private long lastStatusTime = 0L;
 	private int numLastHour = 0, numThisHour = 0;
 
-	
+
 	public EdlInputInterface(LrgsMain lrgsMain)
 	{
 		this.lrgsMain = lrgsMain;
-		this.dataSourceId = 
+		this.dataSourceId =
 			lrgsMain.getDbThread().getDataSourceId(LrgsInputInterface.DL_EDL_TYPESTR, "EDL");
 	}
-	
+
 	@Override
 	public void run()
 	{
-Logger.instance().info("EDL Ingest config thread starting.");
+		log.info("EDL Ingest config thread starting.");
 
 		// Watch for config changes.
 		while(!_shutdown)
 		{
-Logger.instance().debug3("EDL Ingest config check last="+lastConfigCheck + ", loaded=" 
-+ LrgsConfig.instance().getLastLoadTime());
+			log.trace("EDL Ingest config check last={}, loaded={}",
+					  lastConfigCheck, LrgsConfig.instance().getLastLoadTime());
 
 			if (LrgsConfig.instance().getLastLoadTime() > lastConfigCheck)
 			{
@@ -95,14 +97,14 @@ Logger.instance().debug3("EDL Ingest config check last="+lastConfigCheck + ", lo
 			catch (InterruptedException e) { e.printStackTrace(); }
 		}
 	}
-	
+
 	public void saveMessage(DcpMsg dcpMsg)
 	{
 		dcpMsg.setSequenceNum(count++);
 		lrgsMain.msgArchive.archiveMsg(dcpMsg, this);
 		numThisHour++;
 	}
-	
+
 	@Override
 	public int getType()
 	{
@@ -130,7 +132,7 @@ Logger.instance().debug3("EDL Ingest config check last="+lastConfigCheck + ", lo
 	@Override
 	public void initLrgsInput() throws LrgsInputException
 	{
-Logger.instance().info("EDL Ingest initializing.");
+		log.info("EDL Ingest initializing.");
 		// Start the thread that checks for config changes.
 		start();
 	}
@@ -147,7 +149,7 @@ Logger.instance().info("EDL Ingest initializing.");
 	{
 		if (enabled)
 		{
-			Logger.instance().info("EDL Ingest Enabled");
+			log.info("EDL Ingest Enabled");
 			monitorThread = new EdlMonitorThread(this);
 			monitorThread.start();
 			statusStr = "Enabled";
@@ -157,7 +159,7 @@ Logger.instance().info("EDL Ingest initializing.");
 		{
 			if (monitorThread != null)
 			{
-				Logger.instance().info("EDL Ingest Disabled");
+				log.info("EDL Ingest Disabled");
 				monitorThread.shutdown();
 			}
 			monitorThread = null;
@@ -191,7 +193,7 @@ Logger.instance().info("EDL Ingest initializing.");
 	}
 
 	private static final long MS_PER_HR = 3600*1000L;
-	
+
 	@Override
 	public String getStatus()
 	{
@@ -199,7 +201,7 @@ Logger.instance().info("EDL Ingest initializing.");
 		if (now/MS_PER_HR > lastStatusTime/MS_PER_HR)  // Hour just changed
 		{
 			String s = "edlMinHourly";
-Logger.instance().debug3("Looking for property '" + s + "'");
+			log.trace("Looking for property '{}'", s);
 			int minHourly = LrgsConfig.instance().edlMinHourly;
 			if (minHourly > 0                          // Feature Enabled
 			 && enableTime != 0L                       // Currently Enabled
@@ -207,17 +209,15 @@ Logger.instance().debug3("Looking for property '" + s + "'");
 			{
 				if (numThisHour < minHourly)
 				{
-					Logger.instance().warning(getInputName()
-						+ " for hour ending " + new Date((now / MS_PER_HR) * MS_PER_HR)
-						+ " number of messages received=" + numThisHour 
-						+ " which is under minimum threshold of " + minHourly);
+					log.warn("{} for hour ending {} number of messages received={} " +
+							 "which is under minimum threshold of {}",
+							 getInputName(), new Date((now / MS_PER_HR) * MS_PER_HR), numThisHour, minHourly);
 				}
 				if (numThisHour < (numLastHour/2))
 				{
-					Logger.instance().warning(getInputName()
-						+ " for hour ending " + new Date((now / MS_PER_HR) * MS_PER_HR)
-						+ " number of messages received=" + numThisHour 
-						+ " which is under half previous hour's total of " + numLastHour);
+					log.warn("{} for hour ending {} number of messages received={} " +
+							 "which is under half previous hour's total of {}",
+							 getInputName(), new Date((now / MS_PER_HR) * MS_PER_HR), numThisHour, numLastHour);
 				}
 			}
 
@@ -225,7 +225,7 @@ Logger.instance().debug3("Looking for property '" + s + "'");
 			numLastHour = numThisHour;
 			numThisHour = 0;
 		}
-		
+
 		lastStatusTime = now;
 		return statusStr;
 	}
