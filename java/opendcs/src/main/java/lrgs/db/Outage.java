@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.db;
 
 import java.util.Date;
@@ -5,17 +20,18 @@ import java.util.TimeZone;
 import java.text.SimpleDateFormat;
 
 import lrgs.common.DcpAddress;
-import ilex.util.Logger;
 
 /**
- * 
+ *
  * This encapsulates information about LRGS domsat_gap, system_outage and
  * damsnt_outage. The outage type will indicate where the data will be stored
  * or read from.
  * <p>
  * Outage implements the Comparable interface, allowing LRGS to store a
- * priority queue of Outage objects. 
+ * priority queue of Outage objects.
+ * @deprecated Outage recover system no longer supported
  */
+@Deprecated
 public class Outage
 	implements Comparable<Outage>, LrgsDatabaseObject
 {
@@ -35,7 +51,7 @@ public class Outage
 	/** Transient data source name (for dams-nt outages) not stored in DB */
 	private String dataSourceName;
 
-	private static SimpleDateFormat sdf = 
+	private static SimpleDateFormat sdf =
 		new SimpleDateFormat("MMM dd, yyyy ('day' DDD) HH:mm z");
 	static
 	{
@@ -63,7 +79,7 @@ public class Outage
 	/**
 	 * Construct Outage Object from a outageId, beginTime, endTime, outageType,
 	 * statusCode, sourceId, dcpAddress, beginSeq and endSeq.
-	 * 
+	 *
 	 * @param outageId the unique id for the outage
 	 * @param beginTime begin time of the outage
 	 * @param endTime end time of the outage
@@ -116,7 +132,7 @@ public class Outage
 
 	/**
 	 * This method sets the begin time of the outage.
-	 * 
+	 *
 	 * @param beginTime begin time of the outage
 	 */
 	public void setBeginTime(Date beginTime)
@@ -136,7 +152,7 @@ public class Outage
 
 	/**
 	 * This method sets the dcp address number of the outage.
-	 * 
+	 *
 	 * @param dcpAddress the dcp address number of the outage
 	 */
 	public void setDcpAddress(int dcpAddress)
@@ -156,7 +172,7 @@ public class Outage
 
 	/**
 	 * This method sets the end time of the outage.
-	 * 
+	 *
 	 * @param endTime end time of the outage
 	 */
 	public void setEndTime(Date endTime)
@@ -176,7 +192,7 @@ public class Outage
 
 	/**
 	 * This method sets the unique id for the outage.
-	 * 
+	 *
 	 * @param outageId the unique id for the outage
 	 */
 	public void setOutageId(int outageId)
@@ -196,7 +212,7 @@ public class Outage
 
 	/**
 	 * This method sets the outage type.
-	 * 
+	 *
 	 * @param outageType indicates the type of outage (S - system, G - domsat C - dams-nt)
 	 */
 	public void setOutageType(char outageType)
@@ -216,7 +232,7 @@ public class Outage
 
 	/**
 	 * This method sets the outage begin sequence number.
-	 * 
+	 *
 	 * @param beginSeq indicates the outage begin sequence number
 	 */
 	public void setBeginSeq(int beginSeq)
@@ -236,14 +252,14 @@ public class Outage
 
 	/**
 	 * This method sets the outage end sequence number.
-	 * 
+	 *
 	 * @param endSeq indicates the outage end sequence number
 	 */
 	public void setEndSeq(int endSeq)
 	{
 		this.endSeq = endSeq;
 	}
-	
+
 	/**
 	 * This method returns the source id of the outage.
 	 *
@@ -256,7 +272,7 @@ public class Outage
 
 	/**
 	 * This method sets the source id of the outage.
-	 * 
+	 *
 	 * @param sourceId the source id of the outage
 	 */
 	public void setSourceId(int sourceId)
@@ -276,7 +292,7 @@ public class Outage
 
 	/**
 	 * This method sets the status code of the outage.
-	 * 
+	 *
 	 * @param statusCode the status code of the outage
 	 */
 	public void setStatusCode(char statusCode)
@@ -364,9 +380,6 @@ public class Outage
 			else
 				return -1;
 		}
-		// Shouldn't get here, all possibilities are handled above.
-Logger.instance().warning("Failure in comparing outages this=("
-+ this + ") rhs=(" + rhs + ")");
 		return 0;
 	}
 
@@ -377,7 +390,7 @@ Logger.instance().warning("Failure in comparing outages this=("
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append(LrgsConstants.outageTypeName(outageType)
-			+ " Outage, id=" + outageId 
+			+ " Outage, id=" + outageId
 			+ ", status=" + LrgsConstants.outageStatusName(statusCode)
 			+ ", begin=" + sdf.format(beginTime));
 		if (endTime != null)
