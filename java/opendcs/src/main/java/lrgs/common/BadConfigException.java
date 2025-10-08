@@ -13,7 +13,6 @@
 * License for the specific language governing permissions and limitations 
 * under the License.
 */
-
 package lrgs.common;
 
 /**
@@ -22,16 +21,16 @@ Thrown when configuration file cannot be successfully parsed.
 public class BadConfigException extends Exception
 {
 	/**
-	  Construct new BadConfigException.
-	  @param msg the message
-	  @param cause the cause
+	  Construct the exception.
+	  @param s the message
 	*/
+	public BadConfigException(String s)
+	{
+		super(s);
+	}
+
 	public BadConfigException(String msg, Throwable cause)
 	{
 		super(msg, cause);
-	}
-		public BadConfigException(String msg)
-	{
-		super(msg);
 	}
 }

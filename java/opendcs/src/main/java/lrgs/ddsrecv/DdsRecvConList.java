@@ -1,14 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.ddsrecv;
 
@@ -16,14 +19,16 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.lrgsmain.LrgsMain;
 import lrgs.lrgsmain.LrgsConfig;
 import lrgs.lrgsmain.LrgsInputException;
 
-public class DdsRecvConList
-	extends Thread
+public class DdsRecvConList extends Thread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Vector of my connections */
 	private Vector conlist;
 
@@ -60,8 +65,7 @@ public class DdsRecvConList
 	/** Thread run method */
 	public void run()
 	{
-		Logger.instance().debug1(DdsRecv.module 
-			+ " DdsRecvConList thread starting.");
+		log.info("{} DdsRecvConList thread starting.", DdsRecv.module);
 		while(!isShutdown)
 		{
 			if (LrgsConfig.instance().enableDdsRecv)
@@ -72,9 +76,9 @@ public class DdsRecvConList
 	}
 
 	/**
-	 * Removes all connections from the list. This is done when the code 
+	 * Removes all connections from the list. This is done when the code
 	 * detects a configuration change.
-	 * Note: The call to remove all and add is synchronized on this object 
+	 * Note: The call to remove all and add is synchronized on this object
 	 * externally, so the methods are NOT declared to be syncrhonized.
 	 */
 	public void removeAll()
@@ -116,9 +120,8 @@ public class DdsRecvConList
 				numConnected++;
 		}
 
-		Logger.instance().debug3(DdsRecv.module 
-			+ " DdsRecvConList checking connections, " + 
-			numConnected + " currently connected.");
+		log.trace("{} DdsRecvConList checking connections, {} currently connected.",
+				  DdsRecv.module, numConnected);
 
 		DdsRecvConnection lowestNumberConnected = null;
 
@@ -132,14 +135,12 @@ public class DdsRecvConList
 
 			if (con == currentConnection)
 			{
-Logger.instance().debug3(DdsRecv.module 
-+ " skipping current connection to " + con.getName());
+				log.trace("{} skipping current connection to {}", DdsRecv.module, con.getName());
 				continue;
 			}
 			if (!con.isEnabled())
 			{
-Logger.instance().debug3(DdsRecv.module 
-+ " skipping disabled connection to " + con.getName());
+				log.trace("{} skipping disabled connection to {}", DdsRecv.module, con.getName());
 				continue;
 			}
 			if (!con.isConnected())
@@ -150,36 +151,36 @@ Logger.instance().debug3(DdsRecv.module
 					>= conTimeOut
 				 || numConnected == 0)
 				{
-					try 
+					try
 					{
-						con.initLrgsInput(); 
+						con.initLrgsInput();
 			 			if (lowestNumberConnected == null
 				 		 || con.getSlot() < lowestNumberConnected.getSlot())
 							lowestNumberConnected = con;
 					}
 					catch(LrgsInputException ex)
 					{
-						Logger.instance().warning(
-							DdsRecv.module + ":" + DdsRecv.EVT_CONNECTION_FAILED
-							+ " Error making connection to "
-							+ con.getName() + ": " + ex);
+						log.atWarn()
+						   .setCause(ex)
+						   .log("{}:{} Error making connection to {}",
+						   		DdsRecv.module, DdsRecv.EVT_CONNECTION_FAILED, con.getName());
 						con.shutdownLrgsInput();
 					}
 				}
 				else
-					Logger.instance().debug3(DdsRecv.module 
-						+ " skipping timed-out connection to " + con.getName());
+				{
+					log.trace("{} skipping timed-out connection to {}", DdsRecv.module, con.getName());
+				}
 			}
 			else // Is connected!
 			{
-				Logger.instance().debug3(DdsRecv.module 
-					+ " sending noop to " + con.getName());
+				log.trace("{} sending noop to {}", DdsRecv.module, con.getName());
 				try { con.noop(); }
 				catch(LrgsInputException ex)
 				{
-					Logger.instance().warning(DdsRecv.module +
-						" Error on connection to "
-						+ con.getName() + ": " + ex);
+					log.atWarn()
+					   .setCause(ex)
+					   .log("{} Error on connection to {}", DdsRecv.module, con.getName());
 					con.shutdownLrgsInput();
 				}
 			}

@@ -1,21 +1,26 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.ddsrecv;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.PasswordFileEntry;
 import ilex.util.TextUtil;
 import lrgs.apiadmin.AuthenticatorString;
@@ -37,6 +42,7 @@ of retrieving DCP data for my own local archive.
 */
 public class DdsRecvConnection implements LrgsInputInterface
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /** My status */
     String status;
 
@@ -126,36 +132,32 @@ public class DdsRecvConnection implements LrgsInputInterface
         throws LrgsInputException
     {
         status = "Initializing";
-        Logger.instance().info(DdsRecv.module
-            + " Initializing DDS recv connection to " + lddsClient.getName());
+        log.info("{} Initializing DDS recv connection to '{}'", DdsRecv.module, lddsClient.getName());
         lastActivityTime = System.currentTimeMillis();
         lastMessageTime = System.currentTimeMillis();
         try
         {
             lddsClient.connect();
             status = "Ready";
-            Logger.instance().info(DdsRecv.module
-                + " Connection established to " + lddsClient.getName());
+            log.info("{} Connection established to '{}'", DdsRecv.module, lddsClient.getName());
         }
         catch(UnknownHostException ex)
         {
             status = "Unknown Host";
-            String msg = "Can't connect to "
-                + lddsClient.getName() + ": " + ex;
-            Logger.instance().warning(
-                DdsRecv.module + ":" + DdsRecv.EVT_CONNECTION_FAILED + "- "
-                + msg);
-            throw new LrgsInputException(msg);
+            log.atWarn()
+               .setCause(ex)
+               .log("{}:{} - Can't connect to '{}'",
+                    DdsRecv.module, DdsRecv.EVT_CONNECTION_FAILED, lddsClient.getName());
+            throw new LrgsInputException("Can't connect to '" + lddsClient.getName() + "'", ex);
         }
         catch(IOException ex)
         {
             status = "IO Error";
-            String msg = "IO Error on connection to "
-                + lddsClient.getName() + ": " + ex;
-            Logger.instance().warning(
-                DdsRecv.module + ":" + DdsRecv.EVT_CONNECTION_FAILED + "- "
-                + msg);
-            throw new LrgsInputException(msg);
+            log.atWarn()
+               .setCause(ex)
+               .log("{}:{}- IO Error on connection to '{}'",
+                    DdsRecv.module, DdsRecv.EVT_CONNECTION_FAILED, lddsClient.getName());
+            throw new LrgsInputException("IO Error on connection to '" +lddsClient.getName() + "'", ex);
         }
 
         if (config.authenticate)
@@ -182,20 +184,17 @@ public class DdsRecvConnection implements LrgsInputInterface
             catch(IOException ex)
             {
                 status = "IO Error";
-                throw new LrgsInputException("IO Error on connection to "
-                    + lddsClient.getName() + ": " + ex);
+                throw new LrgsInputException("IO Error on connection to '" + lddsClient.getName() + "'", ex);
             }
             catch(ServerError ex)
             {
                 status = "Rejected by Svr";
-                throw new LrgsInputException("Server at "
-                    + lddsClient.getName() + " rejected connection: " + ex);
+                throw new LrgsInputException("Server at '" + lddsClient.getName() + "'' rejected connection", ex);
             }
             catch(ProtocolError ex)
             {
                 status = "Proto Error";
-                throw new LrgsInputException("Protocol Error on connection to "
-                    + lddsClient.getName() + ": " + ex);
+                throw new LrgsInputException("Protocol Error on connection to '" + lddsClient.getName() + "'", ex);
             }
         }
         else
@@ -207,20 +206,17 @@ public class DdsRecvConnection implements LrgsInputInterface
             catch(IOException ex)
             {
                 status = "IO Error";
-                throw new LrgsInputException("IO Error on connection to "
-                    + lddsClient.getName() + ": " + ex);
+                throw new LrgsInputException("IO Error on connection to '" + lddsClient.getName() + "'", ex);
             }
             catch(ServerError ex)
             {
                 status = "Rejected by Svr";
-                throw new LrgsInputException("Server at "
-                    + lddsClient.getName() + " rejected connection: " + ex);
+                throw new LrgsInputException("Server at '" + lddsClient.getName() + "' rejected connection.", ex);
             }
             catch(ProtocolError ex)
             {
                 status = "Proto Error";
-                throw new LrgsInputException("Protocol Error on connection to "
-                    + lddsClient.getName() + ": " + ex);
+                throw new LrgsInputException("Protocol Error on connection to '" + lddsClient.getName() + "'", ex);
             }
         }
         dataSourceId =
@@ -242,7 +238,7 @@ public class DdsRecvConnection implements LrgsInputInterface
         catch(Exception ex)
         {
             status = "Error";
-            throw new LrgsInputException("Error sending NOOP: " + ex);
+            throw new LrgsInputException("Error sending NOOP.", ex);
         }
     }
 
@@ -282,14 +278,12 @@ public class DdsRecvConnection implements LrgsInputInterface
     {
         if (enabled && !config.enabled)
         {
-            Logger.instance().info("Enabling DDS-Recv connection to "
-                + config.host);
+            log.info("Enabling DDS-Recv connection to '{}'", config.host);
             config.enabled = true;
         }
         else if (!enabled && config.enabled)
         {
-            Logger.instance().info("Disabling DDS-Recv connection to "
-                + config.host);
+            log.info("Disabling DDS-Recv connection to '{}'", config.host);
             config.enabled = false;
             shutdownLrgsInput();
             status = "Disabled";
@@ -359,9 +353,10 @@ public class DdsRecvConnection implements LrgsInputInterface
             if (nga.getNetworkList() == null)
             {
                 if (!nga.getNetlistName().toLowerCase().startsWith("source="))
-                    Logger.instance().warning(DdsRecv.module +
-                        " No network list found for group=" + nga.getGroupName()
-                        + " list='" + nga.getNetlistName() + "' -- ignored.");
+                {
+                    log.warn("{} No network list found for group={} list='{}' -- ignored.",
+                             DdsRecv.module, nga.getGroupName(), nga.getNetlistName());
+                }
                 continue;
             }
             try
@@ -370,19 +365,17 @@ public class DdsRecvConnection implements LrgsInputInterface
             }
             catch(ServerError ex)
             {
-                Logger.instance().warning(DdsRecv.module +
-                    "Server at " + lddsClient.getName()
-                    + " rejected network list '" + nga.getNetworkList().makeFileName()
-                    + "': " + ex + " -- ignored.");
+                log.atWarn()
+                   .setCause(ex)
+                   .log("{} Server at {} rejected network list '{}': -- ignored.",
+                        DdsRecv.module, lddsClient.getName(), nga.getNetworkList().makeFileName());
             }
             catch(Exception ex)
             {
-                String msg = DdsRecv.module + ":" + DdsRecv.EVT_CONNECTION_FAILED + "- "
-                    + " Error sending network list to "
-                    + lddsClient.getName() + ": " + ex;
-                Logger.instance().warning(msg);
-                System.err.println(msg);
-                ex.printStackTrace(System.err);
+                log.atWarn()
+                   .setCause(ex)
+                   .log("{}:{}-  Error sending network list to {}" ,
+                        DdsRecv.module, DdsRecv.EVT_CONNECTION_FAILED, lddsClient.getName());
                 shutdownLrgsInput();
                 status = "Error";
                 return false;
@@ -398,10 +391,10 @@ public class DdsRecvConnection implements LrgsInputInterface
         }
         catch(Exception ex)
         {
-            Logger.instance().warning(
-                DdsRecv.module + ":" + DdsRecv.EVT_CONNECTION_FAILED + "- "
-                + " Error sending search criteria to "
-                + lddsClient.getName() + ": " + ex);
+            log.atWarn()
+               .setCause(ex)
+               .log("{}:{}-  Error sending search criteria to {}",
+                    DdsRecv.module, DdsRecv.EVT_CONNECTION_FAILED, lddsClient.getName());
             shutdownLrgsInput();
             status = "Error";
             return false;
@@ -433,9 +426,7 @@ public class DdsRecvConnection implements LrgsInputInterface
             {
                 String errmsg = DdsRecv.module +
                     " timeout on connection to " + lddsClient.getName();
-                Logger.instance().warning(
-                    DdsRecv.module + ":" + DdsRecv.EVT_CONNECTION_FAILED + "- "
-                    + errmsg);
+                log.warn("{}:{}- ", DdsRecv.module, DdsRecv.EVT_CONNECTION_FAILED, errmsg);
                 lddsClient.disconnect();
                 status = "Timeout";
                 throw new LrgsInputException(errmsg);
@@ -456,37 +447,28 @@ public class DdsRecvConnection implements LrgsInputInterface
                     {
                         String errmsg = DdsRecv.module +
                             " timeout on connection to " + lddsClient.getName();
-                        Logger.instance().warning(
-                            DdsRecv.module + ":"
-                            + DdsRecv.EVT_CONNECTION_FAILED + "- "
-                            + errmsg);
+                        log.atError().setCause(ex).log("{}:{}- {}", DdsRecv.module, DdsRecv.EVT_CONNECTION_FAILED, errmsg);
                         lddsClient.disconnect();
                         status = "Timeout";
-                        throw new LrgsInputException(errmsg);
+                        throw new LrgsInputException(errmsg, ex);
                     }
                     else
                     {
-                        Logger.instance().debug3(DdsRecv.module
-                            + " caught up on connection " + getName());
+                        log.trace("{} caught up on connection {}", DdsRecv.module, getName());
                         status = "Real-Time";
                         return null;
                     }
                 }
             }
-            String msg = DdsRecv.module +
-                " Error getting message from " + lddsClient.getName()
-                + ": " + ex;
-            Logger.instance().warning(
-                DdsRecv.module + ":" + DdsRecv.EVT_CONNECTION_FAILED + "- "
-                + msg);
+            String msg = DdsRecv.module + " Error getting message from " + lddsClient.getName();
+            log.atWarn().setCause(ex).log("{}:{}- msg", DdsRecv.module, DdsRecv.EVT_CONNECTION_FAILED, msg);
             lddsClient.disconnect();
             if (!(ex instanceof IOException)
              && !(ex instanceof ServerError
                    && ((ServerError)ex).Derrno == LrgsErrorCode.DDDSINTERNAL
                    && ex.getMessage().contains("not currently usable")))
             {
-                System.err.println(msg);
-                ex.printStackTrace(System.err);
+                log.atTrace().setCause(ex).log("Unknown Error.");
             }
             status = "Error";
             throw new LrgsInputException(msg);
@@ -515,7 +497,6 @@ public class DdsRecvConnection implements LrgsInputInterface
 
     /** @return true if this interface receives APR messages */
     public boolean getsAPRMessages() { return true; }
-// TODO: Make the APR setting configurable for each connection.
 
     /**
      * @return the group
