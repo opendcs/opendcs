@@ -27,6 +27,7 @@ import java.util.Vector;
 import ilex.net.BasicClient;
 import ilex.util.ByteUtil;
 import ilex.util.EnvExpander;
+import ilex.util.FileLogger;
 import ilex.util.IDateFormat;
 
 import lrgs.archive.MsgArchive;
@@ -118,6 +119,7 @@ public class DrgsRecvMsgThread extends BasicClient implements Runnable, LrgsInpu
 
 	protected int dataSourceId = lrgs.db.LrgsConstants.undefinedId;
 	protected LrgsMain lrgsMain;
+	protected final FileLogger activityLogger = null;  // still referenced by downstream classes. Will handle with FileLogger is deleted.
 	protected boolean wasNone = false;
 	protected DrgsConnectCfg myCfg = null;
 	public int myType = DL_DRGSCON;
@@ -1043,6 +1045,16 @@ public class DrgsRecvMsgThread extends BasicClient implements Runnable, LrgsInpu
 	/** @return the slot number that this interface was given at startup */
 	public int getSlot() { return mySlot; }
 
+
+	
+	/** Prints a log message with a host/port prefix. 
+	 * @deprecated classes use their own loggers.
+	*/
+	@Deprecated
+	protected void log(int level, int evtNum, String text)
+	{
+		/* do nothing */
+	}
 	/**
 	 * @return the name of this interface.
 	 */
