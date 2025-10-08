@@ -1,28 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.1  2008/04/04 18:21:13  cvs
-*  Added legacy code to repository
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.5  2007/05/16 00:17:15  mmaloney
-*  dev
-*
-*  Revision 1.4  2004/09/02 13:09:04  mjmaloney
-*  javadoc
-*
-*  Revision 1.3  2003/04/11 20:14:42  mjmaloney
-*  dev
-*
-*  Revision 1.2  2003/04/09 19:38:03  mjmaloney
-*  impl
-*
-*  Revision 1.1  2003/03/27 21:17:43  mjmaloney
-*  drgs dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.drgs;
 
@@ -30,10 +19,13 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Calendar;
 import java.util.StringTokenizer;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.text.SimpleDateFormat;
 import java.text.ParsePosition;
 
-import ilex.util.Logger;
 import ilex.net.BasicClient;
 
 /**
@@ -41,10 +33,9 @@ This thread handles interaction with the DRGS events socket.
 The client (me) sends a Poll sequence. The Server (DRGS) responds
 with an event or a code indicating that no events are currently available.
 */
-public class DrgsEvtThread 
-	extends BasicClient
-	implements Runnable 
+public class DrgsEvtThread extends BasicClient implements Runnable
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	boolean configChanged;
 	boolean running;
 	boolean enabled;
@@ -106,8 +97,8 @@ public class DrgsEvtThread
 			}
 			else
 			{
-				try 
-				{ 
+				try
+				{
 					DrgsEvent evt = getEvent();
 					if (evt != null)
 						logEvent(evt);
@@ -119,15 +110,14 @@ public class DrgsEvtThread
 				}
 				catch(IOException ex)
 				{
-					log(Logger.E_WARNING,
-						"Error on DAMS-NT Event Socket: " + ex);
+					log.atError().setCause(ex).log("Error on DAMS-NT Event Socket.");
 					disconnect();
 				}
 			}
 		}
 		disconnect();
 		if (enabled)
-			log(Logger.E_INFORMATION, "Shutting down and exiting.");
+			log.info("Shutting down and exiting.");
 	}
 
 	/**
@@ -148,7 +138,7 @@ public class DrgsEvtThread
 			setPort(port);
 			configChanged = true;
 		}
-		log(Logger.E_INFORMATION, " configured with " + host + ":" + port + " enabled=" + enabled);
+		log.info(" configured with {}:{} enabled={}", host, port, enabled);
 	}
 
 	/**
@@ -161,20 +151,14 @@ public class DrgsEvtThread
 
 	private void tryConnect()
 	{
-		log(Logger.E_DEBUG1, "Attempting connection.");
+		log.debug("Attempting connection.");
 		try { connect(); }
 		catch(IOException ex)
 		{
-			log(Logger.E_WARNING, "Connection failed: " + ex);
+			log.atError().setCause(ex).log("Connection failed.");
 			return;
 		}
-		log(Logger.E_INFORMATION, "Connected.");
-	}
-
-	/** Prints a log message with a host/port prefix. */
-	private void log(int level, String text)
-	{
-		Logger.instance().log(level, getName() + ": " + text);
+		log.info("Connected.");
 	}
 
 	/** Returns string of the form "EvtSock(host:port)". */
@@ -210,8 +194,7 @@ public class DrgsEvtThread
 			catch(InterruptedException ex) {}
 		}
 		// timeout waiting for response. disconnect to force re-sync.
-		log(Logger.E_INFORMATION, 
-			"Timeout waiting for response to poll -- disconnecting.");
+		log.info("Timeout waiting for response to poll -- disconnecting.");
 		disconnect();
 		return null;
 	}
@@ -222,7 +205,9 @@ public class DrgsEvtThread
 	private void logEvent(DrgsEvent evt)
 	{
 		// For now, just log this event to the default logger.
-		log(evt.priority, "DRGS Event Received: " + evt.text);
+		log.atInfo()
+		   .addKeyValue("priority", "" + evt.priority)
+		   .log("DRGS Event Received: {}", evt.text);
 	}
 
 	/** Processes the response from the DRGS. */
@@ -232,7 +217,7 @@ public class DrgsEvtThread
 		int count = tokenizer.countTokens();
 		if (count < 0)
 		{
-			log(Logger.E_WARNING, "Empty event response received.");
+			log.warn("Empty event response received.");
 			return null;
 		}
 
@@ -243,23 +228,18 @@ public class DrgsEvtThread
 		char c = s.charAt(0);
 		if (!Character.isDigit(c))
 		{
-			log(Logger.E_WARNING, "Improper priority value in response '"
-				+ line + "'");
+			log.warn("Improper priority value in response '{}'", line);
 			return null;
 		}
 		int priority = (int)c - (int)'0';
 		// DRGS priorities are inverted from LRGS. Convert to one of the
 		// value in Logger.
 		priority = 7 - priority;
-		if (priority < Logger.E_DEBUG3)
-			priority = Logger.E_DEBUG3;
-		if (priority > Logger.E_FATAL)
-			priority = Logger.E_FATAL;
+		// except priority as is.
 
 		if (!tokenizer.hasMoreTokens())
 		{
-			log(Logger.E_WARNING, "Missing timestamp value in response '"
-				+ line + "'");
+			log.warn("Missing timestamp value in response '{}'", line);
 			return null;
 		}
 
@@ -267,11 +247,10 @@ public class DrgsEvtThread
 		Date timestamp = goesDateFormat.parse(s, new ParsePosition(0));
 		if (timestamp == null)
 		{
-			log(Logger.E_WARNING, "Invalid timestamp '" + s
-				+ "' in response '" + line + "'");
+			log.warn("Invalid timestamp '{}' in response '{}'", s, line);
 			return null;
 		}
-		
+
 		StringBuffer text = new StringBuffer();
 		for(int i=0; tokenizer.hasMoreTokens(); i++)
 		{

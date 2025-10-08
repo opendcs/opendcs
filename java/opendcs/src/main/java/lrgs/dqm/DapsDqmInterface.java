@@ -1,12 +1,27 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.dqm;
 
 import java.util.LinkedList;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.text.NumberFormat;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import lrgs.apistatus.DownLink;
 import lrgs.lrgsmain.JavaLrgsStatusProvider;
@@ -14,7 +29,7 @@ import lrgs.lrgsmain.LrgsInputInterface;
 
 /**
 This class sends serial messages to the legacy DAPS system over the COM1
-serial port. It is enabled by setting the DapsDqm configuration setting to 
+serial port. It is enabled by setting the DapsDqm configuration setting to
 true.
 
 <p> Two types of messages can be sent:
@@ -30,10 +45,10 @@ outage).
 <p>The sssss, eeeee, and lllll values are all zero-filled five-digit decimals.
 The ddddd values in both messages are 5-digit, right justified, space filled.
 Each message ends with space and line feed.
+@deprecated DOMSAT no longer in service, these classes will be removed
 */
-public class DapsDqmInterface
-	extends Thread
-	implements DqmInterface
+@Deprecated
+public class DapsDqmInterface extends Thread implements DqmInterface
 {
 	/** Queue of text messages to send to DAPS. */
 	private LinkedList<String> msgQueue;
@@ -53,7 +68,6 @@ public class DapsDqmInterface
 	 */
 	public DapsDqmInterface(JavaLrgsStatusProvider statusProvider)
 	{
-		Logger.instance().info("Constructing DAPS DQM Interface.");
 		msgQueue = new LinkedList<String>();
 		numberFormat = NumberFormat.getIntegerInstance();
 		numberFormat.setGroupingUsed(false);
@@ -80,7 +94,6 @@ public class DapsDqmInterface
 			+ " " + numberFormat.format((gapStart + (numDropped-1)) % 65536)
 			+ " " + TextUtil.setLengthRightJustify("" + elapsedSec, 5)
 			+ "\r\n";
-		Logger.instance().debug1("Enqueueing DQM msg '" + msg + "'");
 		msgQueue.addLast(msg);
 	}
 
@@ -89,17 +102,16 @@ public class DapsDqmInterface
 	 */
 	public void shutdown()
 	{
-		shutdownFlag = true; 
+		shutdownFlag = true;
 	}
 
 	/**
-	 * The thread main method. 
+	 * The thread main method.
 	 * Once per minute, send status message with last sequence number to DAPS.
 	 * Wakeup every second and check for dropout reports to send to DAPS.
 	 */
 	public void run()
 	{
-		Logger.instance().debug1("DAPS DQM Interface starting up.");
 		int lastMin = (int)(System.currentTimeMillis() / 60000L);
 		statusProvider.setDqmInterface(this);
 		while(!shutdownFlag)
@@ -108,7 +120,6 @@ public class DapsDqmInterface
 			String msg;
 			while((msg = dequeue()) != null)
 			{
-Logger.instance().info("DQM Sending '" + msg + "'");
 				sendMsg(msg);
 			}
 
@@ -121,24 +132,23 @@ Logger.instance().info("DQM Sending '" + msg + "'");
 
 				// Compute 'duration of outage' which is 0 if we're not in one.
 				int dur = 0;
-				if (dl.statusCode != LrgsInputInterface.DL_ACTIVE 
+				if (dl.statusCode != LrgsInputInterface.DL_ACTIVE
 				 && dl.statusCode != LrgsInputInterface.DL_INIT)
 				{
 					int last = dl.lastMsgRecvTime;
 					if (last == 0)
-						last = (int)(statusProvider.lrgsStartupTime.getTime() 
+						last = (int)(statusProvider.lrgsStartupTime.getTime()
 							 / 1000L);
 					dur = (int)(now/1000L) - last;
 				}
 
 				// Periodic Msg Format: "P lllll       ddddd\r\n"
-				msg = "P " 
+				msg = "P "
 					+ numberFormat.format(dl.lastSeqNum)
 					+ "       "
 					+ TextUtil.setLengthRightJustify("" + dur, 5)
 					+ "\r\n";
 
-Logger.instance().info("DQM Sending '" + msg + "'");
 				sendMsg(msg);
 
 				lastMin = thisMin;
@@ -147,7 +157,6 @@ Logger.instance().info("DQM Sending '" + msg + "'");
 			try{ sleep(1000L); } catch(InterruptedException ex) {}
 		}
 
-		Logger.instance().info("DAPS DQM Interface Shutting Down.");
 		msgQueue.clear();
 		if (serialIf != null)
 		{
@@ -171,17 +180,14 @@ Logger.instance().info("DQM Sending '" + msg + "'");
 		{
 			if (serialIf == null)
 			{
-				Logger.instance().info("DQM opening serial port...");
 				serialIf = new DqmSerialInterface();
 				serialIf.open();
 			}
-			Logger.instance().debug1("Sending DQM msg '" + msg + "'");
+
 			serialIf.write(msg);
 		}
 		catch(DqmSerialException ex)
 		{
-			Logger.instance().warning("Cannot open serial port: "
-				+ ex + " -- DQM output skipped.");
 			serialIf = null;
 		}
 	}
