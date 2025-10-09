@@ -1,14 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.drgsrecv;
 
@@ -16,8 +19,12 @@ import java.io.File;
 import java.util.Iterator;
 import java.util.Vector;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.MDC;
+import org.slf4j.MDC.MDCCloseable;
+
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 
 import lrgs.common.BadConfigException;
 import lrgs.lrgsmain.LrgsMain;
@@ -26,14 +33,14 @@ import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.lrgsmain.LrgsInputException;
 import lrgs.archive.MsgArchive;
 import lrgs.drgs.DrgsConnection;
+import lrgs.drgs.DrgsCmdLineArgs;
 import lrgs.drgs.DrgsConnectCfg;
 import lrgs.drgs.DrgsInputSettings;
 
 /** Main class for the LRGS-DRGS Input Process. */
-public class DrgsRecv
-	extends Thread
-	implements LrgsInputInterface
+public class DrgsRecv extends Thread implements LrgsInputInterface
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Module name for log messages. */
 	public static final String module = "DrgsRecv";
 
@@ -60,7 +67,7 @@ public class DrgsRecv
 
 	/** Event number meaning message too old. */
 	public static final int EVT_MSG_TOO_OLD = 7;
-	
+
 	public static final int EVT_BAD_EXT_QUAL = 8;
 
 	/** We check for config changes this often. */
@@ -88,7 +95,7 @@ public class DrgsRecv
 	private String status;
 
 	/** enable flag */
-	public boolean isEnabled; 
+	public boolean isEnabled;
 
 	/** Number of milliseconds in a day. */
 	public static final long MS_PER_DAY = 1000L*3600L*24L;
@@ -97,7 +104,7 @@ public class DrgsRecv
 
 	/**
 	  Constructor called from main.
-	  @param lrgsMain main LRGS process
+	  @param  lrgsMain main LRGS process
 	  @param msgArchive message archive
 	*/
 	public DrgsRecv(LrgsMain lrgsMain, MsgArchive msgArchive)
@@ -116,7 +123,7 @@ public class DrgsRecv
 	/** Main thread run method. */
 	public void run()
 	{
-		Logger.instance().info(module + " starting.");
+		log.info("starting.");
 		checkConfig();
 
 		// Read the configuration file.
@@ -126,25 +133,28 @@ public class DrgsRecv
 		status = "Active";
 
 		long lastCfgCheck = 0L;
-		while(!isShutdown)
+		try (MDCCloseable mdc = MDC.putCloseable("LrgsInput", module))
 		{
-			long now = System.currentTimeMillis();
-			if (now - lastCfgCheck > cfgCheckTime)
+			while(!isShutdown)
 			{
-				checkConfig();
-				lastCfgCheck = now;
+				long now = System.currentTimeMillis();
+				if (now - lastCfgCheck > cfgCheckTime)
+				{
+					checkConfig();
+					lastCfgCheck = now;
+				}
+
+				try { Thread.sleep(1000L); }
+				catch(InterruptedException ex) {}
 			}
 
-			try { Thread.sleep(1000L); }
-			catch(InterruptedException ex) {}
+			statusCode = DL_DISABLED;
+			status = "Shutdown";
+
+			// Shutdown stuff here...
+			for(Iterator<DrgsConnection> it = myConnections.iterator(); it.hasNext(); )
+				(it.next()).shutdown();
 		}
-
-		statusCode = DL_DISABLED;
-		status = "Shutdown";
-
-		// Shutdown stuff here...
-		for(Iterator<DrgsConnection> it = myConnections.iterator(); it.hasNext(); )
-			(it.next()).shutdown();
 	}
 
 	/** @return connection by number */
@@ -165,7 +175,7 @@ public class DrgsRecv
 	 */
 	private void checkConfig()
 	{
-		Logger.instance().debug3(module + " checkConfig");
+		log.trace("checkConfig");
 
 		if (isEnabled && !LrgsConfig.instance().enableDrgsRecv)
 		{
@@ -204,8 +214,7 @@ public class DrgsRecv
 			}
 			catch(BadConfigException ex)
 			{
-				Logger.instance().failure(module + 
-					" Cannot read DRGS Recv Config File '" + cf + "': " + ex);
+				log.atError().setCause(ex).log("Cannot read DRGS Recv Config File '{}'", cf);
 				return;
 			}
 
@@ -220,7 +229,7 @@ public class DrgsRecv
 				DrgsConnection con = getConnection(cfg.connectNum);
 				if (con == null)
 				{
-					DrgsRecvMsgThread msgThread = 
+					DrgsRecvMsgThread msgThread =
 						new DrgsRecvMsgThread(msgArchive, lrgsMain);
 					lrgsMain.addInput(msgThread);
 					con = new DrgsConnection(cfg.connectNum, msgThread);
@@ -291,12 +300,12 @@ public class DrgsRecv
 	 */
 	public void shutdownLrgsInput()
 	{
-		Logger.instance().info(module + " Shutting down.");
+		log.info("Shutting down.");
 		isShutdown = true;
 	}
 
 	/**
-	 * Enable or Disable the interface. 
+	 * Enable or Disable the interface.
 	 * The interface should only attempt to archive messages when enabled.
 	 * @param enabled true if the interface is to be enabled, false if disabled.
 	 */
@@ -322,16 +331,16 @@ public class DrgsRecv
 	/**
 	 * @return the numeric code representing the current status.
 	 */
-	public int getStatusCode() { return statusCode; } 
+	public int getStatusCode() { return statusCode; }
 
 	/**
 	 * @return a short string description of the current status.
 	 */
 	public String getStatus() { return status; }
 
-	
+
 	public int getDataSourceId() { return dataSourceId; }
-	
+
 	/** @return DRGS never receives APR messages */
 	public boolean getsAPRMessages() { return false; }
 
@@ -342,4 +351,3 @@ public class DrgsRecv
 	}
 
 }
-
