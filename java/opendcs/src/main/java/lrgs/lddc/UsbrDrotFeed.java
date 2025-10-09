@@ -1,45 +1,40 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.3  2008/11/20 18:49:45  mjmaloney
-*  merge from usgs mods
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.2  2008/09/05 13:14:14  mjmaloney
-*  LRGS 7 dev
-*
-*  Revision 1.1  2008/04/04 18:21:14  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.1  2003/09/18 14:22:50  mjmaloney
-*  Created.
-*
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.lddc;
 
 import java.io.*;
 
-import ilex.util.*;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.net.*;
 import ilex.cmdline.*;
 import lrgs.common.*;
 import lrgs.ldds.LddsParams;
-import lrgs.ldds.ProtocolError;
-import lrgs.ldds.ServerError;
 
 public class UsbrDrotFeed extends GetDcpMessages
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String drotFeedSvr;
 	private int drotFeedPort;
 	private BasicClient drotFeed;
 	public static final int pauseTime = 10000; // 10 sec.
 	private boolean firstConnect = true;
 
-	UsbrDrotFeed(String ddsHost, int ddsPort, String ddsUser, String crit, 
+	UsbrDrotFeed(String ddsHost, int ddsPort, String ddsUser, String crit,
 		String usbrHost, int usbrPort)
 		throws Exception
 	{
@@ -47,8 +42,7 @@ public class UsbrDrotFeed extends GetDcpMessages
 		super(ddsHost, ddsPort, false, ddsUser, crit, false, "", "", false, false);
 		timeout = 3600;
 		setSingleMode(true);
-		Logger.instance().log(Logger.E_INFORMATION,
-			"Constructing client to " + usbrHost + ":" + usbrPort);
+		log.info("Constructing client to {}:{}", usbrHost, usbrPort);
 		drotFeed = new BasicClient(usbrHost, usbrPort);
 		String passwd = passwordArg.getValue();
 		if (passwd != null && passwd.length() > 0)
@@ -65,8 +59,7 @@ public class UsbrDrotFeed extends GetDcpMessages
 		while(true)
 		{
 			super.run();
-			Logger.instance().log(Logger.E_WARNING,
-				"DDS session failed, pause before retry...");
+			log.warn("DDS session failed, pause before retry...");
 			try { sleep(pauseTime); }
 			catch(InterruptedException ex) {}
 		}
@@ -86,10 +79,9 @@ public class UsbrDrotFeed extends GetDcpMessages
 			}
 			catch(IOException ex)
 			{
-				Logger.instance().log(Logger.E_WARNING,
-					"Failed to get all-clear from "
-					+ "server at " + drotFeed.getHost() + ":" 
-					+ drotFeed.getPort());
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Failed to get all-clear from server at {}:{}", drotFeed.getHost(), drotFeed.getPort());
 				drotFeed.disconnect();
 			}
 		}
@@ -101,48 +93,45 @@ public class UsbrDrotFeed extends GetDcpMessages
 		{
 			if (!firstConnect)
 			{
-				Logger.instance().log(Logger.E_WARNING,
-					"Pausing before attempt to reconnect to USBR "
-					+ "server at " + drotFeed.getHost() + ":" 
-					+ drotFeed.getPort());
+				log.warn("Pausing before attempt to reconnect to USBR server at {}:{}",
+						 drotFeed.getHost(), drotFeed.getPort());
 				try { sleep(10000L); }
 				catch(InterruptedException  ex) {}
 			}
 			firstConnect = false;
-System.out.println("Trying connect()");
+			log.trace("Trying connect()");
 			try { drotFeed.connect(); }
 			catch(IOException ex)
 			{
-				Logger.instance().log(Logger.E_WARNING,
-					"Error connecting to server at " 
-					+ drotFeed.getHost() + ":" 
-					+ drotFeed.getPort() + ": " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Error connecting to server at {}:{}", drotFeed.getHost(), drotFeed.getPort());
 			}
 		}
 	}
 
 	protected void outputMessage(DcpMsg msg)
 	{
-Logger.instance().log(Logger.E_DEBUG1, "UsbrDrotFeed.outputMessage");
+		log.debug("UsbrDrotFeed.outputMessage");
 		waitForAllClear();
-				
-		try 
+
+		try
 		{
 			drotFeed.sendData(msg.getData());
 			drotFeed.getOutputStream().flush();
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-					"Error on server at " + drotFeed.getHost() + ":" 
-				+ drotFeed.getPort() + ": " + ex);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Error on server at {}:{}", drotFeed.getHost(), drotFeed.getPort());
 			drotFeed.disconnect();
 		}
 	}
 
 	// ========================= main ====================================
 	/**
-	  Usage: UsbrDrotFeed -p port -h host -u user -f searchcrit 
+	  Usage: UsbrDrotFeed -p port -h host -u user -f searchcrit
 
 		... where:
 			-p port defaults to 16003.
@@ -192,29 +181,18 @@ Logger.instance().log(Logger.E_DEBUG1, "UsbrDrotFeed.outputMessage");
 		usbrSettings.addToken(passwordArg); //Inherited from GetDcpMessages
 	}
 
-	public static void main(String args[]) 
+	public static void main(String args[])
 	{
 		try
 		{
 			usbrSettings.parseArgs(args);
-			
-			String lf = logArg.getValue();
-			if (lf != null && lf.length() > 0)
-				Logger.setLogger(new FileLogger("drotfeed.err", lf));
-			int dba = debugArg.getValue();
-			if (dba > 0)
-				Logger.instance().setMinLogPriority(
-					dba == 1 ? Logger.E_DEBUG1 :
-					dba == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
-			Logger.instance().setProcName("UsbrDrotFeed");
-			Logger.instance().setUseProcName(true);
 
 			String crit = searchcritArg.getValue();
 			if (crit != null && crit.length() == 0)
 				crit = null;
 
 			UsbrDrotFeed me = new UsbrDrotFeed(ddsHostArg.getValue(),
-				ddsPortArg.getValue(), ddsUserArg.getValue(), crit, 
+				ddsPortArg.getValue(), ddsUserArg.getValue(), crit,
 				usbrHostArg.getValue(), usbrPortArg.getValue());
 
 			me.setTimeout(timeoutArg.getValue());
@@ -222,11 +200,9 @@ Logger.instance().log(Logger.E_DEBUG1, "UsbrDrotFeed.outputMessage");
 
 			me.start();
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			System.out.println("Exception while attempting to start client: " 
-				+ e);
+			log.atError().setCause(ex).log("Exception while attempting to start client.");
 		}
 	}
 }
-
