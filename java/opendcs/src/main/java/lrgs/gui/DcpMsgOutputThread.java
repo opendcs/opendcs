@@ -1,26 +1,36 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.gui;
 
 import java.io.OutputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
-import java.io.FileInputStream;
 import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Properties;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.StringWriter;
 import java.io.PrintWriter;
 
 import ilex.util.AsciiUtil;
-import ilex.util.TextUtil;
-import ilex.util.Logger;
 import ilex.gui.GuiApp;
 
 import lrgs.common.*;
@@ -38,7 +48,7 @@ to pace the output.
 */
 class DcpMsgOutputThread extends Thread
 {
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(DcpMsgOutputThread.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	DcpMsgOutputMonitor parent;
 	LddsClient client;
@@ -55,7 +65,7 @@ class DcpMsgOutputThread extends Thread
 	boolean printDecodingErrorMessages = true;
 	String outFormatName;
 	boolean showMetaData = false;
-	
+
 	/**
 	Constructor typically called from the parent.
 	  @param parent the object that will monitor this thread's progress
@@ -84,7 +94,7 @@ class DcpMsgOutputThread extends Thread
 	}
 
 	/*  Disable decoding error messages -- used when data are sent
-			to a file for uploading  - messages would interferr with ingest 
+			to a file for uploading  - messages would interferr with ingest
 			programs.
 	*/
 	public void disableDecodingErrorMessages() {
@@ -261,14 +271,14 @@ class DcpMsgOutputThread extends Thread
 
 		if (!decodesInitialized)
 		{
-			try 
+			try
 			{
 				initDecodes();
-				String name = 
+				String name =
 					GuiApp.getProperty("MessageBrowser.PresentationGroup",
 					"empty-presentation");
 				decodesIf.setPresentation(name);
-		
+
 				name = GuiApp.getProperty("MessageBrowser.TimeZone");
 				decodesIf.setTimeZone(name);
 
@@ -276,13 +286,12 @@ class DcpMsgOutputThread extends Thread
 				decodesIf.setFormatter(outFormatName, GuiApp.getProperties());
 				formatter = decodesIf.getFormatter();
 			}
-			catch(Exception e)
+			catch(Exception ex)
 			{
-				String es = "Error initializing DECODES: " + e.toString();
-				System.err.println(es);
-				e.printStackTrace(System.err);
-				try { outs.write(es.getBytes()); }
-				catch(IOException ex) {}
+				String es = "Error initializing DECODES";
+				log.atError().setCause(ex).log(es);
+				try { outs.write((es + ": " + ex.getMessage()).getBytes()); }
+				catch(IOException ex2) {}
 				return;
 			}
 		} else {
@@ -295,11 +304,11 @@ class DcpMsgOutputThread extends Thread
 					formatter = decodesIf.getFormatter();
 					outFormatName = newFormatName;
 				}
-				catch(Exception e)
+				catch(Exception ex)
 				{
-					String es = "Error changing OutputFormat: " + e.toString();
+					String es = "Error changing OutputFormat: " + ex.toString();
 					try { outs.write(es.getBytes()); }
-					catch(IOException ex) {}
+					catch(IOException ex2) {}
 					return;
 				}
 			}
@@ -314,22 +323,20 @@ class DcpMsgOutputThread extends Thread
 				outs.write(data.getBytes());
 			}
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			if ( printDecodingErrorMessages ) {
-				String es = "Decoding error: " + e.toString() + "\n";
-				try 
+			if (printDecodingErrorMessages)
+			{
+				String es = "Decoding error";
+				try
 				{
-					outs.write(es.getBytes()); 
-					if (Logger.instance().getMinLogPriority() <= Logger.E_DEBUG1)
+					outs.write((es + ": " + ex.toString() + "\n").getBytes());
+					if (log.isDebugEnabled())
 					{
-						StringWriter sw = new StringWriter();
-						PrintWriter pw = new PrintWriter(sw);
-						e.printStackTrace(pw);
-						Logger.instance().log(Logger.E_DEBUG1, sw.toString());
+						log.atDebug().setCause(ex).log(es);
 					}
 				}
-				catch(IOException ex) {}
+				catch(IOException ex2) {}
 			}
 		}
 	}
@@ -337,8 +344,7 @@ class DcpMsgOutputThread extends Thread
 	/** Initializes DECODES */
 	private void initDecodes()
 	{
-		Logger.instance().log(Logger.E_DEBUG1, 
-			"Initializing msgaccess DECODES refs");
+		log.debug("Initializing msgaccess DECODES refs");
 		try
 		{
 			/* by the time this is called the Database instance is valid or will be appropriately created. */
@@ -346,10 +352,7 @@ class DcpMsgOutputThread extends Thread
 		}
 		catch(NoClassDefFoundError ex)
 		{
-			PrintStream ps = new PrintStream(outs);
-			ps.println(
-				"Cannot decode data, cannot initialize DECODES: " + ex);
-			ex.printStackTrace(ps);
+			log.atError().setCause(ex).log("Cannot decode data, cannot initialize DECODES");
 			return;
 		}
 		decodesInitialized = true;

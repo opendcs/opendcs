@@ -1,57 +1,17 @@
 /*
-*  $Id$
-*  
-*  $Log$
-*  Revision 1.11  2016/09/29 18:54:37  mmaloney
-*  CWMS-8979 Allow Database Process Record to override decodes.properties and
-*  user.properties setting. Command line arg -Dsettings=appName, where appName is the
-*  name of a process record. Properties assigned to the app will override the file(s).
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  Revision 1.10  2015/07/28 16:33:28  mmaloney
-*  Removed obsolete files.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.9  2015/01/24 13:51:59  mmaloney
-*  Preload configs before platforms in initializeForDecoding(). Otherwise, each platform read has to read the config individually, which is MUCH slower.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.8  2014/11/19 16:14:46  mmaloney
-*  code cleanup
-*
-*  Revision 1.7  2014/10/07 12:50:54  mmaloney
-*  Must init resource factory.
-*
-*  Revision 1.6  2014/09/25 18:12:23  mmaloney
-*  Enum fields encapsulated.
-*
-*  Revision 1.5  2014/08/22 17:23:11  mmaloney
-*  6.1 Schema Mods and Initial DCP Monitor Implementation
-*
-*  Revision 1.4  2014/07/03 12:45:44  mmaloney
-*  Don't call readDecodesProperties() this is done by CmdLineArgs.
-*
-*  Revision 1.3  2014/05/28 13:09:31  mmaloney
-*  dev
-*
-*  Revision 1.2  2014/05/22 12:26:48  mmaloney
-*  Remove obsolete methods.
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.14  2013/03/28 17:29:09  mmaloney
-*  Refactoring for user-customizable decodes properties.
-*
-*  Revision 1.13  2013/02/28 16:12:52  mmaloney
-*  added maintainGoesPdt method.
-*
-*  Revision 1.12  2011/12/16 20:21:50  mmaloney
-*  Added GUI flag.
-*
-*  Revision 1.11  2011/02/03 20:00:23  mmaloney
-*  Time Series Group Editor Mods
-*
-*  Revision 1.10  2010/10/22 18:03:09  mmaloney
-*  formatting
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.gui;
 
@@ -59,8 +19,10 @@ import java.io.File;
 import java.util.Iterator;
 import java.util.Properties;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import decodes.datasource.LrgsDataSource;
 import decodes.datasource.RawMessage;
@@ -97,6 +59,7 @@ and the DECODES classes are not available.
 */
 public class DecodesInterface
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static boolean decodesInitialized = false;
 	static boolean initializedForDecoding = false;
 	static boolean initializedForEditing = false;
@@ -132,8 +95,8 @@ public class DecodesInterface
 
 
 	/**
-	  Initialize interface to the DECODES database. 
-	
+	  Initialize interface to the DECODES database.
+
 	  This method does the minimal initialization that will be neede by
 	  most (all?) applications. After calling this method you probably
 	  also want to call initializeForDecoding() or initializeForEditing().
@@ -142,6 +105,7 @@ public class DecodesInterface
 	  NOTE: If DECODES is not installed, a NoClassDefFoundError will be
 	  thrown when you attempt to call this method.
 
+	  @return true if success, false if failure,
 	*/
 	public static void initDecodes(String propFile)
 			throws DecodesException
@@ -153,35 +117,23 @@ public class DecodesInterface
 		Database db = Database.getDb();
 
 		// Initialize minimal collections:
-		if (!silent)
-		{
-			System.out.print("Enum, ");
-			System.out.flush();
-		}
+
+		log.trace("Enum, ");
 		db.enumList.read();
 
-		if (!silent)
-		{
-			System.out.print("DataType, ");
-			System.out.flush();
-		}
+		log.trace("DataType, ");
 		db.dataTypeSet.read();
-		// System.out.print("EU, "); System.out.flush();
-		// db.engineeringUnitList.read();
-		if (!silent)
-		{
-			System.out.print("Sources, ");
-			System.out.flush();
-		}
+
+		log.trace("Sources, ");
+
 		db.dataSourceList.read();
 
 		decodesInitialized = true;
-		if (!silent)
-			System.out.println();
+
 	}
-	
+
 	/**
-	 * Connects to DECODES database, initializes the singleton and the DBIO 
+	 * Connects to DECODES database, initializes the singleton and the DBIO
 	 * class, but does not read any of the lists.
 	 * @param propFile name of DECODES properties file
 	 * @throws DecodesException if any connect-error occurs.
@@ -195,8 +147,7 @@ public class DecodesInterface
 		ResourceFactory.instance();
 		DecodesSettings settings = DecodesSettings.instance();
 
-		if (!silent)
-		{	System.out.print("Init DECODES DB: "); System.out.flush(); }
+		log.trace("Init DECODES DB: ");
 
 		// Construct database and the interface specified by properties.
 		Database db = Database.getDb();
@@ -205,15 +156,14 @@ public class DecodesInterface
 			db = new Database();
 			Database.setDb(db);
 		}
-		
+
 		DatabaseIO dbio;
 		dbio = DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode,
 			settings.editDatabaseLocation);
 		db.setDbIo(dbio);
 
-		if (!silent)
-		{	System.out.print("EU, "); System.out.flush(); }
-		
+		log.trace("EU, ");
+
 		db.engineeringUnitList.read();
 	}
 
@@ -234,31 +184,25 @@ public class DecodesInterface
 
 		Database db = Database.getDb();
 
-		if (!silent)
-		{	System.out.print("Site, "); System.out.flush(); }
+		log.trace("Site, ");
 		Site.explicitList = true;
 		db.siteList.read();
 		siteListRead = true;
-		
-		if (!silent)
-		{	System.out.print("Equip, "); System.out.flush(); }
+
+		log.trace("Equip, ");
 		db.equipmentModelList.read();
-		
-		if (!silent)
-		{	System.out.print("Config, "); System.out.flush(); }
+
+		log.trace("Config, ");
 		db.platformConfigList.read();
 		if (!initializedForDecoding)
 			initializeForDecoding();
 
 		db.platformConfigList.countPlatformsUsing();
-		
-		if (!silent)
-		{	System.out.print("Routing, "); System.out.flush(); }
+
+		log.trace("Routing, ");
 		db.routingSpecList.read();
 
 		initializedForEditing = true;
-		if (!silent)
-			System.out.println();
 	}
 
 
@@ -276,33 +220,23 @@ public class DecodesInterface
 			return;
 		Database db = Database.getDb();
 		readSiteList();
-		if (!silent)
-		{	System.out.print("Platform Configs, "); System.out.flush(); }
+		log.trace("Platform Configs, ");
 		db.platformConfigList.read();
-		if (!silent)
-		{	System.out.print("Platforms, "); System.out.flush(); }
+		log.trace("Platforms, ");
 		db.platformList.read();
-		if (!silent)
-		{	System.out.print("Presentation Groups, "); System.out.flush(); }
+		log.trace("Presentation Groups, ");
 		db.presentationGroupList.read();
-		if (!silent)
-		{	System.out.print("Network Lists, "); System.out.flush(); }
+		log.trace("Network Lists, ");
 		db.networkListList.read();
 		initializedForDecoding = true;
-		if (!silent)
-			System.out.println();
 	}
-	
+
 	public static void readSiteList()
 		throws DecodesException
 	{
 		if (!siteListRead)
 		{
-			if (!silent)
-			{
-				System.out.print("Site, ");
-				System.out.flush();
-			}
+			log.trace("Site, ");
 			Database db = Database.getDb();
 			db.siteList.read();
 			siteListRead = true;
@@ -353,7 +287,7 @@ public class DecodesInterface
 	*/
 	public void setPresentation(String name)
 	{
-		if (presGrp == null 
+		if (presGrp == null
 		 || !presGrp.groupName.equalsIgnoreCase(name))
 		{
 			presGrp = null;
@@ -364,11 +298,7 @@ public class DecodesInterface
 				try { presGrp.prepareForExec(); }
 				catch(InvalidDatabaseException ex)
 				{
-					String msg = "Cannot prepare presentation group '"
-						+ name + "': " + ex;
-					System.err.println(msg);
-					ex.printStackTrace(System.err);
-					Logger.instance().failure(msg);
+					log.atError().setCause(ex).log("Cannot prepare presentation group '{}'", name);
 				}
 			}
 		}
@@ -428,17 +358,17 @@ public class DecodesInterface
 				p.prepareForExec();
 			if (!tm.isPrepared())
 				tm.prepareForExec();
-	
+
 			// Get decodes script & use it to decode message.
 			DecodesScript ds = tm.getDecodesScript();
 			if (ds == null)
 				throw new Exception(
 					"Transport medium does not have a DecodesScript");
-	
+
 			dm = ds.decodeMessage(rm);
 			//Calculates the elevation using the preoffset, scale and offset
 			dm.applyScaleAndOffset();
-	
+
 			// Use presentation group to convert units & format values
 			if (presGrp != null)
 				dm.formatSamples(presGrp);
@@ -459,20 +389,16 @@ public class DecodesInterface
 
 	public static boolean isInitialized() { return decodesInitialized; }
 
-	public static boolean isGUI() 
+	public static boolean isGUI()
 	{
-//TODO TEST CODE, REMOVE FOR PRODUCTION
-File f = new File(EnvExpander.expand("$DCSTOOL_USERDIR/guiloginbypass"));
-if (f.exists()) return false;
-
 		return isGUI;
 	}
 
-	public static void setGUI(boolean isGUI) 
+	public static void setGUI(boolean isGUI)
 	{
 		DecodesInterface.isGUI = isGUI;
 	}
-	
+
 	public static void maintainGoesPdt()
 	{
 		DecodesSettings settings = DecodesSettings.instance();
@@ -491,7 +417,6 @@ if (f.exists()) return false;
 			// Get CDT singleton instance.
 			ChannelMap cdt = ChannelMap.instance();
 			Pdt.downloadIntervalMsec = 24 * 3600 * 1000L; // 24 hrs
-//			ChannelMap.useLockForDownload = true;
 			// Note thread will not do download if url is null, blank or "-",
 			// so this is safe to do.
 			cdt.startMaintenanceThread(settings.cdtUrl, settings.cdtLocalFile);
@@ -507,7 +432,7 @@ if (f.exists()) return false;
 			xref.startMaintenanceThread(settings.nwsXrefUrl, settings.nwsXrefLocalFile);
 		}
 	}
-	
+
 	/**
 	 * Called by daemons when they detect that the database has gone down.
 	 * This method closes database connections and discards the cached database
@@ -517,7 +442,7 @@ if (f.exists()) return false;
 	{
 		if (!preventDecodesShutdown)
 		{
-			Logger.instance().info("Shutting down Decodes Connection.");
+			log.info("Shutting down Decodes Connection.");
 			Database db = Database.getDb();
 			if (db != null)
 			{
