@@ -1,25 +1,32 @@
 /*
-*  $Id$
-*  
-*  Open source Software
-*  Author: Mike Maloney, Cove Software, LLC
-*  
-*  $Log$
-*  Revision 1.1  2013/02/28 16:44:26  mmaloney
-*  New SearchCriteriaEditPanel implementation.
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.gui;
 
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.table.*;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
 import ilex.util.IDateFormat;
-import ilex.util.Logger;
 
 import decodes.gui.*;
 import decodes.util.NwsXrefEntry;
@@ -45,15 +52,10 @@ public class PdtSelectPanel extends JPanel
 			PdtSelectTableModel.columnWidths);
 
 		setMultipleSelection(true);
-		try
-		{
-			guiInit();
-			model.reload();
-		}
-		catch(Exception ex)
-		{
-			ex.printStackTrace();
-		}
+
+		guiInit();
+		model.reload();
+
 	}
 
 	public void setMultipleSelection(boolean ok)
@@ -64,7 +66,7 @@ public class PdtSelectPanel extends JPanel
 	}
 
 	/** Initializes GUI components. */
-	private void guiInit() throws Exception
+	private void guiInit()
 	{
 		this.setPreferredSize(new Dimension(980,500));
 		JScrollPane scrollPane = new JScrollPane();
@@ -95,7 +97,7 @@ public class PdtSelectPanel extends JPanel
 	{
 		this.parentPanel = parentPanel;
 	}
-	
+
 	public void reload()
 	{
 		model.reload();
@@ -103,9 +105,9 @@ public class PdtSelectPanel extends JPanel
 }
 
 @SuppressWarnings("serial")
-class PdtSelectTableModel extends AbstractTableModel
-	implements SortingListTableModel
+class PdtSelectTableModel extends AbstractTableModel implements SortingListTableModel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	PdtSelectColumnizer columnizer;
 
 	private static String columnNames[] =
@@ -119,25 +121,24 @@ class PdtSelectTableModel extends AbstractTableModel
 	};
 	private int sortColumn = 0;
 	private ArrayList<PdtEntry> entries = new ArrayList<PdtEntry>();
-	
+
 	public PdtSelectTableModel()
 	{
 		super();
 		columnizer = new PdtSelectColumnizer();
 	}
-	
+
 	public void reload()
 	{
 		entries.clear();
 		Pdt pdt = Pdt.instance();
-		Logger.instance().info("PdtSelectPanel.reload(): pdt has " 
-			+ pdt.getEntries().size() + " entries in it.");
+		log.info("PdtSelectPanel.reload(): pdt has {} entries in it.", pdt.getEntries().size());
 		for(PdtEntry pe : pdt.getEntries())
 			entries.add(pe);
 		sortByColumn(sortColumn);
 		this.fireTableDataChanged();
 	}
-	
+
 	public int getColumnCount() { return columnNames.length; }
 
 	public String getColumnName(int col)
@@ -199,17 +200,17 @@ class PdtSelectColumnizer
 			case 4: return p.st_channel > 0 ?
 				IDateFormat.printSecondOfDay(p.st_first_xmit_sod, true) : "";
 			case 5: return p.state_abbr;
-			case 6: 
+			case 6:
 			{
 				NwsXrefEntry nxe = p.getNwsXrefEntry();
 				return nxe != null ? nxe.getNwsId() : "";
 			}
-			case 7: 
+			case 7:
 			{
 				NwsXrefEntry nxe = p.getNwsXrefEntry();
 				return nxe != null ? nxe.getUsgsNum() : "";
 			}
-			case 8: 
+			case 8:
 			{
 				NwsXrefEntry nxe = p.getNwsXrefEntry();
 				return nxe != null ? nxe.getLocationName()

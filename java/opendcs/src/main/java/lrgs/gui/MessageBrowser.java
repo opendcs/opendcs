@@ -1,32 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.5  2016/04/15 19:31:22  mmaloney
-*  LRGS Server List sorted by access time, most-recent-first.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.4  2016/02/23 19:55:18  mmaloney
-*  Refactor to allow a no-decode version of the browser.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.3  2015/07/17 13:10:30  mmaloney
-*  *** empty log message ***
-*
-*  Revision 1.2  2014/10/08 17:24:49  mmaloney
-*  Added combo box for decoder format.
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.13  2013/03/28 19:19:32  mmaloney
-*  User temp files are now placed under DCSTOOL_USERDIR which may be different
-*  from DCSTOOL_HOME on linux/unix multi-user installations.
-*
-*  Revision 1.12  2013/03/28 17:29:09  mmaloney
-*  Refactoring for user-customizable decodes properties.
-*
-*  Revision 1.11  2013/02/28 16:44:26  mmaloney
-*  New SearchCriteriaEditPanel implementation.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.gui;
 
@@ -39,8 +24,7 @@ import javax.net.SocketFactory;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
-import org.opendcs.gui.GuiConstants;
-import org.opendcs.gui.PasswordWithShow;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.border.BevelBorder;
@@ -51,24 +35,19 @@ import decodes.util.DecodesSettings;
 import decodes.util.ResourceFactory;
 
 import java.util.ResourceBundle;
-import java.util.StringTokenizer;
 import java.util.Properties;
-import java.util.Enumeration;
-
 import ilex.gui.*;
 import ilex.cmdline.*;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
-import ilex.util.StderrLogger;
 import ilex.util.EnvExpander;
 import lrgs.common.*;
 import lrgs.ldds.*;
-import lrgs.rtstat.RtStatFrame;
 import lrgs.rtstat.hosts.LrgsConnection;
-import lrgs.rtstat.hosts.LrgsConnectionComboBoxModel;
 import lrgs.rtstat.hosts.LrgsConnectionPanel;
 
+import org.opendcs.gui.GuiHelpers;
 import org.opendcs.gui.x509.X509CertificateVerifierDialog;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 /**
 The MessageBrowser allows the user to display DCP messages on the screen
@@ -76,10 +55,9 @@ and save them to a file. It uses DDS (not CORBA) to pull DCP messages from
 the remote system.
 */
 @SuppressWarnings("serial")
-public class MessageBrowser extends MenuFrame
-    implements DcpMsgOutputMonitor, SearchCritEditorParent
+public class MessageBrowser extends MenuFrame implements DcpMsgOutputMonitor, SearchCritEditorParent
 {
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(MessageBrowser.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static ResourceBundle labels = null;
     private static ResourceBundle genericLabels = null;
 
@@ -146,8 +124,7 @@ public class MessageBrowser extends MenuFrame
         }
         catch (DatabaseException e1)
         {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
+            GuiHelpers.logGuiComponentInit(log, e1);
         }
 
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -397,13 +374,13 @@ public class MessageBrowser extends MenuFrame
                 new GridBagConstraints(0, 3, 1, 1, 0.2, 1.0,
                     GridBagConstraints.EAST, GridBagConstraints.NONE,
                     new Insets(2, 5, 2, 5), 0, 0));
-            
-            
-            
+
+
+
             String[] thisFmt = new String[1];
             thisFmt[0] = "human-readable";
             outCombo = new JComboBox(thisFmt);
-        
+
             outCombo.setSelectedItem(
                 GuiApp.getProperty("MessageBrowser.OutputFormat", "human-readable"));
             southwest.add(outCombo,
@@ -530,15 +507,15 @@ public class MessageBrowser extends MenuFrame
         String fn = LddsClient.getLddsConnectionsFile();
         fn = EnvExpander.expand(fn, System.getProperties());
         File file = new File(fn);
-        try
+        try (FileInputStream fis = new FileInputStream(file))
         {
-            FileInputStream fis = new FileInputStream(file);
             connectionList.load(fis);
-            fis.close();
         }
-        catch(IOException ioe)
+        catch(IOException ex)
         {
-            System.out.println("No previously recorded connections");
+            log.atWarn()
+               .setCause(ex)
+               .log("Cannot access LddsConnections File '{}' or No previously recorded connections", fn);
         }
     }
 
@@ -671,7 +648,7 @@ public class MessageBrowser extends MenuFrame
         }
         catch(IOException ioe)
         {
-            log.error(errmsg, ioe);
+            log.atError().setCause(ioe).log(errmsg);
             errmsg = labels.getString("MessageBrowser.ioConnectErr") + ioe;
         }
         catch(ProtocolError pe)
@@ -744,6 +721,9 @@ public class MessageBrowser extends MenuFrame
         }
         catch(IOException ioe)
         {
+            log.atError().setCause(ioe).log(LoadResourceBundle.sprintf(
+                    labels.getString("MessageBrowser.cannotEditErr"),
+                    s));
             showError(LoadResourceBundle.sprintf(
                     labels.getString("MessageBrowser.cannotEditErr"),
                     s) + ioe);
@@ -819,6 +799,11 @@ public class MessageBrowser extends MenuFrame
                     }
                     catch(IOException ex2)
                     {
+                        ex2.addSuppressed(ioe);
+                        log.atError().setCause(ex2).log(LoadResourceBundle.sprintf(
+                                labels.getString(
+                                "MessageBrowser.cannotReadCreateErr"),
+                                f.getPath()));
                         showError(LoadResourceBundle.sprintf(
                                 labels.getString(
                                 "MessageBrowser.cannotReadCreateErr"),
@@ -828,6 +813,9 @@ public class MessageBrowser extends MenuFrame
                 }
                 else
                 {
+                    log.atError().setCause(ioe).log(LoadResourceBundle.sprintf(
+                            labels.getString("MessageBrowser.cannotOpenErr"),
+                            curSCName));
                     showError(LoadResourceBundle.sprintf(
                             labels.getString("MessageBrowser.cannotOpenErr"),
                             curSCName) + ioe.toString());
@@ -899,7 +887,7 @@ public class MessageBrowser extends MenuFrame
         if (searchcrit.NetlistFiles == null
          || searchcrit.NetlistFiles.size() == 0)
         {
-            Logger.instance().debug3("No lists to send.");
+            log.trace("No lists to send.");
             return;  // no lists to send.
         }
 
@@ -918,15 +906,14 @@ public class MessageBrowser extends MenuFrame
                 {
                     client.sendNetList(f, s);
                 }
-                catch(Exception e)
+                catch(Exception ex)
                 {
-                    System.err.println("Error sending network list "
-                        + s + ": " + e);
+                    log.atTrace().setCause(ex).log("Error sending network list '{}'", s);
                 }
             }
             else
             {
-                Logger.instance().warning("Cannot find netlist '" + s + "'");
+                log.warn("Cannot find netlist '{}'", s);
             }
         }
     }
@@ -939,10 +926,11 @@ public class MessageBrowser extends MenuFrame
     {
         firstAfterConnect = false;
 
-        Logger.instance().debug3("Sending network lists.");
+        log.trace("Sending network lists.");
         sendNetworkLists(searchcrit);
 
         String errmsg = null;
+        Throwable ex = null;
         try
         {
             client.sendSearchCrit(searchcrit);
@@ -950,21 +938,25 @@ public class MessageBrowser extends MenuFrame
         catch(IOException ioe)
         {
             // Probably means socket error.
-            errmsg = labels.getString("MessageBrowser.ioSendingSCErr") + ioe;
+            errmsg = labels.getString("MessageBrowser.ioSendingSCErr");
+            ex = ioe;
             firstAfterConnect = true;
             client = null;   // Force reconnect
         }
         catch(ProtocolError pe)
         {
+            ex = pe;
             errmsg = pe.toString();
             client = null;   // Force reconnect
         }
         catch(ServerError se)
         {
+            ex = se;
             errmsg = se.toString();
         }
         if (errmsg != null)
         {
+            log.atError().setCause(ex).log(labels.getString("MessageBrowser.ioSendingSCErr"));
             showError(errmsg);
             return false;
         }
@@ -1115,7 +1107,6 @@ public class MessageBrowser extends MenuFrame
     public static void main(String args[])
         throws Exception
     {
-        Logger.setLogger(new StderrLogger("MessageBrowser"));
         DecodesInterface.setGUI(true);
 
         // Parse command line args & get argument values:
@@ -1123,7 +1114,7 @@ public class MessageBrowser extends MenuFrame
 
         getMyLabelDescriptions();
 
-        Logger.instance().debug1("MessageBrowser Starting.");
+        log.debug("MessageBrowser Starting.");
 
         GuiApp.setAppName(LrgsApp.ShortID);
         GeneralProperties.init();
