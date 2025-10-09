@@ -1,13 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:14  cvs
-*  Added legacy code to repository
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.4  2004/08/31 21:08:41  mjmaloney
-*  javadoc
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.gui;
 
@@ -23,7 +27,7 @@ import org.opendcs.gui.PasswordWithShow;
 /**
 Simple dialog to enter new DDS user and optionally, password.
 */
-public class NewUserDialog extends JDialog 
+public class NewUserDialog extends JDialog
 {
 	JLabel jLabel1 = new JLabel();
 	JLabel jLabel2 = new JLabel();
@@ -43,26 +47,16 @@ public class NewUserDialog extends JDialog
 
 	private boolean ok = false;
 
-	public NewUserDialog() 
+	public NewUserDialog()
 	{
 		super((Frame)null, true);
-		try {
-			jbInit();
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-		}
+		jbInit();
 	}
 
 	public NewUserDialog(Frame owner)
 	{
 		super(owner, true);
-		try {
-			jbInit();
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-		}
+		jbInit();
 		okButton.addActionListener(
 			new ActionListener()
 			{
@@ -98,14 +92,14 @@ public class NewUserDialog extends JDialog
 			infoArea.setText(s);
 	}
 
-	private void jbInit() throws Exception 
+	private void jbInit()
 	{
 		border1 = BorderFactory.createBevelBorder(BevelBorder.LOWERED,Color.white,Color.white,new Color(148, 145, 140),new Color(103, 101, 98));
 		jLabel1.setHorizontalAlignment(SwingConstants.RIGHT);
 		jLabel1.setText("User Name:");
 		this.setTitle("New DCP Data Service User");
 		this.getContentPane().setLayout(gridBagLayout1);
-		//jLabel2.setPreferredSize(new Dimension(67, 17));
+
 		jLabel2.setHorizontalAlignment(SwingConstants.RIGHT);
 		jLabel2.setText("Password:");
 		userNameField.setPreferredSize(new Dimension(100, 21));
@@ -113,17 +107,15 @@ public class NewUserDialog extends JDialog
 		jPanel1.setLayout(borderLayout1);
 		infoArea.setWrapStyleWord(true);
 		infoArea.setLineWrap(true);
-		//infoArea.setText("Leave Password field blank for unauthenticated users.");
+
 		infoArea.setEditable(false);
 		infoArea.setBackground(new Color(212, 208, 200));
 		jPanel1.setBorder(border1);
 		jPanel2.setLayout(flowLayout1);
 		flowLayout1.setHgap(20);
-		//okButton.setMinimumSize(new Dimension(80, 27));
-		//okButton.setPreferredSize(new Dimension(80, 27));
+
 		okButton.setText("  OK  ");
-		//cancelButton.setMinimumSize(new Dimension(80, 27));
-		//cancelButton.setPreferredSize(new Dimension(80, 27));
+
 		cancelButton.setText("Cancel");
 		this.getContentPane().add(jLabel1, new GridBagConstraints(0, 0, 1, 1, 0.3, 0.0
 			,GridBagConstraints.EAST, GridBagConstraints.NONE, new Insets(0, 7, 3, 3), 0, 0));
@@ -147,7 +139,7 @@ public class NewUserDialog extends JDialog
 		String user = userNameField.getText();
 		if (user == null || user.length() == 0)
 		{
-			JOptionPane.showMessageDialog(null, "User name cannot be blank!", 
+			JOptionPane.showMessageDialog(null, "User name cannot be blank!",
 				"Error!", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
@@ -157,14 +149,14 @@ public class NewUserDialog extends JDialog
 		{
 			if (passwd.length() < 6)
 			{
-				JOptionPane.showMessageDialog(null, 
+				JOptionPane.showMessageDialog(null,
 					"Password too short. Must be at least 6 characters.",
 					"Error!", JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 			else if (passwd.equals(userNameField.getText()))
 			{
-				JOptionPane.showMessageDialog(null, 
+				JOptionPane.showMessageDialog(null,
 					"Password must not be the same as user name.",
 					"Error!", JOptionPane.ERROR_MESSAGE);
 				return;
@@ -173,7 +165,7 @@ public class NewUserDialog extends JDialog
 		ok = true;
 		closeDlg();
 	}
-	
+
 	private void doCancel()
 	{
 		ok = false;
@@ -181,16 +173,11 @@ public class NewUserDialog extends JDialog
 	}
 
 	public boolean isOK() { return ok; }
-	
+
 	private void closeDlg()
 	{
 		setVisible(false);
 		dispose();
 	}
 
-//	public void setVisible(boolean tf)
-//	{
-//		super.setVisible(tf);
-//	}
-		
 }

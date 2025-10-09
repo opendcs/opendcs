@@ -1,24 +1,35 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.gui;
 
 import java.io.*;
 import java.awt.*;
-import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.util.CmdLineArgs;
 
-import java.net.URL;
-import java.net.MalformedURLException;
 import java.util.ResourceBundle;
 import java.util.StringTokenizer;
 
 import ilex.gui.*;
 import ilex.cmdline.*;
-import ilex.util.IDateFormat;
 import ilex.util.FileExceptionList;
 import ilex.util.LoadResourceBundle;
 import ilex.util.TextUtil;
@@ -28,12 +39,12 @@ import lrgs.common.*;
 /**
 This frame implements the search criteria editor
 */
-public class SearchCriteriaEditor extends MenuFrame
-	implements Editor, SearchCriteriaEditorIF
+public class SearchCriteriaEditor extends MenuFrame implements Editor, SearchCriteriaEditorIF
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static ResourceBundle labels = null;
 	private static ResourceBundle genericLabels = null;
-	
+
 	private static final String TITLE = "Search Criteria Editor: ";
 	private File scfile;
 	private SearchCriteria searchcrit;
@@ -66,7 +77,7 @@ public class SearchCriteriaEditor extends MenuFrame
 	public SearchCriteriaEditor()
 	{
 		super(TITLE);
-		
+
 		labels = MessageBrowser.getLabels();
     	genericLabels = MessageBrowser.getGenericLabels();
     	setTitle(labels.getString("SearchCriteriaEditor.frameTitle"));
@@ -99,7 +110,7 @@ public class SearchCriteriaEditor extends MenuFrame
     	dataSourceField = new JTextField();
     	setTitle(labels.getString("SearchCriteriaEditor.frameTitle")
     			+ scfile.getName());
-    	
+
 		this.scfile = scfile;
 		parent = null;
 		init();
@@ -110,7 +121,7 @@ public class SearchCriteriaEditor extends MenuFrame
 				try { searchcrit.parseFile(scfile); }
 				catch(SearchSyntaxException ex)
 				{
-					System.out.println(ex.toString());
+					log.atError().setCause(ex).log("Unable to parse criteria file.");
 				}
 			}
 		}
@@ -326,7 +337,6 @@ public class SearchCriteriaEditor extends MenuFrame
 	protected AbstractAction[] getEditMenuActions()
 	{
 		return null;
-//		return menuset.getEditActions();
 	}
 
 	/**
@@ -430,8 +440,8 @@ public class SearchCriteriaEditor extends MenuFrame
 		scCombo.setSelectedIndex(
 			searchcrit.spacecraft == SearchCriteria.SC_EAST ? 1 :
 			searchcrit.spacecraft == SearchCriteria.SC_WEST ? 2 : 0);
-			
-		if (searchcrit.baudRates == null 
+
+		if (searchcrit.baudRates == null
 		 || searchcrit.baudRates.equalsIgnoreCase("any"))
 			baudCombo.setSelectedIndex(0);
 		else
@@ -544,7 +554,7 @@ public class SearchCriteriaEditor extends MenuFrame
 			idx == 0 ? SearchCriteria.YES : SearchCriteria.EXCLUSIVE;
 
 		idx = scCombo.getSelectedIndex();
-		searchcrit.spacecraft = 
+		searchcrit.spacecraft =
 			idx == 1 ? SearchCriteria.SC_EAST :
 			idx == 2 ? SearchCriteria.SC_WEST : SearchCriteria.SC_ANY;
 
@@ -620,7 +630,6 @@ public class SearchCriteriaEditor extends MenuFrame
 		 	return false;
 		if (dataSourceField.getText().trim().length() != 0)
 			return false;
-//System.out.println("All fields are empty!");
 		return true;
 	}
 
@@ -647,11 +656,6 @@ public class SearchCriteriaEditor extends MenuFrame
 		if (!TextUtil.strEqualIgnoreCase(dataSourcev, v))
 		 	return true;
 		return false;
-	}
-
-	private void showParseErrors(FileExceptionList warnings)
-	{
-		System.out.println(warnings);
 	}
 
 	/**
@@ -709,7 +713,7 @@ public class SearchCriteriaEditor extends MenuFrame
 			}
 			catch(SearchSyntaxException ex)
 			{
-				System.out.println(ex.toString());
+				log.atError().setCause(ex).log("Unable to parse criteria.");
 			}
 			fillFields();
 		}
@@ -758,27 +762,27 @@ public class SearchCriteriaEditor extends MenuFrame
 	// Edit menu actions:
 	public void undoPress()
 	{
-		System.out.println("undoPress");
+		log.trace("undoPress");
 	}
 
 	public void cutPress()
 	{
-		System.out.println("cutPress");
+		log.trace("cutPress");
 	}
 
 	public void copyPress()
 	{
-		System.out.println("copyPress");
+		log.trace("copyPress");
 	}
 
 	public void pastePress()
 	{
-		System.out.println("pastePress");
+		log.trace("pastePress");
 	}
 
 	public void deletePress()
 	{
-		System.out.println("deletePress");
+		log.trace("deletePress");
 	}
 
 	static CmdLineArgs settings = new CmdLineArgs();
