@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.multistat;
 
 import java.io.ByteArrayOutputStream;
@@ -9,27 +24,23 @@ import java.util.ArrayList;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.SAXException;
 
 import hec.util.TextUtil;
 import ilex.util.AuthException;
-import ilex.util.ByteUtil;
-import ilex.util.DesEncrypter;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PasswordFile;
 import ilex.util.PasswordFileEntry;
-import ilex.gui.EventsPanel;
 import ilex.xml.XmlOutputStream;
 import lrgs.ldds.LddsClient;
-import lrgs.ldds.LddsMessage;
 import lrgs.ldds.ServerError;
 import lrgs.ldds.ProtocolError;
 import lrgs.statusxml.LrgsStatusSnapshotExt;
 import lrgs.statusxml.TopLevelXio;
 import lrgs.lrgsmon.DetailReportGenerator;
 import lrgs.rtstat.DdsClientIf;
-import lrgs.ldds.LddsClient;
 import lrgs.ldds.DdsUser;
 import lrgs.rtstat.RtStatPanel;
 import lrgs.lrgsmain.LrgsConfig;
@@ -38,10 +49,9 @@ import lrgs.ddsrecv.DdsRecvSettings;
 import lrgs.drgs.DrgsInputSettings;
 import lrgs.db.Outage;
 
-public class MSLrgsConThread
-	extends Thread
-	implements DdsClientIf
+public class MSLrgsConThread extends Thread implements DdsClientIf
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private int conNum;
 	private LrgsSummaryStatPanel summaryPanel;
 	private LddsClient lddsClient;
@@ -89,7 +99,7 @@ public class MSLrgsConThread
 		try { statusParser = new TopLevelXio(); }
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Cannot construct XML parser: " + ex);
+			log.atError().setCause(ex).log("Cannot construct XML parser.");
 		}
 		baos = new ByteArrayOutputStream(16000);
 		xos = new XmlOutputStream(baos, "html");
@@ -100,7 +110,7 @@ public class MSLrgsConThread
 	public void run()
 	{
 		try { sleep(5000L); } catch(Exception ex) {}
-		
+
 		while(!isShutdown)
 		{
 			long now = System.currentTimeMillis();
@@ -130,7 +140,7 @@ public class MSLrgsConThread
 		MultiStatConfig cfg = MultiStatConfig.instance();
 		if (cfg.getLastLoadTime() <= lastConfigLoad)
 			return;
-		Logger.instance().debug1("Reloading configuration.");
+		log.debug("Reloading configuration.");
 		lastConfigLoad = System.currentTimeMillis();
 
 		if (conNum == 1)
@@ -178,10 +188,8 @@ public class MSLrgsConThread
 				summaryPanel.systemNameField.setText(lrgsDisplayName = cfg.Lrgs4DisplayName);
 		}
 
-		Logger.instance().debug1("After config, displayName="
-			+ lrgsDisplayName + ", host=" + lrgsHostName + ", port=" + lrgsPort
-			+ ", user=" + lrgsUserName + ", pw=" + lrgsPassword
-			+ ", source=" + lrgsSource);
+		log.debug("After config, displayName={}, host={}, port={}, user={}, pw=***, source={}",
+				  lrgsDisplayName, lrgsHostName, lrgsPort, lrgsUserName, lrgsSource);
 	}
 
 
@@ -192,8 +200,7 @@ public class MSLrgsConThread
 
 	private void setConnection(String hn, int port, String un, String pw)
 	{
-		Logger.instance().debug1("Setting connection to host=" + hn
-			+ ", port=" + port + ", user=" + un + ", pw=" + pw);
+		log.debug("Setting connection to host={}, port={}, user={}, pw=****", hn, port, un);
 		lrgsHostName = hn;
 		lrgsUserName = un;
 		lrgsPort = port;
@@ -254,26 +261,24 @@ public class MSLrgsConThread
 		lastConnectAttempt = System.currentTimeMillis();
 		if (lrgsHostName == null)
 			return;
-		
+
 		lddsClient = new LddsClient(lrgsHostName, lrgsPort);
 		try
 		{
 			currentStatus.systemStatus = "Y:Connecting";
 			updateStatus(null);
-			Logger.instance().info(
-				"LRGS " + conNum + " Connecting to " + lddsClient.getName());
+			log.info("LRGS {} Connecting to {}", conNum, lddsClient.getName());
 			lddsClient.connect();
 		}
 		catch(UnknownHostException ex)
 		{
 			currentStatus.systemStatus = "R:Bad Hostname";
 			updateStatus(null);
-			String msg = "Can't connect to "
-				+ lddsClient.getName() + ": " + ex;
-			Logger.instance().failure(
-				MultiStat.module + ":" 
-				+ MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1)
-				+ " " + msg);
+			log.atError()
+			   .setCause(ex)
+			   .log("{}:{} Can't connect to {}",
+			   		MultiStat.module, MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1),
+					lddsClient.getName());
 			lddsClient = null;
 			return;
 		}
@@ -281,12 +286,11 @@ public class MSLrgsConThread
 		{
 			currentStatus.systemStatus = "R:IO Error";
 			updateStatus(null);
-			String msg = "IO Error on connection to "
-				+ lddsClient.getName() + ": " + ex;
-			Logger.instance().warning(
-				MultiStat.module + ":" 
-					+ MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1)
-					+ " " + msg);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("{}:{} IO Error on connection to ",
+				MultiStat.module,
+					+ MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1), lddsClient.getName());
 			lddsClient = null;
 			return;
 		}
@@ -302,8 +306,7 @@ public class MSLrgsConThread
 			}
 			catch(IOException ex)
 			{
-				Logger.instance().warning(
-					MultiStat.module + " Can't open '" + pwfn + "': " + ex);
+				log.atWarn().setCause(ex).log("Can't open '{}'", pwfn);
 				pwfn = EnvExpander.expand("$DCSTOOL_HOME/.lrgs.passwd");
 				try
 				{
@@ -312,15 +315,12 @@ public class MSLrgsConThread
 				}
 				catch(IOException ex2)
 				{
-					Logger.instance().warning(
-						MultiStat.module + " Can't open '" + pwfn + "': " +ex2);
-	
-					Logger.instance().warning(
-						MultiStat.module + ":" 
-						+ MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1)
-						+ " " + "Connection to " + lddsClient.getName()
-						+ " calls for authenticated connection "
-						+ "but can't read local password file.");
+					ex2.addSuppressed(ex);
+					log.atWarn().setCause(ex2).log("Can't open '{}'", pwfn);
+
+					log.warn("{}:{} Connection to {} calls for authenticated connection " +
+							 "but can't read local password file.",
+							 MultiStat.module, MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1), lddsClient.getName());
 					disconnect("Auth Error");
 					return;
 				}
@@ -328,13 +328,10 @@ public class MSLrgsConThread
 			PasswordFileEntry pfe = pf.getEntryByName(lrgsUserName);
 			if (pfe == null)
 			{
-				Logger.instance().warning(
-					MultiStat.module + ":" 
-					+ MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1)
-					+ " Connection to " + lddsClient.getName()
-					+ " calls for authenticated connection "
-					+ "but no local entry for username '" + lrgsUserName
-					+ "'");
+				log.warn("{}:{} Connection to {} calls for authenticated connection " +
+						 "but no local entry for username '{}'",
+						MultiStat.module, MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1),
+						lddsClient.getName(), lrgsUserName);
 				disconnect("No Auth");
 				return;
 			}
@@ -344,31 +341,28 @@ public class MSLrgsConThread
 			}
 			catch(IOException ex)
 			{
-				Logger.instance().warning(
-					MultiStat.module + ":" 
-					+ MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1)
-					+ " IO Error on connection to "
-					+ lddsClient.getName() + ": " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("{}:{} IO Error on connection to {}",
+				   		MultiStat.module, MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1), lddsClient.getName());
 				disconnect("IO Error");
 				return;
 			}
 			catch(ServerError ex)
 			{
-				Logger.instance().warning(
-					MultiStat.module + ":" 
-					+ MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1)
-					+ " Server at "
-					+ lddsClient.getName() + " rejected connection: " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("{}:{} Server at {} rejected",
+				   		MultiStat.module, MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1), lddsClient.getName());
 				disconnect("Rejected by Svr");
 				return;
 			}
 			catch(ProtocolError ex)
 			{
-				Logger.instance().warning(
-					MultiStat.module + ":" 
-					+ MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1)
-					+ " Protocol Error on connection to "
-					+ lddsClient.getName() + ": " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("{}:{} Protocol Error on connection to {}",
+						MultiStat.module, MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1), lddsClient.getName());
 				disconnect("Proto Error");
 				return;
 			}
@@ -381,41 +375,36 @@ public class MSLrgsConThread
 			}
 			catch(IOException ex)
 			{
-				Logger.instance().warning(
-					MultiStat.module + ":" 
-					+ MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1)
-					+ " IO Error on connection to "
-					+ lddsClient.getName() + ": " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("{}:{} IO Error on connection to {}",
+				   		MultiStat.module, MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1), lddsClient.getName());
 				disconnect("IO Error");
 				return;
 			}
 			catch(ServerError ex)
 			{
-				Logger.instance().warning(
-					MultiStat.module + ":" 
-					+ MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1)
-					+ " Server at "
-					+ lddsClient.getName() + " rejected connection: " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("{}:{} Server at {} rejected connection.",
+						MultiStat.module, MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1), lddsClient.getName());
 				disconnect("Rejected by Svr");
 				return;
 			}
 			catch(ProtocolError ex)
 			{
-				Logger.instance().warning(
-					MultiStat.module + ":" 
-					+ MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1)
-					+ " Protocol Error on connection to "
-					+ lddsClient.getName() + ": " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("{}:{} Protocol Error on connection to {}",
+				   		MultiStat.module, MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1), lddsClient.getName());
 				disconnect("Proto Error");
 				return;
 			}
 		}
 		currentStatus.systemStatus = "Connected";
 		updateStatus(null);
-		Logger.instance().info(
-			MultiStat.module + ":" 
-			+ (-(MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1)))	
-			+ " Connected to " + lddsClient.getName());
+		log.info("{}:{} Connected to {}",
+				 MultiStat.module, (-(MultiStat.EVT_CANT_CONNECT_LRGS1 + (conNum-1))), lddsClient.getName());
 	}
 
 	private synchronized void poll()
@@ -423,7 +412,7 @@ public class MSLrgsConThread
 		try
 		{
 			byte[] statmsg = lddsClient.getStatus();
-			currentStatus 
+			currentStatus
 				= statusParser.parse(statmsg, 0, statmsg.length, lrgsHostName);
 			baos.reset();
 			updateStatus(lddsClient.getEvents());
@@ -431,33 +420,25 @@ public class MSLrgsConThread
 		}
 		catch(ServerError ex)
 		{
-			Logger.instance().warning(
-				"ServerError on getStatus from " + lddsClient.getName()
-				+ ": " + ex);
+			log.atWarn().setCause(ex).log("ServerError on getStatus from {}", lddsClient.getName());
 			disconnect("Server Error");
 			currentStatus.systemStatus = "R:Server Error";
 		}
 		catch(ProtocolError ex)
 		{
-			Logger.instance().warning(
-				"Unexpected response to getStatus " + lddsClient.getName()
-				+ ": " + ex);
+			log.atWarn().setCause(ex).log("Unexpected response to getStatus {}", lddsClient.getName());
 			disconnect("Proto Error");
 			currentStatus.systemStatus = "R:Proto Error";
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning(
-				"IOException on getStatus from " + lddsClient.getName()
-				+ ": " + ex);
+			log.atWarn().setCause(ex).log("IOException on getStatus from {}", lddsClient.getName());
 			disconnect("IO Error");
 			currentStatus.systemStatus = "R:IO Error";
 		}
 		catch(SAXException ex)
 		{
-			Logger.instance().warning(
-				"Error parsing status from " + lddsClient.getName()
-				+ ": " + ex);
+			log.atWarn().setCause(ex).log("Error parsing status from {}", lddsClient.getName());
 			disconnect("StatFmtErr");
 			currentStatus.systemStatus = "R:Stat Fmt Err";
 		}
@@ -484,16 +465,14 @@ public class MSLrgsConThread
 						int n = msFrame.alarmList.countAlarmsForSource(
 							lrgsDisplayName);
 						summaryPanel.setStatus(currentStatus, n, lrgsSource);
-						try 
+						try
 						{
-							repgen.writeReport(xos, lrgsHostName, currentStatus, 0); 
+							repgen.writeReport(xos, lrgsHostName, currentStatus, 0);
 							detailPanel.updateStatus(baos.toString());
 						}
 						catch(IOException ex)
 						{
-							Logger.instance().warning(
-							  "Unexpected IO exception writing detail report: "
-							 + ex);
+							log.atWarn().setCause(ex).log("Unexpected IO exception writing detail report.");
 						}
 					}
 				});

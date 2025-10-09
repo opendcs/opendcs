@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.multistat;
 
 import java.awt.*;
@@ -47,17 +62,10 @@ public class LrgsSummaryStatPanel extends JPanel
 
 	public LrgsSummaryStatPanel()
 	{
-		try
-		{
-			jbInit();
-		}
-		catch (Exception ex)
-		{
-			ex.printStackTrace();
-		}
+		jbInit();
 	}
 
-	void jbInit() throws Exception
+	void jbInit()
 	{
 		border1 = BorderFactory.createBevelBorder(BevelBorder.LOWERED, Color.white, Color.white, new Color(
 			115, 114, 105), new Color(165, 163, 151));
@@ -90,64 +98,64 @@ public class LrgsSummaryStatPanel extends JPanel
 		this.add(jPanel1, BorderLayout.NORTH);
 		jPanel1.add(systemNameField, null);
 		this.add(jPanel2, BorderLayout.CENTER);
-		
+
 		int row = 0;
-		jPanel2.add(datasourceLabel, 
+		jPanel2.add(datasourceLabel,
 			new GridBagConstraints(0, row, 1, 1, 0.0, 0.0, GridBagConstraints.EAST,
 				GridBagConstraints.NONE, new Insets(4, 10, 4, 2), 0, 0));
-		jPanel2.add(dataSourceField, 
+		jPanel2.add(dataSourceField,
 			new GridBagConstraints(1, row, 1, 1, 1.0, 0.0, GridBagConstraints.WEST,
 				GridBagConstraints.HORIZONTAL, new Insets(4, 0, 4, 10), 0, 0));
 
 		row++;
-		jPanel2.add(systemStatusLabel, 
+		jPanel2.add(systemStatusLabel,
 			new GridBagConstraints(0, row, 1, 1, 0.0, 0.0, GridBagConstraints.EAST,
 				GridBagConstraints.NONE, new Insets(4, 10, 4, 2), 0, 0));
-		jPanel2.add(systemStatusField, 
+		jPanel2.add(systemStatusField,
 			new GridBagConstraints(1, row, 1, 1, 1.0, 0.0, GridBagConstraints.WEST,
 				GridBagConstraints.HORIZONTAL, new Insets(4, 0, 4, 10), 0, 0));
-	
+
 		row++;
-		jPanel2.add(systemTimeLabel, 
+		jPanel2.add(systemTimeLabel,
 			new GridBagConstraints(0, row, 1, 1, 0.0, 0.0, GridBagConstraints.EAST,
 				GridBagConstraints.NONE, new Insets(4, 10, 4, 2), 0, 0));
-		jPanel2.add(systemTimeField, 
+		jPanel2.add(systemTimeField,
 			new GridBagConstraints(1, row, 1, 1, 1.0, 0.0, GridBagConstraints.WEST,
 				GridBagConstraints.HORIZONTAL, new Insets(4, 0, 4, 10), 0, 0));
-		
+
 		row++;
-		jPanel2.add(numClientsLabel, 
+		jPanel2.add(numClientsLabel,
 			new GridBagConstraints(0, row, 1, 1, 0.0, 0.0, GridBagConstraints.EAST,
 				GridBagConstraints.NONE, new Insets(4, 10, 4, 2), 0, 0));
-		jPanel2.add(numClientsField, 
+		jPanel2.add(numClientsField,
 			new GridBagConstraints(1, row, 1, 1, 1.0, 0.0, GridBagConstraints.WEST,
 				GridBagConstraints.HORIZONTAL, new Insets(4, 0, 4, 10), 0, 0));
-		
+
 		row++;
-		jPanel2.add(new JLabel("Msgs this Hr:"), 
+		jPanel2.add(new JLabel("Msgs this Hr:"),
 			new GridBagConstraints(0, row, 1, 1, 0.0, 0.0, GridBagConstraints.EAST,
 				GridBagConstraints.NONE, new Insets(4, 10, 4, 2), 0, 0));
-		jPanel2.add(msgsThisHourField, 
+		jPanel2.add(msgsThisHourField,
 			new GridBagConstraints(1, row, 1, 1, 1.0, 0.0, GridBagConstraints.WEST,
 				GridBagConstraints.HORIZONTAL, new Insets(4, 0, 4, 10), 0, 0));
-		
+
 		row++;
-		jPanel2.add(alarmsLabel, 
+		jPanel2.add(alarmsLabel,
 			new GridBagConstraints(0, row, 1, 1, 0.0, 0.0, GridBagConstraints.NORTHEAST,
 				GridBagConstraints.NONE, new Insets(4, 10, 4, 2), 0, 0));
-		jPanel2.add(alarmsField, 
+		jPanel2.add(alarmsField,
 			new GridBagConstraints(1, row, 1, 1, 1.0, 0.0, GridBagConstraints.WEST,
 				GridBagConstraints.HORIZONTAL, new Insets(4, 0, 4, 10), 0, 0));
-		
+
 		row++;
-		jPanel2.add(bottomFillerLabel, 
+		jPanel2.add(bottomFillerLabel,
 			new GridBagConstraints(0, row, 2, 1, 0.0, 1.0, GridBagConstraints.NORTH,
 				GridBagConstraints.VERTICAL, new Insets(0, 0, 0, 0), 0, 0));
 	}
 
 	/**
 	 * Sets the status fields according to the passed data.
-	 * 
+	 *
 	 * @param status
 	 *            the status snapshot received from the server.
 	 * @param numAlarm
@@ -198,7 +206,7 @@ public class LrgsSummaryStatPanel extends JPanel
 				}
 			}
 		dataSourceField.setText(sb.toString());
-		
+
 		String ss = currentStatus.systemStatus;
 		boolean isError = ss.startsWith("R:");
 		if (isError)

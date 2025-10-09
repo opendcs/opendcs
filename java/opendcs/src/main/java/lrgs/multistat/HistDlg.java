@@ -1,5 +1,17 @@
 /*
-* $Id: HistDlg.java,v 1.1 2016/02/04 20:46:50 mmaloney Exp $
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.multistat;
 
@@ -11,7 +23,7 @@ import java.awt.event.ActionListener;
 import decodes.gui.SortingListTable;
 
 public class HistDlg
-		extends JDialog 
+		extends JDialog
 {
 	private JPanel panel1 = new JPanel();
 	private BorderLayout borderLayout1 = new BorderLayout();
@@ -24,7 +36,7 @@ public class HistDlg
 	private JPanel jPanel3 = new JPanel();
 	private JButton okButton = new JButton();
 
-	public HistDlg(Frame owner, CancelledAlarmList model) 
+	public HistDlg(Frame owner, CancelledAlarmList model)
 	{
 		super(owner, "Alarm History", false);
 		alarmTable = new SortingListTable(model,
@@ -33,18 +45,12 @@ public class HistDlg
             ListSelectionModel.SINGLE_SELECTION);
 		this.setSize(new Dimension(900, 400));
 		this.setPreferredSize(new Dimension(900, 400));
-		try 
-		{
-			jbInit();
-			pack();
-		}
-		catch (Exception exception) 
-		{
-			exception.printStackTrace();
-		}
+
+		jbInit();
+		pack();
 	}
 
-	private void jbInit() throws Exception 
+	private void jbInit()
 	{
 		panel1.setLayout(borderLayout1);
 		jLabel1.setFont(new java.awt.Font("Dialog", Font.BOLD, 13));
@@ -64,22 +70,22 @@ public class HistDlg
 		jPanel3.add(okButton);
 	}
 
-	public void okButton_actionPerformed(ActionEvent e) 
+	public void okButton_actionPerformed(ActionEvent e)
 	{
 		setVisible(false);
 	}
 }
 
 class AlarmHistoryDialog_okButton_actionAdapter
-		implements ActionListener 
+		implements ActionListener
 	{
 	private HistDlg adaptee;
-	AlarmHistoryDialog_okButton_actionAdapter(HistDlg adaptee) 
+	AlarmHistoryDialog_okButton_actionAdapter(HistDlg adaptee)
 	{
 		this.adaptee = adaptee;
 	}
 
-	public void actionPerformed(ActionEvent e) 
+	public void actionPerformed(ActionEvent e)
 	{
 		adaptee.okButton_actionPerformed(e);
 	}
