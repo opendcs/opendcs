@@ -1,38 +1,23 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.2  2008/09/21 16:08:51  mjmaloney
-*  network DCPs
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1  2008/04/04 18:21:13  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.6  2005/08/09 18:20:01  mjmaloney
-*  dev
-*
-*  Revision 1.5  2005/07/12 00:03:26  mjmaloney
-*  Implemented DRGS interface for Java-Only-Lrgs
-*
-*  Revision 1.4  2004/09/02 13:09:03  mjmaloney
-*  javadoc
-*
-*  Revision 1.3  2003/04/09 19:38:03  mjmaloney
-*  impl
-*
-*  Revision 1.2  2003/04/09 15:16:11  mjmaloney
-*  dev.
-*
-*  Revision 1.1  2003/03/27 21:17:43  mjmaloney
-*  drgs dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.drgs;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.drgsrecv.DrgsRecvMsgThread;
 
 /**
@@ -41,6 +26,7 @@ DRGS.
 */
 public class DrgsConnection
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The connection number */
 	int connectNum;
 	/** True if configured. Used to coordinate re-configuration by parent. */
@@ -65,8 +51,6 @@ public class DrgsConnection
 		Thread t = new Thread(myMsgThread);
 		t.start();
 		myEvtThread = new DrgsEvtThread();
-//		t = new Thread(myEvtThread);
-//		t.start();
 	}
 
 	/**
@@ -80,21 +64,19 @@ public class DrgsConnection
 	{
 		configured = true;
 		myConfig = cfg;
-		Logger.instance().log(Logger.E_DEBUG1,
-			"Configuring drgs[" + connectNum + "]: " + cfg.toString());
+		log.debug("Configuring drgs[{}]: {}", connectNum, cfg.toString());
 
 		// Reconfigure the threads
 		myMsgThread.configure(cfg);
 		myEvtThread.configure(cfg.host, cfg.evtPort, cfg.evtEnabled);
 	}
-	
+
 	public DrgsConnectCfg getConfig() { return myConfig; }
 
 	/** Shuts this DRGS connection down. */
 	public void shutdown()
 	{
-		Logger.instance().log(Logger.E_DEBUG1,
-			"Killing drgs[" + connectNum + "]");
+		log.debug("Killing drgs[{}]", connectNum);
 
 		myMsgThread.shutdown();
 		myEvtThread.shutdown();
