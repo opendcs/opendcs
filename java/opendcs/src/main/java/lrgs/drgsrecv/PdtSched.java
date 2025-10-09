@@ -1,14 +1,31 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.drgsrecv;
 
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Vector;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.LineNumberReader;
-
-import ilex.util.Logger;
 
 /**
  *
@@ -18,6 +35,7 @@ import ilex.util.Logger;
 @Deprecated
 public class PdtSched
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private Vector pdtSched;
 	private int shortLines, badAddresses, badSecondaryChan, badPrimaryChan,
 		badStTimes;
@@ -36,7 +54,7 @@ public class PdtSched
 	 */
 	public synchronized boolean load(File file)
 	{
-		Logger.instance().info("Loading PDT from '" + file.getPath() + "'");
+		log.info("Loading PDT from '{}'", file.getPath());
 		Vector oldSched = pdtSched;
 		pdtSched = new Vector();
 		shortLines = badAddresses = badSecondaryChan = badPrimaryChan =
@@ -55,19 +73,17 @@ public class PdtSched
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("IO Error reading PDT File '"
-				+ file.getPath() + "': " + ex + " -- Old PDT restored.");
+			log.atWarn()
+			   .setCause(ex)
+			   .log("IO Error reading PDT File '{}': -- Old PDT restored.", file.getPath());
 			pdtSched = oldSched;
 			return false;
 		}
 		Collections.sort(pdtSched);
-		Logger.instance().info("Parsed PDT File '" + file.getPath()
-			+ "' good entries=" + pdtSched.size()
-			+ ", shortLines=" + shortLines
-			+ ", badAddresses=" + badAddresses
-			+ ", badSecondaryChan=" + badSecondaryChan
-			+ ", badPrimaryChan=" + badPrimaryChan
-			+ ", badStTimes=" + badStTimes);
+		log.info("Parsed PDT File '{}' good entries={}, shortLines={}, " +
+				 "badAddresses={}, badSecondaryChan={}, badPrimaryChan={}, badStTimes={}",
+				 file.getPath(), pdtSched.size(), shortLines, badAddresses,
+				 badSecondaryChan, badPrimaryChan, badStTimes);
 		return true;
 	}
 
