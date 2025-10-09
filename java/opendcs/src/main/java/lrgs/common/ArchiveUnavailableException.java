@@ -34,4 +34,9 @@ public class ArchiveUnavailableException extends ArchiveException
 	{
 		super(msg, errorCode, true, cause);
 	}
+
+	public ArchiveUnavailableException(String msg, ArchiveException cause)
+	{
+		super(msg, cause.errorCode, true, cause);
+	}
 }
