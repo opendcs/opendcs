@@ -163,7 +163,7 @@ public class CmdGetMsgBlockExt extends LddsCommand
 			if (numMessages >= MAXMSGS)
 				bufDone = true;
 		}
-		debug(ldds, "MJM After seqnum search, numMessages={}, bugDone={}", numMessages, bufDone);
+		debug(ldds, "MJM After seqnum search, numMessages={}, bufDone={}", numMessages, bufDone);
 		if (numMessages == 0)
 			didSeqSearch = false;
 
