@@ -1,21 +1,26 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.noaaportrecv;
 
 import java.io.IOException;
 import java.net.Socket;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.net.BasicServer;
 import ilex.net.BasicSvrThread;
 
@@ -23,9 +28,9 @@ import ilex.net.BasicSvrThread;
 This class is the TCP server that listens for connections from the Marta
 NOAAPORT receiver.
 */
-public class NoaaportListener
-	extends Thread
+public class NoaaportListener extends Thread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private BasicServer tcpServer;
 	private boolean _shutdown;
 	private NoaaportRecv noaaportRecv;
@@ -35,7 +40,7 @@ public class NoaaportListener
 	{
 		super("NOAAPORT");
 		this.noaaportRecv = nr;
-		tcpServer = 
+		tcpServer =
 			new BasicServer(port)
 			{
 				protected BasicSvrThread newSvrThread(Socket sock)
@@ -61,21 +66,21 @@ public class NoaaportListener
 
 	public void run()
 	{
-		Logger.instance().info(noaaportRecv.module 
-			+ " Listening for connections on port " + tcpServer.getPort());
+		log.info("Listening for connections on port {}", tcpServer.getPort());
 		noaaportRecv.setStatus("Listening");
 		while(!_shutdown)
 		{
 			try { tcpServer.listen(); }
 			catch(IOException ex)
 			{
-				Logger.instance().failure(
-					noaaportRecv.module + ":" + noaaportRecv.EVT_LISTEN_FAILED
-					+ " Listening socket failed: " + ex);
+				log.atError()
+				   .setCause(ex)
+				   .log("{}:{} Listening socket failed",
+				   		noaaportRecv.module, noaaportRecv.EVT_LISTEN_FAILED);
 				shutdown();
 			}
 		}
-		Logger.instance().info(noaaportRecv.module + " Listener exiting.");
+		log.info("Listener exiting.");
 		tcpServer = null;
 	}
 }
