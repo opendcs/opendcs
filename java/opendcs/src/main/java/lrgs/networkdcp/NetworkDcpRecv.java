@@ -1,30 +1,32 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.networkdcp;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.ArrayList;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.xml.DomHelper;
 import ilex.xml.XmlOutputStream;
 
@@ -39,10 +41,9 @@ import lrgs.drgs.DrgsInputSettings;
 import lrgs.drgsrecv.DrgsRecvMsgThread;
 
 /** Main class for the LRGS-DRGS Input Process. */
-public class NetworkDcpRecv
-	extends Thread
-	implements LrgsInputInterface
+public class NetworkDcpRecv extends Thread implements LrgsInputInterface
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Module name for log messages. */
 	public static final String module = "NetworkDcpRecv";
 
@@ -72,7 +73,7 @@ public class NetworkDcpRecv
 
 	/** We check for config changes this often. */
 	private static final long cfgCheckTime = 30000L;
-	
+
 	public static final String cfgFileName = "$LRGSHOME/network-dcp.conf";
 	public static final String statFileName = "$LRGSHOME/network-dcp.stat";
 
@@ -95,27 +96,27 @@ public class NetworkDcpRecv
 	private String status;
 
 	/** enable flag */
-	public boolean isEnabled; 
+	public boolean isEnabled;
 
 	private int dataSourceId;
-	
+
 	private DrgsInputSettings networkDcpSettings = new DrgsInputSettings();
-	
+
 	private DcpConfigList dcpConfigList = new DcpConfigList();
-	
-	private ArrayList<ContinuousNetworkDcpThread> continuousThreads = 
+
+	private ArrayList<ContinuousNetworkDcpThread> continuousThreads =
 		new ArrayList<ContinuousNetworkDcpThread>();
-	
-	private ArrayList<PolledNetworkDcpThread> polledThreads = 
+
+	private ArrayList<PolledNetworkDcpThread> polledThreads =
 		new ArrayList<PolledNetworkDcpThread>();
-	
-	private NetworkDcpStatusList statusList = 
+
+	private NetworkDcpStatusList statusList =
 		new NetworkDcpStatusList();
-	
+
 	/** We checkpoint the DCP status this often. */
 	private static final long checkpointStatusMsec = 300000L; // 5 min.
 
-	
+
 	/**
 	  Constructor called from main.
 	  @param args command line arguments.
@@ -137,7 +138,7 @@ public class NetworkDcpRecv
 	/** Main thread run method. */
 	public void run()
 	{
-		Logger.instance().info(module + " starting.");
+		log.info("starting.");
 		checkConfig();
 
 		initStatusList();
@@ -171,12 +172,12 @@ public class NetworkDcpRecv
 		for (DrgsRecvMsgThread drmt : continuousThreads)
 			drmt.shutdown();
 		continuousThreads.clear();
-		
+
 		for (PolledNetworkDcpThread pndt : polledThreads)
 			pndt.shutdown();
 		polledThreads.clear();
 		checkpointStatus();
-		Logger.instance().info(module + " exiting.");
+		log.info(" exiting.");
 	}
 
 	/**
@@ -185,7 +186,7 @@ public class NetworkDcpRecv
 	 */
 	private void checkConfig()
 	{
-		Logger.instance().debug3(module + " checkConfig");
+		log.trace("checkConfig");
 
 		if (isEnabled && !LrgsConfig.instance().networkDcpEnable)
 		{
@@ -219,18 +220,16 @@ public class NetworkDcpRecv
 			}
 			catch(BadConfigException ex)
 			{
-				Logger.instance().failure(module + 
-					" Cannot read DRGS Recv Config File '" + cf.getPath()
-					+ "': " + ex);
+				log.atError().setCause(ex).log("Cannot read DRGS Recv Config File '{}'", cf.getPath());
 				return;
 			}
 		}
 	}
-	
+
 	private void manageThreads()
 	{
 		// Remove any dedicated thread that have died.
-		for(Iterator<ContinuousNetworkDcpThread> it = 
+		for(Iterator<ContinuousNetworkDcpThread> it =
 			continuousThreads.iterator(); it.hasNext(); )
 		{
 			DrgsRecvMsgThread drmt = it.next();
@@ -241,7 +240,7 @@ public class NetworkDcpRecv
 				it.remove();
 			}
 		}
-		
+
 		// Add dedicated threads for any new connections.
 		for (DrgsConnectCfg dcc : dcpConfigList.getContinuousDcps())
 		{
@@ -254,13 +253,13 @@ public class NetworkDcpRecv
 				}
 			if (!haveThread)
 			{
-				ContinuousNetworkDcpThread cndt = 
+				ContinuousNetworkDcpThread cndt =
 					new ContinuousNetworkDcpThread(msgArchive, lrgsMain,
 						dcpConfigList, statusList);
 				lrgsMain.addInput(cndt);
 				cndt.configure(dcc);
 				Thread t = new Thread(cndt);
-Logger.instance().info(module + " starting ContinuousNetworkDcpThread");
+				log.info("starting ContinuousNetworkDcpThread");
 				t.start();
 				continuousThreads.add(cndt);
 			}
@@ -270,21 +269,19 @@ Logger.instance().info(module + " starting ContinuousNetworkDcpThread");
 		int numPolled = dcpConfigList.getNumPolled();
 		int idealNumThreads = numPolled / 10;
 		if (idealNumThreads < 2) idealNumThreads = 2;
-Logger.instance().debug1(module + " current numPolled=" + numPolled +
-", ideal=" + idealNumThreads);
+		log.debug(" current numPolled={}, ideal={}", numPolled, idealNumThreads);
 
 		// Never reduce number of polling threads.
 		while(polledThreads.size() < idealNumThreads)
 		{
-			PolledNetworkDcpThread pndt = 
+			PolledNetworkDcpThread pndt =
 				new PolledNetworkDcpThread(polledThreads.size(),
 					msgArchive, lrgsMain, dcpConfigList, statusList);
-//			lrgsMain.addInput(pndt);
 			Thread t = new Thread(pndt);
 			t.start();
 			polledThreads.add(pndt);
 		}
-		
+
 		for(PolledNetworkDcpThread pndt : polledThreads)
 			pndt.enableLrgsInput(isEnabled);
 	}
@@ -329,12 +326,12 @@ Logger.instance().debug1(module + " current numPolled=" + numPolled +
 	 */
 	public void shutdownLrgsInput()
 	{
-		Logger.instance().info(module + " Shutting down.");
+		log.info(" Shutting down.");
 		isShutdown = true;
 	}
 
 	/**
-	 * Enable or Disable the interface. 
+	 * Enable or Disable the interface.
 	 * The interface should only attempt to archive messages when enabled.
 	 * @param enabled true if the interface is to be enabled, false if disabled.
 	 */
@@ -360,23 +357,23 @@ Logger.instance().debug1(module + " current numPolled=" + numPolled +
 	/**
 	 * @return the numeric code representing the current status.
 	 */
-	public int getStatusCode() { return statusCode; } 
+	public int getStatusCode() { return statusCode; }
 
 	/**
 	 * @return a short string description of the current status.
 	 */
 	public String getStatus() { return status; }
 
-	
+
 	public int getDataSourceId() { return dataSourceId; }
-	
+
 	/** @return DRGS never receives APR messages */
 	public boolean getsAPRMessages() { return false; }
-	
+
 	private void initStatusList()
 	{
 		String path = EnvExpander.expand(statFileName);
-		Logger.instance().info(module + ": Parsing '" + path + "'");
+		log.info("Parsing '{}'", path);
 
 		Document doc;
 		try
@@ -385,37 +382,32 @@ Logger.instance().debug1(module + " current numPolled=" + numPolled +
 		}
 		catch(ilex.util.ErrorException ex)
 		{
-			Logger.instance().warning(ex.toString());
+			log.atWarn().setCause(ex).log("Unable to read status file.");
 			return;
 		}
 
 		Node statusElem = doc.getDocumentElement();
 		if (!statusElem.getNodeName().equalsIgnoreCase("NetworkDcpList"))
 		{
-			String s = module + " File '" + path + "'"
-				+ ": Wrong type of status file -- Cannot initialize status. "
-				+ "Root element is not 'NetworkDcpList'.";
-			Logger.instance().warning(s);
+			log.warn("File '{}': Wrong type of status file -- Cannot initialize status. " +
+					 "Root element is not 'NetworkDcpList'.", path);
 		}
 
-		// MJM Don't do this. It causes bogus connections to never go away
-		//statusList.initFromXml((Element)statusElem);
 	}
-	
+
 	private void checkpointStatus()
 	{
 		String path = EnvExpander.expand(statFileName);
-		Logger.instance().debug1(module + ": Writing '" + path + "'");
+		log.debug("Writing '{}'", path);
 		try
 		{
-			XmlOutputStream xos = new XmlOutputStream( 
+			XmlOutputStream xos = new XmlOutputStream(
 				new FileOutputStream(path), "NetworkDcpList");
 			statusList.saveToXml(xos);
 		}
 		catch(FileNotFoundException ex)
 		{
-			Logger.instance().warning(module + " Cannot write '"
-				+ path + "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot write '{}'", path);
 		}
 	}
 	public NetworkDcpStatusList getStatusList() { return statusList; }
@@ -426,4 +418,3 @@ Logger.instance().debug1(module + " current numPolled=" + numPolled +
 		return null;
 	}
 }
-

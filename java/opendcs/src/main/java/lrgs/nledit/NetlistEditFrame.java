@@ -1,26 +1,32 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.nledit;
 
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
-import java.io.IOException;
 import java.util.ResourceBundle;
 
 import javax.swing.*;
-import javax.swing.table.*;
-import javax.swing.event.*;
-
 import decodes.util.ResourceFactory;
 
-import ilex.util.AsciiUtil;
-
 public class NetlistEditFrame extends JFrame {
-	private static ResourceBundle labels = 
+	private static ResourceBundle labels =
 						NetlistEditor.getLabels();
-	private static ResourceBundle genericLabels = 
+	private static ResourceBundle genericLabels =
 						NetlistEditor.getGenericLabels();
     JPanel contentPane;
     JMenuBar jMenuBar1 = new JMenuBar();
@@ -74,17 +80,12 @@ public class NetlistEditFrame extends JFrame {
     /**Construct the frame*/
     public NetlistEditFrame() {
         enableEvents(AWTEvent.WINDOW_EVENT_MASK);
-        try {
-            jbInit();
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-        }
-//		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+
+        jbInit();
 
     }
     /**Component initialization*/
-    private void jbInit() throws Exception  
+    private void jbInit()
 	{
 		if (netlistDir != null)
 			myFileChooser.setCurrentDirectory(new File(netlistDir));
@@ -99,7 +100,7 @@ public class NetlistEditFrame extends JFrame {
         imageNew = new ImageIcon(lrgs.nledit.NetlistEditFrame.class.getResource("new.gif"));
         imageInsertBefore = new ImageIcon(lrgs.nledit.NetlistEditFrame.class.getResource("insertBefore.gif"));
         imageInsertAfter = new ImageIcon(lrgs.nledit.NetlistEditFrame.class.getResource("insertAfter.gif"));
-        //setIconImage(Toolkit.getDefaultToolkit().createImage(NetlistEditFrame.class.getResource("[Your Icon]")));
+
         contentPane = (JPanel) this.getContentPane();
         contentPane.setLayout(borderLayout1);
         this.setSize(new Dimension(543, 331));
@@ -242,9 +243,7 @@ public class NetlistEditFrame extends JFrame {
             }
         });
         jPanel1.setLayout(borderLayout2);
-//        addDcpButton.setPreferredSize(new Dimension(70, 23));
-//        moveUpButton.setPreferredSize(new Dimension(70, 23));
-//        moveDownButton.setPreferredSize(new Dimension(70, 23));
+
         jToolBar.setFloatable(false);
         jMenuFileMerge.setText(labels.getString("NetlistEditFrame.merge"));
         jMenuFileMerge.addActionListener(new java.awt.event.ActionListener() {
@@ -252,8 +251,7 @@ public class NetlistEditFrame extends JFrame {
                 jMenuFileMerge_actionPerformed(e);
             }
         });
-//        sortIdButton.setPreferredSize(new Dimension(70, 23));
-//        sortNameButton.setPreferredSize(new Dimension(70, 23));
+
         insertBeforeButton.setMaximumSize(new Dimension(25, 25));
         insertBeforeButton.setMinimumSize(new Dimension(25, 25));
         insertBeforeButton.setToolTipText(
@@ -301,15 +299,6 @@ public class NetlistEditFrame extends JFrame {
         contentPane.add(jPanel1, BorderLayout.CENTER);
         jPanel1.add(tableScrollPane, BorderLayout.CENTER);
 
-//		networkListTable.createDefaultColumnsFromModel();
-//		networkListTable.setColumnSelectionAllowed(true);
-//		networkListTable.setRowSelectionAllowed(true);
-
-//		ListSelectionModel lsm = networkListTable.getColumnModel().getSelectionModel();
-//		lsm.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-//		lsm.addListSelectionListener(new TestListener());
-//		JTableHeader jth = networkListTable.getTableHeader();
-//		jth.setReorderingAllowed(false);
 
         tableScrollPane.getViewport().add(networkListTable, null);
 
@@ -446,9 +435,9 @@ public class NetlistEditFrame extends JFrame {
 		if (!networkListTable.isModified())
 			return true;
 
-		int value = JOptionPane.showConfirmDialog(this, 
+		int value = JOptionPane.showConfirmDialog(this,
 				genericLabels.getString("saveChanges"),
-		    labels.getString("NetlistEditFrame.frameTitle"), 
+		    labels.getString("NetlistEditFrame.frameTitle"),
 		    JOptionPane.YES_NO_CANCEL_OPTION) ;
 
 		switch (value)
@@ -475,7 +464,7 @@ public class NetlistEditFrame extends JFrame {
 		if (curFileName == null)
 		{
 		    // synthesize the "Untitled" name if no name yet.
-		    caption = 
+		    caption =
 		    	labels.getString("NetlistEditFrame.untitled");
 		}
 		else
@@ -507,5 +496,3 @@ public class NetlistEditFrame extends JFrame {
 	}
 
 }
-
-
