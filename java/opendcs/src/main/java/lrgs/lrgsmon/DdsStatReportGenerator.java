@@ -144,7 +144,6 @@ public class DdsStatReportGenerator
 							File.separator + hrHtmlFileName);
 				try (FileOutputStream fos = new FileOutputStream(tmp))
 				{
-					//Logger.instance().info("Per hour file= "+tmp.toString());
 
 					XmlOutputStream xos =
 									new XmlOutputStream(fos, "html");
