@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.ldds;
 
@@ -11,15 +23,17 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.Date;
 
-import ilex.util.Logger;
-import ilex.util.EnvExpander;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
+import ilex.util.EnvExpander;
 
 /**
 Holds the remote user's name and the sandbox directory.
 */
 public class LddsUser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** This user's name */
 	String name;
 
@@ -41,14 +55,14 @@ public class LddsUser
 	/** Holds the DDS version number of the client - used to maintain compat. */
 	private int clientDdsVersionNum = DdsVersion.version_7; // Default to 7 if unknown.
 	private String clientDdsVersion = "" + clientDdsVersionNum;
-	
+
 
 	/** True if this user has disabled backward linked-list search */
 	private boolean disableBackLinkSearch = false;
-	
+
 	/** True if this user should only be sent good quality messages */
 	private boolean goodOnly = false;
-	
+
 	/** True if this is a local user in .lrgs.passwd.local */
 	private boolean local = false;
 
@@ -57,22 +71,19 @@ public class LddsUser
 	  @param name the remote username.
 	  @param userRoot the userRoot directory.
 	*/
-	public LddsUser(String name, String userRoot) 
+	public LddsUser(String name, String userRoot)
 		throws UnknownUserException
 	{
 		this.name = name;
 
 		// First check for a sub-directory under Ldds Root:
-		String dirpath = EnvExpander.expand(userRoot + 
+		String dirpath = EnvExpander.expand(userRoot +
 				File.separatorChar + name);
 		directory = new File(dirpath);
 		if (!directory.isDirectory())
 		{
-			Logger.instance().log(Logger.E_DEBUG1,
-				"Cannot access directory for user " + name
-				+ ", path='" + dirpath + "'");
-			throw new UnknownUserException("No such LRGS User '" + name + "'",
-				true);
+			log.debug("Cannot access directory for user {}, path='{}", name, dirpath);
+			throw new UnknownUserException("No such LRGS User '" + name + "'", true);
 		}
 		isAuthenticated = false;
 		sessionKey = null;
@@ -114,7 +125,7 @@ public class LddsUser
 			clientDdsVersionNum = Integer.parseInt(v.substring(0, i));
 		clientDdsVersion = v;
 	}
-	
+
 	public int getClientDdsVersionNum()
 	{
 		return clientDdsVersionNum;
@@ -149,45 +160,35 @@ public class LddsUser
     {
     	this.local = local;
     }
-    
-    
+
+
 	/**
 	 * If the account is suspended, return the time it is suspended to. Return
 	 * null if not suspended.
-	 * 
+	 *
 	 * @return null if not suspended, or date/time suspension ends if it is.
 	 */
 	public Date getSuspendTo()
 	{
 		File suspendFile = new File(directory, ".suspended");
-		DataInputStream dis = null;
-//Logger.instance().info("LddsUser.getSuspendTo: file=" + suspendFile.getPath());
-		try
+
+		try (DataInputStream dis = new DataInputStream(new FileInputStream(suspendFile)))
 		{
-			dis = new DataInputStream(new FileInputStream(suspendFile));
 			Date suspendDate = new Date(dis.readLong());
-//Logger.instance().info("LddsUser.getSuspendTo: suspendDate=" + suspendDate);
 			return suspendDate;
 		}
 		catch (FileNotFoundException ex)
 		{
-//Logger.instance().info("LddsUser.getSuspendTo -- no file");
 			return null;
 		}
 		catch (Exception ex)
 		{
-			Logger.instance().warning("Error reading '" + suspendFile.getPath() + "': " + ex);
+			log.atWarn().setCause(ex).log("Error reading '{}'", suspendFile.getPath());
 			suspendFile.delete();
 			return null;
 		}
-		finally
-		{
-			if (dis != null)
-				try { dis.close(); }
-				catch (Exception ex) {}
-		}
 	}
-	
+
 	public boolean isSuspended()
 	{
 		Date d = getSuspendTo();
@@ -199,7 +200,7 @@ public class LddsUser
 		suspendFile.delete();
 		return false;
 	}
-	
+
 	/** Convenient value for permanent suspension. This is Nov 20 12:46:40 2286 */
     public static final Date permSuspendTime = new Date(10000000000000L);
 
@@ -216,21 +217,14 @@ public class LddsUser
 			suspendFile.delete();
 			return;
 		}
-		DataOutputStream dos = null;
-		try
+
+		try (DataOutputStream dos = new DataOutputStream(new FileOutputStream(suspendFile)))
 		{
-			dos = new DataOutputStream(new FileOutputStream(suspendFile));
 			dos.writeLong(d.getTime());
 		}
 		catch (Exception ex)
 		{
-			Logger.instance().warning("Error writing '" + suspendFile.getPath() + "': " + ex);
-		}
-		finally
-		{
-			if (dos != null)
-				try { dos.close(); }
-				catch (Exception ex) {}
+			log.atWarn().setCause(ex).log("Error writing '{}'", suspendFile.getPath());
 		}
 	}
 
@@ -241,7 +235,6 @@ public class LddsUser
 
 	public void setGoodOnly(boolean goodOnly)
 	{
-//Logger.instance().info("User '" + name + "', setting goodOnly=" + goodOnly);
 		this.goodOnly = goodOnly;
 	}
 }

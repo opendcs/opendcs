@@ -1,31 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  $Log$
-*  Revision 1.2  2011/11/17 20:30:16  mmaloney
-*  removed debug msg
-*
-*  Revision 1.1  2008/04/04 18:21:15  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.3  2007/08/22 14:23:17  mmaloney
-*  dev
-*
-*  Revision 1.2  2005/09/11 21:40:32  mjmaloney
-*  dev
-*
-*  Revision 1.1  2005/09/06 19:11:10  mjmaloney
-*  dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.lrgsmain;
 
@@ -34,11 +20,14 @@ import java.io.FileReader;
 import java.io.LineNumberReader;
 import java.io.IOException;
 import java.util.Vector;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.StringTokenizer;
 
 import ilex.util.EnvExpander;
 import ilex.util.IndexRangeException;
-import ilex.util.Logger;
 import ilex.util.QueueLogger;
 import ilex.util.ProcWaiterThread;
 import ilex.util.ProcWaiterCallback;
@@ -46,7 +35,7 @@ import ilex.util.ProcWaiterCallback;
 /**
 This class is a thread that monitors the event queue for alarm assertions
 and de-assertions. It also reads a configuration file containing alarm
-numbers and processes to be executed. 
+numbers and processes to be executed.
 <p>
 The config file has the format:
 <p>
@@ -57,11 +46,11 @@ if it is being de-asserted. See alarm numbers defined within each module.
 <p>
 The configuration file is monitored for changes once every minute.
 */
-public class AlarmHandler extends Thread
-	implements ProcWaiterCallback
+public class AlarmHandler extends Thread implements ProcWaiterCallback
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** This module's name. */
-	public static final String module = "Alarm"; 
+	public static final String module = "Alarm";
 
 	/** The name of the configuration file */
 	public static final String cfgFileName = "$LRGSHOME/alarm.conf";
@@ -109,7 +98,7 @@ public class AlarmHandler extends Thread
 	{
 		long lastConfigCheck = 0L;
 		int qIndex = qLogger.getStartIdx();
-		
+
 		while(!isShutdown)
 		{
 			try { sleep(1000L); } catch(InterruptedException ex) {}
@@ -134,8 +123,7 @@ public class AlarmHandler extends Thread
 			}
 			catch(IndexRangeException ex)
 			{
-				Logger.instance().warning(module 
-					+ " invalid event queue index " + qIndex + " -- resync.");
+				log.atWarn().setCause(ex).log("invalid event queue index {} -- resync", qIndex);
 				qIndex = qLogger.getStartIdx();
 			}
 		}
@@ -149,21 +137,18 @@ public class AlarmHandler extends Thread
 	{
 		if (!configFile.canRead())
 		{
-			Logger.instance().debug2(module + 
-				" config file '" + configFile.getPath() 
-				+ "' does not exist or is not readable!");
+			log.debug("config file '{}' does not exist or is not readable!", configFile.getPath());
 			return;
 		}
 		if (configFile.lastModified() > lastConfigLoad)
 		{
-			Logger.instance().info(module + " Reading config file '"
-				+ configFile.getPath() + "'");
+			log.info(" Reading config file '{}'", configFile.getPath());
 			lastConfigLoad = System.currentTimeMillis();
 			alarmAssoc.clear();
 			LineNumberReader rdr = null;
-			try
+			try (FileReader fr = new FileReader(configFile))
 			{
-				rdr = new LineNumberReader(new FileReader(configFile));
+				rdr = new LineNumberReader(fr);
 				String line;
 				while((line = rdr.readLine()) != null)
 				{
@@ -173,52 +158,40 @@ public class AlarmHandler extends Thread
 					int idx = line.indexOf(':');
 					if (idx < 1 || idx == line.length()-1)
 					{
-						Logger.instance().warning(module + " "
-							+ configFile.getPath() + ":" + rdr.getLineNumber()
-							+ " bad syntax: no ':', need 'module:num cmd ...'");
+						log.warn("{}:{} bad syntax: no ':', need 'module:num cmd ...'",
+								 configFile.getPath(), rdr.getLineNumber());
 						continue;
 					}
 					String alarmModule = line.substring(0, idx);
 					int idx2 = line.indexOf(' ', idx);
 					if (idx2 == -1)
 					{
-						Logger.instance().warning(module + " "
-							+ configFile.getPath() + ":" + rdr.getLineNumber()
-							+ " bad syntax, no ' ', need 'module:num cmd ...'");
+						log.warn("{}:{} bad syntax, no ' ', need 'module:num cmd ...'" ,
+								 configFile.getPath(), rdr.getLineNumber());
 						continue;
 					}
 					int alarmNum;
-					try 
+					try
 					{
 						alarmNum = Integer.parseInt(
 							line.substring(idx+1, idx2));
 					}
 					catch(NumberFormatException ex)
 					{
-						Logger.instance().warning(module + " "
-							+ configFile.getPath() + ":" + rdr.getLineNumber()
-							+ " bad syntax, no num, need 'module:num cmd ...'");
+						log.atWarn()
+						   .setCause(ex)
+						   .log("{}:{} bad syntax, no num, need 'module:num cmd ...'",
+						   		configFile.getPath(), rdr.getLineNumber());
 						continue;
 					}
 					String cmd = line.substring(idx2+1);
-					Logger.instance().debug1(module + " Associating "
-						+ alarmModule + ":" + alarmNum + " with cmd '"
-						+ cmd + "'");
+					log.debug(" Associating {}:{} with cmd '{}'", alarmModule, alarmNum, cmd);
 					alarmAssoc.add(new AlarmAssoc(alarmModule, alarmNum, cmd));
 				}
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().warning(module 
-					+ " Error reading config file '" + configFile.getPath()
-					+ "': " + ex);
-			}
-			finally
-			{
-				if (rdr != null)
-				{
-					try { rdr.close(); } catch(Exception ex) {}
-				}
+				log.atWarn().setCause(ex).log("Error reading config file '{}'", configFile.getPath());
 			}
 		}
 	}
@@ -247,7 +220,7 @@ public class AlarmHandler extends Thread
 			return;
 		String module = tok.substring(0, idx);
 		int evtNum = 0;
-		try 
+		try
 		{
 			String ens = tok.substring(idx+1);
 			int slen = ens.length();
@@ -274,15 +247,13 @@ public class AlarmHandler extends Thread
 							String name = module + ":" + evtNum;
 							if (runningProcs >= maxAlarmProcs)
 							{
-								Logger.instance().warning(module
-									+ " could not start alarm process " + name
-									+ ", cmd '" + aa.cmd+ "': Already " 
-									+ runningProcs + " processes running.");
+								log.warn("could not start alarm process {}, cmd '{}': Already {} " +
+										 "processes running.",
+										 name, aa.cmd, runningProcs);
 								return;
 							}
-							Logger.instance().info(module + " executing '"
-								+ aa.cmd + "'");
-							try 
+							log.info("executing '{}'", aa.cmd);
+							try
 							{
 								ProcWaiterThread.runBackground(
 									aa.cmd, name, this, aa);
@@ -290,16 +261,17 @@ public class AlarmHandler extends Thread
 							}
 							catch(IOException ex)
 							{
-								Logger.instance().warning(module
-									+ " could not start alarm process " + name
-									+ ", cmd '" + aa.cmd+ "': " + ex);
+								log.atWarn()
+								   .setCause(ex)
+								   .log("Could not start alarm process {}, cmd '{}'", name, aa.cmd);
 							}
 						}
 					}
 					else
-						Logger.instance().warning(module
-							+ "Cannot start alarm " + module + ":" + evtNum
-							+ " -- previous process has not yet finished.");
+					{
+						log.warn("Cannot start alarm {}:{} -- previous process has not yet finished.",
+								 module, evtNum);
+					}
 				}
 			}
 		}
@@ -311,14 +283,13 @@ public class AlarmHandler extends Thread
 	 * @param obj The AlarmAssoc object.
 	 * @param exitStatus the exit status of the process.
 	 */
-	public synchronized void procFinished(String procName, Object obj, 
+	public synchronized void procFinished(String procName, Object obj,
 		int exitStatus)
 	{
 		runningProcs--;
 		AlarmAssoc aa = (AlarmAssoc)obj;
 		aa.isRunning = false;
-		Logger.instance().info(module + " Alarm process '" + procName
-			+ "' finished with exit status " + exitStatus);
+		log.info(" Alarm process '{}' finished with exit status {}", procName, exitStatus);
 	}
 
 }

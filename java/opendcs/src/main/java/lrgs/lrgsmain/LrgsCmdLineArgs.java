@@ -1,14 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of this source
-*  code may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.lrgsmain;
 
@@ -16,15 +19,15 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.cmdline.*;
 import ilex.util.EnvExpander;
-import ilex.util.SequenceFileLogger;
-import ilex.util.QueueLogger;
-import ilex.util.Logger;
-import ilex.util.TeeLogger;
 
 public class LrgsCmdLineArgs extends ApplicationSettings
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
     // Public strings set by command line options:
 	private IntegerToken debuglevel_arg;
 	private StringToken log_arg;
@@ -41,9 +44,6 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 
 	public static final String progname = "lrgs";
 
-	QueueLogger qLogger;
-	SequenceFileLogger fLogger;
-
 	public LrgsCmdLineArgs()
 	{
 		super();
@@ -53,12 +53,12 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 		addToken(debuglevel_arg);
 
 		log_arg = new StringToken(
-			"l", "log-file", "", TokenOptions.optSwitch, 
+			"l", "log-file", "", TokenOptions.optSwitch,
 			EnvExpander.expand("$LRGSHOME/lrgslog"));
 		addToken(log_arg);
 
 		configFile_arg = new StringToken(
-			"f", "config-file", "", TokenOptions.optSwitch, 
+			"f", "config-file", "", TokenOptions.optSwitch,
 			"$LRGSHOME/lrgs.conf");
 		addToken(configFile_arg);
 
@@ -72,10 +72,6 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 		addToken(lockArg);
 		addToken(windowsSvcArg);
 		addToken(foreground);
-
-		qLogger = null;
-		fLogger = null;
-
 
 	}
 
@@ -104,48 +100,14 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 	{
 		super.parseArgs(args);
 
-		try 
-		{
-			qLogger = new QueueLogger(progname);
-
-			fLogger = new SequenceFileLogger(progname, getLogFile()); 
-			fLogger.setNumOldLogs(numOldLogs_arg.getValue());
-			fLogger.setMaxLength(maxLogSize_arg.getValue());
-
-			TeeLogger tLogger = new TeeLogger(progname, fLogger, qLogger);
-			Logger.setLogger(tLogger); 
-	
-			SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
-			df.setTimeZone(TimeZone.getTimeZone("UTC"));
-			Logger.setDateFormat(df);
-
-			// Set debug level.
-			int dl = getDebugLevel();
-			if (dl > 0)
-			{
-				int dv = 
-					dl == 1 ? Logger.E_DEBUG1 :
-					dl == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3;
-				// Debug info only goes to file, never to clients.
-				fLogger.setMinLogPriority(dv);
-			}
-		}
-		catch(IOException ex)
-		{
-			System.err.println("Cannot open log file '" + getLogFile() 
-				+ "': " + ex);
-			System.exit(1);
-		}
-
-		Logger.instance().log(Logger.E_INFORMATION, "========== Process '"
-			+ progname + "' Starting ==========");
+		log.info("========== Process '{}' Starting ==========", progname);
 	}
 
 	public String getConfigFile()
 	{
 		return configFile_arg.getValue();
 	}
-	
+
 	public String getLockFile()
 	{
 		return lockArg.getValue();
