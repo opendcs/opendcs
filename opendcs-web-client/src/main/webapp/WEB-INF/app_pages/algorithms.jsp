@@ -17,7 +17,7 @@
 <!DOCTYPE html>
 <html lang="en">
 	<%@include file="/WEB-INF/common/header.jspf" %>
-	<body class="navbar-top">
+	<body >
 		<%@include file="/WEB-INF/common/top-bar.jspf" %>
 
 	    <!-- Page content -->

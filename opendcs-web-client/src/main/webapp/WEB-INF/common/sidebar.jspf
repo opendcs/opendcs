@@ -17,7 +17,7 @@
 
 <%-- Main sidebar --%>
 
-<nav class="nav navbar-light bg-primary d-inline-flex">
+<nav class="nav navbar-light bg-primary d-inline-flex vh-100">
 	<ul class="list-unstyled ps-2 flex-column">
 		<li class="nav-item mb-2">
 			<button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#decodes-collapse" aria-expanded="true">

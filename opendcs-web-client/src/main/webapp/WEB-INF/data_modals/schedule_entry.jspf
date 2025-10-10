@@ -22,7 +22,7 @@
                                         <label class="form-check-label">
                                             <input
 											type="checkbox" id="scheduleEntryEnabled"
-											class="form-check-input" data-bs-focus="true"/>
+											class="form-check-input"/>
                                         </label>
                                     </div>
                                 </div>
@@ -70,7 +70,7 @@
                                                     <input
 													type="radio" name="runFreq"
 													class="form-check-input-styled-primary" value="continuous"
-													checked data-bs-focus="true"/> Run Continuously
+													checked/> Run Continuously
                                                         
                                                 </label>
                                             </div>
@@ -83,7 +83,7 @@
                                                     <input
 													type="radio" name="runFreq"
 													class="form-check-input-styled-primary" value="once"
-													data-bs-focus="true"/> Run Once
+													/> Run Once
                                                             
                                                 </label>
                                             </div>
@@ -108,7 +108,7 @@
                                                     <input
 													type="radio" name="runFreq"
 													class="form-check-input-styled-primary" value="runevery"
-													data-bs-focus="true"/> Run Every
+													/> Run Every
                                                                     
                                                 </label>
                                             </div>

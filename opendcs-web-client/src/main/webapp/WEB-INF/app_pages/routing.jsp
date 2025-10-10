@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 	<%@include file="/WEB-INF/common/header.jspf" %>
-	<body class="navbar-top">
+	<body >
 		<!-- Main navbar -->
 		<%@include file="/WEB-INF/common/top-bar.jspf" %>
 
