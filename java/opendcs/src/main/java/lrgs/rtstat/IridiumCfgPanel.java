@@ -1,6 +1,18 @@
-/**
- * Open Source Software by Cove Software, LLC
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package lrgs.rtstat;
 
 import java.awt.GridBagConstraints;
@@ -17,8 +29,6 @@ import ilex.util.TextUtil;
 import decodes.gui.GuiDialog;
 import lrgs.iridiumsbd.IridiumSbdInterface;
 import lrgs.lrgsmain.LrgsConfig;
-import lrgs.rtstat.LrgsConfigPanel;
-import lrgs.rtstat.RtStat;
 
 /**
  * Configuration panel for Iridium LRGS Interface
@@ -44,8 +54,6 @@ public class IridiumCfgPanel
 	@Override
 	public boolean hasChanged()
 	{
-//System.out.println("hasChanged, enabled was=" + lrgsConfig.iridiumEnabled
-//+ ", checkbox=" + enableCheckBox.isSelected());
 		if (lrgsConfig == null)
 			return false;
 		
@@ -63,7 +71,6 @@ public class IridiumCfgPanel
 	{
 		this.lrgsConfig = lrgsConfig;
 		enableCheckBox.setSelected(lrgsConfig.iridiumEnabled);
-//System.out.println("fillFields, enabled="+ enableCheckBox.isSelected());
 		portNumField.setText(String.valueOf(lrgsConfig.iridiumPort));
 		captureFileField.setText(lrgsConfig.iridiumCaptureFile);
 	}
@@ -75,7 +82,6 @@ public class IridiumCfgPanel
 			return;
 		
 		lrgsConfig.iridiumEnabled = enableCheckBox.isSelected();
-//System.out.println("saveChanges, enabled="+ enableCheckBox.isSelected());
 		lrgsConfig.iridiumPort = getIntField(portNumField,
 			IridiumSbdInterface.SBD_LISTEN_PORT);
 		String s = captureFileField.getText().trim();

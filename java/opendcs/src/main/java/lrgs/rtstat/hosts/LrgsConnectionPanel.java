@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.rtstat.hosts;
 
 import javax.swing.JPanel;
@@ -14,8 +29,8 @@ import javax.swing.SwingWorker;
 import org.opendcs.gui.GuiConstants;
 import org.opendcs.gui.PasswordWithShow;
 import org.opendcs.tls.TlsMode;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import decodes.util.DecodesVersion;
 import lrgs.gui.MessageBrowser;
@@ -23,8 +38,6 @@ import lrgs.gui.MessageBrowser;
 import java.awt.Component;
 import java.awt.Dimension;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
-
 import java.util.Date;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -34,7 +47,7 @@ import java.util.function.Function;
 
 public final class LrgsConnectionPanel extends JPanel
 {
-    private static final Logger log = LoggerFactory.getLogger(LrgsConnectionPanel.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static final ResourceBundle labels = ResourceBundle.getBundle("decodes.resources.rtstat", Locale.getDefault()); //$NON-NLS-1$
     public static String pwk = MessageBrowser.class.toString() +
         (""+Math.PI).substring(3, 10) + DecodesVersion.class.toString();
@@ -43,7 +56,7 @@ public final class LrgsConnectionPanel extends JPanel
     private JTextField portField;
     private JLabel tlsOptionLabel = new JLabel(labels.getString("RtStatFrame.tls"));
     private JComboBox<TlsMode> tlsOption = new JComboBox<>(TlsMode.values());
-    
+
     private JTextField usernameField;
     private JButton pausedButton;
     private PasswordWithShow passwordField;
@@ -97,7 +110,7 @@ public final class LrgsConnectionPanel extends JPanel
 
         portField = new JTextField();
         portField.setMaximumSize(new Dimension(32, 2147483647));
-        panel_1.add(portField);        
+        panel_1.add(portField);
         portField.setText("16003");
         portField.setColumns(10);
         panel_1.add(tlsOptionLabel);
@@ -132,7 +145,7 @@ public final class LrgsConnectionPanel extends JPanel
         panel_4.add(connectButton);
 
         pausedButton = new JButton(labels.getString("RtStatFrame.pause")); //$NON-NLS-1$
-        pausedButton.addActionListener(e -> 
+        pausedButton.addActionListener(e ->
         {
             paused = !paused;
             pause(paused);
