@@ -1,54 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Source$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $State$
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  $Log$
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.1  2008/04/04 18:21:14  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.12  2005/07/20 20:18:57  mjmaloney
-*  LRGS 5.0 Release preparation
-*
-*  Revision 1.11  2005/03/07 21:33:51  mjmaloney
-*  dev
-*
-*  Revision 1.10  2005/01/05 19:21:07  mjmaloney
-*  Bug fixes & updates.
-*
-*  Revision 1.9  2004/08/30 14:51:46  mjmaloney
-*  Javadocs
-*
-*  Revision 1.8  2003/05/29 14:27:07  mjmaloney
-*  Enhancements for 3.4
-*
-*  Revision 1.7  2003/05/03 12:33:32  mjmaloney
-*  Updates
-*
-*  Revision 1.6  2002/06/19 19:25:17  mjmaloney
-*  Release preparation.
-*
-*  Revision 1.5  2002/06/18 19:19:21  mjmaloney
-*  Use Logger class rather than LrgsEventQueue directly.
-*
-*  Revision 1.4  2000/03/31 16:09:57  mike
-*  Error codes are now in lrgs.common.LrgsErrorCode
-*
-*  Revision 1.3  2000/01/08 21:53:28  mike
-*  generic LddsClient interface
-*
-*  Revision 1.2  1999/11/19 15:56:00  mike
-*  Modifications made for compatibility with legacy DRS Server
-*
-*  Revision 1.1  1999/11/11 16:23:35  mike
-*  Initial implementation
-*
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.ldds;
 
@@ -56,7 +19,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.common.*;
 
@@ -70,6 +34,7 @@ import lrgs.common.*;
 */
 public class CmdRecvNetList extends LddsCommand
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	String filename;
 	byte nldata[];
 
@@ -86,7 +51,7 @@ public class CmdRecvNetList extends LddsCommand
 		idx = filename.lastIndexOf('\\');
 		if (idx != -1)
 			filename = filename.substring(idx+1);
-		
+
 		this.filename = filename;
 		this.nldata = nldata;
 	}
@@ -116,13 +81,11 @@ public class CmdRecvNetList extends LddsCommand
 			LddsMessage msg = new LddsMessage(LddsMessage.IdPutNetlist,
 				filename);
 			ldds.send(msg);
-			Logger.instance().log(Logger.E_DEBUG2,
-				"Successfully saved network list file in " + nlfile.getPath());
+			log.trace("Successfully saved network list file in {}", nlfile.getPath());
 		}
 		catch (IOException ex)
 		{
-			throw new DdsInternalException("Cannot create netlist: "
-				+ex.toString());
+			throw new DdsInternalException("Cannot create netlist.", ex);
 		}
 		return 0;
 	}
@@ -133,9 +96,10 @@ public class CmdRecvNetList extends LddsCommand
 	*/
 	public void writeFile(File f) throws IOException
 	{
-		FileOutputStream fos = new FileOutputStream(f);
-		fos.write(nldata);
-		fos.close();
+		try (FileOutputStream fos = new FileOutputStream(f))
+		{
+			fos.write(nldata);
+		}
 	}
 
 	/** @return the code associated with this command. */
