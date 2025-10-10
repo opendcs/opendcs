@@ -15,8 +15,9 @@ import org.opendcs.gui.GuiConstants;
 import org.opendcs.gui.PasswordWithShow;
 import org.opendcs.gui.layout.WrapLayout;
 import org.opendcs.tls.TlsMode;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import decodes.util.DecodesVersion;
 import lrgs.gui.MessageBrowser;
@@ -37,7 +38,7 @@ import java.util.function.Function;
 
 public final class LrgsConnectionPanel extends JPanel
 {
-    private static final Logger log = LoggerFactory.getLogger(LrgsConnectionPanel.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static final ResourceBundle labels = ResourceBundle.getBundle("decodes.resources.rtstat", Locale.getDefault()); //$NON-NLS-1$
     public static String pwk = MessageBrowser.class.toString() +
         (""+Math.PI).substring(3, 10) + DecodesVersion.class.toString();
