@@ -1,10 +1,26 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.ldds;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.common.*;
 
@@ -13,6 +29,7 @@ import lrgs.common.*;
 */
 public class CmdSendSearchCrit extends LddsCommand
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** return "CmdSendSearchCrit"; */
 	public String cmdType()
 	{
@@ -32,32 +49,22 @@ public class CmdSendSearchCrit extends LddsCommand
 		byte scdata[];
 		File scfile = new File(ldds.user.directory.getCanonicalPath()
 			+ File.separator + "searchcrit");
-		try
+		try (FileInputStream fis = new FileInputStream(scfile))
 		{
-			FileInputStream fis = new FileInputStream(scfile);
-
 			scdata = new byte[50+(int)scfile.length()];
 			byte fnbytes[] = SearchCriteria.defaultName.getBytes();
 			for(int i=0; i<fnbytes.length; i++)
 				scdata[i] = fnbytes[i];
 
 			fis.read(scdata, 50, (int)scfile.length());
-			fis.close();
 
-			// Activate this search crit file. Ignore exceptions (perhaps
-			// from network lists not being found.
-// MJM 20050306 -- why do we want to ignore exceptions -- let them propegate.
-			//try
-			//{
 			ldds.crit = new SearchCriteria(scfile);
 			ldds.msgretriever.setSearchCriteria(ldds.crit);
-			//}
-			//catch(Exception e) {}
+
 		}
 		catch(IOException ioe)
 		{
-			throw new NoSuchFileException("Cannot send searchcrit: "
-				+ ioe.toString());
+			throw new NoSuchFileException("Cannot send searchcrit.", ioe);
 		}
 
 		LddsMessage msg = new LddsMessage(LddsMessage.IdCriteria, "");
@@ -72,9 +79,7 @@ public class CmdSendSearchCrit extends LddsCommand
 		msg.MsgData = scdata;
 		ldds.send(msg);
 
-		Logger.instance().log(Logger.E_DEBUG2,
-			"Successfully retrieved and sent search criteria file " +
-			scfile.getPath());
+		log.trace("Successfully retrieved and sent search criteria file {}", scfile.getPath());
 		return 0;
 	}
 
