@@ -1,14 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of this source
-*  code may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.lrgsmain;
 
@@ -16,26 +19,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.TimeZone;
-import java.util.Map.Entry;
-
-import javax.net.ServerSocketFactory;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManagerFactory;
-
-import org.opendcs.tls.TlsMode;
-
-import java.util.Properties;
-import java.util.Set;
 import java.net.InetAddress;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
@@ -43,39 +26,22 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Properties;
+import java.util.Queue;
+import java.util.TimeZone;
 
-import opendcs.dai.LoadingAppDAI;
-import ilex.util.Logger;
-import ilex.util.FileServerLock;
-import ilex.util.ServerLockable;
-import ilex.util.NoOpServerLock;
-import ilex.util.Pair;
-import ilex.util.EnvExpander;
-import ilex.util.ServerLock;
-import ilex.util.FileLogger;
-import ilex.util.ProcWaiterCallback;
-import ilex.util.ProcWaiterThread;
-import ilex.util.QueueLogger;
-import ilex.util.TextUtil;
-import ilex.jni.SignalHandler;
-import ilex.jni.SignalTrapper;
-import lrgs.archive.MsgArchive;
-import lrgs.archive.InvalidArchiveException;
-import lrgs.ddsserver.DdsServer;
-import lrgs.ddsrecv.DdsRecv;
-import lrgs.drgsrecv.DrgsRecv;
-import lrgs.gui.LrgsApp;
-import lrgs.gui.DecodesInterface;
-import lrgs.iridiumsbd.IridiumSbdInterface;
-import lrgs.ldds.PasswordChecker;
-import lrgs.lrgsmon.DetailReportGenerator;
-import lrgs.lrit.LritDamsNtReceiver;
-import lrgs.statusxml.LrgsStatusSnapshotExt;
-import lrgs.dqm.DapsDqmInterface;
-import lrgs.db.LrgsDatabaseThread;
-import lrgs.edl.EdlInputInterface;
-import lrgs.noaaportrecv.NoaaportRecv;
-import lrgs.networkdcp.NetworkDcpRecv;
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+
+import org.opendcs.tls.TlsMode;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.routing.DacqEventLogger;
@@ -86,14 +52,41 @@ import decodes.tsdb.NoSuchObjectException;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
 import decodes.util.ResourceFactory;
+import ilex.jni.SignalHandler;
+import ilex.util.EnvExpander;
+import ilex.util.FileServerLock;
+import ilex.util.NoOpServerLock;
+import ilex.util.Pair;
+import ilex.util.ProcWaiterCallback;
+import ilex.util.ProcWaiterThread;
+import ilex.util.QueueLogger;
+import ilex.util.ServerLock;
+import ilex.util.ServerLockable;
+import lrgs.archive.InvalidArchiveException;
+import lrgs.archive.MsgArchive;
+import lrgs.db.LrgsDatabaseThread;
+import lrgs.ddsrecv.DdsRecv;
+import lrgs.ddsserver.DdsServer;
+import lrgs.dqm.DapsDqmInterface;
+import lrgs.drgsrecv.DrgsRecv;
+import lrgs.edl.EdlInputInterface;
+import lrgs.gui.DecodesInterface;
+import lrgs.gui.LrgsApp;
+import lrgs.iridiumsbd.IridiumSbdInterface;
+import lrgs.ldds.PasswordChecker;
+import lrgs.lrgsmon.DetailReportGenerator;
+import lrgs.lrit.LritDamsNtReceiver;
+import lrgs.networkdcp.NetworkDcpRecv;
+import lrgs.noaaportrecv.NoaaportRecv;
+import lrgs.statusxml.LrgsStatusSnapshotExt;
+import opendcs.dai.LoadingAppDAI;
 
 /**
 Main class for LRGS process.
 */
-public class LrgsMain
-    implements Runnable, ServerLockable, SignalHandler, ProcWaiterCallback
+public class LrgsMain implements Runnable, ServerLockable, SignalHandler, ProcWaiterCallback
 {
-    private static final Logger logger = Logger.instance();
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     public static final String module = "LrgsMain";
 
     public static final int EVT_TIMEOUT = 1;
@@ -153,16 +146,13 @@ public class LrgsMain
     /** The DDS Receive Module, used for secondary group. */
     private DdsRecv ddsRecv2;
 
-    /** To use is writeDacqEvents = true in configuration */
-    private DacqEventLogger dacqEventLogger = null;
+    private final QueueLogger queueLogger = new QueueLogger("lrgs");
 
     private final String lockFileName;
     private final String configFileName;
-    private final QueueLogger queueLogger;
-    private final FileLogger fileLogger;
 
     /** Constructor. */
-    public LrgsMain(QueueLogger qLogger, String lockFileName, String configFileName, FileLogger fileLogger)
+    public LrgsMain(String lockFileName, String configFileName)
     {
         msgArchive = null;
         myServerLock = null;
@@ -173,14 +163,12 @@ public class LrgsMain
         ddsRecv = null;
         drgsRecv = null;
         statusRptGen = new DetailReportGenerator("icons/satdish.jpg");
-        alarmHandler = new AlarmHandler(qLogger);
+        alarmHandler = new AlarmHandler(queueLogger);
         dbThread = null;
         noaaportRecv = null;
         ddsRecv2=null;
         this.lockFileName = lockFileName;
         this.configFileName = configFileName;
-        this.queueLogger = qLogger;
-        this.fileLogger = fileLogger;
     }
 
     public void run()
@@ -189,19 +177,18 @@ public class LrgsMain
         {
             ResourceFactory.instance().initDbResources();
         }
-        catch (DatabaseException e)
+        catch (DatabaseException ex)
         {
-            e.printStackTrace();
+            log.atError().setCause(ex).log("Unable to initialize database resources.");
         }
 
         shutdownFlag = false;
-        Logger.instance().info("============ " + getAppName()
-            + " Starting ============");
+        log.info("============ {} Starting ============", getAppName());
 
         // Establish a server lock file & start the server lock monitor
 
         String lockName = EnvExpander.expand(lockFileName);
-        Logger.instance().info("Lock File =" + lockName);
+        log.info("Lock File ={}", lockName);
         if (lockName.equals("-"))
         {
             myServerLock = new NoOpServerLock();
@@ -211,10 +198,8 @@ public class LrgsMain
             myServerLock = new FileServerLock(lockName);
             if (!myServerLock.obtainLock(this))
             {
-                Logger.instance().fatal(module + ":" + EVT_LOCK_BUSY
-                    + "- Lock file '" + lockName + "' already taken. "
-                    + "Is another instance of '" + LrgsCmdLineArgs.progname
-                    + "' already running?");
+                log.error("{}:{}- Lock file '{}' already taken. Is another instance of '{}' already running?",
+                          module, EVT_LOCK_BUSY, lockName, LrgsCmdLineArgs.progname);
                 System.exit(1);
             }
         }
@@ -222,24 +207,13 @@ public class LrgsMain
         // Do all of the initialization & exit on fatal error.
         if (!initLRGS())
         {
-            Logger.instance().fatal("============ " + getAppName()
-                + " INIT FAILED -- Exiting. ============");
+            log.error("============ {} INIT FAILED -- Exiting. ============", getAppName());
             myServerLock.releaseLock();
             System.exit(0);
         }
 
         long lastStatusSnapshot = 0L;
 
-        // New for LRGS 6.0: On Linux systems, trap SIGHUP and rotate logs.
-        if (System.getProperty("os.name").toLowerCase().startsWith("linux"))
-        {
-            Logger.instance().info("Trapping SIGHUP");
-            try { SignalTrapper.setSignalHandler(SIGHUP, this); }
-            catch(Throwable ex)
-            {
-                Logger.instance().warning("Could not trap SIGHUP: " + ex);
-            }
-        }
 
         // main loop
         statusProvider.setSystemStatus("Running");
@@ -292,8 +266,7 @@ public class LrgsMain
         statusProvider.detach();
 
         myServerLock.releaseLock();
-        Logger.instance().info("============ " + LrgsCmdLineArgs.progname
-            + " Exiting ============");
+        log.info("============ {} Exiting ============", LrgsCmdLineArgs.progname);
     }
 
     /**
@@ -310,13 +283,12 @@ public class LrgsMain
         try { cfg.loadConfig();}
         catch(IOException ex)
         {
-            String msg = module + ":" + EVT_BAD_CONFIG +
-                "- Cannot read config file '" + cfgName + "': " + ex;
-            Logger.instance().fatal(msg);
-            System.err.println(msg);
+            log.atError()
+               .setCause(ex)
+               .log("{}:{}- Cannot read config file '{}'", module, EVT_BAD_CONFIG, cfgName);
             return false;
         }
-        Logger.instance().info("Config getDoPdtValidation=" + cfg.getDoPdtValidation());
+        log.info("Config getDoPdtValidation={}", cfg.getDoPdtValidation());
 
         // If a startup command is specified in properties, run it.
         String onStartupCmd = cfg.getMiscProp("onStartupCmd");
@@ -341,8 +313,9 @@ public class LrgsMain
                     propFile = new File(homePath);
                 if (!propFile.canRead())
                 {
-                    Logger.instance().failure("loadDecodes=true, but neither '" + userPath + "' nor '" + homePath
-                        + "' is readable. Proceeding with default DECODES settings.");
+                    log.error("loadDecodes=true, but neither '{}' nor '{}' " +
+                              "is readable. Proceeding with default DECODES settings.",
+                              userPath, homePath);
                 }
                 else
                 {
@@ -350,18 +323,17 @@ public class LrgsMain
                     DecodesSettings settings = DecodesSettings.instance();
                     if (!settings.isLoaded())
                     {
-                        Logger.instance().info("Loading DECODES settings from '" + propFile.getPath() + "'");
+                        log.info("Loading DECODES settings from '{}'", propFile.getPath());
                         Properties props = new Properties();
-                        try
+                        try (FileInputStream fis = new FileInputStream(propFile))
                         {
-                            FileInputStream fis = new FileInputStream(propFile);
                             props.load(fis);
-                            fis.close();
                         }
-                        catch(Exception e)
+                        catch(Exception ex)
                         {
-                            Logger.instance().log(Logger.E_FAILURE,
-                                "Cannot open DECODES Properties File '"+propFile.getPath()+"': "+e);
+                            log.atError()
+                               .setCause(ex)
+                               .log("Cannot open DECODES Properties File '{}'", propFile.getPath());
                         }
                         settings.loadFromProperties(props);
                     }
@@ -377,41 +349,16 @@ public class LrgsMain
                 if (cfg.getMiscBooleanProperty("writeDacqEvents", false)
                  && (Database.getDb().getDbIo() instanceof SqlDatabaseIO))
                 {
-                    // Create the DacqEvent Logger and make it the primary logger.
-                    SqlDatabaseIO sqlDbio = (SqlDatabaseIO)Database.getDb().getDbIo();
-                    dacqEventLogger = new DacqEventLogger(Logger.instance());
-
-                    LoadingAppDAI appDAO = sqlDbio.makeLoadingAppDAO();
-                    try
-                    {
-                        CompAppInfo appInfo = appDAO.getComputationApp("LRGS");
-                        if (appInfo != null)
-                            dacqEventLogger.setAppId(appInfo.getAppId());
-                    }
-                    catch (DbIoException ex)
-                    {
-                        Logger.instance().warning(module + " Cannot read application ID: " + ex);
-                    }
-                    catch (NoSuchObjectException ex)
-                    {
-                        Logger.instance().warning(module + " No such application 'LRGS': " + ex
-                            + " -- Please create in Processes GUI.");
-                    }
-                    finally
-                    {
-                        appDAO.close();
-                    }
-
-                    Logger.setLogger(dacqEventLogger);
+                    log.warn("Internal DACQ event system is no longer supported. Adjust logger configuration " +
+                             "to achieve same or similar behavior.");
                 }
 
             }
             catch(DecodesException ex)
             {
-                Logger.instance().info(
-                    LrgsCmdLineArgs.progname
-                    + " Cannot initialize DECODES DB -- assuming not installed ("
-                    + ex + ")");
+                log.atError()
+                   .setCause(ex)
+                   .log("{} Cannot initialize DECODES DB -- assuming not installed.", LrgsCmdLineArgs.progname);
                 decodes.db.Database.setDb(null);
             }
         }
@@ -433,10 +380,7 @@ public class LrgsMain
         try { initArchive(cfg); }
         catch(InvalidArchiveException ex)
         {
-            String msg = module + ":" + EVT_ARC_INIT
-                + "- Cannot initialize Archive: " + ex;
-            Logger.instance().fatal(msg);
-            System.err.println(msg);
+            log.atError().setCause(ex).log("{}:{}- Cannot initialize Archive", module, EVT_ARC_INIT);
             return false;
         }
 
@@ -464,16 +408,19 @@ public class LrgsMain
         if (cfg.getMiscBooleanProperty("noaaport.enable", false)
          || cfg.noaaportEnabled)
         {
-            Logger.instance().info("Constructing NOAAPORT Receive Module.");
+            log.info("Constructing NOAAPORT Receive Module.");
             noaaportRecv = new NoaaportRecv(this, msgArchive);
             addInput(noaaportRecv);
         }
-        else Logger.instance().debug1("NOAAPORT _not_ enabled.");
+        else
+        {
+            log.debug("NOAAPORT _not_ enabled.");
+        }
 
         // If enabled, create the Network DCP Receive Module
         if (cfg.networkDcpEnable)
         {
-            Logger.instance().info("Constructing Network DCP Receive Module.");
+            log.info("Constructing Network DCP Receive Module.");
             networkDcpRecv = new NetworkDcpRecv(this, msgArchive);
             addInput(networkDcpRecv);
             statusProvider.getStatusSnapshot().networkDcpStatusList
@@ -482,24 +429,26 @@ public class LrgsMain
 
         if (cfg.enableLritRecv)
         {
-            Logger.instance().info("Enabling DAMS-NT HRIT Receiver");
+            log.info("Enabling DAMS-NT HRIT Receiver");
             LritDamsNtReceiver ldnr = new LritDamsNtReceiver(msgArchive, this);
             ldnr.configure(null);
             addInput(ldnr);
         }
         else
-            Logger.instance().info("LRIT is not enabled.");
+        {
+            log.info("LRIT is not enabled.");
+        }
 
         if (cfg.hritFileEnabled)
         {
-            Logger.instance().info("Enabling HRIT-File Receiver");
+            log.info("Enabling HRIT-File Receiver");
             HritFileInterface hfi = new HritFileInterface(this, msgArchive);
             addInput(hfi);
         }
 
         if (cfg.iridiumEnabled)
         {
-            Logger.instance().info("Enabling Iridium Receive Module.");
+            log.info("Enabling Iridium Receive Module.");
             addInput(new IridiumSbdInterface(this, msgArchive));
         }
 
@@ -516,9 +465,9 @@ public class LrgsMain
             }
             catch(LrgsInputException lie)
             {
-                Logger.instance().failure(module + ":" + EVT_INPUT_INIT
-                 + "- Cannot initialize input interface '" + lii.getInputName()
-                 + "': " + lie.toString());
+                log.atError()
+                   .setCause(lie)
+                   .log("{}:{}- Cannot initialize input interface '{}'", module, EVT_INPUT_INIT, lii.getInputName());
             }
         }
 
@@ -547,7 +496,7 @@ public class LrgsMain
             }
             catch (LrgsInputException ex)
             {
-                Logger.instance().failure("Cannot start EdlInputInterface: " + ex);
+                log.atError().setCause(ex).log("Cannot start EdlInputInterface.");
             }
         }
 
@@ -555,21 +504,9 @@ public class LrgsMain
         // picks up where it left off.
         statusProvider.initQualityLog();
 
-        // If I'm recovering outages, set 'since' time to the last time I got
-        // a message on _any_ downlink.
-        // MJM OpenDCS 6.2 does not support Outage Recovery
-//        if (cfg.recoverOutages)
-//        {
-//            ddsRecv.setLastMsgRecvTime(statusProvider.getLastReceiveTime());
-//            ddsRecv2.setLastMsgRecvTime(statusProvider.getLastReceiveTime()); // for secondary group
-//        }
-//        else // Otherwise, use last time DDS returned a message
-//        {
-            ddsRecv.setLastMsgRecvTime(statusProvider.getLastDdsReceiveTime());
-            ddsRecv2.setLastMsgRecvTime(statusProvider.getLastSecDdsReceiveTime()); // for secondary group
-//        }
 
-
+        ddsRecv.setLastMsgRecvTime(statusProvider.getLastDdsReceiveTime());
+        ddsRecv2.setLastMsgRecvTime(statusProvider.getLastSecDdsReceiveTime()); // for secondary group
 
         ddsRecv.start();
         ddsRecv2.start();
@@ -587,7 +524,7 @@ public class LrgsMain
             }
             catch (Exception ex)
             {
-                Logger.instance().fatal("Cannot load password checker class '" + pcc + "': " + ex);
+                log.atError().setCause(ex).log("Cannot load password checker class '{}'", pcc);
                 return false;
             }
 
@@ -656,13 +593,11 @@ public class LrgsMain
             }
             catch (IllegalAccessException | InstantiationException | ClassNotFoundException | ClassCastException ex)
             {
-                String msg = "Unable to create Loadable Input %s, because %s";
-                logger.warning(String.format(msg,loadableName,ex.getLocalizedMessage()));
+                log.atWarn().setCause(ex).log("Unable to create Loadable Input {}", loadableName);
             }
             catch (LrgsInputException ex)
             {
-                String msg = "Unable to configure Loadable Input %s, because %s";
-                logger.warning(String.format(msg,loadableName,ex.getLocalizedMessage()));
+                log.atWarn().setCause(ex).log("Unable to configure Loadable Input {}", loadableName);
             }
         });
 
@@ -695,26 +630,20 @@ public class LrgsMain
             InetAddress ia =
                 (cfg.ddsBindAddr != null && cfg.ddsBindAddr.length() > 0) ?
                 InetAddress.getByName(cfg.ddsBindAddr) : null;
-            ddsServer = new DdsServer(cfg.ddsListenPort, ia, msgArchive,
-                    queueLogger, statusProvider, socketFactories);
+            ddsServer = new DdsServer(cfg.ddsListenPort, ia, msgArchive, queueLogger, statusProvider, socketFactories);
             ddsServer.init();
             return true;
         }
         catch(Exception ex)
         {
-            String msg = module + ":" + EVT_DDS_INIT
-                + "- Cannot start DDS Server: " + ex;
-            Logger.instance().fatal(msg);
-            System.err.println(msg);
-            ex.printStackTrace(System.err);
-            throw new RuntimeException("Unable to start DDS server",ex);
-            //return false;
+            log.atError().setCause(ex).log("{}:{}- Cannot start DDS Server: ", module, EVT_DDS_INIT);
+            throw new RuntimeException("Unable to start DDS server", ex);
         }
     }
 
 
     private Pair<ServerSocketFactory,SSLSocketFactory> initSocketFactory(LrgsConfig cfg)
-        throws NoSuchAlgorithmException, CertificateException, 
+        throws NoSuchAlgorithmException, CertificateException,
                FileNotFoundException, IOException, KeyStoreException, UnrecoverableKeyException, KeyManagementException
     {
         ServerSocketFactory serverSocketFactory = ServerSocketFactory.getDefault();
@@ -748,8 +677,7 @@ public class LrgsMain
     /** Called from ServerLockable when the lock file is removed. */
     public void lockFileRemoved()
     {
-        Logger.instance().info(
-            LrgsCmdLineArgs.progname + " Exiting -- Lock File Removed.");
+        log.info("{} Exiting -- Lock File Removed.", LrgsCmdLineArgs.progname);
         shutdown();
     }
 
@@ -766,9 +694,7 @@ public class LrgsMain
         if (cmdLineArgs.windowsSvcArg.getValue())
             FileServerLock.setWindowsService(true);
 
-        Logger.instance().setTimeZone(TimeZone.getTimeZone("UTC"));
-        final LrgsMain lm = new LrgsMain(cmdLineArgs.qLogger, cmdLineArgs.getLockFile(),
-                                         cmdLineArgs.getConfigFile(), cmdLineArgs.fLogger);
+        final LrgsMain lm = new LrgsMain(cmdLineArgs.getLockFile(), cmdLineArgs.getConfigFile());
         if (cmdLineArgs.runInForGround() )
         {
             final Thread mainThread = Thread.currentThread();
@@ -778,7 +704,7 @@ public class LrgsMain
                 {
                     try
                     {
-                        Logger.instance().debug3("SIGTERM Caught, Setting shutdown flag to true.");
+                        log.trace("SIGTERM Caught, Setting shutdown flag to true.");
                         lm.shutdown();
                         mainThread.join(1000);
                     }
@@ -800,7 +726,7 @@ public class LrgsMain
      */
     protected void addCustomFeatures()
     {
-        Logger.instance().debug1("Default 'addCustomFeatures' doing nothing.");
+        log.debug("Default 'addCustomFeatures' doing nothing.");
     }
 
     /**
@@ -853,9 +779,8 @@ public class LrgsMain
                 lrgsInputs[i] = inp;
                 return i;
             }
-        Logger.instance().failure(module + ":" + EVT_INPUT_INIT
-            + "- Cannot add input interface "
-            + inp.getInputName() + ": input interface vector full!");
+        log.error("{}:{}- Cannot add input interface {}: input interface vector full!",
+                  module, EVT_INPUT_INIT, inp.getInputName());
         return -1;
     }
 
@@ -894,8 +819,7 @@ public class LrgsMain
      */
     public void handleSignal(int sig)
     {
-        Logger.instance().info("SIGHUP received -- rotating logs.");
-        fileLogger.rotateLogs();
+        log.info("SIGHUP received -- rotating logs.");
         if (ddsServer != null
          && DdsServer.statLoggerThread != null)
             DdsServer.statLoggerThread.rotateLogs();
@@ -908,8 +832,7 @@ public class LrgsMain
 
     private void runOnStartupCmd(String onStartupCmd)
     {
-        Logger.instance().info(module + " Running onStartupCmd '"
-            + onStartupCmd + "' and will wait 10 sec for completion");
+        log.info("Running onStartupCmd '{}' and will wait 10 sec for completion", onStartupCmd);
         long start = System.currentTimeMillis();
         onStartupCmdFinished = false;
         try
@@ -922,19 +845,17 @@ public class LrgsMain
                 try { Thread.sleep(500L); }
                 catch(InterruptedException ex) {}
             }
-            Logger.instance().info(module + " Proceeding.");
+            log.info("Proceeding.");
         }
         catch(IOException ex)
         {
-            Logger.instance().warning(module
-                + " Cannot run onStartupCmd '" + onStartupCmd + "': " + ex);
+            log.atWarn().setCause(ex).log("Cannot run onStartupCmd '{}'", onStartupCmd);
         }
     }
 
     public void procFinished(String procName, Object obj, int exitStatus)
     {
-        Logger.instance().info(module + " Process '" + procName
-            + "' finished with exit status " + exitStatus);
+        log.info("Process '{}' finished with exit status {}", procName, exitStatus);
         if (procName.equalsIgnoreCase("onStartupCmd"))
             onStartupCmdFinished = true;
     }
