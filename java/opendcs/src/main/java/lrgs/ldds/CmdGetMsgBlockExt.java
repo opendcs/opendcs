@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.ldds;
 
@@ -9,10 +21,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.zip.GZIPOutputStream;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.text.SimpleDateFormat;
 
-import ilex.util.Base64;
-import ilex.util.Logger;
 import ilex.xml.XmlOutputStream;
 import lrgs.common.*;
 import lrgs.archive.MsgArchive;
@@ -43,6 +57,7 @@ data is GZipped.
 */
 public class CmdGetMsgBlockExt extends LddsCommand
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final int MAXSIZE = 20000;
 	private static final int MAXMSGS = 100;
 
@@ -76,26 +91,23 @@ public class CmdGetMsgBlockExt extends LddsCommand
 		if (ldds.user == null)
 			throw new UnknownUserException(
 				"HELLO required before retrieving data.");
-		
+
 		// Set the client's version number in my XML producer so that we don't
 		// send anything the client can't handle.
 		myXmlParser.setDdsVersion(ldds.getClientDdsVersion());
-		
+
 		DcpMsgRetriever msgretriever = ldds.msgretriever;
-		
+
 		if (msgretriever == null)
 			throw new UnknownUserException(
 				"Incomplete setup for user '" + ldds.user.name + "'");
 
-		Logger.instance().debug3(
-			"con(" + ldds.getUniqueID() + ") "
-			+ "GetNextMsgBlockExt executing for " + ldds.getClientName());
+		log.trace("con({}) executing for {}", ldds.getUniqueID(), ldds.getClientName());
 
 		if (!ldds.getStatusProvider().isUsable())
 		{
 			String emsg = "This LRGS is not currently usable.";
-			Logger.instance().warning(
-				"Failing message retrieval from " + ldds.getName() + " "+emsg);
+			log.warn("Failing message retrieval from {} {}", ldds.getName(), emsg);
 			throw new ArchiveException(emsg, LrgsErrorCode.DDDSINTERNAL, true);
 		}
 
@@ -116,11 +128,11 @@ public class CmdGetMsgBlockExt extends LddsCommand
 		boolean didSeqSearch = false;
 		boolean bufDone = false;
 		String conName = "con(" + ldds.getUniqueID() + ")";
-		if (sc != null && sc.seqStart >= 0 && sc.seqEnd >= 0 
+		if (sc != null && sc.seqStart >= 0 && sc.seqEnd >= 0
 		 && (since = sc.evaluateLrgsSinceTime()) != null
 		 && (until = sc.evaluateLrgsUntilTime()) != null)
 		{
-debug(ldds, "MJM Trying seqnum search");
+			debug(ldds, "MJM Trying seqnum search");
 			didSeqSearch = true;
 
 			if (ldds.seqNumMsgBuf == null)
@@ -128,18 +140,15 @@ debug(ldds, "MJM Trying seqnum search");
 				DdsServer ddsServer = (DdsServer)ldds.getParent();
 				MsgArchive marc = ddsServer.msgArchive;
 				ldds.seqNumMsgBuf = new ArrayList<DcpMsg>();
-				int n = marc.getMsgsBySeqNum(since.getTime(), 
+				int n = marc.getMsgsBySeqNum(since.getTime(),
 					until.getTime(), sc.seqStart,
 					sc.seqEnd, ldds.seqNumMsgBuf);
 				ldds.seqNumMsgBufIdx = 0;
-//Logger.instance().info("MJM Got " + n 
-//+ " msgs from archive in sequence range ("
-//+ sc.seqStart + "," + sc.seqEnd + ") at time " + since);
 			}
 			int sz = ldds.seqNumMsgBuf.size();
 			while(ldds.seqNumMsgBufIdx < sz && numMessages < MAXMSGS)
 			{
-				if (myXmlParser.addMsg(xos, 
+				if (myXmlParser.addMsg(xos,
 					ldds.seqNumMsgBuf.get(ldds.seqNumMsgBufIdx++), conName))
 					numMessages++;
 			}
@@ -154,8 +163,7 @@ debug(ldds, "MJM Trying seqnum search");
 			if (numMessages >= MAXMSGS)
 				bufDone = true;
 		}
-debug(ldds, 
-"MJM After seqnum search, numMessages=" + numMessages + ",bufDone=" + bufDone);
+		debug(ldds, "MJM After seqnum search, numMessages={}, bufDone={}", numMessages, bufDone);
 		if (numMessages == 0)
 			didSeqSearch = false;
 
@@ -170,16 +178,16 @@ debug(ldds,
 		while(!bufDone)
 		{
 			int x = -1;
-			try 
+			try
 			{
-				x = msgretriever.getNextPassingIndex(idx, stopSearchMsec); 
+				x = msgretriever.getNextPassingIndex(idx, stopSearchMsec);
 
 				// If we did a sequence search, then only accept messages
 				// for the regular search that DO NOT have DOMSAT sequence nums.
 				if (didSeqSearch
 				 && (idx.getFlagbits() & DcpMsgFlag.MSG_NO_SEQNUM) == 0)
 					continue;
-				
+
 				// Must not deliver Iridium messages to pre DDS v10 clients.
 				if (DcpMsgFlag.isIridium(idx.getFlagbits())
 				 && ldds.user.getClientDdsVersionNum() < 10)
@@ -192,20 +200,18 @@ debug(ldds,
 				if (myXmlParser.addMsg(xos, msg, conName))
 					numMessages++;
 
-				if (baos.size() >= MAXSIZE         // byte size limit reached 
+				if (baos.size() >= MAXSIZE         // byte size limit reached
 				 || numMessages >= maxMsgs)         // # msg limit reached
 					bufDone = true;
 			}
 			catch(NoSuchMessageException nsme)
 			{
-				Logger.instance().warning(LddsParams.module
-					+ " Bad message skipped. idx.Offset = " 
-					+ idx.getOffset() + ": " + nsme);
+				log.atWarn().setCause(nsme).log("Bad message skipped. idx.Offset = {}", idx.getOffset());
 				continue;
 			}
 			catch(UntilReachedException urex)
 			{
-				debug(ldds, "DDS Connection '" + ldds.getName() + "' " + urex);
+				debug(ldds, "DDS Connection '{}'", urex, ldds.getName());
 				if (numMessages == 0)
 					throw urex;
 				else // already have some data, drop down & return it.
@@ -213,8 +219,7 @@ debug(ldds,
 			}
 			catch(EndOfArchiveException eoaex)
 			{
-				debug(ldds, "DDS Connection '" + ldds.getName()
-					+ "' " + eoaex);
+				debug(ldds, "DDS Connection '{}'", eoaex, ldds.getName());
 				if (numMessages == 0)
 					// This means caught-up to end of storage.
 					throw eoaex;
@@ -225,14 +230,18 @@ debug(ldds,
 			{
 				if (ldds.ins.isMsgAvailable())
 				{
-					Logger.instance().debug1(cmdType() + 
-						" aborting to service another client message from "
-							+ ldds.getClientName());
+					log.atDebug()
+					   .setCause(stex)
+					   .log("{} aborting to service another client message from {}",
+							cmdType(), ldds.getClientName());
 					return 0;
 				}
 				else
-					Logger.instance().debug1("DDS Connection '"+ldds.getClientName()
-						+ "' aborting because of 45 second timeout: " + stex);
+				{
+					log.atDebug()
+					   .setCause(stex)
+					   .log("DDS Connection '{}' aborting because of 45 second timeout", ldds.getClientName());
+				}
 
 				if (numMessages == 0)
 					throw stex;     // Means 'try again'
@@ -241,13 +250,9 @@ debug(ldds,
 			}
 			catch(IOException ioex)
 			{
-				String msg = cmdType() + " IOException: " + ioex;
-				Logger.instance().warning(msg);
-				System.err.println(ioex.toString());
-				ioex.printStackTrace(System.err);
 				throw new ArchiveUnavailableException(
 					"Internal server error constructin MsgBlockExt response: "
-					+ ioex, LrgsErrorCode.DDDSINTERNAL);
+					+ ioex, LrgsErrorCode.DDDSINTERNAL, ioex);
 			}
 			// Allow ArchiveUnavailable to propegate.
 		}
@@ -263,19 +268,20 @@ debug(ldds,
 		lm.MsgLength = lm.MsgData.length;
 		ldds.send(lm);
 
-debug(ldds, "MJM CmdGetMsgBlockExt Successfully retrieved and sent " + numMessages
-+ " DCP messages to " + ldds.getClientName()
-+ ", responselen=" + lm.MsgLength);
+		debug(ldds, "MJM CmdGetMsgBlockExt Successfully retrieved and sent {} DCP messages to {}, responselen={}",
+			  numMessages, ldds.getClientName(), lm.MsgLength);
 		return numMessages;
 	}
 
 	/** @return the code associated with this command. */
 	public char getCommandCode() { return LddsMessage.IdDcpBlockExt; }
 
-	private void debug(LddsThread ldds, String msg)
+	private void debug(LddsThread ldds, String msg, Object... args)
 	{
-		Logger.instance().debug3("con(" + ldds.getUniqueID() + ") "
-			+ "GetNextDcpMsgBlock executing for " + ldds.getClientName()
-			+ " " + msg);
+		debug(ldds, msg, null, args);
+	}
+	private void debug(LddsThread ldds, String msg, Throwable cause, Object... args)
+	{
+		log.atTrace().setCause(cause).log("con({})" + msg, ldds.getUniqueID(), args);
 	}
 }
