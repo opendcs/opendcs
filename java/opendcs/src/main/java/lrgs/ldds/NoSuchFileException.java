@@ -13,7 +13,12 @@ public class NoSuchFileException extends LddsRequestException
 	*/
 	public NoSuchFileException(String msg)
 	{
-		super(msg, LrgsErrorCode.DNOSUCHFILE, false);
+		this(msg, null);
+	}
+
+	public NoSuchFileException(String msg, Throwable cause)
+	{
+		super(msg, LrgsErrorCode.DNOSUCHFILE, false, cause);
 	}
 }
 
