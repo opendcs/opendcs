@@ -32,11 +32,7 @@
 		                    	<button type="button" class="btn btn-success float-right" id="saveButton">Save</button>
 		                    </div>
 						</div>
-<<<<<<< HEAD
-						<table id="mainTable" class="table table-hover datatable-responsive w-100">
-=======
 						<table id="mainTable" class="table table-hover table-striped datatable-responsive  w-100">
->>>>>>> f76c177 (Correct layout in all pages.)
 							<caption class="captionTitleCenter">Engineering Unit Conversions
 								<button class="btn btn-secondary float-right captionButton mr-3" id="addButton">+</button>
 							</caption>

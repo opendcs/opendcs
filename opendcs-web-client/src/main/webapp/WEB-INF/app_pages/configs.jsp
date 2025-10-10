@@ -17,13 +17,8 @@
 				<div class="page-header page-header-light">
 					<div class="page-header-content header-elements-md-inline">
 						<div class="page-title d-flex">
-<<<<<<< HEAD
-							<h4><span class="font-weight-semibold">OpenDCS</span> - Configs</h4>
-							<a href="#" class="header-elements-toggle text-default d-md-none"><i class="bi bi-three-dots-vertical"></i></a>
-=======
 							<h4>Configs</h4>
-							<a href="#" class="header-elements-toggle text-default d-md-none"><i class="icon-more"></i></a>
->>>>>>> f76c177 (Correct layout in all pages.)
+							<a href="#" class="header-elements-toggle text-default d-md-none"><i class="bi bi-three-dots-vertical"></i></a>
 						</div>
 					</div>  
 				</div> <!-- /page header -->

@@ -101,6 +101,7 @@
         .forEach(bindDropdownToggle);
   }
 
+  /*
   // Hide dropdown after clicking a menu item, without bubbling to row handlers
   document.addEventListener('click', function (e) {
     var menu = e.target && e.target.closest('.dropdown-menu');
@@ -118,7 +119,7 @@
       }
     }
   }, true); // capture so we beat row handlers
-
+*/
   whenReady(function () {
     rebindDropdowns(document);
 
@@ -137,96 +138,7 @@
     mo.observe(document.body, { childList: true, subtree: true });
   });
 
-  // ---------------- Sidebar + accordion ----------------
-  whenReady(function () {
-    var body = document.body;
-    var sidebar = document.querySelector('.sidebar.sidebar-main');
-    if (sidebar) {
-      body.classList.add('has-sidebar');
-
-      // collapse/expand with persistence
-      var key = 'opendcs.sidebar.collapsed';
-      try { if (localStorage.getItem(key) === '1') body.classList.add('sidebar-collapsed'); } catch (e) {}
-      sidebar.querySelectorAll('.sidebar-main-toggle').forEach(function (btn) {
-        btn.addEventListener('click', function (e) {
-          e.preventDefault();
-          body.classList.toggle('sidebar-collapsed');
-          try { localStorage.setItem(key, body.classList.contains('sidebar-collapsed') ? '1' : '0'); } catch (e) {}
-        });
-      });
-
-      // groups accordion (any li that directly contains ul.nav-group-sub)
-      function directChild(parent, selector) {
-        if (!parent) return null;
-        for (var i = 0; i < parent.children.length; i++) {
-          var el = parent.children[i];
-          if (el.matches && el.matches(selector)) return el;
-        }
-        return null;
-      }
-      var lis = Array.prototype.slice.call(sidebar.querySelectorAll('.nav-sidebar > li'));
-      var groups = lis.filter(function (li) { return !!directChild(li, 'ul.nav-group-sub'); });
-
-      groups.forEach(function (li) {
-        var link = directChild(li, 'a.nav-link');
-        var submenu = directChild(li, 'ul.nav-group-sub');
-        if (!link || !submenu) return;
-
-        var open = isDisplayed(submenu) || li.classList.contains('nav-item-open') || link.getAttribute('aria-expanded') === 'true';
-        if (open) {
-          li.classList.add('nav-item-open');
-          submenu.style.display = 'block';
-        } else {
-          li.classList.remove('nav-item-open');
-          submenu.style.display = 'none';
-        }
-
-        link.addEventListener('click', function (ev) {
-          var href = (link.getAttribute('href') || '').trim();
-          if (href === '' || href === '#' || href.toLowerCase().indexOf('javascript:') === 0) {
-            ev.preventDefault();
-          }
-          var isOpen = li.classList.contains('nav-item-open');
-          groups.forEach(function (sib) {
-            if (sib !== li) {
-              sib.classList.remove('nav-item-open');
-              var s = directChild(sib, 'ul.nav-group-sub'); if (s) s.style.display = 'none';
-              var sLink = directChild(sib, 'a.nav-link'); if (sLink) sLink.setAttribute('aria-expanded', 'false');
-            }
-          });
-          if (isOpen) {
-            li.classList.remove('nav-item-open');
-            submenu.style.display = 'none';
-            link.setAttribute('aria-expanded', 'false');
-          } else {
-            li.classList.add('nav-item-open');
-            submenu.style.display = 'block';
-            link.setAttribute('aria-expanded', 'true');
-          }
-        });
-      });
-
-      // Open the group that contains an active sub-link, if any
-      var active = sidebar.querySelector('.nav-group-sub .nav-link.active');
-      if (active) {
-        var node = active.closest('li');
-        while (node && !directChild(node, 'ul.nav-group-sub')) {
-          node = node.parentElement ? node.parentElement.closest('li') : null;
-        }
-        if (node) {
-          groups.forEach(function (sib) {
-            if (sib !== node) {
-              sib.classList.remove('nav-item-open');
-              var s = directChild(sib, 'ul.nav-group-sub'); if (s) s.style.display = 'none';
-            }
-          });
-          node.classList.add('nav-item-open');
-          var gs = directChild(node, 'ul.nav-group-sub'); if (gs) gs.style.display = 'block';
-        }
-      }
-    }
-  });
-
+ 
   // ---------------- Stacked Modals (BS5) ----------------
   function adjustModalStack(modal) {
     if (modal.parentElement && modal.parentElement !== document.body) {

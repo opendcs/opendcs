@@ -79,11 +79,7 @@
     <!-- /page content -->
 	<%@include file="/WEB-INF/common/scripts.jspf" %>
 	<script src="../resources/js/login.js"></script>
-<<<<<<< HEAD:opendcs-web-client/src/main/webapp/WEB-INF/app_pages/login.jsp
 	<link rel="stylesheet" type="text/css" href="../resources/css/login-form.css">
-=======
-<link rel="stylesheet" type="text/css" href="../resources/css/login-form.css">
->>>>>>> a7f2f28 (Rearrange header/foot/etc to standardized names and directory.):opendcs-web-client/src/main/webapp/login.jsp
 </body>
 <!-- /theme JS files -->
 	<% if (Objects.equals(authType, "sso") && authBasePath != null) { %>

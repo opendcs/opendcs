@@ -37,11 +37,7 @@
                                         <div class="col-lg-2 float-left">
                                             <div class="form-check form-switch">
                                                 <label class="form-check-label">
-<<<<<<< HEAD
                                                     <input type="checkbox" id="manualEditCheckbox" class="form-check-input"/>
-=======
-                                                    <input type="checkbox" id="manualEditCheckbox" class="form-check-input" data-bs-focus="true"/>
->>>>>>> 5805d2b (Cleanup javascript 'opendcs' and corrections for bootstrap.)
                                                 </label>
                                             </div>
                                         </div>
