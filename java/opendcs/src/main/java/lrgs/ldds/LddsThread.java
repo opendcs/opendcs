@@ -1,14 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of this source
-*  code may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.ldds;
 
@@ -22,8 +25,11 @@ import java.util.Date;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.spi.LoggingEventBuilder;
+
 import ilex.net.*;
-import ilex.util.Logger;
 import ilex.util.QueueLogger;
 
 import lrgs.common.*;
@@ -43,6 +49,7 @@ these interfaces are 100% pure Java.
 */
 public abstract class LddsThread extends BasicSvrThread
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /** The input stream for building protocol messages. */
     protected LddsInputStream ins;
 
@@ -133,8 +140,7 @@ public abstract class LddsThread extends BasicSvrThread
         qlog = null;
 
         lastActivity = new Date();
-        Logger.instance().debug1(DdsServer.module +
-            " New client: " + getClientName() + " id=" + id);
+        log.debug("New client: {} id={}", getClientName(), id);
 
         setName("ddsclient-" + id);
 
@@ -142,8 +148,7 @@ public abstract class LddsThread extends BasicSvrThread
         lastSeqNum = 0;
         lastMsgTime = 0;
         hostname = socket.getInetAddress().toString();
-        Logger.instance().debug1(DdsServer.module +
-            " set hostname initially to '" + hostname + "'");
+        log.debug("set hostname initially to '{}'", hostname);
 
         myStats = new DdsConnectionStats();
         myStats.setConnectionId(id);
@@ -154,11 +159,9 @@ public abstract class LddsThread extends BasicSvrThread
 
         int pri = this.getPriority();
         this.setPriority(pri - 1);
-        Logger.instance().debug1(DdsServer.module
-            + " enqueing LddsThread to GetHostnameThread priority=" + getPriority());
+        log.debug("enqueing LddsThread to GetHostnameThread priority={}", getPriority());
         GetHostnameThread.instance().enqueue(this);
-        Logger.instance().debug1(DdsServer.module
-            + " enqueue done.");
+        log.debug("enqueue done.");
     }
 
     /**
@@ -240,14 +243,11 @@ public abstract class LddsThread extends BasicSvrThread
         }
         catch(Exception ex)
         {
-            ex.printStackTrace();
-            throw new DdsInternalException("msgretriever.init(): " + ex);
+            throw new DdsInternalException("msgretriever.init(): ", ex);
         }
 
         msgacc.setStatus("Running");
-        Logger.instance().debug1(DdsServer.module +
-            " Accepted connection #" + getUniqueID() + " from "
-            + getClientName() + "");
+        log.debug(" Accepted connection #{} from {}", getUniqueID(), getClientName());
         lastActivity = new Date();
         statLogger.logStat(this);
     }
@@ -275,8 +275,7 @@ public abstract class LddsThread extends BasicSvrThread
     */
     public void disconnect()
     {
-        Logger.instance().debug1(DdsServer.module + " Connection #"
-            + getUniqueID() + " " + getClientName() + " disconnecting");
+        log.debug("Connection #{} {} disconnecting.", getUniqueID(), getClientName());
         myStats.setEndTime(new Date());
         if (myStats.getSuccessCode() == DdsConnectionStats.SC_CONNECTED)
         {
@@ -304,8 +303,7 @@ public abstract class LddsThread extends BasicSvrThread
         user = null;
         crit = null;
         msgretriever = null;
-        Logger.instance().debug1(DdsServer.module + " Connection #"
-            + getUniqueID() + " disconnection complete.");
+        log.debug(" Connection #{} disconnection complete.", getUniqueID());
     }
 
     /**
@@ -327,29 +325,25 @@ public abstract class LddsThread extends BasicSvrThread
         }
         catch(IOException ex)
         {
-            Logger.instance().debug1(DdsServer.module
-                + " IO Error on connection to "
-                + getClientName() + " (Disconnecting): " + ex.toString());
+            log.atWarn().setCause(ex).log("IO Error on connection to {} (Disconnecting)", getClientName());
             disconnect();
             return;
         }
         catch(ProtocolError ex)
         {
-            Logger.instance().info(DdsServer.module
-                + " Protocol error on connection to " + getClientName()
-                + "(" + ex.getMessage()
-                + ") -- Hanging up. "
-                + "Ask this user if they are using DDS-compliant software.");
+            log.atInfo()
+               .setCause(ex)
+               .log("Protocol error on connection to {}-- Hanging up. " +
+                    "Ask this user if they are using DDS-compliant software.",
+                    getClientName());
             disconnect();
             return;
         }
         catch(Exception ex)
         {
-            String emsg = "Unexpected Error on connection to " + getClientName()
-                + " (Disconnecting): " + ex;
-            System.err.println(emsg);
-            ex.printStackTrace(System.err);
-            warning(emsg);
+            log.atError()
+               .setCause(ex)
+               .log("Unexpected Error on connection to {} (Disconnecting)", getClientName());
             disconnect();
 
             return;
@@ -370,16 +364,16 @@ public abstract class LddsThread extends BasicSvrThread
             {
                 String rs = "?" + aex.getErrorCode() + ",0," + aex.getMessage();
                 if (!(aex instanceof UntilReachedException))
-                    Logger.instance().debug3(DdsServer.module
-                        + " ArchiveException on "
-                        + getClientName() + " Response='" + rs + "' : " + aex);
+                {
+                    log.atTrace()
+                       .setCause(aex)
+                       .log("ArchiveException on {} Response='{}'", getClientName(), rs);
+                }
                 LddsMessage resp = new LddsMessage(cmd.getCommandCode(), rs);
                 try { send(resp); }
                 catch(IOException ioex)
                 {
-                    Logger.instance().debug1(DdsServer.module
-                        + "Cannot return response to "
-                        + getClientName() + ": " + ioex);
+                    log.atDebug().setCause(ioex).log("Cannot return response to {}", getClientName());
                     aex.setHangup(true);
                 }
                 if (aex.getHangup())
@@ -388,28 +382,21 @@ public abstract class LddsThread extends BasicSvrThread
             catch(IOException ex)
             {
                 long elapsed = System.currentTimeMillis() - serviceStart;
-                String emsg = DdsServer.module
-                    + " Client hangup on connection with user '"
-                    + getClientName() + "', elapsed msec=" + elapsed
-                    + ": " + ex.toString();
-                if (emsg.contains("Connection reset by peer")
-                 || emsg.contains("Broken pipe"))
-                    Logger.instance().debug1(emsg);
-                else
-                    Logger.instance().warning(emsg);
+                final String exMsg = ex.toString();
+                LoggingEventBuilder le = exMsg.contains("Connection reset by peer") || exMsg.contains("Boken pipe")
+                                       ? log.atDebug() : log.atWarn();
+                le.setCause(ex)
+                  .log(" Client hangup on connection with user '{}', elapsed msec={}",
+                       getClientName(), elapsed);
                 disconnect();
             }
             catch(Exception ex)
             {
                 long elapsed = System.currentTimeMillis() - serviceStart;
-                String emsg = DdsServer.module +
-                    " " + (new Date()).toString()
-                    + " Unexpected Exception on connection with user '"
-                    + getClientName() + "', elapsed msec=" + elapsed
-                    + ": " + ex.toString();
-                System.err.println(emsg);
-                ex.printStackTrace(System.err);
-                Logger.instance().warning(emsg);
+                log.atError()
+                   .setCause(ex)
+                   .log("Unexpected Exception on connection with user '{}', elapsed msec={}",
+                        getClientName(), elapsed);
                 disconnect();
             }
         }
@@ -417,15 +404,13 @@ public abstract class LddsThread extends BasicSvrThread
         {
             String resptext = "?" + LrgsErrorCode.DBADKEYWORD +
                 ",0,Unrecognized request ID '" + msg.MsgId + "'";
-            Logger.instance().warning(DdsServer.module +
-                " client " + getClientName() + " unrecognized request ID "
-                + msg.MsgId + " resp='" + resptext + "' -- will hangup.");
+            log.warn("client {} unrecognized request ID {} resp='{}' -- will hangup.",
+                     getClientName(), msg.MsgId, resptext);
             LddsMessage resp = new LddsMessage(LddsMessage.IdHello, resptext);
             try { send(resp); }
             catch(IOException ex)
             {
-                Logger.instance().warning(DdsServer.module + " "
-                    + getClientName() + ": " + ex);
+                log.atError().setCause(ex).log("Unable to send response to {}", getClientName());
             }
             disconnect();
         }
@@ -469,7 +454,7 @@ public abstract class LddsThread extends BasicSvrThread
         }
         catch(Exception ex)
         {
-            throw new IOException("Error sending data: " + ex);
+            throw new IOException("Error sending data.", ex);
         }
     }
 
@@ -561,11 +546,12 @@ public abstract class LddsThread extends BasicSvrThread
     /**
      * Convenience method to issue a warning log message on behalf of this
      * client connection.
+     * @deprecated
      */
+    @Deprecated
     public void warning(String msg)
     {
-        Logger.instance().warning("DDS Client " + getClientName()
-            + " " + msg);
+        /* do nothing. needs remove of usages. */
     }
 
     public OutageXmlParser getOutageXmlParser()

@@ -1,17 +1,32 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package lrgs.ldds;
 
 import java.util.Date;
 import java.util.Iterator;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.LinkedList;
 import java.text.SimpleDateFormat;
 import java.io.IOException;
 
 import ilex.util.SequenceFileLogger;
-import ilex.util.Logger;
 import ilex.util.EnvExpander;
 import ilex.net.BasicServer;
 
@@ -22,12 +37,14 @@ import lrgs.db.DdsPeriodStats;
 This class implements a background thread that periodically collects
 status from each running client thread. The stats are written to a
 special log file.
+@deprecated instead of adding new features to this class, implement appropriate opentelemetry measurements.
 */
-public class LddsLoggerThread extends Thread
-    implements StatLogger
+@Deprecated
+public class LddsLoggerThread extends Thread implements StatLogger
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     BasicServer theServer;
-    SequenceFileLogger statLogger;
+    private final Logger statLogger = OpenDcsLoggerFactory.getLogger("LddsStats");
     SimpleDateFormat dateFormat;
     private boolean shutdownFlag;
     private LrgsDatabaseThread ldt;
@@ -48,20 +65,6 @@ public class LddsLoggerThread extends Thread
         shutdownFlag = false;
         dateFormat = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        String logFileName = EnvExpander.expand(logname);
-        try
-        {
-            statLogger = new SequenceFileLogger("DDS", logFileName);
-            statLogger.setMaxLength(5000000);
-            statLogger.setUsePriority(false);
-        }
-        catch(IOException ex)
-        {
-            Logger.instance().log(Logger.E_FAILURE,
-                "Cannot open '" + logFileName
-                + "' DDS stats will not be logged! : " + ex);
-            statLogger = null;
-        }
         ldt = LrgsDatabaseThread.instance();
         currentHour = null;
     }
@@ -81,8 +84,7 @@ public class LddsLoggerThread extends Thread
         initCurrentHour();
         long lastMin = System.currentTimeMillis() / 60000L;
         long lastHour = lastMin / 60;
-        Logger.instance().info("LddsLoggerThread starting. h="
-            + lastHour+", m=" + lastMin);
+        log.info("LddsLoggerThread starting. h={}, m={}", lastHour, lastMin);
         while(!shutdownFlag && statLogger != null)
         {
             long thisMin = System.currentTimeMillis() / 60000L;
@@ -107,12 +109,7 @@ public class LddsLoggerThread extends Thread
 
         try { sleep(1000L); }
         catch(InterruptedException ex) {}
-        if (statLogger != null)
-        {
-            statLogger.close();
-        }
-        statLogger = null;
-        Logger.instance().info("LddsLoggerThread exiting.");
+        log.info("LddsLoggerThread exiting.");
     }
 
     private void logStats()
@@ -150,7 +147,7 @@ public class LddsLoggerThread extends Thread
         if (lt != null)
         {
             lt.myStats.setLastActivity(lt.getLastActivity());
-            statLogger.log(Logger.E_INFORMATION,
+            statLogger.info(
                 lt.myStats.getConnectionId()
                 + " " + lt.getClientName()
                 + " " + lt.retrieveNumServed()
@@ -202,7 +199,7 @@ public class LddsLoggerThread extends Thread
 
     public synchronized void rotateLogs()
     {
-        statLogger.rotateLogs();
+        /** do noting, logger backend takes care of it. */
     }
 
     /**
