@@ -140,13 +140,4 @@ public class ServerError extends Exception
 		return new String(r);
 	}
 
-//	public static void main(String[] args)
-//	{
-//		ServerError se = new ServerError("?123,456,Big Problem, Yeah!");
-//		System.out.println("se='" + se + "'");
-//		se = new ServerError("? 123	,		456 ,Big Problem, Yeah!");
-//		System.out.println("se='" + se + "'");
-//		se = new ServerError("? 123	,		456 ,Big Problem -- Yeah!");
-//		System.out.println("se='" + se + "'");
-//	}
 }

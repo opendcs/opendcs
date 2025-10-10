@@ -189,7 +189,7 @@ public class LddsClient extends BasicClient
     */
     public void connect() throws IOException, UnknownHostException
     {
-        log.debug("Connecting to '{}:{}", host, port);
+        log.debug("Connecting to '{}:{}'", host, port);
         super.connect();
         socket.setTcpNoDelay(true);
         socket.setSoTimeout(60000);
