@@ -4,6 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
@@ -46,6 +48,34 @@ public class UserManagementDaoTestIT extends AppTestBase
 
             dao.deleteRole(tx, id);
             dao.getRole(tx, id).ifPresent(r -> fail("role was not deleted"));
+        }
+    }
+
+
+    @Test
+    @EnableIfTsDb({"OpenDCS-Postgres"})
+    void test_role_pagination() throws Exception
+    {
+        UserManagementDao dao = db.getDao(UserManagementDao.class)
+                                  .orElseThrow(() -> new UnsupportedOperationException("user dao not supported."));
+        try (DataTransaction tx = db.newTransaction())
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                dao.addRole(tx, new Role(DbKey.NullKey, "user" + i, "a test " + i, null));
+            }
+
+            List<Role> roles = dao.getRoles(tx, -1, -1);
+            assertEquals(100, roles.size());
+
+            List<Role> rolesLimit = dao.getRoles(tx, 10, 0);
+            assertEquals(10, rolesLimit.size());
+            assertEquals("user9", rolesLimit.get(rolesLimit.size()-1).name);
+
+            List<Role> rolesLimitOffset = dao.getRoles(tx, 10, 10);
+            assertEquals(10, rolesLimitOffset.size());
+            assertEquals("user19", rolesLimitOffset.get(rolesLimit.size()-1).name);
+
         }
     }
 }
