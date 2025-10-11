@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.lrgsmon;
 
@@ -13,10 +25,13 @@ import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Properties;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.StringPair;
 import ilex.xml.XmlOutputStream;
 
@@ -31,9 +46,10 @@ This class writes the detail report for a single LRGS.
 */
 public class DetailReportGenerator
 {
-	private static ResourceBundle labels = 
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static ResourceBundle labels =
 		RtStat.getLabels();
-	private static ResourceBundle genericLabels = 
+	private static ResourceBundle genericLabels =
 		RtStat.getGenericLabels();
 	/** Used to format dates in the HTML report header. */
 	private SimpleDateFormat headerDF;
@@ -65,7 +81,7 @@ public class DetailReportGenerator
 	public boolean showNetworkDcpDetail = false;
 
 	/** This is the default header to use if no file is provided. */
-	private String defaultHeader = 
+	private String defaultHeader =
        "<h2 style=\"" + center + "\">LRGS: ${HOSTNAME}</h2>\n"
      + "<div style=\"" + center + "\">\n"
      + "  UTC: $DATE(MMMM dd, yyyy HH:mm:ss) (Day $DATE(DDD))\n"
@@ -78,7 +94,7 @@ public class DetailReportGenerator
 
 	/** HTML header to include in report. */
 	private String header;
- 
+
 	/** Constructs a new DetailReportGenerator */
 	public DetailReportGenerator(String imageFile)
 	{
@@ -105,38 +121,33 @@ public class DetailReportGenerator
 			return;
 		}
 		File f = new File(filename);
-		FileReader fr = new FileReader(f);
-		BufferedReader br = new BufferedReader(fr);
 		StringBuffer sb = new StringBuffer((int)f.length());
-		String line;
-		while( (line = br.readLine()) != null)
-			sb.append(line + "\n");
-		br.close();
-		fr.close();
+		try (FileReader fr = new FileReader(f);
+			 BufferedReader br = new BufferedReader(fr);)
+		{
+			String line;
+			while( (line = br.readLine()) != null)
+				sb.append(line + "\n");
+		}
 		header = sb.toString();
 	}
 
 	/** Writes the detail report. */
-	public void write(File output, String host, 
+	public void write(File output, String host,
 		LrgsStatusSnapshotExt status, int scanSeconds)
 	{
-//		Logger.instance().debug1("Generating detail report for " + host);
-		FileOutputStream fos = null;
-		try
+		File tmp = new File(output.getPath() + ".tmp");
+		try (FileOutputStream fos = new FileOutputStream(tmp))
 		{
-			File tmp = new File(output.getPath() + ".tmp");
-			fos = new FileOutputStream(tmp);
 			XmlOutputStream xos = new XmlOutputStream(fos, "html");
 			writeReport(xos, host, status, scanSeconds);
-			fos.close();
-			fos = null;
 			if (!tmp.renameTo(output))
 			{
 				// On windows, have to explicitely delete before rename.
 				output.delete();
 				if (!tmp.renameTo(output))
 				{
-					Logger.instance().warning(
+					log.warn(
 						"LRGS Status report move failed. This can happen on a "
 						+ "Windows LRGS if the LRGSHOME directory is being "
 						+ "dynamically scanned by your AV. Recommend removing "
@@ -146,29 +157,20 @@ public class DetailReportGenerator
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("Cannot write " + output.getPath()
-				+ ": " + ex);
-		}
-		finally
-		{
-			if (fos != null)
-			{
-				try { fos.close(); }
-				catch(IOException ex){}
-			}
+			log.atWarn().setCause(ex).log("Cannot write {}", output.getPath());
 		}
 	}
 
-	public void writeReport(XmlOutputStream xos, String host, 
+	public void writeReport(XmlOutputStream xos, String host,
 		LrgsStatusSnapshotExt status, int scanSeconds)
 		throws IOException
 	{
 		// Define the styles to be used in the output:
 
 		// Reverse Video OK & Error values
-		String revOK = 
+		String revOK =
 		 "color: rgb(51,255,51); font-weight: bold; background-color: black; ";
-		String revERR = 
+		String revERR =
 		 "color: rgb(255,255,51); font-weight: bold; background-color: black; ";
 
 		String thStyle = top + center + bold + ital;
@@ -185,7 +187,7 @@ public class DetailReportGenerator
 		xos.startElement("head");
 		xos.writeElement("title", host);
 		if (scanSeconds > 0)
-			xos.writeElement("meta", "http-equiv", "refresh", "CONTENT", 
+			xos.writeElement("meta", "http-equiv", "refresh", "CONTENT",
 				"" + scanSeconds, null);
 		xos.endElement("head");
 
@@ -218,19 +220,19 @@ public class DetailReportGenerator
 
               xos.startElement("tr");
                 String labelStyle = right + "width: 20%;";
-                xos.writeElement("td", "style", labelStyle, 
+                xos.writeElement("td", "style", labelStyle,
 					labels.getString("DetailReportGenerator.messagesStorage"));
-                xos.writeElement("td", "style", 
+                xos.writeElement("td", "style",
 					left + revOK + "width: 10%", ""+status.lss.arcStats.dirSize);
-                xos.writeElement("td", "style", labelStyle,labels.getString( 
+                xos.writeElement("td", "style", labelStyle,labels.getString(
 						"DetailReportGenerator.oldestMsgTime"));
                 xos.writeElement("td", "style", left + revOK + "width: 16%",
 					columnDF.format(
 						new Date(status.lss.arcStats.oldestMsgTime * 1000L)));
 
-                xos.writeElement("td", "style", labelStyle,labels.getString( 
+                xos.writeElement("td", "style", labelStyle,labels.getString(
                 		"DetailReportGenerator.nextIdx"));
-                xos.writeElement("td", "style", 
+                xos.writeElement("td", "style",
 					left + revOK + "width: 10%", ""+status.lss.arcStats.dirNext);
               xos.endElement("tr");
             xos.endElement("table");
@@ -254,7 +256,7 @@ public class DetailReportGenerator
 
 				// Row with hour names
                 xos.startElement("tr");
-                  xos.writeElement("th", "style", thStyle + right, 
+                  xos.writeElement("th", "style", thStyle + right,
                 		  labels.getString("DetailReportGenerator.hour"));
                   int hr = (status.lss.currentHour + 17) % 24;
 				  for(int i=0; i<8; i++)
@@ -272,7 +274,7 @@ public class DetailReportGenerator
 				if (status.majorVersion < 5)
 					qual = status.lss.qualMeas;
                 xos.startElement("tr");
-                  xos.writeElement("td", "style", right, 
+                  xos.writeElement("td", "style", right,
 					"DOMSAT (Good/"
 					+ (status.majorVersion < 5 ? "Dropped):" : "ParErr):"));
                   hr = (status.lss.currentHour + 17) % 24;
@@ -295,12 +297,12 @@ public class DetailReportGenerator
 			  {
 				qual = status.lss.qualMeas;
                 xos.startElement("tr");
-                  xos.writeElement("td", "style", right, 
+                  xos.writeElement("td", "style", right,
 					"Old NetBack (Recovered):");
                   hr = (status.lss.currentHour + 17) % 24;
 				  for(int i=0; i<8; i++)
                   {
-                    String v = "" 
+                    String v = ""
 						+ (qual[hr] != null ? qual[hr].numRecovered : 0);
                     xos.writeElement("td", "style", revOK + center, v);
                     hr = (hr + 1) % 24;
@@ -315,7 +317,7 @@ public class DetailReportGenerator
 			   && status.domsatDropped != null)
 			  {
                 xos.startElement("tr");
-                  xos.writeElement("td", "style", right, 
+                  xos.writeElement("td", "style", right,
 					"DOMSAT Dropped:");
                   hr = (status.lss.currentHour + 17) % 24;
 				  for(int i=0; i<8; i++)
@@ -326,18 +328,18 @@ public class DetailReportGenerator
                   }
                 xos.endElement("tr");
 			  }
-			
-			
+
+
 
 				// If there is a DRGS connection, print an extra row for it.
-				qual = 
+				qual =
 				  status.getDownlinkQualityHistory(LrgsInputInterface.DL_DRGS);
 				if (qual != null
 				 && status.getDownlinkQualityHistory(
 					LrgsInputInterface.DL_DRGSCON) != null)
 				{
 	                xos.startElement("tr");
-	                  xos.writeElement("td", "style", right, 
+	                  xos.writeElement("td", "style", right,
 						"GOES DRGS"
 						+ (status.majorVersion < 5 ? ":" : " (Good/ParErr):"));
 	                  hr = (status.lss.currentHour + 17) % 24;
@@ -358,7 +360,7 @@ public class DetailReportGenerator
 				}
 
 				// If there is a GR3110 connection, print an extra row for it.
-				qual = 
+				qual =
 				  status.getDownlinkQualityHistory(LrgsInputInterface.DL_GR3110);
 				if (qual != null)
 				{
@@ -379,19 +381,19 @@ public class DetailReportGenerator
 				}
 
 				// If there is a DDS Recv connection, print an extra row for it.
-				qual = 
+				qual =
 					status.getDownlinkQualityHistory(LrgsInputInterface.DL_DDS);
 				if (qual != null)
 				{
 	                xos.startElement("tr");
-	                  xos.writeElement("td", "style", right, 
+	                  xos.writeElement("td", "style", right,
 						"DDS Recv (Good/ParErr):");
 	                  hr = (status.lss.currentHour + 17) % 24;
 					  for(int i=0; i<8; i++)
 	                  {
-						  
-	                    int g = qual[hr] != null ? qual[hr].numGood : 0;	                  
-                    	String v = "" + g;                    	
+
+	                    int g = qual[hr] != null ? qual[hr].numGood : 0;
+                    	String v = "" + g;
 						int e = qual[hr] != null ? qual[hr].numDropped : 0;
 					    if (e != 0)
 							v = v + " / " + e;
@@ -402,7 +404,7 @@ public class DetailReportGenerator
 				}
 
 				// If there is a Secondary DDS Recv connection, print an extra row for it.
-				qual = 
+				qual =
 					status.getDownlinkQualityHistory(LrgsInputInterface.DL_DDS_SECONDRAY);
 				if (qual != null)
 				{
@@ -411,37 +413,37 @@ public class DetailReportGenerator
 					hr = (status.lss.currentHour + 17) % 24;
 					for(int i=0; i<8; i++)
 	                  {
-						int g = qual[hr] != null ? qual[hr].numGood : 0;	                   
-						String v = "" + g;                    
+						int g = qual[hr] != null ? qual[hr].numGood : 0;
+						String v = "" + g;
 						int e = qual[hr] != null ? qual[hr].numDropped : 0;
 					    if (e != 0)
-							v = v + " / " + e;					    
+							v = v + " / " + e;
 	                    hr = (hr + 1) % 24;
 	                   strArr[i]=v;
 	                    if(v.equalsIgnoreCase("0"))
 	                    	j++;
 	                  }
-					
+
 					if(j!=8)
 					{
 	                xos.startElement("tr");
-	                  xos.writeElement("td", "style", right, 
+	                  xos.writeElement("td", "style", right,
 						"DDS Recv:Secondary (Good/ParErr):");
 	                  for(int i=0;i<8;i++)
 	                  {
-	                	  xos.writeElement("td", "style", revOK + center, strArr[i]);  
-	                  }	                 
+	                	  xos.writeElement("td", "style", revOK + center, strArr[i]);
+	                  }
 	                xos.endElement("tr");
 					}
 				}
-				
+
 				// If there is an LRIT Interface, print an extra row for it.
 				qual = status.getDownlinkQualityHistory(
 					LrgsInputInterface.DL_LRIT);
 				if (qual != null)
 				{
 	                xos.startElement("tr");
-	                  xos.writeElement("td", "style", right, 
+	                  xos.writeElement("td", "style", right,
 						"LRIT (Good/ParErr):");
 	                  hr = (status.lss.currentHour + 17) % 24;
 					  for(int i=0; i<8; i++)
@@ -464,7 +466,7 @@ public class DetailReportGenerator
 				if (qual != null)
 				{
 	                xos.startElement("tr");
-	                  xos.writeElement("td", "style", right, 
+	                  xos.writeElement("td", "style", right,
 						"NOAAPORT (Good/ParErr):");
 	                  hr = (status.lss.currentHour + 17) % 24;
 					  for(int i=0; i<8; i++)
@@ -486,7 +488,7 @@ public class DetailReportGenerator
 				if (qual != null)
 				{
 	                xos.startElement("tr");
-	                  xos.writeElement("td", "style", right, 
+	                  xos.writeElement("td", "style", right,
 						"Network DCP (Good/ParErr):");
 	                  hr = (status.lss.currentHour + 17) % 24;
 					  for(int i=0; i<8; i++)
@@ -504,14 +506,14 @@ public class DetailReportGenerator
 	                  }
 	                xos.endElement("tr");
 				}
-				
+
 				// If there is a Iridium, print an extra row for it.
 				qual = status.getDownlinkQualityHistory(
 					  LrgsInputInterface.DL_IRIDIUM);
 				if (qual != null)
 				{
 	                xos.startElement("tr");
-	                  xos.writeElement("td", "style", right, 
+	                  xos.writeElement("td", "style", right,
 						"Iridium (Good/Has Errors):");
 	                  hr = (status.lss.currentHour + 17) % 24;
 					  for(int i=0; i<8; i++)
@@ -529,14 +531,14 @@ public class DetailReportGenerator
 	                  }
 	                xos.endElement("tr");
 				}
-				
+
 				// If there is a DCP_SESSION_MGR, print an extra row for it.
 				qual = status.getDownlinkQualityHistory(
 					  LrgsInputInterface.DL_SESSIONMGR);
 				if (qual != null)
 				{
 	                xos.startElement("tr");
-	                  xos.writeElement("td", "style", right, 
+	                  xos.writeElement("td", "style", right,
 						"DCP Polling Sessions:");
 	                  hr = (status.lss.currentHour + 17) % 24;
 					  for(int i=0; i<8; i++)
@@ -560,7 +562,7 @@ public class DetailReportGenerator
 				if (qual != null)
 				{
 	                xos.startElement("tr");
-	                  xos.writeElement("td", "style", right, 
+	                  xos.writeElement("td", "style", right,
 						"EDL Ingest:");
 	                  hr = (status.lss.currentHour + 17) % 24;
 					  for(int i=0; i<8; i++)
@@ -579,11 +581,11 @@ public class DetailReportGenerator
 	                xos.endElement("tr");
 				}
 
-				
+
 				// Print row with number of messages ARCHIVED
 				qual = status.lss.qualMeas;
 	            xos.startElement("tr");
-	            xos.writeElement("td", "style", right, 
+	            xos.writeElement("td", "style", right,
 					status.majorVersion < 5 ? "Archived:" :
 						"Archived (Good/ParErr):");
 	            hr = (status.lss.currentHour + 17) % 24;
@@ -627,8 +629,6 @@ public class DetailReportGenerator
                 		  "DetailReportGenerator.downlinkName"));
                   xos.writeElement("th", "style", thStyle, labels.getString(
                 		  "DetailReportGenerator.lastMsgRecvT"));
-//                  xos.writeElement("th", "style", thStyle, labels.getString(
-//                		  "DetailReportGenerator.linkType"));
                   xos.writeElement("th", "style", thStyle, labels.getString(
                 		  "DetailReportGenerator.lastSeqNum"));
                   xos.writeElement("th", "style", thStyle, labels.getString(
@@ -642,9 +642,9 @@ public class DetailReportGenerator
                 for(int i=0; i<status.lss.downLinks.length; i++)
                 {
                   if (status.lss.downLinks[i] == null
-				   || status.lss.downLinks[i].type == 
+				   || status.lss.downLinks[i].type ==
 						LrgsInputInterface.DL_UNUSED
-				   || status.lss.downLinks[i].type == 
+				   || status.lss.downLinks[i].type ==
 						LrgsInputInterface.DL_DRGS
                    || status.lss.downLinks[i].type ==
                 	   LrgsInputInterface.DL_NETDCPCONT
@@ -652,24 +652,24 @@ public class DetailReportGenerator
                 	   LrgsInputInterface.DL_DDS
                    || status.lss.downLinks[i].type ==
                     	   LrgsInputInterface.DL_DDS_SECONDRAY)
-                	  
+
                   {
                     continue;
                   }
-                   
+
                   xos.startElement("tr");
                     String nm = status.lss.downLinks[i].name;
-                    if (status.lss.downLinks[i].type == 
+                    if (status.lss.downLinks[i].type ==
                     	LrgsInputInterface.DL_NETWORKDCP
                      && showNetworkDcpDetail)
                     {
-                    	xos.writeElement("a", "href", 
+                    	xos.writeElement("a", "href",
                     		"http://local/showNetworkDcps", nm);
                     }
                     else
                     	xos.writeElement("td", nm);
 					int lmrt = status.lss.downLinks[i].lastMsgRecvTime;
-					String lmrts = lmrt == 0 ? "(none)" : 
+					String lmrts = lmrt == 0 ? "(none)" :
 						columnDF.format(new Date(lmrt * 1000L));
                     xos.writeElement("td", "style", center, lmrts);
                     int t = status.lss.downLinks[i].type;
@@ -688,16 +688,10 @@ public class DetailReportGenerator
 	                    case 4: statstr = "Error"; break;
 	                    }
                     xos.writeElement("td", "style", center, statstr);
-                   
-                    //display connection group under Link Params on page.                                 
+
+                    //display connection group under Link Params on page.
                     xos.writeElement("td", "style", center,status.lss.downLinks[i].group);
                     xos.endElement("tr");
-                 
-                   /* String v = status.lss.downLinks[i].BER;
-                    xos.writeElement("td", "style", left,
-						(v != null && v.length() > 0) ? "BER="+v : "");
-                  xos.endElement("tr");*/ 
-
                 }
 			}
 
@@ -721,21 +715,19 @@ public class DetailReportGenerator
                 xos.endElement("tr");
 
                 xos.startElement("tr");
-                  xos.writeElement("th", "style", thStyle, 
+                  xos.writeElement("th", "style", thStyle,
                		  labels.getString("DetailReportGenerator.slot"));
-                  xos.writeElement("th", "style", thStyle, 
+                  xos.writeElement("th", "style", thStyle,
                		  labels.getString("DetailReportGenerator.hostName"));
-//                  xos.writeElement("th", "style", thStyle, 
-//               		  labels.getString("DetailReportGenerator.clientType"));
-                  xos.writeElement("th", "style", thStyle, 
+                  xos.writeElement("th", "style", thStyle,
                		  labels.getString("DetailReportGenerator.user"));
-                  xos.writeElement("th", "style", thStyle, 
+                  xos.writeElement("th", "style", thStyle,
                		  labels.getString("DetailReportGenerator.msgCount"));
-                  xos.writeElement("th", "style", thStyle, 
+                  xos.writeElement("th", "style", thStyle,
                		  labels.getString("DetailReportGenerator.lastActivityTime"));
-                  xos.writeElement("th", "style", thStyle, 
+                  xos.writeElement("th", "style", thStyle,
                		  labels.getString("DetailReportGenerator.lastMsgTime"));
-                  xos.writeElement("th", "style", thStyle, 
+                  xos.writeElement("th", "style", thStyle,
                		  labels.getString("DetailReportGenerator.status"));
                 xos.endElement("tr");
 
@@ -748,11 +740,10 @@ public class DetailReportGenerator
                   {
                     continue;
                   }
-                   
+
                   xos.startElement("tr");
                     xos.writeElement("td", "style", center, "" + i);
                     xos.writeElement("td", "style", center, ap.getName());
-//                    xos.writeElement("td", "style", center, ap.type);
                     xos.writeElement("td", "style", center, ap.user);
                     xos.writeElement("td", "style", center, "" + ap.lastSeqNum);
                     xos.writeElement("td","style", center, fmtColTime(ap.lastPollTime));
@@ -770,13 +761,7 @@ public class DetailReportGenerator
 xos.endElement("html");
 	}
 
-	private void br()
-		throws IOException
-	{
-		xos.writeLiteral("<br>");
-    	//xos.writeElement("br", null);
-	}
-	
+
 	private String fmtColTime(int timet)
 	{
 		if (timet <= 0)
@@ -784,7 +769,7 @@ xos.endElement("html");
 		return columnDF.format(new Date(timet*1000L));
 	}
 
-	private void writeReportHeader(XmlOutputStream xos, String host, 
+	private void writeReportHeader(XmlOutputStream xos, String host,
 		LrgsStatusSnapshotExt status)
 		throws IOException
 	{
@@ -815,7 +800,7 @@ xos.endElement("html");
 			p.setProperty("STATSTYLE", center);
 			p.setProperty("SYSTEMSTAT", s);
 		}
-		String expHeader = 
+		String expHeader =
 			EnvExpander.expand(header,p,new Date(status.lss.lrgsTime * 1000L));
 		xos.writeLiteral(expHeader);
 	}

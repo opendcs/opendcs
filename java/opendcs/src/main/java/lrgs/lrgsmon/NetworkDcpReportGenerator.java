@@ -17,7 +17,6 @@ import java.util.TimeZone;
 //import java.util.Properties;
 //
 //import ilex.util.EnvExpander;
-//import ilex.util.Logger;
 import ilex.util.StringPair;
 import ilex.xml.XmlOutputStream;
 
@@ -163,4 +162,3 @@ public class NetworkDcpReportGenerator
     	// xos.writeElement("br", null);
 	}
 }
-

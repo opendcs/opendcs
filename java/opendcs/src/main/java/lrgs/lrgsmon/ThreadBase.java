@@ -1,18 +1,20 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:15  cvs
-*  Added legacy code to repository
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.1  2004/06/01 15:26:37  mjmaloney
-*  Created.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.lrgsmon;
 
-import java.util.*;
-import ilex.util.*;
 
 /**
 ThreadBase is the base class for threads in the LRGS Monitor
@@ -35,51 +37,10 @@ public abstract class ThreadBase
 	/// Call this method to shutdown this thread.
 	public void shutdown()
 	{
-		shutdownFlag = true; 
+		shutdownFlag = true;
 	}
 
 	/// Returns true if this thread has been shutdown.
 	public boolean isShutdown() { return shutdownFlag; }
 
-	/// Sends a debug level-1 log message with name of thread as prefix.
-	public void debug1(String msg)
-	{
-		Logger.instance().debug1(getName() + ": " + msg);
-	}
-
-	/// Sends a debug level-2 log message with name of thread as prefix.
-	public void debug2(String msg)
-	{
-		Logger.instance().debug2(getName() + ": " + msg);
-	}
-
-	/// Sends a debug level-3 log message with name of thread as prefix.
-	public void debug3(String msg)
-	{
-		Logger.instance().debug3(getName() + ": " + msg);
-	}
-
-	/// Sends an informational log message with name of thread as prefix.
-	public void info(String msg)
-	{
-		Logger.instance().info(getName() + ": " + msg);
-	}
-
-	/// Sends a warning log message with name of thread as prefix.
-	public void warning(String msg)
-	{
-		Logger.instance().warning(getName() + ": " + msg);
-	}
-
-	/// Sends a failure log message with name of thread as prefix.
-	public void failure(String msg)
-	{
-		Logger.instance().failure(getName() + ": " + msg);
-	}
-
-	/// Sends a fatal log message with name of thread as prefix.
-	public void fatal(String msg)
-	{
-		Logger.instance().fatal(getName() + ": " + msg);
-	}
 }
