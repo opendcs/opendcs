@@ -3,24 +3,38 @@ package org.opendcs.database.model;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
+import decodes.sql.DbKey;
+
+/**
+ * Holds information about a particular user
+ */
 public class User
 {
-    final UUID id;
-    // name/provider
+    /**
+     * Unique identifier of user within OpenDCS itself
+     */
+    final DbKey id;
+    /**
+     * User preferences, generally key -> value,
+     * but can be nested objects or arrays depending on needs.
+     */
     final Map<String, Object> preferences;
+
     final String email;
     final ZonedDateTime createdAt;
     final ZonedDateTime updatedAt;
     final List<Role> roles;
     final String password;
-    final List<IdentityProvider> identityProviders;
+    /**
+     * List of external identity providers that are tied to this user account.
+     */
+    final List<IdentityProviderMapping> identityProviders;
 
 
-    public User(UUID id, Map<String, Object> preferences, String email,
+    public User(DbKey id, Map<String, Object> preferences, String email,
                 ZonedDateTime createdAt, ZonedDateTime updatedAt, List<Role> roles,
-                List<IdentityProvider> identityProviders, String password)
+                List<IdentityProviderMapping> identityProviders, String password)
     {
         this.id = id;
         this.preferences = preferences;
@@ -30,5 +44,23 @@ public class User
         this.roles = roles;
         this.password = password;
         this.identityProviders = identityProviders;
+    }
+
+    public static final class IdentityProviderMapping
+    {
+        /**
+         * Identity Provider associated to this user+subject.
+         */
+        final IdentityProvider provider;
+        /**
+         * unique identifier used for this user in the given identity provider..
+         */
+        final String subject;
+
+        public IdentityProviderMapping(IdentityProvider provider, String subject)
+        {
+            this.provider = provider;
+            this.subject = subject;
+        }
     }
 }
