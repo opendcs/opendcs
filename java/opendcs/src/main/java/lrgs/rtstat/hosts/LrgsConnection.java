@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.rtstat.hosts;
 
 import java.util.Date;
@@ -10,8 +25,8 @@ import nl.altindag.ssl.model.TrustManagerParameters;
 
 import org.opendcs.tls.TlsMode;
 import org.opendcs.utils.WebUtility;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ilex.util.AuthException;
 import ilex.util.DesEncrypter;
@@ -21,7 +36,7 @@ import ilex.util.DesEncrypter;
  */
 public final class LrgsConnection
 {
-    private static final Logger log = LoggerFactory.getLogger(LrgsConnection.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     public static final LrgsConnection BLANK = new LrgsConnection("", -1, "", "", null, TlsMode.NONE);
 
@@ -105,7 +120,7 @@ public final class LrgsConnection
         if (tls != TlsMode.NONE)
         {
            return WebUtility.socketFactory(certTest);
-		}  
+		}
         else
         {
             return null;
@@ -140,7 +155,7 @@ public final class LrgsConnection
         else if((tls != rhs.tls))
         {
             return false;
-        }        
+        }
 
         if (!hostName.equals(rhs.hostName))
         {
@@ -204,7 +219,7 @@ public final class LrgsConnection
         }
         if (parts.length > 3)
         {
-            password = parts[3];    
+            password = parts[3];
         }
         if (parts.length > 4)
         {

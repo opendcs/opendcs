@@ -1,5 +1,17 @@
 /*
-* $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.rtstat;
 
@@ -10,24 +22,18 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.border.Border;
 
-import decodes.util.ResourceFactory;
-
 import java.util.ResourceBundle;
-import java.util.StringTokenizer;
-
 import ilex.util.AsciiUtil;
-import ilex.util.Logger;
 import lrgs.ldds.DdsUser;
 import lrgs.ldds.NoaaPasswordChecker;
 import lrgs.ldds.PasswordChecker;
-import lrgs.lrgsmain.LrgsConfig;
 
 public class EditUserDialog
 	extends JDialog
 {
-	private static ResourceBundle labels = 
+	private static ResourceBundle labels =
 		RtStat.getLabels();
-	private static ResourceBundle genericLabels = 
+	private static ResourceBundle genericLabels =
 		RtStat.getGenericLabels();
 	private JPanel panel1 = new JPanel();
 	private BorderLayout borderLayout1 = new BorderLayout();
@@ -68,7 +74,7 @@ public class EditUserDialog
 	private JCheckBox isLocalCheck = new JCheckBox();
 	private JCheckBox goodOnlyCheck = null;
 
-	
+
 	private JTextField fnameField = new JTextField();
 	private JTextField lnameField = new JTextField();
 	private JTextField orgField = new JTextField();
@@ -80,29 +86,23 @@ public class EditUserDialog
 	{
 		super(owner, title, modal);
 		this.isAdmin = isAdmin;
-		permissionsBorder = 
+		permissionsBorder =
 			new TitledBorder(BorderFactory.createEtchedBorder(Color.white,
-				new Color(30, 30, 30)), 
+				new Color(30, 30, 30)),
 				labels.getString("EditUserDialog.permissions"));
-		restrictionsBorder = 
+		restrictionsBorder =
 			new TitledBorder(BorderFactory.createEtchedBorder(Color.white,
 				new Color(30, 30, 30)), labels.getString(
 						"EditUserDialog.restrictions"));
-		propertiesBorder = 
+		propertiesBorder =
 			new TitledBorder(BorderFactory.createEtchedBorder(Color.white,
 				new Color(30, 30, 30)), genericLabels.getString("properties"));
 		forceAscendingCheck = new JCheckBox(labels.getString("EditUserDialog.forceAscending"));
 		goodOnlyCheck = new JCheckBox("Good Only");
-		try
-		{
-			//setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-			jbInit();
-			pack();
-		}
-		catch (Exception exception)
-		{
-			exception.printStackTrace();
-		}
+
+		jbInit();
+		pack();
+
 		addWindowListener(
 			new WindowAdapter()
 			{
@@ -122,7 +122,6 @@ public class EditUserDialog
 	}
 
 	private void jbInit()
-		throws Exception
 	{
 		panel1.setLayout(borderLayout1);
 		this.setModal(true);
@@ -146,11 +145,10 @@ public class EditUserDialog
 		jPanel1.setLayout(flowLayout1);
 		flowLayout1.setHgap(25);
 		centerPanel.setLayout(gridBagLayout2);
-//		ddsNameField.setPreferredSize(new Dimension(120, 20));
 		ddsNameField.setToolTipText(labels.getString(
 				"EditUserDialog.DDSUserNameTT"));
 		ddsNameField.setText("");
-//		ddsPasswordField.setPreferredSize(new Dimension(120, 22));
+
 		ddsPasswordField.setToolTipText(labels.getString(
 			"EditUserDialog.DDSPasswordTT"));
 		ddsPasswordField.setText("");
@@ -158,13 +156,13 @@ public class EditUserDialog
 		descField.setToolTipText(labels.getString(
 				"EditUserDialog.descriptionTT"));
 		descField.setText("");
-		
+
 		isLocalCheck.setText(labels.getString("UserListDialog.localUserColumn"));
 
 		permissionsPanel.setBorder(permissionsBorder);
 		permissionsPanel.setLayout(gridLayout1);
 		titleLabel.setText(labels.getString("EditUserDialog.DDSUserHost"));
-//		hostField.setPreferredSize(new Dimension(150, 20));
+
 		hostField.setEditable(false);
 		hostField.setText("");
 		ddsPermCheck.setToolTipText(
@@ -200,21 +198,21 @@ public class EditUserDialog
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 15, 3, 2), 0, 0));
 		centerPanel.add(ddsNameField,
-			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0, 
+			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 0, 3, 15), 0, 0));
 		centerPanel.add(new JLabel(labels.getString("EditUserDialog.DDSPassword")),
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(1, 15, 2, 2), 0, 0));
-		
+
 		if (isAdmin)
 		{
 			centerPanel.add(ddsPasswordField,
-				new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0, 
+				new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 					new Insets(1, 0, 2, 15), 0, 0));
-			
+
 			final PasswordChecker pc = new NoaaPasswordChecker();
 			JButton genButton = new JButton("Gen Rand");
 			centerPanel.add(genButton,
@@ -238,17 +236,17 @@ public class EditUserDialog
 			dummy.setEnabled(false);
 			dummy.setText("Select File - Set Password");
 			centerPanel.add(dummy,
-				new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0, 
+				new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 					new Insets(1, 0, 2, 15), 0, 0));
 		}
-		
+
 		centerPanel.add(new JLabel(labels.getString("EditUserDIalog.fname")),
 			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(1, 15, 2, 2), 0, 0));
 		centerPanel.add(fnameField,
-			new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0, 
+			new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 0, 2, 15), 0, 0));
 		centerPanel.add(new JLabel(labels.getString("EditUserDIalog.lname")),
@@ -256,7 +254,7 @@ public class EditUserDialog
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(1, 15, 2, 2), 0, 0));
 		centerPanel.add(lnameField,
-			new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0, 
+			new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 0, 2, 15), 0, 0));
 		centerPanel.add(new JLabel(labels.getString("EditUserDIalog.org")),
@@ -264,7 +262,7 @@ public class EditUserDialog
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(1, 15, 2, 2), 0, 0));
 		centerPanel.add(orgField,
-			new GridBagConstraints(1, 4, 2, 1, 1.0, 0.0, 
+			new GridBagConstraints(1, 4, 2, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 0, 2, 15), 0, 0));
 		centerPanel.add(new JLabel(labels.getString("EditUserDIalog.email")),
@@ -272,7 +270,7 @@ public class EditUserDialog
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(1, 15, 2, 2), 0, 0));
 		centerPanel.add(emailField,
-			new GridBagConstraints(1, 5, 2, 1, 1.0, 0.0, 
+			new GridBagConstraints(1, 5, 2, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 0, 2, 15), 0, 0));
 		centerPanel.add(new JLabel(labels.getString("EditUserDIalog.tel")),
@@ -280,29 +278,29 @@ public class EditUserDialog
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(1, 15, 2, 2), 0, 0));
 		centerPanel.add(telField,
-			new GridBagConstraints(1, 6, 1, 1, 1.0, 0.0, 
+			new GridBagConstraints(1, 6, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 0, 2, 15), 0, 0));
 
-		
+
 		centerPanel.add(new JLabel(genericLabels.getString("description")+":"),
 			new GridBagConstraints(0, 7, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(1, 15, 2, 2), 0, 0));
 		centerPanel.add(descField,
-			new GridBagConstraints(1, 7, 2, 1, 1.0, 0.0, 
+			new GridBagConstraints(1, 7, 2, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 0, 2, 15), 0, 0));
 		centerPanel.add(isLocalCheck,
-			new GridBagConstraints(1, 8, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(1, 8, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(1, 0, 5, 15), 0, 0));
 
-		centerPanel.add(permissionsPanel, 
-			new GridBagConstraints(0, 9, 3, 1, 1.0, 0.0, 
+		centerPanel.add(permissionsPanel,
+			new GridBagConstraints(0, 9, 3, 1, 1.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 5, 3, 5), 0, 0));
-		centerPanel.add(getRestrictionsPanel(), 
+		centerPanel.add(getRestrictionsPanel(),
 			new GridBagConstraints(0, 10, 3, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 5, 5, 5), 0, 0));
@@ -373,9 +371,9 @@ public class EditUserDialog
 
 		ddsUser.forceAscending = forceAscendingCheck.isSelected();
 		ddsUser.goodOnly = goodOnlyCheck.isSelected();
-		
+
 		ddsUser.isLocal = isLocalCheck.isSelected();
-		
+
 		String s = fnameField.getText().trim();
 		ddsUser.setFname(s.length() > 0 ? s : null);
 		s = lnameField.getText().trim();
@@ -412,12 +410,11 @@ public class EditUserDialog
 		ddsPermCheck.setSelected(ddsUser.hasPerm("dds"));
 		adminCheck.setSelected(ddsUser.hasPerm("admin"));
 		forceAscendingCheck.setSelected(ddsUser.forceAscending);
-//System.out.println("EditUserDialog.set goodOnly=" + ddsUser.goodOnly);
+
 		goodOnlyCheck.setSelected(ddsUser.goodOnly);
 		isLocalCheck.setSelected(ddsUser.isLocal);
 		isLocalCheck.setEnabled(modUserName);
 		suspendedCheck.setSelected(ddsUser.isSuspended());
-//System.out.println("EditUserDialog.set user=" + ddsUser.userName + ", suspended=" + ddsUser.isSuspended());
 
 		if (ddsUser.desc == null)
 			descField.setText("");
@@ -454,7 +451,7 @@ public class EditUserDialog
 			dcpLimitField.setEnabled(isAdmin);
 		}
 
-//System.out.println("EditUserDialog: org='" + ddsUser.getOrg() + "'");
+
 		fnameField.setText(ddsUser.getFname() == null ? "" : ddsUser.getFname());
 		lnameField.setText(ddsUser.getLname() == null ? "" : ddsUser.getLname());
 		orgField.setText(ddsUser.getOrg() == null ? "" : ddsUser.getOrg());
@@ -475,13 +472,13 @@ public class EditUserDialog
 	}
 
 	/**
-	 * This method initializes restrictionsPanel	
-	 * 	
-	 * @return javax.swing.JPanel	
+	 * This method initializes restrictionsPanel
+	 *
+	 * @return javax.swing.JPanel
 	 */
-	private JPanel getRestrictionsPanel() 
+	private JPanel getRestrictionsPanel()
 	{
-		if (restrictionsPanel == null) 
+		if (restrictionsPanel == null)
 		{
 			GridLayout gridLayout = new GridLayout();
 			gridLayout.setRows(4);
@@ -500,9 +497,9 @@ public class EditUserDialog
 	}
 
 	/**
-	 * This method initializes ipPanel	
-	 * 	
-	 * @return javax.swing.JPanel	
+	 * This method initializes ipPanel
+	 *
+	 * @return javax.swing.JPanel
 	 */
 	private JPanel getIpPanel() {
 		if (ipPanel == null) {
@@ -535,9 +532,9 @@ public class EditUserDialog
 	}
 
 	/**
-	 * This method initializes ipAddrCheckbox	
-	 * 	
-	 * @return javax.swing.JCheckBox	
+	 * This method initializes ipAddrCheckbox
+	 *
+	 * @return javax.swing.JCheckBox
 	 */
 	private JCheckBox getIpAddrCheckbox() {
 		if (ipAddrCheckbox == null) {
@@ -550,13 +547,13 @@ public class EditUserDialog
 	}
 
 	/**
-	 * This method initializes ipAddrField	
-	 * 	
-	 * @return javax.swing.JTextField	
+	 * This method initializes ipAddrField
+	 *
+	 * @return javax.swing.JTextField
 	 */
-	private JTextField getIpAddrField() 
+	private JTextField getIpAddrField()
 	{
-		if (ipAddrField == null) 
+		if (ipAddrField == null)
 		{
 			ipAddrField = new JTextField();
 			ipAddrField.setToolTipText(labels.getString(
@@ -567,9 +564,9 @@ public class EditUserDialog
 	}
 
 	/**
-	 * This method initializes dcpLimitPanel	
-	 * 	
-	 * @return javax.swing.JPanel	
+	 * This method initializes dcpLimitPanel
+	 *
+	 * @return javax.swing.JPanel
 	 */
 	private JPanel getDcpLimitPanel() {
 		if (dcpLimitPanel == null) {

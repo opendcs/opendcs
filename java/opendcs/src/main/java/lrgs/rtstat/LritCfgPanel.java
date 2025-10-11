@@ -1,8 +1,18 @@
-/**
- * $Id$
- * 
- * Open Source Software by Cove Software, LLC
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.rtstat;
 
 
@@ -16,18 +26,17 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.gui.GuiDialog;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import lrgs.lrgsmain.LrgsConfig;
-import lrgs.rtstat.LrgsConfigPanel;
-import lrgs.rtstat.RtStat;
 
 @SuppressWarnings("serial")
-public class LritCfgPanel 
-	extends JPanel
-	implements LrgsConfigPanel
+public class LritCfgPanel extends JPanel implements LrgsConfigPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private LrgsConfig conf = null;
 	private JCheckBox enableCheck = null;
 	private JTextField hostField = new JTextField();
@@ -47,11 +56,11 @@ public class LritCfgPanel
 
 	@Override
 	public String getLabel() { return "HRIT-DAMSNT"; }
-	
+
 	private void jbinit()
 	{
 		this.setLayout(new GridBagLayout());
-		
+
 		setBorder(
 			BorderFactory.createTitledBorder(
 				"LRIT DAMS-NT " + RtStat.getGenericLabels().getString("parameters")));
@@ -61,7 +70,7 @@ public class LritCfgPanel
 			new GridBagConstraints(1, 0, 1, 1, 0.5, 0.5,
 				GridBagConstraints.SOUTHWEST, GridBagConstraints.NONE,
 				new Insets(3, 0, 3, 15), 0, 0));
-		
+
 		add(new JLabel(RtStat.getLabels().getString("LritPanel.hostname")),
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
@@ -76,17 +85,17 @@ public class LritCfgPanel
 			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(3, 25, 3, 1), 0, 0));
-		
+
 		add(portField,
 			new GridBagConstraints(1, 2, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(3, 0, 3, 0), 30, 0));
-		
+
 		add(new JLabel(RtStat.getLabels().getString("LritPanel.syncpatt")),
 			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(3, 25, 3, 1), 0, 0));
-		
+
 		add(syncPatternField,
 			new GridBagConstraints(1, 3, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
@@ -101,7 +110,7 @@ public class LritCfgPanel
 			new GridBagConstraints(1, 4, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 3, 30), 0, 0));
-		
+
 		add(new JLabel(RtStat.getGenericLabels().getString("timeout")),
 			new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
@@ -111,7 +120,7 @@ public class LritCfgPanel
 			new GridBagConstraints(1, 5, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(3, 0, 3, 30), 50, 0));
-		
+
 		add(new JLabel(RtStat.getLabels().getString("LritPanel.maxage")),
 			new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
@@ -145,14 +154,14 @@ public class LritCfgPanel
 			conf.lritMinHourly > 0 ? ("" + conf.lritMinHourly) : "");
 		this.conf = conf;
 	}
-	
+
 	public boolean hasChanged()
 	{
 		if (conf == null)
 			return false;
-		
+
 		int minHourly = getMinHourly();
-		
+
 		boolean ret = enableCheck.isSelected() != conf.enableLritRecv
 		 || !TextUtil.strEqual(hostField.getText().trim(), conf.lritHostName)
 		 || !TextUtil.strEqual(portField.getText().trim(), ""+conf.lritPort)
@@ -164,7 +173,7 @@ public class LritCfgPanel
 		;
 		return ret;
 	}
-	
+
 	public void saveChanges()
 	{
 		if (conf == null)
@@ -180,8 +189,11 @@ public class LritCfgPanel
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().warning("Invalid LRIT DAMS-NT Port " + portField.getText()
-					+ " -- must be a positive integer. Using default of 17010");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Invalid LRIT DAMS-NT Port {} -- " +
+						"must be a positive integer. Using default of 17010",
+						portField.getText());
 			}
 		}
 		conf.lritDamsNtStartPattern = syncPatternField.getText().trim();
@@ -189,20 +201,23 @@ public class LritCfgPanel
 		try { conf.lritTimeout = Integer.parseInt(timeoutField.getText().trim()); }
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Invalid lrit timeout '" + timeoutField.getText()
-				+ "' -- set to default of 120 seconds");
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Invalid lrit timeout '{}' -- set to default of 120 seconds", timeoutField.getText());
 			conf.lritTimeout = 120;
 		}
 		try { conf.lritMaxMsgAgeSec = Integer.parseInt(maxAgeSecField.getText().trim()); }
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Invalid lrit max age (seconds) '" + timeoutField.getText()
-				+ "' -- set to default of 7200 seconds");
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Invalid lrit max age (seconds) '{}' -- set to default of 7200 seconds",
+			   		maxAgeSecField.getText());
 			conf.lritTimeout = 7200;
 		}
 		conf.lritMinHourly = getMinHourly();
 	}
-	
+
 	private int getMinHourly()
 	{
 		String s = minHourlyField.getText().trim();
@@ -214,7 +229,7 @@ public class LritCfgPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			Logger.instance().warning("EDL Minimum Hourly field must be an integer.");
+			log.atWarn().setCause(ex).log("EDL Minimum Hourly field must be an integer.");
 			return 0;
 		}
 	}

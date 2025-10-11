@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.rtstat;
 
 import java.awt.*;
@@ -13,10 +28,12 @@ import java.util.ResourceBundle;
 
 import javax.swing.*;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.gui.WindowUtility;
 import ilex.util.EnvExpander;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import ilex.util.AuthException;
 import lrgs.gui.DecodesInterface;
 import lrgs.nledit.NetlistEditFrame;
@@ -24,12 +41,12 @@ import decodes.gui.GuiDialog;
 import decodes.db.Database;
 import decodes.db.NetworkListSpec;
 
-public class NetlistMaintenanceDialog
-    extends GuiDialog
+public class NetlistMaintenanceDialog extends GuiDialog
 {
-    private static ResourceBundle labels = 
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
+    private static ResourceBundle labels =
         RtStat.getLabels();
-    private static ResourceBundle genericLabels = 
+    private static ResourceBundle genericLabels =
         RtStat.getGenericLabels();
     private JPanel mainPanel = new JPanel();
     private BorderLayout mainBorderLayout = new BorderLayout();
@@ -85,17 +102,11 @@ public class NetlistMaintenanceDialog
     private NetlistMaintenanceDialog(Frame owner, String title, boolean modal)
     {
         super(owner, title, modal);
-        try
-        {
-            setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-            jbInit();
-            mainPanel.setPreferredSize(new Dimension(650, 400));
-            pack();
-        }
-        catch (Exception exception)
-        {
-            exception.printStackTrace();
-        }
+
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        jbInit();
+        mainPanel.setPreferredSize(new Dimension(650, 400));
+        pack();
     }
 
     /**
@@ -119,7 +130,6 @@ public class NetlistMaintenanceDialog
     }
 
     private void jbInit()
-        throws Exception
     {
         mainPanel.setLayout(mainBorderLayout);
         this.setTitle(labels.getString("NetlistMaintDialog.title"));
@@ -320,11 +330,9 @@ public class NetlistMaintenanceDialog
                     listname = (String)serverListModel.get(i);
                     byte data[] = clientIf.getNetlist(listname);
                     File nl = new File(localNlDir, listname);
-                    try
+                    try (FileOutputStream fos = new FileOutputStream(nl);)
                     {
-                        FileOutputStream fos = new FileOutputStream(nl);
                         fos.write(data);
-                        fos.close();
                     }
                     catch(IOException ex)
                     {
@@ -364,7 +372,7 @@ public class NetlistMaintenanceDialog
         }
         refreshButton_actionPerformed();
     }
-    
+
     private void installList(String listname)
         throws AuthException
     {
@@ -378,8 +386,8 @@ public class NetlistMaintenanceDialog
             for(NetworkListSpec nls : this.netlistSpecs)
                 if (listname.equals(nls.getName()))
                 {
-                    decodes.db.NetworkList nl = 
-                        new decodes.db.NetworkList(nls.getName(), 
+                    decodes.db.NetworkList nl =
+                        new decodes.db.NetworkList(nls.getName(),
                             nls.getTmType());
                     try
                     {
@@ -390,9 +398,7 @@ public class NetlistMaintenanceDialog
                     }
                     catch(Exception ex)
                     {
-                        Logger.instance().warning(
-                            "Cannot read DECODES netlist '"
-                            + listname + "': " + ex);
+                        log.atWarn().setCause(ex).log("Cannot read DECODES netlist '{}'", listname);
                     }
                     break;
                 }
@@ -400,12 +406,10 @@ public class NetlistMaintenanceDialog
         else
         {
             File nl = new File(localNlDir, listname);
-            try
+            try (FileInputStream fis = new FileInputStream(nl))
             {
-                FileInputStream fis = new FileInputStream(nl);
                 byte data[] = new byte[(int)nl.length()];
                 fis.read(data);
-                fis.close();
                 clientIf.installNetlist(listname, data);
             }
             catch(IOException ex)
@@ -512,8 +516,7 @@ public class NetlistMaintenanceDialog
                     localNlDir = new File(System.getProperty("user.dir"));
             }
         }
-        Logger.instance().info("Reading network lists from '"
-            + localNlDir.getPath() + "'");
+        log.info("Reading network lists from '{}'", localNlDir.getPath());
 
         localListModel.clear();
         File files[] = localNlDir.listFiles();
@@ -521,7 +524,7 @@ public class NetlistMaintenanceDialog
         for(int i=0; i<files.length; i++)
             if (files[i].isFile() && files[i].canRead())
                 localListModel.addElement(files[i].getName() + " (File)");
-        
+
         Database db = Database.getDb();
         if (db == null && !dbOpenTried)
         {
@@ -533,7 +536,7 @@ public class NetlistMaintenanceDialog
             }
             catch(Exception ex)
             {
-                Logger.instance().info("Cannot open DECODES database: "+ex);
+                log.atWarn().setCause(ex).log("Cannot open DECODES database.");
                 db = null;
                 netlistSpecs = null;
             }
@@ -548,8 +551,7 @@ public class NetlistMaintenanceDialog
             }
             catch(Exception ex)
             {
-                Logger.instance().info("Cannot list DECODES network lists: "
-                    +ex);
+                log.atWarn().setCause(ex).log("Cannot list DECODES network lists.");
                 db = null;
                 netlistSpecs = null;
             }
