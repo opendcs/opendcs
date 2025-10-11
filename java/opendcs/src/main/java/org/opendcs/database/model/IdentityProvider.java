@@ -2,11 +2,15 @@ package org.opendcs.database.model;
 
 import java.time.ZonedDateTime;
 import java.util.Map;
-import java.util.UUID;
 
+import decodes.sql.DbKey;
+
+/**
+ * Source of information regarding user identities.
+ */
 public interface IdentityProvider
 {
-    UUID getId();
+    DbKey getId();
     String getName();
     String getType();
     ZonedDateTime getUpdatedAt();
