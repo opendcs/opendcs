@@ -12,7 +12,7 @@ import org.opendcs.database.model.User;
 
 import decodes.sql.DbKey;
 
-public interface UserManagement extends OpenDcsDao
+public interface UserManagementDao extends OpenDcsDao
 {
     /**
      * Return list of users given the provided limit and offset.
