@@ -8,10 +8,10 @@ import decodes.sql.DbKey;
  */
 public class Role
 {
-    final DbKey id;
-    final String name;
-    final String description;
-    final ZonedDateTime updatedAt;
+    public final DbKey id;
+    public final String name;
+    public final String description;
+    public final ZonedDateTime updatedAt;
 
 
     public Role(DbKey id, String name, String description, ZonedDateTime updatedAt)
