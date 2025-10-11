@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,7 +32,7 @@ public class UserManagementImpl implements UserManagementDao
     @Override
     public List<User> getUsers(DataTransaction tx, int limit, int offset)
     {
-        return List.of();
+        return new ArrayList<>();
     }
 
     @Override
@@ -62,7 +63,7 @@ public class UserManagementImpl implements UserManagementDao
     public List<IdentityProvider> getIdentityProviders(DataTransaction tx, int limit, int offset)
             throws OpenDcsDataException
     {
-        return List.of();
+        return new ArrayList<>();
     }
 
     @Override
@@ -94,7 +95,21 @@ public class UserManagementImpl implements UserManagementDao
     @Override
     public List<Role> getRoles(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
-        return List.of();
+        Connection conn = tx.connection(Connection.class).get();
+        Handle handle = Jdbi.open(conn);
+        if (limit == -1 || offset == -1)
+        {
+            return handle.createQuery("select id, name, description, updated_at from opendcs_role")
+                         .map(ROLE_MAPPER).list();
+        }
+        else
+        {
+            return handle.createQuery("select id, name, description, updated_at from opendcs_role limit :limit offset :offset")
+                         .bind("limit", limit)
+                         .bind("offset", offset)
+                         .map(ROLE_MAPPER).list();
+        }
+        
     }
 
     @Override
