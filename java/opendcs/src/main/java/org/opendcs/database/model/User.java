@@ -1,6 +1,7 @@
 package org.opendcs.database.model;
 
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -14,22 +15,22 @@ public class User
     /**
      * Unique identifier of user within OpenDCS itself
      */
-    final DbKey id;
+    public final DbKey id;
     /**
      * User preferences, generally key -> value,
      * but can be nested objects or arrays depending on needs.
      */
-    final Map<String, Object> preferences;
+    public final Map<String, Object> preferences;
 
-    final String email;
-    final ZonedDateTime createdAt;
-    final ZonedDateTime updatedAt;
-    final List<Role> roles;
-    final String password;
+    public final String email;
+    public final ZonedDateTime createdAt;
+    public final ZonedDateTime updatedAt;
+    public final List<Role> roles;
+    public final String password;
     /**
      * List of external identity providers that are tied to this user account.
      */
-    final List<IdentityProviderMapping> identityProviders;
+    public final List<IdentityProviderMapping> identityProviders;
 
 
     public User(DbKey id, Map<String, Object> preferences, String email,
@@ -41,9 +42,9 @@ public class User
         this.email = email;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
-        this.roles = roles;
+        this.roles = Collections.unmodifiableList(roles);
         this.password = password;
-        this.identityProviders = identityProviders;
+        this.identityProviders = Collections.unmodifiableList(identityProviders);
     }
 
     public static final class IdentityProviderMapping

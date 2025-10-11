@@ -9,9 +9,9 @@ create table identity_provider (
 create table opendcs_user(
     id bigserial primary key,
     preferred_name_provider bigint references identity_provider(id),
-    email text not null,
+    email text not null unique,
     preferences jsonb default '{}'::jsonb,
-    created_at timestamptz not null default now()
+    created_at timestamptz not null default now(),
     updated_at timestamptz not null --- TODO make trigger
 );
 

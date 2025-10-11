@@ -16,6 +16,8 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.impl.opendcs.dao.UserManagementImpl;
 import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -68,9 +70,16 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         DaoWrapper<?> wrapper =
             daoMap.computeIfAbsent(dao, daoDesired ->
             {
-                if (dao.isAssignableFrom(CwmsLocationLevelDAO.class)){
+                if (dao.isAssignableFrom(CwmsLocationLevelDAO.class))
+                {
                     return new DaoWrapper<>(() -> new CwmsLocationLevelDAO(this.timeSeriesDb));
                 }
+
+                if (dao.isAssignableFrom(UserManagementDao.class))
+                {
+                    return new DaoWrapper<>(() -> new UserManagementImpl());
+                }
+
                 Optional<Method> daoMakeMethod;
                 if (timeSeriesDb != null)
                 {
