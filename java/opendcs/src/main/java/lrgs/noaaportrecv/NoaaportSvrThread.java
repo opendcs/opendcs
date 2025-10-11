@@ -1,35 +1,39 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.noaaportrecv;
 
 import java.io.IOException;
 import java.net.Socket;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.lrgsmain.LrgsConfig;
-import ilex.util.Logger;
 import ilex.net.BasicSvrThread;
 import ilex.net.BasicServer;
 
 /**
 Handles the parsing of messages from the NOAAPORT socket.
 */
-public class NoaaportSvrThread
-	extends BasicSvrThread
-	implements NoaaportConnection
+public class NoaaportSvrThread extends BasicSvrThread implements NoaaportConnection
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private NoaaportProtocol protocolHandler = null;
 
-	NoaaportSvrThread(BasicServer parent, Socket socket, 
+	NoaaportSvrThread(BasicServer parent, Socket socket,
 		NoaaportRecv noaaportRecv)
 		throws IOException
 	{
@@ -37,7 +41,7 @@ public class NoaaportSvrThread
 		try { socket.setSoTimeout(0); }
 		catch(Exception ex)
 		{
-			Logger.instance().warning("BasicSvrThread Cannot set read timeout to 0.");
+			log.atWarn().setCause(ex).log("BasicSvrThread Cannot set read timeout to 0.");
 		}
 
 
@@ -49,9 +53,8 @@ public class NoaaportSvrThread
 		else
 			protocolHandler = new NoaaportProtocol(socket.getInputStream(),
 				noaaportRecv, this, getClientName());
-		
-		protocolHandler.info("New connection from "
-			+ getClientName() + ", receiver type=" + rcvType);
+
+		log.info("New connection from {}, receiver type={}", getClientName(), rcvType);
 	}
 
 	/**
@@ -61,10 +64,10 @@ public class NoaaportSvrThread
 	{
 		protocolHandler.read();
 	}
-	
+
 	public void disconnect( )
 	{
-		protocolHandler.info("Disconnecting from " + getClientName());
+		log.info("Disconnecting from {}", getClientName());
 		super.disconnect();
 	}
 }
