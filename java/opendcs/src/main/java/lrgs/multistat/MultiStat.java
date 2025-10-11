@@ -1,20 +1,34 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.multistat;
 
-import java.awt.*;
 import javax.swing.*;
 
-import java.io.File;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.IOException;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
-import ilex.util.FileLogger;
 import ilex.util.QueueLogger;
-import ilex.util.TeeLogger;
 import ilex.util.IndexRangeException;
 
 public class MultiStat
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	boolean packFrame = false;
 	MultiStatFrame msFrame = null;
 	public static final String module = "GUI";
@@ -22,7 +36,7 @@ public class MultiStat
 	public static final int EVT_CANT_CONNECT_LRGS2 = 2;
 	public static final int EVT_CANT_CONNECT_LRGS3 = 3;
 	public static final int EVT_CANT_CONNECT_LRIT = 4;
-	
+
 	public static MultiStat _instance = null;
 
 	//Construct the application
@@ -34,9 +48,6 @@ public class MultiStat
 		else
 			msFrame.validate();
 
-		//Make the frame pretty much full screen.
-//		Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
-//		msFrame.setBounds(20, 20, d.width-40, d.height-80);
 		msFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		_instance = this;
 	}
@@ -45,31 +56,19 @@ public class MultiStat
 	{
 		msFrame.setVisible(true);
 
-		// Set up a log queue and a monitoring thread.
-		Logger defLogger;
-		try
-		{
-			defLogger = new FileLogger("multistat", "multistat.log");
-		}
-		catch(IOException ex)
-		{
-			System.err.println("Cannot create log file 'multistat.log'");
-			defLogger = Logger.instance();
-		}
+
 		QueueLogger qLogger = new QueueLogger("local");
-		qLogger.setMinLogPriority(defLogger.getMinLogPriority());
-		TeeLogger tLogger = new TeeLogger("local", defLogger, qLogger);
-		Logger.setLogger(tLogger);
+
 		LogMonitor logMon = new LogMonitor(msFrame, qLogger);
 		logMon.start();
 
 		msFrame.startup();
 		long lastAlarmPurge = System.currentTimeMillis();
 		msFrame.alarmMaskList.load();
-		
+
 		ConfigCheckerThread cct = new ConfigCheckerThread();
 		cct.start();
-		
+
 		while(true)
 		{
 			long now = System.currentTimeMillis();
@@ -98,26 +97,18 @@ public class MultiStat
 	}
 
 	//Main method
-	public static void main(String[] args)
+	public static void main(String[] args) throws ClassNotFoundException, InstantiationException,
+												  IllegalAccessException, UnsupportedLookAndFeelException
 	{
-		try
-		{
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-		
-		
+		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+
+
 		MultiStatCmdLineArgs mscla = new MultiStatCmdLineArgs();
 		mscla.parseArgs(args);
-		
+
 		String cfgName = EnvExpander.expand(mscla.getConfigFileName());
 		MultiStatConfig.instance().setConfigFileName(cfgName);
 
-		Logger.instance().info("Debug Min Priority (info=3) = " 
-			+ Logger.instance().getMinLogPriority());
 		MultiStat ms = new MultiStat();
 		ms.run();
 	}
@@ -126,14 +117,14 @@ public class MultiStat
 class ConfigCheckerThread extends Thread
 {
 	private boolean isShutdown = false;
-	
-	
+
+
 
 	public void run()
 	{
 		long lastConfigCheck = 0L;
 		try { sleep(3000L); } catch(Exception ex) {}
-		
+
 		while(!isShutdown)
 		{
 			if (System.currentTimeMillis() - lastConfigCheck > 10000L)
