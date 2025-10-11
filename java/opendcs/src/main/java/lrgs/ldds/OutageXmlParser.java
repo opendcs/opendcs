@@ -20,16 +20,17 @@ import java.text.SimpleDateFormat;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.text.ParseException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import ilex.util.Logger;
 import ilex.xml.DomHelper;
 import ilex.xml.XmlOutputStream;
 
@@ -39,9 +40,12 @@ import lrgs.common.DcpAddress;
 /**
 Parses the XML returned in an Extended Block Request into an array of
 DcpMsg objects.
+@deprecated original outage system is no longer supported or used.
 */
+@Deprecated
 public class OutageXmlParser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String outageListTag = "outageList";
 	public static final String outageTag = "outage";
 	public static final String outageIdTag = "outageId";
@@ -73,8 +77,7 @@ public class OutageXmlParser
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().failure(module +
-				" Could not initialize OutageXmlParser: " + ex);
+			log.atError().setCause(ex).log("Could not initialize OutageXmlParser.");
 		}
 	}
 
@@ -135,8 +138,7 @@ public class OutageXmlParser
 			try { otg.setOutageId(Integer.parseInt(ns.trim())); }
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().warning(module + " Bad outageId '"
-					+ ns + "' -- expected integer.");
+				log.atWarn().setCause(ex).log(" Bad outageId '" + ns + "' -- expected integer.");
 			}
 		}
 
@@ -148,7 +150,7 @@ public class OutageXmlParser
 		NodeList children = elem.getChildNodes();
 		if (children == null)
 		{
-			Logger.instance().warning("Outage element with no children!");
+			log.warn("Outage element with no children!");
 			return null;
 		}
 		for(int i=0; i<children.getLength(); i++)
@@ -191,9 +193,11 @@ public class OutageXmlParser
 				otg.setDcpAddress((int)da.getAddr());
 			}
 			else
-				Logger.instance().warning(module + " Unexpected node '" 
+			{
+				log.warn(module + " Unexpected node '" 
 					+ nn + "' in DcpMsg element with value '"
 					+ DomHelper.getTextContent(child)+ " -- ignored.");
+			}
 		}
 		return otg;
 	}
@@ -211,8 +215,7 @@ public class OutageXmlParser
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning(module + " Unexpected IOException: "
-				+ ex);
+			log.atWarn().setCause(ex).log("Unexpected IOException.");
 		}
 		return baos.toByteArray();
 	}
