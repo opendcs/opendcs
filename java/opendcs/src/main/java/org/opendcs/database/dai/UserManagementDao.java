@@ -46,9 +46,10 @@ public interface UserManagementDao extends OpenDcsDao
      * @param tx
      * @param id
      * @param user
+     * @return
      * @throws OpenDcsDataException
      */
-    void updateUser(DataTransaction tx, DbKey id, User user) throws OpenDcsDataException;
+    User updateUser(DataTransaction tx, DbKey id, User user) throws OpenDcsDataException;
 
     /**
      * Remove a user from the database
@@ -91,9 +92,10 @@ public interface UserManagementDao extends OpenDcsDao
      * @param tx
      * @param id
      * @param provider
+     * @return
      * @throws OpenDcsDataException
      */
-    void updateIdentityProvider(DataTransaction tx, DbKey id, IdentityProvider provider) throws OpenDcsDataException;
+    IdentityProvider updateIdentityProvider(DataTransaction tx, DbKey id, IdentityProvider provider) throws OpenDcsDataException;
 
     /**
      * Remove an identity provider
@@ -135,9 +137,10 @@ public interface UserManagementDao extends OpenDcsDao
      * @param tx
      * @param id
      * @param role
+     * @return the updated role
      * @throws OpenDcsDataException
      */
-    void updateRole(DataTransaction tx, DbKey id, Role role) throws OpenDcsDataException;
+    Role updateRole(DataTransaction tx, DbKey id, Role role) throws OpenDcsDataException;
 
     /**
      * Delete a role from this instance. If implementation does not support removal of roles
