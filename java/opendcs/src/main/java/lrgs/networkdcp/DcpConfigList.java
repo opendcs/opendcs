@@ -1,11 +1,25 @@
-/**
- * 
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.networkdcp;
 
-import ilex.util.Logger;
-
 import java.util.ArrayList;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.drgs.DrgsConnectCfg;
 import lrgs.drgs.DrgsInputSettings;
 
@@ -14,13 +28,13 @@ import lrgs.drgs.DrgsInputSettings;
  */
 public class DcpConfigList
 {
-	private ArrayList<DrgsConnectCfg> configs
-		= new ArrayList<DrgsConnectCfg>();
-	
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private ArrayList<DrgsConnectCfg> configs = new ArrayList<DrgsConnectCfg>();
+
 	public DcpConfigList()
 	{
 	}
-	
+
 	/**
 	 * Called whenever the configuration file was modified, after loading
 	 * the settings. Resets the queue.
@@ -29,8 +43,7 @@ public class DcpConfigList
 	public synchronized void processNewConfig(DrgsInputSettings settings,
 		NetworkDcpStatusList statusList)
 	{
-		Logger.instance().info(NetworkDcpRecv.module + 
-			" Processing new Network DCP Configuration");
+		log.info("Processing new Network DCP Configuration");
 		ArrayList<DrgsConnectCfg> toDelete = new ArrayList<DrgsConnectCfg>();
 		toDelete.addAll(configs);
 		ArrayList<DrgsConnectCfg> toAdd = new ArrayList<DrgsConnectCfg>();
@@ -42,18 +55,14 @@ public class DcpConfigList
 			{
 				if (oldCfg.equalToNetDcp(cfg)) // Is the same?
 				{
-					Logger.instance().info(NetworkDcpRecv.module + 
-						" Already have equal config for host="
-						+ cfg.host + ", port=" + cfg.msgPort 
-						+ ", poll=" + cfg.pollingPeriod); 
+					log.info("Already have equal config for host={}, port={}, poll={}",
+							 cfg.host, cfg.msgPort, cfg.pollingPeriod);
 					toDelete.remove(oldCfg);
 				}
 				else // different!
 				{
-					Logger.instance().info(NetworkDcpRecv.module + 
-						" Config Changed for host="
-						+ cfg.host + ", port=" + cfg.msgPort 
-						+ ", poll=" + cfg.pollingPeriod); 
+					log.info("Config Changed for host={}, port={}, poll={}",
+							 cfg.host, cfg.msgPort, cfg.pollingPeriod);
 					// This will kill any thread servicing this connection.
 					oldCfg.setState(NetworkDcpState.Dead);
 					cfg.setState(NetworkDcpState.Waiting);
@@ -62,10 +71,8 @@ public class DcpConfigList
 			}
 			else // no matching old config
 			{
-				Logger.instance().info(NetworkDcpRecv.module + 
-					" New Config loaded for host="
-					+ cfg.host + ", port=" + cfg.msgPort 
-					+ ", poll=" + cfg.pollingPeriod); 
+				log.info("New Config loaded for host={}, port={}, poll={}",
+						 cfg.host, cfg.msgPort, cfg.pollingPeriod);
 				toAdd.add(cfg);
 			}
 		}
@@ -75,8 +82,8 @@ public class DcpConfigList
 		{
 			configs.remove(cfg);
 			statusList.remove(cfg.host, cfg.msgPort);
-			Logger.instance().info("Removed Network DCP with host="
-				+ cfg.host + ", port=" + cfg.msgPort + ", poll=" + cfg.pollingPeriod); 
+			log.info("Removed Network DCP with host={}, port={}, poll={}",
+					 cfg.host, cfg.msgPort, cfg.pollingPeriod);
 		}
 		for(DrgsConnectCfg cfg : toAdd)
 		{
@@ -84,21 +91,18 @@ public class DcpConfigList
 			NetworkDcpStatus nds = statusList.getStatus(cfg.host, cfg.msgPort);
 			nds.setDisplayName(cfg.name);
 			nds.setPollingMinutes(cfg.pollingPeriod);
-			Logger.instance().info(NetworkDcpRecv.module +
-				" Created status for " 
-				+ nds.getDisplayName() + " host=" + nds.getHost()
-				+ ", port=" + nds.getPort() 
-				+ ", period=" + nds.getPollingMinutes());
+			log.info("Created status for {} host={}, port={}, period={}",
+					 nds.getDisplayName(), nds.getHost(), nds.getPort(), nds.getPollingMinutes());
 		}
 	}
-	
+
 	public synchronized void killAll()
 	{
 		for(DrgsConnectCfg cfg : configs)
 			cfg.setState(NetworkDcpState.Dead);
 		configs.clear();
 	}
-	
+
 	/**
 	 * @return next config to poll, or null if none are ready now.
 	 */
@@ -124,14 +128,14 @@ public class DcpConfigList
 		}
 		return ret;
 	}
-	
+
 	public synchronized void pollFinished(DrgsConnectCfg cfg)
 	{
 		// Won't hurt anything if this cfg was removed in the meantime,
 		// It just is no longer in the list.
 		cfg.setState(NetworkDcpState.Waiting);
 	}
-	
+
 	public synchronized ArrayList<DrgsConnectCfg> getContinuousDcps()
 	{
 		ArrayList<DrgsConnectCfg> ret = new ArrayList<DrgsConnectCfg>();
@@ -140,7 +144,7 @@ public class DcpConfigList
 				ret.add(cfg);
 		return ret;
 	}
-	
+
 	public synchronized int getNumPolled()
 	{
 		int ret = 0;
@@ -149,7 +153,7 @@ public class DcpConfigList
 				ret++;
 		return ret;
 	}
-	
+
 	public DrgsConnectCfg getConfig(String host, int port)
 	{
 		for(DrgsConnectCfg cfg : this.configs)

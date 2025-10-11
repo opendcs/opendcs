@@ -1,11 +1,24 @@
-/**
- * 
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.networkdcp;
 
-import ilex.util.Logger;
-
 import java.io.IOException;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.archive.MsgArchive;
 import lrgs.common.DcpMsg;
@@ -20,9 +33,9 @@ import lrgs.lrgsmain.LrgsMain;
  * This thread polls network DCPs.
  *
  */
-public class PolledNetworkDcpThread
-    extends DrgsRecvMsgThread
+public class PolledNetworkDcpThread extends DrgsRecvMsgThread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private DcpConfigList cfgList;
 	private NetworkDcpStatusList statusList;
 
@@ -52,17 +65,17 @@ public class PolledNetworkDcpThread
 	/**
 	 * Thread run method
 	 * Algorithm is:
-	 * 	- Try to get a config off the queue. Sleep & try again if none 
+	 * 	- Try to get a config off the queue. Sleep & try again if none
 	 *    available.
-	 *  - Once you have a config, call configure, they behave similarly to 
-	 *    super class, but once you get a timeout or NONE, update the poll 
+	 *  - Once you have a config, call configure, they behave similarly to
+	 *    super class, but once you get a timeout or NONE, update the poll
 	 *    times in the config and return it to the queue.
 	 */
 	public void run()
 	{
 		try{ Thread.sleep(2000L); }
 		catch(InterruptedException ex) {}
-		
+
 		lastResponseTime = System.currentTimeMillis();
 
 		int numMsgsThisPoll = 0;
@@ -87,14 +100,14 @@ public class PolledNetworkDcpThread
 					catch(InterruptedException ex) {}
 					continue;
 				}
-				info("Polling " + cfg.name);
+				log.info("Polling {}", cfg.name);
 				status = "Connecting";
 				configure(cfg);
 				tryConnect();
 				if (!isConnected())
 				{
 					cfgList.pollFinished(cfg);
-					info("Failed to connect to " + cfg.name);
+					log.info("Failed to connect to {}", cfg.name);
 					statusList.pollAttempt(myCfg, false, 0);
 					myCfg = null;
 					continue;
@@ -102,7 +115,7 @@ public class PolledNetworkDcpThread
 				status = "Polling";
 			}
 
-			try 
+			try
 			{
 				DcpMsg msg = getMsg();
 				if (msg != null)
@@ -124,8 +137,7 @@ public class PolledNetworkDcpThread
 					else if (now - lastResponseTime > 20000)
 					{
 						// More than 20 seconds since either msg or NONE.
-						log(Logger.E_WARNING, DrgsRecv.EVT_TIMEOUT,
-							"Timeout on Network DCP -- disconnecting.");
+						log.warn("{} Timeout on Network DCP -- disconnecting.",  DrgsRecv.EVT_TIMEOUT);
 						statusList.pollAttempt(myCfg, true, numMsgsThisPoll);
 						disconnect();
 					}
@@ -138,17 +150,16 @@ public class PolledNetworkDcpThread
 			}
 			catch(IOException ex)
 			{
-				log(Logger.E_WARNING, DrgsRecv.EVT_SOCKIO,
-					"Error on Network DCP: " + ex);
+				log.atWarn().setCause(ex).log("{} Error on Network DCP", DrgsRecv.EVT_SOCKIO);
 				disconnect();
 			}
 		}
-		info("Disconnecting and exiting.");
+		log.info("Disconnecting and exiting.");
 		try { disconnect(); }
 		catch(Exception ex){}
 		status = "Shutdown";
 	}
-	
+
 	public void disconnect()
 	{
 		if (myCfg != null)
@@ -156,11 +167,6 @@ public class PolledNetworkDcpThread
 
 		super.disconnect();
 		status = "Idle";
-	}
-
-	private void info(String msg)
-	{
-		Logger.instance().info(myName + " " + msg);
 	}
 
 	/**
@@ -175,7 +181,7 @@ public class PolledNetworkDcpThread
 	{
 		return LrgsInputInterface.DL_NETDCPPOLL;
 	}
-	
+
 	@Override
 	protected int getMsgTypeFlag()
 	{
