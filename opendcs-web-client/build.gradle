@@ -21,12 +21,12 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.servlet.api)
+    compileOnly(libs.servlet.api)
     implementation(libs.slf4j.api)
     implementation(libs.auto.service)
     annotationProcessor(libs.auto.service)
-    runtimeClasspath(libs.jstl)
-    runtimeClasspath(libs.slf4j.jdk14)
+    implementation(libs.jstl)
+    runtimeOnly(libs.slf4j.jdk14)
 
     runtimeOnly("org.webjars:bootstrap:5.3.8")
     constraints {
@@ -54,28 +54,28 @@ dependencies {
     runtimeOnly("org.webjars:webjars-servlet-2.x:1.6")
 
     // DataTables + Bootstrap 5
-    implementation("org.webjars.npm:datatables.net:1.13.8") {
+    runtimeOnly("org.webjars.npm:datatables.net:1.13.8") {
         exclude group: 'org.webjars.npm', module: 'jquery'
     }
-    implementation("org.webjars.npm:datatables.net-bs5:1.13.8") {
+    runtimeOnly("org.webjars.npm:datatables.net-bs5:1.13.8") {
         exclude group: 'org.webjars.npm', module: 'jquery'
     }
-    implementation("org.webjars.npm:datatables.net-responsive:2.5.0") {
+    runtimeOnly("org.webjars.npm:datatables.net-responsive:2.5.0") {
         exclude group: 'org.webjars.npm', module: 'jquery'
     }
-    implementation("org.webjars.npm:datatables.net-responsive-bs5:2.5.0") {
+    runtimeOnly("org.webjars.npm:datatables.net-responsive-bs5:2.5.0") {
         exclude group: 'org.webjars.npm', module: 'jquery'
     }
-    implementation("org.webjars.npm:datatables.net-buttons:2.4.2") {
+    runtimeOnly("org.webjars.npm:datatables.net-buttons:2.4.2") {
         exclude group: 'org.webjars.npm', module: 'jquery'
     }
-    implementation("org.webjars.npm:datatables.net-buttons-bs5:2.4.2") {
+    runtimeOnly("org.webjars.npm:datatables.net-buttons-bs5:2.4.2") {
         exclude group: 'org.webjars.npm', module: 'jquery'
     }
-    implementation("org.webjars.npm:datatables.net-select:1.7.1") {
+    runtimeOnly("org.webjars.npm:datatables.net-select:1.7.1") {
         exclude group: 'org.webjars.npm', module: 'jquery'
     }
-    implementation("org.webjars.npm:datatables.net-select-bs5:1.4.0") {
+    runtimeOnly("org.webjars.npm:datatables.net-select-bs5:1.4.0") {
         exclude group: 'org.webjars.npm', module: 'jquery'
     }
 
