@@ -81,7 +81,7 @@ dependencies {
 
     // Extras
     
-    
+    testImplementation(libs.servlet.api)
     testImplementation(libs.selenium)
     testImplementation(libs.junit.api)
     testImplementation(libs.mockito.core)
