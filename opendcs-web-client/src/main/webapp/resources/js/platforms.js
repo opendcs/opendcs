@@ -142,13 +142,17 @@ document.addEventListener('DOMContentLoaded', function() {
             $('#siteSelectbox').append(optGroupDom);
             $('#actualSiteSelectbox').append(optGroupDom.clone());
         }
-        $('#siteSelectbox').select2({
+        const siteSelect = $('#siteSelectbox');
+        siteSelect.select2({
             placeholder: 'Select a site',
-            allowClear: true
+            allowClear: true,
+            dropdownParent: siteSelect.parent()
         });
-        $('#actualSiteSelectbox').select2({
+        const actualSiteSelect = $('#actualSiteSelectbox');
+        actualSiteSelect.select2({
             placeholder: 'Select a site',
-            allowClear: true
+            allowClear: true,
+            dropdownParent: actualSiteSelect.parent()
         });
 
         classInstance.data.configrefs.data.forEach(conf => {
@@ -180,10 +184,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
-
-        $("#configSelectbox").select2({
+        const configSelect = $("#configSelectbox");
+        configSelect.select2({
             placeholder: 'Select a config',
-            allowClear: true
+            allowClear: true,
+            dropdownParent: configSelect.parent()
         });
         updatePlatformsTable();
 

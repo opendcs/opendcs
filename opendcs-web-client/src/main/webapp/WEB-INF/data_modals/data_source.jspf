@@ -7,7 +7,7 @@
 				<h6 class="modal-title" id="sourcesTitle">Sources</h6>
 			</div>
 			<div id="displayedId" class="displayNone"></div>
-			<div class="modal-body opendcs-modal-body-100 d-flex flex-column">
+			<div class="modal-body opendcs-modal-body-100 d-flex flex-column bg-secondary-subtle">
 				<div class="card w-100 p-3">
 					<div class="row smallMarginBottom">
 

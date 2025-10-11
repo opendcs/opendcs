@@ -6,13 +6,13 @@
                 <h6 class="modal-title" id="modalTitle">Edit Computation</h6>
             </div>
             <div id="displayedId" class="displayNone"></div>
-            <div class="modal-body grey-background total_height-header-footer">
+            <div class="modal-body bg-secondary-subtle total_height-header-footer">
                 <div class="h-100 d-flex flex-column">
                     <div class="row">
                         <div class="col-lg-5">
                             <div class="card pl-3 pr-3 pt-1 pb-1 opendcs_y_scrollable">
                                 <form class="form-validate-jquery" onkeydown="return event.key != 'Enter';">
-                                    <table class="table table-hover datatable-responsive dataTable no-footer mb-1">
+                                    <table class="table table-hover table-striped datatable-responsive dataTable no-footer mb-1">
                                         <caption class="captionTitleCenter">
                                             Details
                                             
@@ -67,7 +67,7 @@
                             </div>
                         </div>
                         <div class="card col-lg-7 pl-3 pr-3 pt-1 pb-1 w-100 opendcs_y_scrollable">
-                            <table id="propertiesTable" resize_on_window_resize="99" class="table table-hover datatable-responsive co-8 border">
+                            <table id="propertiesTable" resize_on_window_resize="99" class="table table-hover table-striped datatable-responsive co-8 border">
                                 <caption class="captionTitleCenter">
                                     Computation Properties
                                     <button class="btn btn-secondary float-right captionButton mt-1" id="addPropertyButton">+</button>
@@ -85,7 +85,7 @@
                     </div>
                     <div class="row m-1 flex-grow-1">
                         <div class="card col-lg-12 pl-3 pr-3 pt-1 pb-1 w-100 opendcs_y_scrollable">
-                            <table id="parametersTable" resize_on_window_resize="99" class="table table-hover datatable-responsive co-8 border">
+                            <table id="parametersTable" resize_on_window_resize="99" class="table table-hover table-striped datatable-responsive co-8 border">
                                 <caption class="captionTitleCenter">Time Series Parameters</caption>
                                 <thead>
                                     <tr>

@@ -1096,15 +1096,15 @@ document.addEventListener('DOMContentLoaded', function() {
         updateDataTableScroll("decodingScriptTable");
     });
 
+    /*
+
     // Time picker
-    $('#firstSampleTime').AnyTime_picker({
-        format: '%H:%i:%S'
-    });
+    $('#firstSampleTime').addEventListener("change", ocheckInterval);
 
 
     $('#samplingInterval').AnyTime_picker({
         format: '%H:%i:%S'
-    });
+    });*/
 
     $("#decodingScriptModalCancel").on("click", function() {
         $("#modal_decodingscript").modal("hide");

@@ -189,6 +189,12 @@ main {
 	height: auto;
 }
 
+.select2-container {
+    z-index: 99999;
+	--bs-bg-opacity: 1;
+ 	background-color: rgba(var(--bs-secondary-bg-rgb), var(--bs-bg-opacity)) !important;
+}
+
 .card {
 	margin-bottom: 0.50rem;
 }
@@ -284,9 +290,11 @@ main {
 	background-color: #b3b3b3 !important;
 }
 
+/*
 .dataTables_wrapper {
 	background-color: #fafeff;
 }
+*/
 
 .modal-header {
 	padding-top: 0.75rem;

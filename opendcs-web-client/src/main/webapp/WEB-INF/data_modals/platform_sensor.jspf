@@ -8,7 +8,7 @@
                 <h6 class="modal-title" id="platformSensorTitle">Platform
 					Sensor Parameters</h6>
             </div>
-            <div class="modal-body grey-background p-1 d-flex flex-column">
+            <div class="modal-body bg-secondary-subtle p-1 d-flex flex-column">
                 <div id="displayedPlatformSensorRowId" class="displayNone"></div>
                 <div class="form-group row">
                     <label class="col-form-label col-2 text-right">Sensor
@@ -79,7 +79,7 @@
                         <div class="card w-100 h-100">
                             <table id="platformSensorPropertiesTable"
 								resize_on_window_resize="95"
-								class="table table-hover datatable-responsive co-8 border">
+								class="table table-hover table-striped datatable-responsive co-8 border">
                                 <caption class="captionTitleCenter">
 									Additional Properties
                                     <button

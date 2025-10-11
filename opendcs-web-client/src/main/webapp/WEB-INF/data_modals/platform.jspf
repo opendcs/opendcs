@@ -84,7 +84,7 @@
                         <div class="row h-50 p-1">
                             <div class="card col-lg-12 pl-3 pr-3 pt-1 pb-1 h-100">
                                 <table id="propertiesTable" resize_on_window_resize="96"
-									class="table table-hover datatable-responsive co-8 border">
+									class="table table-hover table-striped datatable-responsive co-8 border">
                                     <caption class="captionTitleCenter">
 										Properties
                                         <button function="addBlankRow" 

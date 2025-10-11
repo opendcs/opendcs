@@ -10,7 +10,7 @@
                 </h6>
             </div>
             <div class="displayNone" id="selectedSheduleRowIndex" data-index=""></div>
-            <div class="modal-body grey-background">
+            <div class="modal-body bg-secondary-subtle">
                 <div class="row">
                     <div class="col-xl-4">
                         <div class="card">

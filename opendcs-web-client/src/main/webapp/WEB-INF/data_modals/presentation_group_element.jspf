@@ -7,7 +7,7 @@
                 <h6 class="modal-title" id="SourcesTitle">Presentation Element</h6>
             </div>
             <div id="displayedPresentationGroupId" class="displayNone"></div>
-            <div class="modal-body">
+            <div class="modal-body bg-secondary-subtle">
                 <!--<h6 class="font-weight-semibold">Network List Name</h6>-->
                 <div class="form-group row smallMarginBottom">
                     <label class="col-form-label col-lg-1 text-right">Group
@@ -36,7 +36,7 @@
                     <hr class="solid"/>
                 </div>
                 <table id="presentationElementsTable" resize_on_window_resize="95"
-						class="table table-hover datatable-responsive">
+						class="table table-hover table-striped datatable-responsive">
                     <thead>
                         <tr>
                             <th>Data Type Standard</th>

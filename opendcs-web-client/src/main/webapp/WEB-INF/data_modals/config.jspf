@@ -5,7 +5,7 @@
 				<div class="modal-header bg-secondary">
 					<h6 class="modal-title" id="configTitle">Configs</h6>
 				</div>
-				<div class="modal-body">
+				<div class="modal-body bg-secondary-subtle">
 					<!--<h6 class="font-weight-semibold">Network List Name</h6>-->
 					<div class="card pt-2 pb-2">
 						<div class="form-group row">
@@ -24,7 +24,7 @@
 						</div>
 					</div>
 					<div class="card h-50">
-						<table id="sensorTable" resize_on_window_resize="95" class="table table-hover datatable-responsive tablerow-cursor">
+						<table id="sensorTable" resize_on_window_resize="95" class="table table-hover table-striped datatable-responsive tablerow-cursor">
 							<caption class="captionTitleCenter">Sensors
 								<button class="btn btn-secondary float-right captionButton" id="addSensorButton">+</button>
 							</caption>
@@ -50,7 +50,7 @@
 						</table>
 					</div>
 					<div class="card h-40">
-						<table id="decodingScriptTable" resize_on_window_resize="95" class="table table-hover datatable-responsive tablerow-cursor overflow_y-auto">
+						<table id="decodingScriptTable" resize_on_window_resize="95" class="table table-hover table-striped datatable-responsive tablerow-cursor overflow_y-auto">
 						<caption class="captionTitleCenter">Decoding Scripts
 							<button class="btn btn-secondary float-right captionButton" id="addDecodingScriptButton">+</button>
 						</caption>

@@ -1,12 +1,12 @@
 <!-- Decoding Script modal -->
 <div id="modal_decodingscript" class="modal fade" data-bs-keyboard="false" data-bs-backdrop="static">
-    <div class="modal-dialog modal-med">
+    <div class="modal-dialog opendcs-modal-90">
         <div class="modal-content h-100">
             <div class="modal-header bg-secondary">
                 <h6 class="modal-title" id="platformSensorTitle">Edit Decoding Script</h6>
             </div>
             <div id="displayedDecodingScriptRowId" class="displayNone"></div>
-            <div class="modal-body grey-background p-1">
+            <div class="modal-body bg-secondary-subtle p-1">
                 <div class="row m-1 h-50">
                     <div class="card col-lg-7 p-3">
                         <div class="form-group row">

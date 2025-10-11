@@ -9,7 +9,7 @@
 						Transport Medium</h6>
             </div>
             <div id="displayedTmRowIndex" class="displayNone"></div>
-            <div class="modal-body grey-background">
+            <div class="modal-body bg-secondary-subtle">
                 <div class="row m-1 h-50">
                     <div class="card col-lg-12 p-2 h-100 overflow-auto">
                         <table
@@ -74,7 +74,7 @@
                     <div class="card col-lg-12 p-2 h-100 overflow-auto"
 							data-mediumtype="goes,goes-random,goes-self-timed">
                         <table
-								class="table table-hover datatable-responsive dataTable no-footer mb-2">
+								class="table table-hover tabled-striped datatable-responsive dataTable no-footer mb-2">
                             <caption class="captionTitleCenter">GOES DCP Channel
 									Parameters</caption>
                         </table>
@@ -110,8 +110,7 @@
                     </div>
                     <div class="card col-lg-12 p-2 h-100 overflow-auto"
 							data-mediumtype="incoming-tcp,polled-tcp">
-                        <table
-								class="table table-hover datatable-responsive dataTable no-footer mb-2">
+                        <table class="table table-hover table-striped datatable-responsive dataTable no-footer mb-2">
                             <caption class="captionTitleCenter">TCP Parameters</caption>
                         </table>
                         <div class="form-group row mb-2">
@@ -157,8 +156,7 @@
                     </div>
                     <div class="card col-lg-12 p-2 h-100 overflow-auto"
 							data-mediumtype="polled-modem">
-                        <table
-								class="table table-hover datatable-responsive dataTable no-footer mb-2">
+                        <table class="table table-hover table-striped datatable-responsive dataTable no-footer mb-2">
                             <caption class="captionTitleCenter">TCP Parameters</caption>
                         </table>
                         <div class="form-group row mb-2">
