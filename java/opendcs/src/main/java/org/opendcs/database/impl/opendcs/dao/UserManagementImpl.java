@@ -1,26 +1,25 @@
 package org.opendcs.database.impl.opendcs.dao;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
-import org.jdbi.v3.core.mapper.ColumnMapper;
-import org.jdbi.v3.core.mapper.RowMapper;
-import org.jdbi.v3.core.statement.StatementContext;
+import org.jdbi.v3.core.generic.GenericType;
+import org.jdbi.v3.core.qualifier.QualifiedType;
+import org.jdbi.v3.jackson2.Jackson2Plugin;
+import org.jdbi.v3.json.Json;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.Role;
 import org.opendcs.database.model.User;
+import org.opendcs.database.model.mappers.IdentityProviderMapper;
+import org.opendcs.database.model.mappers.RoleMapper;
 
 import decodes.sql.DbKey;
 
@@ -28,6 +27,7 @@ public class UserManagementImpl implements UserManagementDao
 {
 
     private static final RoleMapper ROLE_MAPPER = new RoleMapper();
+    private static final IdentityProviderMapper PROVIDER_MAPPER = new IdentityProviderMapper();
 
     @Override
     public List<User> getUsers(DataTransaction tx, int limit, int offset)
@@ -70,7 +70,18 @@ public class UserManagementImpl implements UserManagementDao
     public IdentityProvider addIdentityProvider(DataTransaction tx, IdentityProvider provider)
             throws OpenDcsDataException
     {
-        return null;
+        Connection conn = tx.connection(Connection.class).get();
+        Handle handle = Jdbi.open(conn);
+        handle.getJdbi().installPlugin(new Jackson2Plugin());
+        GenericType<HashMap<String, Object>> json = new GenericType<HashMap<String,Object>>() {
+            
+        };
+        return
+            handle.createQuery("insert into identity_provider(name, type, updated_at, config) values (:name, :type, now(), :config::jsonb) returning id, name, type, updated_at, config")
+              .bind("name", provider.getName())
+              .bind("type", provider.getType())
+              .bindByType("config", null, json)
+              .map(PROVIDER_MAPPER).one();
     }
 
     @Override
@@ -158,20 +169,5 @@ public class UserManagementImpl implements UserManagementDao
     }
  
     
-    private static class RoleMapper implements RowMapper<Role>
-    {
-
-        @Override
-        public Role map(ResultSet rs, StatementContext ctx) throws SQLException
-        {
-            DbKey key = DbKey.createDbKey(rs, "id");
-            String name = rs.getString("name");
-            String description = rs.getString("description");
-            ColumnMapper<ZonedDateTime> columnMapperForZDT = ctx.findColumnMapperFor(ZonedDateTime.class)
-                                                                .get();
-            ZonedDateTime updatedAt = columnMapperForZDT.map(rs, "updated_at", ctx);
-            return new Role(key, name, description, updatedAt);
-        }
-        
-    }
+    
 }

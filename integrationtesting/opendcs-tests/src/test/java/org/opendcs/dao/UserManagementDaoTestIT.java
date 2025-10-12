@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.impl.opendcs.BuiltInIdentityProvider;
+import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.Role;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
@@ -76,6 +78,23 @@ public class UserManagementDaoTestIT extends AppTestBase
             assertEquals(10, rolesLimitOffset.size());
             assertEquals("user19", rolesLimitOffset.get(rolesLimit.size()-1).name);
 
+        }
+    }
+
+
+    @Test
+    void test_identity_provider_operations() throws Exception
+    {
+        UserManagementDao dao = db.getDao(UserManagementDao.class)
+                                  .orElseThrow(() -> new UnsupportedOperationException("user dao not supported."));
+        DbKey id = DbKey.NullKey;
+        try (DataTransaction tx = db.newTransaction())
+        {
+            IdentityProvider idpIn = new BuiltInIdentityProvider(DbKey.NullKey, "odcs-idp", null, null);
+            IdentityProvider idpOut = dao.addIdentityProvider(tx, idpIn);
+            assertNotEquals(DbKey.NullKey, idpOut.getId());
+            assertEquals("odcs-idp", idpOut.getName());
+            id = idpOut.getId();
         }
     }
 }
