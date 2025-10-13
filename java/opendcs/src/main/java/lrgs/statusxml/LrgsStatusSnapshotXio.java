@@ -1,74 +1,30 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.3  2016/03/24 19:20:16  mmaloney
-*  Added hideHostNames property.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.2  2016/02/29 22:26:43  mmaloney
-*  Encapsulate 'name'.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.5  2010/09/21 01:33:20  mmaloney
-*  Don't include downlinks like LRIT and DDS if they are not used in this LRGS.
-*
-*  Revision 1.4  2010/01/07 21:47:37  shweta
-*  Enhancements for multiple DDS Receive  group.
-*
-*  Revision 1.3  2008/09/24 13:59:01  mjmaloney
-*  network DCPs
-*
-*  Revision 1.2  2008/05/05 15:03:08  cvs
-*  Algorithm Editor Updates
-*
-*  Revision 1.1  2008/04/04 18:21:16  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.11  2008/01/14 14:57:35  mmaloney
-*  dev
-*
-*  Revision 1.10  2007/08/08 17:46:40  mmaloney
-*  *** empty log message ***
-*
-*  Revision 1.9  2006/12/04 17:35:44  mmaloney
-*  dev
-*
-*  Revision 1.8  2005/10/20 18:01:06  mmaloney
-*  event nums
-*
-*  Revision 1.7  2005/10/11 17:55:19  mmaloney
-*  dev
-*
-*  Revision 1.6  2005/07/28 20:22:14  mjmaloney
-*  LRGS Monitor backward compatibility with LRGS 4.0.
-*
-*  Revision 1.5  2005/06/30 15:15:29  mjmaloney
-*  Java Archive Development.
-*
-*  Revision 1.4  2005/06/28 17:37:02  mjmaloney
-*  Java-Only-Archive implementation.
-*
-*  Revision 1.3  2004/09/02 13:09:05  mjmaloney
-*  javadoc
-*
-*  Revision 1.2  2004/06/08 19:31:36  mjmaloney
-*  Final cosmetic mods
-*
-*  Revision 1.1  2004/05/04 18:03:57  mjmaloney
-*  Moved from statusgui package to here.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.statusxml;
 
 import java.io.IOException;
 import java.util.StringTokenizer;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
+import ilex.util.TextUtil;
 import ilex.xml.*;
-import ilex.util.*;
 
 import lrgs.apistatus.*;
 import lrgs.lrgsmain.LrgsConfig;
@@ -80,10 +36,10 @@ This class maps the DECODES XML representation for LrgsStatusSnapshot elements.
 
 @author Michael Maloney, Ilex Engineering, Inc.
 */
-public class LrgsStatusSnapshotXio
-	implements XmlObjectParser, TaggedBooleanOwner, TaggedLongOwner,
-	TaggedStringOwner, XmlObjectWriter
+public class LrgsStatusSnapshotXio implements XmlObjectParser, TaggedBooleanOwner, TaggedLongOwner,
+											  TaggedStringOwner, XmlObjectWriter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/// Top of the parser hierarchy
 	private LrgsStatusSnapshotExt lsse;
 
@@ -100,7 +56,7 @@ public class LrgsStatusSnapshotXio
 
 	private boolean inNetworkDcpList = false;
 	private boolean hideHostNames = false;
-	
+
 	/**
 	  Construct parser.
 	  @param lsse the LrgsStatusSnapshotExt to populate from XML data
@@ -167,17 +123,18 @@ public class LrgsStatusSnapshotXio
 			{
 				int slot = Integer.parseInt(slots);
 				int pid = Integer.parseInt(pids);
-				AttachedProcess ap = 
+				AttachedProcess ap =
 					new AttachedProcess(pid, "", "", "", -1, 0, 0, "", (short)0);
 				lsse.addProcess(ap, slot);
 				hier.pushObjectParser(new ProcessXio(ap));
 			}
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().log(Logger.E_WARNING, 
-					"Invalid slot or pid in Process record, slot='"
-					+ slots + "', pid='" + pids 
-					+ "' -- must be numbers -- Process ignored.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Invalid slot or pid in Process record, slot='{}', pid='{}' " +
+				   		"-- must be numbers -- Process ignored.",
+						slots, pids);
 				hier.pushObjectParser(new ElementIgnorer());
 			}
 		}
@@ -188,16 +145,17 @@ public class LrgsStatusSnapshotXio
 			try
 			{
 				int slot = Integer.parseInt(slots);
-				DownLink dl = 
+				DownLink dl =
 					new DownLink(name, (short)0, false, false, (short)0, 0, -1, "", "");
 				lsse.addDownLink(dl, slot);
 				hier.pushObjectParser(new DownLinkXio(lsse, dl, slot));
 			}
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().log(Logger.E_WARNING, 
-					"Invalid slot in DownLink record, slot='"
-					+ slots + "' -- must be number -- DownLink ignored.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Invalid slot in DownLink record, slot='{}' -- must be number -- DownLink ignored.",
+				   		slots);
 				hier.pushObjectParser(new ElementIgnorer());
 			}
 		}
@@ -213,9 +171,10 @@ public class LrgsStatusSnapshotXio
 			}
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().log(Logger.E_WARNING, 
-					"Invalid hour in Quality record, hour='"
-					+ hours + "' -- must be 0...23 -- Quality ignored.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Invalid hour in Quality record, hour='{}' -- must be 0...23 -- Quality ignored.",
+				   		hours);
 				hier.pushObjectParser(new ElementIgnorer());
 			}
 		}
@@ -233,15 +192,13 @@ public class LrgsStatusSnapshotXio
 			try { port = Integer.parseInt(portstr.trim()); }
 			catch(Exception ex) {}
 			String host = XmlUtils.getAttrIgnoreCase(atts, "host");
-			NetworkDcpStatus nds = 
+			NetworkDcpStatus nds =
 				lsse.networkDcpStatusList.getStatus(host, port);
 			hier.pushObjectParser(new NetworkDcpStatusXio(nds));
 		}
 		else
 		{
-			Logger.instance().debug1(
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
@@ -304,8 +261,7 @@ public class LrgsStatusSnapshotXio
 			try { lsse.domsatDropped[i] = Integer.parseInt(t); }
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().warning(
-					"Invalid string '" + t + "' in domsatDropped.");
+				log.atWarn().setCause(ex).log("Invalid string '{}' in domsatDropped.", t);
 			}
 		}
 	}
@@ -366,33 +322,33 @@ public class LrgsStatusSnapshotXio
 	 */
 	public void writeXml( XmlOutputStream xos ) throws IOException
 	{
-		xos.startElement(StatusXmlTags.LrgsStatusSnapshot, 
+		xos.startElement(StatusXmlTags.LrgsStatusSnapshot,
 			StatusXmlTags.hostname, lsse.hostname);
 		xos.writeElement(StatusXmlTags.systemStatus, "" + lsse.systemStatus);
 		xos.writeElement(StatusXmlTags.isUsable, "" + lsse.isUsable);
 		xos.writeElement(StatusXmlTags.SystemTime,""+(lsse.lss.lrgsTime*1000L));
 		xos.writeElement(StatusXmlTags.MaxClients, ""+lsse.maxClients);
-		xos.writeElement(StatusXmlTags.CurrentNumClients, 
+		xos.writeElement(StatusXmlTags.CurrentNumClients,
 			"" + lsse.currentNumClients);
 		xos.writeElement(StatusXmlTags.majorVersion,""+lsse.majorVersion);
 		xos.writeElement(StatusXmlTags.minorVersion,""+lsse.minorVersion);
 		if (lsse.fullVersion != null)
 			xos.writeElement(StatusXmlTags.fullVersion,""+lsse.fullVersion);
 
-		// Archive Statistics 
+		// Archive Statistics
 		xos.startElement(StatusXmlTags.ArchiveStatistics);
-		xos.writeElement(StatusXmlTags.dirOldest, 
+		xos.writeElement(StatusXmlTags.dirOldest,
 			""+lsse.lss.arcStats.dirOldest);
 		xos.writeElement(StatusXmlTags.dirNext, ""+lsse.lss.arcStats.dirNext);
 		xos.writeElement(StatusXmlTags.dirWrap, ""+lsse.lss.arcStats.dirWrap);
 		xos.writeElement(StatusXmlTags.dirSize, ""+lsse.lss.arcStats.dirSize);
-		xos.writeElement(StatusXmlTags.oldestOffset, 
+		xos.writeElement(StatusXmlTags.oldestOffset,
 			""+lsse.lss.arcStats.oldestOffset);
-		xos.writeElement(StatusXmlTags.oldestMsgTime, 
+		xos.writeElement(StatusXmlTags.oldestMsgTime,
 			""+lsse.lss.arcStats.oldestMsgTime);
-		xos.writeElement(StatusXmlTags.lastSeqNum, 
+		xos.writeElement(StatusXmlTags.lastSeqNum,
 			""+lsse.lss.arcStats.lastSeqNum);
-		xos.writeElement(StatusXmlTags.maxMessages, 
+		xos.writeElement(StatusXmlTags.maxMessages,
 			""+lsse.lss.arcStats.maxMessages);
 		xos.writeElement(StatusXmlTags.maxBytes, ""+lsse.lss.arcStats.maxBytes);
 		xos.endElement(StatusXmlTags.ArchiveStatistics);
@@ -402,7 +358,7 @@ public class LrgsStatusSnapshotXio
 			AttachedProcess ap = lsse.lss.attProcs[i];
 			if (ap.pid > 0)
 			{
-				xos.startElement(StatusXmlTags.Process, 
+				xos.startElement(StatusXmlTags.Process,
 					"slot", ""+i, "pid", ""+ap.pid);
 				String hostname = ap.getName();
 				if (hideHostNames)
@@ -411,13 +367,13 @@ public class LrgsStatusSnapshotXio
 				xos.writeElement(StatusXmlTags.type, ap.type);
 				xos.writeElement(StatusXmlTags.user, ap.user);
 				xos.writeElement(StatusXmlTags.status, ap.status);
-				xos.writeElement(StatusXmlTags.LastSeqNum, 
+				xos.writeElement(StatusXmlTags.LastSeqNum,
 					"" + ap.lastSeqNum);
-				xos.writeElement(StatusXmlTags.LastPollTime, 
+				xos.writeElement(StatusXmlTags.LastPollTime,
 					"" + ap.lastPollTime);
-				xos.writeElement(StatusXmlTags.LastMsgTime, 
+				xos.writeElement(StatusXmlTags.LastMsgTime,
 					"" + ap.lastMsgTime);
-				xos.writeElement(StatusXmlTags.staleCount, 
+				xos.writeElement(StatusXmlTags.staleCount,
 					"" + ap.stale_count);
 				if (ap.ddsVersion != null)
 					xos.writeElement(StatusXmlTags.ddsVersion, ap.ddsVersion);
@@ -438,18 +394,18 @@ public class LrgsStatusSnapshotXio
 				else if (dnl.name.startsWith("DDS")
 				 && !LrgsConfig.instance().enableDdsRecv)
 					continue;
-				
-				xos.startElement(StatusXmlTags.DownLink, "slot", ""+slot, 
+
+				xos.startElement(StatusXmlTags.DownLink, "slot", ""+slot,
 					"name", dnl.name);
 				xos.writeElement(StatusXmlTags.type, ""+dnl.type);
 				xos.writeElement(StatusXmlTags.StatusCode, ""+dnl.statusCode);
 				xos.writeElement(StatusXmlTags.status, dnl.statusString);
-				xos.writeElement(StatusXmlTags.LastMsgRecvTime, 
-					""+dnl.lastMsgRecvTime);				
+				xos.writeElement(StatusXmlTags.LastMsgRecvTime,
+					""+dnl.lastMsgRecvTime);
 				xos.writeElement(StatusXmlTags.group, dnl.group);
-				
+
 				if (dnl.hasSeqNum)
-					xos.writeElement(StatusXmlTags.LastSeqNum, 
+					xos.writeElement(StatusXmlTags.LastSeqNum,
 						""+dnl.lastSeqNum);
 				if (dnl.hasBER)
 					xos.writeElement(StatusXmlTags.BER, dnl.BER);
@@ -458,19 +414,19 @@ public class LrgsStatusSnapshotXio
 				{
 					for(int h = 0; h < 24; h++)
 					{
-						QualityMeasurement qm = 
+						QualityMeasurement qm =
 							lsse.downlinkQMs[slot].dl_qual[h];
 						if (qm.containsData)
 						{
-							xos.startElement(StatusXmlTags.Quality, 
+							xos.startElement(StatusXmlTags.Quality,
 								"hour", ""+h);
-							xos.writeElement(StatusXmlTags.numGood, 
+							xos.writeElement(StatusXmlTags.numGood,
 								""+qm.numGood);
 							if (qm.numDropped > 0)
-								xos.writeElement(StatusXmlTags.numDropped, 
+								xos.writeElement(StatusXmlTags.numDropped,
 									""+qm.numDropped);
 							if (qm.numRecovered > 0)
-								xos.writeElement(StatusXmlTags.numRecovered, 
+								xos.writeElement(StatusXmlTags.numRecovered,
 									""+qm.numRecovered);
 							xos.endElement(StatusXmlTags.Quality);
 						}
@@ -497,7 +453,7 @@ public class LrgsStatusSnapshotXio
 		for(int h=0; h<24; h++)
 			sb.append(" " + lsse.domsatDropped[h]);
 		xos.writeElement(StatusXmlTags.domsatDropped, sb.toString());
-		
+
 		if (lsse.networkDcpStatusList != null)
 			lsse.networkDcpStatusList.saveToXml(xos);
 
