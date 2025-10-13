@@ -1,12 +1,28 @@
-/**
- * @(#) LritDcsRecvConfig.java
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lritdcs.recv;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.File;
 import java.util.Properties;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.PropertiesUtil;
 
 
@@ -15,21 +31,22 @@ Holds the LRIT DCS File Receiver Configuration.
 */
 public class LritDcsRecvConfig
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	 * One of the header-type constants defined in LritDcsDirMonitor.
 	 */
 	public char fileHeaderType;
-	
+
 	/**
 	 * Directory to monitor for incoming LRIT files.
 	 */
 	public String fileInputDir;
-	
+
 	/**
 	 * Directory to place files in after processing.
 	 */
 	public String fileDoneDir;
-	
+
 	/** Directory to store the hourly message files in. */
 	public String msgFileDir;
 
@@ -48,7 +65,7 @@ public class LritDcsRecvConfig
 
 	// My properties file
 	private File propFile;
-	
+
 	public static LritDcsRecvConfig instance()
 	{
 		if (_instance == null)
@@ -83,22 +100,25 @@ public class LritDcsRecvConfig
 		props.load(fis);
 		fis.close();
 		PropertiesUtil.loadFromProps(this, props);
-		
+
 		File f = new File(fileInputDir);
 		if (!f.isDirectory())
 			if (!f.mkdirs())
-				System.out.println("Directory '" + f.getPath() 
-					+ "' does not exist and cannot be made.");
+			{
+				log.warn("Directory '{}' does not exist and cannot be made.", f.getPath());
+			}
 		f = new File(fileDoneDir);
 		if (!f.isDirectory())
 			if (!f.mkdirs())
-				System.out.println("Directory '" + f.getPath() 
-					+ "' does not exist and cannot be made.");
+			{
+				log.warn("Directory '{}' does not exist and cannot be made.", f.getPath());
+			}
 		f = new File(msgFileDir);
 		if (!f.isDirectory())
 			if (!f.mkdirs())
-				System.out.println("Directory '" + f.getPath() 
-					+ "' does not exist and cannot be made.");
+			{
+				log.warn("Directory '{}' does not exist and cannot be made.", f.getPath());
+			}
 		lastLoadTime = System.currentTimeMillis();
 	}
 

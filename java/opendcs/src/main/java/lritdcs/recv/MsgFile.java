@@ -1,7 +1,18 @@
-/**
- * @(#) MsgFile.java
- */
-
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lritdcs.recv;
 
 import java.io.File;
@@ -10,31 +21,32 @@ import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.EOFException;
 import java.util.Date;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.common.DcpMsg;
-import ilex.util.Logger;
 
 /**
 IO Methods for reading & writing periodic files contining DCP messages.
 */
 public class MsgFile
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Used for the I/O */
 	private RandomAccessFile raf;
 	private byte buf[];
 	private File file;
 
-	private static final byte MSG_STARTPATTERN[] = 
+	private static final byte MSG_STARTPATTERN[] =
 		{ (byte)0x1f, (byte)0x2e, (byte)0x3d, (byte)0x4c} ;
-	
+
 	public MsgFile(File file, boolean writable)
 		throws FileNotFoundException
 	{
 		this.file = file;
-		Logger.instance().debug1("Opening '" + file.getPath() + "'");
-// Note "rw" is 5 to 10 times faster than "rws". Since we eventually intend
-// All of the file io to be done in a single JVM process, "rw" should work
-// just fine.
-//		raf = new RandomAccessFile(file, writable ? "rws" : "r");
+		log.debug("Opening '{}'", file.getPath());
+
 		raf = new RandomAccessFile(file, writable ? "rw" : "r");
 		buf = new byte[4];
 	}
@@ -69,13 +81,13 @@ public class MsgFile
 
 		return offset;
 	}
-	
+
 	public void close( )
 	{
 		try { raf.close(); }
 		catch(Exception ex) {}
 	}
-	
+
 	/**
 	 * Reads a message from the file at a specific location.
 	 * If the location does not start with a valid start-pattern, this
@@ -105,8 +117,9 @@ public class MsgFile
 			}
 		}
 		if (slide > 0)
-			Logger.instance().warning("Skipped " + slide 
-				+ "bytes in MsgFile '" + file.getPath() + "', loc=" + loc);
+		{
+			log.warn("Skipped {} bytes in MsgFile '{}', loc={}", slide, file.getPath(), loc);
+		}
 		DcpMsg msg = new DcpMsg();
 		msg.flagbits = raf.readInt();
 		msg.setLocalReceiveTime(new Date(raf.readInt()*1000L));
@@ -124,7 +137,7 @@ public class MsgFile
 
 	/**
 	 * Returns the current location in the file.
-	 * If reading a file sequentially, call this method after readMsg to 
+	 * If reading a file sequentially, call this method after readMsg to
 	 * get the first byte position after the file just read.
 	 * @return current location in message file.
 	 */
