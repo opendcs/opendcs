@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.rtstat;
 
 import ilex.util.AuthException;
@@ -10,22 +25,21 @@ import java.util.ResourceBundle;
 
 import javax.swing.*;
 
-import decodes.util.DecodesSettings;
 import decodes.util.ResourceFactory;
 
 import org.opendcs.tls.TlsMode;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
 Main class for the Real Time Status Applications.
 */
 public class RtStat
 {
-	private final static Logger log = LoggerFactory.getLogger(RtStat.class);
+	private final static Logger log = OpenDcsLoggerFactory.getLogger();
 	private static ResourceBundle labels = null;
 	private static ResourceBundle genericLabels = null;
-	
+
 	boolean packFrame = false;
 
 	RtStatCmdLineArgs cmdLineArgs = new RtStatCmdLineArgs();
@@ -39,7 +53,7 @@ public class RtStat
 		getMyLabelDescriptions();
 		ResourceFactory.instance().initDbResources();
 		frame = new RtStatFrame(
-			cmdLineArgs.getScanPeriod(), 
+			cmdLineArgs.getScanPeriod(),
 			cmdLineArgs.getIconFile(),
 			cmdLineArgs.getHeaderFile());
 
@@ -61,9 +75,10 @@ public class RtStat
 					try
 					{
 						sleep(3000L);
-					} catch (InterruptedException e)
+					}
+					catch (InterruptedException ex)
 					{
-						log.error("InterruptedException ",e);
+						log.atError().setCause(ex).log("InterruptedException ");
 					}
 					SwingUtilities.invokeLater(
 						new Runnable()
@@ -97,9 +112,9 @@ public class RtStat
 			frame.validate();
 		}
 	}
-	
+
 	public RtStatFrame getFrame() { return frame; }
-	
+
 	public static void getMyLabelDescriptions()
 	{
 		//Load the generic properties file - includes labels that are used
@@ -114,21 +129,21 @@ public class RtStat
 				"decodes/resources/rtstat",
 				locale.getLanguage());
 	}
-	
-	public static ResourceBundle getLabels() 
+
+	public static ResourceBundle getLabels()
 	{
 		if (labels == null)
 			getMyLabelDescriptions();
 		return labels;
 	}
 
-	public static ResourceBundle getGenericLabels() 
+	public static ResourceBundle getGenericLabels()
 	{
 		if (genericLabels == null)
 			getMyLabelDescriptions();
 		return genericLabels;
 	}
-	
+
 	//Main method
 	public static void main(String[] args)
 		throws Exception
@@ -142,7 +157,7 @@ public class RtStat
 		}
 		catch (Exception ex)
 		{
-			log.error("Error starting RtStat.", ex);
+			log.atError().setCause(ex).log("Error starting RtStat.");
 		}
 	}
 }

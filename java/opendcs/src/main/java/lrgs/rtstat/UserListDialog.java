@@ -1,5 +1,17 @@
 /*
-* $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.rtstat;
 
@@ -24,12 +36,11 @@ import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
 import lrgs.ldds.DdsUser;
 
-public class UserListDialog
-	extends JDialog
+public class UserListDialog extends JDialog
 {
-	private static ResourceBundle labels = 
+	private static ResourceBundle labels =
 		RtStat.getLabels();
-	private static ResourceBundle genericLabels = 
+	private static ResourceBundle genericLabels =
 		RtStat.getGenericLabels();
 	JPanel panel1 = new JPanel();
 	BorderLayout borderLayout1 = new BorderLayout();
@@ -53,37 +64,32 @@ public class UserListDialog
 	public UserListDialog(Frame owner, String title, boolean modal)
 	{
 		super(owner, title, modal);
-		try
-		{
-			//setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-			tableModel = new UserListTableModel();
-			userTable = new SortingListTable(tableModel, UserListTableModel.colwidths);
-			jbInit();
-			userTable.getSelectionModel().setSelectionMode(
-            	ListSelectionModel.SINGLE_SELECTION);
-			
-			// Note: the only way to get a user list is by being an administrator,
-			// so set isAdmin=true.
-			editUserDialog = new EditUserDialog(this, 
-					labels.getString("UserListDialog.modUserDataTitle"), true, true);
-			setPreferredSize(new Dimension(1000, 600));
-			pack();
-			
-			userTable.addMouseListener(
-				new MouseAdapter()
-				{
-					public void mouseClicked(MouseEvent e)
-					{
-						if (e.getClickCount() == 2)
-							editButtonPressed();
-					}
-				});
 
-		}
-		catch (Exception exception)
-		{
-			exception.printStackTrace();
-		}
+		//setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		tableModel = new UserListTableModel();
+		userTable = new SortingListTable(tableModel, UserListTableModel.colwidths);
+		jbInit();
+		userTable.getSelectionModel().setSelectionMode(
+			ListSelectionModel.SINGLE_SELECTION);
+
+		// Note: the only way to get a user list is by being an administrator,
+		// so set isAdmin=true.
+		editUserDialog = new EditUserDialog(this,
+				labels.getString("UserListDialog.modUserDataTitle"), true, true);
+		setPreferredSize(new Dimension(1000, 600));
+		pack();
+
+		userTable.addMouseListener(
+			new MouseAdapter()
+			{
+				public void mouseClicked(MouseEvent e)
+				{
+					if (e.getClickCount() == 2)
+						editButtonPressed();
+				}
+			});
+
+
 		userList = null;
 		getRootPane().setDefaultButton(okButton);
 	}
@@ -91,14 +97,9 @@ public class UserListDialog
 	public UserListDialog()
 	{
 		this(new Frame(), "UserListDialog", false);
-		try
-		{
-			jbInit();
-		}
-		catch (Exception ex)
-		{
-			ex.printStackTrace();
-		}
+
+		jbInit();
+
 	}
 
 	public void setHost(String host)
@@ -115,7 +116,6 @@ public class UserListDialog
 	}
 
 	private void jbInit()
-		throws Exception
 	{
 		panel1.setLayout(borderLayout1);
 		this.setModal(true);
@@ -188,10 +188,10 @@ public class UserListDialog
 			launch(editUserDialog);
 			if (editUserDialog.okPressed())
 			{
-				try 
+				try
 				{
 					tableModel.addUser(newUser);
-					ddsClientIf.modUser(newUser, editUserDialog.getPassword()); 
+					ddsClientIf.modUser(newUser, editUserDialog.getPassword());
 					tableModel.resort();
 					done = true;
 				}
@@ -216,13 +216,12 @@ public class UserListDialog
 		{
 			JOptionPane.showMessageDialog(this,
             	AsciiUtil.wrapString(labels.getString(
-            			"UserListDialog.selectEditUserErr"), 60), 
+            			"UserListDialog.selectEditUserErr"), 60),
 				"Error!", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 		DdsUser ddsUserOrig = (DdsUser)tableModel.getRowObject(r);
 		DdsUser ddsUserCopy = new DdsUser(ddsUserOrig);
-//System.out.println("UserListDialog.editButtonPressed orig.goodOnly=" + ddsUserOrig.goodOnly + ", copy.goodOnly=" + ddsUserCopy.goodOnly);
 		editUserDialog.set(host, ddsUserCopy, false);
 
 		boolean done = false;
@@ -232,7 +231,7 @@ public class UserListDialog
 			launch(editUserDialog);
 			if (editUserDialog.okPressed())
 			{
-				try 
+				try
 				{
 					ddsClientIf.modUser(ddsUserCopy, editUserDialog.getPassword());
 					tableModel.deleteObject(ddsUserOrig);
@@ -260,12 +259,12 @@ public class UserListDialog
 		{
 			JOptionPane.showMessageDialog(this,
             	AsciiUtil.wrapString(labels.getString(
-            			"UserListDialog.selectDeleteUserErr"), 60), 
+            			"UserListDialog.selectDeleteUserErr"), 60),
 				"Error!", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 		DdsUser ddsUser = (DdsUser)tableModel.getRowObject(r);
-		try 
+		try
 		{
 			ddsClientIf.rmUser(ddsUser.userName);
 			tableModel.deleteObject(ddsUser);
@@ -299,7 +298,7 @@ public class UserListDialog
 		if (xo < 0) xo = 0;
 		int yo = (frameSize.height - dlgSize.height) / 2;
 		if (yo < 0) yo = 0;
-		
+
 		dlg.setLocation(frameLoc.x + xo, frameLoc.y + yo);
 		dlg.setVisible(true);
 	}
@@ -310,7 +309,7 @@ public class UserListDialog
 class UserListTableModel extends AbstractTableModel
 	implements SortingListTableModel
 {
-	private static ResourceBundle labels = 
+	private static ResourceBundle labels =
 		RtStat.getLabels();
 	private String colNames[] = null;
 	private int lastSortColumn = -1;
