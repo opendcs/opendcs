@@ -1,18 +1,18 @@
-/**
- * $Id$
- * 
- * Copyright 2019 U.S. Government.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- * 
- * $Log$
- * Revision 1.1  2019/03/28 13:25:14  mmaloney
- * Mods to support the new HRIT file format.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.lrgsmain;
 
 import java.io.File;
@@ -21,19 +21,20 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.DirectoryMonitorThread;
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
-import ilex.util.Logger;
 import lrgs.archive.MsgArchive;
 import lrgs.common.DcpMsg;
 import lritdcs.HritDcsFileReader;
 import lritdcs.HritException;
 
-public class HritFileInterface
-	extends DirectoryMonitorThread
-	implements LrgsInputInterface, FilenameFilter
+public class HritFileInterface extends DirectoryMonitorThread implements LrgsInputInterface, FilenameFilter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private int slot = -1;
 	private String module = "HritFile";
 	private int statusCode = LrgsInputInterface.DL_DISABLED;
@@ -49,10 +50,10 @@ public class HritFileInterface
 	private int dataSrcId = -1;
 	private boolean enabled = false;
 	private boolean ccsdsHeaderPresent = true;
-	
+
 	public static final char FILE_HEADER_DOMAIN6 = '6'; // Means CCSDS Header is present
 	public static final char FILE_HEADER_NONE = 'N';    // Means no CCSDS Header
-	
+
 	private class RetryEntry
 	{
 		public RetryEntry(String path)
@@ -104,22 +105,22 @@ public class HritFileInterface
 	@Override
 	public void initLrgsInput() throws LrgsInputException
 	{
-		Logger.instance().info(module + " initializing.");
+		log.info("initializing.");
 		statusCode = DL_INIT;
 		status = "Init";
-		
+
 		// Get initial configuration
 		getMyConfig();
-		
+
 		// Start the DirectoryMonitorThread. It will start scanning.
 		start();
 	}
-	
+
 	private void getMyConfig()
 	{
-		Logger.instance().debug1(module + " resetting configuration.");
+		log.debug("resetting configuration.");
 		LrgsConfig cfg = LrgsConfig.instance();
-		
+
 		fnPrefix = cfg.hritFilePrefix;
 		if (fnPrefix != null && fnPrefix.trim().length() == 0)
 			fnPrefix = null;
@@ -140,7 +141,7 @@ public class HritFileInterface
 		}
 		this.timeoutSec = cfg.hritTimeoutSec;
 		this.fileMaxAgeSec = cfg.hritFileMaxAgeSec;
-		
+
 		this.emptyDirectories();
 		s = cfg.hritInputDir;
 		if (s == null || s.trim().length() == 0)
@@ -156,7 +157,7 @@ public class HritFileInterface
 		}
 		enableLrgsInput(cfg.hritFileEnabled);
 		this.ccsdsHeaderPresent = cfg.lritHeaderType == FILE_HEADER_DOMAIN6;
-		
+
 		lastConfigMsec = System.currentTimeMillis();
 	}
 
@@ -174,7 +175,7 @@ public class HritFileInterface
 	{
 		if (this.enabled == enabled)
 			return;
-		
+
 		this.enabled = enabled;
 		status = enabled ? "Running" : "Disabled";
 
@@ -214,14 +215,14 @@ public class HritFileInterface
 	{
 		if (statusCode == DL_TIMEOUT)
 		{
-			Logger.instance().info(module + " Timeout Recovery. Receiving data again.");
+			log.info(" Timeout Recovery. Receiving data again.");
 			statusCode = DL_ACTIVE;
 			status = "Running";
 		}
 		if (statusCode == DL_DISABLED)
 			// Finished scan will pause until enabled or until shutdown.
 			finishedScan();
-		
+
 		RetryEntry retryEntry = retryList.get(file.getPath());
 		if (retryEntry != null
 		 && System.currentTimeMillis() - retryEntry.lastTried < 10000L)
@@ -229,16 +230,16 @@ public class HritFileInterface
 
 		if (System.currentTimeMillis() - file.lastModified() > (fileMaxAgeSec*1000L))
 		{
-			Logger.instance().info(module + " discarding file '" + file.getPath() 
-				+ "' because it's too old. Last modified on " + new Date(file.lastModified()));
+			log.info("discarding file '{}' because it's too old. Last modified on {}",
+					 file.getPath(), new Date(file.lastModified()));
 			finishFile(file);
 			return;
 		}
-	
-		Logger.instance().debug1(module + " processing file '" + file.getPath() + "'");
-		
+
+		log.debug("processing file '{}'", file.getPath());
+
 		HritDcsFileReader reader = new HritDcsFileReader(file.getPath(), ccsdsHeaderPresent);
-		
+
 		try
 		{
 			reader.load();
@@ -253,8 +254,8 @@ public class HritFileInterface
 			finishFile(file);
 		}
 		catch(IOException ex)
-		{			
-			Logger.instance().warning(module + " I/O Error reading file '" + file.getPath() + "': " + ex);
+		{
+			log.atError().setCause(ex).log("I/O Error reading file '{}'", file.getPath());
 			finishFile(file);
 		}
 		catch (HritException ex)
@@ -263,26 +264,24 @@ public class HritFileInterface
 			{
 				if (System.currentTimeMillis() - file.lastModified() > 60000L)
 				{
-					Logger.instance().warning(module + " Incomplete file '" + file.getPath() 
-						+ "': " + ex + " -- has not changed in >60 sec.");
+					log.warn(" Incomplete file '{}' -- has not changed in >60 sec.", file.getPath());
 					finishFile(file);
 				}
 				else
 				{
-					Logger.instance().warning(module + " Incomplete file '" + file.getPath() 
-					+ "': " + ex + " -- will ignore for 10 sec.");
+					log.warn("Incomplete file '{}' -- will ignore for 10 sec.", file.getPath());
 					if (retryEntry == null)
 						retryList.put(file.getPath(), new RetryEntry(file.getPath()));
 				}
 			}
 			else
 			{
-				Logger.instance().warning(module + " Invalid file '" + file.getPath() + "': " + ex);
+				log.warn("Invalid file '{}'", file.getPath());
 				finishFile(file);
 			}
 		}
 	}
-	
+
 	private void finishFile(File file)
 	{
 		retryList.remove(file.getPath());
@@ -293,16 +292,16 @@ public class HritFileInterface
 				FileUtil.moveFile(file, new File(doneDir, file.getName()));
 				return;
 			}
-			catch(IOException ex2)
+			catch(IOException ex)
 			{
-				Logger.instance().warning(module + " Cannot move file '"
-					+ file.getPath() + "' to directory '" + doneDir.getPath() + "': " 
-					+ ex2);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Cannot move file '{}' to directory '{}'", file.getPath(), doneDir.getPath());
 			}
 		}
 		if (!file.delete())
 		{
-			Logger.instance().warning(module + " Cannot delete file '" + file.getPath() + "'");
+			log.warn("Cannot delete file '{}'", file.getPath());
 			retryList.put(file.getPath(), new RetryEntry(file.getPath()));
 		}
 	}
@@ -310,7 +309,7 @@ public class HritFileInterface
 	@Override
 	protected void finishedScan()
 	{
-		Logger.instance().debug1(module + " finishedScan");
+		log.debug("finishedScan");
 		if (lastConfigMsec < LrgsConfig.instance().getLastLoadTime())
 			getMyConfig();
 
@@ -319,22 +318,22 @@ public class HritFileInterface
 		{
 			statusCode = DL_TIMEOUT;
 			status = "Timeout";
-			Logger.instance().warning(module + " TIMEOUT: No file received in > " + timeoutSec + " sec.");
+			log.warn(" TIMEOUT: No file received in > {} sec.", timeoutSec);
 		}
-		
+
 		// Handle periods of being disabled -- this shuts down the file scanning.
 		while(!isShutdown && !enabled && !LrgsConfig.instance().hritFileEnabled)
 			try { sleep(2000L); }
 			catch(InterruptedException ex) {}
 	}
-	
+
 	public void run()
 	{
 		// Handle initial period before we are enabled. Don't start file scanning until that happens.
 		while(!LrgsConfig.instance().hritFileEnabled)
 			try { sleep(2000L); }
 			catch(InterruptedException ex) {}
-		
+
 		// Start the file scanner
 		super.run();
 	}
@@ -348,12 +347,11 @@ public class HritFileInterface
 	@Override
 	public boolean accept(File dir, String name)
 	{
-Logger.instance().info(module + " " + name);
 		if (fnPrefix != null && !name.startsWith(fnPrefix))
 			return false;
 		if (fnSuffix != null && !name.endsWith(fnSuffix))
 			return false;
-		
+
 		return true;
 	}
 }

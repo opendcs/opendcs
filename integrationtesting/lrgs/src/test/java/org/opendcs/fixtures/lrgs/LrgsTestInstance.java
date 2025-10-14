@@ -68,7 +68,7 @@ public class LrgsTestInstance
         queueLogger = new QueueLogger("");
         fileLogger = new FileLogger("lrgs", new File(lrgsHome,"lrgslog").getAbsolutePath(), 200*1024*1024);
         SystemExit exit = new SystemExit();
-        lrgs = new LrgsMain(queueLogger,"-", configFile.getAbsolutePath(), fileLogger);
+        lrgs = new LrgsMain("-", configFile.getAbsolutePath());
 
         lrgsThread = new Thread(lrgs);
         exit.execute(() -> lrgsThread.start());

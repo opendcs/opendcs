@@ -13,7 +13,6 @@ import java.util.TimeZone;
 import java.util.zip.GZIPOutputStream;
 import java.text.SimpleDateFormat;
 
-import ilex.util.Logger;
 import lrgs.common.ArchiveException;
 import lrgs.common.LrgsErrorCode;
 import lrgs.db.DataSource;
@@ -22,7 +21,9 @@ import lrgs.db.Outage;
 
 /**
 This class handles the 'Outage' command on the LRGS server.
+@deprecated Outage system is no longer maintained.
 */
+@Deprecated
 public class CmdGetOutages extends CmdAdminCmd
 {
 	String args = "";
@@ -61,7 +62,7 @@ public class CmdGetOutages extends CmdAdminCmd
 	public int executeAdmin(LddsThread ldds)
 		throws ArchiveException, IOException
 	{
-Logger.instance().info("executing GetOutages " + args);
+
 		StringTokenizer st = new StringTokenizer(args);
 
 		Date start = null;
@@ -73,9 +74,6 @@ Logger.instance().info("executing GetOutages " + args);
 			{
 				String msg = "Bad outage request start time '" + t 
 					+ "': Required format is '" + dateSpec + "'" + ex;
-System.err.println(msg);
-ex.printStackTrace();
-				ldds.warning(msg);
 				throw new 
 					LddsRequestException(msg, LrgsErrorCode.DBADSINCE, false);
 			}
@@ -90,9 +88,6 @@ ex.printStackTrace();
 			{
 				String msg = "Bad outage request end time '" + t 
 					+ "': Required format is '" + dateSpec + "'" + ex;
-System.err.println(msg);
-ex.printStackTrace();
-				ldds.warning(msg);
 				throw new 
 					LddsRequestException(msg, LrgsErrorCode.DBADUNTIL, false);
 			}
@@ -110,7 +105,6 @@ ex.printStackTrace();
 			if (ds != null)
 				otg.setDataSourceName(ds.getDataSourceName());
 		}
-Logger.instance().info("Retrieved " + outages.size() + " outages.");
 
 		// Use OutageXmlParser to format them in a response & return
 		byte xmldata[] = ldds.getOutageXmlParser().outages2xml(outages);

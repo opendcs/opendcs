@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.nledit;
 
 import java.awt.*;
@@ -5,13 +20,12 @@ import java.awt.event.*;
 import java.util.ResourceBundle;
 
 import javax.swing.*;
-import javax.swing.border.*;
 
 public class NetlistEditFrame_AboutBox extends JDialog implements ActionListener {
 
-	private static ResourceBundle labels = 
+	private static ResourceBundle labels =
 		NetlistEditor.getLabels();
-	private static ResourceBundle genericLabels = 
+	private static ResourceBundle genericLabels =
 		NetlistEditor.getGenericLabels();
     JPanel panel1 = new JPanel();
     JPanel panel2 = new JPanel();
@@ -32,24 +46,21 @@ public class NetlistEditFrame_AboutBox extends JDialog implements ActionListener
     String version = "";
     String copyright = "";
     String comments = "";
-    public NetlistEditFrame_AboutBox(Frame parent) {
+    public NetlistEditFrame_AboutBox(Frame parent)
+    {
         super(parent);
         product = labels.getString("NetlistEditFrame.frameTitle");
         version = "LRGS 3.2";
         copyright = "";
-        comments = "See www.covesw.com for more information";
+        comments = "See https://opendcs.org for more information";
         enableEvents(AWTEvent.WINDOW_EVENT_MASK);
-        try {
-            jbInit();
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-        }
+        jbInit();
         pack();
     }
     /**Component initialization*/
-    private void jbInit() throws Exception  {
-        //imageLabel.setIcon(new ImageIcon(NetlistEditFrame_AboutBox.class.getResource("[Your Image]")));
+    private void jbInit()
+    {
+
         this.setTitle(genericLabels.getString("about"));
         setResizable(false);
         panel1.setLayout(borderLayout1);

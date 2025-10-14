@@ -1,5 +1,23 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.rtstat;
 import javax.swing.SwingUtilities;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import javax.swing.JDialog;
 import javax.swing.JPanel;
@@ -19,16 +37,13 @@ import lrgs.statusxml.TopLevelXio;
 import lrgs.ldds.*;
 import ilex.gui.*;
 import ilex.net.BasicClient;
-import java.awt.event.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.rmi.UnknownHostException;
 
-public class LrgsConnectionTest{
-
-	private static final long serialVersionUID = 1L;
-
-
+public class LrgsConnectionTest
+{
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JPanel detailPanel = null;
 
 	private JLabel hostnameLabel = null;
@@ -46,32 +61,32 @@ public class LrgsConnectionTest{
 	private JLabel userLabel = null;
 
 	private JTextField userField = null;
-	
-	
+
+
 	//private object containing the client to connect to.
 	private LddsClient myClient=null;  //  @jve:decl-index=0:
-	
+
 	private BasicClient myDrgsClient=null;  //  @jve:decl-index=0:
-	
+
 	//private string holding the user name
 	private String myUser;  //  @jve:decl-index=0:
-	
+
 	//private string holding the user's password
 	private String myPassword;  //  @jve:decl-index=0:
-	
+
 	//private frame passed in
 	private JFrame myParent=null;
-	
+
 	private JDialog myDialogParent=null;
-	
+
 	private JobDialog myDialog = null;
-	
+
 	private Thread backgroundJob = null;  //  @jve:decl-index=0:
 
 	/**
-	 * This method initializes detailPanel	
-	 * 	
-	 * @return javax.swing.JPanel	
+	 * This method initializes detailPanel
+	 *
+	 * @return javax.swing.JPanel
 	 */
 	private JPanel getDetailPanel() {
 		if (detailPanel == null) {
@@ -145,9 +160,9 @@ public class LrgsConnectionTest{
 	}
 
 	/**
-	 * This method initializes hostnameText	
-	 * 	
-	 * @return javax.swing.JTextField	
+	 * This method initializes hostnameText
+	 *
+	 * @return javax.swing.JTextField
 	 */
 	private JTextField getHostnameText() {
 		if (hostnameText == null) {
@@ -159,9 +174,9 @@ public class LrgsConnectionTest{
 	}
 
 	/**
-	 * This method initializes ipAddressField	
-	 * 	
-	 * @return javax.swing.JTextField	
+	 * This method initializes ipAddressField
+	 *
+	 * @return javax.swing.JTextField
 	 */
 	private JTextField getIpAddressField() {
 		if (ipAddressField == null) {
@@ -173,9 +188,9 @@ public class LrgsConnectionTest{
 	}
 
 	/**
-	 * This method initializes portField	
-	 * 	
-	 * @return javax.swing.JTextField	
+	 * This method initializes portField
+	 *
+	 * @return javax.swing.JTextField
 	 */
 	private JTextField getPortField() {
 		if (portField == null) {
@@ -187,9 +202,9 @@ public class LrgsConnectionTest{
 	}
 
 	/**
-	 * This method initializes userField	
-	 * 	
-	 * @return javax.swing.JTextField	
+	 * This method initializes userField
+	 *
+	 * @return javax.swing.JTextField
 	 */
 	private JTextField getUserField() {
 		if (userField == null) {
@@ -209,7 +224,7 @@ public class LrgsConnectionTest{
 		}
 		//this.setVisible(false);
 	}
-	
+
 	private void drgsClosePressed()
 	{
 		if(myDrgsClient.isConnected())
@@ -226,10 +241,10 @@ public class LrgsConnectionTest{
 			public void run() {
 				//LddsClient tmpclient = new LddsClient("www.ilexengineering.com");
 				//LrgsConnectionTest thisClass = new LrgsConnectionTest(new JFrame(),tmpclient,"ilex",null);
-				
+
 				BasicClient drgsClient = new BasicClient("dev4",1234);
 				LrgsConnectionTest thisClass = new LrgsConnectionTest(new JFrame(),drgsClient);
-				
+
 				thisClass.startConnect();
 			}
 		});
@@ -240,49 +255,49 @@ public class LrgsConnectionTest{
 		myParent = parent;
 		myDialog = new JobDialog(parent, "Testing Connection With " + tmp.getHost(),true);
 		myDialog.setCanCancel(true);
-		
-		
+
+
 		setUp(tmp,name,password);
 	}
-	
+
 	public LrgsConnectionTest(JDialog parent, LddsClient tmp, String name, String password)
 	{
 		myDialogParent = parent;
 		myDialog = new JobDialog(parent, "Testing Connection With " + tmp.getHost(),true);
 		myDialog.setCanCancel(true);
-		
-		
+
+
 		setUp(tmp,name,password);
 	}
-	
+
 	public LrgsConnectionTest(JFrame parent, BasicClient tmp)
 	{
 		myParent = parent;
 		myDialog = new JobDialog(parent, "Testing DRGS Connection", true);
 		myDialog.setCanCancel(true);
-		
-		
+
+
 		setUpDrgs(tmp);
 	}
-	
+
 	public LrgsConnectionTest(JDialog parent, BasicClient tmp)
 	{
 		myDialogParent = parent;
 		myDialog = new JobDialog(parent, "Testing DRGS Connection", true);
 		myDialog.setCanCancel(true);
-		
-		
+
+
 		setUpDrgs(tmp);
 	}
-	
-	private void setUpDrgs(BasicClient tmp) 
+
+	private void setUpDrgs(BasicClient tmp)
 	{
 		myDrgsClient = tmp;
-		
+
 		//Fill fields to be put into the north panel of the job dialog.
 		fillDrgsFields();
 		myDialog.setNorthPanel(getDetailPanel());
-		
+
 		backgroundJob =
 			new Thread()
 			{
@@ -300,17 +315,17 @@ public class LrgsConnectionTest{
 						myDialog.finishedJob();
 						return;
 					}
-					
+
 					if(myDrgsClient.isConnected())
 					{
 						myDialog.addToProgress("Connection Successful");
-						
+
 						myDialog.addToProgress("Begining Retrieval of Messages");
-					
+
 						getIpAddressField().setText(myDrgsClient.getSocket().getInetAddress().getHostAddress());
-						
+
 						InputStream mystream = myDrgsClient.getInputStream();
-						
+
 						for(int pos=0; pos<1000&&myDrgsClient.isConnected();pos++)
 						{
 							String feed="";
@@ -327,21 +342,21 @@ public class LrgsConnectionTest{
 				}
 			};
 }
-	
+
 	/**
 	 * This is the default constructor
 	 */
 	private void setUp(LddsClient tmp, String name, String password) {
-		
+
 		myClient = tmp;
 		myUser = name;
 		myPassword = password;
-		
-		
+
+
 		//Fill fields to be put into the north panel of the job dialog.
 		fillFields();
 		myDialog.setNorthPanel(getDetailPanel());
-		
+
 		backgroundJob =
 			new Thread()
 			{
@@ -388,32 +403,32 @@ public class LrgsConnectionTest{
 								return;
 							}
 						}
-							
+
 					}
-					
+
 					//Connection established, time to get messages
-					
+
 					if(myClient.isConnected())
 					{
 						//updates the translated IP address once connected
 						getIpAddressField().setText(myClient.getSocket().getInetAddress().getHostAddress());
-						
-						
+
+
 						SearchCriteria searchCriteria = new SearchCriteria();
 						searchCriteria.setLrgsSince("now - 1 hour");
 						searchCriteria.setLrgsUntil("now");
 						try{myClient.sendSearchCrit(searchCriteria);}catch(Exception e){}
-						
+
 						//this.update(this.getGraphics());
 						myDialog.addToProgress("Retrieving Status");
-						
+
 						byte[] status;
 						TopLevelXio statusParser=null;
 						LrgsStatusSnapshotExt lsse=null;
 						try { statusParser = new TopLevelXio(); }
 						catch(Exception ex)
 						{
-							System.err.println("Cannot construct XML parser: " + ex);
+							log.atError().setCause(ex).log("Cannot construct XML parser.");
 						}
 						try{status = myClient.getStatus();}
 						catch(Exception e)
@@ -440,11 +455,11 @@ public class LrgsConnectionTest{
 							myDialog.finishedJob();
 							return;
 						}
-						
-						
-						
+
+
+
 						myDialog.addToProgress("Retreiving messages");
-						
+
 						for(int pos=0;pos<100;pos++)
 						{
 							//this.update(this.getGraphics());
@@ -455,30 +470,30 @@ public class LrgsConnectionTest{
 								myDialog.finishedJob();
 								return;
 							}
-							
+
 						}
 						myDialog.addToProgress("Finished Retreiving");
 						myDialog.addToProgress("All Tests Successful");
 						myDialog.finishedJob();
 					}
-					
+
 				}
 			};
 	}
-	
-	
-	
 
-	
+
+
+
+
 	/**
 	 * This method initializes this
-	 * 
+	 *
 	 */
 	public void startConnect() {
 		backgroundJob.start();
 		launch(myDialog);
 	}
-	
+
 	private void launch(JDialog dlg)
 	{
 		Dimension frameSize;
@@ -487,7 +502,7 @@ public class LrgsConnectionTest{
 		{
 			frameSize = myParent.getSize();
 			frameLoc = myParent.getLocation();
-			
+
 		}
 		else
 		{
@@ -499,10 +514,10 @@ public class LrgsConnectionTest{
 		if (xo < 0) xo = 0;
 		int yo = (frameSize.height - dlgSize.height) / 2;
 		if (yo < 0) yo = 0;
-		
+
 		dlg.setLocation(frameLoc.x + xo, frameLoc.y + yo);
 		dlg.setVisible(true);
-		
+
 		if(myClient!=null)
 		{
 			closePressed();
@@ -512,8 +527,8 @@ public class LrgsConnectionTest{
 			drgsClosePressed();
 		}
 	}
-	
-	
+
+
 	/**
 	 * This method fills the fields with the client information
 	 */
@@ -532,5 +547,5 @@ public class LrgsConnectionTest{
 		getHostnameText().setText(myDrgsClient.getHost());
 		getPortField().setText(String.valueOf(myDrgsClient.getPort()));
 	}
-	
+
 }  //  @jve:decl-index=0:visual-constraint="10,10"

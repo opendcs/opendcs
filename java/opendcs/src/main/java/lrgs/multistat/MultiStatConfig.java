@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.multistat;
 
 import java.io.File;
@@ -6,8 +21,10 @@ import java.io.IOException;
 
 import java.util.Properties;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 
 import lritdcs.LritDcsConfig;
@@ -19,6 +36,7 @@ import lritdcs.LritDcsConfig;
 */
 public class MultiStatConfig
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** display name of the 1st LRGS */
 	public String Lrgs1DisplayName = "";
 
@@ -70,12 +88,8 @@ public class MultiStatConfig
 	public String Lrgs4UserName = null;
 	public String Lrgs4Password = "N";
 
-	
-	
-	
-//	/** The base URL of the help dir. */
-//	public String HelpUrlBase;
-//
+
+
 	/** The sound file to play when an alarm happens. */
 	public String soundFile = "alarm.wav";
 
@@ -85,7 +99,7 @@ public class MultiStatConfig
 	/** The local path to the base URL for constructing error files, etc. */
 	public String alarmInfoBasePath;
 
-	/** The initial 'Mute' checkbox setting. */	
+	/** The initial 'Mute' checkbox setting. */
 	public boolean mute = false;
 
 	/** The default operator name. */
@@ -117,27 +131,6 @@ public class MultiStatConfig
 
     private MultiStatConfig()
     {
-//		Lrgs1DisplayName = "CDADATA";
-//		Lrgs1HostName = "192.168.101.174";
-//		Lrgs1Port = 16003;
-//		Lrgs1UserName = "wcdas";
-//		Lrgs1Password = "Y";
-//		Lrgs2DisplayName = "CDABACKUP";
-//		Lrgs2HostName = "192.168.101.189";
-//		Lrgs2Port = 16003;
-//		Lrgs2UserName = "wcdas";
-//		Lrgs2Password = "N";
-//		Lrgs3DisplayName = "NLRGS1";
-//		Lrgs3HostName = "nlrgs1.noaa.gov";
-//		Lrgs3Port = 16003;
-//		Lrgs3UserName = "wcdas";
-//		Lrgs3Password = "N";
-//		Lrgs4HostName = "nlrgs2.noaa.gov";
-//		Lrgs4Port = 16003;
-//		Lrgs4UserName = "wcdas";
-//		Lrgs4Password = "N";
-		
-//		HelpUrlBase = "";
 		adminLrgs = "CDADATA";
 
 		StringBuffer sb = new StringBuffer(EnvExpander.expand("$DCSTOOL_HOME"));
@@ -145,32 +138,30 @@ public class MultiStatConfig
 			if (sb.charAt(i) == '\\')
 				sb.setCharAt(i, '/');
 		alarmInfoBasePath = sb.toString() + "/doc/";
-		alarmInfoBaseUrl = "file://" 
+		alarmInfoBaseUrl = "file://"
 			+ (alarmInfoBasePath.startsWith("/") ? "" : "/")
 			+ alarmInfoBasePath;
-		Logger.instance().debug1("Alarm files locally stored in '"
-			+ alarmInfoBasePath + "' local URL is '" + alarmInfoBaseUrl + "'");
+		log.debug("Alarm files locally stored in '{}' local URL is '{}'", alarmInfoBasePath, alarmInfoBaseUrl);
 
 		Properties props = System.getProperties();
 		props.setProperty("LRITDCS_HOME", props.getProperty("user.dir"));
-		LritDcsConfig.exitOnLoadError = false;		
-		lastLoadTime = 1L;		
+		LritDcsConfig.exitOnLoadError = false;
+		lastLoadTime = 1L;
     }
 
 	public void setConfigFileName(String cfgName)
 	{
 		this.cfgName = cfgName;
 		this.cfgFile = new File(cfgName);
-		Logger.instance().info("Config file set to '" + cfgFile.getPath() + "'");
+		log.info("Config file set to '{}'", cfgFile.getPath());
 	}
 
 	/** Loads configuration from specified config file. */
 	public void loadConfig()
 		throws IOException
 	{
-//		System.out.println("Loading configuration file '" + cfgFile.getPath() + "'");
 		clearConfig();
-		Logger.instance().info("Loading configuration file '" + cfgFile.getPath() + "'");
+		log.info("Loading configuration file '{}'", cfgFile.getPath());
 		lastLoadTime = System.currentTimeMillis();
 		Properties props = new Properties();
 		FileInputStream is = new FileInputStream(cfgFile);
@@ -183,7 +174,7 @@ public class MultiStatConfig
 		if (!alarmInfoBasePath.endsWith("/"))
 			alarmInfoBasePath = alarmInfoBasePath + "/";
 	}
-	
+
 	private void clearConfig()
 	{
 		Lrgs1DisplayName = "";
@@ -214,7 +205,7 @@ public class MultiStatConfig
 			if (sb.charAt(i) == '\\')
 				sb.setCharAt(i, '/');
 		alarmInfoBasePath = sb.toString() + "/doc/";
-		alarmInfoBaseUrl = "file://" 
+		alarmInfoBaseUrl = "file://"
 			+ (alarmInfoBasePath.startsWith("/") ? "" : "/")
 			+ alarmInfoBasePath;
 
@@ -225,7 +216,7 @@ public class MultiStatConfig
 	public long getLastLoadTime() { return lastLoadTime; }
 
 	/**
-	 * Checks to see if config file has changed, and if so, reloads it. 
+	 * Checks to see if config file has changed, and if so, reloads it.
 	 */
 	public boolean checkConfig()
 	{
@@ -238,8 +229,7 @@ public class MultiStatConfig
 			}
 			catch(IOException ex)
 			{
-				Logger.instance().failure("Cannot load config file '" 
-					+ cfgFile.getPath() + "': " + ex);
+				log.atError().setCause(ex).log("Cannot load config file '{}'", cfgFile.getPath());
 			}
 		}
 		return false;
