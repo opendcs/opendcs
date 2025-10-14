@@ -1,5 +1,17 @@
 /*
-* $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.rtstat;
 
@@ -8,16 +20,18 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.util.DecodesSettings;
 
 import ilex.cmdline.*;
-import ilex.util.Logger;
 import lrgs.db.LrgsConstants;
 import ilex.util.EnvExpander;
 
-public class RtStatCmdLineArgs
-	extends StdAppSettings
+public class RtStatCmdLineArgs extends StdAppSettings
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	// Add DECODES-specific setting declarations here...
 	IntegerToken scan_arg;
 	private StringToken iconFileArg;
@@ -37,22 +51,22 @@ public class RtStatCmdLineArgs
             TokenOptions.optSwitch, 2);
 		addToken(scan_arg);
 		iconFileArg = new StringToken(
-			"i", "Icon for Web Report", "", TokenOptions.optSwitch, 
+			"i", "Icon for Web Report", "", TokenOptions.optSwitch,
 			"file://$DECODES_INSTALL_DIR/icons/satdish.jpg");
-		hostArg = new StringToken( "h", "host name for initial connection", 
+		hostArg = new StringToken( "h", "host name for initial connection",
 			"", TokenOptions.optSwitch, "");
 		addToken(hostArg);
-		userArg = new StringToken( "u", "user name for initial connection", 
+		userArg = new StringToken( "u", "user name for initial connection",
 			"", TokenOptions.optSwitch, "");
 		addToken(userArg);
-		headerFileArg = new StringToken("H", "Header for HTML screen", 
+		headerFileArg = new StringToken("H", "Header for HTML screen",
 			"", TokenOptions.optSwitch, "");
 		addToken(headerFileArg);
-		lrgsMonUrlArg = new StringToken( "M", 
-			"URL pointing to LRGS Monitor Web Application", 
+		lrgsMonUrlArg = new StringToken( "M",
+			"URL pointing to LRGS Monitor Web Application",
 			"", TokenOptions.optSwitch, "");
 		addToken(lrgsMonUrlArg);
-		logFileArg = new StringToken( "l", "logfile name", 
+		logFileArg = new StringToken( "l", "logfile name",
 			"", TokenOptions.optSwitch, "");
 		addToken(logFileArg);
 		passwordArg = new StringToken("pw", "Password for initial connection",
@@ -68,9 +82,9 @@ public class RtStatCmdLineArgs
 	*/
 	public void parseArgs(String args[])
 	{
-		try 
-		{ 
-			super.parseArgs(args); 
+		try
+		{
+			super.parseArgs(args);
 			//New Code
 			//Load the decodes.properties
 			String propFile;
@@ -81,7 +95,7 @@ public class RtStatCmdLineArgs
 				String installDir = System.getProperty("DECODES_INSTALL_DIR");
 				if (installDir != null)
 				{
-					propFile = 
+					propFile =
 						installDir + File.separator + "decodes.properties";
 				}
 			}
@@ -89,36 +103,24 @@ public class RtStatCmdLineArgs
 			if (!settings.isLoaded())
 			{
 				Properties props = new Properties();
-				try
+				try (FileInputStream fis = new FileInputStream(propFile))
 				{
-					FileInputStream fis = new FileInputStream(propFile);
 					props.load(fis);
-					fis.close();
 				}
-				catch(IOException e)
+				catch(IOException ex)
 				{
-					Logger.instance().log(Logger.E_WARNING,
-					"RtStatCmdLineArgs:parseArgs " +
-					"Cannot open DECODES Properties File '"+propFile+"': "+e);
+					log.atWarn()
+					   .setCause(ex)
+					   .log("RtStatCmdLineArgs:parseArgs Cannot open DECODES Properties File '{}'", propFile);
 				}
 				settings.loadFromProperties(props);
 			}
 			//End new code
 		}
-		catch (IllegalArgumentException ex) 
+		catch (IllegalArgumentException ex)
 		{
-			System.err.println("Illegal arguments ... program exiting.");
+			log.atError().setCause(ex).log("Illegal arguments ... program exiting.");
 			System.exit(1);
-		}
-		// Set debug level.
-		int dl = getDebugLevel();
-		if (dl > 0)
-		{
-			int dv = 
-				dl == 1 ? Logger.E_DEBUG1 :
-				dl == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3;
-			// Debug info only goes to file, never to clients.
-			Logger.instance().setMinLogPriority(dv);
 		}
 	}
 
@@ -148,7 +150,7 @@ public class RtStatCmdLineArgs
 		String x = hostArg.getValue();
 		return x.length() > 0 ? x : null;
 	}
-	
+
 	public String getUserName()
 	{
 		String x = userArg.getValue();

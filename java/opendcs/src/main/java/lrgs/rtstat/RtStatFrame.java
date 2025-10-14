@@ -1,12 +1,24 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.rtstat;
 
 import java.awt.*;
 import java.awt.event.*;
 
 import javax.net.SocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManagerFactory;
 import javax.swing.*;
 import javax.swing.event.*;
 
@@ -15,11 +27,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.ResourceBundle;
@@ -30,6 +37,8 @@ import org.opendcs.gui.GuiConstants;
 import org.opendcs.gui.PasswordWithShow;
 import org.opendcs.gui.x509.X509CertificateVerifierDialog;
 import org.opendcs.tls.TlsMode;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 
@@ -40,7 +49,6 @@ import ilex.gui.JobDialog;
 import ilex.gui.LoginDialog;
 import ilex.util.AsciiUtil;
 import ilex.util.AuthException;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import ilex.xml.DomHelper;
@@ -61,11 +69,9 @@ import ilex.util.LoadResourceBundle;
 /**
 Main frame for the LRGS Real-Time Status Application.
 */
-public class RtStatFrame
-    extends TopFrame
-    implements DdsClientIf, HyperlinkListener
+public class RtStatFrame extends TopFrame implements DdsClientIf, HyperlinkListener
 {
-    private final static org.slf4j.Logger log = LoggerFactory.getLogger(RtStatFrame.class);
+    private final static Logger log = OpenDcsLoggerFactory.getLogger();
     private static ResourceBundle labels =
         RtStat.getLabels();
     private static ResourceBundle genericLabels =
@@ -127,14 +133,8 @@ public class RtStatFrame
     public RtStatFrame(int scanPeriod, String iconFile, String headerFile)
     {
         exitOnClose = true;
-        try
-        {
-            jbInit();
-        }
-        catch (Exception e)
-        {
-            log.error("RtStatFrame: ",e);
-        }
+
+        jbInit();
         isPaused = false;
         client = null;
         passwordCheck.setSelected(false);
@@ -176,7 +176,6 @@ public class RtStatFrame
                 }
             });
 
-        //loadConnectionsField(hostCombo, connectionList, connectedHostName);
         netlistDlg = null;
         rtStatPanel.htmlPanel.addHyperlinkListener(this);
 
@@ -196,7 +195,6 @@ public class RtStatFrame
 
     /** Initializes GUI components. */
     private void jbInit()
-        throws Exception
     {
         boolean canConfig = true;
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -473,9 +471,10 @@ public class RtStatFrame
         try
         {
             Thread.sleep(millis);
-        } catch(InterruptedException ex)
+        }
+        catch(InterruptedException ex)
         {
-            log.error("Error during pause({})",millis,ex);
+            log.atError().setCause(ex).log("Error during pause({} ms)", millis);
         }
     }
     private void closeConnection()
@@ -485,9 +484,10 @@ public class RtStatFrame
             try
             {
               client.sendGoodbye();
-            } catch(Exception ex)
+            }
+            catch(Exception ex)
             {
-                log.error("Error closing connection",ex);
+                log.atError().setCause(ex).log("Error closing connection");
             }
             client.disconnect();
         }
@@ -511,11 +511,10 @@ public class RtStatFrame
         }
         catch(final Exception ex)
         {
-            log.error("Error getting status",ex);
+            log.atError().setCause(ex).log("Error getting status");
             client.disconnect();
             client = null;
             String msg = "An error occurred in client.getStatus(). ";
-            log.error(msg);
             rtStatPanel.updateStatus("<h1>"+msg+" "+ex.getMessage()+"</h1>");
             rtStatPanel.invalidate();
             return null;
@@ -594,12 +593,13 @@ public class RtStatFrame
         Properties props = new Properties();
         PropertiesUtil.storeInProps(lrgsConfig, props, null);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try{
-            props.store(baos, "LRGS Configuration Modified on "+new Date());
-        }
-        catch(IOException ex)
+        try
         {
-            throw new AuthException(labels.getString("RtStatFrame.constructConfigArrayErr" +ex));
+            props.store(baos, "LRGS Configuration Modified on " + new Date());
+        }
+        catch (IOException ex)
+        {
+            throw new AuthException(labels.getString("RtStatFrame.constructConfigArrayErr"), ex);
         }
         byte cfgData[] = baos.toByteArray();
         client.installConfig("lrgs", cfgData);
@@ -616,7 +616,7 @@ public class RtStatFrame
         {
             settings.storeToXml(baos);
         }
-        catch(IOException ex)
+        catch (IOException ex)
         {
             throw new AuthException(
                 labels.getString("RtStatFrame.constructddsConfigArrayErr") + ex.getLocalizedMessage(),
@@ -638,7 +638,7 @@ public class RtStatFrame
         {
             settings.storeToXml(baos);
         }
-        catch(IOException ex)
+        catch (IOException ex)
         {
             throw new AuthException(
                 labels.getString("RtStatFrame.constructdrgsConfigArrayErr")    + ex.getLocalizedMessage(),
@@ -661,7 +661,7 @@ public class RtStatFrame
         {
             settings.storeToXml(baos);
         }
-        catch(IOException ex)
+        catch (IOException ex)
         {
             throw new AuthException(
                 labels.getString("RtStatFrame.constructdrgsConfigArrayErr")    + ex.getLocalizedMessage(),
@@ -695,9 +695,9 @@ public class RtStatFrame
         {
             String msg = LoadResourceBundle.sprintf(
                 labels.getString("RtStatFrame.cannotReadLrgsConfErr"),
-                host) + ex;
-            showError(msg);
-            throw new AuthException(msg);
+                host);
+            showError(msg + ex);
+            throw new AuthException(msg, ex);
         }
 
         try
@@ -744,7 +744,7 @@ public class RtStatFrame
             String msg = LoadResourceBundle.sprintf(
                     labels.getString("RtStatFrame.cannotReadNetworkDcpConfErr"),
                     host, ex);
-            Logger.instance().warning(msg);
+            log.atWarn().setCause(ex).log(msg);
         }
     }
 
@@ -769,9 +769,9 @@ public class RtStatFrame
         {
             String msg = LoadResourceBundle.sprintf(
                 labels.getString("RtStatFrame.cannotGetNlListErr"),
-                host) + ex;
-            showError(msg);
-            throw new AuthException(msg);
+                host);
+            showError(msg + ex);
+            throw new AuthException(msg, ex);
         }
     }
     /** from DdsClientIf interface */
@@ -791,13 +791,13 @@ public class RtStatFrame
         {
             return client.getConfig("netlist:" + listname);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             String msg = LoadResourceBundle.sprintf(
                     labels.getString("RtStatFrame.cannotGetNlErr"),
-                    host) + ex;
-            showError(msg);
-            throw new AuthException(msg);
+                    host);
+            showError(msg + ex);
+            throw new AuthException(msg, ex);
         }
     }
 
@@ -829,10 +829,10 @@ public class RtStatFrame
         {
             return client.getOutages(null, null);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             throw new AuthException(labels.getString(
-                    "RtStatFrame.cannotReadOutagesErr") + ex);
+                    "RtStatFrame.cannotReadOutagesErr"), ex);
         }
     }
 
@@ -871,7 +871,6 @@ public class RtStatFrame
     */
     public void showError( String msg )
     {
-        System.err.println(msg);
         JOptionPane.showMessageDialog(this,
             AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
     }
