@@ -123,19 +123,25 @@ public class TimeSeries
     }
 
     private static int elementsInTimeWindow(CTimeSeries cts, Date start, Date end) throws NoConversionException{
-        if(start == null || end == null){
+        if(start == null || end == null)
+        {
             return cts.size();
         }
+        
         int elementCount = 0;
         int index = cts.findNextIdx(start);
         TimedVariable tv = cts.sampleAt(index);
-        while(tv != null){
+
+        while(tv != null)
+        {
             Date time  = tv.getTime();
-            if(time.compareTo(end) <= 0){
+            if(time.compareTo(end) <= 0)
+            {
                 elementCount++;
                 tv = cts.sampleAt(index+elementCount);
             }
-            else{
+            else
+            {
                 break;
             }
         }

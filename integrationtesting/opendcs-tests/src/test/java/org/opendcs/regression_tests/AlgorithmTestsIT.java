@@ -240,13 +240,19 @@ public class AlgorithmTestsIT extends AppTestBase
                 log.info("expected units: " + currExpect.getUnitsAbbr());
                 TSUtil.convertUnits(algoOutput, currExpect.getUnitsAbbr());
 
-                for (int i = 0; i<algoOutput.size(); i++){
-                    TimedVariable TVOutput = algoOutput.sampleAt(i);
-                    TimedVariable TVExpected = currExpect.findWithin(TVOutput.getTime(), 0);
-                    log.info("output time: "+TVOutput.getTime());
-                    log.info("output value  : "+TVOutput.getDoubleValue());
-                    log.info("expected value: "+TVExpected.getDoubleValue());
+                
+                if (log.isInfoEnabled()) 
+                {
+                    for (int i = 0; i<algoOutput.size(); i++)
+                    {
+                        TimedVariable TVOutput = algoOutput.sampleAt(i);
+                        TimedVariable TVExpected = currExpect.findWithin(TVOutput.getTime(), 0);
+                        log.info("output time: "+TVOutput.getTime());
+                        log.info("output value  : "+TVOutput.getDoubleValue());
+                        log.info("expected value: "+TVExpected.getDoubleValue());
+                    }
                 }
+
                 assertEquals(currExpect, algoOutput, "expected true", testComp.getValidStart(), testComp.getValidEnd());
             }
         });
