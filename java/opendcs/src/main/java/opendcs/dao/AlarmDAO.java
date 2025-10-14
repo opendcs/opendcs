@@ -1,52 +1,20 @@
 /*
- * $Id$
- * 
- * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log$
- * Revision 1.9  2019/10/13 19:33:25  mmaloney
- * Fix update statement that was missing where clause for alarm_group_id
- *
- * Revision 1.8  2019/08/27 20:15:19  mmaloney
- * Show null last update as "none".
- *
- * Revision 1.7  2019/08/26 20:51:04  mmaloney
- * bug fix in writeToCurrent
- *
- * Revision 1.6  2019/08/07 14:19:44  mmaloney
- * 6.6 RC04
- *
- * Revision 1.5  2019/07/02 13:50:32  mmaloney
- * 6.6RC04 First working Alarm Implementation
- *
- * Revision 1.4  2019/06/10 19:37:33  mmaloney
- * Added Screening I/O
- *
- * Revision 1.3  2019/05/10 18:35:25  mmaloney
- * dev
- *
- * Revision 1.2  2019/03/05 20:48:09  mmaloney
- * Support new table names for ALARM
- *
- * Revision 1.1  2019/03/05 14:53:02  mmaloney
- * Checked in partial implementation of Alarm classes.
- *
- * Revision 1.5  2018/03/23 20:12:19  mmaloney
- * Added 'Enabled' flag for process and file monitors.
- *
- * Revision 1.4  2017/05/17 20:36:40  mmaloney
- * First working version.
- *
- * Revision 1.3  2017/03/30 20:55:20  mmaloney
- * Alarm and Event monitoring capabilities for 6.4 added.
- *
- * Revision 1.2  2017/03/21 12:17:10  mmaloney
- * First working XML and SQL I/O.
- *
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package opendcs.dao;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import java.sql.ResultSet;
@@ -55,6 +23,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
@@ -82,6 +53,8 @@ import opendcs.dai.TimeSeriesDAI;
  */
 public class AlarmDAO extends DaoBase implements AlarmDAI
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	private static String module = "AlarmDAO";
 	private static String grpColumns = "ALARM_GROUP_ID, ALARM_GROUP_NAME, "
 		+ "LAST_MODIFIED";
@@ -92,7 +65,7 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 	private static String alarmEventTable = "ALARM_EVENT";
 	private static String alarmEventColumns = "ALARM_EVENT_ID, ALARM_GROUP_ID, "
 			+ "LOADING_APPLICATION_ID, PRIORITY, PATTERN";
-	
+
 	private static String alarmScreeningColumns =
 		"screening_id, screening_name, site_id, datatype_id, "
 		+ "start_date_time, last_modified, enabled, alarm_group_id, screening_desc";
@@ -103,16 +76,16 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 		+ "roc_interval, reject_roc_high, critical_roc_high, "
 		+ "warning_roc_high, warning_roc_low, critical_roc_low, reject_roc_low, "
 		+ "missing_period, missing_interval, missing_max_values, hint_text";
-	private static String alarmCurrentColumns = 
+	private static String alarmCurrentColumns =
 		"ts_id, limit_set_id, assert_time, data_value, data_time, alarm_flags, message, "
 		+ "last_notification_sent";
-	private static String alarmHistoryColumns = 
+	private static String alarmHistoryColumns =
 			"ts_id, limit_set_id, assert_time, data_value, data_time, alarm_flags, message, "
 			+ "end_time, cancelled_by";
 	private static boolean firstInstantiation = true;
 
 	// Objects in cache never expire (a million hours), but cache is reloaded periodically
-	protected static DbObjectCache<AlarmScreening> screeningCache = 
+	protected static DbObjectCache<AlarmScreening> screeningCache =
 			new DbObjectCache<AlarmScreening>(Long.MAX_VALUE, false);
 	private long lastCacheLoadMsec = 0L;
 	private static final long CACHE_RELOAD_MSEC = 1 * 60 * 60 * 1000L;
@@ -124,13 +97,13 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 	public AlarmDAO(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "AlarmDAO");
-		
+
 		if (firstInstantiation)
 		{
 			firstInstantiation = false;
-			
+
 			int dbver = db.getDecodesDatabaseVersion();
-			
+
 			// Prior to DB version 17, the alarm_event table had a different definition and
 			// there were no time series alarms.
 			if (dbver < DecodesDatabaseVersion.DECODES_DB_17)
@@ -150,7 +123,7 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 		}
 	}
 
-	
+
 	/* (non-Javadoc)
 	 * @see covesw.azul.alarm.dao.AlarmDAI#check(covesw.azul.alarm.AlarmConfig)
 	 */
@@ -161,10 +134,9 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 		ArrayList<LP> lps = new ArrayList<LP>();
 		String q = "select ALARM_GROUP_ID, LAST_MODIFIED from ALARM_GROUP order by LAST_MODIFIED";
 		String what = "reading database LMTs";
-		try
+		try (ResultSet rs = this.doQuery(q);)
 		{
 			int mods = 0;
-			ResultSet rs = this.doQuery(q);
 			while(rs.next())
 				lps.add(new LP(DbKey.createDbKey(rs, 1), rs.getLong(2)));
 			for(AlarmGroup grp : cfg.getGroups())
@@ -204,7 +176,7 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 		}
 		catch (SQLException ex)
 		{
-			throw new DbIoException("Error checking groups while " + what + ": " + ex); 
+			throw new DbIoException("Error checking groups while " + what, ex);
 		}
 	}
 
@@ -218,89 +190,95 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 		LoadingAppDAI appDAO = db.makeLoadingAppDAO();
 		String q = "select " + grpColumns + " from ALARM_GROUP where ALARM_GROUP_ID = "
 			+ grp.getAlarmGroupId();
-		try
+		try (ResultSet rs = doQuery(q))
 		{
-			ResultSet rs = doQuery(q);
+
 			if (rs.next())
 			{
 				grp.setName(rs.getString(2));
 				grp.setLastModifiedMsec(rs.getLong(3));
 			}
-			
+
 			q = "select ADDR from EMAIL_ADDR where ALARM_GROUP_ID = " + grp.getAlarmGroupId();
 			grp.getEmailAddrs().clear();
-			rs = doQuery(q);
-			while(rs.next())
-				grp.getEmailAddrs().add(new EmailAddr(rs.getString(1)));
-			
+			try (ResultSet rs2 = doQuery(q);)
+			{
+				while(rs.next())
+					grp.getEmailAddrs().add(new EmailAddr(rs2.getString(1)));
+			}
+
 			q = "select " + fileMonColumns + " from FILE_MONITOR where ALARM_GROUP_ID = "
 				+ grp.getAlarmGroupId() + " order by PATH";
 			grp.getFileMonitors().clear();
-			rs = doQuery(q);
-			while(rs.next())
+			try (ResultSet rs2 = doQuery(q))
 			{
-				FileMonitor fm = new FileMonitor(rs.getString(2));
-				fm.setPriority(rs.getInt(3));
-				fm.setMaxFiles(rs.getInt(4));
-				if (rs.wasNull()) fm.setMaxFiles(0);
-				fm.setMaxFilesHint(rs.getString(5));
-				fm.setMaxLMT(rs.getString(6));
-				fm.setMaxLMTHint(rs.getString(7));
-				fm.setAlarmOnDelete(TextUtil.str2boolean(rs.getString(8)));
-				fm.setAlarmOnDeleteHint(rs.getString(9));
-				fm.setMaxSize(rs.getLong(10));
-				if (rs.wasNull()) fm.setMaxSize(0L);
-				fm.setMaxSizeHint(rs.getString(11));
-				fm.setAlarmOnExists(TextUtil.str2boolean(rs.getString(12)));
-				fm.setAlarmOnExistsHint(rs.getString(13));
-				fm.setEnabled(TextUtil.str2boolean(rs.getString(14)));
-				if (rs.wasNull())
-					fm.setEnabled(true);
-				grp.getFileMonitors().add(fm);
+				while(rs.next())
+				{
+					FileMonitor fm = new FileMonitor(rs2.getString(2));
+					fm.setPriority(rs2.getInt(3));
+					fm.setMaxFiles(rs2.getInt(4));
+					if (rs2.wasNull()) fm.setMaxFiles(0);
+					fm.setMaxFilesHint(rs2.getString(5));
+					fm.setMaxLMT(rs2.getString(6));
+					fm.setMaxLMTHint(rs2.getString(7));
+					fm.setAlarmOnDelete(TextUtil.str2boolean(rs2.getString(8)));
+					fm.setAlarmOnDeleteHint(rs2.getString(9));
+					fm.setMaxSize(rs2.getLong(10));
+					if (rs2.wasNull()) fm.setMaxSize(0L);
+					fm.setMaxSizeHint(rs2.getString(11));
+					fm.setAlarmOnExists(TextUtil.str2boolean(rs2.getString(12)));
+					fm.setAlarmOnExistsHint(rs2.getString(13));
+					fm.setEnabled(TextUtil.str2boolean(rs2.getString(14)));
+					if (rs2.wasNull())
+						fm.setEnabled(true);
+					grp.getFileMonitors().add(fm);
+				}
 			}
-			
 			q = "select LOADING_APPLICATION_ID, ENABLED from PROCESS_MONITOR where ALARM_GROUP_ID = "
 				+ grp.getAlarmGroupId() + " order by LOADING_APPLICATION_ID";
 			grp.getProcessMonitors().clear();
-			rs = doQuery(q);
-			while(rs.next())
+			try( ResultSet rs2 = doQuery(q))
 			{
-				ProcessMonitor pm = new ProcessMonitor(DbKey.createDbKey(rs, 1));
-				pm.setEnabled(TextUtil.str2boolean(rs.getString(2)));
-				if (rs.wasNull())
-					pm.setEnabled(true);
-				grp.getProcessMonitors().add(pm);
+				while(rs.next())
+				{
+					ProcessMonitor pm = new ProcessMonitor(DbKey.createDbKey(rs2, 1));
+					pm.setEnabled(TextUtil.str2boolean(rs2.getString(2)));
+					if (rs2.wasNull())
+						pm.setEnabled(true);
+					grp.getProcessMonitors().add(pm);
+				}
 			}
-			
+
 			for(ProcessMonitor pm : grp.getProcessMonitors())
 			{
-				q = "select " + alarmEventColumns + " from " + alarmEventTable 
+				q = "select " + alarmEventColumns + " from " + alarmEventTable
 					+ " where "
 					+ "ALARM_GROUP_ID = " + grp.getAlarmGroupId()
 					+ " and LOADING_APPLICATION_ID = " + pm.getAppId();
-				rs = doQuery(q);
-				while(rs.next())
+				try (ResultSet rs2 = doQuery(q))
 				{
-					AlarmEvent def = new AlarmEvent(DbKey.createDbKey(rs, 1));
-					def.setPriority(rs.getInt(4));
-					def.setPattern(rs.getString(5));
-					pm.getDefs().add(def);
+					while(rs.next())
+					{
+						AlarmEvent def = new AlarmEvent(DbKey.createDbKey(rs2, 1));
+						def.setPriority(rs2.getInt(4));
+						def.setPattern(rs2.getString(5));
+						pm.getDefs().add(def);
+					}
 				}
-				
+
 				try
 				{
 					pm.setAppInfo(appDAO.getComputationApp(pm.getAppId()));
 				}
-				catch (NoSuchObjectException e)
+				catch (NoSuchObjectException ex)
 				{
-					Logger.instance().warning(module + " ProcessMonitor with invalid app ID="
-						+ pm.getAppId());
+					log.atWarn().setCause(ex).log("ProcessMonitor with invalid app ID={}", pm.getAppId());
 				}
 			}
 		}
 		catch (SQLException ex)
 		{
-			throw new DbIoException("Error reading group query: " + q + ": " + ex);
+			throw new DbIoException("Error reading group query: " + q, ex);
 		}
 		finally
 		{
@@ -317,14 +295,14 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 	{
 		if (grp.getName() == null)
 		{
-			Logger.instance().warning(module + " cannot write group with no name!");
+			log.warn("cannot write group with no name!");
 			return;
 		}
 
 		// Null key could mean overwriting from an XML file or a new group.
 		if (DbKey.isNull(grp.getAlarmGroupId()))
 			grp.setAlarmGroupId(groupName2id(grp.getName()));
-	
+
 		String q = null;
 		grp.setLastModifiedMsec(System.currentTimeMillis());
 		if (!DbKey.isNull(grp.getAlarmGroupId()))
@@ -334,7 +312,7 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 				+ ", LAST_MODIFIED = " + grp.getLastModifiedMsec()
 				+ "WHERE alarm_group_id = " + grp.getAlarmGroupId();
 			doModify(q);
-			
+
 			// Delete file monitors, email addresses, and process monitors.
 			// They will be re-inserted below.
 			q = "delete from " + alarmEventTable + " where alarm_group_id = " + grp.getAlarmGroupId();
@@ -355,15 +333,15 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 					+ grp.getLastModifiedMsec() + ")";
 			doModify(q);
 		}
-		
-		
+
+
 		for(EmailAddr addr : grp.getEmailAddrs())
 		{
 			q = "insert into EMAIL_ADDR(ALARM_GROUP_ID, ADDR) values ("
 				+ grp.getAlarmGroupId() + ", " + sqlString(addr.getAddr()) + ")";
 			doModify(q);
 		}
-		
+
 		for(FileMonitor fm : grp.getFileMonitors())
 		{
 			q = "insert into FILE_MONITOR(" + fileMonColumns + ") values ("
@@ -383,7 +361,7 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 				+ sqlBoolean(fm.isEnabled()) + ")";
 			doModify(q);
 		}
-		
+
 		for(ProcessMonitor pm : grp.getProcessMonitors())
 		{
 			// If read from XML, the pm will have a name but no app ID.
@@ -395,10 +373,13 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 				{
 					pm.setAppInfo(appDAO.getComputationApp(pm.getProcName()));
 				}
-				catch (NoSuchObjectException e)
+				catch (NoSuchObjectException ex)
 				{
-					Logger.instance().warning(module + " ProcessMonitor references app '"
-						+ pm.getProcName() + "' which does not exist in this database -- skipped.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("ProcessMonitor references app '{}' " +
+					   		"which does not exist in this database -- skipped.",
+							pm.getProcName());
 					continue;
 				}
 				finally
@@ -435,31 +416,31 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 		{
 			String q = "delete from " + alarmEventTable + " where alarm_group_id = " + groupID;
 			doModify(q);
-			
+
 			q = "delete from PROCESS_MONITOR where alarm_group_id = " + groupID;
 			doModify(q);
 
 			q = "delete from FILE_MONITOR where alarm_group_id = " + groupID;
 			doModify(q);
-			
+
 			q = "delete from EMAIL_ADDR where alarm_group_id = " + groupID;
 			doModify(q);
-			
+
 			q = "delete from ALARM_GROUP where alarm_group_id = " + groupID;
 			doModify(q);
 			return true;
 		}
 		return false;
 	}
-	
+
 	@Override
 	public DbKey groupName2id(String groupName)
 		throws DbIoException
 	{
 		String q = "select ALARM_GROUP_ID from ALARM_GROUP where upper(ALARM_GROUP_NAME) = "
 			+ sqlString(groupName.toUpperCase());
-		ResultSet rs = doQuery(q);
-		try
+
+		try (ResultSet rs = doQuery(q))
 		{
 			if (rs.next())
 				return DbKey.createDbKey(rs, 1);
@@ -468,7 +449,7 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 		}
 		catch (SQLException ex)
 		{
-			throw new DbIoException("Error in query '" + q + "': " + ex);
+			throw new DbIoException("Error in query '" + q + "'", ex);
 		}
 	}
 
@@ -479,23 +460,23 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 	{
 		if (noTsAlarms)
 			return null;
-debug3("getScreenings(siteId=" + siteId + ", dtId=" + datatypeId + ", appId=" + appId);
-		
+		log.trace("getScreenings(siteId={}, dtId={}, appId={}", siteId, datatypeId, appId);
+
 		if (System.currentTimeMillis() - lastCacheLoadMsec >= CACHE_RELOAD_MSEC)
 			fillScreeningCache();
-		
+
 		// siteId may be null (for default screening at any site) but datatype may not be null.
 		if (DbKey.isNull(datatypeId))
 			return null;
-		
+
 		// A new filter to only retrieve screenings with appId matching the current process.
 		ArrayList<AlarmScreening> ret = new ArrayList<AlarmScreening>();
 	  nextScit:
 		for(Iterator<AlarmScreening> scit = screeningCache.iterator(); scit.hasNext(); )
 		{
 			AlarmScreening as = scit.next();
-debug3("\tgetScreenings: screening siteId=" + as.getSiteId() + ", dtId=" + as.getDatatypeId() 
-+ ", appId=" + as.getAppId());
+			log.trace("getScreenings: screening siteId={}, dtId={}, appId={}",
+					  as.getSiteId(), as.getDatatypeId(), as.getAppId());
 			if (siteId.equals(as.getSiteId())
 			 && datatypeId.equals(as.getDatatypeId())
 			 && appId.equals(as.getAppId()))
@@ -511,20 +492,20 @@ debug3("\tgetScreenings: screening siteId=" + as.getSiteId() + ", dtId=" + as.ge
 		}
 		return ret;
 	}
-	
+
 	private void fillScreeningCache()
 		throws DbIoException
 	{
 		if (noTsAlarms)
 			return;
-		
+
 		screeningCache.clear();
-		
+
 		// Read all of the screening objects
 		String q = "select " + alarmScreeningColumns + " from alarm_screening";
-		ResultSet rs = doQuery(q);
+
 		LoadingAppDAI appDAO = db.makeLoadingAppDAO();
-		try
+		try (ResultSet rs = doQuery(q))
 		{
 			ArrayList<CompAppInfo> apps = appDAO.listComputationApps(false);
 
@@ -543,14 +524,12 @@ debug3("\tgetScreenings: screening siteId=" + as.getSiteId() + ", dtId=" + as.ge
 					}
 				screeningCache.put(as);
 			}
-			
-			
+
+
 		}
 		catch (SQLException ex)
 		{
-			DbIoException tt = new DbIoException("Error in query '" + q + "': " + ex);
-			tt.initCause(ex);
-			throw tt;
+			throw new DbIoException("Error in query '" + q + "'", ex);
 		}
 		finally
 		{
@@ -559,34 +538,36 @@ debug3("\tgetScreenings: screening siteId=" + as.getSiteId() + ", dtId=" + as.ge
 
 		// Read all of the limit sets and assign to screening objects
 		q = "select " + alarmLimitSetColumns + " from alarm_limit_set";
-		rs = doQuery(q);
+
 		int nls = 0;
-		try
+		try (ResultSet rs2 = doQuery(q);)
 		{
-			while (rs.next())
+			while (rs2.next())
 			{
-				AlarmLimitSet als = rs2LimitSet(rs);
+				AlarmLimitSet als = rs2LimitSet(rs2);
 				AlarmScreening as = screeningCache.getByKey(als.getScreeningId());
 				if (as == null)
 				{
-					warning("ALARM_LIMIT_SET with LIMIT_SET_ID="
-						+ als.getLimitSetId() + " refers to non-existent screening ID="
-						+ als.getScreeningId() + " -- ignored.");
+					log.warn("ALARM_LIMIT_SET with LIMIT_SET_ID={} refers to non-existent " +
+							 "screening ID={} -- ignored.",
+							 als.getLimitSetId(), als.getScreeningId());
 				}
-				as.addLimitSet(als);
-				nls++;
+				else
+				{
+					as.addLimitSet(als);
+					nls++;
+				}
 			}
 		}
 		catch (SQLException ex)
 		{
-			DbIoException tt = new DbIoException("Error in query '" + q + "': " + ex);
-			tt.initCause(ex);
-			throw tt;
+			throw new DbIoException("Error in query '" + q + "'", ex);
 		}
-		
-		debug1("fillScreeningCache: Loaded " + screeningCache.size() + " screenings containing " + nls + " limit sets.");
+
+		log.debug("fillScreeningCache: Loaded {} screenings containing {} limit sets.",
+				  screeningCache.size(), nls);
 	}
-	
+
 	private void rs2AlarmScreening(ResultSet rs, AlarmScreening as)
 		throws SQLException
 	{
@@ -605,10 +586,10 @@ debug3("\tgetScreenings: screening siteId=" + as.getSiteId() + ", dtId=" + as.ge
 			as.setAppId(DbKey.createDbKey(rs, 10));
 		as.setTimeLoaded(new Date());
 	}
-	
+
 	/**
 	 * Construct and return a new limit set from the passed result set.
-	 * 
+	 *
 	 * @param rs
 	 * @return new limit set, or null if invalid limit set
 	 * @throws SQLException
@@ -647,7 +628,7 @@ debug3("\tgetScreenings: screening siteId=" + as.getSiteId() + ", dtId=" + as.ge
 			als.setMinToCheck(d);
 		als.setMaxGap(rs.getString(13));
 		als.setRocInterval(rs.getString(14));
-		
+
 		d = rs.getDouble(15);
 		if (!rs.wasNull())
 			als.setRejectRocHigh(d);
@@ -666,14 +647,12 @@ debug3("\tgetScreenings: screening siteId=" + as.getSiteId() + ", dtId=" + as.ge
 		d = rs.getDouble(20);
 		if (!rs.wasNull())
 			als.setRejectRocLow(d);
-		
+
 		als.setMissingPeriod(rs.getString(21));
 		als.setMissingInterval(rs.getString(22));
 		als.setMaxMissingValues(rs.getInt(23));
-		
-		als.setHintText(rs.getString(24));
 
-//		as.addLimitSet(als);
+		als.setHintText(rs.getString(24));
 
 		return als;
 	}
@@ -687,20 +666,20 @@ debug3("\tgetScreenings: screening siteId=" + as.getSiteId() + ", dtId=" + as.ge
 			throw new BadScreeningException("This database does not support time series alarms.");
 		if (DbKey.isNull(as.getDatatypeId()))
 			throw new BadScreeningException("Datatype cannot be null.");
-		
+
 		// NOTE: Site can be null to establish a default screening for a datatype
-		
+
 		// If no key, try to lookup from the name and start time.
 		if (DbKey.isNull(as.getScreeningId()))
 			as.setScreeningId(screeningName2Id(as.getScreeningName(), as.getStartDateTime()));
-		
+
 		Date now = new Date();
 		AlarmScreening oldas = null;
 		if (!DbKey.isNull(as.getScreeningId())
 		 && (oldas = readAlarmScreening(as.getScreeningId())) != null)
 		{
 			StringBuilder qb = new StringBuilder("update alarm_screening set ");
-			
+
 			qb.append("last_modified = " + now.getTime());
 
 			if (!TextUtil.strEqual(as.getScreeningName(), oldas.getScreeningName()))
@@ -710,7 +689,7 @@ debug3("\tgetScreenings: screening siteId=" + as.getSiteId() + ", dtId=" + as.ge
 			if (!as.getDatatypeId().equals(oldas.getDatatypeId()))
 				qb.append(", datatype_id = " + as.getDatatypeId());
 			if (!dateEqual(as.getStartDateTime(), oldas.getStartDateTime()))
-				qb.append(", start_date_time = " 
+				qb.append(", start_date_time = "
 					+ (as.getStartDateTime() == null ? "0" : as.getStartDateTime().getTime()));
 			if (as.isEnabled() != oldas.isEnabled())
 				qb.append(", enabled = " + sqlBoolean(as.isEnabled()));
@@ -721,11 +700,11 @@ debug3("\tgetScreenings: screening siteId=" + as.getSiteId() + ", dtId=" + as.ge
 			if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_68
 			 && !as.getAppId().equals(oldas.getAppId()))
 			 	qb.append(", loading_application_id = " + as.getAppId());
-else
-{
-info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAppId()
-+ ", newAppId=" + as.getAppId());
-}
+			else
+			{
+				log.info("dbversion={}, oldAppId={}, newAppId={}",
+						 db.getDecodesDatabaseVersion(), oldas.getAppId(), as.getAppId());
+			}
 			qb.append(" where screening_id = " + as.getScreeningId());
 			doModify(qb.toString());
 		}
@@ -737,7 +716,7 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 				+ ", " + sqlString(as.getScreeningName())
 				+ ", " + as.getSiteId()
 				+ ", " + as.getDatatypeId()
-				+ ", " + (as.getStartDateTime()==null ? "0" 
+				+ ", " + (as.getStartDateTime()==null ? "0"
 						: (""+as.getStartDateTime().getTime()))
 				+ ", " + now.getTime()
 				+ ", " + sqlBoolean(as.isEnabled())
@@ -748,13 +727,12 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 				+ ")";
 			doModify(q);
 		}
-		
+
 		as.setLastModified(now); // Always update LMT.
-		
-		Logger.instance().debug1(module + " adding screening id=" + as.getKey()
-			+ " '" + as.getUniqueName() + "' to cache.");
+
+		log.debug("adding screening id={} '{}' to cache.", as.getKey(), as.getUniqueName());
 		screeningCache.put(as);
-		
+
 		ArrayList<DbKey> limitSetIds = new ArrayList<DbKey>();
 		for(AlarmLimitSet als : as.getLimitSets())
 		{
@@ -763,7 +741,7 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 			writeLimitSet(als);
 			limitSetIds.add(als.getLimitSetId());
 		}
-		
+
 		// Now there may have been old limit sets that are no longer in the screening and
 		// we should delete them. Delete any limit set that I didn't just write.
 		String q = "delete from alarm_limit_set where screening_id = " + as.getScreeningId();
@@ -776,11 +754,11 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 		}
 		doModify(q);
 	}
-	
+
 	// compare two dates and allow for null
 	private boolean dateEqual(Date d1, Date d2)
 	{
-		return d1 == null ? d2 == null : 
+		return d1 == null ? d2 == null :
 			   d2 != null && d1.getTime() == d2.getTime();
 	}
 
@@ -805,7 +783,7 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 				if (rs != null && rs.next())
 					als.setLimitSetId(DbKey.createDbKey(rs, 1));
 			}
-			
+
 			AlarmLimitSet oldls = null;
 			if (!DbKey.isNull(als.getLimitSetId())
 			 && (oldls = readLimitSet(als.getLimitSetId())) != null)
@@ -868,7 +846,7 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 				}
 				if (!TextUtil.strEqual(als.getStuckDuration(), oldls.getStuckDuration()))
 				{
-					qb.append((n>0 ? ", " : "") 
+					qb.append((n>0 ? ", " : "")
 						+ "stuck_duration = " + sqlString(als.getStuckDuration()));
 					n++;
 				}
@@ -890,13 +868,13 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 				}
 				if (!TextUtil.strEqual(als.getMaxGap(), oldls.getMaxGap()))
 				{
-					qb.append((n>0 ? ", " : "") 
+					qb.append((n>0 ? ", " : "")
 						+ "stuck_max_gap = " + sqlString(als.getMaxGap()));
 					n++;
 				}
 				if (!TextUtil.strEqual(als.getRocInterval(), oldls.getRocInterval()))
 				{
-					qb.append((n>0 ? ", " : "") 
+					qb.append((n>0 ? ", " : "")
 						+ "roc_interval = " + sqlString(als.getRocInterval()));
 					n++;
 				}
@@ -950,13 +928,13 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 				}
 				if (!TextUtil.strEqual(als.getMissingPeriod(), oldls.getMissingPeriod()))
 				{
-					qb.append((n>0 ? ", " : "") 
+					qb.append((n>0 ? ", " : "")
 						+ "missing_period = " + sqlString(als.getMissingPeriod()));
 					n++;
 				}
 				if (!TextUtil.strEqual(als.getMissingInterval(), oldls.getMissingInterval()))
 				{
-					qb.append((n>0 ? ", " : "") 
+					qb.append((n>0 ? ", " : "")
 						+ "missing_interval = " + sqlString(als.getMissingInterval()));
 					n++;
 				}
@@ -968,7 +946,7 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 				}
 				if (!TextUtil.strEqual(als.getHintText(), oldls.getHintText()))
 				{
-					qb.append((n>0 ? ", " : "") 
+					qb.append((n>0 ? ", " : "")
 						+ "hint_text = " + sqlString(als.getHintText()));
 					n++;
 				}
@@ -1015,9 +993,8 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 		}
 		catch(SQLException ex)
 		{
-			String msg = "writeLimitSet SQLException in queriy '" + q + "': " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			String msg = "writeLimitSet SQLException in query '" + q + "'";
+			throw new DbIoException(msg, ex);
 		}
 	}
 
@@ -1028,14 +1005,13 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 	{
 		String q = "select screening_id from alarm_screening "
 			+ "where upper(screening_name) = " + sqlString(screeningName.toUpperCase()) + " and ";
-		
+
 		if (start == null)
 			q = q + "(start_date_time is null or start_date_time = 0)";
 		else
 			q = q + "start_date_time = " + start.getTime();
-		
-		ResultSet rs = doQuery(q);
-		try
+
+		try (ResultSet rs = doQuery(q))
 		{
 			if (rs == null || !rs.next())
 				return DbKey.NullKey;
@@ -1043,7 +1019,7 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 		}
 		catch(SQLException ex)
 		{
-			warning("SQL Error in query '" + q + "': " + ex);
+			log.atWarn().setCause(ex).log("SQL Error in query '{}'", q);
 			return DbKey.NullKey;
 		}
 	}
@@ -1055,14 +1031,14 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 	{
 		String q = "select limit_set_id from alarm_limit_set where screening_id = "
 			+ screeningId;
-		ResultSet rs = doQuery(q);
+
 		ArrayList<DbKey> limitSetIds = new ArrayList<DbKey>();
 		String action = "Listing Limit Set IDs";
-		try
+		try (ResultSet rs = doQuery(q))
 		{
-			while(rs != null && rs.next())
+			while(rs.next())
 				limitSetIds.add(DbKey.createDbKey(rs, 1));
-			
+
 			for(DbKey limitSetId : limitSetIds)
 			{
 				action = "Removing limit set with id=" + limitSetId;
@@ -1074,7 +1050,7 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 		}
 		catch(SQLException ex)
 		{
-			warning("deleteScreening Error while " + action);
+			log.atWarn().setCause(ex).log("deleteScreening Error while {}", action);
 		}
 	}
 
@@ -1097,23 +1073,26 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 	{
 		String q = "select " + alarmLimitSetColumns + " from alarm_limit_set "
 			+ "where limit_set_id = " + limitSetId;
-		ResultSet rs = doQuery(q);
-		if (rs == null || !rs.next())
-			return null;
-		return rs2LimitSet(rs);
+		try(ResultSet rs = doQuery(q))
+		{
+			if (!rs.next())
+			{
+				return null;
+			}
+			return rs2LimitSet(rs);
+		}
 	}
-	
+
 	private AlarmScreening readAlarmScreening(DbKey screeningId)
 		throws DbIoException
 	{
 		String q = "select " + alarmScreeningColumns + " from alarm_screening "
 				+ "where screening_id = " + screeningId;
-		
-		ResultSet rs = doQuery(q);
+
 		LoadingAppDAI appDAO = db.makeLoadingAppDAO();
-		try
+		try (ResultSet rs = doQuery(q);)
 		{
-			if (rs == null || !rs.next())
+			if (!rs.next())
 				return null;
 			AlarmScreening ret = new AlarmScreening();
 			rs2AlarmScreening(rs, ret);
@@ -1127,14 +1106,14 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 				{
 					ret.setAppInfo(null);
 				}
-				
+
 			}
 
 			return ret;
 		}
 		catch(SQLException ex)
 		{
-			throw new DbIoException("readAlarmScreening error in query '" + q + "': " + ex);
+			throw new DbIoException("readAlarmScreening error in query '" + q + "'", ex);
 		}
 		finally
 		{
@@ -1149,34 +1128,34 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 		ArrayList<AlarmScreening> ret = new ArrayList<AlarmScreening>();
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_17)
 			return ret;
-		
+
 		fillScreeningCache();
 		for(Iterator<AlarmScreening> scit = screeningCache.iterator(); scit.hasNext(); )
 			ret.add(scit.next());
 
 		return ret;
 	}
-	
+
 	@Override
 	public void refreshCurrentAlarms(HashMap<DbKey, Alarm> alarmMap, DbKey appId)
 		throws DbIoException
 	{
 		if (noTsAlarms)
 			return;
-		
+
 		for(Alarm alarm : alarmMap.values())
 			alarm.setChecked(false);
-		
+
 		String q = "select " + alarmCurrentColumns + " from alarm_current";
 		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_68)
 			q = q + " where loading_application_id = " + appId;
-		
+
 		ArrayList<Alarm> needsFilling = new ArrayList<Alarm>();
-		ResultSet rs = doQuery(q);
+
 		TimeSeriesDAI tsDAO = this.db.makeTimeSeriesDAO();
-		try
+		try (ResultSet rs = doQuery(q))
 		{
-			while(rs != null && rs.next())
+			while(rs.next())
 			{
 				DbKey tsKey = DbKey.createDbKey(rs, 1);
 				Alarm alarm = alarmMap.get(tsKey);
@@ -1194,7 +1173,7 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 					if (assertTimeMs < alarm.getLastDbSyncMs())
 						continue; // already up to date
 				}
-				
+
 				alarm.setAssertTime(new Date(rs.getLong(3)));
 				alarm.setChecked(true);
 				DbKey limitSetId = DbKey.createDbKey(rs, 2);
@@ -1211,8 +1190,8 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 				long msec = rs.getLong(8);
 				alarm.setLastNotificationTime(rs.wasNull() ? null : new Date(msec));
 			}
-			
-			
+
+
 			q = "[filling limit set and tsids]";
 			for(Alarm alarm : needsFilling)
 			{
@@ -1221,12 +1200,14 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 				try { alarm.setTsid(tsDAO.getTimeSeriesIdentifier(alarm.getTsidKey())); }
 				catch(NoSuchObjectException ex)
 				{
-					warning("Invalid TsIdKey=" + alarm.getTsidKey() + " -- alarm will be removed.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Invalid TsIdKey={} -- alarm will be removed.", alarm.getTsidKey());
 					deleteCurrentAlarm(alarm.getTsidKey(), null);
 					alarm.setChecked(false);
 				}
 			}
-			
+
 			// After the above, any alarm that is not 'checked' must have been deleted from the DB.
 			ArrayList<DbKey> toDelete = new ArrayList<DbKey>();
 			for (Alarm alarm : alarmMap.values())
@@ -1238,21 +1219,20 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 		}
 		catch(SQLException ex)
 		{
-			throw new DbIoException("readAlarmScreening error in query '" + q + "': " + ex);
+			throw new DbIoException("readAlarmScreening error in query '" + q + "'", ex);
 		}
 		finally
 		{
 			tsDAO.close();
 		}
 	}
-	
+
 	private void rs2alarm(Alarm alarm, ResultSet rs)
 		throws SQLException
 	{
 		alarm.setTsidKey(DbKey.createDbKey(rs, 1));
 		alarm.setLimitSetId(DbKey.createDbKey(rs, 2));
 		alarm.setAssertTime(new Date(rs.getLong(3)));
-//		alarm.setLimitSet(null);
 		alarm.setDataValue(rs.getDouble(4));
 		alarm.setDataTime(new Date(rs.getLong(5)));
 		alarm.setAlarmFlags(rs.getInt(6));
@@ -1262,19 +1242,19 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_68)
 			alarm.setAppId(DbKey.createDbKey(rs, 9));
 	}
-	
+
 	@Override
-	public ArrayList<Alarm> getAllCurrentAlarms() 
+	public ArrayList<Alarm> getAllCurrentAlarms()
 		throws DbIoException
 	{
 		String q = "select " + alarmCurrentColumns + " from alarm_current "
 			+ "order by ts_id, assert_time";
 		ArrayList<Alarm> ret = new ArrayList<Alarm>();
-		ResultSet rs = doQuery(q);
+
 		TimeSeriesDAI tsDAO = this.db.makeTimeSeriesDAO();
-		try
+		try (ResultSet rs = doQuery(q))
 		{
-			while(rs != null && rs.next())
+			while(rs.next())
 			{
 				Alarm alarm = new Alarm();
 				try
@@ -1282,56 +1262,57 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 					rs2alarm(alarm, rs);
 					alarm.setTsid(tsDAO.getTimeSeriesIdentifier(alarm.getTsidKey()));
 				}
-				catch (NoSuchObjectException e)
+				catch (NoSuchObjectException ex)
 				{
 					// this means the ts key was invalid - no matching tsid.
-					Logger.instance().warning(module + " getAllCurrentAlarms: "
-						+ "bad TS Key " + alarm.getTsidKey() + " - no mathing TSID: " + e);
+					log.atWarn()
+					   .setCause(ex)
+					   .log("getAllCurrentAlarms: {} - no mathing TSID: ", alarm.getTsidKey());
 				}
 			}
-			
+
 			// Get all the limit sets that are used by current alarms.
-			q = "select " + alarmLimitSetColumns + " from alarm_limit_set als " + 
-				"where als.limit_set_id in (select distinct limit_set_id from alarm_current)"; 
+			q = "select " + alarmLimitSetColumns + " from alarm_limit_set als " +
+				"where als.limit_set_id in (select distinct limit_set_id from alarm_current)";
 			HashMap<DbKey, AlarmLimitSet> limitSets = new HashMap<DbKey, AlarmLimitSet>();
-			rs = doQuery(q);
-			while(rs != null && rs.next())
-				limitSets.put(DbKey.createDbKey(rs, 1), rs2LimitSet(rs));
-			
+			try (ResultSet rs2 = doQuery(q))
+			{
+				while(rs2.next())
+					limitSets.put(DbKey.createDbKey(rs2, 1), rs2LimitSet(rs));
+			}
+
 			// for each alarm in the return, assign the limit set.
 			for(Alarm alarm : ret)
 				alarm.setLimitSet(limitSets.get(alarm.getLimitSetId()));
 		}
-		catch (SQLException e)
+		catch (SQLException ex)
 		{
-			Logger.instance().failure(module + " getAllCurrentAlarms: Error in query '" + q 
-				+ "': " + e);
-			e.printStackTrace();
+			log.atError().setCause(ex).log("getAllCurrentAlarms: Error in query '{}'", q);
 		}
 		finally
 		{
 			tsDAO.close();
 		}
-		
+
 		return ret;
 	}
-	
-	
+
+
 	@Override
-	public void deleteCurrentAlarm(DbKey tsidKey, DbKey appId) 
+	public void deleteCurrentAlarm(DbKey tsidKey, DbKey appId)
 		throws DbIoException
 	{
 		if (noTsAlarms)
 			return;
-		
+
 		String q = "delete from ALARM_CURRENT where ts_id = " + tsidKey;
 		if (!DbKey.isNull(appId))
 			q = q + " and loading_application_id = " + appId;
 		doModify(q);
 	}
-	
+
 	@Override
-	public void deleteHistoryAlarms(DbKey tsidKey, Date since, Date until) 
+	public void deleteHistoryAlarms(DbKey tsidKey, Date since, Date until)
 		throws DbIoException
 	{
 		if (noTsAlarms)
@@ -1372,11 +1353,12 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 		}
 		catch (DbIoException ex)
 		{
-			Logger.instance().warning(module + " Error writing alarm for tskey=" + alarm.getTsidKey()
-				+ " at time " + alarm.getAssertTime() + ": " + ex);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Error writing alarm for tskey={} at time {}", alarm.getTsidKey(), alarm.getAssertTime());
 		}
 	}
-	
+
 	@Override
 	public void writeToCurrent(Alarm alarm)
 	{
@@ -1390,10 +1372,10 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 		try
 		{
 			doModify(q);
-			
+
 			// Data Time can be null if this is an alarm on missing values.
 			String dataTime = alarm.getDataTime() == null ? "NULL" : (""+alarm.getDataTime().getTime());
-			
+
 			q = "insert into alarm_current(" + alarmCurrentColumns + ") values ("
 					+ alarm.getTsidKey() + ", "
 					+ alarm.getLimitSetId() + ", "
@@ -1410,11 +1392,13 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 		}
 		catch (DbIoException ex)
 		{
-			Logger.instance().warning(module + " Error writing current alarm for tskey=" + alarm.getTsidKey()
-				+ " at time " + alarm.getAssertTime() + ": " + ex);
+			log.atWarn()
+			   .setCause(ex)
+			   .log(" Error writing current alarm for tskey={} at time {}",
+			   		alarm.getTsidKey(), alarm.getAssertTime());
 		}
 	}
-	
+
 	@Override
 	public ArrayList<Alarm> readAlarmHistory(ArrayList<TimeSeriesIdentifier> tsids)
 		throws DbIoException
@@ -1424,7 +1408,7 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 
 		fillScreeningCache();
 		ArrayList<Alarm> ret = new ArrayList<Alarm>();
-		
+
 		String q = "select " + alarmHistoryColumns + " from ALARM_HISTORY";
 		if (tsids.size() > 0)
 		{
@@ -1433,9 +1417,9 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 				q = q + tsids.get(idx).getKey() + (idx < tsids.size() -1 ? ", " : "");
 			q = q + ")";
 		}
-		ResultSet rs = doQuery(q);
+
 		TimeSeriesDAI tsDAO = db.makeTimeSeriesDAO();
-		try
+		try (ResultSet rs = doQuery(q))
 		{
 			while(rs.next())
 			{
@@ -1445,9 +1429,12 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 				{
 					alarm.setTsid(tsDAO.getTimeSeriesIdentifier(alarm.getTsidKey()));
 				}
-				catch (NoSuchObjectException e)
+				catch (NoSuchObjectException ex)
 				{
-					warning("Alarm for TS_ID key=" + alarm.getTsidKey() + " but no time series identifier. Skipped.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Alarm for TS_ID key={} but no time series identifier. Skipped.",
+					   		alarm.getTsidKey());
 					continue;
 				}
 				alarm.setLimitSetId(DbKey.createDbKey(rs, 2));
@@ -1466,17 +1453,15 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 		}
 		catch (SQLException ex)
 		{
-			String msg = "Error reading alarms with query '" + q + "': " + ex;
-			failure(msg);
-			if (Logger.instance().getLogOutput() != null)
-				ex.printStackTrace(Logger.instance().getLogOutput());
-			throw new DbIoException(msg);
+			String msg = "Error reading alarms with query '" + q + "'";
+
+			throw new DbIoException(msg, ex);
 		}
 		finally
 		{
 			tsDAO.close();
 		}
-		
+
 		return ret;
 	}
 
@@ -1509,16 +1494,18 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 		throws DbIoException
 	{
 		String q = "select max(end_time) from alarm_history where ts_id = " + tsid.getKey();
-		ResultSet rs = doQuery(q);
-		try
+
+		try (ResultSet rs = doQuery(q))
 		{
 			if (!rs.next())
+			{
 				return null;
+			}
 			return new Date(rs.getLong(1));
 		}
 		catch(Exception ex)
 		{
-			throw new DbIoException("Error in query '" + q + "'");
+			throw new DbIoException("Error in query '" + q + "'", ex);
 		}
 	}
 

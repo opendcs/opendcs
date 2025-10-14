@@ -1,21 +1,18 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.3  2015/01/06 16:09:33  mmaloney
- * First cut of Polling Modules
- *
- * Revision 1.2  2014/07/03 12:53:41  mmaloney
- * debug improvements.
- *
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to the United States Government. No warranty is provided or implied other 
- * than specific contractual terms between COVE and the U.S. Government.
- *
- * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package opendcs.dao;
 
 import ilex.util.TextUtil;
@@ -25,20 +22,22 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.PlatformStatus;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.DbIoException;
 import opendcs.dai.PlatformStatusDAI;
 
-public class PlatformStatusDAO 
-	extends DaoBase 
-	implements PlatformStatusDAI
+public class PlatformStatusDAO  extends DaoBase  implements PlatformStatusDAI
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String ps_attrs = "platform_id, last_contact_time, last_message_time, " +
 			"last_failure_codes, last_error_time, last_schedule_entry_status_id, " +
 			"annotation";
-	
+
 	public PlatformStatusDAO(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "PlatformStatusDAO");
@@ -50,22 +49,21 @@ public class PlatformStatusDAO
 	{
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
 			return null;
-		
+
 		String q = "select " + ps_attrs + " from platform_status "
 			+ "where platform_id = ?";
-		
+
 		try
 		{
 			return getSingleResult(q, rs->rs2ps(rs),platformId);
 		}
 		catch (SQLException ex)
 		{
-			String msg = "Cannot parse rs for '" + q + "': " + ex;
-			warning(msg);
+			log.atWarn().setCause(ex).log("Cannot parse rs for '{}'", q);
 		}
 		return null;
 	}
-	
+
 	private PlatformStatus rs2ps(ResultSet rs)
 		throws SQLException
 	{
@@ -76,12 +74,12 @@ public class PlatformStatusDAO
 		ps.setLastErrorTime(db.getFullDate(rs, 5));
 		ps.setLastScheduleEntryStatusId(DbKey.createDbKey(rs, 6));
 		ps.setAnnotation(rs.getString(7));
-		
+
 		return ps;
 	}
 
 	@Override
-	public synchronized void writePlatformStatus(PlatformStatus platformStatus) 
+	public synchronized void writePlatformStatus(PlatformStatus platformStatus)
 		throws DbIoException
 	{
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
@@ -99,22 +97,22 @@ public class PlatformStatusDAO
 			{
 				if (sets.length() > 0)
 					sets = sets + ", ";
-				sets = sets + 
+				sets = sets +
 					"last_message_time = " + db.sqlDate(platformStatus.getLastMessageTime());
 			}
-			if (!TextUtil.strEqual(platformStatus.getLastFailureCodes(), 
+			if (!TextUtil.strEqual(platformStatus.getLastFailureCodes(),
 				existing.getLastFailureCodes()))
 			{
 				if (sets.length() > 0)
 					sets = sets + ", ";
-				sets = sets + 
+				sets = sets +
 					"last_failure_codes = " + sqlString(platformStatus.getLastFailureCodes());
 			}
 			if (!datesEqual(platformStatus.getLastErrorTime(), existing.getLastErrorTime()))
 			{
 				if (sets.length() > 0)
 					sets = sets + ", ";
-				sets = sets + 
+				sets = sets +
 					"last_error_time = " + db.sqlDate(platformStatus.getLastErrorTime());
 			}
 			if (!platformStatus.getLastScheduleEntryStatusId().equals(
@@ -122,15 +120,15 @@ public class PlatformStatusDAO
 			{
 				if (sets.length() > 0)
 					sets = sets + ", ";
-				sets = sets + "last_schedule_entry_status_id = " 
+				sets = sets + "last_schedule_entry_status_id = "
 					+ platformStatus.getLastScheduleEntryStatusId();
 			}
-			if (!TextUtil.strEqual(platformStatus.getAnnotation(), 
+			if (!TextUtil.strEqual(platformStatus.getAnnotation(),
 				existing.getAnnotation()))
 			{
 				if (sets.length() > 0)
 					sets = sets + ", ";
-				sets = sets + 
+				sets = sets +
 					"annotation = " + sqlString(platformStatus.getAnnotation());
 			}
 			if (sets.length() == 0)
@@ -151,7 +149,7 @@ public class PlatformStatusDAO
 		}
 		doModify(q);
 	}
-	
+
 	private boolean datesEqual(Date d1, Date d2)
 	{
 		if (d1 != null)
@@ -171,20 +169,20 @@ public class PlatformStatusDAO
 			+ "transportmedium b where a.id = b.platformid)";
 
 		ArrayList<PlatformStatus> ret = new ArrayList<PlatformStatus>();
-		
+
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
 			return ret;
 
-		ResultSet rs = doQuery(q);
-		try
+		try (ResultSet rs = doQuery(q);)
 		{
-			while (rs != null && rs.next())
+			while (rs.next())
+			{
 				ret.add(rs2ps(rs));
+			}
 		}
 		catch (SQLException ex)
 		{
-			String msg = "Error in query '" + q + "': " + ex;
-			warning(msg);
+			log.atWarn().setCause(ex).log("Error in query '{}'", q);
 		}
 
 		return ret;
