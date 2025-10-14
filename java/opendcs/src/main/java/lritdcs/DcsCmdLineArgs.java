@@ -1,28 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.3  2009/10/09 18:12:01  mjmaloney
-*  default to last known state
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.2  2009/08/14 14:05:51  shweta
-*  Added mandatory parameter ' file sender state'  which needs to be provided to start LRIT.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1  2008/04/04 18:21:16  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.4  2005/12/30 19:40:59  mmaloney
-*  dev
-*
-*  Revision 1.3  2004/05/24 13:55:05  mjmaloney
-*  dev
-*
-*  Revision 1.2  2004/04/29 16:11:07  mjmaloney
-*  Implemented new header fields.
-*
-*  Revision 1.1  2003/08/06 23:29:24  mjmaloney
-*  dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lritdcs;
 
@@ -30,13 +19,14 @@ import java.io.IOException;
 import java.io.File;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.cmdline.*;
-import ilex.util.FileLogger;
-import ilex.util.Logger;
-import ilex.util.StderrLogger;
 
 public class DcsCmdLineArgs extends ApplicationSettings
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
     // Public strings set by command line options:
 	private IntegerToken debuglevel_arg;
 	private StringToken log_arg;
@@ -59,7 +49,7 @@ public class DcsCmdLineArgs extends ApplicationSettings
 			"l", "log-file", "", TokenOptions.optSwitch, logname);
 
 		addToken(log_arg);
-		
+
 		state_arg = new StringToken(
 				"s", "LRIT-State", "", TokenOptions.optSwitch, "last");
 		addToken(state_arg);
@@ -84,38 +74,13 @@ public class DcsCmdLineArgs extends ApplicationSettings
 		super.parseArgs(args);
 
 		//checks if the LRIT is started in active or dormant state
-		String lritState = getLritState();		
+		String lritState = getLritState();
 		LritDcsMain.instance().setLritStartState(lritState);
-		
-		
-		// If log-file specified, open it.
-		String fn = getLogFile();
-		try 
-		{
-			Logger.setLogger(new FileLogger(progname, fn)); 
-		}
-		catch(IOException e)
-		{
-			System.err.println("Cannot open log file '" + fn + "': " + e);
-			System.exit(1);
-		}
-
-		// Set debug level.
-		int dl = getDebugLevel();
-		if (dl > 0)
-			Logger.instance().setMinLogPriority(
-				dl == 1 ? Logger.E_DEBUG1 :
-				dl == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
-
-		Logger.instance().setTimeZone(TimeZone.getTimeZone("UTC"));
-		Logger.instance().log(Logger.E_INFORMATION, "LRIT Process '"
-			+ progname + "' Starting.....");
-		
-		
+		log.info("LRIT Process '{}' Starting.....", progname);
 	}
-	
+
 	public String  getLritState() {
-		
+
 		return state_arg.getValue();
 	}
 

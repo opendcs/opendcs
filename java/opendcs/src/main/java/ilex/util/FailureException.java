@@ -1,20 +1,17 @@
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:09  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.3  2004/08/30 15:43:59  mjmaloney
-*  Removed import statements for classes within ilex.util.
-*
-*  Revision 1.2  2004/08/30 14:50:26  mjmaloney
-*  Javadocs
-*
-*  Revision 1.1  2003/05/12 12:36:46  mjmaloney
-*  Added FailureException & FatalException.
-*  All three IlexException sub-classes modified to log messages.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package ilex.util;
 
@@ -30,8 +27,12 @@ public class FailureException extends IlexException
 	*/
 	public FailureException( String msg )
 	{
-		super("Failure: " + msg);
-		Logger.instance().log(Logger.E_FAILURE, msg);
+		super(msg);
+	}
+
+	public FailureException(String msg, Throwable cause)
+	{
+		super(msg, cause);
 	}
 }
 

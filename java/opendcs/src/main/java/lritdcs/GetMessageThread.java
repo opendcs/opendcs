@@ -1,76 +1,17 @@
 /*
-* $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-* $Log$
-* Revision 1.5  2016/09/02 18:26:32  mmaloney
-* Use <username>.auth to send password to data source if file exists.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-* Revision 1.4  2014/08/22 17:23:10  mmaloney
-* 6.1 Schema Mods and Initial DCP Monitor Implementation
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-* Revision 1.3  2014/05/30 13:15:35  mmaloney
-* dev
-*
-* Revision 1.2  2014/05/28 13:09:31  mmaloney
-* dev
-*
-* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-* OPENDCS 6.0 Initial Checkin
-*
-* Revision 1.5  2012/12/12 16:01:31  mmaloney
-* Several updates for 5.2
-*
-* Revision 1.4  2009/10/09 14:52:26  mjmaloney
-* Added flag bytes and carrier times to LRIT File.
-*
-* Revision 1.3  2008/09/05 13:18:00  mjmaloney
-* LRGS 7 dev
-*
-* Revision 1.2  2008/08/06 19:41:04  mjmaloney
-* dev
-*
-* Revision 1.1  2008/04/04 18:21:16  cvs
-* Added legacy code to repository
-*
-* Revision 1.13  2005/12/30 19:40:59  mmaloney
-* dev
-*
-* Revision 1.12  2005/07/28 20:33:06  mjmaloney
-* dev
-*
-* Revision 1.11  2005/03/21 14:33:55  mjmaloney
-* Enum --> DbEnum
-*
-* Revision 1.10  2004/09/08 12:40:36  mjmaloney
-* dev
-*
-* Revision 1.9  2004/05/18 22:52:39  mjmaloney
-* dev
-*
-* Revision 1.8  2003/08/18 14:47:59  mjmaloney
-* bug fixes.
-*
-* Revision 1.7  2003/08/15 20:13:07  mjmaloney
-* dev
-*
-* Revision 1.6  2003/08/11 23:38:11  mjmaloney
-* dev
-*
-* Revision 1.5  2003/08/11 17:29:51  mjmaloney
-* dev
-*
-* Revision 1.4  2003/08/11 15:59:19  mjmaloney
-* dev
-*
-* Revision 1.3  2003/08/11 01:33:58  mjmaloney
-* dev
-*
-* Revision 1.2  2003/08/10 02:22:47  mjmaloney
-* dev.
-*
-* Revision 1.1  2003/08/06 23:29:24  mjmaloney
-* dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lritdcs;
 
@@ -80,25 +21,28 @@ import java.util.Properties;
 import java.util.Vector;
 
 import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.io.File;
 
-import ilex.util.*;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
 import lrgs.common.DcpMsgIndex;
 import decodes.datasource.*;
 import decodes.db.*;
 import decodes.util.*;
+import ilex.util.IDateFormat;
+import ilex.util.TextUtil;
 
 /**
  This class retrieves messages from the DDS servers, segregates them into
- priority H, M, and L by search-criteria, and then saves them in the 
+ priority H, M, and L by search-criteria, and then saves them in the
  appropriate file.
 */
-public class GetMessageThread
-	extends LritDcsThread
+public class GetMessageThread extends LritDcsThread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/// One file writer for each priority.
 	LritDcsFileWriter outputHigh;
 	LritDcsFileWriter outputMedium;
@@ -117,7 +61,7 @@ public class GetMessageThread
 	boolean reconfigSource;
 	int retryPeriod;
 	int timeoutPeriod;
-	
+
 	/// Could be used in future to pass params to data source;
 	Properties rsProps;
 
@@ -131,7 +75,7 @@ public class GetMessageThread
 		outputHigh = null;
 		outputMedium = null;
 		outputLow = null;
-		
+
 		shutdownFlag = false;
 		dataSource = null;
 		myStatus = LritDcsMain.instance().getStatus();
@@ -141,7 +85,6 @@ public class GetMessageThread
 		user1 = user2 = user3 = null;
 
 		rsProps = new Properties();
-//		rsProps.setProperty("single", "true");
 
 		reconfigSource = false;
 
@@ -164,7 +107,7 @@ public class GetMessageThread
 		// Note: changes to searchcrits will be auto detected by writers.
 
 		// Check for changes to server list & reconfigure HBG if nec.
-		reconfigSource = 
+		reconfigSource =
 			!TextUtil.strEqual(host1, cfg.getDds1HostName())
 		 || port1 != cfg.getDds1Port()
 		 || !TextUtil.strEqual(user1, cfg.getDds1UserName())
@@ -216,7 +159,7 @@ public class GetMessageThread
 
 		// Decodes database used for data source records.
 		// Initialize MINIMAL database here with no db IO capability.
-		try 
+		try
 		{
 			new decodes.db.Database(); // this sets the singleton.
 			DbEnum dataSourceTypeEnum = new DbEnum("DataSourceType");
@@ -229,7 +172,7 @@ public class GetMessageThread
 		}
 		catch(DecodesException ex)
 		{
-			throw new InitFailedException("Cannot initialize DECODES: " + ex);
+			throw new InitFailedException("Cannot initialize DECODES: ", ex);
 		}
 
 		// Call update an initial time, then register for updates.
@@ -242,9 +185,6 @@ public class GetMessageThread
 	*/
 	public void run()
 	{
-//		DcpMsg dcpMsg = new DcpMsg();
-//		DcpMsgIndex msgIndex = new DcpMsgIndex();
-
 		boolean noDataSource = false;
 
 		try
@@ -270,27 +210,26 @@ public class GetMessageThread
 						dataSource = null;
 					}
 				}
-	
+
 				if (dataSource == null)
 				{
 					if (!noDataSource)
 					{
-						warning(Constants.EVT_NO_DATA_SOURCE,
-							"Data source invalid, pausing for 10 seconds.");
+						log.warn("{} Data source invalid, pausing for 10 seconds.", Constants.EVT_NO_DATA_SOURCE);
 						noDataSource = true;
 					}
 					try { sleep(10000L); }
 					catch (InterruptedException e) {}
 					reconfigSource = true;
-//MJM Comment out the continue so queue processing can continue even if we have no DS.
+					//MJM Comment out the continue so queue processing can continue even if we have no DS.
 					continue;
 				}
 				else if (noDataSource)
 				{
-					info(Constants.EVT_NO_DATA_SOURCE, "Data Source valid.");
+					log.info("{} Data Source valid.", Constants.EVT_NO_DATA_SOURCE);
 					noDataSource = false;
 				}
-	
+
 				try
 				{
 					RawMessage lrgsMessage = null;
@@ -299,13 +238,11 @@ public class GetMessageThread
 						lrgsMessage = dataSource.getRawMessage();
 					if (lrgsMessage != null)
 					{
-						LrgsDataSource cds = 
+						LrgsDataSource cds =
 							(LrgsDataSource)dataSource.getActiveMember();
 						myStatus.lastDataSource = cds == null ? "" : cds.getHostName();
 						myStatus.lastRetrieval = System.currentTimeMillis();
-						//debug3(
-						//	"Message from '" + dataSource.getName() + "': "
-						//	+ new String(rm.getHeader()));
+
 						byte[] data = lrgsMessage.getData();
 						DcpMsg dcpMsg = lrgsMessage.getOrigDcpMsg();
 						if (dcpMsg == null)
@@ -321,7 +258,7 @@ public class GetMessageThread
 						else
 							enqueueMediumLow(new QueuedMessage(dcpMsg, msgIndex));
 					}
-					
+
 					QueuedMessage queuedMessage = null;
 					now = System.currentTimeMillis();
 					int nQ = 0;
@@ -333,13 +270,10 @@ public class GetMessageThread
 						processMessage(queuedMessage.msg, queuedMessage.idx);
 						nQ++;
 					}
-//					if (nQ > 0)
-//						info(0, "Processed " + nQ + " from the mediumLowQueue");
-					
+
 					if (lrgsMessage == null)
 					{
-						info(0, 
-				"Data source failed to return message, pausing for 2 seconds.");
+						log.info("{} Data source failed to return message, pausing for 2 seconds.", 0);
 						try { sleep(2000L); }
 						catch (InterruptedException e) {}
 						continue;
@@ -348,27 +282,30 @@ public class GetMessageThread
 				catch(UnknownPlatformException ex)
 				{
 					// This shouldn't happen, we turned it off in DataSourceExec.
-					warning(0, "Data source '" + dataSource.getName() 
-						+ "': " + ex + " -- skipped");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("{} Data source '{}' -- skipped", 0, dataSource.getName());
 					continue;
 				}
 				catch(DataSourceEndException ex)
 				{
 					// This shouldn't happen, we never set an until time.
-					warning(0, "Normal termination on data source '"
-						+ dataSource.getName());
+					log.atWarn()
+					   .setCause(ex)
+					   .log("{} Normal termination on data source '{}'", dataSource.getName());
 					continue;
 				}
 				catch(DataSourceException ex)
 				{
-					warning(Constants.EVT_DATA_SOURCE_ERR,
-						"- Error on data source '" 
-						+ dataSource.getName() + "': " + ex);
+					log.atWarn()
+					   .setCause(ex)
+					   .log("{}- Error on data source '{}'",
+					        Constants.EVT_DATA_SOURCE_ERR, dataSource.getName());
 					dataSource = null;
 					reconfigSource = true;
 					continue;
 				}
-	
+
 				// Check file time ranges.
 				outputHigh.checkFileTimeRange();
 				outputMedium.checkFileTimeRange();
@@ -377,9 +314,9 @@ public class GetMessageThread
 		}
 		catch(Exception ex)
 		{
-			fatal(Constants.EVT_INTERNAL_ERR,
-				"Unexpected Exception in main loop. Exiting: " + ex);
-			ex.printStackTrace(Logger.instance().getLogOutput());
+			log.atError()
+			   .setCause(ex)
+			   .log("{} Unexpected Exception in main loop. Exiting.", Constants.EVT_INTERNAL_ERR);
 			LritDcsMain.instance().shutdown();
 		}
 
@@ -399,7 +336,7 @@ public class GetMessageThread
 			dataSource = null;
 		}
 	}
-	
+
 	private void enqueueMediumLow(QueuedMessage newMsg)
 	{
 		// Traverse the queue to see if this message is already here.
@@ -422,9 +359,9 @@ public class GetMessageThread
 		// Fell through without finding match
 		mediumLowQueue.addFirst(newMsg);
 	}
-	
+
 	enum MatchVal { NO_MATCH, SAVE_NEW, SAVE_QUEUED, DISCARD };
-	
+
 	public MatchVal isMatch(DcpMsgIndex newIdx, DcpMsgIndex queuedIdx)
 	{
 		// Don't transmit DAPS Status messages over LRIT.
@@ -434,17 +371,17 @@ public class GetMessageThread
 
 		if (!newIdx.getDcpAddress().equals(queuedIdx.getDcpAddress()))
 			return MatchVal.NO_MATCH;
-		
+
 		if (newIdx.getChannel() != queuedIdx.getChannel())
 			return MatchVal.NO_MATCH;
 
-		long deltaT = newIdx.getXmitTime().getTime() - 
+		long deltaT = newIdx.getXmitTime().getTime() -
 			queuedIdx.getXmitTime().getTime();
 		if (deltaT < -5000L || deltaT > 5000L)
 			return MatchVal.NO_MATCH;
 
 		char queuedFC = queuedIdx.getFailureCode();
-		
+
 		if (newFC == 'G')
 		{
 			if (queuedFC == '?')
@@ -452,13 +389,13 @@ public class GetMessageThread
 		}
 		else if (queuedFC == 'G')
 			return MatchVal.SAVE_QUEUED;
-		
+
 		// they both have equal quality.
 		if (DcpMsgFlag.hasAccurateCarrier(queuedIdx.getFlagbits()))
 			return MatchVal.SAVE_QUEUED;
 		else if (DcpMsgFlag.hasAccurateCarrier(newIdx.getFlagbits()))
 			return MatchVal.SAVE_NEW;
-	
+
 		// else either they both have accurate carrier or they both don't.
 		return MatchVal.SAVE_QUEUED;
 	}
@@ -481,19 +418,18 @@ public class GetMessageThread
 			myStatus.incrementMsgLow();
 		}
 		else
-			warning(Constants.EVT_MSG_DISCARDED,
-				"- Message from platform '"
-				+ dcpMsg.getDcpAddress().toString() 
-				+"' discarded because it doesn't pass criteria for "
-				+ "any priority.");
+		{
+			log.warn("{}- Message from platform '{}' discarded because it doesn't " +
+					 "pass criteria for any priority.",
+					 Constants.EVT_MSG_DISCARDED, dcpMsg.getDcpAddress().toString());
+		}
 	}
 
 	// Initialize the data source object.
 	protected void initDataSource()
 		throws DataSourceInitException
 	{
-		debug3("initDataSource(retry=" + retryPeriod +
-			", timeout=" + timeoutPeriod + ")");
+		log.trace("initDataSource(retry={}, timeout={})", retryPeriod, timeoutPeriod);
 
 		// Initialize the routing spec's data source.
 		rsProps.setProperty("recheck", "" + retryPeriod);
@@ -547,12 +483,12 @@ public class GetMessageThread
 			if (numMembers == 0)
 			{
 				String msg = "No data sources specified!";
-				warning(Constants.EVT_NO_DATA_SOURCE, msg);
+				log.warn("{} {}", Constants.EVT_NO_DATA_SOURCE, msg);
 				throw new DataSourceInitException(msg);
 			}
 
 			String since="";
-			long lastRetrieval = 
+			long lastRetrieval =
 				LritDcsMain.instance().getStatus().lastRetrieval;
 			if (lastRetrieval == 0L)
 				// First time ever? Just back up 5 minutes
@@ -564,7 +500,7 @@ public class GetMessageThread
 					lastRetrieval = System.currentTimeMillis() - 3600000L;
 				since = IDateFormat.toString(new Date(lastRetrieval), false);
 			}
-			
+
 			dataSource = (HotBackupGroup)groupDbDs.makeDelegate();
 			dataSource.setAllowNullPlatform(true);
 			dataSource.setAllowDapsStatusMessages(true);
@@ -573,32 +509,32 @@ public class GetMessageThread
 		}
 		catch(InvalidDatabaseException ex)
 		{
-			throw new DataSourceInitException(ex.toString());
+			throw new DataSourceInitException(ex.toString(), ex);
 		}
 		catch(DataSourceException ex)
 		{
-			throw new DataSourceInitException(ex.toString());
+			throw new DataSourceInitException(ex.toString(), ex);
 		}
 	}
-	
+
 	private String tryGetPassword(String username)
 	{
 		File authFile = new File(username + ".auth");
 		if (!authFile.canRead())
 		{
-			Logger.instance().debug1(authFile.getPath() + " does not exist.");
+			log.debug("{} does not exist.", authFile.getPath());
 			return null;
 		}
 		try
 		{
 			Properties credentials = AuthSourceService.getFromString(authFile.getPath())
 													  .getCredentials();
-			Logger.instance().debug1("Read password from " + authFile.getPath());
+			log.debug("Read password from {}", authFile.getPath());
 			return credentials.getProperty("password");
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Error reading auth file '" + authFile.getPath() + "': " + ex);
+			log.atWarn().setCause(ex).log("Error reading auth file '{}'", authFile.getPath());
 			return null;
 		}
 	}
