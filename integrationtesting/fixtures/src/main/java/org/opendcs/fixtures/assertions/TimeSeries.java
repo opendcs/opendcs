@@ -130,17 +130,13 @@ public class TimeSeries
         int index = cts.findNextIdx(start);
         TimedVariable tv = cts.sampleAt(index);
         while(tv != null){
-            try {
-                Date time  = tv.getDateValue();
-                if(time.compareTo(end) >= 0){
-                    elementCount++;
-                    tv = cts.sampleAt(index+elementCount);
-                }
-                else{
-                    break;
-                }
-            } catch (NoConversionException ex) {
-                throw new NoConversionException("Failed to get Date value for timed variable");
+            Date time  = tv.getTime();
+            if(time.compareTo(end) <= 0){
+                elementCount++;
+                tv = cts.sampleAt(index+elementCount);
+            }
+            else{
+                break;
             }
         }
         return elementCount;
