@@ -1,10 +1,24 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.statusxml;
 
 import java.net.InetAddress;
-import ilex.util.Logger;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.apistatus.*;
 import lrgs.gui.LrgsApp;
@@ -19,6 +33,7 @@ as 'final' we have to extend it via a wrapper, rather than inheritance.
 */
 public class LrgsStatusSnapshotExt
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The wrapped IDL-defined data structure */
 	public LrgsStatusSnapshot lss;
 
@@ -48,7 +63,7 @@ public class LrgsStatusSnapshotExt
 
 	/** Full version string with date for display */
 	public String fullVersion = null;
-	
+
 	/** Network DCP Status List, or null if no net dcps are used. */
 	public NetworkDcpStatusList networkDcpStatusList = null;
 
@@ -70,7 +85,7 @@ public class LrgsStatusSnapshotExt
 	 * messages from DOMSAT. This array contains 24 hours of dropped counts.
 	 */
 	public int domsatDropped[];
-	
+
 
 	public DownlinkQMs downlinkQMs[];
 
@@ -110,8 +125,8 @@ public class LrgsStatusSnapshotExt
 			domsatDropped[i] = 0;
 	}
 
-	/** 
-	  This must be called prior to adding any processes. 
+	/**
+	  This must be called prior to adding any processes.
 	  @param max maximum number of attached processes
 	*/
 	public void setMaxClients(int max)
@@ -121,23 +136,26 @@ public class LrgsStatusSnapshotExt
 		for(int i=0; i<max; i++)
 			lss.attProcs[i] = null;
 	}
-		
-	/** 
-	  Adds a process to the set at a particular slot. 
+
+	/**
+	  Adds a process to the set at a particular slot.
 	  @param ap The IDL-define AttachedProcess structure
 	  @param slot the slot number
 	*/
 	public void addProcess(AttachedProcess ap, int slot)
 	{
 		if (slot >= 0 && lss.attProcs != null && slot < lss.attProcs.length)
+		{
 			lss.attProcs[slot] = ap;
+		}
 		else
-			Logger.instance().log(Logger.E_WARNING, "Invalid process slot "
-				+ slot + " -- process status will be discarded.");
+		{
+			log.warn("Invalid process slot {} -- process status will be discarded.", slot);
+		}
 	}
 
-	/** 
-	  Must be called prior to adding any downlinks. 
+	/**
+	  Must be called prior to adding any downlinks.
 	  @param max maximum number of downlinks
 	*/
 	public void setMaxDownlinks(int max)
@@ -165,8 +183,9 @@ public class LrgsStatusSnapshotExt
 			downlinkQMs[slot] = new DownlinkQMs();
 		}
 		else
-			Logger.instance().log(Logger.E_WARNING, "Invalid downlink slot "
-				+ slot + " -- downlink status will be discarded.");
+		{
+			log.warn("Invalid downlink slot {} -- downlink status will be discarded.", slot);
+		}
 	}
 
 	/**
@@ -185,7 +204,7 @@ public class LrgsStatusSnapshotExt
 	  @param qm the QualityMeasurement structure
 	  @param hour the hour (0...23)
 	*/
-	public void addDownlinkQualityMeasurement(int slot, 
+	public void addDownlinkQualityMeasurement(int slot,
 		QualityMeasurement qm, int hour)
 	{
 		downlinkQMs[slot].dl_qual[hour] = qm;
@@ -222,5 +241,5 @@ public class LrgsStatusSnapshotExt
 		}
 		return -1;
 	}
-				
+
 }
