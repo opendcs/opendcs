@@ -22,12 +22,10 @@ public class InitFailedException extends FatalException
 	public InitFailedException(String msg)
 	{
 		super(msg);
-		// Note FatalException ctor will issue log message.
 	}
 
 	public InitFailedException(String msg, Throwable cause)
 	{
 		super(msg, cause);
 	}
-
 }

@@ -1,55 +1,40 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:16  cvs
-*  Added legacy code to repository
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.8  2007/11/01 20:07:51  mmaloney
-*  dev
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.7  2005/12/30 19:40:59  mmaloney
-*  dev
-*
-*  Revision 1.6  2004/05/25 15:06:52  mjmaloney
-*  Propegate debug level to all loggers.
-*
-*  Revision 1.5  2004/05/24 17:11:08  mjmaloney
-*  release prep
-*
-*  Revision 1.4  2004/05/21 18:27:44  mjmaloney
-*  Release prep.
-*
-*  Revision 1.3  2004/05/18 22:52:40  mjmaloney
-*  dev
-*
-*  Revision 1.2  2004/05/18 18:02:09  mjmaloney
-*  dev
-*
-*  Revision 1.1  2004/05/06 21:48:13  mjmaloney
-*  Implemented Lqm Server. Modified GUI to read events over the net.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lritdcs;
 
 import java.util.*;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.*;
 import java.net.Socket;
 
 import ilex.net.*;
-import ilex.util.Logger;
-import lrgs.common.SearchCriteria;
 
-public class LqmInterfaceThread
-	extends BasicSvrThread
+public class LqmInterfaceThread extends BasicSvrThread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	BufferedReader input;
 
 	LqmInterfaceThread(BasicServer parent, Socket socket)
 		throws IOException
 	{
 		super(parent, socket);
-		input = 
+		input =
 			new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		LritDcsStatus stat = LritDcsMain.instance().getStatus();
 		stat.lqmStatus = "Active: " + socket.getInetAddress().toString();
@@ -68,31 +53,30 @@ public class LqmInterfaceThread
 		// Blocking Read for a line of input
 		String line;
 		LritDcsStatus myStatus = LritDcsMain.instance().getStatus();
-		try 
+		try
 		{
-			line = input.readLine(); 
+			line = input.readLine();
 			if (line == null)
 			{
-				Logger.instance().warning("LRIT:" + Constants.EVT_NO_LQM
-					+ " LQM Interface Socket from " + getClientName() 
-					+ " has disconnected.");
+				log.warn("LRIT:{} LQM Interface Socket from {} has disconnected.",
+						 Constants.EVT_NO_LQM, getClientName());
 				disconnect();
 				return;
 			}
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("LRIT:" + Constants.EVT_NO_LQM
-				+ " IO Error on LQM Interface Socket from " + getClientName() 
-				+ " -- disconnecting");
+			log.atWarn()
+			   .setCause(ex)
+			   .log("LRIT:{} IO Error on LQM Interface Socket from {} -- disconnecting",
+			   		Constants.EVT_NO_LQM, getClientName());
 			disconnect();
 			return;
 		}
 
 		// Process the line.
 		line = line.trim();
-		Logger.instance().debug1(
-			"Received LQM '" + line + "'");
+		log.debug("Received LQM '{}'", line);
 		StringTokenizer st = new StringTokenizer(line);
 		int n = st.countTokens();
 		if (n == 0)
@@ -108,9 +92,7 @@ public class LqmInterfaceThread
 			myStatus.lastLqmContact = System.currentTimeMillis();
 			String fn = st.nextToken();
 			String stat = st.nextToken();
-			Logger.instance().log(Logger.E_DEBUG2, 
-				"LQM/IF: Got FILE report from LQM, name='"
-				+ fn + "', status=" + stat);
+			log.trace("LQM/IF: Got FILE report from LQM, name='{}', status='{}'", fn, stat);
 			LritDcsMain ldm = LritDcsMain.instance();
 			LinkedList pendingList = ldm.getFileNamesPending();
 			FileQueue autoRetransQ = ldm.getFileQueueAutoRetrans();
@@ -140,21 +122,20 @@ public class LqmInterfaceThread
 					 pri == Constants.MediumPri ? "medium.sent" : "low.sent"));
 
 				autoRetransQ.enqueue(new File(dir, fn));
-				Logger.instance().info(
-					"LQM reports failed transmission of '" + fn 
-					+ "' -- scheduled for retransmission.");
+				log.info("LQM reports failed transmission of '{}' -- scheduled for retransmission.", fn);
 			}
 			else if (wasInList)
-				Logger.instance().info(
-					"LQM/IF reports successful transmission of '" + fn 
-					+ "'.");
+			{
+				log.info("LQM/IF reports successful transmission of '{}'.", fn);
+			}
 			else
-				Logger.instance().info(
-					"Unexpected LQM transmit report: '" + line 
-					+ "' -- ignored.");
+			{
+				log.info("Unexpected LQM transmit report: '{}' -- ignored.", line);
+			}
 		}
 		else
-			Logger.instance().info(
-				"Unrecognized Request from LQM '" + line + "' -- ignored.");
+		{
+			log.info("Unrecognized Request from LQM '{}' -- ignored.", line);
+		}
 	}
 }

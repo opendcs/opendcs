@@ -35,4 +35,3 @@ public class FatalException extends IlexException
 		super(msg, cause);
 	}
 }
-
