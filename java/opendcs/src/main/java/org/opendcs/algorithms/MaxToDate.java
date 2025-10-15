@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 The OpenDCS Consortium and contributors
+ * Copyright 2024-2025 The OpenDCS Consortium and contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import java.util.Date;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ilex.var.NamedVariable;
 import decodes.tsdb.DbCompException;
@@ -42,7 +42,7 @@ import decodes.tsdb.algo.AWAlgoType;
                                              + "Previous maximum within the interval should be deleted")
 public class MaxToDate extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-    private static final Logger log = LoggerFactory.getLogger(MaxToDate.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     @Input
     public double input;
@@ -136,7 +136,7 @@ public class MaxToDate extends decodes.tsdb.algo.AW_AlgorithmBase
         }
         else
         {
-            log.trace("Only {} samples found, minium number specified is {}", numSamples, minSamples );
+            log.trace("Only {} samples found, minium number specified is {}", numSamples, minSamples);
             log.trace("selected min/max will not be saved");
         }
     }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 The OpenDCS Consortium and contributors
+ * Copyright 2024-2025 The OpenDCS Consortium and contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ import java.util.GregorianCalendar;
 
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 //AW:JAVADOC
 /**
@@ -54,7 +54,7 @@ import org.slf4j.LoggerFactory;
 
 public class FlowResIn extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-    private static final Logger log = LoggerFactory.getLogger(FlowResIn.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     @Input
     public double ResOut;
