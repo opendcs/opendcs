@@ -1,10 +1,26 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package opendcs.opentsdb;
-
-import ilex.util.Logger;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Calendar;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.IntervalList;
 import decodes.sql.DbKey;
@@ -19,65 +35,64 @@ import opendcs.dao.DatabaseConnectionOwner;
  * @author mmaloney Mike Maloney, Cove Software, LLC
  *
  */
-public class OpenTsdbIntervalDAO
-	extends DaoBase
-	implements IntervalDAI
+public class OpenTsdbIntervalDAO extends DaoBase implements IntervalDAI
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static String validIntervals[] = new String[0];
-	
+
 	public OpenTsdbIntervalDAO(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "IntervalDAO");
 	}
-	
+
 	@Override
 	public void loadAllIntervals()
 		throws DbIoException
 	{
 		String q = "select INTERVAL_ID, NAME, CAL_CONSTANT, CAL_MULTIPLIER "
 			+ "from INTERVAL_CODE";
-		try
+		try (ResultSet rs = doQuery(q))
 		{
-			ResultSet rs = doQuery(q);
-			while(rs != null && rs.next())
+			while(rs.next())
 			{
 				int calconst = str2const(rs.getString(3));
 				if (calconst == -1)
-					warning("Invalid calendar constant '" + rs.getString(3) + "' -- skipped.");
+				{
+					log.warn("Invalid calendar constant '{}' -- skipped.", rs.getString(3));
+				}
 				Interval intv = new Interval(DbKey.createDbKey(rs, 1),
 					rs.getString(2), calconst, rs.getInt(4));
 				IntervalList.instance().add(intv);
 			}
-			
+
 			// "0" needs to be a built-in interval because it's used often for duration.
 			Interval zeroInt = IntervalList.instance().getByName("0");
 			if (zeroInt == null)
 			{
-				Logger.instance().debug1("After loading intervals, there is no '0' interval. Will add.");
+				log.debug("After loading intervals, there is no '0' interval. Will add.");
 				zeroInt = new Interval(DbKey.NullKey, "0", Calendar.MINUTE, 0);
 				if (db.getKeyGenerator() != null)
 					writeInterval(zeroInt);
 				// note: writeInterval will add to the list.
 			}
 			else
-				Logger.instance().info("After loading intervals, '0' interval has key=" + zeroInt.getKey());
+			{
+				log.info("After loading intervals, '0' interval has key={}", zeroInt.getKey());
+			}
 		}
 		catch (Exception ex)
 		{
-			String msg = "Cannot read INTERVAL_CODE table: " + ex;
-			warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace();
-			throw new DbIoException(msg);
+			String msg = "Cannot read INTERVAL_CODE table.";
+			throw new DbIoException(msg, ex);
 		}
-		
+
 		// All intervals, including built-ins are valid in OpenTSDB.
 		validIntervals = new String[IntervalList.instance().getList().size()];
 		int i=0;
 		for(Interval intv : IntervalList.instance().getList())
 			validIntervals[i++] = intv.getName();
 	}
-	
+
 	@Override
 	public void writeInterval(Interval intv)
 		throws DbIoException
@@ -87,17 +102,17 @@ public class OpenTsdbIntervalDAO
 		{
 			q = "select interval_id from interval_code where lower(name) = "
 				+ sqlString(intv.getName().toLowerCase());
-			ResultSet rs = doQuery(q);
-			try
+			try (ResultSet rs = doQuery(q))
 			{
-				if (rs != null && rs.next())
+				if (rs.next())
+				{
 					intv.setKey(DbKey.createDbKey(rs, 1));
+				}
 			}
 			catch (SQLException ex)
 			{
-				String msg = "Error in query '" + q + "': " + ex;
-				failure(msg);
-				throw new DbIoException(msg);
+				String msg = "Error in query '" + q + "'";
+				throw new DbIoException(msg, ex);
 			}
 		}
 		if (intv.getKey().isNull())
@@ -121,7 +136,7 @@ public class OpenTsdbIntervalDAO
 		doModify(q);
 		IntervalList.instance().add(intv);
 	}
-	
+
 	private int str2const(String s)
 	{
 		/** One of MINUTE, HOUR_OF_DAY, DAY_OF_MONTH, WEEK_OF_YEAR, MONTH, YEAR */
@@ -151,7 +166,7 @@ public class OpenTsdbIntervalDAO
 			try { loadAllIntervals(); }
 			catch (DbIoException ex)
 			{
-				failure("Cannot load intervals: " + ex);
+				log.atError().setCause(ex).log("Cannot load intervals.");
 				validIntervals = new String[0];
 			}
 		}
@@ -166,11 +181,11 @@ public class OpenTsdbIntervalDAO
 			try { loadAllIntervals(); }
 			catch (DbIoException ex)
 			{
-				failure("Cannot load intervals: " + ex);
+				log.atError().setCause(ex).log("Cannot load intervals.");
 				validIntervals = new String[0];
 			}
 		}
 		return validIntervals;
 	}
-	
+
 }
