@@ -1,5 +1,17 @@
 /*
-* $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.rtstat;
 
@@ -7,6 +19,7 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.event.*;
+
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashSet;
@@ -20,13 +33,11 @@ import ilex.util.ProcWaiterThread;
 /**
 Main frame for the LRGS Real-Time Summary Status Application.
 */
-public class RtSummaryStatFrame
-	extends JFrame
-	implements ProcWaiterCallback
+public class RtSummaryStatFrame extends JFrame implements ProcWaiterCallback
 {
-	private static ResourceBundle labels = 
+	private static ResourceBundle labels =
 		RtSummaryStat.getLabels();
-	private static ResourceBundle genericLabels = 
+	private static ResourceBundle genericLabels =
 		RtSummaryStat.getGenericLabels();
 	private JPanel contentPane;
 	private BorderLayout contentPaneLayout = new BorderLayout();
@@ -55,14 +66,8 @@ public class RtSummaryStatFrame
 		this.scanPeriod = scanPeriod;
 		this.url = url;
 		enableEvents(AWTEvent.WINDOW_EVENT_MASK);
-		try
-		{
-			jbInit();
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
+
+		jbInit();
 
 		isPaused = false;
 
@@ -126,7 +131,7 @@ public class RtSummaryStatFrame
 			cmd.append(" -DDECODES_INSTALL_DIR=" + p);
 		cmd.append(" lrgs.rtstat.RtStat -h " + host);
 		String cmds = cmd.toString();
-System.out.println("Executing: " + cmds);
+
 		try { ProcWaiterThread.runBackground(cmds, host, this, host); }
 		catch(IOException ex)
 		{
@@ -138,7 +143,6 @@ System.out.println("Executing: " + cmds);
 
 	/** Initializes GUI components. */
 	private void jbInit()
-		throws Exception
 	{
 		contentPane = (JPanel)this.getContentPane();
 		contentPane.setLayout(contentPaneLayout);
@@ -148,8 +152,6 @@ System.out.println("Executing: " + cmds);
 		topPanel.setLayout(topPanelLayout);
 		contentPane.add(topPanel, BorderLayout.NORTH);
 
-//		urlField.setMinimumSize(new Dimension(60, 23));
-//		urlField.setPreferredSize(new Dimension(60, 23));
 		urlField.setText(url);
 		urlField.addActionListener(
 			new java.awt.event.ActionListener()
@@ -185,16 +187,16 @@ System.out.println("Executing: " + cmds);
 			});
 
 		topPanel.add(urlLabel,  new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0
-            ,GridBagConstraints.WEST, GridBagConstraints.NONE, 
+            ,GridBagConstraints.WEST, GridBagConstraints.NONE,
 			new Insets(10, 10, 10, 2), 0, 0));
 		topPanel.add(urlField,  new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0
-            ,GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+            ,GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 			new Insets(10, 0, 10, 6), 0, 6));
 		topPanel.add(pauseButton,  new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0
-            ,GridBagConstraints.CENTER, GridBagConstraints.NONE, 
+            ,GridBagConstraints.CENTER, GridBagConstraints.NONE,
 			new Insets(10, 5, 10, 5), 0, 0));
 		topPanel.add(exitButton,  new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0
-            ,GridBagConstraints.CENTER, GridBagConstraints.NONE, 
+            ,GridBagConstraints.CENTER, GridBagConstraints.NONE,
 			new Insets(10, 5, 10, 10), 0, 0));
 
 		contentPane.add(rtSummaryStatPanel, BorderLayout.CENTER);
@@ -260,68 +262,6 @@ System.out.println("Executing: " + cmds);
 		}
 	}
 
-//	private void loadHistory()
-//	{
-//		file f = new File(EnvExpander.expand("$LRGSHOME/SumStatHistory"));
-//		if (!f.canRead())
-//		{
-//			f = new File(EnvExpander.expand("$HOME/SumStatHistory"));
-//			if (!f.canRead())
-//			{
-//				f = new File(EnvExpander.expand(
-//					"$DECODES_INSTALL_DIR/SumStatHistory"));
-//				if (!f.canRead())
-//				{
-//					// no history;
-//					f = null;
-//				}
-//			}
-//		}
-//		try
-//		{
-//			FileInputStream fis = new FileInputStream(file);
-//			connectionList.clear();
-//			connectionList.load(fis);
-//			fis.close();
-//		}
-//		catch(IOException ioe)
-//		{
-//			System.out.println("No previously recorded connections");
-//		}
-//		Enumeration enames = connectionList.propertyNames();
-//		int selected = -1;
-//		int i = 0;
-//		hostCombo.removeAllItems();
-//		for(; enames.hasMoreElements(); i++)
-//		{
-//			String s = (String)enames.nextElement();
-//			if (connectedHostName != null 
-//			 && connectedHostName.equalsIgnoreCase(s))
-//				selected = i;
-//			hostCombo.addItem(s);
-//		}
-//		if (selected == -1)
-//		{
-//			hostCombo.addItem(connectedHostName);
-//			selected = i;
-//		}
-//		hostCombo.setSelectedIndex(selected);
-//	}
-
-	private void launch(JDialog dlg)
-	{
-		Dimension frameSize = this.getSize();
-		Point frameLoc = this.getLocation();
-		Dimension dlgSize = dlg.getPreferredSize();
-		int xo = (frameSize.width - dlgSize.width) / 2;
-		if (xo < 0) xo = 0;
-		int yo = (frameSize.height - dlgSize.height) / 2;
-		if (yo < 0) yo = 0;
-		
-		dlg.setLocation(frameLoc.x + xo, frameLoc.y + yo);
-		dlg.setVisible(true);
-	}
-
 	public void setLrgsMonUrl(String lrgsMonUrl)
 	{
 		urlField.setText(lrgsMonUrl);
@@ -330,7 +270,6 @@ System.out.println("Executing: " + cmds);
 	public void procFinished(String procName, Object obj, int exitStatus)
 	{
 		String host = (String)obj;
-System.out.println("RtStat for host '" + host + "' terminated.");
 		runningRtStats.remove(host);
 	}
 

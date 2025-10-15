@@ -10,15 +10,16 @@ import javax.swing.text.html.*;
 import javax.swing.text.DefaultCaret;
 
 import ilex.util.EnvExpander;
-import org.slf4j.LoggerFactory;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
 This is the HTML panel in which the status snapshot is displayed.
 */
-public class RtStatPanel
-	extends JPanel
+public class RtStatPanel extends JPanel
 {
-	private final static org.slf4j.Logger log = LoggerFactory.getLogger(RtStatPanel.class);
+	private final static Logger log = OpenDcsLoggerFactory.getLogger();
 	BorderLayout borderLayout1 = new BorderLayout();
 	TitledBorder titledBorder1;
 	TitledBorder titledBorder2;
@@ -27,15 +28,10 @@ public class RtStatPanel
 
 	public RtStatPanel()
 	{
-		try
-		{
-			jbInit();
-			htmlPanel.setDoubleBuffered(true);
-		}
-		catch (Exception ex)
-		{
-			log.error("Exception in RtStatPanel()",ex);
-		}
+
+		jbInit();
+		htmlPanel.setDoubleBuffered(true);
+
 		HTMLEditorKit hek = (HTMLEditorKit)htmlPanel.getEditorKit();
 		HTMLDocument doc = (HTMLDocument)hek.createDefaultDocument();
 
@@ -43,12 +39,12 @@ public class RtStatPanel
 	      Kludge to set the parsers document base so that it will be able
 		  to find the icons sub directory.
 		*/
-		try 
-		{ 
-			String path = 
+		String path =
 				EnvExpander.expand("$DECODES_INSTALL_DIR") + "/base.html";
-			File base = new File(path);
-			FileWriter fw = new FileWriter(base);
+		File base = new File(path);
+
+		try (FileWriter fw = new FileWriter(base))
+		{
 			fw.write("<html><body>dummy lrgs status page</body></html>\n");
 			fw.close();
 
@@ -63,7 +59,7 @@ public class RtStatPanel
 		}
 		catch(Exception ex)
 		{
-			log.error("Cannot set base url: " , ex);
+			log.atError().setCause(ex).log("Cannot set base url.");
 		}
 
 		// Tell the panel not to update the scroll-pane position based on the
@@ -74,7 +70,6 @@ public class RtStatPanel
 	}
 
 	void jbInit()
-		throws Exception
 	{
 		titledBorder1 = new TitledBorder(BorderFactory.createEtchedBorder(Color.
 			white, new Color(165, 163, 151)), "Archive Statistics");
@@ -97,22 +92,22 @@ public class RtStatPanel
 		{
 			StringBuffer sb = new StringBuffer();
 			URL url = new URL(surl);
-			InputStream is = url.openStream();
-			BufferedReader br = new BufferedReader(new InputStreamReader(is));
-			String ln;
-			while ( (ln = br.readLine()) != null)
+			try (InputStream is = url.openStream();
+				 BufferedReader br = new BufferedReader(new InputStreamReader(is));)
 			{
-				sb.append(ln);
-				sb.append("\n");
+				String ln;
+				while ( (ln = br.readLine()) != null)
+				{
+					sb.append(ln);
+					sb.append("\n");
+				}
 			}
 			String str = sb.toString();
-			br.close();
-			is.close();
 			htmlPanel.setText(str);
 		}
 		catch (Exception ex)
 		{
-			log.error("Error in setPage ",ex);
+			log.atError().setCause(ex).log("Error in setPage.");
 		}
 	}
 
