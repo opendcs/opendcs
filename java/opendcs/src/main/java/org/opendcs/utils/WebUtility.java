@@ -13,16 +13,16 @@ import java.util.function.Predicate;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ilex.util.EnvExpander;
 import nl.altindag.ssl.SSLFactory;
 import nl.altindag.ssl.model.TrustManagerParameters;
 
-public class WebUtility 
+public class WebUtility
 {
-    private static final Logger log = LoggerFactory.getLogger(WebUtility.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     /**
      * Default Certificate Trust that only logs the host information for the user to review.
