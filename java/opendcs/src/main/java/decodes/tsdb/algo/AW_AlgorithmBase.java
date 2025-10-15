@@ -692,7 +692,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 						x += ii.getCount();
 
 			aggCal.set(calIncr.getCalConstant(), x);
-			Date dlower = new Date(lower);
+			Date dlower = aggCal.getTime();
 			
 			// MJM Because of the offset stuff above, we could end up with a
 			// start of period after the base time. If that happens, decrement
