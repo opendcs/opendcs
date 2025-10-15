@@ -1,31 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.2  2012/12/12 16:01:31  mmaloney
-*  Several updates for 5.2
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.1  2008/04/04 18:21:16  cvs
-*  Added legacy code to repository
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.7  2006/02/20 22:01:03  mmaloney
-*  dev
-*
-*  Revision 1.6  2004/06/03 15:34:17  mjmaloney
-*  LRIT release prep
-*
-*  Revision 1.5  2004/05/27 13:15:02  mjmaloney
-*  DR fixes.
-*
-*  Revision 1.4  2004/05/18 22:52:40  mjmaloney
-*  dev
-*
-*  Revision 1.3  2004/05/18 18:11:51  mjmaloney
-*  dev
-*
-*  Revision 1.2  2004/05/15 22:02:35  mjmaloney
-*  Implemented retransmit and queue flush features.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lritdcs;
 
@@ -39,8 +25,7 @@ import lrgs.common.SearchCriteria;
 import lrgs.common.DcpAddress;
 import ilex.util.AsciiUtil;
 
-public class SearchCritDialog
-	extends JDialog
+public class SearchCritDialog extends JDialog
 {
 	JPanel panel1 = new JPanel();
 	BorderLayout borderLayout1 = new BorderLayout();
@@ -67,13 +52,10 @@ public class SearchCritDialog
 
 	public SearchCritDialog(Frame frame, String title, boolean modal) {
 		super(frame, title, modal);
-		try {
-			jbInit();
-			pack();
-		}
-		catch(Exception ex) {
-			ex.printStackTrace();
-		}
+
+		jbInit();
+		pack();
+
 		origSC = null;
 		okPressed = false;
 	}
@@ -159,7 +141,8 @@ public class SearchCritDialog
 		}
 	}
 
-	private void jbInit() throws Exception {
+	private void jbInit()
+	{
 		panel1.setLayout(borderLayout1);
 		okButton.setPreferredSize(new Dimension(100, 23));
 		okButton.setText("OK");
@@ -174,7 +157,7 @@ public class SearchCritDialog
 		jLabel1.setText("Search Criteria for ");
 		whichScLabel.setText("High Priority DCP Messages");
 		jPanel3.setBorder(BorderFactory.createEtchedBorder());
-    jPanel3.setPreferredSize(new Dimension(600, 105));
+		jPanel3.setPreferredSize(new Dimension(600, 105));
 		jPanel3.setLayout(gridBagLayout1);
 		jLabel2.setText("DCP Addresses:");
 		addressField.setToolTipText("Enter zero or more DCP addresses, space-separated.");
@@ -190,7 +173,7 @@ public class SearchCritDialog
 		flowLayout2.setAlignment(FlowLayout.CENTER);
 		flowLayout2.setVgap(10);
 		this.setModal(true);
-    this.setTitle("Search Criteria Dialog");
+    	this.setTitle("Search Criteria Dialog");
 		getContentPane().add(panel1);
 		panel1.add(jPanel1, BorderLayout.SOUTH);
 		jPanel1.add(okButton, null);
