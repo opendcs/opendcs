@@ -1,46 +1,26 @@
 /*
-* $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-* $Log$
-* Revision 1.3  2012/12/12 16:01:31  mmaloney
-* Several updates for 5.2
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-* Revision 1.2  2009/08/14 14:11:42  shweta
-* Introduced 6 new variables for all 3 domain 2 hosts and their LRIT status
-* These variables are  wriiten in lritdcs.stat file
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-* Revision 1.1  2008/04/04 18:21:16  cvs
-* Added legacy code to repository
-*
-* Revision 1.7  2004/05/18 18:02:10  mjmaloney
-* dev
-*
-* Revision 1.6  2004/05/11 20:46:26  mjmaloney
-* LQM Impl
-*
-* Revision 1.5  2004/05/11 19:00:31  mjmaloney
-* Working UI
-*
-* Revision 1.4  2003/08/15 20:13:07  mjmaloney
-* dev
-*
-* Revision 1.3  2003/08/11 23:38:11  mjmaloney
-* dev
-*
-* Revision 1.2  2003/08/11 15:59:19  mjmaloney
-* dev
-*
-* Revision 1.1  2003/08/06 23:29:24  mjmaloney
-* dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lritdcs;
 
 import java.io.*;
 import java.util.*;
-import java.lang.reflect.*;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.PropertiesUtil;
 
 /**
@@ -48,6 +28,7 @@ import ilex.util.PropertiesUtil;
 */
 public class LritDcsStatus
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	// Constants:
 	public static final String STAT_FILE_NAME = "lritdcs.stat";
 
@@ -122,26 +103,22 @@ public class LritDcsStatus
 
 	static final String startTimeTagLabel = "startTimeTag";
 	static final String endTimeTagLabel = "endTimeTag";
-	
+
 	public String domain2Ahost;
 	public String domain2Bhost;
 	public String domain2Chost;
-	
+
 	public String domain2AStatus;
 	public String domain2BStatus;
 	public String domain2CStatus;
-	
-//	public String ptpDir;
-//	public boolean ptpEnabled;
-//	public long ptpLastSave;
+
 	public String lastFileName;
-	
+
 	public LritDcsStatus(String filepath)
 	{
 		clear();
 		myFile = new File(filepath);
-		Logger.instance().log(Logger.E_DEBUG3,
-			"Status file will have path '" + myFile.getPath() + "'");
+		log.trace("Status file will have path '{}'", myFile.getPath());
 		lineSep = System.getProperty("line.separator");
 		if (lineSep == null)
 			lineSep = "\n";
@@ -195,9 +172,6 @@ public class LritDcsStatus
 		lastFileSendA = 0L;
 		lastFileSendB = 0L;
 		lastFileSendC = 0L;
-//		ptpDir = "";
-//		ptpEnabled = false;
-//		ptpLastSave = 0L;
 		lastFileName = "";
 	}
 
@@ -206,25 +180,21 @@ public class LritDcsStatus
 	{
 		if (myFile.exists() && myFile.lastModified() <= lastModified)
 		{
-			Logger.instance().log(Logger.E_DEBUG3,
-				"Skipping reload of '" + myFile.getPath() + "' -- no changes.");
+			log.trace("Skipping reload of '{}' -- no changes.", myFile.getPath());
 			return;
 		}
 
-		Logger.instance().log(Logger.E_DEBUG2,
-			"Opening '" + myFile.getPath() + "' for reading.");
+		log.trace("Opening '{}' for reading.", myFile.getPath());
 
 		Properties props = new Properties();
-		try
+		try (FileInputStream fis = new FileInputStream(myFile))
 		{
-			FileInputStream fis = new FileInputStream(myFile);
 			props.load(fis);
-			fis.close();
 			loadFromProps(props);
 		}
 		catch(IOException ex)
 		{
-			throw new StatusInvalidException(ex.toString());
+			throw new StatusInvalidException(ex.toString(), ex);
 		}
 	}
 
@@ -243,10 +213,8 @@ public class LritDcsStatus
 			if (startTimeTag != endTimeTag)
 			{
 				isValid = false;
-				Logger.instance().log(Logger.E_DEBUG1, 
-					"time tags don't match, skipping");
-				throw new StatusInvalidException(
-					"Start/End time tags don't match.");
+				log.debug("time tags don't match, skipping");
+				throw new StatusInvalidException("Start/End time tags don't match.");
 			}
 		}
 		catch(NumberFormatException nfe)
@@ -264,20 +232,16 @@ public class LritDcsStatus
 
 	public void writeToFile()
 	{
-		Logger.instance().log(Logger.E_DEBUG3,"Writing '" + myFile.getPath()
-			+ "'");
+		log.trace("Writing '{}'", myFile.getPath());
 		String fileContents = toString();
-		
-		try
+
+		try (FileOutputStream fos = new FileOutputStream(myFile))
 		{
-			FileOutputStream fos = new FileOutputStream(myFile);
 			fos.write(fileContents.getBytes());
-			fos.close();
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().log(Logger.E_FAILURE, "Cannot write '" 
-				+ myFile.getPath() + "': " + ex);
+			log.atError().setCause(ex).log("Cannot write '{}'", myFile.getPath());
 		}
 	}
 
@@ -285,25 +249,21 @@ public class LritDcsStatus
 	{
 		Properties props = new Properties();
 		PropertiesUtil.storeInProps(this, props, "");
-		
+
 		StringWriter sw = new StringWriter();
-		try
+		try (PrintWriter pw = new PrintWriter(sw))
 		{
-			PrintWriter pw = new PrintWriter(sw);
+
 			long timeTag = System.currentTimeMillis();
 			pw.println(startTimeTagLabel + "=" + timeTag);
 			props.store(pw, null);
 			pw.println(endTimeTagLabel + "=" + timeTag);
-			pw.close();
 		}
 		catch(IOException ex)
 		{
-			String msg = "LritDcsStatus cannot convert to string: " + ex;
-			Logger.instance().warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			log.atWarn().setCause(ex).log("LritDcsStatus cannot convert to string");
 		}
-		
+
 		return sw.toString();
 	}
 
@@ -432,12 +392,10 @@ public class LritDcsStatus
 	public static void main(String args[])
 		throws Exception
 	{
-		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
 		LritDcsConfig cfg = LritDcsConfig.instance();
 		LritDcsStatus stat = new LritDcsStatus(
 			cfg.getLritDcsHome() + File.separator + STAT_FILE_NAME);
-		//stat.loadFromFile();
+
 		stat.writeToFile();
-		//System.out.println(stat.toString());
 	}
 }

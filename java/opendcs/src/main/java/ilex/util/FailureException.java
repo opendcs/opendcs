@@ -35,4 +35,3 @@ public class FailureException extends IlexException
 		super(msg, cause);
 	}
 }
-

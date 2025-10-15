@@ -1,28 +1,26 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:16  cvs
-*  Added legacy code to repository
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.3  2005/12/30 19:41:00  mmaloney
-*  dev
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.2  2003/08/18 14:47:59  mjmaloney
-*  bug fixes.
-*
-*  Revision 1.1  2003/08/11 01:33:58  mjmaloney
-*  dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lritdcs;
 
 import java.util.*;
-import ilex.util.*;
 
-public abstract class LritDcsThread
-	extends Thread
-	implements Observer
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
+public abstract class LritDcsThread extends Thread implements Observer
 {
 	/// Stop the current execution, perhaps to reinit.
 	protected boolean shutdownFlag;
@@ -37,7 +35,7 @@ public abstract class LritDcsThread
 
 	public void shutdown()
 	{
-		shutdownFlag = true; 
+		shutdownFlag = true;
 	}
 
 	public boolean isShutdown() { return shutdownFlag; }
@@ -58,43 +56,35 @@ public abstract class LritDcsThread
 
 	protected abstract void getConfigValues(LritDcsConfig cfg);
 
+	@Deprecated
 	public void debug1(String msg)
 	{
-		Logger.instance().log(Logger.E_DEBUG1,getName() + ": " + msg);
 	}
+
+	@Deprecated
 	public void debug2(String msg)
 	{
-		Logger.instance().log(Logger.E_DEBUG2,getName() + ": " + msg);
 	}
+
+	@Deprecated
 	public void debug3(String msg)
 	{
-		Logger.instance().log(Logger.E_DEBUG3,getName() + ": " + msg);
 	}
 
-	private String format(int evtnum, String msg)
-	{
-		String s = "LRIT";
-		if (evtnum != 0)
-			s = s + ":" + evtnum;
-		if (msg.charAt(0) != '-')
-			s = s + ' ';
-		return s + msg + " (" + getName() + ")";
-	}
-
+	@Deprecated
 	public void info(int evtnum, String msg)
 	{
-		Logger.instance().info(format(evtnum, msg));
 	}
+	@Deprecated
 	public void warning(int evtnum, String msg)
 	{
-		Logger.instance().warning(format(evtnum, msg));
 	}
+	@Deprecated
 	public void failure(int evtnum, String msg)
 	{
-		Logger.instance().failure(format(evtnum, msg));
 	}
+	@Deprecated
 	public void fatal(int evtnum, String msg)
 	{
-		Logger.instance().fatal(format(evtnum, msg));
 	}
 }
