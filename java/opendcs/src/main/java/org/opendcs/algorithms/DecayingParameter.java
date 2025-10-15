@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 The OpenDCS Consortium and contributors
+ * Copyright 2024-2025 The OpenDCS Consortium and contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -38,11 +38,12 @@ import java.io.BufferedWriter;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 
 @Algorithm(name = "DecayingParameter",
-	description = 
+	description =
 		"Implements the equation: FCP[t] = BasinPrecip[t] + Decay*FCP[t-1]\n"
 	  + "FCP = flood control parameter\n"
 	  +	"Decay = Constant provided by water control diagram.\n"
@@ -53,7 +54,7 @@ import org.slf4j.LoggerFactory;
 		)
 public class DecayingParameter extends AW_AlgorithmBase
 {
-	public static final org.slf4j.Logger log = LoggerFactory.getLogger(DecayingParameter.class);
+	public static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	@Input
 	public double input;
@@ -98,7 +99,7 @@ public class DecayingParameter extends AW_AlgorithmBase
 		{   /// the above condition will either cause no FCP or FCP to never decay
 			throw new DbCompException("DecayingParameter:init - You must specify a Decay parameter between but not including 0 or 1" );
 		}
-		
+
 		df = new SimpleDateFormat( "ddMMM");
 		try
 		{
@@ -110,12 +111,12 @@ public class DecayingParameter extends AW_AlgorithmBase
 			}
 			tmp = new GregorianCalendar(aggTZ);
 		}
-		catch (java.text.ParseException e)
+		catch (java.text.ParseException ex)
 		{
-			throw new DbCompException("Could not parse reset date, please use format: ddMMMyyyy HHmm", e);
+			throw new DbCompException("Could not parse reset date, please use format: ddMMMyyyy HHmm", ex);
 		}
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -158,14 +159,14 @@ public class DecayingParameter extends AW_AlgorithmBase
 			{
 				throw new DbCompException("Unable to process previous value.", ex);
 			}
-			first_run = false;                        
+			first_run = false;
 		}
 		if (resetDate != null)
 		{
 			cal.set(Calendar.YEAR, _timeSliceBaseTime.getYear()+1900);
 			tmp.setTime(_timeSliceBaseTime);
 			if ((tmp.get(Calendar.MONTH) == cal.get(Calendar.MONTH) ) && (tmp.get(Calendar.DAY_OF_MONTH) == cal.get(Calendar.DAY_OF_MONTH)))
-			{	
+			{
 				previous_fcp = ResetValue; // reset value
 			}
 		}
@@ -175,7 +176,7 @@ public class DecayingParameter extends AW_AlgorithmBase
 			fcp = Decay*previous_fcp + input;
 			log.trace("New parameter value is {}, setting previous_fcp to this value for next timestep", fcp);
 			previous_fcp = fcp;
-                                      
+
 			setOutput(output, fcp);
 		}
 		else
