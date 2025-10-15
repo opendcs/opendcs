@@ -220,8 +220,7 @@ public class LritDcsConnection implements Observer
 		File keyfile = new File(LritDcsMain.instance().getRsaKeyFile());
 		if (!keyfile.canRead())
 		{
-			log.error("RSA Key File '" + keyfile.getPath()
-				+ "' not readable. Edit lritdcs.conf and check permissions.", keyfile.getPath());
+			log.error("RSA Key File '{}' not readable. Edit lritdcs.conf and check permissions.", keyfile.getPath());
 			connCStatus = "Cannot read RSA Key File";
 			return;
 		}
