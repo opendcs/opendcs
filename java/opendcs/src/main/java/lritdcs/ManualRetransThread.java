@@ -1,60 +1,40 @@
 /*
-* $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-* $Log$
-* Revision 1.3  2014/05/30 13:15:35  mmaloney
-* dev
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-* Revision 1.2  2014/05/28 13:09:31  mmaloney
-* dev
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-* OPENDCS 6.0 Initial Checkin
-*
-* Revision 1.3  2009/10/16 12:39:00  mjmaloney
-* LRIT updates
-*
-* Revision 1.2  2009/10/09 18:17:59  mjmaloney
-* Added flag bytes and carrier times to LRIT File.
-*
-* Revision 1.1  2008/04/04 18:21:16  cvs
-* Added legacy code to repository
-*
-* Revision 1.4  2005/12/30 19:41:00  mmaloney
-* dev
-*
-* Revision 1.3  2004/05/21 18:27:45  mjmaloney
-* Release prep.
-*
-* Revision 1.2  2004/05/18 22:52:40  mjmaloney
-* dev
-*
-* Revision 1.1  2004/05/15 22:02:35  mjmaloney
-* Implemented retransmit and queue flush features.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lritdcs;
 
 import java.util.*;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.IOException;
 import java.io.File;
 
-import ilex.util.*;
-import ilex.cmdline.*;
 import lrgs.common.SearchCriteria;
 import decodes.datasource.*;
-import decodes.decoder.*;
 import decodes.db.*;
-import decodes.consumer.*;
-import decodes.util.*;
+import ilex.util.TextUtil;
 
 /**
  This class handles manual retransmit requests via a separate connection
  to the DDS servers.
 */
-public class ManualRetransThread
-	extends LritDcsThread
+public class ManualRetransThread extends LritDcsThread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	LritDcsFileWriter output;
 
 	/// The data source that is providing raw messages.
@@ -70,7 +50,7 @@ public class ManualRetransThread
 	boolean reconfigSource;
 	int retryPeriod;
 	int timeoutPeriod;
-	
+
 	/// Could be used in future to pass params to data source;
 	Properties rsProps;
 
@@ -88,7 +68,7 @@ public class ManualRetransThread
 		super("ManualRetransThread");
 
 		output = null;
-		
+
 		shutdownFlag = false;
 		dataSource = null;
 		myStatus = LritDcsMain.instance().getStatus();
@@ -124,7 +104,7 @@ public class ManualRetransThread
 		// Note: changes to searchcrits will be auto detected by writers.
 
 		// Check for changes to server list & reconfigure HBG if nec.
-		reconfigSource = 
+		reconfigSource =
 			!TextUtil.strEqual(host1, cfg.getDds1HostName())
 		 || port1 != cfg.getDds1Port()
 		 || !TextUtil.strEqual(user1, cfg.getDds1UserName())
@@ -191,7 +171,7 @@ public class ManualRetransThread
 	*/
 	public void run()
 	{
-		info(0, "Starting Manual Retransmit Thread");
+		log.info("Starting Manual Retransmit Thread");
 
 		try
 		{
@@ -205,17 +185,18 @@ public class ManualRetransThread
 					continue;
 				}
 
-				try 
+				try
 				{
-					initDataSource(sc); 
-					info(-Constants.EVT_DATA_SOURCE_ERR,
-					  "Initialized data source for manual retransmits.");
+					initDataSource(sc);
+					log.info("{}- Initialized data source for manual retransmits.",
+							 -Constants.EVT_DATA_SOURCE_ERR);
 				}
 				catch(DataSourceInitException ex)
 				{
-					warning(Constants.EVT_DATA_SOURCE_ERR,
-					  "Could not initialize data source for manual retransmit: "
-						+ ex + " -- aborted request.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Could not initialize data source for manual retransmit -- aborted request.",
+					   		Constants.EVT_DATA_SOURCE_ERR);
 					try { sleep(10000L); }
 					catch (InterruptedException e) {}
 					continue;
@@ -226,9 +207,9 @@ public class ManualRetransThread
 		}
 		catch(Exception ex)
 		{
-			failure(Constants.EVT_INTERNAL_ERR,
-				"- Unexpected Exception in main loop. Exiting: " + ex);
-			ex.printStackTrace(Logger.instance().getLogOutput());
+			log.atError()
+			   .setCause(ex)
+			   .log("{}- Unexpected Exception in main loop. Exiting.", Constants.EVT_INTERNAL_ERR);
 			LritDcsMain.instance().shutdown();
 		}
 
@@ -238,7 +219,7 @@ public class ManualRetransThread
 
 	private void processRetransRequest(SearchCriteria sc)
 	{
-		Logger.instance().info("Manual Retrans Request.");
+		log.info("Manual Retrans Request.");
 		cancelled = false;
 		while(!cancelled)
 		{
@@ -249,35 +230,33 @@ public class ManualRetransThread
 				rm = dataSource.getRawMessage();
 				if (rm == null)
 				{
-					info(0, 
-				"Data source failed to return message, pausing for 5 seconds.");
+					log.info("Data source failed to return message, pausing for 5 seconds.");
 					try { sleep(5000L); }
 					catch (InterruptedException e) {}
 					continue;
 				}
 
-				LrgsDataSource cds = 
+				LrgsDataSource cds =
 					(LrgsDataSource)dataSource.getActiveMember();
 				myStatus.lastDataSource = cds == null ? "" : cds.getHostName();
 			}
 			catch(UnknownPlatformException ex)
 			{
 				// This shouldn't happen, we turned it off in DataSourceExec.
-				warning(0, "Data source '" + dataSource.getName() + "': " + ex
-					+ " -- skipped");
+				log.atWarn().setCause(ex).log("Data source '{}' -- Skipped", dataSource.getName());
 			}
 			catch(DataSourceEndException ex)
 			{
 				int n = output.getNumMessages();
-				info(0, "Retrieved data for manual retransmit request: " + n 
-					+ " messages resulted.");
+				log.info("Retrieved data for manual retransmit request: {} messages resulted.", n);
 				break;
 			}
 			catch(DataSourceException ex)
 			{
-				failure(Constants.EVT_DATA_SOURCE_ERR, 
-					"- Error on manual retrans data source '" 
-					+ dataSource.getName() + "': " + ex);
+				log.atError()
+				   .setCause(ex)
+				   .log("{}- Error on manual retrans data source '{}'",
+				   		Constants.EVT_DATA_SOURCE_ERR, dataSource.getName());
 				dataSource = null;
 			}
 
@@ -286,21 +265,21 @@ public class ManualRetransThread
 			try
 			{
 				// note - all messages must pass criteria!
-//				byte[] data = rm.getData();
 				output.saveMessage(rm.getOrigDcpMsg());
 				myStatus.incrementMsgLow();
 			}
 			catch(IllegalStateException ex)
 			{
-				warning(0, "Message from platform '"
-					+ rm.getMediumId() + "' discarded: " + ex.toString());
+				log.atWarn().setCause(ex).log("Message from platform '{}' discarded", rm.getMediumId());
 			}
 
 			// Check file time ranges.
 			output.checkFileTimeRange();
 		}
 		if (cancelled)
-			warning(0, "Manual retransmit request cancelled by user.");
+		{
+			log.warn("Manual retransmit request cancelled by user.");
+		}
 
 		// Broke out of above loop -- means this request is done!
 		output.saveFile();
@@ -312,17 +291,15 @@ public class ManualRetransThread
 	protected void initDataSource(SearchCriteria sc)
 		throws DataSourceInitException
 	{
-		debug3("initDataSource(retry=" + retryPeriod +
-			", timeout=" + timeoutPeriod + ")");
+		log.trace("initDataSource(retry={}, timeout={})", retryPeriod, timeoutPeriod);
 
 		LritDcsConfig cfg = LritDcsConfig.instance();
 		File f = new File(cfg.getLritDcsHome(), "searchcrit.manual");
 		try { sc.saveFile(f); }
 		catch(IOException ex)
 		{
-			String msg = "Cannot save '" + f.getPath() + "': " + ex;
-			warning(Constants.EVT_INTERNAL_ERR, msg);
-			throw new DataSourceInitException(msg);
+			String msg = "Cannot save '" + f.getPath() + "'";
+			throw new DataSourceInitException(msg, ex);
 		}
 
 		// Initialize the routing spec's data source.
@@ -382,7 +359,7 @@ public class ManualRetransThread
 				else
 					sc.setLrgsUntil("now");
 			}
-	
+
 			s = sc.getLrgsSince();
 			if (s == null || s.trim().length() == 0)
 			{
@@ -401,11 +378,11 @@ public class ManualRetransThread
 		}
 		catch(InvalidDatabaseException ex)
 		{
-			throw new DataSourceInitException(ex.toString());
+			throw new DataSourceInitException(ex.toString(), ex);
 		}
 		catch(DataSourceException ex)
 		{
-			throw new DataSourceInitException(ex.toString());
+			throw new DataSourceInitException(ex.toString(), ex);
 		}
 	}
 }
