@@ -1,25 +1,37 @@
-/**
- * @(#) LritDcsDirMonitor.java
- */
-
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lritdcs.recv;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.DirectoryMonitorThread;
-import ilex.util.Logger;
 import ilex.util.FileUtil;
 
 import lrgs.common.DcpMsg;
 
 import lritdcs.LritDcsFileReader;
-import lritdcs.BadMessageException;
 
-public class LritDcsDirMonitor extends DirectoryMonitorThread
-	implements FilenameFilter
+public class LritDcsDirMonitor extends DirectoryMonitorThread implements FilenameFilter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private DcpMsgProcessor msgProcessor;
 
 	/**
@@ -27,13 +39,13 @@ public class LritDcsDirMonitor extends DirectoryMonitorThread
 	 * More may be added to support LRIT receivers from different vendors.
 	 */
 	private char headerType;
-	
+
 	/**
 	 * Pre-transmission header only. Use this when testing by copying files
 	 * directly from LRITDCS Sender into the receive directory.
 	 */
 	public static final char HEADER_TYPE_PREXMIT = 'N';
-	
+
 	/**
 	 * Domain-6 header. Use this when this app is running on the open-source
 	 * DOMAIN-6 LRIT receive system.
@@ -47,7 +59,7 @@ public class LritDcsDirMonitor extends DirectoryMonitorThread
 	private String prefix;
 	private String suffix;
 	private File doneDir;
-	
+
 	public LritDcsDirMonitor( DcpMsgProcessor proc)
 	{
 		super();
@@ -62,7 +74,7 @@ public class LritDcsDirMonitor extends DirectoryMonitorThread
 		setFilenameFilter(this);
 		configure();
 	}
-	
+
 	/**
 	 * Called from Dir Mon Thread when a new file is seen.
 	 * Validate the file, then pick it apart into messages.
@@ -70,28 +82,27 @@ public class LritDcsDirMonitor extends DirectoryMonitorThread
 	 */
 	public void processFile( File file )
 	{
-		Logger.instance().debug1(
-			"Monitor found file '" + file.getPath() + "'");
+		log.debug("Monitor found file '{}'", file.getPath());
 
-		LritDcsFileReader ldfr = new LritDcsFileReader(file.getPath(), 
+		LritDcsFileReader ldfr = new LritDcsFileReader(file.getPath(),
 			headerType == HEADER_TYPE_DOM6);
-	
+
 		try{ ldfr.load(); }
 		catch(Exception ex)
 		{
-			Logger.instance().warning(
-				"Bad LRIT-DCS file '" + file.getName() + "': " + ex);
+			log.atWarn().setCause(ex).log("Bad LRIT-DCS file '{}'", file.getName());
 			if (System.currentTimeMillis() - file.lastModified() > 60000L)
 			{
 				File toFile = new File(doneDir, file.getName());
-				try 
+				try
 				{
 					FileUtil.moveFile(file, toFile);
 				}
 				catch(IOException ex2)
 				{
-					Logger.instance().warning("Cannot move '" + file.getPath()
-						+ "' to '" + toFile.getPath() + "': " + ex2);
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Cannot move '{}' to '{}'", file.getPath(), toFile.getPath());
 				}
 			}
 			return;
@@ -99,8 +110,7 @@ public class LritDcsDirMonitor extends DirectoryMonitorThread
 
 		if (!ldfr.checkLength())
 		{
-			Logger.instance().info(
-				"File " + file + " failed checkLength, not completed");
+			log.info("File {} failed checkLength, not completed", file);
 			if (System.currentTimeMillis() - file.lastModified() < 60000L)
 			{
 				return;
@@ -108,7 +118,7 @@ public class LritDcsDirMonitor extends DirectoryMonitorThread
 		}
 		else if (!ldfr.checkCRC())
 		{
-			Logger.instance().warning("CRC failed on " + file.getPath());
+			log.warn("CRC failed on {}", file.getPath());
 		}
 
 		DcpMsg msg;
@@ -116,32 +126,30 @@ public class LritDcsDirMonitor extends DirectoryMonitorThread
 		{
 			while( (msg = ldfr.getNextMsg()) != null)
 			{
-				Logger.instance().debug3("got message for '" + 
-					msg.getDcpAddress() + "'");
+				log.trace("got message for '{}'", msg.getDcpAddress());
 				msgProcessor.processMsg(msg);
 			}
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Error reading file '" + file.getPath() + "': " + ex);
+			log.atWarn().setCause(ex).log("Error reading file '{}'", file.getPath());
 		}
 
 		File toFile = new File(doneDir, file.getName());
-		try 
+		try
 		{
-			Logger.instance().debug3("Moving file '" + file.getName() + "'");
+			log.trace("Moving file '{}'", file.getName());
 			FileUtil.moveFile(file, toFile);
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("Cannot move '" + file.getPath()
-				+ "' to '" + toFile.getPath() + "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot move '{}' to '{}'", file.getPath(), toFile.getPath());
 		}
 	}
-	
+
 	public void finishedScan( )
 	{
-		Logger.instance().debug3("finishedScan");
+		log.trace("finishedScan");
 		if (lastConfigGet < conf.getLastLoadTime())
 			configure();
 	}
@@ -151,8 +159,8 @@ public class LritDcsDirMonitor extends DirectoryMonitorThread
 	 * Check to se if config has been updated, retrieve my variables if so.
 	 */
 	public void configure()
-	{	
-		Logger.instance().info("LritDcsDirMonitor Getting configuration");
+	{
+		log.info("LritDcsDirMonitor Getting configuration");
 
 		emptyDirectories();
 		synchronized(conf)
@@ -165,14 +173,10 @@ public class LritDcsDirMonitor extends DirectoryMonitorThread
 		}
 		lastConfigGet = System.currentTimeMillis();
 
-		Logger.instance().info(
-			"LritDcsDirMonitor input dir='" + conf.fileInputDir + "'");
-		Logger.instance().info(
-			"LritDcsDirMonitor file prefix='" + prefix + "'");
-		Logger.instance().info(
-			"LritDcsDirMonitor file suffix='" + suffix + "'");
-		Logger.instance().info(
-			"LritDcsDirMonitor file doneDir='" + doneDir + "'");
+		log.info("LritDcsDirMonitor input dir='{}'", conf.fileInputDir);
+		log.info("LritDcsDirMonitor file prefix='{}'", prefix);
+		log.info("LritDcsDirMonitor file suffix='{}'", suffix);
+		log.info("LritDcsDirMonitor file doneDir='{}'", doneDir);
 	}
 
 	/**
