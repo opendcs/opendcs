@@ -1,49 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.4  2012/12/12 16:01:31  mmaloney
-*  Several updates for 5.2
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.3  2009/10/14 13:09:48  mjmaloney
-*  LRIT updates
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.2  2009/10/09 14:52:26  mjmaloney
-*  Added flag bytes and carrier times to LRIT File.
-*
-*  Revision 1.1  2008/04/04 18:21:16  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.9  2005/12/30 19:40:59  mmaloney
-*  dev
-*
-*  Revision 1.8  2004/05/18 18:02:09  mjmaloney
-*  dev
-*
-*  Revision 1.7  2004/04/29 16:11:07  mjmaloney
-*  Implemented new header fields.
-*
-*  Revision 1.6  2003/08/18 14:47:59  mjmaloney
-*  bug fixes.
-*
-*  Revision 1.5  2003/08/15 20:13:07  mjmaloney
-*  dev
-*
-*  Revision 1.4  2003/08/10 02:22:47  mjmaloney
-*  dev.
-*
-*  Revision 1.3  2003/08/06 23:29:24  mjmaloney
-*  dev
-*
-*  Revision 1.2  2003/07/28 19:18:24  mjmaloney
-*  dev
-*
-*  Revision 1.1  2003/07/28 18:16:36  mjmaloney
-*  Initial version.
-*
-*  Revision 1.1.1.1  2003/07/28 18:13:20  mjmaloney
-*  LRIT-DCS Project Files
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lritdcs;
 
@@ -53,20 +21,23 @@ import java.util.TimeZone;
 import java.text.SimpleDateFormat;
 import java.util.zip.CRC32;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
 
 import ilex.util.ByteUtil;
-import ilex.util.Logger;
 
 public class LritDcsFile
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Priority is 'H'=High, 'M'=Medium, or 'L'=Low
 	  Should use one of the priority values defined in Constants.java.
 	*/
 	private char priority;
 
-	/// 'e' or 'w', use the values defined in Constants.java 
+	/// 'e' or 'w', use the values defined in Constants.java
 	private char spacecraft;
 
 	/// The directory in which files are to be created.
@@ -99,7 +70,7 @@ public class LritDcsFile
 	private CRC32 myCRC;
 	private byte crcImage[];
 	private SimpleDateFormat ctimeFmt = new SimpleDateFormat("yyDDDHHmmssSSS");
-	
+
 
 	public LritDcsFile(char priority, File parentDir, char spacecraft)
 		throws InitFailedException
@@ -114,20 +85,18 @@ public class LritDcsFile
 		clear();
 		if (!parentDir.isDirectory())
 		{
-			Logger.instance().log(Logger.E_INFORMATION,
-				"Creating output directory '" + parentDir.getPath() + "'");
+			log.info("Creating output directory '{}'", parentDir.getPath());
 			boolean success = false;
 			Exception ex = null;
 			try { success = parentDir.mkdirs(); }
 			catch(Exception e) { success = false; ex = e; }
 			if (!success)
 			{
-				String msg = 
-					ex != null ? ex.toString() : 
+				String msg =
+					ex != null ? ex.toString() :
 						("Cannot create directory '"+parentDir.getPath()+"'");
-				Logger.instance().fatal("LRIT:" + Constants.EVT_INIT_FAILED
-					+ "- " + msg);
-				throw new InitFailedException(msg);
+				log.error("LRIT:{}- {}", Constants.EVT_INIT_FAILED, msg);
+				throw new InitFailedException(msg, ex);
 			}
 		}
 		domsatDateFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -143,7 +112,7 @@ public class LritDcsFile
 	{
 		return fileStartTime;
 	}
-	
+
 	/// Returns the number of messages currently in this file image.
 	public int getNumMessages()
 	{
@@ -168,7 +137,7 @@ public class LritDcsFile
 		throws BadMessageException
 	{
 		byte buffer[] = dcpMsg.getData();
-		
+
 		// Make sure buffer is at least 37 bytes.
 		if (buffer.length < 37)
 			throw new BadMessageException("Message header too short: "
@@ -194,9 +163,9 @@ public class LritDcsFile
 				"Message data is " + buffer.length
 				+ " but length field says is should be " + msglen);
 
-		// Add delimiter to my internal file image. 
+		// Add delimiter to my internal file image.
 		addBytes(MsgDelim, MsgDelim.length);
-		
+
 		// Add the 16-bit flag word.
 		Date cstart = dcpMsg.getCarrierStart();
 		Date cstop = dcpMsg.getCarrierStop();
@@ -220,11 +189,14 @@ public class LritDcsFile
 			addBytes(ctimes.getBytes(), ctimes.length());
 		}
 
-		Logger.instance().log(Logger.E_DEBUG3, 
-			"Added priority " + priority + " message[" + numMessages
-			+ "] from platform "
-			+ (new String(buffer, 0, 8)) + ", channel "
-			+ (new String(buffer, 26, 3)) + ", data length=" + msglen);
+		log.atTrace()
+		   .setMessage("Added priority {} message[{}] from platform {}, channel {}, data length={}")
+		   .addArgument(priority)
+		   .addArgument(numMessages)
+		   .addArgument(() -> (new String(buffer, 0, 8)))
+		   .addArgument(() -> (new String(buffer, 26, 3)))
+		   .addArgument(msglen)
+		   .log();
 
 		numMessages++;
 	}
@@ -238,9 +210,7 @@ public class LritDcsFile
 			while (newlen < imageSize + len)
 				newlen += ImageIncrement;
 
-			Logger.instance().log(Logger.E_DEBUG1, 
-				"Increasing image size from " + fileImage.length + " to "
-				+ newlen);
+			log.debug("Increasing image size from {} to {}", fileImage.length, newlen);
 
 			byte newImage[] = new byte[newlen];
 			for(int i=0; i<imageSize; i++)
@@ -280,7 +250,7 @@ public class LritDcsFile
 	{
 		// If this file within same second as last one, increment seq letter.
 		Date d = new Date();
-		if (lastSave != null && 
+		if (lastSave != null &&
 			(d.getTime()/1000) == (lastSave.getTime()/1000))
 			seqLetter = (char)((int)seqLetter + 1);
 		else
@@ -311,12 +281,12 @@ public class LritDcsFile
 		s = "WCDA";
 		for(int i=0; i<s.length(); i++)
 			fileImage[40+i] = (byte)s.charAt(i);
-		
+
 		// Fill in type -- hard-coded to DCSD
 		s = "DCSD";
 		for(int i=0; i<s.length(); i++)
 			fileImage[44+i] = (byte)s.charAt(i);
-		
+
 		// Fill in any expansion field entries (future)
 		for(int i=48; i < 60; i++)
 			fileImage[i] = (byte)' ';
@@ -343,7 +313,7 @@ public class LritDcsFile
 		catch(IOException ex)
 		{
 			throw new LritDcsFileException("Cannot create '" + ret.getPath()
-				+ "': " + ex.toString());
+				+ "': " + ex.toString(), ex);
 		}
 		finally
 		{
