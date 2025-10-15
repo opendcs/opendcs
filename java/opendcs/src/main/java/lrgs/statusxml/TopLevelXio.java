@@ -1,48 +1,35 @@
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:16  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.6  2005/07/28 20:22:14  mjmaloney
-*  LRGS Monitor backward compatibility with LRGS 4.0.
-*
-*  Revision 1.5  2005/06/30 15:15:29  mjmaloney
-*  Java Archive Development.
-*
-*  Revision 1.4  2004/09/02 13:09:06  mjmaloney
-*  javadoc
-*
-*  Revision 1.3  2004/06/03 15:34:16  mjmaloney
-*  LRIT release prep
-*
-*  Revision 1.2  2004/05/25 20:16:28  mjmaloney
-*  dev
-*
-*  Revision 1.1  2004/05/04 18:03:59  mjmaloney
-*  Moved from statusgui package to here.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package lrgs.statusxml;
 
 import java.io.*;
-import java.util.*;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+
 import org.xml.sax.*;
 
+import ilex.util.TextUtil;
 import ilex.xml.*;
-import ilex.util.*;
-import lrgs.apistatus.LrgsStatusSnapshot;
 
 /**
 Top-level parser for LRGS Status Snapshot XML.
 @author Michael Maloney, Ilex Engineering, Inc.
 */
-public class TopLevelXio
-	implements XmlObjectParser
+public class TopLevelXio implements XmlObjectParser
 {
 	/** SAX parser object */
 	private XMLReader parser;
@@ -151,7 +138,6 @@ public class TopLevelXio
 		{
 			String msg = 
 				"Unexpected tag '" + localName + "' at top level of file.";
-			warning(msg);
 			throw new SAXException(msg);
 		}
 	}
@@ -177,24 +163,6 @@ public class TopLevelXio
 	}
 
 	/**
-	  Logs a warning message with the input name prefix.
-	  @param msg the message
-	*/
-	public void warning(String msg)
-	{
-		Logger.instance().log(Logger.E_WARNING, inputName + ": " + msg);
-	}
-
-	/**
-	  Logs a failure message with the input name prefix.
-	  @param msg the message
-	*/
-	public void failure(String msg)
-	{
-		Logger.instance().log(Logger.E_FAILURE, inputName + ": " + msg);
-	}
-
-	/**
 	Test main: Parses all files given on command line & prints them
 	to System.out.
 	By comparing the input and output, you can verify that both the parse
@@ -205,13 +173,11 @@ public class TopLevelXio
 		throws IOException, SAXException, ParserConfigurationException
 	{
 		File f = new File(args[0]);
-		FileInputStream fis = new FileInputStream(f);
 		byte ba[] = new byte[(int)f.length()];
-		fis.read(ba);
-		fis.close();
-//System.out.println("Loaded file of " + ba.length + " bytes:");
-//System.out.println(new String(ba));
-		
+		try (FileInputStream fis = new FileInputStream(f))
+		{
+			fis.read(ba);
+		}
 		TopLevelXio tlx = new TopLevelXio();
 		LrgsStatusSnapshotExt lsse = tlx.parse(ba, 0, ba.length, "file:"+f.getPath());
 	}
