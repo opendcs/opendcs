@@ -209,7 +209,7 @@ public class ManualRetransThread extends LritDcsThread
 		{
 			log.atError()
 			   .setCause(ex)
-			   .log("{}- Unexpected Exception in main loop. Exiting: {}", Constants.EVT_INTERNAL_ERR);
+			   .log("{}- Unexpected Exception in main loop. Exiting.", Constants.EVT_INTERNAL_ERR);
 			LritDcsMain.instance().shutdown();
 		}
 
