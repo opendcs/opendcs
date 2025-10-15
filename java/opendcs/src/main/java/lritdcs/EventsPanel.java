@@ -1,21 +1,23 @@
 /*
-*	$Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*	$Log$
-*	Revision 1.1  2008/04/04 18:21:16  cvs
-*	Added legacy code to repository
-*	
-*	Revision 1.1  2004/04/22 20:04:47  mjmaloney
-*	Added LQM & Events to the GUI.
-*	
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lritdcs;
 
 import java.awt.*;
 import javax.swing.*;
-import javax.swing.event.*;
 import java.util.Vector;
-import java.awt.event.*;
 
 public class EventsPanel extends JPanel
 {
@@ -31,22 +33,18 @@ public class EventsPanel extends JPanel
 
 	public EventsPanel()
 	{
-		try {
-			jbInit();
-			eventsList.setCellRenderer(new EventsCellRenderer());
-			snapCheck.setSelected(true);
-		}
-		catch(Exception ex) {
-			ex.printStackTrace();
-		}
+		jbInit();
+		eventsList.setCellRenderer(new EventsCellRenderer());
+		snapCheck.setSelected(true);
 	}
 
-	void jbInit() throws Exception {
+	void jbInit()
+	{
 		this.setLayout(borderLayout1);
 		jPanel1.setLayout(flowLayout1);
 		snapCheck.setText("Snap to End");
 		flowLayout1.setAlignment(FlowLayout.LEFT);
-    flowLayout1.setVgap(5);
+    	flowLayout1.setVgap(5);
 		eventsPane.getViewport().setBackground(Color.black);
     	eventsPane.setBorder(BorderFactory.createLoweredBevelBorder());
     	this.add(eventsPane, BorderLayout.CENTER);
@@ -88,7 +86,6 @@ public class EventsPanel extends JPanel
 
 	void checkScroll()
 	{
-//System.out.println("Check Scroll, num events = " + listModel.getSize());
 		// if snap-checked, scroll so that new event is visible.
 		if (snapCheck.isSelected())
 		{
@@ -96,16 +93,11 @@ public class EventsPanel extends JPanel
 			JViewport vp = eventsPane.getViewport();
 			Dimension vpdim = vp.getExtentSize();
 			Point p = vp.getViewPosition();
-//System.out.println("Viewport position = ("+p.x+","+p.y+")");
-//System.out.println("Viewport height="+vpdim.height+", list height=" + listdim.height);
+
 			p.y = listdim.height - vpdim.height;
 			if (p.y > 0)
 			{
 				vp.setViewPosition(p);
-				//eventsList.scrollRectToVisible(
-				//	new Rectangle(p.x, p.y, p.x + vpdim.width,
-				//		p.y + vpdim.height));
-//System.out.println("Set y to " + p.y);
 			}
 		}
 	}
@@ -190,7 +182,6 @@ class EventsCellRenderer extends JLabel implements ListCellRenderer
 			else
 				setForeground(normalColor);
 		}
-//System.out.println("Rendered '" + value + "'");
 
 		return this;
 	}
