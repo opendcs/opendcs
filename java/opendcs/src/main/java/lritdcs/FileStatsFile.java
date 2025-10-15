@@ -1,45 +1,39 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between the contractor and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  $Log$
-*  Revision 1.1  2012/12/12 16:01:31  mmaloney
-*  Several updates for 5.2
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lritdcs;
 
-import java.io.LineNumberReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Date;
-import java.util.StringTokenizer;
 import java.util.TimeZone;
-import java.text.SimpleDateFormat;
-import java.text.ParseException;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
+import java.text.SimpleDateFormat;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
-import lrgs.lrgsmain.LrgsInputInterface;
-import lrgs.statusxml.LrgsStatusSnapshotExt;
 
 /**
 This class contains methods for reading & writing the quality log file.
 */
 public class FileStatsFile
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final String module = "FileStats";
 	private File file;
 	private SimpleDateFormat sdf;
@@ -65,7 +59,7 @@ public class FileStatsFile
 
 	private void openLog(boolean append)
 	{
-		try 
+		try
 		{
 			output = new PrintStream(new FileOutputStream(file, append), true);
 			if (file.length() == 0L)
@@ -95,8 +89,7 @@ public class FileStatsFile
 		}
 		catch(FileNotFoundException ex)
 		{
-			Logger.instance().warning(module + " Cannot open filestats log '"
-				+ file.getPath() + "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot open filestats log '{}'", file.getPath());
 			output = null;
 		}
 	}
@@ -106,10 +99,10 @@ public class FileStatsFile
 	 */
 	public void close()
 	{
-		try 
+		try
 		{
-			if (output != null) 
-				output.close(); 
+			if (output != null)
+				output.close();
 			output = null;
 		}
 		catch(Exception ex) {}
@@ -154,9 +147,9 @@ public class FileStatsFile
 		sb.append(formatTime(qle.getDom2CXferCompleteTime()) + ",");
 		sb.append(formatTime(qle.getDom2CRenameCompleteTime()) + ",");
 		sb.append(formatTime(qle.getAllTransfersCompleteTime()) + ",");
-		
-		long d2complete = 
-			qle.getDom2ARenameCompleteTime() != null 
+
+		long d2complete =
+			qle.getDom2ARenameCompleteTime() != null
 				? qle.getDom2ARenameCompleteTime().getTime()
 				: qle.getDom2BRenameCompleteTime() != null
 				? qle.getDom2BRenameCompleteTime().getTime()
@@ -168,13 +161,13 @@ public class FileStatsFile
 		sb.append(""
 			+ ((double)(d2complete - qle.getFileSaveTime().getTime()) / 1000.0)
 			+ ",");
-		
+
 		// Max msg latency (time from earliest msg carrier end to d2 transfer complete
 		sb.append(""
 			+ ((double)(d2complete - qle.getEarliestCarrierEndTime().getTime()) / 1000.0));
 		return sb.toString();
 	}
-	
+
 	private String formatTime(Date d)
 	{
 		if (d == null)
