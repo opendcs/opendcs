@@ -14,15 +14,17 @@ public class BuiltInIdentityProvider implements IdentityProvider
     private final DbKey id;
     private final String name;
     private final ZonedDateTime updatedAt;
+    private final Map<String, Object> config;
 
     public BuiltInIdentityProvider(DbKey id, String name, ZonedDateTime updateAt, Map<String, Object> configMap)
     {
         this.id = id;
         this.name = name;
         this.updatedAt = updateAt;
+        this.config = configMap; // TODO actually setup config
         // then process config
     }
-    
+
 
     @Override
     public DbKey getId()
@@ -51,7 +53,7 @@ public class BuiltInIdentityProvider implements IdentityProvider
     @Override
     public Map<String, Object> configToMap()
     {
-        return new HashMap<>();
+        return config;
     }
-    
+
 }

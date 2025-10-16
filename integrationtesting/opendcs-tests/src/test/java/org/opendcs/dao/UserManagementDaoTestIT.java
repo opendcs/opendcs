@@ -2,8 +2,10 @@ package org.opendcs.dao;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.HashMap;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -86,7 +88,7 @@ public class UserManagementDaoTestIT extends AppTestBase
     void test_identity_provider_operations() throws Exception
     {
         UserManagementDao dao = db.getDao(UserManagementDao.class)
-                                  .orElseThrow(() -> new UnsupportedOperationException("user dao not supported."));
+                                  .orElseGet(() -> fail("user dao not supported."));
         DbKey id = DbKey.NullKey;
         try (DataTransaction tx = db.newTransaction())
         {
@@ -95,6 +97,16 @@ public class UserManagementDaoTestIT extends AppTestBase
             assertNotEquals(DbKey.NullKey, idpOut.getId());
             assertEquals("odcs-idp", idpOut.getName());
             id = idpOut.getId();
+
+            IdentityProvider out2 = dao.getIdentityProvider(tx, id).orElseGet(() -> fail("could not retrieve identity provided"));
+            assertNotEquals(DbKey.NullKey, out2.getId());
+            assertEquals(idpIn.getName(), out2.getName());
+            HashMap<String, Object> config = new HashMap<>();
+            config.put("a test", "value");
+            IdentityProvider updater = new BuiltInIdentityProvider(id, "odcs-idp2", null, config);
+            IdentityProvider updated = dao.updateIdentityProvider(tx, id, updater);
+            assertEquals(updater.getName(), updated.getName());
+            assertTrue(updated.configToMap().size() > 0);
         }
     }
 }
