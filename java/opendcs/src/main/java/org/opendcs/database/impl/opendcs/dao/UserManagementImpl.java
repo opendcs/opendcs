@@ -21,6 +21,9 @@ import org.opendcs.database.model.User;
 import org.opendcs.database.model.mappers.IdentityProviderMapper;
 import org.opendcs.database.model.mappers.RoleMapper;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import decodes.sql.DbKey;
 
 public class UserManagementImpl implements UserManagementDao
@@ -56,7 +59,7 @@ public class UserManagementImpl implements UserManagementDao
     @Override
     public void deleteUser(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
-        
+
     }
 
     @Override
@@ -73,34 +76,63 @@ public class UserManagementImpl implements UserManagementDao
         Connection conn = tx.connection(Connection.class).get();
         Handle handle = Jdbi.open(conn);
         handle.getJdbi().installPlugin(new Jackson2Plugin());
-        GenericType<HashMap<String, Object>> json = new GenericType<HashMap<String,Object>>() {
-            
-        };
-        return
-            handle.createQuery("insert into identity_provider(name, type, updated_at, config) values (:name, :type, now(), :config::jsonb) returning id, name, type, updated_at, config")
-              .bind("name", provider.getName())
-              .bind("type", provider.getType())
-              .bindByType("config", null, json)
-              .map(PROVIDER_MAPPER).one();
+        ObjectMapper om = new ObjectMapper();
+        try
+        {
+            return
+                handle.createQuery("insert into identity_provider(name, type, updated_at, config) values (:name, :type, now(), :config::jsonb) returning id, name, type, updated_at, config")
+                .bind("name", provider.getName())
+                .bind("type", provider.getType())
+                .bind("config", om.writeValueAsString(provider.configToMap()))
+                .map(PROVIDER_MAPPER).one();
+        }
+        catch (JsonProcessingException ex)
+        {
+            throw new OpenDcsDataException("unable to covert config to json", ex);
+        }
     }
 
     @Override
     public Optional<IdentityProvider> getIdentityProvider(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
-        return Optional.empty();
+        Connection conn = tx.connection(Connection.class).get();
+        Handle handle = Jdbi.open(conn);
+        handle.getJdbi().installPlugin(new Jackson2Plugin());
+
+        return
+            handle.createQuery("select id, name, type, updated_at, config from identity_provider where id = :id")
+              .bind("id", id.getValue())
+              .map(PROVIDER_MAPPER).findOne();
     }
 
     @Override
     public IdentityProvider updateIdentityProvider(DataTransaction tx, DbKey id, IdentityProvider provider)
             throws OpenDcsDataException
     {
-        return null;
+         Connection conn = tx.connection(Connection.class).get();
+        Handle handle = Jdbi.open(conn);
+        handle.getJdbi().installPlugin(new Jackson2Plugin());
+        ObjectMapper om = new ObjectMapper();
+        try
+        {
+            return
+                handle.createQuery("update identity_provider set name = :name, type = :type, updated_at = now(), " +
+                                   "config = config::jsonb returning id, name, type, updated_at, config::varchar")
+                    .bind("name", provider.getName())
+                    .bind("type", provider.getType())
+                    .bind("config", om.writeValueAsString(provider.configToMap()))
+                    .map(PROVIDER_MAPPER).one();
+        }
+        catch (JsonProcessingException ex)
+        {
+            throw new OpenDcsDataException("unable to covert config to json", ex);
+        }
     }
 
     @Override
     public void deleteIdentityProvider(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
-        
+
     }
 
     @Override
@@ -120,7 +152,7 @@ public class UserManagementImpl implements UserManagementDao
                          .bind("offset", offset)
                          .map(ROLE_MAPPER).list();
         }
-        
+
     }
 
     @Override
@@ -167,7 +199,7 @@ public class UserManagementImpl implements UserManagementDao
               .bind("id", id.getValue())
               .execute();
     }
- 
-    
-    
+
+
+
 }
