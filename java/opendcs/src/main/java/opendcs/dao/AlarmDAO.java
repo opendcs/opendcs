@@ -203,7 +203,7 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 			grp.getEmailAddrs().clear();
 			try (ResultSet rs2 = doQuery(q);)
 			{
-				while(rs.next())
+				while(rs2.next())
 					grp.getEmailAddrs().add(new EmailAddr(rs2.getString(1)));
 			}
 
@@ -212,7 +212,7 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 			grp.getFileMonitors().clear();
 			try (ResultSet rs2 = doQuery(q))
 			{
-				while(rs.next())
+				while(rs2.next())
 				{
 					FileMonitor fm = new FileMonitor(rs2.getString(2));
 					fm.setPriority(rs2.getInt(3));
@@ -239,7 +239,7 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 			grp.getProcessMonitors().clear();
 			try( ResultSet rs2 = doQuery(q))
 			{
-				while(rs.next())
+				while(rs2.next())
 				{
 					ProcessMonitor pm = new ProcessMonitor(DbKey.createDbKey(rs2, 1));
 					pm.setEnabled(TextUtil.str2boolean(rs2.getString(2)));
@@ -257,7 +257,7 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 					+ " and LOADING_APPLICATION_ID = " + pm.getAppId();
 				try (ResultSet rs2 = doQuery(q))
 				{
-					while(rs.next())
+					while(rs2.next())
 					{
 						AlarmEvent def = new AlarmEvent(DbKey.createDbKey(rs2, 1));
 						def.setPriority(rs2.getInt(4));
