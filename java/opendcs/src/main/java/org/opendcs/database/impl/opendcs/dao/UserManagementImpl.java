@@ -79,11 +79,12 @@ public class UserManagementImpl implements UserManagementDao
         ObjectMapper om = new ObjectMapper();
         try
         {
+            String config = om.writeValueAsString(provider.configToMap());
             return
-                handle.createQuery("insert into identity_provider(name, type, updated_at, config) values (:name, :type, now(), :config::jsonb) returning id, name, type, updated_at, config")
+                handle.createQuery("insert into identity_provider(name, type, updated_at, config) values (:name, :type, now(), :config::jsonb) returning id, name, type, updated_at, config::text")
                 .bind("name", provider.getName())
                 .bind("type", provider.getType())
-                .bind("config", om.writeValueAsString(provider.configToMap()))
+                .bind("config", config)
                 .map(PROVIDER_MAPPER).one();
         }
         catch (JsonProcessingException ex)
@@ -100,7 +101,7 @@ public class UserManagementImpl implements UserManagementDao
         handle.getJdbi().installPlugin(new Jackson2Plugin());
 
         return
-            handle.createQuery("select id, name, type, updated_at, config from identity_provider where id = :id")
+            handle.createQuery("select id, name, type, updated_at, config::text from identity_provider where id = :id")
               .bind("id", id.getValue())
               .map(PROVIDER_MAPPER).findOne();
     }
@@ -115,12 +116,13 @@ public class UserManagementImpl implements UserManagementDao
         ObjectMapper om = new ObjectMapper();
         try
         {
+            String config = om.writeValueAsString(provider.configToMap());
             return
                 handle.createQuery("update identity_provider set name = :name, type = :type, updated_at = now(), " +
-                                   "config = config::jsonb returning id, name, type, updated_at, config::varchar")
+                                   "config = :config::jsonb returning id, name, type, updated_at, config::text")
                     .bind("name", provider.getName())
                     .bind("type", provider.getType())
-                    .bind("config", om.writeValueAsString(provider.configToMap()))
+                    .bind("config", config)
                     .map(PROVIDER_MAPPER).one();
         }
         catch (JsonProcessingException ex)
@@ -132,7 +134,11 @@ public class UserManagementImpl implements UserManagementDao
     @Override
     public void deleteIdentityProvider(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
-
+        Connection conn = tx.connection(Connection.class).get();
+        Handle handle = Jdbi.open(conn);
+        handle.createUpdate("delete from identity_provider where id = :id")
+              .bind("id", id.getValue())
+              .execute();
     }
 
     @Override

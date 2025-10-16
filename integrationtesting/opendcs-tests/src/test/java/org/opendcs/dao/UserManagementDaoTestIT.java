@@ -107,6 +107,10 @@ public class UserManagementDaoTestIT extends AppTestBase
             IdentityProvider updated = dao.updateIdentityProvider(tx, id, updater);
             assertEquals(updater.getName(), updated.getName());
             assertTrue(updated.configToMap().size() > 0);
+
+
+            dao.deleteIdentityProvider(tx, id);
+            dao.getIdentityProvider(tx, id).ifPresent(idp -> fail("Provider was not deleted."));
         }
     }
 }

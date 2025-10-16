@@ -30,7 +30,8 @@ public class IdentityProviderMapper implements RowMapper<IdentityProvider>
         ZonedDateTime updatedAt = zdtMapper.map(rs, "updated_at", ctx);
         try
         {
-            Map<String, Object> config = om.readValue(rs.getString("config"), new TypeReference<Map<String, Object>>() {});
+            String jsonData = rs.getString("config");
+            Map<String, Object> config = om.readValue(jsonData, new TypeReference<Map<String, Object>>() {});
             // TODO: other providers
             return new BuiltInIdentityProvider(id, name, updatedAt, config);
         }
