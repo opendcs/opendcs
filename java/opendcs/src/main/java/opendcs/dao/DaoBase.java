@@ -1,26 +1,18 @@
-/**
- * $Id$
- *
- * $Log$
- * Revision 1.4  2017/01/24 15:38:08  mmaloney
- * CWMS-10060 added support for DecodesSettings.tsidFetchSize
- *
- * Revision 1.3  2014/07/03 12:53:41  mmaloney
- * debug improvements.
- *
- * Revision 1.2  2014/07/03 12:46:41  mmaloney
- * Make 'module' protected so that subclasses can change it.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to the United States Government. No warranty is provided or implied other
- * than specific contractual terms between COVE and the U.S. Government.
- *
- * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package opendcs.dao;
 
 import opendcs.dai.DaiBase;
@@ -308,30 +300,37 @@ public class DaoBase implements DaiBase
     }
 
     // TODO: remove once all classes have their own logger instance.
+    @Deprecated
     public void debug1(String msg)
     {
         log.debug("{} {}" , module, msg);
     }
+    @Deprecated
     public void debug2(String msg)
     {
         log.debug("{} {}" , module, msg);
     }
+    @Deprecated
     public void debug3(String msg)
     {
         log.trace("{} {}" , module, msg);
     }
+    @Deprecated
     public void info(String msg)
     {
         log.info("{} {}" , module, msg);
     }
+    @Deprecated
     public void warning(String msg)
     {
         log.warn("{} {}" , module, msg);
     }
+    @Deprecated
     public void failure(String msg)
     {
         log.error("{} {}" , module, msg);
     }
+    @Deprecated
     public void fatal(String msg)
     {
         log.error("{} {}" , module, msg);

@@ -1,68 +1,22 @@
 /*
-* $Id: ComputationDAO.java,v 1.15 2020/05/07 13:41:54 mmaloney Exp $
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-* $Log: ComputationDAO.java,v $
-* Revision 1.15  2020/05/07 13:41:54  mmaloney
-* When deleting a computation, first delete it's dependencies using CompDependsDAO.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-* Revision 1.14  2020/02/14 15:18:25  mmaloney
-* Updates for OpenTSDB
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-* Revision 1.13  2019/08/26 20:51:47  mmaloney
-* Added checks for enabled and executable class.
-*
-* Revision 1.12  2019/02/26 17:16:44  mmaloney
-* HDB 660
-*
-* Revision 1.11  2017/08/22 19:58:40  mmaloney
-* Refactor
-*
-* Revision 1.10  2017/07/13 20:57:47  mmaloney
-* HDB-397, when listing for GUI, only add a single copy of each computation.
-*
-* Revision 1.9  2017/03/03 19:21:33  mmaloney
-* Bugfix - it was trying to delete CP_COMPUTATION record before CP_COMP_DEPENDS
-* record, which in pre DB 14 version is defined as a foreign key.
-*
-* Revision 1.8  2016/11/29 01:19:07  mmaloney
-* Refactoring.
-*
-* Revision 1.7  2016/11/19 15:55:51  mmaloney
-* Join PARM records with parent records to bring in implicit VPD filter in CWMS.
-*
-* Revision 1.6  2016/07/20 15:47:30  mmaloney
-* Optimizations.
-*
-* Revision 1.5  2016/01/27 22:11:22  mmaloney
-* Added compEditList method.
-*
-* Revision 1.4  2014/09/30 13:32:15  mmaloney
-* removed season_id
-*
-* Revision 1.3  2014/07/03 12:53:42  mmaloney
-* debug improvements.
-*
-* Revision 1.2  2014/05/20 14:41:06  mmaloney
-* If comment read was null, change it to empty string. This makes it compatible
-* with PG and it prevents compedit from falsely detecting changes.
-*
-* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-* OPENDCS 6.0 Initial Checkin
-*
-* This software was written by Cove Software, LLC ("COVE") under contract
-* to the United States Government. No warranty is provided or implied other
-* than specific contractual terms between COVE and the U.S. Government.
-*
-* Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
-* All rights reserved.
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package opendcs.dao;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -74,7 +28,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Predicate;
 
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
@@ -83,7 +38,6 @@ import opendcs.dai.ComputationDAI;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PropertiesDAI;
-import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.dao.DbObjectCache.CacheIterator;
 import opendcs.util.sql.WrappedConnection;
@@ -97,26 +51,19 @@ import decodes.tsdb.CpDependsNotify;
 import decodes.tsdb.DbAlgoParm;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbCompParm;
-import decodes.tsdb.DbCompResolver;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.TimeSeriesDb;
-import decodes.tsdb.TimeSeriesIdentifier;
-import decodes.tsdb.TsGroup;
 import decodes.tsdb.TsdbDatabaseVersion;
-import decodes.tsdb.compedit.ComputationInList;
-
 import opendcs.util.functional.ThrowingSupplier;
 
 /**
 Data Access Object for reading/writing computations.
 */
-public class ComputationDAO
-	extends DaoBase
-	implements ComputationDAI
+public class ComputationDAO extends DaoBase implements ComputationDAI
 {
-	private static org.slf4j.Logger log = LoggerFactory.getLogger(ComputationDAO.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	protected static DbObjectCache<DbComputation> compCache =
 		new DbObjectCache<DbComputation>(60 * 60 * 1000L, false);
 
@@ -152,7 +99,7 @@ public class ComputationDAO
 			compTableColumnsNoTabName = compTableColumnsNoTabName + ", group_id";
 		}
 	}
-	
+
 	@Override
 	public Connection getConnection()
 	{
@@ -173,7 +120,7 @@ public class ComputationDAO
 
 	private void fillCache()
 	{
-		debug1("ComputationDAO.fillCache()");
+		log.debug("ComputationDAO.fillCache()");
 
 		String q = "select " + compTableColumns + " from CP_COMPUTATION ";
 
@@ -288,8 +235,10 @@ public class ComputationDAO
 						}
 						catch(NoSuchObjectException ex)
 						{
-							log.warn("Computation ID={} with algo ID={} -- cannot find matching algorithm.",
-							         compId, comp.getAlgorithmId());
+							log.atWarn()
+							   .setCause(ex)
+							   .log("Computation ID={} with algo ID={} -- cannot find matching algorithm.",
+							        compId, comp.getAlgorithmId());
 						}
 					}
 					fillCompSubordinates(comp);
@@ -472,10 +421,8 @@ public class ComputationDAO
 			{
 				if (!rs.next())
 				{
-					String msg
-						= "No match finding DATE_TIME_LOADED for computation "
-						+ "id=" + comp.getKey() + ", name=" + comp.getUniqueName();
-					debug1(msg);
+					log.debug("No match finding DATE_TIME_LOADED for computation id={}, name={}",
+							  comp.getKey(), comp.getUniqueName());
 					return false;
 				}
 				Date lmt = db.getFullDate(rs, 1);
@@ -518,9 +465,10 @@ public class ComputationDAO
 						}
 						catch(NoSuchObjectException ex)
 						{
-							warning("Computation '" +name + "' with algo ID="
-								+ comp.getAlgorithmId() + " -- cannot find matching "
-								+ "algorithm.");
+							log.atWarn()
+							   .setCause(ex)
+							   .log("Computation '{}' with algo ID={} -- cannot find matching algorithm.",
+							   		name, comp.getAlgorithmName());
 						}
 					}
 					fillCompSubordinates(comp);
@@ -546,9 +494,8 @@ public class ComputationDAO
 		}
 		catch(SQLException ex)
 		{
-			String msg = "Error reading computation '" + name + "': " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			String msg = "Error reading computation '" + name + "'";
+			throw new DbIoException(msg, ex);
 		}
 	}
 
@@ -561,7 +508,7 @@ public class ComputationDAO
 	public ArrayList<DbComputation> listCompsForGUI(CompFilter filter)
 		throws DbIoException
 	{
-		debug1("listCompsForGUI " + filter);
+		log.debug("listCompsForGUI {}", filter);
 
 		if (compCache.size() == 0)
 			fillCache();
@@ -598,7 +545,7 @@ public class ComputationDAO
 	 */
 	public List<DbComputation> listComps(Predicate<DbComputation> filter) throws DbIoException
 	{
-		debug1("listComps " + filter);
+		log.debug("listComps {}", filter);
 
 		fillCache();
 
@@ -618,7 +565,7 @@ public class ComputationDAO
 	public void writeComputation( DbComputation comp )
 		throws DbIoException
 	{
-		log.trace("writeComputation name= {}", comp.getName());
+		log.trace("writeComputation name={}", comp.getName());
 		final boolean isNew = ((ThrowingSupplier<Boolean,DbIoException>) (() -> {
 			boolean tmpIsNew = comp.getId().isNull();
 			if (tmpIsNew)
@@ -631,8 +578,7 @@ public class ComputationDAO
 					tmpIsNew = id.isNull();
 					if (!tmpIsNew)
 					{
-						info("Determined comp id=" + id
-							+ " from comp name '" + comp.getName() + "'");
+						log.info("Determined comp id={} from comp name '{}'", id, comp.getName());
 					}
 					comp.setId(id);
 				}
@@ -659,7 +605,7 @@ public class ComputationDAO
 						}
 						catch(SQLException ex)
 						{
-							warning("Query '" + q + "': " + ex);
+							log.atWarn().setCause(ex).log("Query '{}'", q);
 							tmpAppId = Constants.undefinedId;
 						}
 					}
@@ -671,9 +617,7 @@ public class ComputationDAO
 			if (algoId.isNull())
 			{
 				String algoName = comp.getAlgorithmName();
-				Logger.instance().debug2(
-					"Computation has undefined algo ID, will lookup name '"
-					+ algoName + "'");
+				log.trace("Computation has undefined algo ID, will lookup name '{}'", algoName);
 				if (algoName != null && algoName.trim().length() > 0)
 				{
 					DbCompAlgorithm algo = null;
@@ -691,7 +635,7 @@ public class ComputationDAO
 					}
 					else
 					{
-						Logger.instance().debug2("Algorithm still null!");
+						log.trace("Algorithm still null!");
 					}
 				}
 			}
@@ -898,9 +842,7 @@ public class ComputationDAO
 		}
 		catch(SQLException ex)
 		{
-			String msg = "Error getting computation ID for name '"
-				+ name + "': " + ex;
-			failure(msg);
+			String msg = "Error getting computation ID for name '" + name + "'";
 			throw new DbIoException(msg, ex);
 		}
 

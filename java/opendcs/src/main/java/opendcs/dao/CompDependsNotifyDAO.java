@@ -1,9 +1,27 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package opendcs.dao;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.CpDependsNotify;
@@ -13,6 +31,8 @@ import opendcs.dai.CompDependsNotifyDAI;
 
 public class CompDependsNotifyDAO extends DaoBase implements CompDependsNotifyDAI
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
     public CompDependsNotifyDAO(DatabaseConnectionOwner db)
     {
         super(db, "CompDependsNotify");
@@ -65,7 +85,7 @@ public class CompDependsNotifyDAO extends DaoBase implements CompDependsNotifyDA
         }
         catch(Exception ex)
         {
-            warning("Error CpCompDependsNotify: " + ex);
+            log.atWarn().setCause(ex).log("Error CpCompDependsNotify");
         }
         return null;
     }

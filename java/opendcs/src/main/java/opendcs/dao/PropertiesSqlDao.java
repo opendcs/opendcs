@@ -1,27 +1,23 @@
 /*
- * $Id$
- *
- * $Log$
- * Revision 1.2  2014/07/03 12:53:40  mmaloney
- * debug improvements.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to the United States Government. No warranty is provided or implied other
- * than specific contractual terms between COVE and the U.S. Government.
- *
- * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package opendcs.dao;
 
 import ilex.util.HasProperties;
-import ilex.util.Logger;
 
 import java.io.IOException;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
@@ -29,6 +25,8 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.opendcs.utils.Property;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.PropertiesDAI;
 
@@ -47,6 +45,7 @@ import decodes.tsdb.DbIoException;
  */
 public class PropertiesSqlDao extends DaoBase implements PropertiesDAI
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     public PropertiesSqlDao(DatabaseConnectionOwner tsdb)
     {
         super(tsdb, "PropertiesSqlDao");
@@ -72,17 +71,20 @@ public class PropertiesSqlDao extends DaoBase implements PropertiesDAI
                 {
                     value = "";
                 }
-                try {
+                try
+                {
                     props.setProperty(name, Property.getRealPropertyValue(value,value));
-                } catch (IOException e) {
-                    Logger.instance().warning("Unable to retrieve property value for: " + name);
+                }
+                catch (IOException ex)
+                {
+                    log.atWarn().setCause(ex).log("Unable to retrieve property value for: {}", name);
                 }
             }, parentKey);
         }
         catch (SQLException ex)
         {
             String msg = "Error in query '" + q + "'. Unable to retrieve Properties";
-            throw new DbIoException(msg,ex);
+            throw new DbIoException(msg, ex);
         }
     }
 
@@ -110,9 +112,8 @@ public class PropertiesSqlDao extends DaoBase implements PropertiesDAI
         }
         catch (SQLException ex)
         {
-            String msg = "Error in query '" + q + "': " + ex;
-            warning(msg);
-            throw new DbIoException(msg);
+            String msg = "Error in query '" + q + "'";
+            throw new DbIoException(msg, ex);
         }
     }
 

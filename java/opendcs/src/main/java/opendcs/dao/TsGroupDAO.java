@@ -1,64 +1,17 @@
 /*
-* $Id: TsGroupDAO.java,v 1.17 2020/02/14 15:21:48 mmaloney Exp $
-* 
-* $Log: TsGroupDAO.java,v $
-* Revision 1.17  2020/02/14 15:21:48  mmaloney
-* Updates for OpenTSDB
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-* Revision 1.16  2019/08/26 20:52:50  mmaloney
-* Removed unneeded debugs.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-* Revision 1.15  2017/11/14 16:08:05  mmaloney
-* Increase cache limit to 20 min.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-* Revision 1.14  2017/08/22 19:58:40  mmaloney
-* Refactor
-*
-* Revision 1.13  2017/05/04 12:19:12  mmaloney
-* Fixed recursion bug.
-*
-* Revision 1.12  2017/05/03 16:59:46  mmaloney
-* Guard against circular references when reading sub groups.
-*
-* Revision 1.11  2017/04/04 21:22:04  mmaloney
-* CWMS-10515 Null Ptr.
-*
-* Revision 1.10  2017/01/10 21:16:30  mmaloney
-* Code cleanup.
-*
-* Revision 1.9  2017/01/06 16:42:10  mmaloney
-* Misc Bug Fixes
-*
-* Revision 1.8  2016/12/16 14:49:16  mmaloney
-* TYPO
-*
-* Revision 1.7  2016/12/16 14:30:54  mmaloney
-* Moved code to adjust comp dependencies when a group is modified to the DAO.
-*
-* Revision 1.6  2016/11/19 15:56:30  mmaloney
-* Generate a NOTIFY record on saving a group if CWMS and version >= 14.
-*
-* Revision 1.5  2016/11/03 19:08:38  mmaloney
-* Refactoring for group evaluation to make HDB work the same way as CWMS.
-*
-* Revision 1.4  2016/10/17 17:52:24  mmaloney
-* Add sub/base accessors for OpenDCS 6.3 CWMS Naming Standards
-*
-* Revision 1.3  2014/12/19 19:26:56  mmaloney
-* Handle version change for column name tsdb_group_member_ts data_id vs. ts_id.
-*
-* Revision 1.2  2014/07/03 12:53:41  mmaloney
-* debug improvements.
-*
-* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-* OPENDCS 6.0 Initial Checkin
-*
-* This software was written by Cove Software, LLC ("COVE") under contract
-* to the United States Government. No warranty is provided or implied other 
-* than specific contractual terms between COVE and the U.S. Government.
-*
-* Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
-* All rights reserved.
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package opendcs.dao;
 
@@ -69,11 +22,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Stack;
 
 import org.opendcs.utils.FailableResult;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -88,16 +42,15 @@ import decodes.tsdb.TsGroupMember;
 import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.tsdb.TsdbException;
 
-public class TsGroupDAO
-	extends DaoBase 
-	implements TsGroupDAI
+public class TsGroupDAO extends DaoBase  implements TsGroupDAI
 {
-	protected String GroupAttributes = 
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	protected String GroupAttributes =
 		"group_id, group_name, group_type, group_description";
 	private static long lastCacheFill = 0L;
 	public static long cacheTimeLimit = 20 * 60 * 1000L;
 	protected static DbObjectCache<TsGroup> cache = new DbObjectCache<TsGroup>(cacheTimeLimit, false);
-	
+
 	// Used to guard against endless loop in subgroup associations.
 	private Stack<DbKey> loopGuard = new Stack<DbKey>();
 
@@ -111,20 +64,18 @@ public class TsGroupDAO
 	{
 		return getTsGroupById(groupId, false);
 	}
-	
+
 	@Override
 	public TsGroup getTsGroupById(DbKey groupId, boolean forceDbRead)
 		throws DbIoException
 	{
 		TsGroup ret = null;
-		
+
 		if (!forceDbRead && (ret = cache.getByKey(groupId)) != null)
 		{
-//debug2("Returning FROM CACHE group id " + ret.getGroupId() + " - " + ret.getGroupName());
 			return ret;
 		}
-//else debug2("READING FROM DATABASE group id " + groupId);
-		
+
 		String q = "SELECT " + GroupAttributes + " FROM tsdb_group "
 			+ "WHERE group_id = ?";
 		try
@@ -146,8 +97,7 @@ public class TsGroupDAO
 		}
 		catch(SQLException ex)
 		{
-			throw new DbIoException(
-				"getTsGroupById: Cannot get group for id=" + groupId, ex);
+			throw new DbIoException("getTsGroupById: Cannot get group for id=" + groupId, ex);
 		}
 	}
 
@@ -168,7 +118,7 @@ public class TsGroupDAO
 		ret.setDescription(rs.getString(4));
 		return ret;
 	}
-	
+
 	public void readTsGroupMembers(TsGroup group)
 		throws DbIoException
 	{
@@ -179,10 +129,10 @@ public class TsGroupDAO
 		{
 			timeSeriesDAO.setManualConnection(conn);
 			String q = "select * from tsdb_group_member_ts where group_id = ?";
-			
+
 			final ArrayList<DbKey> dataIds = new ArrayList<DbKey>();
 			dao.doQuery(q, rs -> dataIds.add(DbKey.createDbKey(rs, 2)), group.getGroupId());
-			
+
 			for(DbKey dataId : dataIds)
 			{
 				try
@@ -191,9 +141,10 @@ public class TsGroupDAO
 				}
 				catch(NoSuchObjectException ex)
 				{
-					warning("tsdb_group id=" + group.getGroupId()
-						+ " contains invalid ts member with data_id="
-						+ dataId + " -- ignored.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("tsdb_group id={} contains invalid ts member with data_id={} -- ignored.",
+					   		group.getGroupId(), dataId);
 				}
 			}
 
@@ -214,8 +165,8 @@ public class TsGroupDAO
 			// Now get the sub-groups.
 			q = "SELECT child_group_id, include_group from tsdb_group_member_group "
 				+ "where parent_group_id = ?";
-			
-			class ChildGroup 
+
+			class ChildGroup
 			{
 				DbKey gid; char combine;
 				public ChildGroup(DbKey gid, char combine)
@@ -225,7 +176,7 @@ public class TsGroupDAO
 				}
 			}
 			ArrayList<ChildGroup> children = new ArrayList<ChildGroup>();
-			
+
 			// Have to read first then recurse. Otherwise ResultSet gets closed in recursion.
 			dao.doQuery(q, rs ->
 			{
@@ -234,9 +185,8 @@ public class TsGroupDAO
 				char combine = (s != null && s.length() > 0) ? s.charAt(0) : 'A';
 				if (loopGuard.contains(childId))
 				{
-					warning("Group (id=" + group.getGroupId() + ") " + group.getGroupName()
-						+ " -- has sub group ID=" + childId 
-						+ " Circular reference detected -- Ignored.");
+					log.warn("Group (id={}) {} -- has sub group ID={} Circular reference detected -- Ignored.",
+							 group.getGroupId(), group.getGroupName(), childId);
 				}
 				else
 				{
@@ -244,20 +194,20 @@ public class TsGroupDAO
 				}
 			},
 			group.getGroupId());
-			
+
 			for(ChildGroup cg : children)
 			{
 				TsGroup child = getTsGroupById(cg.gid);
-				
+
 				if (child != null)
 				{
 					group.addSubGroup(child, cg.combine);
 				}
 				else
 				{
-					warning("Group (id=" + group.getGroupId() + ") " + group.getGroupName()
-						+ " -- has sub group ID=" + cg.gid 
-						+ " that doesn't exist in database. -- Ignored.");
+					log.warn("Group (id={}) {} -- has sub group ID={} " +
+							 "that doesn't exist in database. -- Ignored.",
+							 group.getGroupId(), group.getGroupName(), cg.gid);
 				}
 			}
 		}
@@ -274,7 +224,7 @@ public class TsGroupDAO
 	{
 		if (System.currentTimeMillis() - lastCacheFill > cacheTimeLimit)
 			fillCache();
-		
+
 		ArrayList<TsGroup> ret = new ArrayList<TsGroup>();
 
 		for(Iterator<TsGroup> ci = cache.iterator(); ci.hasNext();)
@@ -293,18 +243,16 @@ public class TsGroupDAO
 	{
 		String q = "SELECT group_id FROM tsdb_group "
 			+ "WHERE lower(group_name) = " + sqlString(grpName.toLowerCase());
-		try
+		try (ResultSet rs = doQuery(q))
 		{
-			ResultSet rs = doQuery(q);
-			if (rs != null && rs.next())
+			if (rs.next())
 				return getTsGroupById(DbKey.createDbKey(rs, 1));
 			else
 				return null;
 		}
 		catch(Exception ex)
 		{
-			throw new DbIoException(
-				"getTsGroupByName: Cannot get group '" + grpName + "': " + ex);
+			throw new DbIoException("getTsGroupByName: Cannot get group '" + grpName + "'", ex);
 		}
 	}
 
@@ -335,7 +283,7 @@ public class TsGroupDAO
 			q = q + " WHERE group_id = " + groupId;
 		}
 		doModify(q);
-		
+
 		// First delete all time-series member links, then re-add them.
 		q = "DELETE from tsdb_group_member_ts WHERE group_id = " + groupId;
 		doModify(q);
@@ -403,7 +351,7 @@ public class TsGroupDAO
 			doModify(q);
 		}
 
-		q = "DELETE from tsdb_group_member_other where group_id = " 
+		q = "DELETE from tsdb_group_member_other where group_id = "
 			+ groupId;
 		doModify(q);
 		for (TsGroupMember tgm : group.getOtherMembers())
@@ -413,9 +361,9 @@ public class TsGroupDAO
 				+ ", " + sqlString(tgm.getMemberValue()) + ")";
 			doModify(q);
 		}
-		
+
 		cache.put(group);
-		
+
 		if ((db.isCwms() && db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_14)
 		  ||(db.isOpenTSDB() && db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_67))
 		{
@@ -436,20 +384,20 @@ public class TsGroupDAO
 	{
 		if (DbKey.isNull(groupId))
 			return;
-		
+
 		removeDependenciesFor(groupId);
 
 		//First delete all time-series member links.
 		String q = "DELETE from tsdb_group_member_ts WHERE group_id = " + groupId;
 		doModify(q);
-			
+
 		//Delete sub-group associations, also delete any Group link
 		//that has this group id
 		q = "DELETE from tsdb_group_member_group "
 			+ "WHERE parent_group_id = " + groupId
 			+ " OR child_group_id = "  + groupId;
 		doModify(q);
-			
+
 		q = "DELETE from tsdb_group_member_site where group_id = " + groupId;
 		doModify(q);
 		q = "DELETE from tsdb_group_member_dt where group_id = " + groupId;
@@ -467,10 +415,10 @@ public class TsGroupDAO
 		throws DbIoException
 	{
 		String q = "select count(*) from cp_computation where group_id = " + groupId;
-		ResultSet rs = doQuery(q);
-		try
+
+		try (ResultSet rs = doQuery(q);)
 		{
-			if (rs != null && rs.next())
+			if (rs.next())
 			{
 				return rs.getInt(1);
 			}
@@ -479,13 +427,13 @@ public class TsGroupDAO
 		}
 		catch (SQLException ex)
 		{
-			String msg = "countCompsUsingGroup: " + ex;
-			throw new DbIoException(msg);
+			String msg = "countCompsUsingGroup.";
+			throw new DbIoException(msg, ex);
 		}
 	}
 
 
-	public void fillCache() 
+	public void fillCache()
 		throws DbIoException
 	{
 		try
@@ -519,12 +467,14 @@ public class TsGroupDAO
 
 						if (group == null)
 						{
-							warning("Bad group id=" + groupId + " in tsdb_group_member_ts with ts_code=" + dataId + " -- no corresponding group.");
+							log.warn("Bad group id={} in tsdb_group_member_ts " +
+									 "with ts_code={} -- no corresponding group.",
+									 groupId, dataId);
 							return;
 						}
 						if (DbKey.isNull(dataId))
 						{
-							warning("Null ts_id in tsdb_group_member_ts ");
+							log.warn("Null ts_id in tsdb_group_member_ts");
 							return;
 						}
 
@@ -570,7 +520,8 @@ public class TsGroupDAO
 						TsGroup group = cache.getByKey(groupId);
 						if (group == null)
 						{
-							warning("Bad group id=" + groupId + " in tsdb_group_member_dt -- no corresponding group.");
+							log.warn("Bad group id={} in tsdb_group_member_dt -- no corresponding group.",
+									 groupId);
 						}
 						else
 						{
@@ -587,7 +538,8 @@ public class TsGroupDAO
 						TsGroup group = cache.getByKey(groupId);
 						if (group == null)
 						{
-							warning("Bad group id=" + groupId + " in tsdb_group_member_other -- no corresponding group.");
+							log.warn("Bad group id={} in tsdb_group_member_other -- no corresponding group.",
+									 groupId);
 						}
 						else
 						{
@@ -622,47 +574,45 @@ public class TsGroupDAO
 	}
 
 	@Override
-	public void removeDependenciesFor(DbKey deletedGroupId) 
+	public void removeDependenciesFor(DbKey deletedGroupId)
 		throws DbIoException
 	{
 		if (DbKey.isNull(deletedGroupId))
 			return;
-		
+
 		// Disable any computation that uses this group directly and null the reference
 		String q = "SELECT COMPUTATION_ID FROM CP_COMPUTATION WHERE GROUP_ID = " + deletedGroupId;
 		ArrayList<DbKey> comps2disable = new ArrayList<DbKey>();
-		ResultSet rs = doQuery(q);
-		try
+
+		try (ResultSet rs = doQuery(q))
 		{
 			while(rs.next())
 				comps2disable.add(DbKey.createDbKey(rs, 1));
 		}
 		catch (SQLException ex)
 		{
-			String msg = " Error listing comps that use group " + deletedGroupId + ": " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			String msg = " Error listing comps that use group " + deletedGroupId;
+			throw new DbIoException(msg, ex);
 		}
-		
+
 		q = "UPDATE CP_COMPUTATION SET ENABLED = 'N', GROUP_ID = NULL,"
 			+ " DATE_TIME_LOADED = " + db.sqlDate(new Date())
 			+ " WHERE GROUP_ID = " + deletedGroupId;
 		doModify(q);
-		
+
 		// Make a list of any group that uses this group as a child.
 		q = "SELECT DISTINCT PARENT_GROUP_ID FROM TSDB_GROUP_MEMBER_GROUP "
 			+ "WHERE CHILD_GROUP_ID = " + deletedGroupId;
 		ArrayList<DbKey> modifiedGroupIds = new ArrayList<DbKey>();
-		try
+		try (ResultSet rs = doQuery(q))
 		{
 			while(rs.next())
 				modifiedGroupIds.add(DbKey.createDbKey(rs, 1));
 		}
 		catch (SQLException ex)
 		{
-			String msg = " Error listing groups that use group " + deletedGroupId + ": " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			String msg = " Error listing groups that use group " + deletedGroupId;
+			throw new DbIoException(msg, ex);
 		}
 
 		// Remove the child references to this group from the affected groups.

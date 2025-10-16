@@ -1,29 +1,27 @@
 /*
- * $Id$
- * 
- * $Log$
- * Revision 1.3  2014/08/22 17:23:10  mmaloney
- * 6.1 Schema Mods and Initial DCP Monitor Implementation
- *
- * Revision 1.2  2014/07/03 12:53:41  mmaloney
- * debug improvements.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to the United States Government. No warranty is provided or implied other 
- * than specific contractual terms between COVE and the U.S. Government.
- *
- * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package opendcs.dao;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.EnumDAI;
 
@@ -38,25 +36,24 @@ import decodes.tsdb.DbIoException;
  * Data Access Object for writing/reading DbEnum objects to/from a SQL database
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
-public class EnumSqlDao 
-	extends DaoBase 
-	implements EnumDAI
+public class EnumSqlDao extends DaoBase implements EnumDAI
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static DbObjectCache<DbEnum> cache = new DbObjectCache<DbEnum>(3600000, false);
-	
+
 	public EnumSqlDao(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "EnumSqlDao");
 	}
-	
+
 	private String getEnumColumns(int dbVer)
 	{
 		return "id, name"
 			+ (dbVer >= DecodesDatabaseVersion.DECODES_DB_10 ? ", defaultValue, description "
-			: dbVer >= DecodesDatabaseVersion.DECODES_DB_6 ? ", defaultvalue " 
+			: dbVer >= DecodesDatabaseVersion.DECODES_DB_6 ? ", defaultvalue "
 			: " ");
 	}
-	
+
 	private DbEnum rs2Enum(ResultSet rs, int dbVer)
 		throws SQLException
 	{
@@ -75,9 +72,9 @@ public class EnumSqlDao
 		}
 		return en;
 	}
-	
+
 	@Override
-	public DbEnum getEnum(String enumName) 
+	public DbEnum getEnum(String enumName)
 		throws DbIoException
 	{
 		synchronized(cache)
@@ -85,11 +82,11 @@ public class EnumSqlDao
 			DbEnum ret = cache.getByUniqueName(enumName);
 			if (ret != null)
 				return ret;
-			
+
 			int dbVer = db.getDecodesDatabaseVersion();
 			String q = "SELECT " + getEnumColumns(dbVer) + " FROM Enum";
 			q = q + " where lower(name) = lower(?)";// + sqlString(enumName.toLowerCase());
-			
+
 			try
 			{
 				ret = getSingleResult(q,(rs) -> {
@@ -98,7 +95,7 @@ public class EnumSqlDao
 				},enumName);
 				if (ret == null)
 				{
-					warning("No such enum '" + enumName + "'");
+					log.warn("No such enum '{}'", enumName);
 					return null;
 				}
 				else
@@ -106,19 +103,18 @@ public class EnumSqlDao
 					readValues(ret);
 					cache.put(ret);
 					return ret;
-				}		
+				}
 			}
 			catch (SQLException ex)
 			{
-				String msg = "Error in query '" + q + "': " + ex;
-				warning(msg);
-				throw new DbIoException(msg,ex);
+				String msg = "Error in query '" + q + "'";
+				throw new DbIoException(msg, ex);
 			}
 		}
 	}
 
 	@Override
-	public void readEnumList(EnumList top) 
+	public void readEnumList(EnumList top)
 		throws DbIoException
 	{
 		int dbVer = db.getDecodesDatabaseVersion();
@@ -127,16 +123,16 @@ public class EnumSqlDao
 		{
 			synchronized(cache)
 			{
-				/**				 
+				/**
 				 * This could also be a single query with a join.
 				 * though a little trickier with the different versions columns
 				 */
-				doQuery("SELECT " + getEnumColumns(dbVer) + " FROM Enum", 
+				doQuery("SELECT " + getEnumColumns(dbVer) + " FROM Enum",
 							  (rs) -> {
 								DbEnum en = rs2Enum(rs, dbVer);
 								cache.put(en);
 							});
-				
+
 				String q = "SELECT enumId, enumValue, description, execClass, editClass";
 				if (dbVer >= DecodesDatabaseVersion.DECODES_DB_6)
 					q = q + ", sortNumber";
@@ -146,14 +142,13 @@ public class EnumSqlDao
 					DbEnum dbEnum = cache.getByKey(key);
 					if (dbEnum != null)
 						rs2EnumValue(rs, dbEnum);
-				});				
+				});
 			}
 		}
 		catch (SQLException ex)
 		{
-			String msg = "Error in query: " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			String msg = "Error in query";
+			throw new DbIoException(msg, ex);
 		}
 	}
 
@@ -168,7 +163,7 @@ public class EnumSqlDao
 		// CLear the list and read whats currently in the database
 		enumList.clear();
 		readEnumList(enumList);
-		
+
 		// Write the new stuff & check it off from the old.
 		for (DbEnum newenum : newenums)
 		{
@@ -185,7 +180,7 @@ public class EnumSqlDao
 		{
 			try
 			{
-				info("writeEnumList Deleting enum '" + oldenum.enumName + "'");
+				log.info("writeEnumList Deleting enum '{}'", oldenum.enumName);
 				String q = "DELETE FROM EnumValue WHERE enumId = ?";// + oldenum.getId();
 				long id = oldenum.getId().getValue();
 				doModify(q,id);
@@ -194,9 +189,9 @@ public class EnumSqlDao
 			}
 			catch(SQLException ex)
 			{
-				throw new DbIoException("Failed to clean up " + oldenum.toString(),ex);
+				throw new DbIoException("Failed to clean up " + oldenum.toString(), ex);
 			}
-			
+
 		}
 		for(DbEnum newenum : newenums)
 			enumList.addEnum(newenum);
@@ -210,7 +205,7 @@ public class EnumSqlDao
 		String q = "";
 		ArrayList<Object> args = new ArrayList<>();
 		if (dbenum.idIsSet())
-		{			
+		{
 			args.add(dbenum.getUniqueName());
 			q = "update enum set name = ?";// + sqlString(dbenum.getUniqueName());
 			if (dbVer >= DecodesDatabaseVersion.DECODES_DB_6)
@@ -231,7 +226,7 @@ public class EnumSqlDao
 			q = "insert into enum";
 			if (dbVer < DecodesDatabaseVersion.DECODES_DB_6)
 			{
-				q = q + "(id, name) values (?,?)"; 
+				q = q + "(id, name) values (?,?)";
 					//+ id + ", " + sqlString(dbenum.getUniqueName()) + ")";
 				args.add(id.getValue());
 				args.add(dbenum.getUniqueName());
@@ -242,8 +237,6 @@ public class EnumSqlDao
 				args.add(id.getValue());
 				args.add(dbenum.getUniqueName());
 				args.add(dbenum.getDefault());
-					/*+ id + ", " + sqlString(dbenum.getUniqueName())
-					+ ", " + sqlString(dbenum.getDefault()) + ")";*/
 			}
 			else
 			{
@@ -252,9 +245,6 @@ public class EnumSqlDao
 				args.add(dbenum.getUniqueName());
 				args.add(dbenum.getDefault());
 				args.add(dbenum.getDescription());
-					/*+ id + ", " + sqlString(dbenum.getUniqueName())
-					+ ", " + sqlString(dbenum.getDefault()) 
-					+ ", " + sqlString(dbenum.getDescription()) + ")";*/
 			}
 			cache.put(dbenum);
 		}
@@ -263,10 +253,10 @@ public class EnumSqlDao
 			doModify(q,args.toArray());
 
 			// Delete all enum values. They'll be re-added below.
-			info("writeEnum deleting values from enum '" + dbenum.enumName + "'");
+			log.info("writeEnum deleting values from enum '" + dbenum.enumName + "'");
 			q = "DELETE FROM EnumValue WHERE enumId = ?";// + dbenum.getId();
 			doModify(q,dbenum.getId().getValue());
-			
+
 			for (Iterator<EnumValue> it = dbenum.iterator(); it.hasNext(); )
 			{
 				writeEnumValue(it.next());
@@ -277,24 +267,23 @@ public class EnumSqlDao
 			throw new DbIoException("enum modify/delete failed for " + dbenum.toString(), ex);
 		}
 	}
-	
+
 	private void readValues(DbEnum dbenum)
 		throws SQLException, DbIoException
 	{
 		int dbVer = db.getDecodesDatabaseVersion();
 
-		String q = 
+		String q =
 			"SELECT enumId, enumValue, description, " +
 			"execClass, editClass";
 		if (dbVer >= DecodesDatabaseVersion.DECODES_DB_6)
 			q = q + ", sortNumber";
-		q = q + " FROM EnumValue WHERE EnumID = ?";// + dbenum.getId();
-		//ResultSet rs = doQuery2(q);
+		q = q + " FROM EnumValue WHERE EnumID = ?";
 		doQuery(q,(rs)-> {
 			rs2EnumValue(rs, dbenum);
 		},dbenum.getId());
 	}
-	
+
 	private void rs2EnumValue(ResultSet rs, DbEnum dbEnum)
 		throws SQLException
 	{
@@ -340,7 +329,7 @@ public class EnumSqlDao
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_6)
 		{
 			q += ")";
-		}			
+		}
 		else if (ev.getSortNumber() == EnumValue.UNDEFINED_SORT_NUMBER)
 		{
 			q += ", NULL)";
@@ -353,13 +342,12 @@ public class EnumSqlDao
 		try
 		{
 			doModify(q,args.toArray());
-		} 
-		catch(SQLException er)
-		{
-			debug3(er.getLocalizedMessage());
-			throw new DbIoException("Failed to add enum to database", er);
 		}
-		
+		catch(SQLException ex)
+		{
+			throw new DbIoException("Failed to add enum to database", ex);
+		}
+
 	}
 
 }

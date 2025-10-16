@@ -1,6 +1,20 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package opendcs.dao;
 
-import ilex.util.Logger;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -15,6 +29,11 @@ import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.DbIoException;
 import opendcs.dai.DacqEventDAI;
 
+/**
+ * @deprecated All logging output will be handled by external handlers. Logging has been remove
+ *   		   in preparation for logging rework.
+ */
+@Deprecated
 public class DacqEventDAO extends DaoBase implements DacqEventDAI
 {
 	public static final String module = "DacqEventDAO";
@@ -23,7 +42,7 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 		+ "EVENT_PRIORITY, SUBSYSTEM, MSG_RECV_TIME, EVENT_TEXT";
 	public static String dacqEventColumns = columnsBase;
 	private static Boolean hasAppId = null;
-	
+
 
 	public DacqEventDAO(DatabaseConnectionOwner tsdb)
 	{
@@ -42,13 +61,11 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 				}
 				catch (Exception ex)
 				{
-					warning(module 
-						+ " DB Version is > 15 but DACQ_EVENT does not have LOADING_APPLICATION_ID: " + ex);
 					hasAppId = false;
 				}
 			}
 		}
-		
+
 		if (hasAppId)
 		{
 			dacqEventColumns = columnsBase + ", LOADING_APPLICATION_ID";
@@ -60,7 +77,7 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 	{
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
 			return;
-		
+
 		if (evt.getDacqEventId().isNull())
 		{
 			evt.setDacqEventId(getKey(dacqEventTableName));
@@ -84,7 +101,7 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 		parameters.add(evt.getSubsystem());
 		parameters.add(evt.getMsgRecvTime());
 		parameters.add(txt);
-		
+
 		if(hasAppId)
 		{
 			q.append(",?");
@@ -101,12 +118,8 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 			StringBuilder sb = new StringBuilder();
 			String msg = "SQL Error in modify query '" + q + "': " + ex;
 			sb.append(msg);
-			if (Logger.instance().getMinLogPriority() == Logger.E_DEBUG3)
-			{
-				sb.append("With event =").append(evt);
-			}
-			throw new DbIoException(sb.toString(),ex);
-		}		
+			throw new DbIoException(sb.toString(), ex);
+		}
 	}
 
 	@Override
@@ -143,11 +156,11 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 			q = q + " AND DACQ_EVENT_ID > ?";
 			parameters.add(evtList.get(evtList.size()-1).getDacqEventId());
 		}
-			
+
 		q = q + " order by DACQ_EVENT_ID";
 		return queryForEvents(q, evtList, parameters);
 	}
-	
+
 	private int queryForEvents(String q, ArrayList<DacqEvent> evtList, List<Object> parameters)
 		throws DbIoException
 	{
@@ -166,9 +179,6 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 		catch (SQLException ex)
 		{
 			String msg = module + " Error in query '" + q + "': " + ex;
-			Logger.instance().warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
 			throw new DbIoException(msg, ex);
 		}
 	}
@@ -209,7 +219,7 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 			q = q + " AND DACQ_EVENT_ID > ?";
 			parameters.add(evtList.get(evtList.size()-1).getDacqEventId());
 		}
-			
+
 		q = q + " order by DACQ_EVENT_ID";
 		return queryForEvents(q, evtList, parameters);
 	}
@@ -249,7 +259,7 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 			throw new DbIoException("Unable to delete records for platform " + platformId, ex);
 		}
 	}
-	
+
 	@Override
 	public DbKey getFirstIdAfter(Date since)
 			throws DbIoException
