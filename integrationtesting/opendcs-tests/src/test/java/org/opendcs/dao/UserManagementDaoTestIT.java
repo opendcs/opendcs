@@ -78,13 +78,14 @@ public class UserManagementDaoTestIT extends AppTestBase
 
             List<Role> rolesLimitOffset = dao.getRoles(tx, 10, 10);
             assertEquals(10, rolesLimitOffset.size());
-            assertEquals("user19", rolesLimitOffset.get(rolesLimit.size()-1).name);
+            assertEquals("user19", rolesLimitOffset.get(rolesLimitOffset.size()-1).name);
 
         }
     }
 
 
     @Test
+    @EnableIfTsDb({"OpenDCS-Postgres"})
     void test_identity_provider_operations() throws Exception
     {
         UserManagementDao dao = db.getDao(UserManagementDao.class)
@@ -103,7 +104,7 @@ public class UserManagementDaoTestIT extends AppTestBase
             assertEquals(idpIn.getName(), out2.getName());
             HashMap<String, Object> config = new HashMap<>();
             config.put("a test", "value");
-            IdentityProvider updater = new BuiltInIdentityProvider(id, "odcs-idp2", null, config);
+            IdentityProvider updater = new BuiltInIdentityProvider(id, "odcs-idpA", null, config);
             IdentityProvider updated = dao.updateIdentityProvider(tx, id, updater);
             assertEquals(updater.getName(), updated.getName());
             assertTrue(updated.configToMap().size() > 0);
@@ -111,6 +112,35 @@ public class UserManagementDaoTestIT extends AppTestBase
 
             dao.deleteIdentityProvider(tx, id);
             dao.getIdentityProvider(tx, id).ifPresent(idp -> fail("Provider was not deleted."));
+        }
+    }
+
+    @Test
+    @EnableIfTsDb({"OpenDCS-Postgres"})
+    void test_idp_pagination() throws Exception
+    {
+        UserManagementDao dao = db.getDao(UserManagementDao.class)
+                                  .orElseThrow(() -> new UnsupportedOperationException("user dao not supported."));
+        try (DataTransaction tx = db.newTransaction())
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                HashMap<String, Object> config = new HashMap<>();
+                config.put("i", i);
+                dao.addIdentityProvider(tx, new BuiltInIdentityProvider(DbKey.NullKey, "idp" + i, null, config));
+            }
+
+            List<IdentityProvider> providers = dao.getIdentityProviders(tx, -1, -1);
+            assertEquals(100, providers.size());
+
+            List<IdentityProvider> providerLimit = dao.getIdentityProviders(tx, 10, 0);
+            assertEquals(10, providerLimit.size());
+            assertEquals("idp9", providerLimit.get(providerLimit.size()-1).getName());
+
+            List<IdentityProvider> providerLimitOffset = dao.getIdentityProviders(tx, 10, 10);
+            assertEquals(10, providerLimitOffset.size());
+            assertEquals("idp19", providerLimitOffset.get(providerLimitOffset.size()-1).getName());
+
         }
     }
 }
