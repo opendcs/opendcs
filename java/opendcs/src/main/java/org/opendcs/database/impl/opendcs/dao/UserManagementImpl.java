@@ -66,7 +66,20 @@ public class UserManagementImpl implements UserManagementDao
     public List<IdentityProvider> getIdentityProviders(DataTransaction tx, int limit, int offset)
             throws OpenDcsDataException
     {
-        return new ArrayList<>();
+        Connection conn = tx.connection(Connection.class).get();
+        Handle handle = Jdbi.open(conn);
+        if (limit == -1 || offset == -1)
+        {
+            return handle.createQuery("select id, name, type, updated_at, config::text from identity_provider")
+                         .map(PROVIDER_MAPPER).list();
+        }
+        else
+        {
+            return handle.createQuery("select id, name, type, updated_at, config::text from identity_provider limit :limit offset :offset")
+                         .bind("limit", limit)
+                         .bind("offset", offset)
+                         .map(PROVIDER_MAPPER).list();
+        }
     }
 
     @Override
@@ -110,7 +123,7 @@ public class UserManagementImpl implements UserManagementDao
     public IdentityProvider updateIdentityProvider(DataTransaction tx, DbKey id, IdentityProvider provider)
             throws OpenDcsDataException
     {
-         Connection conn = tx.connection(Connection.class).get();
+        Connection conn = tx.connection(Connection.class).get();
         Handle handle = Jdbi.open(conn);
         handle.getJdbi().installPlugin(new Jackson2Plugin());
         ObjectMapper om = new ObjectMapper();
@@ -119,7 +132,8 @@ public class UserManagementImpl implements UserManagementDao
             String config = om.writeValueAsString(provider.configToMap());
             return
                 handle.createQuery("update identity_provider set name = :name, type = :type, updated_at = now(), " +
-                                   "config = :config::jsonb returning id, name, type, updated_at, config::text")
+                                   "config = :config::jsonb where id = :id returning id, name, type, updated_at, config::text")
+                    .bind("id", id.getValue())
                     .bind("name", provider.getName())
                     .bind("type", provider.getType())
                     .bind("config", config)
