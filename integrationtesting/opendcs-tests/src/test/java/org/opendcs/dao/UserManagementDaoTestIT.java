@@ -156,9 +156,10 @@ public class UserManagementDaoTestIT extends AppTestBase
         DbKey id = DbKey.NullKey;
         try (DataTransaction tx = db.newTransaction())
         {
-            User userIn = new User(DbKey.NullKey, new HashMap<>(), "test@test.com",
-                                   null, null, new ArrayList<>(), new ArrayList<>(), "test"
-                                  );
+            User userIn = new User.Builder()
+                                  .withEmail("test@test.com")
+                                  .withPassword("test")
+                                  .build();
             User userOut = dao.addUser(tx, userIn);
             assertNotEquals(DbKey.NullKey, userOut.id);
             assertEquals(userIn.email, userOut.email);
@@ -169,9 +170,11 @@ public class UserManagementDaoTestIT extends AppTestBase
             assertEquals(userIn.email, out2.email);
             HashMap<String, Object> preferences = new HashMap<>();
             preferences.put("a test", "value");
-            User updater = new User(DbKey.NullKey, preferences, "test@test.com",
-                                   null, null, new ArrayList<>(), new ArrayList<>(), "test"
-                                        );
+            User updater = new User.Builder()
+                                    .withPreferences(preferences)
+                                    .withEmail("test@test.com")
+                                    .withPassword("test")
+                                    .build();
             User updated = dao.updateUser(tx, id, updater);
             assertEquals(updater.email, updated.email);
             assertTrue(updated.preferences.size() > 0);
@@ -194,9 +197,11 @@ public class UserManagementDaoTestIT extends AppTestBase
             {
                 HashMap<String, Object> preferences = new HashMap<>();
                 preferences.put("i", i);
-                dao.addUser(tx, new User(DbKey.NullKey, preferences, "user"+i,
-                                   null, null, new ArrayList<>(), new ArrayList<>(), "test"+i
-                                        ));
+                dao.addUser(tx, new User.Builder()
+                                        .withPreferences(preferences)
+                                        .withEmail("user"+i)
+                                        .withPassword("test"+i)
+                                        .build());
             }
 
             List<User> users = dao.getUsers(tx, -1, -1);
