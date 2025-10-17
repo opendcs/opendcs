@@ -37,6 +37,7 @@ create table user_roles(
 
 create table user_identity_provider(
     user_id bigint references opendcs_user(id) not null,
+    subject text not null unique,
     identity_provider_id bigint references identity_provider(id) not null,
     primary key (user_id, identity_provider_id),
     created_at timestamptz not null default now()

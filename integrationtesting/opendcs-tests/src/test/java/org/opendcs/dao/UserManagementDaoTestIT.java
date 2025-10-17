@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -15,6 +16,7 @@ import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.impl.opendcs.BuiltInIdentityProvider;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.Role;
+import org.opendcs.database.model.User;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
@@ -140,6 +142,73 @@ public class UserManagementDaoTestIT extends AppTestBase
             List<IdentityProvider> providerLimitOffset = dao.getIdentityProviders(tx, 10, 10);
             assertEquals(10, providerLimitOffset.size());
             assertEquals("idp19", providerLimitOffset.get(providerLimitOffset.size()-1).getName());
+
+        }
+    }
+
+
+    @Test
+    @EnableIfTsDb({"OpenDCS-Postgres"})
+    void test_user_operations() throws Exception
+    {
+        UserManagementDao dao = db.getDao(UserManagementDao.class)
+                                  .orElseGet(() -> fail("user dao not supported."));
+        DbKey id = DbKey.NullKey;
+        try (DataTransaction tx = db.newTransaction())
+        {
+            User userIn = new User(DbKey.NullKey, new HashMap<>(), "test@test.com",
+                                   null, null, new ArrayList<>(), new ArrayList<>(), "test"
+                                  );
+            User userOut = dao.addUser(tx, userIn);
+            assertNotEquals(DbKey.NullKey, userOut.id);
+            assertEquals(userIn.email, userOut.email);
+            id = userOut.id;
+
+            User out2 = dao.getUser(tx, id).orElseGet(() -> fail("could not retrieve identity provided"));
+            assertNotEquals(DbKey.NullKey, out2.id);
+            assertEquals(userIn.email, out2.email);
+            HashMap<String, Object> preferences = new HashMap<>();
+            preferences.put("a test", "value");
+            User updater = new User(DbKey.NullKey, preferences, "test@test.com",
+                                   null, null, new ArrayList<>(), new ArrayList<>(), "test"
+                                        );
+            User updated = dao.updateUser(tx, id, updater);
+            assertEquals(updater.email, updated.email);
+            assertTrue(updated.preferences.size() > 0);
+
+
+            dao.deleteUser(tx, id);
+            dao.getUser(tx, id).ifPresent(idp -> fail("User was not deleted."));
+        }
+    }
+
+     @Test
+    @EnableIfTsDb({"OpenDCS-Postgres"})
+    void test_user_pagination() throws Exception
+    {
+        UserManagementDao dao = db.getDao(UserManagementDao.class)
+                                  .orElseThrow(() -> new UnsupportedOperationException("user dao not supported."));
+        try (DataTransaction tx = db.newTransaction())
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                HashMap<String, Object> preferences = new HashMap<>();
+                preferences.put("i", i);
+                dao.addUser(tx, new User(DbKey.NullKey, preferences, "user"+i,
+                                   null, null, new ArrayList<>(), new ArrayList<>(), "test"+i
+                                        ));
+            }
+
+            List<User> users = dao.getUsers(tx, -1, -1);
+            assertEquals(100, users.size());
+
+            List<User> usersLimit = dao.getUsers(tx, 10, 0);
+            assertEquals(10, usersLimit.size());
+            assertEquals("user9", usersLimit.get(usersLimit.size()-1).email);
+
+            List<User> usersLimitOffset = dao.getUsers(tx, 10, 10);
+            assertEquals(10, usersLimitOffset.size());
+            assertEquals("idp19", usersLimitOffset.get(usersLimitOffset.size()-1).email);
 
         }
     }
