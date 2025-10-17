@@ -21,7 +21,7 @@ public interface UserManagementDao extends OpenDcsDao
      * @param offset -1 for no offset
      * @return
      */
-    List<User> getUsers(DataTransaction tx, int limit, int offset);
+    List<User> getUsers(DataTransaction tx, int limit, int offset) throws OpenDcsDataException;
 
     /**
      * Add a user to the database

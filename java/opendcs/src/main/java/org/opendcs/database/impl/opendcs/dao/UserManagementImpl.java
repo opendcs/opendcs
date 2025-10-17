@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
@@ -14,6 +15,7 @@ import org.jdbi.v3.core.qualifier.QualifiedType;
 import org.jdbi.v3.core.result.LinkedHashMapRowReducer;
 import org.jdbi.v3.core.result.RowView;
 import org.jdbi.v3.core.statement.PreparedBatch;
+import org.jdbi.v3.core.statement.Query;
 import org.jdbi.v3.jackson2.Jackson2Plugin;
 import org.jdbi.v3.json.Json;
 import org.opendcs.database.api.DataTransaction;
@@ -39,16 +41,48 @@ public class UserManagementImpl implements UserManagementDao
     private static final IdentityProviderMapper PROVIDER_MAPPER = new IdentityProviderMapper();
 
     @Override
-    public List<User> getUsers(DataTransaction tx, int limit, int offset)
+    public List<User> getUsers(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
-        return new ArrayList<>();
+        Handle handle = getHandle(tx);
+        handle.getJdbi().installPlugin(new Jackson2Plugin());
+        final String userSelect = "select u.id u_id, u.preferences::text u_preferences, u.email u_email," +
+            "       u.created_at u_created_at, u.updated_at u_updated_at, " +
+            "       r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at" +
+            "  from opendcs_user u" +
+            "  left join user_roles ur on ur.user_id = u.id" +
+            "  left join opendcs_role r on r.id = ur.role_id" +
+            (limit != -1 ? " limit :limit ": "") +
+            (offset != -1 ? " offset :offset " : "");
+
+        Query q = handle.createQuery(userSelect);
+        if (limit != -1)
+        {
+            q.bind("limit", limit);
+        }
+
+        if (offset != -1)
+        {
+            q.bind("offset", offset);
+        }
+              
+        return q.registerRowMapper(User.Builder.class, UserBuilderMapper.withPrefix("u"))
+              .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
+              .reduceRows((Map<Long, User.Builder> map, RowView rowView) ->
+              {
+                User.Builder ub = map.computeIfAbsent(rowView.getColumn("u_id", Long.class), 
+                        qid -> rowView.getRow(User.Builder.class)
+                );
+                Role r = rowView.getRow(Role.class);
+                ub.withRole(r);
+              })
+              .map(ub -> ub.build())
+              .collect(Collectors.toList());
     }
 
     @Override
     public User addUser(DataTransaction tx, User user) throws OpenDcsDataException
     {
-        Connection conn = tx.connection(Connection.class).get();
-        Handle handle = Jdbi.open(conn);
+        Handle handle = getHandle(tx);
         handle.getJdbi().installPlugin(new Jackson2Plugin());
         ObjectMapper om = new ObjectMapper();
         try
@@ -56,10 +90,10 @@ public class UserManagementImpl implements UserManagementDao
             String preferences = om.writeValueAsString(user.preferences);
             
             DbKey id = DbKey.createDbKey(handle.createQuery(
-                "insert into identity_provider(email, created_at, updated_at, preferences) " +
-                "values (:email, now(), now(), :preferences::jsonb) returning id")
+                "insert into opendcs_user(email, updated_at, preferences) " +
+                "values (:email, now(), :preferences::jsonb) returning id")
             .bind("email", user.email)
-            .bind("preference", preferences)
+            .bind("preferences", preferences)
             .mapTo(Long.class)
             .one());
 
@@ -94,12 +128,19 @@ public class UserManagementImpl implements UserManagementDao
     @Override
     public Optional<User> getUser(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
-        Connection conn = tx.connection(Connection.class).get();
-        Handle handle = Jdbi.open(conn);
+        Handle handle = getHandle(tx);
         handle.getJdbi().installPlugin(new Jackson2Plugin());
         
         return 
-        handle.createQuery("select ")
+        handle.createQuery(
+            "select u.id u_id, u.preferences::text u_preferences, u.email u_email," +
+            "       u.created_at u_created_at, u.updated_at u_updated_at, " +
+            "       r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at" +
+            "  from opendcs_user u" +
+            "  left join user_roles ur on ur.user_id = u.id" +
+            "  left join opendcs_role r on r.id = ur.role_id" +
+            "  where u.id = :id"
+            )
               .bind("id", id.getValue())
               .registerRowMapper(User.Builder.class, UserBuilderMapper.withPrefix("u"))
               .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
@@ -119,12 +160,57 @@ public class UserManagementImpl implements UserManagementDao
     @Override
     public User updateUser(DataTransaction tx, DbKey id, User user) throws OpenDcsDataException
     {
-        return null;
+        Handle handle = getHandle(tx);
+        ObjectMapper om = new ObjectMapper();
+        try
+        {
+            String preferences = om.writeValueAsString(user.preferences);
+            
+            handle.createUpdate(
+                "update opendcs_user set email = :email, updated_at = now(), preferences = :preferences::jsonb " +
+                "where id = :id")
+                .bind("id", id.getValue())
+                .bind("preferences", preferences)
+                .bind("email", user.email) // wait should we allow changing the email?
+                .execute();
+            handle.createUpdate("delete from user_roles where user_id = :id").bind("id", id.getValue()).execute();
+            PreparedBatch roleBatch = handle.prepareBatch("insert into user_roles(user_id, role_id) values (:user_id, :role_id)");
+            for (Role role: user.roles)
+            {
+                roleBatch.bind("user_id", id.getValue())
+                         .bind("role_id", role.id.getValue())
+                         .add();
+            }
+            roleBatch.execute();
+
+            handle.createUpdate("delete from user_identity_provider where user_id=:id").bind("id", id.getValue()).execute();
+            PreparedBatch idpBatch = handle.prepareBatch("insert into user_identity_provider (user_id, identity_provider_id, subject) values (:user_id, :identity_provider_id, :subject)");
+            for (IdentityProviderMapping idpM: user.identityProviders)
+            {
+                idpBatch.bind("user_id", id.getValue())
+                        .bind("identity_provider_id", idpM.provider.getId())
+                        .bind("subject", idpM.subject)
+                        .add();
+            }
+            idpBatch.execute();
+            // TODO password, need to handle actual hashing
+
+            return getUser(tx, id).orElseThrow();
+        }
+        catch (JsonProcessingException ex)
+        {
+            throw new OpenDcsDataException("unable to covert config to json", ex);
+        }
     }
 
     @Override
     public void deleteUser(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
+        Handle handle = getHandle(tx);
+        handle.createUpdate("delete from user_roles where user_id = :id").bind("id", id.getValue()).execute();
+        handle.createUpdate("delete from user_identity_provider where user_id=:id").bind("id", id.getValue()).execute();
+        // password?
+        handle.createUpdate("delete from opendcs_user where id = :id").bind("id", id.getValue()).execute();
 
     }
 
@@ -132,8 +218,7 @@ public class UserManagementImpl implements UserManagementDao
     public List<IdentityProvider> getIdentityProviders(DataTransaction tx, int limit, int offset)
             throws OpenDcsDataException
     {
-        Connection conn = tx.connection(Connection.class).get();
-        Handle handle = Jdbi.open(conn);
+        Handle handle = getHandle(tx);
         if (limit == -1 || offset == -1)
         {
             return handle.createQuery("select id, name, type, updated_at, config::text from identity_provider")
@@ -152,8 +237,7 @@ public class UserManagementImpl implements UserManagementDao
     public IdentityProvider addIdentityProvider(DataTransaction tx, IdentityProvider provider)
             throws OpenDcsDataException
     {
-        Connection conn = tx.connection(Connection.class).get();
-        Handle handle = Jdbi.open(conn);
+        Handle handle = getHandle(tx);
         handle.getJdbi().installPlugin(new Jackson2Plugin());
         ObjectMapper om = new ObjectMapper();
         try
@@ -175,8 +259,7 @@ public class UserManagementImpl implements UserManagementDao
     @Override
     public Optional<IdentityProvider> getIdentityProvider(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
-        Connection conn = tx.connection(Connection.class).get();
-        Handle handle = Jdbi.open(conn);
+        Handle handle = getHandle(tx);
         handle.getJdbi().installPlugin(new Jackson2Plugin());
 
         return
@@ -189,8 +272,7 @@ public class UserManagementImpl implements UserManagementDao
     public IdentityProvider updateIdentityProvider(DataTransaction tx, DbKey id, IdentityProvider provider)
             throws OpenDcsDataException
     {
-        Connection conn = tx.connection(Connection.class).get();
-        Handle handle = Jdbi.open(conn);
+        Handle handle = getHandle(tx);
         handle.getJdbi().installPlugin(new Jackson2Plugin());
         ObjectMapper om = new ObjectMapper();
         try
@@ -214,8 +296,7 @@ public class UserManagementImpl implements UserManagementDao
     @Override
     public void deleteIdentityProvider(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
-        Connection conn = tx.connection(Connection.class).get();
-        Handle handle = Jdbi.open(conn);
+        Handle handle = getHandle(tx);
         handle.createUpdate("delete from identity_provider where id = :id")
               .bind("id", id.getValue())
               .execute();
@@ -224,8 +305,7 @@ public class UserManagementImpl implements UserManagementDao
     @Override
     public List<Role> getRoles(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
-        Connection conn = tx.connection(Connection.class).get();
-        Handle handle = Jdbi.open(conn);
+        Handle handle = getHandle(tx);
         if (limit == -1 || offset == -1)
         {
             return handle.createQuery("select id, name, description, updated_at from opendcs_role")
@@ -244,8 +324,7 @@ public class UserManagementImpl implements UserManagementDao
     @Override
     public Role addRole(DataTransaction tx, Role role) throws OpenDcsDataException
     {
-        Connection conn = tx.connection(Connection.class).get();
-        Handle handle = Jdbi.open(conn);
+        Handle handle = getHandle(tx);
         return
             handle.createQuery("insert into opendcs_role(name, description, updated_at) values (:name, :description, now()) returning id, name, description,updated_at")
               .bind("name", role.name)
@@ -287,5 +366,16 @@ public class UserManagementImpl implements UserManagementDao
     }
 
 
+    /**
+     * Helper function. Will be able to just call tx.getConnection(Handle.class)
+     * in the future
+     * @param tx
+     * @return
+     */
+    private Handle getHandle(DataTransaction tx) throws OpenDcsDataException
+    {
+        Connection conn = tx.connection(Connection.class).get();
+        return Jdbi.open(conn);
+    }
 
 }

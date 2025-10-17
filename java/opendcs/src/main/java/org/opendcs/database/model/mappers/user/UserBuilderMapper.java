@@ -44,9 +44,9 @@ public class UserBuilderMapper implements RowMapper<User.Builder>
         builder.withId(DbKey.createDbKey(rs, prefix+"id"))
                .withEmail(rs.getString(prefix+"email"))
                .withUpdatedAt(columnMapperForZDT.map(rs, prefix+"updated_at", ctx))
-               .withCreatedAt(columnMapperForZDT.map(rs, prefix+"create_at", ctx))
+               .withCreatedAt(columnMapperForZDT.map(rs, prefix+"created_at", ctx))
                 ;
-        String jsonData = rs.getString("config");
+        String jsonData = rs.getString(prefix+"preferences");
         Map<String, Object> preferences;
         try
         {
