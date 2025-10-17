@@ -52,11 +52,11 @@ public class User
         /**
          * Identity Provider associated to this user+subject.
          */
-        final IdentityProvider provider;
+        public final IdentityProvider provider;
         /**
          * unique identifier used for this user in the given identity provider..
          */
-        final String subject;
+        public final String subject;
 
         public IdentityProviderMapping(IdentityProvider provider, String subject)
         {

@@ -10,6 +10,7 @@ import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.generic.GenericType;
 import org.jdbi.v3.core.qualifier.QualifiedType;
+import org.jdbi.v3.core.statement.PreparedBatch;
 import org.jdbi.v3.jackson2.Jackson2Plugin;
 import org.jdbi.v3.json.Json;
 import org.opendcs.database.api.DataTransaction;
@@ -18,6 +19,7 @@ import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.Role;
 import org.opendcs.database.model.User;
+import org.opendcs.database.model.User.IdentityProviderMapping;
 import org.opendcs.database.model.mappers.IdentityProviderMapper;
 import org.opendcs.database.model.mappers.RoleMapper;
 
@@ -41,13 +43,61 @@ public class UserManagementImpl implements UserManagementDao
     @Override
     public User addUser(DataTransaction tx, User user) throws OpenDcsDataException
     {
-        return null;
+        Connection conn = tx.connection(Connection.class).get();
+        Handle handle = Jdbi.open(conn);
+        handle.getJdbi().installPlugin(new Jackson2Plugin());
+        ObjectMapper om = new ObjectMapper();
+        try
+        {
+            String preferences = om.writeValueAsString(user.preferences);
+            
+            DbKey id = DbKey.createDbKey(handle.createQuery(
+                "insert into identity_provider(email, created_at, updated_at, preferences) " +
+                "values (:email, now(), now(), :preferences::jsonb) returning id")
+            .bind("email", user.email)
+            .bind("preference", preferences)
+            .mapTo(Long.class)
+            .one());
+
+            PreparedBatch roleBatch = handle.prepareBatch("insert into user_roles(user_id, role_id) values (:user_id, :role_id)");
+            for (Role role: user.roles)
+            {
+                roleBatch.bind("user_id", id.getValue())
+                         .bind("role_id", role.id.getValue())
+                         .add();
+            }
+            roleBatch.execute();
+
+            PreparedBatch idpBatch = handle.prepareBatch("insert into user_identity_provider (user_id, identity_provider_id, subject) values (:user_id, :identity_provider_id, :subject)");
+            for (IdentityProviderMapping idpM: user.identityProviders)
+            {
+                idpBatch.bind("user_id", id.getValue())
+                        .bind("identity_provider_id", idpM.provider.getId())
+                        .bind("subject", idpM.subject)
+                        .add();
+            }
+            idpBatch.execute();
+            // TODO password, need to handle actual hashing
+
+            return getUser(tx, id).orElseThrow();
+        }
+        catch (JsonProcessingException ex)
+        {
+            throw new OpenDcsDataException("unable to covert config to json", ex);
+        }
     }
 
     @Override
     public Optional<User> getUser(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
-        return Optional.empty();
+        Connection conn = tx.connection(Connection.class).get();
+        Handle handle = Jdbi.open(conn);
+        handle.getJdbi().installPlugin(new Jackson2Plugin());
+        
+        handle.createQuery("select ")
+              .bind("id", id.getValue())
+              .registerRowMapper(PROVIDER_MAPPER)
+              .findOne();
     }
 
     @Override
