@@ -4,12 +4,15 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.generic.GenericType;
 import org.jdbi.v3.core.qualifier.QualifiedType;
+import org.jdbi.v3.core.result.LinkedHashMapRowReducer;
+import org.jdbi.v3.core.result.RowView;
 import org.jdbi.v3.core.statement.PreparedBatch;
 import org.jdbi.v3.jackson2.Jackson2Plugin;
 import org.jdbi.v3.json.Json;
@@ -22,6 +25,7 @@ import org.opendcs.database.model.User;
 import org.opendcs.database.model.User.IdentityProviderMapping;
 import org.opendcs.database.model.mappers.IdentityProviderMapper;
 import org.opendcs.database.model.mappers.RoleMapper;
+import org.opendcs.database.model.mappers.user.UserBuilderMapper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,7 +35,7 @@ import decodes.sql.DbKey;
 public class UserManagementImpl implements UserManagementDao
 {
 
-    private static final RoleMapper ROLE_MAPPER = new RoleMapper();
+    private static final RoleMapper ROLE_MAPPER = RoleMapper.withPrefix(null);
     private static final IdentityProviderMapper PROVIDER_MAPPER = new IdentityProviderMapper();
 
     @Override
@@ -94,10 +98,22 @@ public class UserManagementImpl implements UserManagementDao
         Handle handle = Jdbi.open(conn);
         handle.getJdbi().installPlugin(new Jackson2Plugin());
         
+        return 
         handle.createQuery("select ")
               .bind("id", id.getValue())
-              .registerRowMapper(PROVIDER_MAPPER)
-              .findOne();
+              .registerRowMapper(User.Builder.class, UserBuilderMapper.withPrefix("u"))
+              .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
+              .reduceRows((Map<Long, User.Builder> map, RowView rowView) ->
+              {
+                User.Builder ub = map.computeIfAbsent(rowView.getColumn("u_id", Long.class), 
+                        qid -> rowView.getRow(User.Builder.class)
+                );
+                Role r = rowView.getRow(Role.class);
+                ub.withRole(r);
+              })
+              .map(ub -> ub.build())
+              .findFirst()
+              ;
     }
 
     @Override

@@ -1,7 +1,9 @@
 package org.opendcs.database.model;
 
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -33,18 +35,16 @@ public class User
     public final List<IdentityProviderMapping> identityProviders;
 
 
-    public User(DbKey id, Map<String, Object> preferences, String email,
-                ZonedDateTime createdAt, ZonedDateTime updatedAt, List<Role> roles,
-                List<IdentityProviderMapping> identityProviders, String password)
+    private User(Builder builder)
     {
-        this.id = id;
-        this.preferences = preferences;
-        this.email = email;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.roles = Collections.unmodifiableList(roles);
-        this.password = password;
-        this.identityProviders = Collections.unmodifiableList(identityProviders);
+        this.id = builder.id;
+        this.preferences = builder.preferences;
+        this.email = builder.email;
+        this.createdAt = builder.createdAt;
+        this.updatedAt = builder.updatedAt;
+        this.roles = Collections.unmodifiableList(builder.roles);
+        this.password = builder.password;
+        this.identityProviders = Collections.unmodifiableList(builder.idpMap);
     }
 
     public static final class IdentityProviderMapping
@@ -62,6 +62,89 @@ public class User
         {
             this.provider = provider;
             this.subject = subject;
+        }
+    }
+
+    public static class Builder
+    {
+        DbKey id = DbKey.NullKey;
+        String email = null;
+        ArrayList<IdentityProviderMapping> idpMap = new ArrayList<>();
+        ArrayList<Role> roles = new ArrayList();
+        String password = null;
+        ZonedDateTime createdAt = null;
+        ZonedDateTime updatedAt = null;
+        HashMap<String, Object> preferences = new HashMap();
+
+        public User build()
+        {
+            return new User(this);
+        }
+
+        public Builder withId(DbKey id)
+        {
+            this.id = id;
+            return this;
+        }
+
+        public Builder withEmail(String email)
+        {
+            this.email = email;
+            return this;
+        }
+
+        public Builder withPreferences(Map<String, Object> preferences)
+        {
+            this.preferences.putAll(preferences);
+            return this;
+        }
+
+        public Builder withPreference(String key, Object value)
+        {
+            this.preferences.put(key, value);
+            return this;
+        }
+
+        public Builder withCreatedAt(ZonedDateTime createdAt)
+        {
+            this.createdAt = createdAt;
+            return this;
+        }
+
+        public Builder withUpdatedAt(ZonedDateTime updatedAt)
+        {
+            this.updatedAt = updatedAt;
+            return this;
+        }
+
+        public Builder withRoles(List<Role> roles)
+        {
+            this.roles.addAll(roles);
+            return this;
+        }
+
+        public Builder withRole(Role role)
+        {
+            this.roles.add(role);
+            return this;
+        }
+
+        public Builder withIdentityMappings(List<IdentityProviderMapping> mappings)
+        {
+            this.idpMap.addAll(mappings);
+            return this;
+        }
+
+        public Builder withIdentityMapping(IdentityProviderMapping mapping)
+        {
+            this.idpMap.add(mapping);
+            return this;
+        }
+
+        public Builder withPassword(String password)
+        {
+            this.password = password;
+            return this;
         }
     }
 }
