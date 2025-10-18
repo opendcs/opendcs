@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package org.opendcs.database.model.mappers;
 
 import java.sql.ResultSet;
@@ -11,14 +26,11 @@ import org.opendcs.database.model.Role;
 
 import decodes.sql.DbKey;
 
-public class RoleMapper implements RowMapper<Role>
+public class RoleMapper extends PrefixRowMapper<Role>
 {
-    private final String prefix;
-
     private RoleMapper(String prefix)
     {
-        this.prefix = prefix == null ? ""
-                    : (prefix.endsWith("_") ? prefix : prefix+"_");
+        super(prefix);
     }
 
     @Override
@@ -32,8 +44,7 @@ public class RoleMapper implements RowMapper<Role>
         ZonedDateTime updatedAt = columnMapperForZDT.map(rs, prefix+"updated_at", ctx);
         return new Role(key, name, description, updatedAt);
     }
- 
-    
+
     public static RoleMapper withPrefix(String prefix)
     {
         return new RoleMapper(prefix);
