@@ -22,11 +22,12 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.model.IdentityProvider;
+import org.opendcs.database.model.IdentityProviderMapping;
 import org.opendcs.database.model.Role;
 import org.opendcs.database.model.User;
-import org.opendcs.database.model.User.IdentityProviderMapping;
 import org.opendcs.database.model.mappers.IdentityProviderMapper;
 import org.opendcs.database.model.mappers.RoleMapper;
+import org.opendcs.database.model.mappers.user.IdentityProviderMappingMapper;
 import org.opendcs.database.model.mappers.user.UserBuilderMapper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -38,7 +39,7 @@ public class UserManagementImpl implements UserManagementDao
 {
 
     private static final RoleMapper ROLE_MAPPER = RoleMapper.withPrefix(null);
-    private static final IdentityProviderMapper PROVIDER_MAPPER = new IdentityProviderMapper();
+    private static final IdentityProviderMapper PROVIDER_MAPPER = new IdentityProviderMapper(null);
 
     @Override
     public List<User> getUsers(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
@@ -47,10 +48,14 @@ public class UserManagementImpl implements UserManagementDao
         handle.getJdbi().installPlugin(new Jackson2Plugin());
         final String userSelect = "select u.id u_id, u.preferences::text u_preferences, u.email u_email," +
             "       u.created_at u_created_at, u.updated_at u_updated_at, " +
-            "       r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at" +
+            "       r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at," +
+            "       uip.identity_provider_id i_id, uip.subject i_subject,  " +
+            "       idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config::text i_config" +
             "  from opendcs_user u" +
             "  left join user_roles ur on ur.user_id = u.id" +
             "  left join opendcs_role r on r.id = ur.role_id" +
+            "  left join user_identity_provider uip on uip.user_id = u.id" +
+            "  left join identity_provider idp on idp.id = uip.identity_provider_id" +
             (limit != -1 ? " limit :limit ": "") +
             (offset != -1 ? " offset :offset " : "");
 
@@ -67,6 +72,7 @@ public class UserManagementImpl implements UserManagementDao
               
         return q.registerRowMapper(User.Builder.class, UserBuilderMapper.withPrefix("u"))
               .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
+              .registerRowMapper(IdentityProviderMapping.class, IdentityProviderMappingMapper.withPrefix("i"))
               .reduceRows((Map<Long, User.Builder> map, RowView rowView) ->
               {
                 User.Builder ub = map.computeIfAbsent(rowView.getColumn("u_id", Long.class), 
@@ -74,6 +80,8 @@ public class UserManagementImpl implements UserManagementDao
                 );
                 Role r = rowView.getRow(Role.class);
                 ub.withRole(r);
+                IdentityProviderMapping idpM = rowView.getRow(IdentityProviderMapping.class);
+                ub.withIdentityMapping(idpM);
               })
               .map(ub -> ub.build())
               .collect(Collectors.toList());
@@ -135,15 +143,20 @@ public class UserManagementImpl implements UserManagementDao
         handle.createQuery(
             "select u.id u_id, u.preferences::text u_preferences, u.email u_email," +
             "       u.created_at u_created_at, u.updated_at u_updated_at, " +
-            "       r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at" +
+            "       r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at," +
+            "       uip.identity_provider_id i_id, uip.subject i_subject,  " +
+            "       idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config::text i_config" +
             "  from opendcs_user u" +
             "  left join user_roles ur on ur.user_id = u.id" +
             "  left join opendcs_role r on r.id = ur.role_id" +
+            "  left join user_identity_provider uip on uip.user_id = u.id" +
+            "  left join identity_provider idp on idp.id = uip.identity_provider_id" +
             "  where u.id = :id"
             )
               .bind("id", id.getValue())
               .registerRowMapper(User.Builder.class, UserBuilderMapper.withPrefix("u"))
               .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
+              .registerRowMapper(IdentityProviderMapping.class, IdentityProviderMappingMapper.withPrefix("i"))
               .reduceRows((Map<Long, User.Builder> map, RowView rowView) ->
               {
                 User.Builder ub = map.computeIfAbsent(rowView.getColumn("u_id", Long.class), 
@@ -151,6 +164,8 @@ public class UserManagementImpl implements UserManagementDao
                 );
                 Role r = rowView.getRow(Role.class);
                 ub.withRole(r);
+                IdentityProviderMapping idpM = rowView.getRow(IdentityProviderMapping.class);
+                ub.withIdentityMapping(idpM);
               })
               .map(ub -> ub.build())
               .findFirst()
