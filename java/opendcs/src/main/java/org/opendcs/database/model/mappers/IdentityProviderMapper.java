@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package org.opendcs.database.model.mappers;
 
 import java.sql.ResultSet;
@@ -6,7 +21,6 @@ import java.time.ZonedDateTime;
 import java.util.Map;
 
 import org.jdbi.v3.core.mapper.ColumnMapper;
-import org.jdbi.v3.core.mapper.RowMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.impl.opendcs.BuiltInIdentityProvider;
 import org.opendcs.database.model.IdentityProvider;
@@ -17,18 +31,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import decodes.sql.DbKey;
 
-public class IdentityProviderMapper implements RowMapper<IdentityProvider>
+/**
+ * Map identity provider columns
+ */
+public class IdentityProviderMapper extends PrefixRowMapper<IdentityProvider>
 {
     private final ObjectMapper om = new ObjectMapper();
 
-    private final String prefix;
-
-    public IdentityProviderMapper(String prefix)
+    private IdentityProviderMapper(String prefix)
     {
-        this.prefix = prefix == null ? ""
-                    : (prefix.endsWith("_") ? prefix : prefix+"_");
+        super(prefix);
     }
-
 
     @Override
     public IdentityProvider map(ResultSet rs, StatementContext ctx) throws SQLException
@@ -52,4 +65,8 @@ public class IdentityProviderMapper implements RowMapper<IdentityProvider>
 
     }
 
+    public static IdentityProviderMapper withPrefix(String prefix)
+    {
+        return new IdentityProviderMapper(prefix);
+    }
 }
