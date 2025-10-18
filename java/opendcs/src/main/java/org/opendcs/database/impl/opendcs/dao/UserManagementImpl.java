@@ -123,7 +123,7 @@ public class UserManagementImpl implements UserManagementDao
             idpBatch.execute();
             // TODO password, need to handle actual hashing
 
-            return getUser(tx, id).orElseThrow();
+            return getUser(tx, id).orElseThrow(() -> new OpenDcsDataException("Created User could not be retrieved."));
         }
         catch (JsonProcessingException ex)
         {
@@ -201,7 +201,7 @@ public class UserManagementImpl implements UserManagementDao
             idpBatch.execute();
             // TODO password, need to handle actual hashing
 
-            return getUser(tx, id).orElseThrow();
+            return getUser(tx, id).orElseThrow(() -> new OpenDcsDataException("Updated User could not be retrieved."));
         }
         catch (JsonProcessingException ex)
         {
