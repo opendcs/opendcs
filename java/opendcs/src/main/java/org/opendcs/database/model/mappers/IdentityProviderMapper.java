@@ -20,17 +20,27 @@ import decodes.sql.DbKey;
 public class IdentityProviderMapper implements RowMapper<IdentityProvider>
 {
     private final ObjectMapper om = new ObjectMapper();
+
+    private final String prefix;
+
+    public IdentityProviderMapper(String prefix)
+    {
+        this.prefix = prefix == null ? ""
+                    : (prefix.endsWith("_") ? prefix : prefix+"_");
+    }
+
+
     @Override
     public IdentityProvider map(ResultSet rs, StatementContext ctx) throws SQLException
     {
-        DbKey id = DbKey.createDbKey(rs, "id");
-        String name = rs.getString("name");
-        String type = rs.getString("type");
+        DbKey id = DbKey.createDbKey(rs, prefix+"id");
+        String name = rs.getString(prefix+"name");
+        String type = rs.getString(prefix+"type");
         ColumnMapper<ZonedDateTime> zdtMapper = ctx.findColumnMapperFor(ZonedDateTime.class).orElseThrow(() -> new SQLException("No mapper registered for ZonedDateTime."));
-        ZonedDateTime updatedAt = zdtMapper.map(rs, "updated_at", ctx);
+        ZonedDateTime updatedAt = zdtMapper.map(rs, prefix+"updated_at", ctx);
         try
         {
-            String jsonData = rs.getString("config");
+            String jsonData = rs.getString(prefix+"config");
             Map<String, Object> config = om.readValue(jsonData, new TypeReference<Map<String, Object>>() {});
             // TODO: other providers
             return new BuiltInIdentityProvider(id, name, updatedAt, config);
