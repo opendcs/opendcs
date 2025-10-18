@@ -47,34 +47,16 @@ public class User
         this.identityProviders = Collections.unmodifiableList(builder.idpMap);
     }
 
-    public static final class IdentityProviderMapping
-    {
-        /**
-         * Identity Provider associated to this user+subject.
-         */
-        public final IdentityProvider provider;
-        /**
-         * unique identifier used for this user in the given identity provider..
-         */
-        public final String subject;
-
-        public IdentityProviderMapping(IdentityProvider provider, String subject)
-        {
-            this.provider = provider;
-            this.subject = subject;
-        }
-    }
-
     public static class Builder
     {
         DbKey id = DbKey.NullKey;
         String email = null;
         ArrayList<IdentityProviderMapping> idpMap = new ArrayList<>();
-        ArrayList<Role> roles = new ArrayList();
+        ArrayList<Role> roles = new ArrayList<>();
         String password = null;
         ZonedDateTime createdAt = null;
         ZonedDateTime updatedAt = null;
-        HashMap<String, Object> preferences = new HashMap();
+        HashMap<String, Object> preferences = new HashMap<>();
 
         public User build()
         {
