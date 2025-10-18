@@ -1,23 +1,30 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package org.opendcs.database.impl.opendcs.dao;
 
 import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
-import org.jdbi.v3.core.generic.GenericType;
-import org.jdbi.v3.core.qualifier.QualifiedType;
-import org.jdbi.v3.core.result.LinkedHashMapRowReducer;
-import org.jdbi.v3.core.result.RowView;
 import org.jdbi.v3.core.statement.PreparedBatch;
 import org.jdbi.v3.core.statement.Query;
 import org.jdbi.v3.jackson2.Jackson2Plugin;
-import org.jdbi.v3.json.Json;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.UserManagementDao;
@@ -39,7 +46,7 @@ public class UserManagementImpl implements UserManagementDao
 {
 
     private static final RoleMapper ROLE_MAPPER = RoleMapper.withPrefix(null);
-    private static final IdentityProviderMapper PROVIDER_MAPPER = new IdentityProviderMapper(null);
+    private static final IdentityProviderMapper PROVIDER_MAPPER = IdentityProviderMapper.withPrefix(null);
 
     @Override
     public List<User> getUsers(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
@@ -69,20 +76,11 @@ public class UserManagementImpl implements UserManagementDao
         {
             q.bind("offset", offset);
         }
-              
+
         return q.registerRowMapper(User.Builder.class, UserBuilderMapper.withPrefix("u"))
               .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
               .registerRowMapper(IdentityProviderMapping.class, IdentityProviderMappingMapper.withPrefix("i"))
-              .reduceRows((Map<Long, User.Builder> map, RowView rowView) ->
-              {
-                User.Builder ub = map.computeIfAbsent(rowView.getColumn("u_id", Long.class), 
-                        qid -> rowView.getRow(User.Builder.class)
-                );
-                Role r = rowView.getRow(Role.class);
-                ub.withRole(r);
-                IdentityProviderMapping idpM = rowView.getRow(IdentityProviderMapping.class);
-                ub.withIdentityMapping(idpM);
-              })
+              .reduceRows(UserBuilderMapper.UserBuilderReducer.USER_BUILDER_REDUCER)
               .map(ub -> ub.build())
               .collect(Collectors.toList());
     }
@@ -96,7 +94,7 @@ public class UserManagementImpl implements UserManagementDao
         try
         {
             String preferences = om.writeValueAsString(user.preferences);
-            
+
             DbKey id = DbKey.createDbKey(handle.createQuery(
                 "insert into opendcs_user(email, updated_at, preferences) " +
                 "values (:email, now(), :preferences::jsonb) returning id")
@@ -138,8 +136,8 @@ public class UserManagementImpl implements UserManagementDao
     {
         Handle handle = getHandle(tx);
         handle.getJdbi().installPlugin(new Jackson2Plugin());
-        
-        return 
+
+        return
         handle.createQuery(
             "select u.id u_id, u.preferences::text u_preferences, u.email u_email," +
             "       u.created_at u_created_at, u.updated_at u_updated_at, " +
@@ -157,20 +155,13 @@ public class UserManagementImpl implements UserManagementDao
               .registerRowMapper(User.Builder.class, UserBuilderMapper.withPrefix("u"))
               .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
               .registerRowMapper(IdentityProviderMapping.class, IdentityProviderMappingMapper.withPrefix("i"))
-              .reduceRows((Map<Long, User.Builder> map, RowView rowView) ->
-              {
-                User.Builder ub = map.computeIfAbsent(rowView.getColumn("u_id", Long.class), 
-                        qid -> rowView.getRow(User.Builder.class)
-                );
-                Role r = rowView.getRow(Role.class);
-                ub.withRole(r);
-                IdentityProviderMapping idpM = rowView.getRow(IdentityProviderMapping.class);
-                ub.withIdentityMapping(idpM);
-              })
+              .reduceRows(UserBuilderMapper.UserBuilderReducer.USER_BUILDER_REDUCER)
               .map(ub -> ub.build())
               .findFirst()
               ;
     }
+
+
 
     @Override
     public User updateUser(DataTransaction tx, DbKey id, User user) throws OpenDcsDataException
@@ -180,7 +171,7 @@ public class UserManagementImpl implements UserManagementDao
         try
         {
             String preferences = om.writeValueAsString(user.preferences);
-            
+
             handle.createUpdate(
                 "update opendcs_user set email = :email, updated_at = now(), preferences = :preferences::jsonb " +
                 "where id = :id")
