@@ -20,7 +20,6 @@ import java.sql.SQLException;
 import java.time.ZonedDateTime;
 
 import org.jdbi.v3.core.mapper.ColumnMapper;
-import org.jdbi.v3.core.mapper.RowMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.model.Role;
 
