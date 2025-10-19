@@ -94,6 +94,7 @@ testEngines.each { engine ->
         //additionalSourceDirs files(project(":opendcs").sourceSets.main.java.srcDirs)
         //additionalClassDirs files(project(":opendcs").sourceSets.main.output)
         sourceSets project(":opendcs").sourceSets.main
+        executionData = files("${buildDir}/jacoco/test"+engine.replace("-","")+".exec") // Use the .exec file from the custom test task
         reports {
             html {
                 outputLocation = jacoco.reportsDirectory.dir("jacoco-${engine}-html")
