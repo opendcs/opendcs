@@ -205,7 +205,7 @@ public class DataTypeDAO extends DaoBase implements DataTypeDAI
 					{
 						DataType dt = dts.getById(DbKey.createDbKey(rs2, 1));
 						if (dt != null)
-							dt.setDisplayName(rs.getString(2));
+							dt.setDisplayName(rs2.getString(2));
 					}
 				}
 			}

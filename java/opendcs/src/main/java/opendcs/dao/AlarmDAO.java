@@ -1278,7 +1278,7 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 			try (ResultSet rs2 = doQuery(q))
 			{
 				while(rs2.next())
-					limitSets.put(DbKey.createDbKey(rs2, 1), rs2LimitSet(rs));
+					limitSets.put(DbKey.createDbKey(rs2, 1), rs2LimitSet(rs2));
 			}
 
 			// for each alarm in the return, assign the limit set.
