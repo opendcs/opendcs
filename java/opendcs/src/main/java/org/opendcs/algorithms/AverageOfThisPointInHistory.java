@@ -34,7 +34,8 @@ import java.util.GregorianCalendar;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.TimeSeriesDAI;
 
@@ -43,7 +44,7 @@ import opendcs.dai.TimeSeriesDAI;
                          " Algorithm was created to operate on generic intervals but has not been tested for them.")
 public class AverageOfThisPointInHistory extends AW_AlgorithmBase
 {
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(AverageOfThisPointInHistory.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
         // input values, declare a variable, and add the string of the variable name to the _inputNames array
     @Input(type = Double.class)
@@ -119,7 +120,7 @@ public class AverageOfThisPointInHistory extends AW_AlgorithmBase
 
             try (TimeSeriesDAI tdao = this.tsdb.makeTimeSeriesDAO())
             {
-                debug3("filling ts for this time");
+                log.trace("filling ts for this time");
                 tdao.fillTimeSeries(ts, time, time);
 
                 log.trace("Search for data at time: {}", time.toString() );
