@@ -1,21 +1,18 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.3  2015/01/06 16:09:33  mmaloney
- * First cut of Polling Modules
- *
- * Revision 1.2  2014/07/03 12:53:41  mmaloney
- * debug improvements.
- *
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to the United States Government. No warranty is provided or implied other 
- * than specific contractual terms between COVE and the U.S. Government.
- *
- * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package opendcs.dao;
 
 import ilex.util.TextUtil;
@@ -32,10 +29,12 @@ import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.DbIoException;
 import opendcs.dai.PlatformStatusDAI;
 
-public class PlatformStatusDAO 
-	extends DaoBase 
-	implements PlatformStatusDAI
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
+public class PlatformStatusDAO extends DaoBase implements PlatformStatusDAI
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String ps_attrs = "platform_id, last_contact_time, last_message_time, " +
 			"last_failure_codes, last_error_time, last_schedule_entry_status_id, " +
 			"annotation";
@@ -61,8 +60,7 @@ public class PlatformStatusDAO
 		}
 		catch (SQLException ex)
 		{
-			String msg = "Cannot parse rs for '" + q + "': " + ex;
-			warning(msg);
+			log.atWarn().setCause(ex).log("Cannot parse rs for '{}'", q);
 		}
 		return null;
 	}
@@ -93,8 +91,7 @@ public class PlatformStatusDAO
 			}
 			catch (SQLException ex)
 			{
-				String msg = "Cannot parse rs for '" + q + "': " + ex;
-				warning(msg);
+				log.atWarn().setCause(ex).log("Cannot parse rs for '{}'", q);
 			}
 				return new ArrayList<>();
 			}
@@ -119,8 +116,7 @@ public class PlatformStatusDAO
 			}
 			catch (SQLException ex)
 			{
-				String msg = "Error in query '" + q + "': " + ex;
-				warning(msg);
+				log.atWarn().setCause(ex).log("Error in query '{}'", q);
 			}
 
 			return ret;
