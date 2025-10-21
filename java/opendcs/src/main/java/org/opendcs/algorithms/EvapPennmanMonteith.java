@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 The OpenDCS Consortium and contributors
+ * Copyright 2024-2025 The OpenDCS Consortium and contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -34,10 +34,11 @@ import java.util.Calendar;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(name="Evap PennmanMonteith",
-           description = 
+           description =
     "Computes the Penmann Monteith evap calculation. Based on the document \"The ASCE STANDARDIZED REFERENCE EVAPOTRANSPIRATION EQUATION\" December 21, 2001   revised july 9, 2002\n" + //
     "The equation expects the following units:\n" + //
     "    param          |   units\n" + //
@@ -67,7 +68,7 @@ import org.slf4j.LoggerFactory;
 
 public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-    public static final org.slf4j.Logger log = LoggerFactory.getLogger(EvapPennmanMonteith.class);
+    public static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     @Input
     public double SolarRadiation;
