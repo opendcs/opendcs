@@ -1,11 +1,12 @@
 /*
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
- * No warranty is provided or implied other than specific contractual terms 
+ * No warranty is provided or implied other than specific contractual terms
  * between COVE and Alberta ESRD.
  *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
- * 
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,13 +28,16 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.polling.DeviceStatus;
 import decodes.tsdb.DbIoException;
 import opendcs.dai.DeviceStatusDAI;
 
-public class DeviceStatusDAO extends DaoBase 
-	implements DeviceStatusDAI
+public class DeviceStatusDAO extends DaoBase implements DeviceStatusDAI
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String tableName = "SERIAL_PORT_STATUS";
 	public static final String tableColumns = "PORT_NAME, IN_USE, LAST_USED_BY_PROC, "
 		+ "LAST_USED_BY_HOST, LAST_ACTIVITY_TIME, LAST_RECEIVE_TIME, LAST_MEDIUM_ID, "
@@ -50,15 +54,15 @@ public class DeviceStatusDAO extends DaoBase
 	{
 		String q = "select " + tableColumns + " from " + tableName;
 		ArrayList<DeviceStatus> ret = new ArrayList<DeviceStatus>();
-		ResultSet rs = doQuery(q);
-		try
+
+		try (ResultSet rs = doQuery(q))
 		{
-			while(rs != null && rs.next())
+			while (rs.next())
 				ret.add(rs2devStat(rs));
 		}
 		catch (SQLException ex)
 		{
-			throw new DbIoException("listDeviceStatuses: Error in query '" + q + "': " + ex);
+			throw new DbIoException("listDeviceStatuses: Error in query '" + q + "'", ex);
 		}
 
 		return ret;
@@ -69,21 +73,20 @@ public class DeviceStatusDAO extends DaoBase
 	{
 		String q = "select " + tableColumns + " from " + tableName
 			+ " where lower(PORT_NAME) = " + sqlString(portName.toLowerCase());
-		ResultSet rs = doQuery(q);
-		try
+		try (ResultSet rs = doQuery(q))
 		{
-			if (rs == null || !rs.next())
+			if (!rs.next())
 				return null;
 			return rs2devStat(rs);
 		}
 		catch (SQLException ex)
 		{
-			throw new DbIoException("getDeviceStatus(" + portName + ") Error in query '" + q + "': " + ex);
+			throw new DbIoException("getDeviceStatus(" + portName + ") Error in query '" + q + "'", ex);
 		}
 	}
 
 	@Override
-	public void writeDeviceStatus(DeviceStatus deviceStatus) 
+	public void writeDeviceStatus(DeviceStatus deviceStatus)
 		throws DbIoException
 	{
 		DeviceStatus existing = getDeviceStatus(deviceStatus.getPortName());
@@ -91,34 +94,36 @@ public class DeviceStatusDAO extends DaoBase
 		{
 			// Construct UPDATE statement for changed fields only
 			StringBuilder changes = new StringBuilder();
-			
+
 			if (deviceStatus.isInUse() != existing.isInUse())
-				changes.append((changes.length()>0?", " : "") 
+				changes.append((changes.length()>0?", " : "")
 					+ "IN_USE = " + sqlBoolean(deviceStatus.isInUse()));
 			if (!TextUtil.strEqual(deviceStatus.getLastUsedByProc(), existing.getLastUsedByProc()))
-				changes.append((changes.length()>0?", " : "") 
+				changes.append((changes.length()>0?", " : "")
 					+ "LAST_USED_BY_PROC = " + sqlString(deviceStatus.getLastUsedByProc()));
 			if (!TextUtil.strEqual(deviceStatus.getLastUsedByHost(), existing.getLastUsedByHost()))
-				changes.append((changes.length()>0?", " : "") 
+				changes.append((changes.length()>0?", " : "")
 					+ "LAST_USED_BY_HOST = " + sqlString(deviceStatus.getLastUsedByHost()));
 			if (!dateEqual(deviceStatus.getLastActivityTime(), existing.getLastActivityTime()))
-				changes.append((changes.length()>0?", " : "") 
+				changes.append((changes.length()>0?", " : "")
 					+ "LAST_ACTIVITY_TIME = " + db.sqlDate(deviceStatus.getLastActivityTime()));
 			if (!dateEqual(deviceStatus.getLastReceiveTime(), existing.getLastReceiveTime()))
-				changes.append((changes.length()>0?", " : "") 
+				changes.append((changes.length()>0?", " : "")
 					+ "LAST_RECEIVE_TIME = " + db.sqlDate(deviceStatus.getLastReceiveTime()));
 			if (!TextUtil.strEqual(deviceStatus.getLastMediumId(), existing.getLastMediumId()))
-				changes.append((changes.length()>0?", " : "") 
+				changes.append((changes.length()>0?", " : "")
 					+ "LAST_MEDIUM_ID = " + sqlString(deviceStatus.getLastMediumId()));
 			if (!dateEqual(deviceStatus.getLastErrorTime(), existing.getLastErrorTime()))
-				changes.append((changes.length()>0?", " : "") 
+				changes.append((changes.length()>0?", " : "")
 					+ "LAST_ERROR_TIME = " + db.sqlDate(deviceStatus.getLastErrorTime()));
 			if (!TextUtil.strEqual(deviceStatus.getPortStatus(), existing.getPortStatus()))
-				changes.append((changes.length()>0?", " : "") 
+				changes.append((changes.length()>0?", " : "")
 					+ "PORT_STATUS = " + sqlString(deviceStatus.getPortStatus()));
-			
+
 			if (changes.length() == 0)
-				debug2("writeDeviceStatus(" + deviceStatus.getPortName() + ") -- no changes.");
+			{
+				log.trace("writeDeviceStatus({}) -- no changes.", deviceStatus.getPortName());
+			}
 			else
 			{
 				String q = "UPDATE " + tableName + " SET " + changes.toString()
@@ -142,7 +147,7 @@ public class DeviceStatusDAO extends DaoBase
 			doModify(q);
 		}
 	}
-	
+
 	// Compare dates allowing null
 	private boolean dateEqual(Date d1, Date d2)
 	{
@@ -153,7 +158,7 @@ public class DeviceStatusDAO extends DaoBase
 		else
 			return d1.equals(d2);
 	}
-	
+
 	private DeviceStatus rs2devStat(ResultSet rs)
 		throws SQLException
 	{

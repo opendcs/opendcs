@@ -1,50 +1,18 @@
 /*
- * $Id: LoadingAppDao.java,v 1.12 2020/02/14 22:27:05 mmaloney Exp $
- *
- * $Log: LoadingAppDao.java,v $
- * Revision 1.12  2020/02/14 22:27:05  mmaloney
- * Updates
- *
- * Revision 1.11  2019/10/21 14:16:12  mmaloney
- * Bug Fix. For DB Version 17, it was still attempting to delete from ALARM_DEF.
- *
- * Revision 1.10  2019/08/26 20:52:19  mmaloney
- * Removed unneeded debugs.
- *
- * Revision 1.9  2018/06/07 13:10:51  mmaloney
- * Bug fix: Check db version before deleting from DACQ_EVENT.
- *
- * Revision 1.8  2017/12/14 16:50:45  mmaloney
- * In close() guard against multiple statement close calls.
- *
- * Revision 1.7  2017/10/03 12:34:13  mmaloney
- * Handle constraint exceptions
- *
- * Revision 1.6  2015/05/14 13:52:18  mmaloney
- * RC08 prep
- *
- * Revision 1.5  2015/03/19 18:08:00  mmaloney
- * null ptr protection.
- *
- * Revision 1.4  2015/02/06 18:52:45  mmaloney
- * Downgrade lock check debug message.
- *
- * Revision 1.3  2014/07/03 12:53:41  mmaloney
- * debug improvements.
- *
- * Revision 1.2  2014/06/02 00:22:18  mmaloney
- * Add getLastModified method.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to the United States Government. No warranty is provided or implied other
- * than specific contractual terms between COVE and the U.S. Government.
- *
- * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package opendcs.dao;
 
 import ilex.util.PropertiesUtil;
@@ -77,14 +45,16 @@ import decodes.tsdb.LockBusyException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbCompLock;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 /**
  * Data Access Object for writing/reading DbEnum objects to/from a SQL database
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
-public class LoadingAppDao
-    extends DaoBase
-    implements LoadingAppDAI
+public class LoadingAppDao extends DaoBase implements LoadingAppDAI
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private final String lockCheckQuery =
         "SELECT loading_application_id,pid,hostname,heartbeat,cur_status from CP_COMP_PROC_LOCK WHERE LOADING_APPLICATION_ID = ?";
     private final String updateHeartbeatQuery =
@@ -121,9 +91,8 @@ public class LoadingAppDao
         }
         catch(SQLException ex)
         {
-            String msg = "Error listing computations: " + ex;
-            warning(msg);
-            throw new DbIoException(msg);
+            String msg = "Error listing computations.";
+            throw new DbIoException(msg, ex);
         }
     }
 
@@ -182,7 +151,6 @@ public class LoadingAppDao
         catch(SQLException ex)
         {
             String msg = String.format("Error listing applications: (%s) -> (%s)", q.toString(),ex.getLocalizedMessage());
-            warning(msg);
             throw new DbIoException(msg, ex);
         }
     }
@@ -192,18 +160,20 @@ public class LoadingAppDao
     {
         String q = "select LOADING_APPLICATION_ID, PROP_NAME, PROP_VALUE "
             + "from REF_LOADING_APPLICATION_PROP " + whereClause;
-        ResultSet rs = doQuery(q);
-        while(rs != null && rs.next())
+        try (ResultSet rs = doQuery(q))
         {
-            DbKey id = DbKey.createDbKey(rs, 1);
-            String nm = rs.getString(2);
-            String vl = rs.getString(3);
-            for(CompAppInfo cai : list)
-                if (cai.getAppId() == id)
-                {
-                    cai.setProperty(nm, vl);
-                    break;
-                }
+            while(rs.next())
+            {
+                DbKey id = DbKey.createDbKey(rs, 1);
+                String nm = rs.getString(2);
+                String vl = rs.getString(3);
+                for(CompAppInfo cai : list)
+                    if (cai.getAppId() == id)
+                    {
+                        cai.setProperty(nm, vl);
+                        break;
+                    }
+            }
         }
 
     }
@@ -233,7 +203,6 @@ public class LoadingAppDao
         catch(SQLException ex)
         {
             String msg = "Error listing applications: " + ex;
-            warning(msg);
             throw new DbIoException(msg);
         }
     }
@@ -273,7 +242,7 @@ public class LoadingAppDao
                     }
                     catch(ParseException ex)
                     {
-                        warning("Cannot parse LastModified '" + lmp + "': " + ex);
+                         log.atWarn().setCause(ex).log("Cannot parse LastModified '{}'", lmp);
                     }
                 }
                 return cai;
@@ -281,9 +250,7 @@ public class LoadingAppDao
         }
         catch(SQLException ex)
         {
-            String msg = "Error in getComputationApp(" + id + "): " + ex.getLocalizedMessage();
-            ex.printStackTrace();
-            warning(msg);
+            String msg = "Error in getComputationApp(" + id + ")";
             throw new DbIoException(msg, ex);
         }
     }
@@ -355,7 +322,7 @@ public class LoadingAppDao
                     }
                     catch (SQLException ex)
                     {
-                        warning("Error getting app ID: " + ex.getLocalizedMessage());
+                        log.atWarn().setCause(ex).log("Error getting app ID.");
                     }
                 }
                 app.setAppId(id);
@@ -409,11 +376,6 @@ public class LoadingAppDao
         catch(SQLException ex)
         {
             throw new DbIoException("Database error writing computation app", ex);
-        }
-        catch(DbIoException ex)
-        {
-            warning(ex.getMessage());
-            throw ex;
         }
     }
 
@@ -503,10 +465,7 @@ public class LoadingAppDao
         }
         catch(SQLException ex)
         {
-            String msg = "Error in query '" + q + "': " + ex;
-            warning(msg);
-            System.err.println(msg);
-            ex.printStackTrace(System.err);
+            String msg = "Error in query '" + q + "'";
             throw new DbIoException(msg, ex);
         }
     }
@@ -531,9 +490,8 @@ public class LoadingAppDao
         }
         catch(SQLException ex)
         {
-            String msg = "Error in lookupAppId(" + name + "): " + ex;
-            warning(msg);
-            throw new DbIoException(msg);
+            String msg = "Error in lookupAppId(" + name + ")";
+            throw new DbIoException(msg, ex);
         }
     }
 
@@ -568,15 +526,13 @@ public class LoadingAppDao
                         "Cannot obtain lock for app ID " + appInfo.getAppId()
                         + ". Currently owned by PID " + lock.getPID()
                         + " on host '" + lock.getHost() + "'";
-                    fatal(msg);
                     throw new LockBusyException(msg);
                 }
             }
         }
         catch(SQLException ex)
         {
-            String msg = "Obtaining existing lock information: "+ ex;
-            failure(msg);
+            log.atError().setCause(ex).log("Obtaining existing lock information.");
         }
 
         if (lock != null)
@@ -602,15 +558,14 @@ public class LoadingAppDao
             insertLockInfo.setString(5,lock.getStatus());
             insertLockInfo.execute();
 
-            debug1("Obtained lock for application ID " + appInfo.getAppId());
+            log.debug("Obtained lock for application ID {}", appInfo.getAppId());
             lock.setAppName(appInfo.getAppName());
             return lock;
         }
         catch(SQLException ex)
         {
-            String msg = "Error inserting new lock: " + ex;
-            failure(msg);
-            throw new DbIoException(msg);
+            String msg = "Error inserting new lock";
+            throw new DbIoException(msg, ex);
         }
 
     }
@@ -652,7 +607,6 @@ public class LoadingAppDao
                 doModify("DELETE from CP_COMP_PROC_LOCK WHERE LOADING_APPLICATION_ID = ?",lock.getAppId());
             } catch (SQLException ex)
             {
-                warning(ex.getLocalizedMessage());
                 throw new DbIoException("Failed to delete lock", ex);
             }
         }
@@ -680,7 +634,7 @@ public class LoadingAppDao
                 }
                 lock.setHeartbeat(new Date());
 
-                debug3("updating heartbeat");
+                log.trace("updating heartbeat");
                 doModify(updateHeartbeatQuery,lock.getHeartbeat(),lock.getStatus(),lock.getAppId());
             }
             else
@@ -691,7 +645,7 @@ public class LoadingAppDao
         }
         catch(SQLException ex)
         {
-            throw new DbIoException("Cannot read locks: " + ex);
+            throw new DbIoException("Cannot read locks", ex);
         }
     }
 
@@ -721,7 +675,7 @@ public class LoadingAppDao
         }
         catch(SQLException ex)
         {
-            warning("Error iterating results for query '" + q + "': " + ex);
+            log.atWarn().setCause(ex).log("Error iterating results for query '{}'", q);
             return new ArrayList<>();
         }
     }
@@ -761,8 +715,7 @@ public class LoadingAppDao
         }
         catch(Exception ex)
         {
-            warning("Cannot retrieve or parse last modify time for appId="
-                + appId + ": " + ex);
+              log.atWarn().setCause(ex).log("Cannot retrieve or parse last modify time for appId={}", appId);
         }
 		return null;
     }
