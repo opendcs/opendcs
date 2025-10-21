@@ -268,6 +268,8 @@ The software tries to spread the time series values among the available
 tables that you created when you installed the database, or when you run
 the Rebalance utility (see below).
 
+
+
 Table names are TS_NUM\_\ *NNNN*, where *NNNN* is a 4 digit suffix. To
 determine the table, take the TS_SPEC.STORAGE_TABLE integer and format
 it as a 4-digit number. The tables have the following format:
@@ -772,6 +774,11 @@ Description:
 
 The ‘Rebalance’ Utility
 -----------------------
+
+.. WARNING::
+
+   The Rebalance utility has been removed. The project will be migrating to
+   using partitioning, at least for the Postgres implementation.
 
 The Rebalance utility can be used to add new data tables after the
 initial installation.

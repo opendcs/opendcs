@@ -104,6 +104,7 @@ dependencies {
     testImplementation(libs.fasterxml.jackson.databind)
     testImplementation(libs.greenmail)
     testImplementation(libs.org.mock.server)
+    testRuntimeOnly(libs.ch.qos.logback)
   
 }
 
