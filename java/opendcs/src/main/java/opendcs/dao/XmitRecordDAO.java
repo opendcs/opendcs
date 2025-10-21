@@ -5,9 +5,10 @@
  *
  * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * All rights reserved.
- * 
+ *
  * Copyright 2013 The OpenDCS Consortium
- * 
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,7 +24,6 @@
 package opendcs.dao;
 
 import ilex.util.Base64;
-import ilex.util.Logger;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -37,6 +37,9 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.XmitRecordDAI;
 import lrgs.archive.XmitWindow;
@@ -56,10 +59,9 @@ import decodes.tsdb.DbIoException;
  * @author mmaloney Mike Maloney, Cove Software, LLC
  * @author Mike Neilson
  */
-public class XmitRecordDAO
-    extends DaoBase implements XmitRecordDAI
+public class XmitRecordDAO extends DaoBase implements XmitRecordDAI
 {
-    private final Logger logger = Logger.instance();
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     public static final String module = "XmitRecordDao";
     protected static int numDaysStorage=5;
 
@@ -128,7 +130,7 @@ public class XmitRecordDAO
     protected void loadDayNumSuffixMap()
         throws DbIoException
     {
-        Logger.instance().debug2("loadDayNumSuffixMap");
+        log.trace("loadDayNumSuffixMap");
         String q = "SELECT TABLE_SUFFIX, DAY_NUMBER FROM dcp_trans_day_map ORDER BY table_suffix";
         dayNumSuffixMap.clear();
         final int[] latestDayNum = new int[1];
@@ -156,8 +158,7 @@ public class XmitRecordDAO
             throw new DbIoException("Error iterating from query '" + q + "': " + ex,ex);
         }
         dayNumSuffixMapLoadedMsec = System.currentTimeMillis();
-        info("loadDayNumSuffixMap latestDayNum=" + latestDayNum[0] + ", "
-            + new Date(latestDayNum[0]*MS_PER_DAY));
+        log.info("loadDayNumSuffixMap latestDayNum={}, {}", latestDayNum[0], new Date(latestDayNum[0]*MS_PER_DAY));
     }
 
     @Override
@@ -198,12 +199,11 @@ public class XmitRecordDAO
         // if there is a free slot, use it.
         if (firstFree != null)
         {
-            info(method + "Using free suffix "
-                + firstFree.suffix + " for day num " + dayNum);
+            log.info(method + "{} Using free suffix {} for day num {}", method, firstFree.suffix, dayNum);
             firstFree.dayNum = dayNum;
             String q = "UPDATE dcp_trans_day_map SET day_number = ?"
                        + " WHERE table_suffix = ?";
-            Logger.instance().debug2("getDcpXmitSuffix: " + q);
+            log.trace("getDcpXmitSuffix: {}", q);
             try
             {
                 doModify(q,dayNum,firstFree.suffix);
@@ -218,18 +218,16 @@ public class XmitRecordDAO
         // There is no free slot.
         if (dayNum < oldestDay.dayNum)
         {
-            warning(method + "Cannot allocate table "
-                + "for old day number "    + dayNum + ", oldest day in storage is "
-                + oldestDay.dayNum);
+            log.warn("{} Cannot allocate table for old day number {}, oldest day in storage is {}",
+                     method, dayNum, oldestDay.dayNum);
             return null;
         }
 
         // We will re-assign the oldest day to the specified day.
         // Delete all records from the oldest day.
         clearTable(oldestDay.suffix);
-        info(method +
-            "Cleared tables for day num "
-            + oldestDay.dayNum + " to make room for new day number " + dayNum);
+        log.info("{} Cleared tables for day num {} to make room for new day number {}",
+                 method, oldestDay.dayNum, dayNum);
 
         oldestDay.dayNum = dayNum;
 
@@ -250,7 +248,7 @@ public class XmitRecordDAO
     public void deleteOldTableData()
         throws DbIoException
     {
-        info("deleteOldTableData ...");
+        log.info("deleteOldTableData ...");
 
         int today = msecToDay(System.currentTimeMillis());
         for(XmitDayMapEntry xdme : dayNumSuffixMap)
@@ -260,7 +258,7 @@ public class XmitRecordDAO
                 // MJM 20210213 fix concurrent modification exception.
                 // No need to search the map for the suffix, I have it in my hand.
                 String suffix = xdme.suffix;
-                info("Clearing data for day number " + xdme.dayNum + ", suffix=" + suffix);
+                log.info("Clearing data for day number {}, suffix={}", xdme.dayNum, suffix);
                 clearTable(suffix);
             }
         }
@@ -323,8 +321,7 @@ public class XmitRecordDAO
         }
         catch (SQLException ex)
         {
-            String msg = "getLatestTimeStamp Cannot parse xmit result: " + ex;
-            warning(msg);
+            String msg = "getLatestTimeStamp Cannot parse xmit result";
             throw new DbIoException(msg, ex);
         }
     }
@@ -338,7 +335,7 @@ public class XmitRecordDAO
         Date xmitTime = xr.getXmitTime();
         if (xmitTime == null)
         {
-            warning("Cannot save message without xmitTime: " + xr.getHeader());
+            log.warn("Cannot save message without xmitTime: {}", xr.getHeader());
             return;
         }
 
@@ -347,7 +344,7 @@ public class XmitRecordDAO
         long msgAgeMsec = System.currentTimeMillis() - xmitTime.getTime();
         if (msgAgeMsec < -1800000L)
         {
-            warning("Ignoring future message: " + xr.getHeader() + ", xmitTime=" + xmitTime);
+            log.warn("Ignoring future message: {}, xmitTime={}", xr.getHeader(), xmitTime);
             return;
         }
 
@@ -366,9 +363,8 @@ public class XmitRecordDAO
 
             if ((++numXmitsSaved % 100) == 0)
             {
-                debug2("Saving new msg with dcp addr=" + xr.getDcpAddress()
-                    + " at time " + debugSdf.format(xmitTime)
-                    + ", day=" + dayNum + " to " + tab);
+                log.trace("Saving new msg with dcp addr={} at time {}, day={} to {}",
+                          xr.getDcpAddress(), xmitTime, dayNum, tab);
             }
 
             try(Connection c = getConnection();
@@ -387,8 +383,7 @@ public class XmitRecordDAO
         }
         else
         {
-            debug1("Updating msg at time " + debugSdf.format(xmitTime)
-                + ", day=" + dayNum + " to " + tab);
+            log.debug("Updating msg at time {}, day={} to {}", xmitTime, dayNum, tab);
 
             try(Connection c = getConnection();
                 PreparedStatement ps = getUpdateStatement(suffix,c);)
@@ -404,7 +399,7 @@ public class XmitRecordDAO
             catch(SQLException ex)
             {
                 throw new DbIoException(module + ":saveDcpTranmission: " +
-                        "updating XmitRecord " + ex,ex);
+                        "updating XmitRecord " + ex, ex);
             }
         }
 
@@ -423,8 +418,7 @@ public class XmitRecordDAO
             }
             catch (SQLException ex)
             {
-                logger.warning("Unable to large message chunk " + xr.toString()
-                             + " because " + ex.getLocalizedMessage());
+                log.atWarn().setCause(ex).log("Unable to large message chunk {}", xr.toString());
             }
 
         }
@@ -541,8 +535,7 @@ public class XmitRecordDAO
         }
         catch(SQLException ex)
         {
-            warning("fillDcpInsertStatement: " + ex);
-            throw ex;
+            throw new SQLException("Unable to fill in prepared statement to write data.", ex);
         }
     }
 
@@ -577,8 +570,7 @@ public class XmitRecordDAO
         }
         catch (SQLException ex)
         {
-            String msg = "readDcpMsg: Error in query '" + q + "': " + ex;
-            warning(msg);
+            String msg = "readDcpMsg: Error in query '" + q + "'";
             throw new DbIoException(msg, ex);
         }
     }
@@ -599,8 +591,7 @@ public class XmitRecordDAO
         }
         catch (SQLException ex)
         {
-            String msg = "getFirstRecordId: Error in query '" + q + "': " + ex;
-            warning(msg);
+            String msg = "getFirstRecordId: Error in query '" + q + "'";
             throw new DbIoException(msg, ex);
         }
     }
@@ -621,8 +612,7 @@ public class XmitRecordDAO
         }
         catch (SQLException ex)
         {
-            String msg = "getFirstRecordId: Error in query '" + q + "': " + ex;
-            warning(msg);
+            String msg = "getFirstRecordId: Error in query '" + q + "'";
             throw new DbIoException(msg, ex);
         }
     }
@@ -688,9 +678,7 @@ public class XmitRecordDAO
         }
         catch (SQLException ex)
         {
-            String msg = module + ":findDcpTranmission Cannot parse xmit " +
-                    "result: " + ex;
-            warning(msg);
+            String msg = module + ":findDcpTranmission Cannot parse xmit result.";
             throw new DbIoException(msg, ex);
         }
     }
@@ -755,8 +743,7 @@ public class XmitRecordDAO
         ms = rs.getLong(11);
         Date carrierStop = rs.wasNull() ? null : new Date(ms);
         int flags = rs.getInt(12);
-        //int channel = rs.getInt(13);
-        //if (rs.wasNull()) channel = -1;
+        // column 13 instnationally skipped
         double battery = rs.getDouble(14);
         if (rs.wasNull())
         {
@@ -796,8 +783,8 @@ public class XmitRecordDAO
         if (msgLength > data.length)
         {
             xr.setMsgLength(msgLength);
-            logger.debug1("XmitRecordDAO.rs2XmitRecord read a partial message: data.len="
-                        + data.length + ", msgLength=" + msgLength);
+            log.debug("XmitRecordDAO.rs2XmitRecord read a partial message: data.len={}, msgLength={}",
+                      data.length, msgLength);
         }
         xr.setBattVolt(battery);
         xr.setXmitWindow(xmitWindow);
@@ -849,8 +836,10 @@ public class XmitRecordDAO
         }
         catch (SQLException ex)
         {
-            warning("Error in fillCompleteMsg(" + msg.getDcpAddress() + ") "
-                + "dataLen=" + cmdi[0] + ", totlen=" + completeMsgData.length + ": " + ex);
+            log.atWarn()
+               .setCause(ex)
+               .log("Error in fillCompleteMsg({}) dataLen={}, totlen={}",
+                    msg.getDcpAddress(), cmdi[0], completeMsgData.length);
         }
     }
 
@@ -890,8 +879,7 @@ public class XmitRecordDAO
         }
         catch (SQLException ex)
         {
-            String msg = "readXmitsByGroup: Error in query '" + q + "': " + ex;
-            warning(msg);
+            String msg = "readXmitsByGroup: Error in query '" + q + "'";
             throw new DbIoException(msg, ex);
         }
 
@@ -908,7 +896,7 @@ public class XmitRecordDAO
             return 0;
         }
         String q = "select " + dcpTransFields + " from DCP_TRANS_" + suffix
-            + " where channel = ?" 
+            + " where channel = ?"
             + " order by transmit_time";
 
         final int[] n = new int[1];
@@ -928,8 +916,7 @@ public class XmitRecordDAO
         }
         catch (SQLException ex)
         {
-            String msg = "readXmitsByChannel: Error in query '" + q + "': " + ex;
-            warning(msg);
+            String msg = "readXmitsByChannel: Error in query '" + q + "'";
             throw new DbIoException(msg, ex);
         }
 
@@ -967,8 +954,7 @@ public class XmitRecordDAO
         }
         catch (SQLException ex)
         {
-            String msg = "readXmitsByGroup: Error in query '" + q + "': " + ex;
-            warning(msg);
+            String msg = "readXmitsByGroup: Error in query '" + q + "'";
             throw new DbIoException(msg, ex);
         }
 
@@ -986,8 +972,8 @@ public class XmitRecordDAO
             {
                 latestDay = xdme;
             }
-            logger.debug2("XmitRecordDAO.getLastLocalRecvTime: latestDay="
-                        + (latestDay == null ? "null" : "" + latestDay.dayNum));
+            log.trace("XmitRecordDAO.getLastLocalRecvTime: latestDay={}",
+                     (latestDay == null ? "null" : "" + latestDay.dayNum));
         }
         if (latestDay == null)
         {
@@ -995,7 +981,7 @@ public class XmitRecordDAO
         }
 
         String q = "select max(local_recv_time) from " + "DCP_TRANS_" + latestDay.suffix;
-        logger.debug2("XmitRecordDAO.getLastLocalRecvTime: " + q);
+        log.trace("XmitRecordDAO.getLastLocalRecvTime: {}", q);
         try
         {
             return getSingleResultOr(q, rs ->
@@ -1015,7 +1001,7 @@ public class XmitRecordDAO
         }
         catch(SQLException ex)
         {
-            warning("Error in query '" + q + "': " + ex);
+            log.atWarn().setCause(ex).log("Error in query '{}'", q);
         }
         return null;
     }
@@ -1028,7 +1014,7 @@ public class XmitRecordDAO
         String suffix = getDcpXmitSuffix(dayNum, false);
         if (suffix == null)
         {
-            warning("No suffix for dayNum=" + dayNum);
+            log.warn("No suffix for dayNum={}", dayNum);
             return ret;
         }
 
@@ -1063,7 +1049,7 @@ public class XmitRecordDAO
                     xrs.setGoesChannel(rs.getInt(6));
                     if (++n[0] % 1000 == 0)
                     {
-                        debug2("" + n + " records so far");
+                        log.trace("{} records so far", n);
                     }
                     return xrs;
                 },
@@ -1073,13 +1059,12 @@ public class XmitRecordDAO
         }
         catch (SQLException ex)
         {
-            String msg = "getLatestTimeStamp Cannot parse xmit result: " + ex;
-            warning(msg);
+            String msg = "getLatestTimeStamp Cannot parse xmit result.";
             throw new DbIoException(msg, ex);
         }
         finally
         {
-            debug2("" + n[0] + " records received.");
+            log.trace("{} records received.", n[0]);
         }
     }
 
@@ -1104,7 +1089,7 @@ public class XmitRecordDAO
         }
         catch (SQLException ex)
         {
-            warning("Cannot convert date!");
+            log.atWarn().setCause(ex).log("Cannot convert date!");
             return null;
         }
     }
@@ -1123,9 +1108,7 @@ public class XmitRecordDAO
         }
         catch(DbIoException ex)
         {
-            warning("Error deleting old data: " + ex);
-            System.err.println("Error deleting old data: " + ex);
-            ex.printStackTrace();
+            log.atWarn().setCause(ex).log("Error deleting old data");
         }
     }
 }

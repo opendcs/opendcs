@@ -1,23 +1,18 @@
 /*
- * $Id$
- * 
- * $Log$
- * Revision 1.3  2014/08/29 18:19:16  mmaloney
- * For XML import, handle case where existing entry doesn't have a DbKey.
- *
- * Revision 1.2  2014/07/03 12:53:41  mmaloney
- * debug improvements.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to the United States Government. No warranty is provided or implied other 
- * than specific contractual terms between COVE and the U.S. Government.
- *
- * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package opendcs.dao;
 
 import ilex.util.Pair;
@@ -25,6 +20,9 @@ import ilex.util.Pair;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.DataTypeDAI;
 
@@ -41,42 +39,34 @@ import decodes.util.DecodesSettings;
  * Data Access Object for writing/reading DbEnum objects to/from a SQL database
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
-public class DataTypeDAO 
-	extends DaoBase 
-	implements DataTypeDAI
+public class DataTypeDAO extends DaoBase implements DataTypeDAI
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	// Data Types are cached in DataTypeSet, so no cache here.
-	
+
 	// Columns to use in select
 	private String columns;
-	
+
 	public DataTypeDAO(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "DataTypeSqlDao");
 		columns = tsdb.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_10
 			? "id, standard, code" : "id, standard, code, display_name";
 	}
-	
+
 	@Override
-	public DataType getDataType(DbKey id) 
+	public DataType getDataType(DbKey id)
 		throws DbIoException
 	{
 		if (id == null || id.isNull())
 			return null;
-	
-// MJM: No: This is the bottom of the hierarchy. This is called from DataTypeSet.
-// Trying to read DataTypeSet from here causes circular references.
-//		// May have already read this from a previous call:
-//		// Note: This assumes that datatypes are fairly static.
-//		DataType dt = DataType.getDataType(id);
-//		if (dt != null)
-//			return dt;
+
 
 		String q = "SELECT " + columns + " FROM DataType where id = " + id;
-		ResultSet rs = doQuery(q);
-		try
+
+		try (ResultSet rs = doQuery(q))
 		{
-			if (rs != null && rs.next())
+			if (rs.next())
 			{
 				DataType ret = DataType.getDataType(rs.getString(2), rs.getString(3), id);
 				if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
@@ -86,10 +76,10 @@ public class DataTypeDAO
 			else
 				return null;
 		}
-		catch (SQLException e)
+		catch (SQLException ex)
 		{
-			String msg = "Error in query '" + q + "': " + e;
-			throw new DbIoException(msg);
+			String msg = "Error in query '" + q + "'";
+			throw new DbIoException(msg, ex);
 		}
 	}
 
@@ -104,11 +94,11 @@ public class DataTypeDAO
 			{
 				id = db.getKeyGenerator().getKey("DataType", getConnection());
 				dt.setId(id);
-			
-				q = "INSERT INTO DataType(" + columns + ") VALUES(" + id 
-					+ ", " + sqlString(dt.getStandard()) 
+
+				q = "INSERT INTO DataType(" + columns + ") VALUES(" + id
+					+ ", " + sqlString(dt.getStandard())
 					+ ", " + sqlString(dt.getCode())
-					+ (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10 ? 
+					+ (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10 ?
 						(", " + sqlString(dt.getDisplayName())) : "")
 					+ ")";
 			}
@@ -118,14 +108,14 @@ public class DataTypeDAO
 					+ ", code = " + sqlString(dt.getCode());
 				if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
 					q = q + ", display_name = " + sqlString(dt.getDisplayName());
-				
+
 				q = q + " where id = " + id;
 			}
 			doModify(q);
 		}
 		catch(Exception ex)
 		{
-			warning("Cannot write data type: " + ex);
+			log.atWarn().setCause(ex).log("Cannot write data type.");
 		}
 	}
 
@@ -133,15 +123,14 @@ public class DataTypeDAO
 	public DataType lookupDataType(String dtcode) throws DbIoException,
 		NoSuchObjectException
 	{
-		try
-		{
-			String q = "SELECT id, standard FROM DataType WHERE upper(code) = " 
+		String q = "SELECT id, standard FROM DataType WHERE upper(code) = "
 				+ sqlString(dtcode.toUpperCase());
-			DataType pref = null;
-			DataType first = null;
-			
-			ResultSet rs = doQuery2(q);
-			while(rs != null && rs.next())
+		DataType pref = null;
+		DataType first = null;
+
+		try (ResultSet rs = doQuery2(q))
+		{
+			while (rs.next())
 			{
 				DbKey id = DbKey.createDbKey(rs, 1);
 				String std = rs.getString(2);
@@ -165,19 +154,19 @@ public class DataTypeDAO
 		}
 		catch(SQLException ex)
 		{
-			throw new DbIoException("lookupDataType: " + ex);
+			throw new DbIoException("Unable to lookup DataType.", ex);
 		}
 	}
 
 	@Override
-	public void readDataTypeSet(DataTypeSet dts) 
+	public void readDataTypeSet(DataTypeSet dts)
 		throws DbIoException
 	{
 		String q = "select " + columns + " from DataType";
-		ResultSet rs = doQuery(q);
-		try
+
+		try (ResultSet rs = doQuery(q))
 		{
-			while (rs != null && rs.next()) 
+			while (rs.next())
 			{
 				DbKey id = DbKey.createDbKey(rs, 1);
 				String standardName = rs.getString(2);
@@ -188,47 +177,46 @@ public class DataTypeDAO
 					dt.setDisplayName(rs.getString(4));
 				dts.add(dt);
 			}
-	
+
 			ArrayList<Pair> equivs = readDtEquivalences();
 			for(Pair equiv : equivs)
 			{
 				DbKey id0 = (DbKey)equiv.first;
 				DbKey id1 = (DbKey)equiv.second;
-				
+
 				DataType dt0 = dts.getById(id0);
 				DataType dt1 = dts.getById(id1);
-	
+
 				if (dt0 == null || dt1 == null)
 				{
-					warning("Bad datatype equivalence ids (" + id0 + "," + id1
-						+ ") -- ignored");
+					log.warn("Bad datatype equivalence ids ({},{}) -- ignored", id0, id1);
 					continue;
 				}
-			
+
 				dt0.assertEquivalence(dt1);
 			}
-			
+
 			if (db.isHdb())
 			{
 				q = "select datatype_id, datatype_common_name from hdb_datatype";
-				rs = doQuery(q);
-				while(rs != null && rs.next())
+				try (ResultSet rs2 = doQuery(q))
 				{
-					DataType dt = dts.getById(DbKey.createDbKey(rs, 1));
-					if (dt != null)
-						dt.setDisplayName(rs.getString(2));
+					while (rs2.next())
+					{
+						DataType dt = dts.getById(DbKey.createDbKey(rs2, 1));
+						if (dt != null)
+							dt.setDisplayName(rs2.getString(2));
+					}
 				}
 			}
 		}
 		catch(SQLException ex)
 		{
-			String msg = "Error reading data type set: " + ex;
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
-			throw new DbIoException(msg);
+			String msg = "Error reading data type set.";
+			throw new DbIoException(msg, ex);
 		}
 	}
-	
+
 	/**
 	 * Read all equivalences and return an arraylist of Pairs where the pairs
 	 * hold DbKey objects.
@@ -238,25 +226,24 @@ public class DataTypeDAO
 		throws SQLException, DbIoException
 	{
 		String q = "SELECT a.id0, a.id1 FROM DataTypeEquivalence a";
-		
+
 		if (db.isCwms() && db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_8)
 			// For CWMS, the join with datatype will implicitly add the VPD predicate
 			q = q + ", datatype b where a.id0 = b.id";
-		
+
 		ArrayList<Pair> ret = new ArrayList<Pair>();
-		ResultSet rs = doQuery(q);
-		while (rs != null && rs.next()) 
+		try (ResultSet rs = doQuery(q))
 		{
-			DbKey id0 = DbKey.createDbKey(rs, 1);
-			DbKey id1 = DbKey.createDbKey(rs, 2);
-			ret.add(new Pair(id0, id1));
+			while (rs != null && rs.next())
+			{
+				DbKey id0 = DbKey.createDbKey(rs, 1);
+				DbKey id1 = DbKey.createDbKey(rs, 2);
+				ret.add(new Pair(id0, id1));
+			}
 		}
-//		debug3("" + ret.size() + " existing equivalences read.");
-//		for(Pair p : ret)
-//			debug3("    (" + p.first + ", " + p.second + ")");
 		return ret;
 	}
-	
+
 	/**
 	 * Given a complete data type set, modify what's currently in the database
 	 * to conform to the passed list. Items in the database are updated, inserted,
@@ -270,7 +257,7 @@ public class DataTypeDAO
 		DataTypeSet dbSet = new DataTypeSet();
 		readDataTypeSet(dbSet);
 		ArrayList<Pair> dbEquivs = readDtEquivalences();
-		
+
 		// Datatypes are immutable. So only additions are allowed.
 		// New datatypes will have no ID, only insert those.
 		for (DataType dt : dts.values())
@@ -299,13 +286,12 @@ public class DataTypeDAO
 			for(DataType eq = dt.equivRing; eq != null && eq != dt;
 				eq = eq.equivRing)
 			{
-				debug3("   Checking for equiv(" + dt.getKey() + ", " + eq.getKey() + ")");
+				log.trace("Checking for equiv({}, {})", dt.getKey(), eq.getKey());
 				boolean found = false;
 				for(Pair equiv : dbEquivs)
 				{
 					DbKey id0 = (DbKey)equiv.first;
 					DbKey id1 = (DbKey)equiv.second;
-//					debug3("          exists: " + id0 + ", " + id1 );
 					if ((id0.equals(dt.getKey()) && id1.equals(eq.getKey()))
 					 || (id1.equals(dt.getKey()) && id0.equals(eq.getKey())))
 					{
@@ -362,7 +348,7 @@ public class DataTypeDAO
 			id1 = id2;
 			id2 = t;
 		}
-		
+
 		String q = "INSERT INTO datatypeequivalence VALUES (" +	id1 + ", " + id2 + ")";
 		try { doModify(q); }
 		catch(DbIoException ex)
@@ -371,7 +357,9 @@ public class DataTypeDAO
 			if (msg.toLowerCase().contains("unique"))
 				; // Do nothing. It means equivalence is already asserted.
 			else
-				warning("Cannot assert equivalence '" + q + "': " + ex);
+			{
+				log.warn("Cannot assert equivalence '{}'", q);
+			}
 		}
 	}
 }
