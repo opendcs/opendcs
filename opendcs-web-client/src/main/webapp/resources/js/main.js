@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     }
 
     const themeSwitcherText = document.querySelector('#bd-theme-mode-text')
-    const activeThemeIcon = document.querySelector('.theme-icon-active use')
+    const activeThemeIcon = document.querySelector('.mode-icon-active use')
     const btnToActive = document.querySelector(`[data-bs-theme-value="${theme}"]`)
     const svgOfActiveBtn = btnToActive.querySelector('svg use').getAttribute('href')
 
@@ -139,28 +139,28 @@ document.addEventListener("DOMContentLoaded", function(event) {
     }
 
     const themeSwitcherText = document.querySelector('#bd-theme-text')
-    //const activeThemeIcon = document.querySelector('.theme-icon-active use')
-    //const btnToActive = document.querySelector(`[data-bs-theme-value="${theme}"]`)
-    //const svgOfActiveBtn = btnToActive.querySelector('svg use').getAttribute('href')
+    const btnToActive = document.querySelector(`[data-bs-theme-link="${theme}"]`)
 
-    //document.querySelectorAll('[data-bs-theme-value]').forEach(element => {
-    //  element.classList.remove('active')
-    //   element.setAttribute('aria-pressed', 'false')
-    //})
+    document.querySelectorAll('[data-bs-theme-link]').forEach(element => {
+      element.classList.remove('active')
+       element.setAttribute('aria-pressed', 'false')
+    })
+    console.log("hello")
+    btnToActive.classList.add('active')
+    btnToActive.setAttribute('aria-pressed', 'true')
+    
+    const themeSwitcherLabel = `${btnToActive.textContent.trim()}`
+    themeSwitcher.setAttribute('aria-label', themeSwitcherLabel)
 
-    // btnToActive.classList.add('active')
-    // btnToActive.setAttribute('aria-pressed', 'true')
-    // activeThemeIcon.setAttribute('href', svgOfActiveBtn)
-    // const themeSwitcherLabel = `${themeSwitcherText.textContent} (${btnToActive.dataset.bsThemeValue})`
-    // themeSwitcher.setAttribute('aria-label', themeSwitcherLabel)
-
-    // if (focus) {
-    //   themeSwitcher.focus()data-bs-theme-value
-    // }
+    if (focus) {
+      themeSwitcher.focus()
+    }
   }
 
   window.addEventListener('DOMContentLoaded', () => {
-    setTheme(getPreferredTheme())
+    const theme = getPreferredTheme()
+    //setTheme(getPreferredTheme())
+    showActiveTheme(theme, false)
 
     document.querySelectorAll('[data-bs-theme-link]')
       .forEach(toggle => {

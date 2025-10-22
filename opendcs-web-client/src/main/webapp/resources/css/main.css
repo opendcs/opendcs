@@ -6,13 +6,17 @@ main {
 }
 
 .theme-icon {
-	width: 24px;
-	height: 24px;
+	width: 1.5em;
+	height: 1.5em;
 }
 
-.theme-icon-active {
-	width: 24px;
-	height: 24px;
+.mode-icon-active {
+	width: 1.5em;
+	height: 1.5em;
+}
+
+.active .bi {
+  display:block!important
 }
 
 .formAlert {

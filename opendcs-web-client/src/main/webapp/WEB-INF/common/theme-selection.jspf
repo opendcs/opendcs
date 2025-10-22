@@ -14,9 +14,10 @@
     <ul class="dropdown-menu" aria-labelledby="bd-theme-text">
         <c:forEach items="${themes}" var="theme">
             <li>
-            <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-link="${theme.link}" aria-pressed="false">
-            ${theme.name}
+            <button type="button" class="dropdown-item d-flex align-items-center ${theme.name.contains("Default") ? 'true' : 'false' }" data-bs-theme-link="${theme.link}" aria-pressed="${theme.name.contains("Default") ? 'true' : 'false' }">
+            ${theme.name} <svg class="bi ms-auto d-none theme-icon" aria-hidden="true"><use href="#check2"></use></svg>
             </button>
+            
         </li></c:forEach>
     </ul>
 </li>
