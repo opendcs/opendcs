@@ -24,7 +24,7 @@ import org.opendcs.database.model.IdentityProviderMapping;
 import org.opendcs.database.model.mappers.IdentityProviderMapper;
 import org.opendcs.database.model.mappers.PrefixRowMapper;
 
-public class IdentityProviderMappingMapper extends PrefixRowMapper<IdentityProviderMapping>
+public final class IdentityProviderMappingMapper extends PrefixRowMapper<IdentityProviderMapping>
 {
     private final IdentityProviderMapper idpMapper;
 

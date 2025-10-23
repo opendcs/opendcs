@@ -27,7 +27,7 @@ import decodes.sql.DbKey;
  * Always active, at least used for initial setup/breakfix admin
  * account.
  */
-public class BuiltInIdentityProvider implements IdentityProvider
+public final class BuiltInIdentityProvider implements IdentityProvider
 {
     public static final String TYPE = "BuiltIn";
     private final DbKey id;

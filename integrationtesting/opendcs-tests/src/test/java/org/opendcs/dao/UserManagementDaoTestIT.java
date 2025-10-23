@@ -27,6 +27,7 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.impl.opendcs.BuiltInIdentityProvider;
+import org.opendcs.database.model.UserBuilder;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.Role;
 import org.opendcs.database.model.User;
@@ -36,7 +37,7 @@ import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.sql.DbKey;
 
-public class UserManagementDaoTestIT extends AppTestBase
+class UserManagementDaoTestIT extends AppTestBase
 {
 
     @ConfiguredField
@@ -169,7 +170,7 @@ public class UserManagementDaoTestIT extends AppTestBase
         DbKey id = DbKey.NullKey;
         try (DataTransaction tx = db.newTransaction())
         {
-            User userIn = new User.Builder()
+            User userIn = new UserBuilder()
                                   .withEmail("test@test.com")
                                   .withPassword("test")
                                   .build();
@@ -183,7 +184,7 @@ public class UserManagementDaoTestIT extends AppTestBase
             assertEquals(userIn.email, out2.email);
             HashMap<String, Object> preferences = new HashMap<>();
             preferences.put("a test", "value");
-            User updater = new User.Builder()
+            User updater = new UserBuilder()
                                     .withPreferences(preferences)
                                     .withEmail("test@test.com")
                                     .withPassword("test")
@@ -210,7 +211,7 @@ public class UserManagementDaoTestIT extends AppTestBase
             {
                 HashMap<String, Object> preferences = new HashMap<>();
                 preferences.put("i", i);
-                dao.addUser(tx, new User.Builder()
+                dao.addUser(tx, new UserBuilder()
                                         .withPreferences(preferences)
                                         .withEmail("user"+i)
                                         .withPassword("test"+i)
