@@ -1,16 +1,16 @@
 /*
 * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
 * of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software 
+*
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
 */
 package decodes.dbimport;
@@ -25,9 +25,7 @@ import java.util.Vector;
 import java.util.Iterator;
 import java.util.Date;
 import ilex.util.IDateFormat;
-import ilex.util.StderrLogger;
 import ilex.util.StringPair;
-import ilex.util.TeeLogger;
 import ilex.util.TextUtil;
 
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -93,7 +91,7 @@ public class EmitImport
 		currentFormat = null;
 		formats = new Vector();
 		platform = null;
-		defaultStationNameType = 
+		defaultStationNameType =
 			DecodesSettings.instance().siteNameTypePreference;
 		configDescription = null;
 
@@ -125,7 +123,7 @@ public class EmitImport
 	public void parseFile(String filename)
 		throws IOException
 	{
-		isUsgsFile = isUsgsFlag;  // Reset file-level flag to cmd-line arg 
+		isUsgsFile = isUsgsFlag;  // Reset file-level flag to cmd-line arg
 		db = Database.getDb();
 		curFileName = filename;
 		log.debug("Attempting to parse '{}'", filename);
@@ -359,7 +357,7 @@ public class EmitImport
 				warning("Platform Config '{} description is too long (limit=400 chars), ignoring CD line.",
 						platformConfig.configName);
 			}
-			else 
+			else
 			{
 				if (configDescription.length() > 0)
 					configDescription.append(' ');
@@ -531,7 +529,7 @@ public class EmitImport
 		if (shefEnglishPG != null && shefDT != null)
 		{
 			// Look up DataPresentation element for this SHEF code
-			DataPresentation pres = 
+			DataPresentation pres =
 				shefEnglishPG.findDataPresentation(shefDT);
 			if (pres != null && pres.getUnitsAbbr() != null)
 				units = pres.getUnitsAbbr();
@@ -783,7 +781,7 @@ public class EmitImport
 			skipToES = true;
 			return;
 		}
-		else 
+		else
 			skipToES = false;
 
 		if (line.length() < 10)
@@ -797,7 +795,7 @@ public class EmitImport
 		String agency = line.substring(3, 3+5).trim();
 		if (agency.length() > 0)
 			platform.agency = agency;
-		
+
 		statnum = line.substring(8);
 		if (statnum.length() > 15)
 			statnum = statnum.substring(0, 15);
@@ -844,9 +842,9 @@ public class EmitImport
 		if (tzstr.length() > 0 && platform.getSite() != null)
 		{
 			int min = 0;
-			try 
+			try
 			{
-				min = Integer.parseInt(tzstr); 
+				min = Integer.parseInt(tzstr);
 				boolean dst = line.length() >= 29 && line.charAt(28) == 'Y';
 				platform.getSite().timeZoneAbbr = getSdfTZ(min, daylightFlag);
 			}
@@ -949,7 +947,7 @@ public class EmitImport
 		if (line.length() >= 28)
 		{
 			String s = line.substring(20, 20+8);
-			platform.lastModifyTime = emitDateFormat.parse(s, 
+			platform.lastModifyTime = emitDateFormat.parse(s,
 				new ParsePosition(0));
 
 			if (line.length() >= 44)
@@ -965,11 +963,11 @@ public class EmitImport
 			  SiteNumber + "-" + DeviceName + "-" + DeviceNumber.
 			*/
 			TransportMedium edlTM = new TransportMedium(platform,
-				Constants.medium_EDL, 
+				Constants.medium_EDL,
 				statnum + "-" + devId + "-" + line.charAt(19));
 			edlTM.scriptName = Constants.script_EDL;
 			edlTM.setTimeZone(
-				platform.getSite().timeZoneAbbr == null 
+				platform.getSite().timeZoneAbbr == null
 					|| platform.getSite().timeZoneAbbr.length() == 0
 				? null : platform.getSite().timeZoneAbbr);
 			platform.transportMedia.add(edlTM);
@@ -994,9 +992,9 @@ public class EmitImport
 			try
 			{
 				selfTimedTM.assignedTime = IDateFormat.getSecondOfDay(s);
-				// messageTime is assignedTime truncated to nearest minute 
+				// messageTime is assignedTime truncated to nearest minute
 				//- SED 2003/09/15
-				messageTime = selfTimedTM.assignedTime 
+				messageTime = selfTimedTM.assignedTime
 					- ( selfTimedTM.assignedTime%60 );
 			}
 			catch(Exception e) {}
@@ -1005,7 +1003,7 @@ public class EmitImport
 				return;
 
 			s = line.substring(53, 53+6);
-			try 
+			try
 			{
 				StringBuilder sb = new StringBuilder(s);
 				for(int i=0; i<sb.length(); i++)
@@ -1014,7 +1012,7 @@ public class EmitImport
 				s = sb.toString();
 				selfTimedTM.transmitInterval = IDateFormat.getSecondOfDay(s);
 			}
-			catch(Exception ex) 
+			catch(Exception ex)
 			{
 				log.atTrace().setCause(ex).log("Unable to set transmit interval.");
 			}
@@ -1070,7 +1068,7 @@ public class EmitImport
 		// Difference in USGS and EMIT files for the SS record:
 		String fields[];
 		if (isUsgsFile)
-			fields = TextUtil.getFixedFields(line, 
+			fields = TextUtil.getFixedFields(line,
 				new int[]{ 2,1,1,2,6,6,2,4,8,8,15,4,32 });
 		else
 			fields = TextUtil.getFixedFields(line,
@@ -1106,7 +1104,7 @@ public class EmitImport
 			if (sb.charAt(i) == ' ')
 				sb.setCharAt(i, '0');
 		fields[4] = sb.toString();
-		try 
+		try
 		{
 			recordingInterval = IDateFormat.getSecondOfDay(fields[4]);
 		}
@@ -1121,7 +1119,7 @@ public class EmitImport
 			if (sb.charAt(i) == ' ')
 				sb.setCharAt(i, '0');
 		fields[5] = sb.toString();
-		try 
+		try
 		{
 			timeOffset = IDateFormat.getSecondOfDay(fields[5]);
 		}
@@ -1146,7 +1144,7 @@ public class EmitImport
 			// timeOfFirstSample must be normalized  -- SED 2003/09/15
 			// Guard agains divide by zero -- MJM 20040904
 			if (recordingInterval > 0)
-				cs.timeOfFirstSample = 
+				cs.timeOfFirstSample =
 					(messageTime - timeOffset) % recordingInterval;
 			while (cs.timeOfFirstSample < 0)
 			  cs.timeOfFirstSample += recordingInterval;
@@ -1187,22 +1185,22 @@ public class EmitImport
 				if (s.length() != 0 && cs != null)
 				if (cs != null && s.length() > 0)
 				{
-					try 
+					try
 					{
-						double d = Double.parseDouble(s); 
+						double d = Double.parseDouble(s);
 						ps.getProperties().setProperty("minimum", s);
 					}
 					catch (NumberFormatException e) {}
 				}
-		
+
 				if (fields.length >= 10)
 				{
 					s = fields[9].trim();
 					if (cs != null && s.length() > 0)
 					{
-						try 
-						{ 
-							double d = Double.parseDouble(s); 
+						try
+						{
+							double d = Double.parseDouble(s);
 							ps.getProperties().setProperty("maximum", s);
 						}
 						catch (NumberFormatException ex)
@@ -1210,13 +1208,13 @@ public class EmitImport
 							log.atTrace().setCause(ex).log("Unable to set maximum property.");
 						}
 					}
-			
+
 					if (fields.length >= 11)
 					{
 						s = fields[10].trim();
 						if (s.length() > 0)
 						{
-							SiteName sn = new SiteName(null, 
+							SiteName sn = new SiteName(null,
 								Constants.snt_USGS, s);
 							ps.site = db.siteList.getSite(sn);
 							if (ps.site == null)
@@ -1225,15 +1223,15 @@ public class EmitImport
 								ps.site.addName(sn);
 							}
 						}
-				
+
 						if (fields.length >= 12)
 						{
-							num = parseIntField(fields[11], 0, 
+							num = parseIntField(fields[11], 0,
 								Constants.usgsprop_AlertNum, 0);
 							if (num != 0)
 								ps.getProperties().setProperty(
 									Constants.usgsprop_AlertNum, ""+num);
-					
+
 							if (fields.length >= 13)
 							{
 								s = fields[12].trim();
@@ -1251,7 +1249,7 @@ public class EmitImport
 			platform.platformSensors.add(ps);
 	}
 
-	/** 
+	/**
 	  USGS SS1 extensions to sensor records.
 	  @param line the line of data to parse
 	*/
@@ -1412,7 +1410,7 @@ public class EmitImport
 			skipToES = false;
 			return;
 		}
-		
+
 		// Associate ST & RD transport media to scripts.
 		TransportMedium st_tm =
 			platform.getTransportMedium(Constants.medium_GoesST);
@@ -1431,7 +1429,7 @@ public class EmitImport
 		}
 
 		// Find out if this platform already exists.
-		TransportMedium tm = st_tm != null ? st_tm : 
+		TransportMedium tm = st_tm != null ? st_tm :
 		                     rd_tm != null ? rd_tm : edl_tm;
 		Platform oldPlatform = null;
 		try
@@ -1452,9 +1450,9 @@ public class EmitImport
                     DbKey id = oldPlatform.getId();
                     platform.setId(id);
                 }
-                catch (DatabaseException ex) 
-				{ 
-					log.atTrace().setCause(ex).log("Unable to set ID on new platform instance.");	
+                catch (DatabaseException ex)
+				{
+					log.atTrace().setCause(ex).log("Unable to set ID on new platform instance.");
 				}
 			}
 
@@ -1581,7 +1579,7 @@ public class EmitImport
 			int omin = min%60;
 			tzcode = "GMT";
 			if ( ohr != 0 || omin != 0  ) {
-			  if ( ohr > 0 ) { 
+			  if ( ohr > 0 ) {
 			    if ( ohr < 10 )
 			      tzcode+="+0"+ohr+":";
 			    else
@@ -1600,7 +1598,7 @@ public class EmitImport
 		}
 		return(tzcode);
 	}
-	
+
 	/**
 	  Parses an integer field, returning a default value if the field
 	  is blank, or an error value if it is unparsable.
@@ -1638,10 +1636,10 @@ public class EmitImport
 		TokenOptions.optArgument|TokenOptions.optMultiple
 		|TokenOptions.optRequired, "");
 	static BooleanToken makeSiteNamesArg = new BooleanToken("s",
-		"Make site names from network list entries", "", 
+		"Make site names from network list entries", "",
 		TokenOptions.optSwitch, false);
 	static BooleanToken usgsFileArg = new BooleanToken("u",
-		"Default to USGS-generated SDF files", "", 
+		"Default to USGS-generated SDF files", "",
 		TokenOptions.optSwitch, false);
 	static
 	{
@@ -1677,8 +1675,8 @@ public class EmitImport
 		log.debug("Instantiating Database IO of type '{}' at location '{}'",
 				  settings.editDatabaseType, settings.editDatabaseLocation);
 		DatabaseIO dbio = null;
-		try 
-		{ 
+		try
+		{
 			dbio = DatabaseIO.makeDatabaseIO(
 				settings.editDatabaseTypeCode, settings.editDatabaseLocation);
 		}
@@ -1774,7 +1772,7 @@ public class EmitImport
 			return curFileName + "(" + reader.getLineNumber() + ") ";
 	}
 
-	
+
 	/**
 	  Convenience method to print a log message.
 	  @param msg the message
@@ -1919,4 +1917,3 @@ public class EmitImport
 
 
 }
-
