@@ -1,31 +1,33 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of this source
-*  code may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.lrgsmain;
 
 
 import java.io.File;
 import java.io.IOException;
-import java.security.KeyStore;
 import java.io.FileInputStream;
-import java.util.Optional;
 import java.util.Properties;
 
 import org.opendcs.tls.TlsMode;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.ldds.PasswordChecker;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
@@ -34,6 +36,7 @@ This class holds all of the configuration variables for the archive module.
 */
 public class LrgsConfig implements PropertiesOwner
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /** True if noaaport interface is enabled. */
     public boolean noaaportEnabled;
 
@@ -442,14 +445,13 @@ public class LrgsConfig implements PropertiesOwner
     public void loadConfig()
         throws IOException
     {
-        Logger.instance().warning(
-            LrgsMain.module + ":" + LrgsMain.EVT_CONFIG_CHANGE
-            + " Loading configuration file '" + cfgFile.getPath() + "'");
+        log.warn("{} Loading configuration file '{}'", LrgsMain.EVT_CONFIG_CHANGE, cfgFile.getPath());
         lastLoadTime = System.currentTimeMillis();
         Properties props = new Properties();
-        FileInputStream is = new FileInputStream(cfgFile);
-        props.load(is);
-        is.close();
+        try (FileInputStream is = new FileInputStream(cfgFile))
+        {
+            props.load(is);
+        }
 
         PropertiesUtil.loadFromProps(this, props);
 
@@ -473,8 +475,7 @@ public class LrgsConfig implements PropertiesOwner
             try { loadConfig(); }
             catch(IOException ex)
             {
-                Logger.instance().failure("Cannot load config file '"
-                    + cfgFile.getPath() + "': " + ex);
+                log.atError().setCause(ex).log("Cannot load config file '{}'", cfgFile.getPath());
             }
         }
     }
@@ -482,7 +483,7 @@ public class LrgsConfig implements PropertiesOwner
     /** @return the configuration File object. */
     public File getCfgFile()
     {
-        return cfgFile; 
+        return cfgFile;
     }
 
     /**
@@ -530,8 +531,9 @@ public class LrgsConfig implements PropertiesOwner
         }
         catch(Exception ex)
         {
-            Logger.instance().warning("Bad format for config value '" + name
-                + "': expected integer");
+            log.atWarn()
+               .setCause(ex)
+               .log("Bad format for config value '{}': expected integer", name);
             return defaultV;
         }
     }

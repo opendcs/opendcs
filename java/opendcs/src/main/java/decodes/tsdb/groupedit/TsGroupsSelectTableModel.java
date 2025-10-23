@@ -18,17 +18,18 @@ import decodes.tsdb.DbIoException;
 import decodes.tsdb.TsGroup;
 import decodes.util.DecodesSettings;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
-import org.slf4j.LoggerFactory;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.*;
 
 class TsGroupsSelectTableModel extends AbstractTableModel
 {
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(TsGroupsSelectTableModel.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static String[] columnNames;
     private TsGroupListPanel panel;
     private ArrayList<TsGroup> theGroupList = new ArrayList<TsGroup>();
@@ -108,8 +109,7 @@ class TsGroupsSelectTableModel extends AbstractTableModel
                 tsGroups = groupDAO.getTsGroupList(null);
                 if (tsGroups == null)
                 {
-                    Logger.instance().warning(
-                            module + " The Ts Group List is null.");
+                    log.warn("The Ts Group List is null.");
                     panel.showError("The Ts Group List is empty.");
                 }
                 for(TsGroup tsGroup : tsGroups)

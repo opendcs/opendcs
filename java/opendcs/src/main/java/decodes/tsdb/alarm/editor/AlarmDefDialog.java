@@ -1,21 +1,20 @@
 /*
 * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
 * of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software 
+*
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
 */
 package decodes.tsdb.alarm.editor;
 
-import ilex.util.Logger;
 import ilex.util.StringPair;
 
 import java.awt.BorderLayout;
@@ -48,7 +47,7 @@ public class AlarmDefDialog extends GuiDialog
 
 	public AlarmDefDialog(AlarmEditPanel parentPanel)
 	{
-		super(parentPanel.parentFrame, 
+		super(parentPanel.parentFrame,
 			parentPanel.parentFrame.eventmonLabels.getString("alarmDef"), true);
 		this.parentPanel = parentPanel;
 		guiInit();
@@ -58,26 +57,26 @@ public class AlarmDefDialog extends GuiDialog
 	private void guiInit()
 	{
 		ResourceBundle labels = parentPanel.parentFrame.eventmonLabels;
-		
+
 		JPanel centerPanel = new JPanel(new GridBagLayout());
 		centerPanel.add(new JLabel(labels.getString("priority") + ":"),
-			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		priorityCombo = new JComboBox(priorities);
 		centerPanel.add(priorityCombo,
-			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 10), 0, 0));
 		centerPanel.add(new JLabel(labels.getString("pattern") + ":"),
-			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		centerPanel.add(patternField,
-			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 10), 0, 0));
-			
+
 		ok = false;
 		Container contpane = getContentPane();
 		contpane.setLayout(new BorderLayout());
@@ -152,7 +151,7 @@ public class AlarmDefDialog extends GuiDialog
 			return null;
 		return s;
 	}
-	
+
 	public void setData(StringPair sp)
 	{
 		for(int idx = 0; idx < priorities.length; idx++)
