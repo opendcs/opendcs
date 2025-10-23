@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package org.opendcs.database;
 
 import java.lang.reflect.InvocationTargetException;
@@ -5,7 +20,6 @@ import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -16,6 +30,8 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.impl.opendcs.dao.UserManagementImpl;
 import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -68,9 +84,16 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         DaoWrapper<?> wrapper =
             daoMap.computeIfAbsent(dao, daoDesired ->
             {
-                if (dao.isAssignableFrom(CwmsLocationLevelDAO.class)){
+                if (dao.isAssignableFrom(CwmsLocationLevelDAO.class))
+                {
                     return new DaoWrapper<>(() -> new CwmsLocationLevelDAO(this.timeSeriesDb));
                 }
+
+                if (dao.isAssignableFrom(UserManagementDao.class))
+                {
+                    return new DaoWrapper<>(UserManagementImpl::new);
+                }
+
                 Optional<Method> daoMakeMethod;
                 if (timeSeriesDb != null)
                 {
