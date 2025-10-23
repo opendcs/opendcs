@@ -31,6 +31,7 @@ import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.impl.opendcs.DatabaseKeyArgumentFactory;
 import org.opendcs.database.impl.opendcs.DatabaseKeyColumnMapper;
+import org.opendcs.database.model.UserBuilder;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.IdentityProviderMapping;
 import org.opendcs.database.model.Role;
@@ -39,6 +40,7 @@ import org.opendcs.database.model.mappers.IdentityProviderMapper;
 import org.opendcs.database.model.mappers.RoleMapper;
 import org.opendcs.database.model.mappers.user.IdentityProviderMappingMapper;
 import org.opendcs.database.model.mappers.user.UserBuilderMapper;
+import org.opendcs.database.model.mappers.user.UserBuilderReducer;
 import org.opendcs.utils.sql.SqlKeywords;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -67,8 +69,7 @@ public class UserManagementImpl implements UserManagementDao
             "  left join opendcs_role r on r.id = ur.role_id" +
             "  left join user_identity_provider uip on uip.user_id = u.id" +
             "  left join identity_provider idp on idp.id = uip.identity_provider_id" +
-            (limit != -1 ? " limit :limit ": "") +
-            (offset != -1 ? " offset :offset " : "");
+            addLimitOffset(limit, offset);
 
         try (Query q = handle.createQuery(userSelect))
         {
@@ -82,11 +83,11 @@ public class UserManagementImpl implements UserManagementDao
                 q.bind(SqlKeywords.OFFSET, offset);
             }
 
-            return q.registerRowMapper(User.Builder.class, UserBuilderMapper.withPrefix("u"))
+            return q.registerRowMapper(UserBuilder.class, UserBuilderMapper.withPrefix("u"))
                 .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
                 .registerRowMapper(IdentityProviderMapping.class, IdentityProviderMappingMapper.withPrefix("i"))
-                .reduceRows(UserBuilderMapper.UserBuilderReducer.USER_BUILDER_REDUCER)
-                .map(User.Builder::build)
+                .reduceRows(UserBuilderReducer.USER_BUILDER_REDUCER)
+                .map(UserBuilder::build)
                 .collect(Collectors.toList());
         }
     }
@@ -125,7 +126,10 @@ public class UserManagementImpl implements UserManagementDao
                 roleBatch.execute();
             }
 
-            try (PreparedBatch idpBatch = handle.prepareBatch("insert into user_identity_provider (user_id, identity_provider_id, subject) values (:user_id, :identity_provider_id, :subject)"))
+            try (PreparedBatch idpBatch = 
+                    handle.prepareBatch(
+                        "insert into user_identity_provider (user_id, identity_provider_id, subject) " +
+                                                    "values (:user_id, :identity_provider_id, :subject)"))
             {
                 for (IdentityProviderMapping idpM: user.identityProviders)
                 {
@@ -166,11 +170,11 @@ public class UserManagementImpl implements UserManagementDao
             ))
         {
              return user.bind("id", id)
-              .registerRowMapper(User.Builder.class, UserBuilderMapper.withPrefix("u"))
+              .registerRowMapper(UserBuilder.class, UserBuilderMapper.withPrefix("u"))
               .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
               .registerRowMapper(IdentityProviderMapping.class, IdentityProviderMappingMapper.withPrefix("i"))
-              .reduceRows(UserBuilderMapper.UserBuilderReducer.USER_BUILDER_REDUCER)
-              .map(User.Builder::build)
+              .reduceRows(UserBuilderReducer.USER_BUILDER_REDUCER)
+              .map(UserBuilder::build)
               .findFirst()
               ;
         }
@@ -216,7 +220,9 @@ public class UserManagementImpl implements UserManagementDao
                 deleteProviders.bind("id", id).execute();
             }
 
-            try (PreparedBatch idpBatch = handle.prepareBatch("insert into user_identity_provider (user_id, identity_provider_id, subject) values (:user_id, :identity_provider_id, :subject)"))
+            try (PreparedBatch idpBatch = 
+                    handle.prepareBatch("insert into user_identity_provider (user_id, identity_provider_id, subject) " +
+                                                                    "values (:user_id, :identity_provider_id, :subject)"))
             {
                 for (IdentityProviderMapping idpM: user.identityProviders)
                 {
@@ -243,7 +249,7 @@ public class UserManagementImpl implements UserManagementDao
         try (Update deleteRoles = handle.createUpdate("delete from user_roles where user_id = :id");
              Update deleteIdps = handle.createUpdate("delete from user_identity_provider where user_id=:id");
              // password?
-             Update deleteUser = handle.createUpdate("delete from opendcs_user where id = :id");)
+             Update deleteUser = handle.createUpdate("delete from opendcs_user where id = :id"))
         {
             deleteRoles.bind("id", id).execute();
             deleteIdps.bind("id", id).execute();
@@ -259,8 +265,7 @@ public class UserManagementImpl implements UserManagementDao
 
         try (Query select = handle.createQuery(
             "select id, name, type, updated_at, config::text from identity_provider" +
-            (limit != -1 ? " limit :limit ": "") +
-            (offset != -1 ? " offset :offset " : "")))
+            addLimitOffset(limit, offset)))
         {
             if (limit != -1)
             {
@@ -287,7 +292,9 @@ public class UserManagementImpl implements UserManagementDao
         {
             String config = om.writeValueAsString(provider.configToMap());
 
-            try (Query addIdp = handle.createQuery("insert into identity_provider(name, type, updated_at, config) values (:name, :type, now(), :config::jsonb) returning id, name, type, updated_at, config::text"))
+            try (Query addIdp = 
+                    handle.createQuery("insert into identity_provider (name, type, updated_at, config) " +
+                                                              "values (:name, :type, now(), :config::jsonb) returning id, name, type, updated_at, config::text"))
             {
                 return addIdp.bind("name", provider.getName())
                              .bind("type", provider.getType())
@@ -355,8 +362,7 @@ public class UserManagementImpl implements UserManagementDao
     {
         Handle handle = getHandle(tx);
         try (Query select = handle.createQuery("select id, name, description, updated_at from opendcs_role" +
-                                              (limit != -1 ? " limit :limit ": "") +
-                                              (offset != -1 ? " offset :offset " : "")))
+                                              addLimitOffset(limit, offset)))
         {
             if (limit != -1)
             {
@@ -375,7 +381,9 @@ public class UserManagementImpl implements UserManagementDao
     public Role addRole(DataTransaction tx, Role role) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        try (Query addRole = handle.createQuery("insert into opendcs_role(name, description, updated_at) values (:name, :description, now()) returning id, name, description,updated_at"))
+        try (Query addRole = 
+                handle.createQuery("insert into opendcs_role (name, description, updated_at) " +
+                                                     "values (:name, :description, now()) returning id, name, description,updated_at"))
         {
             return addRole.bind("name", role.name)
                           .bind("description", role.description)
@@ -425,13 +433,26 @@ public class UserManagementImpl implements UserManagementDao
      * @param tx
      * @return
      */
+    // Use of this suppress is temporary. Handle should be part of DataTransaction
+    // which would handle the close operation.
+    @SuppressWarnings("resource")
     private Handle getHandle(DataTransaction tx) throws OpenDcsDataException
     {
-        Connection conn = tx.connection(Connection.class).get();
-        Handle h = Jdbi.open(conn).registerArgument(new DatabaseKeyArgumentFactory())
-                                  .registerColumnMapper(new DatabaseKeyColumnMapper());
-
-        return h;
+        Connection conn = tx.connection(Connection.class)
+                            .orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Connection from transaction."));
+        return Jdbi.open(conn).registerArgument(new DatabaseKeyArgumentFactory())
+                              .registerColumnMapper(new DatabaseKeyColumnMapper());
     }
 
+    /**
+     * Helper function to add limit and offset fields to queries
+     * @param limit
+     * @param offset
+     * @return
+     */
+    private static String addLimitOffset(int limit, int offset)
+    {
+        return (limit != -1 ? " limit :limit ": "") +
+               (offset != -1 ? " offset :offset " : "");
+    }
 }

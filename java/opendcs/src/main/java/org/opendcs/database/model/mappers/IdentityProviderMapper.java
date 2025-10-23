@@ -24,6 +24,7 @@ import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.impl.opendcs.BuiltInIdentityProvider;
 import org.opendcs.database.model.IdentityProvider;
+import org.opendcs.utils.sql.SqlErrorMessages;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -34,7 +35,7 @@ import decodes.sql.DbKey;
 /**
  * Map identity provider columns
  */
-public class IdentityProviderMapper extends PrefixRowMapper<IdentityProvider>
+public final class IdentityProviderMapper extends PrefixRowMapper<IdentityProvider>
 {
     private final ObjectMapper om = new ObjectMapper();
 
@@ -46,11 +47,13 @@ public class IdentityProviderMapper extends PrefixRowMapper<IdentityProvider>
     @Override
     public IdentityProvider map(ResultSet rs, StatementContext ctx) throws SQLException
     {
-        ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class).get();
+        ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class)
+                                                    .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
         DbKey id = columnMapperForKey.map(rs, prefix+"id", ctx);
         String name = rs.getString(prefix+"name");
         String type = rs.getString(prefix+"type");
-        ColumnMapper<ZonedDateTime> zdtMapper = ctx.findColumnMapperFor(ZonedDateTime.class).orElseThrow(() -> new SQLException("No mapper registered for ZonedDateTime."));
+        ColumnMapper<ZonedDateTime> zdtMapper = ctx.findColumnMapperFor(ZonedDateTime.class)
+                                                   .orElseThrow(() -> new SQLException(SqlErrorMessages.ZDT_MAPPER_NOT_FOUND));
         ZonedDateTime updatedAt = zdtMapper.map(rs, prefix+"updated_at", ctx);
         try
         {

@@ -22,10 +22,11 @@ import java.time.ZonedDateTime;
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.model.Role;
+import org.opendcs.utils.sql.SqlErrorMessages;
 
 import decodes.sql.DbKey;
 
-public class RoleMapper extends PrefixRowMapper<Role>
+public final class RoleMapper extends PrefixRowMapper<Role>
 {
     private RoleMapper(String prefix)
     {
@@ -35,12 +36,13 @@ public class RoleMapper extends PrefixRowMapper<Role>
     @Override
     public Role map(ResultSet rs, StatementContext ctx) throws SQLException
     {
-        ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class).get();
+        ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class)
+                                                    .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
         DbKey key = columnMapperForKey.map(rs, prefix+"id", ctx);
         String name = rs.getString(prefix+"name");
         String description = rs.getString(prefix+"description");
         ColumnMapper<ZonedDateTime> columnMapperForZDT = ctx.findColumnMapperFor(ZonedDateTime.class)
-                                                            .get();
+                                                            .orElseThrow(() -> new SQLException(SqlErrorMessages.ZDT_MAPPER_NOT_FOUND));
         ZonedDateTime updatedAt = columnMapperForZDT.map(rs, prefix+"updated_at", ctx);
         return new Role(key, name, description, updatedAt);
     }
