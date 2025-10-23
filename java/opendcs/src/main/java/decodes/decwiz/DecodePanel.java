@@ -1,16 +1,16 @@
 /*
 * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
 * of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software 
+*
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
 */
 package decodes.decwiz;
@@ -34,7 +34,6 @@ import org.opendcs.gui.GuiHelpers;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
-import ilex.util.TeeLogger;
 import ilex.var.TimedVariable;
 import decodes.db.*;
 import decodes.consumer.DataConsumerException;
@@ -47,7 +46,6 @@ import decodes.decoder.DecoderException;
 import decodes.decoder.SummaryReportGenerator;
 import decodes.decoder.TimeSeries;
 import decodes.dbeditor.TraceDialog;
-import decodes.dbeditor.TraceLogger;
 import decodes.gui.TopFrame;
 import decodes.util.DecodesSettings;
 
@@ -98,10 +96,10 @@ public class DecodePanel extends DecWizPanel
 	private TraceDialog traceDialog = null;
 	private PresentationGroup presentationGroup = null;
 	private SummaryReportGenerator sumRepGen = null;
-	private String shiftDatePatterns[] = 
+	private String shiftDatePatterns[] =
 		{ "yyyy/MM/dd HH:mm", "MM/dd HH:mm", "HH:mm",
 		  "yyyy/MM/dd HH:mm:ss", "MM/dd HH:mm:ss", "HH:mm:ss" };
-	private SimpleDateFormat dateFormat = 
+	private SimpleDateFormat dateFormat =
 		new SimpleDateFormat("yyyy/MM/dd HH:mm");
 	private Date fromDate = null;
 	private Date toDate = null;
@@ -186,21 +184,21 @@ public class DecodePanel extends DecWizPanel
 		});
 		this.add(northPanel, java.awt.BorderLayout.NORTH);
 		northPanel.add(startDecodeButton,
-			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 10), 0, 0));
 
 		northPanel.add(traceLogButton,
-			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0, 
+			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 10), 0, 0));
 
 		northPanel.add(maxMissingLabel,
-			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 2), 0, 0));
 		northPanel.add(maxMissingField,
-			new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(5, 0, 5, 10), 0, 0));
 		maxMissingField.setPreferredSize(new Dimension(80, 23));
@@ -209,31 +207,31 @@ public class DecodePanel extends DecWizPanel
 		this.add(timeShiftPanel, java.awt.BorderLayout.SOUTH);
 
 		timeShiftPanel.add(timeShiftCheck,
-			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 2), 0, 0));
 		timeShiftPanel.add(fromLabel,
-			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 2), 0, 0));
 		timeShiftPanel.add(fromField,
 			new GridBagConstraints(2, 0, 1, 1, 0.4, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 0, 5, 0), 0, 0));
-		timeShiftPanel.add(toLabel, 
-			new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0, 
+		timeShiftPanel.add(toLabel,
+			new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 5, 5, 2), 0, 0));
-		timeShiftPanel.add(toField, 
-			new GridBagConstraints(4, 0, 1, 1, 0.4, 0.0, 
+		timeShiftPanel.add(toField,
+			new GridBagConstraints(4, 0, 1, 1, 0.4, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 0, 5, 0), 0, 0));
 		timeShiftPanel.add(shiftLabel,
-			new GridBagConstraints(5, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(5, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 0, 5, 2), 0, 0));
 		timeShiftPanel.add(shiftField,
-			new GridBagConstraints(6, 0, 1, 1, 0.2, 0.0, 
+			new GridBagConstraints(6, 0, 1, 1, 0.2, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 0, 5, 10), 0, 0));
 
@@ -345,10 +343,10 @@ public class DecodePanel extends DecWizPanel
 			return true;
 		for(String pat : shiftDatePatterns)
 		{
-			try 
+			try
 			{
 				dateFormat.applyPattern(pat);
-				fromDate = dateFormat.parse(ds); 
+				fromDate = dateFormat.parse(ds);
 				return true;
 			}
 			catch(ParseException ex) { }
@@ -365,10 +363,10 @@ public class DecodePanel extends DecWizPanel
 			return true;
 		for(String pat : shiftDatePatterns)
 		{
-			try 
+			try
 			{
 				dateFormat.applyPattern(pat);
-				toDate = dateFormat.parse(ds); 
+				toDate = dateFormat.parse(ds);
 				return true;
 			}
 			catch(ParseException ex)
@@ -443,7 +441,7 @@ public class DecodePanel extends DecWizPanel
 					+ "make sure the setting for Medium Type is correct.");
 				return;
 			}
-			try 
+			try
 			{
 				tm = fileIdPanel.rawMessage.getTransportMedium();
 			}
@@ -462,7 +460,7 @@ public class DecodePanel extends DecWizPanel
 				}
 			}
 			fileIdPanel.rawMessage.setPlatform(platform);
-			decodedMessage = 
+			decodedMessage =
 				decodesScript.decodeMessage(fileIdPanel.rawMessage);
 			decodedMessage.applyScaleAndOffset();
 			decodedMessage.applySensorLimits();
@@ -476,15 +474,15 @@ public class DecodePanel extends DecWizPanel
 			String tzs = tm.getTimeZone();
 			if (tzs == null || tzs.length() == 0)
 				tzs = "UTC";
-			else if ( tzs.matches("^GMT.*[MAYN]$") ) 
+			else if ( tzs.matches("^GMT.*[MAYN]$") )
 				tzs = tzs.substring(0,tzs.length()-1);
 			tzs = tzs.trim();
 			OutputFormatter formatter = OutputFormatter.makeOutputFormatter(
-				fileIdPanel.getSelectedFormat(), TimeZone.getTimeZone(tzs), 
+				fileIdPanel.getSelectedFormat(), TimeZone.getTimeZone(tzs),
 				null, new Properties(), null);
-			formatter.formatMessage(decodedMessage, consumer); 
+			formatter.formatMessage(decodedMessage, consumer);
 			decodedDataArea.setText(consumer.getBuffer().toString());
-			try 
+			try
 			{
 				maxMissing = Integer.parseInt(maxMissingField.getText().trim());
 			}
@@ -513,7 +511,7 @@ public class DecodePanel extends DecWizPanel
 		}
 		catch(OutputFormatterException ex)
 		{
-			log.atError().setCause(ex).log("Error in Output Formatter.");	
+			log.atError().setCause(ex).log("Error in Output Formatter.");
 			showError("Error in Output Formatter: " + ex);
 		}
 		catch(DataConsumerException ex)
@@ -575,7 +573,7 @@ public class DecodePanel extends DecWizPanel
 	public Date getLastTimeOfDecodedData() {
 		Date lastDate = null;
 		if ( decodedMessage != null )
-		{ 
+		{
 			for(Iterator tsit = decodedMessage.getAllTimeSeries(); tsit.hasNext();)
 			{
 				TimeSeries ts = (TimeSeries)tsit.next();

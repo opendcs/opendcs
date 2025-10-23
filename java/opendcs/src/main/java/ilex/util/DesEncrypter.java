@@ -77,8 +77,7 @@ public class DesEncrypter
 		}
 		catch(Exception ex)
 		{
-			String msg = "Cannot construct DesEncrypter: " + ex;
-			Logger.instance().warning(msg);
+			String msg = "Cannot construct DesEncrypter.";
 			throw new AuthException(msg, ex);
 		}
 	}

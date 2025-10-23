@@ -1,16 +1,16 @@
 /*
 * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
 * of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software 
+*
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
 */
 package decodes.snotel;
@@ -26,7 +26,6 @@ import java.util.StringTokenizer;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
-import ilex.util.StderrLogger;
 import lrgs.common.DcpAddress;
 
 /**
@@ -39,11 +38,11 @@ public class SnotelPlatformSpecList
 	private HashMap<DcpAddress, SnotelPlatformSpec> platformSpecs
 		= new HashMap<DcpAddress, SnotelPlatformSpec>();
 	private long lastLoadTime = 0L;
-	
+
 	public SnotelPlatformSpecList()
 	{
 	}
-	
+
 	/**
 	 * Return the platform spec corresponding to the GOES address or null if
 	 * there is none.
@@ -54,7 +53,7 @@ public class SnotelPlatformSpecList
 	{
 		return platformSpecs.get(addr);
 	}
-	
+
 	public Collection<SnotelPlatformSpec> getPlatformSpecs()
 	{
 		return platformSpecs.values();
@@ -64,7 +63,7 @@ public class SnotelPlatformSpecList
 		throws IOException
 	{
 		platformSpecs.clear();
-		
+
 		// open filename with line number reader
 		LineNumberReader lnr = new LineNumberReader(new FileReader(specFile));
 		String line;
@@ -83,7 +82,7 @@ public class SnotelPlatformSpecList
 			int nt = 0;
 			while(nt < 4 && st.hasMoreTokens())
 				fields[nt++] = st.nextToken();
-			
+
 			if (nt < 4)
 			{
 				log.warn("Line {} '{}'incorrect number of pipe-separated fields. 4 required. -- Skipped.",
@@ -99,12 +98,12 @@ public class SnotelPlatformSpecList
 				   .log("Line {} '{}' bad site number in first field. Must be integer. -- Skipped.",
 				   		lnr.getLineNumber(), line);
 				continue;
-				
+
 			}
 			String stationName = fields[1];
-			
+
 			DcpAddress dcpAddress = new DcpAddress(fields[2].toUpperCase());
-			
+
 			if (fields[3].length() == 0)
 			{
 				log.warn("Line {} '{}' missing data format in last field, should be A or B. -- Skipped.",
@@ -112,22 +111,22 @@ public class SnotelPlatformSpecList
 				continue;
 			}
 			char formatFlag = fields[3].charAt(0);
-			
-			SnotelPlatformSpec spec = new SnotelPlatformSpec(stationId, stationName, 
+
+			SnotelPlatformSpec spec = new SnotelPlatformSpec(stationId, stationName,
 				dcpAddress, formatFlag);
 
 			platformSpecs.put(dcpAddress, spec);
 		}
-		
+
 		lnr.close();
 		lastLoadTime = System.currentTimeMillis();
 	}
-	
+
 	public void addHistoryRetrieval(HistoryRetrieval hr)
 	{
 		platformSpecs.put(hr.getSpec().getDcpAddress(), hr.getSpec());
 	}
-	
+
 	/**
 	 * Test main - pass file name on commandline. It reads the file and spits it back out
 	 * to stdout. Any errors are printed to stderr.

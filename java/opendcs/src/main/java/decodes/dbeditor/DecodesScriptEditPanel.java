@@ -1,23 +1,23 @@
 /*
 * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
 * of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software 
+*
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
-* 
+*
 * Reworked from open-source code in USGS repository and USACE HEC repository.
-* 
+*
 * Open Source Software written by Cove Software, LLC under contract to the
 * U.S. Government.
-* 
+*
 */
 package decodes.dbeditor;
 
@@ -134,16 +134,15 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 	/** Original script */
 	DecodesScript origScript;
 
-	public static TraceLogger traceLogger = null;
 	private TraceDialog traceDialog = null;
-	
+
 	private int selectedDecodedDataRow = -1;
 	private int selectedDecodedDataCol = -1;
 	private LoadMessageDialog loadMessageDialog = null;
 	private DecodingScriptEditDialog parentDialog = null;
-	
+
 	boolean decodingDone = false;
-	
+
 	/** Color values used for sensors. Make mods here if necessary. */
 	static int colorValues[] =
 	{
@@ -180,19 +179,19 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 	Style highlightStyle = null;
 	/** Style used to unhighlight to plain white background */
 	Style unhighlightStyle = null;
-	
+
 	/** After decoding, this is set to the header length. */
 	int headerLength = 0;
-	
+
 	private boolean firstSampleThisScript = true;
-	
+
 	/** Noargs constructor */
 	public DecodesScriptEditPanel()
 	{
 		origScript = theScript = null;
-		
+
 		unitConversionTable = new JTable(new UnitConversionTableModel(null, this));
-		
+
 		unitConversionTableModel = new UnitConversionTableModel(null, this);
 		unitConversionTable = new JTable(unitConversionTableModel);
 		TableColumnAdjuster.adjustColumnWidths(unitConversionTable, new int[]
@@ -211,7 +210,7 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 		Properties props = new Properties();
 		props.setProperty("includeSensorNum", "true");
 		guiInit();
-		
+
 	}
 
 	public void setTraceDialog(TraceDialog dlg)
@@ -221,7 +220,7 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 
 	/**
 	 * setDecodesScript is called by the GUI.
-	 * 
+	 *
 	 * @param ds DecodesScript to be edited.
 	 */
 	public void setDecodesScript(DecodesScript ds)
@@ -241,7 +240,7 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 	public void clearDataBoxes()
 	{
 		rawMessagePane.setText("");
-		
+
 		decodedDataTableModel.clear();
 	}
 
@@ -261,14 +260,14 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 		initColors();
 	}
 
-	private void parseColorSetting(String colorString, int index, String settingName) 
+	private void parseColorSetting(String colorString, int index, String settingName)
 	{
-		if (colorString != null && !colorString.trim().isEmpty()) 
+		if (colorString != null && !colorString.trim().isEmpty())
 		{
-			try 
+			try
 			{
 				colorValues[index] = Integer.parseInt(colorString.trim(), 16);
-			} catch (NumberFormatException ex) 
+			} catch (NumberFormatException ex)
 			{
 				log.atWarn()
 					.setCause(ex)
@@ -286,8 +285,8 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 		parseColorSetting(settings.decodeScriptColor5, 4, "decodesScriptColor5");
     	parseColorSetting(settings.decodeScriptColor6, 5, "decodesScriptColor6");
 		parseColorSetting(settings.decodeScriptColor7, 6, "decodesScriptColor7");
-    	parseColorSetting(settings.decodeScriptColor8, 7, "decodesScriptColor8");				
-		
+    	parseColorSetting(settings.decodeScriptColor8, 7, "decodesScriptColor8");
+
 		for(int i=0; i<colorValues.length; i++)
 		{
 			StringBuilder sb = new StringBuilder("#");
@@ -306,7 +305,7 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 
 	/**
 	 * Gets the data from the fields &amp; puts it back into the object.
-	 * 
+	 *
 	 * @return the internal copy of the object being edited.
 	 */
 	public DecodesScript getDataFromFields()
@@ -326,38 +325,38 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 		this.setLayout(new BorderLayout());
 		JPanel northHeaderPanel = new JPanel(new GridBagLayout());
 		this.add(northHeaderPanel, BorderLayout.NORTH);
-		
+
 		JLabel scriptNameLabel = new JLabel(
 			dbeditLabels.getString("DecodingScriptEditDialog.scriptName"));
 		northHeaderPanel.add(scriptNameLabel,
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(10, 5, 10, 2), 0, 0));
 		northHeaderPanel.add(scriptNameField,
-			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(10, 0, 10, 5), 20, 0));
-	
+
 		JLabel dataOrderLabel = new JLabel(
 			dbeditLabels.getString("DecodingScriptEditPanel.dataOrder"));
-		northHeaderPanel.add(dataOrderLabel, 
+		northHeaderPanel.add(dataOrderLabel,
 			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(10, 5, 10, 2), 0, 0));
-		northHeaderPanel.add(dataOrderCombo, 
+		northHeaderPanel.add(dataOrderCombo,
 			new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(10, 0, 10, 5), 0, 0));
-		
+
 		JLabel headerTypeLabel = new JLabel(
 			dbeditLabels.getString("DecodingScriptEditDialog.headerType"));
-		northHeaderPanel.add(headerTypeLabel, 
+		northHeaderPanel.add(headerTypeLabel,
 			new GridBagConstraints(4, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(10, 5, 10, 2), 0, 0));
 		northHeaderPanel.add(headerTypeCombo,
-			new GridBagConstraints(5, 0, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+			new GridBagConstraints(5, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(10, 0, 10, 5), 0, 0));
 
 		// Center main panel holds all the info
@@ -380,7 +379,7 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 		formatStatementTable = new JTable(formatStatementTableModel);
 
 		TableColumn fmtStatementColumn = formatStatementTable.getColumnModel().getColumn(1);
-		
+
 		fmtStatementColumn.setCellRenderer(new FmtStatementRenderer());
 		fmtStatementColumn.setCellEditor(new FmtStatementEditor());
 		formatStatementTable.getTableHeader().setReorderingAllowed(false);
@@ -390,30 +389,30 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 
 		JButton moveFormatUpButton = new JButton(genericLabels.getString("upAbbr"));
 		moveFormatUpButton.addActionListener(e -> moveFormatUpButtonPressed());
-		fmtStatementButtonPanel.add(moveFormatUpButton, 
+		fmtStatementButtonPanel.add(moveFormatUpButton,
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 4, 2, 4), 0, 0));
 
 		JButton moveFormatDownButton = new JButton(genericLabels.getString("downAbbr"));
 		moveFormatDownButton.addActionListener(e -> moveFormatDownButtonPressed());
-		fmtStatementButtonPanel.add(moveFormatDownButton, 
+		fmtStatementButtonPanel.add(moveFormatDownButton,
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 4, 2, 4), 0, 0));
-		
+
 		JButton addFormatStatementButton = new JButton(genericLabels.getString("add"));
 		addFormatStatementButton.addActionListener(e -> addFormatStatementButtonPressed());
-		fmtStatementButtonPanel.add(addFormatStatementButton, 
+		fmtStatementButtonPanel.add(addFormatStatementButton,
 			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 4, 2, 4), 0, 0));
 
 		JButton deleteFormatStatementButton = new JButton(genericLabels.getString("delete"));
 		deleteFormatStatementButton.addActionListener(e -> deleteFormatStatementButtonPressed());
-		fmtStatementButtonPanel.add(deleteFormatStatementButton, 
+		fmtStatementButtonPanel.add(deleteFormatStatementButton,
 			new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
-				GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 4, 2, 4), 0, 0));
 
 		// Script Sensor Panel for Units and Conversions
@@ -434,21 +433,21 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 		rawMessagePanel.add(rawMsgScrollPane, BorderLayout.CENTER);
 		rawMsgScrollPane.getViewport().add(rawMessagePane, null);
 		rawMessagePanel.add(rawMsgButtonPanel, BorderLayout.EAST);
-		
+
 		// LOAD
 		JButton loadSampleButton = new JButton(genericLabels.getString("load"));
 		loadSampleButton.addActionListener(e ->	loadSampleButtonPressed());
-		rawMsgButtonPanel.add(loadSampleButton, 
+		rawMsgButtonPanel.add(loadSampleButton,
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 4, 2, 4), 0, 0));
-		
+
 		// CLEAR
 		JButton clearSampleButton = new JButton(genericLabels.getString("clear"));
 		clearSampleButton.addActionListener(e -> clearSampleButtonPressed());
-		rawMsgButtonPanel.add(clearSampleButton, 
+		rawMsgButtonPanel.add(clearSampleButton,
 			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 4, 2, 4), 0, 0));
 
 		// DECODES
@@ -456,20 +455,20 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 		decodeSampleButton.addActionListener(e -> decodeSampleButtonPressed());
 		rawMsgButtonPanel.add(decodeSampleButton,
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 4, 2, 4), 0, 0));
-		
+
 		// TRACE
 		JButton traceButton = new JButton(dbeditLabels.getString("DecodingScriptEditPanel.trace"));
 		traceButton.addActionListener(e -> traceButton_actionPerformed(e));
 		rawMsgButtonPanel.add(traceButton,
 			new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.NONE, 
+				GridBagConstraints.CENTER, GridBagConstraints.NONE,
 				new Insets(2, 4, 2, 4), 0, 0));
 
 		decodedDataTable = new JTable(decodedDataTableModel);
 		decodedDataTable.getTableHeader().setReorderingAllowed(false);
-		DefaultTableCellRenderer headerRenderer = 
+		DefaultTableCellRenderer headerRenderer =
 			(DefaultTableCellRenderer)decodedDataTable.getTableHeader().getDefaultRenderer();
 		headerRenderer.setHorizontalAlignment(JLabel.CENTER);
 		decodedDataTable.setCellSelectionEnabled(true);
@@ -496,7 +495,7 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 			});
 
 		JScrollPane decodedDataScrollPane = new JScrollPane(
-			decodedDataTable, 
+			decodedDataTable,
 			JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 			JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
 		decodedDataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
@@ -510,28 +509,28 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 		rawDecMsgSplitPane.setBottomComponent(decodedDataPanel);
 		rawDecMsgSplitPane.setTopComponent(rawMessagePanel);
 
-		
-		
+
+
 		upperSplitPane.add(rawDecMsgSplitPane, JSplitPane.BOTTOM);
-		
+
 		rawDecMsgSplitPane.add(rawMessagePanel, JSplitPane.TOP);
 		rawDecMsgSplitPane.add(decodedDataPanel, JSplitPane.BOTTOM);
 		decodedDataPanel.add(decodedDataScrollPane, BorderLayout.CENTER);
-		
+
 		normalRawDataStyle = rawMessagePane.addStyle("normal", null);
 		StyleConstants.setFontFamily(normalRawDataStyle, "Monospaced");
-		StyleConstants.setFontSize(normalRawDataStyle, 
+		StyleConstants.setFontSize(normalRawDataStyle,
 			StyleConstants.getFontSize(normalRawDataStyle) + 2);
 		headerDataStyle = rawMessagePane.addStyle("header", null);
 		StyleConstants.setForeground(headerDataStyle, Color.gray);
-		
+
 		initColors();
 
 		highlightStyle = rawMessagePane.addStyle("highlight", null);
 		StyleConstants.setBackground(highlightStyle, Color.yellow);
 		unhighlightStyle = rawMessagePane.addStyle("unhighlight", null);
 		StyleConstants.setBackground(unhighlightStyle, Color.white);
-		
+
 		rawMessagePane.addCaretListener(
 			new CaretListener()
 			{
@@ -542,7 +541,7 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 					inputAttr.removeAttribute(StyleConstants.Foreground);
 				}
 			});
-		
+
 		FontMetrics metrics = formatStatementTable.getFontMetrics(
 			formatStatementTable.getFont());
 		int fontHeight = metrics.getHeight();
@@ -568,7 +567,7 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 			{
 				if (row > 0)
 				{
-					
+
 				}
 			}
 			else
@@ -581,14 +580,14 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 				else
 				{
 					TokenPosition rawpos = decSamp.getRawDataPosition();
-					highlightRawData(rawpos.getStart(), 
+					highlightRawData(rawpos.getStart(),
 						rawpos.getEnd()-rawpos.getStart(), (col-1) % sensorColorStyle.length,
 						true);
 				}
 			}
 		}
 	}
-	
+
 	/**
 	 * @param tv the timed variable
 	 * @return the DecodedSample bean containing the passed timed variable, or null
@@ -603,8 +602,8 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 				return samp;
 		return null;
 	}
-	
-	
+
+
 	/** Called when 'Add' button is pressed to add a format statement. */
 	void addFormatStatementButtonPressed()
 	{
@@ -715,8 +714,8 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 		}
 		else
 			loadMessageDialog.reset();
-		
-			
+
+
 		if (parentDialog != null)
 		{
 			if (firstSampleThisScript)
@@ -741,11 +740,11 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 						ArrayList<String> addrs = new ArrayList<String>();
 						for(Platform p : Database.getDb().platformList.getPlatformVector())
 						{
-							if (p.getConfig() != null 
+							if (p.getConfig() != null
 							 && cfg.configName.equals(p.getConfig().configName))
 							{
 								String pname = p.getDisplayName();
-								
+
 								boolean didGoes = false;
 								for(TransportMedium tm : p.transportMedia)
 								{
@@ -753,7 +752,7 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 										continue;
 									if (tm.isGoes())
 										didGoes = true;
-									
+
 									String s = tm.getMediumId() + " - " + pname;
 									addrs.add(s);
 								}
@@ -771,7 +770,7 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 						for(Platform p : Database.getDb().platformList.getPlatformVector())
 						{
 							String pname = p.getDisplayName();
-							
+
 							boolean didGoes = false;
 							for(TransportMedium tm : p.transportMedia)
 							{
@@ -779,7 +778,7 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 									continue;
 								if (tm.isGoes())
 									didGoes = true;
-								
+
 								String s = tm.getMediumId() + " - " + pname;
 								addrs.add(s);
 							}
@@ -847,7 +846,7 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 			log.atError().setCause(ex).log("Unable to style document.");
 			return;
 		}
-		
+
 		StringBuilder sb = new StringBuilder(s);
 		for (int i = 0; i < sb.length(); i++)
 		{
@@ -904,7 +903,6 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 			tmpPlatform.transportMedia.add(tmpMedium);
 
 			traceDialog.clear();
-			traceLogger.setDialog(traceDialog);
 
 			RawMessage rawMessage = new RawMessage(s.getBytes(), len);
 			rawMessage.setPlatform(tmpPlatform);
@@ -955,10 +953,10 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 			DecodesScript.trackDecoding = true;
 			DecodedMessage dm = theScript.decodeMessage(rawMessage);
 			log.debug("After decoding there are {} decoded samples.", theScript.getDecodedSamples().size());
-			
+
 			decodedDataTableModel.clear();
 			decodedDataTableModel.setDecodedData(dm);
-			
+
 			// setDecodedData will change the table structure, which resets column widths.
 			// Make sure the date/time column is wide enough.
 			if (decodedDataTableModel.getRowCount() > 0)
@@ -968,10 +966,10 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 				int w = t.getPreferredSize().width;
 				decodedDataTable.getColumnModel().getColumn(0).setPreferredWidth(w + 20);
 			}
-			
+
 			// Now make sure that the columns are wide enough to accommodate the sensor
 			// names.
-			DefaultTableColumnModel colModel = 
+			DefaultTableColumnModel colModel =
 				(DefaultTableColumnModel)decodedDataTable.getColumnModel();
 			for(int colidx = 1; colidx < decodedDataTableModel.getColumnCount(); colidx++)
 			{
@@ -987,10 +985,8 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 			    	width = 80;
 			    col.setPreferredWidth(width);
 			}
-			
-			traceLogger.setDialog(null);
-			
-			rawMessagePane.getStyledDocument().setCharacterAttributes(0, 
+
+			rawMessagePane.getStyledDocument().setCharacterAttributes(0,
 				rawMessage.getHeaderLength(), headerDataStyle, false);
 			for(DecodedSample decodedSample : theScript.getDecodedSamples())
 			{
@@ -1001,13 +997,13 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 				{
 					Style st = sensorColorStyle[col % sensorColorStyle.length];
 					rawMessagePane.getStyledDocument().setCharacterAttributes(
-						headerLength+rawpos.getStart(), 	
+						headerLength+rawpos.getStart(),
 						rawpos.getEnd()-rawpos.getStart(), st, false);
 				}
 			}
-			
+
 			selectedDecodedDataRow = selectedDecodedDataCol = -1;
-		
+
 			// Get the Channel number - used by the platform wizard
 			try
 			{
@@ -1024,12 +1020,12 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 		catch (DecodesException ex)
 		{
 			String msg = dbeditLabels.getString("DecodingScriptEditPanel.errorDecoding");
-			log.atError().setCause(ex).log(msg);	
+			log.atError().setCause(ex).log(msg);
 			TopFrame.instance().showError(msg + ex);
 			return;
 		}
 	}
-	
+
 	/**
 	 * Stops all the table cell editors so that current changes are stored in
 	 * the JTable.
@@ -1077,13 +1073,13 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 			log.atError().setCause(ex).log("Unable to set raw message.");
 		}
 	}
-	
+
 	public void highlightRawData(int start, int length, int sensorColorIdx, boolean highlight)
 	{
 		StyledDocument sdoc = rawMessagePane.getStyledDocument();
-		sdoc.setCharacterAttributes(headerLength+start, length, 
+		sdoc.setCharacterAttributes(headerLength+start, length,
 			highlight ? highlightStyle : unhighlightStyle, false);
-		
+
 	}
 
 	public void setParentDialog(DecodingScriptEditDialog parentDialog)
@@ -1257,7 +1253,7 @@ class UnitConversionTableModel extends AbstractTableModel
 		theScript = ds;
 		fillValues();
 	}
-	
+
 	void ftdc()
 	{
 		fireTableDataChanged();
@@ -1310,7 +1306,7 @@ class UnitConversionTableModel extends AbstractTableModel
 			nCoeffs = 0;
 		else
 			nCoeffs = getNumCoeffs(uc.algorithm);
-		
+
 		// If decoding is done, try to get the html color corresponding to the
 		// sensor corresponding to the selected row.
 		String htmlColor = null;
@@ -1320,9 +1316,9 @@ class UnitConversionTableModel extends AbstractTableModel
 				ss.sensorNumber);
 			if (decodedSensorColumn >= 0) // this sensor has decoded data
 			{
-				int colorIdx = decodedSensorColumn % 
+				int colorIdx = decodedSensorColumn %
 					DecodesScriptEditPanel.sensorColorHtml.length;
-				htmlColor = DecodesScriptEditPanel.sensorColorHtml[colorIdx];                        
+				htmlColor = DecodesScriptEditPanel.sensorColorHtml[colorIdx];
 			}
 		}
 
@@ -1330,11 +1326,11 @@ class UnitConversionTableModel extends AbstractTableModel
 		{
 		case 0:
 			return htmlColor == null ? ("" + ss.sensorNumber)
-				: ("<html><font color=\"" + htmlColor + "\">" + ss.sensorNumber 
+				: ("<html><font color=\"" + htmlColor + "\">" + ss.sensorNumber
 					+ "</font></html>");
 		case 1:
 			return htmlColor == null ? ss.getSensorName()
-				: ("<html><font color=\"" + htmlColor + "\">" + ss.getSensorName() 
+				: ("<html><font color=\"" + htmlColor + "\">" + ss.getSensorName()
 					+ "</font></html>");
 		case 2:
 			return uc == null ? "" : uc.toAbbr;
@@ -1451,7 +1447,7 @@ class DecodedDataTableModel extends AbstractTableModel
 		// One for each column. This is the index into the TimeSeries
 		// of the value displayed in this cell. -1 means the cell is blank.
 		int tsIndeces[] = null;
-		
+
 		Row(Date d, int numColumns)
 		{
 			rowDate = d;
@@ -1463,9 +1459,9 @@ class DecodedDataTableModel extends AbstractTableModel
 	private ArrayList<Row> rows = new ArrayList<Row>();
 	private SimpleDateFormat decDataDateFmt = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 	private String columnColor[] = new String[0];
-	
 
-	
+
+
 	public void setTZ(TimeZone editTZ)
 	{
 		decDataDateFmt.setTimeZone(editTZ);
@@ -1483,14 +1479,14 @@ class DecodedDataTableModel extends AbstractTableModel
 		// A column for date and one for each time series.
 		return colTimeSeries.length + 1;
 	}
-	
+
 	public TimeSeries getColumnTimeSeries(int col)
 	{
 		if (col < 1 || col > colTimeSeries.length)
 			return null;
 		return colTimeSeries[col-1];
 	}
-	
+
 	public int getTimeSeriesColumn(TimeSeries ts)
 	{
 		for(int i=0; i<colTimeSeries.length; i++)
@@ -1498,7 +1494,7 @@ class DecodedDataTableModel extends AbstractTableModel
 				return i;
 		return -1;
 	}
-	
+
 	public int getSensorNumberColumn(int sensorNum)
 	{
 		for(int i=0; i<colTimeSeries.length; i++)
@@ -1507,12 +1503,12 @@ class DecodedDataTableModel extends AbstractTableModel
 				return i;
 		return -1;
 	}
-	
+
 	public TimedVariable getTimedVariableAt(int rowIndex, int columnIndex)
 	{
 		if (columnIndex == 0)
 			return null; // column 0 is date/time
-		
+
 		Row row = rows.get(rowIndex);
 		int tsIndex = row.tsIndeces[columnIndex-1];
 		return tsIndex != -1 ? colTimeSeries[columnIndex-1].sampleAt(tsIndex)
@@ -1525,45 +1521,45 @@ class DecodedDataTableModel extends AbstractTableModel
 		Row row = rows.get(rowIndex);
 		if (columnIndex == 0)
 			return decDataDateFmt.format(row.rowDate);
-			
+
 		int tsIndex = row.tsIndeces[columnIndex-1];
 		String color = columnColor[columnIndex-1];
-		String v = tsIndex != -1 
+		String v = tsIndex != -1
 			? colTimeSeries[columnIndex-1].formattedSampleAt(tsIndex)
 			: "";
 		String ret = "<html><font color=\"" + color + "\">" + v + "</font></html>";
 		return ret;
 	}
-	
+
 	@Override
 	public String getColumnName(int col)
 	{
 		if (col == 0)
 			return "<html>Date/Time<br>(" + decDataDateFmt.getTimeZone().getID()
 				+ ")</html>";
-		
+
 		String color = columnColor[col-1];
-		
+
 		// <html>sensorNum: sensorName<br>units</html>
-		return "<html><font color=\"" + color + "\">" 
+		return "<html><font color=\"" + color + "\">"
 			+ colTimeSeries[col-1].getSensorNumber()
 			+ ": " + colTimeSeries[col-1].getSensorName()
 			+ "<br>" + colTimeSeries[col-1].getUnits()
 			+ "</font></html>";
 	}
-	
+
 	public void clear()
 	{
 		colTimeSeries = new TimeSeries[0];
 		rows.clear();
 		fireTableDataChanged();
 	}
-	
+
 	public void setDecodedData(DecodedMessage decmsg)
 	{
 		colTimeSeries = new TimeSeries[decmsg.getNumTimeSeries()];
 		columnColor = new String[decmsg.getNumTimeSeries()];
-		
+
 		// Get the time series into the columns.
 		int numTS = 0;
 		for(Iterator<TimeSeries> tsit = decmsg.getAllTimeSeries(); tsit.hasNext();
@@ -1573,12 +1569,12 @@ class DecodedDataTableModel extends AbstractTableModel
 			columnColor[numTS] = DecodesScriptEditPanel.sensorColorHtml[
 			     numTS % DecodesScriptEditPanel.sensorColorHtml.length];
 		}
-		
+
 		// Build the Row data structures.
 		for(int tsIdx = 0; tsIdx < numTS; tsIdx++)
 		{
 			TimeSeries ts = colTimeSeries[tsIdx];
-			
+
 			for(int sampleNum = 0; sampleNum < ts.size(); sampleNum++)
 			{
 				TimedVariable tv = ts.sampleAt(sampleNum);
@@ -1604,7 +1600,7 @@ class DecodedDataTableModel extends AbstractTableModel
 			});
 		fireTableStructureChanged();
 	}
-	
+
 	private Row findRowFor(Date d)
 	{
 		for(Row row : rows)
@@ -1640,15 +1636,15 @@ class FmtStatementEditor
 	extends DefaultCellEditor
 {
 	private String origText = null;
-	
+
 	public FmtStatementEditor()
 	{
 		super(new JTextField());
-		editorComponent.setFont(new Font("Monospaced", Font.PLAIN, 
+		editorComponent.setFont(new Font("Monospaced", Font.PLAIN,
 			editorComponent.getFont().getSize()+1));
 	}
-	
-	public Component getTableCellEditorComponent(JTable table, 
+
+	public Component getTableCellEditorComponent(JTable table,
 		Object value, boolean isSelected, int row, int column)
 	{
 		JTextField ec = (JTextField)super.getTableCellEditorComponent(table,
@@ -1656,11 +1652,9 @@ class FmtStatementEditor
 		origText = ec.getText();
 		return ec;
 	}
-	
+
 	public boolean stopCellEditing()
 	{
 		return super.stopCellEditing();
 	}
 }
-
-
