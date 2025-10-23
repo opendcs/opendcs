@@ -35,7 +35,8 @@ public class RoleMapper extends PrefixRowMapper<Role>
     @Override
     public Role map(ResultSet rs, StatementContext ctx) throws SQLException
     {
-        DbKey key = DbKey.createDbKey(rs, prefix+"id");
+        ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class).get();
+        DbKey key = columnMapperForKey.map(rs, prefix+"id", ctx);
         String name = rs.getString(prefix+"name");
         String description = rs.getString(prefix+"description");
         ColumnMapper<ZonedDateTime> columnMapperForZDT = ctx.findColumnMapperFor(ZonedDateTime.class)
