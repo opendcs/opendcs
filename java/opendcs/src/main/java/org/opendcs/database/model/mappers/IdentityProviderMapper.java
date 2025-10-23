@@ -46,7 +46,8 @@ public class IdentityProviderMapper extends PrefixRowMapper<IdentityProvider>
     @Override
     public IdentityProvider map(ResultSet rs, StatementContext ctx) throws SQLException
     {
-        DbKey id = DbKey.createDbKey(rs, prefix+"id");
+        ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class).get();
+        DbKey id = columnMapperForKey.map(rs, prefix+"id", ctx);
         String name = rs.getString(prefix+"name");
         String type = rs.getString(prefix+"type");
         ColumnMapper<ZonedDateTime> zdtMapper = ctx.findColumnMapperFor(ZonedDateTime.class).orElseThrow(() -> new SQLException("No mapper registered for ZonedDateTime."));

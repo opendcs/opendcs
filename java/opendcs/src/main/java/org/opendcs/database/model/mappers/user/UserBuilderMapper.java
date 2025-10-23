@@ -58,8 +58,9 @@ public class UserBuilderMapper extends PrefixRowMapper<User.Builder>
         ColumnMapper<ZonedDateTime> columnMapperForZDT
                 = ctx.findColumnMapperFor(ZonedDateTime.class)
                      .get();
+        ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class).get();
 
-        builder.withId(DbKey.createDbKey(rs, prefix+"id"))
+        builder.withId(columnMapperForKey.map(rs, prefix+"id", ctx))
                .withEmail(rs.getString(prefix+"email"))
                .withUpdatedAt(columnMapperForZDT.map(rs, prefix+"updated_at", ctx))
                .withCreatedAt(columnMapperForZDT.map(rs, prefix+"created_at", ctx))
