@@ -15,7 +15,7 @@ main {
 	height: 1.5em;
 }
 
-.active .bi {
+.dropdown-menu .active .bi {
   display:block!important
 }
 

@@ -68,6 +68,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     const btnToActive = document.querySelector(`[data-bs-theme-value="${theme}"]`)
     const svgOfActiveBtn = btnToActive.querySelector('svg use').getAttribute('href')
 
+    // clear existing check
     document.querySelectorAll('[data-bs-theme-value]').forEach(element => {
       element.classList.remove('active')
       element.setAttribute('aria-pressed', 'false')
@@ -141,11 +142,12 @@ document.addEventListener("DOMContentLoaded", function(event) {
     const themeSwitcherText = document.querySelector('#bd-theme-text')
     const btnToActive = document.querySelector(`[data-bs-theme-link="${theme}"]`)
 
+    // clear existing check
     document.querySelectorAll('[data-bs-theme-link]').forEach(element => {
       element.classList.remove('active')
        element.setAttribute('aria-pressed', 'false')
     })
-    console.log("hello")
+
     btnToActive.classList.add('active')
     btnToActive.setAttribute('aria-pressed', 'true')
     
