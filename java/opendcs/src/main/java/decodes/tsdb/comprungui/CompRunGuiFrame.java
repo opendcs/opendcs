@@ -1,22 +1,21 @@
 /*
 * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
 * of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software 
+*
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
 */
 package decodes.tsdb.comprungui;
 
 import ilex.gui.DateTimeCalendar;
-import ilex.util.TeeLogger;
 import ilex.util.TextUtil;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
@@ -32,8 +31,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.beans.PropertyChangeEvent;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -62,16 +59,12 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JViewport;
 import javax.swing.SwingWorker;
 import javax.swing.WindowConstants;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
-
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
@@ -103,11 +96,7 @@ import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.time.Week;
 import org.jfree.data.time.Year;
 import org.jfree.data.xy.XYDataset;
-import org.opendcs.gui.tables.DateRenderer;
-import org.slf4j.LoggerFactory;
-
 import decodes.dbeditor.TraceDialog;
-import decodes.dbeditor.TraceLogger;
 import decodes.gui.TopFrame;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
@@ -192,7 +181,7 @@ public class CompRunGuiFrame extends TopFrame
 	private ProgressState progress;
 	/**
 	 * Constructor
-	 * 
+	 *
 	 * @param standAloneMode
 	 *            True if running from launcher or tester. False if running
 	 *            inside compedit.
@@ -221,7 +210,7 @@ public class CompRunGuiFrame extends TopFrame
 
 		this.standAloneMode = standAloneMode;
 
-		
+
 		timeZoneStr = DecodesSettings.instance().sqlTimeZone;
 		timeZoneStr = timeZoneStr == null ? "UTC" : timeZoneStr;
 		setAllLabels();
@@ -291,13 +280,13 @@ public class CompRunGuiFrame extends TopFrame
 		cancelComputationExecutionLabel = cancelButtonLabel;
 		dateTimeColumnLabel = labels.getString("TimeSeriesTable.dateTimeColumnLabel") + " (" + timeZoneStr
 			+ ")";
-		
+
 	}
 
 	/**
 	 * When lauch from Comp Edit GUI need to set the parent so that we can get
 	 * the DbComputation obj when the user presses Run Computation button.
-	 * 
+	 *
 	 * @param compEdit
 	 *            the parent of this frame
 	 */
@@ -415,7 +404,7 @@ public class CompRunGuiFrame extends TopFrame
 		gbc_runhalf.gridx = 2;
 		gbc_runhalf.gridy = 0;
 		time.add(runhalf, gbc_runhalf);
-		
+
 		cancelExecutionButton = new JButton(cancelComputationExecutionLabel);
 		cancelExecutionButton.setEnabled(false);
 		GridBagConstraints gbc_cancelExecutionButton = new GridBagConstraints();
@@ -427,7 +416,7 @@ public class CompRunGuiFrame extends TopFrame
 		cancelExecutionButton.addActionListener(e ->
 		{
 			if (this.compExecutionWorker != null && !this.compExecutionWorker.isDone())
-			{				
+			{
 				this.compExecutionWorker.cancel(true);
 				this.cancelExecutionButton.setEnabled(false);
 			}
@@ -478,8 +467,8 @@ public class CompRunGuiFrame extends TopFrame
 
 	/**
 	 * This methods plots all data on chart.
-	 * 
-	 * 
+	 *
+	 *
 	 */
 	private void plotDataOnChart(Vector<CTimeSeries> ctsList, int inputs)
 	{
@@ -621,7 +610,7 @@ public class CompRunGuiFrame extends TopFrame
 
 	/**
 	 * Create the Time Series Data set with all data read from the DB.
-	 * 
+	 *
 	 * @param index
 	 * @param timeSeriesName
 	 * @param tsIn
@@ -637,7 +626,7 @@ public class CompRunGuiFrame extends TopFrame
 		for (int i = 0; i < tsIn.size(); i++)
 		{
 			TimedVariable tv = tsIn.sampleAt(i);
-			
+
 			// Don't plot values flagged for deletion.
 			if (tv == null || VarFlags.mustDelete(tv))
 				continue;
@@ -671,7 +660,7 @@ public class CompRunGuiFrame extends TopFrame
 	/**
 	 * Create the X axis "Domain Axis" according to the first time and last time
 	 * of the CTimeSeries.
-	 * 
+	 *
 	 * @param plot
 	 * @param ts
 	 */
@@ -802,7 +791,7 @@ public class CompRunGuiFrame extends TopFrame
 		runButton.setEnabled(false);
 		traceDialog.clear();
 		AlarmManager.deleteInstance();
-		
+
 		if (fromDTCal.getDate() == null || toDTCal.getDate() == null)
 		{
 			return;
@@ -968,7 +957,7 @@ public class CompRunGuiFrame extends TopFrame
 				}
 
 				// Read a fresh copy of the group from the DB
-				
+
 				try (TsGroupDAI groupDAO = theDb.makeTsGroupDAO())
 				{
 					compGroup = groupDAO.getTsGroupById(compGroup.getGroupId());
@@ -1378,7 +1367,7 @@ private void runSelectedComps(Collection<DbComputation> compVector, Vector<CTime
 				progressBar.setString(String.format("%d of %d", progress.getDone(), progress.getTotal()));
 			}
 		}
-	}	
+	}
 
 	private JPanel closePanel()
 	{
@@ -1449,7 +1438,7 @@ private void runSelectedComps(Collection<DbComputation> compVector, Vector<CTime
 				/**
 				 * TODO: This shouldn't be necassary and Java will exit when the last non-daemon
 				 *  thread exits and we should rely on that behavior instead of forcing a System.exit
-				 */ 
+				 */
 				System.exit(0);
 			}
 		}
@@ -1458,7 +1447,7 @@ private void runSelectedComps(Collection<DbComputation> compVector, Vector<CTime
 
 	/**
 	 * This is used when this GUI is launch from the Comp Edit GUI
-	 * 
+	 *
 	 * @return true or false
 	 */
 	public boolean closeFromParent()
@@ -1487,7 +1476,7 @@ private void runSelectedComps(Collection<DbComputation> compVector, Vector<CTime
 
 	private void saveCompOutput()
 	{
-		
+
 		try (TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO())
 		{
 			for (CTimeSeries myseries : myoutputs)
