@@ -1,5 +1,5 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<li class="nav-item dropdown dropstart ">                          
+<li class="nav-item dropdown dropstart ">
     <button class="btn btn-link nav-link py-2 px-0 px-lg-2 dropdown-toggle d-flex align-items-center dropdown-item"
                 id="bd-theme-select"
                 type="button"
@@ -10,14 +10,13 @@
         <span class="d-lg-none ms-2" id="bd-theme-text">Theme</span>
         Theme
     </button>
-    
+
     <ul class="dropdown-menu" aria-labelledby="bd-theme-text">
         <c:forEach items="${themes}" var="theme">
             <li>
             <button type="button" class="dropdown-item d-flex align-items-center ${theme.name.contains("Default") ? 'active' : '' }" data-bs-theme-link="${theme.link}" aria-pressed="${theme.name.contains("Default") ? 'true' : 'false' }">
             ${theme.name} <svg class="bi ms-auto d-none theme-icon" aria-hidden="true"><use href="#check2"></use></svg>
             </button>
-            
         </li></c:forEach>
     </ul>
 </li>

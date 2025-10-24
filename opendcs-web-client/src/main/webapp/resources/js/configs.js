@@ -1096,7 +1096,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateDataTableScroll("decodingScriptTable");
     });
 
-    /*
+
 
     // Time picker
     $('#firstSampleTime').addEventListener("change", ocheckInterval);
@@ -1104,7 +1104,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     $('#samplingInterval').AnyTime_picker({
         format: '%H:%i:%S'
-    });*/
+    });
 
     $("#decodingScriptModalCancel").on("click", function() {
         $("#modal_decodingscript").modal("hide");

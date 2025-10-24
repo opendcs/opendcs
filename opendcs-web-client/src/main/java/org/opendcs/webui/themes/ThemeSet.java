@@ -11,14 +11,12 @@ public interface ThemeSet
     Stream<Theme> getThemes();
     
 
-    public static List<Theme> getAllThemes()
+    static List<Theme> getAllThemes()
     {
         ServiceLoader<ThemeSet> themeSets = ServiceLoader.load(ThemeSet.class);
         final List<Theme> ret = new ArrayList<>();
-        themeSets.forEach(ts ->
-        {
-            ts.getThemes().collect(Collectors.toCollection(() -> ret));
-        });
+        themeSets.forEach(ts -> ts.getThemes()
+                 .collect(Collectors.toCollection(() -> ret)));
         return ret;
     }
 }

@@ -98,7 +98,6 @@ main {
 .loginPageBackground {
 	background-image: url('../img/river_2.jpg');
 	background-size: 100% 100%;
-	
 }
 
 .pointerCursor {
@@ -109,8 +108,8 @@ main {
     margin-bottom: 2px;
 }
 
-.captionTitleCenter { 
-	caption-side: top; 
+.captionTitleCenter {
+	caption-side: top;
 	width: auto;
 	text-align: center;
 	margin-bottom: 5px;
@@ -221,10 +220,10 @@ main {
 
 .opendcs-modal-90 {
 	height: 90vh !important;
-	min-height: 500px !important; 
+	min-height: 500px !important;
 	max-height: 90vh !important;
 	width: 90vw;
-	min-width: 600px !important; 
+	min-width: 600px !important;
 	max-width: 90vw !important;
 }
 
@@ -243,10 +242,10 @@ main {
 
 .opendcs-modal-tall-narrow {
 	height: 95vh !important;
-	min-height: 500px !important; 
+	min-height: 500px !important;
 	max-height: 95vh !important;
 	width: 50vw;
-	min-width: 400px !important; 
+	min-width: 400px !important;
 	max-width: 50vw !important;
 }
 
@@ -293,12 +292,6 @@ main {
 .datatable-disabled tr.selected {
 	background-color: #b3b3b3 !important;
 }
-
-/*
-.dataTables_wrapper {
-	background-color: #fafeff;
-}
-*/
 
 .modal-header {
 	padding-top: 0.75rem;
@@ -356,7 +349,7 @@ main {
      width:120px;
      height:18px;
  }
- 
+
  .select-editable select {
      position:absolute;
      top:0px;
@@ -366,7 +359,7 @@ main {
      width:120px;
      margin:0;
  }
- 
+
  .select-editable input {
      position:absolute;
      top:0px;
@@ -376,7 +369,7 @@ main {
      font-size:12px;
      border:none;
  }
- 
+
  .select-editable select:focus, .select-editable input:focus {
      outline:none;
  }

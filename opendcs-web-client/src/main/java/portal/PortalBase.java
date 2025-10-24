@@ -43,9 +43,11 @@ import org.slf4j.LoggerFactory;
  *
  */
 
-public class PortalBase extends HttpServlet {
+public class PortalBase extends HttpServlet
+{
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PortalBase.class);
+    private static final List<Theme> themes = ThemeSet.getAllThemes();
 
     /**
      * Represents the relative url path for the corresponding web page.
@@ -71,8 +73,7 @@ public class PortalBase extends HttpServlet {
      */
     
     private String apiBaseUrl;
-    
-    private static final List<Theme> themes = ThemeSet.getAllThemes();
+
     /**
      * Creates a new PortalBase
      *
