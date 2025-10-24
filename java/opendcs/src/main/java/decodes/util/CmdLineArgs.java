@@ -27,7 +27,6 @@ import decodes.gui.TopFrame;
 import decodes.launcher.Profile;
 import ilex.cmdline.*;
 import ilex.util.EnvExpander;
-import ilex.util.JavaLoggerAdapter;
 
 /**
 Extends the ilex.cmdline.StdAppSettings class to handle arguments that
