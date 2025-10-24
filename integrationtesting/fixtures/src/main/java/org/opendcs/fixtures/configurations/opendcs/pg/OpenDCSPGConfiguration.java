@@ -148,6 +148,7 @@ public class OpenDCSPGConfiguration implements Configuration
         roles.add("OTSDB_MGR");
         mp.createUser(jdbi, DCS_ADMIN_USER, DCS_ADMIN_USER_PASSWORD, roles);
         log.info("Setting authentication environment vars.");
+        mp.loadBaselineData(profile, DCS_ADMIN_USER, DCS_ADMIN_USER_PASSWORD);
         setStarted();
     }
 
