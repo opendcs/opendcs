@@ -1,18 +1,19 @@
 /*
-*  $Id$
-*  
-*  Open Source Software
-*  
-*  Author: Mike Maloney, Cove Software, LLC
-*  
-*  $Log$
-*  Revision 1.1  2013/02/28 16:44:26  mmaloney
-*  New SearchCriteriaEditPanel implementation.
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.gui;
-
-import ilex.util.Logger;
 
 import java.awt.*;
 
@@ -44,10 +45,10 @@ public class PdtSelectDialog extends JDialog
 	{
 		setTitle("PDT Selection");
 		JPanel mainPanel = new JPanel(new BorderLayout());
-		
+
 		selectPanel = new PdtSelectPanel(this);
 		mainPanel.add(selectPanel, BorderLayout.CENTER);
-		
+
 		JButton reloadButton = new JButton("Reload");
 		reloadButton.addActionListener(
 			new java.awt.event.ActionListener()
@@ -75,19 +76,19 @@ public class PdtSelectDialog extends JDialog
 					cancelPressed();
 				}
 			});
-		
+
 		JPanel buttonPanel = new JPanel(new GridBagLayout());
 		buttonPanel.add(reloadButton,
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(4, 10, 4, 5), 0, 0));
 		buttonPanel.add(selectButton,
 			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(4, 10, 4, 5), 0, 0));
 		buttonPanel.add(cancelButton,
 			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(4, 5, 4, 5), 0, 0));
 
 		mainPanel.add(buttonPanel, BorderLayout.SOUTH);
@@ -97,9 +98,9 @@ public class PdtSelectDialog extends JDialog
 //			BorderFactory.createTitledBorder(
 //				BorderFactory.createEtchedBorder(EtchedBorder.RAISED), "Platform Selection"));
 
-		
-		
-		
+
+
+
 
 		getRootPane().setDefaultButton(selectButton);
         pack();
@@ -122,10 +123,9 @@ public class PdtSelectDialog extends JDialog
 
 	protected void reloadPressed()
 	{
-Logger.instance().info("PdtSelectDialog.reloadPressed");
 		selectPanel.reload();
 	}
-	
+
 	/** Closes dialog. */
 	void closeDlg()
 	{
@@ -133,8 +133,8 @@ Logger.instance().info("PdtSelectDialog.reloadPressed");
 		dispose();
 	}
 
-	/** 
-	  Called with true if multiple selection is to be allowed. 
+	/**
+	  Called with true if multiple selection is to be allowed.
 	  @param ok true if multiple selection is to be allowed.
 	*/
 	public void setMultipleSelection(boolean ok)
