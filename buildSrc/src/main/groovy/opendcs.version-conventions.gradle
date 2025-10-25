@@ -15,5 +15,5 @@ def static versionLabel(gitInfo) {
 
 def tmp_version = project.findProperty("versionOverride") ?: versionLabel(gitDetails)
 
-group = 'mil.army.usace.hec'
+group = 'org.opendcs'
 version = tmp_version
