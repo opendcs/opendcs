@@ -18,6 +18,10 @@ dependencies {
     api(libs.bundles.jdbi)
 }
 
+jar {
+    archiveBaseName = "opendcs-integrationtesting-fixtures"
+}
+
 publishing {
     publications {
         maven(MavenPublication) {
