@@ -109,13 +109,13 @@ final class ComputationResourcesTest
 	@Test
 	void testComputationRefMap()
 	{
-		ArrayList<ComputationInList> comps = new ArrayList<>();
-		ComputationInList dbComp = new ComputationInList(DbKey.createDbKey(16704L), "Flow Computation",
-				DbKey.createDbKey(197865L), DbKey.createDbKey(51981L),
-				true, "Computation to find the flow rate of a body of water");
+		ArrayList<DbComputation> comps = new ArrayList<>();
+		DbComputation dbComp = new DbComputation(DbKey.createDbKey(16704L), "Flow Computation");
+		dbComp.setAlgorithmId(DbKey.createDbKey(197865L));
+		dbComp.setAppId(DbKey.createDbKey(51981L));
+		dbComp.setEnabled(true);
+		dbComp.setComment("Computation to find the flow rate of a body of water");
 		dbComp.setAlgorithmName("Flow Algorithm");
-		dbComp.setDescription("Computation to determine flow rate");
-		dbComp.setProcessId(DbKey.createDbKey(1L));
 		DbCompAlgorithm dbCompAlgorithm = new DbCompAlgorithm("Flow Algorithm");
 		dbCompAlgorithm.setId(DbKey.createDbKey(197865L));
 		dbComp.setEnabled(true);
@@ -127,12 +127,12 @@ final class ComputationResourcesTest
 		assertEquals(1, apiComps.size());
 		ApiComputationRef apiComp = apiComps.get(0);
 		assertNotNull(apiComp);
-		assertEquals(dbComp.getComputationId().getValue(), apiComp.getComputationId());
-		assertEquals(dbComp.getComputationName(), apiComp.getName());
+		assertEquals(dbComp.getId().getValue(), apiComp.getComputationId());
+		assertEquals(dbComp.getName(), apiComp.getName());
 		assertEquals(dbComp.getAlgorithmName(), apiComp.getAlgorithmName());
-		assertEquals(dbComp.getDescription(), apiComp.getDescription());
-		assertEquals(dbComp.getProcessId().getValue(), apiComp.getProcessId());
-		assertEquals(dbComp.getProcessName(), apiComp.getProcessName());
+		assertEquals(dbComp.getComment(), apiComp.getDescription());
+		assertEquals(dbComp.getAppId().getValue(), apiComp.getProcessId());
+		assertEquals(dbComp.getApplicationName(), apiComp.getProcessName());
 		assertEquals(dbComp.getAlgorithmId().getValue(), apiComp.getAlgorithmId());
 	}
 }

@@ -124,7 +124,7 @@ public final class ComputationResources extends OpenDcsResource
 			{
 				compFilter.setIntervalCode(interval);
 			}
-			List<ApiComputationRef> computationRefs = map(dai.compEditList(compFilter));
+			List<ApiComputationRef> computationRefs = map(dai.listCompsForGUI(compFilter));
 			return Response.status(HttpServletResponse.SC_OK).entity(computationRefs).build();
 		}
 		catch(DbIoException e)
@@ -133,13 +133,13 @@ public final class ComputationResources extends OpenDcsResource
 		}
 	}
 
-	static ArrayList<ApiComputationRef> map(ArrayList<ComputationInList> computations)
+	static ArrayList<ApiComputationRef> map(ArrayList<DbComputation> computations)
 	{
 		ArrayList<ApiComputationRef> ret = new ArrayList<>();
-		for (ComputationInList comp : computations)
+		for (DbComputation comp : computations)
 		{
 			ApiComputationRef ref = new ApiComputationRef();
-			ref.setComputationId(comp.getComputationId().getValue());
+			ref.setComputationId(comp.getId().getValue());
 			if (comp.getAlgorithmId() != null)
 			{
 				ref.setAlgorithmId(comp.getAlgorithmId().getValue());
@@ -149,13 +149,13 @@ public final class ComputationResources extends OpenDcsResource
 				ref.setAlgorithmId(DbKey.NullKey.getValue());
 			}
 			ref.setAlgorithmName(comp.getAlgorithmName());
-			ref.setName(comp.getComputationName());
+			ref.setName(comp.getName());
 			ref.setEnabled(comp.isEnabled());
-			ref.setDescription(comp.getDescription());
-			ref.setProcessName(comp.getProcessName());
-			if (comp.getProcessId() != null)
+			ref.setDescription(comp.getComment());
+			ref.setProcessName(comp.getApplicationName());
+			if (comp.getAppId() != null)
 			{
-				ref.setProcessId(comp.getProcessId().getValue());
+				ref.setProcessId(comp.getAppId().getValue());
 			}
 			else
 			{
