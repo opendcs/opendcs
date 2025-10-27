@@ -64,10 +64,11 @@ if [ -d "$DCSTOOL_USERDIR/dep" ]; then
 fi
 CP=$CP:$DH/dep/*
 
-if [ -z "$DCSTOOL_USERDIR/logback.xml" ]; then
-  LOGBACK="$LOGBACK -Dlogback.configurationFile=$DCSTOOL_USERDIR/logback.xml"
+cmd="java -Xms120m $DECJ_MAXHEAP $DECJ_OPTS -cp $CP -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR"
+if [ -z "$DCSTOOL_USERDIR/logback.xml"]; then
+  cmd="$cmd -Dlogback.configurationFile=$DCSTOOL_USERDIR/logback.xml"
 else
-  LOGBACK="$LOGBACK -Dlogback.configurationFile=$DCSTOOL_HOME/logback.xml"
+  cmd="$cmd -Dlogback.configurationFile=$DCSTOOL_HOME/logback.xml"
 fi
 
 APP_NAME=$1
