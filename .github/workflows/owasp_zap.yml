@@ -27,7 +27,7 @@ jobs:
       - name: Run OWASP Zap
         run: ./gradlew :opendcs-integration-test:owaspZap --stacktrace
       - name: Upload Full HTML Report
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v5.0.0
         with:
           name: zap_report.html
           path: opendcs-integration-test/build/test-results/owasp_zap/zap_report.html
