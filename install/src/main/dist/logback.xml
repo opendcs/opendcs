@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration>
+
+<configuration>
+  <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
+  <import class="ch.qos.logback.classic.encoder.PatternLayoutEncoder"/>
+  <import class="ch.qos.logback.core.FileAppender"/>
+  <import class="ch.qos.logback.core.ConsoleAppender"/>
+  <variable name="APP_NAME" value="app"/>
+
+  <contextName>${APP_NAME}</contextName>
+
+  <appender name="STDERR" class="ConsoleAppender">
+    <encoder class="PatternLayoutEncoder">
+        <pattern>%date{ISO8601} %level [%thread] %logger %mdc %marker %kvp %msg %ex %n</pattern>
+    </encoder>
+    <target>System.err</target>
+  </appender>
+
+  <appender name="FILE" class="FileAppender">
+    <file>${APP_NAME}.log</file>
+    <encoder class="PatternLayoutEncoder">
+      <pattern>%date{ISO8601} %level [%thread] %logger %mdc %marker %kvp %msg %ex %n</pattern>
+    </encoder>    
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="FILE"/>
+    
+  </root>
+  <root level="debug">
+    <appender-ref ref="FILE"/>
+    <appender-ref ref="STDERR"/>
+  </root>
+</configuration>

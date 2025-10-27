@@ -70,15 +70,18 @@ public class BackgroundTsDbApp<App extends TsdbAppTemplate> implements Closeable
     private BackgroundTsDbApp(Class<?> clazz, String name, File propertiesFile, File logFile, EnvironmentVariables env,
                            String ...args) throws Exception
     {
+        this.name = name;
         ArrayList<String> theArgs = new ArrayList<>();
         theArgs.add("java");
         theArgs.add("-cp");
         theArgs.add(System.getProperty("opendcs.test.classpath")); // setup classpath
         theArgs.add("-DDCSTOOL_USERDIR="+propertiesFile.getParent());
         theArgs.add("-DDCSTOOL_HOME="+System.getProperty("DCSTOOL_HOME"));
+        theArgs.add("-DAPP_NAME=" + this.name);
+        theArgs.add("-Dlogback.configurationFile="+System.getProperty("resource.dir")+"/../test-config/logback-test-child.xml");
+        theArgs.add("-DtestLoggerPort="+System.getProperty("testLoggerPort"));
         theArgs.add(clazz.getName());
         theArgs.add("-a"); theArgs.add(name);
-        theArgs.add("-l"); theArgs.add(logFile.getAbsolutePath());
         theArgs.add("-P"); theArgs.add(propertiesFile.getAbsolutePath());
         theArgs.add("-d3");
         for (String arg: args)
@@ -86,7 +89,7 @@ public class BackgroundTsDbApp<App extends TsdbAppTemplate> implements Closeable
             theArgs.add(arg);
         }
         ProcessBuilder pb = new ProcessBuilder(theArgs.toArray(new String[0]));
-        this.name = name;
+
         Map<String,String> processEnv = pb.environment();
         processEnv.putAll(env.getVariables());
         pb.inheritIO();
@@ -102,7 +105,7 @@ public class BackgroundTsDbApp<App extends TsdbAppTemplate> implements Closeable
                 {
                     throw new RuntimeException(ex);
                 }
-            }, "ShutdownHook-name")
+            }, "ShutdownHook-" + this.name)
         );
     }
 

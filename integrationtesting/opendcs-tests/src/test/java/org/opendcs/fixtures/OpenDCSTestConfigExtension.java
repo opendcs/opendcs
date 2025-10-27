@@ -95,6 +95,8 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
         environment.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
         properties.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
         properties.set("INPUT_DATA",new File(TestResources.resourceDir,"/shared").getAbsolutePath());
+        properties.set("APP_NAME", "test-apps");
+        properties.set("logback.configurationFile", System.getProperty("DCSTOOL_HOME")+"/logback.xml");
         configuration.getEnvironment().forEach((k,v) -> environment.set(k,v));
     }
 
