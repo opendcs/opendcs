@@ -65,6 +65,11 @@ fi
 CP=$CP:$DH/dep/*
 
 cmd="java -Xms120m $DECJ_MAXHEAP $DECJ_OPTS -cp $CP -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR"
+if [ -z "$DCSTOOL_USERDIR/logback.xml"]; then
+  cmd="$cmd -Dlogback.configurationFile=$DCSTOOL_USERDIR/logback.xml"
+else
+  cmd="$cmd -Dlogback.configurationFile=$DCSTOOL_HOME/logback.xml"
+fi
 
 for a
 do

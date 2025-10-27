@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration>
+
+<configuration>
+  <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
+  <import class="ch.qos.logback.classic.encoder.PatternLayoutEncoder"/>
+  <import class="ch.qos.logback.core.FileAppender"/>
+  <import class="ch.qos.logback.core.ConsoleAppender"/>
+  <import class="ch.qos.logback.classic.net.server.ServerSocketReceiver"/>
+  <variable name="APP_NAME" value="test"/>
+
+  <contextName>${APP_NAME}</contextName>
+
+  <appender name="STDERR" class="ConsoleAppender">
+    <encoder class="PatternLayoutEncoder">
+        <pattern>%date{ISO8601} %level [%thread] %contextName %logger %mdc %marker %kvp %msg %ex %n</pattern>
+    </encoder>
+    <target>System.err</target>
+  </appender>
+
+  <appender name="FILE" class="FileAppender">
+    <file>${java.io.tmpdir}/tests.log</file>
+    <encoder class="PatternLayoutEncoder">
+      <pattern>%date{ISO8601} %level [%thread] %contextName %logger %mdc %marker %kvp %msg %ex %n</pattern>
+    </encoder>    
+  </appender>
+
+
+  <logger name="covesw" level="trace">
+    <appender-ref ref="FILE"/>
+  </logger>
+  <logger name="decodes" level="trace">
+    <appender-ref ref="FILE"/>
+  </logger>
+  <logger name="ilex" level="trace">
+    <appender-ref ref="FILE"/>
+  </logger>
+  <logger name="lqm" level="trace">
+    <appender-ref ref="FILE"/>
+  </logger>
+  <logger name="lrgs" level="trace">
+    <appender-ref ref="FILE"/>
+  </logger>
+  <logger name="org.opendcs" level="trace">
+    <appender-ref ref="FILE"/>
+  </logger>
+  <logger name="opendcs" level="trace">
+    <appender-ref ref="FILE"/>
+  </logger>
+
+
+  <root level="INFO">
+    <appender-ref ref="FILE"/>
+    <appender-ref ref="STDERR"/>
+  </root>
+
+  <receiver class="ServerSocketReceiver">
+    <port>${testLoggerPort}</port>
+  </receiver>
+</configuration>
