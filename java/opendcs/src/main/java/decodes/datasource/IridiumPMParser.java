@@ -20,6 +20,9 @@ import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import java.util.Date;
+import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.text.SimpleDateFormat;
 
 import lrgs.common.DcpMsg;
@@ -35,6 +38,9 @@ import decodes.db.Constants;
 public class IridiumPMParser extends PMParser
 {
 	private static final Logger logger = OpenDcsLoggerFactory.getLogger();
+	// Allow more flexibiity in Header parsing
+	private static final Pattern SEPARATOR_MATCHER = 
+		Pattern.compile("^(.*?)[\\s|,]+.*?$", Pattern.MULTILINE | Pattern.DOTALL);
 	// Performance Measurement tags:
 	public static final String LATITUDE = "latitude";
 	public static final String LONGITUDE = "longitude";
@@ -58,17 +64,18 @@ public class IridiumPMParser extends PMParser
 	*/
 	public void parsePerformanceMeasurements(RawMessage msg) throws HeaderParseException
 	{
-		String hdr = null;
+
+		final byte data[] = msg.getData();
+		if (data == null || data.length < 75)
+		{
+			throw new HeaderParseException("Header too short, 75 bytes is required");
+		}
+		final String hdr = new String(data);
 		try
 		{
 			DcpMsg origMsg = msg.getOrigDcpMsg();
-			byte data[] = msg.getData();
-			if (data == null || data.length < 75)
-			{
-				throw new HeaderParseException("Header too short, 75 bytes is required");
-			}
+			
 			msg.setPM(GoesPMParser.MESSAGE_LENGTH, new Variable(data.length));
-			hdr = new String(data);
 
 			if (origMsg != null)
 			{
@@ -127,13 +134,11 @@ public class IridiumPMParser extends PMParser
 					throw new HeaderParseException("Cannot parse time from Iridium header '" + s + "'", ex);
 				}
 
-				idx = hdr.indexOf("STAT=");
-				if (idx != -1)
+				setParameter("STAT=", hdr, val ->
 				{
-					int comma = hdr.indexOf(',', idx);
 					try
 					{
-						int sessionStat = Integer.parseInt(hdr.substring(idx+5, comma));
+						int sessionStat = Integer.parseInt(val);
 						if (sessionStat == 0 || sessionStat == 1 || sessionStat == 2)
 						{
 							msg.setPM(GoesPMParser.FAILURE_CODE, new Variable('G'));
@@ -145,17 +150,15 @@ public class IridiumPMParser extends PMParser
 						  	  .setCause(ex)
 						  	  .log("Bad STAT field in Iridium header '{}'",hdr);
 					}
-				}
+				});
 			}
 
 			// Process Location info if it is present.
-			int idx = hdr.indexOf("LAT=");
-			if (idx != -1)
+			setParameter("LAT=", hdr, val ->
 			{
-				int comma = hdr.indexOf(',', idx);
 				try
 				{
-					msg.setPM(LATITUDE, new Variable(Double.parseDouble(hdr.substring(idx+4, comma))));
+					msg.setPM(LATITUDE, new Variable(Double.parseDouble(val)));
 				}
 				catch (Exception ex)
 				{
@@ -163,14 +166,12 @@ public class IridiumPMParser extends PMParser
 						  .setCause(ex)
 						  .log("Bad LAT field in Iridium header '{}'",hdr);
 				}
-			}
-			idx = hdr.indexOf("LON=");
-			if (idx != -1)
+			});
+			setParameter("LON=", hdr, val ->
 			{
-				int comma = hdr.indexOf(',', idx);
 				try
 				{
-					msg.setPM(LONGITUDE, new Variable(Double.parseDouble(hdr.substring(idx+4, comma))));
+					msg.setPM(LONGITUDE, new Variable(Double.parseDouble(val)));
 				}
 				catch (Exception ex)
 				{
@@ -178,31 +179,26 @@ public class IridiumPMParser extends PMParser
 						  .setCause(ex)
 						  .log("Bad LON field in Iridium header '{}'", hdr);
 				}
-			}
-			idx = hdr.indexOf("RAD=");
-			if (idx != -1)
-			{
-				int comma = hdr.indexOf(',', idx);
+			});
+			setParameter("RAD=", hdr, val ->
+			{			
 				try
 				{
-					msg.setPM(CEP_RADIUS, new Variable(Double.parseDouble(hdr.substring(idx+4, comma))));
+					msg.setPM(CEP_RADIUS, new Variable(Double.parseDouble(val)));
 				}
-				catch(Exception ex)
+				catch (Exception ex)
 				{
 					logger.atWarn()
 						  .setCause(ex)
 						  .log("Bad RAD field in Iridium header '{}'", hdr);
 				}
-			}
+			});
 
-			idx = hdr.indexOf("PLEN=");
-			if (idx != -1)
+			setParameter("PLEN=", hdr, val ->
 			{
-				// Currently this is the last header so there's no comma after, but there is a space
-				int comma = hdr.indexOf(' ', idx);
 				try
 				{
-					msg.setPM(PAYLOAD_LEN, new Variable(Integer.parseInt(hdr.substring(idx+5, comma))));
+					msg.setPM(PAYLOAD_LEN, new Variable(Integer.parseInt(val)));
 				}
 				catch (Exception ex)
 				{
@@ -210,11 +206,11 @@ public class IridiumPMParser extends PMParser
 						.setCause(ex)
 						.log("Bad PLEN field in Iridium header '{}'", hdr);
 				}
-			}
+			});
 
 			// If iridiumIEInPayload is true, this length does not include the IE:02 portion;
 			// if false, the IE:02 part is removed, and this really is the length of the header.
-			idx = hdr.indexOf(" ");
+			int idx = hdr.indexOf(" ");
 			if (!hdr.substring(idx+1, idx+6).equals("IE:02"))
 			{
 				idx++;	// include the ending space in the header portion
@@ -227,6 +223,22 @@ public class IridiumPMParser extends PMParser
 		catch (Throwable ex)
 		{
 			throw new HeaderParseException("Error parsing header '" + hdr + "'", ex);
+		}
+	}
+
+	private void setParameter(String parameter, String header, Consumer<String> setter)
+	{
+		int paramIdx = header.indexOf(parameter);
+		if (paramIdx == -1)
+		{
+			return;
+		}
+		final String subStr = header.substring(paramIdx+parameter.length());
+		Matcher sep = SEPARATOR_MATCHER.matcher(subStr);
+		
+		if (sep.matches())
+		{
+			setter.accept(sep.group(1));
 		}
 	}
 
