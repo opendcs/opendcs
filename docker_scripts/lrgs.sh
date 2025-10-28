@@ -47,4 +47,6 @@ done
 exec java -Xms120m $DECJ_MAXHEAP -cp $CP \
      -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH \
      -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR -DLRGSHOME=$LRGSHOME \
-     lrgs.lrgsmain.LrgsMain -d3 -l /dev/stdout -F -k -
+     -Dlogback.configurationFile=$DCSTOOL_HOME/logback.xml \
+     -DAPP_NAME=$APP_NAME \
+     lrgs.lrgsmain.LrgsMain -F -k -
