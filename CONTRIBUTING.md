@@ -176,9 +176,20 @@ A large PR *may* be allowed in the following conditions
 Changes made *must* pass any tests that exist with the built-in Postgres and XML databases as appropriate to the given change.
 Changes to the tests are valid as required for api changes and the like.
 
-Code Changes *should* have a test provided. Preferably automated, description of a procedure is acceptable.
+Code Changes *must* have a test provided. 
 
-A trivial change *may* be accepted without changes by comment and approval by other committers. However, tests are preferred and make it easier to review code.
+A trivial change *may* be accepted without tests by comment and approval by other committers. However, tests are preferred and make it easier to review code.
+
+See https://opendcs-env.readthedocs.io/en/stable/dev-testing.html for additional guidance
+
+#### Acceptable forms of test
+
+1. Unit/Fucntional tests that validate behavior outside of an active instance
+2. Integration tests that validate behavior within an active instance (these can be limited to a single implementation.)
+3. Manual procedures in Gherkin feature syntax (see the manual tests directory within testing.)
+4. A Gui Scaffold or automated test in the integrationtest/gui directory
+
+Changes to, or new, Algorithms require test data that will function for at least one implementation. 
 
 ### Check Your Changes
 
