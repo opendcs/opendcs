@@ -187,6 +187,7 @@ tasks.register('integrationTestCWMS', Test) {
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcatalina.base=${layout.buildDirectory.file("tomcat")}"
     jvmArgs += "-Dopendcs.test.integration.db=CWMS-Oracle"
+    jvmArgs += "-Dtestcontainer.cwms.bypass.cwms.pass=dcs_user"
     def restWar = project(':opendcs-rest-api').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
     def guiWar = project(':opendcs-web-client').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
     jvmArgs += "-Dopendcs.restapi.warfile=${restWar}"
