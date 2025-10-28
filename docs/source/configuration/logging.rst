@@ -59,7 +59,7 @@ the required parameters. A table follows of java (-D) properties that can be set
 decj
 ====
 
-The script decj (and decj.bat) are used to setup the environment and parameters before starting java.
+The script decj (and decj.bat) are used to setup the environment and paramters before starting java.
 If `LOGBACK_OVERRIDE` is set any calculated values are set aside and *only* the parameters provided are used.
 
 NOTE: at the time of writing, decj.bat may not have been updated to process any of the logback options.
