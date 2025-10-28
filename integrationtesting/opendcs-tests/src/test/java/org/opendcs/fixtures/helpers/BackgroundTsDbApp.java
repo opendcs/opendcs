@@ -79,6 +79,7 @@ public class BackgroundTsDbApp<App extends TsdbAppTemplate> implements Closeable
         theArgs.add("-DDCSTOOL_USERDIR="+propertiesFile.getParent());
         theArgs.add("-DDCSTOOL_HOME="+System.getProperty("DCSTOOL_HOME"));
         theArgs.add("-DAPP_NAME=" + this.name);
+        theArgs.add("-Djava.io.tmpdir=" + System.getProperty("java.io.tmpdir"));
         theArgs.add("-Dlogback.configurationFile="+System.getProperty("resource.dir")+"/../test-config/logback-test-child.xml");
         theArgs.add("-DtestLoggerPort="+System.getProperty("testLoggerPort"));
         theArgs.add(clazz.getName());
@@ -90,7 +91,7 @@ public class BackgroundTsDbApp<App extends TsdbAppTemplate> implements Closeable
             theArgs.add(arg);
         }
         ProcessBuilder pb = new ProcessBuilder(theArgs.toArray(new String[0]));
-
+        log.atTrace().addArgument(() -> String.join(" ", theArgs)).log("Executing '{}'");
         Map<String,String> processEnv = pb.environment();
         processEnv.putAll(env.getVariables());
         pb.inheritIO();

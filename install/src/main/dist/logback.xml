@@ -1,35 +1,51 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE configuration>
-
 <configuration>
-  <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
-  <import class="ch.qos.logback.classic.encoder.PatternLayoutEncoder"/>
-  <import class="ch.qos.logback.core.FileAppender"/>
-  <import class="ch.qos.logback.core.ConsoleAppender"/>
-  <variable name="APP_NAME" value="app"/>
-
-  <contextName>${APP_NAME}</contextName>
-
-  <appender name="STDERR" class="ConsoleAppender">
-    <encoder class="PatternLayoutEncoder">
-        <pattern>%date{ISO8601} %level [%thread] %logger %mdc %marker %kvp %msg %ex %n</pattern>
-    </encoder>
-    <target>System.err</target>
-  </appender>
-
-  <appender name="FILE" class="FileAppender">
-    <file>${APP_NAME}.log</file>
-    <encoder class="PatternLayoutEncoder">
-      <pattern>%date{ISO8601} %level [%thread] %logger %mdc %marker %kvp %msg %ex %n</pattern>
-    </encoder>    
-  </appender>
-
-  <root level="INFO">
-    <appender-ref ref="FILE"/>
-    
-  </root>
-  <root level="debug">
-    <appender-ref ref="FILE"/>
-    <appender-ref ref="STDERR"/>
-  </root>
+    <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
+    <import class="ch.qos.logback.classic.encoder.PatternLayoutEncoder"/>
+    <import class="ch.qos.logback.core.FileAppender"/>
+    <import class="ch.qos.logback.core.ConsoleAppender"/>
+    <import class="ch.qos.logback.core.boolex.PropertyEqualityCondition"/>
+    <variable name="APP_NAME" value="${APP_NAME:-app}"/>
+    <variable name="LOG_DIR" value="${LOG_DIR:-${DCSTOOL_USERDIR}/logs}"/>
+    <variable name="LOG" value="${LOG_FILE:-${LOG_DIR}/${APP_NAME}.log}"/>
+    <variable name="LOG_LEVEL" value="${LOG_LEVEL:-INFO}"/>
+    <contextName>${APP_NAME}</contextName>
+    <appender name="STDERR" class="ConsoleAppender">
+        <encoder class="PatternLayoutEncoder">
+            <pattern>%date{ISO8601} %level [%thread] %logger %mdc %marker %kvp %msg %ex %n</pattern>
+        </encoder>
+        <target>System.err</target>
+    </appender>
+    <appender name="FILE" class="FileAppender">
+        <file>${LOG}</file>
+        <encoder class="PatternLayoutEncoder">
+            <pattern>%date{ISO8601} %level [%thread] %logger %mdc %marker %kvp %msg %ex %n</pattern>
+        </encoder>
+    </appender>
+    <logger name="covesw" level="${LOG_LEVEL}">
+        <appender-ref ref="FILE"/>
+    </logger>
+    <logger name="decodes" level="${LOG_LEVEL}">
+        <appender-ref ref="FILE"/>
+    </logger>
+    <logger name="ilex" level="${LOG_LEVEL}">
+        <appender-ref ref="FILE"/>
+    </logger>
+    <logger name="lqm" level="${LOG_LEVEL}">
+        <appender-ref ref="FILE"/>
+    </logger>
+    <logger name="lrgs" level="${LOG_LEVEL}">
+        <appender-ref ref="FILE"/>
+    </logger>
+    <logger name="org.opendcs" level="${LOG_LEVEL}">
+        <appender-ref ref="FILE"/>
+    </logger>
+    <logger name="opendcs" level="${LOG_LEVEL}">
+        <appender-ref ref="FILE"/>
+    </logger>
+    <root level="INFO">
+        <appender-ref ref="FILE"/>
+        <appender-ref ref="STDERR"/>
+    </root>
 </configuration>
