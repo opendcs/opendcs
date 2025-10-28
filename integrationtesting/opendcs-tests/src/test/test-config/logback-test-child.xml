@@ -1,21 +1,49 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE configuration>
-
 <configuration>
+  <import class="ch.qos.logback.classic.encoder.PatternLayoutEncoder"/>
+  <import class="ch.qos.logback.core.FileAppender"/>
   <import class="ch.qos.logback.classic.net.SocketAppender"/>
-  
-  <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
-  <variable name="APP_NAME" value="test-child"/>
+  <import class="ch.qos.logback.core.status.OnConsoleStatusListener"/>
+  <statusListener class="OnConsoleStatusListener"/>
+  <variable name="APP_NAME" value="${APP_NAME:-test-child}"/>
   <contextName>${APP_NAME}</contextName>
-
+  <appender name="FILE" class="FileAppender">
+    <file>${java.io.tmpdir}/tests-${APP_NAME}.log</file>
+    <encoder class="PatternLayoutEncoder">
+      <pattern>%date{ISO8601} %level [%thread] %contextName %logger %mdc %marker %kvp %msg %ex %n</pattern>
+    </encoder>
+  </appender>
+  <!-- While this likely works, the receiving end currently does not configure itself correct. -->
   <appender name="SOCKET" class="SocketAppender">
     <remoteHost>localhost</remoteHost>
     <port>${testLoggerPort}</port>
     <reconnectionDelay>10000</reconnectionDelay>
     <includeCallerData>false</includeCallerData>
   </appender>
-
-  <root level="DEBUG">
-    <appender-ref ref="SOCKET"/>
+  <logger name="covesw" level="trace">
+    <appender-ref ref="FILE"/>
+  </logger>
+  <logger name="decodes" level="trace">
+    <appender-ref ref="FILE"/>
+  </logger>
+  <logger name="ilex" level="trace">
+    <appender-ref ref="FILE"/>
+  </logger>
+  <logger name="lqm" level="trace">
+    <appender-ref ref="FILE"/>
+  </logger>
+  <logger name="lrgs" level="trace">
+    <appender-ref ref="FILE"/>
+  </logger>
+  <logger name="org.opendcs" level="trace">
+    <appender-ref ref="FILE"/>
+  </logger>
+  <logger name="opendcs" level="trace">
+    <appender-ref ref="FILE"/>
+  </logger>
+  <root level="INFO">
+    <!--<appender-ref ref="SOCKET"/>-->
+    <appender-ref ref="FILE"/>
   </root>
 </configuration>

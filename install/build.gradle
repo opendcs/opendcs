@@ -134,7 +134,7 @@ task runApp(type: Exec) {
         args "/c", binDir+app+ext, "-d3", "-l", "CON:"
     } else {
         executable binDir+app
-        args "-d3", "-l", "/dev/stdout"
+        args "-d3", "-DLOG_DIR=${runDir}"
     }
     if (!profile.equals("default")) {
         args += ["-P", profile]

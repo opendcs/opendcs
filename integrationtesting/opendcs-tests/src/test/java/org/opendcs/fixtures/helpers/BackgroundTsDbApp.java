@@ -7,9 +7,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import org.junit.function.ThrowingRunnable;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.tsdb.CpCompDependsUpdater;
 import decodes.tsdb.TsdbAppTemplate;
@@ -26,7 +27,7 @@ import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
  */
 public class BackgroundTsDbApp<App extends TsdbAppTemplate> implements Closeable
 {
-    private static final Logger log = Logger.getLogger(BackgroundTsDbApp.class.getName());
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     private String name;
     private Process app;
@@ -78,6 +79,7 @@ public class BackgroundTsDbApp<App extends TsdbAppTemplate> implements Closeable
         theArgs.add("-DDCSTOOL_USERDIR="+propertiesFile.getParent());
         theArgs.add("-DDCSTOOL_HOME="+System.getProperty("DCSTOOL_HOME"));
         theArgs.add("-DAPP_NAME=" + this.name);
+        theArgs.add("-Djava.io.tmpdir=" + System.getProperty("java.io.tmpdir"));
         theArgs.add("-Dlogback.configurationFile="+System.getProperty("resource.dir")+"/../test-config/logback-test-child.xml");
         theArgs.add("-DtestLoggerPort="+System.getProperty("testLoggerPort"));
         theArgs.add(clazz.getName());
@@ -89,7 +91,7 @@ public class BackgroundTsDbApp<App extends TsdbAppTemplate> implements Closeable
             theArgs.add(arg);
         }
         ProcessBuilder pb = new ProcessBuilder(theArgs.toArray(new String[0]));
-
+        log.atTrace().addArgument(() -> String.join(" ", theArgs)).log("Executing '{}'");
         Map<String,String> processEnv = pb.environment();
         processEnv.putAll(env.getVariables());
         pb.inheritIO();
