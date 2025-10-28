@@ -3,7 +3,8 @@
 <configuration>
     <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
     <import class="ch.qos.logback.classic.encoder.PatternLayoutEncoder"/>
-    <import class="ch.qos.logback.core.FileAppender"/>
+    <import class="ch.qos.logback.core.rolling.RollingFileAppender"/>
+    <import class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy"/>
     <import class="ch.qos.logback.core.ConsoleAppender"/>
     <import class="ch.qos.logback.core.boolex.PropertyEqualityCondition"/>
     <variable name="APP_NAME" value="${APP_NAME:-app}"/>
@@ -17,8 +18,13 @@
         </encoder>
         <target>System.err</target>
     </appender>
-    <appender name="FILE" class="FileAppender">
+    <appender name="FILE" class="RollingFileAppender">
         <file>${LOG}</file>
+        <rollingPolicy class="TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG}.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+        </rollingPolicy>
         <encoder class="PatternLayoutEncoder">
             <pattern>%date{ISO8601} %level [%thread] %logger %mdc %marker %kvp %msg %ex %n</pattern>
         </encoder>

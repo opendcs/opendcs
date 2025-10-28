@@ -35,6 +35,12 @@ if defined CP_SHARED_JAR_DIR (
     )
 )
 
+if exists "%DCSTOOL_USERDIR%\logback.xml" do (
+  set "LOGBACK=%LOGBACK% -Dlogback.configurationFile=$DCSTOOL_USERDIR/logback.xml"
+)
+else (
+  set "LOGBACK=%LOGBACK% -Dlogback.configurationFile=$DCSTOOL_HOME/logback.xml"
+)
 
 if exist "%DCSTOOL_USERDIR%/dep\" do (
   set "CLASSPATH=!CLASSPATH!;%DCSTOOL_USERDIR%/dep/*"

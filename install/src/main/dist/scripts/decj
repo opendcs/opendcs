@@ -63,7 +63,7 @@ if [ -d "$DCSTOOL_USERDIR/dep" ]; then
   CP=$CP:$DCSTOOL_USERDIR/dep/*
 fi
 CP=$CP:$DH/dep/*
-
+if [[ -z "$LOGBACK" ]]; then
 LOGBACK=""
 if [ -z "$DCSTOOL_USERDIR/logback.xml" ]; then
   LOGBACK="$LOGBACK -Dlogback.configurationFile=$DCSTOOL_USERDIR/logback.xml"
@@ -129,8 +129,11 @@ while [[ $# -gt 0 ]]; do
     shift
   fi
 done
-
-LOGBACK="$LOGBACK -DAPP_NAME=${APP_NAME} $LOG_FILE $LOG_LEVEL"
+if [[ -z "$LOGBACK_OVERRIDE" ]]; then
+  LOGBACK="$LOGBACK_OVERRIDE"
+else
+  LOGBACK="$LOGBACK -DAPP_NAME=${APP_NAME} $LOG_FILE $LOG_LEVEL"
+else
 
 cmd="java -Xms120m $DECJ_MAXHEAP $DECJ_OPTS -cp $CP -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR $LOGBACK $ARGS"
 echo "$LOGBACK"

@@ -25,4 +25,6 @@ done
 exec java -Xms120m $DECJ_MAXHEAP -cp $CP \
      -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH \
      -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR \
-     decodes.tsdb.CpCompDependsUpdater -d3 -l /dev/stdout -a $APPLICATION_NAME
+     -Dlogback.configurationFile=$DCSTOOL_HOME/logback.xml \
+     -DAPP_NAME=$APP_NAME \
+     decodes.tsdb.CpCompDependsUpdater -a $APPLICATION_NAME
