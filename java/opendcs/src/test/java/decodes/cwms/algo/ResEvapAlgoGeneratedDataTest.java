@@ -4,19 +4,47 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class for ResEvapAlgo
- * Includes tests for frustum volume and flow calculations using generated test data.
+ * Includes tests for frustum volume and flow calculations using calculated test data
+ * frustum formula for reference: (area1 + area2 + Math.sqrt(area1 * area2)) / 3.0 * depth;
  */
 
 final class ResEvapAlgoGeneratedDataTest
 {
 
     private static final double SECONDS_PER_DAY = 86400.0;
+    private final List<TestRow> calculatedTestRows = Arrays.asList(
+        new TestRow(1000.00, 999.50, 5000.00, 4990.00, 1000000.00000, 997502.50042),
+        new TestRow(999.50, 999.00, 4990.00, 4980.00, 997507.50042, 995015.00084),
+        new TestRow(999.00, 998.50, 4980.00, 4970.00, 995025.00084, 992537.50126),
+        new TestRow(998.50, 998.00, 4970.00, 4960.00, 992552.50126, 990070.00168),
+        new TestRow(998.00, 997.50, 4960.00, 4950.00, 990090.00168, 987612.50210),
+        new TestRow(997.50, 997.00, 4950.00, 4940.00, 987637.50211, 985165.00253),
+        new TestRow(997.00, 996.50, 4940.00, 4930.00, 985195.00253, 982727.50296),
+        new TestRow(996.50, 996.00, 4930.00, 4920.00, 982762.50296, 980300.00338),
+        new TestRow(996.00, 995.50, 4920.00, 4910.00, 980340.00339, 977882.50381),
+        new TestRow(995.50, 995.00, 4910.00, 4900.00, 977927.50382, 975475.00425),
+        new TestRow(995.00, 994.50, 4900.00, 4890.00, 975525.00426, 973077.50468),
+        new TestRow(994.50, 994.00, 4890.00, 4880.00, 973132.50469, 970690.00512),
+        new TestRow(994.00, 993.50, 4880.00, 4870.00, 970750.00513, 968312.50556),
+        new TestRow(993.50, 993.00, 4870.00, 4860.00, 968377.50557, 965945.00600),
+        new TestRow(993.00, 992.50, 4860.00, 4850.00, 966015.00601, 963587.50644),
+        new TestRow(992.50, 992.00, 4850.00, 4840.00, 963662.50645, 961240.00688),
+        new TestRow(992.00, 991.50, 4840.00, 4830.00, 961320.00689, 958902.50733),
+        new TestRow(991.50, 991.00, 4830.00, 4820.00, 958987.50734, 956575.00777),
+        new TestRow(991.00, 990.50, 4820.00, 4810.00, 956665.00779, 954257.50822),
+        new TestRow(990.50, 990.00, 4810.00, 4800.00, 954352.50824, 951950.00867),
+        new TestRow(990.00, 989.50, 4800.00, 4790.00, 952050.00869, 949652.50912),
+        new TestRow(989.50, 989.00, 4790.00, 4780.00, 949757.50914, 947365.00958),
+        new TestRow(989.00, 988.50, 4780.00, 4770.00, 947475.00960, 945087.51003),
+        new TestRow(988.50, 988.00, 4770.00, 4760.00, 945202.51006, 942820.01049)
+    );
 
     @Test
     void testSingleFrustumVolumeAndFlow()
@@ -35,37 +63,16 @@ final class ResEvapAlgoGeneratedDataTest
         assertEquals(expectedFlow, actualFlow, 0.0001, "Flow conversion mismatch");
     }
 
-
     @Test
-    void testGenerateTestRows()
-    {
-        List<TestRow> testRows = TestDataGenerator.generateTestRows();
-
-        assertNotNull(testRows, "Generated test rows should not be null");
-        assertEquals(24, testRows.size(), "There should be 24 test rows generated");
-
-        // Additional assertions to verify the content of the test rows
-        TestRow firstRow = testRows.get(0);
-        assertEquals(1000.0, firstRow.elevStart, 0.0001, "First row elevStart mismatch");
-        assertEquals(999.5, firstRow.elevEnd, 0.0001, "First row elevEnd mismatch");
-        assertEquals(5000.0, firstRow.areaStart, 0.0001, "First row areaStart mismatch");
-        assertEquals(4990.0, firstRow.areaEnd, 0.0001, "First row areaEnd mismatch");
-        assertEquals(1_000_000.0, firstRow.storStart, 0.0001, "First row storStart mismatch");
-        assertEquals(997502.5004, firstRow.storEnd, 0.0001, "First row storEnd mismatch");
-    }
-
-
-    @Test
-    void testHourlyFustumVolumeWithGeneratedData()
+    void testHourlyFrustumVolumeWithGeneratedData()
     {
         List<Executable> assertions = new ArrayList<>();
-        List<TestRow> testRows = TestDataGenerator.generateTestRows();
 
         double expectedTotalDailyVolumeM3 = 0.0;
         double actualTotalDailyVolumeM3 = 0.0;
-        int hours = testRows.size();
+        int hours = calculatedTestRows.size();
 
-        for (TestRow row : testRows)
+        for (TestRow row : calculatedTestRows)
         {
             double depthM = row.elevStart - row.elevEnd;
 
@@ -92,16 +99,15 @@ final class ResEvapAlgoGeneratedDataTest
 
 
     @Test
-    void testHourlyFustumFlowWithGeneratedData()
+    void testHourlyFrustumFlowWithGeneratedData()
     {
         List<Executable> assertions = new ArrayList<>();
-        List<TestRow> testRows = TestDataGenerator.generateTestRows();
 
         double expectedTotalFlowCMS = 0.0;
         double actualTotalDailyFlowCMS = 0.0;
-        int hours = testRows.size();
+        int hours = calculatedTestRows.size();
 
-        for (TestRow row : testRows)
+        for (TestRow row : calculatedTestRows)
         {
             double depthM = row.elevStart - row.elevEnd;
 
@@ -137,7 +143,8 @@ final class ResEvapAlgoGeneratedDataTest
 
 
     @Test
-    void testEdgeCases_ZeroAndExtremeDepth() {
+    void testEdgeCases_ZeroAndExtremeDepth()
+    {
         double area1 = 200.0;
         double area2 = 100.0;
 
@@ -146,8 +153,8 @@ final class ResEvapAlgoGeneratedDataTest
         assertEquals(0.0, ResEvapAlgo.getVolumeM3AsFlowCMS(0.0, SECONDS_PER_DAY), 1e-9, "Zero volume should yield zero flow");
 
         System.out.println("Zero depth test results: " +
-                "Frustum Volume = " + ResEvapAlgo.getFrustumVolumeM3(area1, area2, zeroDepth) +
-                "%nFrustum Flow = " + ResEvapAlgo.getVolumeM3AsFlowCMS(ResEvapAlgo.getFrustumVolumeM3(area1, area2, zeroDepth), SECONDS_PER_DAY)
+                "\nFrustum Volume = " + ResEvapAlgo.getFrustumVolumeM3(area1, area2, zeroDepth) +
+                "\nFrustum Flow = " + ResEvapAlgo.getVolumeM3AsFlowCMS(ResEvapAlgo.getFrustumVolumeM3(area1, area2, zeroDepth), SECONDS_PER_DAY)
         );
 
         double tinyDepth = 1e-6;
@@ -155,8 +162,8 @@ final class ResEvapAlgoGeneratedDataTest
         assertTrue(ResEvapAlgo.getVolumeM3AsFlowCMS(ResEvapAlgo.getFrustumVolumeM3(area1, area2, tinyDepth), SECONDS_PER_DAY) > 0, "Tiny depth should yield small positive flow");
 
         System.out.println("Tiny depth test results: " +
-                "Frustum Volume = " + ResEvapAlgo.getFrustumVolumeM3(area1, area2, tinyDepth) +
-                "%nFrustum Flow = " + ResEvapAlgo.getVolumeM3AsFlowCMS(ResEvapAlgo.getFrustumVolumeM3(area1, area2, tinyDepth), SECONDS_PER_DAY)
+                "\nFrustum Volume = " + ResEvapAlgo.getFrustumVolumeM3(area1, area2, tinyDepth) +
+                "\nFrustum Flow = " + ResEvapAlgo.getVolumeM3AsFlowCMS(ResEvapAlgo.getFrustumVolumeM3(area1, area2, tinyDepth), SECONDS_PER_DAY)
         );
 
         double largeDepth = 1000.0;
@@ -164,8 +171,8 @@ final class ResEvapAlgoGeneratedDataTest
         assertTrue(ResEvapAlgo.getVolumeM3AsFlowCMS(ResEvapAlgo.getFrustumVolumeM3(area1, area2, largeDepth), SECONDS_PER_DAY) > 0, "Large depth should yield positive flow");
 
         System.out.println("Large depth test results: " +
-                "Frustum Volume = " + ResEvapAlgo.getFrustumVolumeM3(area1, area2, largeDepth) +
-                "%nFrustum Flow = " + ResEvapAlgo.getVolumeM3AsFlowCMS(ResEvapAlgo.getFrustumVolumeM3(area1, area2, largeDepth), SECONDS_PER_DAY)
+                "\nFrustum Volume = " + ResEvapAlgo.getFrustumVolumeM3(area1, area2, largeDepth) +
+                "\nFrustum Flow = " + ResEvapAlgo.getVolumeM3AsFlowCMS(ResEvapAlgo.getFrustumVolumeM3(area1, area2, largeDepth), SECONDS_PER_DAY)
         );
     }
 
