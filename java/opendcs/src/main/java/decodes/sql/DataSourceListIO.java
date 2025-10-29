@@ -138,7 +138,7 @@ public class DataSourceListIO extends SqlDbObjIo
 		return readDS(id);
 	}
 	
-		public DataSource readDS(DbKey id)
+	public DataSource readDS(DbKey id)
 		throws DatabaseException
 	{
 		String q = "SELECT id, name, dataSourceType, dataSourceArg " +
@@ -148,7 +148,7 @@ public class DataSourceListIO extends SqlDbObjIo
 		{
 			// There should be only one row in the result set
 			if (!rs.next())
-				throw new DatabaseException(
+				throw new ValueNotFoundException(
 					"No DataSource found with id " + id);
 
 			DataSource ret = rs2ds(rs);
