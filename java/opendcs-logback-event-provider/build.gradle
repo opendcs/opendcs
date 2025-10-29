@@ -6,11 +6,10 @@ plugins {
     id 'java-library'
 }
 
-/* any dependencies here beyond slf4j-api should be thoroughly discussed
- */
 dependencies {
-    implementation project(':opendcs-annotations')
     api(libs.org.slf4j.api)
+    api(libs.ch.qos.logback)
+    implementation project(':opendcs-api')
 
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)
@@ -19,12 +18,12 @@ dependencies {
 publishing {
     publications {
         maven(MavenPublication) {
-            artifactId = 'opendcs-api'
+            artifactId = 'opendcs-logback-event-provider'
             from components.java
 
             pom {
-                name = 'OpenDCS API'
-                description = 'Core interfaces for Database interaction used by OpenDCS Components'
+                name = 'OpenDCS Logback Event Provider'
+                description = 'Event provider implementation to consume events from logback for the GUI and other systems.'
             }
         }
     }

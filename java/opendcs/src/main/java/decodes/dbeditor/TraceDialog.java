@@ -22,6 +22,8 @@ import java.awt.event.*;
 import java.util.ResourceBundle;
 
 import org.opendcs.gui.GuiHelpers;
+import org.opendcs.gui.models.LoggingEventListModel;
+import org.opendcs.logging.LoggingEvent;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -46,11 +48,8 @@ public class TraceDialog extends JDialog
 	private FlowLayout flowLayout1 = new FlowLayout();
 	private JLabel jLabel1 = new JLabel();
 	private JScrollPane eventScrollPane = new JScrollPane();
-	private JTextArea eventArea = new JTextArea();
+	private JList<LoggingEvent> eventArea = new JList<>(new LoggingEventListModel());
 	private JLabel errorLabel = new JLabel();
-	
-	private int maxMessages = 20000;
-	private int numMessages = 0;
 	private String closeText = null;
 
 	/**
@@ -114,8 +113,6 @@ public class TraceDialog extends JDialog
 		jPanel2.setLayout(flowLayout1);
 		jLabel1.setText(
 			dbeditLabels.getString("TraceDialog.logMsgs"));
-		eventArea.setEditable(false);
-		eventArea.setText("");
 		getContentPane().add(panel1);
 		panel1.add(jPanel1, BorderLayout.SOUTH);
 		jPanel1.add(closeButton, null);
@@ -150,7 +147,8 @@ public class TraceDialog extends JDialog
 	}
 
 	/**
-	 * Adds text to the dialog.
+	 * Adds text to the dialog. 
+	 * This is left in place for close text at the moment, it it otherwise a no-op.
 	 * @param text the text.
 	 */
 	public void addText(String text)
@@ -159,37 +157,6 @@ public class TraceDialog extends JDialog
 		{
 			this.setVisible(false);
 		}
-		if (numMessages <= maxMessages || autoCycle.isSelected())
-		{
-			SwingUtilities.invokeLater(() ->
-			{
-
-				if (numMessages == maxMessages && autoCycle.isSelected())
-				{
-					errorLabel.setText("");
-					String currentText = eventArea.getText();
-					eventArea.setText(currentText.substring(currentText.length() / 2));
-					numMessages = numMessages/2;
-				}
-
-				if (numMessages == maxMessages)
-				{
-					errorLabel.setText(
-						"Maximum number of messages (" + maxMessages + ") reached. " +
-						"Clear old messages or set to autocycle.");
-				}
-				else
-				{
-					eventArea.append(text);
-					numMessages++;
-				}
-
-				if (autoScroll.isSelected())
-				{
-					eventArea.setCaretPosition(eventArea.getDocument().getLength());
-				}
-			});
-		}
 	}
 
 	/**
@@ -197,8 +164,5 @@ public class TraceDialog extends JDialog
 	 */
 	public void clear()
 	{
-		errorLabel.setText("");
-		eventArea.setText("");
-		numMessages = 0;
 	}
 }
