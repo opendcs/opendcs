@@ -1,15 +1,17 @@
 package org.opendcs.logging.logback;
 
-import java.util.logging.Logger;
-
+import com.google.auto.service.AutoService;
 import org.opendcs.logging.LoggingEvent;
 import org.opendcs.logging.spi.LoggingEventProvider;
 import org.opendcs.util.RingBuffer;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.LoggerFactory;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 
+@AutoService(LoggingEventProvider.class)
 public final class LogbackEventProvider implements LoggingEventProvider
 {
     private final LogAppender appender;
@@ -32,8 +34,12 @@ public final class LogbackEventProvider implements LoggingEventProvider
                 )
             );
         }
-        LoggerContext ctx = (LoggerContext)factory;
-        ctx.getLogger("ROOT").addAppender(appender);
+        Logger log = (Logger)LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+        appender.setContext((LoggerContext)factory);
+        appender.setName("MemoryBuffer");
+        //log.setLevel(Level.TRACE);
+        log.addAppender(appender);
+        appender.start();
     }
 
     @Override

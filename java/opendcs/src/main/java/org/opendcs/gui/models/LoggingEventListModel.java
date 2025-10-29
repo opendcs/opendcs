@@ -15,9 +15,28 @@ public final class LoggingEventListModel extends AbstractListModel<LoggingEvent>
 
     public LoggingEventListModel()
     {
+        
         buffer = new LoggingEventBuffer.Builder()
-                    .withProvider(LoggingEventProvider.getProvider())
-                    .build();
+            .withProvider(LoggingEventProvider.getProvider())
+            .build();
+        events = buffer.getEvents();
+        final Thread t = new Thread(() -> 
+        {
+            while (true)
+            {
+                try
+                {
+                    this.fireContentsChanged(this, 0, getSize());
+                    Thread.sleep(100);
+                }
+                catch (InterruptedException ex)
+                {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }, "LoggingEventModel-update-thread");
+        t.setDaemon(true);
+        t.start();
     }
 
     public void setSize(int size)

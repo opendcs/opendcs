@@ -48,7 +48,7 @@ public class TraceDialog extends JDialog
 	private FlowLayout flowLayout1 = new FlowLayout();
 	private JLabel jLabel1 = new JLabel();
 	private JScrollPane eventScrollPane = new JScrollPane();
-	private JList<LoggingEvent> eventArea = new JList<>(new LoggingEventListModel());
+	private JList<LoggingEvent> eventArea;
 	private JLabel errorLabel = new JLabel();
 	private String closeText = null;
 
@@ -65,6 +65,7 @@ public class TraceDialog extends JDialog
 		{
 			jbInit();
 			pack();
+			eventArea = new JList<>(new LoggingEventListModel());
 		}
 		catch(Exception ex) 
 		{

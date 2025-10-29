@@ -9,7 +9,10 @@ plugins {
 dependencies {
     api(libs.org.slf4j.api)
     api(libs.ch.qos.logback)
+    implementation(libs.auto.service.annotations)
     implementation project(':opendcs-api')
+
+    annotationProcessor(libs.auto.service.processor)
 
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)
