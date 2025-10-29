@@ -63,8 +63,7 @@ if [ -d "$DCSTOOL_USERDIR/dep" ]; then
   CP=$CP:$DCSTOOL_USERDIR/dep/*
 fi
 CP=$CP:$DH/dep/*
-if [[ -z "$LOGBACK" ]]; then
-LOGBACK=""
+
 if [ -z "$DCSTOOL_USERDIR/logback.xml" ]; then
   LOGBACK="$LOGBACK -Dlogback.configurationFile=$DCSTOOL_USERDIR/logback.xml"
 else
@@ -98,8 +97,7 @@ while [[ $# -gt 0 ]]; do
         esac
         LOG_LEVEL="-DLOG_LEVEL=${levelStr}" ;;
       p)
-        # may be -P (profile) or it might be the -PP flag
-        echo "'$OPT' '$OPTARG'"
+        # may be a -p option or it might be the -pp flag
         if [ $OPTARG == "p" ]; then
           ARGS="$ARGS -pp"
           shift # skip ahead to the value
@@ -109,37 +107,34 @@ while [[ $# -gt 0 ]]; do
           ARGS="$ARGS -p $OPTARG"
         fi
         ;;
-      :) echo "colon case"; ARGS="$ARGS -$OPTARG" ;;
+      :) ARGS="$ARGS -$OPTARG" ;;
       \?)
-        echo "? case '$OPT' '$OPTARG'"
         if [ "$OPTARG" == "D" ]; then
+          shift
+          ARGS="$ARGS $1"
+        elif [ "$OPTARG" == "P" ]; then
           shift
           ARGS="$ARGS $1"
         else
           ARGS="$ARGS -$OPTARG"
         fi
         ;;
-      *) echo "* case"; ARGS="$ARGS $opt" ;;
+      *) ARGS="$ARGS $opt" ;;
       esac
     shift $((OPTIND - 1))
     unset OPTIND
   else
-    echo "non opt $1"
     ARGS="$ARGS $1"
     shift
   fi
 done
+
 if [[ -z "$LOGBACK_OVERRIDE" ]]; then
   LOGBACK="$LOGBACK_OVERRIDE"
 else
   LOGBACK="$LOGBACK -DAPP_NAME=${APP_NAME} $LOG_FILE $LOG_LEVEL"
-else
+fi
 
 cmd="java -Xms120m $DECJ_MAXHEAP $DECJ_OPTS -cp $CP -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR $LOGBACK $ARGS"
-echo "$LOGBACK"
-echo "Args@ $@"
-echo "Args* $*"
-echo "ArgsV $ARGS"
-echo "$cmd"
 
 eval $cmd
