@@ -114,6 +114,12 @@
     "displayName": "CWMS:Ratio"
   },
   {
+    "id": 128,
+    "standard": "CWMS",
+    "code": "%-RelativeHumidity",
+    "displayName": "CWMS:%-RelativeHumidity"
+  },
+  {
     "id": 138,
     "standard": "CWMS",
     "code": "Rotation",
@@ -257,4 +263,5 @@
     "code": "Pres",
     "displayName": "CWMS:Pres"
   }
+  
 ]

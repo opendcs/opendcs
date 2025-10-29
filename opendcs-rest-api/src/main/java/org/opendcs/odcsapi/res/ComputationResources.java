@@ -124,7 +124,7 @@ public final class ComputationResources extends OpenDcsResource
 			{
 				compFilter.setIntervalCode(interval);
 			}
-			List<ApiComputationRef> computationRefs = map(dai.listCompsForGUI(compFilter));
+			List<ApiComputationRef> computationRefs = map(dai.listComps(c -> compFilter.passes(c)));
 			return Response.status(HttpServletResponse.SC_OK).entity(computationRefs).build();
 		}
 		catch(DbIoException e)
@@ -133,7 +133,7 @@ public final class ComputationResources extends OpenDcsResource
 		}
 	}
 
-	static ArrayList<ApiComputationRef> map(ArrayList<DbComputation> computations)
+	static ArrayList<ApiComputationRef> map(List<DbComputation> computations)
 	{
 		ArrayList<ApiComputationRef> ret = new ArrayList<>();
 		for (DbComputation comp : computations)
