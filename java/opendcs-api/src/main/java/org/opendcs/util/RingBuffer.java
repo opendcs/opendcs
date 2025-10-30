@@ -1,5 +1,4 @@
 package org.opendcs.util;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -7,9 +6,9 @@ import java.util.List;
 import java.util.ListIterator;
 
 /**
- * A circular buffer 
+ * A circular buffer.
  */
-public class RingBuffer<T> implements Iterable<T>, List<T>
+public class RingBuffer<T> implements List<T>
 {
     // Performance hit, but easier to deal with initially
     private final LinkedList<T> list = new LinkedList<>();
@@ -43,12 +42,16 @@ public class RingBuffer<T> implements Iterable<T>, List<T>
     @Override
     public boolean addAll(Collection<? extends T> elements)
     {
-        final int numberNew = elements.size();
-        while (list.size() >= (maxSize-numberNew))
+        boolean ret = true;
+        for (T element: elements)
         {
-            list.removeFirst();
+            if (!add(element))
+            {
+                ret = false;
+                break;
+            }
         }
-        return list.addAll(elements);
+        return ret;
     }
 
     /**
@@ -175,7 +178,6 @@ public class RingBuffer<T> implements Iterable<T>, List<T>
     {
         return list.lastIndexOf(o);
     }
-
 
     @Override
     public ListIterator<T> listIterator()
