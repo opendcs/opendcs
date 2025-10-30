@@ -65,7 +65,6 @@ public class TraceDialog extends JDialog
 		{
 			jbInit();
 			pack();
-			eventArea = new JList<>(new LoggingEventListModel());
 		}
 		catch(Exception ex) 
 		{
@@ -127,6 +126,9 @@ public class TraceDialog extends JDialog
 		panel1.add(jPanel2, BorderLayout.NORTH);
 		jPanel2.add(jLabel1, null);
 		panel1.add(eventScrollPane, BorderLayout.CENTER);
+		eventArea = new JList<>(new LoggingEventListModel());
+		eventArea.setLayoutOrientation(JList.VERTICAL);
+		eventArea.setVisibleRowCount(-1);
 		eventScrollPane.getViewport().add(eventArea, null);
 		//eventScrollPane.setVerticalScrollBarPolicy(
 		//	JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);

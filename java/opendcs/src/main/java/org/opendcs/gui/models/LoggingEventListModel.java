@@ -3,6 +3,7 @@ package org.opendcs.gui.models;
 import java.util.List;
 
 import javax.swing.AbstractListModel;
+import javax.swing.SwingUtilities;
 
 import org.opendcs.logging.LoggingEvent;
 import org.opendcs.logging.spi.LoggingEventProvider;
@@ -26,8 +27,9 @@ public final class LoggingEventListModel extends AbstractListModel<LoggingEvent>
             {
                 try
                 {
-                    this.fireContentsChanged(this, 0, getSize());
-                    Thread.sleep(100);
+                    final int size = getSize();
+                    SwingUtilities.invokeLater(() -> this.fireIntervalAdded(this, 0, size));
+                    Thread.sleep(500);
                 }
                 catch (InterruptedException ex)
                 {

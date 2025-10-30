@@ -1,6 +1,7 @@
 package org.opendcs.logging;
 
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Map;
 
@@ -35,5 +36,11 @@ public final class LoggingEvent {
         this.keyValuePairs = Collections.unmodifiableMap(keyValuePairs);
         this.message = message;
         this.throwable = throwable;
+    }
+
+    @Override
+    public String toString()
+    {
+        return String.format("%s %s [%s] %s %s", timestamp.format(DateTimeFormatter.ISO_ZONED_DATE_TIME), level, threadName, loggerName, message);
     }
 }
