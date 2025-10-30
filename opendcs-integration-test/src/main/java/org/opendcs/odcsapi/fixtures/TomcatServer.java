@@ -278,6 +278,8 @@ public final class TomcatServer implements AutoCloseable
 	{
 		if(CwmsOracleConfiguration.NAME.equals(dbType))
 		{
+			// I have no idea why this is suddenly required but it was also affecting operations in
+			// runtime test environments where the required entries weren't present.
 			String unlockUser = "begin cwms_sec.unlock_user(?,?); end;";
 			String userPermissions = "begin execute immediate 'grant web_user to ' || ?; end;";
 			String dbOffice = System.getProperty(DB_OFFICE);
