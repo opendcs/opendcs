@@ -21,7 +21,7 @@ Feature: Comp Run Trace Dialog
         And  The user clicks Execute
         Then The list of messages is kept at the bottom so new messages are visible.
 
-    Scenario: WIthout Auto Scroll
+    Scenario: Without Auto Scroll
   
         Given A long computation
         When The AutoScroll button is disable
