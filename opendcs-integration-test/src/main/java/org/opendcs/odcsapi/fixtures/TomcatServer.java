@@ -278,6 +278,7 @@ public final class TomcatServer implements AutoCloseable
 	{
 		if(CwmsOracleConfiguration.NAME.equals(dbType))
 		{
+			String unlockUser = "begin cwms_sec.unlock_user(?,?); end;";
 			String userPermissions = "begin execute immediate 'grant web_user to ' || ?; end;";
 			String dbOffice = System.getProperty(DB_OFFICE);
 			String setWebUserPermissions = "begin\n" +
@@ -286,14 +287,19 @@ public final class TomcatServer implements AutoCloseable
 					"end;";
 			try(Connection connection = DriverManager.getConnection(System.getProperty(DB_URL), "CWMS_20",
 					System.getProperty(DB_PASSWORD));
-				PreparedStatement stmt1 = connection.prepareStatement(userPermissions);
-				PreparedStatement stmt2 = connection.prepareStatement(setWebUserPermissions))
+				PreparedStatement unlockUserStmt = connection.prepareStatement(unlockUser);
+				PreparedStatement userPermissionsStmt = connection.prepareStatement(userPermissions);
+				PreparedStatement setWebUserPermissionsStmt = connection.prepareStatement(setWebUserPermissions))
 			{
-				stmt1.setString(1, System.getProperty(DB_USERNAME));
-				stmt1.executeQuery();
-				stmt2.setString(1, System.getProperty(DB_USERNAME));
-				stmt2.setString(2, dbOffice);
-				stmt2.executeQuery();
+				final String username = System.getProperty(DB_USERNAME);
+				unlockUserStmt.setString(1, username);
+				unlockUserStmt.setString(2, dbOffice);
+				unlockUserStmt.executeQuery();
+				userPermissionsStmt.setString(1, username);
+				userPermissionsStmt.executeQuery();
+				setWebUserPermissionsStmt.setString(1, username);
+				setWebUserPermissionsStmt.setString(2, dbOffice);
+				setWebUserPermissionsStmt.executeQuery();
 			}
 			catch(SQLException e)
 			{
