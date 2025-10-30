@@ -17,6 +17,8 @@ package decodes.dbeditor;
 
 import java.awt.*;
 import javax.swing.*;
+import javax.swing.event.ListDataEvent;
+import javax.swing.event.ListDataListener;
 
 import java.awt.event.*;
 import java.util.ResourceBundle;
@@ -41,9 +43,7 @@ public class TraceDialog extends JDialog
 	private BorderLayout borderLayout1 = new BorderLayout();
 	private JPanel jPanel1 = new JPanel();
 	private JButton closeButton = new JButton();
-	private JButton clearButton = new JButton();
 	private JToggleButton autoScroll = new JToggleButton("autoScroll",true);
-	private JToggleButton autoCycle = new JToggleButton("autoCycle",false);
 	private JPanel jPanel2 = new JPanel();
 	private FlowLayout flowLayout1 = new FlowLayout();
 	private JLabel jLabel1 = new JLabel();
@@ -106,9 +106,6 @@ public class TraceDialog extends JDialog
 			dbeditLabels.getString("TraceDialog.title"));
 		closeButton.setText(genericLabels.getString("close"));
 		closeButton.addActionListener(e -> closeButton_actionPerformed(e));
-		clearButton.setText(genericLabels.getString("clear"));
-		clearButton.addActionListener(e -> clear());
-		autoCycle.setSelected(false);
 		autoScroll.setSelected(true);
 		jPanel2.setLayout(flowLayout1);
 		jLabel1.setText(
@@ -117,8 +114,6 @@ public class TraceDialog extends JDialog
 		panel1.add(jPanel1, BorderLayout.SOUTH);
 		jPanel1.add(closeButton, null);
 		jPanel1.add(autoScroll, null);
-		jPanel1.add(autoCycle, null);
-		jPanel1.add(clearButton, null);
 
 		errorLabel.setForeground(Color.RED); // Set text color to red for errors
 		jPanel1.add(errorLabel, null);
@@ -129,6 +124,35 @@ public class TraceDialog extends JDialog
 		eventArea = new JList<>(new LoggingEventListModel());
 		eventArea.setLayoutOrientation(JList.VERTICAL);
 		eventArea.setVisibleRowCount(-1);
+		eventArea.getModel().addListDataListener(new ListDataListener()
+		{
+
+			@Override
+			public void intervalAdded(ListDataEvent e)
+			{
+				setPosition();
+			}
+
+			@Override
+			public void intervalRemoved(ListDataEvent e)
+			{
+				setPosition();
+			}
+
+			@Override
+			public void contentsChanged(ListDataEvent e)
+			{
+				setPosition();
+			}
+
+			private void setPosition()
+			{
+				if (autoScroll.isEnabled())
+				{
+					eventArea.ensureIndexIsVisible(eventArea.getModel().getSize()-1);
+				}
+			}
+		});
 		eventScrollPane.getViewport().add(eventArea, null);
 		//eventScrollPane.setVerticalScrollBarPolicy(
 		//	JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);

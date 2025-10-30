@@ -16,7 +16,8 @@ public final class LoggingEventListModel extends AbstractListModel<LoggingEvent>
 
     public LoggingEventListModel()
     {
-        
+        // arguably there should only be one buffer shared by all instances of this model
+        // but this currently works and future improvements should come later.
         buffer = new LoggingEventBuffer.Builder()
             .withProvider(LoggingEventProvider.getProvider())
             .build();
