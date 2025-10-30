@@ -17,8 +17,12 @@ package decodes.dbeditor;
 
 import java.awt.*;
 import javax.swing.*;
+import javax.swing.event.ListDataEvent;
+import javax.swing.event.ListDataListener;
 
 import org.opendcs.gui.GuiHelpers;
+import org.opendcs.gui.models.LoggingEventListModel;
+import org.opendcs.logging.LoggingEvent;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -39,18 +43,13 @@ public class TraceDialog extends JDialog
 	private BorderLayout borderLayout1 = new BorderLayout();
 	private JPanel jPanel1 = new JPanel();
 	private JButton closeButton = new JButton();
-	private JButton clearButton = new JButton();
 	private JToggleButton autoScroll = new JToggleButton("autoScroll",true);
-	private JToggleButton autoCycle = new JToggleButton("autoCycle",false);
 	private JPanel jPanel2 = new JPanel();
 	private FlowLayout flowLayout1 = new FlowLayout();
 	private JLabel jLabel1 = new JLabel();
 	private JScrollPane eventScrollPane = new JScrollPane();
-	private JTextArea eventArea = new JTextArea();
+	private JList<LoggingEvent> eventArea;
 	private JLabel errorLabel = new JLabel();
-
-	private int maxMessages = 20000;
-	private int numMessages = 0;
 	private String closeText = null;
 
 	/**
@@ -105,21 +104,14 @@ public class TraceDialog extends JDialog
 			dbeditLabels.getString("TraceDialog.title"));
 		closeButton.setText(genericLabels.getString("close"));
 		closeButton.addActionListener(e -> closeButton_actionPerformed(e));
-		clearButton.setText(genericLabels.getString("clear"));
-		clearButton.addActionListener(e -> clear());
-		autoCycle.setSelected(false);
 		autoScroll.setSelected(true);
 		jPanel2.setLayout(flowLayout1);
 		jLabel1.setText(
 			dbeditLabels.getString("TraceDialog.logMsgs"));
-		eventArea.setEditable(false);
-		eventArea.setText("");
 		getContentPane().add(panel1);
 		panel1.add(jPanel1, BorderLayout.SOUTH);
 		jPanel1.add(closeButton, null);
 		jPanel1.add(autoScroll, null);
-		jPanel1.add(autoCycle, null);
-		jPanel1.add(clearButton, null);
 
 		errorLabel.setForeground(Color.RED); // Set text color to red for errors
 		jPanel1.add(errorLabel, null);
@@ -127,6 +119,38 @@ public class TraceDialog extends JDialog
 		panel1.add(jPanel2, BorderLayout.NORTH);
 		jPanel2.add(jLabel1, null);
 		panel1.add(eventScrollPane, BorderLayout.CENTER);
+		eventArea = new JList<>(new LoggingEventListModel());
+		eventArea.setLayoutOrientation(JList.VERTICAL);
+		eventArea.setVisibleRowCount(-1);
+		eventArea.getModel().addListDataListener(new ListDataListener()
+		{
+
+			@Override
+			public void intervalAdded(ListDataEvent e)
+			{
+				setPosition();
+			}
+
+			@Override
+			public void intervalRemoved(ListDataEvent e)
+			{
+				setPosition();
+			}
+
+			@Override
+			public void contentsChanged(ListDataEvent e)
+			{
+				setPosition();
+			}
+
+			private void setPosition()
+			{
+				if (autoScroll.isEnabled())
+				{
+					eventArea.ensureIndexIsVisible(eventArea.getModel().getSize()-1);
+				}
+			}
+		});
 		eventScrollPane.getViewport().add(eventArea, null);
 		//eventScrollPane.setVerticalScrollBarPolicy(
 		//	JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
@@ -149,6 +173,7 @@ public class TraceDialog extends JDialog
 
 	/**
 	 * Adds text to the dialog.
+	 * This is left in place for close text at the moment, it it otherwise a no-op.
 	 * @param text the text.
 	 */
 	public void addText(String text)
@@ -157,37 +182,6 @@ public class TraceDialog extends JDialog
 		{
 			this.setVisible(false);
 		}
-		if (numMessages <= maxMessages || autoCycle.isSelected())
-		{
-			SwingUtilities.invokeLater(() ->
-			{
-
-				if (numMessages == maxMessages && autoCycle.isSelected())
-				{
-					errorLabel.setText("");
-					String currentText = eventArea.getText();
-					eventArea.setText(currentText.substring(currentText.length() / 2));
-					numMessages = numMessages/2;
-				}
-
-				if (numMessages == maxMessages)
-				{
-					errorLabel.setText(
-						"Maximum number of messages (" + maxMessages + ") reached. " +
-						"Clear old messages or set to autocycle.");
-				}
-				else
-				{
-					eventArea.append(text);
-					numMessages++;
-				}
-
-				if (autoScroll.isSelected())
-				{
-					eventArea.setCaretPosition(eventArea.getDocument().getLength());
-				}
-			});
-		}
 	}
 
 	/**
@@ -195,8 +189,5 @@ public class TraceDialog extends JDialog
 	 */
 	public void clear()
 	{
-		errorLabel.setText("");
-		eventArea.setText("");
-		numMessages = 0;
 	}
 }

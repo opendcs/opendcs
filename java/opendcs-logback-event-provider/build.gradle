@@ -1,0 +1,33 @@
+plugins {
+    id 'opendcs.deps-conventions'
+    id 'opendcs.java-conventions'
+    id 'opendcs.publishing-conventions'
+    id 'opendcs.sonar-conventions'
+    id 'java-library'
+}
+
+dependencies {
+    api(libs.org.slf4j.api)
+    api(libs.ch.qos.logback)
+    implementation(libs.auto.service.annotations)
+    implementation project(':opendcs-api')
+
+    annotationProcessor(libs.auto.service.processor)
+
+    testImplementation enforcedPlatform(libs.junit.bom)
+    testImplementation(libs.bundles.junit)
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = 'opendcs-logback-event-provider'
+            from components.java
+
+            pom {
+                name = 'OpenDCS Logback Event Provider'
+                description = 'Event provider implementation to consume events from logback for the GUI and other systems.'
+            }
+        }
+    }
+}

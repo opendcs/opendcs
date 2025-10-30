@@ -1,0 +1,31 @@
+plugins {
+    id 'opendcs.deps-conventions'
+    id 'opendcs.java-conventions'
+    id 'opendcs.publishing-conventions'
+    id 'opendcs.sonar-conventions'
+    id 'java-library'
+}
+
+/* any dependencies here beyond slf4j-api should be thoroughly discussed
+ */
+dependencies {
+    implementation project(':opendcs-annotations')
+    api(libs.org.slf4j.api)
+
+    testImplementation enforcedPlatform(libs.junit.bom)
+    testImplementation(libs.bundles.junit)
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = 'opendcs-api'
+            from components.java
+
+            pom {
+                name = 'OpenDCS API'
+                description = 'Core interfaces for Database interaction used by OpenDCS Components'
+            }
+        }
+    }
+}

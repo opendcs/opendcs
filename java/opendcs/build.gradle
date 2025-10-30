@@ -21,6 +21,7 @@ configurations {
 dependencies {
     annotationProcessor(project(":opendcs-annotations"))
     api(project(":opendcs-annotations"))
+    api(project(":opendcs-api"))
     implementation(libs.bundles.oracle)
     implementation(libs.io.github.hakky54)
     implementation(libs.postgresql)
@@ -35,7 +36,7 @@ dependencies {
     implementation(libs.jfree.jcommon)
     implementation(libs.jfree.jfreechart)
     implementation(libs.jython.standalone)
-    
+
     implementation(libs.scijava.jep) {
         exclude group: "jama", module: "jama"
     }
