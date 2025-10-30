@@ -20,13 +20,13 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.RoutingSpec;
 import decodes.util.PropertySpec;
 import decodes.util.SensorPropertiesOwner;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
@@ -36,7 +36,7 @@ import ilex.util.TextUtil;
 */
 public class TabRatingCompResolver extends CompResolver implements SensorPropertiesOwner
 {
-	private static final org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	* The directory containing TABLE files. PlatformSensor properties need
 	* not contain the entire path.

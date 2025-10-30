@@ -27,7 +27,6 @@ import java.io.*;
 
 import decodes.util.CmdLineArgs;
 import ilex.gui.WindowUtility;
-import ilex.util.StderrLogger;
 import ilex.util.EnvExpander;
 import ilex.cmdline.*;
 

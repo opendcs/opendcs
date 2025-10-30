@@ -105,8 +105,7 @@ public class PollGUI extends TsdbAppTemplate
 		decodesDbIo = Database.getDb().getDbIo();
 		makeFrame();
 		noExitAfterRunApp = true;
-		int minPri = -1; // TODO: replacing logger will revisit usage of queue logger later.
-		queueLogger.setMinLogPriority(minPri);
+
 		epqt = new EventsPanelQueueThread(queueLogger, eventsPanel);
 		epqt.start();
 		theFrame.setVisible(true);

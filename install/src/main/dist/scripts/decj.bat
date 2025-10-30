@@ -9,8 +9,6 @@ popd
 
 set "CLASSPATH=%BIN_PATH%opendcs.jar;%BIN_PATH%hibernate.cfg.xml"
 
-set "CLASSPATH=!CLASSPATH!"
-
 if not defined DCSTOOL_USERDIR (
   set "DCSTOOL_USERDIR=%APPDATA%\.opendcs"
 )
@@ -35,11 +33,17 @@ if defined CP_SHARED_JAR_DIR (
     )
 )
 
+set "LOGBACK="
+if exist "%DCSTOOL_USERDIR%\logback.xml" (
+  set "LOGBACK=!LOGBACK! -Dlogback.configurationFile=%DCSTOOL_USERDIR%\logback.xml"
+) else (
+  set "LOGBACK=!LOGBACK! -Dlogback.configurationFile=%APP_PATH%\logback.xml"
+)
 
-if exist "%DCSTOOL_USERDIR%/dep\" do (
-  set "CLASSPATH=!CLASSPATH!;%DCSTOOL_USERDIR%/dep/*"
+if exist "%DCSTOOL_USERDIR%\dep\" (
+  set "CLASSPATH=!CLASSPATH!;%DCSTOOL_USERDIR%\dep\*"
   )
 
-set "CLASSPATH=!CLASSPATH!;%APP_PATH%/dep/*"
+set "CLASSPATH=!CLASSPATH!;%APP_PATH%\dep\*"
 
-java -Xms240m %DECJ_MAXHEAP% %DECJ_OPTS% -cp "!CLASSPATH!" -DDCSTOOL_HOME="%APP_PATH%" -DDECODES_INSTALL_DIR="%APP_PATH%" -DDCSTOOL_USERDIR="%DCSTOOL_USERDIR%" %*%
+java -Xms240m %DECJ_MAXHEAP% %DECJ_OPTS% -cp "!CLASSPATH!" -DDCSTOOL_HOME="%APP_PATH%" -DDECODES_INSTALL_DIR="%APP_PATH%" -DDCSTOOL_USERDIR="%DCSTOOL_USERDIR%" %*

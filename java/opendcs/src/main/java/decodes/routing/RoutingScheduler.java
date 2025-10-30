@@ -157,7 +157,11 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 		// Routing Scheduler can survive DB going down.
 		surviveDatabaseBounce = true;
 
-		try { hostname = InetAddress.getLocalHost().getHostName(); }
+
+		try
+		{
+			hostname = InetAddress.getLocalHost().getHostName();
+		}
 		catch(Exception ex)
 		{
 			log.atWarn().setCause(ex).log("Cannot determine hostname, will use 'localhost'");

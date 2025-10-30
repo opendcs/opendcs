@@ -8,6 +8,7 @@ dependencies {
     implementation project(":opendcs")
     implementation project(":testing:fixtures")
     testImplementation enforcedPlatform(libs.junit.bom)
+    testImplementation(libs.ch.qos.logback)
     testImplementation(libs.bundles.junit)
     testImplementation(libs.commons.io)
     testImplementation(libs.apache.derby)

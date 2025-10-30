@@ -14,6 +14,9 @@ def commonJacocoExcludes = [
   "**/pkg_resources/**"
 ]
 
+configurations {
+    extra
+}
 
 dependencies {
     implementation project(":install")
@@ -26,6 +29,8 @@ dependencies {
         builtBy ":install:installDist"
     }
 
+    extra(libs.ch.qos.logback) // need to manually add this to classpath in test tasks
+
     testImplementation project(":testing:fixtures")
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.testcontainers.core)
@@ -37,6 +42,7 @@ dependencies {
     testImplementation(libs.bundles.junit.platform)
     testImplementation(libs.commons.io)
     testImplementation(libs.apache.derby)
+    testImplementation(libs.ch.qos.logback)
     testImplementation(libs.fasterxml.jackson.databind)
     testImplementation(libs.webcompere.system.stubs.jupiter)
 }
@@ -71,7 +77,8 @@ testEngines.each { engine ->
         def install = project(":install")
         def stageDir = install.layout.getBuildDirectory().dir("install/${install.distributions.main.distributionBaseName.get()}").get()
         def classPath = (project(':opendcs').jar.outputs.files
-                    + project(":opendcs").configurations.runtimeClasspath).asPath
+                    + project(":opendcs").configurations.runtimeClasspath
+                    + configurations.extra).asPath
         inputs.property "opendcs.test.engine", engine
 
         systemProperties += project.properties.findAll {k, v -> k.startsWith("opendcs")}
@@ -83,7 +90,9 @@ testEngines.each { engine ->
         jvmArgs += "-Dopendcs.test.classpath=${classPath}"
         jvmArgs += "-Dresource.dir=${projectDir}/src/test/resources" // TODO: make clearer
         jvmArgs += "-DDCSTOOL_HOME=${stageDir}"
-        jvmArgs += "-Djava.util.logging.config.file=${projectDir}/src/test/test-config/logging.properties"
+        jvmArgs += "-Dlogback.configurationFile=${projectDir}/src/test/test-config/logback-test-driver.xml"
+        jvmArgs += "-DAPP_NAME=tests"
+        jvmArgs += "-DtestLoggerPort="+ project.findProperty("testLoggerPort") ?: "35356"
 
         reports {
             html {}

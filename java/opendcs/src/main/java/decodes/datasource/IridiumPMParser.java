@@ -40,7 +40,7 @@ public class IridiumPMParser extends PMParser
 {
 	private static final Logger logger = OpenDcsLoggerFactory.getLogger();
 	// Allow more flexibiity in Header parsing
-	private static final Pattern SEPARATOR_MATCHER =
+	private static final Pattern SEPARATOR_MATCHER = 
 		Pattern.compile("^(.*?)[\\s|,]+.*?$", Pattern.MULTILINE | Pattern.DOTALL);
 	// Performance Measurement tags:
 	public static final String LATITUDE = "latitude";
@@ -75,7 +75,7 @@ public class IridiumPMParser extends PMParser
 		try
 		{
 			DcpMsg origMsg = msg.getOrigDcpMsg();
-
+			
 			msg.setPM(GoesPMParser.MESSAGE_LENGTH, new Variable(data.length));
 
 			if (origMsg != null)
@@ -182,7 +182,7 @@ public class IridiumPMParser extends PMParser
 				}
 			});
 			setParameter("RAD=", hdr, val ->
-			{
+			{			
 				try
 				{
 					msg.setPM(CEP_RADIUS, new Variable(Double.parseDouble(val)));
@@ -236,7 +236,7 @@ public class IridiumPMParser extends PMParser
 		}
 		final String subStr = header.substring(paramIdx+parameter.length());
 		Matcher sep = SEPARATOR_MATCHER.matcher(subStr);
-
+		
 		if (sep.matches())
 		{
 			setter.accept(sep.group(1));
