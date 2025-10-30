@@ -1,6 +1,7 @@
 package decodes.cwms.resevapcalc;
 
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Arrays;
@@ -31,37 +32,43 @@ class ResWaterTemperatureComputeTest
         }
     }
 
-
-    @MethodSource("getLayerIndexValues")
+    @MethodSource("layerParams")
     @ParameterizedTest
-    void testAvgRhow(int index)
+    void testAvgRhow(int index, double rhow, double depth, double volume,
+                     double expectedDepth, double expectedVol)
     {
         // using depth average
         double avgRhowDepth = ResWaterTemperatureCompute.getAvgRhow(index, RHOW_VALUES, DEPTH_VALUES);
-        double totalDepth = Arrays.stream(DEPTH_VALUES).limit(index + 1).sum();
-        double totalDensityDepth = Arrays.stream(RHOW_DEPTH_PRODUCTS).limit(index + 1).sum();
-        double expectedDepth = totalDensityDepth / totalDepth;
-
         assertEquals(expectedDepth, avgRhowDepth, 0.0001, "Depth Average: Average Rhow should match the set value");
 
         // using volumetric average
         double avgRhowVol = ResWaterTemperatureCompute.getAvgRhow(index, RHOW_VALUES, VOLUME_VALUES);
-        double totalVolume = Arrays.stream(VOLUME_VALUES).limit(index + 1).sum();
-        double totalDensityVolume = Arrays.stream(RHOW_VOLUME_PRODUCTS).limit(index + 1).sum();
-        double expectedVol = totalDensityVolume / totalVolume;
-
         System.out.printf("layer %d: Rhow=%f, Depth=%f, Volume=%f%n AvgRhowDepth=%f, AvgRhowVolume=%f%n",
-                index, RHOW_VALUES[index], DEPTH_VALUES[index], VOLUME_VALUES[index], avgRhowDepth, avgRhowVol);
-
+                index, rhow, depth, volume, avgRhowDepth, avgRhowVol);
         assertEquals(expectedVol, avgRhowVol, 0.0001, "Volume Average: Average Rhow should match the set value");
-
     }
 
-
-    static Stream<Integer> getLayerIndexValues()
+    static Stream<Arguments> layerParams()
     {
         return IntStream.range(0, RHOW_VALUES.length)
-                .boxed();
-    }
+                .mapToObj(i ->
+                {
+                    double totalDepth = Arrays.stream(DEPTH_VALUES).limit(i + 1).sum();
+                    double totalDensityDepth = Arrays.stream(RHOW_DEPTH_PRODUCTS).limit(i + 1).sum();
+                    double expectedDepth = totalDensityDepth / totalDepth;
 
+                    double totalVolume = Arrays.stream(VOLUME_VALUES).limit(i + 1).sum();
+                    double totalDensityVolume = Arrays.stream(RHOW_VOLUME_PRODUCTS).limit(i + 1).sum();
+                    double expectedVol = totalDensityVolume / totalVolume;
+
+                    return Arguments.of(
+                            i,
+                            RHOW_VALUES[i],
+                            DEPTH_VALUES[i],
+                            VOLUME_VALUES[i],
+                            expectedDepth,
+                            expectedVol
+                    );
+                });
+    }
 }
