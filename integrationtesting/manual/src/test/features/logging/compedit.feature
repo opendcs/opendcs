@@ -8,7 +8,7 @@ Feature: Comp Run Trace Dialog
     
     Scenario: With Tracing open, logs are shown
 
-        When The user clicks the "Trace" button
+        When The user clicks the "Trace Execution" button
         Then The TraceDialog is opened
 
         When The user clicks the "Execute" button
