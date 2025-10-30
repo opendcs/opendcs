@@ -2035,7 +2035,7 @@ public class LauncherFrame extends JFrame implements ProcWaiterCallback
             if (File.separatorChar == '\\')
                 launchCmd = launchCmd + ".bat";
             launchCmd = launchCmd + " -pp " + listenPort + " -P " + profile.getFile().getAbsolutePath()
-                + " -l " + "launcher-" + profile.getName() + ".log -d1";
+                + " -DAPP_NAME=launcher-" + profile.getName() + " -DLOG_DIR=${LOG_DIR:-$DCSTOOL_USERDIR}} -d1";
             try
             {
                 log.info("No launcher exists for profile '{}' -- launching command '{}'",

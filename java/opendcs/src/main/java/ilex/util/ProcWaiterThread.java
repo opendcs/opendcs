@@ -22,6 +22,7 @@ import java.io.InputStreamReader;
 import java.util.Map;
 
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.MDC;
 
 /**
 You have to be careful when spawning processes from within Java to process
@@ -145,6 +146,8 @@ public class ProcWaiterThread extends Thread
         Thread isr =
                 new Thread(() ->
                 {
+                    MDC.put("LauncherChild", this.name);
+                    MDC.put("IOStream", "Standard Out");
                     try (BufferedReader reader = new BufferedReader(new InputStreamReader(is)))
                     {
                         String line = null;
@@ -158,7 +161,7 @@ public class ProcWaiterThread extends Thread
                     {
                         processLogger.atError()
                                      .setCause(ex)
-                                     .log("{} error on output stream.", name);
+                                     .log("Error on output stream.");
                     }
                 });
         isr.setDaemon(true);
@@ -171,6 +174,8 @@ public class ProcWaiterThread extends Thread
         Thread esr =
                 new Thread(() ->
                 {
+                    MDC.put("LauncherChild", this.name);
+                    MDC.put("IOStream", "Standard Error");
                     try (BufferedReader reader = new BufferedReader(new InputStreamReader(es)))
                     {
                         String line = null;

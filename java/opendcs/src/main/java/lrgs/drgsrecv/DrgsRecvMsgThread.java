@@ -27,7 +27,6 @@ import java.util.Vector;
 import ilex.net.BasicClient;
 import ilex.util.ByteUtil;
 import ilex.util.EnvExpander;
-import ilex.util.FileLogger;
 import ilex.util.IDateFormat;
 
 import lrgs.archive.MsgArchive;
@@ -119,7 +118,6 @@ public class DrgsRecvMsgThread extends BasicClient implements Runnable, LrgsInpu
 
 	protected int dataSourceId = lrgs.db.LrgsConstants.undefinedId;
 	protected LrgsMain lrgsMain;
-	protected final FileLogger activityLogger = null;  // still referenced by downstream classes. Will handle with FileLogger is deleted.
 	protected boolean wasNone = false;
 	protected DrgsConnectCfg myCfg = null;
 	public int myType = DL_DRGSCON;

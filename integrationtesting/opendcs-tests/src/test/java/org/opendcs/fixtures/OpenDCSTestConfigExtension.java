@@ -31,13 +31,13 @@ import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
 import org.opendcs.fixtures.helpers.TestResources;
 import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.fixtures.spi.ConfigurationProvider;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.Database;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesSettings;
-import ilex.util.FileLogger;
 import lrgs.gui.DecodesInterface;
 import uk.org.webcompere.systemstubs.ThrowingRunnable;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
@@ -47,7 +47,7 @@ import uk.org.webcompere.systemstubs.security.SystemExit;
 
 public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEachCallback, AfterAllCallback, TestExecutionListener
 {
-    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(OpenDCSTestConfigExtension.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     private static Configuration configuration = null;
     private static Map<String,BackgroundTsDbApp<? extends TsdbAppTemplate>> runningApps = new HashMap<>();
@@ -91,10 +91,12 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
         properties.setup();
         environment.setup();
         File userDir = configuration.getUserDir();
-        logger.info("DCSTOOL_USERDIR="+userDir);
+        log.info("DCSTOOL_USERDIR="+userDir);
         environment.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
         properties.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
         properties.set("INPUT_DATA",new File(TestResources.resourceDir,"/shared").getAbsolutePath());
+        properties.set("APP_NAME", "test-apps");
+        properties.set("logback.configurationFile", System.getProperty("DCSTOOL_HOME")+"/logback.xml");
         configuration.getEnvironment().forEach((k,v) -> environment.set(k,v));
     }
 
@@ -118,7 +120,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
             }
             catch(Throwable t)
             {
-                logger.atError()
+                log.atError()
                       .setCause(t)
                       .log("Unable to initialize configuration.");
                 configError = true;
@@ -127,10 +129,10 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
         }
         else if (configError)
         {
-            logger.warn("Skipping 2nd attempt to start database.");
+            log.warn("Skipping 2nd attempt to start database.");
         }
 
-        logger.info("Initializing decodes.");
+        log.info("Initializing decodes.");
         DecodesSettings settings = DecodesSettings.instance();
         Properties props = new Properties();
         try(InputStream propStream = configuration.getPropertiesFile().toURI().toURL().openStream())
@@ -165,7 +167,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
     private void startOrCheckApplications(Object testInstance, Method testMethod, ExtensionContext ctx, EnvironmentVariables environment,
             SystemProperties properties, SystemExit exit) throws Exception
     {
-        logger.info("Starting or Checking required applications.");
+        log.info("Starting or Checking required applications.");
         ArrayList<TsdbAppRequired> requiredApps = new ArrayList<>();
         TsdbAppRequired apps[] = testInstance.getClass().getAnnotationsByType(TsdbAppRequired.class);
         for (TsdbAppRequired app: apps)
@@ -184,7 +186,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
             BackgroundTsDbApp<? extends TsdbAppTemplate> runningApp = runningApps.get(app.appName());
             if (runningApp == null)
             {
-                logger.info("Starting Application " + app.appName() + "{" + app.app().getName()+"}");
+                log.info("Starting Application " + app.appName() + "{" + app.app().getName()+"}");
                 runningApp = BackgroundTsDbApp.forApp(
                                 app.app(),app.appName(),configuration.getPropertiesFile(),
                                 setupLog(app.appName()+".log"),environment
@@ -347,7 +349,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
     @Override
     public void testPlanExecutionStarted(TestPlan testPlan)
     {
-        logger.info("All tests are starting.");
+        log.info("All tests are starting.");
         try
         {
             Field preventDecodesShutdownField = DecodesInterface.class.getDeclaredField("preventDecodesShutdown");
@@ -360,7 +362,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
         }
         if (configuration == null)
         {
-            logger.warn("CREATING CONFIGURATION");
+            log.warn("CREATING CONFIGURATION");
             String engine = System.getProperty("opendcs.test.engine");
             if (engine == null)
             {

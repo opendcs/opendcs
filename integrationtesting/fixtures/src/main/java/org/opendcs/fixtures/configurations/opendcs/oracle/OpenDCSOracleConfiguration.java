@@ -39,7 +39,6 @@ import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesSettings;
-import ilex.util.FileLogger;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
 import opendcs.dao.LoadingAppDao;

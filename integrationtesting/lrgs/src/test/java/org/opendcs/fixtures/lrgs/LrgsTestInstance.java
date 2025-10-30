@@ -10,7 +10,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.opendcs.tls.TlsMode;
 
-import ilex.util.FileLogger;
 import ilex.util.QueueLogger;
 import lrgs.archive.MsgArchive;
 import lrgs.lrgsmain.LrgsConfig;
@@ -24,7 +23,6 @@ public class LrgsTestInstance
     private final LrgsMain lrgs;
     private final MsgArchive archive;
     private final QueueLogger queueLogger;
-    private final FileLogger fileLogger;
     private final File configFile;
     private final Thread lrgsThread;
 
@@ -66,7 +64,6 @@ public class LrgsTestInstance
         }
         new File(lrgsHome,"netlist").mkdirs();
         queueLogger = new QueueLogger("");
-        fileLogger = new FileLogger("lrgs", new File(lrgsHome,"lrgslog").getAbsolutePath(), 200*1024*1024);
         SystemExit exit = new SystemExit();
         lrgs = new LrgsMain("-", configFile.getAbsolutePath());
 

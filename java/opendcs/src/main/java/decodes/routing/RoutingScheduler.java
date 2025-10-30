@@ -1,6 +1,6 @@
  /**
  * Copyright 2014 Cove Software, LLC
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,9 +22,7 @@ import ilex.util.EnvExpander;
 import ilex.util.ServerLock;
 import ilex.util.PropertiesUtil;
 import ilex.util.FileServerLock;
-import ilex.util.StderrLogger;
 import ilex.util.TextUtil;
-import ilex.util.ThreadLogger;
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -35,7 +33,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.concurrent.ExecutorService;
 
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -77,9 +74,9 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	protected static String module = "RoutingScheduler";
-	static StringToken lockFileArg = new StringToken("k", 
+	static StringToken lockFileArg = new StringToken("k",
 		"Optional Lock File", "", TokenOptions.optSwitch, "");
-	static BooleanToken windowsSvcArg = new BooleanToken("w", "Run as Windows Service", "", 
+	static BooleanToken windowsSvcArg = new BooleanToken("w", "Run as Windows Service", "",
 		TokenOptions.optSwitch, false);
 
 	/** Holds app name, id, and description. */
@@ -90,43 +87,42 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 	protected boolean shutdownFlag = false;
 
 	protected String hostname = null;
-	
+
 	/*** Purge entries older than this many days */
 	public long purgeBeforeDays = 30;
 	public static long MSEC_PER_DAY = 24 * 3600 * 1000L;
-	
+
 	/** Number of seconds at which to purge old status record from the database */
 	public long oldStatusPurgeInterval = 3600L; // default = 1 hr.
 
 	/** Number of seconds at which to refresh schedule entries from the database */
 	public long refreshSchedInterval = 60L;   // default # sec.
-	
+
 	private PropertySpec[] myProps =
 	{
 		new PropertySpec("monitor", PropertySpec.BOOLEAN,
 			"Set to true to allow monitoring from the GUI."),
 		new PropertySpec("EventPort", PropertySpec.INT,
 			"Open listening socket on this port to serve out app events."),
-		new PropertySpec("purgeBeforeDays", PropertySpec.INT, 
+		new PropertySpec("purgeBeforeDays", PropertySpec.INT,
 			"Purge status entries older than this number of days (def=30)"),
-		new PropertySpec("oldStatusPurgeInterval", PropertySpec.INT, 
+		new PropertySpec("oldStatusPurgeInterval", PropertySpec.INT,
 			"Interval (sec) at which to purge old statuses (def=3600 or 1 hour)"),
 		new PropertySpec("refreshSchedInterval", PropertySpec.INT,
 			"Interval (sec) at which to check for schedule entry changes (def=60 or 1 min)"),
-		new PropertySpec("allowedHosts", PropertySpec.STRING, 
+		new PropertySpec("allowedHosts", PropertySpec.STRING,
 			"comma-separated list of hostnames or ip addresses")
 	};
 
 	protected ArrayList<ScheduleEntryExecutive> executives = new ArrayList<ScheduleEntryExecutive>();
-	private ThreadLogger appLogger = null;
-	Logger origLogger = null;
+
 	private CompEventSvr compEventSvr = null;
-	
+
 	public RoutingScheduler()
 	{
 		this("routsched.log");
 	}
-	
+
 	protected RoutingScheduler(String appName)
 	{
 		super(appName);
@@ -156,31 +152,31 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 		cmdLineArgs.addToken(windowsSvcArg);
 		appNameArg.setDefaultValue("RoutingScheduler");
 	}
-	
+
 	@Override
 	protected void oneTimeInit()
 	{
-		/** 
+		/**
 		 * Using lock files as an IPC mechanism (for status GUI) is unreliable in windoze.
 		 * Tell server lock never to exit as a result of lock file I/O error.
 		 */
 		if (windowsSvcArg.getValue())
 			FileServerLock.setWindowsService(true);
-		
+
 		// Routing Scheduler can survive DB going down.
 		surviveDatabaseBounce = true;
 
 
-		try 
-		{ 
-			hostname = InetAddress.getLocalHost().getHostName(); 
+		try
+		{
+			hostname = InetAddress.getLocalHost().getHostName();
 		}
 		catch(Exception ex)
 		{
 			log.atWarn().setCause(ex).log("Cannot determine hostname, will use 'localhost'");
 			hostname = "localhost";
 		}
-		
+
 		// MJM 20201111 Initialize computation processor if arg provided
 		if (cfgFileArg.getValue() != null && cfgFileArg.getValue().length() > 0)
 		{
@@ -196,9 +192,9 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 		}
 
 	}
-	
+
 	@Override
-	protected void runApp() 
+	protected void runApp()
 	{
 		log.debug("runApp starting");
 		shutdownFlag = false;
@@ -209,7 +205,7 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 		long lastOldStatusPurge = 0L; // Cause it to happen right away
 		long lastSchedRefresh = 0L;
 		long lastLockCheck = 0L;
-		
+
 		while(!shutdownFlag)
 		{
 			String action="";
@@ -262,7 +258,7 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 					}
 					lastOldStatusPurge = now;
 				}
-				
+
 				// Call each executive's check method so that it can start/stop
 				// routing specs as appropriate for the state and schedule.
 				action = "Check Executives";
@@ -289,10 +285,10 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 			catch(InterruptedException ex) {}
 		}
 		runAppShutdown();
-		
+
 		log.debug("runApp() exiting.");
 	}
-	
+
 	/**
 	 * This method is called at the beginning of the runApp() method.
 	 * <ul>
@@ -324,7 +320,7 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 			// If this process can be monitored, start an Event Server.
 			if (TextUtil.str2boolean(appInfo.getProperty("monitor")) && compEventSvr == null)
 			{
-				try 
+				try
 				{
 					compEventSvr = new CompEventSvr(determineEventPort(appInfo));
 					compEventSvr.startup();
@@ -336,7 +332,7 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 					   .log("Cannot create Event server -- no events available to external clients.");
 				}
 			}
-			
+
 			if (loadingAppDao.supportsLocks())
 			{
 				try { myLock = loadingAppDao.obtainCompProcLock(appInfo, getPID(), hostname); }
@@ -363,7 +359,7 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 			return;
 		}
 	}
-	
+
 	protected void loadConfig(Properties properties)
 	{
 		PropertiesUtil.loadFromProps(this, properties);
@@ -380,14 +376,14 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 		try { Thread.sleep(5000L); }
 		catch(InterruptedException ex) {}
 	}
-	
+
 	public String getAppName()
 	{
 		return appInfo != null ? appInfo.getAppName() : appNameArg.getValue();
 	}
 
-	
-	protected void refreshSchedule() 
+
+	protected void refreshSchedule()
 		throws DbIoException
 	{
 		// read list of ScheduleEntry's for my loading app.
@@ -400,14 +396,14 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 		{
 			scheduleEntryDAO.close();
 		}
-		
+
 		for(Iterator<ScheduleEntry> seit = dbEntries.iterator(); seit.hasNext(); )
 		{
 			ScheduleEntry se = seit.next();
 			if (se.getName() != null && se.getName().toLowerCase().endsWith("-manual"))
 				seit.remove();
 		}
-		
+
 		ArrayList<ScheduleEntryExecutive> newExecs = new ArrayList<ScheduleEntryExecutive>();
 		for(ScheduleEntry dbEntry : dbEntries)
 		{
@@ -434,7 +430,7 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 		}
 		executives.addAll(newExecs);
 	}
-	
+
 	protected String getStatistics()
 	{
 		int run, wait, complete, init, down;
@@ -467,7 +463,7 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 			ret = ret + ", down=" + down;
 		return ret;
 	}
-	
+
 	@Override
 	public void initDecodes()
 		throws DecodesException
@@ -529,7 +525,7 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 	{
 		return false;
 	}
-	
+
 	/**
 	 * Called from a ScheduleEntryExecutive when it create a RoutingSpecThread
 	 * to execute the routing spec. Register the thread's specific logger.
@@ -539,7 +535,7 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 	{
 		/* do nothing */
 	}
-	
+
 	public void threadFinished(Thread thread)
 	{
 		/* do nothing */
@@ -551,7 +547,7 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 	}
 
 	@Override
-	public synchronized int getNumberActiveRoutingSpecs()	
+	public synchronized int getNumberActiveRoutingSpecs()
 	{
 		int active = 0;
 		for(ScheduleEntryExecutive see: executives)

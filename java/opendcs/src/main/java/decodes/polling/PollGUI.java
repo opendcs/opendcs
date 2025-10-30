@@ -1,16 +1,16 @@
 /*
 * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
 * of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software 
+*
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
 */
 package decodes.polling;
@@ -22,7 +22,6 @@ import ilex.gui.TextAreaOutputStream;
 import ilex.util.EnvExpander;
 import ilex.util.IDateFormat;
 import ilex.util.QueueLogger;
-import ilex.util.TeeLogger;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -75,7 +74,7 @@ public class PollGUI extends TsdbAppTemplate
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "PollGUI";
-	
+
 	private TopFrame theFrame = null;
 	private JTextField stationField = new JTextField();
 	private JTextField backlogField = new JTextField("2");
@@ -94,7 +93,7 @@ public class PollGUI extends TsdbAppTemplate
 	private DatabaseIO decodesDbIo = null;
 
 
-	
+
 	public PollGUI()
 	{
 		super(module);
@@ -106,13 +105,12 @@ public class PollGUI extends TsdbAppTemplate
 		decodesDbIo = Database.getDb().getDbIo();
 		makeFrame();
 		noExitAfterRunApp = true;
-		int minPri = -1; // TODO: replacing logger will revisit usage of queue logger later.
-		queueLogger.setMinLogPriority(minPri);
+
 		epqt = new EventsPanelQueueThread(queueLogger, eventsPanel);
 		epqt.start();
 		theFrame.setVisible(true);
 	}
-	
+
 	@Override
 	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
@@ -125,13 +123,13 @@ public class PollGUI extends TsdbAppTemplate
 	{
 		new PollGUI().execute(args);
 	}
-	
+
 	private void makeFrame()
 	{
 		theFrame = new TopFrame();
 		theFrame.setExitOnClose(true);
 		theFrame.setTitle("Station Polling");
-		
+
 		theFrame.setContentPane(makeTopPanel());
 		theFrame.addWindowListener(new WindowAdapter()
 		{
@@ -142,17 +140,17 @@ public class PollGUI extends TsdbAppTemplate
 		});
 		theFrame.pack();
 		theFrame.trackChanges("PollGUI");
-		sessionLogPrintStream = 
+		sessionLogPrintStream =
 			new PrintStream(new TextAreaOutputStream(sessionLogArea))
 		{
 			public void close() {}
 		};
 	}
-	
+
 	private JPanel makeTopPanel()
 	{
 		JPanel topPanel = new JPanel(new BorderLayout());
-		
+
 		JPanel northPanel = new JPanel(new GridBagLayout());
 		topPanel.add(northPanel, BorderLayout.NORTH);
 
@@ -186,7 +184,7 @@ public class PollGUI extends TsdbAppTemplate
 				new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.NONE,
 					new Insets(8, 2, 4, 20), 0, 0));
-			
+
 		northPanel.add(new JLabel("Backlog Hours:"),
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
@@ -195,7 +193,7 @@ public class PollGUI extends TsdbAppTemplate
 			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(4, 0, 8, 4), 50, 0));
-		
+
 		startPollButton.setEnabled(false);
 		startPollButton.addActionListener(
 			new ActionListener()
@@ -221,7 +219,7 @@ public class PollGUI extends TsdbAppTemplate
 		df.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 		sessionLogPanel.add(sessionLogScrollPane, BorderLayout.CENTER);
 		centerSplitPane.setTopComponent(sessionLogPanel);
-		
+
 		// Bottom of split pane is a scrolling event pane.
 		centerSplitPane.setBottomComponent(eventsPanel);
 		centerSplitPane.setResizeWeight(.5);
@@ -229,7 +227,7 @@ public class PollGUI extends TsdbAppTemplate
 		// Init to 3/4 of the pane in the top, 1/4 in the bottom.
 		sessionLogPanel.setPreferredSize(new Dimension(700, 600));
 		eventsPanel.setPreferredSize(new Dimension(700, 200));
-		
+
 		// south panel contains three buttons: Clear, View Data, and Exit.
 		JButton clearButton = new JButton("Clear");
 		clearButton.addActionListener(
@@ -288,10 +286,10 @@ public class PollGUI extends TsdbAppTemplate
 			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 10), 0, 0));
-		
+
 		return topPanel;
 	}
-	
+
 	protected void clear()
 	{
 		sessionLogArea.setText("");
@@ -355,7 +353,7 @@ public class PollGUI extends TsdbAppTemplate
 				return;
 			}
 			PollingThread.backlogOverrideHours = backlog;
-			
+
 			startPollButton.setText("Stop Poll");
 			selectStationButton.setEnabled(false);
 
@@ -407,7 +405,7 @@ public class PollGUI extends TsdbAppTemplate
 	{
 		eventsPanel.addLine(event);
 	}
-	
+
 	private void doPoll(int backlog)
 	{
 		sessionLogArea.setCaretPosition(sessionLogArea.getDocument().getLength());
@@ -426,21 +424,21 @@ public class PollGUI extends TsdbAppTemplate
 				isModem = false;
 				break;
 			}
-		
+
 		String rsName = isModem ? DecodesSettings.instance().pollRoutingTemplate :
 			DecodesSettings.instance().pollTcpTemplate;
-		
+
 		RoutingSpec rs = Database.getDb().routingSpecList.find(rsName);
 		if (rs == null)
 		{
-			theFrame.showError("No routing spec named '" + rsName 
+			theFrame.showError("No routing spec named '" + rsName
 				+ "' in database. This is needed as a template for "
 				+ (isModem ? "Modem" : "TCP/Cellular")
 				+ " platforms. Check the DECODES Setting for "
 				+ (isModem ? "pollRoutingTemplate" : "pollTcpTemplate"));
 			return;
 		}
-		
+
 		// Retrieve up station status and set rs.sinceTime to last poll time.
 		PlatformStatusDAI platformStatusDAO = decodesDbIo.makePlatformStatusDAO();
 		try
@@ -451,18 +449,18 @@ public class PollGUI extends TsdbAppTemplate
 				lastMsgTime = platStat.getLastMessageTime();
 			if (lastMsgTime == null) // default to 4 hours.
 				lastMsgTime = new Date(System.currentTimeMillis() - 3600000L * 4);
-			
+
 			long sinceTimeMS = System.currentTimeMillis() - backlog*3600000L;
 			rs.sinceTime = IDateFormat.time_t2string((int)(sinceTimeMS/1000L));
-			
+
 			// Remove the netlists in the prototype and replace with the single station name.
 			rs.networkListNames.clear();
 			rs.networkLists.clear();
 			String dcpname = selectedPlatform.makeFileName();
 			rs.setProperty("sc:DCP_NAME_0000", dcpname);
-			
+
 			rs.setProperty("pollNumTries", "1"); // Only try poll once.
-			
+
 			ScheduleEntryExecutive.setRereadRsBeforeExec(false);
 			routingSpecThread = RoutingSpecThread.makeInstance(rs);
 
@@ -478,7 +476,7 @@ public class PollGUI extends TsdbAppTemplate
 				{
 					public void run()
 					{
-						if (routingSpecThread.getConsumer() != null 
+						if (routingSpecThread.getConsumer() != null
 							&& routingSpecThread.getConsumer() instanceof DirectoryConsumer)
 						{
 							DirectoryConsumer dc = (DirectoryConsumer)routingSpecThread.getConsumer();
@@ -492,9 +490,9 @@ public class PollGUI extends TsdbAppTemplate
 							else
 								sessionLogPrintStream.println("(no active output)");
 						}
-						else 
+						else
 							sessionLogPrintStream.println(
-								routingSpecThread.getConsumer() == null ? "No output file produced." 
+								routingSpecThread.getConsumer() == null ? "No output file produced."
 									: routingSpecThread.getConsumer().getClass().getName());
 						pollFinished();
 					}
@@ -521,7 +519,7 @@ public class PollGUI extends TsdbAppTemplate
 		selectStationButton.setEnabled(true);
 		pollingInProgress = false;
 	}
-	
+
 	/** Override createDatabase to not do anything. PollGUI does not use TSDB. */
 	@Override
 	public synchronized void createDatabase()
@@ -529,11 +527,10 @@ public class PollGUI extends TsdbAppTemplate
 		InstantiationException, IllegalAccessException
 	{
 	}
-	
+
 	@Override
 	public void tryConnect()
 		throws BadConnectException
 	{
 	}
 }
-
