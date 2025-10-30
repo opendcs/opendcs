@@ -278,7 +278,7 @@ public final class TomcatServer implements AutoCloseable
 	{
 		if(CwmsOracleConfiguration.NAME.equals(dbType))
 		{
-			String userPermissions = "begin execute immediate 'grant web_user to ?'; end;";
+			String userPermissions = "begin execute immediate 'grant web_user to ' || ?; end;";
 			String dbOffice = System.getProperty(DB_OFFICE);
 			String setWebUserPermissions = "begin\n" +
 					"   cwms_sec.add_user_to_group(?, 'CWMS User Admins',?) ;\n" +

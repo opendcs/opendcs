@@ -43,7 +43,11 @@ public final class OpenDcsSecurityContext implements SecurityContext
 	{
 		return principal.getRoles()
 				.stream()
-				.anyMatch(e -> e.getRole().equals(role));
+				.anyMatch(e ->
+				{
+					final String r = e.getRole();
+					return r.equals(role);
+				});
 	}
 
 	@Override
