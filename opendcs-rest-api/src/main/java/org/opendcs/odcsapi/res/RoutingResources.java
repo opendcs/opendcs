@@ -198,7 +198,7 @@ public final class RoutingResources extends OpenDcsResource
 		}
 		catch(DatabaseException e)
 		{
-			if(e.getCause() instanceof ValueNotFoundException)
+			if((e instanceof ValueNotFoundException) || (e.getCause() instanceof ValueNotFoundException))
 			{
 				throw new DatabaseItemNotFoundException("RoutingSpec with ID " + routingId + " not found");
 			}
