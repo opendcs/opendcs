@@ -12,6 +12,9 @@ project(":opendcs-annotations").projectDir=file("java/annotations")
 include ":opendcs-api"
 project(":opendcs-api").projectDir=file("java/opendcs-api")
 
+include ":opendcs-logback-event-provider"
+project(":opendcs-logback-event-provider").projectDir=file("java/opendcs-logback-event-provider")
+
 include ":lrgs-web"
 project(":lrgs-web").projectDir=file("java/lrgs-web")
 
