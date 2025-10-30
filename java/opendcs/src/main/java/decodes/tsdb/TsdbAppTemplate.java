@@ -26,7 +26,6 @@ import opendcs.dai.LoadingAppDAI;
 import ilex.cmdline.*;
 import ilex.util.AuthException;
 import ilex.util.PropertiesUtil;
-import ilex.util.StderrLogger;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
 import decodes.util.DecodesVersion;

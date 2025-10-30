@@ -25,124 +25,58 @@ import decodes.sql.DbKey;
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TsdbAppTemplate;
-import ilex.util.Logger;
 
 /**
  * @deprecated we are replacing the logging system. Output to external logging (the dacq event tables count)
  * 				should be handled through the logger implementations outputs.
  */
 @Deprecated
-public class DacqEventLogger extends Logger
+public class DacqEventLogger
 {
-	private Logger parent = null;
-	private DbKey schedEntryStatusId = DbKey.NullKey;
-	private DbKey platformId = DbKey.NullKey;
-	private String subsystem = null;
-	private DbKey appId = DbKey.NullKey;
-	private Date msgStart = null;
-
-	public DacqEventLogger(Logger parent)
+	public DacqEventLogger()
 	{
-		super("");
-		this.parent = parent;
-		if (parent != null)
-			this.setMinLogPriority(parent.getMinLogPriority());
-
-		if (TsdbAppTemplate.getAppInstance() != null)
-			appId = TsdbAppTemplate.getAppInstance().getAppId();
+		/* class getting removed */
 	}
 
-	@Override
 	public void close()
 	{
+		/* class getting removed */
 	}
 
-	@Override
+
 	public void doLog(int priority, String text)
 	{
-		if (parent != null)
-		{
-			parent.doLog(priority, text);
-		}
-		if (priority < Logger.E_INFORMATION)
-		{
-			return;
-		}
-
-		if (fromDacqDao())
-		{
-			return;
-		}
-
-		DacqEvent evt = new DacqEvent();
-		evt.setPlatformId(platformId);
-		evt.setSubsystem(subsystem);
-		evt.setEventPriority(priority);
-		evt.setEventText(text);
-		evt.setAppId(appId);
-		evt.setMsgRecvTime(msgStart);
-
-		writeDacqEvent(evt);
-	}
-
-	/**
-	 * Verify that we aren't trying to write a log message from DacqEventDAO through
-	 * DacqEventDAO as presumably such messages are due to connection or database issues.
-	 * @return
-	 */
-	private boolean fromDacqDao()
-	{
-		StackTraceElement stackTrace[] = Thread.currentThread().getStackTrace();
-		for (StackTraceElement ste: stackTrace)
-		{
-			if (DacqEventDAO.class.getName().equals(ste.getClassName()))
-			{
-				return true;
-			}
-		}
-		return false;
+		/* class getting removed */
 	}
 
 	public void writeDacqEvent(DacqEvent evt)
 	{
-		if (!(Database.getDb().getDbIo() instanceof SqlDatabaseIO))
-			return;
-
-		try (DacqEventDAI dacqEventDAO = ((SqlDatabaseIO)Database.getDb().getDbIo()).makeDacqEventDAO())
-		{
-			evt.setScheduleEntryStatusId(schedEntryStatusId);
-			dacqEventDAO.writeEvent(evt);
-		}
-		catch (DbIoException ex)
-		{
-			parent.debug3("DacqEventLogger cannot write event to database: "
-				+ ex + " -- will disable DB events until next run.");
-		}
+		/* class getting removed */
 	}
 
 	public void setSchedEntryStatusId(DbKey schedEntryStatusId)
 	{
-		this.schedEntryStatusId = schedEntryStatusId;
+		/* class getting removed */
 	}
 
 	public void setPlatformId(DbKey platformId)
 	{
-		this.platformId = platformId;
+		/* class getting removed */
 	}
 
 	public void setSubsystem(String subsystem)
 	{
-		this.subsystem = subsystem;
+		/* class getting removed */
 	}
 
 	public void setAppId(DbKey appId)
 	{
-		this.appId = appId;
+		/* class getting removed */
 	}
 
 	public void setMsgStart(Date timeStamp)
 	{
-		msgStart = timeStamp;
+		/* class getting removed */
 	}
 
 }

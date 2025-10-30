@@ -22,6 +22,7 @@ RUN addgroup opendcs && \
 WORKDIR /opt/opendcs
 COPY --from=builder /app/install/build/install/opendcs/ /opt/opendcs
 COPY docker_scripts/env.sh /opt/opendcs/
+COPY docker_scripts/logback.xml /opt/opendcs/
 WORKDIR /opt/opendcs/bin
 RUN rm *.bat && \
     chmod +x /opt/opendcs/bin/*

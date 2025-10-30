@@ -38,7 +38,7 @@ import decodes.sql.OracleSequenceKeyGenerator;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
-import ilex.util.FileLogger;
+import decodes.util.DecodesSettings;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
 import opendcs.dao.LoadingAppDao;
@@ -272,7 +272,7 @@ public class OpenDCSOracleConfiguration implements Configuration
         }
 
         Properties info = new Properties();
-        info.put("user", "sys");        
+        info.put("user", "sys");
         info.put("internal_logon","sysdba");
         info.put("password", db.getPassword());
         try (Connection conn =  driverInstance.connect(db.getJdbcUrl(),info);

@@ -14,6 +14,12 @@
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 * License for the specific language governing permissions and limitations
 * under the License.
+*
+* Reworked from open-source code in USGS repository and USACE HEC repository.
+*
+* Open Source Software written by Cove Software, LLC under contract to the
+* U.S. Government.
+*
 */
 package decodes.dbeditor;
 
@@ -256,15 +262,15 @@ public class DecodesScriptEditPanel extends JPanel implements SampleMessageOwner
 		initColors();
 	}
 
-	private void parseColorSetting(String colorString, int index, String settingName) 
+	private void parseColorSetting(String colorString, int index, String settingName)
 	{
-		if (colorString != null && !colorString.trim().isEmpty()) 
+		if (colorString != null && !colorString.trim().isEmpty())
 		{
-			try 
+			try
 			{
 				colorValues[index] = Integer.parseInt(colorString.trim(), 16);
 			}
-			catch (NumberFormatException ex) 
+			catch (NumberFormatException ex)
 			{
 				log.atWarn()
 				   .setCause(ex)
@@ -386,52 +392,28 @@ public class DecodesScriptEditPanel extends JPanel implements SampleMessageOwner
 		fmtStatementPanel.add(fmtStatementButtonPanel, BorderLayout.EAST);
 
 		JButton moveFormatUpButton = new JButton(genericLabels.getString("upAbbr"));
-		moveFormatUpButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				moveFormatUpButtonPressed();
-			}
-		});
+		moveFormatUpButton.addActionListener(e -> moveFormatUpButtonPressed());
 		fmtStatementButtonPanel.add(moveFormatUpButton,
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 4, 2, 4), 0, 0));
 
 		JButton moveFormatDownButton = new JButton(genericLabels.getString("downAbbr"));
-		moveFormatDownButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				moveFormatDownButtonPressed();
-			}
-		});
+		moveFormatDownButton.addActionListener(e -> moveFormatDownButtonPressed());
 		fmtStatementButtonPanel.add(moveFormatDownButton,
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 4, 2, 4), 0, 0));
 
 		JButton addFormatStatementButton = new JButton(genericLabels.getString("add"));
-		addFormatStatementButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				addFormatStatementButtonPressed();
-			}
-		});
+		addFormatStatementButton.addActionListener(e -> addFormatStatementButtonPressed());
 		fmtStatementButtonPanel.add(addFormatStatementButton,
 			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 4, 2, 4), 0, 0));
 
 		JButton deleteFormatStatementButton = new JButton(genericLabels.getString("delete"));
-		deleteFormatStatementButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				deleteFormatStatementButtonPressed();
-			}
-		});
+		deleteFormatStatementButton.addActionListener(e -> deleteFormatStatementButtonPressed());
 		fmtStatementButtonPanel.add(deleteFormatStatementButton,
 			new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL,
@@ -458,13 +440,7 @@ public class DecodesScriptEditPanel extends JPanel implements SampleMessageOwner
 
 		// LOAD
 		JButton loadSampleButton = new JButton(genericLabels.getString("load"));
-		loadSampleButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				loadSampleButtonPressed();
-			}
-		});
+		loadSampleButton.addActionListener(e ->	loadSampleButtonPressed());
 		rawMsgButtonPanel.add(loadSampleButton,
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
@@ -472,13 +448,7 @@ public class DecodesScriptEditPanel extends JPanel implements SampleMessageOwner
 
 		// CLEAR
 		JButton clearSampleButton = new JButton(genericLabels.getString("clear"));
-		clearSampleButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				clearSampleButtonPressed();
-			}
-		});
+		clearSampleButton.addActionListener(e -> clearSampleButtonPressed());
 		rawMsgButtonPanel.add(clearSampleButton,
 			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
@@ -1069,10 +1039,9 @@ public class DecodesScriptEditPanel extends JPanel implements SampleMessageOwner
 		}
 		catch (DecodesException ex)
 		{
-			log.atError().setCause(ex).log(
-				dbeditLabels.getString("DecodingScriptEditPanel.errorDecoding"));
-			TopFrame.instance().showError(
-				dbeditLabels.getString("DecodingScriptEditPanel.errorDecoding") + ex);
+			String msg = dbeditLabels.getString("DecodingScriptEditPanel.errorDecoding");
+			log.atError().setCause(ex).log(msg);
+			TopFrame.instance().showError(msg + ex);
 			return;
 		}
 	}

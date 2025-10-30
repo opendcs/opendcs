@@ -123,8 +123,6 @@ public class PolledNetworkDcpThread extends DrgsRecvMsgThread
 					msg.setSequenceNum(getNextSeqNum());
 					msgArchive.archiveMsg(msg, this);
 					numMsgsThisPoll++;
-					if (activityLogger != null)
-						activityLogger.info(msg.getHeader());
 				}
 				else // no msg yet.
 				{

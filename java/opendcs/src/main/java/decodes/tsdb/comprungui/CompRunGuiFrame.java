@@ -16,7 +16,6 @@
 package decodes.tsdb.comprungui;
 
 import ilex.gui.DateTimeCalendar;
-import ilex.util.TeeLogger;
 import ilex.util.TextUtil;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
@@ -32,8 +31,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.beans.PropertyChangeEvent;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -100,7 +97,6 @@ import org.slf4j.MDC;
 import org.slf4j.MDC.MDCCloseable;
 
 import decodes.dbeditor.TraceDialog;
-import decodes.dbeditor.TraceLogger;
 import decodes.gui.TopFrame;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;

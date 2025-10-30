@@ -3,7 +3,6 @@ package org.opendcs.regression_tests;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
-import java.util.logging.Logger;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -12,7 +11,11 @@ import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.helpers.TestResources;
 import org.opendcs.spi.configuration.Configuration;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import decodes.routing.RoutingSpecThread;
@@ -29,7 +32,7 @@ import uk.org.webcompere.systemstubs.SystemStubs;
 })
 public class DecodesTest extends AppTestBase
 {
-    private static final Logger log = Logger.getLogger(DecodesTest.class.getName());
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     @ParameterizedTest
     @CsvSource({
@@ -64,7 +67,7 @@ public class DecodesTest extends AppTestBase
     {
         Configuration config = this.configuration;
         File logFile = new File(config.getUserDir(),"/decodes-HydroJson-" + specName + ".log");
-        log.info("Importing test db.");
+
 
         String output = SystemStubs.tapSystemOut(
             () -> exit.execute(() ->
@@ -79,7 +82,11 @@ public class DecodesTest extends AppTestBase
         String golden = IOUtils.toString(goldenFile.toURI().toURL().openStream(), "UTF8");
 
         ObjectMapper mapper = new ObjectMapper();
-        assertEquals(mapper.readTree(golden),mapper.readTree(output),"Output Doesn't match expected data.");
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        final JsonNode expected = mapper.readTree(golden);
+        final JsonNode actual = mapper.readTree(output);
+
+        assertEquals(expected, actual,"Output Doesn't match expected data.");
         /**
          * This doesn't pass, and the data is huge. Technically the above test isn't sufficient either.
          * The mapper only reads the first value from each. However this *IS* correct behavior for JSON.

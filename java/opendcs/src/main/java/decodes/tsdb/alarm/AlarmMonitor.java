@@ -144,7 +144,7 @@ public class AlarmMonitor extends TsdbAppTemplate
 	private void initialize()
 		throws LockBusyException, DbIoException, NoSuchObjectException, MailerException
 	{
-		dacqLogger = new DacqEventLogger(null);
+		dacqLogger = new DacqEventLogger();
 
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		try

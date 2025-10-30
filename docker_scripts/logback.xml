@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration>
+<configuration>
+    <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
+    <import class="ch.qos.logback.classic.encoder.JsonEncoder"/>
+    <import class="ch.qos.logback.core.ConsoleAppender"/>
+    <variable name="APP_NAME" value="${APP_NAME:-app}"/>
+    <variable name="LOG_LEVEL" value="${LOG_LEVEL:-INFO}"/>
+    <contextName>${APP_NAME}</contextName>
+    <appender name="STDERR" class="ConsoleAppender">
+        <encoder class="JsonEncoder"/>
+        <target>System.err</target>
+    </appender>
+
+    <logger name="covesw" level="${LOG_LEVEL}"/>
+    <logger name="decodes" level="${LOG_LEVEL}"/>
+    <logger name="ilex" level="${LOG_LEVEL}"/>
+    <logger name="lqm" level="${LOG_LEVEL}"/>
+    <logger name="lrgs" level="${LOG_LEVEL}"/>
+    <logger name="org.opendcs" level="${LOG_LEVEL}"/>
+        
+    <logger name="opendcs" level="${LOG_LEVEL}"/>
+        
+    <root level="INFO">
+        <appender-ref ref="STDERR"/>
+    </root>
+</configuration>

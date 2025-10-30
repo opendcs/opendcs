@@ -30,7 +30,7 @@ import decodes.launcher.Profile;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
-import ilex.util.FileLogger;
+import decodes.util.DecodesSettings;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
 import opendcs.dao.LoadingAppDao;
