@@ -15,8 +15,8 @@ public interface LoggingEventProvider
 {
     static final Logger log = LoggerFactory.getLogger(LoggingEventProvider.class);
     /**
-     * Attach this provider to the log buffer instance.
-     * @return
+     * Attach this provider to the Ring buffer instance.
+     * @param buffer The Ring buffer to which we add events.
      */
     void attach(RingBuffer<LoggingEvent> buffer);
 
@@ -24,7 +24,7 @@ public interface LoggingEventProvider
     {
         ServiceLoader<LoggingEventProvider> loader = ServiceLoader.load(LoggingEventProvider.class);
         loader.reload();
-        
+
         Iterator<LoggingEventProvider> providers = loader.iterator();
         LoggingEventProvider provider = null;
         if (providers.hasNext())
