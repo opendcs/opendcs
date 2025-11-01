@@ -20,21 +20,17 @@ import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.Map;
 
+import org.jdbi.v3.core.generic.GenericType;
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.model.UserBuilder;
 import org.opendcs.database.model.mappers.PrefixRowMapper;
 import org.opendcs.utils.sql.SqlErrorMessages;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import decodes.sql.DbKey;
 
 public final class UserBuilderMapper extends PrefixRowMapper<UserBuilder>
 {
-    private final ObjectMapper om = new ObjectMapper();
 
     private UserBuilderMapper(String prefix)
     {
@@ -62,16 +58,11 @@ public final class UserBuilderMapper extends PrefixRowMapper<UserBuilder>
                .withUpdatedAt(columnMapperForZDT.map(rs, prefix+"updated_at", ctx))
                .withCreatedAt(columnMapperForZDT.map(rs, prefix+"created_at", ctx))
                 ;
-        String jsonData = rs.getString(prefix+"preferences");
-        Map<String, Object> preferences;
-        try
-        {
-            preferences = om.readValue(jsonData, new TypeReference<Map<String, Object>>() {});
-            return builder.withPreferences(preferences);
-        }
-        catch (JsonProcessingException ex)
-        {
-            throw new SQLException("Unable to parse provided json preferences", ex);
-        }
+        ColumnMapper<Map<String, Object>> columnMapperForConfig = 
+                ctx.findColumnMapperFor(new GenericType<Map<String, Object>>() {})
+                   .orElseThrow(() -> new SQLException(SqlErrorMessages.CONFIG_MAPPER_NOT_FOUND));
+
+        Map<String, Object> preferences = columnMapperForConfig.map(rs, prefix+"preferences", ctx);
+        return builder.withPreferences(preferences);
     }
 }

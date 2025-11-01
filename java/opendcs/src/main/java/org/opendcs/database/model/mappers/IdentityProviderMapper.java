@@ -20,14 +20,13 @@ import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.Map;
 
+import org.jdbi.v3.core.generic.GenericType;
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.impl.opendcs.BuiltInIdentityProvider;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.utils.sql.SqlErrorMessages;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import decodes.sql.DbKey;
@@ -37,7 +36,6 @@ import decodes.sql.DbKey;
  */
 public final class IdentityProviderMapper extends PrefixRowMapper<IdentityProvider>
 {
-    private final ObjectMapper om = new ObjectMapper();
 
     private IdentityProviderMapper(String prefix)
     {
@@ -55,18 +53,13 @@ public final class IdentityProviderMapper extends PrefixRowMapper<IdentityProvid
         ColumnMapper<ZonedDateTime> zdtMapper = ctx.findColumnMapperFor(ZonedDateTime.class)
                                                    .orElseThrow(() -> new SQLException(SqlErrorMessages.ZDT_MAPPER_NOT_FOUND));
         ZonedDateTime updatedAt = zdtMapper.map(rs, prefix+"updated_at", ctx);
-        try
-        {
-            String jsonData = rs.getString(prefix+"config");
-            Map<String, Object> config = om.readValue(jsonData, new TypeReference<Map<String, Object>>() {});
-            // TODO: other providers
-            return new BuiltInIdentityProvider(id, name, updatedAt, config);
-        }
-        catch (JsonProcessingException | SQLException ex)
-        {
-            throw new SQLException("Unable to parse provided json", ex);
-        }
-
+        ColumnMapper<Map<String, Object>> columnMapperForConfig = 
+                ctx.findColumnMapperFor(new GenericType<Map<String, Object>>() {})
+                   .orElseThrow(() -> new SQLException(SqlErrorMessages.CONFIG_MAPPER_NOT_FOUND));
+            
+        Map<String, Object> config = columnMapperForConfig.map(rs, prefix+"config", ctx);            
+        // TODO: other providers
+        return new BuiltInIdentityProvider(id, name, updatedAt, config);
     }
 
     public static IdentityProviderMapper withPrefix(String prefix)

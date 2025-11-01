@@ -29,8 +29,10 @@ import org.jdbi.v3.jackson2.Jackson2Plugin;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.UserManagementDao;
-import org.opendcs.database.impl.opendcs.DatabaseKeyArgumentFactory;
-import org.opendcs.database.impl.opendcs.DatabaseKeyColumnMapper;
+import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
+import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
+import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigArgumentFactory;
+import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigColumnMapper;
 import org.opendcs.database.model.UserBuilder;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.IdentityProviderMapping;
@@ -42,9 +44,6 @@ import org.opendcs.database.model.mappers.user.IdentityProviderMappingMapper;
 import org.opendcs.database.model.mappers.user.UserBuilderMapper;
 import org.opendcs.database.model.mappers.user.UserBuilderReducer;
 import org.opendcs.utils.sql.SqlKeywords;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import decodes.sql.DbKey;
 
@@ -97,56 +96,48 @@ public class UserManagementImpl implements UserManagementDao
     {
         Handle handle = getHandle(tx);
         handle.getJdbi().installPlugin(new Jackson2Plugin());
-        ObjectMapper om = new ObjectMapper();
-        try
+
+        DbKey id = DbKey.NullKey;
+
+        try (Query addUser = handle.createQuery("insert into opendcs_user(email, updated_at, preferences) " +
+                                        "values (:email, now(), :preferences::jsonb) returning id"))
         {
-            String preferences = om.writeValueAsString(user.preferences);
-
-            DbKey id = DbKey.NullKey;
-
-            try (Query addUser = handle.createQuery("insert into opendcs_user(email, updated_at, preferences) " +
-                                          "values (:email, now(), :preferences::jsonb) returning id"))
-            {
-                id = DbKey.createDbKey(
-                    addUser.bind("email", user.email)
-                       .bind("preferences", preferences)
-                       .mapTo(Long.class)
-                       .one()
-                    );
-            }
-
-            try (PreparedBatch roleBatch = handle.prepareBatch("insert into user_roles(user_id, role_id) values (:user_id, :role_id)"))
-            {
-                for (Role role: user.roles)
-                {
-                    roleBatch.bind("user_id", id)
-                            .bind("role_id", role.id)
-                            .add();
-                }
-                roleBatch.execute();
-            }
-
-            try (PreparedBatch idpBatch = 
-                    handle.prepareBatch(
-                        "insert into user_identity_provider (user_id, identity_provider_id, subject) " +
-                                                    "values (:user_id, :identity_provider_id, :subject)"))
-            {
-                for (IdentityProviderMapping idpM: user.identityProviders)
-                {
-                    idpBatch.bind("user_id", id)
-                            .bind("identity_provider_id", idpM.provider.getId())
-                            .bind("subject", idpM.subject)
-                            .add();
-                }
-                idpBatch.execute();
-            }
-
-            return getUser(tx, id).orElseThrow(() -> new OpenDcsDataException("Created User could not be retrieved."));
+            id = DbKey.createDbKey(
+                addUser.bind("email", user.email)
+                    .bind("preferences", user.preferences)
+                    .mapTo(Long.class)
+                    .one()
+                );
         }
-        catch (JsonProcessingException ex)
+
+        try (PreparedBatch roleBatch = handle.prepareBatch("insert into user_roles(user_id, role_id) values (:user_id, :role_id)"))
         {
-            throw new OpenDcsDataException("unable to covert config to json", ex);
+            for (Role role: user.roles)
+            {
+                roleBatch.bind("user_id", id)
+                        .bind("role_id", role.id)
+                        .add();
+            }
+            roleBatch.execute();
         }
+
+        try (PreparedBatch idpBatch = 
+                handle.prepareBatch(
+                    "insert into user_identity_provider (user_id, identity_provider_id, subject) " +
+                                                "values (:user_id, :identity_provider_id, :subject)"))
+        {
+            for (IdentityProviderMapping idpM: user.identityProviders)
+            {
+                idpBatch.bind("user_id", id)
+                        .bind("identity_provider_id", idpM.provider.getId())
+                        .bind("subject", idpM.subject)
+                        .add();
+            }
+            idpBatch.execute();
+        }
+
+        return getUser(tx, id).orElseThrow(() -> new OpenDcsDataException("Created User could not be retrieved."));
+    
     }
 
     @Override
@@ -186,60 +177,51 @@ public class UserManagementImpl implements UserManagementDao
     public User updateUser(DataTransaction tx, DbKey id, User user) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        ObjectMapper om = new ObjectMapper();
-        try
+        
+        try (Update userUpdate =handle.createUpdate(
+            "update opendcs_user set email = :email, preferences = :preferences::jsonb " +
+            "where id = :id"))
         {
-            String preferences = om.writeValueAsString(user.preferences);
-
-            try (Update userUpdate =handle.createUpdate(
-                "update opendcs_user set email = :email, preferences = :preferences::jsonb " +
-                "where id = :id"))
-            {
-                userUpdate.bind("id", id)
-                          .bind("preferences", preferences)
-                          .bind("email", user.email) // wait should we allow changing the email?
-                          .execute();
-            }
-            try (Update deleteRoles = handle.createUpdate("delete from user_roles where user_id = :id"))
-            {
-                deleteRoles.bind("id", id).execute();
-            }
-            try (PreparedBatch roleBatch = handle.prepareBatch("insert into user_roles(user_id, role_id) values (:user_id, :role_id)"))
-            {
-                for (Role role: user.roles)
-                {
-                    roleBatch.bind("user_id", id)
-                            .bind("role_id", role.id)
-                            .add();
-                }
-                roleBatch.execute();
-            }
-
-            try (Update deleteProviders = handle.createUpdate("delete from user_identity_provider where user_id=:id"))
-            {
-                deleteProviders.bind("id", id).execute();
-            }
-
-            try (PreparedBatch idpBatch = 
-                    handle.prepareBatch("insert into user_identity_provider (user_id, identity_provider_id, subject) " +
-                                                                    "values (:user_id, :identity_provider_id, :subject)"))
-            {
-                for (IdentityProviderMapping idpM: user.identityProviders)
-                {
-                    idpBatch.bind("user_id", id)
-                            .bind("identity_provider_id", idpM.provider.getId())
-                            .bind("subject", idpM.subject)
-                            .add();
-                }
-                idpBatch.execute();
-            }
-
-            return getUser(tx, id).orElseThrow(() -> new OpenDcsDataException("Updated User could not be retrieved."));
+            userUpdate.bind("id", id)
+                        .bind("preferences", user.preferences)
+                        .bind("email", user.email) // wait should we allow changing the email?
+                        .execute();
         }
-        catch (JsonProcessingException ex)
+        try (Update deleteRoles = handle.createUpdate("delete from user_roles where user_id = :id"))
         {
-            throw new OpenDcsDataException("unable to covert config to json", ex);
+            deleteRoles.bind("id", id).execute();
         }
+        try (PreparedBatch roleBatch = handle.prepareBatch("insert into user_roles(user_id, role_id) values (:user_id, :role_id)"))
+        {
+            for (Role role: user.roles)
+            {
+                roleBatch.bind("user_id", id)
+                        .bind("role_id", role.id)
+                        .add();
+            }
+            roleBatch.execute();
+        }
+
+        try (Update deleteProviders = handle.createUpdate("delete from user_identity_provider where user_id=:id"))
+        {
+            deleteProviders.bind("id", id).execute();
+        }
+
+        try (PreparedBatch idpBatch = 
+                handle.prepareBatch("insert into user_identity_provider (user_id, identity_provider_id, subject) " +
+                                                                "values (:user_id, :identity_provider_id, :subject)"))
+        {
+            for (IdentityProviderMapping idpM: user.identityProviders)
+            {
+                idpBatch.bind("user_id", id)
+                        .bind("identity_provider_id", idpM.provider.getId())
+                        .bind("subject", idpM.subject)
+                        .add();
+            }
+            idpBatch.execute();
+        }
+
+        return getUser(tx, id).orElseThrow(() -> new OpenDcsDataException("Updated User could not be retrieved."));
     }
 
     @Override
@@ -287,24 +269,15 @@ public class UserManagementImpl implements UserManagementDao
     {
         Handle handle = getHandle(tx);
         handle.getJdbi().installPlugin(new Jackson2Plugin());
-        ObjectMapper om = new ObjectMapper();
-        try
-        {
-            String config = om.writeValueAsString(provider.configToMap());
 
-            try (Query addIdp = 
-                    handle.createQuery("insert into identity_provider (name, type, updated_at, config) " +
-                                                              "values (:name, :type, now(), :config::jsonb) returning id, name, type, updated_at, config::text"))
-            {
-                return addIdp.bind("name", provider.getName())
-                             .bind("type", provider.getType())
-                             .bind("config", config)
-                             .map(PROVIDER_MAPPER).one();
-            }
-        }
-        catch (JsonProcessingException ex)
+        try (Query addIdp = 
+                handle.createQuery("insert into identity_provider (name, type, updated_at, config) " +
+                                                            "values (:name, :type, now(), :config::jsonb) returning id, name, type, updated_at, config::text"))
         {
-            throw new OpenDcsDataException("unable to covert config to json", ex);
+            return addIdp.bind("name", provider.getName())
+                            .bind("type", provider.getType())
+                            .bind("config", provider.configToMap())
+                            .map(PROVIDER_MAPPER).one();
         }
     }
 
@@ -326,24 +299,15 @@ public class UserManagementImpl implements UserManagementDao
     {
         Handle handle = getHandle(tx);
         handle.getJdbi().installPlugin(new Jackson2Plugin());
-        ObjectMapper om = new ObjectMapper();
-        try
+        try (Query updateIdp =
+                handle.createQuery("update identity_provider set name = :name, type = :type, " +
+                                    "config = :config::jsonb where id = :id returning id, name, type, updated_at, config::text"))
         {
-            String config = om.writeValueAsString(provider.configToMap());
-            try (Query updateIdp =
-                    handle.createQuery("update identity_provider set name = :name, type = :type, " +
-                                       "config = :config::jsonb where id = :id returning id, name, type, updated_at, config::text"))
-            {
-                return updateIdp.bind("id", id)
-                                .bind("name", provider.getName())
-                                .bind("type", provider.getType())
-                                .bind("config", config)
-                                .map(PROVIDER_MAPPER).one();
-            }
-        }
-        catch (JsonProcessingException ex)
-        {
-            throw new OpenDcsDataException("unable to covert config to json", ex);
+            return updateIdp.bind("id", id)
+                            .bind("name", provider.getName())
+                            .bind("type", provider.getType())
+                            .bind("config", provider.configToMap())
+                            .map(PROVIDER_MAPPER).one();
         }
     }
 
@@ -441,7 +405,9 @@ public class UserManagementImpl implements UserManagementDao
         Connection conn = tx.connection(Connection.class)
                             .orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Connection from transaction."));
         return Jdbi.open(conn).registerArgument(new DatabaseKeyArgumentFactory())
-                              .registerColumnMapper(new DatabaseKeyColumnMapper());
+                              .registerColumnMapper(new DatabaseKeyColumnMapper())
+                              .registerArgument(new ConfigArgumentFactory())
+                              .registerColumnMapper(new ConfigColumnMapper());
     }
 
     /**

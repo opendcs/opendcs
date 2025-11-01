@@ -13,7 +13,7 @@
 * License for the specific language governing permissions and limitations
 * under the License.
 */
-package org.opendcs.database.impl.opendcs;
+package org.opendcs.database.impl.opendcs.jdbi.column.databasekey;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
