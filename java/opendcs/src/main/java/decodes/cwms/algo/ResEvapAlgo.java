@@ -580,7 +580,7 @@ final public class ResEvapAlgo
                         log.debug("No previous hourlyEvapRate value found before {} - will use first-hour fallback.", baseTimes.first());
                     }
                 }
-                catch (Exception ex)
+                catch (RuntimeException | NoConversionException | DbIoException | BadTimeSeriesException | NoSuchObjectException ex)
                 {
                     // Don’t abort the run; log and fall back.
                     prevInstHrEvapRate = Double.NaN;
@@ -632,7 +632,6 @@ final public class ResEvapAlgo
             setOutput(hourlyEvapRate, computedList.get(6)); // inst mm/hr
 
             hourlyWTP.setProfiles(resEvap.getHourlyWaterTempProfile(), _timeSliceBaseTime, wtpTsId, zeroElevation, elev, timeSeriesDAO);
-
             count++;
 
             double currInstHrEvapRate = resEvap.getHourlyEvapRateTimeSeries(); // mm/hr
