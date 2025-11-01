@@ -19,6 +19,10 @@ public class ConfigColumnMapper implements ColumnMapper<Map<String, Object>>
     public Map<String, Object> map(ResultSet rs, int columnNumber, StatementContext ctx) throws SQLException
     {
         final String configStr = rs.getString(columnNumber);
+        if (rs.wasNull())
+        {
+            return null;
+        }
         try {
             return om.readValue(configStr, new TypeReference<Map<String, Object>>() {});
         } catch (JsonProcessingException ex)
