@@ -192,7 +192,7 @@ public class UserManagementImpl implements UserManagementDao
             String preferences = om.writeValueAsString(user.preferences);
 
             try (Update userUpdate =handle.createUpdate(
-                "update opendcs_user set email = :email, updated_at = now(), preferences = :preferences::jsonb " +
+                "update opendcs_user set email = :email, preferences = :preferences::jsonb " +
                 "where id = :id"))
             {
                 userUpdate.bind("id", id)
@@ -331,7 +331,7 @@ public class UserManagementImpl implements UserManagementDao
         {
             String config = om.writeValueAsString(provider.configToMap());
             try (Query updateIdp =
-                    handle.createQuery("update identity_provider set name = :name, type = :type, updated_at = now(), " +
+                    handle.createQuery("update identity_provider set name = :name, type = :type, " +
                                        "config = :config::jsonb where id = :id returning id, name, type, updated_at, config::text"))
             {
                 return updateIdp.bind("id", id)
