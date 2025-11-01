@@ -112,9 +112,6 @@ while [[ $# -gt 0 ]]; do
         if [ "$OPTARG" == "D" ]; then
           shift
           ARGS="$ARGS $1"
-        elif [ "$OPTARG" == "P" ]; then
-          shift
-          ARGS="$ARGS $1"
         else
           ARGS="$ARGS -$OPTARG"
         fi
