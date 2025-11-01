@@ -19,6 +19,10 @@ import java.time.ZonedDateTime;
 import java.util.Map;
 
 import org.opendcs.database.model.IdentityProvider;
+import org.opendcs.spi.authentication.IdentityProviderProvider;
+import org.opendcs.spi.authentication.UnsupportedProviderException;
+
+import com.google.auto.service.AutoService;
 
 import decodes.sql.DbKey;
 
@@ -40,8 +44,7 @@ public final class BuiltInIdentityProvider implements IdentityProvider
         this.id = id;
         this.name = name;
         this.updatedAt = updateAt;
-        this.config = configMap; // TODO actually setup config
-        // then process config
+        this.config = configMap;
     }
 
 
@@ -75,4 +78,20 @@ public final class BuiltInIdentityProvider implements IdentityProvider
         return config;
     }
 
+    @AutoService(IdentityProviderProvider.class)
+    public static class BuiltInIdentityProviderProvider implements IdentityProviderProvider
+    {
+
+        @Override
+        public IdentityProvider create(DbKey id, String name, ZonedDateTime updatedAt, Map<String, Object> config)
+        {
+            return new BuiltInIdentityProvider(id, name, updatedAt, config);
+        }
+
+        @Override
+        public String getName()
+        {
+            return TYPE;
+        }
+    }
 }

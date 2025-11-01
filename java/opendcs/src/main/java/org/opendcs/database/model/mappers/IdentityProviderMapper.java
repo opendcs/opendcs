@@ -25,6 +25,8 @@ import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.impl.opendcs.BuiltInIdentityProvider;
 import org.opendcs.database.model.IdentityProvider;
+import org.opendcs.spi.authentication.IdentityProviderProvider;
+import org.opendcs.spi.authentication.UnsupportedProviderException;
 import org.opendcs.utils.sql.SqlErrorMessages;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -58,8 +60,16 @@ public final class IdentityProviderMapper extends PrefixRowMapper<IdentityProvid
                    .orElseThrow(() -> new SQLException(SqlErrorMessages.CONFIG_MAPPER_NOT_FOUND));
             
         Map<String, Object> config = columnMapperForConfig.map(rs, prefix+"config", ctx);            
-        // TODO: other providers
-        return new BuiltInIdentityProvider(id, name, updatedAt, config);
+        IdentityProviderProvider idpp;
+        try
+        {
+            idpp = IdentityProviderProvider.createFor(type);
+        }
+        catch (UnsupportedProviderException ex)
+        {
+            throw new SQLException("Provider config stored in the database is not supported by this version of OpenDCS", ex);
+        }
+        return idpp.create(id, name, updatedAt, config);
     }
 
     public static IdentityProviderMapper withPrefix(String prefix)
