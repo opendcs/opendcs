@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvFileSource;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.opendcs.database.model.mappers.user.UserBuilderReducer;
 
@@ -22,6 +21,7 @@ class UserBuilderReducerTest
             @Override
             public void execute() throws Throwable
             {
+                @SuppressWarnings("unused")
                 UserBuilderReducer dut = new UserBuilderReducer("r", "u", "i");
             }
         });
@@ -42,6 +42,7 @@ class UserBuilderReducerTest
     {
         assertThrows(IllegalArgumentException.class, () ->
         {
+            @SuppressWarnings("unused")
             UserBuilderReducer dut = new UserBuilderReducer(role, role, idp);
         });
     }

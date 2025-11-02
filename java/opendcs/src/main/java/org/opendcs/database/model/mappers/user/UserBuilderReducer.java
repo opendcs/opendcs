@@ -14,9 +14,9 @@ import org.opendcs.database.model.Role;
 public class UserBuilderReducer implements BiConsumer<Map<Long, UserBuilder>, RowView>
 {
     public static final UserBuilderReducer USER_BUILDER_REDUCER = new UserBuilderReducer();
-    private final String role_prefix;
-    private final String user_prefix;
-    private final String idp_prefix;
+    private final String rolePrefix;
+    private final String userPrefix;
+    private final String idpPrefix;
 
     /**
      * Create reducer using the default prefixes of r_, u_, and i_ for role, user, and identity_provider
@@ -29,31 +29,31 @@ public class UserBuilderReducer implements BiConsumer<Map<Long, UserBuilder>, Ro
 
     /**
      * Create a reduces using the provided prefixes for column names.
-     * @param role_prefix
-     * @param user_prefix
-     * @param identity_provider_prefix
+     * @param rolePrefix
+     * @param userPrefix
+     * @param identityProviderPrefix
      */
-    public UserBuilderReducer(String role_prefix, String user_prefix, String identity_provider_prefix)
+    public UserBuilderReducer(String rolePrefix, String userPrefix, String identityProviderPrefix)
     {
-        this.role_prefix = addUnderscoreIfMissing(requireValue(role_prefix));
-        this.user_prefix = addUnderscoreIfMissing(requireValue(user_prefix));
-        this.idp_prefix = addUnderscoreIfMissing(requireValue(identity_provider_prefix));
+        this.rolePrefix = addUnderscoreIfMissing(requireValue(rolePrefix));
+        this.userPrefix = addUnderscoreIfMissing(requireValue(userPrefix));
+        this.idpPrefix = addUnderscoreIfMissing(requireValue(identityProviderPrefix));
     }
 
     @Override
     public void accept(Map<Long, UserBuilder> map, RowView rowView)
     {
 
-        UserBuilder ub = map.computeIfAbsent(rowView.getColumn(user_prefix + GenericColumns.ID, Long.class),
+        UserBuilder ub = map.computeIfAbsent(rowView.getColumn(userPrefix + GenericColumns.ID, Long.class),
                 qid -> rowView.getRow(UserBuilder.class)
         );
-        Long roleId = rowView.getColumn(role_prefix + GenericColumns.ID, Long.class);
+        Long roleId = rowView.getColumn(rolePrefix + GenericColumns.ID, Long.class);
         if (roleId != null)
         {
             Role r = rowView.getRow(Role.class);
             ub.withRole(r);
         }
-        String subject = rowView.getColumn(idp_prefix + GenericColumns.SUBJECT, String.class);
+        String subject = rowView.getColumn(idpPrefix + GenericColumns.SUBJECT, String.class);
         if (subject != null)
         {
             IdentityProviderMapping idpM = rowView.getRow(IdentityProviderMapping.class);

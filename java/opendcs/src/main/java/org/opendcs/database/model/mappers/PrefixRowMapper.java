@@ -25,6 +25,6 @@ public abstract class PrefixRowMapper<T> implements RowMapper<T>
 
     public static String addUnderscoreIfMissing(String prefix)
     {
-        return prefix.endsWith("_") ? prefix : prefix + "_";
+        return prefix.endsWith("_") ? prefix : (prefix + "_");
     }
 }
