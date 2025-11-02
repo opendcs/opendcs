@@ -33,8 +33,6 @@ public class ConfigArgumentFactory extends AbstractArgumentFactory<Map<String, O
             {
                 throw new SQLException("Unable to create json string from map", ex);
             }
-            
         };
     }
-    
 }

@@ -22,12 +22,15 @@ import java.time.ZonedDateTime;
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.model.Role;
+import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 
 import decodes.sql.DbKey;
 
 public final class RoleMapper extends PrefixRowMapper<Role>
 {
+    public static final String ROLE_ID = "role_id";
+
     private RoleMapper(String prefix)
     {
         super(prefix);
@@ -38,12 +41,12 @@ public final class RoleMapper extends PrefixRowMapper<Role>
     {
         ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class)
                                                     .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
-        DbKey key = columnMapperForKey.map(rs, prefix+"id", ctx);
-        String name = rs.getString(prefix+"name");
-        String description = rs.getString(prefix+"description");
+        DbKey key = columnMapperForKey.map(rs, prefix+GenericColumns.ID, ctx);
+        String name = rs.getString(prefix+GenericColumns.NAME);
+        String description = rs.getString(prefix+GenericColumns.DESCRIPTION);
         ColumnMapper<ZonedDateTime> columnMapperForZDT = ctx.findColumnMapperFor(ZonedDateTime.class)
                                                             .orElseThrow(() -> new SQLException(SqlErrorMessages.ZDT_MAPPER_NOT_FOUND));
-        ZonedDateTime updatedAt = columnMapperForZDT.map(rs, prefix+"updated_at", ctx);
+        ZonedDateTime updatedAt = columnMapperForZDT.map(rs, prefix+GenericColumns.UPDATED_AT, ctx);
         return new Role(key, name, description, updatedAt);
     }
 

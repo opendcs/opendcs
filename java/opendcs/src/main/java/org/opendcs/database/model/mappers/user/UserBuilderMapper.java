@@ -26,11 +26,16 @@ import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.model.UserBuilder;
 import org.opendcs.database.model.mappers.PrefixRowMapper;
 import org.opendcs.utils.sql.SqlErrorMessages;
+import org.opendcs.utils.sql.GenericColumns;
 
 import decodes.sql.DbKey;
 
 public final class UserBuilderMapper extends PrefixRowMapper<UserBuilder>
 {
+    /**
+     * Used for queries referencing the user id as a foreign key
+     */
+    public static final String USER_ID = "user_id";
 
     private UserBuilderMapper(String prefix)
     {
@@ -53,16 +58,16 @@ public final class UserBuilderMapper extends PrefixRowMapper<UserBuilder>
         ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class)
                                                     .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
 
-        builder.withId(columnMapperForKey.map(rs, prefix+"id", ctx))
-               .withEmail(rs.getString(prefix+"email"))
-               .withUpdatedAt(columnMapperForZDT.map(rs, prefix+"updated_at", ctx))
-               .withCreatedAt(columnMapperForZDT.map(rs, prefix+"created_at", ctx))
+        builder.withId(columnMapperForKey.map(rs, prefix+GenericColumns.ID, ctx))
+               .withEmail(rs.getString(prefix+GenericColumns.EMAIL))
+               .withUpdatedAt(columnMapperForZDT.map(rs, prefix+GenericColumns.UPDATED_AT, ctx))
+               .withCreatedAt(columnMapperForZDT.map(rs, prefix+GenericColumns.CREATED_AT, ctx))
                 ;
         ColumnMapper<Map<String, Object>> columnMapperForConfig = 
                 ctx.findColumnMapperFor(new GenericType<Map<String, Object>>() {})
                    .orElseThrow(() -> new SQLException(SqlErrorMessages.CONFIG_MAPPER_NOT_FOUND));
 
-        Map<String, Object> preferences = columnMapperForConfig.map(rs, prefix+"preferences", ctx);
+        Map<String, Object> preferences = columnMapperForConfig.map(rs, prefix+GenericColumns.PREFERENCES, ctx);
         return builder.withPreferences(preferences);
     }
 }

@@ -23,6 +23,7 @@ import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.IdentityProviderMapping;
 import org.opendcs.database.model.mappers.IdentityProviderMapper;
 import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.utils.sql.GenericColumns;
 
 public final class IdentityProviderMappingMapper extends PrefixRowMapper<IdentityProviderMapping>
 {
@@ -39,7 +40,7 @@ public final class IdentityProviderMappingMapper extends PrefixRowMapper<Identit
     {
 
         IdentityProvider provider = idpMapper.map(rs, ctx);
-        String subject = rs.getString(prefix+"subject");
+        String subject = rs.getString(prefix+GenericColumns.SUBJECT);
 
         return new IdentityProviderMapping(provider, subject);
     }

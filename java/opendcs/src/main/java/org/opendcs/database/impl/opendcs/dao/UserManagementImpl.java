@@ -44,6 +44,7 @@ import org.opendcs.database.model.mappers.user.IdentityProviderMappingMapper;
 import org.opendcs.database.model.mappers.user.UserBuilderMapper;
 import org.opendcs.database.model.mappers.user.UserBuilderReducer;
 import org.opendcs.utils.sql.SqlKeywords;
+import org.opendcs.utils.sql.GenericColumns;
 
 import decodes.sql.DbKey;
 
@@ -103,8 +104,8 @@ public class UserManagementImpl implements UserManagementDao
                                         "values (:email, now(), :preferences::jsonb) returning id"))
         {
             id = DbKey.createDbKey(
-                addUser.bind("email", user.email)
-                    .bind("preferences", user.preferences)
+                addUser.bind(GenericColumns.EMAIL, user.email)
+                    .bind(GenericColumns.PREFERENCES, user.preferences)
                     .mapTo(Long.class)
                     .one()
                 );
@@ -114,8 +115,8 @@ public class UserManagementImpl implements UserManagementDao
         {
             for (Role role: user.roles)
             {
-                roleBatch.bind("user_id", id)
-                        .bind("role_id", role.id)
+                roleBatch.bind(UserBuilderMapper.USER_ID, id)
+                        .bind(RoleMapper.ROLE_ID, role.id)
                         .add();
             }
             roleBatch.execute();
@@ -128,9 +129,9 @@ public class UserManagementImpl implements UserManagementDao
         {
             for (IdentityProviderMapping idpM: user.identityProviders)
             {
-                idpBatch.bind("user_id", id)
-                        .bind("identity_provider_id", idpM.provider.getId())
-                        .bind("subject", idpM.subject)
+                idpBatch.bind(UserBuilderMapper.USER_ID, id)
+                        .bind(IdentityProviderMapper.IDENTITY_PROVIDER_ID, idpM.provider.getId())
+                        .bind(GenericColumns.SUBJECT, idpM.subject)
                         .add();
             }
             idpBatch.execute();
@@ -160,7 +161,7 @@ public class UserManagementImpl implements UserManagementDao
             "  where u.id = :id"
             ))
         {
-             return user.bind("id", id)
+             return user.bind(GenericColumns.ID, id)
               .registerRowMapper(UserBuilder.class, UserBuilderMapper.withPrefix("u"))
               .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
               .registerRowMapper(IdentityProviderMapping.class, IdentityProviderMappingMapper.withPrefix("i"))
@@ -182,21 +183,21 @@ public class UserManagementImpl implements UserManagementDao
             "update opendcs_user set email = :email, preferences = :preferences::jsonb " +
             "where id = :id"))
         {
-            userUpdate.bind("id", id)
-                        .bind("preferences", user.preferences)
-                        .bind("email", user.email) // wait should we allow changing the email?
+            userUpdate.bind(GenericColumns.ID, id)
+                        .bind(GenericColumns.PREFERENCES, user.preferences)
+                        .bind(GenericColumns.EMAIL, user.email) // wait should we allow changing the email?
                         .execute();
         }
         try (Update deleteRoles = handle.createUpdate("delete from user_roles where user_id = :id"))
         {
-            deleteRoles.bind("id", id).execute();
+            deleteRoles.bind(GenericColumns.ID, id).execute();
         }
         try (PreparedBatch roleBatch = handle.prepareBatch("insert into user_roles(user_id, role_id) values (:user_id, :role_id)"))
         {
             for (Role role: user.roles)
             {
-                roleBatch.bind("user_id", id)
-                        .bind("role_id", role.id)
+                roleBatch.bind(UserBuilderMapper.USER_ID, id)
+                        .bind(RoleMapper.ROLE_ID, role.id)
                         .add();
             }
             roleBatch.execute();
@@ -204,7 +205,7 @@ public class UserManagementImpl implements UserManagementDao
 
         try (Update deleteProviders = handle.createUpdate("delete from user_identity_provider where user_id=:id"))
         {
-            deleteProviders.bind("id", id).execute();
+            deleteProviders.bind(GenericColumns.ID, id).execute();
         }
 
         try (PreparedBatch idpBatch = 
@@ -213,9 +214,9 @@ public class UserManagementImpl implements UserManagementDao
         {
             for (IdentityProviderMapping idpM: user.identityProviders)
             {
-                idpBatch.bind("user_id", id)
-                        .bind("identity_provider_id", idpM.provider.getId())
-                        .bind("subject", idpM.subject)
+                idpBatch.bind(UserBuilderMapper.USER_ID, id)
+                        .bind(IdentityProviderMapper.IDENTITY_PROVIDER_ID, idpM.provider.getId())
+                        .bind(GenericColumns.SUBJECT, idpM.subject)
                         .add();
             }
             idpBatch.execute();
@@ -233,9 +234,9 @@ public class UserManagementImpl implements UserManagementDao
              // password?
              Update deleteUser = handle.createUpdate("delete from opendcs_user where id = :id"))
         {
-            deleteRoles.bind("id", id).execute();
-            deleteIdps.bind("id", id).execute();
-            deleteUser.bind("id", id).execute();
+            deleteRoles.bind(GenericColumns.ID, id).execute();
+            deleteIdps.bind(GenericColumns.ID, id).execute();
+            deleteUser.bind(GenericColumns.ID, id).execute();
         }
     }
 
@@ -274,9 +275,9 @@ public class UserManagementImpl implements UserManagementDao
                 handle.createQuery("insert into identity_provider (name, type, updated_at, config) " +
                                                             "values (:name, :type, now(), :config::jsonb) returning id, name, type, updated_at, config::text"))
         {
-            return addIdp.bind("name", provider.getName())
-                            .bind("type", provider.getType())
-                            .bind("config", provider.configToMap())
+            return addIdp.bind(GenericColumns.NAME, provider.getName())
+                            .bind(IdentityProviderMapper.TYPE, provider.getType())
+                            .bind(GenericColumns.CONFIG, provider.configToMap())
                             .map(PROVIDER_MAPPER).one();
         }
     }
@@ -289,7 +290,7 @@ public class UserManagementImpl implements UserManagementDao
 
         try (Query getIdp = handle.createQuery("select id, name, type, updated_at, config::text from identity_provider where id = :id"))
         {
-            return getIdp.bind("id", id).map(PROVIDER_MAPPER).findOne();
+            return getIdp.bind(GenericColumns.ID, id).map(PROVIDER_MAPPER).findOne();
         }
     }
 
@@ -303,10 +304,10 @@ public class UserManagementImpl implements UserManagementDao
                 handle.createQuery("update identity_provider set name = :name, type = :type, " +
                                     "config = :config::jsonb where id = :id returning id, name, type, updated_at, config::text"))
         {
-            return updateIdp.bind("id", id)
-                            .bind("name", provider.getName())
-                            .bind("type", provider.getType())
-                            .bind("config", provider.configToMap())
+            return updateIdp.bind(GenericColumns.ID, id)
+                            .bind(GenericColumns.NAME, provider.getName())
+                            .bind(IdentityProviderMapper.TYPE, provider.getType())
+                            .bind(GenericColumns.CONFIG, provider.configToMap())
                             .map(PROVIDER_MAPPER).one();
         }
     }
@@ -317,7 +318,7 @@ public class UserManagementImpl implements UserManagementDao
         Handle handle = getHandle(tx);
         try (Update deleteIdp = handle.createUpdate("delete from identity_provider where id = :id"))
         {
-            deleteIdp.bind("id", id).execute();
+            deleteIdp.bind(GenericColumns.ID, id).execute();
         }
     }
 
@@ -349,8 +350,8 @@ public class UserManagementImpl implements UserManagementDao
                 handle.createQuery("insert into opendcs_role (name, description, updated_at) " +
                                                      "values (:name, :description, now()) returning id, name, description,updated_at"))
         {
-            return addRole.bind("name", role.name)
-                          .bind("description", role.description)
+            return addRole.bind(GenericColumns.NAME, role.name)
+                          .bind(GenericColumns.DESCRIPTION, role.description)
                           .map(ROLE_MAPPER).one();
         }
     }
@@ -361,7 +362,7 @@ public class UserManagementImpl implements UserManagementDao
         Handle handle = getHandle(tx);
         try (Query select = handle.createQuery("select id, name, description, updated_at from opendcs_role where id = :id"))
         {
-            return select.bind("id", id)
+            return select.bind(GenericColumns.ID, id)
                          .map(ROLE_MAPPER).findOne();
         }
     }
@@ -372,9 +373,9 @@ public class UserManagementImpl implements UserManagementDao
         Handle handle = getHandle(tx);
         try (Query update = handle.createQuery("update opendcs_role set name =:name, description = :description where id=:id returning id, name, description,updated_at"))
         {
-            return update.bind("name", role.name)
-                         .bind("description", role.description)
-                         .bind("id", id)
+            return update.bind(GenericColumns.NAME, role.name)
+                         .bind(GenericColumns.DESCRIPTION, role.description)
+                         .bind(GenericColumns.ID, id)
                          .map(ROLE_MAPPER).one();
         }
     }
@@ -385,7 +386,7 @@ public class UserManagementImpl implements UserManagementDao
         Handle handle = getHandle(tx);
         try (Update delete = handle.createUpdate("delete from opendcs_role where id = :id"))
         {
-             delete.bind("id", id)
+             delete.bind(GenericColumns.ID, id)
                    .execute();
         }
     }

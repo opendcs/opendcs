@@ -23,13 +23,11 @@ import java.util.Map;
 import org.jdbi.v3.core.generic.GenericType;
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.impl.opendcs.BuiltInIdentityProvider;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.spi.authentication.IdentityProviderProvider;
 import org.opendcs.spi.authentication.UnsupportedProviderException;
+import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import decodes.sql.DbKey;
 
@@ -38,6 +36,8 @@ import decodes.sql.DbKey;
  */
 public final class IdentityProviderMapper extends PrefixRowMapper<IdentityProvider>
 {
+    public static final String IDENTITY_PROVIDER_ID = "identity_provider_id";
+    public static final String TYPE = "type";
 
     private IdentityProviderMapper(String prefix)
     {
@@ -49,17 +49,17 @@ public final class IdentityProviderMapper extends PrefixRowMapper<IdentityProvid
     {
         ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class)
                                                     .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
-        DbKey id = columnMapperForKey.map(rs, prefix+"id", ctx);
-        String name = rs.getString(prefix+"name");
-        String type = rs.getString(prefix+"type");
+        DbKey id = columnMapperForKey.map(rs, prefix+GenericColumns.ID, ctx);
+        String name = rs.getString(prefix+GenericColumns.NAME);
+        String type = rs.getString(prefix+TYPE);
         ColumnMapper<ZonedDateTime> zdtMapper = ctx.findColumnMapperFor(ZonedDateTime.class)
                                                    .orElseThrow(() -> new SQLException(SqlErrorMessages.ZDT_MAPPER_NOT_FOUND));
-        ZonedDateTime updatedAt = zdtMapper.map(rs, prefix+"updated_at", ctx);
-        ColumnMapper<Map<String, Object>> columnMapperForConfig = 
+        ZonedDateTime updatedAt = zdtMapper.map(rs, prefix+GenericColumns.UPDATED_AT, ctx);
+        ColumnMapper<Map<String, Object>> columnMapperForConfig =
                 ctx.findColumnMapperFor(new GenericType<Map<String, Object>>() {})
                    .orElseThrow(() -> new SQLException(SqlErrorMessages.CONFIG_MAPPER_NOT_FOUND));
-            
-        Map<String, Object> config = columnMapperForConfig.map(rs, prefix+"config", ctx);            
+
+        Map<String, Object> config = columnMapperForConfig.map(rs, prefix+GenericColumns.CONFIG, ctx);
         IdentityProviderProvider idpp;
         try
         {

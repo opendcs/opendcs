@@ -3,6 +3,7 @@ package org.opendcs.database.impl.opendcs.jdbi.column.json;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.HashMap;
 
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
@@ -21,14 +22,16 @@ public class ConfigColumnMapper implements ColumnMapper<Map<String, Object>>
         final String configStr = rs.getString(columnNumber);
         if (rs.wasNull())
         {
-            return null;
+            return new HashMap<>();
         }
-        try {
+        try
+        {
             return om.readValue(configStr, new TypeReference<Map<String, Object>>() {});
-        } catch (JsonProcessingException ex)
+        }
+        catch (JsonProcessingException ex)
         {
             throw new SQLException("Unable to parse provided json preferences", ex);
         }
     }
-    
+
 }

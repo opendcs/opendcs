@@ -20,7 +20,6 @@ import java.util.Map;
 
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.spi.authentication.IdentityProviderProvider;
-import org.opendcs.spi.authentication.UnsupportedProviderException;
 
 import com.google.auto.service.AutoService;
 
