@@ -18,6 +18,8 @@ dependencies
     opendcs(project(":opendcs"))
     opendcs(project(":lrgs-web"))
     opendcs(project(":opendcs-logback-event-provider"))
+    opendcs(project(":opendcs-schemas"))
+    opendcs(project(":opendcs-schemas-cwms-oracle"))
     opendcs(libs.ch.qos.logback)
     docs(project(path: ":docs", configuration: 'docs'))
 }
@@ -33,7 +35,7 @@ distributions
             into('bin')
             {
                 from ('src/main/dist/scripts')
-                
+
                 filePermissions
                 {
                     user
@@ -90,6 +92,7 @@ distributions
 
             into('schema') {
                 from "${rootDir}/schema"
+                include "**/hdb", "**/noaa/**"
             }
         }
     }
