@@ -92,6 +92,7 @@ distributions
 
             into('schema') {
                 from "${rootDir}/schema"
+                include "**/hdb", "**/noaa/**"
             }
         }
     }
