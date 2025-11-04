@@ -1,3 +1,5 @@
+.\schema contains flyway migration scripts and other implementation specific SQL.
+
 The directories in here that aren't gradle sub projects haven't been converted yet.
 
 Sub projects that are converted are flyway migration scripts under the `src/main/resources/db/<impl name>`.
