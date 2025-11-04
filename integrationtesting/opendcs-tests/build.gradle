@@ -32,6 +32,8 @@ dependencies {
 
     extra(libs.ch.qos.logback) // need to manually add this to classpath in test tasks
 
+    testImplementation project(":opendcs-schemas")
+    testImplementation project(":opendcs-schemas-cwms-oracle")
     testImplementation project(":testing:fixtures")
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)
@@ -113,7 +115,7 @@ testEngines.each { engine ->
             }
 
         }
-      
+
 
 
         classDirectories.setFrom(files(classDirectories.files.collect {
