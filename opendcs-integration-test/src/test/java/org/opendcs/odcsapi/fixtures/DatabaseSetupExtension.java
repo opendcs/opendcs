@@ -29,13 +29,13 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.platform.commons.PreconditionViolationException;
 import org.opendcs.fixtures.spi.Configuration;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 import static io.restassured.RestAssured.given;
 
 public class DatabaseSetupExtension implements BeforeEachCallback
 {
-	private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseSetupExtension.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static DbType currentDbType;
 	private static Configuration currentConfig;
 	private static TomcatServer currentTomcat;
@@ -104,12 +104,12 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 						.then()
 						.assertThat()
 						.statusCode(Matchers.is(HttpServletResponse.SC_NO_CONTENT));
-				LOGGER.atDebug().log("Server is up!");
+				log.debug("Server is up!");
 				break;
 			}
-			catch(Throwable e)
+			catch(Throwable ex)
 			{
-				LOGGER.atDebug().log("Waiting for the server to start...");
+				log.atDebug().setCause(ex).log("Waiting for the server to start...");
 				Thread.sleep(100);//NOSONAR
 			}
 		}
@@ -139,9 +139,9 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 				stmt2.setString(2, dbOffice);
 				stmt2.executeQuery();
 			}
-			catch(SQLException e)
+			catch(SQLException ex)
 			{
-				throw new RuntimeException(e);
+				throw new RuntimeException(ex);
 			}
 		}
 	}

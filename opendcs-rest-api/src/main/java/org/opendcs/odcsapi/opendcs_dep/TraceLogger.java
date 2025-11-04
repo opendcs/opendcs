@@ -16,12 +16,17 @@
 package org.opendcs.odcsapi.opendcs_dep;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.spi.LoggingEventBuilder;
 
+/**
+ * NOTE: coordinate with main code development. Mechanism to use here
+ * will likely be the same as how the GUI replaces this behavior.
+ * 
+ */
 final class TraceLogger extends ilex.util.Logger
 {
-	private static final Logger LOGGER = LoggerFactory.getLogger(TraceLogger.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	public TraceLogger()
 	{
@@ -43,20 +48,20 @@ final class TraceLogger extends ilex.util.Logger
 		{
 			case ilex.util.Logger.E_DEBUG3:
 			case ilex.util.Logger.E_DEBUG2:
-				level = LOGGER.atTrace();
+				level = log.atTrace();
 				break;
 			case ilex.util.Logger.E_DEBUG1:
-				level = LOGGER.atDebug();
+				level = log.atDebug();
 				break;
 			case ilex.util.Logger.E_WARNING:
-				level = LOGGER.atWarn();
+				level = log.atWarn();
 				break;
 			case ilex.util.Logger.E_FATAL:
-				level = LOGGER.atError();
+				level = log.atError();
 				break;
 			case ilex.util.Logger.E_INFORMATION:
 			default:
-				level = LOGGER.atInfo();
+				level = log.atInfo();
 		}
 		level.log(msg);
 	}

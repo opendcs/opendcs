@@ -28,11 +28,11 @@ import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 public final class CwmsAuthorizationDAO extends DaoBase implements ApiAuthorizationDAI
 {
-	private static final Logger LOGGER = LoggerFactory.getLogger(CwmsAuthorizationDAO.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	public CwmsAuthorizationDAO(DatabaseConnectionOwner tsdb)
 	{
@@ -73,7 +73,7 @@ public final class CwmsAuthorizationDAO extends DaoBase implements ApiAuthorizat
 						while(rs.next())
 						{
 							String role = rs.getString(1);
-							LOGGER.info("User '{}' has role {}", username, role);
+							log.info("User '{}' has role {}", username, role);
 							if("CCP Mgr".equalsIgnoreCase(role))
 							{
 								roles.add(OpenDcsApiRoles.ODCS_API_ADMIN);

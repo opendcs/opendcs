@@ -142,9 +142,9 @@ public final class AppResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_OK)
 					.entity(mapLoading(dai.getComputationApp(DbKey.createDbKey(appId)))).build();
 		}
-		catch (NoSuchObjectException e)
+		catch (NoSuchObjectException ex)
 		{
-			throw new DatabaseItemNotFoundException(String.format(NO_APP_FOUND, appId), e);
+			throw new DatabaseItemNotFoundException(String.format(NO_APP_FOUND, appId), ex);
 		}
 		catch (DbIoException ex)
 		{
@@ -264,9 +264,9 @@ public final class AppResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_NO_CONTENT)
 					.entity("appId with ID " + appId + " deleted").build();
 		}
-		catch (NoSuchObjectException e)
+		catch (NoSuchObjectException ex)
 		{
-			throw new DatabaseItemNotFoundException(String.format(NO_APP_FOUND, appId), e);
+			throw new DatabaseItemNotFoundException(String.format(NO_APP_FOUND, appId), ex);
 		}
 		catch (DbIoException | ConstraintException ex)
 		{

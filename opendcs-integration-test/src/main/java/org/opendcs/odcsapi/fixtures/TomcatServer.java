@@ -38,7 +38,7 @@ import org.opendcs.fixtures.configurations.cwms.CwmsOracleConfiguration;
 import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.fixtures.spi.ConfigurationProvider;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
@@ -50,7 +50,7 @@ import uk.org.webcompere.systemstubs.security.SystemExit;
  */
 public final class TomcatServer implements AutoCloseable
 {
-	private static final Logger LOGGER = LoggerFactory.getLogger(TomcatServer.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String DB_OFFICE = "DB_OFFICE";
 	public static final String DB_DRIVER_CLASS = "DB_DRIVER_CLASS";
 	public static final String DB_DATASOURCE_CLASS = "DB_DATASOURCE_CLASS";
@@ -109,7 +109,7 @@ public final class TomcatServer implements AutoCloseable
 	public void start() throws LifecycleException
 	{
 		tomcatInstance.start();
-		LOGGER.info("Tomcat listening at http://localhost:{}", tomcatInstance.getConnector().getLocalPort());
+		log.info("Tomcat listening at http://localhost:{}", tomcatInstance.getConnector().getLocalPort());
 	}
 
 	public int getPort()
@@ -160,9 +160,9 @@ public final class TomcatServer implements AutoCloseable
 				tomcat.await();
 			}
 		}
-		catch(RuntimeException | LifecycleException | IOException e)
+		catch(RuntimeException | LifecycleException | IOException ex)
 		{
-			LOGGER.error("Error starting tomcat", e);
+			log.atError().setCause(ex).log("Error starting tomcat", ex);
 			System.exit(-1);
 		}
 	}
@@ -303,9 +303,9 @@ public final class TomcatServer implements AutoCloseable
 				setWebUserPermissionsStmt.setString(2, dbOffice);
 				setWebUserPermissionsStmt.executeQuery();
 			}
-			catch(SQLException e)
+			catch(SQLException ex)
 			{
-				LOGGER.atDebug().setCause(e).log("Error setting up client user");
+				log.atDebug().setCause(ex).log("Error setting up client user");
 			}
 		}
 	}

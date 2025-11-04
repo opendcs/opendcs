@@ -29,11 +29,11 @@ import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.spi.database.DatabaseProvider;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 public final class OpenDcsDatabaseFactory
 {
-	private static final Logger LOGGER = LoggerFactory.getLogger(OpenDcsDatabaseFactory.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static OpenDcsDatabase database;
 
 	private OpenDcsDatabaseFactory()
@@ -55,10 +55,10 @@ public final class OpenDcsDatabaseFactory
 			}
 			database = DatabaseService.getDatabaseFor(dataSource);
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
 			//Temporary workaround until database_properties table is implemented in the schema
-			LOGGER.atWarn().setCause(e).log("Temporary solution forcing OpenTSDB");
+			log.atWarn().setCause(ex).log("Temporary solution forcing OpenTSDB");
 			DecodesSettings decodesSettings = new DecodesSettings();
 			DecodesSettings.instance().writeCwmsLocations = true;
 			decodesSettings.CwmsOfficeId = DbInterface.decodesProperties.getProperty("CwmsOfficeId");
@@ -77,9 +77,10 @@ public final class OpenDcsDatabaseFactory
 				}
 				database = databaseProvider.createDatabase(dataSource, decodesSettings);
 			}
-			catch(DatabaseException | SQLException ex)
+			catch(DatabaseException | SQLException ex2)
 			{
-				throw new IllegalStateException("Error connecting to the database via JNDI", ex);
+				ex2.addSuppressed(ex);
+				throw new IllegalStateException("Error connecting to the database via JNDI", ex2);
 			}
 		}
 		return database;

@@ -28,14 +28,15 @@ import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.spi.LoggingEventBuilder;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 
 @Provider
 public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(AppExceptionMapper.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final String INTERNAL_ERROR = "There was an error.  Please contact your sys admin.";
 
 	@Override
@@ -75,7 +76,7 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 
 	private static Response handle(Throwable ex)
 	{
-		LOGGER.warn("Unknown Error", ex);
+		log.atWarn().setCause(ex).log("Unknown Error");
 		Status status = new Status("Bad Request.  There was an issue with the request, please try again or contact your system administrator.");
 		return Response.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
 				.entity(status)
@@ -84,7 +85,7 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 
 	private static Response handle(UnsupportedOperationException wae)
 	{
-		LOGGER.warn("Unsupported endpoint", wae);
+		log.atWarn().setCause(wae).log("Unsupported endpoint");
 		return Response.status(HttpServletResponse.SC_NOT_IMPLEMENTED)
 				.entity(new Status(wae.getMessage()))
 				.build();
@@ -92,7 +93,7 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 
 	private static Response handle(WebApplicationException wae)
 	{
-		LOGGER.warn("Error in request", wae);
+		log.atWarn().setCause(wae).log("Error in request");
 		String message = wae.getMessage();
 		if(wae instanceof InternalServerErrorException)
 		{
@@ -121,7 +122,7 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 						"Please contact your system administrator for more information.";
 			}
 		}
-		LOGGER.warn(returnErrMsg, dbex);
+		log.atWarn().setCause(dbex).log(returnErrMsg);
 		return Response.status(HttpServletResponse.SC_BAD_REQUEST)
 				.entity(new Status(returnErrMsg))
 				.build();
@@ -129,18 +130,22 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 
 	private static Response handle(TsdbException dbex)
 	{
-		LOGGER.warn("Unexpected DbIoException thrown from request", dbex);
+		LoggingEventBuilder le = log.atWarn().setCause(dbex);
 		String returnErrMsg = INTERNAL_ERROR;
 		if(dbex.getCause() != null)
 		{
 			String tempCause = dbex.getCause().toString().toLowerCase();
 			if(tempCause.contains("value too long"))
 			{
-				returnErrMsg = "There was an error saving this.  " +
+				le.log("There was an error saving this.  " +
 						"The most likely error is that there is an attempt to save a value that exceeds the allowed length.  " +
-						"Please contact your system administrator for more information.";
+						"Please contact your system administrator for more information.");
 			}
-			LOGGER.warn(returnErrMsg, dbex);
+			else
+			{
+				le.log("Unexpected DbIoException thrown from request");
+			}
+			
 		}
 		return Response.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
 				.entity(new Status(returnErrMsg))
@@ -150,18 +155,19 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 	private static Response handle(ConstraintException dbex)
 	{
 		String returnErrMsg = INTERNAL_ERROR;
+		LoggingEventBuilder le = log.atWarn().setCause(dbex);
 		if(dbex.getCause() != null)
 		{
 			String tempCause = dbex.getCause().toString().toLowerCase();
 			if(tempCause.contains("duplicate key value violates unique constraint"))
 			{
-				returnErrMsg = "There was an error saving this.  The most likely error is that there is a duplicate key value.  Please contact your system administrator for more information.";
-			}
-			LOGGER.warn(returnErrMsg, dbex);
+				le.log("There was an error saving this.  The most likely error is that there is a duplicate key value. " +
+					   "Please contact your system administrator for more information.");
+			}	
 		}
 		else
 		{
-			LOGGER.warn("Violated constraint exception thrown from request", dbex);
+			le.log("Violated constraint exception thrown from request");
 		}
 		return Response.status(HttpServletResponse.SC_BAD_REQUEST)
 				.entity(new Status(returnErrMsg))
@@ -170,13 +176,14 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 
 	private static Response handle(WebAppException wae)
 	{
+		LoggingEventBuilder le = (wae.getStatus() >= 500 ? log.atWarn() : log.atInfo() ).setCause(wae);
 		if(wae.getStatus() >= 500)
 		{
-			LOGGER.warn("Server error", wae);
+			le.log("Server error");
 		}
 		else
 		{
-			LOGGER.info("Client error", wae);
+			le.log("Client error");
 		}
 		return Response.status(wae.getStatus())
 				.entity(new Status(wae.getMessage()))

@@ -42,14 +42,14 @@ import javax.ws.rs.ext.Provider;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 @Provider
 @Priority(Priorities.AUTHORIZATION)
 public final class SecurityFilter implements ContainerRequestFilter
 {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(SecurityFilter.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static final String LAST_AUTHORIZATION_CHECK = "opendcs-last-authorization-check";
 	@Context
 	private ResourceInfo resourceInfo;
@@ -87,9 +87,9 @@ public final class SecurityFilter implements ContainerRequestFilter
 
 	private void setupGuestContext(ContainerRequestContext requestContext)
 	{
-		if(LOGGER.isDebugEnabled())
+		if(log.isDebugEnabled())
 		{
-			LOGGER.debug("Public endpoint identified: {}", resourceInfo.getResourceMethod().toGenericString());
+			log.debug("Public endpoint identified: {}", resourceInfo.getResourceMethod().toGenericString());
 		}
 		OpenDcsPrincipal principal = new OpenDcsPrincipal("guest", Collections.singleton(OpenDcsApiRoles.ODCS_API_GUEST));
 		requestContext.setSecurityContext(new OpenDcsSecurityContext(principal,

@@ -66,11 +66,11 @@ import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.odcsapi.util.ApiPropertiesUtil;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 public final class TestDecoder
 {
-	private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(TestDecoder.class);
+	private static final org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
 	private static long lastDecodesInitMsec = 0L;
 
 	private TestDecoder()
@@ -190,7 +190,7 @@ public final class TestDecoder
 			}
 			catch (RuntimeException | NoConversionException ex)
 			{
-				LOGGER.atDebug().setCause(ex).log("Cannot get message time from header. Defaulting to current time.");
+				log.atDebug().setCause(ex).log("Cannot get message time from header. Defaulting to current time.");
 				timeStamp = new Date();
 			}
 			rawMessage.setTimeStamp(timeStamp);

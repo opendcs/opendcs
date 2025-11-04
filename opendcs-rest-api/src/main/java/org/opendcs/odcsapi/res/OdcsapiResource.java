@@ -101,9 +101,9 @@ public final class OdcsapiResource extends OpenDcsResource
 			}
 			return Response.status(HttpServletResponse.SC_OK).entity(props).build();
 		}
-		catch(SQLException e)
+		catch(SQLException ex)
 		{
-			throw new DbException("Error reading timeseries properties", e);
+			throw new DbException("Error reading timeseries properties", ex);
 		}
 	}
 
@@ -151,9 +151,9 @@ public final class OdcsapiResource extends OpenDcsResource
 			TimeSeriesDb tsdb = getLegacyTimeseriesDB();
 			tsdb.writeTsdbProperties(props);
 		}
-		catch (DbIoException e)
+		catch (DbIoException ex)
 		{
-			throw new DbException("Error writing timeseries properties", e);
+			throw new DbException("Error writing timeseries properties", ex);
 		}
 		return Response.status(HttpServletResponse.SC_OK).entity(props).build();
 	}

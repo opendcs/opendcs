@@ -33,11 +33,11 @@ import decodes.util.PropertySpec;
 import org.opendcs.odcsapi.beans.ApiPropSpec;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 public final class PropSpecHelper
 {
-	private static final Logger LOGGER = LoggerFactory.getLogger(PropSpecHelper.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	public enum ClassName
 	{
@@ -189,7 +189,7 @@ public final class PropSpecHelper
 	private static PropertySpec[] getDecodesPropSpecs(String className) throws WebAppException
 	{
 		//className is user controlled, so it is logged at trace level.
-		LOGGER.trace("PropSpecHelper.getPropSpecs class='{}'", className);
+		log.trace("PropSpecHelper.getPropSpecs class='{}'", className);
 		if (FtpDataSource.class.getName().equalsIgnoreCase(className))
 		{
 			// Can't instantiate the class because it requires Apache FTP libs.

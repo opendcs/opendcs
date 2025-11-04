@@ -54,10 +54,10 @@ public final class ServletSsoAuthCheck extends AuthorizationCheck
 			return new OpenDcsSecurityContext(openDcsPrincipal,
 					httpServletRequest.isSecure(), SESSION_COOKIE_NAME);
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
 			throw new ServerErrorException("Error accessing database to determine user roles",
-					Response.Status.INTERNAL_SERVER_ERROR, e);
+					Response.Status.INTERNAL_SERVER_ERROR, ex);
 		}
 	}
 

@@ -221,9 +221,9 @@ public final class TimeSeriesResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_OK)
 					.entity(spec).build();
 		}
-		catch (NoSuchObjectException e)
+		catch (NoSuchObjectException ex)
 		{
-			throw new DatabaseItemNotFoundException(String.format("Time series with key: %d not found", tsKey), e);
+			throw new DatabaseItemNotFoundException(String.format("Time series with key: %d not found", tsKey), ex);
 		}
 		catch (DbIoException ex)
 		{

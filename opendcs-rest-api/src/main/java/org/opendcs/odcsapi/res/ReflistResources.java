@@ -194,9 +194,9 @@ public final class ReflistResources extends OpenDcsResource
 
 			return Response.status(HttpServletResponse.SC_OK).entity(ret).build();
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
-			throw new DbException("Unable to retrieve reference lists", e);
+			throw new DbException("Unable to retrieve reference lists", ex);
 		}
 		finally
 		{
@@ -246,9 +246,9 @@ public final class ReflistResources extends OpenDcsResource
 					.entity(map(dbEnum))
 					.build();
 		}
-		catch( DatabaseException | DbIoException e)
+		catch( DatabaseException | DbIoException ex)
 		{
-			throw new DbException("Unable to write reference list", e);
+			throw new DbException("Unable to write reference list", ex);
 		}
 	}
 
@@ -333,9 +333,9 @@ public final class ReflistResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_NO_CONTENT)
 					.entity("reflist with ID " + reflistId + " deleted").build();
 		}
-		catch(DbIoException e)
+		catch(DbIoException ex)
 		{
-			throw new DbException("Unable to delete reference list", e);
+			throw new DbException("Unable to delete reference list", ex);
 		}
 	}
 
@@ -376,9 +376,9 @@ public final class ReflistResources extends OpenDcsResource
 			}
 			return Response.status(HttpServletResponse.SC_OK).entity(mapSeasons(dbEnum)).build();
 		}
-		catch(DbIoException e)
+		catch(DbIoException ex)
 		{
-			throw new DbException("Unable to retrieve seasons", e);
+			throw new DbException("Unable to retrieve seasons", ex);
 		}
 	}
 
@@ -438,13 +438,13 @@ public final class ReflistResources extends OpenDcsResource
 
 			return Response.status(HttpServletResponse.SC_OK).entity(map(seasonVal)).build();
 		}
-		catch(DbIoException e)
+		catch(DbIoException ex)
 		{
-			if (e.getCause() instanceof ValueNotFoundException)
+			if (ex.getCause() instanceof ValueNotFoundException)
 			{
-				throw new DatabaseItemNotFoundException("Unable to retrieve season: matching season not found", e);
+				throw new DatabaseItemNotFoundException("Unable to retrieve season: matching season not found", ex);
 			}
-			throw new DbException(String.format("Unable to retrieve season with abbreviation: %s", abbr), e);
+			throw new DbException(String.format("Unable to retrieve season with abbreviation: %s", abbr), ex);
 		}
 	}
 
@@ -520,9 +520,9 @@ public final class ReflistResources extends OpenDcsResource
 					.entity(map(dbSeason))
 					.build();
 		}
-		catch(DbIoException e)
+		catch(DbIoException ex)
 		{
-			throw new DbException(String.format("Unable to write season with abbreviation: %s", season.getAbbr()), e);
+			throw new DbException(String.format("Unable to write season with abbreviation: %s", season.getAbbr()), ex);
 		}
 	}
 
@@ -575,9 +575,9 @@ public final class ReflistResources extends OpenDcsResource
 			dai.deleteEnumValue(enumKey, abbr);
 			return Response.status(HttpServletResponse.SC_NO_CONTENT).entity("Deleted season " + abbr).build();
 		}
-		catch(DbIoException e)
+		catch(DbIoException ex)
 		{
-			throw new DbException(String.format("Unable to delete season with abbreviation: %s", abbr), e);
+			throw new DbException(String.format("Unable to delete season with abbreviation: %s", abbr), ex);
 		}
 	}
 

@@ -31,8 +31,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.opendcs.webui.themes.Theme;
 import org.opendcs.webui.themes.ThemeSet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Represents a PortalBase.
@@ -45,8 +43,6 @@ import org.slf4j.LoggerFactory;
 
 public class PortalBase extends HttpServlet
 {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(PortalBase.class);
     private static final List<Theme> themes = ThemeSet.getAllThemes();
 
     /**

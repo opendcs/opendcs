@@ -63,12 +63,12 @@ import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 @Path("/")
 public final class PresentationResources extends OpenDcsResource
 {
-	private static final Logger LOGGER = LoggerFactory.getLogger(PresentationResources.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	@Context HttpHeaders httpHeaders;
 
@@ -96,9 +96,9 @@ public final class PresentationResources extends OpenDcsResource
 			dbIo.readPresentationGroupList(groupList);
 			return Response.status(HttpServletResponse.SC_OK).entity(map(groupList)).build();
 		}
-		catch (DatabaseException e)
+		catch (DatabaseException ex)
 		{
-			throw new DbException("Unable to retrieve presentation groups", e);
+			throw new DbException("Unable to retrieve presentation groups", ex);
 		}
 		finally
 		{
@@ -182,17 +182,17 @@ public final class PresentationResources extends OpenDcsResource
 			dbIo.readPresentationGroup(group);
 			return Response.status(HttpServletResponse.SC_OK).entity(map(group)).build();
 		}
-		catch (ValueNotFoundException e)
+		catch (ValueNotFoundException ex)
 		{
-			throw new DatabaseItemNotFoundException(String.format("Presentation group with ID %s not found", groupId), e);
+			throw new DatabaseItemNotFoundException(String.format("Presentation group with ID %s not found", groupId), ex);
 		}
-		catch (DatabaseException e)
+		catch (DatabaseException ex)
 		{
-			if (e.getCause() instanceof ValueNotFoundException)
+			if (ex.getCause() instanceof ValueNotFoundException)
 			{
-				throw new DatabaseItemNotFoundException(String.format("Presentation group with ID %s not found", groupId), e);
+				throw new DatabaseItemNotFoundException(String.format("Presentation group with ID %s not found", groupId), ex);
 			}
-			throw new DbException(String.format("Unable to retrieve presentation group with ID: %s", groupId), e);
+			throw new DbException(String.format("Unable to retrieve presentation group with ID: %s", groupId), ex);
 		}
 		finally
 		{
@@ -279,9 +279,9 @@ public final class PresentationResources extends OpenDcsResource
 					.entity(map(group))
 					.build();
 		}
-		catch (DatabaseException e)
+		catch (DatabaseException ex)
 		{
-			throw new DbException("Unable to store presentation group", e);
+			throw new DbException("Unable to store presentation group", ex);
 		}
 		finally
 		{
@@ -341,9 +341,9 @@ public final class PresentationResources extends OpenDcsResource
 						dt = retDt;
 					}
 				}
-				catch (DbIoException | NoSuchObjectException e)
+				catch (DbIoException | NoSuchObjectException ex)
 				{
-					LOGGER.atDebug().setCause(e).log("Unable to lookup data type {}. Setting to null.", ape.getDataTypeCode());
+					log.atDebug().setCause(ex).log("Unable to lookup data type {}. Setting to null.", ape.getDataTypeCode());
 					dt.setId(DbKey.NullKey);
 				}
 			}
@@ -415,9 +415,9 @@ public final class PresentationResources extends OpenDcsResource
 					.entity("Presentation Group with ID " + groupId + " deleted")
 					.build();
 		}
-		catch (DatabaseException e)
+		catch (DatabaseException ex)
 		{
-			throw new DbException("Unable to delete presentation group", e);
+			throw new DbException("Unable to delete presentation group", ex);
 		}
 		finally
 		{

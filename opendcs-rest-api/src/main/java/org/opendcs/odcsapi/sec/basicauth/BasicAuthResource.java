@@ -56,7 +56,7 @@ import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
 import org.opendcs.odcsapi.sec.OpenDcsPrincipal;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 import static org.opendcs.odcsapi.res.DataSourceContextCreator.DATA_SOURCE_ATTRIBUTE_KEY;
 
@@ -65,7 +65,7 @@ import static org.opendcs.odcsapi.res.DataSourceContextCreator.DATA_SOURCE_ATTRI
 public final class BasicAuthResource extends OpenDcsResource
 {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(BasicAuthResource.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final String MODULE = "BasicAuthResource";
 
 	@Context
@@ -211,7 +211,7 @@ public final class BasicAuthResource extends OpenDcsResource
 		for(String header : authHeaders)
 		{
 			String trimmedHeader = header.trim();
-			LOGGER.debug(MODULE + ".makeToken authHdr = {}", trimmedHeader);
+			log.debug(MODULE + ".makeToken authHdr = {}", trimmedHeader);
 			if(trimmedHeader.startsWith("Basic"))
 			{
 				return extractCredentials(trimmedHeader.substring(6).trim());
@@ -235,25 +235,8 @@ public final class BasicAuthResource extends OpenDcsResource
 		credentials.setUsername(parts[0]);
 		credentials.setPassword(parts[1]);
 
-		LOGGER.info(MODULE + ".checkToken found tokstr in header.");
+		log.info(MODULE + ".checkToken found tokstr in header.");
 		return credentials;
-	}
-
-	private String getDatabaseUrl() throws WebAppException
-	{
-		DataSource dataSource = (DataSource) context.getAttribute(DATA_SOURCE_ATTRIBUTE_KEY);
-		try(Connection poolCon = dataSource.getConnection())
-		{
-			// The only way to verify that user/pw is valid is to attempt to establish a connection:
-			// This should eventually be moved to a users table
-			DatabaseMetaData metaData = poolCon.getMetaData();
-			return metaData.getURL();
-		}
-		catch(SQLException e)
-		{
-			throw new WebAppException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-					"Failed to obtain database URL.", e);
-		}
 	}
 
 	private void validateDbCredentials(Credentials creds) throws WebAppException
@@ -273,10 +256,10 @@ public final class BasicAuthResource extends OpenDcsResource
 
 			}
 		}
-		catch(SQLException e)
+		catch(SQLException ex)
 		{
 			throw new WebAppException(HttpServletResponse.SC_FORBIDDEN,
-					"Unable to authorize user.", e);
+					"Unable to authorize user.", ex);
 		}
 	}
 
@@ -286,9 +269,9 @@ public final class BasicAuthResource extends OpenDcsResource
 		{
 			return dao.getRoles(username);
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			throw new IllegalStateException("Unable to query the database for user authorization", e);
+			throw new IllegalStateException("Unable to query the database for user authorization", ex);
 		}
 	}
 

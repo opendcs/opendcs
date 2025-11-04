@@ -29,18 +29,16 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.servers.Server;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 @ApplicationPath("/")
 public final class RestServices extends ResourceConfig
 {
-	private static final Logger LOGGER = LoggerFactory.getLogger(RestServices.class);
-
-	;
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	public RestServices(@Context ServletContext servletContext)
 	{
-		LOGGER.debug("Initializing odcsapi RestServices.");
+		log.debug("Initializing odcsapi RestServices.");
 		packages("org.opendcs.odcsapi");
 		setupSwagger(servletContext);
 	}

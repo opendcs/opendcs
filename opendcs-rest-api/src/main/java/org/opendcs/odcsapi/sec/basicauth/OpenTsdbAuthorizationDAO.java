@@ -27,11 +27,11 @@ import org.opendcs.odcsapi.dao.ApiAuthorizationDAI;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 public final class OpenTsdbAuthorizationDAO extends DaoBase implements ApiAuthorizationDAI
 {
-	private static final Logger LOGGER = LoggerFactory.getLogger(OpenTsdbAuthorizationDAO.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	public OpenTsdbAuthorizationDAO(DatabaseConnectionOwner tsdb)
 	{
@@ -60,7 +60,7 @@ public final class OpenTsdbAuthorizationDAO extends DaoBase implements ApiAuthor
 						{
 							int roleid = rs.getInt(1);
 							String role = rs.getString(2);
-							LOGGER.info("User '{}' has role {}={}", username, roleid, role);
+							log.info("User '{}' has role {}={}", username, roleid, role);
 							if("OTSDB_ADMIN".equalsIgnoreCase(role))
 							{
 								roles.add(OpenDcsApiRoles.ODCS_API_ADMIN);

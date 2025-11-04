@@ -24,8 +24,8 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Duration;
 
 import org.opendcs.odcsapi.fixtures.TomcatServer;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
@@ -34,7 +34,7 @@ import org.testcontainers.utility.DockerImageName;
 public final class OwaspZap
 {
 	private static final String ZAP_IMAGE = "ghcr.io/zaproxy/zaproxy:stable";
-	private static final Logger LOGGER = LoggerFactory.getLogger(OwaspZap.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 
 	/**
@@ -58,15 +58,15 @@ public final class OwaspZap
 			tomcat.start();
 			System.exit(runOwaspZap(tomcat).intValue());
 		}
-		catch(InterruptedException e)
+		catch(InterruptedException ex)
 		{
 			Thread.currentThread().interrupt();
-			LOGGER.atError().setCause(e).log("Error running OWASP ZAP against OpenDCS REST API. Interrupted");
+			log.atError().setCause(ex).log("Error running OWASP ZAP against OpenDCS REST API. Interrupted");
 			System.exit(-2);
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			LOGGER.atError().setCause(e).log("Error running OWASP ZAP against OpenDCS REST API");
+			log.atError().setCause(ex).log("Error running OWASP ZAP against OpenDCS REST API");
 			System.exit(-1);
 		}
 	}
@@ -95,7 +95,7 @@ public final class OwaspZap
 				String utf8Str = outputFrame.getUtf8String().trim();
 				if(!utf8Str.isEmpty())
 				{
-					LOGGER.atInfo().log(utf8Str);
+					log.info(utf8Str);
 				}
 			});
 			while(zapContainer.isRunning())
@@ -104,7 +104,7 @@ public final class OwaspZap
 			}
 			printAllFilesInDirectory(reportDir);
 
-			LOGGER.atInfo().log("OWASP ZAP scan complete");
+			log.info("OWASP ZAP scan complete");
 			return zapContainer.getCurrentContainerInfo().getState().getExitCodeLong();
 		}
 
@@ -117,28 +117,29 @@ public final class OwaspZap
 		{
 			Files.setPosixFilePermissions(reportDir, PosixFilePermissions.fromString("rwxrwxrwx"));//NOSONAR
 		}
-		catch(UnsupportedOperationException e)
+		catch(UnsupportedOperationException ex)
 		{
-			LOGGER.atTrace()
-					.setCause(e)
-					.log("Unable to set permissions on report directory: " + reportDir + " likely due to Windows OS");
+			log.atTrace()
+			   .setCause(ex)
+			   .log("Unable to set permissions on report directory: {} likely due to Windows OS",
+			   		reportDir);
 		}
 		assert Files.isWritable(reportDir);
 	}
 
 	private static void printAllFilesInDirectory(Path directoryPath)
 	{
-		LOGGER.atInfo().log("Directory: " + directoryPath);
+		log.info("Directory: {}", directoryPath);
 		try(DirectoryStream<Path> stream = Files.newDirectoryStream(directoryPath))
 		{
 			for(Path path : stream)
 			{
-				LOGGER.atInfo().log("File: " + path.toAbsolutePath());
+				log.info("File: {}", path.toAbsolutePath());
 			}
 		}
-		catch(IOException e)
+		catch(IOException ex)
 		{
-			LOGGER.atError().setCause(e).log("Error reading directory: " + directoryPath);
+			log.atError().setCause(ex).log("Error reading directory: {}", directoryPath);
 		}
 	}
 

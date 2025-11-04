@@ -82,7 +82,7 @@ import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiPropertiesUtil;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import static ilex.util.TextUtil.str2boolean;
@@ -90,7 +90,7 @@ import static ilex.util.TextUtil.str2boolean;
 @Path("/")
 public final class RoutingResources extends OpenDcsResource
 {
-	private static final Logger LOGGER = LoggerFactory.getLogger(RoutingResources.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final String LAST_DACQ_ATTRIBUTE = "last-dacq-event-id";
 
 	@Context
@@ -123,9 +123,9 @@ public final class RoutingResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_OK)
 					.entity(map(rsList)).build();
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
-			throw new DbException("Unable to retrieve routing reference list", e);
+			throw new DbException("Unable to retrieve routing reference list", ex);
 		}
 		finally
 		{
@@ -196,13 +196,13 @@ public final class RoutingResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_OK)
 					.entity(map(spec)).build();
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
-			if((e instanceof ValueNotFoundException) || (e.getCause() instanceof ValueNotFoundException))
+			if((ex instanceof ValueNotFoundException) || (ex.getCause() instanceof ValueNotFoundException))
 			{
 				throw new DatabaseItemNotFoundException("RoutingSpec with ID " + routingId + " not found");
 			}
-			throw new DbException("Unable to retrieve routing spec by ID", e);
+			throw new DbException("Unable to retrieve routing spec by ID", ex);
 		}
 		finally
 		{
@@ -289,7 +289,7 @@ public final class RoutingResources extends OpenDcsResource
 						ret.setIridium(true);
 						break;
 					default:
-						LOGGER.atDebug().log("Unknown source type: " + value);
+						log.debug("Unknown source type: {}", value);
 				}
 			}
 			else if(key.equals("sc:spacecraft"))
@@ -317,7 +317,7 @@ public final class RoutingResources extends OpenDcsResource
 				}
 				catch(NumberFormatException ex)
 				{
-					LOGGER.atDebug().setCause(ex).log("Unable to parse channel number: " + value);
+					log.atDebug().setCause(ex).log("Unable to parse channel number: {}", value);
 				}
 			}
 			else if(key.startsWith("rs.timeapplyto"))
@@ -385,9 +385,9 @@ public final class RoutingResources extends OpenDcsResource
 			dbIo.writeRoutingSpec(spec);
 			return Response.status(HttpServletResponse.SC_CREATED).entity(map(spec)).build();
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
-			throw new DbException("Unable to store routing spec", e);
+			throw new DbException("Unable to store routing spec", ex);
 		}
 		finally
 		{
@@ -450,9 +450,9 @@ public final class RoutingResources extends OpenDcsResource
 			spec.networkListNames = new Vector<>(routing.getNetlistNames());
 			return spec;
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
-			throw new DbException("Unable to map routing spec", e);
+			throw new DbException("Unable to map routing spec", ex);
 		}
 
 	}
@@ -569,9 +569,9 @@ public final class RoutingResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_NO_CONTENT)
 					.entity(String.format("RoutingSpec with ID: %d deleted", routingId)).build();
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
-			throw new DbException("Unable to delete routing spec", e);
+			throw new DbException("Unable to delete routing spec", ex);
 		}
 		finally
 		{
@@ -620,9 +620,9 @@ public final class RoutingResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_OK)
 					.entity(entryMap(entries)).build();
 		}
-		catch(DbIoException e)
+		catch(DbIoException ex)
 		{
-			throw new DbException("Unable to retrieve schedule entry ref list", e);
+			throw new DbException("Unable to retrieve schedule entry ref list", ex);
 		}
 	}
 
@@ -690,9 +690,9 @@ public final class RoutingResources extends OpenDcsResource
 					.entity(map(entry))
 					.build();
 		}
-		catch(DbIoException e)
+		catch(DbIoException ex)
 		{
-			throw new DbException("Unable to retrieve schedule entry by ID", e);
+			throw new DbException("Unable to retrieve schedule entry by ID", ex);
 		}
 	}
 
@@ -738,9 +738,9 @@ public final class RoutingResources extends OpenDcsResource
 					.entity(map(entry))
 					.build();
 		}
-		catch(DbIoException e)
+		catch(DbIoException ex)
 		{
-			throw new DbException("Unable to store schedule entry", e);
+			throw new DbException("Unable to store schedule entry", ex);
 		}
 	}
 
@@ -774,9 +774,9 @@ public final class RoutingResources extends OpenDcsResource
 			entry.setEnabled(schedule.isEnabled());
 			return entry;
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
-			throw new DbException("Unable to map schedule entry", e);
+			throw new DbException("Unable to map schedule entry", ex);
 		}
 	}
 
@@ -841,9 +841,9 @@ public final class RoutingResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_NO_CONTENT)
 					.entity("Schedule entry with ID " + scheduleId + " deleted").build();
 		}
-		catch(DbIoException e)
+		catch(DbIoException ex)
 		{
-			throw new DbException(String.format("Unable to delete schedule entry by ID: %s", scheduleId), e);
+			throw new DbException(String.format("Unable to delete schedule entry by ID: %s", scheduleId), ex);
 		}
 	}
 
@@ -921,9 +921,9 @@ public final class RoutingResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_OK)
 					.entity(map(dbIo.readRoutingSpecStatus())).build();
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
-			throw new DbException("Unable to retrieve routing status", e);
+			throw new DbException("Unable to retrieve routing status", ex);
 		}
 		finally
 		{
@@ -1034,9 +1034,9 @@ public final class RoutingResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_OK)
 					.entity(statusMap(dai.readScheduleStatus(entry))).build();
 		}
-		catch(DbIoException e)
+		catch(DbIoException ex)
 		{
-			throw new DbException("Unable to retrieve routing exec status", e);
+			throw new DbException("Unable to retrieve routing exec status", ex);
 		}
 	}
 
@@ -1187,9 +1187,9 @@ public final class RoutingResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_OK)
 					.entity(events.stream().map(RoutingResources::map).collect(Collectors.toList())).build();
 		}
-		catch(DbIoException e)
+		catch(DbIoException ex)
 		{
-			throw new DbException("Unable to retrieve dacq events", e);
+			throw new DbException("Unable to retrieve dacq events", ex);
 		}
 	}
 
@@ -1242,6 +1242,11 @@ public final class RoutingResources extends OpenDcsResource
 		return backlogMap;
 	}
 
+	/**
+	 * Note: while we may leave placeholders for a bit, DacqEvent and DAO are now NOOPs
+	 * @param event
+	 * @return
+	 */
 	static ApiDacqEvent map(DacqEvent event)
 	{
 		// The app name is not present in the Toolkit DTO, so it won't be mapped here.

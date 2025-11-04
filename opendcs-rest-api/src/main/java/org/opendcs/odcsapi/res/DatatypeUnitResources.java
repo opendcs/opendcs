@@ -113,9 +113,9 @@ public final class DatatypeUnitResources extends OpenDcsResource
 			dai.readDataTypeSet(set, std);
 			return Response.status(HttpServletResponse.SC_OK).entity(map(set)).build();
 		}
-		catch(DbIoException e)
+		catch(DbIoException ex)
 		{
-			throw new DbException("Unable to retrieve data type list", e);
+			throw new DbException("Unable to retrieve data type list", ex);
 		}
 	}
 
@@ -180,9 +180,9 @@ public final class DatatypeUnitResources extends OpenDcsResource
 			dbIo.readEngineeringUnitList(euList);
 			return Response.status(HttpServletResponse.SC_OK).entity(map(euList)).build();
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
-			throw new DbException("Unable to retrieve data type list", e);
+			throw new DbException("Unable to retrieve data type list", ex);
 		}
 		finally
 		{
@@ -258,9 +258,9 @@ public final class DatatypeUnitResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_CREATED)
 					.entity(map(euList)).build();
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
-			throw new DbException("Unable to store Engineering Unit list", e);
+			throw new DbException("Unable to store Engineering Unit list", ex);
 		}
 		finally
 		{
@@ -301,9 +301,9 @@ public final class DatatypeUnitResources extends OpenDcsResource
 			dbIo.deleteEngineeringUnit(unit);
 			return Response.status(HttpServletResponse.SC_NO_CONTENT).entity("EU with abbr " + abbr + " deleted").build();
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
-			throw new DbException("Unable to store Engineering Unit list", e);
+			throw new DbException("Unable to store Engineering Unit list", ex);
 		}
 		finally
 		{
@@ -344,9 +344,9 @@ public final class DatatypeUnitResources extends OpenDcsResource
 			dbIo.readUnitConverterSet(unitConverterSet);
 			return Response.status(HttpServletResponse.SC_OK).entity(map(unitConverterSet)).build();
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
-			throw new DbException("Unable to retrieve Unit Converter list", e);
+			throw new DbException("Unable to retrieve Unit Converter list", ex);
 		}
 		finally
 		{
@@ -417,9 +417,9 @@ public final class DatatypeUnitResources extends OpenDcsResource
 			dbIo.insertUnitConverter(unitConverterDb);
 			return Response.status(HttpServletResponse.SC_CREATED).entity(map(unitConverterDb)).build();
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
-			throw new DbException("Unable to store Unit Converter list", e);
+			throw new DbException("Unable to store Unit Converter list", ex);
 		}
 		finally
 		{
@@ -542,9 +542,9 @@ public final class DatatypeUnitResources extends OpenDcsResource
 			dbIo.deleteUnitConverter(id);
 			return Response.status(HttpServletResponse.SC_NO_CONTENT).entity("EUConv with id=" + id + " deleted").build();
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
-			throw new DbException("Unable to delete Unit Converter", e);
+			throw new DbException("Unable to delete Unit Converter", ex);
 		}
 		finally
 		{

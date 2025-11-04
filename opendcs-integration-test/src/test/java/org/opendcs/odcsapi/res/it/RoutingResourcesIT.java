@@ -1213,9 +1213,9 @@ final class RoutingResourcesIT extends BaseIT
 		{
 			dai.writeEvent(event);
 		}
-		catch (Throwable e)
+		catch (Throwable ex)
 		{
-			throw new DatabaseException("Error storing dacq event", e);
+			throw new DatabaseException("Error storing dacq event", ex);
 		}
 	}
 
@@ -1225,9 +1225,9 @@ final class RoutingResourcesIT extends BaseIT
 		{
 			dai.deleteEventsForPlatform(platformId);
 		}
-		catch (Throwable e)
+		catch (Throwable ex)
 		{
-			throw new DatabaseException("Error deleting dacq event for specified platform", e);
+			throw new DatabaseException("Error deleting dacq event for specified platform", ex);
 		}
 	}
 }

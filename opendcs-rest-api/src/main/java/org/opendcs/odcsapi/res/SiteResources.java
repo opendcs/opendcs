@@ -172,13 +172,13 @@ public final class SiteResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_OK)
 					.entity(map(returnedSite, props)).build();
 		}
-		catch (NoSuchObjectException e)
+		catch (NoSuchObjectException ex)
 		{
-			throw new DatabaseItemNotFoundException(String.format("Requested site with matching ID: %d not found", siteId), e);
+			throw new DatabaseItemNotFoundException(String.format("Requested site with matching ID: %d not found", siteId), ex);
 		}
-		catch(DbIoException e)
+		catch(DbIoException ex)
 		{
-			throw new DbException("Unable to retrieve site by ID", e);
+			throw new DbException("Unable to retrieve site by ID", ex);
 		}
 	}
 
@@ -273,9 +273,9 @@ public final class SiteResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_CREATED)
 					.entity(site).build();
 		}
-		catch(DatabaseException | DbIoException e)
+		catch(DatabaseException | DbIoException ex)
 		{
-			throw new DbException("Unable to store site", e);
+			throw new DbException("Unable to store site", ex);
 		}
 	}
 
@@ -346,9 +346,9 @@ public final class SiteResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_NO_CONTENT)
 					.entity("ID " + siteId + " deleted").build();
 		}
-		catch(DbIoException | WebAppException e)
+		catch(DbIoException | WebAppException ex)
 		{
-			throw new DbException("Unable to delete site", e);
+			throw new DbException("Unable to delete site", ex);
 		}
 	}
 }

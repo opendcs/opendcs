@@ -42,7 +42,6 @@ import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsGroup;
-import decodes.tsdb.compedit.ComputationInList;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -127,9 +126,9 @@ public final class ComputationResources extends OpenDcsResource
 			List<ApiComputationRef> computationRefs = map(dai.listComps(c -> compFilter.passes(c)));
 			return Response.status(HttpServletResponse.SC_OK).entity(computationRefs).build();
 		}
-		catch(DbIoException e)
+		catch(DbIoException ex)
 		{
-			throw new DbException("Unable to retrieve computation references", e);
+			throw new DbException("Unable to retrieve computation references", ex);
 		}
 	}
 
@@ -198,13 +197,13 @@ public final class ComputationResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_OK)
 					.entity(map(dai.getComputationById(DbKey.createDbKey(compId)))).build();
 		}
-		catch(DbIoException e)
+		catch(DbIoException ex)
 		{
-			throw new DbException(String.format("Unable to retrieve computation by ID: %s", compId), e);
+			throw new DbException(String.format("Unable to retrieve computation by ID: %s", compId), ex);
 		}
-		catch (NoSuchObjectException e)
+		catch (NoSuchObjectException ex)
 		{
-			throw new DatabaseItemNotFoundException(String.format("Computation with ID %s not found", compId), e);
+			throw new DatabaseItemNotFoundException(String.format("Computation with ID %s not found", compId), ex);
 		}
 	}
 
@@ -343,9 +342,9 @@ public final class ComputationResources extends OpenDcsResource
 			dai.writeComputation(dbComp);
 			return Response.status(HttpServletResponse.SC_CREATED).entity(map(dbComp)).build();
 		}
-		catch(DbIoException e)
+		catch(DbIoException ex)
 		{
-			throw new DbException("Unable to store computation", e);
+			throw new DbException("Unable to store computation", ex);
 		}
 	}
 
@@ -474,9 +473,9 @@ public final class ComputationResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_NO_CONTENT)
 					.entity(String.format("Computation with ID: %d deleted", computationId)).build();
 		}
-		catch(DbIoException | ConstraintException e)
+		catch(DbIoException | ConstraintException ex)
 		{
-			throw new DbException(String.format("Unable to delete computation by ID: %s", computationId), e);
+			throw new DbException(String.format("Unable to delete computation by ID: %s", computationId), ex);
 		}
 	}
 }

@@ -34,7 +34,7 @@ import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
 import org.opendcs.odcsapi.sec.OpenDcsPrincipal;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 @Tag("integration")
 final class ServletSsoAuthIT
 {
-	private static final Logger LOGGER = LoggerFactory.getLogger(ServletSsoAuthIT.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final String COOKIE = "HelloWorld";
 	private SessionFilter sessionFilter;
 
@@ -69,8 +69,8 @@ final class ServletSsoAuthIT
 		session.activate();
 		session.addSessionListener(event ->
 		{
-			LOGGER.atInfo().log("Got event of type: {}",event.getType());
-			LOGGER.atInfo().log("Session is: {}",event.getSession().toString());
+			log.atInfo().log("Got event of type: {}",event.getType());
+			log.atInfo().log("Session is: {}",event.getSession().toString());
 		});
 		tomcat.getSsoValve()
 				.wrappedRegister(COOKIE, mcup, "CLIENT-CERT");

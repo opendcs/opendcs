@@ -39,9 +39,9 @@ public final class DataSourceContextCreator implements ServletContextListener
 			DataSource dataSource = (DataSource) envCtx.lookup(lookupName);
 			servletContextEvent.getServletContext().setAttribute(DATA_SOURCE_ATTRIBUTE_KEY, dataSource);
 		}
-		catch(NamingException e)
+		catch(NamingException ex)
 		{
-			throw new IllegalStateException("ServletContext missing data source access via name: " + lookupName, e);
+			throw new IllegalStateException("ServletContext missing data source access via name: " + lookupName, ex);
 		}
 	}
 }

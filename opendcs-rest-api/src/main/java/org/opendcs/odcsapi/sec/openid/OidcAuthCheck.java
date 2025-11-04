@@ -40,13 +40,13 @@ import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
 import org.opendcs.odcsapi.sec.OpenDcsPrincipal;
 import org.opendcs.odcsapi.sec.OpenDcsSecurityContext;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 @AutoService(AuthorizationCheck.class)
 public final class OidcAuthCheck extends AuthorizationCheck
 {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(OidcAuthCheck.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static final String AUTHORIZATION_HEADER = "Authorization";
 	static final String BEARER_PREFIX = "Bearer ";
 	private final JWKSource<SecurityContext> keySource;
@@ -71,7 +71,7 @@ public final class OidcAuthCheck extends AuthorizationCheck
 			String jwkSetUrl = DbInterface.decodesProperties.getProperty(property);
 			if(jwkSetUrl == null)
 			{
-				LOGGER.atWarn().log("Property: " + property + " not set. OpenID Authorization is disabled.");
+				log.warn("Property: {} not set. OpenID Authorization is disabled.", property);
 			}
 			else
 			{
@@ -81,9 +81,9 @@ public final class OidcAuthCheck extends AuthorizationCheck
 						.build();
 			}
 		}
-		catch(MalformedURLException e)
+		catch(MalformedURLException ex)
 		{
-			LOGGER.atWarn().setCause(e).log("Property: " + property + " is invalid. OpenID Authorization is disabled.");
+			log.atWarn().setCause(ex).log("Property: {} is invalid. OpenID Authorization is disabled.", property);
 		}
 		return keySource;
 	}
@@ -100,9 +100,9 @@ public final class OidcAuthCheck extends AuthorizationCheck
 			OpenDcsPrincipal principal = createPrincipalFromSubject(username, servletContext);
 			return new OpenDcsSecurityContext(principal, httpServletRequest.isSecure(), BEARER_PREFIX);
 		}
-		catch(ParseException | JOSEException | BadJOSEException e)
+		catch(ParseException | JOSEException | BadJOSEException ex)
 		{
-			LOGGER.warn("Token processing error: ", e);
+			log.atWarn().setCause(ex).log("Token processing error.");
 			throw new NotAuthorizedException("Invalid JWT.");
 		}
 	}
@@ -114,10 +114,10 @@ public final class OidcAuthCheck extends AuthorizationCheck
 			Set<OpenDcsApiRoles> roles = authorizationDao.getRoles(subject);
 			return new OpenDcsPrincipal(subject, roles);
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
 			throw new ServerErrorException("Error accessing database to determine user roles",
-					Response.Status.INTERNAL_SERVER_ERROR, e);
+					Response.Status.INTERNAL_SERVER_ERROR, ex);
 		}
 	}
 

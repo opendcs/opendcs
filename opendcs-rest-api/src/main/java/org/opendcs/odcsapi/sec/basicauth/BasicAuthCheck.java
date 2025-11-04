@@ -76,9 +76,9 @@ public final class BasicAuthCheck extends AuthorizationCheck
 		{
 			return dao.getRoles(username);
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			throw new IllegalStateException("Unable to query the database for user authorization", e);
+			throw new IllegalStateException("Unable to query the database for user authorization", ex);
 		}
 	}
 }

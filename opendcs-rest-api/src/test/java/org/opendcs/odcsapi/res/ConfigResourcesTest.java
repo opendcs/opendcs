@@ -28,7 +28,7 @@ import org.opendcs.odcsapi.beans.ApiPlatformConfig;
 import org.opendcs.odcsapi.beans.ApiScriptFormatStatement;
 import org.opendcs.odcsapi.beans.ApiUnitConverter;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -38,7 +38,7 @@ import static org.opendcs.odcsapi.res.ConfigResources.map;
 
 final class ConfigResourcesTest
 {
-	private static final Logger LOGGER = LoggerFactory.getLogger(ConfigResourcesTest.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	@Test
 	void testPlatformConfigListMap() throws Exception
@@ -239,7 +239,7 @@ final class ConfigResourcesTest
 		unitConverter.setF(6.0);
 		sensor.setUnitConverter(unitConverter);
 
-		LOGGER.atDebug().log(sensor.prettyPrint());
+		log.atDebug().addArgument(() -> sensor.prettyPrint()).log("{}");
 		ScriptSensor decodesSensor = map(sensor);
 
 		assertNotNull(decodesSensor);

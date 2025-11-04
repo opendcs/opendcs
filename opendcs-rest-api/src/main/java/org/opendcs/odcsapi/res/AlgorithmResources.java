@@ -139,9 +139,9 @@ public final class AlgorithmResources extends OpenDcsResource
 					.entity(apiAlgorithm)
 					.build();
 		}
-		catch(NoSuchObjectException e)
+		catch(NoSuchObjectException ex)
 		{
-			throw new DatabaseItemNotFoundException(String.format("No Computation Algorithm with id: %d", algoId), e);
+			throw new DatabaseItemNotFoundException(String.format("No Computation Algorithm with id: %d", algoId), ex);
 		}
 	}
 
