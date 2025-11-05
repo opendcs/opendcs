@@ -777,3 +777,29 @@ The following guidance *MUST* be observed:
 
 While the actual versioned migrations *MUST* stay the same, the other organization is not final; please open a pull-request
 if you think you have a superior organization for these data.
+
+
+Using OpenDCS Jars in you project
+=================================
+
+Except for tests and the installer zip, project jars are available on maven central.
+You can add them to your project using the appropriate dependency management solution.
+
+However, if you are doing development where upstream changes to OpenDcs may be required, such as in the RestAPI,
+and are using Gradle, you will benefit from the build extension system. Add the following to your projects settings.gradle
+and set the variable in the gradle.properties file.
+
+.. code-block:: groovy
+
+    if(hasProperty('opendcsLibrarySourcesDir')) {
+        def externalDir = new File("$opendcsLibrarySourcesDir")
+        if (externalDir.exists()) {
+            externalDir.eachDir() { directory ->
+                def opendcsBuildExtFile = new File(directory, "opendcs-build-ext.gradle")
+                if (opendcsBuildExtFile.exists()) {
+                    gradle.ext.externalLibDir = directory
+                    apply from: opendcsBuildExtFile
+                }
+            }
+        }
+    }
