@@ -779,7 +779,7 @@ While the actual versioned migrations *MUST* stay the same, the other organizati
 if you think you have a superior organization for these data.
 
 
-Using OpenDCS Jars in you project
+Using OpenDCS Jars in your project
 =================================
 
 Except for tests and the installer zip, project jars are available on maven central.
