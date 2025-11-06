@@ -11,6 +11,9 @@ on:
       - "main"
       - "7.0"
       - "8.0"
+# Update this value if we need a different Jdk to be used for sonar analysis.
+env:
+  sonarJdk: 21
 
 jobs:
   tests:
@@ -89,25 +92,25 @@ jobs:
         # Integration tests require docker now for test containers.
         # More work required to deal with the other platforms. Should be workable
         # at some point though.
-        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 17
+        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == env.sonarJdk
         run: |
           ./gradlew codeCoverageReport --info
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
-        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 17
+        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == env.sonarJdk
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
       - name: Cache Gradle packages
         uses: actions/cache@v4
-        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 17
+        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == env.sonarJdk
         with:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
       - name: Upload Coverage
-        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 17
+        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == env.sonarJdk
         uses: actions/upload-artifact@v4.6.2
         with:
           name: coverage
