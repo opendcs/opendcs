@@ -1,36 +1,53 @@
 plugins {
     id 'base'
 }
+ext {
+    osWin = rootProject.ext.osWin
+    pythonExe = osWin ? "python.exe" : "python3"
+    docsVenv = "$buildDir/sphinx"
+    docsDir = projectDir
+    venvPath = (osWin ? "${docsVenv}/Scripts" : "${docsVenv}/bin")
+    noDocs = project.findProperty("no.docs") ?: false
+    havePython = project.objects.property(Boolean)
+}
 
-def pythonExe = osWin ? "python.exe" : "python3"
-def docsVenv = "$buildDir/sphinx"
-def docsDir = projectDir
-def venvPath = (osWin ? "${docsVenv}/Scripts" : "${docsVenv}/bin")
-def noDocs = project.findProperty("no.docs") ?: false
-def havePython = checkPython(pythonExe)
+import javax.inject.Inject
 
-def checkPython(pythonStr) {
-    def result = exec {
-        ignoreExitValue = true
-        if (osWin) {
-            executable "cmd"
-            args += "/c"
-            args += pythonStr
-        } else {
-            executable pythonStr
-        }
-        args += "-c"
-        args += "import sys; print('checking for python'); sys.exit(0)"
+abstract class CheckPython extends DefaultTask {
+    private ExecOperations execOperations
+
+    @Inject
+    CheckPython(ExecOperations execOperations) {
+        this.execOperations = execOperations
     }
-    return result.getExitValue() == 0
+
+    @TaskAction
+    void doAction() {
+        def result = execOperations.exec {
+            ignoreExitValue = true
+            if (project.ext.osWin) {
+                executable "cmd"
+                args += "/c"
+                args += project.ext.pythonExe
+            } else {
+                executable project.ext.pythonExe
+            }
+            args += "-c"
+            args += "import sys; print('checking for python'); sys.exit(0)"
+        }
+
+        project.ext.havePython.set(result.getExitValue() == 0)
+    }
 }
 
 configurations {
     docs {
         canBeConsumed = true
-        canBeResolved = false        
+        canBeResolved = false
     }
 }
+
+tasks.register("checkPython", CheckPython)
 
 task prepVenv(type: Exec) {
     executable pythonExe
@@ -44,6 +61,7 @@ task prepVenv(type: Exec) {
 
 task installReqs(type: Exec) {
     dependsOn prepVenv
+    dependsOn checkPython
     def theArgs = osWin ? ["/c","pip"]
                         : []
     def cmd = osWin ? "cmd" : venvPath+"/pip"
@@ -61,45 +79,30 @@ task installReqs(type: Exec) {
 tasks.addRule("Pattern: buildDocs<ID>") { String taskName ->
     def builder = taskName.toLowerCase().replace("builddocs","")
     if (taskName.startsWith("buildDocs")) {
-        if (!noDocs && havePython) {
+
         def theArgs = osWin ? ["/c","make.bat",builder]
                          : [builder]
         def cmd = osWin ? "cmd" : "make"
-            task(taskName, type: Exec) {
-                dependsOn installReqs
+        task(taskName, type: Exec) {
+            dependsOn installReqs
+            dependsOn checkPython
+            enabled = havePython
+            executable cmd
+            workingDir projectDir
+            args = theArgs
+            environment "PATH": "${venvPath}:${System.getenv('PATH')}"
 
-                executable cmd
-                workingDir projectDir
-                args = theArgs
-                environment "PATH": "${venvPath}:${System.getenv('PATH')}"
-
-                inputs.files(fileTree('source'))
-                    .withPropertyName('sourceFiles')
-                    .withPathSensitivity(PathSensitivity.RELATIVE)
-                outputs.dir("${buildDir}/${builder}")
-                       .withPropertyName('outputDir')
-            }
-        } else {
-            task(taskName) {
-                // Register outputs so downstream usages still behave correctly.
-                outputs.dir("${buildDir}/${builder}")
-                       .withPropertyName('outputDir')
-                doLast {
-                    println('Doc Generation was skipped.')
-                }
-            }
+            inputs.files(fileTree('source'))
+                .withPropertyName('sourceFiles')
+                .withPathSensitivity(PathSensitivity.RELATIVE)
+            outputs.dir("${buildDir}/${builder}")
+                    .withPropertyName('outputDir')
         }
     }
 }
 
 task buildDocs {
-    dependsOn 'buildDocsHtml' 
-    // work on PDF later,'buildDocsLatexpdf'
-    doFirst {
-        if (!havePython) {
-            logger.warn("Python was not found, the documentation will not be built.")
-        }
-    }
+    dependsOn 'buildDocsHtml'
 }
 
 artifacts {

@@ -51,6 +51,7 @@ dependencies {
 def testEngines = (project.findProperty("opendcs.test.engine")?: "OpenDCS-XML,OpenDCS-Postgres,OpenDCS-Oracle,CWMS-Oracle").split(",")
 
 test {
+    useJUnitPlatform()
     // The below registered test tasks do all the real work.
     exclude '**/*'
 }
@@ -61,9 +62,11 @@ testEngines.each { engine ->
     def task = tasks.register("test"+engine.replace("-",""), Test) { task ->
         dependsOn ":install:installDist"
         dependsOn ":opendcs:test"
-        //outputs.upToDateWhen {false}
         useJUnitPlatform()
 
+        // with gradle 9.2 it seems we need to set these manually
+        testClassesDirs = sourceSets.test.output.classesDirs
+        classpath = sourceSets.test.runtimeClasspath
 
         enabled = gradle.startParameter.taskNames.contains(":testing:" + project.name + ":test") ||
                   gradle.startParameter.taskNames.contains(":testing:" + project.name + ":" +task.name)
