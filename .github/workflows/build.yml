@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, macos-13, windows-latest]
-        jdk: [8, 11, 17]
+        jdk: [21]
     runs-on: ${{matrix.platform}}
     steps:
       - name: Clean up disk space, so we don't run out.

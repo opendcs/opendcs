@@ -92,6 +92,7 @@ testEngines.each { engine ->
         jvmArgs += "-Dlogback.configurationFile=${projectDir}/src/test/test-config/logback-test-driver.xml"
         jvmArgs += "-DAPP_NAME=tests"
         jvmArgs += "-DtestLoggerPort="+ project.findProperty("testLoggerPort") ?: "35356"
+        jvmArgs += "-Djava.security.manager=allow"
 
         reports {
             html {}

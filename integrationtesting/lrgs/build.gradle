@@ -18,6 +18,9 @@ dependencies {
     testImplementation(libs.webcompere.system.stubs.jupiter)
 }
 
+test {
+    jvmArgs += "-Djava.security.manager=allow"
+}
 
 jacocoTestReport {
     dependsOn test

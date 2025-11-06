@@ -1,6 +1,4 @@
 
-if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
-    sonar {
-        skipProject = (name == ":testing") || (name == ":docs") || (name == ":install")
-    }
+sonar {
+    skipProject = (name == ":testing") || (name == ":docs") || (name == ":install")
 }
