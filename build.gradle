@@ -93,9 +93,17 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
     }
 }
 
+import javax.inject.Inject
+
+interface InjectedExecOps {
+    @Inject //@javax.inject.Inject
+    ExecOperations getExecOps()
+}
+
 ext.sonarVersion = {
     def stdout = new ByteArrayOutputStream()
-    exec {
+    def execOps = project.objects.newInstance(InjectedExecOps)
+    execOps.execOps.exec {
         commandLine 'git', 'describe', '--tags', '--abbrev=0', "--always"
         standardOutput = stdout
     }
