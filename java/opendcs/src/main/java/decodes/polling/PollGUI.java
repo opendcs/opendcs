@@ -70,6 +70,11 @@ import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
 
+import org.opendcs.logging.spi.LoggingEventProvider;
+import org.opendcs.utils.logging.LoggingEventBuffer;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 public class PollGUI extends TsdbAppTemplate
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
@@ -84,7 +89,7 @@ public class PollGUI extends TsdbAppTemplate
 	private JButton selectStationButton = new JButton("Select");
 	private boolean pollingInProgress = false;
 	private EventsPanel eventsPanel = new EventsPanel();
-	private QueueLogger queueLogger = new QueueLogger(module); // TODO: sort out replacement?
+	private final QueueLogger queueLogger;
 	private EventsPanelQueueThread epqt = null;
 	private PrintStream sessionLogPrintStream = null;
 	private RoutingSpecThread routingSpecThread = null;
@@ -97,6 +102,13 @@ public class PollGUI extends TsdbAppTemplate
 	public PollGUI()
 	{
 		super(module);
+		queueLogger = new QueueLogger(
+			new LoggingEventBuffer.Builder()
+								  .withProvider(LoggingEventProvider.getProvider())
+								  .withDefaultSize(QueueLogger.MAX_MESSAGES)
+								  .withThreadName("PollGUI Log Thread")
+								  .build()
+								  .getPublisher());
 	}
 
 	@Override
