@@ -13,4 +13,4 @@ then
 fi
 LD_LIBRARY_PATH=$LRGSHOME/lib
 export LD_LIBRARY_PATH
-exec ${APP_PATH}/decj -DLRGSHOME=$LRGSHOME lrgs.lrgsmain.LrgsMain -k - $*
+exec ${APP_PATH}/decj lrgs.lrgsmain.LrgsMain -DLRGSHOME=$LRGSHOME -k - $*

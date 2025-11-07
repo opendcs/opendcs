@@ -5,8 +5,7 @@ import org.opendcs.logging.spi.LoggingEventProvider;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.SubmissionPublisher;
 
 import org.opendcs.logging.LoggingEvent;
 import org.opendcs.util.RingBuffer;
@@ -15,7 +14,7 @@ import org.slf4j.Logger;
 /**
  * Consumes Logging events from the given provider and store them
  * in a ring buffer to be consumed as needed.
- * 
+ *
  */
 public final class LoggingEventBuffer
 {
@@ -50,6 +49,17 @@ public final class LoggingEventBuffer
     public List<LoggingEvent> getEvents()
     {
         return Collections.unmodifiableList(this.eventList);
+    }
+
+    /**
+     * Return SubmissionPublisher implemented by the Ring buffer.
+     * For use by systems that either don't want to Poll or only require notification
+     * of recent events.
+     * @return
+     */
+    public SubmissionPublisher<LoggingEvent> getPublisher()
+    {
+        return this.eventList;
     }
 
     public static class Builder
