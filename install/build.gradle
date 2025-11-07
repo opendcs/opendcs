@@ -141,7 +141,7 @@ task runApp(type: Exec) {
         args "-d3", "-DLOG_DIR=${runDir}"
     }
     if (!profile.equals("default")) {
-        args += ["-P", profile]
+        args += ["-P${profile}"]
     }
 
     if (appArgs != null) {
