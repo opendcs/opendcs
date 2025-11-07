@@ -135,7 +135,7 @@ task runApp(type: Exec) {
     println("Using app ${app}")
     if (osWin) {
         executable "cmd"
-        args "/c", binDir+app+ext, "-d3", "-l", "CON:"
+        args "/c", binDir+app+ext, "-d3", "-DLOG_DIR={$runDir}"
     } else {
         executable binDir+app
         args "-d3", "-DLOG_DIR=${runDir}"

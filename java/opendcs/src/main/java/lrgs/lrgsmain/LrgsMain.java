@@ -38,9 +38,12 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 
+import org.opendcs.logging.spi.LoggingEventProvider;
 import org.opendcs.tls.TlsMode;
+import org.opendcs.utils.logging.LoggingEventBuffer;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.spi.LoggingEventBuilder;
 
 import decodes.db.Database;
 import decodes.db.DatabaseException;
@@ -146,7 +149,7 @@ public class LrgsMain implements Runnable, ServerLockable, SignalHandler, ProcWa
     /** The DDS Receive Module, used for secondary group. */
     private DdsRecv ddsRecv2;
 
-    private final QueueLogger queueLogger = new QueueLogger("lrgs");
+    private final QueueLogger queueLogger;
 
     private final String lockFileName;
     private final String configFileName;
@@ -154,6 +157,11 @@ public class LrgsMain implements Runnable, ServerLockable, SignalHandler, ProcWa
     /** Constructor. */
     public LrgsMain(String lockFileName, String configFileName)
     {
+        LoggingEventBuffer logEvents = new LoggingEventBuffer.Builder()
+                                                             .withProvider(LoggingEventProvider.getProvider())
+                                                             .withDefaultSize(QueueLogger.MAX_MESSAGES)
+                                                             .withThreadName("LRGS-Log-Queue")
+                                                             .build();
         msgArchive = null;
         myServerLock = null;
         shutdownFlag = false;
@@ -163,6 +171,7 @@ public class LrgsMain implements Runnable, ServerLockable, SignalHandler, ProcWa
         ddsRecv = null;
         drgsRecv = null;
         statusRptGen = new DetailReportGenerator("icons/satdish.jpg");
+        queueLogger = new QueueLogger(logEvents.getPublisher());
         alarmHandler = new AlarmHandler(queueLogger);
         dbThread = null;
         noaaportRecv = null;

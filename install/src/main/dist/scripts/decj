@@ -77,7 +77,7 @@ LOG_LEVEL="-DLOG_LEVEL=info"
 ARGS=""
 while [[ $# -gt 0 ]]; do
   OPTIND=1
-  if getopts ":a:l:d:p:" opt "$@"; then
+  if getopts ":a:l:d:p:k:" opt "$@"; then
     case $opt in
       a)
       APP_NAME=${OPTARG}
@@ -107,14 +107,18 @@ while [[ $# -gt 0 ]]; do
           ARGS="$ARGS -p $OPTARG"
         fi
         ;;
+      k) ARGS="$ARGS -k '$OPTARG'" ;;
       :) ARGS="$ARGS -$OPTARG" ;;
       \?)
         if [ "$OPTARG" == "D" ]; then
-          shift
-          ARGS="$ARGS $1"
+          # For some reason things didn't want to behave well if the -D values didn't come before
+          # the class to run.
+          ARGS="$1 $ARGS"
         else
-          ARGS="$ARGS -$OPTARG"
+          # Otherwise pass on the unknown argument and it's input to the application.
+          ARGS="$ARGS $1"
         fi
+        shift
         ;;
       *) ARGS="$ARGS $opt" ;;
       esac
@@ -126,12 +130,11 @@ while [[ $# -gt 0 ]]; do
   fi
 done
 
-if [[ -z "$LOGBACK_OVERRIDE" ]]; then
+if [ "${LOGBACK_OVERRIDE+x}" ]; then
   LOGBACK="$LOGBACK_OVERRIDE"
 else
   LOGBACK="$LOGBACK -DAPP_NAME=${APP_NAME} $LOG_FILE $LOG_LEVEL"
 fi
 
 cmd="java -Xms120m $DECJ_MAXHEAP $DECJ_OPTS -cp $CP -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR $LOGBACK $ARGS"
-
 eval $cmd
