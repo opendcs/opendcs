@@ -111,11 +111,14 @@ while [[ $# -gt 0 ]]; do
       :) ARGS="$ARGS -$OPTARG" ;;
       \?)
         if [ "$OPTARG" == "D" ]; then
+          # For some reason things didn't want to behave well if the -D values didn't come before
+          # the class to run.
           ARGS="$1 $ARGS"
-          shift
         else
-          ARGS="$ARGS -$OPTARG"
+          # Otherwise pass on the unknown argument and it's input to the application.
+          ARGS="$ARGS $1"
         fi
+        shift
         ;;
       *) ARGS="$ARGS $opt" ;;
       esac
