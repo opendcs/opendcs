@@ -708,7 +708,7 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 						parameters.add(comp.getId());
 					}
 
-					doModify(query.toString(), parameters.toArray(new Object[0]));
+					dao.doModify(query.toString(), parameters.toArray(new Object[0]));
 					DbKey id = comp.getId();
 					// Delete parameters. Will do nothing if new.
 					dao.doModify("DELETE FROM CP_COMP_TS_PARM WHERE COMPUTATION_ID = ?", id);
@@ -779,7 +779,7 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 						}
 
 						query.append(")");
-						doModify(query.toString(), parameters.toArray(new Object[0]));
+						dao.doModify(query.toString(), parameters.toArray(new Object[0]));
 					}
 
 					// (re)add properties
@@ -787,7 +787,7 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 						e.hasMoreElements(); )
 					{
 						String nm = (String)e.nextElement();
-						doModify("INSERT INTO CP_COMP_PROPERTY VALUES (?,?,?)", id, nm, comp.getProperty(nm));
+						dao.doModify("INSERT INTO CP_COMP_PROPERTY VALUES (?,?,?)", id, nm, comp.getProperty(nm));
 					}
 
 					if (db.isCwms())
