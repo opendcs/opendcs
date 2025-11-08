@@ -55,7 +55,7 @@ can be scary we would like to encourage you to join us anyways.
 - OpenDCS is compiled using the gradle wrapper 'gradlew'
 - OpenDCS latest/8.x requires Java 21 for compiling and runtime 
 - OpenDCS 7.x targets Java 8. A JDK 8 is recommended for build though 11 and 17 will work
-- Our runtime target is Java 8, however we will support 11 and 17 at runtime
+
 
 in the following examples replace `./gradlew` with `gradlew` if you are using windows.
 
