@@ -37,7 +37,6 @@ import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesSettings;
-import ilex.util.FileLogger;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
 import opendcs.dao.LoadingAppDao;
@@ -139,21 +138,7 @@ public class OpenDCSSqlite implements Configuration
         mm.migrate();
         Jdbi jdbi = mm.getJdbiHandle();
         log.info("Setting authentication environment vars.");
-        ilex.util.Logger originalLog = ilex.util.Logger.instance();
-        ilex.util.FileLogger fl = null;
-        try
-        {
-            
-            mp.loadBaselineData(profile, "", "");
-        }
-        finally
-        {
-            if (fl != null)
-            {
-                ilex.util.Logger.setLogger(originalLog);
-                fl.close();
-            }
-        }
+        mp.loadBaselineData(profile, "", "");
         setStarted();
     }
 
