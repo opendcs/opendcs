@@ -367,14 +367,14 @@ public class AlgorithmDAO extends DaoBase implements AlgorithmDAI
                 {
                     // Delete & re-add parameters
                     q = "DELETE FROM CP_ALGO_TS_PARM WHERE ALGORITHM_ID = ?";
-                    doModify(q, id);
+                    dao.doModify(q, id);
                 }
                 
                 for(Iterator<DbAlgoParm> it = algo.getParms(); it.hasNext(); )
                 {
                     DbAlgoParm dap = it.next();
                     q = "INSERT INTO CP_ALGO_TS_PARM VALUES (?,?,?)";
-                    doModify(q, id, dap.getRoleName(), dap.getParmType());
+                    dao.doModify(q, id, dap.getRoleName(), dap.getParmType());
                 }
                 log.info("saving algo props");
                 try(PropertiesSqlDao propertiesSqlDao = new PropertiesSqlDao(db))

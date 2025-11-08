@@ -815,7 +815,7 @@ public class DaoBase implements DaiBase
      */
     public void inTransaction(DaoConsumer consumer) throws Exception
     {
-        Connection c = getConnection();
+        Connection c = db.getConnection();
         boolean autoCommit = c.getAutoCommit();
         c.setAutoCommit(false);
         try (DaoBase dao = new DaoHelper(this.db,"transaction",new ConnectionInTransaction(c));)
