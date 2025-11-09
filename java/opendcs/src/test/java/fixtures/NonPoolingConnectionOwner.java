@@ -358,5 +358,11 @@ public class NonPoolingConnectionOwner implements TestConnectionOwner
     {
         return Optional.empty();
     }
+
+    @Override
+    public String sqlListSubtraction() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'sqlListSubtraction'");
+    }
     
 }

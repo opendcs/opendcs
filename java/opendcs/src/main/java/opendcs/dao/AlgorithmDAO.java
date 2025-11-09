@@ -183,7 +183,7 @@ public class AlgorithmDAO extends DaoBase implements AlgorithmDAI
                 q = "select a.ALGORITHM_ID, a.SCRIPT_TYPE, a.SCRIPT_DATA "
                   + "from CP_ALGO_SCRIPT a, CP_ALGORITHM b "
                   + "where a.ALGORITHM_ID = b.ALGORITHM_ID "
-                  + "order by ALGORITHM_ID, SCRIPT_TYPE, BLOCK_NUM";
+                  + "order by a.ALGORITHM_ID, SCRIPT_TYPE, BLOCK_NUM";
 
                 final AtomicReference<DbCompAlgorithm> lastAlgo = new AtomicReference<>(null);
                 doQuery(q, rs ->
