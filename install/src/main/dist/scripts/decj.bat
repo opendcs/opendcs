@@ -46,12 +46,11 @@ if exist "%DCSTOOL_USERDIR%\dep\" (
 
 set "CLASSPATH=!CLASSPATH!;%APP_PATH%\dep\*"
 
-echo before parsing ARGS: %*
 call :ParseArgs %*
 
-echo Parsed ARGS: !ARGS!
-echo LOGBACK: !LOGBACK!
-pause
+:: echo Parsed ARGS: !ARGS!
+:: echo LOGBACK: !LOGBACK!
+:: pause
 
 java -Xms240m %DECJ_MAXHEAP% %DECJ_OPTS% -cp "!CLASSPATH!" -DDCSTOOL_HOME="%APP_PATH%" -DDECODES_INSTALL_DIR="%APP_PATH%" -DDCSTOOL_USERDIR="%DCSTOOL_USERDIR%" !LOGBACK! !ARGS!
 
@@ -61,14 +60,12 @@ set "LOG_FILE="
 set "LOG_LEVEL=-DLOG_LEVEL=info"
 set "ARGS=%1"
 set "APP_NAME=%1"
-
+shift
 
 :__parseLoop
 if "%~1"=="" goto __parseDone
 
 set "CURRENT_ARG=%~1"
-
-echo "Parsing arg >: !CURRENT_ARG!"
 
 :: -d level
 if /I "!CURRENT_ARG!"=="-d" goto :HandleDebugLevel
@@ -90,7 +87,6 @@ if /I "!CURRENT_ARG!"=="-a" goto :HandleApp
 
 
 
-:: echo "Adding to ARGS: !CURRENT_ARG!"
 set "ARGS=!ARGS! !CURRENT_ARG!"
 shift
 goto __parseLoop
