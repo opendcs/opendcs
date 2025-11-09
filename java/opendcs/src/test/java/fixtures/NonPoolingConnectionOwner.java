@@ -349,5 +349,11 @@ public class NonPoolingConnectionOwner implements TestConnectionOwner
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'transformTsidByCompParm'");
     }
+
+    @Override
+    public String sqlListSubtraction() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'sqlListSubtraction'");
+    }
     
 }

@@ -20,6 +20,7 @@ import decodes.db.*;
 import decodes.hdb.HdbSqlDatabaseIO;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -185,6 +186,7 @@ public class SqlDatabaseIO extends DatabaseIO implements DatabaseConnectionOwner
 
     /** Facilitates OPENTSDB and HDB connection pooling. CWMS is handled differently. */
     private javax.sql.DataSource poolingDataSource = null;
+    private final String listSubtraction;
 
     /**
      * Default constructor -- all initialization that doesn't depend on
@@ -217,12 +219,21 @@ public class SqlDatabaseIO extends DatabaseIO implements DatabaseConnectionOwner
         {
             determineVersion(conn);        
             setDBDatetimeFormat(conn);
+            DatabaseMetaData meta = conn.getMetaData();
+            if (meta.getDatabaseProductName().contains("PostgreSQL"))
+            {
+                listSubtraction = "except";
+            }
+            else
+            {
+                listSubtraction = "minus";
+            }
+            postConnectInit();
         }
         catch (SQLException ex)
         {
-             log.atWarn().setCause(ex).log("Unable to set DB Date/Time format.");
+            throw new DatabaseException("Unable to initialize database.", ex);
         }
-        postConnectInit();
     }
 
     /**
@@ -2247,5 +2258,11 @@ public class SqlDatabaseIO extends DatabaseIO implements DatabaseConnectionOwner
     public void setKeyGenerator(KeyGenerator keyGenerator)
     {
         this.keyGenerator = keyGenerator;
+    }
+
+    @Override
+    public String sqlListSubtraction()
+    {
+        return listSubtraction;
     }
 }
