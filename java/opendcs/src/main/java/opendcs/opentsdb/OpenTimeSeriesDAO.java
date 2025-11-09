@@ -951,7 +951,7 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 					String q = "select num_ts_present, est_annual_values from storage_table_list "
 					+ "where table_num = ? and storage_type=?";
 					int num_andEstimate[] =
-								getSingleResult(q,
+								dao.getSingleResult(q,
 												rs -> new int[]{ rs.getInt(1), rs.getInt(2)},
 												ctsid.getStorageTable(), ctsid.getStorageType());
 					num_andEstimate[0]--;
@@ -959,7 +959,7 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 					q = "update storage_table_list set num_ts_present = ?"
 						+ ", est_annual_values = ?"
 						+ " where table_num = ?";
-					doModify(q, num_andEstimate[0], num_andEstimate[1], ctsid.getStorageTable());
+					dao.doModify(q, num_andEstimate[0], num_andEstimate[1], ctsid.getStorageTable());
 				}
 				catch (Exception ex)
 				{
