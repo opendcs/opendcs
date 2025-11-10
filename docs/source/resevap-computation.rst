@@ -182,20 +182,39 @@ layers must be in the same increment as the input data, which by default is 0.5m
 
 ResEvap builds these output time series based on the location and version name.
 As the compute progresses in time, the hourly time series are filled with compute
-results. At the end of the simulation, hourly evaporation is accumulated to daily evaporation.
-The evaporation as flow is then computed from the daily evaporation and the
-reservoir surface area. This is converted based on the following equation:
+results. At the end of the simulation, hourly evaporation values are aggregated to produce
+daily evaporation totals. Evaporation as flow is then computed from the total daily evaporation volume.
 
-:math:`{E_{f_t}} = E_{t}{A_{s_t}}`
+Evaporation volume at each hourly timestep is computed using the average evaporation depth and
+the average pool elevation for that hour. A frustum-based method is used to account for the change
+in reservoir surface area with elevation.
+
+Each hourly evaporation volume is computed as:
+
+:math:`V_{t} = \dfrac{E_{t}}{3} \left( A_{1_t} + A_{2_t} + \sqrt{A_{1_t} A_{2_t}} \right)`
 
 Where:
 
     .. csv-table::
        :widths: auto
 
-       ":math:`E_{f_t}`", "Evaporation as flow at time :math:`t`"
-       ":math:`E_{t}`", "Evaporation rate at time :math:`t`"
-       ":math:`A_{s_t}`", "Reservoir surface area at time :math:`t`"
+       ":math:`V_{t}`", "Evaporation volume at time :math:`t`"
+       ":math:`E_{t}`", "Evaporation depth at time :math:`t`"
+       ":math:`A_{1_t}`", "Reservoir surface area at elevation :math:`e_t` (before evaporation)"
+       ":math:`A_{2_t}`", "Reservoir surface area at elevation :math:`e_t - E_t` (after evaporation)"
+
+The total daily evaporation volume, calculated as the sum of the hourly volumes, is converted to flow as:
+
+:math:`E_{f_t} = \frac{\sum V_{t}}{T}`
+
+Where:
+
+    .. csv-table::
+        :widths: auto
+
+        ":math:`E_{f_t}`", "Evaporation as flow at time :math:`t`"
+        ":math:`\sum V_{t}`", "Total daily evaporation volume"
+        ":math:`T`", "Number of seconds in the day (typically 86400, or 82800 if daylight savings applies)"
 
 
 Evaporation Computations

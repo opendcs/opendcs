@@ -449,7 +449,7 @@ final public class EvapReservoir
 
 
     /**
-     * interpolate reservoir surface area for elevation el.
+     * interpolate reservoir surface area for elevation (el) and returns surface area in m2.
      *
      * @param el
      * @return

@@ -44,10 +44,13 @@
     <AlgoParm roleName="hourlySurfaceTemp">
       <ParmType>o</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="hourlyEvap">
+    <AlgoParm roleName="hourlyEvapRate">
       <ParmType>o</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="dailyEvap">
+    <AlgoParm roleName="dailyEvapDepth">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="hourlyEvapDepth">
       <ParmType>o</ParmType>
     </AlgoParm>
     <AlgoParm roleName="dailyEvapAsFlow">
@@ -75,7 +78,7 @@
     <AlgorithmName>ResEvapAlgo</AlgorithmName>
     <LastModified>2025-01-15 05:54:55 PST</LastModified>
     <ValidStart>2024-10-08 08:00:00 UTC</ValidStart>
-    <ValidEnd>2024-10-09 00:00:00 UTC</ValidEnd>
+    <ValidEnd>2024-10-09 07:00:00 UTC</ValidEnd>
     <CompProperty name="aggregateTimeOffset">1 hour</CompProperty>
     <CompProperty name="aggregateTimeZone">US/Arizona</CompProperty>
     <CompProperty name="zeroElevation">2034</CompProperty>
@@ -199,13 +202,23 @@
       <DeltaT>0</DeltaT>
       <DeltaTUnits>Seconds</DeltaTUnits>
     </CompParm>
-    <CompParm roleName="dailyEvap">
+    <CompParm roleName="dailyEvapDepth">
       <SiteDataType>
         <SiteName NameType="CWMS">TESTSITE1</SiteName>
         <DataType Standard="CWMS" code="Evap"/>
       </SiteDataType>
       <Interval>1Day</Interval>
       <TableSelector>Total.1Day.Rev-NWO-Evap-test</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="hourlyEvapDepth">
+      <SiteDataType>
+          <SiteName NameType="CWMS">TESTSITE1</SiteName>
+          <DataType Standard="CWMS" code="Evap"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Total.1Hour.Rev-NWO-Evap-test</TableSelector>
       <DeltaT>0</DeltaT>
       <DeltaTUnits>Seconds</DeltaTUnits>
     </CompParm>
@@ -219,13 +232,13 @@
       <DeltaT>0</DeltaT>
       <DeltaTUnits>Seconds</DeltaTUnits>
     </CompParm>
-    <CompParm roleName="hourlyEvap">
+    <CompParm roleName="hourlyEvapRate">
       <SiteDataType>
         <SiteName NameType="CWMS">TESTSITE1</SiteName>
         <DataType Standard="CWMS" code="EvapRate"/>
       </SiteDataType>
       <Interval>1Hour</Interval>
-      <TableSelector>Total.1Hour.Rev-NWO-Evap-test</TableSelector>
+      <TableSelector>Ave.1Hour.Rev-NWO-Evap-test</TableSelector>
       <DeltaT>0</DeltaT>
       <DeltaTUnits>Seconds</DeltaTUnits>
     </CompParm>
