@@ -102,13 +102,20 @@ public class TimeSeries
                                             .expected(expectedDate)
                                             .buildAndThrow();
                     }
-                    if (actualVar.isNumeric() )
+                    if (actualVar.isNumeric())
                     {
                         double expectedValue = expectedVar.getDoubleValue();
                         double actualValue = actualVar.getDoubleValue();
                         Assertions.assertEquals(expectedValue,actualValue, delta, "Values at position " + i + "(" + actualDate +") do not match");
 
                     }
+                    int expectedFlags = expectedVar.getFlags();
+                    int actualFlags = actualVar.getFlags();
+                    Assertions.assertEquals(expectedFlags, actualFlags, () ->
+                        String.format("Flags at position %d(%s) do not match actualHex %s, expectedHex %s",
+                                      i, actualDate, Integer.toHexString(actualFlags), Integer.toHexString(expectedFlags))
+                    );
+
                 }
             }
         }

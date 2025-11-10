@@ -312,7 +312,12 @@ public class TsImporter
         }
         try
         {
-            tv.setValue(Double.parseDouble(x[1].trim()));
+            final String trimmed = x[1].trim();
+            if (!"m".equalsIgnoreCase(trimmed))
+            {
+                tv.setValue(Double.parseDouble(x[1].trim()));    
+            }
+            
         }
         catch(Exception ex)
         {
@@ -324,10 +329,20 @@ public class TsImporter
             String flags = x[2].trim();
             try
             {
+                int numericFlags;
                 if (TextUtil.startsWithIgnoreCase(flags, "0x"))
-                    tv.setFlags(Integer.parseInt(flags.substring(2), 16));
+                {
+                    numericFlags = Integer.parseInt(flags.substring(2), 16);
+                }
+                else if (TextUtil.startsWithIgnoreCase(flags, "0b"))
+                {
+                    numericFlags = Integer.parseInt(flags.substring(2), 2);
+                }
                 else
-                    tv.setFlags(Integer.parseInt(flags));
+                {
+                    numericFlags = (Integer.parseInt(flags));
+                }
+                tv.setFlags(numericFlags);
             }
             catch(Exception ex)
             {

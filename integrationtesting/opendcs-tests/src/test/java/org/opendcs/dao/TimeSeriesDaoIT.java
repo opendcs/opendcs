@@ -21,6 +21,7 @@ import org.opendcs.utils.FailableResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import decodes.cwms.CwmsFlags;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
