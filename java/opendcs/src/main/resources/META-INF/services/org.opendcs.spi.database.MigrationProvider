@@ -1,3 +1,4 @@
 org.opendcs.database.impl.opendcs.OpenDcsPgProvider
+org.opendcs.database.impl.opendcs.OpenDcsSqliteProvider
 org.opendcs.database.impl.opendcs.OpenDcsOracleProvider
 decodes.cwms.database.CwmsOracleProvider

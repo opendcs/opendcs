@@ -104,6 +104,7 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
     public static String module = "tsdb";
 
+    private final String listSubtraction;
     /** The application ID of the connected program */
     protected DbKey appId = Constants.undefinedId;
 
@@ -193,6 +194,16 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
         {
             determineTsdbVersion(conn, this);
             postConnectInit(appName, conn);
+            
+			DatabaseMetaData meta = conn.getMetaData();
+			if (meta.getDatabaseProductName().contains("PostgreSQL"))
+			{
+				listSubtraction = "except";
+			}
+			else
+			{
+				listSubtraction = "minus";
+			}
         }
         catch (BadConnectException | SQLException ex)
         {
@@ -1619,4 +1630,9 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
         }
     }
 
+    @Override
+	public String sqlListSubtraction()
+	{
+		return this.listSubtraction;
+	}
 }
