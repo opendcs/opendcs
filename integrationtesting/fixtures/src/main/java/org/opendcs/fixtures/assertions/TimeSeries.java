@@ -11,6 +11,10 @@ import ilex.var.TimedVariable;
 
 public class TimeSeries
 {
+    // First octet is used internally by Compproc, by default we'll mask that out for comparison
+    // Additionally the 8th is used by IFlags to determine certain states.
+    public static final int DEFAULT_FLAG_MASK = ~0xF000000F;
+    public static final double DEFAULT_DELTA = 0.0001;
 
     public static void assertContains(CTimeSeries expected, CTimeSeries actual, String message)
     {
@@ -22,21 +26,26 @@ public class TimeSeries
         } catch (NoConversionException ex) {
             throw new RuntimeException("Failed to get date value from the first sample", ex);
         }
-        assertEquals(expected, actual, .0001, message, start, end);
+        assertEquals(expected, actual, DEFAULT_DELTA, DEFAULT_FLAG_MASK, message, start, end);
     }
     public static void assertEquals(CTimeSeries expected, CTimeSeries actual, String message)
     {
-        assertEquals(expected, actual, .0001, message, null, null);
+        assertEquals(expected, actual, DEFAULT_FLAG_MASK, message);
+    }
+
+    public static void assertEquals(CTimeSeries expected, CTimeSeries actual, int flagMask, String message)
+    {
+        assertEquals(expected, actual, DEFAULT_DELTA, flagMask, message, null, null);
     }
     public static void assertEquals(CTimeSeries expected, CTimeSeries actual, double delta, String message)
     {
-        assertEquals(expected, actual, delta, message, null, null);
+        assertEquals(expected, actual, delta, DEFAULT_FLAG_MASK, message, null, null);
     }
     public static void assertEquals(CTimeSeries expected, CTimeSeries actual, String message, Date start, Date end)
     {
-        assertEquals(expected, actual, .0001, message, start, end);
+        assertEquals(expected, actual, DEFAULT_DELTA, DEFAULT_FLAG_MASK, message, start, end);
     }
-    public static void assertEquals(CTimeSeries expected, CTimeSeries actual, double delta, String message, Date start, Date end)
+    public static void assertEquals(CTimeSeries expected, CTimeSeries actual, double delta, int flagMask, String message, Date start, Date end)
     {
         try
         {
@@ -109,8 +118,8 @@ public class TimeSeries
                         Assertions.assertEquals(expectedValue,actualValue, delta, "Values at position " + i + "(" + actualDate +") do not match");
 
                     }
-                    int expectedFlags = expectedVar.getFlags();
-                    int actualFlags = actualVar.getFlags();
+                    int expectedFlags = expectedVar.getFlags() & flagMask;
+                    int actualFlags = actualVar.getFlags() & flagMask;
                     Assertions.assertEquals(expectedFlags, actualFlags, () ->
                         String.format("Flags at position %d(%s) do not match actualHex %s, expectedHex %s",
                                       i, actualDate, Integer.toHexString(actualFlags), Integer.toHexString(expectedFlags))

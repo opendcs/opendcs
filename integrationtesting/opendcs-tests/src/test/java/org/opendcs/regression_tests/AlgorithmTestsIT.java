@@ -253,7 +253,9 @@ public class AlgorithmTestsIT extends AppTestBase
                         TimedVariable TVExpected = currExpect.findWithin(TVOutput.getTime(), 0);
                         log.info("output time: "+TVOutput.getTime());
                         log.info("output value  : "+TVOutput.getDoubleValue());
-                        log.info("expected value: "+TVExpected.getDoubleValue());
+                        log.info("expected value: {}", TVExpected != null
+                                                                          ? TVExpected.getDoubleValue()
+                                                                          : " intentionally missing in output file");
                     }
                 }
 

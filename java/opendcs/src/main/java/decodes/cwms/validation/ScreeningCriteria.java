@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.TreeSet;
 import java.util.function.Function;
 
+import org.opendcs.algorithms.AlgorithmUtilties;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -226,6 +227,14 @@ public class ScreeningCriteria
 		validity = ValidityOK;
 		testbits = 0;
 
+		/**
+		 * Don't attempt checks on missing values directly as it will
+		 * just cause extra flags to be set.
+		 */
+		if(AlgorithmUtilties.isMissing(value))
+		{
+			return CwmsFlags.VALIDITY_MISSING;
+		}
 		// ABS checks
 		if (screening == null || screening.isRangeActive())
 			for(AbsCheck chk : absChecks)

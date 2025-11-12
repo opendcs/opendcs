@@ -317,6 +317,10 @@ public class TsImporter
             {
                 tv.setValue(Double.parseDouble(x[1].trim()));    
             }
+            else
+            {
+                tv.setValue(Double.NEGATIVE_INFINITY);
+            }
             
         }
         catch(Exception ex)
