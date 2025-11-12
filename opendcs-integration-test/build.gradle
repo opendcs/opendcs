@@ -76,6 +76,7 @@ tasks.register('run', JavaExec) {
     dependsOn build
     def restWar = project(':opendcs-rest-api').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
     def guiWar = project(':opendcs-web-client').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
+    inputs.files(restWar,guiWar)
     group "application"
     dependsOn(':opendcs-rest-api:war', ':opendcs-web-client:war')
     dependsOn generateConfig

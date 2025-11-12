@@ -1,4 +1,4 @@
-FROM gradle:8.14-jdk11 AS builder
+FROM gradle:8.14-jdk21 AS builder
 
 RUN --mount=type=cache,target=/home/gradle/.gradle
 WORKDIR /builddir
@@ -9,7 +9,7 @@ RUN gradle build --info --no-daemon
 FROM alpine:3.21.3 AS tomcat_base
 RUN apk --no-cache upgrade && \
     apk --no-cache add \
-        openjdk11-jre \
+        openjdk21-jre \
         curl \
         bash
 

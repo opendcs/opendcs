@@ -11,22 +11,27 @@ permissions:
 jobs:
   build:
     name: Build, Test, and Analyze
+    strategy:
+      matrix:
+        java: ['21' ]
+      fail-fast: false
+      max-parallel: 4
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5.0.0
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - name: Set up JDK 17
+      - name: Set up JDK ${{ matrix.Java }}
         uses: actions/setup-java@v5.0.0
         with:
-          java-version: 17
+          java-version: ${{ matrix.Java }}
           distribution: 'temurin'
       - name: Cache SonarCloud packages
         uses: actions/cache@v4.2.3
         with:
           path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
+          key: ${{ runner.os }}-sonar-${{ matrix.Java }}
+          restore-keys: ${{ runner.os }}-sonar-${{ matrix.Java }}
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3.5.0
         with:
@@ -42,22 +47,24 @@ jobs:
       - name: Upload WAR files
         uses: actions/upload-artifact@v5.0.0
         with:
-          name: warfile
+          name: warfile-${{ matrix.Java }}
           path: ./**/build/libs/*.war
           retention-days: 1
           if-no-files-found: error
       - name: Upload Test Reports
         uses: actions/upload-artifact@v5.0.0
         with:
-          name: test-report
+          name: test-report-${{ matrix.Java }}
           path: ./**/build/reports/tests/**
           if-no-files-found: error
       - name: Upload Coverage Reports
         uses: actions/upload-artifact@v5.0.0
         with:
-          name: coverage-report
+          name: coverage-report-${{ matrix.Java }}
           path: ./**/build/reports/jacoco/
           if-no-files-found: error
+      - run: echo "jdk=${{ matrix.Java }}" >> $GITHUB_OUTPUT
+          
   container-build:
     name: Build Container Image
     runs-on: ubuntu-latest
