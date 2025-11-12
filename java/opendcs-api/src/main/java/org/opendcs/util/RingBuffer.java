@@ -4,7 +4,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.concurrent.SubmissionPublisher;
+import org.reactivestreams.Publisher;
 
 /**
  * A circular buffer.

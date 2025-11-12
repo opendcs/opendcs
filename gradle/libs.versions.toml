@@ -39,6 +39,8 @@ sun-mailapi="1.6.7"
 hakky54-ssl = "9.1.0"
 mock-server = "5.15.0"
 auto-service = "1.1.1"
+# Implementation of the Java Flow API for JDK 8
+reactive-api = "1.0.4"
 
 #test deps
 junit = "5.10.2"
@@ -98,6 +100,7 @@ org-flywaydb-flyway-core = { module = "org.flywaydb:flyway-core", version.ref = 
 io-github-hakky54 = { module = "io.github.hakky54:sslcontext-kickstart", version.ref="hakky54-ssl" }
 auto-service-annotations = { module = "com.google.auto.service:auto-service-annotations", version.ref = "auto-service" }
 auto-service-processor = { module = "com.google.auto.service:auto-service", version.ref = "auto-service" }
+org-reactivestreams-reactive-streams = { module = "org.reactivestreams:reactive-streams", version.ref ="reactive-api" }
 
 # CWMS
 cwms-db-jooq = { module = "mil.army.usace.hec:cwms-db-jooq", version.ref = "cwms-db" }
