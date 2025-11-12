@@ -65,7 +65,7 @@ The OWASP Zap HTML report is attached to the GitHub Workflow run along with a sh
 At this time, the default configuration is used and the results are not used to gatekeep Pull Requests.
 
 ## Java Version Compatibility
-OpenDCS REST API targets JDK 8 compatibility for distribution. 
+OpenDCS REST API targets JDK 21 compatibility for distribution. 
 In order to ensure compatibility with future versions of Java, the GitHub workflow [java_compatibility.yml](./.github/workflows/java_compatibility.yml)
 will run a matrix build against the project to ensure compatibility with other JDK versions.
 
