@@ -4,6 +4,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.concurrent.Flow.Publisher;
+import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.SubmissionPublisher;
 
 /**
@@ -13,10 +15,11 @@ import java.util.concurrent.SubmissionPublisher;
  *
  * @see java.util.concurrent.SubmissionPublisher
  */
-public class RingBuffer<T> extends SubmissionPublisher<T> implements List<T>
+public class RingBuffer<T> implements List<T>, Publisher<T>
 {
     // Performance hit, but easier to deal with initially
     private final LinkedList<T> list = new LinkedList<>();
+    private final SubmissionPublisher<T> publisher = new SubmissionPublisher<>();
     private int maxSize;
 
     public RingBuffer(int size)
@@ -44,7 +47,7 @@ public class RingBuffer<T> extends SubmissionPublisher<T> implements List<T>
         boolean added = list.add(element);
         if (added)
         {
-            submit(element);
+            publisher.submit(element);
         }
         return added;
     }
@@ -191,7 +194,7 @@ public class RingBuffer<T> extends SubmissionPublisher<T> implements List<T>
 
     @Override
     public ListIterator<T> listIterator()
-    {   
+    {
         return list.listIterator();
     }
 
@@ -207,5 +210,12 @@ public class RingBuffer<T> extends SubmissionPublisher<T> implements List<T>
     public List<T> subList(int fromIndex, int toIndex)
     {
         return list.subList(fromIndex, toIndex);
+    }
+
+
+    @Override
+    public void subscribe(Subscriber<? super T> subscriber)
+    {
+        publisher.subscribe(subscriber);
     }
 }

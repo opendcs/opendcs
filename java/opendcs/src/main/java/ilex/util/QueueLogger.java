@@ -16,6 +16,9 @@
 package ilex.util;
 
 import java.util.Vector;
+import java.util.concurrent.Flow.Publisher;
+import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.SubmissionPublisher;
 
 import org.opendcs.logging.LoggingEvent;
@@ -48,13 +51,40 @@ public class QueueLogger
 	* empty string (i.e. "").
 	* @param procName the process name
 	*/
-	public QueueLogger(SubmissionPublisher<LoggingEvent> logBuffer)
+	public QueueLogger(Publisher<LoggingEvent> logBuffer)
 	{
 		messages = new PublicRRVector<>(MAX_MESSAGES, QUEUE_INCREMENT);
 		startIndex = 0;
-		logBuffer.consume(le ->
+		logBuffer.subscribe(new Subscriber<LoggingEvent>()
 		{
-			doLog(le);
+			Subscription subscription = null;
+
+			@Override
+			public void onSubscribe(Subscription subscription)
+			{
+				this.subscription = subscription;
+				// an arbitrary number, may need to adjust later but for now start somewhere.
+				subscription.request(1);
+			}
+
+			@Override
+			public void onNext(LoggingEvent item)
+			{
+				doLog(item);
+				subscription.request(1);
+			}
+
+			@Override
+			public void onError(Throwable throwable)
+			{
+				doLog(LoggingEvent.of("Error retrieving next log event", throwable));
+			}
+
+			@Override
+			public void onComplete()
+			{
+				doLog(LoggingEvent.of("no more messages."));
+			}
 		});
 	}
 
