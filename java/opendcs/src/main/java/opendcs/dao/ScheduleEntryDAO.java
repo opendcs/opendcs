@@ -1,52 +1,18 @@
-/**
- * $Id$
- *
- * $Log$
- * Revision 1.13  2017/06/16 15:33:18  mmaloney
- * To handle import from XML, when writing, if loading app ID is null but the name is not,
- * lookup the ID from the name.
- *
- * Revision 1.12  2016/12/21 23:42:15  mmaloney
- * bugswat
- *
- * Revision 1.11  2016/12/21 20:28:21  mmaloney
- * bugswat
- *
- * Revision 1.10  2016/12/21 19:42:23  mmaloney
- * Last Src can only hold 32 chars. If string is longer, truncate it.
- *
- * Revision 1.9  2016/08/05 14:48:16  mmaloney
- * Updates for Session Status GUI.
- *
- * Revision 1.8  2016/07/20 15:48:44  mmaloney
- * update last source and consumer. It wasn't doing that before.
- *
- * Revision 1.7  2016/02/04 19:00:15  mmaloney
- * SQL bug fix where it wasn't calling rs.next().
- *
- * Revision 1.6  2015/04/14 18:21:39  mmaloney
- * Prevent schedule entry statuses of more than 24 chars.
- *
- * Revision 1.5  2015/02/06 18:51:35  mmaloney
- * When deleting schedule entry status, also delete dependent DACQ_EVENTs
- *
- * Revision 1.4  2014/12/11 20:33:11  mmaloney
- * dev
- *
- * Revision 1.3  2014/08/29 18:18:46  mmaloney
- * For XML import, handle case where existing entry doesn't have a DbKey.
- *
- * Revision 1.2  2014/07/03 12:53:41  mmaloney
- * debug improvements.
- *
- *
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to the United States Government. No warranty is provided or implied other
- * than specific contractual terms between COVE and the U.S. Government.
- *
- * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package opendcs.dao;
 
 import ilex.util.TextUtil;
@@ -55,10 +21,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import decodes.db.ScheduleEntry;
 import decodes.db.ScheduleEntryStatus;
@@ -72,7 +37,7 @@ import opendcs.dai.ScheduleEntryDAI;
 
 public class ScheduleEntryDAO extends DaoBase implements ScheduleEntryDAI
 {
-	private static final Logger log = LoggerFactory.getLogger(ScheduleEntryDAO.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     private static String seColumns = "a.schedule_entry_id, a.name, "
         + "a.loading_application_id, a.routingspec_id, a.start_time, a.timezone, "
@@ -301,9 +266,10 @@ public class ScheduleEntryDAO extends DaoBase implements ScheduleEntryDAI
             return;
 		}
 
-		debug3("writeScheduleEntry(" + scheduleEntry.getName() + ") rsID=" + scheduleEntry.getRoutingSpecId()
-				+ ", rsname='" + scheduleEntry.getRoutingSpecName() + "', appID=" + scheduleEntry.getLoadingAppId()
-				+ ", appName='" + scheduleEntry.getLoadingAppName() + "'");
+		log.trace("writeScheduleEntry({}) rsID={}, rsname='{}', appID={}, appName='{}'",
+                  scheduleEntry.getName(), scheduleEntry.getRoutingSpecId(), scheduleEntry.getRoutingSpecName(),
+                  scheduleEntry.getLoadingAppId(), scheduleEntry.getLoadingAppName());
+                  
         if (scheduleEntry.getRoutingSpecId().isNull()
          && scheduleEntry.getRoutingSpecName() != null
          && scheduleEntry.getRoutingSpecName().length() > 0)

@@ -15,6 +15,10 @@ def commonJacocoExcludes = [
   "**/pkg_resources/**"
 ]
 
+configurations {
+    extra
+}
+
 dependencies {
     implementation project(":install")
 
@@ -26,15 +30,19 @@ dependencies {
         builtBy ":install:installDist"
     }
 
+    extra(libs.ch.qos.logback) // need to manually add this to classpath in test tasks
+
+    testImplementation project(":opendcs-schemas")
+    testImplementation project(":opendcs-schemas-cwms-oracle")
     testImplementation project(":testing:fixtures")
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)
     testImplementation(libs.bundles.junit.platform)
     testImplementation(libs.commons.io)
     testImplementation(libs.apache.derby)
+    testImplementation(libs.ch.qos.logback)
     testImplementation(libs.fasterxml.jackson.databind)
     testImplementation(libs.webcompere.system.stubs.jupiter)
-    testRuntimeOnly(project(":opendcs-slf4j-provider"))
 }
 
 
@@ -43,6 +51,7 @@ dependencies {
 def testEngines = (project.findProperty("opendcs.test.engine")?: "OpenDCS-XML,OpenDCS-Postgres,OpenDCS-Oracle,CWMS-Oracle").split(",")
 
 test {
+    useJUnitPlatform()
     // The below registered test tasks do all the real work.
     exclude '**/*'
 }
@@ -53,9 +62,11 @@ testEngines.each { engine ->
     def task = tasks.register("test"+engine.replace("-",""), Test) { task ->
         dependsOn ":install:installDist"
         dependsOn ":opendcs:test"
-        //outputs.upToDateWhen {false}
         useJUnitPlatform()
 
+        // with gradle 9.2 it seems we need to set these manually
+        testClassesDirs = sourceSets.test.output.classesDirs
+        classpath = sourceSets.test.runtimeClasspath
 
         enabled = gradle.startParameter.taskNames.contains(":testing:" + project.name + ":test") ||
                   gradle.startParameter.taskNames.contains(":testing:" + project.name + ":" +task.name)
@@ -65,7 +76,8 @@ testEngines.each { engine ->
         def install = project(":install")
         def stageDir = install.layout.getBuildDirectory().dir("install/${install.distributions.main.distributionBaseName.get()}").get()
         def classPath = (project(':opendcs').jar.outputs.files
-                    + project(":opendcs").configurations.runtimeClasspath).asPath
+                    + project(":opendcs").configurations.runtimeClasspath
+                    + configurations.extra).asPath
         inputs.property "opendcs.test.engine", engine
 
         systemProperties += project.properties.findAll {k, v -> k.startsWith("opendcs")}
@@ -77,7 +89,10 @@ testEngines.each { engine ->
         jvmArgs += "-Dopendcs.test.classpath=${classPath}"
         jvmArgs += "-Dresource.dir=${projectDir}/src/test/resources" // TODO: make clearer
         jvmArgs += "-DDCSTOOL_HOME=${stageDir}"
-        jvmArgs += "-Djava.util.logging.config.file=${projectDir}/src/test/test-config/logging.properties"
+        jvmArgs += "-Dlogback.configurationFile=${projectDir}/src/test/test-config/logback-test-driver.xml"
+        jvmArgs += "-DAPP_NAME=tests"
+        jvmArgs += "-DtestLoggerPort="+ project.findProperty("testLoggerPort") ?: "35356"
+        jvmArgs += "-Djava.security.manager=allow"
 
         reports {
             html {}
@@ -94,6 +109,7 @@ testEngines.each { engine ->
         //additionalSourceDirs files(project(":opendcs").sourceSets.main.java.srcDirs)
         //additionalClassDirs files(project(":opendcs").sourceSets.main.output)
         sourceSets project(":opendcs").sourceSets.main
+        executionData = files("${buildDir}/jacoco/test"+engine.replace("-","")+".exec") // Use the .exec file from the custom test task
         reports {
             html {
                 outputLocation = jacoco.reportsDirectory.dir("jacoco-${engine}-html")
@@ -103,7 +119,7 @@ testEngines.each { engine ->
             }
 
         }
-      
+
 
 
         classDirectories.setFrom(files(classDirectories.files.collect {

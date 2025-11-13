@@ -21,8 +21,12 @@ configurations {
 
 dependencies {
     annotationProcessor(project(":opendcs-annotations"))
+    annotationProcessor(libs.auto.service.processor)
+
     api(project(":opendcs-annotations"))
     api(project(":opendcs-api"))
+
+    implementation(libs.auto.service.annotations)
     implementation(libs.bundles.oracle)
     implementation(libs.io.github.hakky54)
     implementation(libs.postgresql)
@@ -35,7 +39,7 @@ dependencies {
     implementation(libs.jfree.jcommon)
     implementation(libs.jfree.jfreechart)
     implementation(libs.jython.standalone)
-    
+
     implementation(libs.scijava.jep) {
         exclude group: "jama", module: "jama"
     }
@@ -96,15 +100,18 @@ dependencies {
     api(libs.org.slf4j.api)
     implementation(libs.bundles.jdbi)
     implementation(libs.org.flywaydb.flyway.core)
+    implementation(libs.fasterxml.jackson.databind)
+
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)
+    testImplementation(libs.bundles.junit.platform)
     testImplementation(libs.commons.io)
     testImplementation(libs.apache.derby)
     testImplementation(libs.webcompere.system.stubs.jupiter)
-    testImplementation(libs.fasterxml.jackson.databind)
     testImplementation(libs.greenmail)
     testImplementation(libs.org.mock.server)
-  
+    testRuntimeOnly(libs.ch.qos.logback)
+
 }
 
 test

@@ -1,33 +1,34 @@
 /*
 * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
 * of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software 
+*
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
 */
 package ilex.util;
 
 import java.util.Vector;
+import java.util.concurrent.SubmissionPublisher;
+
+import org.opendcs.logging.LoggingEvent;
 
 /**
-* Concrete subclass of Logger that stores messages in a queue of fixed
-* size. When size is reached the oldest messages are deleted. Messages
-* can be retrieved by index.
-* @deprecated Existing logging system is getting replaced
+* Fixed length queue with mechanisms for tracking current and next position.
+* Uses new RingBuffer and Logging Event mechanisms to populate.
+*
 */
-@Deprecated
-public class QueueLogger extends Logger
+public class QueueLogger
 {
 	/** Messages stored internally in a vector */
-	private PublicRRVector messages;
+	private final PublicRRVector<String> messages;
 
 	/**
 	* This is the index of the first element in the vector. Initially this
@@ -47,29 +48,23 @@ public class QueueLogger extends Logger
 	* empty string (i.e. "").
 	* @param procName the process name
 	*/
-	public QueueLogger( String procName )
+	public QueueLogger(SubmissionPublisher<LoggingEvent> logBuffer)
 	{
-		super(procName);
-		messages = new PublicRRVector(MAX_MESSAGES, QUEUE_INCREMENT);
+		messages = new PublicRRVector<>(MAX_MESSAGES, QUEUE_INCREMENT);
 		startIndex = 0;
-	}
-
-	/**
-	* Discards the queue.
-	*/
-	public void close( ) 
-	{
-		messages = null;
+		logBuffer.consume(le ->
+		{
+			doLog(le);
+		});
 	}
 
 	/**
 	* Logs a message into the queue.
-	* @param priority the priority.
-	* @param text the formatted message.
+	* @param event The raw event from the log.
 	*/
-	public void doLog( int priority, String text )
+	public void doLog(LoggingEvent event)
 	{
-		String msg = standardMessage(priority, text);
+		String msg = event.toString();
 		addToQueue(msg);
 	}
 
@@ -113,32 +108,32 @@ public class QueueLogger extends Logger
 		idx -= startIndex;
 		int n = messages.size();
 		if (idx < n)
-			return (String)messages.get(idx);
+			return messages.get(idx);
 		else if (idx == n)
 			return null;
 		else
 			throw new IndexRangeException("too high");
 	}
-}
 
-class PublicRRVector extends Vector
-{
-	/**
-	* @param max
-	* @param inc
-	*/
-	PublicRRVector( int max, int inc )
+	private static class PublicRRVector<T> extends Vector<T>
 	{
-		super(max, inc);
-	}
+		/**
+		* @param max
+		* @param inc
+		*/
+		PublicRRVector( int max, int inc )
+		{
+			super(max, inc);
+		}
 
-	// Have to overload this to make it public.
-	/**
-	* @param from
-	* @param to
-	*/
-	public void removeRange( int from, int to )
-	{
-		super.removeRange(from, to);
+		// Have to overload this to make it public.
+		/**
+		* @param from
+		* @param to
+		*/
+		public void removeRange( int from, int to )
+		{
+			super.removeRange(from, to);
+		}
 	}
 }

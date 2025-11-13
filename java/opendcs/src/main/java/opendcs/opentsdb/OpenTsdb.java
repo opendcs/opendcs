@@ -1,6 +1,20 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package opendcs.opentsdb;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.TimedVariable;
 
@@ -13,6 +27,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.DaiBase;
 import opendcs.dai.IntervalDAI;
@@ -52,6 +69,7 @@ import decodes.util.DecodesSettings;
 
 public class OpenTsdb extends TimeSeriesDb
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String jdbcOracleDriver = null;
 	private String databaseLocation = null;
 
@@ -80,7 +98,7 @@ public class OpenTsdb extends TimeSeriesDb
 		}
 		catch (SQLException ex)
 		{
-			warning("Cannot convert date!");
+			log.atWarn().setCause(ex).log("Cannot convert date!");
 			return null;
 		}
 	}
@@ -182,13 +200,13 @@ public class OpenTsdb extends TimeSeriesDb
 		if (transformed)
 		{
 			String uniqueString = tsidRet.getUniqueString();
-			debug3(module + " origString='" + origString + "', new string='"
-				+ uniqueString + "', parm=" + parm);
+			log.trace(" origString='{}', new string='{}', parm={}",
+					  origString, uniqueString, parm);
 
 			try
 			{
 				tsidRet = timeSeriesDAO.getTimeSeriesIdentifier(uniqueString);
-				debug3(module + " time series '" + uniqueString + "' exists OK.");
+				log.trace("time series '{}' exists.", uniqueString);
 			}
 			catch(NoSuchObjectException ex)
 			{
@@ -207,7 +225,7 @@ public class OpenTsdb extends TimeSeriesDb
 				}
 				else
 				{
-					debug3(module + " no such time series '" + uniqueString + "'");
+					log.trace("No such time series '{}'", uniqueString);
 					return null;
 				}
 			}
@@ -257,7 +275,7 @@ public class OpenTsdb extends TimeSeriesDb
 				}
 				catch (Exception ex)
 				{
-					Logger.instance().warning("Cannot get site for sitename " + parmSiteName + ": " + ex);
+					log.atWarn().setCause(ex).log("Cannot get site for sitename '{}'", parmSiteName);
 				}
 				finally
 				{
@@ -269,8 +287,8 @@ public class OpenTsdb extends TimeSeriesDb
 			  && parm.getLocSpec() != null && parm.getLocSpec().length() > 0)
 		{
 			String morphed = TsidMorpher.morph(ctsid.getSiteName(), parm.getLocSpec());
-			debug2("TSID site name '" + ctsid.getSiteName() + "' with loc spec '"
-				+ parm.getLocSpec() + "' morphed to '" + morphed + "'");
+			log.trace("TSID site name '{}' with loc spec '{}' morphed to '{}'",
+					  ctsid.getSiteName(), parm.getLocSpec(), morphed);
 			if (morphed == null)
 				morphed = parm.getLocSpec();
 			tsidRet.setSite(null);
@@ -287,8 +305,7 @@ public class OpenTsdb extends TimeSeriesDb
 			}
 			catch (Exception ex)
 			{
-				Logger.instance().warning("Cannot get site for morphed sitename "
-					+ morphed + ": " + ex);
+				log.atWarn().setCause(ex).log("Cannot get site for morphed sitename {}", morphed);
 			}
 			finally
 			{
@@ -307,8 +324,8 @@ public class OpenTsdb extends TimeSeriesDb
 		{
 			String morphed = TsidMorpher.morph(ctsid.getPart("param"), parm.getParamSpec());
 			if (morphed == null)
-				debug2("Unable to morph param '" + ctsid.getPart("param") + "' with param spec '"
-					+ parm.getParamSpec() + "'");
+				log.trace("Unable to morph param '{}' with param spec '{}'",
+						  ctsid.getPart("param"), parm.getParamSpec());
 			else
 			{
 				tsidRet.setDataType(null);
@@ -342,8 +359,8 @@ public class OpenTsdb extends TimeSeriesDb
 			{
 				String morphed = TsidMorpher.morph(ctsid.getPart("version"), s);
 				if (morphed == null)
-					debug2("Unable to morph param '" + ctsid.getPart("version")
-						+ "' with version spec '" + s + "'");
+					log.trace("Unable to morph param '{}' with version spec '{}'",
+							  ctsid.getPart("version"), s);
 				else
 				{
 					ctsid.setVersion(morphed);

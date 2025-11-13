@@ -1,46 +1,38 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.3  2009/10/16 12:39:00  mjmaloney
-*  LRIT updates
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.2  2009/08/24 13:39:33  shweta
-*  Code added to listen to messages from LQM even in dormant mode.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1  2008/04/04 18:21:16  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.3  2005/12/30 19:40:59  mmaloney
-*  dev
-*
-*  Revision 1.2  2004/05/21 18:27:44  mjmaloney
-*  Release prep.
-*
-*  Revision 1.1  2004/05/06 21:48:13  mjmaloney
-*  Implemented Lqm Server. Modified GUI to read events over the net.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lritdcs;
 
-import java.util.StringTokenizer;
 import java.net.*;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.IOException;
 
 import ilex.net.*;
-import ilex.util.Logger;
 
 public class LqmInterfaceServer extends BasicServer
 {
-	
-	
-	
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	public LqmInterfaceServer(int port)
 		throws IOException
 	{
 		super(port);
-		Logger.instance().warning("LRIT:"
-        	+ Constants.EVT_NO_LQM + " No LQM Connected.");
+		log.warn("LRIT:{} No LQM Connected.", Constants.EVT_NO_LQM);
 	}
 
 	protected BasicSvrThread newSvrThread(Socket sock)
@@ -49,19 +41,18 @@ public class LqmInterfaceServer extends BasicServer
 		InetAddress sockaddr = sock.getInetAddress();
 		if (isOK(sockaddr))
 		{
-			try 
+			try
 			{
-				BasicSvrThread ret = new LqmInterfaceThread(this, sock); 
-				Logger.instance().info("LRIT:" 
-					+ (-Constants.EVT_LQM_CON_FAILED) + " LQM Connected.");
+				BasicSvrThread ret = new LqmInterfaceThread(this, sock);
+				log.info("LRIT:{} LQM Connected.", (-Constants.EVT_LQM_CON_FAILED));
 				return ret;
 			}
 			catch(IOException ex)
 			{
-				Logger.instance().warning("LRIT:" 
-					+ Constants.EVT_LQM_CON_FAILED
-					+ " Error accepting connection from " + sockaddr.toString()
-					+ " (disconnecting): " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("LRIT:{} Error accepting connection from {} (disconnecting): ",
+				    	Constants.EVT_LQM_CON_FAILED, sockaddr.toString());
 				return null;
 			}
 		}
@@ -72,8 +63,7 @@ public class LqmInterfaceServer extends BasicServer
 
 	private boolean isOK(InetAddress sockaddr)
 	{
-		Logger.instance().info(
-			"LQM Interface Socket connection from " + sockaddr.toString());
+		log.info("LQM Interface Socket connection from {}", sockaddr.toString());
 		// Localhost is always OK.
 
 		// Check each addr/name in the configuration.
@@ -86,22 +76,20 @@ public class LqmInterfaceServer extends BasicServer
 			InetAddress testaddr = InetAddress.getByName(lqmhost);
 			if (sockaddr.equals(testaddr))
 			{
-				Logger.instance().info("LRIT:"
-        			+ (-Constants.EVT_NO_LQM) + " LQM Connected.");
+				log.info("LRIT:{} LQM Connected.", (-Constants.EVT_NO_LQM));
 				return true;
 			}
 		}
-		catch(UnknownHostException ex) 
-		{ 
-			Logger.instance().failure("LRIT:"
-				+ Constants.EVT_LQM_BAD_CONFIG
-				+ " LQM configuration address '" + lqmhost + "' is invalid: "
-				+ ex + " -- Cannot accept ANY LQM connections!");
+		catch(UnknownHostException ex)
+		{
+			log.atError()
+			   .setCause(ex)
+			   .log("LRIT:{} LQM configuration address '{}' is invalid -- Cannot accept ANY LQM connections!",
+			   		Constants.EVT_LQM_BAD_CONFIG, lqmhost);
 		}
 
-		Logger.instance().warning("LRIT:" + Constants.EVT_LQM_INVALID_HOST
-			+ " Rejecting LQM connection from unauthorized host " 
-			+ sockaddr.toString());
+		log.warn("LRIT:{} Rejecting LQM connection from unauthorized host {}",
+				 Constants.EVT_LQM_INVALID_HOST, sockaddr.toString());
 		return false;
 	}
 
@@ -112,26 +100,26 @@ public class LqmInterfaceServer extends BasicServer
 	{
 		final LqmInterfaceServer lqmServer = this;
 		final int port = portNum;
-		Thread lqmServerThread = 
+		Thread lqmServerThread =
 			new Thread()
 			{
 				public void run()
 				{
-					Logger.instance().info(
-						"LRIT:" + (-Constants.EVT_LQM_LISTEN_ERR)
-						+ " LQM Interface Listening on port " + port);
+					log.info("LRIT:{} LQM Interface Listening on port {}",
+							(-Constants.EVT_LQM_LISTEN_ERR), port);
 					try { lqmServer.listen(); }
 					catch(IOException ex)
 					{
-						Logger.instance().failure(
-							"LRIT:" + Constants.EVT_LQM_LISTEN_ERR
-							+ " LQM Interface Listening Socket Error: " + ex);
+						log.atError()
+						   .setCause(ex)
+						   .log("LRIT:{} LQM Interface Listening Socket Error: ", Constants.EVT_LQM_LISTEN_ERR);
 					}
 					String fss = LritDcsConfig.instance().getFileSenderState();
 					if (!fss.equalsIgnoreCase("dormant"))
-						Logger.instance().failure(
-							"LRIT:" + Constants.EVT_LQM_LISTEN_ERR
-							+ " LQM Interface Listening Socket Stopped.");
+					{
+						log.error("LRIT:{} LQM Interface Listening Socket Stopped.",
+								  Constants.EVT_LQM_LISTEN_ERR);
+					}
 				}
 			};
 		lqmServerThread.start();
@@ -144,7 +132,7 @@ public class LqmInterfaceServer extends BasicServer
 		{
 			if (portNum != cfg.getLqmPort() || !cfg.getEnableLqm())
 				shutdown();
-			else 
+			else
 			{
 				for(int i=0; i<mySvrThreads.size(); i++)
 				{
@@ -161,20 +149,20 @@ public class LqmInterfaceServer extends BasicServer
 		if (listeningSocket == null && cfg.getEnableLqm())
 		{
 			portNum = cfg.getLqmPort();
-			try 
+			try
 			{
-				makeServerSocket(); 
+				makeServerSocket();
 				startListeningThread();
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().failure(
-					"LRIT:" + Constants.EVT_LQM_LISTEN_ERR
-					+ " Error on LQM server: "
-					+ ex + " -- no LQM connections will be accepted.");
+				log.atError()
+				   .setCause(ex)
+				   .log("LRIT:{} Error on LQM server:  -- no LQM connections will be accepted.",
+				   		Constants.EVT_LQM_LISTEN_ERR);
 			}
 		}
-		
+
 	}
 
 	public void updateConfigDormant()
@@ -182,10 +170,10 @@ public class LqmInterfaceServer extends BasicServer
 		LritDcsConfig cfg = LritDcsConfig.instance();
 		if (listeningSocket != null)
 		{
-			
+
 			if (portNum != cfg.getLqmPort() || !cfg.getEnableLqm())
 			{
-				Logger.instance().info("LQM config changed. Closing old LQM connection ");
+				log.info("LQM config changed. Closing old LQM connection ");
 				shutdown();
 			}
 		}
@@ -193,21 +181,20 @@ public class LqmInterfaceServer extends BasicServer
 		if (listeningSocket == null && cfg.getEnableLqm())
 		{
 			portNum = cfg.getLqmPort();
-			try 
+			try
 			{
-				Logger.instance().info("LQM config changed. Opening new LQM connection ");
-				makeServerSocket(); 
-				//startListeningThread();
+				log.info("LQM config changed. Opening new LQM connection ");
+				makeServerSocket();
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().failure(
-					"LRIT:" + Constants.EVT_LQM_LISTEN_ERR
-					+ " Error on LQM server: "
-					+ ex + " -- no LQM connections will be accepted.");
+				log.atError()
+				   .setCause(ex)
+				   .log("LRIT:{} Error on LQM server -- no LQM connections will be accepted.",
+				   		Constants.EVT_LQM_LISTEN_ERR);
 			}
 		}
 	}
-	
-	
+
+
 }

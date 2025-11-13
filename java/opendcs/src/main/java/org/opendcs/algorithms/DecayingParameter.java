@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 The OpenDCS Consortium and contributors
+ * Copyright 2024-2025 The OpenDCS Consortium and contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -36,7 +36,8 @@ import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
 import org.opendcs.annotations.PropertySpec;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 
 @Algorithm(name = "DecayingParameter",
@@ -51,7 +52,7 @@ import org.slf4j.LoggerFactory;
 		)
 public class DecayingParameter extends AW_AlgorithmBase
 {
-	public static final org.slf4j.Logger log = LoggerFactory.getLogger(DecayingParameter.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	@Input
 	public double input;
@@ -103,9 +104,9 @@ public class DecayingParameter extends AW_AlgorithmBase
 			}
 			tmp = new GregorianCalendar(aggTZ);
 		}
-		catch (java.text.ParseException e)
+		catch (java.text.ParseException ex)
 		{
-			throw new DbCompException("Could not parse reset date, please use format: ddMMMyyyy HHmm", e);
+			throw new DbCompException("Could not parse reset date, please use format: ddMMMyyyy HHmm", ex);
 		}
 	}
 	

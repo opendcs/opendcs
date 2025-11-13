@@ -15,9 +15,9 @@ plugins {
     id 'jacoco'
 }
 
-if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
-    apply plugin: "org.sonarqube"
-}
+
+apply plugin: "org.sonarqube"
+
 
 repositories {
     mavenCentral()
@@ -27,75 +27,83 @@ import org.apache.tools.ant.taskdefs.condition.Os
 
 ext.osWin = Os.isFamily(Os.FAMILY_WINDOWS)
 
-if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
-    sonar {
-        properties {
-            property "sonar.projectKey", "opendcs_opendcs"
-            property "sonar.organization", "opendcs"
-            property "sonar.host.url", "https://sonarcloud.io"
-            property "sonar.pullrequest.provider", "GitHub"
-            property "sonar.pullrequest.github.repository", "opendcs/opendcs"
-                                                                                          
-            
-            property "sonar.projectVersion", sonarVersion()
-            // TODO: just remove the C files that are no longer used. However, they are still
-            // called in some of the java
-            property "sonar.c.file.suffixes", "-"
-            property "sonar.cpp.file.suffixes", "-"
-            property "sonar.objc.file.suffixes", "-"
-        }
+
+sonar {
+    properties {
+        property "sonar.projectKey", "opendcs_opendcs"
+        property "sonar.organization", "opendcs"
+        property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.pullrequest.provider", "GitHub"
+        property "sonar.pullrequest.github.repository", "opendcs/opendcs"
+
+
+        property "sonar.projectVersion", sonarVersion()
+        // TODO: just remove the C files that are no longer used. However, they are still
+        // called in some of the java
+        property "sonar.c.file.suffixes", "-"
+        property "sonar.cpp.file.suffixes", "-"
+        property "sonar.objc.file.suffixes", "-"
     }
+}
 
 
-    tasks.register("codeCoverageReport", JacocoReport) {
-        subprojects { subproject -> 
-            subproject.plugins.withType(JacocoPlugin).configureEach {
-                subproject.tasks.matching({t -> t.extensions.findByType(JacocoTaskExtension)}).configureEach { testTask ->
-                    if(testTask.extensions.getByType(JacocoTaskExtension).isEnabled()) {
-                        sourceSets subproject.sourceSets.main
-                        executionData(testTask)
-                    }
+tasks.register("codeCoverageReport", JacocoReport) {
+    subprojects { subproject ->
+        subproject.plugins.withType(JacocoPlugin).each {
+            subproject.tasks.matching({t -> t.extensions.findByType(JacocoTaskExtension)}).each { testTask ->
+                if(testTask.extensions.getByType(JacocoTaskExtension).isEnabled()) {
+                    sourceSets subproject.sourceSets.main
+                    executionData(testTask)
                 }
             }
         }
-
-        // enable the different report types (html, xml, csv)
-        reports {
-            xml.required = true
-            html.required = true
-        }
-        def excludes = [
-                    "**/easy_install/**",
-                    "**/python_packages",
-                    "**/certifi/**",
-                    "**/chardet/**",
-                    "**/urllib3/**",
-                    "**/requests/**",
-                    "**/chardet/**",
-                    "**/urllib3/**",
-                    "**/idna/**",
-                    "**/pkg_resources/**"
-                ]
-
-//        afterEvaluate {
-            classDirectories.setFrom(files(classDirectories.files.collect {
-                fileTree(dir: it, exclude: excludes)
-            }))
-  //      }
     }
 
-    subprojects {
-        sonar {
-            properties {
-                property "sonar.coverage.jacoco.xmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml"
-            }
+    // enable the different report types (html, xml, csv)
+    reports {
+        xml.required = true
+        html.required = true
+    }
+    def excludes = [
+                "**/easy_install/**",
+                "**/python_packages",
+                "**/certifi/**",
+                "**/chardet/**",
+                "**/urllib3/**",
+                "**/requests/**",
+                "**/chardet/**",
+                "**/urllib3/**",
+                "**/idna/**",
+                "**/pkg_resources/**"
+            ]
+
+
+    classDirectories.setFrom(files(classDirectories.files.collect {
+        fileTree(dir: it, exclude: excludes)
+    }))
+
+}
+
+subprojects {
+    sonar {
+        properties {
+            property "sonar.coverage.jacoco.xmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml"
         }
     }
 }
 
+
+import javax.inject.Inject
+
+interface InjectedExecOps {
+    @Inject //@javax.inject.Inject
+    ExecOperations getExecOps()
+}
+
 ext.sonarVersion = {
     def stdout = new ByteArrayOutputStream()
-    exec {
+    def execOps = project.objects.newInstance(InjectedExecOps)
+    execOps.execOps.exec {
         commandLine 'git', 'describe', '--tags', '--abbrev=0', "--always"
         standardOutput = stdout
     }

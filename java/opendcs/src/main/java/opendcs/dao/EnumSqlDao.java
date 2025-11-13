@@ -1,23 +1,18 @@
 /*
- * $Id$
- * 
- * $Log$
- * Revision 1.3  2014/08/22 17:23:10  mmaloney
- * 6.1 Schema Mods and Initial DCP Monitor Implementation
- *
- * Revision 1.2  2014/07/03 12:53:41  mmaloney
- * debug improvements.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to the United States Government. No warranty is provided or implied other 
- * than specific contractual terms between COVE and the U.S. Government.
- *
- * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package opendcs.dao;
 
 import java.sql.Connection;
@@ -32,8 +27,8 @@ import java.util.Optional;
 import org.opendcs.database.SimpleTransaction;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import decodes.db.EnumValue;
 import decodes.db.ValueNotFoundException;
@@ -51,7 +46,7 @@ import decodes.tsdb.DbIoException;
  */
 public class EnumSqlDao extends DaoBase implements EnumDAI
 {
-	private static final Logger log = LoggerFactory.getLogger(EnumSqlDao.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static DbObjectCache<DbEnum> cache = new DbObjectCache<DbEnum>(3600000, false);
 	
 	public EnumSqlDao(DatabaseConnectionOwner tsdb)
@@ -121,7 +116,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 				},enumName);
 				if (ret == null)
 				{
-					warning("No such enum '" + enumName + "'");
+					log.warn("No such enum '{}'", enumName);
 					return null;
 				}
 				else
@@ -133,8 +128,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 			}
 			catch (SQLException ex)
 			{
-				String msg = "Error in query '" + q + "': " + ex;
-				warning(msg);
+				String msg = "Error in query '" + q + "'";
 				throw new DbIoException(msg,ex);
 			}
 		}
@@ -169,7 +163,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 				ret = getSingleResult(q, rs -> rs2Enum(rs, dbVer), enumId.getValue());
 				if (ret == null)
 				{
-					warning("No such enum with id '" + enumId.getValue() + "'");
+					log.warn("No such enum with id '" + enumId.getValue() + "'");
 					return null;
 				}
 				else
@@ -181,8 +175,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 			}
 			catch (SQLException ex)
 			{
-				String msg = "Error in query '" + q + "': " + ex;
-				warning(msg);
+				String msg = "Error in query '" + q + "'";
 				throw new DbIoException(msg,ex);
 			}
 		}
@@ -212,7 +205,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 				},enumName);
 				if (ret == null)
 				{
-					warning("No such enum '" + enumName + "'");
+					log.warn("No such enum '" + enumName + "'");
 					return null;
 				}
 				else
@@ -222,8 +215,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 			}
 			catch (SQLException ex)
 			{
-				String msg = "Error in query '" + q + "': " + ex;
-				warning(msg);
+				String msg = "Error in query '" + q + "'";
 				throw new DbIoException(msg,ex);
 			}
 		}
@@ -268,8 +260,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 		}
 		catch (SQLException ex)
 		{
-			String msg = "Error in query: " + ex;
-			warning(msg);
+			String msg = "Error in query";
 			throw new DbIoException(msg);
 		}
 	}
@@ -302,7 +293,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 		{
 			try
 			{
-				info("writeEnumList Deleting enum '" + oldenum.enumName + "'");
+				log.info("writeEnumList Deleting enum '{}'", oldenum.enumName);
 				String q = "DELETE FROM EnumValue WHERE enumId = ?";// + oldenum.getId();
 				long id = oldenum.getId().getValue();
 				doModify(q,id);
@@ -325,7 +316,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 	{
 		try
 		{
-			info("deleteEnum Deleting enums with id '" + enumId.getValue() + "'");
+			log.info("deleteEnum Deleting enums with id '{}'", enumId.getValue());
 			String q = "DELETE FROM EnumValue WHERE enumId = ?";
 			doModify(q, enumId.getValue());
 			q = "delete from enum where id = ?";
@@ -509,8 +500,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 			"execClass, editClass";
 		if (dbVer >= DecodesDatabaseVersion.DECODES_DB_6)
 			q = q + ", sortNumber";
-		q = q + " FROM EnumValue WHERE EnumID = ?";// + dbenum.getId();
-		//ResultSet rs = doQuery2(q);
+		q = q + " FROM EnumValue WHERE EnumID = ?";
 		dao.doQuery(q,(rs)-> {
 			rs2EnumValue(rs, dbenum);
 		},dbenum.getId());
@@ -709,7 +699,6 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 			helper.doModify(q,args.toArray());
 
 			// Delete all enum values. They'll be re-added below.
-			//info("writeEnum deleting values from enum '" + dbenum.enumName + "'");
 			q = "DELETE FROM EnumValue WHERE enumId = ?";
 			helper.doModify(q, dbEnum.getId().getValue());
 			

@@ -427,7 +427,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
             // There will be only one row in the result set.
             if (!resultSet.next())
             {
-                throw new DatabaseException("No RoutingSpec found with id "    + routingSpec.getId());
+                throw new ValueNotFoundException("No RoutingSpec found with id "    + routingSpec.getId());
             }
 
             routingSpec.setName(resultSet.getString(2));

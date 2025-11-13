@@ -33,7 +33,8 @@ import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
 import org.opendcs.annotations.PropertySpec;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(name="Evap PennmanMonteith",
            description = 
@@ -66,7 +67,7 @@ import org.slf4j.LoggerFactory;
 
 public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-    public static final org.slf4j.Logger log = LoggerFactory.getLogger(EvapPennmanMonteith.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     @Input
     public double SolarRadiation;

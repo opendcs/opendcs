@@ -1,57 +1,19 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Source$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $State$
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  $Log$
-*  Revision 1.2  2015/02/04 19:43:47  mmaloney
-*  In connect(), if currently connected, do a disconnect first. Ensures that there are no
-*  orphan sockets left open if a BasicClient is reused.
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.4  2011/06/09 18:13:14  shweta
-*  added try catch in disconnect method
-*
-*  Revision 1.3  2008/11/29 21:08:00  mjmaloney
-*  merge with opensrc
-*
-*  Revision 1.1  2008/11/15 01:12:17  mmaloney
-*  Copied from separate ilex tree
-*
-*  Revision 1.8  2005/08/03 15:43:46  mjmaloney
-*  2-step connect to control timeout to 20 sec. Bogus port numbers were causing
-*  very long (2 minute) timeouts.
-*
-*  Revision 1.7  2004/08/30 14:50:21  mjmaloney
-*  Javadocs
-*
-*  Revision 1.6  2004/03/01 20:18:16  mjmaloney
-*  Upgraded socket apps to flush data after each interaction.
-*
-*  Revision 1.5  2003/04/09 19:38:27  mjmaloney
-*  Update lastConnectAttempt before attempting.
-*
-*  Revision 1.4  2003/04/09 15:16:11  mjmaloney
-*  dev.
-*
-*  Revision 1.3  2002/11/22 16:13:42  mjmaloney
-*  Added getClientName and isConnected utilities.
-*
-*  Revision 1.2  2000/09/08 15:05:25  mike
-*  Added outputData method to avoid NullPointerExceptions when client tries
-*  to write data and the socket is closed.
-*
-*  Revision 1.1  2000/01/23 19:30:29  mike
-*  created.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package ilex.net;
-
-import ilex.util.Logger;
 
 import java.net.*;
 import java.io.*;
@@ -62,7 +24,8 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 import org.opendcs.tls.TlsMode;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
 This class encapsulates common functions for a TCP/IP client.
@@ -71,7 +34,7 @@ object of this type.
 */
 public class BasicClient
 {
-	public final static org.slf4j.Logger log = LoggerFactory.getLogger(BasicClient.class);
+	public final static Logger log = OpenDcsLoggerFactory.getLogger();
 	/** port to connect to. */
 	protected int port;
 	/** host to connect to. */
@@ -199,12 +162,6 @@ public class BasicClient
 	*/
 	private synchronized Socket doConnect( String host, int port ) throws IOException, UnknownHostException
 	{
-		Logger.instance().info("SocketFactory class: " + socketFactory.getClass().getName());
-		StackTraceElement ste[] = Thread.currentThread().getStackTrace();
-		for(int i=0; i < ste.length; i++)
-		{
-			Logger.instance().debug3(ste[i].toString());
-		}
 		Socket ret = tlsMode == TlsMode.START_TLS ? SocketFactory.getDefault().createSocket() : socketFactory.createSocket();
 		InetSocketAddress iaddr = new InetSocketAddress(host, port);
 		if (iaddr.isUnresolved())
@@ -212,8 +169,8 @@ public class BasicClient
 			throw new UnknownHostException(host);
 		}
 		ret.connect(iaddr, 20000);
-		Logger.instance().info("Socket class: " + ret.getClass().getName());
-		Logger.instance().info("Connected to:" + String.format("%s:%d",host,port));
+
+		log.info("Connected to: {}:{}", host, port);
 		return ret;
 	}
 
@@ -226,7 +183,7 @@ public class BasicClient
 	*/
 	public void disconnect( )
 	{
-		Logger.instance().debug2("BasicClient " + getName() + " disconnect()");
+		log.trace("BasicClient {} disconnect()", getName());
 		try
 		{
 			try
@@ -234,30 +191,27 @@ public class BasicClient
 				if (input != null)
 					input.close();
 			}
-			catch (Exception e)
+			catch (Exception ex)
 			{
-				Logger.instance().debug1("Error closing input: "+e.getMessage());
-				e.printStackTrace();
+				log.atDebug().setCause(ex).log("Error closing input.");
 			}
 			try
 			{
 				if (output != null)
 					output.close();
 			}
-			catch (Exception e)
+			catch (Exception ex)
 			{
-				Logger.instance().debug1("Error closing ouput: "+e.getMessage());
-				e.printStackTrace();
+				log.atDebug().setCause(ex).log("Error closing output.");
 			}
 			try
 			{
 				if (socket != null)
 					socket.close();
 			}
-			catch (Exception e)
+			catch (Exception ex)
 			{
-				Logger.instance().debug1("Error closing socket: "+e.getMessage());
-				e.printStackTrace();
+				log.atDebug().setCause(ex).log("Error closing socket.");
 			}
 
 			if (debug != null)

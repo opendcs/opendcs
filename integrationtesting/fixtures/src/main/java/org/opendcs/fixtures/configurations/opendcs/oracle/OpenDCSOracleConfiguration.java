@@ -39,7 +39,6 @@ import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesSettings;
-import ilex.util.FileLogger;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
 import opendcs.dao.LoadingAppDao;
@@ -158,23 +157,7 @@ public class OpenDCSOracleConfiguration implements Configuration
         roles.add("OTSDB_COMP_EXEC");
         mp.createUser(jdbi, DCS_ADMIN_USER, DCS_ADMIN_USER_PASSWORD, roles);
         log.info("Setting authentication environment vars.");
-        ilex.util.Logger originalLog = ilex.util.Logger.instance();
-        ilex.util.FileLogger fl = null;
-        try
-        {
-            fl = new FileLogger("test", new File(userDir,"baseline-import.log").getAbsolutePath(), 200*1024*1024);
-            fl.setMinLogPriority(ilex.util.Logger.E_DEBUG3);
-            ilex.util.Logger.setLogger(fl);
-            mp.loadBaselineData(profile, DCS_ADMIN_USER, DCS_ADMIN_USER_PASSWORD);
-        }
-        finally
-        {
-            if (fl != null)
-            {
-                ilex.util.Logger.setLogger(originalLog);
-                fl.close();
-            }
-        }
+        mp.loadBaselineData(profile, DCS_ADMIN_USER, DCS_ADMIN_USER_PASSWORD);
         setStarted();
     }
 

@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 The OpenDCS Consortium and contributors
+ * Copyright 2024-2025 The OpenDCS Consortium and contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,7 +20,8 @@ import java.util.Date;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.var.NamedVariable;
 
@@ -47,7 +48,7 @@ import decodes.tsdb.algo.AWAlgoType;
                        + "See any calculus text section on trapezoidal integration for more detail.")
 public class TrapezoidalIntegrationAverage extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(TrapezoidalIntegrationAverage.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     @Input
     public double input;
 

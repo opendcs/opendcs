@@ -12,15 +12,20 @@ project(":opendcs-annotations").projectDir=file("java/annotations")
 include ":opendcs-api"
 project(":opendcs-api").projectDir=file("java/opendcs-api")
 
-
-include ":opendcs-slf4j-provider"
-project(":opendcs-slf4j-provider").projectDir=file("java/opendcs-slf4j-provider")
+include ":opendcs-logback-event-provider"
+project(":opendcs-logback-event-provider").projectDir=file("java/opendcs-logback-event-provider")
 
 include ":lrgs-web"
 project(":lrgs-web").projectDir=file("java/lrgs-web")
 
 include ":opendcs"
 project(":opendcs").projectDir=file("java/opendcs")
+
+include(":opendcs-schemas")
+project(":opendcs-schemas").projectDir=file("schema/opendcs-schemas")
+
+include(":opendcs-schemas-cwms-oracle")
+project(":opendcs-schemas-cwms-oracle").projectDir=file("schema/opendcs-schemas-cwms-oracle")
 
 include ":testing"
 project(":testing").projectDir=file("integrationtesting")

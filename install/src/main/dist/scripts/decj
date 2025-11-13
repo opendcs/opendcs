@@ -1,7 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 
 #
-# Some commands have arguments with embedded spaces. 
+# Some commands have arguments with embedded spaces.
 # Need to preserve the # grouping, so enclose every argument in quotes.
 #
 
@@ -54,7 +54,7 @@ CP=$DH/bin/opendcs.jar
 # add all the jars therein to the classpath.
 if [ "$CP_SHARED_JAR_DIR" != "" ]; then
   CP=$CP:$CP_SHARED_JAR_DIR/*
-  echo "The need of the CP_SHARED_JAR_DIR is variable superseded by using a " 1>&2 
+  echo "The need of the CP_SHARED_JAR_DIR is variable superseded by using a " 1>&2
   echo "DCSTOOL_USERDIR for configuration. Support for this variable will" 1>&2
   echo "be moved in a future release. Please update your configuration." 1>&2
 fi
@@ -64,10 +64,77 @@ if [ -d "$DCSTOOL_USERDIR/dep" ]; then
 fi
 CP=$CP:$DH/dep/*
 
-cmd="java -Xms120m $DECJ_MAXHEAP $DECJ_OPTS -cp $CP -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR"
+if [ -z "$DCSTOOL_USERDIR/logback.xml" ]; then
+  LOGBACK="$LOGBACK -Dlogback.configurationFile=$DCSTOOL_USERDIR/logback.xml"
+else
+  LOGBACK="$LOGBACK -Dlogback.configurationFile=$DCSTOOL_HOME/logback.xml"
+fi
 
-for a
-do
-     cmd=`echo $cmd \"$a\"`
+APP_NAME=$1
+LOG_FILE=""
+LOG_LEVEL="-DLOG_LEVEL=info"
+
+ARGS=""
+while [[ $# -gt 0 ]]; do
+  OPTIND=1
+  if getopts ":a:l:d:p:k:" opt "$@"; then
+    case $opt in
+      a)
+      APP_NAME=${OPTARG}
+      ARGS="$ARGS -a ${APP_NAME}" # need to put this back if it exists
+      ;;
+      l) LOG_FILE="-DLOG_FILE=${OPTARG}" ;;
+      d)
+        level=$OPTARG
+        levelStr="info"
+        case $level in
+          "-2") levelStr="ERROR" ;;
+          "-1") levelStr="WARN" ;;
+          "0") levelStr="INFO" ;;
+          "1") levelStr="DEBUG" ;;
+          "2") levelStr="TRACE" ;;
+          "3") levelStr="TRACE" ;;
+        esac
+        LOG_LEVEL="-DLOG_LEVEL=${levelStr}" ;;
+      p)
+        # may be a -p option or it might be the -pp flag
+        if [ $OPTARG == "p" ]; then
+          ARGS="$ARGS -pp"
+          shift # skip ahead to the value
+          ARGS="$ARGS $1"
+          echo "$1"
+        else
+          ARGS="$ARGS -p $OPTARG"
+        fi
+        ;;
+      k) ARGS="$ARGS -k '$OPTARG'" ;;
+      :) ARGS="$ARGS -$OPTARG" ;;
+      \?)
+        if [ "$OPTARG" == "D" ]; then
+          # For some reason things didn't want to behave well if the -D values didn't come before
+          # the class to run.
+          ARGS="$1 $ARGS"
+        else
+          # Otherwise pass on the unknown argument and it's input to the application.
+          ARGS="$ARGS $1"
+        fi
+        shift
+        ;;
+      *) ARGS="$ARGS $opt" ;;
+      esac
+    shift $((OPTIND - 1))
+    unset OPTIND
+  else
+    ARGS="$ARGS $1"
+    shift
+  fi
 done
+
+if [ "${LOGBACK_OVERRIDE+x}" ]; then
+  LOGBACK="$LOGBACK_OVERRIDE"
+else
+  LOGBACK="$LOGBACK -DAPP_NAME=${APP_NAME} $LOG_FILE $LOG_LEVEL"
+fi
+
+cmd="java -Xms120m $DECJ_MAXHEAP $DECJ_OPTS -cp $CP -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR $LOGBACK $ARGS"
 eval $cmd

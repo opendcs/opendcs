@@ -97,15 +97,15 @@ public class DatabaseService
     {
         DecodesSettings settings = new DecodesSettings();
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement("select name,value from tsdb_property");
+             PreparedStatement stmt = conn.prepareStatement("select prop_name,prop_value from tsdb_property");
              ResultSet rs = stmt.executeQuery())
         {
             //
             Properties props = new Properties();
             while (rs.next())
             {
-                final String name = rs.getString("name");
-                final String value = rs.getString("value");
+                final String name = rs.getString("prop_name");
+                final String value = rs.getString("prop_value");
                 props.put(name, value);
             }
             settings.loadFromProperties(props);

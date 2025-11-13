@@ -18,6 +18,12 @@ dependencies {
     api(libs.bundles.jdbi)
 }
 
+// Force archive names to match publishing name.
+// Otherwise maven central validation fails.
+base {
+    archivesName = "opendcs-integrationtesting-fixtures"
+}
+
 publishing {
     publications {
         maven(MavenPublication) {

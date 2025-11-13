@@ -1,13 +1,27 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package ilex.net;
 
-import ilex.net.BasicServer;
 import java.net.*;
 import java.util.Date;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.IOException;
-import ilex.util.Logger;
 
 /**
 * Class BasicSvrThread works with BasicServer to provide the network
@@ -17,6 +31,7 @@ import ilex.util.Logger;
 */
 public abstract class BasicSvrThread extends Thread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The client connection socket */
 	protected Socket socket;
 
@@ -25,9 +40,9 @@ public abstract class BasicSvrThread extends Thread
 
 	/** True if currently connected */
 	protected boolean connected;
-	
+
 	private Date connectTime = null;
-	
+
 	protected boolean isReadOnly = false;
 
 	/**
@@ -42,7 +57,7 @@ public abstract class BasicSvrThread extends Thread
 		connected = true;
 		connectTime = new Date();
 	}
-	
+
 	public Date getConnectTime() { return connectTime; }
 
 	/** Guarantees disconnect when object destroyed. */
@@ -50,8 +65,7 @@ public abstract class BasicSvrThread extends Thread
 	{
 		if (connected)
 		{
-			Logger.instance().warning("Disconnect called from finalize. "
-				+ " Server thread left socket open.");
+			log.warn("Disconnect called from finalize. Server thread left socket open.");
 			disconnect();
 		}
 	}
@@ -71,14 +85,7 @@ public abstract class BasicSvrThread extends Thread
 		parent.rmSvrThread(this);  // Remove me from parent's list.
 
 		connected = false;         // Cause run() to exit.
-		Logger.instance().debug1("BasicSvrThread disconnect complete for " 
-			+ getClientName());
-//		try { throw new Exception(); }
-//		catch(Exception ex)
-//		{
-//			System.err.println("Disconnect stack trace:");
-//			ex.printStackTrace(System.err);
-//		}
+		log.debug("BasicSvrThread disconnect complete for {}", getClientName());
 	}
 
 	/**
@@ -103,36 +110,32 @@ public abstract class BasicSvrThread extends Thread
 		catch (Exception ex)
 		{
 			disconnect();
-			String msg = "Unexpected exception servicing client: " + ex;
-			Logger.instance().failure(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			log.atError().setCause(ex).log("Unexpected exception servicing client.");
 		}
-		Logger.instance().debug1(parent.module + " client-thread exiting "
-			+ getClientName());
+		log.debug("client-thread exiting {}", getClientName());
 	}
-	
+
 	public boolean isConnected()
 	{
 		if (socket.isClosed())
 		{
-			Logger.instance().info(parent.module + " socket.isClosed()");
+			log.info("socket.isClosed()");
 			return false;
 		}
 		if (!socket.isConnected())
 		{
-			Logger.instance().info(parent.module + " !socket.isConnected()");
+			log.info("!socket.isConnected()");
 			return false;
 		}
 		if (socket.isInputShutdown())
 		{
-			Logger.instance().info(parent.module + " socket.isInputShutdown()");
+			log.info("socket.isInputShutdown()");
 			return false;
 		}
 		// Don't shut down in the write-half of a read-only connection times out.
 		if (!isReadOnly && socket.isOutputShutdown())
 		{
-			Logger.instance().info(parent.module + " socket.isOutputShutdown()");
+			log.info("socket.isOutputShutdown()");
 			return false;
 		}
 		return true;
@@ -176,4 +179,3 @@ public abstract class BasicSvrThread extends Thread
 		return socket;
 	}
 }
-

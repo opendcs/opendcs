@@ -1,5 +1,5 @@
 # Depends on having buildx available for the --mount feature
-FROM eclipse-temurin:17-jdk-jammy AS builder
+FROM eclipse-temurin:25-jdk-jammy AS builder
 
 RUN --mount=type=cache,target=/var/cache/apt \ 
     apt-get update && apt-get -y upgrade && \
@@ -12,7 +12,7 @@ RUN --mount=type=cache,target=/root \
     ./gradlew installDist -Dno.docs=true
 # end initial build
 
-FROM eclipse-temurin:17-jre-alpine AS opendcs_base
+FROM eclipse-temurin:25-jre-alpine AS opendcs_base
 
 RUN apk upgrade --no-cache
 RUN apk add --no-cache \
@@ -22,6 +22,7 @@ RUN addgroup opendcs && \
 WORKDIR /opt/opendcs
 COPY --from=builder /app/install/build/install/opendcs/ /opt/opendcs
 COPY docker_scripts/env.sh /opt/opendcs/
+COPY docker_scripts/logback.xml /opt/opendcs/
 WORKDIR /opt/opendcs/bin
 RUN rm *.bat && \
     chmod +x /opt/opendcs/bin/*
