@@ -1,13 +1,8 @@
 package org.opendcs.regression_tests;
 
 import static org.junit.Assume.assumeFalse;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.opendcs.fixtures.assertions.TimeSeries.assertEquals;
-import static org.opendcs.fixtures.helpers.TestResources.getResource;
-
-import java.io.IOException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.BufferedReader;
@@ -21,30 +16,23 @@ import java.util.stream.Collectors;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.Iterator;
 
 import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
-
+import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.fixtures.helpers.TestResources;
 import org.opendcs.utils.FailableResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import decodes.db.Constants;
-import decodes.db.DatabaseException;
 import decodes.db.Site;
 import decodes.db.SiteName;
-import decodes.db.UnitConverter;
-import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TimeSeriesDb;
@@ -56,18 +44,14 @@ import decodes.tsdb.VarFlags;
 import decodes.util.DecodesSettings;
 import decodes.util.TSUtil;
 import decodes.tsdb.DataCollection;
-import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbComputation;
 import opendcs.dai.TimeSeriesDAI;
-import opendcs.dao.ComputationDAO;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.SiteDAI;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.rating.CwmsRatingDao;
 import ilex.var.TimedVariable;
 import ilex.util.FileUtil;
-
-import hec.data.RatingException;
 
 @DecodesConfigurationRequired({
     "shared/test-sites.xml"})
@@ -182,11 +166,14 @@ public class AlgorithmTestsIT extends AppTestBase
                     }
                 }
             }
-            loadRatingimport(buildFilePath(test.getAbsolutePath(),"rating"));
-
+            
             List<CTimeSeries> inputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","inputs"), importer);
             Collection<CTimeSeries> outputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","outputs"), importer);
             Collection<CTimeSeries> expectedOutputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","expectedOutputs"), importer);
+
+            loadRatingimport(buildFilePath(test.getAbsolutePath(),"rating"));
+            loadScreenings(buildFilePath(test.getAbsolutePath(), "screenings"));
+
 
             DbComputation testComp = null;
             try (ComputationDAI compdao = tsDb.makeComputationDAO())
@@ -225,19 +212,38 @@ public class AlgorithmTestsIT extends AppTestBase
                 log.info("expected units: " + currExpect.getUnitsAbbr());
                 TSUtil.convertUnits(algoOutput, currExpect.getUnitsAbbr());
 
-                for (int i = 0; i<algoOutput.size(); i++){
-                    TimedVariable TVOutput = algoOutput.sampleAt(i);
-                    TimedVariable TVExpected = currExpect.findWithin(TVOutput.getTime(), 0);
-                    log.info("output time: "+TVOutput.getTime());
-                    log.info("output value  : "+TVOutput.getDoubleValue());
-                    log.info("expected value: "+TVExpected.getDoubleValue());
+                
+                if (log.isInfoEnabled()) 
+                {
+                    for (int i = 0; i<algoOutput.size(); i++)
+                    {
+                        TimedVariable TVOutput = algoOutput.sampleAt(i);
+                        TimedVariable TVExpected = currExpect.findWithin(TVOutput.getTime(), 0);
+                        log.info("output time: "+TVOutput.getTime());
+                        log.info("output value  : "+TVOutput.getDoubleValue());
+                        log.info("expected value: {}", TVExpected != null
+                                                                          ? TVExpected.getDoubleValue()
+                                                                          : " intentionally missing in output file");
+                    }
                 }
+
                 assertEquals(currExpect, algoOutput, "expected true", testComp.getValidStart(), testComp.getValidEnd());
             }
         });
     }
 
-    public static String buildFilePath(String... parts) {
+    private void loadScreenings(String screeningsFile) throws Exception
+    {
+        File folderTS = new File(screeningsFile);
+        if (!folderTS.exists())
+        {
+            return;
+        }
+        File log = new File(configuration.getUserDir().getParentFile(), "screenings-import-"+ folderTS.getName()+".log");
+        Programs.ImportScreenings(log, configuration.getPropertiesFile(), environment, exit, screeningsFile);
+	}
+
+	public static String buildFilePath(String... parts) {
         // Start with the first part
         Path path = Paths.get(parts[0]);
     
@@ -281,8 +287,7 @@ public class AlgorithmTestsIT extends AppTestBase
         return fullTs;
     }
 
-    private void loadRatingimport(String folderRatingStr)
-    throws Exception
+    private void loadRatingimport(String folderRatingStr) throws Exception
     {
         File folderTS = new File(folderRatingStr);
         if (!folderTS.exists())
