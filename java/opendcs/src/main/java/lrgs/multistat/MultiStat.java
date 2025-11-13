@@ -17,6 +17,8 @@ package lrgs.multistat;
 
 import javax.swing.*;
 
+import org.opendcs.logging.spi.LoggingEventProvider;
+import org.opendcs.utils.logging.LoggingEventBuffer;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -56,8 +58,13 @@ public class MultiStat
 	{
 		msFrame.setVisible(true);
 
-
-		QueueLogger qLogger = new QueueLogger("local");
+		QueueLogger qLogger = new QueueLogger(
+			new LoggingEventBuffer.Builder()
+								  .withProvider(LoggingEventProvider.getProvider())
+								  .withThreadName("PollGUI Log Thread")
+								  .withDefaultSize(QueueLogger.MAX_MESSAGES)
+								  .build()
+								  .getPublisher());
 
 		LogMonitor logMon = new LogMonitor(msFrame, qLogger);
 		logMon.start();

@@ -8,7 +8,9 @@ import java.io.FileWriter;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.opendcs.logging.spi.LoggingEventProvider;
 import org.opendcs.tls.TlsMode;
+import org.opendcs.utils.logging.LoggingEventBuffer;
 
 import ilex.util.QueueLogger;
 import lrgs.archive.MsgArchive;
@@ -63,7 +65,13 @@ public class LrgsTestInstance
             fw.flush();
         }
         new File(lrgsHome,"netlist").mkdirs();
-        queueLogger = new QueueLogger("");
+        queueLogger = new QueueLogger(
+			new LoggingEventBuffer.Builder()
+								  .withProvider(LoggingEventProvider.getProvider())
+                                  .withDefaultSize(QueueLogger.MAX_MESSAGES)
+								  .withThreadName("PollGUI Log Thread")
+								  .build()
+								  .getPublisher());
         SystemExit exit = new SystemExit();
         lrgs = new LrgsMain("-", configFile.getAbsolutePath());
 

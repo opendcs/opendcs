@@ -17,17 +17,22 @@ package ilex.util;
 
 import java.util.Vector;
 
+import org.opendcs.logging.LoggingEvent;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Observer;
+
 /**
-* Concrete subclass of Logger that stores messages in a queue of fixed
-* size. When size is reached the oldest messages are deleted. Messages
-* can be retrieved by index.
-* @deprecated Existing logging system is getting replaced
+* Fixed length queue with mechanisms for tracking current and next position.
+* Uses new RingBuffer and Logging Event mechanisms to populate.
+*
 */
-@Deprecated
 public class QueueLogger
 {
 	/** Messages stored internally in a vector */
-	private PublicRRVector messages;
+	private final PublicRRVector<String> messages;
 
 	/**
 	* This is the index of the first element in the vector. Initially this
@@ -47,28 +52,20 @@ public class QueueLogger
 	* empty string (i.e. "").
 	* @param procName the process name
 	*/
-	public QueueLogger( String procName )
+	public QueueLogger(Publisher<LoggingEvent> logBuffer)
 	{
-		messages = new PublicRRVector(MAX_MESSAGES, QUEUE_INCREMENT);
+		messages = new PublicRRVector<>(MAX_MESSAGES, QUEUE_INCREMENT);
 		startIndex = 0;
-	}
-
-	/**
-	* Discards the queue.
-	*/
-	public void close( )
-	{
-		messages = null;
+		Flowable.fromPublisher(logBuffer).subscribe(this::doLog);
 	}
 
 	/**
 	* Logs a message into the queue.
-	* @param priority the priority.
-	* @param text the formatted message.
+	* @param event The raw event from the log.
 	*/
-	public void doLog( int priority, String text )
+	public void doLog(LoggingEvent event)
 	{
-		String msg = text;
+		String msg = event.toString();
 		addToQueue(msg);
 	}
 
@@ -112,32 +109,32 @@ public class QueueLogger
 		idx -= startIndex;
 		int n = messages.size();
 		if (idx < n)
-			return (String)messages.get(idx);
+			return messages.get(idx);
 		else if (idx == n)
 			return null;
 		else
 			throw new IndexRangeException("too high");
 	}
-}
 
-class PublicRRVector extends Vector
-{
-	/**
-	* @param max
-	* @param inc
-	*/
-	PublicRRVector( int max, int inc )
+	private static class PublicRRVector<T> extends Vector<T>
 	{
-		super(max, inc);
-	}
+		/**
+		* @param max
+		* @param inc
+		*/
+		PublicRRVector( int max, int inc )
+		{
+			super(max, inc);
+		}
 
-	// Have to overload this to make it public.
-	/**
-	* @param from
-	* @param to
-	*/
-	public void removeRange( int from, int to )
-	{
-		super.removeRange(from, to);
+		// Have to overload this to make it public.
+		/**
+		* @param from
+		* @param to
+		*/
+		public void removeRange( int from, int to )
+		{
+			super.removeRange(from, to);
+		}
 	}
 }
