@@ -8,7 +8,7 @@ public final class AlgorithmUtilties
     }
     /**
 	 * Returns true if this variable is flagged as either missing or deleted.
-	 * The algorithm should not then use it's value in an equation.
+	 * Algorithms should use isMissing, to avoid invalid equation evaluations
 	 * @return true if this variable is flagged as either missing or deleted.
 	 */
 	public static boolean isMissing(double var)
@@ -18,7 +18,7 @@ public final class AlgorithmUtilties
 
 	/**
 	 * Returns true if this variable is flagged as either missing or deleted.
-	 * The algorithm should not then use it's value in an equation.
+	 * Algorithms should use isMissing, to avoid invalid equation evaluations.
 	 * @return true if this variable is flagged as either missing or deleted.
 	 */
 	public static boolean isMissing(long var)
@@ -28,7 +28,7 @@ public final class AlgorithmUtilties
 
 	/**
 	 * Returns true if this variable is flagged as either missing or deleted.
-	 * The algorithm should not then use it's value in an equation.
+	 * Algorithms should use isMissing, to avoid invalid equation evaluations.
 	 * @return true if this variable is flagged as either missing or deleted.
 	 */
 	public static boolean isMissing(String var)
