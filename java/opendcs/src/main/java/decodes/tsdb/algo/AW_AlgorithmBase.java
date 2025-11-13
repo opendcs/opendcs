@@ -24,6 +24,7 @@ import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import org.opendcs.algorithms.AlgorithmUtilties;
 import org.opendcs.utils.AnnotationHelpers;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -821,7 +822,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 
 		if (_missing_found)
 		{
-			 return;
+			return;
 		}
 		else
 		{
@@ -1342,7 +1343,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 	 */
 	protected boolean isMissing(double var)
 	{
-		return var == Double.MIN_VALUE || var == Double.NEGATIVE_INFINITY;
+		return AlgorithmUtilties.isMissing(var);
 	}
 
 	/**
@@ -1352,7 +1353,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 	 */
 	protected boolean isMissing(long var)
 	{
-		return var == Long.MIN_VALUE;
+		return AlgorithmUtilties.isMissing(var);
 	}
 
 	/**
@@ -1362,7 +1363,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 	 */
 	protected boolean isMissing(String var)
 	{
-		return var == null;
+		return AlgorithmUtilties.isMissing(var);
 	}
 
 	protected abstract void initAWAlgorithm()

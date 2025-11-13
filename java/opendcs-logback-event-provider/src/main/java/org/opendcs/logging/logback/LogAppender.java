@@ -45,7 +45,7 @@ public class LogAppender extends AppenderBase<ILoggingEvent>
         Map<String, String> kvp = kvpList == null 
                                 ? new HashMap<>() 
                                 : (Map<String,String>)kvpList.stream()
-                                         .collect(Collectors.toMap(kv -> kv.key, kv -> (String)kv.value));
+                                         .collect(Collectors.toMap(kv -> kv.key, kv -> kv.value.toString()));
 
         return new LoggingEvent(
             sequence++, 

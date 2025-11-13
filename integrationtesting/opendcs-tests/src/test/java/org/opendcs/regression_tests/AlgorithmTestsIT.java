@@ -67,6 +67,7 @@ import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.ComputationDAO;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.SiteDAI;
+import decodes.cwms.CwmsFlags;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.rating.CwmsRatingDao;
 import ilex.var.TimedVariable;
@@ -197,11 +198,14 @@ public class AlgorithmTestsIT extends AppTestBase
                     executeSqlFile(comp_data);
                 }
             }
-            loadRatingimport(buildFilePath(test.getAbsolutePath(),"rating"));
-
+            
             List<CTimeSeries> inputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","inputs"), importer);
             Collection<CTimeSeries> outputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","outputs"), importer);
             Collection<CTimeSeries> expectedOutputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","expectedOutputs"), importer);
+
+            loadRatingimport(buildFilePath(test.getAbsolutePath(),"rating"));
+            loadScreenings(buildFilePath(test.getAbsolutePath(), "screenings"));
+
 
             DbComputation testComp = null;
             try (ComputationDAI compdao = tsDb.makeComputationDAO())
@@ -249,7 +253,9 @@ public class AlgorithmTestsIT extends AppTestBase
                         TimedVariable TVExpected = currExpect.findWithin(TVOutput.getTime(), 0);
                         log.info("output time: "+TVOutput.getTime());
                         log.info("output value  : "+TVOutput.getDoubleValue());
-                        log.info("expected value: "+TVExpected.getDoubleValue());
+                        log.info("expected value: {}", TVExpected != null
+                                                                          ? TVExpected.getDoubleValue()
+                                                                          : " intentionally missing in output file");
                     }
                 }
 
@@ -258,7 +264,18 @@ public class AlgorithmTestsIT extends AppTestBase
         });
     }
 
-    public static String buildFilePath(String... parts) {
+    private void loadScreenings(String screeningsFile) throws Exception
+    {
+        File folderTS = new File(screeningsFile);
+        if (!folderTS.exists())
+        {
+            return;
+        }
+        File log = new File(configuration.getUserDir().getParentFile(), "screenings-import-"+ folderTS.getName()+".log");
+        Programs.ImportScreenings(log, configuration.getPropertiesFile(), environment, exit, screeningsFile);
+	}
+
+	public static String buildFilePath(String... parts) {
         // Start with the first part
         Path path = Paths.get(parts[0]);
     
@@ -302,8 +319,7 @@ public class AlgorithmTestsIT extends AppTestBase
         return fullTs;
     }
 
-    private void loadRatingimport(String folderRatingStr)
-    throws Exception
+    private void loadRatingimport(String folderRatingStr) throws Exception
     {
         File folderTS = new File(folderRatingStr);
         if (!folderTS.exists())
