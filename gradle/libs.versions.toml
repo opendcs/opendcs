@@ -41,6 +41,7 @@ mock-server = "5.15.0"
 auto-service = "1.1.1"
 # Implementation of the Java Flow API for JDK 8
 reactive-api = "1.0.4"
+rxjava = "3.1.12"
 
 #test deps
 junit = "5.10.2"
@@ -100,7 +101,8 @@ org-flywaydb-flyway-core = { module = "org.flywaydb:flyway-core", version.ref = 
 io-github-hakky54 = { module = "io.github.hakky54:sslcontext-kickstart", version.ref="hakky54-ssl" }
 auto-service-annotations = { module = "com.google.auto.service:auto-service-annotations", version.ref = "auto-service" }
 auto-service-processor = { module = "com.google.auto.service:auto-service", version.ref = "auto-service" }
-org-reactivestreams-reactive-streams = { module = "org.reactivestreams:reactive-streams", version.ref ="reactive-api" }
+org-reactivestreams-reactive-streams = { module = "org.reactivestreams:reactive-streams", version.ref = "reactive-api" }
+io-reactivex-rxjava3 = { module ="io.reactivex.rxjava3:rxjava", version.ref = "rxjava" }
 
 # CWMS
 cwms-db-jooq = { module = "mil.army.usace.hec:cwms-db-jooq", version.ref = "cwms-db" }

@@ -5,7 +5,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
 
+import io.reactivex.rxjava3.core.BackpressureStrategy;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Observable;
 /**
  * A circular buffer.
  * Additionally the Buffer extends SubmissionPublisher to allow subscription
@@ -13,10 +17,15 @@ import org.reactivestreams.Publisher;
  *
  * @see java.util.concurrent.SubmissionPublisher
  */
-public class RingBuffer<T> extends SubmissionPublisher<T> implements List<T>
+import io.reactivex.rxjava3.subjects.PublishSubject;
+
+
+public class RingBuffer<T> implements Publisher<T>, List<T>
 {
     // Performance hit, but easier to deal with initially
     private final LinkedList<T> list = new LinkedList<>();
+    private final PublishSubject<T> subject = PublishSubject.create();
+
     private int maxSize;
 
     public RingBuffer(int size)
@@ -44,7 +53,7 @@ public class RingBuffer<T> extends SubmissionPublisher<T> implements List<T>
         boolean added = list.add(element);
         if (added)
         {
-            submit(element);
+            subject.onNext(element);
         }
         return added;
     }
@@ -207,5 +216,12 @@ public class RingBuffer<T> extends SubmissionPublisher<T> implements List<T>
     public List<T> subList(int fromIndex, int toIndex)
     {
         return list.subList(fromIndex, toIndex);
+    }
+
+
+    @Override
+    public void subscribe(Subscriber<? super T> s)
+    {
+        subject.toFlowable(BackpressureStrategy.DROP).safeSubscribe(s);
     }
 }

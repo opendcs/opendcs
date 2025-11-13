@@ -12,6 +12,7 @@ dependencies {
     implementation project(':opendcs-annotations')
     api(libs.org.slf4j.api)
     api(libs.org.reactivestreams.reactive.streams)
+    api(libs.io.reactivex.rxjava3)
 
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)

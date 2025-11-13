@@ -5,10 +5,10 @@ import org.opendcs.logging.spi.LoggingEventProvider;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.SubmissionPublisher;
 
 import org.opendcs.logging.LoggingEvent;
 import org.opendcs.util.RingBuffer;
+import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 
 /**
@@ -57,7 +57,7 @@ public final class LoggingEventBuffer
      * of recent events.
      * @return
      */
-    public SubmissionPublisher<LoggingEvent> getPublisher()
+    public Publisher<LoggingEvent> getPublisher()
     {
         return this.eventList;
     }

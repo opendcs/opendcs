@@ -16,9 +16,13 @@
 package ilex.util;
 
 import java.util.Vector;
-import java.util.concurrent.SubmissionPublisher;
 
 import org.opendcs.logging.LoggingEvent;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Observer;
 
 /**
 * Fixed length queue with mechanisms for tracking current and next position.
@@ -48,14 +52,11 @@ public class QueueLogger
 	* empty string (i.e. "").
 	* @param procName the process name
 	*/
-	public QueueLogger(SubmissionPublisher<LoggingEvent> logBuffer)
+	public QueueLogger(Publisher<LoggingEvent> logBuffer)
 	{
 		messages = new PublicRRVector<>(MAX_MESSAGES, QUEUE_INCREMENT);
 		startIndex = 0;
-		logBuffer.consume(le ->
-		{
-			doLog(le);
-		});
+		Flowable.fromPublisher(logBuffer).subscribe(this::doLog);
 	}
 
 	/**
