@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 
+import decodes.cwms.validation.ScreeningImport;
 import decodes.dbimport.DbImport;
 import decodes.tsdb.ImportCompApp;
 import decodes.tsdb.TsImport;
@@ -351,6 +352,50 @@ public class Programs
                         }
 
                         decodes.tsdb.comprungui.CompExec.main(theArgs.toArray(new String[0]));
+                    })
+                )
+            );
+        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0,
+                   "System.exit called with unexpected code.");
+    }
+
+    /**
+     * Call TsImport on a set of files. Execution is wrapped
+     * in the SystemStubs EnvironmentVariables and SystemExit stubs.
+     *
+     * @param log Log file to use for this import
+     * @param propertiesFile userProperties file for this execution
+     * @param env SystemStubs environment instance
+     * @param exit SystemStubs exit instance
+     * @param screeningFiles list of specific files or directories. Will be expanded recursively.
+     * @throws Exception If DbImport exists with a code other than 0 (or null)
+     */
+    public static void ImportScreenings(File log, File propertiesFile,
+                                  EnvironmentVariables env, SystemExit exit,
+                                  String... screeningFiles) throws Exception
+    {
+        final String extensions[] = {"screening"};
+        final ArrayList<File> files = new ArrayList<>();
+        for(String f: screeningFiles)
+        {
+            files.addAll(FileUtils.listFiles(new File(f),extensions,true));
+        }
+
+        env.execute(() ->
+                exit.execute(() ->
+                    SystemStubs.tapSystemErrAndOut(() ->
+                    {
+                        ArrayList<String> theArgs = new ArrayList<>();
+                        theArgs.add("-l"); theArgs.add(log.getAbsolutePath());
+                        theArgs.add("-P"); theArgs.add(propertiesFile.getAbsolutePath());
+                        theArgs.add("-y");
+                        theArgs.add("-d3");
+                        theArgs.addAll(
+                            files.stream()
+                                 .map(f->f.getAbsolutePath())
+                                 .collect(Collectors.toList())
+                                    );
+                        ScreeningImport.main(theArgs.toArray(new String[0]));
                     })
                 )
             );
