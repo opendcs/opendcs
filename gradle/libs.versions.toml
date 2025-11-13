@@ -34,7 +34,7 @@ nucleus = "1.1.1"
 jdbi = "3.39.1"
 flywaydb = "9.8.1"
 sun-mailapi="1.6.7"
-hakky54-ssl = "9.1.0"
+ayza = "10.0.0"
 mock-server = "5.15.0"
 auto-service = "1.1.1"
 
@@ -92,7 +92,7 @@ org-jdbi3-postgres = { module = "org.jdbi:jdbi3-postgres", version.ref = "jdbi" 
 org-jdbi3-oracle = { module = "org.jdbi:jdbi3-oracle12", version.ref = "jdbi" }
 org-jdbi3-jackson2 = { module ="org.jdbi:jdbi3-jackson2", version.ref = "jdbi" }
 org-flywaydb-flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flywaydb" }
-io-github-hakky54 = { module = "io.github.hakky54:sslcontext-kickstart", version.ref="hakky54-ssl" }
+io-github-hakky54 = { module = "io.github.hakky54:ayza", version.ref="ayza" }
 auto-service-annotations = { module = "com.google.auto.service:auto-service-annotations", version.ref = "auto-service" }
 auto-service-processor = { module = "com.google.auto.service:auto-service", version.ref = "auto-service" }
 
