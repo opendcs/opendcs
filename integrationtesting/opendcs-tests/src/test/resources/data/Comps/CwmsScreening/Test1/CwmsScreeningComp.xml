@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="CwmsScreening">
+    <Comment>
+      Review input data sets any required flags
+    </Comment>
+    <ExecClass>decodes.cwms.validation.CwmsScreeningAlgorithm</ExecClass>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+  <Computation name="Test1CwmsScreening">
+    <Comment></Comment>
+    <Enabled>true</Enabled>
+    <AlgorithmName>CwmsScreening</AlgorithmName>
+    <LastModified>2025-01-06 03:16:19 PST</LastModified>
+    <CompParm roleName="output">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Stage"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.cwmsScreening-output</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="input">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Stage"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.cwmsScreening-input</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+  </Computation>
+</CompMetaData>
