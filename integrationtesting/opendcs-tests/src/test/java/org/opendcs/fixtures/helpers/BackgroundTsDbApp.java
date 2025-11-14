@@ -8,13 +8,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.junit.function.ThrowingRunnable;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
-import decodes.tsdb.CpCompDependsUpdater;
 import decodes.tsdb.TsdbAppTemplate;
-import opendcs.util.functional.ThrowingFunction;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 
