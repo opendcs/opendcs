@@ -43,19 +43,7 @@ public class Programs
                                 String... filesOrDirectories) throws Exception
     {
         final String extensions[] = {"xml"};
-        final ArrayList<File> files = new ArrayList<>();
-        for(String f: filesOrDirectories)
-        {
-            File file = new File(f);
-            if (file.isFile())
-            {
-                files.add(file);
-            }
-            else
-            {
-                files.addAll(FileUtils.listFiles(new File(f),extensions,true));
-            }
-        }
+        final ArrayList<File> files = gatherFiles(extensions, filesOrDirectories);
 
         properties.execute(() ->
             env.execute(() ->
@@ -96,11 +84,7 @@ public class Programs
                                   String... filesOrDirectories) throws Exception
     {
         final String extensions[] = {"xml"};
-        final ArrayList<File> files = new ArrayList<>();
-        for(String f: filesOrDirectories)
-        {
-            files.addAll(FileUtils.listFiles(new File(f),extensions,true));
-        }
+        final ArrayList<File> files = gatherFiles(extensions, filesOrDirectories);
 
         env.execute(() ->
                 exit.execute(() ->
@@ -140,11 +124,7 @@ public class Programs
                                   String... tsImportFiles) throws Exception
     {
         final String extensions[] = {"tsimport"};
-        final ArrayList<File> files = new ArrayList<>();
-        for(String f: tsImportFiles)
-        {
-            files.addAll(FileUtils.listFiles(new File(f),extensions,true));
-        }
+        final ArrayList<File> files = gatherFiles(extensions, tsImportFiles);
 
         env.execute(() ->
                 exit.execute(() ->
@@ -385,11 +365,7 @@ public class Programs
                                   String... screeningFiles) throws Exception
     {
         final String extensions[] = {"screening"};
-        final ArrayList<File> files = new ArrayList<>();
-        for(String f: screeningFiles)
-        {
-            files.addAll(FileUtils.listFiles(new File(f),extensions,true));
-        }
+        final ArrayList<File> files = gatherFiles(extensions, screeningFiles);
 
         env.execute(() ->
                 exit.execute(() ->
@@ -411,5 +387,23 @@ public class Programs
             );
         assertTrue(exit.getExitCode() == null || exit.getExitCode()==0,
                    "System.exit called with unexpected code.");
+    }
+
+    private static ArrayList<File> gatherFiles(String[] extensions, String... filesOrDirectories)
+    {
+        ArrayList<File> files = new ArrayList<>();
+        for (var fileOrDir: filesOrDirectories)
+        {
+            File file = new File(fileOrDir);
+            if (file.isFile())
+            {
+                files.add(file);
+            }
+            else
+            {
+                files.addAll(FileUtils.listFiles(file,extensions,true));
+            }
+        }
+        return files;
     }
 }
