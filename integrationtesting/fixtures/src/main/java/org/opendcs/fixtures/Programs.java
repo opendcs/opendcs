@@ -46,7 +46,15 @@ public class Programs
         final ArrayList<File> files = new ArrayList<>();
         for(String f: filesOrDirectories)
         {
-            files.addAll(FileUtils.listFiles(new File(f),extensions,true));
+            File file = new File(f);
+            if (file.isFile())
+            {
+                files.add(file);
+            }
+            else
+            {
+                files.addAll(FileUtils.listFiles(new File(f),extensions,true));
+            }
         }
 
         properties.execute(() ->
