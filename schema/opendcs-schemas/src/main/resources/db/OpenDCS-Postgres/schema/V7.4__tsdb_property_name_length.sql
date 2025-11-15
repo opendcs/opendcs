@@ -1,2 +1,3 @@
-alter table tsdb_property alter column prop_name varchar(512);
-alter table tsdb_property alter column prop_value varchar(1024) drop not null;
+alter table tsdb_property alter column prop_name type varchar(512),
+                          alter column prop_value type varchar(1024),
+                          alter column prop_value drop not null;
