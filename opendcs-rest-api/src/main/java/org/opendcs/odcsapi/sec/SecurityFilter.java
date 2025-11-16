@@ -63,37 +63,35 @@ public final class SecurityFilter implements ContainerRequestFilter
 	@Override
 	public void filter(ContainerRequestContext requestContext)
 	{
-		if(isPublicEndpoint())
+
+		// TODO: instead of create session here check and then see if a stateless method is used
+		HttpSession session = httpServletRequest.getSession(true);
+		Object sessionPrincipal = session.getAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE);
+		if (sessionPrincipal != null)
 		{
-			setupGuestContext(requestContext);
+			OpenDcsPrincipal principal = (OpenDcsPrincipal) sessionPrincipal;
+			requestContext.setSecurityContext(
+				new OpenDcsSecurityContext(principal, httpServletRequest.isSecure(), SecurityContext.BASIC_AUTH));
 		}
 		else
 		{
-			HttpSession session = httpServletRequest.getSession(true);
-			Object sessionPrincipal = session.getAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE);
-			if(isAuthorizationExpired(session) || !(sessionPrincipal instanceof OpenDcsPrincipal))
-			{
-				authorizeSession(requestContext, session);
-			}
-			else
-			{
-				OpenDcsPrincipal principal = (OpenDcsPrincipal) sessionPrincipal;
-				requestContext.setSecurityContext(new OpenDcsSecurityContext(principal,
-						httpServletRequest.isSecure(), SecurityContext.BASIC_AUTH));
-			}
+			setupGuestContext(requestContext);
 		}
+	
+		
 		verifyRoles(requestContext);
 	}
 
 	private void setupGuestContext(ContainerRequestContext requestContext)
 	{
-		if(log.isDebugEnabled())
+		if(log.isTraceEnabled())
 		{
-			log.debug("Public endpoint identified: {}", resourceInfo.getResourceMethod().toGenericString());
+			log.trace("Public endpoint identified: {}", resourceInfo.getResourceMethod().toGenericString());
 		}
 		OpenDcsPrincipal principal = new OpenDcsPrincipal("guest", Collections.singleton(OpenDcsApiRoles.ODCS_API_GUEST));
 		requestContext.setSecurityContext(new OpenDcsSecurityContext(principal,
 				httpServletRequest.isSecure(), ""));
+		
 	}
 
 	private void verifyRoles(ContainerRequestContext requestContext)
@@ -115,46 +113,15 @@ public final class SecurityFilter implements ContainerRequestFilter
 					return;
 				}
 			}
-			throw new ForbiddenException("User does not have the correct roles for endpoint: " + endpoint);
-		}
-	}
-
-	private void authorizeSession(ContainerRequestContext requestContext, HttpSession session)
-	{
-		SecurityContext securityContext = lookupAuthCheck(requestContext).authorize(requestContext, httpServletRequest, servletContext);
-		requestContext.setSecurityContext(securityContext);
-		Principal principal = securityContext.getUserPrincipal();
-		session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, principal);//NOSONAR impl is Serializable
-		session.setAttribute(LAST_AUTHORIZATION_CHECK, Instant.now());
-	}
-
-	private boolean isAuthorizationExpired(HttpSession session)
-	{
-		Instant lastAuthorizationCheck = (Instant) session.getAttribute(LAST_AUTHORIZATION_CHECK);
-		String expirationMinutes = DbInterface.decodesProperties.getProperty("opendcs.rest.api.authorization.expiration.duration", "PT15M");
-		long expirationSeconds = Duration.parse(expirationMinutes).get(ChronoUnit.SECONDS);
-		return lastAuthorizationCheck == null
-				|| Duration.between(lastAuthorizationCheck, Instant.now()).abs().get(ChronoUnit.SECONDS) >= expirationSeconds;
-	}
-
-	private boolean isPublicEndpoint()
-	{
-		boolean retval = false;
-		RolesAllowed annotation = resourceInfo.getResourceMethod().getAnnotation(RolesAllowed.class);
-		if(annotation != null)
-		{
-			String[] roles = annotation.value();
-			if(roles != null
-					&& Arrays.asList(roles).contains(OpenDcsApiRoles.ODCS_API_GUEST.getRole()))
+			if ("guest".equals(securityContext.getUserPrincipal().getName()))
 			{
-				retval = true;
+				throw new NotAuthorizedException("WWW-Authenticate");
+			}
+			else
+			{
+				throw new ForbiddenException("User does not have the correct roles for endpoint: " + endpoint);
 			}
 		}
-		else if (resourceInfo.getResourceClass().equals(OpenApiResource.class))
-		{
-			retval = true;
-		}
-		return retval;
 	}
 
 	private AuthorizationCheck lookupAuthCheck(ContainerRequestContext requestContext)

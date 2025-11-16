@@ -45,6 +45,10 @@ dependencies {
     testRuntimeOnly(libs.junit.engine)
     testRuntimeOnly(libs.junit.params)
     testRuntimeOnly(libs.slf4j.jdk14)
+
+    testRuntimeOnly(libs.opendcs.schemas)
+    testRuntimeOnly(libs.opendcs.schemas.cwms)
+    testRuntimeOnly(libs.bundles.testcontainers)
 }
 
 configurations.all {

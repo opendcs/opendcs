@@ -46,7 +46,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ExtendWith(DatabaseContextProvider.class)
 final class NetlistResourcesIT extends BaseIT
 {
-	private static SessionFilter sessionFilter;
 	private Long netlistId;
 	private Long platformId;
 	private Long siteId;
@@ -55,8 +54,7 @@ final class NetlistResourcesIT extends BaseIT
 	void setUp() throws Exception
 	{
 		setUpCreds();
-		sessionFilter = new SessionFilter();
-		authenticate(sessionFilter);
+		authenticate();
 
 		ObjectMapper mapper = new ObjectMapper();
 
@@ -67,8 +65,7 @@ final class NetlistResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(configJson)
 		.when()
 			.redirects().follow(true)
@@ -92,8 +89,7 @@ final class NetlistResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(platformJson)
 		.when()
 			.redirects().follow(true)
@@ -119,8 +115,7 @@ final class NetlistResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(netlistJson)
 		.when()
 			.redirects().follow(true)
@@ -142,8 +137,7 @@ final class NetlistResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("netlistid", netlistId)
 		.when()
 			.redirects().follow(true)
@@ -160,8 +154,7 @@ final class NetlistResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("platformid", platformId)
 		.when()
 			.redirects().follow(true)
@@ -176,7 +169,6 @@ final class NetlistResourcesIT extends BaseIT
 
 		tearDownSite(siteId);
 
-		logout(sessionFilter);
 	}
 
 	@TestTemplate
@@ -191,8 +183,7 @@ final class NetlistResourcesIT extends BaseIT
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
-			.header("Authorization", authHeader)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -229,8 +220,7 @@ final class NetlistResourcesIT extends BaseIT
 		response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
-			.header("Authorization", authHeader)
+			.spec(authSpec)
 			.queryParam("tmtype", "goes")
 		.when()
 			.redirects().follow(true)
@@ -268,8 +258,7 @@ final class NetlistResourcesIT extends BaseIT
 		response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
-			.header("Authorization", authHeader)
+			.spec(authSpec)
 			.queryParam("tmtype", "goes-random")
 		.when()
 			.redirects().follow(true)
@@ -315,8 +304,7 @@ final class NetlistResourcesIT extends BaseIT
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("netlistid", netlistId)
 		.when()
 			.redirects().follow(true)
@@ -353,8 +341,7 @@ final class NetlistResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(netlistJson)
 		.when()
 			.redirects().follow(true)
@@ -375,8 +362,7 @@ final class NetlistResourcesIT extends BaseIT
 		response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
-			.header("Authorization", authHeader)
+			.spec(authSpec)
 			.queryParam("netlistid", newNetlistId)
 		.when()
 			.redirects().follow(true)
@@ -407,8 +393,7 @@ final class NetlistResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("netlistid", newNetlistId)
 		.when()
 			.redirects().follow(true)
@@ -424,8 +409,7 @@ final class NetlistResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
-			.header("Authorization", authHeader)
+			.spec(authSpec)
 			.queryParam("netlistid", newNetlistId)
 		.when()
 			.redirects().follow(true)
@@ -449,8 +433,7 @@ final class NetlistResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.TEXT_PLAIN)
-			.filter(sessionFilter)
-			.header("Authorization", authHeader)
+			.spec(authSpec)
 			.body(inputTxt)
 		.when()
 			.redirects().follow(true)
@@ -478,9 +461,8 @@ final class NetlistResourcesIT extends BaseIT
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.contentType(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(siteJson)
 		.when()
 			.redirects().follow(true)
@@ -501,9 +483,8 @@ final class NetlistResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("siteid", siteId)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -517,9 +498,8 @@ final class NetlistResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("siteid", siteId)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)

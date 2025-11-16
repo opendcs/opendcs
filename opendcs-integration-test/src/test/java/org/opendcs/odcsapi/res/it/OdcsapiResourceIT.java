@@ -51,7 +51,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @ExtendWith(DatabaseContextProvider.class)
 final class OdcsapiResourceIT extends BaseIT
 {
-	private static SessionFilter sessionFilter;
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 	private Properties props;
 	private Long platformId;
@@ -62,8 +61,8 @@ final class OdcsapiResourceIT extends BaseIT
 	void setUp() throws Exception
 	{
 		setUpCreds();
-		sessionFilter = new SessionFilter();
-		authenticate(sessionFilter);
+		
+		authenticate();
 
 		Properties properties = new Properties();
 		properties.setProperty("key", "value");
@@ -79,9 +78,8 @@ final class OdcsapiResourceIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
+			.spec(authSpec)
 			.body(propertiesJson)
-			.filter(sessionFilter)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -106,8 +104,6 @@ final class OdcsapiResourceIT extends BaseIT
 		{
 			deleteSite(siteId);
 		}
-
-		logout(sessionFilter);
 	}
 
 	@TestTemplate
@@ -116,8 +112,7 @@ final class OdcsapiResourceIT extends BaseIT
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -141,8 +136,7 @@ final class OdcsapiResourceIT extends BaseIT
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("class", "decodes.datasource.WebDirectoryDataSource")
 		.when()
 			.redirects().follow(true)
@@ -179,8 +173,7 @@ final class OdcsapiResourceIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("script", request.getConfig().getScripts().get(0).getName())
 			.body(decodeJson)
 		.when()
@@ -207,8 +200,7 @@ final class OdcsapiResourceIT extends BaseIT
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -238,8 +230,7 @@ final class OdcsapiResourceIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(configJson)
 		.when()
 			.redirects().follow(true)
@@ -262,8 +253,7 @@ final class OdcsapiResourceIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(platformJson)
 		.when()
 			.redirects().follow(true)
@@ -281,8 +271,7 @@ final class OdcsapiResourceIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("platformid", newPlatformId)
 		.when()
 			.redirects().follow(true)
@@ -302,8 +291,7 @@ final class OdcsapiResourceIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("platformid", platformId)
 		.when()
 			.redirects().follow(true)
@@ -324,8 +312,7 @@ final class OdcsapiResourceIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(siteJson)
 		.when()
 			.redirects().follow(true)
@@ -346,8 +333,7 @@ final class OdcsapiResourceIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("siteid", siteId)
 		.when()
 			.redirects().follow(true)

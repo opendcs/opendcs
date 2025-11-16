@@ -51,15 +51,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ExtendWith(DatabaseContextProvider.class)
 final class AppResourcesIT extends BaseIT
 {
-	private static Long appid;
-	private static SessionFilter sessionFilter;
+	private static Long appid = null;
 
 	@BeforeEach
 	void setUp() throws Exception
 	{
 		setUpCreds();
-		sessionFilter = new SessionFilter();
-		authenticate(sessionFilter);
+		authenticate();
 
 		String appJson = getJsonFromResource("app_insert_data.json");
 
@@ -67,9 +65,8 @@ final class AppResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
+			.spec(authSpec)
 			.body(appJson)
-			.filter(sessionFilter)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -91,8 +88,7 @@ final class AppResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.queryParam("appid", appid)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -103,7 +99,6 @@ final class AppResourcesIT extends BaseIT
 			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
 		;
 
-		logout(sessionFilter);
 	}
 
 	@TestTemplate
@@ -114,8 +109,7 @@ final class AppResourcesIT extends BaseIT
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -157,8 +151,7 @@ final class AppResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("appid", appid)
 		.when()
 			.redirects().follow(true)
@@ -185,9 +178,8 @@ final class AppResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
+			.spec(authSpec)
 			.body(appJson)
-			.filter(sessionFilter)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -207,9 +199,9 @@ final class AppResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
+			.spec(authSpec)
 			.queryParam("appid", appId)
-			.filter(sessionFilter)
+			
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -231,9 +223,8 @@ final class AppResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("appid", appId)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -248,9 +239,8 @@ final class AppResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("appid", appId)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -282,8 +272,7 @@ final class AppResourcesIT extends BaseIT
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -314,8 +303,7 @@ final class AppResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)

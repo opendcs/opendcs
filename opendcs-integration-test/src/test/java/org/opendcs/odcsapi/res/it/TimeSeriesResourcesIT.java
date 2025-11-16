@@ -55,7 +55,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ExtendWith(DatabaseContextProvider.class)
 final class TimeSeriesResourcesIT extends BaseIT
 {
-	private static SessionFilter sessionFilter;
 	private Long tsGroupId;
 	private TimeSeriesIdentifier tsId;
 	private TimeSeriesIdentifier tsId2;
@@ -66,8 +65,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 	void setUp() throws Exception
 	{
 		setUpCreds();
-		sessionFilter = new SessionFilter();
-		authenticate(sessionFilter);
+		authenticate();
 
 		// create a site
 		Site tsSite = map(storeSite("ts_site_insert_data.json"));
@@ -141,7 +139,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -181,7 +179,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(intervalJson)
 		.when()
 			.redirects().follow(true)
@@ -205,7 +203,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(groupJson)
 		.when()
 			.redirects().follow(true)
@@ -228,7 +226,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("groupid", tsGroupId)
 		.when()
 			.redirects().follow(true)
@@ -245,8 +243,6 @@ final class TimeSeriesResourcesIT extends BaseIT
 
 		tearDownSite(siteId);
 		tearDownSite(siteId2);
-
-		logout(sessionFilter);
 	}
 
 	@TestTemplate
@@ -258,7 +254,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -299,7 +295,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("active", true)
 		.when()
 			.redirects().follow(true)
@@ -342,7 +338,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("key", tsId.getKey().getValue())
 		.when()
 			.redirects().follow(true)
@@ -376,7 +372,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("key", tsId.getKey().getValue())
 			.queryParam("start", "2000/365/12:00:00")
 			.queryParam("end", "2030/360/12:45:00")
@@ -410,7 +406,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("key", DbKey.NullKey.getValue())
 			.queryParam("start", "2000/365/12:00:00")
 			.queryParam("end", "2030/360/12:45:00")
@@ -434,7 +430,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -474,7 +470,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(intervalJson)
 		.when()
 			.redirects().follow(true)
@@ -493,7 +489,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("id", newIntervalId)
 		.when()
 			.redirects().follow(true)
@@ -531,7 +527,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -567,7 +563,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("groupid", tsGroupId)
 		.when()
 			.redirects().follow(true)
@@ -625,7 +621,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(groupJson)
 		.when()
 			.redirects().follow(true)
@@ -644,7 +640,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("groupid", newTSGroupId)
 		.when()
 			.redirects().follow(true)
@@ -668,7 +664,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("groupid", newTSGroupId)
 		.when()
 			.redirects().follow(true)
@@ -684,7 +680,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("groupid", newTSGroupId)
 		.when()
 			.redirects().follow(true)
@@ -705,9 +701,8 @@ final class TimeSeriesResourcesIT extends BaseIT
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.contentType(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(siteJson)
 		.when()
 			.redirects().follow(true)
@@ -733,9 +728,8 @@ final class TimeSeriesResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("siteid", siteId)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -749,9 +743,8 @@ final class TimeSeriesResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("siteid", siteId)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)

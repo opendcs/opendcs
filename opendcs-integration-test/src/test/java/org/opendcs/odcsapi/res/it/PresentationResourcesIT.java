@@ -45,7 +45,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 final class PresentationResourcesIT extends BaseIT
 {
 	private static final ObjectMapper MAPPER = new ObjectMapper();
-	private static SessionFilter sessionFilter;
 	private Long parentPresentationId;
 	private Long presentationId;
 
@@ -53,8 +52,7 @@ final class PresentationResourcesIT extends BaseIT
 	void setUp() throws Exception
 	{
 		setUpCreds();
-		sessionFilter = new SessionFilter();
-		authenticate(sessionFilter);
+		authenticate();
 
 		String presentationJson = getJsonFromResource("presentation_insert_parent_data.json");
 
@@ -62,8 +60,7 @@ final class PresentationResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(presentationJson)
 		.when()
 			.redirects().follow(true)
@@ -87,8 +84,7 @@ final class PresentationResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(presentationJson)
 		.when()
 			.redirects().follow(true)
@@ -111,8 +107,7 @@ final class PresentationResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("groupid", presentationId)
 		.when()
 			.redirects().follow(true)
@@ -128,8 +123,7 @@ final class PresentationResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("groupid", parentPresentationId)
 		.when()
 			.redirects().follow(true)
@@ -140,8 +134,6 @@ final class PresentationResourcesIT extends BaseIT
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
 		;
-
-		logout(sessionFilter);
 	}
 
 	@Disabled("Will get fixed with PR: https://github.com/opendcs/opendcs/pull/928")
@@ -157,8 +149,7 @@ final class PresentationResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -208,8 +199,7 @@ final class PresentationResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("groupid", presentationId)
 		.when()
 			.redirects().follow(true)
@@ -238,8 +228,7 @@ final class PresentationResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(presentationJson)
 		.when()
 			.redirects().follow(true)
@@ -259,8 +248,7 @@ final class PresentationResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("groupid", newPresentationId)
 		.when()
 			.redirects().follow(true)
@@ -284,8 +272,7 @@ final class PresentationResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("groupid", newPresentationId)
 		.when()
 			.redirects().follow(true)
@@ -302,8 +289,7 @@ final class PresentationResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("groupid", newPresentationId)
 		.when()
 			.redirects().follow(true)

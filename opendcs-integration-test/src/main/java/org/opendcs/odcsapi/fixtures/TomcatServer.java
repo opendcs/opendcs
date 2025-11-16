@@ -34,6 +34,8 @@ import org.apache.catalina.connector.Connector;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.jdbc.pool.DataSourceFactory;
+import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.fixtures.configurations.cwms.CwmsOracleConfiguration;
 import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.fixtures.spi.ConfigurationProvider;
@@ -60,7 +62,6 @@ public final class TomcatServer implements AutoCloseable
 	public static final String DB_USERNAME = "DB_USERNAME";
 	public static final String DB_PASSWORD = "DB_PASSWORD";
 	private final Tomcat tomcatInstance;
-	private final TestSingleSignOn singleSignOn = new TestSingleSignOn();
 	private final Supplier<Manager> sessionManager;
 
 	/**
@@ -89,7 +90,6 @@ public final class TomcatServer implements AutoCloseable
 		StandardContext restApiContext = (StandardContext) tomcatInstance.addWebapp("/odcsapi", restWar);
 		restApiContext.setDelegate(true);
 		restApiContext.setParentClassLoader(TomcatServer.class.getClassLoader());
-		restApiContext.getPipeline().addValve(singleSignOn);
 		restApiContext.setReloadable(true);
 		restApiContext.setPrivileged(true);
 		sessionManager = restApiContext::getManager;
@@ -251,6 +251,17 @@ public final class TomcatServer implements AutoCloseable
 		EnvironmentVariables environment = new EnvironmentVariables();
 		SystemProperties properties = new SystemProperties();
 		config.start(exit, environment, properties);
+		try (DataTransaction tx = config.getOpenDcsDatabase().newTransaction();
+			 Connection conn = tx.connection(Connection.class).orElseThrow();
+			 PreparedStatement stmt = conn.prepareStatement("insert into tsdb_properties(prop_name, prop_value) values (?,?)"))
+		{
+			stmt.setString(1, "EditDatabaseType");
+			stmt.setString(2, dbType);
+		}
+		catch (Throwable ex)
+		{
+			throw new OpenDcsDataException("Unable to set database type property.", ex);
+		}
 		environment.getVariables().forEach(System::setProperty);
 		config.getEnvironment().forEach((key, value) -> System.setProperty(key.toString(), value.toString()));
 		if(CwmsOracleConfiguration.NAME.equals(dbType))
@@ -308,11 +319,6 @@ public final class TomcatServer implements AutoCloseable
 				log.atDebug().setCause(ex).log("Error setting up client user");
 			}
 		}
-	}
-
-	public TestSingleSignOn getSsoValve()
-	{
-		return singleSignOn;
 	}
 
 	public Manager getTestSessionManager()

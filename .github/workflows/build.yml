@@ -9,7 +9,7 @@ on:
 permissions:
   contents: write
 jobs:
-  build:
+  build:  
     name: Build, Test, and Analyze
     strategy:
       matrix:
@@ -17,21 +17,23 @@ jobs:
       fail-fast: false
       max-parallel: 4
     runs-on: ubuntu-latest
+    outputs:
+      jdk: ${{steps.save_jdk.outputs.jdk}}
     steps:
       - uses: actions/checkout@v5.0.0
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - name: Set up JDK ${{ matrix.Java }}
+      - name: Set up JDK ${{ matrix.java }}
         uses: actions/setup-java@v5.0.0
         with:
-          java-version: ${{ matrix.Java }}
+          java-version: ${{ matrix.java }}
           distribution: 'temurin'
       - name: Cache SonarCloud packages
         uses: actions/cache@v4.2.3
         with:
           path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar-${{ matrix.Java }}
-          restore-keys: ${{ runner.os }}-sonar-${{ matrix.Java }}
+          key: ${{ runner.os }}-sonar-${{ matrix.java }}
+          restore-keys: ${{ runner.os }}-sonar-${{ matrix.java }}
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3.5.0
         with:
@@ -47,23 +49,24 @@ jobs:
       - name: Upload WAR files
         uses: actions/upload-artifact@v5.0.0
         with:
-          name: warfile-${{ matrix.Java }}
+          name: warfile-${{ matrix.java }}
           path: ./**/build/libs/*.war
           retention-days: 1
           if-no-files-found: error
       - name: Upload Test Reports
         uses: actions/upload-artifact@v5.0.0
         with:
-          name: test-report-${{ matrix.Java }}
+          name: test-report-${{ matrix.java }}
           path: ./**/build/reports/tests/**
           if-no-files-found: error
       - name: Upload Coverage Reports
         uses: actions/upload-artifact@v5.0.0
         with:
-          name: coverage-report-${{ matrix.Java }}
+          name: coverage-report-${{ matrix.java }}
           path: ./**/build/reports/jacoco/
           if-no-files-found: error
-      - run: echo "jdk=${{ matrix.Java }}" >> $GITHUB_OUTPUT
+      - id: save_jdk
+        run: echo "jdk=${{ matrix.java }}" >> $GITHUB_OUTPUT
           
   container-build:
     name: Build Container Image

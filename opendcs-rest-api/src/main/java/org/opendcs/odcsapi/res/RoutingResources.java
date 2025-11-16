@@ -1255,7 +1255,7 @@ public final class RoutingResources extends OpenDcsResource
 		apiEvent.setAppId(event.getAppId().getValue());
 		apiEvent.setPlatformId(event.getPlatformId().getValue());
 		apiEvent.setRoutingExecId(event.getScheduleEntryStatusId().getValue());
-		apiEvent.setPriority(ilex.util.Logger.priorityName[event.getEventPriority()]);
+		apiEvent.setPriority(event.getPriorityStr());
 		apiEvent.setEventTime(event.getEventTime());
 		apiEvent.setEventText(event.getEventText());
 		apiEvent.setSubsystem(event.getSubsystem());

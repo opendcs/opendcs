@@ -47,7 +47,7 @@ final class ConfigResourcesIT extends BaseIT
 		setUpCreds();
 		sessionFilter = new SessionFilter();
 
-		authenticate(sessionFilter);
+		authenticate();
 
 		String configJson = getJsonFromResource("config_input_data.json");
 
@@ -55,8 +55,7 @@ final class ConfigResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(configJson)
 		.when()
 			.redirects().follow(true)
@@ -79,8 +78,7 @@ final class ConfigResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("configid", configId)
 		.when()
 			.redirects().follow(true)
@@ -104,8 +102,7 @@ final class ConfigResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -129,8 +126,7 @@ final class ConfigResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("configid", configId)
 		.when()
 			.redirects().follow(true)
@@ -176,8 +172,7 @@ final class ConfigResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(configJson)
 		.when()
 			.redirects().follow(true)
@@ -199,8 +194,7 @@ final class ConfigResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("configid", newConfigId)
 		.when()
 			.redirects().follow(true)
@@ -239,8 +233,7 @@ final class ConfigResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("configid", newConfigId)
 		.when()
 			.redirects().follow(true)
@@ -257,8 +250,7 @@ final class ConfigResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("configid", newConfigId)
 		.when()
 			.redirects().follow(true)

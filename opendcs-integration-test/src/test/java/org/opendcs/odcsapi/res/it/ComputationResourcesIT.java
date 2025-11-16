@@ -59,7 +59,7 @@ final class ComputationResourcesIT extends BaseIT
 	{
 		setUpCreds();
 		sessionFilter = new SessionFilter();
-		authenticate(sessionFilter);
+		authenticate();
 
 		ApiComputation comp = getDtoFromResource("computation_insert_data.json", ApiComputation.class);
 
@@ -71,10 +71,9 @@ final class ComputationResourcesIT extends BaseIT
 		// Insert the app
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.body(appJson)
 		.when()
 			.redirects().follow(true)
@@ -97,10 +96,9 @@ final class ComputationResourcesIT extends BaseIT
 		// Insert the algorithm
 		response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.body(algJson)
 		.when()
 			.redirects().follow(true)
@@ -120,10 +118,9 @@ final class ComputationResourcesIT extends BaseIT
 		// Insert the site
 		response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.body(siteJson)
 		.when()
 			.redirects().follow(true)
@@ -150,10 +147,9 @@ final class ComputationResourcesIT extends BaseIT
 		// Insert the computation
 		 response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.body(compJson)
 		.when()
 			.redirects().follow(true)
@@ -175,9 +171,8 @@ final class ComputationResourcesIT extends BaseIT
 		// Delete the computation
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("computationid", compId)
 		.when()
 			.redirects().follow(true)
@@ -192,9 +187,8 @@ final class ComputationResourcesIT extends BaseIT
 		// Delete the app
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("appid", appId)
 		.when()
 			.redirects().follow(true)
@@ -209,9 +203,8 @@ final class ComputationResourcesIT extends BaseIT
 		// Delete the algorithm
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("algorithmid", algId)
 		.when()
 			.redirects().follow(true)
@@ -226,9 +219,8 @@ final class ComputationResourcesIT extends BaseIT
 		// Delete the site
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("siteid", siteId)
 		.when()
 			.redirects().follow(true)
@@ -250,9 +242,8 @@ final class ComputationResourcesIT extends BaseIT
 
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -283,9 +274,8 @@ final class ComputationResourcesIT extends BaseIT
 
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("site", siteId)
 			.queryParam("datatype", comp.getParmList().get(0).getDataTypeId())
 			.queryParam("group", comp.getGroupId())
@@ -322,9 +312,8 @@ final class ComputationResourcesIT extends BaseIT
 
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("site", comp.getParmList().get(0).getSiteId())
 			.queryParam("datatype", comp.getParmList().get(0).getDataTypeId())
 			.queryParam("group", "test group")
@@ -344,9 +333,8 @@ final class ComputationResourcesIT extends BaseIT
 
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("site", comp.getParmList().get(0).getSiteId())
 			.queryParam("datatype", comp.getParmList().get(0).getDataTypeId())
 			.queryParam("group", comp.getGroupId())
@@ -367,9 +355,8 @@ final class ComputationResourcesIT extends BaseIT
 
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("site", comp.getParmList().get(0).getSiteId())
 			.queryParam("datatype", comp.getParmList().get(0).getDataTypeId())
 			.queryParam("group", comp.getGroupId())
@@ -395,9 +382,8 @@ final class ComputationResourcesIT extends BaseIT
 
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("computationid", compId)
 		.when()
 			.redirects().follow(true)
@@ -437,10 +423,9 @@ final class ComputationResourcesIT extends BaseIT
 		// Store the new computation
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.body(compJson)
 		.when()
 			.redirects().follow(true)
@@ -458,9 +443,8 @@ final class ComputationResourcesIT extends BaseIT
 		// Get the new computation and assert it matches the expected data
 		response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("computationid", newCompId)
 		.when()
 			.redirects().follow(true)
@@ -494,9 +478,8 @@ final class ComputationResourcesIT extends BaseIT
 		// Delete the new computation
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("computationid", newCompId)
 		.when()
 			.redirects().follow(true)
@@ -511,9 +494,8 @@ final class ComputationResourcesIT extends BaseIT
 		// Get the new computation and assert it is not found
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("computationid", newCompId)
 		.when()
 			.redirects().follow(true)

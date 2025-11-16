@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.opendcs.odcsapi.fixtures.DatabaseContextProvider;
-import org.opendcs.odcsapi.hydrojson.DbInterface;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -33,7 +32,7 @@ import static org.hamcrest.Matchers.is;
 
 @Tag("integration-opentsdb-only")
 @ExtendWith(DatabaseContextProvider.class)
-final class BasicAuthIT
+final class FormAuthIT
 {
 
 	private SessionFilter sessionFilter;
@@ -47,7 +46,6 @@ final class BasicAuthIT
 	@TestTemplate
 	void testBasicAuthFlow()
 	{
-		DbInterface.decodesProperties.setProperty("opendcs.rest.api.authorization.type", "basic");
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)

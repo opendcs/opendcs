@@ -44,7 +44,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 final class DataSourceResourcesIT extends BaseIT
 {
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-	private static SessionFilter sessionFilter;
 	private static Long sourceId;
 	private static Long memberSourceId;
 
@@ -52,8 +51,7 @@ final class DataSourceResourcesIT extends BaseIT
 	void setUp() throws Exception
 	{
 		setUpCreds();
-		sessionFilter = new SessionFilter();
-		authenticate(sessionFilter);
+		authenticate();
 
 		ApiDataSource source = getDtoFromResource("datasource_insert_parent_data.json", ApiDataSource.class);
 
@@ -64,8 +62,7 @@ final class DataSourceResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(dsJson)
 		.when()
 			.redirects().follow(true)
@@ -90,8 +87,7 @@ final class DataSourceResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(dsJson)
 		.when()
 			.redirects().follow(true)
@@ -115,9 +111,8 @@ final class DataSourceResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("datasourceid", memberSourceId)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -133,9 +128,8 @@ final class DataSourceResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("datasourceid", sourceId)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -146,7 +140,6 @@ final class DataSourceResourcesIT extends BaseIT
 			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
 		;
 
-		logout(sessionFilter);
 	}
 
 	@TestTemplate
@@ -159,8 +152,7 @@ final class DataSourceResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -205,8 +197,7 @@ final class DataSourceResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("datasourceid", sourceId)
 		.when()
 			.redirects().follow(true)
@@ -238,8 +229,7 @@ final class DataSourceResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(dsJson)
 		.when()
 			.redirects().follow(true)
@@ -263,8 +253,7 @@ final class DataSourceResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(dsJson)
 		.when()
 			.redirects().follow(true)
@@ -287,8 +276,7 @@ final class DataSourceResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("datasourceid", newSourceId)
 		.when()
 			.redirects().follow(true)
@@ -313,9 +301,8 @@ final class DataSourceResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.queryParam("datasourceid", newSourceId)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -331,8 +318,7 @@ final class DataSourceResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("datasourceid", newSourceId)
 		.when()
 			.redirects().follow(true)

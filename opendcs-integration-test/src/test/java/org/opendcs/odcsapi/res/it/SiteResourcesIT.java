@@ -46,25 +46,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 final class SiteResourcesIT extends BaseIT
 {
 	private static Long siteId;
-	private static SessionFilter sessionFilter;
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
 	@BeforeEach
 	void setUp() throws Exception
 	{
-		sessionFilter = new SessionFilter();
-
 		setUpCreds();
-		authenticate(sessionFilter);
+		authenticate();
 
 		String siteJson = getJsonFromResource("site_setup_dto.json");
 
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.contentType(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(siteJson)
 		.when()
 			.redirects().follow(true)
@@ -86,8 +82,7 @@ final class SiteResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("siteid", siteId)
 		.when()
 			.redirects().follow(true)
@@ -98,8 +93,6 @@ final class SiteResourcesIT extends BaseIT
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
 		;
-
-		logout(sessionFilter);
 	}
 
 	@TestTemplate
@@ -111,8 +104,7 @@ final class SiteResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -147,8 +139,7 @@ final class SiteResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("siteid", siteId)
 		.when()
 			.redirects().follow(true)
@@ -192,8 +183,7 @@ final class SiteResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.body(siteJson)
 		.when()
 			.redirects().follow(true)
@@ -215,9 +205,8 @@ final class SiteResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
 			.contentType(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("siteid", id)
 		.when()
 			.redirects().follow(true)

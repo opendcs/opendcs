@@ -34,9 +34,12 @@ import decodes.sql.DbKey;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
+import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.session.SessionFilter;
+import io.restassured.http.Cookie;
 import io.restassured.path.json.JsonPath;
+import io.restassured.specification.RequestSpecification;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -53,10 +56,12 @@ import org.opendcs.odcsapi.sec.basicauth.Credentials;
 import static io.restassured.RestAssured.given;
 import static java.util.stream.Collectors.joining;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class BaseIT
 {
 	protected static String authHeader = null;
+	protected static RequestSpecification authSpec = null;
 
 	<T> T getDtoFromResource(String filename, Class<T> dtoType) throws Exception
 	{
@@ -118,11 +123,9 @@ class BaseIT
 		return new JsonPath(resource);
 	}
 
-	void authenticate(SessionFilter sessionFilter)
+	void authenticate()
 	{
 		String COOKIE = "IntegrationTestAuthCookie";
-		String parameterKey = "opendcs.rest.api.authorization.type";
-		DbInterface.decodesProperties.setProperty(parameterKey, "sso");
 		String username = System.getProperty("DB_USERNAME");
 		TomcatServer tomcat = DatabaseSetupExtension.getCurrentTomcat();
 		StandardSession session = (StandardSession) tomcat.getTestSessionManager()
@@ -133,17 +136,20 @@ class BaseIT
 		OpenDcsPrincipal mcup = new OpenDcsPrincipal(username, EnumSet.allOf(OpenDcsApiRoles.class));
 		session.setAuthType("CLIENT-CERT");
 		session.setPrincipal(mcup);
-		session.activate();
-		tomcat.getSsoValve()
-				.wrappedRegister(COOKIE, mcup, "CLIENT-CERT");
-
-
+		session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, mcup);
+		
+		Cookie cookie = new Cookie.Builder("JSESSIONID", COOKIE)
+								  .setHttpOnly(true)
+								  .setSecured(true)
+								  .setMaxAge(-1)
+								  .setPath("/odcsapi")
+								  .build();
+		authSpec = new RequestSpecBuilder().addCookie(cookie).build();
 		//Check while passing in cookie
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
-			.cookie("JSESSIONIDSSO", COOKIE)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -162,8 +168,7 @@ class BaseIT
 			given()
 				.log().ifValidationFails(LogDetail.ALL, true)
 				.accept(MediaType.APPLICATION_JSON)
-				.header("Authorization", authHeader)
-				.filter(sessionFilter)
+				.spec(authSpec)
 			.when()
 				.redirects().follow(true)
 				.redirects().max(3)

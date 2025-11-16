@@ -35,15 +35,11 @@ import static org.hamcrest.Matchers.is;
 @ExtendWith(DatabaseContextProvider.class)
 final class AlgorithmResourcesIT extends BaseIT
 {
-
-	private SessionFilter sessionFilter;
-
 	@BeforeEach
 	void setUp() throws Exception
 	{
 		setUpCreds();
-		sessionFilter = new SessionFilter();
-		authenticate(sessionFilter);
+		authenticate();
 	}
 
 	@TestTemplate
@@ -52,7 +48,7 @@ final class AlgorithmResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -71,13 +67,13 @@ final class AlgorithmResourcesIT extends BaseIT
 		ApiAlgorithm dto = getDtoFromResource("algorithm_tempstring_check.json", ApiAlgorithm.class);
 		//The ID can't be set as it is generated on store
 		dto.setAlgorithmId(null);
-		authenticate(sessionFilter);
+		authenticate();
 		//Assert algorithm can be stored. Update with the new id
 		dto = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -96,7 +92,7 @@ final class AlgorithmResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("algorithmid", dto.getAlgorithmId())
 		.when()
 			.redirects().follow(true)
@@ -112,7 +108,7 @@ final class AlgorithmResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("algorithmid", dto.getAlgorithmId())
 		.when()
 			.redirects().follow(true)
@@ -128,7 +124,7 @@ final class AlgorithmResourcesIT extends BaseIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.spec(authSpec)
 			.queryParam("algorithmid", dto.getAlgorithmId())
 		.when()
 			.redirects().follow(true)

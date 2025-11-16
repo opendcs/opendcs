@@ -45,7 +45,6 @@ import decodes.decoder.DecodedSample;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TimeSeriesDb;
-import ilex.util.Logger;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 import opendcs.dai.DataTypeDAI;
@@ -67,6 +66,8 @@ import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.odcsapi.util.ApiPropertiesUtil;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.MDC;
+import org.slf4j.MDC.MDCCloseable;
 
 public final class TestDecoder
 {
@@ -91,55 +92,49 @@ public final class TestDecoder
 		ApiPlatformConfig cfg, String scriptName, OpenDcsDatabase db)
 		throws DbException, WebAppException
 	{
-		final ApiDecodedMessage ret = new ApiDecodedMessage();
-		
-		// Capture the OpenDCS log messages to return to client.
-		Logger origLogger = Logger.instance();
-		Logger traceLogger = new TraceLogger();
-		traceLogger.setMinLogPriority(Logger.E_DEBUG3);
-		Logger.setLogger(traceLogger);
-
-		// Convert base64 back to plaintext & create DECODES RawMessage
-		byte[] rawdata = Base64.getDecoder().decode(msgData.getBase64());
-		RawMessage rawMessage = new RawMessage(rawdata, rawdata.length);
-
-		// Convert webapp bean to DECODES platform config
-		PlatformConfig platformConfig = apiConfig2decodesConfig(cfg);
-
-		// Setup dummy platform to do decoding.
-		Platform tmpPlatform = new Platform();
-		tmpPlatform.setSite(new Site());
-		tmpPlatform.getSite().addName(new SiteName(tmpPlatform.getSite(), "USGS", "dummy"));
-		tmpPlatform.setConfig(platformConfig);
-		tmpPlatform.setConfigName(platformConfig.configName);
-		
-		// If a script is specified, use it. Else take the first in the config.
-		DecodesScript script = null;
-		if (scriptName != null)
-			script = platformConfig.getScript(scriptName);
-		else if (platformConfig.getNumScripts() > 0)
-			script = platformConfig.decodesScripts.get(0);
-		if (script == null)
-			throw new WebAppException(HttpServletResponse.SC_PRECONDITION_FAILED, "No such script '" + scriptName
-				+ "' within the passed configuration.");
-
-		String mediumType = script.getHeaderType();
-		traceLogger.debug1("script.getHeaderType() returned '" + mediumType + "', scriptType='" 
-			+ script.scriptType + "'");
-		if (mediumType == null)
-			mediumType = isGoes(rawdata) ? Constants.medium_Goes :
-				isIridium(rawdata) ? Constants.medium_IRIDIUM : Constants.medium_EDL;
-		traceLogger.debug1("Determined mediumType '" + mediumType + "'");
-		TransportMedium tmpMedium = new TransportMedium(tmpPlatform, mediumType, "11111111");
-
-		tmpMedium.scriptName = scriptName;
-		tmpMedium.setDecodesScript(script);
-		tmpPlatform.transportMedia.add(tmpMedium);
-
-		rawMessage.setPlatform(tmpPlatform);
-		rawMessage.setTransportMedium(tmpMedium);
-		try
+		try (MDCCloseable mdc = MDC.putCloseable("scriptName", scriptName))
 		{
+			final ApiDecodedMessage ret = new ApiDecodedMessage();
+
+			// Convert base64 back to plaintext & create DECODES RawMessage
+			byte[] rawdata = Base64.getDecoder().decode(msgData.getBase64());
+			RawMessage rawMessage = new RawMessage(rawdata, rawdata.length);
+
+			// Convert webapp bean to DECODES platform config
+			PlatformConfig platformConfig = apiConfig2decodesConfig(cfg);
+
+			// Setup dummy platform to do decoding.
+			Platform tmpPlatform = new Platform();
+			tmpPlatform.setSite(new Site());
+			tmpPlatform.getSite().addName(new SiteName(tmpPlatform.getSite(), "USGS", "dummy"));
+			tmpPlatform.setConfig(platformConfig);
+			tmpPlatform.setConfigName(platformConfig.configName);
+			
+			// If a script is specified, use it. Else take the first in the config.
+			DecodesScript script = null;
+			if (scriptName != null)
+				script = platformConfig.getScript(scriptName);
+			else if (platformConfig.getNumScripts() > 0)
+				script = platformConfig.decodesScripts.get(0);
+			if (script == null)
+				throw new WebAppException(HttpServletResponse.SC_PRECONDITION_FAILED, "No such script '" + scriptName
+					+ "' within the passed configuration.");
+
+			String mediumType = script.getHeaderType();
+			log.debug("script.getHeaderType() returned '{}', scriptType='{}'", mediumType, script.scriptType);
+			if (mediumType == null)
+				mediumType = isGoes(rawdata) ? Constants.medium_Goes :
+					isIridium(rawdata) ? Constants.medium_IRIDIUM : Constants.medium_EDL;
+			log.debug("Determined mediumType '{}'", mediumType);
+			TransportMedium tmpMedium = new TransportMedium(tmpPlatform, mediumType, "11111111");
+
+			tmpMedium.scriptName = scriptName;
+			tmpMedium.setDecodesScript(script);
+			tmpPlatform.transportMedia.add(tmpMedium);
+
+			rawMessage.setPlatform(tmpPlatform);
+			rawMessage.setTransportMedium(tmpMedium);
+			
 			try
 			{
 				initDecodes(db);
@@ -150,12 +145,11 @@ public final class TestDecoder
 						"Cannot get pmParser for mediumType '" + mediumType + "'");
 				}
 				pmParser.parsePerformanceMeasurements(rawMessage);
-				traceLogger.info("Header type '" + mediumType 
-					+ "' length=" + pmParser.getHeaderLength());
+				log.info("Header type '{}' length={}", mediumType, pmParser.getHeaderLength());
 				for(Iterator<String> pmnit = rawMessage.getPMNames(); pmnit.hasNext(); )
 				{
 					String pmn = pmnit.next();
-					traceLogger.info("  PM:" + pmn + "=" + rawMessage.getPM(pmn));
+					log.info("PM:{}={}", pmn, rawMessage.getPM(pmn));
 				}
 			}
 			catch (HeaderParseException ex)
@@ -175,12 +169,14 @@ public final class TestDecoder
 				{
 					PMParser edlPMParser = PMParser.getPMParser("edl");
 					edlPMParser.parsePerformanceMeasurements(rawMessage);
-					traceLogger.info("" + ex + " -- will process as EDL file with no header.");
+					log.atInfo().setCause(ex).log("Error parsing header -- will process as EDL file with no header.");
 				}
 				catch (HeaderParseException ex2)
 				{
-					throw new WebAppException(HttpServletResponse.SC_BAD_REQUEST,
+					WebAppException toThrow = new WebAppException(HttpServletResponse.SC_BAD_REQUEST,
 						"Cannot parse message header as " + mediumType + " or edl: " + ex2);
+					toThrow.addSuppressed(ex);
+					throw toThrow;
 				}
 			}
 			Date timeStamp;
@@ -198,34 +194,28 @@ public final class TestDecoder
 			try
 			{
 				script.prepareForExec();
-				traceLogger.debug1("After script.prepare, there are " 
-					+ script.scriptSensors.size() + " script sensors:");
+				log.debug("After script.prepare, there are {} script sensors:", script.scriptSensors.size());
 				for(ScriptSensor ss : script.scriptSensors)
-					traceLogger.debug1("sensor[" + ss.sensorNumber + "] rawConverter=" 
-						+ ss.rawConverter + ", execConverter=" + ss.execConverter);
+				{
+					log.debug("sensor[{}] rawConverter={}, execConverter={}",
+								ss.sensorNumber, ss.rawConverter, ss.execConverter);
+				}
 				tmpMedium.prepareForExec();
 				DecodesScript.trackDecoding = true;
 				DecodedMessage dm = script.decodeMessage(rawMessage);
-				traceLogger.debug1("After decoding there are " 
-					+ script.getDecodedSamples().size() + " decoded samples.");
+				log.debug("After decoding there are {} decoded samples.", script.getDecodedSamples().size());
 				decodedMsg2api(ret, dm, script.getDecodedSamples());
 			}
 			catch (Exception ex)
 			{
 				throw new WebAppException(HttpServletResponse.SC_PRECONDITION_FAILED, "Decoding failed: " + ex);
 			}
+			return ret;
 		}
-		finally
-		{
-			Logger.setLogger(origLogger);
-		}
-		return ret;
 	}
 	
 	private static boolean isGoes(byte[] msgData)
 	{
-		Logger.instance().debug1("isGoes(" + new String(msgData) + ")");
-
 		if (msgData.length < 37)
 			return false;
 		if (!isHexString(new String(msgData, 0, 8)))
