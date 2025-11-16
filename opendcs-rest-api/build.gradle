@@ -26,6 +26,9 @@ configurations {
 }
 
 dependencies {
+    compileOnly(libs.auto.service)
+    annotationProcessor(libs.auto.service)
+
     implementation(libs.opendcs) {
         exclude group: "javax.media", module: "jai_core"
         exclude group: "javax.media", module: "jai_codec"
@@ -48,15 +51,18 @@ dependencies {
     implementation(libs.jwt)
     implementation(libs.jersey.hk2)
     implementation(libs.slf4j.api)
-    runtimeClasspath(libs.slf4j.jdk14)
     implementation(libs.jackson)
+    runtimeOnly(libs.slf4j.jdk14)
     runtimeOnly(libs.jackson.annotations) // updated for swagger compatibility
+
     webjars(libs.swagger.ui)
+
+    testImplementation enforcedPlatform(libs.junit.bom)
+    testImplementation(libs.bundles.junit)
+    testImplementation(libs.bundles.junit.platform)
     testImplementation(libs.jersey.test)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
-    compileOnly(libs.auto.service)
-    annotationProcessor(libs.auto.service)
 }
 
 tasks.register('extractWebJars', Copy) {
@@ -97,15 +103,14 @@ publishing {
     }
 }
 
-if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
-    sonarqube {
-        properties {
-            property 'sonar.coverage.jacoco.xmlReportPaths', "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/test/jacocoTestReport.xml," +
-                    "../opendcs-integration-test/build/reports/jacoco/integrationTestReportCWMS/integrationTestReportCWMS.xml," +
-                    "../opendcs-integration-test/build/reports/jacoco/integrationTestReportOpenTSDB/integrationTestReportOpenTSDB.xml"
-        }
+sonarqube {
+    properties {
+        property 'sonar.coverage.jacoco.xmlReportPaths', "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/test/jacocoTestReport.xml," +
+                "../opendcs-integration-test/build/reports/jacoco/integrationTestReportCWMS/integrationTestReportCWMS.xml," +
+                "../opendcs-integration-test/build/reports/jacoco/integrationTestReportOpenTSDB/integrationTestReportOpenTSDB.xml"
     }
 }
+
 
 // task to generate OpenAPI JSON file
 resolve {

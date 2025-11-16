@@ -80,7 +80,9 @@ dependencies {
     }
 
     // Extras
-    
+    testImplementation enforcedPlatform(libs.junit.bom)
+    testImplementation(libs.bundles.junit)
+    testImplementation(libs.bundles.junit.platform)
     testImplementation(libs.servlet.api)
     testImplementation(libs.selenium)
     testImplementation(libs.junit.api)
@@ -98,20 +100,23 @@ publishing {
     }
 }
 
-if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
-    sonarqube {
-        properties {
-            property 'sonar.sources', 'src/main/java,src/main/webapp'
-            property 'sonar.exclusions', 'src/main/webapp/resources/css/icons/**'
-        }
+sonarqube {
+    properties {
+        property 'sonar.sources', 'src/main/java,src/main/webapp'
+        property 'sonar.exclusions', 'src/main/webapp/resources/css/icons/**'
     }
 }
+
 
 tasks.register('integrationTest', Test) {
     group "verification"
     useJUnitPlatform {
         includeTags "integration"
     }
+    // with gradle 9.2 it seems we need to set these manually
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+
     shouldRunAfter test
     dependsOn war
     systemProperties += project.properties.findAll { k, v -> k.startsWith("opendcs") }

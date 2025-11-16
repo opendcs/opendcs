@@ -53,7 +53,11 @@ auto-service = { module = "com.google.auto.service:auto-service", version.ref = 
 
 #Test Dependencies
 opendcs-integrationtesting-fixtures = { module = "org.opendcs:opendcs-integrationtesting-fixtures", version.ref = "opendcs"}
+# test deps
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+junit-platform-engine = { module = "org.junit.platform:junit-platform-engine" }
+junit-platform-commons = { module = "org.junit.platform:junit-platform-commons" }
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
 junit-params = { module = "org.junit.jupiter:junit-jupiter-params" }
@@ -79,5 +83,7 @@ test-containers-oracle = { module = "org.testcontainers:testcontainers-oracle-fr
 swagger-ui = { module ="org.webjars:swagger-ui", version.ref = "swagger-ui" }
 
 [bundles]
+junit = [ "junit-api", "junit-engine", "junit-params" ]
+junit-platform = [ "junit-platform-launcher", "junit-platform-engine", "junit-platform-commons" ]
 tomcat = ["tomcat-embedded-core", "tomcat-embedded-jasper", "tomcat-jdbc"]
 testcontainers = [ "test-containers-core", "test-containers-jdbc", "test-containers-postgresql", "test-containers-oracle"]

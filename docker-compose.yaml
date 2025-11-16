@@ -17,7 +17,7 @@ services:
       retries: 20
       start_period: 10s
   migration:
-    image: ghcr.io/opendcs/compdepends:sha-a50092b
+    image: ghcr.io/opendcs/compdepends:7.5.1-RC13
     environment:
       - DCS_OWNER=dcs_owner
       - DCS_OWNER_PASS=dcs_password
