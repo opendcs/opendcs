@@ -73,62 +73,108 @@ fi
 APP_NAME=$1
 LOG_FILE=""
 LOG_LEVEL="-DLOG_LEVEL=info"
-
 ARGS=""
-while [[ $# -gt 0 ]]; do
-  OPTIND=1
-  if getopts ":a:l:d:p:k:" opt "$@"; then
-    case $opt in
-      a)
-      APP_NAME=${OPTARG}
-      ARGS="$ARGS -a ${APP_NAME}" # need to put this back if it exists
-      ;;
-      l) LOG_FILE="-DLOG_FILE=${OPTARG}" ;;
-      d)
-        level=$OPTARG
-        levelStr="info"
-        case $level in
-          "-2") levelStr="ERROR" ;;
-          "-1") levelStr="WARN" ;;
-          "0") levelStr="INFO" ;;
-          "1") levelStr="DEBUG" ;;
-          "2") levelStr="TRACE" ;;
-          "3") levelStr="TRACE" ;;
-        esac
-        LOG_LEVEL="-DLOG_LEVEL=${levelStr}" ;;
-      p)
-        # may be a -p option or it might be the -pp flag
-        if [ $OPTARG == "p" ]; then
-          ARGS="$ARGS -pp"
-          shift # skip ahead to the value
-          ARGS="$ARGS $1"
-          echo "$1"
-        else
-          ARGS="$ARGS -p $OPTARG"
-        fi
-        ;;
-      k) ARGS="$ARGS -k '$OPTARG'" ;;
-      :) ARGS="$ARGS -$OPTARG" ;;
-      \?)
-        if [ "$OPTARG" == "D" ]; then
-          # For some reason things didn't want to behave well if the -D values didn't come before
-          # the class to run.
-          ARGS="$1 $ARGS"
-        else
-          # Otherwise pass on the unknown argument and it's input to the application.
-          ARGS="$ARGS $1"
-        fi
-        shift
-        ;;
-      *) ARGS="$ARGS $opt" ;;
-      esac
-    shift $((OPTIND - 1))
-    unset OPTIND
+
+# https://stackoverflow.com/a/36475789
+_ARGS=()
+
+
+shift_globally () {
+  shift
+  _ARGS=$@
+}
+# end https://stackoverflow.com/a/36475789
+
+function handle_arg {
+  arg=$1
+  next_arg=$2
+  if [[ "${arg:0:2}" == "-a" ]]; then
+    handle_app $arg $next_arg
+  elif [[ "${arg:0:2}" == "-d" ]]; then
+    handle_debug $arg $next_arg
+  elif [[ "${arg:0:2}" == "-D" ]]; then
+    handle_jvm_prop $arg $next_arg
+  elif [[ "${arg:0:2}" == "-l" ]]; then
+    handle_log $arg $next_arg
   else
-    ARGS="$ARGS $1"
-    shift
+    ARGS="$ARGS $arg" # pass through
+  fi
+}
+
+function handle_jvm_prop {
+  arg=$1
+  prop=$2
+  
+  if [[ "$arg" == "-D" ]]; then
+    shift_globally "$@"
+  else
+    prop=${arg:2}
+  fi
+  ARGS="-D$prop $ARGS" # these come before the class name so that the jvm sets them for us.
+}
+
+
+function handle_debug {
+    arg=$1
+    level=$2
+    if [[ "$arg" == "-d" ]]; then # value is in next argument
+      shift_globally "$@"
+    else
+      level=${arg:2}
+    fi
+    levelStr="info"
+    case $level in
+      "-2") levelStr="ERROR" ;;
+      "-1") levelStr="WARN" ;;
+      "0") levelStr="INFO" ;;
+      "1") levelStr="DEBUG" ;;
+      "2") levelStr="TRACE" ;;
+      "3") levelStr="TRACE" ;;
+    esac    
+    LOG_LEVEL="-DLOG_LEVEL=${levelStr}" 
+}
+
+function handle_log {
+  arg=$1
+  log_file=$2
+  if [[ "$arg" == "-l" ]]; then
+    shift_globally "$@"
+  else
+    log_file=${arg:2}
+  fi
+  LOG_FILE="-DLOG_FILE=${log_file}"
+}
+
+function handle_app {
+  arg=$1
+  APP_NAME=$2
+  if [[ "$arg" == "-a" ]]; then
+    shift_globally "$@"
+  else
+    APP_NAME=${arg:2}
+  fi
+  ARGS="$ARGS -a $APP_NAME" # this one gets used *and* passed through
+}
+
+while [[ $# -gt 0 ]]; do
+  arg=$1
+  shift
+  next_arg=$1
+
+  if [[ "$arg" == "--" ]]; then # stop trying to special process anything
+    break
+  elif [[ ${arg:0:1} == "-" ]]; then
+    handle_arg $arg $next_arg # extract our desired elements
+  else
+    ARGS="$ARGS $arg" # pass through
   fi
 done
+# remaining args are assumed correct as is and the application will deal
+while [[ $# -gt 0 ]]; do
+  ARGS="$ARGS $1"
+  shift
+done
+
 
 if [ "${LOGBACK_OVERRIDE+x}" ]; then
   LOGBACK="$LOGBACK_OVERRIDE"
@@ -137,4 +183,5 @@ else
 fi
 
 cmd="java -Xms120m $DECJ_MAXHEAP $DECJ_OPTS -cp $CP -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR $LOGBACK $ARGS"
-eval $cmd
+echo $cmd
+exec $cmd

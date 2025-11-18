@@ -1,1 +1,1 @@
-@"%~dp0\decj" decodes.tsdb.test.ListLocks %*%
+@"%~dp0\decj" decodes.tsdb.locks.ListLocks %*%
