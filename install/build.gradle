@@ -130,10 +130,10 @@ task runApp(type: Exec) {
     println("Using app ${app}")
     if (osWin) {
         executable "cmd"
-        args "/c", binDir+app+ext, "-d3", "-DLOG_DIR={$runDir}"
+        args "/c", binDir+app+ext, "-d3"
     } else {
         executable binDir+app
-        args "-d3", "-DLOG_DIR=${runDir}"
+        args "-d3"
     }
     if (!profile.equals("default")) {
         args += ["-P", profile]
@@ -158,6 +158,7 @@ task runApp(type: Exec) {
     }
 
     environment "DECJ_OPTS", decjOpts
+    environment "LOG_DIR", runDir
     environment "DCSTOOL_HOME": file(installDist.destinationDir)
     environment "DECODES_INSTALL_DIR": file(installDist.destinationDir)
     environment "PATH": (files (file(binDir),
