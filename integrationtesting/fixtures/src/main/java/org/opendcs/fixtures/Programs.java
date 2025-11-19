@@ -399,7 +399,7 @@ public class Programs
             {
                 files.add(file);
             }
-            else
+            else if (file.isDirectory()) 
             {
                 files.addAll(FileUtils.listFiles(file,extensions,true));
             }
