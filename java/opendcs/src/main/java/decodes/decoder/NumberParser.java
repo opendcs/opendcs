@@ -500,13 +500,44 @@ public class NumberParser
 		return new Variable((double)ival * factor1);
 	}
 	
+	/**
+	 For decoding Nortek currentmeter sensors
+	 including legacy and Gen 2 nortek sensors
+	*/
 	private Variable parseAtonString(byte[] field)
 			throws FieldParseException
 	{
-		log.debug("parseAtonString field='{}', len={}", new String(field), field.length);
+		String snsType = "";
 		String result = "";
 		int fieldIndex = 0;
-		DecimalFormat dFormat = new DecimalFormat("0.000");
+		if (field.length >= 3) 
+		{
+			String firstThree = new String(field, 0, 3);
+			if (firstThree.contains("CA")) 
+			{
+				snsType = "CA";
+			} 
+			else if (firstThree.contains("CN")) 
+			{
+				snsType = "CN";
+			}
+			else 
+			{
+				snsType = "CX"; //Reserved for future logic
+			}
+		}
+
+		// Update field if first character is 'C'
+		if (field.length > 0 && field[0] == 'C') 
+		{
+			byte[] updatedField = new byte[field.length + 1];
+			updatedField[0] = '*'; // prepend '*'
+			System.arraycopy(field, 0, updatedField, 1, field.length);
+			field = updatedField; // update reference
+		}
+
+		DecimalFormat dFormat1 = new DecimalFormat("0.0");
+		DecimalFormat dFormat3 = new DecimalFormat("0.000");
 		
 		// ==================================== 
 		// MJM New Header Code:
@@ -519,118 +550,256 @@ public class NumberParser
 		NumberFormat dp3 = NumberFormat.getNumberInstance();
 		dp3.setGroupingUsed(false);
 		dp3.setMinimumFractionDigits(3);
+		NumberFormat i1 = NumberFormat.getIntegerInstance();
+		i1.setGroupingUsed(false);
+		i1.setMinimumIntegerDigits(1);
 		NumberFormat i2 = NumberFormat.getIntegerInstance();
 		i2.setGroupingUsed(false);
 		i2.setMinimumIntegerDigits(2);
+		NumberFormat i6 = NumberFormat.getIntegerInstance();
+		i6.setGroupingUsed(false);
+		i6.setMinimumIntegerDigits(6);
 		NumberFormat i8 = NumberFormat.getIntegerInstance();
 		i8.setGroupingUsed(false);
 		i8.setMinimumIntegerDigits(8);
-		
-		StringBuilder header = new StringBuilder();
-		for(int idx = 3; idx < 11; idx++)
-			header.append((char)field[idx]);
-		header.append('\n');
-		
-		int x = PseudoBinary.decodePB(new String(field, 12, 2), false); // MM
-		header.append(i2.format(x) + ' ');
-		x = PseudoBinary.decodePB(new String(field, 14, 2), false);     // DD
-		header.append(i2.format(x) + ' ');
-		x = PseudoBinary.decodePB(new String(field, 16, 2), false);     // YYYY
-		header.append(i2.format(x) + ' '); // will always be 4 digits, no need to pad or check
-		x = PseudoBinary.decodePB(new String(field, 18, 2), false);     // HR
-		header.append(i2.format(x) + ' ');
-		x = PseudoBinary.decodePB(new String(field, 20, 2), false);     // MN
-		header.append(i2.format(x) + ' ');
-		x = PseudoBinary.decodePB(new String(field, 22, 2), false);     // SS
-		header.append(i2.format(x) + ' ');
-
-		x = PseudoBinary.decodePB(new String(field, 24, 3), false);     // 8 dig binary #
-		header.append(i8.format(x) + ' ');
-		x = PseudoBinary.decodePB(new String(field, 27, 3), false);     // 8 dig binary #
-		header.append(i8.format(x) + ' ');
-		
-		double d = PseudoBinary.decodePB(new String(field, 30, 2), false) * .1;
-		header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ' ');
-
-		d = PseudoBinary.decodePB(new String(field, 32, 3), false) * .1;
-		header.append(TextUtil.setLengthRightJustify(dp1.format(d), 6) + ' ');
-
-		d = PseudoBinary.decodePB(new String(field, 35, 2), false) * .1;
-		header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ' ');
-
-		d = PseudoBinary.decodePB(new String(field, 37, 2), true) * .1;
-		header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ' ');
-
-		d = PseudoBinary.decodePB(new String(field, 39, 2), true) * .1;
-		header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ' ');
-		
-		d = PseudoBinary.decodePB(new String(field, 41, 2), false) * .001;
-		header.append(TextUtil.setLengthRightJustify(dp3.format(d), 7) + ' ');
-		
-		d = PseudoBinary.decodePB(new String(field, 43, 2), false) * .01;
-		header.append(TextUtil.setLengthRightJustify(dp2.format(d), 6) + ' ');
-
-		x = PseudoBinary.decodePB(new String(field, 45, 3), false);
-		header.append(TextUtil.setLengthRightJustify(i2.format(x), 5) + ' ');
-
-		x = PseudoBinary.decodePB(new String(field, 48, 3), false);
-		header.append(TextUtil.setLengthRightJustify(i2.format(x), 5) + '\n');
-
-		log.debug("header: '{}'", header.toString());
-		result = result + header.toString();
-		// ==================================== 
-
-		//processing data
-		String strResult = "";
-		for(fieldIndex = 52; fieldIndex < field.length-1; fieldIndex++)
+		if (snsType.equals("CA")) 
 		{
-			for(int i = 0; i < 6; i++)
+			// processing legacy nortek message
+			log.debug("Legacy Nortek field='{}', len={}", new String(field), field.length);			
+			StringBuilder header = new StringBuilder();
+			for(int idx = 3; idx < 11; idx++)
 			{
-				if(fieldIndex>field.length-2)
-					break;
-				String temp = "";
-				
-				temp += (char)field[fieldIndex++];
-				temp += (char)field[fieldIndex++];
-				
-				//the first three values in each bin/line are 
-				//represented by three bytes of pseudo-binary
-				if(i==0 || i==1 || i==2 && fieldIndex < field.length-1)
-				{
-					temp += (char)field[fieldIndex++];
-				}
-				int number = PseudoBinary.decodePB(temp, true);
-				
-				double dnum = 0.000;
-				String blank = "";
-				if(i==0 || i==1 || i==2)
-				{
-					dnum = number*0.001;
-					strResult = dnum + "";
-					strResult = dFormat.format(dnum);
-					
-					for(int j = strResult.length(); j<8; j++)
-						blank += " ";
-					strResult = blank + strResult; 
-				}
-				else 
-				{
-					dnum = number;
-					strResult = dnum + "";
-					if(strResult.equalsIgnoreCase("0.0"))
-						strResult = "0.000";
-					for(int j = strResult.length(); j<6; j++)
-						blank += " ";
-					strResult = blank + strResult; 
-				}				
-				result += strResult;// + " ";
+				header.append((char)field[idx]);
 			}
-			result = result + "\n";
+			header.append('\n');
+			int x = PseudoBinary.decodePB(new String(field, 12, 2), false); // MM
+			header.append(i2.format(x) + ' ');
+			x = PseudoBinary.decodePB(new String(field, 14, 2), false);     // DD
+			header.append(i2.format(x) + ' ');
+			x = PseudoBinary.decodePB(new String(field, 16, 2), false);     // YYYY
+			header.append(i2.format(x) + ' '); // will always be 4 digits, no need to pad or check
+			x = PseudoBinary.decodePB(new String(field, 18, 2), false);     // HR
+			header.append(i2.format(x) + ' ');
+			x = PseudoBinary.decodePB(new String(field, 20, 2), false);     // MN
+			header.append(i2.format(x) + ' ');
+			x = PseudoBinary.decodePB(new String(field, 22, 2), false);     // SS
+			header.append(i2.format(x) + ' ');
+			x = PseudoBinary.decodePB(new String(field, 24, 3), false);     // 8 dig binary #
+			header.append(i8.format(x) + ' ');
+			x = PseudoBinary.decodePB(new String(field, 27, 3), false);     // 8 dig binary #
+			header.append(i8.format(x) + ' ');
+			double d = PseudoBinary.decodePB(new String(field, 30, 2), false) * .1;
+			header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ' ');
+			d = PseudoBinary.decodePB(new String(field, 32, 3), false) * .1;
+			header.append(TextUtil.setLengthRightJustify(dp1.format(d), 6) + ' ');
+			d = PseudoBinary.decodePB(new String(field, 35, 2), false) * .1;
+			header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ' ');
+			d = PseudoBinary.decodePB(new String(field, 37, 2), true) * .1;
+			header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ' ');
+			d = PseudoBinary.decodePB(new String(field, 39, 2), true) * .1;
+			header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ' ');
+			d = PseudoBinary.decodePB(new String(field, 41, 2), false) * .001;
+			header.append(TextUtil.setLengthRightJustify(dp3.format(d), 7) + ' ');
+			d = PseudoBinary.decodePB(new String(field, 43, 2), false) * .01;
+			header.append(TextUtil.setLengthRightJustify(dp2.format(d), 6) + ' ');
+			x = PseudoBinary.decodePB(new String(field, 45, 3), false);
+			header.append(TextUtil.setLengthRightJustify(i2.format(x), 5) + ' ');
+			x = PseudoBinary.decodePB(new String(field, 48, 3), false);
+			header.append(TextUtil.setLengthRightJustify(i2.format(x), 5) + '\n');
+			log.debug("Legacy Nortek header : '{}'", header.toString());
+			result = result + header.toString();
+			String strResult = "";
+			for(fieldIndex = 52; fieldIndex < field.length-1; fieldIndex++)
+			{
+				for(int i = 0; i < 6; i++)
+				{
+					if(fieldIndex>field.length-2) 
+					{
+						break;
+					}
+					String temp = "";
+					temp += (char)field[fieldIndex++];
+					temp += (char)field[fieldIndex++];
+					//the first three values in each bin/line are 
+					//represented by three bytes of pseudo-binary
+					if(i==0 || i==1 || i==2 && fieldIndex < field.length-1)
+					{
+						temp += (char)field[fieldIndex++];
+					}
+					int number = PseudoBinary.decodePB(temp, true);
+					double dnum = 0.000;
+					String blank = "";
+					if(i==0 || i==1 || i==2)
+					{
+						dnum = number*0.001;
+						strResult = dnum + "";
+						strResult = dFormat3.format(dnum);
+						for(int j = strResult.length(); j<8; j++)
+						{
+							blank += " ";
+						}
+						strResult = blank + strResult; 
+					}
+					else 
+					{
+						dnum = number;
+						strResult = dnum + "";
+						if(strResult.equalsIgnoreCase("0.0"))
+						{
+							strResult = "0.000";
+						}
+
+						for(int j = strResult.length(); j<6; j++)
+						{
+							blank += " ";
+						}
+						strResult = blank + strResult; 
+					}				
+					result += strResult;
+				}
+				result = result + "\n";
+			}
+		} 
+		else if (snsType.equals("CN")) 
+		{
+			// processing gen 2 nortek message
+			log.debug("Nortek Generation 2 field='{}', len={}", new String(field), field.length);
+			StringBuilder header = new StringBuilder();
+			for (int idx = 3; idx < 11; idx++)
+			{
+				header.append((char) field[idx]);
+			}
+
+			header.append('\n');
+			int x = PseudoBinary.decodePB(new String(field, 12, 1), false); // Instrument type
+			header.append(i1.format(x) + ", ");
+			x = PseudoBinary.decodePB(new String(field, 13, 4), false); // Head ID
+			header.append(i6.format(x) + ", ");
+			x = PseudoBinary.decodePB(new String(field, 17, 1), false); // No of beams
+			int beamNo = x;
+			header.append(i1.format(x) + ", ");
+			x = PseudoBinary.decodePB(new String(field, 18, 2), false); // No of cells
+			header.append(i2.format(x) + ", ");
+			double d = PseudoBinary.decodePB(new String(field, 20, 2), false) * .01; // Blanking Distance
+			double blankingDistance = d;
+			header.append(TextUtil.setLengthRightJustify(dp2.format(d), 5) + ", ");
+			d = PseudoBinary.decodePB(new String(field, 22, 2), false) * .01; // Cell Size
+			double cellSize = d;
+			header.append(TextUtil.setLengthRightJustify(dp2.format(d), 5) + ", ");
+			x = PseudoBinary.decodePB(new String(field, 24, 1), false); // Coordinate System
+			header.append(i1.format(x) + '\n');
+			x = PseudoBinary.decodePB(new String(field, 25, 3), false); // Date
+			header.append(i6.format(x) + ", ");
+			x = PseudoBinary.decodePB(new String(field, 28, 3), false); // Time
+			header.append(i6.format(x) + ", ");
+			x = PseudoBinary.decodePB(new String(field, 31, 3), false); // Error code
+			header.append(i6.format(x) + ", ");
+			x = PseudoBinary.decodePB(new String(field, 34, 4), false); // Status code
+			String y = Integer.toHexString(x);
+			String firstFour = y.length() >= 4 ? y.substring(0, 4) : String.format("%-4s", y).replace(' ', '0');
+			char lastChar = y.charAt(y.length() - 1);
+			y = (firstFour + "000" + lastChar).toUpperCase();
+			header.append(y + ", ");
+			d = PseudoBinary.decodePB(new String(field, 38, 2), false) * .1; // Battery Voltage
+			header.append(TextUtil.setLengthRightJustify(dp1.format(d), 4) + ", ");
+			d = PseudoBinary.decodePB(new String(field, 40, 3), false) * .1; // Sound Speed
+			header.append(TextUtil.setLengthRightJustify(dp1.format(d), 6) + ", ");
+			d = PseudoBinary.decodePB(new String(field, 43, 2), false) * .01; // Heading Std Dev
+			header.append(TextUtil.setLengthRightJustify(dp2.format(d), 5) + ", ");
+			d = PseudoBinary.decodePB(new String(field, 45, 2), false) * .1; // Heading
+			header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ", ");
+			d = PseudoBinary.decodePB(new String(field, 47, 2), true) * .1; // Pitch
+			header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ", ");
+			d = PseudoBinary.decodePB(new String(field, 49, 2), false) * .01; // Pitch Std Dev
+			header.append(TextUtil.setLengthRightJustify(dp2.format(d), 5) + ", ");
+			d = PseudoBinary.decodePB(new String(field, 51, 2), true) * .1; // Roll
+			header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ", ");
+			d = PseudoBinary.decodePB(new String(field, 53, 2), false) * .01; // Roll Std Dev
+			header.append(TextUtil.setLengthRightJustify(dp2.format(d), 5) + ", ");
+			d = PseudoBinary.decodePB(new String(field, 55, 3), false) * .001; // Pressure
+			header.append(TextUtil.setLengthRightJustify(dp3.format(d), 7) + ", ");
+			d = PseudoBinary.decodePB(new String(field, 58, 2), false) * .01; // Pressure Std Dev
+			header.append(TextUtil.setLengthRightJustify(dp2.format(d), 5) + ", ");
+			d = PseudoBinary.decodePB(new String(field, 60, 3), true) * .01; // Temperature
+			header.append(TextUtil.setLengthRightJustify(dp2.format(d), 6) + '\n');
+			log.debug("Nortek Generation 2 header : '{}'", header.toString());
+			int countProfile = 0;
+			if (field.length < 64) 
+			{
+				throw new FieldParseException("No profile message in data");
+			}
+			for (int i = 64; i < field.length; i++) 
+			{
+				if (field[i] == '+') 
+				{
+					countProfile = i;
+					break;
+				}
+			}
+			countProfile = (countProfile - 64) / beamNo;
+			if (countProfile != 5 && countProfile != 7) 
+			{
+				throw new FieldParseException("Cannot identify message type");
+			}
+			result += header.toString();
+			String strResult = "";
+			int cellNumber = 1;
+			int loopLimit = 0;
+			if (beamNo == 2 && countProfile == 7 || beamNo == 3 && countProfile == 5) 
+			{
+				loopLimit = 6;
+			} 
+			else if (beamNo == 2 && countProfile == 5) 
+			{
+				loopLimit = 4;
+			} 
+			else if (beamNo == 3 && countProfile == 7) 
+			{
+				loopLimit = 9;
+			}
+			for (fieldIndex = 64; fieldIndex < field.length - 1; fieldIndex++) 
+			{
+				result += String.format("%2d", cellNumber) + ",";
+				result += " " + TextUtil.setLengthRightJustify(dp1.format(blankingDistance + cellSize * cellNumber++), 6) + ",";
+				for (int i = 0; i < loopLimit; i++) 
+				{
+					if (fieldIndex > field.length - 2) 
+					{
+						break;
+					}
+					String temp = "";
+					temp += (char) field[fieldIndex++];
+					temp += (char) field[fieldIndex++];
+					if (i < beamNo)
+					{
+						temp += (char) field[fieldIndex++];
+					}
+					int number = (i <= beamNo - 1) ? PseudoBinary.decodePB(temp, true)
+							: PseudoBinary.decodePB(temp, false);
+					double dnum = (i <= beamNo - 1) ? number * 0.001
+							: (i > beamNo - 1 && i <= 2 * beamNo - 1) ? number * 0.1 : number;
+					strResult = (i <= beamNo - 1) ? dFormat3.format(dnum)
+							: (i > beamNo - 1 && i <= 2 * beamNo - 1 && countProfile == 7) ? dFormat1.format(dnum)
+							: (countProfile == 7) ? String.valueOf((int) dnum) : dFormat1.format(dnum);
+					String blank = "";
+					int padLen = (i <= beamNo - 1) ? 10 : 8;
+					for (int j = strResult.length(); j < padLen; j++) 
+					{
+						blank += " ";
+					}
+					strResult = blank + strResult + ',';
+					result += strResult;
+				}
+				result = result.substring(0, result.length() - 1) + "\n";
+			}
+		} 
+		else 
+		{
+			throw new FieldParseException("No current meter ID in raw message");
 		}
 		return new Variable(result);
 	}
 
-		
 	private Variable parseSontekString(byte[] field)
 			throws FieldParseException
 	{
