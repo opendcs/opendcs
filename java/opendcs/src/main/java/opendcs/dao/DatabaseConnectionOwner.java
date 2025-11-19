@@ -102,6 +102,12 @@ public interface DatabaseConnectionOwner
 	
 	/** @return true if this is HDB */
 	public boolean isHdb();
+
+	/**
+	 * Provide sql subtractive for an insert into table from table with exclusion
+	 * @return
+	 */
+	String sqlListSubtraction();
 	
 	/** @return true if this is CWMS */
 	public boolean isCwms();
