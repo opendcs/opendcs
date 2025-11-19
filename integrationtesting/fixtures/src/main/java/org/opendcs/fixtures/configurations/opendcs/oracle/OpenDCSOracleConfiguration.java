@@ -113,6 +113,7 @@ public class OpenDCSOracleConfiguration implements Configuration
      * Actually setup the database
      * @throws Exception
     */
+    @SuppressWarnings("resource") // lives for life of tests, test containers cleans up for us
     private void installDb(SystemExit exit,EnvironmentVariables environment, SystemProperties properties, UserPropertiesBuilder configBuilder) throws Exception
     {
         // These should always be set.
@@ -127,6 +128,14 @@ public class OpenDCSOracleConfiguration implements Configuration
         if(db == null)
         {
             db = new OracleContainer("gvenzl/oracle-free:full-faststart")
+                    .withCreateContainerCmdModifier(cmd ->
+                    {
+                        cmd.getHostConfig()
+                            .withMemory(4L*1024*1024*1024)
+                            .withCpuPeriod(20000L)
+                            .withCpuQuota(25000L)
+                        ;
+                    })
                     .withUsername(SCHEMA_OWNING_USER)
                     .withPassword(SCHEMA_OWNING_USER_PASSWORD)
                     .withStartupTimeoutSeconds(300)
