@@ -1,36 +1,36 @@
 package org.opendcs.logging;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
-public final class LoggedThrowable
+public final record LoggedThrowable(String className, String message, List<ThrowableStep> steps, LoggedThrowable cause)
 {
-    public final String className;
-    public final String message;
-    public final List<ThrowableStep> steps;
-    public final LoggedThrowable cause;
 
-    public LoggedThrowable(String className, String message, List<ThrowableStep> steps, LoggedThrowable cause)
+    public static record ThrowableStep(String className, String methodName, String fileName, int lineNumber)
     {
-        this.className = className;
-        this.message = message;
-        this.steps = Collections.unmodifiableList(steps);
-        this.cause = cause;
+
     }
 
-    public static class ThrowableStep
+    public static LoggedThrowable from(Throwable ex)
     {
-        public final String className;
-        public final String methodName;
-        public final String fileName;
-        public final int lineNumber;
-
-        public ThrowableStep(String className, String methodName, String fileName, int lineNumber)
+        if (ex == null)
         {
-            this.className = className;
-            this.methodName = methodName;
-            this.fileName = fileName;
-            this.lineNumber = lineNumber;
+            return null;// end of chain.
         }
+        return new LoggedThrowable(ex.getClass().getName(), ex.getMessage(),
+                                   map(ex.getStackTrace()), from(ex.getCause()));
+    }
+
+    private static List<LoggedThrowable.ThrowableStep> map(StackTraceElement[] stackTrace)
+    {
+        ArrayList<LoggedThrowable.ThrowableStep> steps = new ArrayList<>();
+        for(StackTraceElement ste: stackTrace)
+        {
+            steps.add(
+                new LoggedThrowable.ThrowableStep(
+                    ste.getClassName(), ste.getMethodName(),
+                    ste.getFileName(), ste.getLineNumber()));
+        }
+        return steps;
     }
 }

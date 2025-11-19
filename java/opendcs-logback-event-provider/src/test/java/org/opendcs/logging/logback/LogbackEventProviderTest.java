@@ -25,7 +25,7 @@ class LogbackEventProviderTest
         log.info(msg);
         assertFalse(buffer.isEmpty());
         LoggingEvent le = buffer.get(0);
-        assertEquals(msg, le.message);
+        assertEquals(msg, le.message());
     }
     
 }

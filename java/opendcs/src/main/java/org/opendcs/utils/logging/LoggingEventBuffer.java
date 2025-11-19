@@ -5,7 +5,7 @@ import org.opendcs.logging.spi.LoggingEventProvider;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.SubmissionPublisher;
+import java.util.concurrent.Flow.Publisher;
 
 import org.opendcs.logging.LoggingEvent;
 import org.opendcs.util.RingBuffer;
@@ -52,12 +52,12 @@ public final class LoggingEventBuffer
     }
 
     /**
-     * Return SubmissionPublisher implemented by the Ring buffer.
+     * Return Publisher implemented by the Ring buffer.
      * For use by systems that either don't want to Poll or only require notification
      * of recent events.
      * @return
      */
-    public SubmissionPublisher<LoggingEvent> getPublisher()
+    public Publisher<LoggingEvent> getPublisher()
     {
         return this.eventList;
     }
