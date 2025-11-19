@@ -1,0 +1,3 @@
+﻿SET:TZ=UTC
+SET:UNITS=m
+TSID:TESTSITE1.Stage.Inst.1Hour.0.cwmsScreening-output

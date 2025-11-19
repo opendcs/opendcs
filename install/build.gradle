@@ -136,7 +136,7 @@ task runApp(type: Exec) {
         args "-d3"
     }
     if (!profile.equals("default")) {
-        args += ["-P", profile]
+        args += ["-P${profile}"]
     }
 
     if (appArgs != null) {

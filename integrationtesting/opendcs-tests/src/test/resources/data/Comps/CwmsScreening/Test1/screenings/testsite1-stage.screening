@@ -1,0 +1,18 @@
+*===========================================
+SCREENING TEST1.Stag.92ze
+PARAM Stage
+PARAMTYPE Inst
+DURATION 0
+UNITS m
+RANGE_ACTIVE true
+ROC_ACTIVE true
+CONST_ACTIVE true
+DURMAG_ACTIVE true
+
+CRITERIA_SET
+CRITERIA ABS R 0 45
+CRITERIA ABS Q 2.6 16.4
+CRITERIA_SET_END
+SCREENING_END
+
+ASSIGN TESTSITE1.Stage.Inst.1Hour.0.cwmsScreening-input : TEST1.Stag.92ze
