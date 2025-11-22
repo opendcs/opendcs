@@ -200,7 +200,26 @@ final public class ResWaterTemperatureCompute
 
         double avgRhow = getAvgRhow(resj, rhow, delz);
 
-        // Calculate Stability Frequency and then Diffusion coefficient
+       /*
+          * Calculate the stability frequency and then Diffusion Coefficient for each reservoir layer.
+          * Layer indexing:
+          *   - i = resj: bottom layer of the reservoir, so i = 0: top layer (surface)
+          *   - Loop iterates from bottom (resj) up to just below the surface (i = 1)
+          * Variables:
+          *   - rhow[i]: Water density at layer i
+          *   - cp[i]: Heat capacity of water at layer i
+          *   - zd[i] is a depth-like coordinate ordered so that values are largest at the surface and smallest at the
+          *     bottom. ex: zd[117]= 0.25, increments up by 0.5 each layer and zd[1] = 58.25
+          *   - grav: Gravitational acceleration constant
+          *   - avgRhow: Average water density across all layers
+          *   - sFreq: Stability frequency (buoyancy frequency), measures vertical stability between layers
+          *   - surfArea: Reservoir surface area (constant for all layers)
+          *   - surfAreaX: Surface area used in calculation, capped at 350 m^2 for large reservoirs
+          *   - kzx: Base vertical diffusion coefficient (m^2/s), empirically derived
+          *   - thermalDiffusivityCoefficient: Tuning factor for diffusion
+          *   - kz[i]: Final vertical diffusion coefficient for layer i (J/(s m C)), used in heat transport
+          * The code computes kz[i] for each layer, modeling heat diffusion between layers based on density differences and reservoir properties.
+        */
 
         for (int i = resj; i >= 1; i--)  //TODO check
         {
@@ -229,7 +248,7 @@ final public class ResWaterTemperatureCompute
             kzx = .000817 * Math.pow(surfAreaX, 0.56) *
                     Math.pow((Math.abs(sFreq)), (-0.43)); // cm^2/s
             kzx = .0001 * kzx;                                // m^2/s
-            kz[i] = thermalDiffusivityCoefficient * kzx * cp[i] * rhow[i]; // j/(s m C) factor to arbitrarly reduce diffusion
+            kz[i] = thermalDiffusivityCoefficient * kzx * cp[i] * rhow[i]; // j/(s m C) factor to arbitrarily reduce diffusion
         }
 
         // Perform diffusion calculation

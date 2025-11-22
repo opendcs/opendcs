@@ -808,12 +808,12 @@ is a large lateral variation in temperature (i.e. long run-of-the-river reservoi
 these computations will be unreliable. General guidance provided here is reservoirs with
 a flushing time less than 30 days will violate the assumption of laterally homogeneity,
 and therefore the vertical temperature profile computations should only be applied for
-reservoirs with a flushing time greater than 30 days. Based on this assumption, vertical transfer
-of heat is modeled first by assuming stable reservoir stratification, accounting
-for diffusion of heat, and then accounting for any convective or turbulent mixing
-that occurs in the reservoir profile. Vertical diffusion of heat within a
-one-dimensional reservoir is governed by the equation below
-:ref:`(Hondzo and Stefan 1993) <References>`:
+reservoirs with a flushing time greater than 30 days.
+
+Based on this assumption, vertical transfer of heat is modeled by first by assuming stable
+reservoir stratification, accounting for diffusion of heat, and then accounting for any convective
+or turbulent mixing that occurs in the reservoir profile. Vertical diffusion of heat within a
+one-dimensional reservoir is governed by the equation below :ref:`(Hondzo and Stefan 1993) <References>`:
 
 :math:`\dfrac{dT_{w}}{dt} = \dfrac{1}{A}\dfrac{d}{dz}\left( K_{z}A\dfrac{dT_{w}}{dz} \right) + \
 \dfrac{I_{z}}{\rho_{w}c_{p}}`
@@ -831,22 +831,35 @@ Where:
        ":math:`\rho_{w}`", "Density of water"
        ":math:`c_{p}`", "Heat capacity"
 
-In order to initialize the computations, the density and heat capacity must be updated for
-each layer.
+To initialize the computations, the density and heat capacity must be updated for each layer:
 
 :math:`{\rho_{w_i}} = 1000 - 0.019549\left| {T_{w_i}} - 277.15 \right|^{1.68}`
 
 :math:`{c_{p_i}} = 4174.9 + 1.6659\left( e^\left({\frac{307.65 - {T_{w_i}}}{10.6}}\right) + \
 e^ {-\left({\frac{307.65 - {T_{w_i}}}{10.6}}\right)} \right)`
 
-In the above equations, |i| is the index of the layer, where :math:`i = 1`
-is the bottom layer of the temperature profile. Next the thermal diffusivity is
-computed for each layer as follows:
+Here, |i| is the index of the layer, with :math:`i = 1` as the top layer of the temperature profile.
 
-:math:`{K_{z_i}} = 0.00012\left( 0.000817{A_{s}}^{0.56}\left( {N_{i}}^{2} \right)^{- 0.43} \right)`
+Next, the thermal diffusivity for each layer is computed as follows:
+
+:math:`{A_{s}}^{*} = max\left( A_{s}, 350 \right)`
+
+:math:`{K_{z_i}} = 0.0001 * {TD} \left( 0.000817{A_{s}}^{0.56}\left( {N_{i}}^{2} \right)^{- 0.43} \right)`
+
 
 :math:`{N_{i}}^{2} = max\left(0.00007,\ \dfrac{g}{\overline{\rho_{w}}} \, \dfrac{{\rho_{w}}_{i} - \
 {\rho_{w}}_{i - 1}}{z_{i} - z_{i - 1}}\right)`
+
+
+Note to review:  Per the computation This is what the equation should be: add in absolute value and switch the layer
+ordering in the denominator zi and zi-1:
+
+:math:`{N_{i}}^{2} = max\left(0.00007,\ \dfrac{g}{\overline{\rho_{w}}} \, \dfrac{\left| {\rho_{w}}_{i} - \
+{\rho_{w}}_{i-1}\right|}{z_{i-1} - z_{i}}\right)`
+
+
+Where the average density over the water column is computed as:
+
 
 :math:`\overline{\rho_{w}} = \dfrac{\sum_{i = 1}^{N}{\rho_{w_i} \Delta z_i}}{\sum_{i = 1}^{N}{\Delta z_i}}`
 
@@ -855,10 +868,11 @@ Where:
     .. csv-table::
        :widths: auto
 
+       ":math:`TD`", "Thermal diffusivity coefficient (default 1.2)"
+       ":math:`A_{s}`", "Water surface area"
+       ":math:`N_{i}`", "Stability frequency of layer |i|"
        ":math:`\overline{\rho_{w}}`", "Average density over the entire water column"
        ":math:`z_{i}`", "Depth of the top of layer |i|"
-       ":math:`N_{i}`", "Stability frequency of layer |i|"
-       ":math:`A_{s}`", "Water surface area"
 
 Note that :math:`\overline{\rho_{w}}` is computed as a thickness-weighted average using the layer thickness
 :math:`\Delta z_i`, consistent with the one-dimensional structure of this model.
