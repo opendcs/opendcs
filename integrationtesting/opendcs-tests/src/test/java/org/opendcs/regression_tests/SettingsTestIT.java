@@ -7,7 +7,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.Properties;
 
+import javax.sql.DataSource;
+
 import org.junit.jupiter.api.Test;
+import org.opendcs.database.DatabaseService;
+import org.opendcs.database.SimpleOpenDcsDatabaseWrapper;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
@@ -44,5 +48,9 @@ class SettingsTestIT extends AppTestBase
                 stmt.executeBatch();
             }
         });
+
+
+        var ds = ((SimpleOpenDcsDatabaseWrapper)db).getDataSource();
+        assertDoesNotThrow(() -> DatabaseService.getDatabaseFor(ds));
     }
 }
