@@ -77,6 +77,11 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         }
     }
 
+    public DataSource getDataSource()
+    {
+        return dataSource;
+    }
+
     @Override
     public <T extends OpenDcsDao> Optional<T> getDao(Class<T> dao)
     {
