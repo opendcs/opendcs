@@ -21,6 +21,7 @@ configurations {
         exclude group: "mil.army.usace.hec", module: "data-exchange-factories"
         exclude group: "mil.army.usace.hec", module: "data-exchange-xml"
         exclude group: "mil.army.usace.hec", module: "vrt"
+        exclude group: "mil.army.usace.hec", module: "callback-servers"
     }
 }
 
