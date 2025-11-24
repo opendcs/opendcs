@@ -403,12 +403,10 @@ public class UserManagementImpl implements UserManagementDao
     @SuppressWarnings("resource")
     private Handle getHandle(DataTransaction tx) throws OpenDcsDataException
     {
-        Connection conn = tx.connection(Connection.class)
+        Handle h = tx.connection(Handle.class)
                             .orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Connection from transaction."));
-        return Jdbi.open(conn).registerArgument(new DatabaseKeyArgumentFactory())
-                              .registerColumnMapper(new DatabaseKeyColumnMapper())
-                              .registerArgument(new ConfigArgumentFactory())
-                              .registerColumnMapper(new ConfigColumnMapper());
+        return h.registerArgument(new ConfigArgumentFactory())
+                .registerColumnMapper(new ConfigColumnMapper());
     }
 
     /**
