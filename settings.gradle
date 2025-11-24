@@ -18,3 +18,17 @@ rootProject.name = "opendcs_rest_api"
 include "opendcs-rest-api"
 include "opendcs-web-client"
 include "opendcs-integration-test"
+
+// Version overide for local development
+if(hasProperty('librarySourcesDir')) {
+    def externalDir = new File("$librarySourcesDir")
+    if (externalDir.exists()) {
+        externalDir.eachDir() { directory ->
+            def hecBuildExtFile = new File(directory, "opendcs-build-ext.gradle")
+            if (hecBuildExtFile.exists()) {
+                gradle.ext.externalLibDir = directory
+                apply from: hecBuildExtFile
+            }
+        }
+    }
+}

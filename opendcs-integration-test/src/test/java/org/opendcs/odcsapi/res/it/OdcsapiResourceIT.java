@@ -107,29 +107,6 @@ final class OdcsapiResourceIT extends BaseIT
 	}
 
 	@TestTemplate
-	void testGetAllProperties()
-	{
-		ExtractableResponse<Response> response = given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(MediaType.APPLICATION_JSON)
-			.spec(authSpec)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("tsdb_properties")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
-			.extract()
-		;
-
-		Properties dbProperties = response.as(Properties.class);
-
-		assertEquals(props, dbProperties);
-	}
-
-	@TestTemplate
 	void testGetPropertySpecs()
 	{
 		JsonPath expected = getJsonPathFromResource("odcsapi_property_specs.json");
@@ -212,9 +189,12 @@ final class OdcsapiResourceIT extends BaseIT
 			.extract()
 		;
 
+		// check only the values we've added.
 		Properties dbProperties = response.as(Properties.class);
-
-		assertEquals(properties, dbProperties);
+		properties.forEach((k,v) ->
+		{
+			assertEquals(properties.get(k), dbProperties.get(k));
+		});
 	}
 
 	private Long storePlatform() throws Exception

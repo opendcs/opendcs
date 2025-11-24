@@ -65,13 +65,16 @@ class BaseIT
 
 	<T> T getDtoFromResource(String filename, Class<T> dtoType) throws Exception
 	{
+		String url = "org/opendcs/odcsapi/res/it/" + DatabaseSetupExtension.getCurrentDbType().getProvider() + "/" + filename;
+		System.out.println("Trying " + url);
 		try(InputStream inputStream = getClass().getClassLoader()
-				.getResourceAsStream("org/opendcs/odcsapi/res/it/" + DatabaseSetupExtension.getCurrentDbType().name() + "/" + filename))
+				.getResourceAsStream(url))
 		{
 			if(inputStream == null)
 			{
-				try(InputStream defaultInputStream = getClass().getClassLoader()
-						.getResourceAsStream("org/opendcs/odcsapi/res/it/DEFAULT/" + filename))
+				url = "org/opendcs/odcsapi/res/it/DEFAULT/" + filename;
+				System.out.println("Trying " + url);
+				try(InputStream defaultInputStream = getClass().getClassLoader().getResourceAsStream(url))
 				{
 					ObjectMapper mapper = new ObjectMapperContextResolver().getContext(dtoType);
 					return mapper.readValue(defaultInputStream, dtoType);
@@ -88,7 +91,7 @@ class BaseIT
 	String getJsonFromResource(String filename) throws Exception
 	{
 		try(InputStream implInputStream = getClass().getClassLoader()
-				.getResourceAsStream("org/opendcs/odcsapi/res/it/" + DatabaseSetupExtension.getCurrentDbType().name() + "/" + filename))
+				.getResourceAsStream("org/opendcs/odcsapi/res/it/" + DatabaseSetupExtension.getCurrentDbType().getProvider() + "/" + filename))
 		{
 			if(implInputStream == null)
 			{
@@ -114,7 +117,7 @@ class BaseIT
 	JsonPath getJsonPathFromResource(String filename)
 	{
 		URL resource = getClass().getClassLoader()
-				.getResource("org/opendcs/odcsapi/res/it/" + DatabaseSetupExtension.getCurrentDbType().name() + "/" + filename);
+				.getResource("org/opendcs/odcsapi/res/it/" + DatabaseSetupExtension.getCurrentDbType().getProvider() + "/" + filename);
 		if(resource == null)
 		{
 			resource = getClass().getClassLoader()
@@ -163,7 +166,7 @@ class BaseIT
 
 	static void logout(SessionFilter sessionFilter)
 	{
-		if (DatabaseSetupExtension.getCurrentDbType() == DbType.OPEN_TSDB)
+		if (DatabaseSetupExtension.getCurrentDbType() == DbType.OPENDCS_POSTGRES)
 		{
 			given()
 				.log().ifValidationFails(LogDetail.ALL, true)

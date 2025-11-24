@@ -81,7 +81,7 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 
 	private TomcatServer startTomcat() throws Exception
 	{
-		configuration = TomcatServer.setupDb(dbType.toString());
+		configuration = TomcatServer.setupDb(dbType);
 		setupClientUser();
 		String restWarFile = Objects.requireNonNull(System.getProperty("opendcs.restapi.warfile"), "opendcs.restapi.warfile is not set");
 		String guiWarFile = Objects.requireNonNull(System.getProperty("opendcs.gui.warfile"), "opendcs.gui.warfile is not set");
@@ -121,7 +121,7 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 
 	private void setupClientUser()
 	{
-		if(dbType == DbType.CWMS)
+		if(dbType == DbType.CWMS_ORACLE)
 		{
 			String userPermissions = "begin execute immediate 'grant web_user to " + System.getProperty("DB_USERNAME") + "'; end;";
 			String dbOffice = System.getProperty("DB_OFFICE");

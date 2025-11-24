@@ -24,6 +24,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
 
@@ -40,6 +41,9 @@ import org.opendcs.fixtures.configurations.cwms.CwmsOracleConfiguration;
 import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.fixtures.spi.ConfigurationProvider;
 import org.slf4j.Logger;
+
+import decodes.util.DecodesSettings;
+
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
@@ -152,7 +156,7 @@ public final class TomcatServer implements AutoCloseable
 			String port = args[1];
 			String restWar = args[2];
 			String guiWar = args[3];
-			String dbType = args[4];
+			DbType dbType = DbType.from(args[4]);
 			setupDb(dbType);
 			try(TomcatServer tomcat = new TomcatServer(baseDir, Integer.parseInt(port), restWar, guiWar))
 			{
@@ -167,7 +171,7 @@ public final class TomcatServer implements AutoCloseable
 		}
 	}
 
-	public static Configuration setupDb(String dbType)
+	public static Configuration setupDb(DbType dbType)
 	{
 		ConfigurationProvider provider = getProvider(dbType);
 		try
@@ -190,9 +194,9 @@ public final class TomcatServer implements AutoCloseable
 		}
 	}
 
-	private static void setupDbForBypass(String dbType)
+	private static void setupDbForBypass(DbType dbType)
 	{
-		if(CwmsOracleConfiguration.NAME.equals(dbType))
+		if(CwmsOracleConfiguration.NAME.equals(dbType.getProvider()))
 		{
 			System.setProperty(DB_DRIVER_CLASS, "oracle.jdbc.driver.OracleDriver");
 			System.setProperty(DB_DATASOURCE_CLASS, DataSourceFactory.class.getName());
@@ -224,16 +228,18 @@ public final class TomcatServer implements AutoCloseable
 				|| System.getProperty("testcontainer.opentsdb.bypass.url") != null;
 	}
 
-	private static ConfigurationProvider getProvider(String dbType)
+	private static ConfigurationProvider getProvider(DbType dbType)
 	{
 		ServiceLoader<ConfigurationProvider> loader = ServiceLoader.load(ConfigurationProvider.class);
 		Iterator<ConfigurationProvider> configs = loader.iterator();
 
 		ConfigurationProvider configProvider = null;
+		System.out.println("DbType " + dbType.name());
 		while(configs.hasNext())
 		{
 			ConfigurationProvider configProviderTmp = configs.next();
-			if(configProviderTmp.getImplementation().equals(dbType))
+			System.out.println("Current provider: " + configProviderTmp.getImplementation());
+			if(configProviderTmp.getImplementation().equals(dbType.getProvider()))
 			{
 				configProvider = configProviderTmp;
 			}
@@ -245,7 +251,7 @@ public final class TomcatServer implements AutoCloseable
 		return configProvider;
 	}
 
-	private static void startDbContainer(Configuration config, String dbType) throws Exception
+	private static void startDbContainer(Configuration config, DbType dbType) throws Exception
 	{
 		SystemExit exit = new SystemExit();
 		EnvironmentVariables environment = new EnvironmentVariables();
@@ -253,18 +259,33 @@ public final class TomcatServer implements AutoCloseable
 		config.start(exit, environment, properties);
 		try (DataTransaction tx = config.getOpenDcsDatabase().newTransaction();
 			 Connection conn = tx.connection(Connection.class).orElseThrow();
-			 PreparedStatement stmt = conn.prepareStatement("insert into tsdb_properties(prop_name, prop_value) values (?,?)"))
+			 PreparedStatement stmt = conn.prepareStatement("insert into tsdb_property(prop_name, prop_value) values (?,?)"))
 		{
-			stmt.setString(1, "EditDatabaseType");
-			stmt.setString(2, dbType);
+			DecodesSettings settings = config.getOpenDcsDatabase()
+											 .getSettings(DecodesSettings.class)
+											 .orElseThrow();
+			Properties props = new Properties();
+			settings.saveToProps(props);
+			for(var k: props.keySet())
+			{
+				final String value = props.getProperty(k.toString(), null);
+				if (k != null && value != null)
+				{
+					stmt.setString(1, k.toString());
+					stmt.setString(2, value);
+					stmt.executeUpdate();
+				}
+			}
+			//stmt.executeBatch();
 		}
 		catch (Throwable ex)
 		{
+			log.atInfo().setCause(ex).log("error setting props");
 			throw new OpenDcsDataException("Unable to set database type property.", ex);
 		}
 		environment.getVariables().forEach(System::setProperty);
 		config.getEnvironment().forEach((key, value) -> System.setProperty(key.toString(), value.toString()));
-		if(CwmsOracleConfiguration.NAME.equals(dbType))
+		if(CwmsOracleConfiguration.NAME.equals(dbType.getProvider()))
 		{
 			System.setProperty(DB_DRIVER_CLASS, "oracle.jdbc.driver.OracleDriver");
 			System.setProperty(DB_DATASOURCE_CLASS, "org.apache.tomcat.jdbc.pool.DataSourceFactory");
@@ -285,9 +306,9 @@ public final class TomcatServer implements AutoCloseable
 	}
 
 
-	private static void setupClientUser(String dbType)
+	private static void setupClientUser(DbType dbType)
 	{
-		if(CwmsOracleConfiguration.NAME.equals(dbType))
+		if(CwmsOracleConfiguration.NAME.equals(dbType.getProvider()))
 		{
 			// I have no idea why this is suddenly required but it was also affecting operations in
 			// runtime test environments where the required entries weren't present.

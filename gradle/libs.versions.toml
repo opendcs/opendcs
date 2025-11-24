@@ -1,5 +1,5 @@
 [versions]
-opendcs = "7.5.1-RC13"
+opendcs = "7.5.1-RC17"
 
 servlet-api = "4.0.1" #Updating this further will require a change to the jakarta namespace.
 slf4j = { strictly = "2.0.17" }

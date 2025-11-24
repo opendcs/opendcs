@@ -57,31 +57,7 @@ public final class OpenDcsDatabaseFactory
 		}
 		catch(DatabaseException ex)
 		{
-			//Temporary workaround until database_properties table is implemented in the schema
-			log.atWarn().setCause(ex).log("Temporary solution forcing OpenTSDB");
-			DecodesSettings decodesSettings = new DecodesSettings();
-			DecodesSettings.instance().writeCwmsLocations = true;
-			decodesSettings.CwmsOfficeId = DbInterface.decodesProperties.getProperty("CwmsOfficeId");
-			try(Connection connection = dataSource.getConnection())
-			{
-				DatabaseProvider databaseProvider;
-				String databaseProductName = connection.getMetaData().getDatabaseProductName();
-				if(databaseProductName.toLowerCase().startsWith("oracle"))
-				{
-					databaseProvider = new CwmsDatabaseProvider();
-					decodesSettings.sqlKeyGenerator = OracleSequenceKeyGenerator.class.getName();
-				}
-				else
-				{
-					databaseProvider = new OpenTsdbProvider();
-				}
-				database = databaseProvider.createDatabase(dataSource, decodesSettings);
-			}
-			catch(DatabaseException | SQLException ex2)
-			{
-				ex2.addSuppressed(ex);
-				throw new IllegalStateException("Error connecting to the database via JNDI", ex2);
-			}
+			throw new IllegalStateException("Error establishing database instance through data source.", ex);
 		}
 		return database;
 	}

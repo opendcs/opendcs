@@ -20,19 +20,51 @@ import org.opendcs.fixtures.configurations.opendcs.pg.OpenDCSPGConfiguration;
 
 public enum DbType
 {
-	CWMS(CwmsOracleConfiguration.NAME),
-	OPEN_TSDB(OpenDCSPGConfiguration.NAME);
+	CWMS_ORACLE(CwmsOracleConfiguration.NAME, decodes.sql.OracleSequenceKeyGenerator.class.getName(), "CWMS"),
+	OPENDCS_POSTGRES(OpenDCSPGConfiguration.NAME, decodes.sql.SequenceKeyGenerator.class.getName(), "OPENTSDB");
 
-	private final String name;
+	private final String provider;
+	private final String keyGenerator;
+	private final String oldType;
 
-	DbType(String name)
+	DbType(String provider, String keyGenerator, String oldType)
 	{
-		this.name = name;
+		this.provider = provider;
+		this.keyGenerator = keyGenerator;
+		this.oldType = oldType;
 	}
 
 	@Override
 	public String toString()
 	{
-		return name;
+		return provider;
+	}
+
+	public String getKeyGenerator()
+	{
+		return keyGenerator;
+	}
+
+	public String getOldType()
+	{
+		return oldType;
+	}
+
+	public String getProvider()
+	{
+		return provider;
+	}
+
+
+	public static DbType from(String value)
+	{
+		for (var tmp: values())
+		{
+			if (tmp.provider.equals(value))
+			{
+				return tmp;
+			}
+		}
+		throw new IllegalArgumentException("Enum for " + value + "does not exist");
 	}
 }

@@ -15,11 +15,6 @@
 
 package org.opendcs.odcsapi.sec;
 
-import java.security.Principal;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.ServiceLoader;
 import javax.annotation.Priority;
@@ -48,9 +43,8 @@ import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 @Priority(Priorities.AUTHORIZATION)
 public final class SecurityFilter implements ContainerRequestFilter
 {
-
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
-	static final String LAST_AUTHORIZATION_CHECK = "opendcs-last-authorization-check";
+
 	@Context
 	private ResourceInfo resourceInfo;
 	@Context
@@ -122,25 +116,5 @@ public final class SecurityFilter implements ContainerRequestFilter
 				throw new ForbiddenException("User does not have the correct roles for endpoint: " + endpoint);
 			}
 		}
-	}
-
-	private AuthorizationCheck lookupAuthCheck(ContainerRequestContext requestContext)
-	{
-		String parameterKey = "opendcs.rest.api.authorization.type";
-		String initParameter = DbInterface.decodesProperties.getProperty(parameterKey, "openid");
-		String[] authorizationType = initParameter.split(",");
-		ServiceLoader<AuthorizationCheck> serviceLoader = ServiceLoader.load(AuthorizationCheck.class);
-		//Order of authorization type establishes priority
-		for(String type : authorizationType)
-		{
-			for(AuthorizationCheck authType : serviceLoader)
-			{
-				if(authType.supports(type, requestContext, servletContext))
-				{
-					return authType;
-				}
-			}
-		}
-		throw new NotAuthorizedException("Unable to authorize user. Supported authorization: " + initParameter);
 	}
 }

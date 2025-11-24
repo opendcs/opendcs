@@ -23,6 +23,7 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Duration;
 
+import org.opendcs.odcsapi.fixtures.DbType;
 import org.opendcs.odcsapi.fixtures.TomcatServer;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -50,7 +51,7 @@ public final class OwaspZap
 		String port = args[1];
 		String restWar = args[2];
 		String guiWar = args[3];
-		String dbType = args[4];
+		DbType dbType = DbType.from(args[4]);
 		TomcatServer.setupDb(dbType);
 
 		try(TomcatServer tomcat = new TomcatServer(baseDir, Integer.parseInt(port), restWar, guiWar))
