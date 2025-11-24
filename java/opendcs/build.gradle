@@ -16,6 +16,11 @@ configurations {
         exclude group: "log4j"
         exclude group: "org.apache.xmlbeans", module: "xmlbeans"
         exclude group: "dom4j", module: "dom4j"
+        exclude group: "mil.army.usace.hec", module: "hec-server-suite"
+        exclude group: "mil.army.usace.hec", module: "data-exchange-services"
+        exclude group: "mil.army.usace.hec", module: "data-exchange-factories"
+        exclude group: "mil.army.usace.hec", module: "data-exchange-xml"
+        exclude group: "mil.army.usace.hec", module: "vrt"
     }
 }
 
