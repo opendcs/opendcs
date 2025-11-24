@@ -4,8 +4,12 @@ import java.util.Optional;
 
 import javax.sql.DataSource;
 
+import org.opendcs.database.JdbiTransaction;
 import org.opendcs.database.SimpleOpenDcsDatabaseWrapper;
+import org.opendcs.database.SimpleTransaction;
+import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.impl.xml.dao.EnumXmlDao;
 
 import decodes.db.Database;
@@ -37,5 +41,18 @@ public final class XmlOpenDcsDatabaseWrapper extends SimpleOpenDcsDatabaseWrappe
             return super.getDao(dao);
         }
         
+    }
+
+    @Override
+    public DataTransaction newTransaction() throws OpenDcsDataException
+    {
+        try
+        {
+            return new SimpleTransaction(this.dataSource.getConnection());
+        }
+        catch (Throwable ex)
+        {
+            throw new OpenDcsDataException("Unable to get JDBC Connection.", ex);
+        }
     }
 }

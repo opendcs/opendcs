@@ -2,8 +2,6 @@ package org.opendcs.database.api;
 
 import java.util.Optional;
 
-import javax.management.openmbean.OpenDataException;
-
 /**
  * Instance of this class are used to hold appropriate connections
  * to external systems. Most commonly will be SQL connections for the OpenDCS information.

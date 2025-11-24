@@ -26,6 +26,8 @@ import java.util.function.Supplier;
 import javax.sql.DataSource;
 
 import decodes.cwms.CwmsLocationLevelDAO;
+
+import org.jdbi.v3.core.Jdbi;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
@@ -47,7 +49,8 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     private final DecodesSettings settings;
     private final Database decodesDb;
     private final TimeSeriesDb timeSeriesDb;
-    private final DataSource dataSource;
+    protected final DataSource dataSource;
+    protected final Jdbi jdbi;
     private final Map<Class<? extends OpenDcsDao>, DaoWrapper<? extends OpenDcsDao>> daoMap = new HashMap<>();
 
     public SimpleOpenDcsDatabaseWrapper(DecodesSettings settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource)
@@ -56,6 +59,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         this.decodesDb = decodesDb;
         this.timeSeriesDb = timeSeriesDb;
         this.dataSource = dataSource;
+        this.jdbi = Jdbi.create(dataSource);
     }
 
     @SuppressWarnings("unchecked") // class is checked before casting
@@ -162,9 +166,9 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     {
         try
         {
-            return new SimpleTransaction(this.dataSource.getConnection());
+            return new JdbiTransaction(jdbi.open().begin());
         }
-        catch (SQLException ex)
+        catch (Throwable ex)
         {
             throw new OpenDcsDataException("Unable to get JDBC Connection.", ex);
         }
