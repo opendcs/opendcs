@@ -183,7 +183,7 @@ public class AlgorithmDAO extends DaoBase implements AlgorithmDAI
                 q = "select a.ALGORITHM_ID, a.SCRIPT_TYPE, a.SCRIPT_DATA "
                   + "from CP_ALGO_SCRIPT a, CP_ALGORITHM b "
                   + "where a.ALGORITHM_ID = b.ALGORITHM_ID "
-                  + "order by ALGORITHM_ID, SCRIPT_TYPE, BLOCK_NUM";
+                  + "order by a.ALGORITHM_ID, SCRIPT_TYPE, BLOCK_NUM";
 
                 final AtomicReference<DbCompAlgorithm> lastAlgo = new AtomicReference<>(null);
                 doQuery(q, rs ->
@@ -367,22 +367,23 @@ public class AlgorithmDAO extends DaoBase implements AlgorithmDAI
                 {
                     // Delete & re-add parameters
                     q = "DELETE FROM CP_ALGO_TS_PARM WHERE ALGORITHM_ID = ?";
-                    doModify(q, id);
+                    dao.doModify(q, id);
                 }
+                
                 for(Iterator<DbAlgoParm> it = algo.getParms(); it.hasNext(); )
                 {
                     DbAlgoParm dap = it.next();
                     q = "INSERT INTO CP_ALGO_TS_PARM VALUES (?,?,?)";
-                    doModify(q, id, dap.getRoleName(), dap.getParmType());
+                    dao.doModify(q, id, dap.getRoleName(), dap.getParmType());
                 }
-
+                log.info("saving algo props");
                 try(PropertiesSqlDao propertiesSqlDao = new PropertiesSqlDao(db))
                 {
                     propertiesSqlDao.inTransactionOf(dao);
                     propertiesSqlDao.writeProperties("CP_ALGO_PROPERTY", "ALGORITHM_ID",
                             id, algo.getProperties());
                 }
-
+                log.info("saving algo scripts");
                 if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_13)
                 {
                     q = "DELETE FROM CP_ALGO_SCRIPT WHERE ALGORITHM_ID = ?";

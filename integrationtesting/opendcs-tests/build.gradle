@@ -43,12 +43,13 @@ dependencies {
     testImplementation(libs.ch.qos.logback)
     testImplementation(libs.fasterxml.jackson.databind)
     testImplementation(libs.webcompere.system.stubs.jupiter)
+    testRuntimeOnly(files(rootProject.file("log4jdbc4-1.2.jar")))
 }
 
 
 
 
-def testEngines = (project.findProperty("opendcs.test.engine")?: "OpenDCS-XML,OpenDCS-Postgres,OpenDCS-Oracle,CWMS-Oracle").split(",")
+def testEngines = (project.findProperty("opendcs.test.engine")?: "OpenDCS-XML,OpenDCS-SQLite,OpenDCS-Postgres,OpenDCS-Oracle,CWMS-Oracle").split(",")
 
 test {
     useJUnitPlatform()
@@ -77,13 +78,17 @@ testEngines.each { engine ->
         def stageDir = install.layout.getBuildDirectory().dir("install/${install.distributions.main.distributionBaseName.get()}").get()
         def classPath = (project(':opendcs').jar.outputs.files
                     + project(":opendcs").configurations.runtimeClasspath
-                    + configurations.extra).asPath
+                    + configurations.extra
+                    + configurations.testRuntimeClasspath).asPath
+                    
         inputs.property "opendcs.test.engine", engine
 
         systemProperties += project.properties.findAll {k, v -> k.startsWith("opendcs")}
         systemProperties += project.properties.findAll {k, v -> k.startsWith("testcontainer")}
         systemProperties += ["opendcs.test.engine": engine]
 
+        jvmArgs += "-XX:MaxJavaStackTraceDepth=1073741823"
+       
         jvmArgs += "-Djava.io.tmpdir=${tmpdir}"
         jvmArgs += "-Dbuild.dir=${project.layout.buildDirectory.get()}"
         jvmArgs += "-Dopendcs.test.classpath=${classPath}"

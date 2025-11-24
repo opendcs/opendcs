@@ -280,9 +280,11 @@ public class ImportComp
                                 }
                                 catch(NoSuchObjectException ex) {}
                             }
-
-                            log.info("Importing algorithm '{}'", algo.getName());
-                            algorithmDao.writeAlgorithm(algo);
+                            try(AlgorithmDAI tmpDao = this.theDb.makeAlgorithmDAO())
+                            {
+                                log.info("Importing algorithm '{}'", algo.getName());
+                                tmpDao.writeAlgorithm(algo);
+                            }
                         }
                     }
                     catch(DbIoException ex)

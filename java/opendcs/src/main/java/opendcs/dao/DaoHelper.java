@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 
 import decodes.tsdb.DbIoException;
+import opendcs.util.sql.WrappedConnection;
 
 /**
  * A simple Version of a dao used when only a specific connection instance
@@ -68,7 +69,9 @@ public class DaoHelper extends DaoBase
     @Override
     public Connection getConnection()
     {
-        /** bypass DaoBase get connection as we know it MUST be valid. */
-        return this.myCon;
+        /** bypass DaoBase get connection as we know it MUST be valid. 
+         * we also know we don't close
+        */
+        return new WrappedConnection(this.myCon, c -> {});
     }
 }
