@@ -8,6 +8,8 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.ServiceLoader;
 
+import javax.sql.DataSource;
+
 import org.opendcs.authentication.AuthSourceService;
 import org.opendcs.authentication.impl.NoOpAuthSourceProvider;
 import org.opendcs.database.api.OpenDcsDatabase;
@@ -67,13 +69,27 @@ public class DatabaseService
      * @return
      * @throws DatabaseException any error with class initialization or loading of properties
      */
-    public static OpenDcsDatabase getDatabaseFor(javax.sql.DataSource dataSource) throws DatabaseException
+    public static OpenDcsDatabase getDatabaseFor(DataSource dataSource) throws DatabaseException
     {
-        /**
-         * extract properties; requires simple table
-         */
-        DecodesSettings settings = decodesSettingsFromJdbc(dataSource);
+        DecodesSettings settings = decodesSettingsFromJdbc(dataSource, new Properties());
+        return createDatabaseFromSettings(dataSource, settings);
+    }
 
+    /**
+     * Create database given a valid DataSource. Will load settings from the database.
+     * @param dataSource any valid javax.sql.DataSource. However, a connection pool is expected as multiple connections
+     *                   may be needed
+     * @return
+     * @throws DatabaseException any error with class initialization or loading of properties
+     */
+    public static OpenDcsDatabase getDatabaseFor(DataSource dataSource, Properties properties) throws DatabaseException
+    {
+        DecodesSettings settings = decodesSettingsFromJdbc(dataSource, properties);
+        return createDatabaseFromSettings(dataSource, settings);
+    }
+
+    private static OpenDcsDatabase createDatabaseFromSettings(DataSource dataSource, DecodesSettings settings) throws DatabaseException
+    {
         final Iterator<DatabaseProvider> providers = loader.iterator();
         while (providers.hasNext())
         {
@@ -93,15 +109,13 @@ public class DatabaseService
      * @return
      * @throws DatabaseException
      */
-    private static DecodesSettings decodesSettingsFromJdbc(javax.sql.DataSource dataSource) throws DatabaseException
+    private static DecodesSettings decodesSettingsFromJdbc(DataSource dataSource, Properties props) throws DatabaseException
     {
         DecodesSettings settings = new DecodesSettings();
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement("select prop_name,prop_value from tsdb_property");
              ResultSet rs = stmt.executeQuery())
         {
-            //
-            Properties props = new Properties();
             while (rs.next())
             {
                 final String name = rs.getString("prop_name");
