@@ -19,7 +19,7 @@ public interface OpenDcsDatabase
      */
     @Deprecated
     <T> Optional<T> getLegacyDatabase(Class<T> legacyDatabaseType);
-    
+
     /**
      * Retrieve DAO from the database
      * @param <T> DAO Type
@@ -43,4 +43,10 @@ public interface OpenDcsDatabase
      * @return Optional&lt;T&gt; Settings if available, otherwise empty.
      */
     <T extends OpenDcsSettings> Optional<T> getSettings(Class<T> settingsClass);
+
+    /**
+     * Get the Current version of this database
+     * @return
+     */
+    int getVersion();
 }

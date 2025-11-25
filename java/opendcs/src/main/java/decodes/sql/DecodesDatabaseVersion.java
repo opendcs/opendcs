@@ -144,4 +144,5 @@ public class DecodesDatabaseVersion
 	 */
 	public static final int DECODES_DB_68 = 68;
 	
+	public static final int DECODES_DB_70 = 70;
 }

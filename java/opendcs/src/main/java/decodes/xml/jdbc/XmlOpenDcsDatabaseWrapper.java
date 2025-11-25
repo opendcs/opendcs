@@ -14,6 +14,7 @@ import org.opendcs.database.impl.xml.dao.EnumXmlDao;
 
 import decodes.db.Database;
 import decodes.db.DbEnum;
+import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
 import opendcs.dai.EnumDAI;
@@ -55,5 +56,11 @@ public final class XmlOpenDcsDatabaseWrapper extends SimpleOpenDcsDatabaseWrappe
         {
             throw new OpenDcsDataException("Unable to get JDBC Connection.", ex);
         }
+    }
+
+    @Override
+    public int getVersion()
+    {
+        return DecodesDatabaseVersion.DECODES_DB_68;
     }
 }

@@ -26,6 +26,7 @@ import javax.sql.DataSource;
 
 import decodes.cwms.CwmsLocationLevelDAO;
 
+import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.JdbiException;
 import org.opendcs.database.api.DataTransaction;
@@ -42,8 +43,10 @@ import org.slf4j.Logger;
 
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
+import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
+import decodes.util.DecodesVersion;
 
 public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
 {
@@ -218,6 +221,23 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         else
         {
             return Optional.empty();
+        }
+    }
+
+    @Override
+    public int getVersion()
+    {
+        try (var tx = newTransaction())
+        {
+            return tx.connection(Handle.class).get()
+                     // should only be the one, but having multiple shouldn't be a major issue and this avoid exceptions.
+                     .createQuery("select db_version from tsdb_database_version order by db_version desc")
+                     .mapTo(Integer.class)
+                     .first();
+        }
+        catch (OpenDcsDataException ex)
+        {
+            throw new IllegalStateException("Unable to retrieve database version.", ex);
         }
     }
 }
