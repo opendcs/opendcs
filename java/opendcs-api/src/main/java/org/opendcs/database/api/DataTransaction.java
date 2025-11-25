@@ -24,12 +24,13 @@ public interface DataTransaction extends AutoCloseable {
      * Retrieve a connection of a given type, such as java.sql.Connection or
      * an HTTP client.
      * @param <T> Requested connection type. Implementations should implement support
-     *            for the connections they use.
+     *            for the connections they use. It is expected that any requested "connection" type
+     *            would implement Closeable or AutoClosable as they deal with external resources
      * @param connectionType class of connection type
      * @return optional with the instance of the connection type, if available.
      * @throws OpenDcsDataException any issues with the connection, if implementations check validity.
      */
-    <T> Optional<T> connection(Class<T> connectionType) throws OpenDcsDataException;
+    <T extends AutoCloseable> Optional<T> connection(Class<T> connectionType) throws OpenDcsDataException;
 
     /**
      * Finalize transaction state across all connections.

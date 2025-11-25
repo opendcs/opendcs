@@ -24,7 +24,7 @@ public class JdbiTransaction implements DataTransaction
 
     @SuppressWarnings("unchecked") // types are checked before any operations happen.
     @Override
-    public <T> Optional<T> connection(Class<T> connectionType) throws OpenDcsDataException
+    public <T extends AutoCloseable> Optional<T> connection(Class<T> connectionType) throws OpenDcsDataException
     {
         if (Connection.class.isAssignableFrom(connectionType))
         {

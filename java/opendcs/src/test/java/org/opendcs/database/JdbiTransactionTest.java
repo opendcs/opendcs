@@ -1,10 +1,11 @@
-package org.opendcs.database.model.mappsers.user;
+package org.opendcs.database;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.InputStream;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
@@ -14,7 +15,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.opendcs.database.JdbiTransaction;
 import org.opendcs.database.api.DataTransaction;
 
 class JdbiTransactionTest
@@ -53,11 +53,15 @@ class JdbiTransactionTest
     }
 
     @Test
-    void test_jdbi_transaction_returns_empty_on_unknown() throws Exception
+    void test_jdbi_transaction_returns_empty_on_not_supported() throws Exception
     {
         try (DataTransaction tx = new JdbiTransaction(jdbi.open()))
         {
-            assertFalse(tx.connection(Integer.class).isPresent());
+            // Is this somewhat silly, using an InputStream as a "connection" type... yes.
+            // However, with DataTransaction we are attempting to "future proof" a bit and
+            // provide the flexibility for different sources of data they likely don't
+            // follow the javax.sql.Connection semantics.
+            assertFalse(tx.connection(InputStream.class).isPresent());
         }
     }
 
