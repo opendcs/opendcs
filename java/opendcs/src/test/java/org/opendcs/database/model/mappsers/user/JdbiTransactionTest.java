@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.opendcs.database.JdbiTransaction;
 import org.opendcs.database.api.DataTransaction;
 
-public class JdbiTransactionTest
+class JdbiTransactionTest
 {
     Jdbi jdbi;
 
