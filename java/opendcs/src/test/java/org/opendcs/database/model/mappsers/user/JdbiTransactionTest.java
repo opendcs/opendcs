@@ -1,15 +1,12 @@
 package org.opendcs.database.model.mappsers.user;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-
-import javax.sql.DataSource;
 
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
@@ -27,17 +24,20 @@ public class JdbiTransactionTest
     @BeforeAll
     static void setup() throws Exception
     {
-        Class.forName("org.apache.derby.jdbc.EmbeddedDriver").newInstance();
+        Class<?> clazz = Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
+        var dbC = clazz.getConstructor();
+        var obj = dbC.newInstance();
+        assertNotNull(obj);
     }
 
     @BeforeEach
-    public void create_db() throws Exception
+    void create_db()
     {
         jdbi = Jdbi.create("jdbc:derby:memory:db;create=true");
     }
 
     @AfterEach
-    public void drop_db() throws Exception
+    void drop_db() throws Exception
     {
         try
         {
