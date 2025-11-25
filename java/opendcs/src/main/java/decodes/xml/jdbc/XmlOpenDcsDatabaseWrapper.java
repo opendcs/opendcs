@@ -1,10 +1,10 @@
 package decodes.xml.jdbc;
 
+import java.sql.SQLException;
 import java.util.Optional;
 
 import javax.sql.DataSource;
 
-import org.opendcs.database.JdbiTransaction;
 import org.opendcs.database.SimpleOpenDcsDatabaseWrapper;
 import org.opendcs.database.SimpleTransaction;
 import org.opendcs.database.api.DataTransaction;
@@ -29,6 +29,7 @@ public final class XmlOpenDcsDatabaseWrapper extends SimpleOpenDcsDatabaseWrappe
         enumCache = new DbObjectCache<>(1800_000L, false);
     }
 
+    @SuppressWarnings("unchecked") // types are checked before any operations happen.
     @Override
     public <T extends OpenDcsDao> Optional<T> getDao(Class<T> dao)
     {
@@ -50,7 +51,7 @@ public final class XmlOpenDcsDatabaseWrapper extends SimpleOpenDcsDatabaseWrappe
         {
             return new SimpleTransaction(this.dataSource.getConnection());
         }
-        catch (Throwable ex)
+        catch (SQLException ex)
         {
             throw new OpenDcsDataException("Unable to get JDBC Connection.", ex);
         }

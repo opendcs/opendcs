@@ -15,13 +15,11 @@
 */
 package org.opendcs.database.impl.opendcs.dao;
 
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.jdbi.v3.core.Handle;
-import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.statement.PreparedBatch;
 import org.jdbi.v3.core.statement.Query;
 import org.jdbi.v3.core.statement.Update;
@@ -29,8 +27,6 @@ import org.jdbi.v3.jackson2.Jackson2Plugin;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.UserManagementDao;
-import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
-import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
 import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigColumnMapper;
 import org.opendcs.database.model.UserBuilder;

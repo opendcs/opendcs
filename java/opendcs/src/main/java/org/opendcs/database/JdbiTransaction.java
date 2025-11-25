@@ -13,7 +13,7 @@ public class JdbiTransaction implements DataTransaction
 {
     final Handle jdbiHandle;
 
-    JdbiTransaction(Handle handle)
+    public JdbiTransaction(Handle handle)
     {
         this.jdbiHandle = handle;
         if (!this.jdbiHandle.isInTransaction())
@@ -22,14 +22,13 @@ public class JdbiTransaction implements DataTransaction
         }
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked") // types are checked before any operations happen.
     @Override
     public <T> Optional<T> connection(Class<T> connectionType) throws OpenDcsDataException
     {
         if (Connection.class.isAssignableFrom(connectionType))
         {
-            
-            return (Optional<T>)Optional.of(new WrappedConnection(jdbiHandle.getConnection(), (c) -> {}));
+            return (Optional<T>)Optional.of(new WrappedConnection(jdbiHandle.getConnection(), c -> {}));
         }
         else if (Handle.class.equals(connectionType))
         {
@@ -56,7 +55,7 @@ public class JdbiTransaction implements DataTransaction
     @Override
     public void close() throws OpenDcsDataException
     {
-        jdbiHandle.commit();
+        commit();
         jdbiHandle.close();
     }
     

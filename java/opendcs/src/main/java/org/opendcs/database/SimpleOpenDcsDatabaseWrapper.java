@@ -17,7 +17,6 @@ package org.opendcs.database;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -28,6 +27,7 @@ import javax.sql.DataSource;
 import decodes.cwms.CwmsLocationLevelDAO;
 
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.JdbiException;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
@@ -170,9 +170,11 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     {
         try
         {
-            return new JdbiTransaction(jdbi.open().begin());
+            // This DataTransaction is auto closable and handles the closing of the
+            // Jdbi Handle instance.
+            return new JdbiTransaction(jdbi.open().begin()); // NOSONAR
         }
-        catch (Throwable ex)
+        catch (JdbiException ex)
         {
             throw new OpenDcsDataException("Unable to get JDBC Connection.", ex);
         }
