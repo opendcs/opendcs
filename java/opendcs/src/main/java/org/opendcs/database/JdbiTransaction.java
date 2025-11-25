@@ -9,7 +9,7 @@ import org.opendcs.database.api.OpenDcsDataException;
 
 import opendcs.util.sql.WrappedConnection;
 
-public class JdbiTransaction implements DataTransaction
+public final class JdbiTransaction implements DataTransaction
 {
     final Handle jdbiHandle;
 
