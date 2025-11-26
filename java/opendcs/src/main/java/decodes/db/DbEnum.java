@@ -312,4 +312,33 @@ public class DbEnum extends IdDatabaseObject implements CachableDbObject, Serial
           .append("]}");
         return sb.toString();
     }
+
+    public static class DbEnumBuilder
+    {
+        DbEnum tmpEnum;
+
+        public DbEnumBuilder(DbKey id, String name, String defaultValue, String description)
+        {
+            tmpEnum = new DbEnum(id, name);
+            tmpEnum.defaultValue = defaultValue;
+            tmpEnum.description = description;
+        }
+
+        public DbEnum build()
+        {
+            return tmpEnum;
+        }
+
+        public DbKey getId()
+        {
+            return tmpEnum.getId();
+        }
+
+        public DbEnumBuilder withValue(EnumValue v)
+        {
+            v.setDbenum(tmpEnum);
+            tmpEnum.addValue(v);
+            return this;
+        }
+    }
 }

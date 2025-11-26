@@ -23,15 +23,22 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import org.jdbi.v3.core.Handle;
 import org.opendcs.database.SimpleTransaction;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.model.mappers.dbenum.DbEnumBuilderMapper;
+import org.opendcs.database.model.mappers.dbenum.DbEnumBuilderReducer;
+import org.opendcs.database.model.mappers.dbenum.EnumValueMapper;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.opendcs.utils.sql.GenericColumns;
 import org.slf4j.Logger;
 
 import decodes.db.EnumValue;
 import decodes.db.ValueNotFoundException;
+import decodes.db.DbEnum.DbEnumBuilder;
 import opendcs.dai.EnumDAI;
 
 import decodes.db.DbEnum;
@@ -583,53 +590,69 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 	}
 
 	@Override
-	public Collection<DbEnum> getEnums(DataTransaction tx) throws OpenDcsDataException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Unimplemented method 'getEnums'");
+	public Collection<DbEnum> getEnums(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
+	{
+		var handle = tx.connection(Handle.class)
+					   .orElseThrow(() -> new OpenDcsDataException("Unable to get Database connection object."));
+		final String queryText = """
+				select e.id e_id, e.name e_name, e.defaultValue e_defaultValue, e.description e_description,
+				       v.enumvalue v_enumvalue, v.description v_description, v.execclass v_execclass,
+					   v.editclass v_editclass, v.sortnumber v_sortnumber
+				  from enum e
+				  join enumvalue v on e.id = v.enumid
+				""";
+		// todo limit/offset
+		try (var query =handle.createQuery(queryText))
+		{
+			return query.registerRowMapper(DbEnumBuilder.class, DbEnumBuilderMapper.withPrefix("e"))
+					 	.registerRowMapper(EnumValue.class, EnumValueMapper.withPrefix("v"))
+					 	.reduceRows(DbEnumBuilderReducer.DBENUM_BUILDER_REDUCER)
+					 	.map(DbEnumBuilder::build)
+					 	.collect(Collectors.toList());
+		}
 	}
 
 	@Override
 	public Optional<DbEnum> getEnum(DataTransaction tx, String enumName) throws OpenDcsDataException
 	{
-		synchronized(cache)
+		var handle = tx.connection(Handle.class)
+					   .orElseThrow(() -> new OpenDcsDataException("Unable to get Database connection object."));
+		try (var query = handle.createQuery("select id from enum where name = :name"))
 		{
-			DbEnum ret = cache.getByUniqueName(enumName);
-			if (ret != null)
-			{
-				return Optional.of(ret);
-			}
-			
-			int dbVer = db.getDecodesDatabaseVersion();
-			String q = "SELECT " + getEnumColumns(dbVer) + " FROM Enum";
-			q = q + " where lower(name) = lower(?)";// + sqlString(enumName.toLowerCase());
-			Connection conn = tx.connection(Connection.class)
-						        .orElseThrow(() -> new OpenDcsDataException("JDBC Connection not available in this transaction."));
-			try (DaoHelper helper = new DaoHelper(this.db, "helper-enum", conn))
-			{
-				ret = helper.getSingleResult(q, rs -> rs2Enum(rs, dbVer), enumName);
-				if (ret == null)
-				{
-					warning("No such enum '" + enumName + "'");
-					return Optional.empty();
-				}
-				else
-				{
-					readValues(helper, ret);
-					cache.put(ret);
-					return Optional.of(ret);
-				}		
-			}
-			catch (DbIoException | SQLException ex)
-			{
-				throw new OpenDcsDataException("Error retrieving Enum values",ex);
-			}
+			var id = query.bind(GenericColumns.NAME, enumName)
+						  .mapTo(DbKey.class)
+						  .findOne();
+			return getEnum(tx, id.orElse(DbKey.NullKey));
 		}
 	}
 
 	@Override
-	public Optional<DbEnum> getEnum(DataTransaction tx, DbKey id) throws OpenDcsDataException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Unimplemented method 'getEnum'");
+	public Optional<DbEnum> getEnum(DataTransaction tx, DbKey id) throws OpenDcsDataException
+	{
+		if (DbKey.isNull(id))
+		{
+			throw new OpenDcsDataException("Unable to search for enum with null ID");
+		}
+		final String queryText ="""
+				select e.id e_id, e.name e_name, e.defaultValue e_defaultValue, e.description e_description,
+				       v.enumvalue v_enumvalue, v.description v_description, v.execclass v_execclass,
+					   v.editclass v_editclass, v.sortnumber v_sortnumber
+				  from enum e
+				  join enumvalue v on e.id = v.enumid
+				 where e.id = :id
+				""";
+		var handle = tx.connection(Handle.class)
+					   .orElseThrow(() -> new OpenDcsDataException("Unable to get Database connection object."));
+		try (var query = handle.createQuery(queryText))
+		{
+		    return query.bind(GenericColumns.ID, id)
+						.registerRowMapper(DbEnumBuilder.class, DbEnumBuilderMapper.withPrefix("e"))
+						.registerRowMapper(EnumValue.class, EnumValueMapper.withPrefix("v"))
+						.reduceRows(DbEnumBuilderReducer.DBENUM_BUILDER_REDUCER)
+						.map(DbEnumBuilder::build)
+						.findFirst();
+		}
+		     
 	}
 
 	@Override
