@@ -17,7 +17,6 @@ package org.opendcs.database;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -26,12 +25,17 @@ import java.util.function.Supplier;
 import javax.sql.DataSource;
 
 import decodes.cwms.CwmsLocationLevelDAO;
+
+import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.JdbiException;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.impl.opendcs.dao.UserManagementImpl;
+import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
+import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
 import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -47,7 +51,8 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     private final DecodesSettings settings;
     private final Database decodesDb;
     private final TimeSeriesDb timeSeriesDb;
-    private final DataSource dataSource;
+    protected final DataSource dataSource;
+    protected final Jdbi jdbi;
     private final Map<Class<? extends OpenDcsDao>, DaoWrapper<? extends OpenDcsDao>> daoMap = new HashMap<>();
 
     public SimpleOpenDcsDatabaseWrapper(DecodesSettings settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource)
@@ -56,6 +61,9 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         this.decodesDb = decodesDb;
         this.timeSeriesDb = timeSeriesDb;
         this.dataSource = dataSource;
+        this.jdbi = Jdbi.create(dataSource);
+        jdbi.registerArgument(new DatabaseKeyArgumentFactory())
+            .registerColumnMapper(new DatabaseKeyColumnMapper());
     }
 
     @SuppressWarnings("unchecked") // class is checked before casting
@@ -162,9 +170,11 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     {
         try
         {
-            return new SimpleTransaction(this.dataSource.getConnection());
+            // This DataTransaction is auto closable and handles the closing of the
+            // Jdbi Handle instance.
+            return new JdbiTransaction(jdbi.open().begin()); // NOSONAR
         }
-        catch (SQLException ex)
+        catch (JdbiException ex)
         {
             throw new OpenDcsDataException("Unable to get JDBC Connection.", ex);
         }

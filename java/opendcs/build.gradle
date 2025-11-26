@@ -111,6 +111,7 @@ dependencies {
     testImplementation(libs.greenmail)
     testImplementation(libs.org.mock.server)
     testRuntimeOnly(libs.ch.qos.logback)
+    testImplementation(project(":opendcs-api"))
 
 }
 
