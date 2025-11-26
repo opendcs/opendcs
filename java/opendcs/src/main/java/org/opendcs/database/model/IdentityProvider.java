@@ -42,12 +42,12 @@ public interface IdentityProvider
      * @param db Instance of the database to retrieve DAOs required.
      * @param tx Existing transaction to use for this operation.
      * @param credentials Credentials object appropriate to the provider.
-     * @return User if authentication succeeded, empty otherwise.
+     * @return User if authentication succeeded, empty if user doesn't exist.
      * @throws OpenDcsAuthException Any error with authentication
      * @throws
      */
     Optional<User> login(OpenDcsDatabase db, DataTransaction tx,
-                         IdentityProviderCredentials credentials) throws OpenDcsAuthException;
+               IdentityProviderCredentials credentials) throws OpenDcsAuthException;
 
     /**
      * If a provider supports the operation, update the user credentials.
