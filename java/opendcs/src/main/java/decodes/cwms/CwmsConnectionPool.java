@@ -55,20 +55,16 @@ import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
  */
 public final class CwmsConnectionPool implements ConnectionPoolMXBean, javax.sql.DataSource
 {
-    private static Logger log = Logger.getLogger(CwmsConnectionPool.class.getName());
+    private static final Logger log = Logger.getLogger(CwmsConnectionPool.class.getName());
 
-    private static TreeMap<CwmsConnectionInfo,CwmsConnectionPool> pools = new TreeMap<>((left,right)->{
-        return mapCompare(left,right);
-    });
+    private static final TreeMap<CwmsConnectionInfo,CwmsConnectionPool> pools = new TreeMap<>(CwmsConnectionPool::mapCompare);
 
-    //private HashSet<WrappedConnection> connectionsOut = new HashSet<>();
     private Set<WrappedConnection> connectionsOut = Collections.synchronizedSet(new HashSet<>());
     private CwmsConnectionInfo info = null;
 	private int connectionsRequested = 0;
 	private int connectionsFreed = 0;
 	private int unknownConnReturned = 0;
     private int connectionsClosedDuringGet = 0;
-    //private static CwmsDbConnectionPool pool = CwmsDbConnectionPool.getInstance();
     private DataSource pool;
 
     /**
@@ -77,7 +73,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean, javax.sql
      * @return Connection pool instance to which connections can be retrieved from and returned.
      * @throws BadConnectException
      */
-    public static CwmsConnectionPool getPoolFor(CwmsConnectionInfo info) throws BadConnectException
+    public static synchronized CwmsConnectionPool getPoolFor(CwmsConnectionInfo info) throws BadConnectException
     {
         CwmsConnectionPool ret = pools.get(info);
         if (ret == null)
@@ -118,8 +114,8 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean, javax.sql
     private static int mapCompare(CwmsConnectionInfo left, CwmsConnectionInfo right) {
         ConnectionLoginInfo leftInfo = left.getLoginInfo();
         ConnectionLoginInfo rightInfo = right.getLoginInfo();
-        String leftStr = leftInfo.getUrl() + "|" + leftInfo.getUser();
-        String rightStr = rightInfo.getUrl() + "|" + rightInfo.getUser();
+        String leftStr = leftInfo.getUrl() + "|" + leftInfo.getUser() + "|" + leftInfo.getUserOfficeId();
+        String rightStr = rightInfo.getUrl() + "|" + rightInfo.getUser() + "|" + rightInfo.getUserOfficeId();
         return leftStr.compareTo(rightStr);
     }
 
