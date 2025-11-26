@@ -361,7 +361,9 @@ public class TopLevelParser implements XmlObjectParser
 						+ topLevelObject.getObjectType());
 			}
 			else
-				topLevelObject = Database.getDb().enumList;
+			{
+				topLevelObject = new EnumList(); /// well, this is an issue.
+			}
 
 			hier.pushObjectParser(new EnumListParser(topLevelObject.getDatabase()));
 		}

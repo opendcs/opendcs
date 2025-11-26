@@ -142,9 +142,15 @@ public class RefListFrame extends JFrame
         ucTableModel = new EUCnvTableModel();
         ucTable = new SortingListTable(ucTableModel,
             new int[] {17, 17, 18, 8, 8, 8, 8, 8, 8 });
-
-        dteTableModel = new DTEquivTableModel();
-        dteTable = new SortingListTable(dteTableModel,null);
+        var enumDao = database.getDao(EnumDAI.class)
+                              .orElseThrow(() -> new DecodesException("This database doesn't implement an Enum Dao?"));
+        try (var tx = database.newTransaction())
+        {
+            DbEnum dtEnum = enumDao.getEnum(tx, Constants.enum_DataTypeStd)
+                                   .orElseThrow(() -> new DecodesException(Constants.enum_DataTypeStd + " Enum is not available."));
+            dteTableModel = new DTEquivTableModel(dtEnum);
+            dteTable = new SortingListTable(dteTableModel,null);
+        }
 
         seasonListTableModel = new SeasonListTableModel();
         seasonsTable = new SortingListTable(seasonListTableModel,
@@ -1055,7 +1061,3 @@ public class RefListFrame extends JFrame
             AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
     }
 }
-
-
-
-

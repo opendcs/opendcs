@@ -42,7 +42,6 @@ import opendcs.dai.ComputationDAI;
 import opendcs.dai.DacqEventDAI;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.DeviceStatusDAI;
-import opendcs.dai.EnumDAI;
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PlatformStatusDAI;
@@ -59,7 +58,6 @@ import opendcs.dao.DacqEventDAO;
 import opendcs.dao.DataTypeDAO;
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.DeviceStatusDAO;
-import opendcs.dao.EnumSqlDao;
 import opendcs.dao.LoadingAppDao;
 import opendcs.dao.PlatformStatusDAO;
 import opendcs.dao.PropertiesSqlDao;
@@ -375,48 +373,6 @@ public class SqlDatabaseIO extends DatabaseIO implements DatabaseConnectionOwner
     */
     public void close( )
     {
-    }
-
-    /**
-    * Reads the set of known enumeration objects in this database.
-    * @param top the EnumList object to populate
-    */
-    @Override
-    public synchronized void readEnumList(EnumList top)
-        throws DatabaseException
-    {
-        EnumDAI enumSqlDao = makeEnumDAO();
-
-        try
-        {
-            enumSqlDao.readEnumList(top);
-        }
-        catch (DbIoException ex)
-        {
-            throw new DatabaseException("Error reading enum list", ex);
-        }
-        finally
-        {
-            enumSqlDao.close();
-        }
-    }
-
-    public synchronized DbEnum readEnum(String enumName)
-        throws DatabaseException
-    {
-        EnumDAI enumSqlDao = makeEnumDAO();
-        try
-        {
-            return enumSqlDao.getEnum(enumName);
-        }
-        catch (DbIoException ex)
-        {
-            throw new DatabaseException(String.format("failed to read enum '%s' from database",enumName), ex);
-        }
-        finally
-        {
-            enumSqlDao.close();
-        }
     }
 
     /**
@@ -1833,24 +1789,7 @@ public class SqlDatabaseIO extends DatabaseIO implements DatabaseConnectionOwner
         return new Date(lastLMT);
     }
 
-    /**
-     * Writes the enumeration list data to the SQL database.
-    * @param enumList the object to write to the database.
-     */
-    @Override
-    public synchronized void writeEnumList(EnumList enumList)
-        throws DatabaseException
-    {
-        try (EnumDAI enumSqlDao = makeEnumDAO();)
-        {
-            enumSqlDao.writeEnumList(enumList);
-        }
-        catch (DbIoException ex)
-        {
-            throw new DatabaseException("Unable to write EnumList", ex);
-        }
-    }
-
+   
     /**
       Generates a surrogate key using the installed KeyGenerator.
       @param tableName name of the table for which a new key is needed.
@@ -1912,11 +1851,7 @@ public class SqlDatabaseIO extends DatabaseIO implements DatabaseConnectionOwner
         return keyGenerator;
     }
 
-    @Override
-    public EnumDAI makeEnumDAO()
-    {
-        return new EnumSqlDao(this);
-    }
+  
 
     @Override
     public PropertiesDAI makePropertiesDAO()

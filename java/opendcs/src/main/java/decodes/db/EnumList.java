@@ -223,7 +223,6 @@ public class EnumList extends DatabaseObject
 	public void read()
 		throws DatabaseException
 	{
-		myDatabase.getDbIo().readEnumList(this);
 		for(DbEnum en : enums.values())
 			en.sort();
 		_readAllEnums = true;
@@ -232,7 +231,7 @@ public class EnumList extends DatabaseObject
 	public void write()
 		throws DatabaseException
 	{
-		myDatabase.getDbIo().writeEnumList(this);
+		
 	}
 
 
@@ -242,4 +241,3 @@ public class EnumList extends DatabaseObject
 		enumIdList.clear();
 	}
 }
-

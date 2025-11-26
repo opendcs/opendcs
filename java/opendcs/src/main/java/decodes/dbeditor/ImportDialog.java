@@ -285,6 +285,8 @@ public class ImportDialog extends GuiDialog
 		topParser = stageDbIo.getParser();
 
 		// Copy the dataType, enums, & other 'setup' info into stageDb.
+		// *copy* the info
+		/*
 		for(Iterator it = editDb.enumList.iterator(); it.hasNext(); )
 		{
 			decodes.db.DbEnum en = (decodes.db.DbEnum)it.next();
@@ -299,6 +301,7 @@ public class ImportDialog extends GuiDialog
 				stageEv.setSortNumber(ev.getSortNumber());
 			}
 		}
+		*/
 		stageDb.engineeringUnitList = editDb.engineeringUnitList;
 		stageDb.dataTypeSet = editDb.dataTypeSet;
 		stageDb.unitConverterSet = editDb.unitConverterSet;

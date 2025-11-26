@@ -49,9 +49,6 @@ public class Database extends DatabaseObject
 	/** Holds the EngineeringUnit objects from the database. */
 	public EngineeringUnitList   engineeringUnitList;
 
-	/** Holds all the Enum and EnumValue objects from the database. */
-	public EnumList			  enumList;
-
 	public NetworkListList	   networkListList;
 
 	public PlatformList		  platformList;
@@ -113,8 +110,6 @@ public class Database extends DatabaseObject
 
 		engineeringUnitList = new EngineeringUnitList();
 		engineeringUnitList.setDatabase(this);
-		enumList = new EnumList();
-		enumList.setDatabase(this);
 
 		networkListList = new NetworkListList();
 		networkListList.setDatabase(this);
@@ -243,39 +238,6 @@ public class Database extends DatabaseObject
 			p.write();
 		}
 		platformList.write();
-	}
-
-	/**
-	 * Reads an enumeration from the DB if necessary and adds it to the cache.
-	 * @param enumName Name of enumeration
-	 * @return the DbEnum object.
-	 */
-	public DbEnum getDbEnum(String enumName)
-	{
-		if (enumList == null)
-			return null;
-		DbEnum ret = enumList.getEnum(enumName);
-		if (ret != null || enumList.haveReadAllEnums())
-			return ret;
-
-		try
-		{
-			if (!(dbio instanceof SqlDatabaseIO))
-			{
-				enumList.read();
-				return enumList.getEnum(enumName);
-			}
-			SqlDatabaseIO sdbio = (SqlDatabaseIO)dbio;
-			ret = sdbio.readEnum(enumName);
-			if (ret != null)
-				enumList.addEnum(ret);
-			return ret;
-		}
-		catch(DatabaseException ex)
-		{
-			log.atError().setCause(ex).log("Cannot read enum: '{}'.", enumName);
-			return null;
-		}
 	}
 
 	public PresentationGroupList getPresentationGroupList()

@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
+import org.jdbi.v3.core.Handle;
 import org.opendcs.database.SimpleTransaction;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
@@ -36,9 +37,9 @@ import decodes.db.ValueNotFoundException;
 import opendcs.dai.EnumDAI;
 
 import decodes.db.DbEnum;
-import decodes.db.EnumList;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
+import decodes.sql.KeyGenerator;
 import decodes.tsdb.DbIoException;
 
 /**
@@ -110,67 +111,40 @@ public class EnumSqlDao implements EnumDAI
 	@Override
 	public DbEnum writeEnum(DataTransaction tx, DbEnum dbEnum) throws OpenDcsDataException
 	{
-		// should this be part of DataTransaction?
-		int dbVer = db.getDecodesDatabaseVersion();
 		String q = "";
 		ArrayList<Object> args = new ArrayList<>();
-		if (dbEnum.idIsSet())
-		{			
-			args.add(dbEnum.getUniqueName());
-			q = "update enum set name = ?";// + sqlString(dbenum.getUniqueName());
-			if (dbVer >= DecodesDatabaseVersion.DECODES_DB_6)
-			{
-				q = q + ", defaultvalue = ?";// + sqlString(dbenum.getDefault());
-				args.add(dbEnum.getDefault());
-				if (dbVer >= DecodesDatabaseVersion.DECODES_DB_10)
-					q = q + ", description = ?";// + sqlString(dbenum.getDescription());
-					args.add(dbEnum.getDescription());
-			}
-			q = q + " where id = ?" /*+ dbenum.getId()*/;
-			args.add(dbEnum.getId().getValue());
-		}
-		else // New enum, allocate a key and insert
-		{
-			DbKey id;
-			try
-			{
-				id = getKey("Enum");
-			}
-			catch (DbIoException ex)
-			{
-				throw new OpenDcsDataException("Unable to generate new key for dbEnum", ex);
-			}
-			dbEnum.forceSetId(id);
-			q = "insert into enum";
-			if (dbVer < DecodesDatabaseVersion.DECODES_DB_6)
-			{
-				q = q + "(id, name) values (?,?)"; 
-					//+ id + ", " + sqlString(dbenum.getUniqueName()) + ")";
-				args.add(id.getValue());
-				args.add(dbEnum.getUniqueName());
-			}
-			else if (dbVer < DecodesDatabaseVersion.DECODES_DB_10)
-			{
-				q = q + "(id, name, defaultValue) values (?,?,?)";
-				args.add(id.getValue());
-				args.add(dbEnum.getUniqueName());
-				args.add(dbEnum.getDefault());
-			}
-			else
-			{
-				q = q + "(id, name, defaultValue, description) values (?,?,?,?)";
-				args.add(id.getValue());
-				args.add(dbEnum.getUniqueName());
-				args.add(dbEnum.getDefault());
-				args.add(dbEnum.getDescription());
-			}
-			cache.put(dbEnum);
-		}
+		KeyGenerator keyGenerator = this.db.getSettings(KeyGenerator.class).get();
+		DbKey id;
 		
-		Connection conn = tx.connection(Connection.class)
-							.orElseThrow(() -> new OpenDcsDataException("Unable to get JDBC connection to perform DbEnum Save."));		
-		try (DaoHelper helper = new DaoHelper(this.db, q, conn))
+		try (var handle = tx.connection(Handle.class)
+							.orElseThrow(() -> new OpenDcsDataException("Unable to get JDbi Handle istance to perform DbEnum Save.")))
 		{
+			if (dbEnum.idIsSet())
+			{	
+				q = """
+	update enum set name = :name, defaultvalue = :default, description = :description where id = :id returning id, name, defaultvalue, description"
+	""";
+				id = dbEnum.getId();
+			}
+			else // New enum, allocate a key and insert
+			{
+				q = "insert into enum(id, name, defaultValue, description) values (:name,:default,:description) returning id, name, defaultValue, description";
+				id = keyGenerator.getKey("enum", handle.getConnection());
+			}
+			var savedEnum = handle.createQuery(q)
+							   .bind("default", dbEnum.getDefault())
+							   .bind("description", dbEnum.getDescription())
+							   .bind("name", dbEnum.getUniqueName())
+							   .bind("id", id)
+							   .map(r -> r.getColumn("id", Long.class))
+							   .findOne()
+							   .orElseThrow(() -> new OpenDcsDataException("Unable to retrieve the enum we just saved."))
+							   ;
+			
+
+			cache.put(dbEnum);
+		}		
+		
 			helper.doModify(q,args.toArray());
 
 			// Delete all enum values. They'll be re-added below.

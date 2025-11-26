@@ -211,20 +211,7 @@ public abstract class DatabaseIO
 	public abstract void deleteEngineeringUnit(EngineeringUnit eu)
 		throws DatabaseException;
 
-	/**
-	Populates the set of known enumeration objects in this database.
-	  @param el the list to populate
-	*/
-	public abstract void readEnumList(EnumList el)
-		throws DatabaseException;
-
-	/**
-	Writes the EU list to the database.
-	  @param el the list to write.
-	*/
-	public abstract void writeEnumList(EnumList el)
-		throws DatabaseException;
-
+	
 	/**
 	Populates the list of EquipmentModel objects defined in this database.
 	Objects in this collection are complete.

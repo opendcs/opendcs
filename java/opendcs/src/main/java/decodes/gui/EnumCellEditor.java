@@ -6,6 +6,7 @@ import java.util.Iterator;
 
 import decodes.db.EnumValue;
 import decodes.db.Database;
+import decodes.db.DbEnum;
 
 /**
 Used within a JTable for having a combo-box in a table cell.
@@ -17,21 +18,21 @@ public class EnumCellEditor extends DefaultCellEditor
 	  Constructor.
 	  param enumName the name of the DECODES enumeration to display.
 	*/
-	public EnumCellEditor(String enumName)
+	public EnumCellEditor(DbEnum dbEnum)
 	{
-		super(new JComboBox());
-
-		// find enum in current database
-		decodes.db.DbEnum en = Database.getDb().getDbEnum(enumName);
-		if (en == null)
+		super(new JComboBox<EnumValue>());
+		
+		if (dbEnum == null)
 			return;
 
 		// populate JCombo with enum values
-		JComboBox jcb = (JComboBox)this.getComponent();
-		for(Iterator it = en.values().iterator(); it.hasNext(); )
+		@SuppressWarnings("unchecked") // we just set this up above
+		var jcb = (JComboBox<EnumValue>)this.getComponent();
+		var it = dbEnum.iterator();
+		while(it.hasNext())
 		{
-			EnumValue ev = (EnumValue)it.next();
-			jcb.addItem(ev.getValue());
+			var ev = it.next();
+			jcb.addItem(ev);
 		}
 	}
 

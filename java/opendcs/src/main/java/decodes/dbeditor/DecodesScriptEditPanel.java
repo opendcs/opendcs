@@ -64,12 +64,15 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 
+import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import java.util.ResourceBundle;
 
 import ilex.var.TimedVariable;
+import opendcs.dai.EnumDAI;
 import decodes.util.DecodesSettings;
 import decodes.util.DecodesException;
 import decodes.gui.EnumComboBox;
@@ -186,7 +189,7 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 	private boolean firstSampleThisScript = true;
 
 	/** Noargs constructor */
-	public DecodesScriptEditPanel()
+	public DecodesScriptEditPanel(OpenDcsDatabase db)
 	{
 		origScript = theScript = null;
 
@@ -198,7 +201,17 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 		{ 6, 11, 11, 15, 10, 10, 10, 10, 10 });
 		unitConversionTable.getTableHeader().setReorderingAllowed(false);
 		TableColumn tc = unitConversionTable.getColumnModel().getColumn(3);
-		tc.setCellEditor(new EnumCellEditor(Constants.eucvt_enumName));
+		// note, this *should* be on a different thread. just getting things to work at all again.
+		try (var tx = db.newTransaction())
+		{
+			var conversions = db.getDao(EnumDAI.class).get().getEnum(tx, Constants.eucvt_enumName);
+			conversions.ifPresent(dbEnum -> tc.setCellEditor(new EnumCellEditor(dbEnum)));
+		}
+		catch (OpenDcsDataException ex)
+		{
+			throw new IllegalStateException("Unable to retrieve and set enums.", ex);
+		}
+		
 
 		String tz = DecodesSettings.instance().editTimeZone;
 		if (tz == null) tz = "UTC";

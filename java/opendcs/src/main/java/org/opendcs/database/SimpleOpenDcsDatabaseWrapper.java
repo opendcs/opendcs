@@ -42,11 +42,12 @@ import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import decodes.db.Database;
+import decodes.db.DatabaseException;
 import decodes.db.DatabaseIO;
-import decodes.sql.DecodesDatabaseVersion;
+import decodes.sql.KeyGenerator;
+import decodes.sql.KeyGeneratorFactory;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
-import decodes.util.DecodesVersion;
 
 public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
 {
@@ -55,12 +56,21 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     private final Database decodesDb;
     private final TimeSeriesDb timeSeriesDb;
     protected final DataSource dataSource;
+    protected final KeyGenerator keyGenerator;
     protected final Jdbi jdbi;
     private final Map<Class<? extends OpenDcsDao>, DaoWrapper<? extends OpenDcsDao>> daoMap = new HashMap<>();
 
     public SimpleOpenDcsDatabaseWrapper(DecodesSettings settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource)
     {
         this.settings = settings;
+        try
+        {
+            this.keyGenerator = KeyGeneratorFactory.makeKeyGenerator(settings.sqlKeyGenerator);
+        }
+        catch (DatabaseException ex)
+        {
+            throw new IllegalStateException("Unable to setup KeyGenerator", ex);
+        }
         this.decodesDb = decodesDb;
         this.timeSeriesDb = timeSeriesDb;
         this.dataSource = dataSource;
@@ -217,6 +227,10 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         if (DecodesSettings.class.equals(settingsClass))
         {
             return Optional.of((T)settings);
+        }
+        else if (KeyGenerator.class.equals(settingsClass) && settingsClass.isAssignableFrom(this.keyGenerator.getClass()))
+        {
+            return Optional.of((T)keyGenerator);
         }
         else
         {

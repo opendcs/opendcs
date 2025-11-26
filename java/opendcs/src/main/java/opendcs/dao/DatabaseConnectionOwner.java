@@ -188,12 +188,6 @@ public interface DatabaseConnectionOwner
 	public String getDatabaseTimezone();
 	
 	/**
-	 * Factory method to make a DAO for enumerations
-	 * @return the DAO
-	 */
-	public EnumDAI makeEnumDAO();
-	
-	/**
 	 * Factory method to make a DAO for properties
 	 * @return the DAO
 	 */

@@ -15,17 +15,18 @@ import ilex.util.*;
 /**
 Table model for data type equivalence entries.
 */
-public class DTEquivTableModel extends AbstractTableModel
-	implements SortingListTableModel
+public class DTEquivTableModel extends AbstractTableModel implements SortingListTableModel
 {
 	String columnNames[];
-	Vector dataTypes;
+	Vector<String[]> dataTypes;
 	int numColumns;
 	int lastSortColumn = 0;
+	private final DbEnum dtEnum;
 
 	/** Constructor. */
-	public DTEquivTableModel()
+	public DTEquivTableModel(DbEnum dtEnum)
 	{
+		this.dtEnum = dtEnum;
 		//columnNames = new String[] { "SHEF-PE", "EPA-Code", "Hydstra-Code" };
 		rebuild();
 	}
@@ -36,9 +37,8 @@ public class DTEquivTableModel extends AbstractTableModel
 	 */
 	public void rebuild()
 	{
-		Database db = Database.getDb();
-		dataTypes = new Vector();
-		decodes.db.DbEnum dtEnum = db.getDbEnum(Constants.enum_DataTypeStd);
+		dataTypes = new Vector<>();
+	
 		if( dtEnum == null)
 		{
 			numColumns = 0;
@@ -48,9 +48,9 @@ public class DTEquivTableModel extends AbstractTableModel
 		numColumns = dtEnum.size();
 		columnNames = new String[numColumns];
 		int i=0;
-		for(Iterator it = dtEnum.iterator(); it.hasNext(); )
+		for(Iterator<EnumValue> it = dtEnum.iterator(); it.hasNext(); )
 		{
-			EnumValue ev = (EnumValue)it.next();
+			EnumValue ev = it.next();
 			columnNames[i++] = ev.getValue();
 		}
 
