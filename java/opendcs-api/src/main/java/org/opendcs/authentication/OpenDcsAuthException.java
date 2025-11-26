@@ -13,17 +13,20 @@
 * License for the specific language governing permissions and limitations
 * under the License.
 */
-package org.opendcs.database.api;
+package org.opendcs.authentication;
 
-public class OpenDcsDataException extends Exception
+/**
+ * Parent type of any OpenDCS Authentication errors.
+ */
+public class OpenDcsAuthException extends Exception
 {
-    public OpenDcsDataException(String msg)
+    public OpenDcsAuthException(String msg)
     {
         super(msg);
     }
 
-    public OpenDcsDataException(String msg, Throwable cause)
+    public OpenDcsAuthException(String msg, Throwable cause)
     {
-        super(msg);
+        super(msg, cause);
     }
 }

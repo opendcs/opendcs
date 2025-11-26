@@ -17,6 +17,12 @@ package org.opendcs.database.model;
 
 import java.time.ZonedDateTime;
 import java.util.Map;
+import java.util.Optional;
+
+import org.opendcs.authentication.IdentityProviderCredentials;
+import org.opendcs.authentication.OpenDcsAuthException;
+import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDatabase;
 
 import decodes.sql.DbKey;
 
@@ -30,4 +36,35 @@ public interface IdentityProvider
     String getType();
     ZonedDateTime getUpdatedAt();
     Map<String, Object> configToMap();
+
+    /**
+     * Perform appropriate user verification procedures and return a constructed User object.
+     * @param db Instance of the database to retrieve DAOs required.
+     * @param tx Existing transaction to use for this operation.
+     * @param credentials Credentials object appropriate to the provider.
+     * @return User if authentication succeeded, empty otherwise.
+     * @throws OpenDcsAuthException Any error with authentication
+     * @throws
+     */
+    Optional<User> login(OpenDcsDatabase db, DataTransaction tx,
+                         IdentityProviderCredentials credentials) throws OpenDcsAuthException;
+
+    /**
+     * If a provider supports the operation, update the user credentials.
+     * @param db Instance of the database to retrieve DAOs required.
+     * @param tx Existing transaction to use for this operation.
+     * @param credentials Credentials object appropriate to the provider.
+     * @throws OpenDcsAuthException Any errors updating the credentials
+     */
+    void updateUserCredentials(OpenDcsDatabase db, DataTransaction tx,
+                               User user, IdentityProviderCredentials credentials) throws OpenDcsAuthException;
+
+    /**
+    * Simple check if users can update their credentials through our interface.
+    * @return
+    */
+    default boolean canUpdateCredentials()
+    {
+        return false;
+    }
 }

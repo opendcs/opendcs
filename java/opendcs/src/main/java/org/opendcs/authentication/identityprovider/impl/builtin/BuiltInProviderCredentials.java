@@ -13,17 +13,19 @@
 * License for the specific language governing permissions and limitations
 * under the License.
 */
-package org.opendcs.database.api;
+package org.opendcs.authentication.identityprovider.impl.builtin;
 
-public class OpenDcsDataException extends Exception
+import org.opendcs.authentication.IdentityProviderCredentials;
+
+public final class BuiltInProviderCredentials implements IdentityProviderCredentials
 {
-    public OpenDcsDataException(String msg)
-    {
-        super(msg);
-    }
+    // package protected. External can create it, but can't see it.
+    final String username;
+    final String password;
 
-    public OpenDcsDataException(String msg, Throwable cause)
+    public BuiltInProviderCredentials(String username, String password)
     {
-        super(msg);
+        this.username = username;
+        this.password = password;
     }
 }
