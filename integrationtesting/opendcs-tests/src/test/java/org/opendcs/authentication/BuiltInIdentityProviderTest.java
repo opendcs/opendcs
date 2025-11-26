@@ -38,6 +38,10 @@ class BuiltInIdentityProviderTest extends AppTestBase
     @EnableIfTsDb({"OpenDCS-Postgres"})
     void setup_provider() throws Exception
     {
+        if (db == null || (db instanceof decodes.xml.jdbc.XmlOpenDcsDatabaseWrapper))
+        {
+            return;
+        }
         var userDao = db.getDao(UserManagementDao.class).get();
         provider = new BuiltInIdentityProvider(DbKey.NullKey, "builtin", null, Map.of());
         try (var tx = db.newTransaction())
