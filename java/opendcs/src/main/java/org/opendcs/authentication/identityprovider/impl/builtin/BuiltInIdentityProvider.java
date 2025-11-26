@@ -166,6 +166,8 @@ public final class BuiltInIdentityProvider implements IdentityProvider
         {
             try
             {
+                // We should allow some control of these settings.
+                // However, the defaults are sane, it's easy to do wrong, and this PR is already large enough
                 var hashed = Password.hash(creds.password.getBytes()).addPepper().addRandomSalt().withArgon2();
                 var handle = tx.connection(Handle.class)
                             .orElseThrow(() -> new OpenDcsAuthException("Unable to retrieve database connection object."));
