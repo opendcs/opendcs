@@ -17,10 +17,12 @@ package org.opendcs.authentication.identityprovider.impl.builtin;
 
 import java.time.ZonedDateTime;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 import org.opendcs.authentication.IdentityProviderCredentials;
+import org.opendcs.authentication.InvalidCredentials;
 import org.opendcs.authentication.InvalidCredentialsType;
 import org.opendcs.authentication.OpenDcsAuthException;
 import org.opendcs.database.api.DataTransaction;
@@ -93,6 +95,9 @@ public final class BuiltInIdentityProvider implements IdentityProvider
     public Optional<User> login(OpenDcsDatabase db, DataTransaction tx, IdentityProviderCredentials credentials)
             throws OpenDcsAuthException
     {
+        Objects.requireNonNull(db, "Provider requires a valid Database instance.");
+        Objects.requireNonNull(tx, "Provider requires a valid open database transaction.");
+        Objects.requireNonNull(credentials, "Provider requires a valid credentials instance.");
         try
         {
             if (credentials instanceof BuiltInProviderCredentials creds)
@@ -100,7 +105,7 @@ public final class BuiltInIdentityProvider implements IdentityProvider
                 var handle = tx.connection(Handle.class)
                             .orElseThrow(() -> new OpenDcsAuthException("Unable to get database connection object"));
 
-                var userId = handle.createQuery(
+                var optionalUserId = handle.createQuery(
                                     """
                                         select user_id
                                         from user_identity_provider
@@ -110,15 +115,20 @@ public final class BuiltInIdentityProvider implements IdentityProvider
                                     .bind("id", this.id)
                                     .bind("username", creds.username)
                                     .mapTo(DbKey.class)
-                                    .findOne()
-                                    .orElseThrow(() -> new OpenDcsAuthException("User does not exist."));
+                                    .findOne();
 
+                if (!optionalUserId.isPresent())
+                {
+                    return Optional.empty();
+                }
+
+                var userId = optionalUserId.get();
                 var hashedPassword  = handle.createQuery("select password from opendcs_user_password where user_id = :id")
                                       .bind("id", userId)
                                       .mapTo(String.class)
                                       .findOne()
-
                                       .orElseThrow(() -> new OpenDcsAuthException("Unable to authenticate user"));
+
                 var pw = Password.check(creds.password, hashedPassword);
                 if (pw.withArgon2())
                 {
@@ -126,7 +136,10 @@ public final class BuiltInIdentityProvider implements IdentityProvider
                                 .orElseThrow(() -> new OpenDcsAuthException("No User Management DAO is available."));
                     return userDao.getUser(tx, userId);
                 }
-                return Optional.empty();
+                else
+                {
+                    throw new InvalidCredentials();
+                }
             }
             else
             {
@@ -145,6 +158,10 @@ public final class BuiltInIdentityProvider implements IdentityProvider
     public void updateUserCredentials(OpenDcsDatabase db, DataTransaction tx, User user, IdentityProviderCredentials credentials)
             throws OpenDcsAuthException
     {
+        Objects.requireNonNull(db, "Provider requires a valid Database instance.");
+        Objects.requireNonNull(tx, "Provider requires a valid open database transaction.");
+        Objects.requireNonNull(user, "Provider requires a valid user object to perform operations.");
+        Objects.requireNonNull(credentials, "Provider requires a valid credentials instance.");
         if (credentials instanceof BuiltInProviderCredentials creds)
         {
             try
