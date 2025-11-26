@@ -20,6 +20,8 @@ import org.opendcs.database.model.IdentityProviderMapping;
 import org.opendcs.database.model.UserBuilder;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.sql.DbKey;
 
@@ -33,6 +35,7 @@ class BuiltInIdentityProviderTest extends AppTestBase
 
 
     @BeforeAll
+    @EnableIfTsDb({"OpenDCS-Postgres"})
     void setup_provider() throws Exception
     {
         var userDao = db.getDao(UserManagementDao.class).get();
@@ -54,6 +57,7 @@ class BuiltInIdentityProviderTest extends AppTestBase
 
 
     @Test
+    @EnableIfTsDb({"OpenDCS-Postgres"})
     void test_login_successful() throws Exception
     {
         try (var tx = db.newTransaction())
@@ -70,6 +74,7 @@ class BuiltInIdentityProviderTest extends AppTestBase
 
 
     @Test
+    @EnableIfTsDb({"OpenDCS-Postgres"})
     void test_login_failures() throws Exception
     {
         try (var tx = db.newTransaction())
@@ -92,6 +97,7 @@ class BuiltInIdentityProviderTest extends AppTestBase
     }
 
     @Test
+    @EnableIfTsDb({"OpenDCS-Postgres"})
     void test_wrong_provider_throws_exception() throws Exception
     {
         try (var tx = db.newTransaction())
