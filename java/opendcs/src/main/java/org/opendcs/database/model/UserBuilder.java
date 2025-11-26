@@ -29,7 +29,6 @@ public class UserBuilder
     String email = null;
     ArrayList<IdentityProviderMapping> idpMap = new ArrayList<>();
     ArrayList<Role> roles = new ArrayList<>();
-    String password = null;
     ZonedDateTime createdAt = null;
     ZonedDateTime updatedAt = null;
     HashMap<String, Object> preferences = new HashMap<>();
@@ -96,12 +95,6 @@ public class UserBuilder
     public UserBuilder withIdentityMapping(IdentityProviderMapping mapping)
     {
         this.idpMap.add(mapping);
-        return this;
-    }
-
-    public UserBuilder withPassword(String password)
-    {
-        this.password = password;
         return this;
     }
 }

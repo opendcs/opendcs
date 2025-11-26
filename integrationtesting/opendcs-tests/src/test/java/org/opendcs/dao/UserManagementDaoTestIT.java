@@ -169,7 +169,6 @@ class UserManagementDaoTestIT extends AppTestBase
         {
             User userIn = new UserBuilder()
                                   .withEmail("test@test.com")
-                                  .withPassword("test")
                                   .build();
             User userOut = dao.addUser(tx, userIn);
             assertNotEquals(DbKey.NullKey, userOut.id);
@@ -184,7 +183,6 @@ class UserManagementDaoTestIT extends AppTestBase
             User updater = new UserBuilder()
                                     .withPreferences(preferences)
                                     .withEmail("test@test.com")
-                                    .withPassword("test")
                                     .build();
             User updated = dao.updateUser(tx, id, updater);
             assertEquals(updater.email, updated.email);
@@ -210,7 +208,6 @@ class UserManagementDaoTestIT extends AppTestBase
                 dao.addUser(tx, new UserBuilder()
                                         .withPreferences(preferences)
                                         .withEmail("user"+i)
-                                        .withPassword("test"+i)
                                         .build());
             }
 
