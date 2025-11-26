@@ -1,6 +1,9 @@
 package org.opendcs.authentication;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
 
@@ -43,18 +46,65 @@ class BuiltInIdentityProviderTest extends AppTestBase
                                         .build();
             var userOut = userDao.addUser(tx, userIn);
 
-            provider.updateUserCredentials(db, tx, userOut, new BuiltInProviderCredentials("test", "testpassword"));
+            provider.updateUserCredentials(db, tx, userOut, new BuiltInProviderCredentials(
+                                                        "test",
+                                                        "testpassword"));
         }
     }
 
 
     @Test
-    void test_login() throws Exception
+    void test_login_successful() throws Exception
     {
         try (var tx = db.newTransaction())
         {
-            assertDoesNotThrow(() -> provider.login(db, tx, new BuiltInProviderCredentials("test", "testpassword")));
+            var user = assertDoesNotThrow(() -> provider.login(db,
+                                                               tx,
+                                                               new BuiltInProviderCredentials(
+                                                               "test",
+                                                               "testpassword"))).get();
+            assertEquals("test@example.com", user.email);
+            assertEquals("test", user.identityProviders.get(0).subject);
         }
     }
 
+
+    @Test
+    void test_login_failures() throws Exception
+    {
+        try (var tx = db.newTransaction())
+        {
+            var user = assertDoesNotThrow(
+                         () -> provider.login(db,
+                                              tx,
+                                              new BuiltInProviderCredentials(
+                                              "bad username",
+                                              "testpassword")));
+            assertTrue(user.isEmpty());
+
+            assertThrows(InvalidCredentials.class,
+                         () -> provider.login(db,
+                                        tx,
+                                        new BuiltInProviderCredentials(
+                                        "test",
+                                        "wrong password")));
+        }
+    }
+
+    @Test
+    void test_wrong_provider_throws_exception() throws Exception
+    {
+        try (var tx = db.newTransaction())
+        {
+            assertThrows(InvalidCredentialsType.class,
+                         () -> provider.login(db,
+                                        tx,
+                                        new IdentityProviderCredentials() {}));
+            assertThrows(InvalidCredentialsType.class,
+                         () -> provider.updateUserCredentials(db,
+                                        tx,
+                                        new UserBuilder().withEmail("test").build(),
+                                        new IdentityProviderCredentials() {}));
+        }
+    }
 }
