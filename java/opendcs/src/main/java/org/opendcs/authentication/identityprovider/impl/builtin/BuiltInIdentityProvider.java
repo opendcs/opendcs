@@ -105,40 +105,44 @@ public final class BuiltInIdentityProvider implements IdentityProvider
                 var handle = tx.connection(Handle.class)
                             .orElseThrow(() -> new OpenDcsAuthException("Unable to get database connection object"));
 
-                var optionalUserId = handle.createQuery(
+                try (var userIdQuery = handle.createQuery(
                                     """
                                         select user_id
                                         from user_identity_provider
                                         where identity_provider_id = :id
                                         and subject = :username
-                                    """)
-                                    .bind("id", this.id)
-                                    .bind("username", creds.username)
-                                    .mapTo(DbKey.class)
-                                    .findOne();
-
-                if (!optionalUserId.isPresent())
+                                    """);
+                     var pwQuery = handle.createQuery(
+                                    """
+                                    select password from opendcs_user_password where user_id = :id
+                                    """))
                 {
-                    return Optional.empty();
-                }
+                    var optionalUserId = userIdQuery.bind("id", this.id)
+                                               .bind("username", creds.username)
+                                               .mapTo(DbKey.class)
+                                               .findOne();
+                    if (!optionalUserId.isPresent())
+                    {
+                        return Optional.empty();
+                    }
 
-                var userId = optionalUserId.get();
-                var hashedPassword  = handle.createQuery("select password from opendcs_user_password where user_id = :id")
-                                      .bind("id", userId)
-                                      .mapTo(String.class)
-                                      .findOne()
-                                      .orElseThrow(() -> new OpenDcsAuthException("Unable to authenticate user"));
+                    var userId = optionalUserId.get();
+                    var hashedPassword  = pwQuery.bind("id", userId)
+                                                 .mapTo(String.class)
+                                                 .findOne()
+                                                 .orElseThrow(() -> new OpenDcsAuthException("Unable to authenticate user"));
 
-                var pw = Password.check(creds.password, hashedPassword);
-                if (pw.withArgon2())
-                {
-                    var userDao = db.getDao(UserManagementDao.class)
-                                .orElseThrow(() -> new OpenDcsAuthException("No User Management DAO is available."));
-                    return userDao.getUser(tx, userId);
-                }
-                else
-                {
-                    throw new InvalidCredentials();
+                    var pw = Password.check(creds.password, hashedPassword);
+                    if (pw.withArgon2())
+                    {
+                        var userDao = db.getDao(UserManagementDao.class)
+                                        .orElseThrow(() -> new OpenDcsAuthException("No User Management DAO is available."));
+                        return userDao.getUser(tx, userId);
+                    }
+                    else
+                    {
+                        throw new InvalidCredentials();
+                    }
                 }
             }
             else
@@ -164,22 +168,22 @@ public final class BuiltInIdentityProvider implements IdentityProvider
         Objects.requireNonNull(credentials, "Provider requires a valid credentials instance.");
         if (credentials instanceof BuiltInProviderCredentials creds)
         {
-            try
-            {
-                // We should allow some control of these settings.
-                // However, the defaults are sane, it's easy to do wrong, and this PR is already large enough
-                var hashed = Password.hash(creds.password.getBytes()).addPepper().addRandomSalt().withArgon2();
-                var handle = tx.connection(Handle.class)
-                            .orElseThrow(() -> new OpenDcsAuthException("Unable to retrieve database connection object."));
-                handle.createUpdate(
+            try (var handle = tx.connection(Handle.class)
+                           .orElseThrow(() -> new OpenDcsAuthException("Unable to retrieve database connection object."));
+                 var pwUpdate = handle.createUpdate(
                        """
                         insert into opendcs_user_password(user_id, password)
                         values (:id, :password)
                         on conflict (user_id) do update set password = :password
-                       """)
-                      .bind("id", user.id)
-                      .bind("password", hashed.getResult())
-                      .execute();
+                       """))
+            {
+                // We should allow some control of these settings.
+                // However, the defaults are sane, it's easy to do wrong, and this PR is already large enough
+                var hashed = Password.hash(creds.password.getBytes()).addPepper().addRandomSalt().withArgon2();
+                
+                pwUpdate.bind("id", user.id)
+                        .bind("password", hashed.getResult())
+                        .execute();
             }
             catch (OpenDcsDataException ex)
             {
