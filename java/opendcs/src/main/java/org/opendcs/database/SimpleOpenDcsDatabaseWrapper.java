@@ -42,8 +42,11 @@ import org.slf4j.Logger;
 
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
+import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
+import opendcs.dai.EnumDAI;
+import opendcs.dao.EnumSqlDao;
 
 public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
 {
@@ -64,6 +67,9 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         this.jdbi = Jdbi.create(dataSource);
         jdbi.registerArgument(new DatabaseKeyArgumentFactory())
             .registerColumnMapper(new DatabaseKeyColumnMapper());
+
+        this.timeSeriesDb.setDcsDatabase(this);
+        ((SqlDatabaseIO)this.decodesDb.getDbIo()).setDcsDatabase(this);
     }
 
     @SuppressWarnings("unchecked") // class is checked before casting
@@ -105,6 +111,11 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
                 if (dao.isAssignableFrom(UserManagementDao.class))
                 {
                     return new DaoWrapper<>(UserManagementImpl::new);
+                }
+
+                if (dao.isAssignableFrom(EnumDAI.class))
+                {
+                    return new DaoWrapper<>(() -> new EnumSqlDao(timeSeriesDb, this));
                 }
 
                 Optional<Method> daoMakeMethod;
