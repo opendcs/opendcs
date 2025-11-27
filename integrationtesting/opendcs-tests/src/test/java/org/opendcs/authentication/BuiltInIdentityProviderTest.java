@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -17,6 +18,7 @@ import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.IdentityProviderMapping;
+import org.opendcs.database.model.User;
 import org.opendcs.database.model.UserBuilder;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
@@ -32,6 +34,7 @@ class BuiltInIdentityProviderTest extends AppTestBase
     private OpenDcsDatabase db;
 
     private IdentityProvider provider;
+    private User user;
 
 
     @BeforeAll
@@ -56,9 +59,26 @@ class BuiltInIdentityProviderTest extends AppTestBase
             provider.updateUserCredentials(db, tx, userOut, new BuiltInProviderCredentials(
                                                         "test",
                                                         "testpassword"));
+            this.user = userOut;
         }
     }
 
+    @AfterAll
+    @EnableIfTsDb({"OpenDCS-Postgres"})
+    void teardown_provider() throws Exception
+    {
+        if (db == null || (db instanceof decodes.xml.jdbc.XmlOpenDcsDatabaseWrapper))
+        {
+            return;
+        }
+        var userDao = db.getDao(UserManagementDao.class).get();
+        provider = new BuiltInIdentityProvider(DbKey.NullKey, "builtin", null, Map.of());
+        try (var tx = db.newTransaction())
+        {
+            userDao.deleteUser(tx, user.id);
+            userDao.deleteIdentityProvider(tx, provider.getId());
+        }
+    }
 
     @Test
     @EnableIfTsDb({"OpenDCS-Postgres"})
