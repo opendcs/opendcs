@@ -17,6 +17,8 @@ package org.opendcs.database;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +31,7 @@ import decodes.cwms.CwmsLocationLevelDAO;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.JdbiException;
 import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
@@ -56,6 +59,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     private final TimeSeriesDb timeSeriesDb;
     protected final DataSource dataSource;
     protected final Jdbi jdbi;
+    public final DatabaseEngine dbEngine;
     private final Map<Class<? extends OpenDcsDao>, DaoWrapper<? extends OpenDcsDao>> daoMap = new HashMap<>();
 
     public SimpleOpenDcsDatabaseWrapper(DecodesSettings settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource)
@@ -70,6 +74,16 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
 
         this.timeSeriesDb.setDcsDatabase(this);
         ((SqlDatabaseIO)this.decodesDb.getDbIo()).setDcsDatabase(this);
+
+        try (var tx = newTransaction();
+             var conn = tx.connection(Connection.class).get())
+        {
+            dbEngine = DatabaseEngine.from(conn.getMetaData().getDatabaseProductName());
+        }
+        catch (SQLException | OpenDcsDataException ex)
+        {
+            throw new IllegalStateException("Unable to determine database type", ex);
+        }
     }
 
     @SuppressWarnings("unchecked") // class is checked before casting
@@ -230,5 +244,11 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         {
             return Optional.empty();
         }
+    }
+
+    @Override
+    public DatabaseEngine getDatabase()
+    {
+        return this.dbEngine;
     }
 }
