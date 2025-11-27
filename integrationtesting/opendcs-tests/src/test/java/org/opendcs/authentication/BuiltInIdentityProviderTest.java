@@ -2,8 +2,10 @@ package org.opendcs.authentication;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Map;
 
@@ -22,7 +24,6 @@ import org.opendcs.database.model.User;
 import org.opendcs.database.model.UserBuilder;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
-import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.sql.DbKey;
@@ -72,11 +73,19 @@ class BuiltInIdentityProviderTest extends AppTestBase
             return;
         }
         var userDao = db.getDao(UserManagementDao.class).get();
-        provider = new BuiltInIdentityProvider(DbKey.NullKey, "builtin", null, Map.of());
         try (var tx = db.newTransaction())
         {
             userDao.deleteUser(tx, user.id);
             userDao.deleteIdentityProvider(tx, provider.getId());
+
+            var tmp = userDao.getIdentityProvider(tx, provider.getId());
+            assertFalse(tmp.isPresent());
+        }
+
+        try (var tx = db.newTransaction())
+        {
+            var tmp = userDao.getIdentityProvider(tx, provider.getId());
+            assertFalse(tmp.isPresent());
         }
     }
 
