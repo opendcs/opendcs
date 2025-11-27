@@ -168,22 +168,24 @@ public final class BuiltInIdentityProvider implements IdentityProvider
         Objects.requireNonNull(credentials, "Provider requires a valid credentials instance.");
         if (credentials instanceof BuiltInProviderCredentials creds)
         {
-            try (var handle = tx.connection(Handle.class)
-                           .orElseThrow(() -> new OpenDcsAuthException("Unable to retrieve database connection object."));
-                 var pwUpdate = handle.createUpdate(
-                       """
-                        insert into opendcs_user_password(user_id, password)
-                        values (:id, :password)
-                        on conflict (user_id) do update set password = :password
-                       """))
+            try
             {
-                // We should allow some control of these settings.
-                // However, the defaults are sane, it's easy to do wrong, and this PR is already large enough
-                var hashed = Password.hash(creds.password.getBytes()).addPepper().addRandomSalt().withArgon2();
-                
-                pwUpdate.bind("id", user.id)
-                        .bind("password", hashed.getResult())
-                        .execute();
+                var handle = tx.connection(Handle.class)
+                            .orElseThrow(() -> new OpenDcsAuthException("Unable to retrieve database connection object."));
+                try (var pwUpdate = handle.createUpdate(
+                        """
+                            insert into opendcs_user_password(user_id, password)
+                            values (:id, :password)
+                            on conflict (user_id) do update set password = :password
+                        """))
+                {
+                    // We should allow some control of these settings.
+                    // However, the defaults are sane, it's easy to do wrong, and this PR is already large enough
+                    var hashed = Password.hash(creds.password.getBytes()).addPepper().addRandomSalt().withArgon2();
+                    pwUpdate.bind("id", user.id)
+                            .bind("password", hashed.getResult())
+                            .execute();
+                }
             }
             catch (OpenDcsDataException ex)
             {
