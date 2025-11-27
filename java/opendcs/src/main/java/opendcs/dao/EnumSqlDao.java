@@ -604,9 +604,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 				with e (id, name, defaultValue, description) as (
 				    select id, name, defaultValue, description from enum
 					  order by id asc
-				""" +
-				addLimitOffset(limit, offset) +
-				"""
+					  <limit>
 					)
 				  select e.id e_id, e.name e_name, e.defaultValue e_defaultValue, e.description e_description,
 				       v.enumvalue v_enumvalue, v.description v_description, v.execclass v_execclass,
@@ -614,11 +612,10 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 				  from e
 				  join enumvalue v on e.id = v.enumid
 				  order by e.id asc
-				""" +
-				addLimitOffset(limit, offset);
+				""";
 
 		// todo limit/offset
-		try (var query =handle.createQuery(queryText))
+		try (var query = handle.createQuery(queryText))
 		{
 			if (limit != -1)
             {
@@ -629,7 +626,8 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
             {
                 query.bind(SqlKeywords.OFFSET, offset);
             }
-			return query.registerRowMapper(DbEnumBuilder.class, DbEnumBuilderMapper.withPrefix("e"))
+			return query.define("limit", addLimitOffset(limit, offset))
+						.registerRowMapper(DbEnumBuilder.class, DbEnumBuilderMapper.withPrefix("e"))
 					 	.registerRowMapper(EnumValue.class, EnumValueMapper.withPrefix("v"))
 					 	.reduceRows(DbEnumBuilderReducer.DBENUM_BUILDER_REDUCER)
 					 	.map(DbEnumBuilder::build)
