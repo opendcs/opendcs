@@ -37,6 +37,8 @@ import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.sql.DbKey;
 
+
+@EnableIfTsDb({"OpenDCS-Postgres"})
 class UserManagementDaoTestIT extends AppTestBase
 {
 
@@ -44,7 +46,6 @@ class UserManagementDaoTestIT extends AppTestBase
     private OpenDcsDatabase db;
 
     @Test
-    @EnableIfTsDb({"OpenDCS-Postgres"})
     void test_create_role() throws Exception
     {
         UserManagementDao dao = db.getDao(UserManagementDao.class)
@@ -73,7 +74,6 @@ class UserManagementDaoTestIT extends AppTestBase
 
 
     @Test
-    @EnableIfTsDb({"OpenDCS-Postgres"})
     void test_role_pagination() throws Exception
     {
         UserManagementDao dao = db.getDao(UserManagementDao.class)
@@ -101,7 +101,6 @@ class UserManagementDaoTestIT extends AppTestBase
 
 
     @Test
-    @EnableIfTsDb({"OpenDCS-Postgres"})
     void test_identity_provider_operations() throws Exception
     {
         UserManagementDao dao = db.getDao(UserManagementDao.class)
@@ -132,7 +131,6 @@ class UserManagementDaoTestIT extends AppTestBase
     }
 
     @Test
-    @EnableIfTsDb({"OpenDCS-Postgres"})
     void test_idp_pagination() throws Exception
     {
         UserManagementDao dao = db.getDao(UserManagementDao.class)
@@ -162,7 +160,6 @@ class UserManagementDaoTestIT extends AppTestBase
 
 
     @Test
-    @EnableIfTsDb({"OpenDCS-Postgres"})
     void test_user_operations() throws Exception
     {
         UserManagementDao dao = db.getDao(UserManagementDao.class)
@@ -199,8 +196,7 @@ class UserManagementDaoTestIT extends AppTestBase
         }
     }
 
-     @Test
-    @EnableIfTsDb({"OpenDCS-Postgres"})
+    @Test
     void test_user_pagination() throws Exception
     {
         UserManagementDao dao = db.getDao(UserManagementDao.class)
