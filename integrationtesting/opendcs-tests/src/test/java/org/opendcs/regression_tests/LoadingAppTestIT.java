@@ -12,16 +12,14 @@ import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.TimeSeriesDb;
 import opendcs.dao.LoadingAppDao;
 
-
-
-public class LoadingAppTestIT extends AppTestBase
+@EnableIfTsDb
+class LoadingAppTestIT extends AppTestBase
 {
     @ConfiguredField
     protected TimeSeriesDb db;
 
     @Test
-    @EnableIfTsDb
-    public void test_utilityClassIsPresent() throws Exception
+    void test_utilityClassIsPresent() throws Exception
     {
         try(LoadingAppDao dao = new LoadingAppDao(db);)
         {
