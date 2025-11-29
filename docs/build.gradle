@@ -32,7 +32,12 @@ configurations {
     }
 }
 
+tasks.register("checkPython", CheckPython) {
+    enabled = !noDocs
+}
+
 task prepVenv(type: Exec) {
+    enabled = !noDocs
     executable pythonExe
     workingDir projectDir
     args += "-m"
@@ -44,6 +49,8 @@ task prepVenv(type: Exec) {
 
 task installReqs(type: Exec) {
     dependsOn prepVenv
+    dependsOn checkPython
+    enabled = !noDocs
     def theArgs = osWin ? ["/c","pip"]
                         : []
     def cmd = osWin ? "cmd" : venvPath+"/pip"
@@ -65,13 +72,14 @@ tasks.addRule("Pattern: buildDocs<ID>") { String taskName ->
         def theArgs = osWin ? ["/c","make.bat",builder]
                          : [builder]
         def cmd = osWin ? "cmd" : "make"
-            task(taskName, type: Exec) {
-                dependsOn installReqs
-
-                executable cmd
-                workingDir projectDir
-                args = theArgs
-                environment "PATH": "${venvPath}:${System.getenv('PATH')}"
+        task(taskName, type: Exec) {
+            dependsOn installReqs
+            dependsOn checkPython
+            onlyIf { !noDocs && havePython.getOrElse(false) }
+            executable cmd
+            workingDir projectDir
+            args = theArgs
+            environment "PATH": "${venvPath}:${System.getenv('PATH')}"
 
                 inputs.files(fileTree('source'))
                     .withPropertyName('sourceFiles')
@@ -93,13 +101,8 @@ tasks.addRule("Pattern: buildDocs<ID>") { String taskName ->
 }
 
 task buildDocs {
-    dependsOn 'buildDocsHtml' 
-    // work on PDF later,'buildDocsLatexpdf'
-    doFirst {
-        if (!havePython) {
-            logger.warn("Python was not found, the documentation will not be built.")
-        }
-    }
+    onlyIf { !noDocs }
+    dependsOn 'buildDocsHtml'
 }
 
 artifacts {
