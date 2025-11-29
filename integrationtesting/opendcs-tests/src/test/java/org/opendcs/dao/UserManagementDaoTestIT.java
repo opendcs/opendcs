@@ -23,10 +23,10 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityProvider;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.UserManagementDao;
-import org.opendcs.database.impl.opendcs.BuiltInIdentityProvider;
 import org.opendcs.database.model.UserBuilder;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.Role;
@@ -172,7 +172,6 @@ class UserManagementDaoTestIT extends AppTestBase
         {
             User userIn = new UserBuilder()
                                   .withEmail("test@test.com")
-                                  .withPassword("test")
                                   .build();
             User userOut = dao.addUser(tx, userIn);
             assertNotEquals(DbKey.NullKey, userOut.id);
@@ -187,7 +186,6 @@ class UserManagementDaoTestIT extends AppTestBase
             User updater = new UserBuilder()
                                     .withPreferences(preferences)
                                     .withEmail("test@test.com")
-                                    .withPassword("test")
                                     .build();
             User updated = dao.updateUser(tx, id, updater);
             assertEquals(updater.email, updated.email);
@@ -214,7 +212,6 @@ class UserManagementDaoTestIT extends AppTestBase
                 dao.addUser(tx, new UserBuilder()
                                         .withPreferences(preferences)
                                         .withEmail("user"+i)
-                                        .withPassword("test"+i)
                                         .build());
             }
 

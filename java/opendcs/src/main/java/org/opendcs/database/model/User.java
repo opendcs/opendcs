@@ -41,7 +41,6 @@ public final class User
     public final ZonedDateTime createdAt;
     public final ZonedDateTime updatedAt;
     public final List<Role> roles;
-    public final String password;
     /**
      * List of external identity providers that are tied to this user account.
      */
@@ -56,7 +55,6 @@ public final class User
         this.createdAt = builder.createdAt;
         this.updatedAt = builder.updatedAt;
         this.roles = Collections.unmodifiableList(builder.roles);
-        this.password = builder.password;
         this.identityProviders = Collections.unmodifiableList(builder.idpMap);
     }
 }

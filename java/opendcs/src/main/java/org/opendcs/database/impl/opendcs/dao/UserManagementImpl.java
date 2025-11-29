@@ -226,10 +226,11 @@ public class UserManagementImpl implements UserManagementDao
     {
         Handle handle = getHandle(tx);
         try (Update deleteRoles = handle.createUpdate("delete from user_roles where user_id = :id");
-             Update deleteIdps = handle.createUpdate("delete from user_identity_provider where user_id=:id");
-             // password?
+             Update deleteIdps = handle.createUpdate("delete from user_identity_provider where user_id = :id");
+             Update deletePassword = handle.createUpdate("delete from opendcs_user_password where user_id = :id");
              Update deleteUser = handle.createUpdate("delete from opendcs_user where id = :id"))
         {
+            deletePassword.bind(GenericColumns.ID, id).execute();
             deleteRoles.bind(GenericColumns.ID, id).execute();
             deleteIdps.bind(GenericColumns.ID, id).execute();
             deleteUser.bind(GenericColumns.ID, id).execute();
