@@ -43,4 +43,10 @@ public interface OpenDcsDatabase
      * @return Optional&lt;T&gt; Settings if available, otherwise empty.
      */
     <T extends OpenDcsSettings> Optional<T> getSettings(Class<T> settingsClass);
+
+    /**
+     * Which database engine is this
+     * @return
+     */
+    DatabaseEngine getDatabase();
 }

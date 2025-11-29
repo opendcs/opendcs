@@ -21,8 +21,6 @@ import ilex.var.NamedVariable;
 import ilex.var.TimedVariable;
 import ilex.var.Variable;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -38,6 +36,7 @@ import java.util.Enumeration;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -75,7 +74,6 @@ import opendcs.dao.PropertiesSqlDao;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
-import opendcs.util.sql.WrappedConnection;
 import decodes.util.DecodesSettings;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.db.Constants;
@@ -171,14 +169,14 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
     private boolean connected = false;
 
     protected final DecodesSettings settings;
-    /**
-     * Lazy initialization, called at the first time a date or timestamp
-     * is needing to be parsed or formatted. Can't do this in the constructor
-     * because the database is not yet connected so _dbio.isOracle doesn't work.
-     */
-    /**
-     * No args constructor required.
-     */
+
+    protected OpenDcsDatabase dcsDb;
+
+    public void setDcsDatabase(OpenDcsDatabase dcsDb)
+    {
+        this.dcsDb = dcsDb;
+    }
+
     public TimeSeriesDb(String appName, javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
     {
         this.settings = settings;
@@ -1372,7 +1370,7 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
     @Override
     public EnumDAI makeEnumDAO()
     {
-        return new EnumSqlDao(this);
+        return new EnumSqlDao(this, dcsDb);
     }
 
     @Override

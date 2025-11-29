@@ -1,16 +1,16 @@
 /*
 * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
 * of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software 
+*
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
 */
 package opendcs.dao;
@@ -23,15 +23,25 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import org.jdbi.v3.core.Handle;
 import org.opendcs.database.SimpleTransaction;
 import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.model.mappers.dbenum.DbEnumBuilderMapper;
+import org.opendcs.database.model.mappers.dbenum.DbEnumBuilderReducer;
+import org.opendcs.database.model.mappers.dbenum.EnumValueMapper;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.opendcs.utils.sql.GenericColumns;
+import org.opendcs.utils.sql.SqlKeywords;
 import org.slf4j.Logger;
 
 import decodes.db.EnumValue;
 import decodes.db.ValueNotFoundException;
+import decodes.db.DbEnum.DbEnumBuilder;
 import opendcs.dai.EnumDAI;
 
 import decodes.db.DbEnum;
@@ -48,10 +58,12 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static DbObjectCache<DbEnum> cache = new DbObjectCache<DbEnum>(3600000, false);
-	
-	public EnumSqlDao(DatabaseConnectionOwner tsdb)
+	private final OpenDcsDatabase dcsDb;
+
+	public EnumSqlDao(DatabaseConnectionOwner tsdb, OpenDcsDatabase db)
 	{
 		super(tsdb, "EnumSqlDao");
+		this.dcsDb = db;
 	}
 
 	@Override
@@ -59,22 +71,22 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 	{
 		try
 		{
-			return new SimpleTransaction(db.getConnection());
+			return dcsDb != null ? dcsDb.newTransaction() : new SimpleTransaction(db.getConnection());
 		}
 		catch (SQLException ex)
 		{
 			throw new OpenDcsDataException("Unable to get connection.", ex);
 		}
 	}
-	
+
 	private String getEnumColumns(int dbVer)
 	{
 		return "id, name"
 			+ (dbVer >= DecodesDatabaseVersion.DECODES_DB_10 ? ", defaultValue, description "
-			: dbVer >= DecodesDatabaseVersion.DECODES_DB_6 ? ", defaultvalue " 
+			: dbVer >= DecodesDatabaseVersion.DECODES_DB_6 ? ", defaultvalue "
 			: " ");
 	}
-	
+
 	private DbEnum rs2Enum(ResultSet rs, int dbVer)
 		throws SQLException
 	{
@@ -93,9 +105,9 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 		}
 		return en;
 	}
-	
+
 	@Override
-	public DbEnum getEnum(String enumName) 
+	public DbEnum getEnum(String enumName)
 		throws DbIoException
 	{
 		synchronized(cache)
@@ -103,11 +115,11 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 			DbEnum ret = cache.getByUniqueName(enumName);
 			if (ret != null)
 				return ret;
-			
+
 			int dbVer = db.getDecodesDatabaseVersion();
 			String q = "SELECT " + getEnumColumns(dbVer) + " FROM Enum";
 			q = q + " where lower(name) = lower(?)";// + sqlString(enumName.toLowerCase());
-			
+
 			try
 			{
 				ret = getSingleResult(q,(rs) -> {
@@ -124,7 +136,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 					readValues(ret);
 					cache.put(ret);
 					return ret;
-				}		
+				}
 			}
 			catch (SQLException ex)
 			{
@@ -222,7 +234,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 	}
 
 	@Override
-	public void readEnumList(EnumList top) 
+	public void readEnumList(EnumList top)
 		throws DbIoException
 	{
 		int dbVer = db.getDecodesDatabaseVersion();
@@ -231,13 +243,13 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 		{
 			synchronized(cache)
 			{
-				doQuery("SELECT " + getEnumColumns(dbVer) + " FROM Enum", 
+				doQuery("SELECT " + getEnumColumns(dbVer) + " FROM Enum",
 							  (rs) -> {
 								DbEnum en = rs2Enum(rs, dbVer);
 								cache.put(en);
 							    top.addEnum(en);
 							});
-				
+
 				String q = "SELECT enumId, enumValue, ev.description, execClass, editClass";
 				if (dbVer >= DecodesDatabaseVersion.DECODES_DB_6)
 					q = q + ", sortNumber";
@@ -276,7 +288,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 		// CLear the list and read whats currently in the database
 		enumList.clear();
 		readEnumList(enumList);
-		
+
 		// Write the new stuff & check it off from the old.
 		for (DbEnum newenum : newenums)
 		{
@@ -304,7 +316,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 			{
 				throw new DbIoException("Failed to clean up " + oldenum.toString(),ex);
 			}
-			
+
 		}
 		for(DbEnum newenum : newenums)
 			enumList.addEnum(newenum);
@@ -483,7 +495,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 		catch (OpenDcsDataException ex)
 		{
 			throw new DbIoException("Unable to save DbEnum", ex);
-		}	
+		}
 	}
 
 	private void readValues(DbEnum dbenum)throws SQLException, DbIoException
@@ -495,7 +507,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 	{
 		int dbVer = db.getDecodesDatabaseVersion();
 
-		String q = 
+		String q =
 			"SELECT enumId, enumValue, description, " +
 			"execClass, editClass";
 		if (dbVer >= DecodesDatabaseVersion.DECODES_DB_6)
@@ -505,7 +517,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 			rs2EnumValue(rs, dbenum);
 		},dbenum.getId());
 	}
-	
+
 	private void rs2EnumValue(ResultSet rs, DbEnum dbEnum)
 		throws SQLException
 	{
@@ -560,7 +572,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_6)
 		{
 			q += ")";
-		}			
+		}
 		else if (ev.getSortNumber() == EnumValue.UNDEFINED_SORT_NUMBER)
 		{
 			q += ", NULL)";
@@ -573,145 +585,164 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 		try
 		{
 			dao.doModify(q,args.toArray());
-		} 
+		}
 		catch(SQLException er)
 		{
 			debug3(er.getLocalizedMessage());
 			throw new DbIoException("Failed to add enum to database", er);
 		}
-		
+
 	}
 
 	@Override
-	public Collection<DbEnum> getEnums(DataTransaction tx) throws OpenDcsDataException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Unimplemented method 'getEnums'");
+	public Collection<DbEnum> getEnums(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
+	{
+		var handle = tx.connection(Handle.class)
+					   .orElseThrow(() -> new OpenDcsDataException("Unable to get Database connection object."));
+
+		final String queryText = """
+				with e (id, name, defaultValue, description) as (
+				    select id, name, defaultValue, description from enum
+					  order by id asc
+					  <limit>
+					)
+				  select e.id e_id, e.name e_name, e.defaultValue e_defaultValue, e.description e_description,
+				       v.enumvalue v_enumvalue, v.description v_description, v.execclass v_execclass,
+					   v.editclass v_editclass, v.sortnumber v_sortnumber
+				  from e
+				  join enumvalue v on e.id = v.enumid
+				  order by e.id asc
+				""";
+
+		// todo limit/offset
+		try (var query = handle.createQuery(queryText))
+		{
+			if (limit != -1)
+            {
+                query.bind(SqlKeywords.LIMIT, limit);
+            }
+
+            if (offset != -1)
+            {
+                query.bind(SqlKeywords.OFFSET, offset);
+            }
+			return query.define("limit", addLimitOffset(limit, offset))
+						.registerRowMapper(DbEnumBuilder.class, DbEnumBuilderMapper.withPrefix("e"))
+					 	.registerRowMapper(EnumValue.class, EnumValueMapper.withPrefix("v"))
+					 	.reduceRows(DbEnumBuilderReducer.DBENUM_BUILDER_REDUCER)
+					 	.map(DbEnumBuilder::build)
+					 	.collect(Collectors.toList());
+		}
 	}
 
 	@Override
 	public Optional<DbEnum> getEnum(DataTransaction tx, String enumName) throws OpenDcsDataException
 	{
-		synchronized(cache)
+		var handle = tx.connection(Handle.class)
+					   .orElseThrow(() -> new OpenDcsDataException("Unable to get Database connection object."));
+		try (var query = handle.createQuery("select id from enum where name = :name"))
 		{
-			DbEnum ret = cache.getByUniqueName(enumName);
-			if (ret != null)
-			{
-				return Optional.of(ret);
-			}
-			
-			int dbVer = db.getDecodesDatabaseVersion();
-			String q = "SELECT " + getEnumColumns(dbVer) + " FROM Enum";
-			q = q + " where lower(name) = lower(?)";// + sqlString(enumName.toLowerCase());
-			Connection conn = tx.connection(Connection.class)
-						        .orElseThrow(() -> new OpenDcsDataException("JDBC Connection not available in this transaction."));
-			try (DaoHelper helper = new DaoHelper(this.db, "helper-enum", conn))
-			{
-				ret = helper.getSingleResult(q, rs -> rs2Enum(rs, dbVer), enumName);
-				if (ret == null)
-				{
-					warning("No such enum '" + enumName + "'");
-					return Optional.empty();
-				}
-				else
-				{
-					readValues(helper, ret);
-					cache.put(ret);
-					return Optional.of(ret);
-				}		
-			}
-			catch (DbIoException | SQLException ex)
-			{
-				throw new OpenDcsDataException("Error retrieving Enum values",ex);
-			}
+			var id = query.bind(GenericColumns.NAME, enumName)
+						  .mapTo(DbKey.class)
+						  .findOne();
+			return getEnum(tx, id.orElse(DbKey.NullKey));
 		}
 	}
 
 	@Override
-	public Optional<DbEnum> getEnum(DataTransaction tx, DbKey id) throws OpenDcsDataException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Unimplemented method 'getEnum'");
+	public Optional<DbEnum> getEnum(DataTransaction tx, DbKey id) throws OpenDcsDataException
+	{
+		if (DbKey.isNull(id))
+		{
+			throw new OpenDcsDataException("Unable to search for enum with null ID");
+		}
+		final String queryText ="""
+				select e.id e_id, e.name e_name, e.defaultValue e_defaultValue, e.description e_description,
+				       v.enumvalue v_enumvalue, v.description v_description, v.execclass v_execclass,
+					   v.editclass v_editclass, v.sortnumber v_sortnumber
+				  from enum e
+				  join enumvalue v on e.id = v.enumid
+				 where e.id = :id
+				""";
+		var handle = tx.connection(Handle.class)
+					   .orElseThrow(() -> new OpenDcsDataException("Unable to get Database connection object."));
+		try (var query = handle.createQuery(queryText))
+		{
+		    return query.bind(GenericColumns.ID, id)
+						.registerRowMapper(DbEnumBuilder.class, DbEnumBuilderMapper.withPrefix("e"))
+						.registerRowMapper(EnumValue.class, EnumValueMapper.withPrefix("v"))
+						.reduceRows(DbEnumBuilderReducer.DBENUM_BUILDER_REDUCER)
+						.map(DbEnumBuilder::build)
+						.findFirst();
+		}
 	}
 
 	@Override
 	public DbEnum writeEnum(DataTransaction tx, DbEnum dbEnum) throws OpenDcsDataException
 	{
-		// should this be part of DataTransaction?
-		int dbVer = db.getDecodesDatabaseVersion();
-		String q = "";
-		ArrayList<Object> args = new ArrayList<>();
-		if (dbEnum.idIsSet())
-		{			
-			args.add(dbEnum.getUniqueName());
-			q = "update enum set name = ?";// + sqlString(dbenum.getUniqueName());
-			if (dbVer >= DecodesDatabaseVersion.DECODES_DB_6)
-			{
-				q = q + ", defaultvalue = ?";// + sqlString(dbenum.getDefault());
-				args.add(dbEnum.getDefault());
-				if (dbVer >= DecodesDatabaseVersion.DECODES_DB_10)
-					q = q + ", description = ?";// + sqlString(dbenum.getDescription());
-					args.add(dbEnum.getDescription());
-			}
-			q = q + " where id = ?" /*+ dbenum.getId()*/;
-			args.add(dbEnum.getId().getValue());
-		}
-		else // New enum, allocate a key and insert
+		DbKey id = DbKey.NullKey;
+		try
 		{
-			DbKey id;
-			try
-			{
-				id = getKey("Enum");
-			}
-			catch (DbIoException ex)
-			{
-				throw new OpenDcsDataException("Unable to generate new key for dbEnum", ex);
-			}
-			dbEnum.forceSetId(id);
-			q = "insert into enum";
-			if (dbVer < DecodesDatabaseVersion.DECODES_DB_6)
-			{
-				q = q + "(id, name) values (?,?)"; 
-					//+ id + ", " + sqlString(dbenum.getUniqueName()) + ")";
-				args.add(id.getValue());
-				args.add(dbEnum.getUniqueName());
-			}
-			else if (dbVer < DecodesDatabaseVersion.DECODES_DB_10)
-			{
-				q = q + "(id, name, defaultValue) values (?,?,?)";
-				args.add(id.getValue());
-				args.add(dbEnum.getUniqueName());
-				args.add(dbEnum.getDefault());
-			}
-			else
-			{
-				q = q + "(id, name, defaultValue, description) values (?,?,?,?)";
-				args.add(id.getValue());
-				args.add(dbEnum.getUniqueName());
-				args.add(dbEnum.getDefault());
-				args.add(dbEnum.getDescription());
-			}
-			cache.put(dbEnum);
+			id = dbEnum.idIsSet() ? dbEnum.getId() : getKey("enum"); // Going to need to sort this out.
 		}
-		
-		Connection conn = tx.connection(Connection.class)
-							.orElseThrow(() -> new OpenDcsDataException("Unable to get JDBC connection to perform DbEnum Save."));		
-		try (DaoHelper helper = new DaoHelper(this.db, q, conn))
+		catch (DbIoException ex)
 		{
-			helper.doModify(q,args.toArray());
+			throw new OpenDcsDataException("Unable to generate key to save enum", ex);
+		}
 
-			// Delete all enum values. They'll be re-added below.
-			q = "DELETE FROM EnumValue WHERE enumId = ?";
-			helper.doModify(q, dbEnum.getId().getValue());
-			
-			for (Iterator<EnumValue> it = dbEnum.iterator(); it.hasNext(); )
-			{
-				writeEnumValue(helper, it.next());
-			}
-			return dbEnum;
-		}
-		catch(DbIoException | SQLException ex)
+		var handle = tx.connection(Handle.class)
+					   .orElseThrow(() -> new OpenDcsDataException("Unable to get Database connection object."));
+		final String enumMergeText = """
+					MERGE into enum e
+					USING (select :id id, :name name, :defaultValue defaultValue, :description description <dual>) s
+					ON (e.id = s.id)
+					WHEN MATCHED THEN
+						update set name = s.name, defaultValue = s.defaultValue, description = s.description
+					WHEN NOT MATCHED THEN
+						insert(id, name, defaultValue, description)
+						values(s.id, s.name, s.defaultValue, s.description)
+				""";
+		final String removeValuesText = "delete from enumvalue where enumid = :id";
+		final String addValueText = """
+				insert into enumvalue(enumid, enumvalue, description, execclass, editclass, sortnumber)
+				values (:id, :enumvalue, :description, :execclass, :editclass, :sortnumber)
+				""";
+		try (var enumMerge = handle.createUpdate(enumMergeText)
+								   .define("dual", dcsDb.getDatabase() == DatabaseEngine.ORACLE ? "from dual" : "");
+			 var removeValues = handle.createUpdate(removeValuesText);
+			 var addValues = handle.prepareBatch(addValueText))
 		{
-			throw new OpenDcsDataException("enum modify/delete failed for " + dbEnum.toString(), ex);
+			enumMerge.bind(GenericColumns.ID, id)
+					 .bind(GenericColumns.NAME, dbEnum.enumName)
+					 .bind("defaultValue", dbEnum.getDefault())
+					 .bind(GenericColumns.DESCRIPTION, dbEnum.getDescription())
+					 .execute();
+
+			removeValues.bind(GenericColumns.ID, id).execute();
+
+			for (var enumValue: dbEnum.values())
+			{
+				addValues.bind(GenericColumns.ID, id)
+						 .bind("enumvalue", enumValue.getValue())
+						 .bind(GenericColumns.DESCRIPTION, enumValue.getDescription())
+						 .bind("execclass", enumValue.getExecClassName())
+						 .bind("editclass", enumValue.getEditClassName())
+						 .bind("sortnumber", enumValue.getSortNumber())
+						 .add();
+			}
+			addValues.execute();
+			return getEnum(tx, id).orElseThrow(() -> new OpenDcsDataException("Could not retrieve the enum we just saved."));
 		}
 	}
-
+	/**
+     * Helper function to add limit and offset fields to queries
+     * @param limit
+     * @param offset
+     * @return
+     */
+    private static String addLimitOffset(int limit, int offset)
+    {
+        return (offset != -1 ? " offset :offset rows" : "") +
+			   (limit != -1 ? " fetch next :limit rows only": "");
+    }
 }
