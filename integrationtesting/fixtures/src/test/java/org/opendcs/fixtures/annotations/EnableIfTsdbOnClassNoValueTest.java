@@ -6,7 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @EnableIfTsDb
-public class EnableIfTsdbOnClassNoValueTest
+class EnableIfTsdbOnClassNoValueTest
 {
     @BeforeEach
     void setup()

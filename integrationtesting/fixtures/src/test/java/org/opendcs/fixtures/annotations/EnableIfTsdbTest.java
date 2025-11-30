@@ -1,6 +1,6 @@
 package org.opendcs.fixtures.annotations;
 
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
@@ -11,7 +11,7 @@ class EnableIfTsdbOnMethodsTest
     @EnableIfTsDb
     void test_no_annotation()
     {
-        assumeTrue(true, "test was not enabled");
+        assertTrue(true, "test was not enabled");
     }
 
 
@@ -26,7 +26,7 @@ class EnableIfTsdbOnMethodsTest
     @EnableIfTsDb({"OpenDCS-Enabled", "Another impl"})
     void test_with_list()
     {
-        assumeTrue(true,"Test was not enabled");
+        assertTrue(true,"Test was not enabled");
     }
 
 }

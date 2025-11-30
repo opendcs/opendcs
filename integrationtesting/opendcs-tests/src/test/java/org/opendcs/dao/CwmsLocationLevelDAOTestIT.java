@@ -63,12 +63,10 @@ class CwmsLocationLevelDAOTestIT extends AppTestBase
     }
 
     @BeforeEach
-    void setUp() throws Exception
+    void setUp()
     {
-
-        Optional<SiteReferenceMetaData>  dai = db.getDao(SiteReferenceMetaData.class);
-        assertTrue(dai.isPresent(), "Unable to retrieve LocationLevelDAI instance from database.");
-        dao = (CwmsLocationLevelDAO) dai.get();
+        dao = (CwmsLocationLevelDAO)db.getDao(SiteReferenceMetaData.class)
+                                      .orElseGet(() -> fail("Unable to retrieve LocationLevelDAI instance from database."));
     }
 
     @Test
@@ -199,7 +197,8 @@ class CwmsLocationLevelDAOTestIT extends AppTestBase
             String invalidLocationId = "INVALID_FORMAT";
 
             // Should not throw exception, just return null
-            CwmsSiteReferenceValue value =  (CwmsSiteReferenceValue) dao.getLatestLocationLevelValue(tx, invalidLocationId);
+            CwmsSiteReferenceValue value =  assertDoesNotThrow(() -> (CwmsSiteReferenceValue) dao.getLatestLocationLevelValue(tx, invalidLocationId));
+            assertNull(value);
 
             // Most likely will be null for invalid ID
             // But if not null, it means the ID exists (unlikely for this test ID)

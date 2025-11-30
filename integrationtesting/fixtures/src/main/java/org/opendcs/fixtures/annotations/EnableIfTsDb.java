@@ -21,10 +21,10 @@ import org.opendcs.fixtures.spi.Configuration;
 @ExtendWith(EnableIfTsDb.EnableIfTsDbCondition.class)
 public @interface EnableIfTsDb
 {
-    public String[] value() default {};
-    static final String engine = System.getProperty("opendcs.test.engine");
+    final String ENGINE = System.getProperty("opendcs.test.engine");
+    String[] value() default {};
 
-    static class EnableIfTsDbCondition implements ExecutionCondition
+    class EnableIfTsDbCondition implements ExecutionCondition
     {
         @Override
         public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext ctx)
@@ -34,11 +34,11 @@ public @interface EnableIfTsDb
             if (element.isPresent())
             {
                 EnableIfTsDb anno = element.get().getAnnotation(EnableIfTsDb.class);
-                if ((anno == null || anno.value().length == 0) && !engine.equals("OpenDCS-XML"))
+                if ((anno == null || anno.value().length == 0) && !"OpenDCS-XML".equals(ENGINE))
                 {
                     retVal = ConditionEvaluationResult.enabled("Is Timeseries Db");
                 }
-                else if (matches(anno.value(),engine))
+                else if (matches(anno.value(),ENGINE))
                 {
                     retVal = ConditionEvaluationResult.enabled(
                         String.format("Is Timeseries Db of type (%s)", String.join(",", anno.value()))
@@ -47,7 +47,7 @@ public @interface EnableIfTsDb
                 else
                 {
                     retVal = ConditionEvaluationResult.disabled(
-                        String.format("Not a Timeseries Db of type (%s) was %s", String.join(",", anno.value()), engine));
+                        String.format("Not a Timeseries Db of type (%s) was %s", String.join(",", anno.value()), ENGINE));
                 }
             }
             return retVal;
