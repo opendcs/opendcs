@@ -21,7 +21,7 @@ import org.opendcs.fixtures.spi.Configuration;
 @ExtendWith(EnableIfTsDb.EnableIfTsDbCondition.class)
 public @interface EnableIfTsDb
 {
-    final String ENGINE = System.getProperty("opendcs.test.engine");
+    String ENGINE = System.getProperty("opendcs.test.engine");
     String[] value() default {};
 
     class EnableIfTsDbCondition implements ExecutionCondition

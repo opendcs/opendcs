@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assumptions.*;
 import java.nio.charset.StandardCharsets;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
@@ -218,12 +217,14 @@ class CwmsLocationLevelDAOTestIT extends AppTestBase
             String testLocationLevelId = "FTPK-Lower.Stage.Const.0.Test";
 
             // All interface methods should work with transactions
-            SiteReferenceValue value = daiInterface.getLatestLocationLevelValue(tx, testLocationLevelId);
+            assertDoesNotThrow(() ->
+            {
+                SiteReferenceValue value = daiInterface.getLatestLocationLevelValue(tx, testLocationLevelId);
 
-            SiteReferenceValue valueWithUnits = daiInterface.getLatestLocationLevelValue(tx, testLocationLevelId, "ft");
+                SiteReferenceValue valueWithUnits = daiInterface.getLatestLocationLevelValue(tx, testLocationLevelId, "ft");
 
-            List<? extends SiteReferenceSpecification> specs = daiInterface.getLocationLevelSpecs(tx, "FTPK-Lower");
-
+                List<? extends SiteReferenceSpecification> specs = daiInterface.getLocationLevelSpecs(tx, "FTPK-Lower");
+            });
             // No exceptions should be thrown
         }
     }
