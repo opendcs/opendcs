@@ -17,7 +17,7 @@ public final class SimpleTransaction implements DataTransaction
     }
 
     @Override
-    public <T> Optional<T> connection(Class<T> connectionType) throws OpenDcsDataException {
+    public <T extends AutoCloseable> Optional<T> connection(Class<T> connectionType) throws OpenDcsDataException {
         if (Connection.class.equals(connectionType))
         {
             return Optional.of((T)conn);

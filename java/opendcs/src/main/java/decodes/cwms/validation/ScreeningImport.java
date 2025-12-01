@@ -149,7 +149,9 @@ public class ScreeningImport extends TsdbAppTemplate
 					{
 						TimeSeriesIdentifier tsid = getTsid(tsidStr);
 						if (tsid != null)
+						{
 							screeningDAO.assignScreening(screening, tsid, true);
+						}
 					}
 				}
 			}

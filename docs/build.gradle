@@ -47,9 +47,12 @@ configurations {
     }
 }
 
-tasks.register("checkPython", CheckPython)
+tasks.register("checkPython", CheckPython) {
+    enabled = !noDocs
+}
 
 task prepVenv(type: Exec) {
+    enabled = !noDocs
     executable pythonExe
     workingDir projectDir
     args += "-m"
@@ -62,6 +65,7 @@ task prepVenv(type: Exec) {
 task installReqs(type: Exec) {
     dependsOn prepVenv
     dependsOn checkPython
+    enabled = !noDocs
     def theArgs = osWin ? ["/c","pip"]
                         : []
     def cmd = osWin ? "cmd" : venvPath+"/pip"
@@ -86,7 +90,7 @@ tasks.addRule("Pattern: buildDocs<ID>") { String taskName ->
         task(taskName, type: Exec) {
             dependsOn installReqs
             dependsOn checkPython
-            enabled = havePython
+            onlyIf { !noDocs && havePython.getOrElse(false) }
             executable cmd
             workingDir projectDir
             args = theArgs
@@ -102,6 +106,7 @@ tasks.addRule("Pattern: buildDocs<ID>") { String taskName ->
 }
 
 task buildDocs {
+    onlyIf { !noDocs }
     dependsOn 'buildDocsHtml'
 }
 

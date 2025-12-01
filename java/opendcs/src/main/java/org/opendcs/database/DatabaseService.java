@@ -120,7 +120,10 @@ public class DatabaseService
             {
                 final String name = rs.getString("prop_name");
                 final String value = rs.getString("prop_value");
-                props.put(name, value);
+                if (value != null)
+                {
+                    props.put(name, value);
+                }
             }
             settings.loadFromProperties(props);
         }

@@ -15,13 +15,11 @@
 */
 package org.opendcs.database.impl.opendcs.dao;
 
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.jdbi.v3.core.Handle;
-import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.statement.PreparedBatch;
 import org.jdbi.v3.core.statement.Query;
 import org.jdbi.v3.core.statement.Update;
@@ -29,8 +27,6 @@ import org.jdbi.v3.jackson2.Jackson2Plugin;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.UserManagementDao;
-import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
-import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
 import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigColumnMapper;
 import org.opendcs.database.model.UserBuilder;
@@ -403,12 +399,10 @@ public class UserManagementImpl implements UserManagementDao
     @SuppressWarnings("resource")
     private Handle getHandle(DataTransaction tx) throws OpenDcsDataException
     {
-        Connection conn = tx.connection(Connection.class)
+        Handle h = tx.connection(Handle.class)
                             .orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Connection from transaction."));
-        return Jdbi.open(conn).registerArgument(new DatabaseKeyArgumentFactory())
-                              .registerColumnMapper(new DatabaseKeyColumnMapper())
-                              .registerArgument(new ConfigArgumentFactory())
-                              .registerColumnMapper(new ConfigColumnMapper());
+        return h.registerArgument(new ConfigArgumentFactory())
+                .registerColumnMapper(new ConfigColumnMapper());
     }
 
     /**

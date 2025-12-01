@@ -47,7 +47,7 @@ jackson = "2.18.2"
 greenmail = "1.6.5"
 
 # integration test deps
-testcontainers = "1.20.4"
+testcontainers = { strictly = "2.0.2" }
 hec-testcontainers-cwms = "2.0.0"
 
 # manual test deps
@@ -126,8 +126,8 @@ org-slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j-api
 #integration test deps
 
 testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref="testcontainers" }
-testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref="testcontainers" }
-testcontainers-oracle-free = { module = "org.testcontainers:oracle-free", version.ref="testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql", version.ref="testcontainers" }
+testcontainers-oracle-free = { module = "org.testcontainers:testcontainers-oracle-free", version.ref="testcontainers" }
 hec-testcontainers-cwms = { module = "mil.army.usace.hec:testcontainers-cwms", version.ref = "hec-testcontainers-cwms" }
 
 [bundles]

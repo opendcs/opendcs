@@ -43,9 +43,9 @@ public class CwmsOracleConfiguration implements Configuration
 {
     private static Logger log = Logger.getLogger(CwmsOracleConfiguration.class.getName());
 
-    private static final String CWMS_ORACLE_IMAGE = System.getProperty("opendcs.cwms.oracle.image","registry-public.hecdev.net/cwms/database-ready-ora-23.5:latest-dev");
+    private static final String CWMS_ORACLE_IMAGE = System.getProperty("opendcs.cwms.oracle.image","ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25-07-01-RC06");
     private static final String CWMS_ORACLE_VOLUME = System.getProperty("opendcs.cwms.oracle.volume","cwms_opendcs_volume");
-    private static final String CWMS_SCHEMA_IMAGE = System.getProperty("opendcs.cwms.schema.image","registry-public.hecdev.net/cwms/schema_installer:latest-dev");
+    private static final String CWMS_SCHEMA_IMAGE = System.getProperty("opendcs.cwms.schema.image","ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25-07-01-RC06");
     private static final String CWMS_BUILDUSER_PASSWORD = System.getProperty("opendcs.cwms.build.user.password","antbuildpassword");
 
     public static final String NAME = "CWMS-Oracle";
