@@ -23,14 +23,15 @@ import org.opendcs.fixtures.spi.Configuration;
 @ExtendWith(EnableIfSql.EnableIfSqlCondition.class)
 public @interface EnableIfSql
 {
-    static class EnableIfSqlCondition implements ExecutionCondition
+    class EnableIfSqlCondition implements ExecutionCondition
     {
         @Override
         public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext ctx)
         {
             Object testInstance = ctx.getRequiredTestInstance();
             List<Configuration> configs = AnnotationSupport.findAnnotatedFieldValues(testInstance, ConfiguredField.class, Configuration.class);
-            if (configs.size() == 1 && configs.get(0) != null) {
+            if (configs.size() == 1 && configs.get(0) != null)
+            {
                 return configs.get(0).isSql() ? ConditionEvaluationResult.enabled("Is a Sql Based Db") : ConditionEvaluationResult.disabled("Not a SQL Based Db");
             }
             return ConditionEvaluationResult.disabled("No " + Configuration.class.getName() + " member fields present in Test class.");

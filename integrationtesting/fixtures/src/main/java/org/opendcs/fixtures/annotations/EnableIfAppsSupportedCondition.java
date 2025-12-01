@@ -26,7 +26,8 @@ public class EnableIfAppsSupportedCondition implements ExecutionCondition
             TsdbAppRequired appRequired = a.getAnnotation(TsdbAppRequired.class);
             Object testInstance = ctx.getRequiredTestInstance();
             List<Configuration> configs = AnnotationSupport.findAnnotatedFieldValues(testInstance, ConfiguredField.class, Configuration.class);
-            if (configs.size() == 1 && configs.get(0) != null) {
+            if (configs.size() == 1 && configs.get(0) != null)
+            {
                 return configs.get(0).implementsSupportFor(appRequired.app()) 
                     ? ConditionEvaluationResult.enabled("Implementation Supports " + appRequired.app().getName() )
                     : ConditionEvaluationResult.disabled("Implementation Does not Support " + appRequired.app().getName());
