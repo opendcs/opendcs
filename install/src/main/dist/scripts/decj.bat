@@ -34,7 +34,7 @@ setLocal EnableDelayedExpansion
 :: Configuration
 set "MIN_JAVA_VERSION=21"
 set "DEFAULT_HEAP=-Xms240m"
-set "DEBUG_DECJ="
+set "DEBUG_DECJ=1"
 
 :: Initialize paths
 call :InitializePaths
@@ -48,6 +48,7 @@ call :SetupLogback
 call :ParseArgs %*
 
 :: Verify Java and launch
+call :ValidateJavaHome || exit /B 1
 call :VerifyJava || exit /B 1
 call :LaunchApplication
 
@@ -102,8 +103,21 @@ exit /B %ERRORLEVEL%
     )
     exit /B 0
 
+:ValidateJavaHome
+    :: Ensures JAVA_HOME is set and points to a valid Java installation
+    if not defined JAVA_HOME (
+        call :LogStderr "ERROR: JAVA_HOME environment variable is not set."
+        call :LogStderr "Please set JAVA_HOME to a Java %MIN_JAVA_VERSION%+ installation."
+        exit /B 1
+    )
+    if not exist "%JAVA_HOME%\bin\java.exe" (
+        call :LogStderr "ERROR: Java executable not found at %JAVA_HOME%\bin\java.exe"
+        call :LogStderr "Please verify JAVA_HOME is set correctly."
+        exit /B 1
+    )
+    exit /B 0
+
 :VerifyJava
-    :: Use a temporary file to handle paths with special characters like +
     set "_JAVA_CMD=%JAVA_HOME%\bin\java"
     set "_TMPFILE=%TEMP%\java_version_%RANDOM%.txt"
     "!_JAVA_CMD!" -version 2>"!_TMPFILE!"
@@ -131,6 +145,7 @@ exit /B %ERRORLEVEL%
         echo [DEBUG]   LOGBACK: !LOGBACK!
         echo [DEBUG]   ARGS: !ARGS!
     )
+    else (
     "%JAVA_HOME%\bin\java" %DEFAULT_HEAP% %DECJ_MAXHEAP% %DECJ_OPTS% ^
         !JVM_ARGS! ^
         -cp "!CLASSPATH!" ^
@@ -139,6 +154,7 @@ exit /B %ERRORLEVEL%
         -DDCSTOOL_USERDIR="%DCSTOOL_USERDIR%" ^
         !LOGBACK! !ARGS!
     exit /B %ERRORLEVEL%
+    )
 
 :: ----------------------------------------------------------------------------
 :: Argument Parsing
@@ -243,7 +259,7 @@ exit /B %ERRORLEVEL%
     if "!_level!"=="-1" set "LOG_LEVEL_RESULT=WARN"
     if "!_level!"=="0"  set "LOG_LEVEL_RESULT=INFO"
     if "!_level!"=="1"  set "LOG_LEVEL_RESULT=DEBUG"
-    if "!_level!" GEQ "2" set "LOG_LEVEL_RESULT=TRACE"
+    if "!_level!" GEQ 2 set "LOG_LEVEL_RESULT=TRACE"
     exit /B 0
 
 :StartsWithPrefix
