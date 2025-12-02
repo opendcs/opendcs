@@ -27,9 +27,9 @@ import opendcs.dao.DaoBase;
 @ExtendWith(EnableIfDaoSupported.EnableIfDaoSupportedCondition.class)
 public @interface EnableIfDaoSupported
 {
-    public Class<? extends DaoBase>[] value();
+    Class<? extends DaoBase>[] value();
 
-    public static class EnableIfDaoSupportedCondition implements ExecutionCondition
+    class EnableIfDaoSupportedCondition implements ExecutionCondition
     {
         @Override
         public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext ctx)
