@@ -26,6 +26,7 @@ dependencies
 }
 
 def createUserDir = tasks.register("createUserDir", Copy) {
+    dependsOn testClasses
     from sourceSets.test.output.classesDirs
     into project.layout.buildDirectory.dir("user_dir/dep")
 }
