@@ -29,6 +29,7 @@ import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import decodes.sql.DbKey;
 
 @TestInstance(Lifecycle.PER_CLASS)
+@EnableIfTsDb({"OpenDCS-Postgres"})
 class BuiltInIdentityProviderTest extends AppTestBase
 {
     @ConfiguredField
@@ -39,7 +40,6 @@ class BuiltInIdentityProviderTest extends AppTestBase
 
 
     @BeforeAll
-    @EnableIfTsDb({"OpenDCS-Postgres"})
     void setup_provider() throws Exception
     {
         if (db == null || (db instanceof decodes.xml.jdbc.XmlOpenDcsDatabaseWrapper))
@@ -65,7 +65,6 @@ class BuiltInIdentityProviderTest extends AppTestBase
     }
 
     @AfterAll
-    @EnableIfTsDb({"OpenDCS-Postgres"})
     void teardown_provider() throws Exception
     {
         if (db == null || (db instanceof decodes.xml.jdbc.XmlOpenDcsDatabaseWrapper))
@@ -90,35 +89,33 @@ class BuiltInIdentityProviderTest extends AppTestBase
     }
 
     @Test
-    @EnableIfTsDb({"OpenDCS-Postgres"})
     void test_login_successful() throws Exception
     {
         try (var tx = db.newTransaction())
         {
-            var user = assertDoesNotThrow(() -> provider.login(db,
+            var userActual = assertDoesNotThrow(() -> provider.login(db,
                                                                tx,
                                                                new BuiltInProviderCredentials(
                                                                "test",
                                                                "testpassword"))).get();
-            assertEquals("test@example.com", user.email);
-            assertEquals("test", user.identityProviders.get(0).subject);
+            assertEquals("test@example.com", userActual.email);
+            assertEquals("test", userActual.identityProviders.get(0).subject);
         }
     }
 
 
     @Test
-    @EnableIfTsDb({"OpenDCS-Postgres"})
     void test_login_failures() throws Exception
     {
         try (var tx = db.newTransaction())
         {
-            var user = assertDoesNotThrow(
+            var userActual = assertDoesNotThrow(
                          () -> provider.login(db,
                                               tx,
                                               new BuiltInProviderCredentials(
                                               "bad username",
                                               "testpassword")));
-            assertTrue(user.isEmpty());
+            assertTrue(userActual.isEmpty());
 
             assertThrows(InvalidCredentials.class,
                          () -> provider.login(db,
@@ -130,7 +127,6 @@ class BuiltInIdentityProviderTest extends AppTestBase
     }
 
     @Test
-    @EnableIfTsDb({"OpenDCS-Postgres"})
     void test_wrong_provider_throws_exception() throws Exception
     {
         try (var tx = db.newTransaction())
