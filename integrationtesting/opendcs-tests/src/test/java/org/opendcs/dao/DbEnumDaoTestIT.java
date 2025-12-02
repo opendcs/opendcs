@@ -12,7 +12,7 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
-import org.opendcs.fixtures.annotations.EnableIfSql;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.db.DbEnum;
 import opendcs.dai.EnumDAI;
@@ -47,7 +47,7 @@ class DbEnumDaoTestIT extends AppTestBase
     }
 
     @Test
-    @EnableIfSql
+    @EnableIfTsDb
     void test_pagination() throws Exception
     {
         EnumDAI dai = db.getDao(EnumDAI.class)
