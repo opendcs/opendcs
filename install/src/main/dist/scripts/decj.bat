@@ -29,7 +29,7 @@
 :: ============================================================================
 setLocal EnableDelayedExpansion
 
-set "MIN_JAVA_VERSION=21"
+set "MIN_JAVA_VERSION=8"
 set "DEFAULT_HEAP=-Xms240m"
 set "DEBUG_DECJ=1"
 
