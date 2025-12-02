@@ -306,10 +306,10 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
             try
             {
                 log.info("writeEnumList Deleting enum '{}'", oldenum.enumName);
-                String q = "DELETE FROM EnumValue WHERE enumId = ?";// + oldenum.getId();
+                String q = "DELETE FROM EnumValue WHERE enumId = ?";
                 long id = oldenum.getId().getValue();
                 doModify(q,id);
-                q = "delete from enum where id = ?";// + oldenum.getId();
+                q = "delete from enum where id = ?";
                 doModify(q,id);
             }
             catch(SQLException ex)
@@ -319,7 +319,10 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 
         }
         for(DbEnum newenum : newenums)
+		{
+			log.info("writeEnumList adding '{}'", newenum.enumName);
             enumList.addEnum(newenum);
+		}
     }
 
     @Override
@@ -490,7 +493,8 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
     {
         try (DataTransaction tx = this.getTransaction())
         {
-            this.writeEnum(tx, dbenum);
+            var written = this.writeEnum(tx, dbenum);
+			dbenum.forceSetId(written.getId());
         }
         catch (OpenDcsDataException ex)
         {
@@ -639,7 +643,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException("Unable to get Database connection object."));
-        try (var query = handle.createQuery("select id from enum where name = :name"))
+        try (var query = handle.createQuery("select id from enum where upper(name) = upper(:name)"))
         {
             var id = query.bind(GenericColumns.NAME, enumName)
                           .mapTo(DbKey.class)
@@ -730,7 +734,9 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
                          .add();
             }
             addValues.execute();
-            return getEnum(tx, id).orElseThrow(() -> new OpenDcsDataException("Could not retrieve the enum we just saved."));
+            var dbEnumDb = getEnum(tx, id).orElseThrow(() -> new OpenDcsDataException("Could not retrieve the enum we just saved."));
+			cache.put(dbEnumDb);
+			return dbEnumDb;
         }
     }
     /**

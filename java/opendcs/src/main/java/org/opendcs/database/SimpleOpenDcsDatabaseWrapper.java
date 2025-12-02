@@ -71,8 +71,10 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         this.jdbi = Jdbi.create(dataSource);
         jdbi.registerArgument(new DatabaseKeyArgumentFactory())
             .registerColumnMapper(new DatabaseKeyColumnMapper());
-
-        this.timeSeriesDb.setDcsDatabase(this);
+        if (this.timeSeriesDb != null)
+        {
+            this.timeSeriesDb.setDcsDatabase(this);
+        }
         ((SqlDatabaseIO)this.decodesDb.getDbIo()).setDcsDatabase(this);
 
         try (var tx = newTransaction();
