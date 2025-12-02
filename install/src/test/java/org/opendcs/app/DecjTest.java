@@ -90,6 +90,7 @@ class DecjTest
         assertEquals(Collections.EMPTY_LIST, output.args,
                      () -> "argument not consumed. cmd was: '" +
                            output.props.getProperty("cli", "could not retrieve CLI value") + "'");
+        assertEquals("test.log",output.props.getProperty("LOG_FILE",""));
     }
 
     @ParameterizedTest
