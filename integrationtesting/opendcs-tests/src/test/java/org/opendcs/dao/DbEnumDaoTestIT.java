@@ -43,6 +43,8 @@ class DbEnumDaoTestIT extends AppTestBase
         {
             Optional<DbEnum> dbEnumResult = enumDai.getEnum(tx, "TestEnum");
             assertTrue(dbEnumResult.isPresent(), "Unable to retrieve created enum.");
+
+            enumDai.deleteEnum(tx, dbEnumResult.get().getId());
         }
     }
 
@@ -77,6 +79,8 @@ class DbEnumDaoTestIT extends AppTestBase
 
             assertNotEquals(dbEnums.toArray()[0], secondDbEnums.toArray()[0]);
             assertNotEquals(dbEnums.toArray()[1], secondDbEnums.toArray()[1]);
+
+            tx.rollback();
         }
     }
 }

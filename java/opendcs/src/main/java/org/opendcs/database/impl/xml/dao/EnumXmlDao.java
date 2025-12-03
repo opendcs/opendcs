@@ -358,4 +358,11 @@ public class EnumXmlDao implements EnumDAI
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'getEnumById'");
     }
+
+
+    @Override
+    public void deleteEnum(DataTransaction tx, DbKey dbEnumId) throws OpenDcsDataException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'deleteEnum'");
+    }
 }

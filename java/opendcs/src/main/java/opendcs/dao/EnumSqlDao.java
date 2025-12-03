@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -749,5 +750,24 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
     {
         return (offset != -1 ? " offset :offset rows" : "") +
                (limit != -1 ? " fetch next :limit rows only": "");
+    }
+
+    @Override
+    public void deleteEnum(DataTransaction tx, DbKey dbEnumId) throws OpenDcsDataException
+    {
+        if (DbKey.isNull(dbEnumId))
+        {
+            throw new OpenDcsDataException("Cannot delete an enum that doesn't exist.");
+        }
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException("Unable to get Database connection object."));
+        final String deleteValuesSql = "delete from enumvalue where enumid = :id";
+        final String deleteEnumSql = "delete from enum where id = :id";
+        try (var deleteValues = handle.createUpdate(deleteValuesSql);
+             var deleteEnum = handle.createUpdate(deleteEnumSql))
+        {
+            deleteValues.bind("id", dbEnumId).execute();
+            deleteEnum.bind("id", dbEnumId).execute();
+        }
     }
 }

@@ -118,4 +118,12 @@ public interface EnumDAI extends DaiBase, OpenDcsDao
 	 * @throws OpenDcsDataException
 	 */
 	DbEnum writeEnum(DataTransaction tx, DbEnum dbEnum) throws OpenDcsDataException;
+
+	/**
+	 * Remove an enum from the database
+	 * @param tx
+	 * @param dbEnumId
+	 * @throws OpenDcsDataException
+	 */
+	void deleteEnum(DataTransaction tx, DbKey dbEnumId) throws OpenDcsDataException;
 }
