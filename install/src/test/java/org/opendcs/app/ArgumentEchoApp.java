@@ -13,7 +13,8 @@ public class ArgumentEchoApp
         System.out.println(String.join(",", args));
         for (String key : System.getProperties().stringPropertyNames())
         {
-            System.out.println(key + ": " + System.getProperty(key));
+            String value = System.getProperty(key).replace("\\", "\\\\");
+            System.out.println(key + "=" + value);
         }
     }
 }

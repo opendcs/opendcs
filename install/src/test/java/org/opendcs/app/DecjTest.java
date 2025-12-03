@@ -21,7 +21,12 @@ class DecjTest
     private Result appOutput(String ...args) throws IOException, InterruptedException
     {
         List<String> argsList = new ArrayList<>();
-        argsList.add("build/install/opendcs/bin/decj"); //windows check here
+        String script = "build/install/opendcs/bin/decj";
+        if (System.getProperty("os.name").toLowerCase().contains("win"))
+        {
+            script += ".bat";
+        }
+        argsList.add(script);
         argsList.add("org.opendcs.app.ArgumentEchoApp");
         for (String arg: args)
         {
@@ -85,6 +90,7 @@ class DecjTest
         assertEquals(Collections.EMPTY_LIST, output.args,
                      () -> "argument not consumed. cmd was: '" +
                            output.props.getProperty("cli", "could not retrieve CLI value") + "'");
+        assertEquals("test.log",output.props.getProperty("LOG_FILE",""));
     }
 
     @ParameterizedTest
