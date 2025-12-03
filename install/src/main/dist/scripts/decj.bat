@@ -15,7 +15,7 @@
 ::   -D<prop>=<value>  Pass to JVM 
 ::
 :: Environment Variables:
-::   JAVA_HOME         Path to Java 21+ installation (required)
+::   JAVA_HOME         Path to Java installation (required)
 ::   DCSTOOL_USERDIR   User config directory (default: %APPDATA%\.opendcs)
 ::   DECJ_MAXHEAP      Max heap size (e.g., -Xmx512m)
 ::   DECJ_OPTS         Additional JVM options
