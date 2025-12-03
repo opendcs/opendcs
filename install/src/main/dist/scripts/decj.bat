@@ -29,9 +29,8 @@
 :: ============================================================================
 setLocal EnableDelayedExpansion
 
-set "MIN_JAVA_VERSION=8"
 set "DEFAULT_HEAP=-Xms240m"
-set "DEBUG_DECJ=1"
+set "DEBUG_DECJ="
 
 call :InitializePaths
 
@@ -42,7 +41,6 @@ call :SetupLogback
 call :ParseArgs %*
 
 call :ValidateJavaHome || exit /B 1
-call :VerifyJava || exit /B 1
 call :LaunchApplication
 
 exit /B %ERRORLEVEL%
@@ -106,22 +104,6 @@ exit /B %ERRORLEVEL%
     )
     exit /B 0
 
-:VerifyJava
-    set "_JAVA_CMD=%JAVA_HOME%\bin\java"
-    set "_TMPFILE=%TEMP%\java_version_%RANDOM%.txt"
-    "!_JAVA_CMD!" -version 2>"!_TMPFILE!"
-    for /f "tokens=3" %%i in ('type "!_TMPFILE!" ^| findstr /i "version"') do (
-        set "JAVA_VERSION=%%~i"
-    )
-    del "!_TMPFILE!" 2>nul
-    for /f "tokens=1 delims=." %%a in ("!JAVA_VERSION!") do set "JAVA_MAJOR=%%a"
-    if not defined JAVA_MAJOR set "JAVA_MAJOR=0"
-    if !JAVA_MAJOR! LSS %MIN_JAVA_VERSION% (
-        call :LogStderr "ERROR: Java %MIN_JAVA_VERSION% or higher is required. Found version !JAVA_VERSION!"
-        call :LogStderr "Please set JAVA_HOME to a Java %MIN_JAVA_VERSION%+ installation."
-        exit /B 1
-    )
-    exit /B 0
 
 :LaunchApplication
     set CLI_CMD="%JAVA_HOME%\bin\java" %DEFAULT_HEAP% %DECJ_MAXHEAP% %DECJ_OPTS% !JVM_ARGS! -cp "!CLASSPATH!" -DDCSTOOL_HOME="%APP_PATH%" -DDECODES_INSTALL_DIR="%APP_PATH%" -DDCSTOOL_USERDIR="%DCSTOOL_USERDIR%" !LOGBACK! !ARGS!
