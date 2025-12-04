@@ -37,6 +37,7 @@ final class XmlDatabaseTest {
     public void testReadingDecodesScripts() throws Exception
     {
         Path xmlDir = Files.createTempDirectory("xml-test-dir-{01}");
+        var oldDb = Database.getDb(); // in case used in other tests. we must set it here for the sitename
         try {
             System.out.println(xmlDir.toString());
             String configName = "config-1";
@@ -46,16 +47,18 @@ final class XmlDatabaseTest {
             settings.DbAuthFile = "noop:nothing";
             XmlDatabaseIO dbio = (XmlDatabaseIO) DatabaseIO.makeDatabaseIO(settings);
 
-            Database db = new Database();
+            Database dbOut = new Database(true);
             DbEnum snt = new DbEnum("SiteNameType");
             snt.addValue("CWMS", null, null, null);
-            db.enumList.addEnum(snt);
-            db.setDbIo(dbio);
-            Platform platform = createPlatform();
+            dbOut.enumList.addEnum(snt);
+            dbOut.setDbIo(dbio);
+            dbOut.enumList.setDatabase(dbOut);
+            Database.setDb(dbOut);
+            Platform platform = createPlatform(dbOut);
 
             PlatformConfig pc = new PlatformConfig(configName);
-            pc.setDatabase(db);
-            db.platformConfigList.add(pc);
+            pc.setDatabase(dbOut);
+            dbOut.platformConfigList.add(pc);
             platform.setConfig(pc);
 
             addConfigSensor(pc,1,"GageHeight","SHEF-PE","GH");
@@ -68,23 +71,25 @@ final class XmlDatabaseTest {
             addScriptSensor(ds2,2,"degF");
 
             assertEquals(2, pc.getNumScripts(), "Expected 2 scripts (before save).");
-            db.write();
+            dbOut.write();
 
             // read from disk
-            db = new Database();
+            var dbIn = new Database(true);
+            Database.setDb(dbIn);
             dbio = (XmlDatabaseIO) DatabaseIO.makeDatabaseIO(settings);
-            db.setDbIo(dbio);
-            db.read();
+            dbIn.setDbIo(dbio);
+            dbIn.read();
 
-            PlatformConfig cfg = db.platformConfigList.get(configName);
+            PlatformConfig cfg = dbIn.platformConfigList.get(configName);
             assertEquals(2, cfg.getNumScripts(), "Expected 2 scripts (after reading from disk).");
         }
         finally {
+            Database.setDb(oldDb);
             deleteDirectory(xmlDir.toFile());
         }
     }
 
-    private static Platform createPlatform() throws Exception{
+    private static Platform createPlatform(Database db) throws Exception{
         Platform platform = new Platform();
         platform.setId(DbKey.createDbKey(123456));
         platform.isProduction = true;
@@ -98,7 +103,7 @@ final class XmlDatabaseTest {
         site.setDescription("Murray River - Australia");
         site.setElevation(9.124);
         site.setProperty("PUBLIC_NAME","TESTSITE1");
-       // site.setDatabase(db);
+        site.setDatabase(db);
         SiteName sn = new SiteName(site,"CWMS","name");
         site.addName(sn);
         platform.setSite(site);
