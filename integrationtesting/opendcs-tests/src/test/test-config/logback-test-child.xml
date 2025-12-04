@@ -21,27 +21,13 @@
     <reconnectionDelay>10000</reconnectionDelay>
     <includeCallerData>false</includeCallerData>
   </appender>
-  <logger name="covesw" level="trace">
-    <appender-ref ref="FILE"/>
-  </logger>
-  <logger name="decodes" level="trace">
-    <appender-ref ref="FILE"/>
-  </logger>
-  <logger name="ilex" level="trace">
-    <appender-ref ref="FILE"/>
-  </logger>
-  <logger name="lqm" level="trace">
-    <appender-ref ref="FILE"/>
-  </logger>
-  <logger name="lrgs" level="trace">
-    <appender-ref ref="FILE"/>
-  </logger>
-  <logger name="org.opendcs" level="trace">
-    <appender-ref ref="FILE"/>
-  </logger>
-  <logger name="opendcs" level="trace">
-    <appender-ref ref="FILE"/>
-  </logger>
+  <logger name="covesw" level="trace"/>
+  <logger name="decodes" level="trace"/>
+  <logger name="ilex" level="trace"/>
+  <logger name="lqm" level="trace"/>
+  <logger name="lrgs" level="trace"/>
+  <logger name="org.opendcs" level="trace"/>
+  <logger name="opendcs" level="trace"/>
   <root level="INFO">
     <!--<appender-ref ref="SOCKET"/>-->
     <appender-ref ref="FILE"/>
