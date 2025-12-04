@@ -19,7 +19,6 @@ doc-source/*.rst
 *.log
 *.iml
 .idea/
-!install/bin
 out
 gradle.properties
 **/.factorypath
