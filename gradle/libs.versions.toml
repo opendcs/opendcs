@@ -39,7 +39,8 @@ mock-server = "5.15.0"
 auto-service = "1.1.1"
 
 #test deps
-junit = "5.10.2"
+junit = "5.13.3"
+junit-launcher = "1.14.1"
 commons-io = "2.11.0"
 derby = "10.14.2.0"
 webcompere = "2.1.8"
@@ -108,9 +109,9 @@ hec-nucleus-metadata = { module = "mil.army.usace.hec:hec-nucleus-metadata", ver
 
 # test deps
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
-junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
-junit-platform-engine = { module = "org.junit.platform:junit-platform-engine" }
-junit-platform-commons = { module = "org.junit.platform:junit-platform-commons" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-launcher" }
+junit-platform-engine = { module = "org.junit.platform:junit-platform-engine", version.ref = "junit-launcher" }
+junit-platform-commons = { module = "org.junit.platform:junit-platform-commons", version.ref = "junit-launcher" }
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
 junit-params = { module = "org.junit.jupiter:junit-jupiter-params" }

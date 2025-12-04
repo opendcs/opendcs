@@ -8,9 +8,12 @@ plugins {
 dependencies {
     implementation project(":opendcs")
     implementation project(":testing:fixtures")
+    implementation (libs.bundles.junit.platform)
+    implementation(libs.bundles.junit)
+    
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)
-    testImplementation(libs.bundles.junit.platform)
+    testRuntimeOnly (libs.bundles.junit.platform)
     testImplementation(libs.ch.qos.logback)
     testImplementation(project(":opendcs-logback-event-provider"))
     testImplementation(libs.commons.io)
