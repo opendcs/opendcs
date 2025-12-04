@@ -46,7 +46,8 @@ class BuiltInIdentityProviderTest extends AppTestBase
         {
             return;
         }
-        var userDao = db.getDao(UserManagementDao.class).get();
+        var userDao = db.getDao(UserManagementDao.class)
+                        .orElseGet(() -> fail("No user management DAO available."));
         provider = new BuiltInIdentityProvider(DbKey.NullKey, "builtin", null, Map.of());
         try (var tx = db.newTransaction())
         {
@@ -117,7 +118,7 @@ class BuiltInIdentityProviderTest extends AppTestBase
                                               "testpassword")));
             assertTrue(userActual.isEmpty());
 
-            assertThrows(InvalidCredentials.class,
+            assertThrows(InvalidCredentialsException.class,
                          () -> provider.login(db,
                                         tx,
                                         new BuiltInProviderCredentials(
@@ -131,11 +132,11 @@ class BuiltInIdentityProviderTest extends AppTestBase
     {
         try (var tx = db.newTransaction())
         {
-            assertThrows(InvalidCredentialsType.class,
+            assertThrows(InvalidCredentialsTypeException.class,
                          () -> provider.login(db,
                                         tx,
                                         new IdentityProviderCredentials() {}));
-            assertThrows(InvalidCredentialsType.class,
+            assertThrows(InvalidCredentialsTypeException.class,
                          () -> provider.updateUserCredentials(db,
                                         tx,
                                         new UserBuilder().withEmail("test").build(),
