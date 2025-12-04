@@ -22,8 +22,8 @@ import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 import org.opendcs.authentication.IdentityProviderCredentials;
-import org.opendcs.authentication.InvalidCredentials;
-import org.opendcs.authentication.InvalidCredentialsType;
+import org.opendcs.authentication.InvalidCredentialsException;
+import org.opendcs.authentication.InvalidCredentialsTypeException;
 import org.opendcs.authentication.OpenDcsAuthException;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
@@ -141,13 +141,13 @@ public final class BuiltInIdentityProvider implements IdentityProvider
                     }
                     else
                     {
-                        throw new InvalidCredentials();
+                        throw new InvalidCredentialsException();
                     }
                 }
             }
             else
             {
-                throw new InvalidCredentialsType("This provider cannot handle credentials of type " +
+                throw new InvalidCredentialsTypeException("This provider cannot handle credentials of type " +
                                                  credentials.getClass().getName());
             }
         }
@@ -194,7 +194,7 @@ public final class BuiltInIdentityProvider implements IdentityProvider
         }
         else
         {
-            throw new InvalidCredentialsType("This provider cannot handle credentials of type " +
+            throw new InvalidCredentialsTypeException("This provider cannot handle credentials of type " +
                                                 credentials.getClass().getName());
         }
     }
