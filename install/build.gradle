@@ -2,6 +2,7 @@ plugins
 {
     id 'opendcs.deps-conventions'
     id 'opendcs.publishing-conventions'
+    id 'opendcs.java-conventions'
     id 'distribution'
 }
 
@@ -19,7 +20,26 @@ dependencies
     opendcs(project(":opendcs-logback-event-provider"))
     opendcs(libs.ch.qos.logback)
     docs(project(path: ":docs", configuration: 'docs'))
+    testImplementation enforcedPlatform(libs.junit.bom)
+    testImplementation(libs.bundles.junit)
+    testRuntimeOnly (libs.bundles.junit.platform)
 }
+
+def createUserDir = tasks.register("createUserDir", Copy) {
+    dependsOn testClasses
+    from sourceSets.test.output.classesDirs
+    into project.layout.buildDirectory.dir("user_dir/dep")
+}
+
+test {
+    useJUnitPlatform()
+    dependsOn installDist
+    dependsOn createUserDir
+    environment "DCSTOOL_USERDIR", project.layout.buildDirectory.dir("user_dir").get()
+    environment "DCSTOOL_HOME", project.layout.buildDirectory.dir("install/opendcs").get()
+}
+
+
 
 distributions
 {
@@ -154,7 +174,7 @@ task runApp(type: Exec) {
     if (useJfr && (javaVersion >= 11)) {
         decjOpts += "-XX:StartFlightRecording=disk=true,dumponexit=true,filename=${runDir}/${app}.${profile}.recording.jfr,settings=profile"
     } else if (useJfr) {
-        logger.warn("Unable to run Flight Recorder on JDKs below 8. Use an 11 or higher JDK for running flight recorder.")
+        logger.warn("Unable to run Flightclass Recorder on JDKs below 8. Use an 11 or higher JDK for running flight recorder.")
     }
 
     environment "DECJ_OPTS", decjOpts

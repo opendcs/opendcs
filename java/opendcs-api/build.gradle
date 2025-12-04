@@ -16,6 +16,7 @@ dependencies {
 
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)
+    testRuntimeOnly (libs.bundles.junit.platform)
 }
 
 publishing {

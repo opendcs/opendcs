@@ -60,7 +60,7 @@ if [ "$CP_SHARED_JAR_DIR" != "" ]; then
 fi
 
 if [ -d "$DCSTOOL_USERDIR/dep" ]; then
-  CP=$CP:$DCSTOOL_USERDIR/dep/*
+  CP=$CP:$DCSTOOL_USERDIR/dep/*:$DCSTOOL_USERDIR/dep
 fi
 CP=$CP:$DH/dep/*
 
@@ -73,31 +73,30 @@ fi
 APP_NAME=$1
 LOG_FILE=""
 LOG_LEVEL="-DLOG_LEVEL=info"
-ARGS=""
+APP_ARGS=""
 
 # https://stackoverflow.com/a/36475789
-_ARGS=()
+_ARGS=("$@")
 
 
 shift_globally () {
   shift
-  _ARGS=$@
+  _ARGS=("$@")
 }
 # end https://stackoverflow.com/a/36475789
 
 function handle_arg {
   arg=$1
-  next_arg=$2
   if [[ "${arg:0:2}" == "-a" ]]; then
-    handle_app $arg $next_arg
+    handle_app $arg "${@:2}"
   elif [[ "${arg:0:2}" == "-d" ]]; then
-    handle_debug $arg $next_arg
+    handle_debug $arg "${@:2}"
   elif [[ "${arg:0:2}" == "-D" ]]; then
-    handle_jvm_prop $arg $next_arg
+    handle_jvm_prop $arg "${@:2}"
   elif [[ "${arg:0:2}" == "-l" ]]; then
-    handle_log $arg $next_arg
+    handle_log $arg "${@:2}"
   else
-    ARGS="$ARGS $arg" # pass through
+    APP_ARGS="$APP_ARGS $arg" # pass through
   fi
 }
 
@@ -106,11 +105,11 @@ function handle_jvm_prop {
   prop=$2
   
   if [[ "$arg" == "-D" ]]; then
-    shift_globally "$@"
+    shift_globally "${@:2}"
   else
     prop=${arg:2}
   fi
-  ARGS="-D$prop $ARGS" # these come before the class name so that the jvm sets them for us.
+  APP_ARGS="-D$prop $APP_ARGS" # these come before the class name so that the jvm sets them for us.
 }
 
 
@@ -118,7 +117,7 @@ function handle_debug {
     arg=$1
     level=$2
     if [[ "$arg" == "-d" ]]; then # value is in next argument
-      shift_globally "$@"
+      shift_globally "${@:2}"
     else
       level=${arg:2}
     fi
@@ -138,7 +137,7 @@ function handle_log {
   arg=$1
   log_file=$2
   if [[ "$arg" == "-l" ]]; then
-    shift_globally "$@"
+    shift_globally "${@:2}"
   else
     log_file=${arg:2}
   fi
@@ -149,30 +148,28 @@ function handle_app {
   arg=$1
   APP_NAME=$2
   if [[ "$arg" == "-a" ]]; then
-    shift_globally "$@"
+    shift_globally "${@:2}"
   else
     APP_NAME=${arg:2}
   fi
-  ARGS="$ARGS -a $APP_NAME" # this one gets used *and* passed through
+  APP_ARGS="$APP_ARGS -a $APP_NAME" # this one gets used *and* passed through
 }
 
-while [[ $# -gt 0 ]]; do
-  arg=$1
-  shift
-  next_arg=$1
-
+while [[ ${#_ARGS[@]} -gt 0 ]]; do
+  arg=${_ARGS[0]}
+  shift_globally ${_ARGS[@]}
   if [[ "$arg" == "--" ]]; then # stop trying to special process anything
     break
   elif [[ ${arg:0:1} == "-" ]]; then
-    handle_arg $arg $next_arg # extract our desired elements
+    handle_arg $arg "${_ARGS[@]}" # extract our desired elements
   else
-    ARGS="$ARGS $arg" # pass through
+    APP_ARGS="$APP_ARGS $arg" # pass through
   fi
 done
 # remaining args are assumed correct as is and the application will deal
-while [[ $# -gt 0 ]]; do
-  ARGS="$ARGS $1"
-  shift
+while [[ ${#_ARGS[@]} -gt 0 ]]; do
+  APP_ARGS="$APP_ARGS ${_ARGS[0]}"
+  shift_globally "${_ARGS[@]}"
 done
 
 
@@ -182,6 +179,6 @@ else
   LOGBACK="$LOGBACK -DAPP_NAME=${APP_NAME} $LOG_FILE $LOG_LEVEL"
 fi
 
-cmd="java -Xms120m $DECJ_MAXHEAP $DECJ_OPTS -cp $CP -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR $LOGBACK $ARGS"
-echo $cmd
+cmd="java -Xms120m $DECJ_MAXHEAP $DECJ_OPTS -cp $CP -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR $LOGBACK $APP_ARGS"
+echo "cli: $cmd"
 exec $cmd
