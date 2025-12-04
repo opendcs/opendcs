@@ -47,7 +47,7 @@ jobs:
         run: echo "VERSION=${{github.event.release.tag_name}}" >> $GITHUB_ENV
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5.9.0
+        uses: docker/metadata-action@v5.10.0
         with:
           # this is triggered by the schedule so we want to actually use the checked out information
           # and not the context from the workflow itself.
