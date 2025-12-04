@@ -17,6 +17,6 @@ for image in ${images[@]}; do
     echo "Building $tag/$image:$version"
     docker build --target $image -t $tag/$image:$version .
     while IFS= read -r version2; do
-        docker tag $tag/$image:$version $tag/$image:$version2:
+        docker tag $tag/$image:$version $tag/$image:$version2
     done <<< "$extra_versions"
 done;
