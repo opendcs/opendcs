@@ -39,7 +39,7 @@ mock-server = "5.15.0"
 auto-service = "1.1.1"
 
 #test deps
-junit = "5.13.3"
+junit = "5.14.1"
 junit-launcher = "1.14.1"
 commons-io = "2.11.0"
 derby = "10.14.2.0"
