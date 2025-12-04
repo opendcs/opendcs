@@ -12,8 +12,8 @@ jobs:
       - name: Set up JDK ${{ github.event.workflow_run.outputs.jdk }}
         uses: actions/setup-java@v5.0.0
         with:
-          java-version: ${{ github.event.workflow_run.outputs.jdk }}
-          distribution: temurin
+          java-version: 21
+          distribution: 'temurin'
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5.0.0
       - name: Checkout PR

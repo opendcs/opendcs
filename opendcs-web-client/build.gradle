@@ -20,6 +20,10 @@ plugins {
     id "war"
 }
 
+configurations {
+    local_js
+}
+
 dependencies {
     compileOnly(libs.servlet.api)
     implementation(libs.slf4j.api)
@@ -27,6 +31,8 @@ dependencies {
     annotationProcessor(libs.auto.service)
     implementation(libs.jstl)
     runtimeOnly(libs.slf4j.jdk14)
+
+    local_js(project(":api-client-typescript"))
 
     runtimeOnly("org.webjars:bootstrap:5.3.8")
     constraints {
@@ -88,6 +94,14 @@ dependencies {
     testImplementation(libs.junit.api)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
+}
+
+war {
+    dependsOn configurations.local_js
+    from(zipTree(configurations.local_js.singleFile)) {
+        into("resources/js")
+        include('**/*js')
+    }
 }
 
 

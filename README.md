@@ -14,8 +14,9 @@ OpenDCS Rest API is intended to run as a stand-alone Java program. It uses embed
 ./opendcs-integration-test - contains scripts for running embedded tomcat to deploy the REST API and Web Client wars for testing.
 
 
-# Installation and Configuration
-There are two types of installations/configurations.  One is embedded Jetty bundles and the other is WAR files.
+# Building
+
+JDK 21 and Node 22 or higher are required to build the project.
 
 ## OPENDCS API
 The gradle task `./gradlew :opendcs-rest-api:war` will create a war file in the `build/libs` directory.

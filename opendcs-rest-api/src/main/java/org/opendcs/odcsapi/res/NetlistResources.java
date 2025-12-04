@@ -394,6 +394,7 @@ public final class NetlistResources extends OpenDcsResource
 			summary = "Convert Network List File",
 			description = "Parses a network list file (in text format) and converts it to an object representation.",
 			requestBody = @RequestBody(required = true, content = @Content(mediaType = MediaType.TEXT_PLAIN,
+				    schema = @Schema(implementation = String.class),
 					examples = {
 						@ExampleObject(value = "14159500 CGRO\n14372300 AGNO\n"),
 						@ExampleObject(value = "6698948: Stream_test_site platform associated with stream")

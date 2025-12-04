@@ -1,0 +1,78 @@
+plugins {
+    id 'opendcs-rest-api.deps-conventions'
+    id 'opendcs-rest-api.java-conventions'
+    id 'opendcs-rest-api.publishing-conventions'
+    id 'java-library'
+    id "org.openapi.generator" version "7.17.0"
+}
+
+configurations {
+    apiSpec
+}
+
+dependencies {
+    api(libs.bundles.openapi.deps)
+
+    implementation(project(":opendcs-rest-api"))
+    implementation(libs.bundles.jaxrs.client)
+    implementation(libs.slf4j.api)
+    implementation(libs.jackson)
+
+    apiSpec(project(path: ":opendcs-rest-api", configuration: 'api_spec'))
+}
+
+openApiGenerate {
+    inputSpec = configurations.apiSpec.asPath
+    outputDir = "$buildDir/generated/openApi"
+    generatorName = "java"
+    library = "jersey2"
+    //serializationLibrary = "jackson"
+    //useJakartaEe = false
+    apiPackage = "org/opendcs/rest/client/api"
+    modelPackage = "org/opendcs/rest/client/model"
+    invokerPackage = "org/opendcs/rest/client/invoker"
+    globalProperties.set([
+        modelDocs: "true",
+        modelTests: "false",
+        apiDocs: "true",
+        apiTests: "false",
+        enabledPostProcessFile: "false"
+    ])
+    ignoreFileOverride = "$projectDir/.openapi-generator-ignore"
+    
+}
+
+sourceSets.main {
+    java.srcDir("$buildDir/generated/openApi/src/main/java")
+}
+
+def genTask = tasks.named("openApiGenerate")
+
+genTask.configure {
+    dependsOn configurations.apiSpec
+}
+compileJava.dependsOn genTask
+sourcesJar.dependsOn genTask
+
+
+
+javadoc {
+    options {
+        addStringOption('Xdoclint:none', '-quiet')
+    }
+}
+
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = 'REST API Client'
+            from components.java
+
+            pom {
+                name = 'OpenDCS REST Api client'
+                description = 'Code generated from the OpenDCS Rest APi.'
+            }
+        }
+    }
+}

@@ -14,6 +14,12 @@ nimbus = "9.41.1"
 jwt = "4.4.0"
 auto-service = "1.1.1"
 
+swagger-codegen = "3.0.61"
+jakarta-annotation-api = "1.3.5"
+jsr305 = "3.0.2"
+openapitools-databind-nullable = "0.2.1"
+httpmime-version = "4.5.13"
+
 #Test Dependencies
 junit = "5.10.2"
 mockito = "4.11.0"
@@ -37,11 +43,25 @@ slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 json-jackson = { module = "org.glassfish.jersey.media:jersey-media-json-jackson", version.ref = "jersey" }
 jersey-container-servlet = { module = "org.glassfish.jersey.containers:jersey-container-servlet", version.ref = "jersey" }
 jersey-hk2 = { module = "org.glassfish.jersey.inject:jersey-hk2", version.ref = "jersey" }
+jersey-core = { module = "org.glassfish.jersey.core:jersey-client", version.ref = "jersey" }
+jersey-media-multipart = { module = "org.glassfish.jersey.media:jersey-media-multipart", version.ref = "jersey" }
+jersey-apache-connector = { module = "org.glassfish.jersey.connectors:jersey-apache-connector", version.ref = "jersey" }
 
 jstl = { module = "javax.servlet:jstl", version = "1.2"}
 swagger-jaxrs2 = { module = "io.swagger.core.v3:swagger-jaxrs2", version.ref = "swagger" }
 jackson = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
+
+swagger-codegen = { module = "io.swagger.codegen.v3:swagger-codegen-cli", version.ref = "swagger-codegen" }
+com-google-jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "jsr305" }
+com-faster-xml-jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
+com-faster-xml-jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
+com-faster-xml-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+com-faster-xml-jackson-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
+org-openapitools-jackson-databind = { module = "org.openapitools:jackson-databind-nullable", version.ref = "openapitools-databind-nullable" }
+jakarta-annotation-api = { module = "jakarta.annotation:jakarta.annotation-api", version.ref = "jakarta-annotation-api" }
+org-http-httpmime = { module = "org.apache.httpcomponents:httpmime", version.ref = "httpmime-version" }
+
 
 selenium = { module = "org.seleniumhq.selenium:selenium-java", version.ref = "selenium" }
 nimbus = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus" }
@@ -87,3 +107,11 @@ junit = [ "junit-api", "junit-engine", "junit-params" ]
 junit-platform = [ "junit-platform-launcher", "junit-platform-engine", "junit-platform-commons" ]
 tomcat = ["tomcat-embedded-core", "tomcat-embedded-jasper", "tomcat-jdbc"]
 testcontainers = [ "test-containers-core", "test-containers-jdbc", "test-containers-postgresql", "test-containers-oracle"]
+openapi-deps = [
+    "com-google-jsr305", "org-openapitools-jackson-databind", "jakarta-annotation-api",
+    "com-faster-xml-jackson-core", "com-faster-xml-jackson-databind", "com-faster-xml-jackson-annotations",
+    "com-faster-xml-jackson-jsr310", "org-http-httpmime"
+]
+jaxrs-client = [
+    "jersey-core", "json-jackson", "jersey-hk2", "jersey-media-multipart", "jersey-apache-connector"
+]
