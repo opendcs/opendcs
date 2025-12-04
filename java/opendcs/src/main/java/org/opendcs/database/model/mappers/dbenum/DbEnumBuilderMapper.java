@@ -26,7 +26,8 @@ public class DbEnumBuilderMapper extends PrefixRowMapper<DbEnumBuilder>
     @Override
     public DbEnumBuilder map(ResultSet rs, StatementContext ctx) throws SQLException
     {
-        ColumnMapper<DbKey> dbKeyMapper = ctx.findColumnMapperFor(DbKey.class).get();
+        ColumnMapper<DbKey> dbKeyMapper = ctx.findColumnMapperFor(DbKey.class)
+                                             .orElseThrow(() -> new SQLException("No mapper registered for DbKey class."));
         final DbKey id = dbKeyMapper.map(rs, prefix + GenericColumns.ID, ctx);
         final String name = rs.getString(prefix + GenericColumns.NAME);
         final String defaultValue = rs.getString(prefix + "defaultValue");

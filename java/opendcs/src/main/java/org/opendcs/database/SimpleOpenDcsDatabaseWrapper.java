@@ -45,7 +45,6 @@ import org.slf4j.Logger;
 
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
-import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
 import opendcs.dai.EnumDAI;
@@ -77,7 +76,8 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         }
 
         try (var tx = newTransaction();
-             var conn = tx.connection(Connection.class).get())
+             var conn = tx.connection(Connection.class)
+                          .orElseThrow(() -> new IllegalStateException("Unable to retrieve connection object.")))
         {
             dbEngine = DatabaseEngine.from(conn.getMetaData().getDatabaseProductName());
         }

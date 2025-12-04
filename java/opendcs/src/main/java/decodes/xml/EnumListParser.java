@@ -19,7 +19,6 @@ import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import java.util.Collection;
 import java.util.Iterator;
 import decodes.db.*;
 import ilex.util.TextUtil;
@@ -135,7 +134,7 @@ public class EnumListParser implements XmlObjectParser, XmlObjectWriter
 		
 		for(Iterator<DbEnum> it = enums.iterator(); it.hasNext(); )
 		{
-			decodes.db.DbEnum dbenum = (decodes.db.DbEnum)it.next();
+			decodes.db.DbEnum dbenum = it.next();
 			EnumParser p = new EnumParser(dbenum);
 			p.writeXml(xos);
 		}
