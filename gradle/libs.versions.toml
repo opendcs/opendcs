@@ -99,6 +99,10 @@ io-github-hakky54 = { module = "io.github.hakky54:ayza", version.ref="ayza" }
 auto-service-annotations = { module = "com.google.auto.service:auto-service-annotations", version.ref = "auto-service" }
 auto-service-processor = { module = "com.google.auto.service:auto-service", version.ref = "auto-service" }
 com-password4j-password4j = { module = "com.password4j:password4j", version.ref = "password4j" }
+jersey-media = { module = "org.glassfish.jersey.media:jersey-media-json-jackson", version.ref="jersey" }
+fasterxml-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+fasterxml-jackson-jaxrs = { module = "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider", version.ref="jackson" }
+fasterxml-jackson-datatype = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref="jackson" }
 
 # CWMS
 cwms-db-jooq = { module = "mil.army.usace.hec:cwms-db-jooq", version.ref = "cwms-db" }
@@ -122,7 +126,6 @@ junit-params = { module = "org.junit.jupiter:junit-jupiter-params" }
 commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
 apache-derby = { module = "org.apache.derby:derby", version.ref = "derby" }
 webcompere-system-stubs-jupiter = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "webcompere" }
-fasterxml-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 greenmail = { module = "com.icegreen:greenmail", version.ref = "greenmail" }
 org-mock-server = { module = "org.mock-server:mockserver-junit-jupiter-no-dependencies", version.ref = "mock-server" }
 
@@ -142,3 +145,4 @@ oracle = [ "oracle-ojdbc8" , "oracle-ucp" ]
 jersey = [ "org-eclipse-jetty-jsp", "org-eclipse-jetty-annotations", "org-eclipse-jetty-server", 
             "org-eclipse-jetty-servlets", "org-eclipse-jetty-webapp", "jakarta-servlet",
             "jakarta-jakartaee-api", "jersey-containers","jersey-inject" ]
+jackson = [ "fasterxml-jackson-databind", "fasterxml-jackson-datatype", "fasterxml-jackson-jaxrs" ]
