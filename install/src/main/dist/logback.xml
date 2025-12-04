@@ -29,27 +29,13 @@
             <pattern>%date{ISO8601} %level [%thread] %logger %mdc %marker %kvp %msg %ex %n</pattern>
         </encoder>
     </appender>
-    <logger name="covesw" level="${LOG_LEVEL}">
-        <appender-ref ref="FILE"/>
-    </logger>
-    <logger name="decodes" level="${LOG_LEVEL}">
-        <appender-ref ref="FILE"/>
-    </logger>
-    <logger name="ilex" level="${LOG_LEVEL}">
-        <appender-ref ref="FILE"/>
-    </logger>
-    <logger name="lqm" level="${LOG_LEVEL}">
-        <appender-ref ref="FILE"/>
-    </logger>
-    <logger name="lrgs" level="${LOG_LEVEL}">
-        <appender-ref ref="FILE"/>
-    </logger>
-    <logger name="org.opendcs" level="${LOG_LEVEL}">
-        <appender-ref ref="FILE"/>
-    </logger>
-    <logger name="opendcs" level="${LOG_LEVEL}">
-        <appender-ref ref="FILE"/>
-    </logger>
+    <logger name="covesw" level="trace"/>
+    <logger name="decodes" level="trace"/>
+    <logger name="ilex" level="trace"/>
+    <logger name="lqm" level="trace"/>
+    <logger name="lrgs" level="trace"/>
+    <logger name="org.opendcs" level="trace"/>
+    <logger name="opendcs" level="trace"/>
     <root level="INFO">
         <appender-ref ref="FILE"/>
         <appender-ref ref="STDERR"/>
