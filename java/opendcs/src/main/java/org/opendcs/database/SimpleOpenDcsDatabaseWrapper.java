@@ -75,7 +75,6 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         {
             this.timeSeriesDb.setDcsDatabase(this);
         }
-        ((SqlDatabaseIO)this.decodesDb.getDbIo()).setDcsDatabase(this);
 
         try (var tx = newTransaction();
              var conn = tx.connection(Connection.class).get())

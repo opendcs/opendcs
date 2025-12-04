@@ -12,6 +12,7 @@ import org.opendcs.spi.database.DatabaseProvider;
 
 import decodes.db.Database;
 import decodes.db.DatabaseException;
+import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
@@ -46,15 +47,6 @@ public class OpenTsdbProvider implements DatabaseProvider
     {
         Database db = new Database(true);            
         db.setDbIo(new OpenTsdbSqlDbIO(dataSource, settings));
-        Database.setDb(db);
-        try
-        {
-            db.init(settings);
-        }
-        catch(DecodesException ex)
-        {
-            throw new DatabaseException("Unable to initialize decodes.", ex);
-        }
         return db;
     }
 
@@ -63,6 +55,18 @@ public class OpenTsdbProvider implements DatabaseProvider
     {
         Database decodesDb = getDecodesDatabase(dataSource, settings);
         OpenTsdb tsDb = new OpenTsdb(appName, dataSource, settings);
-        return new SimpleOpenDcsDatabaseWrapper(settings, decodesDb, tsDb, dataSource);
+        var db = new SimpleOpenDcsDatabaseWrapper(settings, decodesDb, tsDb, dataSource);
+        tsDb.setDcsDatabase(db);
+        Database.setDb(decodesDb);
+        try
+        {
+            ((SqlDatabaseIO)decodesDb.getDbIo()).setDcsDatabase(db);
+            decodesDb.init(settings);
+        }
+        catch(DecodesException ex)
+        {
+            throw new DatabaseException("Unable to initialize decodes.", ex);
+        }
+        return db;
     }
 }

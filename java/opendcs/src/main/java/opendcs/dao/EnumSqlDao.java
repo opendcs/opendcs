@@ -229,7 +229,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
             catch (SQLException ex)
             {
                 String msg = "Error in query '" + q + "'";
-                throw new DbIoException(msg,ex);
+                throw new DbIoException(msg, ex);
             }
         }
     }
@@ -238,43 +238,21 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
     public void readEnumList(EnumList top)
         throws DbIoException
     {
-        int dbVer = db.getDecodesDatabaseVersion();
-
-        try
+        try (var tx = getTransaction())
         {
             synchronized(cache)
             {
-                doQuery("SELECT " + getEnumColumns(dbVer) + " FROM Enum",
-                              (rs) -> {
-                                DbEnum en = rs2Enum(rs, dbVer);
-                                cache.put(en);
-                                top.addEnum(en);
-                            });
-
-                String q = "SELECT enumId, enumValue, ev.description, execClass, editClass";
-                if (dbVer >= DecodesDatabaseVersion.DECODES_DB_6)
-                    q = q + ", sortNumber";
-                q = q + " FROM EnumValue ev,";
-                q = q + " Enum  e";
-                q = q + " WHERE ev.enumId = e.id";
-                doQuery(q, (rs) -> {
-                    DbKey key = DbKey.createDbKey(rs, 1);
-                    DbEnum dbEnum = cache.getByKey(key);
-                    if (dbEnum != null)
-                    {
-                        rs2EnumValue(rs, dbEnum);
-                    }
-                    else
-                    {
-                        log.warn("Enum not in cache for key {}. Orphaned enum value {}", key, rs.getString("enumValue"));
-                    }
+                getEnums(tx, -1, -1).forEach(dbe ->
+                {
+                    cache.put(dbe);
+                    top.addEnum(dbe);
                 });
             }
         }
-        catch (SQLException ex)
+        catch (OpenDcsDataException ex)
         {
             String msg = "Error in query";
-            throw new DbIoException(msg);
+            throw new DbIoException(msg, ex);
         }
     }
 

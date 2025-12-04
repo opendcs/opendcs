@@ -165,7 +165,7 @@ public class DatabaseParser implements XmlObjectParser, XmlObjectWriter
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.EnumList_el))
 		{
-			hier.pushObjectParser(new EnumListParser(theDb));
+			hier.pushObjectParser(new EnumListParser(theDb.enumList));
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.DataSource_el))
 		{
@@ -332,7 +332,7 @@ public class DatabaseParser implements XmlObjectParser, XmlObjectWriter
 
 		if (theDb.enumList.size() > 0)
 		{
-			EnumListParser p = new EnumListParser(theDb);
+			EnumListParser p = new EnumListParser(theDb.enumList);
 			p.writeXml(xos);
 		}
 

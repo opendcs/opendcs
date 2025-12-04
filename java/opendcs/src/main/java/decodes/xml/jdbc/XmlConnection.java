@@ -116,9 +116,9 @@ public class XmlConnection implements java.sql.Connection
     }
 
     @Override
-    public DatabaseMetaData getMetaData() throws SQLException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getMetaData'");
+    public DatabaseMetaData getMetaData() throws SQLException
+    {
+        return new XmlMetaData();
     }
 
     @Override

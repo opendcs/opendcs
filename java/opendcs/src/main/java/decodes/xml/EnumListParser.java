@@ -32,19 +32,22 @@ import ilex.xml.*;
 public class EnumListParser implements XmlObjectParser, XmlObjectWriter
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
-	/** The database to read & write */
-	Database theDb;
+	final EnumList enums;
+	DbEnum currDbEnum;
 
 	/**
 	  Note: Normally we would store a reference to the Java object that
 	  we're building, but since EnumList is a singleton with only static
 	  members, we don't need to do this.
-	  @param db The database to read and write.
+
+	  NOTE2: as we move towards new daos we're to first pretend the above isn't true... 
+	         add then make it so.
+	  @param enums The enums to read and write.
 	*/
-	public EnumListParser(Database db)
+	public EnumListParser(EnumList enums)
 	{
 		super();
-		theDb = db;
+		this.enums = enums;
 	}
 
 	/**
@@ -80,9 +83,10 @@ public class EnumListParser implements XmlObjectParser, XmlObjectWriter
 			if (enumName == null)
 				throw new SAXException("Enum without " +
 					XmlDbTags.name_at + " attribute");
-
-			decodes.db.DbEnum dbenum = new decodes.db.DbEnum(enumName);
-			hier.pushObjectParser(new EnumParser(dbenum));
+			
+			currDbEnum = new decodes.db.DbEnum(enumName);
+			enums.addEnum(currDbEnum);
+			hier.pushObjectParser(new EnumParser(currDbEnum));
 		}
 		else
 		{
@@ -106,6 +110,7 @@ public class EnumListParser implements XmlObjectParser, XmlObjectWriter
 				"Parse stack corrupted: got end tag for " + localName
 				+ ", expected " + myName());
 		hier.popObjectParser();
+		
 	}
 
 	/**
@@ -127,8 +132,8 @@ public class EnumListParser implements XmlObjectParser, XmlObjectWriter
 	{
 		xos.startElement(XmlDbTags.EnumList_el);
 
-		Collection enums = theDb.enumList.getEnumList();
-		for(Iterator it = enums.iterator(); it.hasNext(); )
+		
+		for(Iterator<DbEnum> it = enums.iterator(); it.hasNext(); )
 		{
 			decodes.db.DbEnum dbenum = (decodes.db.DbEnum)it.next();
 			EnumParser p = new EnumParser(dbenum);

@@ -5,6 +5,7 @@ import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
+import decodes.db.DbEnum;
 import decodes.db.DecodesScript;
 import decodes.db.Platform;
 import decodes.db.PlatformConfig;
@@ -46,6 +47,9 @@ final class XmlDatabaseTest {
             XmlDatabaseIO dbio = (XmlDatabaseIO) DatabaseIO.makeDatabaseIO(settings);
 
             Database db = new Database();
+            DbEnum snt = new DbEnum("SiteNameType");
+            snt.addValue("CWMS", null, null, null);
+            db.enumList.addEnum(snt);
             db.setDbIo(dbio);
             Platform platform = createPlatform();
 
@@ -95,8 +99,8 @@ final class XmlDatabaseTest {
         site.setElevation(9.124);
         site.setProperty("PUBLIC_NAME","TESTSITE1");
        // site.setDatabase(db);
-        //SiteName sn = new SiteName(site,"CWMS","name");
-        //site.addName(sn);
+        SiteName sn = new SiteName(site,"CWMS","name");
+        site.addName(sn);
         platform.setSite(site);
         return platform;
         /*

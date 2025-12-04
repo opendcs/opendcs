@@ -258,10 +258,8 @@ public class TopLevelParser implements XmlObjectParser
 		throws IOException
 	{
 		XmlObjectWriter xow = null;
-
-		if (topLevelObject instanceof EnumList)
-			xow = new EnumListParser(
-				((EnumList)topLevelObject).getDatabase());
+		if (topLevelObject instanceof EnumList enums)
+			xow = new EnumListParser(enums);
 		else if (topLevelObject instanceof Platform)
 			xow = new PlatformParser((Platform)topLevelObject);
 		else if (topLevelObject instanceof DataTypeSet)
@@ -363,7 +361,7 @@ public class TopLevelParser implements XmlObjectParser
 			else
 				topLevelObject = Database.getDb().enumList;
 
-			hier.pushObjectParser(new EnumListParser(topLevelObject.getDatabase()));
+			hier.pushObjectParser(new EnumListParser((EnumList)topLevelObject));
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.Platform_el))
 		{
