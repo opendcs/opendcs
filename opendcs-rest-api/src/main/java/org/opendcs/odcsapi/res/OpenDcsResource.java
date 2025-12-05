@@ -15,9 +15,9 @@
 
 package org.opendcs.odcsapi.res;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 import javax.sql.DataSource;
-import javax.ws.rs.core.Context;
+import jakarta.ws.rs.core.Context;
 
 import decodes.db.Database;
 import decodes.db.DatabaseIO;

@@ -18,7 +18,7 @@ plugins {
     id "opendcs-rest-api.deps-conventions"
     id "opendcs-rest-api.publishing-conventions"
     id "war"
-    id "io.swagger.core.v3.swagger-gradle-plugin" version "2.2.28"
+    id "io.swagger.core.v3.swagger-gradle-plugin" version "2.2.41"
 }
 
 configurations {
@@ -47,7 +47,11 @@ dependencies {
         exclude group: "org.eclipse.jetty", module: "jetty-annotations"
     }
     implementation(libs.opendcs.api)
-    implementation(libs.servlet.api)
+    swaggerDeps(libs.servlet.api)
+    swaggerDeps(libs.rs.api)
+    swaggerDeps(libs.swagger.jaxrs2)
+    compileOnly(libs.servlet.api)
+    compileOnly(libs.rs.api)
     implementation(libs.json.jackson)
     implementation(libs.jersey.container.servlet)
     implementation(libs.nimbus)
@@ -56,8 +60,10 @@ dependencies {
     implementation(libs.jersey.hk2)
     implementation(libs.slf4j.api)
     implementation(libs.jackson)
+    implementation(libs.jakarta.xml.bind.api)
     runtimeOnly(libs.slf4j.jdk14)
-    runtimeOnly(libs.jackson.annotations) // updated for swagger compatibility
+    runtimeOnly(libs.org.glassfish.jaxb.runtime)
+    runtimeOnly(libs.com.faster.xml.jackson.annotations) // updated for swagger compatibility
 
     webjars(libs.swagger.ui)
 

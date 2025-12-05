@@ -17,8 +17,8 @@ package org.opendcs.odcsapi.res;
 
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
-import javax.ws.rs.ext.ContextResolver;
-import javax.ws.rs.ext.Provider;
+import jakarta.ws.rs.ext.ContextResolver;
+import jakarta.ws.rs.ext.Provider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 

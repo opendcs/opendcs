@@ -27,7 +27,7 @@
         <servlet-name>jersey-servlet</servlet-name>
         <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
         <init-param>
-            <param-name>javax.ws.rs.Application</param-name>
+            <param-name>jakarta.ws.rs.Application</param-name>
             <param-value>org.opendcs.odcsapi.res.RestServices</param-value>
         </init-param>
         <init-param>
@@ -50,20 +50,6 @@
         <param-name>opendcs.rest.api.authorization.expiration.duration</param-name>
         <param-value>PT15M</param-value>
     </context-param>
-    <!--
-    <context-param>
-        <param-name>opendcs.rest.api.cwms.office</param-name>
-        <param-value></param-value>
-    </context-param>
-    <context-param>
-        <param-name>opendcs.rest.api.authorization.jwt.jwkset.url</param-name>
-        <param-value></param-value>
-    </context-param>
-    <context-param>
-        <param-name>opendcs.rest.api.authorization.jwt.issuer.url</param-name>
-        <param-value></param-value>
-    </context-param>
-    -->
     <servlet-mapping>
         <servlet-name>jersey-servlet</servlet-name>
         <url-pattern>/*</url-pattern>

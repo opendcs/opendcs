@@ -14,7 +14,7 @@ dependencies {
     api(libs.bundles.openapi.deps)
 
     implementation(project(":opendcs-rest-api"))
-    implementation(libs.bundles.jaxrs.client)
+    //implementation(libs.bundles.jaxrs.client)
     implementation(libs.slf4j.api)
     implementation(libs.jackson)
 
@@ -25,9 +25,7 @@ openApiGenerate {
     inputSpec = configurations.apiSpec.asPath
     outputDir = "$buildDir/generated/openApi"
     generatorName = "java"
-    library = "jersey2"
-    //serializationLibrary = "jackson"
-    //useJakartaEe = false
+    library = "native"
     apiPackage = "org/opendcs/rest/client/api"
     modelPackage = "org/opendcs/rest/client/model"
     invokerPackage = "org/opendcs/rest/client/invoker"

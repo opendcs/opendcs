@@ -17,7 +17,7 @@ package portal.decodes;
 
 import java.io.IOException;
 
-import javax.servlet.annotation.WebServlet;
+import jakarta.servlet.annotation.WebServlet;
 
 import portal.PortalBase;
 

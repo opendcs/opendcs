@@ -16,7 +16,7 @@
 package org.opendcs.odcsapi.sec;
 
 import java.security.Principal;
-import javax.ws.rs.core.SecurityContext;
+import jakarta.ws.rs.core.SecurityContext;
 
 public final class OpenDcsSecurityContext implements SecurityContext
 {

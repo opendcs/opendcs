@@ -15,11 +15,11 @@
 
 package org.opendcs.odcsapi.sec;
 
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.SecurityContext;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.SecurityContext;
 
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.tsdb.TimeSeriesDb;

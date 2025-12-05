@@ -18,7 +18,7 @@ package org.opendcs.odcsapi.sec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import io.restassured.RestAssured;
 import io.restassured.filter.log.LogDetail;
@@ -97,7 +97,7 @@ final class AuthorizationTestIT
 				.flatMap(e ->
 						e.getValue().readOperationsMap().entrySet().stream().map(opEntry ->
 						{
-							String contentType = javax.ws.rs.core.MediaType.APPLICATION_JSON;
+							String contentType = jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 							RequestBody requestBody = opEntry.getValue().getRequestBody();
 							if(requestBody != null)
 							{
@@ -105,7 +105,7 @@ final class AuthorizationTestIT
 							}
 							List<ApiResponse> acceptTypes = new ArrayList<>(opEntry.getValue().getResponses().values());
 							Content acceptContent = acceptTypes.get(0).getContent();
-							String acceptType = javax.ws.rs.core.MediaType.APPLICATION_JSON;
+							String acceptType = jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 							if(acceptContent != null)
 							{
 								acceptType = acceptContent.keySet().iterator().next();

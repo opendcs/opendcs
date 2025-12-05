@@ -17,7 +17,7 @@ package org.opendcs.odcsapi.opendcs_dep;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import decodes.consumer.StringBufferConsumer;
 import decodes.cwms.rating.CwmsRatingSingleIndep;
