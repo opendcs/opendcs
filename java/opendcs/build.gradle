@@ -90,6 +90,7 @@ dependencies {
         exclude group: "com.mrsid"
         exclude group: "javax.help"
         exclude group: "org.jooq.pro"
+        exclude group: "com.fasterxml"
     }
 
     implementation(libs.hec.cwms.ratings.core) {

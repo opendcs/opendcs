@@ -30,13 +30,14 @@ cwms-db-codegen = { strictly = "7.0.0-OpenDCS" }
 monolith = { strictly = "2.0.2" }
 cwms-ratings = "1.1.0"
 nucleus = "1.1.1"
-jdbi = "3.39.1"
-flywaydb = "9.8.1"
+jdbi = "3.50.0"
+flywaydb = "11.18.0"
 sun-mailapi="1.6.7"
 ayza = "10.0.0"
 mock-server = "5.15.0"
 auto-service = "1.1.1"
 password4j = "1.8.4"
+jackson = "2.20.1"
 
 #test deps
 junit = "5.14.1"
@@ -44,7 +45,6 @@ junit-launcher = "1.14.1"
 commons-io = "2.11.0"
 derby = "10.14.2.0"
 webcompere = "2.1.8"
-jackson = "2.18.2"
 greenmail = "1.6.5"
 
 # integration test deps
@@ -101,7 +101,7 @@ auto-service-processor = { module = "com.google.auto.service:auto-service", vers
 com-password4j-password4j = { module = "com.password4j:password4j", version.ref = "password4j" }
 jersey-media = { module = "org.glassfish.jersey.media:jersey-media-json-jackson", version.ref="jersey" }
 fasterxml-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
-fasterxml-jackson-jaxrs = { module = "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider", version.ref="jackson" }
+fasterxml-jackson-jaxrs = { module = "com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider", version.ref="jackson" }
 fasterxml-jackson-datatype = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref="jackson" }
 
 # CWMS
@@ -144,5 +144,5 @@ jdbi = [ "org-jdbi3-core", "org-jdbi3-sqlobject", "org-jdbi3-postgres", "org-jdb
 oracle = [ "oracle-ojdbc8" , "oracle-ucp" ]
 jersey = [ "org-eclipse-jetty-jsp", "org-eclipse-jetty-annotations", "org-eclipse-jetty-server", 
             "org-eclipse-jetty-servlets", "org-eclipse-jetty-webapp", "jakarta-servlet",
-            "jakarta-jakartaee-api", "jersey-containers","jersey-inject" ]
+            "jakarta-jakartaee-api", "jersey-containers","jersey-inject", "jersey-media" ]
 jackson = [ "fasterxml-jackson-databind", "fasterxml-jackson-datatype", "fasterxml-jackson-jaxrs" ]
