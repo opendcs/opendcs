@@ -95,6 +95,8 @@ org-jdbi3-postgres = { module = "org.jdbi:jdbi3-postgres", version.ref = "jdbi" 
 org-jdbi3-oracle = { module = "org.jdbi:jdbi3-oracle12", version.ref = "jdbi" }
 org-jdbi3-jackson2 = { module ="org.jdbi:jdbi3-jackson2", version.ref = "jdbi" }
 org-flywaydb-flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flywaydb" }
+org-flywaydb-flyway-postgres = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flywaydb" }
+org-flywaydb-flyway-oracle = { module = "org.flywaydb:flyway-database-oracle", version.ref = "flywaydb" }
 io-github-hakky54 = { module = "io.github.hakky54:ayza", version.ref="ayza" }
 auto-service-annotations = { module = "com.google.auto.service:auto-service-annotations", version.ref = "auto-service" }
 auto-service-processor = { module = "com.google.auto.service:auto-service", version.ref = "auto-service" }
