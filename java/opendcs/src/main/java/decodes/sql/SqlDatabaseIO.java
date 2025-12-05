@@ -31,6 +31,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -186,6 +187,13 @@ public class SqlDatabaseIO extends DatabaseIO implements DatabaseConnectionOwner
     /** Facilitates OPENTSDB and HDB connection pooling. CWMS is handled differently. */
     private javax.sql.DataSource poolingDataSource = null;
 
+    // would've preferred this final, but at least it's injected
+    protected OpenDcsDatabase dcsDb;
+
+    public void setDcsDatabase(OpenDcsDatabase dcsDb)
+    {
+        this.dcsDb = dcsDb;
+    }
     /**
      * Default constructor -- all initialization that doesn't depend on
      * a database connection goes here.
@@ -1915,7 +1923,7 @@ public class SqlDatabaseIO extends DatabaseIO implements DatabaseConnectionOwner
     @Override
     public EnumDAI makeEnumDAO()
     {
-        return new EnumSqlDao(this);
+        return new EnumSqlDao(this, dcsDb);
     }
 
     @Override

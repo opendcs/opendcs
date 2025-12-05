@@ -1722,7 +1722,7 @@ public class XmlDatabaseIO extends DatabaseIO
 	{
 		String fn = xmldir + File.separator + EnumDir
 					+ File.separator + EnumListFile;
-		writeDatabaseObject(fn, new EnumListParser(ob.getDatabase()));
+		writeDatabaseObject(fn, new EnumListParser(ob));
 	}
 
 

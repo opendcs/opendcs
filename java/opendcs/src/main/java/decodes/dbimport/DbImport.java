@@ -179,7 +179,7 @@ public class DbImport
 		final String defAgency = agencyArg.getValue().length() == 0 ? null : agencyArg.getValue();
 
 		final String newOwner = platOwnerArg.getValue().length() == 0 ? null : platOwnerArg.getValue();
-
+		
 		DbImport dbImport = new DbImport(cmdLineArgs.getProfile(), dbLoc, validateOnlyArg.getValue(),
 										 keepOldArg.getValue(), platformRelatedOnlyArg.getValue(), overwriteDb.getValue(),
 										 allowHistoricalArg.getValue(), pdtFile, newDesignatorArg, defAgency,

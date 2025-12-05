@@ -58,9 +58,6 @@ public class DbEnum extends IdDatabaseObject implements CachableDbObject, Serial
 
         enumName = name;
         enumValues = new Vector<EnumValue>();
-        Database db = Database.getDb();
-        if (db != null)
-            db.enumList.addEnum(this);
         defaultValue = null;
     }
 
@@ -74,7 +71,6 @@ public class DbEnum extends IdDatabaseObject implements CachableDbObject, Serial
         super(id);
         enumName = name;
         enumValues = new Vector<EnumValue>();
-        Database.getDb().enumList.addEnum(this);
         defaultValue = null;
     }
 
@@ -311,5 +307,34 @@ public class DbEnum extends IdDatabaseObject implements CachableDbObject, Serial
            )
           .append("]}");
         return sb.toString();
+    }
+
+    public static class DbEnumBuilder
+    {
+        DbEnum tmpEnum;
+
+        public DbEnumBuilder(DbKey id, String name, String defaultValue, String description)
+        {
+            tmpEnum = new DbEnum(id, name);
+            tmpEnum.defaultValue = defaultValue;
+            tmpEnum.description = description;
+        }
+
+        public DbEnum build()
+        {
+            return tmpEnum;
+        }
+
+        public DbKey getId()
+        {
+            return tmpEnum.getId();
+        }
+
+        public DbEnumBuilder withValue(EnumValue v)
+        {
+            v.setDbenum(tmpEnum);
+            tmpEnum.addValue(v);
+            return this;
+        }
     }
 }
