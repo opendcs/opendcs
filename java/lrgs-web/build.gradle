@@ -7,7 +7,8 @@ plugins {
 dependencies {
     implementation(project(":opendcs"))
     implementation(libs.org.slf4j.api)
-    implementation(libs.bundles.jersey)
+    api(libs.bundles.jersey)
+    api(libs.bundles.jackson)
 }
 // We don't publish the logger provider to  maven central. Its purpose is a stop gap for the application.
 project.tasks.findAll { task -> task.name.startsWith("publish")}.each { task -> task.enabled = false }
