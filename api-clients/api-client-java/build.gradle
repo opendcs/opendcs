@@ -52,7 +52,9 @@ genTask.configure {
 compileJava.dependsOn genTask
 sourcesJar.dependsOn genTask
 
-
+sonar {
+    skipProject = true // all generated code
+}
 
 javadoc {
     options {

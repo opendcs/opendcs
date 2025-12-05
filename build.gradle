@@ -20,7 +20,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:6.0.1.5171"
+        classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:6.2.0.5505"
     }
 }
 
@@ -31,18 +31,6 @@ plugins {
 apply plugin: "org.sonarqube"
 
 
-def static versionLabel(gitInfo) {
-    def branch = gitInfo.branchName // all branches are snapshots, only tags get released
-    def tag = gitInfo.lastTag
-    // tag is returned as is. Branch may need cleanup
-    return branch == null ? tag : 99 + "." + branch.replace("/", "-") + "-SNAPSHOT"
-}
-
-allprojects {
-    group = 'org.opendcs'
-    version = versionLabel(versionDetails())    
-    apply plugin: "org.sonarqube"
-}
 subprojects {
     sonarqube {
         properties {
@@ -64,9 +52,17 @@ sonar {
     }
 }
 
+import javax.inject.Inject
+
+interface InjectedExecOps {
+    @Inject //@javax.inject.Inject
+    ExecOperations getExecOps()
+}
+
 ext.sonarVersion = {
     def stdout = new ByteArrayOutputStream()
-    exec {
+    def execOps = project.objects.newInstance(InjectedExecOps)
+    execOps.execOps.exec {
         commandLine 'git', 'describe', '--tags', '--abbrev=0', "--always"
         standardOutput = stdout
     }

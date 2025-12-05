@@ -14,6 +14,11 @@ dependencies {
     apiSpec(project(path: ":opendcs-rest-api", configuration: 'api_spec'))
 }
 
+
+sonar {
+    skipProject = true // all generated code
+}
+
 openApiGenerate {
     inputSpec = configurations.apiSpec.asPath
     outputDir = "$buildDir/generated/openApi"
