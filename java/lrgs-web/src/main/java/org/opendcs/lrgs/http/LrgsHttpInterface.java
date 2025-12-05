@@ -15,9 +15,15 @@
 */
 package org.opendcs.lrgs.http;
 
+import java.io.IOException;
+import java.io.Writer;
+
+import org.eclipse.jetty.ee11.servlet.ServletContextHandler;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.server.handler.ErrorHandler;
+import org.eclipse.jetty.util.Callback;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -72,12 +78,24 @@ public class LrgsHttpInterface implements LoadableLrgsInputInterface
 		ctx = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		ctx.setContextPath("/");
 		server.setHandler(ctx);
-        ServletHolder serHol = ctx.addServlet(ServletContainer.class, "/*");
+        var serHol = ctx.addServlet(ServletContainer.class, "/*");
 		serHol.setInitOrder(1);
-		serHol.setInitParameter("jersey.config.server.provider.packages", "org.opendcs.lrgs.http");
+        server.setErrorHandler(new ErrorHandler()
+        {
+            @Override
+            protected void generateResponse(Request request, Response response, int code, String message, Throwable cause, Callback callback) throws IOException
+            {
+                log.atError().setCause(cause).log("Unexpected error {}, code = {}", message, code);
+                
+                callback.succeeded();
+                
+            }
+        });
+        serHol.setInitParameter("jersey.config.server.provider.packages", "org.opendcs.lrgs.http");
+        serHol.setInitParameter("com.sun.jersey.api.json.POJOMappingFeature", "true");
         ctx.setAttribute("lrgs", this.lrgs);
         ctx.setAttribute("archive", this.archive);
-
+        
         ServerConnector connector = new ServerConnector(server);
         connector.setPort(this.port);
         server.addConnector(connector);

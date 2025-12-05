@@ -19,18 +19,17 @@ aspectj="1.8.10"
 json="20231013"
 slf4j-api= { strictly = "2.0.17" }
 logback = "1.3.15" 
-jetty = "9.4.56.v20240826"
-jetty-jsp = "9.2.30.v20200428"
-jersey = "2.40"
-servlet-api = "4.0.1"
-javax-javaee-api = "7.0"
+jetty = "12.1.4"
+jetty-jsp = "12.1.4"
+jersey = "4.0.0"
+servlet-api = "6.1.0"
+jakarta-jakartaee-api = "11.0.0"
 # CWMS Dep version
 cwms-db = "9.3.5"
 cwms-db-codegen = { strictly = "7.0.0-OpenDCS" }
 monolith = { strictly = "2.0.2" }
 cwms-ratings = "1.1.0"
 nucleus = "1.1.1"
-# to upgrade past this version requires java 11 -->
 jdbi = "3.39.1"
 flywaydb = "9.8.1"
 sun-mailapi="1.6.7"
@@ -38,6 +37,7 @@ ayza = "10.0.0"
 mock-server = "5.15.0"
 auto-service = "1.1.1"
 password4j = "1.8.4"
+jackson = "2.20.1"
 
 #test deps
 junit = "5.14.1"
@@ -45,7 +45,6 @@ junit-launcher = "1.14.1"
 commons-io = "2.11.0"
 derby = "10.14.2.0"
 webcompere = "2.1.8"
-jackson = "2.18.2"
 greenmail = "1.6.5"
 
 # integration test deps
@@ -57,7 +56,7 @@ gherkin-kiwi = "1.0.0-M11"
 
 [libraries]
 gherkin-kiwi = { module = "org.opendcs.testing:gradle-plugin", version.ref="gherkin-kiwi" }
-oracle-ojdbc8 = { module = "com.oracle.database.jdbc:ojdbc8", version.ref = "oracle" }
+oracle-ojdbc8 = { module = "com.oracle.database.jdbc:ojdbc11", version.ref = "oracle" }
 oracle-ucp = { module = "com.oracle.database.jdbc:ucp", version.ref = "oracle" }
 postgresql = { module ="org.postgresql:postgresql", version.ref = "postgres"}
 commons-logging = { module = "commons-logging:commons-logging", version.ref = "commons-logging" }
@@ -79,15 +78,17 @@ org-aspectj-aspectjrt = { module = "org.aspectj:aspectjrt", version.ref="aspectj
 org-json-json = { module = "org.json:json", version.ref="json" }
 org-slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j-api" }
 ch-qos-logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
-org-eclipse-jetty-jsp = { module = "org.eclipse.jetty:jetty-jsp", version.ref="jetty-jsp" }
-org-eclipse-jetty-annotations = { module = "org.eclipse.jetty:jetty-annotations", version.ref="jetty" }
+# jetty (lrgs-web)
+org-eclipse-jetty-jsp = { module = "org.eclipse.jetty.ee11:jetty-ee11-apache-jsp", version.ref="jetty-jsp" }
+org-eclipse-jetty-annotations = { module = "org.eclipse.jetty.ee11:jetty-ee11-annotations", version.ref="jetty" }
 org-eclipse-jetty-server = { module = "org.eclipse.jetty:jetty-server", version.ref="jetty" }
-org-eclipse-jetty-servlets = { module = "org.eclipse.jetty:jetty-servlets", version.ref="jetty" }
-org-eclipse-jetty-webapp = { module = "org.eclipse.jetty:jetty-webapp", version.ref="jetty" }
-javax-servlet = { module = "javax.servlet:javax.servlet-api", version.ref="servlet-api" }
-javax-javaee-api = { module = "javax:javaee-api", version.ref="javax-javaee-api" }
+org-eclipse-jetty-servlets = { module = "org.eclipse.jetty.ee11:jetty-ee11-servlets", version.ref="jetty" }
+org-eclipse-jetty-webapp = { module = "org.eclipse.jetty.ee11:jetty-ee11-webapp", version.ref="jetty" }
+jakarta-servlet = { module = "jakarta.servlet:jakarta.servlet-api", version.ref="servlet-api" }
+jakarta-jakartaee-api = { module = "jakarta.platform:jakarta.jakartaee-api", version.ref="jakarta-jakartaee-api" }
 jersey-containers = { module = "org.glassfish.jersey.containers:jersey-container-servlet", version.ref="jersey" }
 jersey-inject = { module ="org.glassfish.jersey.inject:jersey-hk2", version.ref="jersey" }
+# end jetty (lrgs-web)
 org-jdbi3-core = { module = "org.jdbi:jdbi3-core", version.ref = "jdbi" }
 org-jdbi3-sqlobject = { module = "org.jdbi:jdbi3-sqlobject", version.ref = "jdbi" }
 org-jdbi3-postgres = { module = "org.jdbi:jdbi3-postgres", version.ref = "jdbi" }
@@ -98,6 +99,10 @@ io-github-hakky54 = { module = "io.github.hakky54:ayza", version.ref="ayza" }
 auto-service-annotations = { module = "com.google.auto.service:auto-service-annotations", version.ref = "auto-service" }
 auto-service-processor = { module = "com.google.auto.service:auto-service", version.ref = "auto-service" }
 com-password4j-password4j = { module = "com.password4j:password4j", version.ref = "password4j" }
+jersey-media = { module = "org.glassfish.jersey.media:jersey-media-json-jackson", version.ref="jersey" }
+fasterxml-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+fasterxml-jackson-jaxrs = { module = "com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider", version.ref="jackson" }
+fasterxml-jackson-datatype = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref="jackson" }
 
 # CWMS
 cwms-db-jooq = { module = "mil.army.usace.hec:cwms-db-jooq", version.ref = "cwms-db" }
@@ -121,7 +126,6 @@ junit-params = { module = "org.junit.jupiter:junit-jupiter-params" }
 commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
 apache-derby = { module = "org.apache.derby:derby", version.ref = "derby" }
 webcompere-system-stubs-jupiter = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "webcompere" }
-fasterxml-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 greenmail = { module = "com.icegreen:greenmail", version.ref = "greenmail" }
 org-mock-server = { module = "org.mock-server:mockserver-junit-jupiter-no-dependencies", version.ref = "mock-server" }
 
@@ -139,5 +143,6 @@ junit-platform = [ "junit-platform-launcher", "junit-platform-engine", "junit-pl
 jdbi = [ "org-jdbi3-core", "org-jdbi3-sqlobject", "org-jdbi3-postgres", "org-jdbi3-oracle", "org-jdbi3-jackson2" ]
 oracle = [ "oracle-ojdbc8" , "oracle-ucp" ]
 jersey = [ "org-eclipse-jetty-jsp", "org-eclipse-jetty-annotations", "org-eclipse-jetty-server", 
-            "org-eclipse-jetty-servlets", "org-eclipse-jetty-webapp", "javax-servlet",
-            "javax-javaee-api", "jersey-containers","jersey-inject" ] 
+            "org-eclipse-jetty-servlets", "org-eclipse-jetty-webapp", "jakarta-servlet",
+            "jakarta-jakartaee-api", "jersey-containers","jersey-inject", "jersey-media" ]
+jackson = [ "fasterxml-jackson-databind", "fasterxml-jackson-datatype", "fasterxml-jackson-jaxrs" ]
