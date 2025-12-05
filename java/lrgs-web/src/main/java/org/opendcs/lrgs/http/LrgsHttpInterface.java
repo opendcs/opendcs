@@ -15,9 +15,8 @@
 */
 package org.opendcs.lrgs.http;
 
+import org.eclipse.jetty.ee11.servlet.ServletContextHandler;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -72,7 +71,7 @@ public class LrgsHttpInterface implements LoadableLrgsInputInterface
 		ctx = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		ctx.setContextPath("/");
 		server.setHandler(ctx);
-        ServletHolder serHol = ctx.addServlet(ServletContainer.class, "/*");
+        var serHol = ctx.addServlet(ServletContainer.class, "/*");
 		serHol.setInitOrder(1);
 		serHol.setInitParameter("jersey.config.server.provider.packages", "org.opendcs.lrgs.http");
         ctx.setAttribute("lrgs", this.lrgs);
