@@ -272,6 +272,20 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     public DatabaseEngine getDatabase()
     {
         return this.dbEngine;
+    }    
+
+    @SuppressWarnings("unchecked") // Types are checked manually in this function
+    @Override
+    public <T extends Generator> Optional<T> getGenerator(Class<T> generatorClass)
+    {
+        if (KeyGenerator.class.equals(generatorClass))
+        {
+            return Optional.of((T)keyGenerator);
+        }
+        else
+        {
+            return Optional.empty();
+        }
     }
 
     @SuppressWarnings("unchecked") // Types are checked manually in this function
