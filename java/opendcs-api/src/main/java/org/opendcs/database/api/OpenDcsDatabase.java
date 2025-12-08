@@ -49,4 +49,10 @@ public interface OpenDcsDatabase
      * @return
      */
     DatabaseEngine getDatabase();
+
+    /**
+     * KeyGenerator if auto generated keys aren't used.
+     * @return
+     */
+    <T extends Generator> Optional<T> getGenerator(Class<T> generatorClass);
 }

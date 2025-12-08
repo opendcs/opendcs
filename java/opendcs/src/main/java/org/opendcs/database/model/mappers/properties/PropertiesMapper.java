@@ -26,7 +26,7 @@ public class PropertiesMapper extends PrefixRowMapper<Pair<String,String>>
     public Pair<String, String> map(ResultSet rs, StatementContext ctx) throws SQLException
     {
         return Pair.of(rs.getString(prefix+GenericColumns.NAME), 
-                       rs.getString(prefix+"name"));
+                       rs.getString(prefix+"prop_value"));
     }
     
 }

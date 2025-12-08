@@ -15,10 +15,12 @@ import ilex.util.Pair;
 public class EquipmentModelReducer implements BiConsumer<Map<Long, EquipmentModel>, RowView>
 {
     private final String equipmentModelPrefix;
+    private final String propertyPrefix;
 
-    public EquipmentModelReducer(String equipmentModelPrefix)
+    public EquipmentModelReducer(String equipmentModelPrefix, String propertyPrefix)
     {
         this.equipmentModelPrefix = addUnderscoreIfMissing(equipmentModelPrefix);
+        this.propertyPrefix = addUnderscoreIfMissing(propertyPrefix);
     }
 
     @Override
@@ -26,8 +28,11 @@ public class EquipmentModelReducer implements BiConsumer<Map<Long, EquipmentMode
     {
         var em = map.computeIfAbsent(rowView.getColumn(equipmentModelPrefix+GenericColumns.ID, Long.class), 
                                      emId -> rowView.getRow(EquipmentModel.class));
-        var prop = rowView.getRow(new GenericType<Pair<String,String>>() {});
-        em.properties.setProperty(prop.first, prop.second);
+        if (rowView.getColumn(propertyPrefix+GenericColumns.NAME, String.class) != null)
+        {
+            var prop = rowView.getRow(new GenericType<Pair<String,String>>() {});
+            em.properties.setProperty(prop.first, prop.second);
+        }
     }
     
 }

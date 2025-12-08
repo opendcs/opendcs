@@ -11,7 +11,7 @@ import org.opendcs.database.api.OpenDcsDataException;
 import decodes.db.EquipmentModel;
 import decodes.sql.DbKey;
 
-public interface EquipmentModelDai extends OpenDcsDao
+public interface EquipmentModelDao extends OpenDcsDao
 {
     /**
      * Retrieve list of equipment models configured in this database.

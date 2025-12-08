@@ -32,10 +32,13 @@ import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.JdbiException;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
+import org.opendcs.database.api.Generator;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.dai.EquipmentModelDao;
 import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.impl.opendcs.dao.EquipmentModelImpl;
 import org.opendcs.database.impl.opendcs.dao.UserManagementImpl;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
@@ -44,7 +47,10 @@ import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import decodes.db.Database;
+import decodes.db.DatabaseException;
 import decodes.db.DatabaseIO;
+import decodes.sql.KeyGenerator;
+import decodes.sql.KeyGeneratorFactory;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
 import opendcs.dai.EnumDAI;
@@ -59,6 +65,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     protected final DataSource dataSource;
     protected final Jdbi jdbi;
     public final DatabaseEngine dbEngine;
+    public final KeyGenerator keyGenerator;
     private final Map<Class<? extends OpenDcsDao>, DaoWrapper<? extends OpenDcsDao>> daoMap = new HashMap<>();
 
     public SimpleOpenDcsDatabaseWrapper(DecodesSettings settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource)
@@ -84,6 +91,15 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         catch (SQLException | OpenDcsDataException ex)
         {
             throw new IllegalStateException("Unable to determine database type", ex);
+        }
+
+        try
+        {
+            keyGenerator = KeyGeneratorFactory.makeKeyGenerator(settings.sqlKeyGenerator);
+        }
+        catch (DatabaseException ex)
+        {
+            throw new IllegalStateException("Unable to create key generator of type '" + settings.sqlKeyGenerator + "'", ex);
         }
     }
 
@@ -121,6 +137,11 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
                 if (dao.isAssignableFrom(CwmsLocationLevelDAO.class))
                 {
                     return new DaoWrapper<>(() -> new CwmsLocationLevelDAO(this.timeSeriesDb));
+                }
+
+                if (dao.isAssignableFrom(EquipmentModelDao.class))
+                {
+                    return new DaoWrapper<>(() -> new EquipmentModelImpl(this));
                 }
 
                 if (dao.isAssignableFrom(UserManagementDao.class))
@@ -251,5 +272,19 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     public DatabaseEngine getDatabase()
     {
         return this.dbEngine;
+    }    
+
+    @SuppressWarnings("unchecked") // Types are checked manually in this function
+    @Override
+    public <T extends Generator> Optional<T> getGenerator(Class<T> generatorClass)
+    {
+        if (KeyGenerator.class.equals(generatorClass))
+        {
+            return Optional.of((T)keyGenerator);
+        }
+        else
+        {
+            return Optional.empty();
+        }
     }
 }
