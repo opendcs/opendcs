@@ -12,9 +12,9 @@ import decodes.db.DatabaseException;
 import decodes.db.EquipmentModel;
 import decodes.sql.DbKey;
 
-public final class EquipmentModelMapper extends PrefixRowMapper<EquipmentModel>
+public class EquipmentModelMapper extends PrefixRowMapper<EquipmentModel> 
 {
-    private EquipmentModelMapper(String prefix)
+  private EquipmentModelMapper(String prefix)
     {
         super(prefix);
     }
@@ -31,7 +31,7 @@ public final class EquipmentModelMapper extends PrefixRowMapper<EquipmentModel>
         EquipmentModel em = new EquipmentModel();
         ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class)
                                                     .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
-        try
+        try 
         {
             em.setId(columnMapperForKey.map(rs, prefix+"id", ctx));
             em.name = rs.getString(prefix+"name");
@@ -44,7 +44,7 @@ public final class EquipmentModelMapper extends PrefixRowMapper<EquipmentModel>
         {
             throw new SQLException("Unable to set id field on fresh EquipmentModel instance.", ex);
         }
-        return em;
+        return null;
     }
-
+    
 }
