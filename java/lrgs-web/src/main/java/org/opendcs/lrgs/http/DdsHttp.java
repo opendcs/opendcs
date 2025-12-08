@@ -24,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.MDC;
 import org.slf4j.MDC.MDCCloseable;
 
-import ilex.util.IndexRangeException;
 import lrgs.apistatus.AttachedProcess;
 import lrgs.archive.MsgArchive;
 import lrgs.common.ArchiveUnavailableException;
@@ -37,6 +36,7 @@ import lrgs.common.SearchCriteria;
 import lrgs.common.SearchTimeoutException;
 import lrgs.common.UntilReachedException;
 import lrgs.ddsserver.MessageArchiveRetriever;
+import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.lrgsmain.LrgsMain;
 
 @Path("/dds")
@@ -50,7 +50,7 @@ public class DdsHttp
     @GET
     @Path("/next")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response get(@Context HttpServletRequest request)
+    public Response getNext(@Context HttpServletRequest request)
     { 
         LrgsMain lrgs = (LrgsMain)servletContext.getAttribute("lrgs");
         HttpSession session = request.getSession();
@@ -152,6 +152,21 @@ public class DdsHttp
         }
         log.info("Unable to retrieve message archive retriever");
         return null;
+    }
+
+    @GET
+    @Path("/sources")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getSources(@Context HttpServletRequest request)
+    {
+        LrgsMain lrgs = (LrgsMain)servletContext.getAttribute("lrgs");
+        var sources = lrgs.getInputs()
+                          .stream()
+                          .filter(i -> i != null)
+                          .filter(i -> i.getStatusCode() != LrgsInputInterface.DL_DISABLED)
+                          .map(i -> i.getInputName())
+                          .toList();
+        return Response.ok().entity(sources).build();
     }
 
     public static class Message
