@@ -40,6 +40,9 @@ dependencies {
     testImplementation(libs.nimbus)
     testImplementation(libs.jwt)
     testImplementation(libs.swagger.parser)
+    testImplementation(libs.swagger.models)
+    testImplementation(libs.selenium)
+    testImplementation(libs.web.driver.manager)
     testRuntimeOnly(libs.byte.buddy)
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)
@@ -61,6 +64,12 @@ configurations.all {
     exclude group: "javax.media"
     exclude group: "com.sun.media"
     exclude group: "org.eclipse.jetty"
+    exclude group: "javax.xml.bind", module: "jaxb-api"
+    exclude group: "javax.transaction", module: "jta"
+    exclude group: "javax.xml.stream", module: "stax-api"
+    exclude group: "io.swagger.core.v3", module: "swagger-core"
+    exclude group: "io.swagger.core.v3", module: "swagger-models"
+
 }
 
 

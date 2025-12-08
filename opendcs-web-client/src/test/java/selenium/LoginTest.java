@@ -9,6 +9,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -44,7 +45,7 @@ public class LoginTest {
             }
 
             // Set implicit wait to handle any delays in finding elements
-            driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+            driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
 
             // Open the login page
             String baseUrl = System.getProperty("opendcs.webclient.url") + "/portal/login"; // Change to your actual URL

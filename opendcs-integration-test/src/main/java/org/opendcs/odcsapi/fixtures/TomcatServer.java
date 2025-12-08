@@ -28,6 +28,7 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
 
+import decodes.util.DecodesSettings;
 import org.apache.catalina.Host;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.Manager;
@@ -35,16 +36,14 @@ import org.apache.catalina.connector.Connector;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.jdbc.pool.DataSourceFactory;
+import org.apache.tomcat.util.scan.StandardJarScanner;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.fixtures.configurations.cwms.CwmsOracleConfiguration;
 import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.fixtures.spi.ConfigurationProvider;
-import org.slf4j.Logger;
-
-import decodes.util.DecodesSettings;
-
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
@@ -96,16 +95,13 @@ public final class TomcatServer implements AutoCloseable
 		restApiContext.setParentClassLoader(TomcatServer.class.getClassLoader());
 		restApiContext.setReloadable(true);
 		restApiContext.setPrivileged(true);
+		((StandardJarScanner) restApiContext.getJarScanner()).setScanClassPath(false);
 		sessionManager = restApiContext::getManager;
-		if(System.getProperty(DB_OFFICE) != null)
-		{
-			restApiContext.removeParameter("opendcs.rest.api.cwms.office");
-			restApiContext.addParameter("opendcs.rest.api.cwms.office", System.getProperty(DB_OFFICE));
-		}
 
 		StandardContext guiContext = (StandardContext) tomcatInstance.addWebapp("", guiWar);
+		((StandardJarScanner) guiContext.getJarScanner()).setScanClassPath(false);
 		guiContext.setDelegate(true);
-		guiContext.setParentClassLoader(TomcatServer.class.getClassLoader());
+		guiContext.setParentClassLoader(null);
 		guiContext.setReloadable(true);
 		guiContext.setPrivileged(true);
 	}

@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 
 <%-- Core JS files --%>
 <script src="/webjars/jquery/jquery.min.js"></script>
@@ -27,6 +27,7 @@
 <script src="/webjars/datatables.net-select/js/dataTables.select.min.js"></script>
 <script src="/webjars/datatables.net-select-bs5/js/select.bootstrap5.min.js"></script>
 <%--  OpenDCS Web Files --%>
+<script src="../resources/js/main.js"></script>
 <script src="../resources/js/decodes.js"></script>
 <script src="../resources/js/lib/dom_utilities.js"></script>
 <script src="../resources/js/lib/object_utilities.js"></script>
@@ -49,4 +50,3 @@
 		window.API_URL = new URL(apiBasePath, origin).href;
 	})();
 </script>
-<script src="../resources/js/main.js"></script>
