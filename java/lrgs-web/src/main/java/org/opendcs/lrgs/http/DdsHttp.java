@@ -106,7 +106,6 @@ public class DdsHttp
                     }
                     return Response.ok().entity(messages).build();
                 }
-                //return Response.ok("\"Active\"").build();
             }
             else
             {
@@ -132,7 +131,6 @@ public class DdsHttp
             AttachedProcess ap = new AttachedProcess(1, "test", "test", "tester", 0, 0, 0, "running", (short)0);
             mar = new MessageArchiveRetriever(archive, ap);
             SearchCriteria sc = new SearchCriteria();
-            //sc.addDcpName("TEST");
             sc.setAscendingTimeOnly(true);
             sc.setLrgsSince("now - 1 hour");
             sc.setLrgsUntil("now");
