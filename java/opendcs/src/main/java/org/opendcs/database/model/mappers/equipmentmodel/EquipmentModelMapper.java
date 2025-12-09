@@ -44,7 +44,7 @@ public class EquipmentModelMapper extends PrefixRowMapper<EquipmentModel>
         {
             throw new SQLException("Unable to set id field on fresh EquipmentModel instance.", ex);
         }
-        return null;
+        return em;
     }
     
 }
