@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
+import org.jdbi.v3.core.generic.GenericType;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
@@ -19,12 +20,14 @@ import decodes.db.DatabaseException;
 import decodes.db.EquipmentModel;
 import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
-import decodes.tsdb.DbIoException;
+import ilex.util.Pair;
 
 public class EquipmentModelImpl implements EquipmentModelDao
 {
     private final OpenDcsDatabase db;
     private final KeyGenerator keyGen;
+
+    private final String propsDeleteSql = "delete from equipmentproperty where equipmentid = :id";
 
     public EquipmentModelImpl(OpenDcsDatabase db)
     {
@@ -58,7 +61,7 @@ public class EquipmentModelImpl implements EquipmentModelDao
         {
             return emQuery.bind("id", id)
                           .registerRowMapper(EquipmentModelMapper.withPrefix("e"))
-                          .registerRowMapper(PropertiesMapper.withPrefix("p"))
+                          .registerRowMapper(new GenericType<Pair<String,String>>(){}, PropertiesMapper.withPrefix("p"))
                           .reduceRows(new EquipmentModelReducer("e", "p"))
                           .map(m -> m)
                           .findFirst();
@@ -75,14 +78,21 @@ public class EquipmentModelImpl implements EquipmentModelDao
     @Override
     public void deleteEquipmentModel(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'deleteEquipmentModel'");
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException("No Jdbi Handle available."));
+        final var deleteEquipmentModelSql = "delete from equipmentmodel where id = :id";
+        try (var deleteProps = handle.createUpdate(propsDeleteSql);
+             var deleteEquipmentModel = handle.createUpdate(deleteEquipmentModelSql))
+        {
+            deleteProps.bind(GenericColumns.ID, id).execute();
+            deleteEquipmentModel.bind(GenericColumns.ID, id).execute();
+        }
     }
 
     @Override
     public EquipmentModel saveEquipmentModel(DataTransaction tx, EquipmentModel em) throws OpenDcsDataException
     {
-        DbKey id = DbKey.NullKey;
+        
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException("No Jdbi Handle available."));
 
@@ -97,17 +107,32 @@ public class EquipmentModelImpl implements EquipmentModelDao
                     insert(id, name, model, company, description, equipmentType)
                     values(input.id, input.name, input.model, input.company, input.description, input.equipmentType)
                 """;
+       
+        var insertPropsSql = "insert into equipmentproperty(equipmentid, name, prop_value) values (:equipmentid, :name, :value)";
         try (var emMerge = handle.createUpdate(emMergeSql)
-                                 .define("dual", db.getDatabase() == DatabaseEngine.ORACLE ? "from dual" : ""))
+                                 .define("dual", db.getDatabase() == DatabaseEngine.ORACLE ? "from dual" : "");
+             var propsDelete = handle.createUpdate(propsDeleteSql);
+             var insertProps = handle.prepareBatch(insertPropsSql);)
         {
-            id = em.idIsSet() ? em.getId() : keyGen.getKey("equipmentmodel", handle.getConnection());
+            final DbKey id = em.idIsSet() ? em.getId() : keyGen.getKey("equipmentmodel", handle.getConnection());
             emMerge.bind(GenericColumns.ID, id);
             emMerge.bind(GenericColumns.NAME, em.name);
             emMerge.bind("model", em.model);
             emMerge.bind("company", em.company);
             emMerge.bind(GenericColumns.DESCRIPTION, em.description);
             emMerge.bind("equipmentType", em.equipmentType);
-            int updated = emMerge.execute();
+            emMerge.execute();
+            propsDelete.bind("id", id).execute();
+            em.properties.forEach((k,v) ->
+            {
+                insertProps.bind("equipmentid", id);
+                insertProps.bind(GenericColumns.NAME, k.toString());
+                var toSave = v != null ? v.toString() : "";
+                insertProps.bind("value", toSave);
+                insertProps.add();
+            });
+            insertProps.execute();
+
             return getEquipmentModel(tx, id).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve equipment model we just saved."));
         }
         catch (DatabaseException ex)

@@ -1,6 +1,7 @@
 package org.opendcs.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,10 @@ class EquipmentModelDaoTestIT  extends AppTestBase
             assertNotEquals(emInWithProps.getId(), emOutWithProps.getId());
 
             assertEquals("5", emOutWithProps.properties.getProperty("vcc"));
+
+            dao.deleteEquipmentModel(tx, emOutWithProps.getId());
+            var emShouldNotExist = dao.getEquipmentModel(tx, emOutWithProps.getId());
+            assertFalse(emShouldNotExist.isPresent());
         }  
 
     }
