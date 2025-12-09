@@ -59,13 +59,13 @@ import opendcs.dao.EnumSqlDao;
 public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
-    private final DecodesSettings settings;
+    protected final DecodesSettings settings;
     private final Database decodesDb;
     private final TimeSeriesDb timeSeriesDb;
     protected final DataSource dataSource;
     protected final Jdbi jdbi;
-    public final DatabaseEngine dbEngine;
-    public final KeyGenerator keyGenerator;
+    protected final DatabaseEngine dbEngine;
+    protected final KeyGenerator keyGenerator;
     private final Map<Class<? extends OpenDcsDao>, DaoWrapper<? extends OpenDcsDao>> daoMap = new HashMap<>();
 
     public SimpleOpenDcsDatabaseWrapper(DecodesSettings settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource)
@@ -141,7 +141,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
 
                 if (dao.isAssignableFrom(EquipmentModelDao.class))
                 {
-                    return new DaoWrapper<>(() -> new EquipmentModelImpl(this));
+                    return new DaoWrapper<>(EquipmentModelImpl::new);
                 }
 
                 if (dao.isAssignableFrom(UserManagementDao.class))
@@ -151,7 +151,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
 
                 if (dao.isAssignableFrom(EnumDAI.class))
                 {
-                    return new DaoWrapper<>(() -> new EnumSqlDao(timeSeriesDb, this));
+                    return new DaoWrapper<>(() -> new EnumSqlDao(timeSeriesDb));
                 }
 
                 Optional<Method> daoMakeMethod;
@@ -219,7 +219,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         {
             // This DataTransaction is auto closable and handles the closing of the
             // Jdbi Handle instance.
-            return new JdbiTransaction(jdbi.open().begin()); // NOSONAR
+            return new JdbiTransaction(jdbi.open().begin(), new TransactionContextImpl(keyGenerator, settings, dbEngine)); // NOSONAR
         }
         catch (JdbiException ex)
         {
@@ -274,31 +274,4 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         return this.dbEngine;
     }
 
-    @SuppressWarnings("unchecked") // Types are checked manually in this function
-    @Override
-    public <T extends Generator> Optional<T> getGenerator(Class<T> generatorClass)
-    {
-        if (KeyGenerator.class.equals(generatorClass))
-        {
-            return Optional.of((T)keyGenerator);
-        }
-        else
-        {
-            return Optional.empty();
-        }
-    }
-
-    @SuppressWarnings("unchecked") // Types are checked manually in this function
-    @Override
-    public <T extends Generator> Optional<T> getGenerator(Class<T> generatorClass)
-    {
-        if (KeyGenerator.class.equals(generatorClass))
-        {
-            return Optional.of((T)keyGenerator);
-        }
-        else
-        {
-            return Optional.empty();
-        }
-    }
 }

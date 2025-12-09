@@ -25,14 +25,9 @@ public class EquipmentModelImpl implements EquipmentModelDao
 {
     private static final String PROPERTIES_DELETE_SQL = "delete from equipmentproperty where equipmentid = :id";
 
-    private final OpenDcsDatabase db;
-    private final KeyGenerator keyGen;
 
-    public EquipmentModelImpl(OpenDcsDatabase db)
+    public EquipmentModelImpl()
     {
-        this.db = db;
-        this.keyGen = db.getGenerator(KeyGenerator.class)
-                        .orElseThrow(() -> new IllegalStateException("No key generator configured."));
     }
 
     @Override
@@ -168,10 +163,13 @@ public class EquipmentModelImpl implements EquipmentModelDao
                     insert(id, name, model, company, description, equipmentType)
                     values(input.id, input.name, input.model, input.company, input.description, input.equipmentType)
                 """;
-
+        var ctx = tx.getContext();
+        var dbEngine = ctx.getDatabase();
+        var keyGen = ctx.getGenerator(KeyGenerator.class)
+                        .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
         var insertPropsSql = "insert into equipmentproperty(equipmentid, name, prop_value) values (:equipmentid, :name, :value)";
         try (var emMerge = handle.createUpdate(emMergeSql)
-                                 .define("dual", db.getDatabase() == DatabaseEngine.ORACLE ? "from dual" : "");
+                                 .define("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
              var propsDelete = handle.createUpdate(PROPERTIES_DELETE_SQL);
              var insertProps = handle.prepareBatch(insertPropsSql))
         {

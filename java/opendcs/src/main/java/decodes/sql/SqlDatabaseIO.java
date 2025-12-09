@@ -1923,7 +1923,7 @@ public class SqlDatabaseIO extends DatabaseIO implements DatabaseConnectionOwner
     @Override
     public EnumDAI makeEnumDAO()
     {
-        return new EnumSqlDao(this, dcsDb);
+        return new EnumSqlDao(this);
     }
 
     @Override
