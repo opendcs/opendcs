@@ -5,12 +5,11 @@ import static org.opendcs.database.model.mappers.PrefixRowMapper.addUnderscoreIf
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-import org.jdbi.v3.core.generic.GenericType;
 import org.jdbi.v3.core.result.RowView;
+import org.opendcs.database.model.mappers.properties.PropertiesMapper;
 import org.opendcs.utils.sql.GenericColumns;
 
 import decodes.db.EquipmentModel;
-import ilex.util.Pair;
 
 public class EquipmentModelReducer implements BiConsumer<Map<Long, EquipmentModel>, RowView>
 {
@@ -31,7 +30,7 @@ public class EquipmentModelReducer implements BiConsumer<Map<Long, EquipmentMode
         var propName = rowView.getColumn(propertyPrefix+GenericColumns.NAME, String.class);
         if (propName != null)
         {
-            var prop = rowView.getRow(new GenericType<Pair<String,String>>() {});
+            var prop = rowView.getRow(PropertiesMapper.PAIR_STRING_STRING);
             em.properties.setProperty(prop.first, prop.second);
         }
     }
