@@ -272,7 +272,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     public DatabaseEngine getDatabase()
     {
         return this.dbEngine;
-    }    
+    }
 
     @SuppressWarnings("unchecked") // Types are checked manually in this function
     @Override

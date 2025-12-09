@@ -25,8 +25,8 @@ public class PropertiesMapper extends PrefixRowMapper<Pair<String,String>>
     @Override
     public Pair<String, String> map(ResultSet rs, StatementContext ctx) throws SQLException
     {
-        return Pair.of(rs.getString(prefix+GenericColumns.NAME), 
+        return Pair.of(rs.getString(prefix+GenericColumns.NAME),
                        rs.getString(prefix+"prop_value"));
     }
-    
+
 }

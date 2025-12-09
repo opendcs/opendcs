@@ -12,7 +12,7 @@ import decodes.db.DatabaseException;
 import decodes.db.EquipmentModel;
 import decodes.sql.DbKey;
 
-public class EquipmentModelMapper extends PrefixRowMapper<EquipmentModel> 
+public class EquipmentModelMapper extends PrefixRowMapper<EquipmentModel>
 {
   private EquipmentModelMapper(String prefix)
     {
@@ -31,7 +31,7 @@ public class EquipmentModelMapper extends PrefixRowMapper<EquipmentModel>
         EquipmentModel em = new EquipmentModel();
         ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class)
                                                     .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
-        try 
+        try
         {
             em.setId(columnMapperForKey.map(rs, prefix+"id", ctx));
             em.name = rs.getString(prefix+"name");
@@ -46,5 +46,5 @@ public class EquipmentModelMapper extends PrefixRowMapper<EquipmentModel>
         }
         return em;
     }
-    
+
 }
