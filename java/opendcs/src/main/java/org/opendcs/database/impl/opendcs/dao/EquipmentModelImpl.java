@@ -23,7 +23,7 @@ import decodes.sql.KeyGenerator;
 
 public class EquipmentModelImpl implements EquipmentModelDao
 {
-    private static final String propsDeleteSql = "delete from equipmentproperty where equipmentid = :id";
+    private static final String PROPERTIES_DELETE_SQL = "delete from equipmentproperty where equipmentid = :id";
 
     private final OpenDcsDatabase db;
     private final KeyGenerator keyGen;
@@ -143,7 +143,7 @@ public class EquipmentModelImpl implements EquipmentModelDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         final var deleteEquipmentModelSql = "delete from equipmentmodel where id = :id";
-        try (var deleteProps = handle.createUpdate(propsDeleteSql);
+        try (var deleteProps = handle.createUpdate(PROPERTIES_DELETE_SQL);
              var deleteEquipmentModel = handle.createUpdate(deleteEquipmentModelSql))
         {
             deleteProps.bind(GenericColumns.ID, id).execute();
@@ -172,7 +172,7 @@ public class EquipmentModelImpl implements EquipmentModelDao
         var insertPropsSql = "insert into equipmentproperty(equipmentid, name, prop_value) values (:equipmentid, :name, :value)";
         try (var emMerge = handle.createUpdate(emMergeSql)
                                  .define("dual", db.getDatabase() == DatabaseEngine.ORACLE ? "from dual" : "");
-             var propsDelete = handle.createUpdate(propsDeleteSql);
+             var propsDelete = handle.createUpdate(PROPERTIES_DELETE_SQL);
              var insertProps = handle.prepareBatch(insertPropsSql))
         {
             final DbKey id = em.idIsSet() ? em.getId() : keyGen.getKey("equipmentmodel", handle.getConnection());
