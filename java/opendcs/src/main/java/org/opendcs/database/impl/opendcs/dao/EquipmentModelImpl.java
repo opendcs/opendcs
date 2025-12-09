@@ -133,7 +133,7 @@ public class EquipmentModelImpl implements EquipmentModelDao
         {
             return emQuery.bind(GenericColumns.NAME, name)
                           .registerRowMapper(EquipmentModelMapper.withPrefix("e"))
-                          .registerRowMapper(new GenericType<Pair<String,String>>(){}, PropertiesMapper.withPrefix("p"))
+                          .registerRowMapper(PropertiesMapper.PAIR_STRING_STRING, PropertiesMapper.withPrefix("p"))
                           .reduceRows(new EquipmentModelReducer("e", "p"))
                           .map(m -> m)
                           .findFirst();
