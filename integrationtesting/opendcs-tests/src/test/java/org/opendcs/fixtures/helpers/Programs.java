@@ -41,11 +41,7 @@ public class Programs
                                 String... filesOrDirectories) throws Exception
     {
         final String extensions[] = {"xml"};
-        final ArrayList<File> files = new ArrayList<>();
-        for(String f: filesOrDirectories)
-        {
-            files.addAll(FileUtils.listFiles(new File(f),extensions,true));
-        }
+        final ArrayList<File> files = gatherFiles(extensions, filesOrDirectories);
 
         properties.execute(() ->
             env.execute(() ->
@@ -86,11 +82,7 @@ public class Programs
                                   String... filesOrDirectories) throws Exception
     {
         final String extensions[] = {"xml"};
-        final ArrayList<File> files = new ArrayList<>();
-        for(String f: filesOrDirectories)
-        {
-            files.addAll(FileUtils.listFiles(new File(f),extensions,true));
-        }
+        final ArrayList<File> files = gatherFiles(extensions, filesOrDirectories);
 
         env.execute(() ->
                 exit.execute(() ->
@@ -130,11 +122,7 @@ public class Programs
                                   String... tsImportFiles) throws Exception
     {
         final String extensions[] = {"tsimport"};
-        final ArrayList<File> files = new ArrayList<>();
-        for(String f: tsImportFiles)
-        {
-            files.addAll(FileUtils.listFiles(new File(f),extensions,true));
-        }
+        final ArrayList<File> files = gatherFiles(extensions, tsImportFiles);
 
         env.execute(() ->
                 exit.execute(() ->
@@ -277,9 +265,9 @@ public class Programs
                     decodes.tsdb.CpCompDependsUpdater.main(theArgs.toArray(new String[0]));
                 })
             )
-        );        
+        );
 
-        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0, 
+        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0,
                    "System.exit called with unexpected code.");
     }
 
@@ -305,7 +293,7 @@ public class Programs
      */
     public static void RunCompExec(File log, File propertiesFile,
                                   EnvironmentVariables env, SystemExit exit, String start,
-                                  String end, String tz, String outputFormat, String presentationGroup, 
+                                  String end, String tz, String outputFormat, String presentationGroup,
                                   String controlFileName, boolean quiet, String[] comps, String[] groups,
                                   String[] tsNames) throws Exception
     {
@@ -356,5 +344,23 @@ public class Programs
             );
         assertTrue(exit.getExitCode() == null || exit.getExitCode()==0,
                    "System.exit called with unexpected code.");
+    }
+
+    private static ArrayList<File> gatherFiles(String[] extensions, String... filesOrDirectories)
+    {
+        ArrayList<File> files = new ArrayList<>();
+        for (String fileOrDir: filesOrDirectories)
+        {
+            File file = new File(fileOrDir);
+            if (file.isFile())
+            {
+                files.add(file);
+            }
+            else if (file.isDirectory())
+            {
+                files.addAll(FileUtils.listFiles(file,extensions,true));
+            }
+        }
+        return files;
     }
 }
