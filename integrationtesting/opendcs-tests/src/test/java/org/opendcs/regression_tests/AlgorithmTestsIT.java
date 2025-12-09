@@ -1,9 +1,9 @@
 package org.opendcs.regression_tests;
 
-import static org.junit.Assume.assumeFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.opendcs.fixtures.assertions.TimeSeries.assertEquals;
 import static org.opendcs.fixtures.helpers.TestResources.getResource;
 
@@ -177,7 +177,7 @@ public class AlgorithmTestsIT extends AppTestBase
                         if (firstLine != null && firstLine.contains(keyword)) {
                             String substring = firstLine.substring(firstLine.indexOf(keyword) + keyword.length()).trim();
                             final String testEngine = System.getProperty("opendcs.test.engine", "").trim();
-                            assumeFalse("Test is disabled by config file for: " + substring, !substring.equals(testEngine));
+                            assumeFalse(!substring.equals(testEngine), "Test is disabled by config file for: " + substring);
                         }
                     }
                 }

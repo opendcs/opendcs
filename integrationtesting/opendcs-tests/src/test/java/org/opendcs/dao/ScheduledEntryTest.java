@@ -9,7 +9,6 @@ import java.util.Date;
 
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.AppTestBase;
-import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 
@@ -52,8 +51,29 @@ public class ScheduledEntryTest extends AppTestBase
             ses.setScheduleEntryId(se.getId());
             ses.setHostname("bleh");
             ses.setRunStart(new Date());
-            ses.setRunStatus("Working");
+            ses.setRunStatus("Starting");
             dao.writeScheduleStatus(ses);
+
+            ScheduleEntryStatus ses2 = new ScheduleEntryStatus(DbKey.NullKey);
+            ses2.setScheduleEntryName(se.getName());
+            ses2.setScheduleEntryId(se.getId());
+            ses2.setHostname("saved again quickly");
+            ses2.setRunStart(new Date(ses.getRunStart().getTime() + 5000 /* add 5 seconds */));
+            ses2.setRunStatus("Working");
+            dao.writeScheduleStatus(ses2);
+
+            ScheduleEntryStatus ses3 = new ScheduleEntryStatus(DbKey.NullKey);
+            ses3.setScheduleEntryName(se.getName());
+            ses3.setScheduleEntryId(se.getId());
+            ses3.setHostname("saved again quickly");
+            ses3.setRunStart(new Date(ses.getRunStart().getTime() + 10000 /* add 10 seconds */));
+            ses3.setRunStop(new Date());
+            ses3.setRunStatus("Done");
+            dao.writeScheduleStatus(ses3);
+
+            final ScheduleEntryStatus singleRet = dao.getLastScheduleStatusFor(se);
+            assertNotNull(singleRet, "Could not read last status.");
+
 
             final ScheduleEntry seRet = dao.readScheduleEntry("test");
             assertNotNull(seRet, "Could not read back Scheduled Entry.");

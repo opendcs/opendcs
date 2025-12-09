@@ -602,7 +602,6 @@ public class ScheduleEntryDAO extends DaoBase implements ScheduleEntryDAI
                 rs2scheduleEntryStatus(rs, ses);
                 return ses;
             },
-			null,
 			scheduleEntry.getKey(), scheduleEntry.getKey());
         }
         catch (SQLException ex)
