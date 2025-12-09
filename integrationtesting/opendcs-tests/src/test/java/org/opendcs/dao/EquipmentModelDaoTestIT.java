@@ -94,7 +94,7 @@ class EquipmentModelDaoTestIT  extends AppTestBase
             assertTrue(ems.size() >= 30);
 
             var emsLimited = dao.getEquipmentModels(tx, 10, 0);
-            assertTrue(emsLimited.size() == 10);
+            assertEquals(10, emsLimited.size());
         }
     }
 }

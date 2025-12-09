@@ -10,7 +10,7 @@ import org.opendcs.utils.sql.GenericColumns;
 
 import ilex.util.Pair;
 
-public class PropertiesMapper extends PrefixRowMapper<Pair<String,String>>
+public final class PropertiesMapper extends PrefixRowMapper<Pair<String,String>>
 {
     public static final GenericType<Pair<String,String>> PAIR_STRING_STRING = new GenericType<>()
     {

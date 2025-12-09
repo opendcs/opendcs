@@ -12,9 +12,9 @@ import decodes.db.DatabaseException;
 import decodes.db.EquipmentModel;
 import decodes.sql.DbKey;
 
-public class EquipmentModelMapper extends PrefixRowMapper<EquipmentModel>
+public final class EquipmentModelMapper extends PrefixRowMapper<EquipmentModel>
 {
-  private EquipmentModelMapper(String prefix)
+    private EquipmentModelMapper(String prefix)
     {
         super(prefix);
     }
