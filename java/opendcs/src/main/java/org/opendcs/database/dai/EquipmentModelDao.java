@@ -34,7 +34,7 @@ public interface EquipmentModelDao extends OpenDcsDao
     /**
      * Retrieve EquipmentModel by name.
      * @param tx Transaction object for the request.
-     * @param name equipment model name name to look for. Comparison will be upper(name) = upper(name in database).
+     * @param name equipment model name name to look for. Comparison will be upper(name) = upper(name) in database.
      * @return Equipment Model if found, otherwise empty.
      */
     Optional<EquipmentModel> getEquipmentModel(DataTransaction tx, String name) throws OpenDcsDataException;

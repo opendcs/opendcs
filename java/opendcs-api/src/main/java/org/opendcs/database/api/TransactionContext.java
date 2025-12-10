@@ -8,7 +8,7 @@ public interface TransactionContext
 {
  
     /**
-     * KeyGenerator if auto generated keys aren't used.
+     * KeyGenerator alternative to auto generated keys.
      * @return
      */
     <T extends Generator> Optional<T> getGenerator(Class<T> generatorClass);
