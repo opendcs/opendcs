@@ -1,0 +1,38 @@
+package org.opendcs.database.model.mappers.equipmentmodel;
+
+import static org.opendcs.database.model.mappers.PrefixRowMapper.addUnderscoreIfMissing;
+
+import java.util.Map;
+import java.util.function.BiConsumer;
+
+import org.jdbi.v3.core.result.RowView;
+import org.opendcs.database.model.mappers.properties.PropertiesMapper;
+import org.opendcs.utils.sql.GenericColumns;
+
+import decodes.db.EquipmentModel;
+
+public class EquipmentModelReducer implements BiConsumer<Map<Long, EquipmentModel>, RowView>
+{
+    private final String equipmentModelPrefix;
+    private final String propertyPrefix;
+
+    public EquipmentModelReducer(String equipmentModelPrefix, String propertyPrefix)
+    {
+        this.equipmentModelPrefix = addUnderscoreIfMissing(equipmentModelPrefix);
+        this.propertyPrefix = addUnderscoreIfMissing(propertyPrefix);
+    }
+
+    @Override
+    public void accept(Map<Long, EquipmentModel> map, RowView rowView)
+    {
+        var em = map.computeIfAbsent(rowView.getColumn(equipmentModelPrefix+GenericColumns.ID, Long.class),
+                                     emId -> rowView.getRow(EquipmentModel.class));
+        var propName = rowView.getColumn(propertyPrefix+GenericColumns.NAME, String.class);
+        if (propName != null)
+        {
+            var prop = rowView.getRow(PropertiesMapper.PAIR_STRING_STRING);
+            em.properties.setProperty(prop.first, prop.second);
+        }
+    }
+
+}
