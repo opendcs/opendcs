@@ -7,6 +7,7 @@ import javax.sql.DataSource;
 
 import org.opendcs.database.SimpleOpenDcsDatabaseWrapper;
 import org.opendcs.database.SimpleTransaction;
+import org.opendcs.database.TransactionContextImpl;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
@@ -49,7 +50,8 @@ public final class XmlOpenDcsDatabaseWrapper extends SimpleOpenDcsDatabaseWrappe
     {
         try
         {
-            return new SimpleTransaction(this.dataSource.getConnection());
+            return new SimpleTransaction(this.dataSource.getConnection(),
+                                         new TransactionContextImpl(keyGenerator, settings, dbEngine));
         }
         catch (SQLException ex)
         {

@@ -1370,7 +1370,7 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
     @Override
     public EnumDAI makeEnumDAO()
     {
-        return new EnumSqlDao(this, dcsDb);
+        return new EnumSqlDao(this);
     }
 
     @Override

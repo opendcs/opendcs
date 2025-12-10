@@ -6,15 +6,18 @@ import java.util.Optional;
 import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.TransactionContext;
 
 import opendcs.util.sql.WrappedConnection;
 
 public final class JdbiTransaction implements DataTransaction
 {
     final Handle jdbiHandle;
+    final TransactionContext context;
 
-    public JdbiTransaction(Handle handle)
+    public JdbiTransaction(Handle handle, TransactionContext context)
     {
+        this.context = context;
         this.jdbiHandle = handle;
         if (!this.jdbiHandle.isInTransaction())
         {
@@ -63,6 +66,12 @@ public final class JdbiTransaction implements DataTransaction
     {
         commit();
         jdbiHandle.close();
+    }
+
+    @Override
+    public TransactionContext getContext()
+    {
+        return this.context;
     }
     
 }

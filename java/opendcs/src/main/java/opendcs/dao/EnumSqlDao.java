@@ -15,56 +15,66 @@
 */
 package opendcs.dao;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.jdbi.v3.core.Handle;
-import org.opendcs.database.SimpleTransaction;
+import org.jdbi.v3.core.Jdbi;
+import org.opendcs.database.JdbiTransaction;
+import org.opendcs.database.TransactionContextImpl;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
+import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
 import org.opendcs.database.model.mappers.dbenum.DbEnumBuilderMapper;
 import org.opendcs.database.model.mappers.dbenum.DbEnumBuilderReducer;
 import org.opendcs.database.model.mappers.dbenum.EnumValueMapper;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlKeywords;
+
+import org.openide.util.lookup.ServiceProvider;
+
 import org.slf4j.Logger;
 
 import decodes.db.EnumValue;
 import decodes.db.ValueNotFoundException;
 import decodes.db.DbEnum.DbEnumBuilder;
 import opendcs.dai.EnumDAI;
-
+import decodes.db.DatabaseException;
 import decodes.db.DbEnum;
 import decodes.db.EnumList;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
+import decodes.sql.KeyGenerator;
 import decodes.tsdb.DbIoException;
+import decodes.util.DecodesSettings;
 
 /**
  * Data Access Object for writing/reading DbEnum objects to/from a SQL database
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
+@ServiceProvider(service = EnumDAI.class)
 public class EnumSqlDao extends DaoBase implements EnumDAI
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static DbObjectCache<DbEnum> cache = new DbObjectCache<DbEnum>(3600000, false);
-    private final OpenDcsDatabase dcsDb;
 
-    public EnumSqlDao(DatabaseConnectionOwner tsdb, OpenDcsDatabase db)
+    public EnumSqlDao(DatabaseConnectionOwner tsdb)
     {
         super(tsdb, "EnumSqlDao");
-        this.dcsDb = db;
+    }
+
+    public EnumSqlDao()
+    {
+        super(null, "EnumSqlDao - null tsdb");
     }
 
     @Override
@@ -72,7 +82,14 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
     {
         try
         {
-            return dcsDb != null ? dcsDb.newTransaction() : new SimpleTransaction(db.getConnection());
+            /**
+             * NOTE this is a stop gap until non DataTransaction usages can be removed.
+             */
+            return new JdbiTransaction(Jdbi.open(db.getConnection())
+                                           .registerArgument(new DatabaseKeyArgumentFactory())
+                                           .registerColumnMapper(new DatabaseKeyColumnMapper()),
+                                     new TransactionContextImpl(db.getKeyGenerator(), DecodesSettings.instance(),
+                                         db.isOracle() ? DatabaseEngine.ORACLE : DatabaseEngine.POSTGRES));
         }
         catch (SQLException ex)
         {
@@ -662,15 +679,10 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
     @Override
     public DbEnum writeEnum(DataTransaction tx, DbEnum dbEnum) throws OpenDcsDataException
     {
-        DbKey id = DbKey.NullKey;
-        try
-        {
-            id = dbEnum.idIsSet() ? dbEnum.getId() : getKey("enum"); // Going to need to sort this out.
-        }
-        catch (DbIoException ex)
-        {
-            throw new OpenDcsDataException("Unable to generate key to save enum", ex);
-        }
+        var context = tx.getContext();
+        var keyGen = context.getGenerator(KeyGenerator.class)
+                            .orElseThrow(() -> new OpenDcsDataException("No Keygenerator configured."));
+        var dbEngine = context.getDatabase();
 
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException("Unable to get Database connection object."));
@@ -689,11 +701,13 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
                 insert into enumvalue(enumid, enumvalue, description, execclass, editclass, sortnumber)
                 values (:id, :enumvalue, :description, :execclass, :editclass, :sortnumber)
                 """;
+
         try (var enumMerge = handle.createUpdate(enumMergeText)
-                                   .define("dual", dcsDb.getDatabase() == DatabaseEngine.ORACLE ? "from dual" : "");
+                                   .define("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
              var removeValues = handle.createUpdate(removeValuesText);
              var addValues = handle.prepareBatch(addValueText))
         {
+            final DbKey id = dbEnum.idIsSet() ? dbEnum.getId() : keyGen.getKey("enum", handle.getConnection());
             enumMerge.bind(GenericColumns.ID, id)
                      .bind(GenericColumns.NAME, dbEnum.enumName)
                      .bind("defaultValue", dbEnum.getDefault())
@@ -716,6 +730,10 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
             var dbEnumDb = getEnum(tx, id).orElseThrow(() -> new OpenDcsDataException("Could not retrieve the enum we just saved."));
 			cache.put(dbEnumDb);
 			return dbEnumDb;
+        }
+        catch (DatabaseException ex)
+        {
+            throw new OpenDcsDataException("Unable to generate new key for Enum", ex);
         }
     }
     /**

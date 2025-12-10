@@ -32,18 +32,14 @@ import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.JdbiException;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
-import org.opendcs.database.api.Generator;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.database.dai.EquipmentModelDao;
-import org.opendcs.database.dai.UserManagementDao;
-import org.opendcs.database.impl.opendcs.dao.EquipmentModelImpl;
-import org.opendcs.database.impl.opendcs.dao.UserManagementImpl;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
 import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.openide.util.Lookup;
 import org.slf4j.Logger;
 
 import decodes.db.Database;
@@ -53,19 +49,17 @@ import decodes.sql.KeyGenerator;
 import decodes.sql.KeyGeneratorFactory;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
-import opendcs.dai.EnumDAI;
-import opendcs.dao.EnumSqlDao;
 
 public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
-    private final DecodesSettings settings;
+    protected final DecodesSettings settings;
     private final Database decodesDb;
     private final TimeSeriesDb timeSeriesDb;
     protected final DataSource dataSource;
     protected final Jdbi jdbi;
-    public final DatabaseEngine dbEngine;
-    public final KeyGenerator keyGenerator;
+    protected final DatabaseEngine dbEngine;
+    protected final KeyGenerator keyGenerator;
     private final Map<Class<? extends OpenDcsDao>, DaoWrapper<? extends OpenDcsDao>> daoMap = new HashMap<>();
 
     public SimpleOpenDcsDatabaseWrapper(DecodesSettings settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource)
@@ -127,31 +121,22 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         return dataSource;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T extends OpenDcsDao> Optional<T> getDao(Class<T> dao)
     {
-        @SuppressWarnings("unchecked")
         DaoWrapper<?> wrapper =
             daoMap.computeIfAbsent(dao, daoDesired ->
             {
+                Optional<DaoWrapper<T>> tmp = fromLookup(dao);
+
+                if (tmp.isPresent())
+                {
+                    return tmp.get();
+                }
                 if (dao.isAssignableFrom(CwmsLocationLevelDAO.class))
                 {
                     return new DaoWrapper<>(() -> new CwmsLocationLevelDAO(this.timeSeriesDb));
-                }
-
-                if (dao.isAssignableFrom(EquipmentModelDao.class))
-                {
-                    return new DaoWrapper<>(() -> new EquipmentModelImpl(this));
-                }
-
-                if (dao.isAssignableFrom(UserManagementDao.class))
-                {
-                    return new DaoWrapper<>(UserManagementImpl::new);
-                }
-
-                if (dao.isAssignableFrom(EnumDAI.class))
-                {
-                    return new DaoWrapper<>(() -> new EnumSqlDao(timeSeriesDb, this));
                 }
 
                 Optional<Method> daoMakeMethod;
@@ -212,6 +197,19 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         return Optional.ofNullable((T)wrapper.create());
     }
 
+    private <T extends OpenDcsDao> Optional<DaoWrapper<T>> fromLookup(Class<T> dao)
+    {
+        final var instance = Lookup.getDefault().lookup(dao);
+        if (instance != null)
+        {
+            return Optional.of(new DaoWrapper<>(() -> instance));
+        }
+        else
+        {
+            return Optional.empty();
+        }
+    }
+
     @Override
     public DataTransaction newTransaction() throws OpenDcsDataException
     {
@@ -219,7 +217,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         {
             // This DataTransaction is auto closable and handles the closing of the
             // Jdbi Handle instance.
-            return new JdbiTransaction(jdbi.open().begin()); // NOSONAR
+            return new JdbiTransaction(jdbi.open().begin(), new TransactionContextImpl(keyGenerator, settings, dbEngine)); // NOSONAR
         }
         catch (JdbiException ex)
         {
@@ -274,17 +272,4 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         return this.dbEngine;
     }
 
-    @SuppressWarnings("unchecked") // Types are checked manually in this function
-    @Override
-    public <T extends Generator> Optional<T> getGenerator(Class<T> generatorClass)
-    {
-        if (KeyGenerator.class.equals(generatorClass))
-        {
-            return Optional.of((T)keyGenerator);
-        }
-        else
-        {
-            return Optional.empty();
-        }
-    }
 }
