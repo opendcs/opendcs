@@ -15,33 +15,28 @@
 
 package org.opendcs.odcsapi.sec.cwms;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.EnumSet;
 import java.util.Set;
 
-import opendcs.dao.DaoBase;
-import opendcs.dao.DatabaseConnectionOwner;
+import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.odcsapi.dao.ApiAuthorizationDAI;
 import org.opendcs.odcsapi.dao.DbException;
-import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
-import org.slf4j.Logger;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
-public final class CwmsAuthorizationDAO extends DaoBase implements ApiAuthorizationDAI
+public final class CwmsAuthorizationDAO implements ApiAuthorizationDAI
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
-    public CwmsAuthorizationDAO(DatabaseConnectionOwner tsdb)
-    {
-        super(tsdb, "AuthorizationDAO");
-    }
-
-    @Override
-    public Set<OpenDcsApiRoles> getRoles(String username) throws DbException
-    {
+	@Override
+	public Set<OpenDcsApiRoles> getRoles(DataTransaction tx, String username, String organizationId) throws DbException
+	{
         Set<OpenDcsApiRoles> roles = EnumSet.noneOf(OpenDcsApiRoles.class);
         roles.add(OpenDcsApiRoles.ODCS_API_GUEST);
         String q = """
@@ -59,40 +54,34 @@ public final class CwmsAuthorizationDAO extends DaoBase implements ApiAuthorizat
                 end
             and avsu.is_member = 'T'
         """;
-        String cwmsOfficeId = DbInterface.decodesProperties.getProperty("CwmsOfficeId");
-        try
+		try(Connection c = tx.connection(Connection.class).orElseThrow();
+			PreparedStatement statement = c.prepareStatement(q))
         {
-            withConnection(c ->
-            {
-                try(PreparedStatement statement = c.prepareStatement(q))
-                {
-                    statement.setString(1, username);
-                    statement.setString(2, cwmsOfficeId);
+			statement.setString(1, username);
+			statement.setString(2, organizationId);
 
-                    try(ResultSet rs = statement.executeQuery())
-                    {
-                        while(rs.next())
-                        {
-                            String role = rs.getString(1);
-                            log.info("User '{}' has role {}", username, role);
-                            if("CCP Mgr".equalsIgnoreCase(role))
-                            {
-                                roles.add(OpenDcsApiRoles.ODCS_API_ADMIN);
-                            }
-                            if("CCP Proc".equalsIgnoreCase(role))
-                            {
-                                roles.add(OpenDcsApiRoles.ODCS_API_USER);
-                            }
-                        }
-                    }
-                }
-            });
+			try(ResultSet rs = statement.executeQuery())
+			{
+				while(rs.next())
+				{
+					String role = rs.getString(1);
+					log.info("User '{}' has role {}", username, role);
+					if("CCP Mgr".equalsIgnoreCase(role))
+					{
+						roles.add(OpenDcsApiRoles.ODCS_API_ADMIN);
+					}
+					if("CCP Proc".equalsIgnoreCase(role))
+					{
+						roles.add(OpenDcsApiRoles.ODCS_API_USER);
+					}
+				}
+			}
             return roles;
         }
-        catch(SQLException ex)
+		catch(SQLException | OpenDcsDataException ex)
         {
             throw new DbException("Unable to determine user roles for user: " + username
-                    + " and office: " + cwmsOfficeId, ex);
+                    + " and office: " + organizationId, ex);
         }
     }
 }

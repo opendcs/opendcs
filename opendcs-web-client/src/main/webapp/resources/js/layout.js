@@ -23,6 +23,11 @@
                 popperConfig: { strategy: 'fixed' }
             });
         });
+
+        const orgId = localStorage.getItem('organizationId');   // or from server via data-* attr
+        if (orgId) {
+            document.getElementById('organization_id').textContent = orgId;
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function () {

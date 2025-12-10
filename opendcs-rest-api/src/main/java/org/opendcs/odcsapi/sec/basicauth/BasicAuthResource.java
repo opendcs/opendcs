@@ -16,47 +16,45 @@
 package org.opendcs.odcsapi.sec.basicauth;
 
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Base64;
 import java.util.Set;
-import jakarta.annotation.security.RolesAllowed;
+import javax.sql.DataSource;
 
+import decodes.util.DecodesSettings;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.StringToClassMapItem;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import javax.sql.DataSource;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.ServerErrorException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
-import decodes.tsdb.TimeSeriesDb;
+import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.dao.ApiAuthorizationDAI;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.res.OpenDcsResource;
 import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
 import org.opendcs.odcsapi.sec.OpenDcsPrincipal;
+import org.opendcs.odcsapi.sec.cwms.CwmsAuthorizationDAO;
 import org.opendcs.odcsapi.util.ApiConstants;
-import org.slf4j.Logger;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import static org.opendcs.odcsapi.res.DataSourceContextCreator.DATA_SOURCE_ATTRIBUTE_KEY;
 
@@ -69,7 +67,7 @@ public final class BasicAuthResource extends OpenDcsResource
 	private static final String MODULE = "BasicAuthResource";
 
 	@Context
-	private HttpServletRequest request;
+	private HttpServletRequest httpServletRequest;
 	@Context
 	private HttpHeaders httpHeaders;
 
@@ -80,14 +78,17 @@ public final class BasicAuthResource extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
 	@Operation(
 			summary = "The ‘credentials’ POST method is used to obtain a new token",
-			description = "The user name and password provided must be a valid login for the underlying database.   \n"
-					+ "Also, that user must be assigned either of the roles OTSDB_ADMIN or OTSDB_MGR.\n"
-					+ "--- \n\n\n"
-					+ "Starting in **API Version 0.0.3**, authentication credentials (username and password) "
-					+ "may be passed as shown above in the POST body.   \n"
-					+ "They may also be passed in a GET call to the 'credentials' method, "
-					+ "(e.g. '*http://localhost:8080/odcsapi/credentials*') containing an HTTP Authentication Basic "
-					+ "header in the form 'username:password'.  \n\nThe returned data to the GET call will be empty.",
+			description = """
+					The user name and password provided must be a valid login for the underlying database.
+					Also, that user must be assigned either of the roles OTSDB_ADMIN or OTSDB_MGR.
+					---
+					Starting in **API Version 0.0.3**, authentication credentials (username and password) \
+					may be passed as shown above in the POST body.
+					They may also be passed in a GET call to the 'credentials' method, \
+					(e.g. '*http://localhost:8080/odcsapi/credentials*') containing an HTTP Authentication Basic \
+					header in the form 'username:password'.
+					
+					The returned data to the GET call will be empty.""",
 			requestBody = @RequestBody(
 					description = "Login Credentials",
 					required = true,
@@ -133,12 +134,6 @@ public final class BasicAuthResource extends OpenDcsResource
 	)
 	public Response postCredentials(Credentials credentials) throws WebAppException
 	{
-		TimeSeriesDb db = getLegacyTimeseriesDB();
-		if(!db.isOpenTSDB())
-		{
-			throw new ServerErrorException("Basic Auth is not supported", Response.Status.NOT_IMPLEMENTED);
-		}
-
 		//If credentials are null, Authorization header will be checked.
 		if(credentials != null)
 		{
@@ -148,14 +143,14 @@ public final class BasicAuthResource extends OpenDcsResource
 		String authorizationHeader = httpHeaders.getHeaderString(HttpHeaders.AUTHORIZATION);
 		credentials = getCredentials(credentials, authorizationHeader);
 		validateDbCredentials(credentials);
-		Set<OpenDcsApiRoles> roles = getUserRoles(credentials.getUsername());
+		Set<OpenDcsApiRoles> roles = getUserRoles(credentials.getUsername(), organizationId);
 		OpenDcsPrincipal principal = new OpenDcsPrincipal(credentials.getUsername(), roles);
-		HttpSession oldSession = request.getSession(false);
+		HttpSession oldSession = httpServletRequest.getSession(false);
 		if(oldSession != null)
 		{
 			oldSession.invalidate();
 		}
-		HttpSession session = request.getSession(true);
+		HttpSession session = httpServletRequest.getSession(true);
 		session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, principal);
 		return Response.status(HttpServletResponse.SC_OK).entity(new Status("Authentication Successful."))
 				.build();
@@ -249,8 +244,8 @@ public final class BasicAuthResource extends OpenDcsResource
 			 Intentional unused connection. Makes a new db connection using passed credentials
 			 This validates the username & password and will throw SQLException if user/pw is not valid.
 			*/
-			//noinspection EmptyTryBlock
 			DataSource dataSource = (DataSource) context.getAttribute(DATA_SOURCE_ATTRIBUTE_KEY);
+			//noinspection EmptyTryBlock
 			try (Connection ignored = dataSource.getConnection(creds.getUsername(), creds.getPassword()))
 			{// NOSONAR
 
@@ -263,11 +258,13 @@ public final class BasicAuthResource extends OpenDcsResource
 		}
 	}
 
-	private Set<OpenDcsApiRoles> getUserRoles(String username)
+	private Set<OpenDcsApiRoles> getUserRoles(String username, String organizationId)
 	{
-		try(ApiAuthorizationDAI dao = getAuthDao())
+		OpenDcsDatabase db = createDb();
+		ApiAuthorizationDAI dao = getAuthDao(db);
+		try(DataTransaction tx = db.newTransaction())
 		{
-			return dao.getRoles(username);
+			return dao.getRoles(tx, username, organizationId);
 		}
 		catch(Exception ex)
 		{
@@ -275,13 +272,17 @@ public final class BasicAuthResource extends OpenDcsResource
 		}
 	}
 
-	private ApiAuthorizationDAI getAuthDao()
+	private ApiAuthorizationDAI getAuthDao(OpenDcsDatabase db)
 	{
-		TimeSeriesDb timeSeriesDb = getLegacyTimeseriesDB();
+		String databaseType = db.getSettings(DecodesSettings.class).orElseThrow().editDatabaseType;
 		// Username+Password login only supported by OpenTSDB
-		if(timeSeriesDb.isOpenTSDB())
+		if("opentsdb".equalsIgnoreCase(databaseType))
 		{
-			return new OpenTsdbAuthorizationDAO(timeSeriesDb);
+			return new OpenTsdbAuthorizationDAO();
+		}
+		else if("cwms".equalsIgnoreCase(databaseType))
+		{
+			return new CwmsAuthorizationDAO();
 		}
 		throw new UnsupportedOperationException("Endpoint is unsupported by the OpenDCS REST API.");
 	}

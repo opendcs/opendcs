@@ -107,7 +107,6 @@ docker run  --network database_net \
             -e DB_URL=jdbc:postgres:db:5324/dcs \
             -e DB_USERNAME=dcs_app \
             -e DB_PASSWORD=dcs_app_password \
-            -e DB_CONNECTION_INIT="select 1" \
             -e DB_VALIDATION_QUERY="select 1" \
             -e DB_MAX_CONNECTIONS=10 \
             -e DB_MAX_IDLE=5 \
@@ -128,7 +127,6 @@ docker run  --network database_net \
             -e DB_URL=jdbc:oracle:thin:@//cwmsdb:1521/CWMSTEST \
             -e DB_USERNAME=ccp_app \
             -e DB_PASSWORD=ccp \
-            -e DB_CONNECTION_INIT="BEGIN cwms_ccp_vpd.set_ccp_session_ctx(null, null, 'SPK' ); END;" \
             -e DB_VALIDATION_QUERY="select 1 from dual" \
             -e DB_MAX_CONNECTIONS=10 \
             -e DB_MAX_IDLE=5 \

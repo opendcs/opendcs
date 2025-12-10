@@ -1,190 +1,198 @@
 /*
- *  Copyright 2023 OpenDCS Consortium
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  Login form styling tuned for Bootstrap 5 themes
+ *  - Uses Bootstrap CSS variables when possible
+ *  - Keeps original layout + animations
  */
 
+/* LINKS & HEADINGS INSIDE THE LOGIN FORM */
 
-/* BASIC */
-/*
-html {
-  background-color: #56baed;
-}
-*/
-
-a {
-  color: #92badd;
-  display:inline-block;
+#formContent a {
+  color: var(--bs-link-color, #0d6efd);
   text-decoration: none;
   font-weight: 400;
 }
 
-h2 {
-  text-align: center;
-  font-size: 16px;
-  font-weight: 600;
-  text-transform: uppercase;
-  display:inline-block;
-  margin: 40px 8px 10px 8px; 
-  color: #cccccc;
+#formContent a:hover {
+  color: var(--bs-link-hover-color, #0a58ca);
+  text-decoration: underline;
 }
 
-/* STRUCTURE */
+#formContent h2 {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  display: inline-block;
+  margin: 2.5rem 0 .75rem;
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+/* “Tab” style headings */
+#formContent h2.inactive {
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+#formContent h2.active {
+  color: var(--bs-body-color, #212529);
+  border-bottom: 2px solid var(--bs-primary, #0d6efd);
+}
+
+/* LAYOUT / STRUCTURE */
+
 .wrapper {
   display: flex;
   align-items: center;
-  flex-direction: column; 
   justify-content: center;
+  flex-direction: column;
   width: 100%;
-  min-height: 100%;
-  padding: 20px;
+  min-height: 100vh;
+  padding: 1.5rem;
+  background-color: transparent;
 }
 
 #formContent {
-  -webkit-border-radius: 10px 10px 10px 10px;
-  border-radius: 10px 10px 10px 10px;
-  background: #fff;
-  padding: 30px;
-  width: 90%;
+  background-color: var(--bs-body-bg, #fff);
+  border-radius: var(--bs-border-radius-lg, 0.5rem);
+  box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15);
+  width: 100%;
   max-width: 450px;
   position: relative;
-  padding: 0px;
-  -webkit-box-shadow: 0 30px 60px 0 rgba(0,0,0,0.3);
-  box-shadow: 0 30px 60px 0 rgba(0,0,0,0.3);
+  padding: 2rem 2rem 1rem;
   text-align: center;
-  padding-bottom: 10px;
+  margin: 0 auto;
 }
 
 #formFooter {
-  background-color: #f6f6f6;
-  border-top: 1px solid #dce8f1;
-  padding: 25px;
+  background-color: var(--bs-secondary-bg, #f8f9fa);
+  border-top: 1px solid var(--bs-border-color, #dee2e6);
+  padding: 1rem;
   text-align: center;
-  -webkit-border-radius: 0 0 10px 10px;
-  border-radius: 0 0 10px 10px;
+  border-radius: 0 0 var(--bs-border-radius-lg, 0.5rem) var(--bs-border-radius-lg, 0.5rem);
+  font-size: .875rem;
 }
 
-/* TABS */
+/* FORM FIELDS
+ * Assumes your inputs/selects either:
+ *  - have class="form-control" / "form-select"
+ *  - or just rely on these type-based rules
+ */
 
-h2.inactive {
-  color: #cccccc;
-}
-
-h2.active {
-  color: #0d0d0d;
-  border-bottom: 2px solid #5fbae9;
-}
-
-
-
-/* FORM TYPOGRAPHY*/
-
-input[type=button], input[type=submit], input[type=reset]  {
-  background-color: #56baed;
-  border: none;
-  color: white;
-  padding: 15px 80px;
+/* Shared style: username, password, and raw organization <select> */
+input[type="text"],
+input[type="password"],
+select#id_organization {
+  display: block;
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: .375rem .75rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--bs-body-color, #212529);
+  background-color: var(--bs-form-control-bg, #fff);
+  background-clip: padding-box;
+  border: 1px solid var(--bs-border-color, #ced4da);
+  border-radius: var(--bs-border-radius, .375rem);
+  transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out, background-color .15s ease-in-out;
   text-align: center;
-  text-decoration: none;
+}
+
+/* Keep placeholders subtle */
+input[type="text"]::placeholder,
+input[type="password"]::placeholder {
+  color: var(--bs-secondary-color, #6c757d);
+  opacity: 1;
+}
+
+/* Focus state to match .form-control:focus */
+input[type="text"]:focus,
+input[type="password"]:focus,
+select#id_organization:focus {
+  color: var(--bs-body-color, #212529);
+  background-color: var(--bs-form-control-bg, #fff);
+  border-color: var(--bs-primary, #0d6efd);
+  outline: 0;
+  box-shadow: 0 0 0 .25rem rgba(var(--bs-primary-rgb, 13, 110, 253), .25);
+}
+
+/* BUTTONS
+ * For best results, also add class="btn btn-primary w-100" in the JSP,
+ * but these rules will make plain <input type=submit> look close to Bootstrap.
+ */
+
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
   display: inline-block;
+  width: 100%;
+  margin: 1rem 0 1.5rem;
+  padding: .6rem 1.5rem;
+  font-size: .875rem;
+  font-weight: 600;
   text-transform: uppercase;
-  font-size: 13px;
-  -webkit-box-shadow: 0 10px 30px 0 rgba(95,186,233,0.4);
-  box-shadow: 0 10px 30px 0 rgba(95,186,233,0.4);
-  -webkit-border-radius: 5px 5px 5px 5px;
-  border-radius: 5px 5px 5px 5px;
-  margin: 5px 20px 40px 20px;
-  -webkit-transition: all 0.3s ease-in-out;
-  -moz-transition: all 0.3s ease-in-out;
-  -ms-transition: all 0.3s ease-in-out;
-  -o-transition: all 0.3s ease-in-out;
-  transition: all 0.3s ease-in-out;
-}
-
-input[type=button]:hover, input[type=submit]:hover, input[type=reset]:hover  {
-  background-color: #39ace7;
-}
-
-input[type=button]:active, input[type=submit]:active, input[type=reset]:active  {
-  -moz-transform: scale(0.95);
-  -webkit-transform: scale(0.95);
-  -o-transform: scale(0.95);
-  -ms-transform: scale(0.95);
-  transform: scale(0.95);
-}
-
-input[type=text] {
-  background-color: #f6f6f6;
-  border: none;
-  color: #0d0d0d;
-  padding: 15px 32px;
   text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 16px;
-  margin: 5px;
-  width: 85%;
-  border: 2px solid #f6f6f6;
-  -webkit-transition: all 0.5s ease-in-out;
-  -moz-transition: all 0.5s ease-in-out;
-  -ms-transition: all 0.5s ease-in-out;
-  -o-transition: all 0.5s ease-in-out;
-  transition: all 0.5s ease-in-out;
-  -webkit-border-radius: 5px 5px 5px 5px;
-  border-radius: 5px 5px 5px 5px;
+  border-radius: var(--bs-border-radius-pill, var(--bs-border-radius, .375rem));
+  border: 1px solid var(--bs-primary, #0d6efd);
+  color: #fff;
+  background-color: var(--bs-primary, #0d6efd);
+  box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15);
+  cursor: pointer;
+  transition: background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out, transform .1s ease-in-out;
 }
 
-input[type=text]:focus {
-  background-color: #fff;
-  border-bottom: 2px solid #5fbae9;
+input[type="button"]:hover,
+input[type="submit"]:hover,
+input[type="reset"]:hover {
+  background-color: var(--bs-primary, #0d6efd);
+  border-color: var(--bs-primary, #0d6efd);
+  box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .25);
+  filter: brightness(0.95);
 }
 
-input[type=text]:placeholder {
-  color: #cccccc;
+input[type="button"]:active,
+input[type="submit"]:active,
+input[type="reset"]:active {
+  transform: scale(0.97);
+  box-shadow: 0 .25rem .5rem rgba(0, 0, 0, .2);
 }
 
-input[type=password] {
-  background-color: #f6f6f6;
-  border: none;
-  color: #0d0d0d;
-  padding: 15px 32px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 16px;
-  margin: 5px;
-  width: 85%;
-  border: 2px solid #f6f6f6;
-  -webkit-transition: all 0.5s ease-in-out;
-  -moz-transition: all 0.5s ease-in-out;
-  -ms-transition: all 0.5s ease-in-out;
-  -o-transition: all 0.5s ease-in-out;
-  transition: all 0.5s ease-in-out;
-  -webkit-border-radius: 5px 5px 5px 5px;
-  border-radius: 5px 5px 5px 5px;
+/* SELECT2 INTEGRATION (organization dropdown) */
+
+#id_organization + .select2-container {
+  width: 100% !important;
+  margin-bottom: 1rem;
 }
 
-input[type=password]:focus {
-  background-color: #fff;
-  border-bottom: 2px solid #5fbae9;
+.select2-container--default .select2-selection--single {
+  background-color: var(--bs-form-control-bg, #fff);
+  border: 1px solid var(--bs-border-color, #ced4da);
+  border-radius: var(--bs-border-radius, .375rem);
+  min-height: calc(2.25rem + 2px);
+  display: flex;
+  align-items: center;
+  padding: .375rem .75rem;
+  box-shadow: none;
 }
 
-input[type=password]:placeholder {
-  color: #cccccc;
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: var(--bs-body-color, #212529);
+  padding: 0;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 100%;
+  right: .75rem;
+}
+
+/* Focus state for Select2 to match Bootstrap */
+.select2-container--default.select2-container--focus .select2-selection--single {
+  border-color: var(--bs-primary, #0d6efd);
+  outline: 0;
+  box-shadow: 0 0 0 .25rem rgba(var(--bs-primary-rgb, 13, 110, 253), .25);
 }
 
 /* ANIMATIONS */
 
-/* Simple CSS3 Fade-in-down Animation */
 .fadeInDown {
   -webkit-animation-name: fadeInDown;
   animation-name: fadeInDown;
@@ -220,78 +228,53 @@ input[type=password]:placeholder {
   }
 }
 
-/* Simple CSS3 Fade-in Animation */
+/* Simple fade-in */
+
 @-webkit-keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
 @-moz-keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
 @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
 
 .fadeIn {
-  opacity:0;
-  -webkit-animation:fadeIn ease-in 1;
-  -moz-animation:fadeIn ease-in 1;
-  animation:fadeIn ease-in 1;
-
-  -webkit-animation-fill-mode:forwards;
-  -moz-animation-fill-mode:forwards;
-  animation-fill-mode:forwards;
-
-  -webkit-animation-duration:1s;
-  -moz-animation-duration:1s;
-  animation-duration:1s;
+  opacity: 0;
+  -webkit-animation: fadeIn ease-in 1;
+  -moz-animation: fadeIn ease-in 1;
+  animation: fadeIn ease-in 1;
+  -webkit-animation-fill-mode: forwards;
+  -moz-animation-fill-mode: forwards;
+  animation-fill-mode: forwards;
+  -webkit-animation-duration: 1s;
+  -moz-animation-duration: 1s;
+  animation-duration: 1s;
 }
 
-.fadeIn.first {
-  -webkit-animation-delay: 0.4s;
-  -moz-animation-delay: 0.4s;
-  animation-delay: 0.4s;
-}
+.fadeIn.first   { -webkit-animation-delay: 0.4s; -moz-animation-delay: 0.4s; animation-delay: 0.4s; }
+.fadeIn.second  { -webkit-animation-delay: 0.6s; -moz-animation-delay: 0.6s; animation-delay: 0.6s; }
+.fadeIn.third   { -webkit-animation-delay: 0.8s; -moz-animation-delay: 0.8s; animation-delay: 0.8s; }
+.fadeIn.fourth  { -webkit-animation-delay: 1s;   -moz-animation-delay: 1s;   animation-delay: 1s; }
 
-.fadeIn.second {
-  -webkit-animation-delay: 0.6s;
-  -moz-animation-delay: 0.6s;
-  animation-delay: 0.6s;
-}
+/* Underline hover effect for links inside form */
 
-.fadeIn.third {
-  -webkit-animation-delay: 0.8s;
-  -moz-animation-delay: 0.8s;
-  animation-delay: 0.8s;
-}
-
-.fadeIn.fourth {
-  -webkit-animation-delay: 1s;
-  -moz-animation-delay: 1s;
-  animation-delay: 1s;
-}
-
-/* Simple CSS3 Fade-in Animation */
 .underlineHover:after {
   display: block;
   left: 0;
-  bottom: -10px;
+  bottom: -0.625rem;
   width: 0;
   height: 2px;
-  background-color: #56baed;
+  background-color: var(--bs-primary, #0d6efd);
   content: "";
   transition: width 0.2s;
 }
 
 .underlineHover:hover {
-  color: #0d0d0d;
+  color: var(--bs-body-color, #212529);
 }
 
-.underlineHover:hover:after{
+.underlineHover:hover:after {
   width: 100%;
 }
 
-
-
-/* OTHERS */
-
-*:focus {
-    outline: none;
-} 
+/* ICON */
 
 #icon {
-  width:60%;
+  width: 60%;
 }

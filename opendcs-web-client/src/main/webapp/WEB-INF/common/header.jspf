@@ -30,6 +30,8 @@
 
   <link href="/webjars/bootstrap-daterangepicker/css/bootstrap-daterangepicker.css" rel="stylesheet" type="text/css"/>
   <link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" type="text/css" href="/webjars/select2/css/select2.min.css">
+  <link rel="stylesheet" type="text/css" href="/webjars/select2-bootstrap-5-theme/dist/select2-bootstrap-5-theme.min.css">
 
   <link href="/resources/css/main.css" rel="stylesheet" type="text/css"/>
   <link href="/resources/css/opendcs-shim.css" rel="stylesheet" type="text/css"/>

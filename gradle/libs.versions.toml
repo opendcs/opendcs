@@ -1,7 +1,7 @@
 [versions]
-opendcs = "7.5.1-RC17"
+opendcs = "7.5.1-RC18"
 
-servlet-api = "6.1.0" #Updating this further will require a change to the jakarta namespace.
+servlet-api = "6.1.0"
 slf4j = { strictly = "2.0.17" }
 jersey = "4.0.0"
 
@@ -39,6 +39,8 @@ opendcs = { module = "org.opendcs:opendcs", version.ref = "opendcs" }
 opendcs-api = { module = "org.opendcs:opendcs-api", version.ref = "opendcs" }
 opendcs-schemas = { module = "org.opendcs:opendcs-schemas", version.ref = "opendcs" }
 opendcs-schemas-cwms = { module = "org.opendcs:opendcs-schemas-cwms-oracle", version.ref = "opendcs" }
+
+jdbi = { module = "org.jdbi:jdbi3-core", version = "3.39.1" }
 
 servlet-api = { module = "jakarta.servlet:jakarta.servlet-api", version.ref = "servlet-api" }
 rs-api = { module = "jakarta.ws.rs:jakarta.ws.rs-api", version.ref="rs-api" }

@@ -1,10 +1,26 @@
 /* === OpenDCS shim v6 (cleaned) ============================================ */
 :root {
-    --navbar-height: 56px;
-    --sidebar-width: 260px;
-    --sidebar-bg: #343a40;
-    --sidebar-card-bg: #f8f9fa;
-    --sidebar-border: rgba(0,0,0,.05);
+    --primary: #0d6efd;
+    --primary-dark: #0751c4;
+    --primary-soft: #e6f0ff;
+    --sidebar-bg: #064a9c;
+    --topbar-bg: #0d6efd;
+    --page-bg: #f5f7fb;
+    --card-bg: #ffffff;
+    --border-soft: #e1e5ee;
+    --text-main: #1e293b;
+    --text-muted: #6b7280;
+}
+
+body.dark-mode {
+    --page-bg: #020617;
+    --card-bg: #020617;
+    --sidebar-bg: #020617;
+    --topbar-bg: #020617;
+    --text-main: #e5e7eb;
+    --text-muted: #9ca3af;
+    --border-soft: #1f2937;
+    --primary-soft: rgba(37, 99, 235, 0.15);
 }
 
 /* Offset the page for a fixed top navbar */
@@ -368,4 +384,20 @@ body.navbar-top .modal-dialog-scrollable .modal-content {
 .sidebar.sidebar-dark .nav-group-sub {
     background: var(--sidebar-sub-bg);
     border-left: 1px solid var(--sidebar-border);
+}
+
+.table thead th {
+    background-color: var(--primary-soft);
+    font-size: 0.75rem;
+    letter-spacing: 0.07em;
+    color: var(--text-main);
+}
+
+.page-sidebar {
+    width: 230px;
+    background: linear-gradient(
+            180deg,
+            var(--bs-primary) 0%,
+            color-mix(in srgb, var(--bs-primary) 80%, #000 20%) 100%
+    );
 }

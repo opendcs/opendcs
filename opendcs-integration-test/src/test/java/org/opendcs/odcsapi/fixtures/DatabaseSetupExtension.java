@@ -20,6 +20,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Objects;
+
+import decodes.util.DecodesSettings;
 import jakarta.servlet.http.HttpServletResponse;
 
 import io.restassured.RestAssured;
@@ -61,6 +63,18 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 	public static TomcatServer getCurrentTomcat()
 	{
 		return currentTomcat;
+	}
+
+	public static String getOrganization()
+	{
+		try
+		{
+			return getCurrentConfig().getOpenDcsDatabase().getSettings(DecodesSettings.class).orElseThrow().CwmsOfficeId;
+		}
+		catch(Throwable e)
+		{
+			throw new IllegalStateException(e);
+		}
 	}
 
 	@Override
@@ -107,7 +121,7 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 				log.debug("Server is up!");
 				break;
 			}
-			catch(Throwable ex)
+			catch(AssertionError ex)
 			{
 				log.atDebug().setCause(ex).log("Waiting for the server to start...");
 				Thread.sleep(100);//NOSONAR
@@ -125,10 +139,11 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 		{
 			String userPermissions = "begin execute immediate 'grant web_user to " + System.getProperty("DB_USERNAME") + "'; end;";
 			String dbOffice = System.getProperty("DB_OFFICE");
-			String setWebUserPermissions = "begin\n" +
-					"   cwms_sec.add_user_to_group(?, 'CWMS User Admins',?) ;\n" +
-					"   commit;\n" +
-					"end;";
+			String setWebUserPermissions = """
+					begin
+					   cwms_sec.add_user_to_group(?, 'CWMS User Admins',?) ;
+					   commit;
+					end;""";
 			try(Connection connection = DriverManager.getConnection(System.getProperty("DB_URL"), "CWMS_20",
 					System.getProperty("DB_PASSWORD"));
 				PreparedStatement stmt1 = connection.prepareStatement(userPermissions);

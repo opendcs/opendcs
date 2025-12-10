@@ -23,7 +23,7 @@ project(":api-client-typescript").projectDir=file("api-clients/api-client-typesc
 include ":api-client-java"
 project(":api-client-java").projectDir=file("api-clients/api-client-java")
 
-// Version overide for local development
+// Version override for local development
 if(hasProperty('librarySourcesDir')) {
     def externalDir = new File("$librarySourcesDir")
     if (externalDir.exists()) {

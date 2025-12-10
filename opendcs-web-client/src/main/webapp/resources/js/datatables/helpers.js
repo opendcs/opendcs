@@ -46,8 +46,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-
-    setPropSpecsMeta();
+    if(!globalThis.location.pathname.toLowerCase().startsWith("/login")) {
+        setPropSpecsMeta();
+    }
     document
         .querySelectorAll('.dataTables_wrapper [onclick*="clickedDropdown"]')
         .forEach(el => el.removeAttribute('onclick'));
@@ -995,10 +996,10 @@ function updateDataTableScroll(targetTable, fillPercentage)
     
     if (jqTable.attr("id") == "propertiesTable")
 	{
-    	console.log("*********PropertiesTable**************");
-        console.log("ParentHeight: " + parentHeight);
-        console.log("TotalOuterHeight: " + totalOuterHeight);
-    	console.log("*********PropertiesTable**************");
+    	console.debug("*********PropertiesTable**************");
+        console.debug("ParentHeight: " + parentHeight);
+        console.debug("TotalOuterHeight: " + totalOuterHeight);
+    	console.debug("*********PropertiesTable**************");
         
 	}
     if (totalOuterHeight > parentHeight)

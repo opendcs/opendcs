@@ -113,7 +113,7 @@ public final class PlatformResources extends OpenDcsResource
 	)
 	public Response getPlatformRefs(@Parameter(description = "Transport medium type",
 			schema = @Schema(implementation = String.class, example = "goes"))
-		@QueryParam("tmtype") String tmtype)
+	@QueryParam("tmtype") String tmtype)
 			throws DbException
 	{
 		DatabaseIO dbIo = getLegacyDatabase();

@@ -15,8 +15,12 @@
 
 package org.opendcs.odcsapi.res;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.servlet.ServletContext;
 import javax.sql.DataSource;
+
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 
 import decodes.db.Database;
@@ -28,6 +32,7 @@ import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.odcsapi.dao.OpenDcsDatabaseFactory;
 
 import static org.opendcs.odcsapi.res.DataSourceContextCreator.DATA_SOURCE_ATTRIBUTE_KEY;
+import static org.opendcs.odcsapi.util.ApiConstants.ORGANIZATION_HEADER;
 
 @OpenAPIDefinition(
 		info = @Info(
@@ -41,16 +46,33 @@ public class OpenDcsResource
 {
 	private static final String UNSUPPORTED_OPERATION_MESSAGE = "Endpoint is unsupported by the OpenDCS REST API.";
 
+	@HeaderParam(ORGANIZATION_HEADER)
+	@Parameter(description = "Organization ID for the request", required = true)
+	protected String organizationId;
+
+	@Context
+	protected ContainerRequestContext request;
+
 	@Context
 	protected ServletContext context;
 
 	protected final synchronized OpenDcsDatabase createDb()
 	{
-		DataSource dataSource = (DataSource) context.getAttribute(DATA_SOURCE_ATTRIBUTE_KEY);
-		return OpenDcsDatabaseFactory.createDb(dataSource);
+		DataSource dataSource = getDataSource();
+		return OpenDcsDatabaseFactory.createDb(dataSource, organizationId);
 	}
 
-	protected DatabaseIO getLegacyDatabase()
+	protected final DataSource getDataSource()
+	{
+		DataSource dataSource = (DataSource) context.getAttribute(DATA_SOURCE_ATTRIBUTE_KEY);
+		if(dataSource == null)
+		{
+			throw new IllegalStateException("DataSource not found in ServletContext.");
+		}
+		return dataSource;
+	}
+
+	protected final DatabaseIO getLegacyDatabase()
 	{
 		return createDb().getLegacyDatabase(Database.class)
 				.map(Database::getDbIo)

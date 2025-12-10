@@ -44,7 +44,6 @@ services:
       - DB_DRIVER_CLASS=org.postgresql.Driver
       - DB_USERNAME=app
       - DB_PASSWORD=app_pass
-      - DB_CONNECTION_INIT=SELECT 1
       - DB_VALIDATION_QUERY=SELECT 1
       - DB_URL=jdbc:postgresql://db:5432/dcs
       - DB_MAX_CONNECTIONS=10

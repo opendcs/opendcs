@@ -31,7 +31,6 @@ public final class ContextPropertySetup implements ServletContextListener
 	{
 		ServletContext servletContext = sce.getServletContext();
 		//Move this information to the database. https://github.com/opendcs/rest_api/issues/191
-		initProp(servletContext, "opendcs.rest.api.cwms.office", "CwmsOfficeId", "OPENDCS_DB_OFFICE");
 		initProp(servletContext, "opendcs.rest.api.authorization.type", "opendcs.rest.api.authorization.type", "OPENDCS_AUTHORIZATION_TYPE");
 		initProp(servletContext, "opendcs.rest.api.authorization.expiration.duration", "opendcs.rest.api.authorization.expiration.duration", "OPENDCS_AUTHORIZATION_DURATION");
 		initProp(servletContext, "opendcs.rest.api.authorization.jwt.jwkset.url", "opendcs.rest.api.authorization.jwt.jwkset.url", "OPENDCS_AUTHORIZATION_JWK_SET_URL");

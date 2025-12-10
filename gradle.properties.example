@@ -3,7 +3,6 @@
 #DCSTOOL_USERDIR=
 
 ###Point to existing Postgres OpenTS database
-#postgresdb.url=
 #opendcs.db.username=
 #opendcs.db.password=
 

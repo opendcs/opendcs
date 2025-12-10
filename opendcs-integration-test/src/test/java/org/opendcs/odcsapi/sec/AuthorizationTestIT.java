@@ -60,24 +60,14 @@ final class AuthorizationTestIT
 					//ensures unauthorized session
 					.filter(new SessionFilter())
 					.when();
-			Response response;
-			switch(method)
+			Response response = switch(method)
 			{
-				case GET:
-					response = spec.get(path);
-					break;
-				case POST:
-					response = spec.post(path);
-					break;
-				case PUT:
-					response = spec.put(path);
-					break;
-				case DELETE:
-					response = spec.delete(path);
-					break;
-				default:
-					throw new IllegalArgumentException("Unsupported method: " + method);
-			}
+				case GET -> spec.get(path);
+				case POST -> spec.post(path);
+				case PUT -> spec.put(path);
+				case DELETE -> spec.delete(path);
+				default -> throw new IllegalArgumentException("Unsupported method: " + method);
+			};
 			response.then()
 					.log().ifValidationFails(LogDetail.ALL, true)
 					.assertThat()
@@ -94,6 +84,7 @@ final class AuthorizationTestIT
 		return paths.entrySet().stream()
 				.filter(e -> !e.getKey().equals("/credentials"))
 				.filter(e -> !e.getKey().equals("/logout"))
+				.filter(e -> !e.getKey().equals("/organizations"))
 				.flatMap(e ->
 						e.getValue().readOperationsMap().entrySet().stream().map(opEntry ->
 						{
@@ -114,20 +105,8 @@ final class AuthorizationTestIT
 						}));
 	}
 
-	private static class Endpoint
+	private record Endpoint(String path, PathItem.HttpMethod method, String contentMediaType, String acceptMediaType)
 	{
-		private final String path;
-		private final PathItem.HttpMethod method;
-		public final String contentMediaType;
-		public final String acceptMediaType;
-
-		private Endpoint(String path, PathItem.HttpMethod method, String contentMediaType, String acceptMediaType)
-		{
-			this.path = path;
-			this.method = method;
-			this.contentMediaType = contentMediaType;
-			this.acceptMediaType = acceptMediaType;
-		}
 
 		@Override
 		public String toString()

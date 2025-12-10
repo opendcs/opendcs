@@ -15,31 +15,27 @@
 
 package org.opendcs.odcsapi.sec.basicauth;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.EnumSet;
 import java.util.Set;
 
-import opendcs.dao.DaoBase;
-import opendcs.dao.DatabaseConnectionOwner;
+import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.odcsapi.dao.ApiAuthorizationDAI;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
 import org.slf4j.Logger;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
-public final class OpenTsdbAuthorizationDAO extends DaoBase implements ApiAuthorizationDAI
+public final class OpenTsdbAuthorizationDAO implements ApiAuthorizationDAI
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
-	public OpenTsdbAuthorizationDAO(DatabaseConnectionOwner tsdb)
-	{
-		super(tsdb, "AuthorizationDAO");
-	}
-
 	@Override
-	public Set<OpenDcsApiRoles> getRoles(String username) throws DbException
+	public Set<OpenDcsApiRoles> getRoles(DataTransaction transaction, String username, String unused) throws DbException
 	{
 		Set<OpenDcsApiRoles> roles = EnumSet.noneOf(OpenDcsApiRoles.class);
 		roles.add(OpenDcsApiRoles.ODCS_API_GUEST);
@@ -47,37 +43,35 @@ public final class OpenTsdbAuthorizationDAO extends DaoBase implements ApiAuthor
 		String q = "select pm.roleid, pr.rolname from pg_auth_members pm, pg_roles pr"
 				+ " where pm.member = (select oid from pg_roles where upper(rolname) = upper(?))"
 				+ " and pm.roleid = pr.oid";
-		try
+
+		try(Connection c = transaction.connection(Connection.class).orElseThrow())
 		{
-			withConnection(c ->
+			try(PreparedStatement statement = c.prepareStatement(q))
 			{
-				try(PreparedStatement statement = c.prepareStatement(q))
+				statement.setString(1, username);
+				try(ResultSet rs = statement.executeQuery())
 				{
-					statement.setString(1, username);
-					try(ResultSet rs = statement.executeQuery())
+					while(rs.next())
 					{
-						while(rs.next())
+						int roleid = rs.getInt(1);
+						String role = rs.getString(2);
+						log.info("User '{}' has role {}={}", username, roleid, role);
+						if("OTSDB_ADMIN".equalsIgnoreCase(role))
 						{
-							int roleid = rs.getInt(1);
-							String role = rs.getString(2);
-							log.info("User '{}' has role {}={}", username, roleid, role);
-							if("OTSDB_ADMIN".equalsIgnoreCase(role))
-							{
-								roles.add(OpenDcsApiRoles.ODCS_API_ADMIN);
-							}
-							if("OTSDB_MGR".equalsIgnoreCase(role))
-							{
-								roles.add(OpenDcsApiRoles.ODCS_API_USER);
-							}
+							roles.add(OpenDcsApiRoles.ODCS_API_ADMIN);
+						}
+						if("OTSDB_MGR".equalsIgnoreCase(role))
+						{
+							roles.add(OpenDcsApiRoles.ODCS_API_USER);
 						}
 					}
 				}
-			});
+			}
 			return roles;
 		}
-		catch(SQLException ex)
+		catch(SQLException | OpenDcsDataException ex)
 		{
-			throw new DbException(module, ex, "Unable to determine user roles in the database.");
+			throw new DbException("Unable to determine user roles in the database.", ex);
 		}
 
 	}

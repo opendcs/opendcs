@@ -41,6 +41,7 @@
 <%@include file="/WEB-INF/common/modals/waiting.jspf" %>
 <%@include file="/WEB-INF/common/modals/notification.jspf" %>
 <%@include file="/WEB-INF/common/modals/yesno.jspf" %>
+<%@include file="/WEB-INF/common/modals/organizations.jspf" %>
 
 <!-- API base -->
 <script>

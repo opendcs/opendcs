@@ -13,20 +13,15 @@
  *  limitations under the License.
  */
 
-package org.opendcs.odcsapi.util;
+package org.opendcs.odcsapi.dao;
 
-/**
- * Various constants used by the API.
- */
-public final class ApiConstants
+import java.util.List;
+
+import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDao;
+import org.opendcs.odcsapi.beans.ApiOrganization;
+
+public interface OrganizationDao extends OpenDcsDao
 {
-	public static final String ODCS_API_GUEST = "ODCS_API_GUEST";
-	public static final String ODCS_API_USER = "ODCS_API_USER";
-	public static final String ODCS_API_ADMIN = "ODCS_API_ADMIN";
-	public static final String ORGANIZATION_HEADER = "X-ORGANIZATION-ID";
-
-	private ApiConstants()
-	{
-		throw new AssertionError("Utility class");
-	}
+	List<ApiOrganization> retrieveOrganizationIds(DataTransaction tx, int limit, int offset) throws DbException;
 }

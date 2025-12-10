@@ -504,115 +504,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     });
 
-    params = {}
-    $.ajax({
-        url: `${window.API_URL}/apprefs`,
-        type: "GET",
-        data: params,
-        success: function(response) {
-            var processList = response;
-            var optionAttributes = {
-                    "value": "",
-                    "id": "",
-                    "comment": "",
-                    "last_modified": ""
-            };
-            var newOption = $("<option>").attr(optionAttributes).html("(none)");
-            $("#processSelectbox").append(newOption);
-            for (var x = 0; x < processList.length; x++)
-            {
-                var curProcess = processList[x];
-                optionAttributes = {
-                        "value": curProcess.appName,
-                        "id": curProcess.appId,
-                        "comment": curProcess.comment,
-                        "last_modified": curProcess.lastModified
-                };
-
-                var newOption = $("<option>").attr(optionAttributes).html(`${curProcess.appId}: ${curProcess.appName}`);
-                $("#processSelectbox").append(newOption);
-            }
-        },
-        error: function(response) {
-            show_notification_modal("Error retrieving apprefs", 
-                    "There was an issue getting the apprefs from the OpenDCS REST API", 
-                    `Please contact your system administrator.`, 
-                    "OK", 
-                    "bg-danger", 
-                    "bg-secondary",
-                    null);
-        }
-    });
-
-    params = {};
-    $.ajax({
-        url: `${window.API_URL}/tsgrouprefs`,
-        type: "GET",
-        data: params,
-        success: function(response) {
-            var tsGroupRefs = response;
-            var optionAttributes = {
-                    "value": "",
-                    "id": "",
-                    "description": "",
-                    "type": ""
-            };
-            var newOption = $("<option>").attr(optionAttributes).html("");
-            $("#groupSelectbox").append(newOption);
-            for (var x = 0; x < tsGroupRefs.length; x++)
-            {
-                var curGroup = tsGroupRefs[x];
-                optionAttributes = {
-                        "value": curGroup.groupName,
-                        "id": curGroup.groupId,
-                        "description": curGroup.description,
-                        "type": curGroup.groupType
-                };
-                var newOption = $(`<option title="${curGroup.description}">`).attr(optionAttributes).html(`${curGroup.groupType}: ${curGroup.groupName}`);
-                $("#groupSelectbox").append(newOption);
-            }
-        },
-        error: function(response) {
-            show_notification_modal("Error retrieving ts group refs", 
-                    "There was an issue getting the ts group refs from the OpenDCS REST API", 
-                    `Please contact your system administrator.`, 
-                    "OK", 
-                    "bg-danger", 
-                    "bg-secondary",
-                    null);
-        }
-    });
-
-    params = {};
-    //Ajax call to load the list of algorithms into the algorithm datatable.
-    $.ajax({
-        url: `${window.API_URL}/algorithmrefs`,
-        type: "GET",
-        data: params,
-        success: function(response) {
-            console.log("Got algorithms.");
-            console.log(response);
-            algorithmList = response;
-            for (var x = 0; x < algorithmList.length; x++)
-            {
-                var curRow = algorithmList[x];
-                var newRow = [curRow.algorithmId, curRow.algorithmName, curRow.execClass, curRow.numCompsUsing, curRow.description];
-                algorithmTable.row.add(newRow);
-                algorithmTable.draw(false);
-            }
-            algorithmTable.draw(false);
-        },
-        error: function(response) {
-            show_notification_modal("Error retrieving algorithm refs", 
-                    "There was an issue getting the algorithm from the OpenDCS REST API", 
-                    `Please contact your system administrator.`, 
-                    "OK", 
-                    "bg-danger", 
-                    "bg-secondary",
-                    null);
-        }
-    });
-
     //when clicked, the main table dialog is opened.
     $('#mainTable').on('click', 'tbody tr', beginOpenMainTableDialog);
 
@@ -628,11 +519,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 //"scrollY": 1,
                 "scrollCollapse": true,
                 "autoWidth": true,
-                "columnDefs": [  {
-                            "targets": [ 9 ],
-                            "visible": false,
-                            "searchable": false
-                        }] 
+                "columnDefs": []
             });
 
     //initialize the properties table.
@@ -914,14 +801,87 @@ document.addEventListener('DOMContentLoaded', function() {
 
     });
 
-    var params = {};
+    $.ajax({
+        url: `${window.API_URL}/apprefs`,
+        type: "GET",
+        success: function(response) {
+            var processList = response;
+            var optionAttributes = {
+                "value": "",
+                "id": "",
+                "comment": "",
+                "last_modified": ""
+            };
+            var newOption = $("<option>").attr(optionAttributes).html("(none)");
+            $("#processSelectbox").append(newOption);
+            for (var x = 0; x < processList.length; x++)
+            {
+                var curProcess = processList[x];
+                optionAttributes = {
+                    "value": curProcess.appName,
+                    "id": curProcess.appId,
+                    "comment": curProcess.comment,
+                    "last_modified": curProcess.lastModified
+                };
+
+                var newOption = $("<option>").attr(optionAttributes).html(`${curProcess.appId}: ${curProcess.appName}`);
+                $("#processSelectbox").append(newOption);
+            }
+        },
+        error: function(response) {
+            show_notification_modal("Error retrieving apprefs",
+                "There was an issue getting the apprefs from the OpenDCS REST API",
+                `Please contact your system administrator.`,
+                "OK",
+                "bg-danger",
+                "bg-secondary",
+                null);
+        }
+    });
+
+    $.ajax({
+        url: `${window.API_URL}/tsgrouprefs`,
+        type: "GET",
+        success: function(response) {
+            var tsGroupRefs = response;
+            var optionAttributes = {
+                "value": "",
+                "id": "",
+                "description": "",
+                "type": ""
+            };
+            var newOption = $("<option>").attr(optionAttributes).html("");
+            $("#groupSelectbox").append(newOption);
+            for (var x = 0; x < tsGroupRefs.length; x++)
+            {
+                var curGroup = tsGroupRefs[x];
+                optionAttributes = {
+                    "value": curGroup.groupName,
+                    "id": curGroup.groupId,
+                    "description": curGroup.description,
+                    "type": curGroup.groupType
+                };
+                var newOption = $(`<option title="${curGroup.description}">`).attr(optionAttributes).html(`${curGroup.groupType}: ${curGroup.groupName}`);
+                $("#groupSelectbox").append(newOption);
+            }
+        },
+        error: function(response) {
+            show_notification_modal("Error retrieving ts group refs",
+                "There was an issue getting the ts group refs from the OpenDCS REST API",
+                `Please contact your system administrator.`,
+                "OK",
+                "bg-danger",
+                "bg-secondary",
+                null);
+        }
+    });
+
     //Opens the main table dialog (this is how to add a new element to the 
     //main datatable.
     show_waiting_modal();
     $.ajax({
         url: `${window.API_URL}/computationrefs`,
         type: "GET",
-        data: params,
         success: function(response) {
             
             var computationRefs = response;

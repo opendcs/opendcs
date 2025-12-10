@@ -6,20 +6,21 @@ document.addEventListener("DOMContentLoaded", function(event) {
 	$(document).on('click', '#logoutButton', function (e) {
 		e.preventDefault();
 		console.log("Logging out.");
-        sessionStorage.removeItem("token");
+        $.ajax({
+            url: `${globalThis.API_URL}/logout`,
+            type: "DELETE"
+        });
         window.location = "login";
     });
-	
-	var token = sessionStorage.getItem("token");
-	if (token != null)
-	{
-		$.ajaxSetup({
-		    beforeSend: function(xhr) {
-		    	xhr.setRequestHeader('Authorization', 
-		    			`${token}`);
-		    }
-		});
-	}
+
+    $.ajaxSetup({
+        beforeSend: function(xhr) {
+            let orgId = localStorage.getItem("organizationId");
+            if (orgId) {
+                xhr.setRequestHeader("X-ORGANIZATION-ID", orgId);
+            }
+        }
+    });
 });
 
 

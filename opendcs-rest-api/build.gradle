@@ -47,6 +47,7 @@ dependencies {
         exclude group: "org.eclipse.jetty", module: "jetty-annotations"
     }
     implementation(libs.opendcs.api)
+    implementation(libs.jdbi)
     swaggerDeps(libs.servlet.api)
     swaggerDeps(libs.rs.api)
     swaggerDeps(libs.swagger.jaxrs2)

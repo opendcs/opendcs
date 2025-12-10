@@ -13,20 +13,14 @@
  *  limitations under the License.
  */
 
-package org.opendcs.odcsapi.util;
+package org.opendcs.odcsapi.beans;
 
-/**
- * Various constants used by the API.
- */
-public final class ApiConstants
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents an organization within the system")
+public record ApiOrganization(
+		@Schema(description = "The short unique identifier name of the organization") String name,
+		@Schema(description = "A longer descriptive name of the organization") String description,
+		@Schema(description = "The parent organization's name, if any", nullable = true) String parent)
 {
-	public static final String ODCS_API_GUEST = "ODCS_API_GUEST";
-	public static final String ODCS_API_USER = "ODCS_API_USER";
-	public static final String ODCS_API_ADMIN = "ODCS_API_ADMIN";
-	public static final String ORGANIZATION_HEADER = "X-ORGANIZATION-ID";
-
-	private ApiConstants()
-	{
-		throw new AssertionError("Utility class");
-	}
 }

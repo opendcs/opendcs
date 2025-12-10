@@ -47,7 +47,6 @@ import org.apache.catalina.session.StandardSession;
 import org.opendcs.odcsapi.fixtures.DatabaseSetupExtension;
 import org.opendcs.odcsapi.fixtures.DbType;
 import org.opendcs.odcsapi.fixtures.TomcatServer;
-import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.odcsapi.res.ObjectMapperContextResolver;
 import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
 import org.opendcs.odcsapi.sec.OpenDcsPrincipal;
@@ -56,7 +55,7 @@ import org.opendcs.odcsapi.sec.basicauth.Credentials;
 import static io.restassured.RestAssured.given;
 import static java.util.stream.Collectors.joining;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.opendcs.odcsapi.util.ApiConstants.ORGANIZATION_HEADER;
 
 class BaseIT
 {
@@ -147,7 +146,11 @@ class BaseIT
 								  .setMaxAge(-1)
 								  .setPath("/odcsapi")
 								  .build();
-		authSpec = new RequestSpecBuilder().addCookie(cookie).build();
+		String organization = DatabaseSetupExtension.getOrganization();
+		authSpec = new RequestSpecBuilder()
+				.addCookie(cookie)
+				.addHeader(ORGANIZATION_HEADER, organization)
+				.build();
 		//Check while passing in cookie
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)

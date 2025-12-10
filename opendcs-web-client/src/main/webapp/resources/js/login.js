@@ -32,16 +32,44 @@
 $( document ).ready(function() {
     console.log("Loaded login.js.");
     $(".dropdown-user").addClass("invisible");
+
     $("#loginButton").on("click", function(e) {
         login();
     });
-    $("#id_username").keyup(function(event) {
-        inputBoxLogin(event);
+    $("#id_password").keyup(inputBoxLogin);
+    $("#id_organization").keyup(inputBoxLogin);
+    let usernameField = $("#id_username");
+    usernameField.keyup(inputBoxLogin);
+    usernameField.focus();
+    const $orgSelect = $('#id_organization');
+
+    $.ajax({
+        url: `${globalThis.API_URL}/organizations`,
+        type: "GET",
+        dataType: "json",
+        success: function (data) {
+            data.forEach(function (org) {
+                $('<option>')
+                    .val(org.name)
+                    .text(org.name)
+                    .appendTo($orgSelect);
+            });
+            $orgSelect.select2({
+                placeholder: 'Select an organization',
+                allowClear: true,
+                minimumResultsForSearch: 0,
+                width: '100%'
+            });
+            const orgId = localStorage.getItem("organizationId");
+            if (orgId && $orgSelect.find('option[value="' + orgId + '"]').length) {
+                $orgSelect.val(orgId).trigger('change');
+            }
+        },
+        failure: function () {
+            console.error("Failed to load organizations");
+            $orgSelect.next('.select2-container').hide();
+        }
     });
-    $("#id_password").keyup(function(event) {
-        inputBoxLogin(event);
-    });
-    $("#id_username").focus();
 });
 
 function inputBoxLogin(event)
@@ -59,9 +87,10 @@ function inputBoxLogin(event)
  */
 function login()
 {
-    var username = $("#id_username").val();
-    var password = $("#id_password").val();
-    var params = {
+    const username = $("#id_username").val();
+    const password = $("#id_password").val();
+    const organization = $("#id_organization").val();
+    const params = {
             "username": username,
             "password": password
     };
@@ -70,16 +99,17 @@ function login()
         type: "POST",
         data: JSON.stringify(params),
         headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "X-ORGANIZATION-ID": organization
         },
         success: function(response) {
             sessionStorage.setItem("username", response.username);
-            sessionStorage.setItem("token", response.token);
+            localStorage.setItem("organizationId", organization);
             window.location = "platforms";
         },
         error: function(response) {
-            var errorJson;
-            var errorMessage;
+            let errorJson;
+            let errorMessage;
             try {
                 errorJson = JSON.parse(response.responseText);
                 errorMessage = errorJson.errMessage;

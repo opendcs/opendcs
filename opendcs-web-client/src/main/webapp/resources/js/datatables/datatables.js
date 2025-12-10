@@ -264,10 +264,10 @@ class OpenDcsDataTable {
     
     if (jqTable.attr("id") == "propertiesTable")
 	{
-    	console.log("*********PropertiesTable**************");
-        console.log("ParentHeight: " + parentHeight);
-        console.log("TotalOuterHeight: " + totalOuterHeight);
-    	console.log("*********PropertiesTable**************");
+    	console.debug("*********PropertiesTable**************");
+        console.debug("ParentHeight: " + parentHeight);
+        console.debug("TotalOuterHeight: " + totalOuterHeight);
+    	console.debug("*********PropertiesTable**************");
         
 	}
     if (totalOuterHeight > parentHeight)
