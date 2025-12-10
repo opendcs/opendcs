@@ -15,26 +15,22 @@
 */
 package opendcs.dao;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
 import org.opendcs.database.JdbiTransaction;
-import org.opendcs.database.SimpleTransaction;
 import org.opendcs.database.TransactionContextImpl;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
 import org.opendcs.database.model.mappers.dbenum.DbEnumBuilderMapper;
@@ -43,6 +39,9 @@ import org.opendcs.database.model.mappers.dbenum.EnumValueMapper;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlKeywords;
+
+import org.openide.util.lookup.ServiceProvider;
+
 import org.slf4j.Logger;
 
 import decodes.db.EnumValue;
@@ -62,6 +61,7 @@ import decodes.util.DecodesSettings;
  * Data Access Object for writing/reading DbEnum objects to/from a SQL database
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
+@ServiceProvider(service = EnumDAI.class, path = "DEFAULT")
 public class EnumSqlDao extends DaoBase implements EnumDAI
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
@@ -70,6 +70,11 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
     public EnumSqlDao(DatabaseConnectionOwner tsdb)
     {
         super(tsdb, "EnumSqlDao");
+    }
+
+    public EnumSqlDao()
+    {
+        super(null, "EnumSqlDao - null tsdb");
     }
 
     @Override

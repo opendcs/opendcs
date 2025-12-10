@@ -7,7 +7,6 @@ import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.EquipmentModelDao;
 import org.opendcs.database.model.mappers.equipmentmodel.EquipmentModelMapper;
 import org.opendcs.database.model.mappers.equipmentmodel.EquipmentModelReducer;
@@ -15,12 +14,14 @@ import org.opendcs.database.model.mappers.properties.PropertiesMapper;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
+import org.openide.util.lookup.ServiceProvider;
 
 import decodes.db.DatabaseException;
 import decodes.db.EquipmentModel;
 import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
 
+@ServiceProvider(service = EquipmentModelDao.class)
 public class EquipmentModelImpl implements EquipmentModelDao
 {
     private static final String PROPERTIES_DELETE_SQL = "delete from equipmentproperty where equipmentid = :id";

@@ -44,6 +44,7 @@ import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgu
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
 import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.openide.util.Lookup;
 import org.slf4j.Logger;
 
 import decodes.db.Database;
@@ -127,31 +128,22 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         return dataSource;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T extends OpenDcsDao> Optional<T> getDao(Class<T> dao)
     {
-        @SuppressWarnings("unchecked")
         DaoWrapper<?> wrapper =
             daoMap.computeIfAbsent(dao, daoDesired ->
             {
+                Optional<DaoWrapper<T>> tmp = fromLookup(dao);
+
+                if (tmp.isPresent())
+                {
+                    return tmp.get();
+                }
                 if (dao.isAssignableFrom(CwmsLocationLevelDAO.class))
                 {
                     return new DaoWrapper<>(() -> new CwmsLocationLevelDAO(this.timeSeriesDb));
-                }
-
-                if (dao.isAssignableFrom(EquipmentModelDao.class))
-                {
-                    return new DaoWrapper<>(EquipmentModelImpl::new);
-                }
-
-                if (dao.isAssignableFrom(UserManagementDao.class))
-                {
-                    return new DaoWrapper<>(UserManagementImpl::new);
-                }
-
-                if (dao.isAssignableFrom(EnumDAI.class))
-                {
-                    return new DaoWrapper<>(() -> new EnumSqlDao(timeSeriesDb));
                 }
 
                 Optional<Method> daoMakeMethod;
@@ -210,6 +202,19 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
                 return new DaoWrapper<>(() -> null);
             });
         return Optional.ofNullable((T)wrapper.create());
+    }
+
+    private <T extends OpenDcsDao> Optional<DaoWrapper<T>> fromLookup(Class<T> dao)
+    {
+        final var instance = Lookup.getDefault().lookup(dao);
+        if (instance != null)
+        {
+            return Optional.of(new DaoWrapper<>(() -> instance));
+        }
+        else
+        {
+            return Optional.empty();
+        }
     }
 
     @Override
