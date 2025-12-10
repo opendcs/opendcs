@@ -26,11 +26,6 @@ public class EquipmentModelImpl implements EquipmentModelDao
 {
     private static final String PROPERTIES_DELETE_SQL = "delete from equipmentproperty where equipmentid = :id";
 
-
-    public EquipmentModelImpl()
-    {
-    }
-
     @Override
     public List<EquipmentModel> getEquipmentModels(DataTransaction tx, int limit, int offset)
             throws OpenDcsDataException

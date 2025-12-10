@@ -61,7 +61,7 @@ import decodes.util.DecodesSettings;
  * Data Access Object for writing/reading DbEnum objects to/from a SQL database
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
-@ServiceProvider(service = EnumDAI.class, path = "DEFAULT")
+@ServiceProvider(service = EnumDAI.class)
 public class EnumSqlDao extends DaoBase implements EnumDAI
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();

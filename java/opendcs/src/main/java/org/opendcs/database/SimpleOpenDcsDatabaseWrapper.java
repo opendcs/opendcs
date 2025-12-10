@@ -32,14 +32,9 @@ import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.JdbiException;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
-import org.opendcs.database.api.Generator;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.database.dai.EquipmentModelDao;
-import org.opendcs.database.dai.UserManagementDao;
-import org.opendcs.database.impl.opendcs.dao.EquipmentModelImpl;
-import org.opendcs.database.impl.opendcs.dao.UserManagementImpl;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
 import org.opendcs.settings.api.OpenDcsSettings;
@@ -54,8 +49,6 @@ import decodes.sql.KeyGenerator;
 import decodes.sql.KeyGeneratorFactory;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
-import opendcs.dai.EnumDAI;
-import opendcs.dao.EnumSqlDao;
 
 public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
 {

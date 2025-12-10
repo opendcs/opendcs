@@ -30,12 +30,14 @@ public class TransactionContextImpl implements TransactionContext
     }
 
 
-    public DecodesSettings getSettings() {
+    public DecodesSettings getSettings()
+    {
         return this.settings;
     }
 
 
-    public DatabaseEngine getDatabaseEngine() {
+    public DatabaseEngine getDatabaseEngine()
+    {
         return this.databaseEngine;
     }
 
