@@ -89,11 +89,11 @@ jobs:
       - name: API tests (OpenDCS-Postgres)
         if: matrix.platform == 'ubuntu-latest'
         run: |
-          ./gradlew :testing:rest-api:testOpenDCSPostgres - --info
+          ./gradlew :testing:rest-api:testOpenDCSPostgres --info
       - name: API tests (CWMS-Oracle)
         if: matrix.platform == 'ubuntu-latest'
         run: |
-          ./gradlew :testing:rest-api:testCWMSOracle - --info
+          ./gradlew :testing:rest-api:testCWMSOracle --info
       - name: Gather Code Coverage into single report
         # There is an odd issues with the log file name on the windows runner.
         # It does work locally though. Will work on it later.
