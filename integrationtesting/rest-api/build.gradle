@@ -121,7 +121,7 @@ tasks.register('owaspZap', JavaExec) {
     group "application"
     dependsOn(':opendcs-rest-api:war', ':opendcs-web-ui:war')
     dependsOn generateConfig
-    dependsOn downloadAndUnzipInstaller
+    dependsOn ":install:installDist"
 
 
     mainClass = "org.opendcs.odcsapi.owasp.OwaspZap"
@@ -137,7 +137,11 @@ tasks.register('owaspZap', JavaExec) {
     def databaseType = project.findProperty("opendcs.test.integration.db") ?: "OpenDCS-Postgres"
     def tomcatDir = layout.buildDirectory.file("tomcat").get()
     args tomcatDir, port, restWar, guiWar, databaseType
-    def outputDir = downloadAndUnzipInstaller.outputs.files.singleFile
+    def odcsInstallDir = install.layout
+                                .getBuildDirectory()
+                                .dir("install/${install.distributions.main.distributionBaseName.get()}")
+                                .get()
+    systemProperties.put("DCSTOOL_HOME", odcsInstallDir.toString())
     systemProperties.put("DCSTOOL_HOME", outputDir)
 }
 
