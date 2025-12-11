@@ -22,17 +22,17 @@ jobs:
         run: ./gradlew generateOpenAPI
       - name: Attach OpenDCS REST API WAR file
         run: |
-          gh release upload ${{ github.event.release.tag_name }} opendcs-rest-api/build/libs/opendcs-rest-api-${{ github.event.release.tag_name }}.war --repo ${{ github.repository }}
+          gh release upload ${{ github.event.release.tag_name }} java/opendcs-rest-api/build/libs/opendcs-rest-api-${{ github.event.release.tag_name }}.war --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Attach OpenDCS Web Client WAR file
+      - name: Attach OpenDCS Web UI WAR file
         run: |
-          gh release upload ${{ github.event.release.tag_name }} opendcs-web-client/build/libs/opendcs-web-client-${{ github.event.release.tag_name }}.war --repo ${{ github.repository }}
+          gh release upload ${{ github.event.release.tag_name }} java/opendcs-web-ui/build/libs/opendcs-web-ui-${{ github.event.release.tag_name }}.war --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Attach OpenAPI Specification
         run: |
-            gh release upload ${{ github.event.release.tag_name }} opendcs-rest-api/build/swagger/opendcs-openapi.json --repo ${{ github.repository }}
+            gh release upload ${{ github.event.release.tag_name }} java/opendcs-rest-api/build/swagger/opendcs-openapi.json --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   container-release:

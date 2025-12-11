@@ -16,12 +16,22 @@
 rootProject.name = "opendcs_rest_api"
 
 include ":opendcs-rest-api"
-include ":opendcs-web-client"
-include ":opendcs-integration-test"
+project(":opendcs-rest-api").projectDir=file("java/opendcs-rest-api")
+
+include ":opendcs-web-ui"
+project(":opendcs-web-ui").projectDir=file("java/opendcs-web-ui")
+
+include ":testing"
+project(":testing").projectDir=file("integrationtesting")
+
+include ":testing:rest-api"
+project(":testing:rest-api").projectDir=file("integrationtesting/rest-api")
+
 include ":api-client-typescript"
-project(":api-client-typescript").projectDir=file("api-clients/api-client-typescript")
+project(":api-client-typescript").projectDir=file("java/api-clients/api-client-typescript")
+
 include ":api-client-java"
-project(":api-client-java").projectDir=file("api-clients/api-client-java")
+project(":api-client-java").projectDir=file("java/api-clients/api-client-java")
 
 // Version override for local development
 if(hasProperty('librarySourcesDir')) {

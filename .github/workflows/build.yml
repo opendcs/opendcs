@@ -42,10 +42,10 @@ jobs:
         run: ./gradlew build
       - name: Integration Tests CWMS
         if: always()
-        run: ./gradlew integrationTestCWMS --stacktrace --info
+        run: ./gradlew :testing:rest-api:testCWMSOracle --stacktrace --info
       - name: Integration Tests OpenTSDB
         if: always()
-        run: ./gradlew integrationTestOpenTSDB --stacktrace --info
+        run: ./gradlew :testing:rest-api:testOpenDCSPostgres --stacktrace --info
       - name: Upload WAR files
         uses: actions/upload-artifact@v5.0.0
         with:

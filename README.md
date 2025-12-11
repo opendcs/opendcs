@@ -9,8 +9,8 @@ OpenDCS Rest API is web application that provides access to the OpenDCS database
 OpenDCS Rest API is intended to run as a stand-alone Java program. It uses embedded JETTY to implement the web services.
 
 # Structure
-./opendcs-rest-api - contains source files for the OpenDCS REST API
-./opendcs-web-client - contains source files for the OpenDCS Web Application Client
+./java/opendcs-rest-api - contains source files for the OpenDCS REST API
+./java/opendcs-web-ui - contains source files for the OpenDCS Web Application Client
 ./opendcs-integration-test - contains scripts for running embedded tomcat to deploy the REST API and Web Client wars for testing.
 
 
@@ -36,7 +36,7 @@ properties that should be configured for your system.
 - `opendcs.rest.api.authorization.jwt.issuer.url`  - for openid authorization this is the Issuer URL
 
 ## OPENDCS Web Client
-The gradle task `./gradlew :opendcs-web-client:war` will create a war file in the `build/libs` directory.
+The gradle task `./gradlew :opendcs-web-ui:war` will create a war file in the `build/libs` directory.
 
 # CI/CD
 The GitHub Action workflow [default.yml](./.github/workflows/default.yml) contains the primary CI/CD pipeline for the project.
