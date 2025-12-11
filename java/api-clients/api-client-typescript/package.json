@@ -1,0 +1,33 @@
+{
+  "name": "api-client-typescript",
+  "version": "1.0.0",
+  "description": "",
+  "file": ["dist"],
+  "main": "./dist/opendcs-api.umd.cjs",
+  "module": "./dist/opendcs-api.js",
+  "exports": {
+    ".": {
+      "import": "./dist/opendcs-api.js",
+      "require": "./dist/opendcs-api.umd.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "bundle": "vite build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "CC0-1.0",
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/node-fetch": "^2.6.13",
+    "node-fetch": "^3.3.2",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.4"   
+  },
+  "dependencies": {
+    "ts-node": "^10.9.2"
+  }
+}

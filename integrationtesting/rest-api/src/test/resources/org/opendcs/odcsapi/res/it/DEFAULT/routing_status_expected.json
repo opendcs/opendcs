@@ -1,0 +1,14 @@
+{
+  "routingSpecId" : null,
+  "name" : "Test schedule",
+  "scheduleEntryId" : null,
+  "appId" : null,
+  "appName" : null,
+  "runInterval" : "runInterval",
+  "lastActivity" : "2025-01-03T21:14:47.937Z[UTC]",
+  "lastMsgTime" : null,
+  "numMessages" : 0,
+  "numErrors" : 0,
+  "enabled" : true,
+  "manual" : false
+}

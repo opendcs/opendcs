@@ -1,0 +1,157 @@
+/*
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License")
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+plugins {
+    id "opendcs.java-conventions"
+    id "opendcs.deps-conventions"
+    id "opendcs.publishing-conventions"
+    id "war"
+    id "com.netflix.nebula.jakartaee-migration" version "2.0.0"
+}
+
+configurations {
+    local_js
+}
+
+dependencies {
+    compileOnly(libs.jakarta.servlet)
+    implementation(libs.org.slf4j.api)
+    implementation(libs.auto.service.annotations)
+    annotationProcessor(libs.auto.service.processor)
+    implementation(libs.jstl)
+    runtimeOnly(libs.jstl.impl)
+    runtimeOnly(libs.slf4j.jdk14)
+
+    local_js(project(":api-client-typescript"))
+
+    runtimeOnly("org.webjars:bootstrap:5.3.8")
+    constraints {
+        runtimeOnly("org.webjars:jquery") {
+            version {
+                strictly '3.4.1'
+            }
+        }
+    }
+    runtimeOnly("org.webjars:jquery-blockui:2.70-1")
+    runtimeOnly("org.webjars:jquery")
+    runtimeOnly("org.webjars:select2:4.0.13")
+    runtimeOnly("org.webjars:d3js:6.7.0")
+    runtimeOnly("org.webjars:jquery-validation:1.20.0")
+    runtimeOnly("org.webjars:pickadate.js:3.6.4")
+    runtimeOnly("org.webjars:bootstrap-daterangepicker:3.1")
+    runtimeOnly("org.webjars:momentjs:2.30.1-1")
+    runtimeOnly("org.webjars.npm:bootswatch:5.3.5")
+    runtimeOnly("org.webjars.npm:bootstrap-icons:1.13.1")
+
+
+
+    
+    runtimeOnly("org.webjars:webjars-locator-core:0.59")
+    runtimeOnly("org.webjars:webjars-servlet-2.x:1.6")
+
+    // DataTables + Bootstrap 5
+    runtimeOnly("org.webjars.npm:datatables.net:1.13.8") {
+        exclude group: 'org.webjars.npm', module: 'jquery'
+    }
+    runtimeOnly("org.webjars.npm:datatables.net-bs5:1.13.8") {
+        exclude group: 'org.webjars.npm', module: 'jquery'
+    }
+    runtimeOnly("org.webjars.npm:datatables.net-responsive:2.5.0") {
+        exclude group: 'org.webjars.npm', module: 'jquery'
+    }
+    runtimeOnly("org.webjars.npm:datatables.net-responsive-bs5:2.5.0") {
+        exclude group: 'org.webjars.npm', module: 'jquery'
+    }
+    runtimeOnly("org.webjars.npm:datatables.net-buttons:2.4.2") {
+        exclude group: 'org.webjars.npm', module: 'jquery'
+    }
+    runtimeOnly("org.webjars.npm:datatables.net-buttons-bs5:2.4.2") {
+        exclude group: 'org.webjars.npm', module: 'jquery'
+    }
+    runtimeOnly("org.webjars.npm:datatables.net-select:1.7.1") {
+        exclude group: 'org.webjars.npm', module: 'jquery'
+    }
+    runtimeOnly("org.webjars.npm:datatables.net-select-bs5:1.4.0") {
+        exclude group: 'org.webjars.npm', module: 'jquery'
+    }
+    runtimeOnly("org.webjars.npm:select2-bootstrap-5-theme:1.3.0") {
+        exclude group: 'org.webjars.npm', module: 'jquery'
+        exclude group: 'org.webjars.npm', module: 'bootstrap'
+    }
+
+    // Extras
+    testImplementation enforcedPlatform(libs.junit.bom)
+    testImplementation(libs.bundles.junit)
+    testImplementation(libs.bundles.junit.platform)
+    testImplementation(libs.jakarta.servlet)
+    testImplementation(libs.selenium)
+    testImplementation(libs.junit.api)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.junit.jupiter)
+}
+
+// Until webjars-servlet is built for Jakarta EE need to migrate with tool.
+jakartaeeMigration {
+    migrate()
+    includeTransform('org.webjars:webjars-servlet-2.x')
+}
+
+war {
+    dependsOn configurations.local_js
+    from(zipTree(configurations.local_js.singleFile)) {
+        into("resources/js")
+        include('**/*js')
+    }
+}
+
+tasks.named('war') {
+    inputs.dir("$projectDir/src/main")
+}
+
+sonarqube {
+    properties {
+        property 'sonar.sources', 'src/main/java,src/main/webapp'
+        property 'sonar.exclusions', 'src/main/webapp/resources/css/icons/**'
+    }
+}
+
+if (shouldSign) {
+    signing {
+        sign war
+    }
+}
+
+// We don't publish the ui war to maven central.
+project.tasks.findAll { task -> task.name.startsWith("publish")}.each { task -> task.enabled = false }
+
+tasks.register('integrationTest', Test) {
+    group "verification"
+    useJUnitPlatform {
+        includeTags "integration"
+    }
+    // with gradle 9.2 it seems we need to set these manually
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+
+    shouldRunAfter test
+    dependsOn war
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("opendcs") }
+}
+
+test {
+    useJUnitPlatform {
+        excludeTags "integration"
+    }
+}

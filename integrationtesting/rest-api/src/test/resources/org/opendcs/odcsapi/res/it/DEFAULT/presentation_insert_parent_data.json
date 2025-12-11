@@ -1,0 +1,18 @@
+{
+  "groupId" : null,
+  "name" : "Parent Presentation Group",
+  "inheritsFrom" : null,
+  "inheritsFromId" : null,
+  "lastModified" : 1736530715000,
+  "elements" : [
+    {
+      "dataTypeStd" : "CWMS",
+      "dataTypeCode" : "Volume",
+      "units" : "km3",
+      "fractionalDigits" : 2,
+      "min" : 0.0,
+      "max" : 1000.0
+    }
+  ],
+  "production" : true
+}

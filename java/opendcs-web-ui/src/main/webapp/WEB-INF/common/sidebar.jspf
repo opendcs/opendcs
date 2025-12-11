@@ -1,0 +1,60 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%--
+  ~  Copyright 2023 OpenDCS Consortium
+  ~
+  ~  Licensed under the Apache License, Version 2.0 (the "License");
+  ~  you may not use this file except in compliance with the License.
+  ~  You may obtain a copy of the License at
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~  Unless required by applicable law or agreed to in writing, software
+  ~  distributed under the License is distributed on an "AS IS" BASIS,
+  ~  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~  See the License for the specific language governing permissions and
+  ~  limitations under the License.
+  --%>
+
+<%-- Main sidebar --%>
+
+<nav class="nav navbar-light bg-primary d-inline-flex vh-100 page-sidebar">
+	<ul class="list-unstyled ps-2 flex-column">
+		<li class="nav-item mb-2">
+			<button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#decodes-collapse" aria-expanded="true">
+				<span class="text-primary-emphasis fw-bold">Decodes</span>
+			</button>
+			<div id="decodes-collapse" class="bg-primary-subtle text-secondary collapse <% if (request.getAttribute("tool") == "decodes") { %> show <% }%> ">
+				<a class="nav-link nav-item <% if (request.getAttribute("page") == "platforms") { %>active<% } %>" aria-current="page" href="platforms">Platforms</a>
+				<a class="nav-link nav-item <% if (request.getAttribute("page") == "sites") { %>active<% } %>" href="sites">Sites</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "configs") { %>active<% } %>" href="configs">Configs</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "presentations") { %>active<% } %>" href="presentation">Presentation</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "routing") { %>active<% } %>" href="routing">Routing</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "sources") { %>active<% } %>" href="sources">Data Sources</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "netlist") { %>active<% } %>" href="netlist">Netlists</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "schedule") { %>active<% } %>" href="schedule">Schedule Entry</a>
+			</div>
+		</li>
+		<li class="nav-item  mb-2">
+			<button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#computations-collapse" aria-expanded="true">
+				<span class="text-primary-emphasis fw-bold">Computations</span>
+			</button>
+			<div id="computations-collapse" class="bg-primary-subtle text-secondary collapse <% if (request.getAttribute("tool") == "computations") { %> show <% }%>">
+				<a class="nav-link <% if (request.getAttribute("page") == "algorithm") { %>active<% } %>" aria-current="page" href="algorithms">Algorithms</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "computations") { %>active<% } %>" href="computations">Computations</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "processes") { %>active<% } %>" href="processes">Processes</a>
+			</div>
+		</li>
+		<li class="nav-item mb-2">
+			<button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#reflist-collapse" aria-expanded="true">
+				<span class="text-primary-emphasis fw-bold">Reference List</span>
+			</button>
+			<div id="reflist-collapse" class="bg-primary-subtle collapse text-secondary <% if (request.getAttribute("tool") == "rledit") { %> show <% }%>">
+				<a class="nav-link <% if (request.getAttribute("page") == "enumerations") { %>active<% } %>" aria-current="page" href="enumerations">Enumerations</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "engineering_units") { %>active<% } %>" href="engineering_units">Engineering Units</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "eu_conversions") { %>active<% } %>" href="eu_conversions">Unit Conversions</a>
+				<a class="nav-link <% if (request.getAttribute("page") == "seasons") { %>active<% } %>" href="seasons">Seasons</a>
+			</div>
+		</li>
+	</ul>
+</nav>
+<%-- /main sidebar --%>

@@ -1,5 +1,4 @@
 build
-Dockerfile
 .gitignore
 .readthedocs.yaml
 bin
@@ -8,3 +7,12 @@ bin
 **/opendcs-installer*
 **/doc.tar.gz
 **/doc
+Dockerfile
+compose_files
+.dockerignore
+**/build
+.vscode
+.settings
+.gradle
+**/bin
+**/*.md

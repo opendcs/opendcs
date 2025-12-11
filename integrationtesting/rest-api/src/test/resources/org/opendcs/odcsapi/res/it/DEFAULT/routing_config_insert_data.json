@@ -1,0 +1,8 @@
+{
+  "configId" : null,
+  "name" : "RoutingPlatConfig",
+  "numPlatforms" : 0,
+  "description" : "A platform for routing tests",
+  "configSensors" : [ ],
+  "scripts" : [ ]
+}

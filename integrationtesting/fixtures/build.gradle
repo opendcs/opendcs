@@ -11,9 +11,7 @@ dependencies {
     api(libs.commons.io)
     api(libs.apache.derby)
     api(libs.webcompere.system.stubs.jupiter)
-    api(libs.testcontainers.core)
-    api(libs.testcontainers.postgresql)
-    api(libs.testcontainers.oracle.free)
+    api(libs.bundles.testcontainers)
     api(libs.hec.testcontainers.cwms)
     api(libs.bundles.jdbi)
 

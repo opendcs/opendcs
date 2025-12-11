@@ -8,7 +8,7 @@ if [ $# -lt 2 ]; then
     exit 1
 fi
 
-images=("lrgs"  "routingscheduler"  "compproc" "compdepends")
+images=("lrgs"  "routingscheduler"  "compproc" "compdepends" "web-api")
 tag=$1
 version=$2
 extra_versions=$3
