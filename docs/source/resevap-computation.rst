@@ -844,22 +844,10 @@ Next, the thermal diffusivity for each layer is computed as follows:
 
 :math:`{A_{s}}^{*} = max\left( A_{s}, 350 \right)`
 
-:math:`{K_{z_i}} = 0.0001 * {TD} \left( 0.000817{A_{s}}^{0.56}\left( {N_{i}}^{2} \right)^{- 0.43} \right)`
+:math:`{K_{z_i}} = 0.0001 * {cK} \left( 0.000817{A_{s}}^{0.56}\left( {N_{i}}^{2} \right)^{- 0.43} \right)`
 
-
-:math:`{N_{i}}^{2} = max\left(0.00007,\ \dfrac{g}{\overline{\rho_{w}}} \, \dfrac{{\rho_{w}}_{i} - \
-{\rho_{w}}_{i - 1}}{z_{i} - z_{i - 1}}\right)`
-
-
-Note to review:  Per the computation This is what the equation should be: add in absolute value and switch the layer
-ordering in the denominator zi and zi-1:
-
-:math:`{N_{i}}^{2} = max\left(0.00007,\ \dfrac{g}{\overline{\rho_{w}}} \, \dfrac{\left| {\rho_{w}}_{i} - \
-{\rho_{w}}_{i-1}\right|}{z_{i-1} - z_{i}}\right)`
-
-
-Where the average density over the water column is computed as:
-
+:math:`{N_{i}}^{2} = max\left(0.00007,\ \dfrac{g}{\overline{\rho_{w}}} \, \dfrac{{\rho_{w}}_{i - 1} - \
+{\rho_{w}}_{i}}{z_{i - 1} - z_{i}}\right)`
 
 :math:`\overline{\rho_{w}} = \dfrac{\sum_{i = 1}^{N}{\rho_{w_i} \Delta z_i}}{\sum_{i = 1}^{N}{\Delta z_i}}`
 
@@ -868,16 +856,18 @@ Where:
     .. csv-table::
        :widths: auto
 
-       ":math:`TD`", "Thermal diffusivity coefficient (default 1.2)"
+       ":math:`cK`", "Thermal diffusivity scaling coefficient"
        ":math:`A_{s}`", "Water surface area"
-       ":math:`N_{i}`", "Stability frequency of layer |i|"
+       ":math:`{N_{i}}^{2}`", "Stability frequency of layer |i|"
        ":math:`\overline{\rho_{w}}`", "Average density over the entire water column"
        ":math:`z_{i}`", "Depth of the top of layer |i|"
 
 Note that :math:`\overline{\rho_{w}}` is computed as a thickness-weighted average using the layer thickness
-:math:`\Delta z_i`, consistent with the one-dimensional structure of this model.
+:math:`\Delta z_i`, consistent with the one-dimensional structure of this model. Also, :math:`cK` is a
+unitless thermal diffusivity scaling coefficient. Increasing :math:`cK` strengthens vertical heat
+transport (more mixing/smoothing); decreasing :math:`cK` reduces mixing and preserves sharper stratification.
 
-Additionally, the net radiation of layer |i| is computed as follows:
+The net radiation of layer |i| is computed as follows:
 
 :math:`{I_{z_i}} = \left\{ \begin{matrix}
 \Bigl( I_{s \downarrow}\beta(1 - \alpha) + I_{l \downarrow} - I_{l \uparrow} - H_{l} - H_{s} \Bigr) \

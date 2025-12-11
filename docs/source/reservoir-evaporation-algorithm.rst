@@ -13,14 +13,26 @@ if the following parameter values are not provided they will be retrieved from t
 * Coming Soon - Secchi Depth
 * Coming soon - Max Temperature Depth
 
-**Important Timezone Notes:**
+**Important Notes:**
 
-* In the Computation Properties, make sure to set your aggregateTimeOffset to your timezoneOffset in the form "8 hours"
+* Make sure to set your aggregateTimeOffset to your timezoneOffset in the form "8 hours"
 * Always set your aggregateTimeZone to "ETC/GMT"
 
     .. image:: ./media/resources/algorithms/im-042-ResEvap-Properties.jpg
        :alt:  ResEvap Properties
        :width: 600
+
+* When setting Zero_elevation property, check the rating table to find the exact and correct Zero_elevation.
+* This algorithm Requires that a rating table exist within your CWMS data base for the area of your reservoir
+  with rating id test to "FTPK.Elev;Area.Linear.Step".
+* This algorithm Requires that a set of Water Temperature profiles exist with the WtpTsid format of
+  "FTPK-Lower-D000,0m.Temp-Water.Inst.1Day.0.Rev-NWO-Evap-test".
+* Thermal diffusivity coefficient is a unitless scaling factor applied to the computed thermal diffusivity.
+  Lower values will reduce temperature transfer between layers. Adjust this value down if deeper water layers
+  warm too quickly or up if they are warming too slowly. The default value is 1.2 with a recommended range of 0.5-2.0.
+
+
+The following tables detail the Inputs,Outputs, and Properties for the ResEvap algorithm.
 
 **Inputs**
 
@@ -57,6 +69,7 @@ if the following parameter values are not provided they will be retrieved from t
     "hourlyLatent", "Hourly latent heat flux", "W/m²"
     "hourlySensible", "Hourly sensible heat flux", "W/m²"
 
+
 **Properties**
 
 .. csv-table::
@@ -70,21 +83,9 @@ if the following parameter values are not provided they will be retrieved from t
     "latitude", "Latitude of reservoir", ""
     "longitude", "Longitude of reservoir", ""
     "timezone", "Time zone at reservoir location", "D%03d,%dm"
-    "windShear", "Wind shear equation to be used in computation", "Donelan(default) or Fischer"
-    "thermalDifCoe", "Thermal diffusivity coefficient to be used in the computation.", "1.2 (default)"
+    "windShear", "Wind shear equation to be used in computation", "Donelan (default) or Fischer"
+    "thermalDifCoe", "Thermal diffusivity scaling coefficient.", "1.2 (default)"
     "rating", "Rating Curve specification for Elevation-Area curve", "FTPK.Elev;Area.Linear.Step"
-
-
-**Important Property Notes:**
-
-* **wtpTsId:** This algorithm Requires that a set of Water Temperature profiles exist with the WtpTsid format of
-  "FTPK-Lower-D000,0m.Temp-Water.Inst.1Day.0.Rev-NWO-Evap-test"
-* **zeroElevation:** Check the rating table to find the exact and correct Zero_elevation
-* **thermalDifCoe:** This is a scaling factor applied to the computed thermal diffusivity. Lower values will reduce
-    temperature transfer between layers. Adjust this value down if deeper water layers warm too quickly or up if they are
-    warming too slowly. The default value is 1.2.
-* **rating:** This algorithm Requires that a rating table exist within your CWMS data base for the area of your reservoir
-  with rating id test to "FTPK.Elev;Area.Linear.Step"
 
 
 .. note::
