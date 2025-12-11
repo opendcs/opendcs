@@ -137,12 +137,12 @@ tasks.register('owaspZap', JavaExec) {
     def databaseType = project.findProperty("opendcs.test.integration.db") ?: "OpenDCS-Postgres"
     def tomcatDir = layout.buildDirectory.file("tomcat").get()
     args tomcatDir, port, restWar, guiWar, databaseType
+    def install = project(":install")
     def odcsInstallDir = install.layout
                                 .getBuildDirectory()
                                 .dir("install/${install.distributions.main.distributionBaseName.get()}")
                                 .get()
     systemProperties.put("DCSTOOL_HOME", odcsInstallDir.toString())
-    systemProperties.put("DCSTOOL_HOME", outputDir)
 }
 
 def commonJacocoExcludes = [
