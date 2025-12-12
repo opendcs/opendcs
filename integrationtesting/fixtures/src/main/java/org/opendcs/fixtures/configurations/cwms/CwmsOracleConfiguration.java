@@ -284,6 +284,7 @@ public class CwmsOracleConfiguration implements Configuration
         }
         return false;
     }
+
     @Override
     public OpenDcsDatabase getOpenDcsDatabase() throws Throwable
     {
@@ -295,5 +296,11 @@ public class CwmsOracleConfiguration implements Configuration
             }
             return databases;
         }
+    }
+
+    @Override
+    public boolean supportsRestApi()
+    {
+        return true;
     }
 }
