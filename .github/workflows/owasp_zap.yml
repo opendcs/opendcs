@@ -25,12 +25,12 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
       - name: Run OWASP Zap
-        run: ./gradlew :testing:rest-api:owaspZap --stacktrace
+        run: ./gradlew :testing:opendcs-tests:owaspZap --stacktrace
       - name: Upload Full HTML Report
         uses: actions/upload-artifact@v5.0.0
         with:
           name: zap_report.html
-          path: integrationtesting/rest-api/build/test-results/owasp_zap/zap_report.html
+          path: integrationtesting/opendcs-tests/build/test-results/owasp_zap/zap_report.html
           retention-days: 1
           if-no-files-found: error
       - name: Trim Summary Report

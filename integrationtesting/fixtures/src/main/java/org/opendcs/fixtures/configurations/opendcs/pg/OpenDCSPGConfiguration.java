@@ -148,6 +148,13 @@ public class OpenDCSPGConfiguration implements Configuration
         mp.createUser(jdbi, DCS_ADMIN_USER, DCS_ADMIN_USER_PASSWORD, roles);
         log.info("Setting authentication environment vars.");
         mp.loadBaselineData(profile, DCS_ADMIN_USER, DCS_ADMIN_USER_PASSWORD);
+        try (var handle = jdbi.open();
+             var insertDbType = handle.createUpdate("insert into tsdb_property(prop_name, prop_value) values(:name, :value)"))
+        {
+            insertDbType.bind("name", "editDatabaseType")
+                        .bind("value", getName())
+                        .execute();
+        }
         setStarted();
     }
 
@@ -272,5 +279,11 @@ public class OpenDCSPGConfiguration implements Configuration
             }
             return databases;
         }
+    }
+
+    @Override
+    public boolean supportsRestApi()
+    {
+        return true;
     }
 }

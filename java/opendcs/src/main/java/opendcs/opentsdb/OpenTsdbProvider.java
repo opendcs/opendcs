@@ -5,19 +5,17 @@ import java.util.Properties;
 import javax.sql.DataSource;
 
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.impl.opendcs.OpenDcsOracleProvider;
+import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.database.SimpleOpenDcsDatabaseWrapper;
-import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.spi.database.DatabaseProvider;
 
 import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.sql.SqlDatabaseIO;
-import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
-import ilex.util.Pair;
-import opendcs.dai.DaiBase;
 
 public class OpenTsdbProvider implements DatabaseProvider
 {
@@ -26,7 +24,10 @@ public class OpenTsdbProvider implements DatabaseProvider
     @Override
     public boolean canCreate(DecodesSettings settings)
     {
-        return settings.editDatabaseTypeCode == DecodesSettings.DB_OPENTSDB;
+        return settings.editDatabaseTypeCode == DecodesSettings.DB_OPENTSDB 
+            || OpenDcsPgProvider.NAME.equals(settings.editDatabaseType)
+            || OpenDcsOracleProvider.NAME.equals(settings.editDatabaseType)
+        ;
     }
 
     @Override

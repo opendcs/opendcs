@@ -23,6 +23,8 @@ dependencies {
     implementation project(":install")
     implementation(libs.bundles.junit)
     implementation(libs.bundles.junit.platform)
+    implementation(libs.bundles.tomcat)
+    implementation(libs.commons.io)
 
     testCompileOnly project(":opendcs")
 
@@ -43,6 +45,9 @@ dependencies {
     testImplementation(libs.com.bucket4j.bucket4j)
     testRuntimeOnly(libs.bundles.junit.platform)
     
+    implementation(project(":opendcs-rest-api"))
+    testImplementation(project(":opendcs-rest-api"))
+    testImplementation(project(":opendcs-web-ui"))
     testImplementation(libs.bundles.testcontainers)
     testImplementation(libs.bundles.jdbi)
     testImplementation(libs.commons.io)
@@ -50,9 +55,37 @@ dependencies {
     testImplementation(libs.ch.qos.logback)
     testImplementation(libs.com.faster.xml.jackson.databind)
     testImplementation(libs.webcompere.system.stubs.jupiter)
+    testImplementation(libs.rest.assured)
+    testImplementation(libs.json.jackson)
+    testImplementation(libs.commons.lang)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.junit.jupiter)
+    testImplementation(libs.hamcrest)
+    testImplementation(libs.nimbus)
+    testImplementation(libs.jwt)
+    testImplementation(libs.swagger.parser)
+    testImplementation(libs.swagger.models)
+    testImplementation(libs.selenium)
+    testImplementation(libs.web.driver.manager)
+    testRuntimeOnly(libs.byte.buddy)
+    runtimeOnly(libs.com.faster.xml.jackson.databind) // for swagger compatibility
+    runtimeOnly(libs.com.faster.xml.jackson.annotations) // for swagger compatibility
+
+
+    
 }
 
-
+def genConfig = tasks.register('generateConfig', Copy) {
+    doFirst {
+        project.delete layout.buildDirectory.file("tomcat/")
+        project.mkdir layout.buildDirectory.file("tomcat/logs")
+    }
+    from 'src/test/resources/tomcat'
+    into layout.buildDirectory.file("tomcat")
+    rename "tomcat-server.xml", "server.xml"
+    inputs.dir "src/test/resources"
+    outputs.dir layout.buildDirectory.file("tomcat/conf")
+}
 
 
 def testEngines = (project.findProperty("opendcs.test.engine")?: "OpenDCS-XML,OpenDCS-Postgres,OpenDCS-Oracle,CWMS-Oracle").split(",")
@@ -69,6 +102,9 @@ testEngines.each { engine ->
     def task = tasks.register("test"+engine.replace("-",""), Test) { task ->
         dependsOn ":install:installDist"
         dependsOn ":opendcs:test"
+        dependsOn(":opendcs-rest-api:war")
+        dependsOn(":opendcs-web-ui:war")
+        dependsOn genConfig
         useJUnitPlatform()
 
         // with gradle 9.2 it seems we need to set these manually
@@ -90,6 +126,14 @@ testEngines.each { engine ->
         systemProperties += project.properties.findAll {k, v -> k.startsWith("opendcs")}
         systemProperties += project.properties.findAll {k, v -> k.startsWith("testcontainer")}
         systemProperties += ["opendcs.test.engine": engine]
+
+        jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
+        jvmArgs += "-Dcatalina.base=${layout.buildDirectory.file("tomcat")}"
+        jvmArgs += "-Dopendcs.test.integration.db=${engine}"
+        def restWar = project(':opendcs-rest-api').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
+        def guiWar = project(':opendcs-web-ui').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
+        jvmArgs += "-Dopendcs.restapi.warfile=${restWar}"
+        jvmArgs += "-Dopendcs.gui.warfile=${guiWar}"
 
         jvmArgs += "-Djava.io.tmpdir=${tmpdir}"
         jvmArgs += "-Dbuild.dir=${project.layout.buildDirectory.get()}"
@@ -138,4 +182,66 @@ testEngines.each { engine ->
     task.configure {
         finalizedBy jtr
     }
+}
+
+
+tasks.register('runApi', JavaExec) {
+    dependsOn build
+    def restWar = project(':opendcs-rest-api').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
+    def guiWar = project(':opendcs-web-ui').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
+    inputs.files(restWar,guiWar)
+    group "application"
+    dependsOn(':opendcs-rest-api:war', ':opendcs-web-ui:war')
+    dependsOn generateConfig
+    dependsOn ":install:installDist"
+    classpath += sourceSets.test.runtimeClasspath
+    classpath += configurations.testRuntimeClasspath
+
+    mainClass = "org.opendcs.fixtures.TomcatServer"
+    systemProperties += project.properties.findAll { k, v -> k.toLowerCase().startsWith("testcontainer") }
+    systemProperties += project.properties.findAll { k, v -> k.toLowerCase().startsWith("opendcs") }
+    systemProperties.put("org.apache.tomcat.util.digester.PROPERTY_SOURCE", "org.apache.tomcat.util.digester.EnvironmentPropertySource")
+    systemProperties.put("java.util.logging.config.file", "build/tomcat/conf/logging.properties")
+    systemProperties.put("DCSTOOL_USERDIR", "build/resources/test/tomcat/conf")
+
+    def port = project.findProperty("opendcs.tomcat.port") ?: "7000"
+    def databaseType = project.findProperty("opendcs.test.integration.db") ?: "OpenDCS-Postgres"
+    def tomcatDir = layout.buildDirectory.file("tomcat").get()
+    args tomcatDir, port, restWar, guiWar, databaseType
+    def install = project(":install")
+    def odcsInstallDir = install.layout
+                                .getBuildDirectory()
+                                .dir("install/${install.distributions.main.distributionBaseName.get()}")
+                                .get()
+    systemProperties.put("DCSTOOL_HOME", odcsInstallDir.toString())
+}
+
+tasks.register('owaspZap', JavaExec) {
+    dependsOn build
+    def restWar = project(':opendcs-rest-api').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
+    def guiWar = project(':opendcs-web-ui').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
+    group "application"
+    dependsOn(':opendcs-rest-api:war', ':opendcs-web-ui:war')
+    dependsOn generateConfig
+    dependsOn ":install:installDist"
+
+    mainClass = "org.opendcs.odcsapi.owasp.OwaspZap"
+    classpath += sourceSets.test.runtimeClasspath
+    classpath += configurations.testRuntimeClasspath
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("opendcs") }
+    systemProperties.put("org.apache.tomcat.util.digester.PROPERTY_SOURCE", "org.apache.tomcat.util.digester.EnvironmentPropertySource")
+    systemProperties.put("DCSTOOL_USERDIR", "build/resources/test/owasp")
+    systemProperties.put("java.util.logging.config.file", "build/tomcat/conf/logging.properties")
+
+    def port = project.findProperty("opendcs.tomcat.port") ?: "8910"
+    def databaseType = project.findProperty("opendcs.test.integration.db") ?: "OpenDCS-Postgres"
+    def tomcatDir = layout.buildDirectory.file("tomcat").get()
+    args tomcatDir, port, restWar, guiWar, databaseType
+    def install = project(":install")
+    def odcsInstallDir = install.layout
+                                .getBuildDirectory()
+                                .dir("install/${install.distributions.main.distributionBaseName.get()}")
+                                .get()
+    systemProperties.put("DCSTOOL_HOME", odcsInstallDir.toString())
 }

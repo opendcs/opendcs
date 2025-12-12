@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
@@ -27,6 +28,7 @@ import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.TsdbAppRequired;
+import org.opendcs.fixtures.configurations.cwms.CwmsOracleConfiguration;
 import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
 import org.opendcs.fixtures.helpers.TestResources;
 import org.opendcs.fixtures.spi.Configuration;
@@ -34,10 +36,14 @@ import org.opendcs.fixtures.spi.ConfigurationProvider;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import org.hamcrest.Matchers;
+
 import decodes.db.Database;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesSettings;
+import io.restassured.RestAssured;
+import jakarta.ws.rs.core.Response;
 import lrgs.gui.DecodesInterface;
 import uk.org.webcompere.systemstubs.ThrowingRunnable;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
@@ -45,11 +51,14 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
+import static io.restassured.RestAssured.given;
+
 public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEachCallback, AfterAllCallback, TestExecutionListener
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     private static Configuration configuration = null;
+    private static TomcatServer tomcatInstance = null;
     private static Map<String,BackgroundTsDbApp<? extends TsdbAppTemplate>> runningApps = new HashMap<>();
 
     private SystemExit exit = null;
@@ -117,6 +126,14 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
             try
             {
                 configuration.start(exit, environment, properties);
+                if (configuration.supportsRestApi())
+                {
+                    tomcatInstance = startTomcat();
+                    RestAssured.baseURI = "http://localhost";
+                    RestAssured.port = tomcatInstance.getPort();
+                    RestAssured.basePath = "odcsapi";
+                    healthCheck();
+                }
             }
             catch(Throwable t)
             {
@@ -234,6 +251,11 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
                 {
                     f.setAccessible(true);
                     withEnvProps(() -> f.set(testInstance,configuration.getOpenDcsDatabase()));
+                }
+                else if (f.getType().equals(TomcatServer.class) && configuration.isRunning())
+                {
+                    f.setAccessible(true);
+                    withEnvProps(() -> f.set(testInstance, tomcatInstance));
                 }
             }
             catch (Throwable ex)
@@ -399,6 +421,73 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
             }
         }
     }
+
+    private TomcatServer startTomcat() throws Exception
+	{
+        // TODO: Move to individual configuration
+        if(CwmsOracleConfiguration.NAME.equals(configuration.getName()))
+		{
+			System.setProperty(TomcatServer.DB_DRIVER_CLASS, "oracle.jdbc.driver.OracleDriver");
+			System.setProperty(TomcatServer.DB_DATASOURCE_CLASS, "org.apache.tomcat.jdbc.pool.DataSourceFactory");
+			System.setProperty(TomcatServer.DB_VALIDATION_QUERY, "SELECT 1 FROM dual");
+		}
+		else
+		{
+			String validationQuery = "SELECT 1";
+			System.setProperty(TomcatServer.DB_DRIVER_CLASS, "org.postgresql.Driver");
+			System.setProperty(TomcatServer.DB_DATASOURCE_CLASS, "org.apache.tomcat.jdbc.pool.DataSourceFactory");
+			System.setProperty(TomcatServer.DB_VALIDATION_QUERY, validationQuery);
+		}
+		String restWarFile = Objects.requireNonNull(System.getProperty("opendcs.restapi.warfile"), "opendcs.restapi.warfile is not set");
+		String guiWarFile = Objects.requireNonNull(System.getProperty("opendcs.gui.warfile"), "opendcs.gui.warfile is not set");
+		TomcatServer tomcat = new TomcatServer("build/tomcat", 0, restWarFile, guiWarFile);
+		tomcat.start();
+		return tomcat;
+	}
+
+	private static void healthCheck() throws InterruptedException
+	{
+		int attempts = 0;
+		int maxAttempts = 15;
+		for(; attempts < maxAttempts; attempts++)
+		{
+			try
+			{
+				// do we need to call all of them? no.
+				// Is there a more reasonable natural way to test these? also no.
+				given()
+					.when()
+					.get("/health/started")
+					.then()
+					.assertThat()
+					.statusCode(Matchers.is(Response.Status.OK.getStatusCode()));
+				given()
+					.when()
+					.get("/health/ready")
+					.then()
+					.assertThat()
+					.statusCode(Matchers.is(Response.Status.OK.getStatusCode()));
+				given()
+					.when()
+					.get("/health/live")
+					.then()
+					.assertThat()
+					.statusCode(Matchers.is(Response.Status.OK.getStatusCode()));
+				log.debug("Server is up!");
+				break;
+				break;
+			}
+			catch(AssertionError ex)
+			{
+				log.atDebug().setCause(ex).log("Waiting for the server to start...");
+				Thread.sleep(100);//NOSONAR
+			}
+		}
+		if(attempts == maxAttempts)
+		{
+			throw new PreconditionViolationException("Server didn't start in time...");
+		}
+	}
 
     @Override
     public void testPlanExecutionFinished(TestPlan testPlan)
