@@ -67,7 +67,7 @@ jobs:
         # at some point though.
         if: matrix.platform == 'ubuntu-latest'
         run: |
-          ./gradlew :testing:opendcs-tests:test -P"opendcs.test.engine=OpenDCS-Postgres" --info
+          ./gradlew :testing:opendcs-tests:testOpenDCSPostgres --info
       - name: integration tests (OpenDCS-Oracle)
         # There is an odd issues with the log file name on the windows runner.
         # It does work locally though. Will work on it later.
@@ -76,7 +76,7 @@ jobs:
         # at some point though.
         if: matrix.platform == 'ubuntu-latest'
         run: |
-          ./gradlew :testing:opendcs-tests:test -P"opendcs.test.engine=OpenDCS-Oracle" --info
+          ./gradlew :testing:opendcs-tests:testOpenDCSOracle  --info
       - name: integration tests (CWMS-Oracle)
         # There is an odd issues with the log file name on the windows runner.
         # It does work locally though. Will work on it later.
@@ -85,7 +85,15 @@ jobs:
         # at some point though.
         if: matrix.platform == 'ubuntu-latest'
         run: |
-          ./gradlew :testing:opendcs-tests:test -P"opendcs.test.engine=CWMS-Oracle" --info
+          ./gradlew :testing:opendcs-tests:testCWMSOracle  --info
+      - name: API tests (OpenDCS-Postgres)
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          ./gradlew :testing:rest-api:testOpenDCSPostgres --info
+      - name: API tests (CWMS-Oracle)
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          ./gradlew :testing:rest-api:testCWMSOracle --info
       - name: Gather Code Coverage into single report
         # There is an odd issues with the log file name on the windows runner.
         # It does work locally though. Will work on it later.
@@ -118,6 +126,12 @@ jobs:
             ./**/build/**/jacoco*.xml
             ./build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml
             ./**/build/**/*.class
+      - name: Upload Test Reports
+        uses: actions/upload-artifact@v5.0.0
+        with:
+          name: test-report-${{ runner.os }}-${{ matrix.jdk }}
+          path: ./**/build/reports/tests/**
+          if-no-files-found: error
   containers:
     runs-on: [ubuntu-latest]
     steps:

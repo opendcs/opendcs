@@ -1,0 +1,22 @@
+{
+  "reflistId" : null,
+  "enumName" : "monthsEnum",
+  "items" : {
+    "june" : {
+      "value" : "june",
+      "description" : "Month in summer",
+      "execClassName" : null,
+      "editClassName" : null,
+      "sortNumber" : 1
+    },
+    "july" : {
+      "value" : "july",
+      "description" : "Month in summer",
+      "execClassName" : null,
+      "editClassName" : null,
+      "sortNumber" : 2
+    }
+  },
+  "defaultValue" : "January",
+  "description" : "Enum of months"
+}

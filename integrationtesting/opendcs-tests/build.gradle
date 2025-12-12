@@ -41,15 +41,12 @@ dependencies {
     testImplementation(libs.bundles.junit)
     testRuntimeOnly(libs.bundles.junit.platform)
     
-    testImplementation(libs.testcontainers.core)
-    testImplementation(libs.testcontainers.postgresql)
-    testImplementation(libs.testcontainers.oracle.free)
-    testImplementation(libs.hec.testcontainers.cwms)
+    testImplementation(libs.bundles.testcontainers)
     testImplementation(libs.bundles.jdbi)
     testImplementation(libs.commons.io)
     testImplementation(libs.apache.derby)
     testImplementation(libs.ch.qos.logback)
-    testImplementation(libs.fasterxml.jackson.databind)
+    testImplementation(libs.com.faster.xml.jackson.databind)
     testImplementation(libs.webcompere.system.stubs.jupiter)
 }
 

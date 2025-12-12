@@ -1,0 +1,12 @@
+{
+  "ucId" : null,
+  "fromAbbr" : "K",
+  "toAbbr" : "degC",
+  "algorithm" : "LINEAR",
+  "a" : 1.0,
+  "b" : -273.15,
+  "c" : null,
+  "d" : null,
+  "e" : null,
+  "f" : null
+}

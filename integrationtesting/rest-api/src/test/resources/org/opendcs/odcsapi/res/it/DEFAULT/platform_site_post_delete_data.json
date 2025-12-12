@@ -1,0 +1,23 @@
+{
+  "siteId": null,
+  "description": "Platform 20 location",
+  "latitude": "39.0",
+  "longitude": "-122.0",
+  "elevation": 200.0,
+  "elevUnits": "m",
+  "state": "CA",
+  "country": "USA",
+  "nearestCity": "Sacramento",
+  "timezone": "PST",
+  "region": "Yolo County",
+  "active": true,
+  "properties": {
+    "prop2": "value2"
+  },
+  "publicName": "Platform 20",
+  "locationType": "river",
+  "lastModified": 1625141800000,
+  "sitenames": {
+    "stream": "Platform 20"
+  }
+}

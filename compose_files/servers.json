@@ -1,0 +1,13 @@
+{
+    "Servers": {
+        "1": {
+            "Name": "dcs database",
+            "Group": "Server Group 1",
+            "Port": 5432,
+            "Username": "dcs_owner",
+            "Host": "db",
+            "SSLMode": "prefer",
+            "MaintenanceDB": "postgres"
+        }
+    }
+}

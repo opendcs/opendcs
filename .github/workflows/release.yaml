@@ -106,6 +106,12 @@ jobs:
           gh release upload ${VERSION} install/build/distributions/opendcs-${VERSION}.tar.asc#opendcs-${VERSION}.tar.asc --clobber
           gh release upload ${VERSION} install/build/distributions/opendcs-${VERSION}.zip#opendcs-${VERSION}.zip --clobber
           gh release upload ${VERSION} install/build/distributions/opendcs-${VERSION}.zip.asc#opendcs-${VERSION}.zip.asc --clobber
+          gh release upload ${VERSION} java/opendcs-rest-api/build/libs/opendcs-rest-api-${VERSION}.war#opendcs-rest-api-${VERSION}.war --clobber
+          gh release upload ${VERSION} java/opendcs-rest-api/build/libs/opendcs-rest-api-${VERSION}.war.asc#opendcs-rest-api-${VERSION}.war.asc --clobber
+          gh release upload ${VERSION} java/opendcs-web-ui/build/libs/opendcs-web-ui-${VERSION}.war#opendcs-rest-ui-${VERSION}.war --clobber
+          gh release upload ${VERSION} java/opendcs-web-ui/build/libs/opendcs-web-ui-${VERSION}.war.asc#opendcs-rest-ui-${VERSION}.asc --clobber
+          gh release upload ${VERSION} java/opendcs-rest-api/build/swagger/opendcs-openapi.json#opendcs-openapi.json --clobber
+          gh release upload ${VERSION} java/opendcs-rest-api/build/swagger/opendcs-openapi.json.asc#opendcs-openapi.json.asc --clobber
       - name: Log in to the Container registry
         uses: docker/login-action@v3.4.0
         with:
@@ -121,4 +127,3 @@ jobs:
               docker push ghcr.io/${REPO}/${image}:${version}
             done <<< "${{steps.meta.outputs.tags}}"
           done
-

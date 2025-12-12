@@ -1,0 +1,95 @@
+plugins {
+    id 'base'
+    id 'opendcs.deps-conventions'
+    id 'opendcs.sonar-conventions'
+    id 'opendcs.version-conventions'
+    id "org.openapi.generator" version "7.17.0"
+    id 'com.github.node-gradle.node' version '7.1.0'
+    id 'java-library'
+}
+// configured later
+def genTask = tasks.named("openApiGenerate")
+
+def buildLib = tasks.register("buildLib", NpxTask) {
+    dependsOn genTask
+    dependsOn npmInstall
+    command = "npm"
+    args = ['run', 'build']
+    outputs.dir(file("build/dist"))
+}
+
+def bundle = tasks.register("bundle", NpxTask) {
+    dependsOn buildLib
+    command = "npm"
+    args = ['run', 'bundle']
+    inputs.files file("build/dist")
+    outputs.dir(file("dist"))
+}
+
+
+configurations {
+    apiSpec
+    lib {
+        artifacts {
+            add("lib", tasks.named("bundle"))
+        }
+    }
+}
+
+dependencies {
+    apiSpec(project(path: ":opendcs-rest-api", configuration: 'api_spec'))
+}
+
+
+sonar {
+    skipProject = true // all generated code
+}
+
+openApiGenerate {
+    inputSpec = configurations.apiSpec.asPath
+    outputDir = "$buildDir/generated/openApi"
+    generatorName = "typescript-fetch"
+    // packageName = "org.opendcs"
+    // apiPackage = "org.opendcs"
+    // modelPackage = "org.opendcs"
+    // invokerPackage = "org.opendcs"
+    globalProperties.set([
+        modelDocs: "true",
+        modelTests: "false",
+        apiDocs: "true",
+        apiTests: "false",
+        enabledPostProcessFile: "false"
+    ])
+    ignoreFileOverride = "$projectDir/.openapi-generator-ignore"
+}
+
+openApiValidate {
+    inputSpec = configurations.apiSpec.asPath
+}
+
+
+genTask.configure {
+    dependsOn configurations.apiSpec
+    mustRunAfter npmInstall
+}
+
+node {
+    // Version of Node.js to install. Required.
+    version = '20.10.0'
+    
+   
+    // Whether to download Node.js if it is not already installed. Defaults to true.
+    download = true
+    
+    // The working directory for Node.js. Defaults to the project directory.
+    
+    // Configure a proxy for the download. Optional.
+    // distBaseUrl = 'https://custom.node.dist.mirror'
+}
+
+jar.dependsOn bundle
+
+processResources {
+    dependsOn bundle
+    from(file("dist"))
+}

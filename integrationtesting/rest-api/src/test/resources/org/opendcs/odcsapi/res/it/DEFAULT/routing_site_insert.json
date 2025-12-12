@@ -1,0 +1,21 @@
+{
+  "siteId" : null,
+  "sitenames" : {
+    "Stream" : "Platform 12 Test Site"
+  },
+  "description" : "Test site in Davis, CA",
+  "latitude" : "38.55",
+  "longitude" : "-121.75",
+  "elevation" : 0.0,
+  "elevUnits" : "ft",
+  "nearestCity" : "Davis",
+  "timezone" : "PST",
+  "state" : "CA",
+  "country" : "USA",
+  "region" : "West",
+  "active" : true,
+  "locationType" : "Stream",
+  "publicName" : "Platform 12 Test Site",
+  "properties" : { },
+  "lastModified" : 1738363296998
+}
