@@ -22,7 +22,8 @@ public class CwmsDatabaseProvider implements DatabaseProvider
     @Override
     public boolean canCreate(DecodesSettings settings)
     {
-        return "CWMS".equals(settings.editDatabaseType);
+        return "CWMS".equals(settings.editDatabaseType)
+            || "CWMS-Oracle".equals(settings.editDatabaseType);
     }
 
     @Override
