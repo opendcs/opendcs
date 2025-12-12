@@ -30,27 +30,28 @@ public interface Configuration
      * @param properties The System.getProperty map to hold appropriate values.
      * @throws Exception thrown if error occurs
      */
-    public void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception;
+    void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception;
 
     /**
      *
      * @return true if required services/content are configured and running as appropriate
      */
-    public boolean isRunning();
+    boolean isRunning();
 
     /**
      * Close files, shutdown databases, etc
      * @throws Exception if error occurs
      */
-    public default void stop() throws Throwable
+    default void stop() throws Throwable
     {
         // nothing to do by default
     }
 
-    public File getPropertiesFile();
-    public File getUserDir();
-    public boolean isSql();
-    default public boolean isTsdb()
+    File getPropertiesFile();
+    File getUserDir();
+    boolean isSql();
+
+    default boolean isTsdb()
     {
         return false;
     }
@@ -59,7 +60,7 @@ public interface Configuration
      * Additional environment variables this test configuration requires
      * @return map of environment variables/values
      */
-    public Map<Object,Object> getEnvironment();
+    Map<Object,Object> getEnvironment();
 
     /**
      * If available return a valid instead of a TimeSeriesDb based on the current configuration.
@@ -68,7 +69,7 @@ public interface Configuration
      * @return The timeseries database if it can be made.
      * @throws Throwable any issue with the creation of the TimeSeriesDb object
      */
-    default public TimeSeriesDb getTsdb() throws Throwable
+    default TimeSeriesDb getTsdb() throws Throwable
     {
         return null;
     }
@@ -81,7 +82,7 @@ public interface Configuration
      */
     public Database getDecodesDatabase() throws Throwable;    
 
-    default public boolean implementsSupportFor(Class<? extends TsdbAppTemplate> appClass)
+    default boolean implementsSupportFor(Class<? extends TsdbAppTemplate> appClass)
     {
         return false;
     }
@@ -91,7 +92,7 @@ public interface Configuration
      * @param dao Class that extends from {@link opendcs.dao.DaoBase}
      * @return true if the Database implementation supports the given dataset, false otherwise.
      */
-    default public boolean supportsDao(Class<? extends DaoBase> dao)
+    default boolean supportsDao(Class<? extends DaoBase> dao)
     {
         return false;
     };
@@ -99,7 +100,16 @@ public interface Configuration
     /* The name of this configuration
     * @return
     */
-    public String getName();
+    String getName();
 
-    public OpenDcsDatabase getOpenDcsDatabase() throws Throwable;
+    OpenDcsDatabase getOpenDcsDatabase() throws Throwable;
+
+    /**
+     * Does this configuration expect the Rest API to function.
+     * @return
+     */
+    default boolean supportsRestApi()
+    {
+        return false;
+    }
 }
