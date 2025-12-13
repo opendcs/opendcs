@@ -32,7 +32,7 @@ if the following parameter values are not provided they will be retrieved from t
   warm too quickly or up if they are warming too slowly. The default value is 1.2 with a recommended range of 0.5-2.0.
 
 
-The following tables detail the Inputs,Outputs, and Properties for the ResEvap algorithm.
+The following tables detail the Inputs, Outputs, and Properties for the ResEvap algorithm.
 
 **Inputs**
 
