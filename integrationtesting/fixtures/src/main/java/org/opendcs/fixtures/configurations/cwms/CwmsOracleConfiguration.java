@@ -123,6 +123,7 @@ public class CwmsOracleConfiguration implements Configuration
 
         environment.set("DB_USERNAME",dcsUser);
         environment.set("DB_PASSWORD",dcsUserPassword);
+        environment.set("DB_URL", cwmsDb.getJdbcUrl());
         environmentVars.put("DB_USERNAME",dcsUser);
         environmentVars.put("DB_PASSWORD",dcsUserPassword);
         environmentVars.put("DB_OFFICE", cwmsDb.getOfficeId());
