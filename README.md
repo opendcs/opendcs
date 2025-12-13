@@ -217,3 +217,17 @@ properties that should be configured for your system.
 
 ### OPENDCS Web Client
 The gradle task `./gradlew :opendcs-web-ui:war` will create a war file in the `build/libs` directory.
+
+
+### Testing
+
+If you are on a platform with Docker, or establish the appropriate database configuration override properties you can run the api and web ui with the following:
+
+```
+./gradlew runApi --info
+# The appropriate link will be provided in the terminal output, by default it will be http://localhost:7000.
+
+
+```
+
+The default user name and password are `dcs_admin` and `dcs_admin_password`
