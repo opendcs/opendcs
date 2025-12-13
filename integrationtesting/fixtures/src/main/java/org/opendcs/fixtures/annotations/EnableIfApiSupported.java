@@ -16,7 +16,8 @@ import org.junit.platform.commons.support.AnnotationSupport;
 import org.opendcs.fixtures.spi.Configuration;
 
 /**
- * Only run this test if the database under test is a SQL based database
+* Enable the annotated test when the test's {@link org.opendcs.fixtures.spi.Configuration}
+* indicates that REST API support is available.
  */
 @Documented
 @Target({ElementType.METHOD, ElementType.TYPE, ElementType.ANNOTATION_TYPE})
