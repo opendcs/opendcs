@@ -20,7 +20,7 @@ import jakarta.ws.rs.core.MediaType;
 import io.restassured.filter.log.LogDetail;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiAlgorithm;
 
 import static io.restassured.RestAssured.given;
@@ -36,7 +36,7 @@ final class AlgorithmResourcesIT extends BaseApiIT
 		authenticate();
 	}
 
-	@TestTemplate
+	@Test
 	void getAlgorithmRefs()
 	{
 		given()
@@ -55,7 +55,7 @@ final class AlgorithmResourcesIT extends BaseApiIT
 		;
 	}
 
-	@TestTemplate
+	@Test
 	void roundTrip() throws Exception
 	{
 		ApiAlgorithm dto = getDtoFromResource("algorithm_tempstring_check.json", ApiAlgorithm.class);
