@@ -116,6 +116,10 @@ public class OpenDCSPGConfiguration implements Configuration
         environmentVars.put("DB_PASSWORD",DCS_ADMIN_USER_PASSWORD);
         environment.set("DB_USERNAME",DCS_ADMIN_USER);
         environment.set("DB_PASSWORD",DCS_ADMIN_USER_PASSWORD);
+        String validationQuery = "SELECT 1";
+		environment.set("DB_DRIVER_CLASS", "org.postgresql.Driver");
+		environment.set("DB_DATASOURCE_CLASS", "org.apache.tomcat.jdbc.pool.DataSourceFactory");
+		environment.set("DB_VALIDATION_QUERY", validationQuery);
         if (isRunning())
         {
             return;

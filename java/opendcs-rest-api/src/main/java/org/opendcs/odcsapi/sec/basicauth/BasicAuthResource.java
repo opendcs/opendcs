@@ -288,10 +288,10 @@ public final class BasicAuthResource extends OpenDcsResource
 		{
 			return new OpenTsdbAuthorizationDAO();
 		}
-		else if("cwms".equalsIgnoreCase(databaseType))
+		else if("cwms-oracle".equalsIgnoreCase(databaseType))
 		{
 			return new CwmsAuthorizationDAO();
 		}
-		throw new UnsupportedOperationException("Endpoint is unsupported by the OpenDCS REST API.");
+		throw new UnsupportedOperationException("Endpoint is unsupported by the OpenDCS REST API for database implementation '" + databaseType + "'");
 	}
 }
