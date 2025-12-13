@@ -1,0 +1,12 @@
+{
+  "computationId": 1,
+  "name": "Flow Computation",
+  "algorithmId": 11,
+  "algorithmName": "Test Algorithm",
+  "processId": 8,
+  "processName": "Computational App",
+  "enabled": true,
+  "description": "Performs flow computations",
+  "groupId": null,
+  "groupName": null
+}

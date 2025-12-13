@@ -1,0 +1,32 @@
+{
+  "platformId" : null,
+  "name" : "Platform1",
+  "siteId" : null,
+  "agency" : "USACE",
+  "configId" : null,
+  "description" : "A test platform",
+  "designator" : "Plat",
+  "lastModified" : 1625140800000,
+  "production" : false,
+  "properties" : { },
+  "platformSensors" : [ ],
+  "transportMedia" : [ {
+    "mediumType" : "Stream",
+    "mediumId" : "15823",
+    "scriptName" : "script1",
+    "channelNum" : 142,
+    "assignedTime" : 1738355857,
+    "transportWindow" : 400,
+    "transportInterval" : 20,
+    "timeAdjustment" : 0,
+    "timezone" : "UTC",
+    "loggerType" : "Simple",
+    "baud" : 9600,
+    "stopBits" : 8,
+    "parity" : "N",
+    "dataBits" : 2,
+    "doLogin" : true,
+    "username" : "SomeUser",
+    "password" : "SomePassword"
+  } ]
+}

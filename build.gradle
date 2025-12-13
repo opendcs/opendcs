@@ -4,9 +4,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
-            classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:6.2.0.5505"
-        }
+        classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:6.2.0.5505"
     }
 }
 

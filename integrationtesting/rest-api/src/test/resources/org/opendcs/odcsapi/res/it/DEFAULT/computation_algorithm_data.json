@@ -1,0 +1,12 @@
+{
+  "algorithmId" : null,
+  "name" : "Test Algorithm",
+  "execClass" : null,
+  "description" : "Test Algorithm Description",
+  "props" : {
+    "prop1" : "value1"
+  },
+  "parms" : [ ],
+  "numCompsUsing" : 0,
+  "algoScripts" : [ ]
+}

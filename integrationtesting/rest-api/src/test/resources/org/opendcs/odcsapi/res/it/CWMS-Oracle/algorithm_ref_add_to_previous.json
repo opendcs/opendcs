@@ -1,0 +1,7 @@
+{
+  "algorithmId": 44,
+  "algorithmName": "AddToPrevious",
+  "execClass": "decodes.tsdb.algo.AddToPrevious",
+  "numCompsUsing": 0,
+  "description": "Adds the current value to the previous value in the database"
+}

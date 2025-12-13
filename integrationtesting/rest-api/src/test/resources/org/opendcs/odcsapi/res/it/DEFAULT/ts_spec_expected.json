@@ -1,0 +1,31 @@
+{
+  "tsid": {
+    "uniqueString": "TS test site.Area.Inst.5Minutes.0.Calc",
+    "key": 1,
+    "description": "Area at TS test site",
+    "storageUnits": "ft2",
+    "active": true
+  },
+  "location": "TS test site",
+  "param": null,
+  "statCode": null,
+  "interval": "5Minutes",
+  "duration": "0",
+  "version": "Calc",
+  "siteId": 1,
+  "datatypeId": 104,
+  "intervalId": null,
+  "durationId": null,
+  "lastModified": null,
+  "active": true,
+  "allowDSTVariation": false,
+  "utcOffset": 0,
+  "offsetErrorAction": "IGNORE",
+  "storageType": "N",
+  "storageTable": 0,
+  "numValues": 0,
+  "min": null,
+  "max": null,
+  "oldest": null,
+  "newest": null
+}

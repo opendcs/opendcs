@@ -1,0 +1,10 @@
+{
+  "dataSourceId" : null,
+  "name" : "Routing Test Data Source",
+  "type" : "CWMS",
+  "usedBy" : 1,
+  "props" : {
+    "url" : "http://localhost:8080/cwms"
+  },
+  "groupMembers" : [ ]
+}

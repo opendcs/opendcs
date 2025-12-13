@@ -1,0 +1,23 @@
+{
+  "siteId": null,
+  "description": "a platform site",
+  "latitude": "38.0",
+  "longitude": "-121.0",
+  "elevation": 100.0,
+  "elevUnits": "m",
+  "state": "CA",
+  "country": "USA",
+  "nearestCity": "Sacramento",
+  "timezone": "PST",
+  "region": "Yolo County",
+  "active": true,
+  "properties": {
+    "prop1": "value1"
+  },
+  "publicName": "Platform 10",
+  "locationType": "stream",
+  "lastModified": 1625140800000,
+  "sitenames": {
+    "stream": "Platform 10"
+  }
+}

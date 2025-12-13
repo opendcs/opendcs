@@ -1,0 +1,84 @@
+plugins {
+    id 'opendcs.deps-conventions'
+    id 'opendcs.java-conventions'
+    id 'opendcs.publishing-conventions'
+    id 'opendcs.sonar-conventions'
+    id 'opendcs.version-conventions'
+    id 'java-library'
+    id "org.openapi.generator" version "7.17.0"
+}
+
+configurations {
+    apiSpec
+}
+
+dependencies {
+    api(libs.bundles.openapi.deps)
+
+    implementation(project(":opendcs-rest-api"))
+    implementation(libs.org.slf4j.api)
+    implementation(libs.com.faster.xml.jackson.databind)
+
+    apiSpec(project(path: ":opendcs-rest-api", configuration: 'api_spec'))
+}
+
+openApiGenerate {
+    inputSpec = configurations.apiSpec.asPath
+    outputDir = "$buildDir/generated/openApi"
+    generatorName = "java"
+    library = "native"
+    apiPackage = "org/opendcs/rest/client/api"
+    modelPackage = "org/opendcs/rest/client/model"
+    invokerPackage = "org/opendcs/rest/client/invoker"
+    globalProperties.set([
+        modelDocs: "true",
+        modelTests: "false",
+        apiDocs: "true",
+        apiTests: "false",
+        enabledPostProcessFile: "false"
+    ])
+    ignoreFileOverride = "$projectDir/.openapi-generator-ignore"
+    
+}
+
+sourceSets.main {
+    java.srcDir("$buildDir/generated/openApi/src/main/java")
+}
+
+def genTask = tasks.named("openApiGenerate")
+
+genTask.configure {
+    dependsOn configurations.apiSpec
+}
+compileJava.dependsOn genTask
+sourcesJar.dependsOn genTask
+
+sonar {
+    skipProject = true // all generated code
+}
+
+javadoc {
+    options {
+        addStringOption('Xdoclint:none', '-quiet')
+    }
+}
+
+// Force archive names to match publishing name.
+// Otherwise maven central validation fails.
+base {
+    archivesName = "opendcs-api-client-java"
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = 'opendcs-api-client-java'
+            from components.java
+
+            pom {
+                name = 'OpenDCS REST API Client'
+                description = 'Code generated from the OpenDCS Rest APi.'
+            }
+        }
+    }
+}

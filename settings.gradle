@@ -44,3 +44,18 @@ project(":testing:manual").projectDir=file("integrationtesting/manual")
 
 include ":testing:gui"
 project(":testing:gui").projectDir=file("integrationtesting/test-gui-examples")
+
+include ":opendcs-rest-api"
+project(":opendcs-rest-api").projectDir=file("java/opendcs-rest-api")
+
+include ":opendcs-web-ui"
+project(":opendcs-web-ui").projectDir=file("java/opendcs-web-ui")
+
+include ":testing:rest-api"
+project(":testing:rest-api").projectDir=file("integrationtesting/rest-api")
+
+include ":api-client-typescript"
+project(":api-client-typescript").projectDir=file("java/api-clients/api-client-typescript")
+
+include ":api-client-java"
+project(":api-client-java").projectDir=file("java/api-clients/api-client-java")

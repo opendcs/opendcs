@@ -1,0 +1,153 @@
+/*
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License")
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+plugins {
+    id "opendcs.java-conventions"
+    id "opendcs.deps-conventions"
+    id "opendcs.publishing-conventions"
+    id "opendcs.sonar-conventions"
+    id "opendcs.version-conventions"
+    id "war"
+
+    // plugin needs additional updates. Newest, while it interacts with the cache
+    // correctly, does not correctly differ processing of the sourceSets which
+    // causes issues with various bits.
+    id "io.swagger.core.v3.swagger-gradle-plugin" version "2.2.26"
+}
+
+configurations {
+    webjars
+    api_spec {
+        canBeResolved = false // Consumers will resolve, not this config
+        canBeConsumed = true // This config can be consumed by others
+    }
+}
+
+dependencies {
+    compileOnly(libs.auto.service.annotations)
+    annotationProcessor(libs.auto.service.processor)
+
+    implementation(project(":opendcs"))
+
+    implementation(libs.bundles.jdbi)
+    swaggerDeps(libs.jakarta.servlet)
+    swaggerDeps(libs.rs.api)
+    swaggerDeps(libs.swagger.jaxrs2)
+    compileOnly(libs.jakarta.servlet)
+    compileOnly(libs.rs.api)
+    implementation(libs.json.jackson)
+    implementation(libs.jersey.container.servlet)
+    implementation(libs.nimbus)
+    implementation(libs.swagger.jaxrs2)
+    implementation(libs.jwt)
+    implementation(libs.jersey.hk2)
+    implementation(libs.org.slf4j.api)
+    implementation(libs.com.faster.xml.jackson.databind)
+    implementation(libs.jakarta.xml.bind.api)
+    runtimeOnly(libs.slf4j.jdk14)
+    runtimeOnly(libs.org.glassfish.jaxb.runtime)
+    runtimeOnly(libs.com.faster.xml.jackson.annotations) // updated for swagger compatibility
+
+    webjars(libs.swagger.ui)
+
+    testImplementation enforcedPlatform(libs.junit.bom)
+    testImplementation(libs.bundles.junit)
+    testImplementation(libs.bundles.junit.platform)
+    testImplementation(libs.jersey.test)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.junit.jupiter)
+}
+
+tasks.register('extractWebJars', Copy) {
+    from zipTree(configurations.webjars.singleFile)
+
+    into file("${layout.buildDirectory.get().asFile}/generated/webapp/swaggerui")
+    includeEmptyDirs = false
+    eachFile {
+        path -= ~/^.+?\/.+?\/.+?\/.+?\/.+?\//
+    }
+    exclude "**/swagger-initializer.js"
+    includeEmptyDirs = false
+}
+
+compileTestJava {
+    dependsOn extractWebJars
+}
+
+javadoc {
+    dependsOn extractWebJars
+}
+
+jar {
+    dependsOn extractWebJars
+}
+
+war {
+    dependsOn extractWebJars
+    from "${layout.buildDirectory.get().asFile}/generated/webapp"
+}
+
+sonarqube {
+    properties {
+        property 'sonar.coverage.jacoco.xmlReportPaths', "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/test/jacocoTestReport.xml," +
+                "../opendcs-integration-test/build/reports/jacoco/integrationTestReportCWMS/integrationTestReportCWMS.xml," +
+                "../opendcs-integration-test/build/reports/jacoco/integrationTestReportOpenTSDB/integrationTestReportOpenTSDB.xml"
+    }
+}
+
+def fileName = 'opendcs-openapi'
+def format = providers.gradleProperty('outputFormat').getOrElse('JSON').toLowerCase()
+
+// task to generate OpenAPI JSON file
+resolve {
+    classpath = sourceSets.main.runtimeClasspath
+    outputFileName = fileName
+    outputFormat = format
+    prettyPrint = 'TRUE'
+    resourcePackages = ['org.opendcs.odcsapi.res', 'org.opendcs.odcsapi.beans', 'org.opendcs.odcsapi.sec']
+    outputDir = file('build/swagger/')
+}
+
+def genSpec = tasks.register('generateOpenAPI') {
+    group = "documentation"
+    description = "Generates the Swagger OpenAPI JSON file without running the application"
+    dependsOn resolve
+    outputs.files(file("build/swagger/${fileName}.${format}"))
+}
+
+def spec = artifacts.add("api_spec", genSpec)
+
+if (shouldSign) {
+    signing {
+        sign war
+    }
+}
+
+// We don't publish the api war to maven central.
+project.tasks.findAll { task -> task.name.startsWith("publish")}.each { task -> task.enabled = false }
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = 'opendcs-openapi'
+            artifact(spec)
+
+            pom {
+                name = 'OpenDCS REST API OpenAPI Specification'
+                description = 'OpenAPI Specification.'
+            }
+        }
+    }
+}

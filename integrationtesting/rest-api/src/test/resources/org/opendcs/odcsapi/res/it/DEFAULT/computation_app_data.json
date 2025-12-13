@@ -1,0 +1,12 @@
+
+{
+  "appId" : null,
+  "appName" : "Computational App",
+  "appType" : "Computation",
+  "comment" : "Performs computations",
+  "lastModified" : null,
+  "manualEditingApp" : true,
+  "properties" : {
+    "prop1" : "value1"
+  }
+}
