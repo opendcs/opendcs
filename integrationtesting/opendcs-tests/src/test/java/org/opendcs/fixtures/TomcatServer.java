@@ -37,7 +37,9 @@ import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.jdbc.pool.DataSourceFactory;
 import org.apache.tomcat.util.scan.StandardJarScanner;
+import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.fixtures.configurations.cwms.CwmsOracleConfiguration;
 import org.opendcs.fixtures.spi.Configuration;
@@ -245,34 +247,36 @@ public final class TomcatServer implements AutoCloseable
 		EnvironmentVariables environment = new EnvironmentVariables();
 		SystemProperties properties = new SystemProperties();
 		config.start(exit, environment, properties);
-		try (DataTransaction tx = config.getOpenDcsDatabase().newTransaction();
-			 Connection conn = tx.connection(Connection.class).orElseThrow();
-			 PreparedStatement stmt = conn.prepareStatement("insert into tsdb_property(prop_name, prop_value) values (?,?)"))
+		try (var tx = config.getOpenDcsDatabase().newTransaction())
 		{
-			DecodesSettings settings = config.getOpenDcsDatabase()
-											 .getSettings(DecodesSettings.class)
-											 .orElseThrow();
-			Properties props = new Properties();
-			settings.saveToProps(props);
-			for(var k: props.keySet())
+			// looks odd, need ro make surer the transaction closes it.
+			var conn = tx.connection(Handle.class).orElseThrow();
+			try (var upsertProp = conn.prepareBatch("""
+				merge into tsdb_property p
+				using (select :name prop_name, :value prop_value <dual>) input
+				on (p.prop_name = input.prop_name)
+				when matched then
+				  update set prop_value = input.prop_value
+				when not matched then
+				  insert (prop_name, prop_value)
+				  values(input.prop_name, input.prop_value)
+				""").define("dual", tx.getContext().getDatabase() == DatabaseEngine.ORACLE ? "from dual" : ""))
 			{
-				final String value = props.getProperty(k.toString(), null);
-				if (value != null && !value.isBlank())
+				DecodesSettings settings = config.getOpenDcsDatabase()
+												.getSettings(DecodesSettings.class)
+												.orElseThrow();
+				Properties props = new Properties();
+				settings.saveToProps(props);
+				for(var k: props.keySet())
 				{
-					stmt.setString(1, k.toString());
-					stmt.setString(2, value);
-					try
-					{// note: insufficnet, getting back to it later.
-						stmt.executeUpdate();
-					}
-					catch (SQLException ex)
-					{
-						if (!ex.getMessage().toLowerCase().contains("unique"))
-						{
-							throw ex;
-						}
-					}
+					final String value = props.getProperty(k.toString(), null);
+					upsertProp.bind("name", k.toString())
+							.bind("value", value)
+							.add();
 				}
+				
+				upsertProp.execute();
+			
 			}
 		}
 		catch (Throwable ex)
