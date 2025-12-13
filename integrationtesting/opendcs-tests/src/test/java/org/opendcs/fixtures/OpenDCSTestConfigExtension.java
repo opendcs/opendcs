@@ -14,6 +14,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -35,7 +36,7 @@ import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.fixtures.spi.ConfigurationProvider;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-
+import org.apache.tomcat.jdbc.pool.DataSourceFactory;
 import org.hamcrest.Matchers;
 
 import decodes.db.Database;
@@ -52,6 +53,7 @@ import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
 import static io.restassured.RestAssured.given;
+import static org.opendcs.fixtures.assertions.Waiting.assertResultWithinTimeFrame;
 
 public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEachCallback, AfterAllCallback, TestExecutionListener
 {
@@ -441,37 +443,23 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
 		String restWarFile = Objects.requireNonNull(System.getProperty("opendcs.restapi.warfile"), "opendcs.restapi.warfile is not set");
 		String guiWarFile = Objects.requireNonNull(System.getProperty("opendcs.gui.warfile"), "opendcs.gui.warfile is not set");
 		TomcatServer tomcat = new TomcatServer("build/tomcat", 0, restWarFile, guiWarFile);
-		tomcat.start();
+        withEnvProps(() -> tomcat.start());
 		return tomcat;
 	}
 
-	private static void healthCheck() throws InterruptedException
+	private static void healthCheck() throws Exception
 	{
-		int attempts = 0;
-		int maxAttempts = 15;
-		for(; attempts < maxAttempts; attempts++)
-		{
-			try
-			{
-				given()
+        assertResultWithinTimeFrame(i ->
+        {
+            return given()
 						.when()
 						.delete("/logout")
-						.then()
-						.assertThat()
-						.statusCode(Matchers.is(HttpServletResponse.SC_NO_CONTENT));
-				log.debug("Server is up!");
-				break;
-			}
-			catch(AssertionError ex)
-			{
-				log.atDebug().setCause(ex).log("Waiting for the server to start...");
-				Thread.sleep(100);//NOSONAR
-			}
-		}
-		if(attempts == maxAttempts)
-		{
-			throw new PreconditionViolationException("Server didn't start in time...");
-		}
+						.andReturn()
+                        .statusCode() == HttpServletResponse.SC_NO_CONTENT;
+        },
+        1, TimeUnit.MINUTES, 
+        3, TimeUnit.SECONDS,
+        "api server not available in reasonable time");
 	}
 
     @Override
