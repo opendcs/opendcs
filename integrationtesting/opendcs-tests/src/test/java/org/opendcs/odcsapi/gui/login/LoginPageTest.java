@@ -23,8 +23,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestTemplate;
-import org.opendcs.fixtures.AppTestBase;
+import org.opendcs.odcsapi.res.it.BaseApiIT;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -33,7 +32,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("integration")
-final class LoginPageTest extends AppTestBase
+final class LoginPageTest extends BaseApiIT
 {
 
 	private WebDriver driver;
