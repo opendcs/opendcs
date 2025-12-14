@@ -27,6 +27,7 @@ import org.opendcs.odcsapi.res.it.BaseApiIT;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.isNotNull;
 
 @EnableIfTsDb({"OpenDCS-Postgres"})
 final class FormAuthIT extends BaseApiIT
@@ -41,7 +42,7 @@ final class FormAuthIT extends BaseApiIT
 	}
 
 	@Test
-	void testBasicAuthFlow()
+	void testBasicAuthFlow() throws Exception
 	{
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
@@ -56,10 +57,11 @@ final class FormAuthIT extends BaseApiIT
 		.assertThat()
 			.statusCode(is(Response.Status.UNAUTHORIZED.getStatusCode()))
 		;
-		Credentials credentials = new Credentials();
-		credentials.setUsername(System.getProperty("DB_USERNAME"));
-		credentials.setPassword(System.getProperty("DB_PASSWORD"));
-		given()
+		final Credentials credentials = new Credentials();
+		credentials.setUsername(System.getenv("DB_USERNAME"));
+		credentials.setPassword(System.getenv("DB_PASSWORD"));
+
+		var auth = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
@@ -74,11 +76,14 @@ final class FormAuthIT extends BaseApiIT
 			.assertThat()
 			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.body("email", equalTo(credentials.getUsername()))
+			.cookie("JSESSIONID")
+			.extract().detailedCookie("JSESSIONID")
 		;
 
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
+			.cookie(auth)
 			.filter(sessionFilter)
 		.when()
 			.redirects().follow(true)
