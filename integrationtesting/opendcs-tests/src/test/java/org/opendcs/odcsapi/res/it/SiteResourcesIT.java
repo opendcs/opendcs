@@ -27,6 +27,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiSite;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -37,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class SiteResourcesIT extends BaseApiIT
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static Long siteId;
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -109,11 +112,11 @@ final class SiteResourcesIT extends BaseApiIT
 
 		JsonPath actual = response.body().jsonPath();
 		List<Map<String, Object>> actualSites = actual.getList("");
-
+		log.debug("site response {}", response.asPrettyString());
 		boolean found = false;
 		for (Map<String, Object> site : actualSites)
 		{
-			if (site.get("publicName").equals(expected.get("publicName")))
+			if (expected.get("publicName").equals(site.get("publicName")))
 			{
 				assertEquals(expected.get("sitenames"), site.get("sitenames"));
 				assertEquals(expected.get("description"), site.get("description"));
