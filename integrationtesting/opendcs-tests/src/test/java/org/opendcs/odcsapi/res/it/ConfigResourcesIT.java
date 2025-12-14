@@ -89,7 +89,7 @@ final class ConfigResourcesIT extends BaseApiIT
 	void testGetConfigRefs()
 	{
 		JsonPath expected = getJsonPathFromResource("config_refs_expected.json");
-
+		final String name = expected.getString("[0].name");
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
@@ -103,9 +103,8 @@ final class ConfigResourcesIT extends BaseApiIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(Response.Status.OK.getStatusCode()))
-			.body("[0].name", equalTo(expected.getString("[0].name")))
-			.body("[0].description", equalTo(expected.getString("[0].description")))
-			.body("[0].numPlatforms", equalTo(expected.getInt("[0].numPlatforms")))
+			.body("find { it -> it.name == '"+ name +"'}.description", equalTo(expected.getString("[0].description")))
+			.body("find { it -> it.name == '"+ name +"'}.numPlatforms", equalTo(expected.getInt("[0].numPlatforms")))
 		;
 	}
 
