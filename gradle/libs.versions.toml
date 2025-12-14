@@ -125,6 +125,7 @@ jstl = { module = "jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api", versi
 jstl-impl = { module = "org.glassfish.web:jakarta.servlet.jsp.jstl", version = "3.0.1"}
 swagger-jaxrs2 = { module = "io.swagger.core.v3:swagger-jaxrs2-jakarta", version.ref = "swagger" }
 swagger-models = { module = "io.swagger.core.v3:swagger-models-jakarta", version.ref = "swagger" }
+swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations-jakarta", version.ref = "swagger" }
 
 swagger-codegen = { module = "io.swagger.codegen.v3:swagger-codegen-cli", version.ref = "swagger-codegen" }
 com-google-jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "jsr305" }

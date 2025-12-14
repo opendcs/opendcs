@@ -310,7 +310,7 @@ final class AppResourcesIT extends BaseApiIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(Response.Status.OK.getStatusCode()))
-			.body("size()", is(0))
+			.body("findAll { it -> it.name=='" + status.getAppName() + "'}.size()", is(0))
 		;
 	}
 

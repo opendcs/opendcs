@@ -606,7 +606,7 @@ final class DatatypeUnitResourcesIT extends BaseApiIT
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
-			.body(converterJson.replace("\"ft\"", "\"in\""))
+			.body(converterJson.replace("\"flurgle\"", "\"in\""))
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)

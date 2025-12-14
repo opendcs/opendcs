@@ -289,7 +289,7 @@ public final class BasicAuthResource extends OpenDcsResource
 		String databaseType = db.getSettings(DecodesSettings.class).orElseThrow().editDatabaseType;
 		log.info("Getting Auth DAO for {}", databaseType);
 		// Username+Password login only supported by OpenTSDB
-		if("opentsdb".equalsIgnoreCase(databaseType))
+		if("opendcs-postgres".equalsIgnoreCase(databaseType))
 		{
 			return new OpenTsdbAuthorizationDAO();
 		}

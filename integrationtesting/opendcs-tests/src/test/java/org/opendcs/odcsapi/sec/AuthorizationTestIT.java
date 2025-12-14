@@ -33,12 +33,15 @@ import io.swagger.v3.parser.OpenAPIV3Parser;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.res.it.BaseApiIT;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 final class AuthorizationTestIT extends BaseApiIT
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	@Test
 	void unauthorizedAccessShouldReturn401()
@@ -74,7 +77,9 @@ final class AuthorizationTestIT extends BaseApiIT
 	private static Stream<Endpoint> getEndpoints()
 	{
 		OpenAPIV3Parser parser = new OpenAPIV3Parser();
-		OpenAPI api = parser.read(RestAssured.baseURI + ":" + RestAssured.port + "/" + RestAssured.basePath + "/openapi.json");
+		final String url = RestAssured.baseURI + ":" + RestAssured.port + "/" + RestAssured.basePath + "/openapi.json";
+		log.debug("getting api from {}", url);
+		OpenAPI api = parser.read(url);
 		Paths paths = api.getPaths();
 		return paths.entrySet().stream()
 				.filter(e -> !e.getKey().equals("/credentials"))
