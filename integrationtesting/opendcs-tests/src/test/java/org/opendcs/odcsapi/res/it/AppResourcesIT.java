@@ -33,6 +33,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestTemplate;
 import org.opendcs.odcsapi.beans.ApiAppStatus;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -44,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class AppResourcesIT extends BaseApiIT
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static Long appid = null;
 
 	@BeforeEach
@@ -279,14 +282,16 @@ final class AppResourcesIT extends BaseApiIT
 
 		// Extract response and app ID, assert that the app matches the expected JSON
 		JsonPath actual = response.body().jsonPath();
-		assertNotNull(actual.getList("appId"));
-		int appID = Integer.parseInt(actual.getList("appId").get(0).toString());
-		assertEquals(appid.intValue(), appID);
-		assertEquals(expected.get("hostname"), actual.getList("hostname").get(0));
-		assertEquals(expected.get("eventPort"), actual.getList("eventPort").get(0));
-		assertEquals(expected.get("status"), actual.getList("status").get(0));
-		assertEquals(expected.get("appName"), actual.getList("appName").get(0));
-		assertEquals(expected.get("pid"), actual.getList("pid").get(0));
+		log.debug("{}", actual.prettyPrint());
+		log.debug("Looking for {}", status.getAppName());
+		actual = actual.setRootPath("find { it -> it.appName == '" + status.getAppName() + "'}");
+		assertNotNull(actual.get("appId"), "Application status was not returned.");
+		// ID not compared as we don't actually care what it is.
+		assertEquals(host, actual.get("hostname"));
+		assertEquals(expected.get("eventPort"), (Integer)actual.get("eventPort"));
+		assertEquals(expected.get("status"), (String)actual.get("status"));
+		assertEquals(expected.get("appName"), (String)actual.get("appName"));
+		assertEquals(expected.get("pid"), (Integer)actual.get("pid"));
 		// App type is not returned by the API
 
 		// Release app lock
