@@ -279,7 +279,8 @@ final class DatatypeUnitResourcesIT extends BaseApiIT
 		List<Map<String, Object>> actualList = actual.getList("");
 		List<Map<String, Object>> expectedList = expected.getList("");
 
-		assertEquals(expectedList.size(), actualList.size());
+		// Allow for other integration tests to have failed to cleanup after themselves.
+		assertTrue(actualList.size() >= expectedList.size());
 
 		for(Map<String, Object> expectedItem : expectedList)
 		{
