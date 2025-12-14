@@ -72,7 +72,17 @@ dependencies {
     runtimeOnly(libs.com.faster.xml.jackson.annotations) // for swagger compatibility
 
 
-    
+    modules {
+        module("io.swagger.core.v3:swagger-annotations") {
+            replacedBy("io.swagger.core.v3:swagger-annotations-jakarta")
+        }
+        module("io.swagger.core.v3:swagger-models") {
+            replacedBy("io.swagger.core.v3:swagger-models-jakarta")
+        }
+        module("io.swagger.core.v3:swagger-core") {
+            replacedBy("io.swagger.core.v3:swagger-core-jakarta")
+        }
+    }
 }
 
 def genConfig = tasks.register('generateConfig', Copy) {
