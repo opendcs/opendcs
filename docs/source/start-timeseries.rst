@@ -146,9 +146,9 @@ Time Series and OpenDCS
 =======================
 
 It is important to understand the parts of time series when using
-OpenDCS.  In a nutshell, OpenDCS is used for retreiving
+OpenDCS.  In a nutshell, OpenDCS is used for retrieving
 data and processing time series.  The basis of how data is 
-retreived and decoded and stored relies on the basic time series 
+retrieved and decoded and stored, relies on the basic time series
 principals outlined above.  Likewise, the processing, such as 
 computations, assume users have a solid understanding of the 
 input and output time series that they are executing computations on.
