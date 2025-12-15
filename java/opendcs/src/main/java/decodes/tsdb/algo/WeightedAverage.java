@@ -66,8 +66,22 @@ public class WeightedAverage extends AW_AlgorithmBase
     @Input
     public double weight8;
 
+    String[] _inputNames = { "weightTotal",
+            "input1", "weight1",
+            "input2", "weight2",
+            "input3", "weight3",
+            "input4", "weight4",
+            "input5", "weight5",
+            "input6", "weight6",
+            "input7", "weight7",
+            "input8", "weight8"
+    };
+
     @Output(type = Double.class)
     public NamedVariable output = new NamedVariable("output", 0);
+    String[] _outputNames = { "output" };
+
+    String[] _propertyNames = {};
 
     // Allow javac to generate a no-args constructor.
 
@@ -195,5 +209,33 @@ public class WeightedAverage extends AW_AlgorithmBase
     @Override
     protected void afterTimeSlices()
             throws DbCompException
-    {}
+    {
+        // This code will be executed once after each group of time slices.
+        // For TimeSlice algorithms this is done once after all slices.
+    }
+
+    /**
+     * Required method returns a list of all input time series names.
+     */
+    public String[] getInputNames()
+    {
+        return _inputNames;
+    }
+
+    /**
+     * Required method returns a list of all output time series names.
+     */
+    public String[] getOutputNames()
+    {
+        return _outputNames;
+    }
+
+    /**
+     * Required method returns a list of properties that have meaning to
+     * this algorithm.
+     */
+    public String[] getPropertyNames()
+    {
+        return _propertyNames;
+    }
 }
