@@ -249,10 +249,10 @@ final class ComputationResourcesIT extends BaseApiIT
 			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
-		var actualItem = response.body().jsonPath().getMap("find {it -> it.name = '" + expectedJson.getString("name") + "'");
+		final var actualItem = response.body().jsonPath().getMap("find { it -> it.name = '" + expectedJson.getString("name") + "'}");
 		assertNotNull(actualItem);
 		assertEquals(expectedJson.getString("name"), actualItem.get("name"));
-		assertEquals(expectedJson.getString("description"), actualItem.get("description"));
+		assertEquals(expectedJson.getString("description"), actualItem.get("description"), () -> "Return was: " + response.asPrettyString());
 		assertEquals(expectedJson.getBoolean("enabled"), actualItem.get("enabled"));
 		assertEquals(expectedJson.getString("groupName"), actualItem.get("groupName"));
 		assertEquals(expectedJson.getString("algorithmName"), actualItem.get("algorithmName"));
