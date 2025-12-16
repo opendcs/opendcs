@@ -75,7 +75,7 @@ task installReqs(type: Exec) {
     args += "install"
     args += "-r"
     args += "${docsDir}/requirements.txt"
-    environment "PATH": "${venvPath}:${System.getenv('PATH')}"
+    environment "PATH": "${venvPath}${File.pathSeparator}${System.getenv('PATH')}"
     environment "VENV_PATH", venvPath
 }
 
@@ -94,7 +94,7 @@ tasks.addRule("Pattern: buildDocs<ID>") { String taskName ->
             executable cmd
             workingDir projectDir
             args = theArgs
-            environment "PATH": "${venvPath}:${System.getenv('PATH')}"
+            environment "PATH": "${venvPath}${File.pathSeparator}${System.getenv('PATH')}"
 
             inputs.files(fileTree('source'))
                 .withPropertyName('sourceFiles')
