@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Properties;
 import javax.sql.DataSource;
 
+import decodes.db.Database;
 import decodes.db.DatabaseException;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.api.OpenDcsDatabase;
@@ -47,7 +48,10 @@ public final class OpenDcsDatabaseFactory
 
 	public static synchronized OpenDcsDatabase createDb(DataSource dataSource, String organization)
 	{
-		return dbCache.computeIfAbsent(organization, o -> newDatabase(dataSource, organization));
+		var db = dbCache.computeIfAbsent(organization, o -> newDatabase(dataSource, organization));
+		var decodesDb = db.getLegacyDatabase(Database.class);
+		decodesDb.ifPresent(liveDb -> Database.setDb(liveDb));
+		return db;
 	}
 
 	private static OpenDcsDatabase newDatabase(DataSource dataSource, String organization)
