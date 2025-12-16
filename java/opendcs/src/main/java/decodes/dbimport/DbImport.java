@@ -177,7 +177,7 @@ public class DbImport
 		final String newOwner = platOwnerArg.getValue().length() == 0 ? null : platOwnerArg.getValue();
 
 		DbImport dbImport = new DbImport(cmdLineArgs.getProfile(), dbLoc, validateOnlyArg.getValue(),
-										 keepOldArg.getValue(), platformRelatedOnlyArg.getValue(), overwriteDb.getValue(),
+										 keepOldArg.getValue(), overwriteDb.getValue(), platformRelatedOnlyArg.getValue(),
 										 allowHistoricalArg.getValue(), pdtFile, newDesignatorArg, defAgency,
 										 newOwner, files);
 		dbImport.importDatabase();
@@ -382,7 +382,7 @@ public class DbImport
 		log.info("Since the OVERWRITE option was given, deleting current database.");
 		if (!platformRelatedOnly)
 		{
-			log.info("ONLY deleting platform-related entities.");
+			log.info("Also deleting NON platform-related entities.");
 			ScheduleEntryDAI scheduleEntryDAO = theDbio.makeScheduleEntryDAO();
 			if (scheduleEntryDAO != null)
 			{
