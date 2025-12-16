@@ -201,7 +201,7 @@ public class CwmsConsumer extends DataConsumer
 		{
 			DecodesSettings settings = DecodesSettings.instance().asCopy();
 			settings.editDatabaseTypeCode = DecodesSettings.DB_CWMS;
-			settings.editDatabaseType = "CWMS";
+			settings.editDatabaseType = "CWMS-Oracle";
 			settings.editDatabaseLocation = cwmsCfg.getDbUri();
 			settings.DbAuthFile = cwmsCfg.DbAuthFile;
 			settings.CwmsOfficeId = cwmsCfg.cwmsOfficeId;
