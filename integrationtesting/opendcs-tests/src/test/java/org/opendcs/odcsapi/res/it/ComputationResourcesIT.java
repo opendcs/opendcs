@@ -38,6 +38,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 final class ComputationResourcesIT extends BaseApiIT
 {
@@ -248,9 +249,8 @@ final class ComputationResourcesIT extends BaseApiIT
 			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
-		List<Map<String, Object>> actualList = response.body().jsonPath().getList("");
-		assertFalse(actualList.isEmpty());
-		Map<String, Object> actualItem = actualList.get(0);
+		var actualItem = response.body().jsonPath().getMap("find {it -> it.name = '" + expectedJson.getString("name") + "'");
+		assertNotNull(actualItem);
 		assertEquals(expectedJson.getString("name"), actualItem.get("name"));
 		assertEquals(expectedJson.getString("description"), actualItem.get("description"));
 		assertEquals(expectedJson.getBoolean("enabled"), actualItem.get("enabled"));

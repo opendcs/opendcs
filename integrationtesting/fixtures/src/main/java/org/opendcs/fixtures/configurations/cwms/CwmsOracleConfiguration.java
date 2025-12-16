@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.jdbi.v3.core.Jdbi;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.MigrationManager;
 import org.opendcs.database.api.OpenDcsDatabase;
@@ -118,6 +119,17 @@ public class CwmsOracleConfiguration implements Configuration
             createPropertiesFile(configBuilder, this.propertiesFile);
             profile = Profile.getProfile(this.propertiesFile);
             mp.loadBaselineData(profile, dcsUser, dcsUserPassword);
+            Jdbi jdbi = mm.getJdbiHandle();
+            try (var handle = jdbi.open();
+                 var insertDbType = handle.createUpdate("insert into tsdb_property(prop_name, prop_value) values(:name, :value)"))
+            {
+                insertDbType.bind("name", "editDatabaseType")
+                            .bind("value", getName())
+                            .execute();
+                insertDbType.bind("name", "sqlKeyGenerator")
+                            .bind("value", OracleSequenceKeyGenerator.class.getName())
+                            .execute();
+            }
         }
 
 

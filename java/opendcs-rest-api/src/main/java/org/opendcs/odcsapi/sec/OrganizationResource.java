@@ -67,7 +67,7 @@ public final class OrganizationResource extends OpenDcsResource
 									 @QueryParam("offset") @DefaultValue("0") int offset) throws DbException
 	{
 		OpenDcsDatabase db = createDb();
-		if("cwms".equalsIgnoreCase(db.getSettings(DecodesSettings.class).orElseThrow().editDatabaseType))
+		if("cwms-oracle".equalsIgnoreCase(db.getSettings(DecodesSettings.class).orElseThrow().editDatabaseType))
 		{
 			try(DataTransaction tx = db.newTransaction())
 			{
