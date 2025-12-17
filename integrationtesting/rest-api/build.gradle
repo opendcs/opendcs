@@ -86,7 +86,7 @@ def genConfig = tasks.register('generateConfig', Copy) {
     outputs.dir layout.buildDirectory.file("tomcat/conf")
 }
 
-tasks.register('run', JavaExec) {
+tasks.register('runWeb', JavaExec) {
     dependsOn build
     def restWar = project(':opendcs-rest-api').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
     def guiWar = project(':opendcs-web-ui').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
@@ -122,7 +122,7 @@ tasks.register('owaspZap', JavaExec) {
     dependsOn build
     def restWar = project(':opendcs-rest-api').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
     def guiWar = project(':opendcs-web-ui').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
-    group "application"
+    group "verification"
     dependsOn(':opendcs-rest-api:war', ':opendcs-web-ui:war')
     dependsOn generateConfig
     dependsOn ":install:installDist"
