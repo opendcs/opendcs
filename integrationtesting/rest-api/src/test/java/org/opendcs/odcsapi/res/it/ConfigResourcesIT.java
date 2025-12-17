@@ -18,14 +18,15 @@ package org.opendcs.odcsapi.res.it;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.session.SessionFilter;
 import io.restassured.path.json.JsonPath;
-import io.restassured.response.Response;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 final class ConfigResourcesIT extends BaseIT
 {

@@ -56,6 +56,7 @@ import org.opendcs.odcsapi.sec.basicauth.Credentials;
 
 import static io.restassured.RestAssured.given;
 import static java.util.stream.Collectors.joining;
+import static org.hamcrest.Matchers.is;
 import static org.opendcs.odcsapi.util.ApiConstants.ORGANIZATION_HEADER;
 
 
