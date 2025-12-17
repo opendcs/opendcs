@@ -18,17 +18,6 @@ package org.opendcs.odcsapi.res;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import jakarta.annotation.security.RolesAllowed;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.DbAlgoParm;
@@ -47,6 +36,16 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import opendcs.dai.AlgorithmDAI;
 import org.opendcs.odcsapi.beans.ApiAlgoParm;
 import org.opendcs.odcsapi.beans.ApiAlgorithm;
@@ -89,7 +88,7 @@ public final class AlgorithmResources extends OpenDcsResource
 					.map(AlgorithmResources::map)
 					.sorted(comparing(ApiAlgorithmRef::getAlgorithmId))
 					.collect(toList());
-			return Response.status(HttpServletResponse.SC_OK).entity(algorithmRefs)
+			return Response.ok().entity(algorithmRefs)
 					.build();
 		}
 	}
@@ -135,7 +134,7 @@ public final class AlgorithmResources extends OpenDcsResource
 		try(AlgorithmDAI dai = getLegacyTimeseriesDB().makeAlgorithmDAO())
 		{
 			ApiAlgorithm apiAlgorithm = map(dai.getAlgorithmById(DbKey.createDbKey(algoId)));
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.ok()
 					.entity(apiAlgorithm)
 					.build();
 		}
@@ -220,7 +219,7 @@ public final class AlgorithmResources extends OpenDcsResource
 			DbCompAlgorithm map = map(algo);
 			dai.writeAlgorithm(map);
 			algo.setAlgorithmId(map.getId().getValue());
-			return Response.status(HttpServletResponse.SC_CREATED)
+			return Response.status(Response.Status.CREATED)
 					.entity(map(map))
 					.build();
 		}
@@ -280,7 +279,7 @@ public final class AlgorithmResources extends OpenDcsResource
 		try(AlgorithmDAI dai = getLegacyTimeseriesDB().makeAlgorithmDAO())
 		{
 			dai.deleteAlgorithm(DbKey.createDbKey(algorithmId));
-			return Response.status(HttpServletResponse.SC_NO_CONTENT)
+			return Response.noContent()
 					.build();
 		}
 	}

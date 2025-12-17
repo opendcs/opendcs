@@ -18,9 +18,23 @@ package org.opendcs.odcsapi.res;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import decodes.sql.DbKey;
+import decodes.tsdb.CompAppInfo;
+import decodes.tsdb.ConstraintException;
+import decodes.tsdb.DbIoException;
+import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.TsdbCompLock;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -32,22 +46,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
-import decodes.sql.DbKey;
-import decodes.tsdb.CompAppInfo;
-import decodes.tsdb.ConstraintException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.TsdbCompLock;
 import opendcs.dai.LoadingAppDAI;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.opendcs.odcsapi.beans.ApiAppRef;
 import org.opendcs.odcsapi.beans.ApiAppStatus;
 import org.opendcs.odcsapi.beans.ApiLoadingApp;
@@ -91,7 +90,7 @@ public final class AppResources extends OpenDcsResource
 					.stream()
 					.map(AppResources::map)
 					.collect(Collectors.toList());
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.ok()
 					.entity(ret).build();
 		}
 		catch(DbIoException ex)
@@ -139,7 +138,7 @@ public final class AppResources extends OpenDcsResource
 		}
 		try (LoadingAppDAI dai = getLegacyDatabase().makeLoadingAppDAO())
 		{
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.ok()
 					.entity(mapLoading(dai.getComputationApp(DbKey.createDbKey(appId)))).build();
 		}
 		catch (NoSuchObjectException ex)
@@ -190,7 +189,7 @@ public final class AppResources extends OpenDcsResource
 		{
 			CompAppInfo compApp = map(app);
 			dai.writeComputationApp(compApp);
-			return Response.status(HttpServletResponse.SC_CREATED)
+			return Response.status(Response.Status.CREATED)
 					.entity(map(compApp))
 					.build();
 		}
@@ -261,7 +260,7 @@ public final class AppResources extends OpenDcsResource
 				throw new DbException(String.format(NO_APP_FOUND, appId));
 			}
 			dai.deleteComputationApp(app);
-			return Response.status(HttpServletResponse.SC_NO_CONTENT)
+			return Response.noContent()
 					.entity("appId with ID " + appId + " deleted").build();
 		}
 		catch (NoSuchObjectException ex)
@@ -450,7 +449,7 @@ public final class AppResources extends OpenDcsResource
 			{
 				ret.add(map(dai, lock));
 			}
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.ok()
 					.entity(ret).build();
 		}
 		catch (DbIoException ex)

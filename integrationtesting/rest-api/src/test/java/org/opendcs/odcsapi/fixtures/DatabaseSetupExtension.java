@@ -22,9 +22,9 @@ import java.sql.SQLException;
 import java.util.Objects;
 
 import decodes.util.DecodesSettings;
-import jakarta.servlet.http.HttpServletResponse;
 
 import io.restassured.RestAssured;
+import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -117,7 +117,7 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 						.delete("/logout")
 						.then()
 						.assertThat()
-						.statusCode(Matchers.is(HttpServletResponse.SC_NO_CONTENT));
+						.statusCode(Matchers.is(Response.Status.NO_CONTENT.getStatusCode()));
 				log.debug("Server is up!");
 				break;
 			}

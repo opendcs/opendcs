@@ -15,11 +15,10 @@
 
 package org.opendcs.odcsapi.sec.basicauth;
 
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.core.MediaType;
-
 import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.session.SessionFilter;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -57,7 +56,7 @@ final class FormAuthIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_UNAUTHORIZED))
+			.statusCode(is(Response.Status.UNAUTHORIZED.getStatusCode()))
 		;
 		Credentials credentials = new Credentials();
 		credentials.setUsername(System.getProperty("DB_USERNAME"));
@@ -75,7 +74,7 @@ final class FormAuthIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.ok()))
 			.body("message", equalTo("Authentication Successful."))
 		;
 
@@ -90,7 +89,7 @@ final class FormAuthIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.ok()))
 		;
 
 	}

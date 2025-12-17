@@ -19,8 +19,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
+import decodes.db.DataSource;
+import decodes.db.DataSourceList;
+import decodes.db.DatabaseException;
+import decodes.db.DatabaseIO;
+import decodes.db.ValueNotFoundException;
+import decodes.sql.DbKey;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.annotation.security.RolesAllowed;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -32,22 +45,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-
-import decodes.db.DataSource;
-import decodes.db.DataSourceList;
-import decodes.db.DatabaseException;
-import decodes.db.DatabaseIO;
-import decodes.db.ValueNotFoundException;
-import decodes.sql.DbKey;
 import org.opendcs.odcsapi.beans.ApiDataSource;
 import org.opendcs.odcsapi.beans.ApiDataSourceGroupMember;
 import org.opendcs.odcsapi.beans.ApiDataSourceRef;
@@ -93,7 +90,7 @@ public class DataSourceResources extends OpenDcsResource
 		{
 			DataSourceList dsl = new DataSourceList();
 			dbIo.readDataSourceList(dsl);
-			return Response.status(HttpServletResponse.SC_OK).entity(map(dsl)).build();
+			return Response.ok().entity(map(dsl)).build();
 		}
 		catch (DatabaseException ex)
 		{
@@ -175,7 +172,7 @@ public class DataSourceResources extends OpenDcsResource
 				throw new DatabaseItemNotFoundException(notFound + dataSourceId + ".");
 			}
 			ApiDataSource ret = map(ds);
-			return Response.status(HttpServletResponse.SC_OK).entity(ret).build();
+			return Response.ok().entity(ret).build();
 		}
 		catch (ValueNotFoundException ex)
 		{
@@ -290,7 +287,7 @@ public class DataSourceResources extends OpenDcsResource
 		{
 			DataSource source = map(datasource);
 			dbIo.writeDataSource(source);
-			return Response.status(HttpServletResponse.SC_CREATED)
+			return Response.status(Response.Status.CREATED)
 					.entity(map(source))
 					.build();
 		}
@@ -384,14 +381,14 @@ public class DataSourceResources extends OpenDcsResource
 
 			if (ds.numUsedBy > 0)
 			{
-				return Response.status(HttpServletResponse.SC_METHOD_NOT_ALLOWED)
+				return Response.status(Response.Status.METHOD_NOT_ALLOWED)
 						.entity(" Cannot delete datasource with ID " + datasourceId
 								+ " because it is used by the following number of routing specs: "
 								+ ds.numUsedBy).build();
 			}
 
 			dbIo.deleteDataSource(ds);
-			return Response.status(HttpServletResponse.SC_NO_CONTENT)
+			return Response.noContent()
 					.entity("Datasource with ID " + datasourceId + " deleted").build();
 		}
 		catch (DatabaseException ex)

@@ -17,7 +17,6 @@ package org.opendcs.odcsapi.opendcs_dep;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import jakarta.servlet.http.HttpServletResponse;
 
 import decodes.consumer.StringBufferConsumer;
 import decodes.cwms.rating.CwmsRatingSingleIndep;
@@ -30,6 +29,7 @@ import decodes.dbeditor.RoutingSpecEditPanel;
 import decodes.tsdb.algo.PythonAlgorithm;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
+import jakarta.ws.rs.core.Response;
 import org.opendcs.odcsapi.beans.ApiPropSpec;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.slf4j.Logger;
@@ -340,13 +340,13 @@ public final class PropSpecHelper
 			}
 			if(propertiesOwner == null)
 			{
-				throw new WebAppException(HttpServletResponse.SC_CONFLICT, "Cannot get property specs for '" + className + "'");
+				throw new WebAppException(Response.Status.CONFLICT.getStatusCode(), "Cannot get property specs for '" + className + "'");
 			}
 			return propertiesOwner.getSupportedProps();
 		}
 		catch (RuntimeException | InstantiationException | IllegalAccessException | InvocationTargetException | ClassNotFoundException ex)
 		{
-			throw new WebAppException(HttpServletResponse.SC_CONFLICT, "Cannot get property specs for '" + className + "'", ex);
+			throw new WebAppException(Response.Status.CONFLICT.getStatusCode(), "Cannot get property specs for '" + className + "'", ex);
 		}
 	}
 }

@@ -15,7 +15,7 @@
 
 package org.opendcs.odcsapi.errorhandling;
 
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.core.Response;
 
 public final class DatabaseItemNotFoundException extends WebAppException
 {
@@ -24,20 +24,20 @@ public final class DatabaseItemNotFoundException extends WebAppException
 
 	public DatabaseItemNotFoundException(String errMessage)
 	{
-		super(HttpServletResponse.SC_NOT_FOUND, errMessage);
+		super(Response.Status.NOT_FOUND.getStatusCode(), errMessage);
 		this.errMessage = errMessage;
 	}
 
 	public DatabaseItemNotFoundException(String errMessage, Throwable cause)
 	{
-		super(HttpServletResponse.SC_NOT_FOUND, errMessage, cause);
+		super(Response.Status.NOT_FOUND.getStatusCode(), errMessage, cause);
 		this.errMessage = errMessage;
 	}
 
 	@Override
 	public int getStatus()
 	{
-		return HttpServletResponse.SC_NOT_FOUND;
+		return Response.Status.NOT_FOUND.getStatusCode();
 	}
 
 	@Override

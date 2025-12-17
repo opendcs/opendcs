@@ -23,8 +23,23 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
+import decodes.db.DatabaseException;
+import decodes.db.Site;
+import decodes.db.SiteList;
+import decodes.db.SiteName;
+import decodes.sql.DbKey;
+import decodes.tsdb.DbIoException;
+import decodes.tsdb.NoSuchObjectException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.annotation.security.RolesAllowed;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -36,23 +51,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-
-import decodes.db.DatabaseException;
-import decodes.db.Site;
-import decodes.db.SiteList;
-import decodes.db.SiteName;
-import decodes.sql.DbKey;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.NoSuchObjectException;
 import opendcs.dai.PropertiesDAI;
 import opendcs.dai.SiteDAI;
 import org.opendcs.odcsapi.beans.ApiSite;
@@ -94,7 +92,7 @@ public final class SiteResources extends OpenDcsResource
 			SiteList sites = new SiteList();
 			dai.read(sites);
 			List<ApiSiteRef> siteRefs = map(sites);
-			return Response.status(HttpServletResponse.SC_OK).entity(siteRefs).build();
+			return Response.ok().entity(siteRefs).build();
 		}
 		catch (DbIoException ex)
 		{
@@ -169,7 +167,7 @@ public final class SiteResources extends OpenDcsResource
 			Site returnedSite = dai.getSiteById(siteKey);
 			Properties props = new Properties();
 			propsDai.readProperties("SITE_PROPERTY", "SITE_ID", siteKey, props);
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.ok()
 					.entity(map(returnedSite, props)).build();
 		}
 		catch (NoSuchObjectException ex)
@@ -270,7 +268,7 @@ public final class SiteResources extends OpenDcsResource
 			DbKey siteKey = dbSite.getId();
 			propsDai.writeProperties("SITE_PROPERTY", "SITE_ID", siteKey, site.getProperties());
 			site.setSiteId(siteKey.getValue());
-			return Response.status(HttpServletResponse.SC_CREATED)
+			return Response.status(Response.Status.CREATED)
 					.entity(site).build();
 		}
 		catch(DatabaseException | DbIoException ex)
@@ -343,7 +341,7 @@ public final class SiteResources extends OpenDcsResource
 				throw new MissingParameterException("Missing required siteid parameter.");
 			}
 			dai.deleteSite(DbKey.createDbKey(siteId));
-			return Response.status(HttpServletResponse.SC_NO_CONTENT)
+			return Response.noContent()
 					.entity("ID " + siteId + " deleted").build();
 		}
 		catch(DbIoException | WebAppException ex)

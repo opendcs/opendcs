@@ -15,12 +15,11 @@
 
 package org.opendcs.odcsapi.res.it;
 
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.core.MediaType;
 
 import io.restassured.filter.log.LogDetail;
-import io.restassured.filter.session.SessionFilter;
-import org.junit.jupiter.api.BeforeEach;import org.junit.jupiter.api.Tag;
+import jakarta.ws.rs.core.Response;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.opendcs.odcsapi.beans.ApiAlgorithm;
 
@@ -51,7 +50,7 @@ final class AlgorithmResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 				.body("", hasItem(getJsonPathFromResource("algorithm_ref_add_to_previous.json").getMap("")))
 		;
 	}
@@ -77,7 +76,7 @@ final class AlgorithmResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 			.body()
 			.as(ApiAlgorithm.class)
@@ -96,7 +95,7 @@ final class AlgorithmResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 		;
 
 		//Assert algorithm can be deleted
@@ -112,7 +111,7 @@ final class AlgorithmResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		//Assert algorithm no longer exists
@@ -128,7 +127,7 @@ final class AlgorithmResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
 		;
 	}
 }

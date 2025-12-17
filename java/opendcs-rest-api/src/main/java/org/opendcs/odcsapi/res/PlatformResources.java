@@ -23,31 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
-import java.util.stream.Collectors;
-import jakarta.annotation.security.RolesAllowed;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.media.Content;
 
 import decodes.db.DatabaseException;
 import decodes.db.DatabaseIO;
@@ -63,6 +38,26 @@ import decodes.db.TransportMedium;
 import decodes.db.ValueNotFoundException;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import org.opendcs.odcsapi.beans.ApiPlatform;
@@ -128,7 +123,7 @@ public final class PlatformResources extends OpenDcsResource
 			{
 				ret.put(ps.getName(), ps);
 			}
-			return Response.status(HttpServletResponse.SC_OK).entity(ret).build();
+			return Response.ok().entity(ret).build();
 		}
 		catch (DatabaseException ex)
 		{
@@ -227,7 +222,7 @@ public final class PlatformResources extends OpenDcsResource
 			Platform platform = new Platform();
 			platform.setId(DbKey.createDbKey(platformId));
 			dbIo.readPlatform(platform);
-			return Response.status(HttpServletResponse.SC_OK).entity(map(platform)).build();
+			return Response.ok().entity(map(platform)).build();
 		}
 		catch(ValueNotFoundException ex)
 		{
@@ -383,7 +378,7 @@ public final class PlatformResources extends OpenDcsResource
 		{
 			Platform plat = map(platform);
 			dbIo.writePlatform(plat);
-			return Response.status(HttpServletResponse.SC_CREATED)
+			return Response.status(Response.Status.CREATED)
 					.entity(map(plat))
 					.build();
 		}
@@ -573,7 +568,7 @@ public final class PlatformResources extends OpenDcsResource
 			Platform plat = new Platform();
 			plat.setId(DbKey.createDbKey(platformId));
 			dbIo.deletePlatform(plat);
-			return Response.status(HttpServletResponse.SC_NO_CONTENT)
+			return Response.noContent()
 					.entity("Platform with ID " + platformId + " deleted")
 					.build();
 		}
@@ -645,7 +640,7 @@ public final class PlatformResources extends OpenDcsResource
 			{
 				statuses = dao.readPlatformStatusList(null);
 			}
-			return Response.status(HttpServletResponse.SC_OK).entity(statusListMap(dbIo, statuses)).build();
+			return Response.ok().entity(statusListMap(dbIo, statuses)).build();
 		}
 		catch (DbIoException | DatabaseException ex)
 		{

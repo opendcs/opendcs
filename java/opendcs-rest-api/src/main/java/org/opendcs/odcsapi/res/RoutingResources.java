@@ -27,21 +27,6 @@ import java.util.Properties;
 import java.util.TimeZone;
 import java.util.Vector;
 import java.util.stream.Collectors;
-import jakarta.annotation.security.RolesAllowed;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 
 import decodes.db.DataSource;
 import decodes.db.DatabaseException;
@@ -65,6 +50,20 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import opendcs.dai.DacqEventDAI;
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.ScheduleEntryDAI;
@@ -120,7 +119,7 @@ public final class RoutingResources extends OpenDcsResource
 		{
 			RoutingSpecList rsList = new RoutingSpecList();
 			dbIo.readRoutingSpecList(rsList);
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.ok()
 					.entity(map(rsList)).build();
 		}
 		catch(DatabaseException ex)
@@ -193,7 +192,7 @@ public final class RoutingResources extends OpenDcsResource
 			RoutingSpec spec = new RoutingSpec();
 			spec.setId(DbKey.createDbKey(routingId));
 			dbIo.readRoutingSpec(spec);
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.ok()
 					.entity(map(spec)).build();
 		}
 		catch(DatabaseException ex)
@@ -383,7 +382,7 @@ public final class RoutingResources extends OpenDcsResource
 		{
 			RoutingSpec spec = map(routing);
 			dbIo.writeRoutingSpec(spec);
-			return Response.status(HttpServletResponse.SC_CREATED).entity(map(spec)).build();
+			return Response.status(Response.Status.CREATED).entity(map(spec)).build();
 		}
 		catch(DatabaseException ex)
 		{
@@ -566,7 +565,7 @@ public final class RoutingResources extends OpenDcsResource
 			RoutingSpec spec = new RoutingSpec();
 			spec.setId(DbKey.createDbKey(routingId));
 			dbIo.deleteRoutingSpec(spec);
-			return Response.status(HttpServletResponse.SC_NO_CONTENT)
+			return Response.noContent()
 					.entity(String.format("RoutingSpec with ID: %d deleted", routingId)).build();
 		}
 		catch(DatabaseException ex)
@@ -617,7 +616,7 @@ public final class RoutingResources extends OpenDcsResource
 		try(ScheduleEntryDAI dai = getLegacyDatabase().makeScheduleEntryDAO())
 		{
 			List<ScheduleEntry> entries = dai.listScheduleEntries(null);
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.ok()
 					.entity(entryMap(entries)).build();
 		}
 		catch(DbIoException ex)
@@ -686,7 +685,7 @@ public final class RoutingResources extends OpenDcsResource
 			{
 				throw new DatabaseItemNotFoundException("ScheduleEntry with ID " + scheduleId + " not found");
 			}
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.ok()
 					.entity(map(entry))
 					.build();
 		}
@@ -734,7 +733,7 @@ public final class RoutingResources extends OpenDcsResource
 		{
 			ScheduleEntry entry = map(schedule);
 			dai.writeScheduleEntry(entry);
-			return Response.status(HttpServletResponse.SC_CREATED)
+			return Response.status(Response.Status.CREATED)
 					.entity(map(entry))
 					.build();
 		}
@@ -838,7 +837,7 @@ public final class RoutingResources extends OpenDcsResource
 		{
 			ScheduleEntry entry = new ScheduleEntry(DbKey.createDbKey(scheduleId));
 			dai.deleteScheduleEntry(entry);
-			return Response.status(HttpServletResponse.SC_NO_CONTENT)
+			return Response.noContent()
 					.entity("Schedule entry with ID " + scheduleId + " deleted").build();
 		}
 		catch(DbIoException ex)
@@ -918,7 +917,7 @@ public final class RoutingResources extends OpenDcsResource
 		DatabaseIO dbIo = getLegacyDatabase();
 		try
 		{
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.ok()
 					.entity(map(dbIo.readRoutingSpecStatus())).build();
 		}
 		catch(DatabaseException ex)
@@ -1031,7 +1030,7 @@ public final class RoutingResources extends OpenDcsResource
 		try(ScheduleEntryDAI dai = getLegacyDatabase().makeScheduleEntryDAO())
 		{
 			ScheduleEntry entry = new ScheduleEntry(DbKey.createDbKey(scheduleEntryId));
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.ok()
 					.entity(statusMap(dai.readScheduleStatus(entry))).build();
 		}
 		catch(DbIoException ex)
@@ -1184,7 +1183,7 @@ public final class RoutingResources extends OpenDcsResource
 			Long timeInMillis = (Long) backlogMap.get("timeInMillis");
 			dai.readEvents(events, DbKey.createDbKey(appId), DbKey.createDbKey(routingExecId),
 					DbKey.createDbKey(platformId), backLogValid, dacqEventId, timeInMillis);
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.ok()
 					.entity(events.stream().map(RoutingResources::map).collect(Collectors.toList())).build();
 		}
 		catch(DbIoException ex)

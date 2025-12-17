@@ -19,18 +19,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Properties;
-import jakarta.annotation.security.RolesAllowed;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TimeSeriesDb;
@@ -43,6 +31,17 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.odcsapi.beans.ApiDecodedMessage;
 import org.opendcs.odcsapi.beans.ApiPropSpec;
@@ -99,7 +98,7 @@ public final class OdcsapiResource extends OpenDcsResource
 				String key = (String) keyObj;
 				props.setProperty(key, tsdb.getProperty(key));
 			}
-			return Response.status(HttpServletResponse.SC_OK).entity(props).build();
+			return Response.ok().entity(props).build();
 		}
 		catch(SQLException ex)
 		{
@@ -155,7 +154,7 @@ public final class OdcsapiResource extends OpenDcsResource
 		{
 			throw new DbException("Error writing timeseries properties", ex);
 		}
-		return Response.status(HttpServletResponse.SC_OK).entity(props).build();
+		return Response.ok().entity(props).build();
 	}
 
 	@GET
@@ -226,7 +225,7 @@ public final class OdcsapiResource extends OpenDcsResource
 		{
 			throw new MissingParameterException("Missing required 'class' argument.");
 		}
-		return Response.status(HttpServletResponse.SC_OK).entity(PropSpecHelper.getPropSpecs(className)).build();
+		return Response.ok().entity(PropSpecHelper.getPropSpecs(className)).build();
 	}
 
 	@POST
@@ -274,7 +273,7 @@ public final class OdcsapiResource extends OpenDcsResource
 		}
 		OpenDcsDatabase db = createDb();
 
-		return Response.status(HttpServletResponse.SC_OK).entity(TestDecoder.decodeMessage(request.getRawmsg(),
+		return Response.ok().entity(TestDecoder.decodeMessage(request.getRawmsg(),
 				request.getConfig(), scriptName, db)).build();
 	}
 }

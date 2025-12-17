@@ -32,7 +32,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
@@ -152,7 +151,8 @@ public final class BasicAuthResource extends OpenDcsResource
 		}
 		HttpSession session = httpServletRequest.getSession(true);
 		session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, principal);
-		return Response.status(HttpServletResponse.SC_OK).entity(new Status("Authentication Successful."))
+		return Response.ok()
+				.entity(new Status("Authentication Successful."))
 				.build();
 	}
 
@@ -253,8 +253,7 @@ public final class BasicAuthResource extends OpenDcsResource
 		}
 		catch(SQLException ex)
 		{
-			throw new WebAppException(HttpServletResponse.SC_FORBIDDEN,
-					"Unable to authorize user.", ex);
+			throw new WebAppException(Response.Status.FORBIDDEN.getStatusCode(), "Unable to authorize user.", ex);
 		}
 	}
 

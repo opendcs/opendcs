@@ -21,8 +21,6 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Base64;
 import java.util.EnumSet;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.core.MediaType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import decodes.db.DatabaseException;
@@ -40,6 +38,8 @@ import io.restassured.filter.session.SessionFilter;
 import io.restassured.http.Cookie;
 import io.restassured.path.json.JsonPath;
 import io.restassured.specification.RequestSpecification;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -56,7 +56,6 @@ import org.opendcs.odcsapi.sec.basicauth.Credentials;
 
 import static io.restassured.RestAssured.given;
 import static java.util.stream.Collectors.joining;
-import static org.hamcrest.Matchers.is;
 import static org.opendcs.odcsapi.util.ApiConstants.ORGANIZATION_HEADER;
 
 
@@ -167,7 +166,7 @@ class BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 		;
 	}
 
@@ -186,7 +185,7 @@ class BaseIT
 			.then()
 				.log().ifValidationFails(LogDetail.ALL, true)
 			.assertThat()
-				.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+				.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 			;
 		}
 	}

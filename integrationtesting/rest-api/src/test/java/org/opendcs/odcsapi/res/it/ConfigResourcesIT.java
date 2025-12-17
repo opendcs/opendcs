@@ -15,21 +15,17 @@
 
 package org.opendcs.odcsapi.res.it;
 
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.core.MediaType;
-
 import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.session.SessionFilter;
 import io.restassured.path.json.JsonPath;
-import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
+import jakarta.ws.rs.core.MediaType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
 
 final class ConfigResourcesIT extends BaseIT
 {
@@ -46,7 +42,7 @@ final class ConfigResourcesIT extends BaseIT
 
 		String configJson = getJsonFromResource("config_input_data.json");
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
@@ -59,7 +55,7 @@ final class ConfigResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -82,7 +78,7 @@ final class ConfigResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		logout(sessionFilter);
@@ -105,7 +101,7 @@ final class ConfigResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.body("[0].name", equalTo(expected.getString("[0].name")))
 			.body("[0].description", equalTo(expected.getString("[0].description")))
 			.body("[0].numPlatforms", equalTo(expected.getInt("[0].numPlatforms")))
@@ -130,7 +126,7 @@ final class ConfigResourcesIT extends BaseIT
 			.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.body("name", equalTo(expected.getString("name")))
 			.body("description", equalTo(expected.getString("description")))
 			.body("numPlatforms", equalTo(expected.get("numPlatforms")))
@@ -163,7 +159,7 @@ final class ConfigResourcesIT extends BaseIT
 	{
 		String configJson = getJsonFromResource("config_post_delete_input_data.json");
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
@@ -176,7 +172,7 @@ final class ConfigResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -198,7 +194,7 @@ final class ConfigResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.body("name", equalTo(expected.getString("name")))
 			.body("description", equalTo(expected.getString("description")))
 			.body("numPlatforms", equalTo(expected.get("numPlatforms")))
@@ -237,7 +233,7 @@ final class ConfigResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		// Retrieve and assert that the config is no longer there
@@ -254,6 +250,6 @@ final class ConfigResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()));
 	}
 }

@@ -18,29 +18,6 @@ package org.opendcs.odcsapi.res;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import jakarta.annotation.security.RolesAllowed;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.tags.Tag;
-
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 
 import decodes.db.Constants;
 import decodes.db.DataTypeSet;
@@ -57,6 +34,26 @@ import decodes.db.UnitConverterSet;
 import decodes.db.UsgsStdConverter;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import opendcs.dai.DataTypeDAI;
 import org.opendcs.odcsapi.beans.ApiDataType;
 import org.opendcs.odcsapi.beans.ApiUnit;
@@ -111,7 +108,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 		{
 			DataTypeSet set = new DataTypeSet();
 			dai.readDataTypeSet(set, std);
-			return Response.status(HttpServletResponse.SC_OK).entity(map(set)).build();
+			return Response.ok().entity(map(set)).build();
 		}
 		catch(DbIoException ex)
 		{
@@ -178,7 +175,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 		{
 			EngineeringUnitList euList = new EngineeringUnitList();
 			dbIo.readEngineeringUnitList(euList);
-			return Response.status(HttpServletResponse.SC_OK).entity(map(euList)).build();
+			return Response.ok().entity(map(euList)).build();
 		}
 		catch(DatabaseException ex)
 		{
@@ -255,7 +252,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 			}
 			euList.add(unit);
 			dbIo.writeEngineeringUnitList(euList);
-			return Response.status(HttpServletResponse.SC_CREATED)
+			return Response.status(Response.Status.CREATED)
 					.entity(map(euList)).build();
 		}
 		catch(DatabaseException ex)
@@ -299,7 +296,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 		{
 			EngineeringUnit unit = new EngineeringUnit(abbr, "", "", "");
 			dbIo.deleteEngineeringUnit(unit);
-			return Response.status(HttpServletResponse.SC_NO_CONTENT).entity("EU with abbr " + abbr + " deleted").build();
+			return Response.noContent().entity("EU with abbr " + abbr + " deleted").build();
 		}
 		catch(DatabaseException ex)
 		{
@@ -342,7 +339,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 		{
 			UnitConverterSet unitConverterSet = new UnitConverterSet();
 			dbIo.readUnitConverterSet(unitConverterSet);
-			return Response.status(HttpServletResponse.SC_OK).entity(map(unitConverterSet)).build();
+			return Response.ok().entity(map(unitConverterSet)).build();
 		}
 		catch(DatabaseException ex)
 		{
@@ -415,7 +412,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 				unitConverterDb.forceSetId(DbKey.NullKey);
 			}
 			dbIo.insertUnitConverter(unitConverterDb);
-			return Response.status(HttpServletResponse.SC_CREATED).entity(map(unitConverterDb)).build();
+			return Response.status(Response.Status.CREATED).entity(map(unitConverterDb)).build();
 		}
 		catch(DatabaseException ex)
 		{
@@ -540,7 +537,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 		try
 		{
 			dbIo.deleteUnitConverter(id);
-			return Response.status(HttpServletResponse.SC_NO_CONTENT).entity("EUConv with id=" + id + " deleted").build();
+			return Response.noContent().entity("EUConv with id=" + id + " deleted").build();
 		}
 		catch(DatabaseException ex)
 		{
