@@ -51,8 +51,6 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -60,8 +58,6 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import opendcs.dai.DacqEventDAI;
@@ -90,10 +86,6 @@ import static ilex.util.TextUtil.str2boolean;
 public final class RoutingResources extends OpenDcsResource
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
-	private static final String LAST_DACQ_ATTRIBUTE = "last-dacq-event-id";
-
-	@Context
-	private HttpServletRequest request;
 
 	@GET
 	@Path("routingrefs")
@@ -1097,10 +1089,9 @@ public final class RoutingResources extends OpenDcsResource
 					+ "execution of a routing spec. (The 'GET routingexecstatus' method will return a list of "
 					+ "executions, each with a unique ID.)\n  \n*  **platformid** (*long integer*): only return "
 					+ "events generated during the processing of a specific platform.\n  \n"
-					+ "*  **backlog** (*string*): either the word 'last' or one of the valid interval names "
+					+ "*  **backlog** (*string*): one of the valid interval names "
 					+ "returned in GET intervals (see section 3.4.1). Only events generated since the specified "
-					+ "interval are returned. The word 'last' means only return events generated since the last "
-					+ "'GET dacqevents' call within this session. It can be used to approximate a real-time stream. \n  \n"
+					+ "interval are returned. \n  \n"
 					+ "The returned data looks like this:\n  \n```\n  [\n    {\n      \"eventId\": 181646,\n      "
 					+ "\"routingExecId\": 607,\n      \"platformId\": null,\n      "
 					+ "\"eventTime\": \"2023-06-08T19:21:15.255Z[UTC]\",\n      "
@@ -1137,10 +1128,9 @@ public final class RoutingResources extends OpenDcsResource
 			@Parameter(description = "Only return events generated during the processing of a specific platform.",
 					example = "45", schema = @Schema(implementation = Long.class))
 			@QueryParam("platformid") Long platformId,
-			@Parameter(description = "Either the word 'last' or one of the valid interval names returned in " +
+			@Parameter(description = "One of the valid interval names returned in " +
 					"GET intervals (see section 3.4.1). Only events generated since the specified interval " +
-					"are returned. The word 'last' means only return events generated since the last " +
-					"'GET dacqevents' call within this session. It can be used to approximate a real-time stream.",
+					"are returned.",
 					example = "15Minutes", schema = @Schema(implementation = String.class))
 			@QueryParam("backlog") String backlog)
 			throws DbException, MissingParameterException
@@ -1154,7 +1144,7 @@ public final class RoutingResources extends OpenDcsResource
 			}
 			if(routingExecId == null)
 			{
-				if(parameter.length() > 0)
+				if(!parameter.isEmpty())
 				{
 					parameter.append(", ");
 				}
@@ -1162,7 +1152,7 @@ public final class RoutingResources extends OpenDcsResource
 			}
 			if(platformId == null)
 			{
-				if(parameter.length() > 0)
+				if(!parameter.isEmpty())
 				{
 					parameter.append(", ");
 				}
@@ -1173,9 +1163,8 @@ public final class RoutingResources extends OpenDcsResource
 
 		try(DacqEventDAI dai = getLegacyTimeseriesDB().makeDacqEventDAO())
 		{
-			HttpSession session = request.getSession(true);
 			ArrayList<DacqEvent> events = new ArrayList<>();
-			Map<String, Object> backlogMap = handleBacklog(backlog, session);
+			Map<String, Object> backlogMap = handleBacklog(backlog);
 			boolean backLogValid = (boolean) backlogMap.get("backLogValid");
 			Long dacqEventId = (Long) backlogMap.get("dacqEventId");
 			Long timeInMillis = (Long) backlogMap.get("timeInMillis");
@@ -1190,45 +1179,33 @@ public final class RoutingResources extends OpenDcsResource
 		}
 	}
 
-	Map<String, Object> handleBacklog(String backlog, HttpSession session) throws DbIoException
+	Map<String, Object> handleBacklog(String backlog) throws DbIoException
 	{
 		Map<String, Object> backlogMap = new HashMap<>();
-		Object lastDacqEventId = session.getAttribute(LAST_DACQ_ATTRIBUTE);
 		boolean backLogValid = false;
 		Long dacqEventId = null;
 		Long timeInMillis = null;
 		if(backlog != null && !backlog.trim().isEmpty())
 		{
 			backLogValid = true;
-			if(backlog.equalsIgnoreCase("last"))
+			try(IntervalDAI intDai = getLegacyTimeseriesDB().makeIntervalDAO())
 			{
-				if(lastDacqEventId != null)
+				intDai.loadAllIntervals();
+				String[] intervalCodes = intDai.getValidIntervalCodes();
+				for(String intervalCode : intervalCodes)
 				{
-					dacqEventId = (Long) lastDacqEventId;
-				}
-			}
-			else
-			{
-				try(IntervalDAI intDai = getLegacyTimeseriesDB().makeIntervalDAO())
-				{
-					intDai.loadAllIntervals();
-					String[] intervalCodes = intDai.getValidIntervalCodes();
-					for(String intervalCode : intervalCodes)
+					Interval intV = IntervalCodes.getInterval(intervalCode);
+					if(intV != null && backlog.equalsIgnoreCase(intV.getName()))
 					{
-						Interval intV = IntervalCodes.getInterval(intervalCode);
-						if(intV != null && backlog.equalsIgnoreCase(intV.getName()))
+						Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+						cal.setTimeInMillis(System.currentTimeMillis());
+						int calConstant = intV.getCalConstant();
+						if(calConstant != -1)
 						{
-							Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-							cal.setTimeInMillis(System.currentTimeMillis());
-							int calConstant = intV.getCalConstant();
-							if(calConstant != -1)
-							{
-								cal.add(calConstant, -intV.getCalMultiplier());
-								timeInMillis = cal.getTimeInMillis();
-								session.removeAttribute(LAST_DACQ_ATTRIBUTE);
-							}
-							break;
+							cal.add(calConstant, -intV.getCalMultiplier());
+							timeInMillis = cal.getTimeInMillis();
 						}
+						break;
 					}
 				}
 			}
