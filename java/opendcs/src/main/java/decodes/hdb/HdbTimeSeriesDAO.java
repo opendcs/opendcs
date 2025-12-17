@@ -1183,7 +1183,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 
 
 	@Override
-	public DataCollection getNewData(DbKey applicationId)
+	public DataCollection getNewData(DbKey applicationId, int maxTake)
 		throws DbIoException
 	{
 		// Since DAO is recreated every compApp loop, removed cache load
@@ -1197,7 +1197,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		DataCollection dataCollection = new DataCollection();
 
 		q = "select " + attrList + " from CP_COMP_TASKLIST "
-		  + "where LOADING_APPLICATION_ID = " + applicationId + " and rownum < 10000 ";
+		  + " where LOADING_APPLICATION_ID = " + applicationId + " and rownum < " + maxTake;
 
 		if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_4)
 			q = q + " and (FAIL_TIME is null OR "

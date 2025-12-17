@@ -252,10 +252,11 @@ public interface TimeSeriesDAI extends DaiBase, OpenDcsDao
 	 * New values are marked with the DB_ADDED flag. Deleted values 
 	 * marked with the DB_DELETED flag.
 	 * @param applicationId used to lookup &amp; save the since time.
+	 * @param maxTake maximum number of records to acquire at one time.
 	 * @return DataCollection with newly added or deleted values.
 	 * @throws DbIoException on Database IO error.
 	 */
-	public DataCollection getNewData( DbKey applicationId )
+	public DataCollection getNewData( DbKey applicationId, int maxTake )
 		throws DbIoException;
 
 }
