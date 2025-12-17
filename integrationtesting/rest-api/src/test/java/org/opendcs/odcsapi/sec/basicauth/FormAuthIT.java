@@ -89,7 +89,7 @@ final class FormAuthIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(Response.ok()))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 		;
 
 	}
