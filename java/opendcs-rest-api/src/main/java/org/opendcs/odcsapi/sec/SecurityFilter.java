@@ -47,11 +47,7 @@ public final class SecurityFilter implements ContainerRequestFilter
 	@Context
 	private ResourceInfo resourceInfo;
 	@Context
-	private HttpHeaders httpHeaders;
-	@Context
 	private HttpServletRequest httpServletRequest;
-	@Context
-	private ServletContext servletContext;
 
 	@Override
 	public void filter(ContainerRequestContext requestContext)

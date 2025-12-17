@@ -94,8 +94,6 @@ public final class RoutingResources extends OpenDcsResource
 
 	@Context
 	private HttpServletRequest request;
-	@Context
-	private HttpHeaders httpHeaders;
 
 	@GET
 	@Path("routingrefs")
