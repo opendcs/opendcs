@@ -24,7 +24,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.UUID;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.core.MediaType;
 
 import com.nimbusds.jose.JOSEObjectType;
@@ -37,6 +36,7 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.session.SessionFilter;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -91,7 +91,7 @@ final class OpenIdAuthIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_UNAUTHORIZED))
+			.statusCode(is(Response.Status.UNAUTHORIZED.getStatusCode()))
 		;
 
 		//Check while passing in JWT
@@ -107,7 +107,7 @@ final class OpenIdAuthIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.ok()))
 		;
 
 		//Session should be cached even without JWT
@@ -122,7 +122,7 @@ final class OpenIdAuthIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.ok()))
 		;
 
 		//Logout and clear session
@@ -137,7 +137,7 @@ final class OpenIdAuthIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		//Session should now be cleared
@@ -152,7 +152,7 @@ final class OpenIdAuthIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_UNAUTHORIZED))
+			.statusCode(is(Response.Status.UNAUTHORIZED.getStatusCode()))
 		;
 	}
 

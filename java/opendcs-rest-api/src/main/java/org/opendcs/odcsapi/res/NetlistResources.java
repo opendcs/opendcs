@@ -15,6 +15,21 @@
 
 package org.opendcs.odcsapi.res;
 
+import java.io.LineNumberReader;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import decodes.db.DatabaseException;
+import decodes.db.DatabaseIO;
+import decodes.db.NetworkList;
+import decodes.db.NetworkListEntry;
+import decodes.db.NetworkListList;
+import decodes.db.RoutingSpec;
+import decodes.db.RoutingSpecList;
+import decodes.sql.DbKey;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -23,15 +38,8 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-
-import java.io.LineNumberReader;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -43,16 +51,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
-import decodes.db.DatabaseException;
-import decodes.db.DatabaseIO;
-import decodes.db.NetworkList;
-import decodes.db.NetworkListEntry;
-import decodes.db.NetworkListList;
-import decodes.db.RoutingSpec;
-import decodes.db.RoutingSpecList;
-import decodes.sql.DbKey;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.opendcs.odcsapi.beans.ApiNetList;
 import org.opendcs.odcsapi.beans.ApiNetListItem;
 import org.opendcs.odcsapi.beans.ApiNetlistRef;
@@ -114,7 +112,7 @@ public final class NetlistResources extends OpenDcsResource
 			{
 				dbIo.readNetworkListList(nlList, getSingleWord(tmtype).toLowerCase());
 			}
-			return Response.status(HttpServletResponse.SC_OK).entity(map(nlList)).build();
+			return Response.ok().entity(map(nlList)).build();
 		}
 		catch(DatabaseException ex)
 		{
@@ -189,7 +187,7 @@ public final class NetlistResources extends OpenDcsResource
 				throw new DatabaseItemNotFoundException("No such network list with id=" + netlistId + ".");
 			}
 			ApiNetList ret = map(nl);
-			return Response.status(HttpServletResponse.SC_OK).entity(ret).build();
+			return Response.ok().entity(ret).build();
 		}
 		catch(DatabaseException ex)
 		{
@@ -270,7 +268,7 @@ public final class NetlistResources extends OpenDcsResource
 		{
 			NetworkList nlList = map(netList);
 			dbIo.writeNetworkList(nlList);
-			return Response.status(HttpServletResponse.SC_CREATED).entity(map(nlList)).build();
+			return Response.status(Response.Status.CREATED).entity(map(nlList)).build();
 		}
 		catch(DatabaseException ex)
 		{
@@ -362,7 +360,7 @@ public final class NetlistResources extends OpenDcsResource
 
 			if (errmsg.length() > 0)
 			{
-				return Response.status(HttpServletResponse.SC_CONFLICT)
+				return Response.status(Response.Status.CONFLICT)
 						.entity(" Cannot delete network list with ID " + netlistId
 								+ " because it is used by the following routing specs: "
 								+ errmsg).build();
@@ -373,7 +371,7 @@ public final class NetlistResources extends OpenDcsResource
 				nl.setId(DbKey.createDbKey(netlistId));
 			}
 			dbIo.deleteNetworkList(nl);
-			return Response.status(HttpServletResponse.SC_NO_CONTENT).entity("ID " + netlistId + " deleted").build();
+			return Response.noContent().entity("ID " + netlistId + " deleted").build();
 		}
 		catch (DatabaseException ex)
 		{
@@ -435,10 +433,10 @@ public final class NetlistResources extends OpenDcsResource
 			String msg =
 					"NL File Parsing Failed on line " + lineNumber + ": " + ex
 							+ (ln == null ? "" : (" -- " + ln));
-			throw new WebAppException(HttpServletResponse.SC_NOT_ACCEPTABLE, msg, ex);
+			throw new WebAppException(Response.Status.NOT_ACCEPTABLE.getStatusCode(), msg, ex);
 		}
 
-		return Response.status(HttpServletResponse.SC_OK).entity(ret).build();
+		return Response.ok().entity(ret).build();
 	}
 
 	// Helper method to extract the first word from a string.

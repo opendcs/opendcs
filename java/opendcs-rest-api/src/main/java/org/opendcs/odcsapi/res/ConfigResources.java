@@ -21,40 +21,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
-import jakarta.annotation.security.RolesAllowed;
-
-import decodes.db.DataTypeSet;
-import decodes.db.FormatStatement;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 
 import decodes.db.ConfigSensor;
 import decodes.db.Constants;
 import decodes.db.DataType;
+import decodes.db.DataTypeSet;
 import decodes.db.DatabaseException;
 import decodes.db.DatabaseIO;
 import decodes.db.DecodesScript;
 import decodes.db.DecodesScriptException;
 import decodes.db.EngineeringUnit;
+import decodes.db.FormatStatement;
 import decodes.db.LinearConverter;
 import decodes.db.NullConverter;
 import decodes.db.PlatformConfig;
@@ -66,6 +43,26 @@ import decodes.db.UnitConverterDb;
 import decodes.db.UsgsStdConverter;
 import decodes.db.ValueNotFoundException;
 import decodes.sql.DbKey;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.opendcs.odcsapi.beans.ApiConfigRef;
 import org.opendcs.odcsapi.beans.ApiConfigScript;
 import org.opendcs.odcsapi.beans.ApiConfigScriptSensor;
@@ -122,7 +119,7 @@ public final class ConfigResources extends OpenDcsResource
 		{
 			PlatformConfigList configList = new PlatformConfigList();
 			dbIo.readConfigList(configList);
-			return Response.status(HttpServletResponse.SC_OK).entity(map(configList)).build();
+			return Response.ok().entity(map(configList)).build();
 		}
 		catch(DatabaseException ex)
 		{
@@ -188,7 +185,7 @@ public final class ConfigResources extends OpenDcsResource
 			PlatformConfig config = new PlatformConfig();
 			config.setId(DbKey.createDbKey(configId));
 			dbIo.readConfig(config);
-			return Response.status(HttpServletResponse.SC_OK).entity(map(config)).build();
+			return Response.ok().entity(map(config)).build();
 		}
 		catch (ValueNotFoundException ex)
 		{
@@ -344,7 +341,7 @@ public final class ConfigResources extends OpenDcsResource
 			dbIo.readDataTypeSet(dataTypeSet);
 			PlatformConfig pc = map(config, dataTypeSet);
 			dbIo.writeConfig(pc);
-			return Response.status(HttpServletResponse.SC_CREATED)
+			return Response.status(Response.Status.CREATED)
 					.entity(map(pc))
 					.build();
 		}
@@ -573,14 +570,14 @@ public final class ConfigResources extends OpenDcsResource
 
 			if (pc.numPlatformsUsing > 0)
 			{
-				return Response.status(HttpServletResponse.SC_METHOD_NOT_ALLOWED)
+				return Response.status(Response.Status.METHOD_NOT_ALLOWED)
 						.entity(" Cannot delete config with ID "
 								+ configId + " because it is used by one or more platforms.")
 						.build();
 			}
 
 			dbIo.deleteConfig(pc);
-			return Response.status(HttpServletResponse.SC_NO_CONTENT)
+			return Response.noContent()
 					.entity("Config with ID " + configId + " deleted")
 					.build();
 		}

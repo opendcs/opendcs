@@ -18,21 +18,18 @@ package org.opendcs.odcsapi.res.it;
 
 import java.util.List;
 import java.util.Map;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.core.MediaType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.filter.log.LogDetail;
-import io.restassured.filter.session.SessionFilter;
-import io.restassured.response.ExtractableResponse;
-import io.restassured.response.Response;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.opendcs.odcsapi.beans.ApiDataSource;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -53,7 +50,7 @@ final class DataSourceResourcesIT extends BaseIT
 		String dsJson = OBJECT_MAPPER.writeValueAsString(source);
 
 		// Create a new data source member
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
@@ -66,7 +63,7 @@ final class DataSourceResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -91,7 +88,7 @@ final class DataSourceResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -115,7 +112,7 @@ final class DataSourceResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		// Clean up the parent data source
@@ -132,7 +129,7 @@ final class DataSourceResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 	}
@@ -143,7 +140,7 @@ final class DataSourceResourcesIT extends BaseIT
 		Map<String, Object> expected = getJsonPathFromResource("datasource_get_refs_expected.json").getMap("");
 		Map<String, Object> memberExpected = getJsonPathFromResource("datasource_get_refs_member_expected.json").getMap("");
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
@@ -155,7 +152,7 @@ final class DataSourceResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract();
 
 		List<Map<String, Object>> actualList = response.body().jsonPath().getList("");
@@ -188,7 +185,7 @@ final class DataSourceResourcesIT extends BaseIT
 	{
 		Map<String, Object> expected = getJsonPathFromResource("datasource_insert_data.json").getMap("");
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
@@ -201,7 +198,7 @@ final class DataSourceResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -220,7 +217,7 @@ final class DataSourceResourcesIT extends BaseIT
 		String dsJson = OBJECT_MAPPER.writeValueAsString(dsGroupMem);
 
 		// Create a new data source member
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
@@ -233,7 +230,7 @@ final class DataSourceResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -257,7 +254,7 @@ final class DataSourceResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -280,7 +277,7 @@ final class DataSourceResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -305,7 +302,7 @@ final class DataSourceResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		// Attempt to retrieve the new data source and assert it is not found
@@ -322,7 +319,7 @@ final class DataSourceResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
 		;
 	}
 }

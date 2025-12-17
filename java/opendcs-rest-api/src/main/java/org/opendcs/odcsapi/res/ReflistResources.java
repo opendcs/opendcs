@@ -18,8 +18,26 @@ package org.opendcs.odcsapi.res;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
+import decodes.db.DatabaseException;
+import decodes.db.DatabaseIO;
+import decodes.db.DbEnum;
+import decodes.db.EnumList;
+import decodes.db.EnumValue;
+import decodes.db.ValueNotFoundException;
+import decodes.sql.DbKey;
+import decodes.tsdb.DbIoException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.StringToClassMapItem;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -31,26 +49,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.StringToClassMapItem;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.Parameter;
-
-import decodes.db.DatabaseException;
-import decodes.db.DatabaseIO;
-import decodes.db.DbEnum;
-import decodes.db.EnumList;
-import decodes.db.EnumValue;
-import decodes.db.ValueNotFoundException;
-import decodes.sql.DbKey;
-import decodes.tsdb.DbIoException;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import opendcs.dai.EnumDAI;
 import org.opendcs.odcsapi.beans.ApiRefList;
 import org.opendcs.odcsapi.beans.ApiRefListItem;
@@ -192,7 +190,7 @@ public final class ReflistResources extends OpenDcsResource
 				}
 			}
 
-			return Response.status(HttpServletResponse.SC_OK).entity(ret).build();
+			return Response.ok().entity(ret).build();
 		}
 		catch(DatabaseException ex)
 		{
@@ -242,7 +240,7 @@ public final class ReflistResources extends OpenDcsResource
 			DbEnum dbEnum = mapToEnum(reflist);
 			dai.writeEnum(dbEnum);
 
-			return Response.status(HttpServletResponse.SC_CREATED)
+			return Response.status(Response.Status.CREATED)
 					.entity(map(dbEnum))
 					.build();
 		}
@@ -330,7 +328,7 @@ public final class ReflistResources extends OpenDcsResource
 		try (EnumDAI dai = getLegacyTimeseriesDB().makeEnumDAO())
 		{
 			dai.deleteEnumList(DbKey.createDbKey(reflistId));
-			return Response.status(HttpServletResponse.SC_NO_CONTENT)
+			return Response.noContent()
 					.entity("reflist with ID " + reflistId + " deleted").build();
 		}
 		catch(DbIoException ex)
@@ -374,7 +372,7 @@ public final class ReflistResources extends OpenDcsResource
 			{
 				throw new DatabaseItemNotFoundException("Season enum not found");
 			}
-			return Response.status(HttpServletResponse.SC_OK).entity(mapSeasons(dbEnum)).build();
+			return Response.ok().entity(mapSeasons(dbEnum)).build();
 		}
 		catch(DbIoException ex)
 		{
@@ -436,7 +434,7 @@ public final class ReflistResources extends OpenDcsResource
 			DbKey seasonId = dai.getEnumId(SEASON_ENUM);
 			EnumValue seasonVal = dai.getEnumValue(seasonId, abbr);
 
-			return Response.status(HttpServletResponse.SC_OK).entity(map(seasonVal)).build();
+			return Response.ok().entity(map(seasonVal)).build();
 		}
 		catch(DbIoException ex)
 		{
@@ -516,7 +514,7 @@ public final class ReflistResources extends OpenDcsResource
 			}
 			EnumValue dbSeason = map(season, dbEnum);
 			dai.writeEnumValue(dbSeasonId, dbSeason, null, season.getSortNumber());
-			return Response.status(HttpServletResponse.SC_CREATED)
+			return Response.status(Response.Status.CREATED)
 					.entity(map(dbSeason))
 					.build();
 		}
@@ -573,7 +571,7 @@ public final class ReflistResources extends OpenDcsResource
 		{
 			DbKey enumKey = dai.getEnumId(SEASON_ENUM);
 			dai.deleteEnumValue(enumKey, abbr);
-			return Response.status(HttpServletResponse.SC_NO_CONTENT).entity("Deleted season " + abbr).build();
+			return Response.noContent().entity("Deleted season " + abbr).build();
 		}
 		catch(DbIoException ex)
 		{

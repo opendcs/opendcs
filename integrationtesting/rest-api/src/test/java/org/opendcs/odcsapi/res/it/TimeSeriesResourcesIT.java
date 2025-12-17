@@ -19,8 +19,6 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.core.MediaType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import decodes.cwms.CwmsTsId;
@@ -32,10 +30,9 @@ import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.VarFlags;
 import ilex.var.TimedVariable;
 import io.restassured.filter.log.LogDetail;
-import io.restassured.filter.session.SessionFilter;
 import io.restassured.path.json.JsonPath;
-import io.restassured.response.ExtractableResponse;
-import io.restassured.response.Response;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -131,7 +128,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		storeTimeSeries(ts2);
 
 		// get TS DbKeys and save to the identifiers
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -142,7 +139,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -183,7 +180,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 		;
 
 		String groupJson = getJsonFromResource("ts_group_insert_data.json");
@@ -207,7 +204,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -230,7 +227,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		deleteTimeSeries(tsId);
@@ -246,7 +243,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		JsonPath expected = getJsonPathFromResource("ts_ref_expected.json");
 		JsonPath expected2 = getJsonPathFromResource("ts_ref_expected_inactive.json");
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -257,7 +254,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -299,7 +296,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -330,7 +327,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 	{
 		JsonPath expected = getJsonPathFromResource("ts_spec_expected.json");
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -342,7 +339,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -364,7 +361,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		// There are two expected JSON files to account for these differences
 		JsonPath expected = getJsonPathFromResource("ts_data_expected.json");
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -378,7 +375,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -412,7 +409,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
 		;
 
 	}
@@ -422,7 +419,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 	{
 		JsonPath expected = getJsonPathFromResource("ts_interval_insert_data.json");
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -433,7 +430,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -461,7 +458,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		JsonPath expected = new JsonPath(intervalJson);
 
 		// create interval
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
@@ -474,7 +471,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -493,7 +490,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -519,7 +516,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 	{
 		JsonPath expected = getJsonPathFromResource("ts_group_ref_expected.json");
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -530,7 +527,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -555,7 +552,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 	{
 		JsonPath expected = getJsonPathFromResource("ts_group_expected.json");
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -567,7 +564,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -612,7 +609,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		String groupJson = getJsonFromResource("ts_group_post_delete_insert_data.json");
 
 		// create ts group
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
@@ -625,7 +622,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -644,7 +641,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -668,7 +665,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		// retrieve ts group and assert not found
@@ -684,7 +681,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
 		;
 	}
 
@@ -693,7 +690,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		assertNotNull(jsonPath);
 		String siteJson = getJsonFromResource(jsonPath);
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
@@ -706,7 +703,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -732,7 +729,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		given()
@@ -747,7 +744,7 @@ final class TimeSeriesResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
 		;
 	}
 

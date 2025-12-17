@@ -17,8 +17,8 @@ package org.opendcs.odcsapi.res.it;
 
 
 import io.restassured.filter.log.LogDetail;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.TestTemplate;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
@@ -43,7 +43,7 @@ final class OrganizationResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 				.body("name", hasItem("SPK"))
 		;
 	}

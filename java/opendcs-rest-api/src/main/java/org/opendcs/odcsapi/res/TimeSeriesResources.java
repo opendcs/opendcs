@@ -19,27 +19,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import jakarta.annotation.security.RolesAllowed;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
-
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.tags.Tag;
-
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 
 import decodes.cwms.CwmsTsId;
 import decodes.hdb.HdbTsId;
@@ -52,16 +31,34 @@ import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
+import ilex.util.IDateFormat;
 import ilex.var.TimedVariable;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.opentsdb.Interval;
 import org.opendcs.odcsapi.beans.ApiDataType;
-import ilex.util.IDateFormat;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.opendcs.odcsapi.beans.ApiInterval;
 import org.opendcs.odcsapi.beans.ApiSiteRef;
 import org.opendcs.odcsapi.beans.ApiTimeSeriesData;
@@ -133,7 +130,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 					returnList.add(tsId);
 				}
 			}
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.ok()
 					.entity(returnList)
 					.build();
 		}
@@ -218,7 +215,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 		{
 			TimeSeriesIdentifier identifier = dai.getTimeSeriesIdentifier(DbKey.createDbKey(tsKey));
 			ApiTimeSeriesSpec spec = specMap(identifier);
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.ok()
 					.entity(spec).build();
 		}
 		catch (NoSuchObjectException ex)
@@ -353,7 +350,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 			}
 			catch(IllegalArgumentException ex)
 			{
-				throw new WebAppException(HttpServletResponse.SC_BAD_REQUEST,
+				throw new WebAppException(Response.Status.BAD_REQUEST.getStatusCode(),
 						"Invalid start time. Use [[[CC]YY]/DDD]/HH:MM[:SS] or relative time.", ex);
 			}
 		}
@@ -365,7 +362,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 			}
 			catch (IllegalArgumentException ex)
 			{
-				throw new WebAppException(HttpServletResponse.SC_BAD_REQUEST,
+				throw new WebAppException(Response.Status.BAD_REQUEST.getStatusCode(),
 						"Invalid end time. Use [[[CC]YY]/DDD]/HH:MM[:SS] or relative time.", ex);
 			}
 		}
@@ -376,7 +373,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 			TimeSeriesIdentifier tsId = dai.getTimeSeriesIdentifier(DbKey.createDbKey(tsKey));
 			CTimeSeries cts = tsdb.makeTimeSeries(tsId);
 			dai.fillTimeSeries(cts, dStart, dEnd);
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.ok()
 					.entity(dataMap(cts, dStart, dEnd)).build();
 		}
 		catch (NoSuchObjectException ex)
@@ -509,7 +506,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 				Interval intV = IntervalCodes.getInterval(code);
 				intervals.add(map(intV));
 			}
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.ok()
 					.entity(intervals).build();
 		}
 		catch (DbIoException ex)
@@ -556,7 +553,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 		{
 			Interval interval = map(intv);
 			dai.writeInterval(interval);
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.ok()
 					.entity(map(interval)).build();
 		}
 		catch (DbIoException ex)
@@ -688,7 +685,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 	{
 		try (TsGroupDAI dai = getLegacyTimeseriesDB().makeTsGroupDAO())
 		{
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.ok()
 					.entity(mapRef(dai.getTsGroupList(null))).build();
 		}
 		catch (DbIoException ex)
@@ -795,7 +792,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 			{
 				throw new DatabaseItemNotFoundException("Time series group with ID=" + groupId + " not found");
 			}
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.ok()
 					.entity(map(group)).build();
 		}
 		catch (DbIoException ex)
@@ -885,7 +882,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 			{
 				TsGroup group = map(grp);
 				dai.writeTsGroup(group);
-				return Response.status(HttpServletResponse.SC_OK)
+				return Response.ok()
 						.entity(map(group)).build();
 			}
 			catch (DbIoException | BadTimeSeriesException ex)
@@ -1014,7 +1011,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 		try (TsGroupDAI dai = getLegacyTimeseriesDB().makeTsGroupDAO())
 		{
 			dai.deleteTsGroup(DbKey.createDbKey(groupId));
-			return Response.status(HttpServletResponse.SC_NO_CONTENT)
+			return Response.noContent()
 					.entity("tsgroup with ID=" + groupId + " deleted").build();
 		}
 		catch (DbIoException ex)

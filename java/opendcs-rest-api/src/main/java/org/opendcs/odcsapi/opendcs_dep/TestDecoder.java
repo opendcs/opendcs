@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Iterator;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.WebApplicationException;
 
 import decodes.datasource.GoesPMParser;
@@ -47,6 +46,7 @@ import decodes.tsdb.DbIoException;
 import decodes.tsdb.TimeSeriesDb;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
+import jakarta.ws.rs.core.Response;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.EnumDAI;
 import org.opendcs.database.api.OpenDcsDatabase;
@@ -117,8 +117,8 @@ public final class TestDecoder
 			else if (platformConfig.getNumScripts() > 0)
 				script = platformConfig.decodesScripts.get(0);
 			if (script == null)
-				throw new WebAppException(HttpServletResponse.SC_PRECONDITION_FAILED, "No such script '" + scriptName
-					+ "' within the passed configuration.");
+				throw new WebAppException(Response.Status.PRECONDITION_FAILED.getStatusCode(),
+						"No such script '" + scriptName + "' within the passed configuration.");
 
 			String mediumType = script.getHeaderType();
 			log.debug("script.getHeaderType() returned '{}', scriptType='{}'", mediumType, script.scriptType);
@@ -141,7 +141,7 @@ public final class TestDecoder
 				PMParser pmParser = PMParser.getPMParser(mediumType);
 				if (pmParser == null)
 				{
-					throw new WebAppException(HttpServletResponse.SC_PRECONDITION_FAILED,
+					throw new WebAppException(Response.Status.PRECONDITION_FAILED.getStatusCode(),
 						"Cannot get pmParser for mediumType '" + mediumType + "'");
 				}
 				pmParser.parsePerformanceMeasurements(rawMessage);
@@ -173,7 +173,7 @@ public final class TestDecoder
 				}
 				catch (HeaderParseException ex2)
 				{
-					WebAppException toThrow = new WebAppException(HttpServletResponse.SC_BAD_REQUEST,
+					WebAppException toThrow = new WebAppException(Response.Status.BAD_REQUEST.getStatusCode(),
 						"Cannot parse message header as " + mediumType + " or edl: " + ex2);
 					toThrow.addSuppressed(ex);
 					throw toThrow;
@@ -208,7 +208,7 @@ public final class TestDecoder
 			}
 			catch (Exception ex)
 			{
-				throw new WebAppException(HttpServletResponse.SC_PRECONDITION_FAILED, "Decoding failed: " + ex);
+				throw new WebAppException(Response.Status.PRECONDITION_FAILED.getStatusCode(), "Decoding failed: " + ex);
 			}
 			return ret;
 		}

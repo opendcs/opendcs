@@ -17,15 +17,13 @@ package org.opendcs.odcsapi.res.it;
 
 import java.util.List;
 import java.util.Map;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.core.MediaType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.session.SessionFilter;
 import io.restassured.path.json.JsonPath;
-import io.restassured.response.ExtractableResponse;
-import io.restassured.response.Response;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -36,7 +34,7 @@ import org.opendcs.odcsapi.beans.ApiLoadingApp;
 import org.opendcs.odcsapi.beans.ApiSite;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
@@ -64,7 +62,7 @@ final class ComputationResourcesIT extends BaseIT
 		String appJson = MAPPER.writeValueAsString(app);
 
 		// Insert the app
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
@@ -77,7 +75,7 @@ final class ComputationResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -102,7 +100,7 @@ final class ComputationResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -124,7 +122,7 @@ final class ComputationResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -153,7 +151,7 @@ final class ComputationResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -176,7 +174,7 @@ final class ComputationResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		// Delete the app
@@ -192,7 +190,7 @@ final class ComputationResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		// Delete the algorithm
@@ -208,7 +206,7 @@ final class ComputationResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		// Delete the site
@@ -224,7 +222,7 @@ final class ComputationResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		logout(sessionFilter);
@@ -235,7 +233,7 @@ final class ComputationResourcesIT extends BaseIT
 	{
 		JsonPath expectedJson = getJsonPathFromResource("computation_refs_expected.json");
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
@@ -246,7 +244,7 @@ final class ComputationResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 		List<Map<String, Object>> actualList = response.body().jsonPath().getList("");
@@ -267,7 +265,7 @@ final class ComputationResourcesIT extends BaseIT
 
 		ApiComputation comp = getDtoFromResource("computation_insert_data.json", ApiComputation.class);
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
@@ -285,7 +283,7 @@ final class ComputationResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -323,7 +321,7 @@ final class ComputationResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
 		;
 
 		given()
@@ -344,7 +342,7 @@ final class ComputationResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.body("size()", is(0))
 		;
 
@@ -366,7 +364,7 @@ final class ComputationResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 		;
 	}
 
@@ -375,7 +373,7 @@ final class ComputationResourcesIT extends BaseIT
 	{
 		JsonPath expected = getJsonPathFromResource("computation_insert_data.json");
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
@@ -387,7 +385,7 @@ final class ComputationResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -416,7 +414,7 @@ final class ComputationResourcesIT extends BaseIT
 		String compJson = MAPPER.writeValueAsString(comp);
 
 		// Store the new computation
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
@@ -429,7 +427,7 @@ final class ComputationResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -448,7 +446,7 @@ final class ComputationResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -483,7 +481,7 @@ final class ComputationResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		// Get the new computation and assert it is not found
@@ -499,7 +497,7 @@ final class ComputationResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
 		;
 	}
 }

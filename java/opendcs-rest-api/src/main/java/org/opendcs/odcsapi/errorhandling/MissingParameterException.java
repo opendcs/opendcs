@@ -15,7 +15,7 @@
 
 package org.opendcs.odcsapi.errorhandling;
 
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.core.Response;
 
 public final class MissingParameterException extends WebAppException
 {
@@ -24,14 +24,14 @@ public final class MissingParameterException extends WebAppException
 
 	public MissingParameterException(String errMessage)
 	{
-		super(HttpServletResponse.SC_BAD_REQUEST, errMessage);
+		super(Response.Status.BAD_REQUEST.getStatusCode(), errMessage);
 		this.errMessage = errMessage;
 	}
 
 	@Override
 	public int getStatus()
 	{
-		return HttpServletResponse.SC_BAD_REQUEST;
+		return Response.Status.BAD_REQUEST.getStatusCode();
 	}
 
 	@Override

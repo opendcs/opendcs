@@ -19,28 +19,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Vector;
-import jakarta.annotation.security.RolesAllowed;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.Parameter;
 
 import decodes.db.DataPresentation;
 import decodes.db.DataType;
@@ -53,6 +31,26 @@ import decodes.db.ValueNotFoundException;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import opendcs.dai.DataTypeDAI;
 import org.opendcs.odcsapi.beans.ApiPresentationElement;
 import org.opendcs.odcsapi.beans.ApiPresentationGroup;
@@ -62,8 +60,8 @@ import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
-import org.slf4j.Logger;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Path("/")
 public final class PresentationResources extends OpenDcsResource
@@ -94,7 +92,7 @@ public final class PresentationResources extends OpenDcsResource
 		{
 			PresentationGroupList groupList = new PresentationGroupList();
 			dbIo.readPresentationGroupList(groupList);
-			return Response.status(HttpServletResponse.SC_OK).entity(map(groupList)).build();
+			return Response.ok().entity(map(groupList)).build();
 		}
 		catch (DatabaseException ex)
 		{
@@ -180,7 +178,7 @@ public final class PresentationResources extends OpenDcsResource
 			PresentationGroup group = new PresentationGroup();
 			group.setId(DbKey.createDbKey(groupId));
 			dbIo.readPresentationGroup(group);
-			return Response.status(HttpServletResponse.SC_OK).entity(map(group)).build();
+			return Response.ok().entity(map(group)).build();
 		}
 		catch (ValueNotFoundException ex)
 		{
@@ -275,7 +273,7 @@ public final class PresentationResources extends OpenDcsResource
 		{
 			PresentationGroup group = map(dai, presGrp);
 			dbIo.writePresentationGroup(group);
-			return Response.status(HttpServletResponse.SC_CREATED)
+			return Response.status(Response.Status.CREATED)
 					.entity(map(group))
 					.build();
 		}
@@ -406,12 +404,12 @@ public final class PresentationResources extends OpenDcsResource
 				{
 					routeSpecs = routeSpecs.substring(0, routeSpecs.length() - 2);
 				}
-				return Response.status(HttpServletResponse.SC_METHOD_NOT_ALLOWED)
+				return Response.status(Response.Status.METHOD_NOT_ALLOWED)
 						.entity(String.format("Cannot delete presentation group %s " +
 								"because it is used by the following routing specs: %s", groupId, routeSpecs)).build();
 			}
 			dbIo.deletePresentationGroup(group);
-			return Response.status(HttpServletResponse.SC_NO_CONTENT)
+			return Response.noContent()
 					.entity("Presentation Group with ID " + groupId + " deleted")
 					.build();
 		}

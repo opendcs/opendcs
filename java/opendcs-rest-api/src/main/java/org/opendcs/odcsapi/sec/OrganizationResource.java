@@ -24,7 +24,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.annotation.security.RolesAllowed;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -84,7 +83,7 @@ public final class OrganizationResource extends OpenDcsResource
 				{
 					return precheck.build();
 				}
-				return Response.status(HttpServletResponse.SC_OK)
+				return Response.ok()
 						.entity(organizations)
 						.header("Cache-Control", "public, max-age=86400")
 						.build();
@@ -94,7 +93,7 @@ public final class OrganizationResource extends OpenDcsResource
 				throw new DbException("Error establishing connection to the database.", ex);
 			}
 		}
-		return Response.status(HttpServletResponse.SC_NOT_FOUND)
+		return Response.status(Response.Status.NOT_FOUND)
 				.entity(new Status("Implementation does not support organizations yet."))
 				.build();
 	}

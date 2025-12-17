@@ -18,12 +18,10 @@ package org.opendcs.odcsapi.sec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
-import jakarta.servlet.http.HttpServletResponse;
 
 import io.restassured.RestAssured;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.session.SessionFilter;
-import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
@@ -32,6 +30,7 @@ import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.parser.OpenAPIV3Parser;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.opendcs.odcsapi.fixtures.DatabaseContextProvider;
@@ -58,7 +57,7 @@ final class AuthorizationTestIT
 					//ensures unauthorized session
 					.filter(new SessionFilter())
 					.when();
-			Response response = switch(method)
+			var response = switch(method)
 			{
 				case GET -> spec.get(path);
 				case POST -> spec.post(path);
@@ -69,7 +68,7 @@ final class AuthorizationTestIT
 			response.then()
 					.log().ifValidationFails(LogDetail.ALL, true)
 					.assertThat()
-					.statusCode(HttpServletResponse.SC_UNAUTHORIZED);
+					.statusCode(Response.Status.UNAUTHORIZED.getStatusCode());
 		}));
 	}
 

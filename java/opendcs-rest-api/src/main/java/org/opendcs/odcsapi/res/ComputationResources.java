@@ -17,19 +17,6 @@ package org.opendcs.odcsapi.res;
 
 import java.util.ArrayList;
 import java.util.List;
-import jakarta.annotation.security.RolesAllowed;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 
 import decodes.db.DataType;
 import decodes.db.Site;
@@ -50,6 +37,18 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import opendcs.dai.ComputationDAI;
 import org.opendcs.odcsapi.beans.ApiCompParm;
 import org.opendcs.odcsapi.beans.ApiComputation;
@@ -124,7 +123,7 @@ public final class ComputationResources extends OpenDcsResource
 				compFilter.setIntervalCode(interval);
 			}
 			List<ApiComputationRef> computationRefs = map(dai.listComps(c -> compFilter.passes(c)));
-			return Response.status(HttpServletResponse.SC_OK).entity(computationRefs).build();
+			return Response.ok().entity(computationRefs).build();
 		}
 		catch(DbIoException ex)
 		{
@@ -194,7 +193,7 @@ public final class ComputationResources extends OpenDcsResource
 
 		try (ComputationDAI dai = getLegacyTimeseriesDB().makeComputationDAO())
 		{
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.ok()
 					.entity(map(dai.getComputationById(DbKey.createDbKey(compId)))).build();
 		}
 		catch(DbIoException ex)
@@ -340,7 +339,7 @@ public final class ComputationResources extends OpenDcsResource
 		{
 			DbComputation dbComp = map(comp);
 			dai.writeComputation(dbComp);
-			return Response.status(HttpServletResponse.SC_CREATED).entity(map(dbComp)).build();
+			return Response.status(Response.Status.CREATED).entity(map(dbComp)).build();
 		}
 		catch(DbIoException ex)
 		{
@@ -470,7 +469,7 @@ public final class ComputationResources extends OpenDcsResource
 		try (ComputationDAI dai = getLegacyTimeseriesDB().makeComputationDAO())
 		{
 			dai.deleteComputation(DbKey.createDbKey(computationId));
-			return Response.status(HttpServletResponse.SC_NO_CONTENT)
+			return Response.noContent()
 					.entity(String.format("Computation with ID: %d deleted", computationId)).build();
 		}
 		catch(DbIoException | ConstraintException ex)

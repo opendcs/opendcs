@@ -17,15 +17,12 @@ package org.opendcs.odcsapi.res.it;
 
 import java.util.List;
 import java.util.Map;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.core.MediaType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.filter.log.LogDetail;
-import io.restassured.filter.session.SessionFilter;
 import io.restassured.path.json.JsonPath;
-import io.restassured.response.ExtractableResponse;
-import io.restassured.response.Response;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -33,7 +30,7 @@ import org.opendcs.odcsapi.beans.ApiUnit;
 import org.opendcs.odcsapi.beans.ApiUnitConverter;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -71,7 +68,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 		;
 
 		ApiUnit eu2 = getDtoFromResource("datatypeunit_engineering_unit_2_insert_data.json",
@@ -94,11 +91,11 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 		;
 
 		// retrieve the EU List and assert it contains the EUs
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
@@ -111,7 +108,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -158,7 +155,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -181,7 +178,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		// Delete the EU
@@ -197,7 +194,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		// Delete the EU
@@ -213,7 +210,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 	}
 
@@ -222,7 +219,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 	{
 		JsonPath expected = getJsonPathFromResource("datatypeunit_get_type_list_expected.json");
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -233,7 +230,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -262,7 +259,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 	{
 		JsonPath expected = getJsonPathFromResource("datatypeunit_get_type_list_expected_filtered.json");
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -274,7 +271,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -308,7 +305,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		ApiUnit expected = getDtoFromResource("datatypeunit_engineering_unit_insert_data.json",
 				ApiUnit.class);
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -319,7 +316,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -363,13 +360,13 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 		;
 
 		JsonPath expected = getJsonPathFromResource("datatypeunit_eu_post_delete_data.json");
 
 		// Retrieve the EU and assert it matches expected JSON
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -380,7 +377,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -417,7 +414,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 		;
 
 		// Delete the EU
@@ -433,7 +430,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		// Retrieve the EU and assert it is not found
@@ -448,7 +445,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 			.response()
 			.jsonPath()
@@ -462,7 +459,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		ApiUnitConverter expected = getDtoFromResource("datatypeunit_insert_euconv_data.json",
 				ApiUnitConverter.class);
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -473,7 +470,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -528,7 +525,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 		;
 
 		// Store the EU
@@ -546,11 +543,11 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 		;
 
 		// Store the EU Converter
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
@@ -563,7 +560,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -584,7 +581,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -616,7 +613,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -633,7 +630,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		// Delete the EU
@@ -649,7 +646,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		// Delete the EU
@@ -665,7 +662,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		// Retrieve the EU Converter and assert it is not found
@@ -680,7 +677,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 

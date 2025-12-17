@@ -23,8 +23,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.core.MediaType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import decodes.db.DatabaseException;
@@ -32,10 +30,9 @@ import decodes.db.ScheduleEntryStatus;
 import decodes.polling.DacqEvent;
 import decodes.sql.DbKey;
 import io.restassured.filter.log.LogDetail;
-import io.restassured.filter.session.SessionFilter;
 import io.restassured.path.json.JsonPath;
-import io.restassured.response.ExtractableResponse;
-import io.restassured.response.Response;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import opendcs.dai.DacqEventDAI;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,8 +47,8 @@ import org.opendcs.odcsapi.beans.ApiScheduleEntryRef;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.anyOf;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -92,7 +89,7 @@ final class RoutingResourcesIT extends BaseIT
 		String loadingAppJson = MAPPER.writeValueAsString(loadingApp);
 
 		// Insert the application data
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
@@ -105,7 +102,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -131,7 +128,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -155,7 +152,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -183,7 +180,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -221,7 +218,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -243,7 +240,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -301,7 +298,7 @@ final class RoutingResourcesIT extends BaseIT
 			.then()
 				.log().ifValidationFails(LogDetail.ALL, true)
 			.assertThat()
-				.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+				.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 			;
 		}
 
@@ -320,7 +317,7 @@ final class RoutingResourcesIT extends BaseIT
 			.then()
 				.log().ifValidationFails(LogDetail.ALL, true)
 			.assertThat()
-				.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+				.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 			;
 		}
 
@@ -337,7 +334,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		// Delete the application
@@ -353,7 +350,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		tearDownPlatform(platformId);
@@ -371,7 +368,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		tearDownSite(siteId);
@@ -383,7 +380,7 @@ final class RoutingResourcesIT extends BaseIT
 	{
 		JsonPath expected = getJsonPathFromResource("routing_insert_data.json");
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -394,7 +391,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -418,7 +415,7 @@ final class RoutingResourcesIT extends BaseIT
 	{
 		JsonPath expected = getJsonPathFromResource("routing_insert_data.json");
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -430,7 +427,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -475,7 +472,7 @@ final class RoutingResourcesIT extends BaseIT
 		String routingJson = MAPPER.writeValueAsString(routing);
 
 		// Insert the routing
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
@@ -488,7 +485,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -509,7 +506,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -557,7 +554,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		// Get the routing and assert it does not exist
@@ -573,7 +570,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
 		;
 	}
 
@@ -585,7 +582,7 @@ final class RoutingResourcesIT extends BaseIT
 		schedule.setAppName(appName);
 		JsonPath expected = new JsonPath(MAPPER.writeValueAsString(schedule));
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -596,7 +593,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -625,7 +622,7 @@ final class RoutingResourcesIT extends BaseIT
 		entry.setAppName(appName);
 		JsonPath expected = new JsonPath(MAPPER.writeValueAsString(entry));
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -637,7 +634,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -660,7 +657,7 @@ final class RoutingResourcesIT extends BaseIT
 		String scheduleJson = MAPPER.writeValueAsString(schedule);
 
 		// Insert the schedule
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
@@ -673,7 +670,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -698,7 +695,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -729,7 +726,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		// Get the schedule and assert it does not exist
@@ -745,7 +742,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
 		;
 	}
 
@@ -757,7 +754,7 @@ final class RoutingResourcesIT extends BaseIT
 		status.setAppName(appName);
 		JsonPath expected = new JsonPath(MAPPER.writeValueAsString(status));
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -768,7 +765,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -795,7 +792,7 @@ final class RoutingResourcesIT extends BaseIT
 		// Note: Routing spec id is not mapped here!
 		JsonPath expected = getJsonPathFromResource("routing_exec_status_expected.json");
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -807,7 +804,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -855,7 +852,7 @@ final class RoutingResourcesIT extends BaseIT
 		event.setSubsystem("Routing");
 		JsonPath expected = new JsonPath(MAPPER.writeValueAsString(event));
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -869,7 +866,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -918,7 +915,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -965,7 +962,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -1012,7 +1009,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -1049,7 +1046,7 @@ final class RoutingResourcesIT extends BaseIT
 		assertNotNull(jsonPath);
 		String siteJson = getJsonFromResource(jsonPath);
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
@@ -1062,7 +1059,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -1083,7 +1080,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		given()
@@ -1098,7 +1095,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
 		;
 	}
 
@@ -1110,7 +1107,7 @@ final class RoutingResourcesIT extends BaseIT
 		platformJson = platformJson.replace("[SITE_ID]", siteId.toString());
 		platformJson = platformJson.replace("[CONFIG_ID]", configId.toString());
 
-		ExtractableResponse<Response> response = given()
+		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
@@ -1123,7 +1120,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
 
@@ -1144,7 +1141,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
 		given()
@@ -1159,7 +1156,7 @@ final class RoutingResourcesIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
 		;
 	}
 
