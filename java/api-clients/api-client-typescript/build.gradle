@@ -17,8 +17,6 @@ def buildLib = tasks.register("buildLib", NpxTask) {
     outputs.dir(file("build/generated/openApi"))
     workingDir
 }
-
-build.dependsOn buildLib
 /*
 def bundle = tasks.register("bundle", NpxTask) {
     dependsOn buildLib

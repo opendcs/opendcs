@@ -31,10 +31,11 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import java.util.HashMap;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.Map;
 
-import org.opendcs.database.model.User;
 import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.util.ApiConstants;
 
@@ -65,6 +66,13 @@ public final class SessionResource
 								If there is no session. This could be because it never existed or
 								it had and the user logged out.
 								""",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = String.class),
+								examples = @ExampleObject(value = "No Session"))
+					),
+					@ApiResponse(
+							responseCode = "401",
+							description = "If the session is not valid, 401 is returned.",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
 								schema = @Schema(implementation = Map.class)
 							)
