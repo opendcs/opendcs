@@ -10,9 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "opendcs-api": "file:../../java/api-clients/api-client-typescript/build/generated/openApi",
     "react": "^19.2.0",
+    "react-bootstrap": "^2.10.10",
     "react-dom": "^19.2.0",
-    "opendcs-api": "file:../../java/api-clients/api-client-typescript/build/generated/openApi"
+    "react-router-dom": "^7.11.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
