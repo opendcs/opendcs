@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "bootstrap": "^5.3.8",
     "opendcs-api": "file:../../java/api-clients/api-client-typescript/build/generated/openApi",
     "react": "^19.2.0",
     "react-bootstrap": "^2.10.10",
@@ -19,7 +20,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@types/node": "^24.10.1",
-    "@types/react": "^19.2.5",
+    "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "eslint": "^9.39.1",
