@@ -73,15 +73,14 @@ fi
 APP_NAME=$1
 LOG_FILE=""
 LOG_LEVEL="-DLOG_LEVEL=info"
-APP_ARGS=""
+APP_ARGS=()
 
 # https://stackoverflow.com/a/36475789
-_ARGS=("$@")
-
+_ARGS=( "$@" )
 
 shift_globally () {
   shift
-  _ARGS=("$@")
+  _ARGS=( "$@" )
 }
 # end https://stackoverflow.com/a/36475789
 
@@ -96,20 +95,20 @@ function handle_arg {
   elif [[ "${arg:0:2}" == "-l" ]]; then
     handle_log $arg "${@:2}"
   else
-    APP_ARGS="$APP_ARGS $arg" # pass through
+    APP_ARGS+=(${arg}) # pass through
   fi
 }
 
 function handle_jvm_prop {
-  arg=$1
-  prop=$2
-  
+  arg="$1"
+  prop="$2"
+
   if [[ "$arg" == "-D" ]]; then
     shift_globally "${@:2}"
   else
-    prop=${arg:2}
+    prop="${arg:2}"
   fi
-  APP_ARGS="-D$prop $APP_ARGS" # these come before the class name so that the jvm sets them for us.
+  APP_ARGS+=("-D$prop") # these come before the class name so that the jvm sets them for us.
 }
 
 
@@ -129,8 +128,8 @@ function handle_debug {
       "1") levelStr="DEBUG" ;;
       "2") levelStr="TRACE" ;;
       "3") levelStr="TRACE" ;;
-    esac    
-    LOG_LEVEL="-DLOG_LEVEL=${levelStr}" 
+    esac
+    LOG_LEVEL="-DLOG_LEVEL=${levelStr}"
 }
 
 function handle_log {
@@ -152,23 +151,35 @@ function handle_app {
   else
     APP_NAME=${arg:2}
   fi
-  APP_ARGS="$APP_ARGS -a $APP_NAME" # this one gets used *and* passed through
+  APP_ARGS+=("-a" "$APP_NAME") # this one gets used *and* passed through
 }
 
+# NOTE for below, the change before using @Q *SHOULD NOT* be required.
+# However, at least on my test system with bash 5.2.15(1)-release, @Q did not behave correctly
+# It's possible it's something with how things are setup, tough several direct tests were tried.
 while [[ ${#_ARGS[@]} -gt 0 ]]; do
-  arg=${_ARGS[0]}
-  shift_globally ${_ARGS[@]}
+  arg="${_ARGS[0]}"
+  shift_globally "${_ARGS[@]}"
   if [[ "$arg" == "--" ]]; then # stop trying to special process anything
     break
   elif [[ ${arg:0:1} == "-" ]]; then
     handle_arg $arg "${_ARGS[@]}" # extract our desired elements
   else
-    APP_ARGS="$APP_ARGS $arg" # pass through
+    if [[ "$arg" =~ ^(-)?[a-zA-Z0-9\.]*$ ]]; then
+      APP_ARGS+=("${arg}") # pass through
+    else
+      APP_ARGS+=("${arg}") # pass through, quoting the value
+    fi;
   fi
 done
 # remaining args are assumed correct as is and the application will deal
 while [[ ${#_ARGS[@]} -gt 0 ]]; do
-  APP_ARGS="$APP_ARGS ${_ARGS[0]}"
+  arg="${_ARGS[0]}"
+  if [[ "$arg" =~ ^(-)?[a-zA-Z0-9\.]*$ ]]; then
+    APP_ARGS+=("${arg}") # pass through
+  else
+    APP_ARGS+=("${arg@Q}") # pass through, quoting the value
+  fi;
   shift_globally "${_ARGS[@]}"
 done
 
@@ -179,6 +190,9 @@ else
   LOGBACK="$LOGBACK -DAPP_NAME=${APP_NAME} $LOG_FILE $LOG_LEVEL"
 fi
 
-cmd="java -Xms120m $DECJ_MAXHEAP $DECJ_OPTS -cp $CP -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR $LOGBACK $APP_ARGS"
-echo "cli: $cmd"
-exec $cmd
+
+cmd=(java -Xms120m $DECJ_MAXHEAP $DECJ_OPTS)
+cmd+=(-cp $CP -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH)
+cmd+=(-DDCSTOOL_USERDIR=$DCSTOOL_USERDIR $LOGBACK)
+echo "cli: ${cmd[@]} ${APP_ARGS[@]@Q}"
+exec "${cmd[@]}"  "${APP_ARGS[@]}"
