@@ -1,41 +1,24 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
-import {createConfiguration, RESTAuthenticationAndAuthorizationApi, ServerConfiguration} from 'opendcs-api'
+import { AuthContext } from './contexts/AuthContext';
+import Login from './pages/Login';
+
+//import {createConfiguration, RESTAuthenticationAndAuthorizationApi, ServerConfiguration} from 'opendcs-api'
+
 
 function App() {
-  const [count, setCount] = useState(0);
-  const conf = createConfiguration({ 
-    baseServer: new ServerConfiguration("/odcsapi", {}),
+   const [user, setUser] = useState("");
+  // const conf = createConfiguration({ 
+  //   baseServer: new ServerConfiguration("/odcsapi", {}),
 
-  });
-  const tmp = new RESTAuthenticationAndAuthorizationApi(conf);
-  tmp.checkSessionAuthorization();
+  // });
+  //const tmp = new RESTAuthenticationAndAuthorizationApi(conf);
+  //tmp.checkSessionAuthorization();
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-      
-    </>
+    <AuthContext value={{user, setUser}}>
+      Current user: {user}
+      <Login />
+    </AuthContext>
   )
 }
 
