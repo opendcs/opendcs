@@ -2,6 +2,7 @@ import { useState } from 'react'
 import './App.css'
 import { AuthContext } from './contexts/AuthContext';
 import Login from './pages/Login';
+import { TopBar } from './components/TopBar';
 
 //import {createConfiguration, RESTAuthenticationAndAuthorizationApi, ServerConfiguration} from 'opendcs-api'
 
@@ -16,6 +17,7 @@ function App() {
   //tmp.checkSessionAuthorization();
   return (
     <AuthContext value={{user, setUser}}>
+      <TopBar />
       Current user: {user}
       <Login />
     </AuthContext>
