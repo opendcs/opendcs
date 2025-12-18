@@ -30,6 +30,12 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.util.Map;
+
 import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.util.ApiConstants;
 
@@ -55,7 +61,14 @@ public final class SessionResource
 							description = "If the session is not valid, HTTP 410 is returned.",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
 									schema = @Schema(implementation = String.class),
-								examples = @ExampleObject(value = "Session Valid"))
+								examples = @ExampleObject(value = "No Session"))
+					),
+					@ApiResponse(
+							responseCode = "401",
+							description = "If the session is not valid, 401 is returned.",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+								schema = @Schema(implementation = Map.class)
+							)
 					)
 			},
 			tags = {"REST - Authentication and Authorization"}

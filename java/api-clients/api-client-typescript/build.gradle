@@ -15,9 +15,10 @@ def buildLib = tasks.register("buildLib", NpxTask) {
     dependsOn npmInstall
     command = "npm"
     args = ['run', 'build']
-    outputs.dir(file("build/dist"))
+    outputs.dir(file("build/generated/openApi"))
+    workingDir
 }
-
+/*
 def bundle = tasks.register("bundle", NpxTask) {
     dependsOn buildLib
     command = "npm"
@@ -25,15 +26,15 @@ def bundle = tasks.register("bundle", NpxTask) {
     inputs.files file("build/dist")
     outputs.dir(file("dist"))
 }
-
+*/
 
 configurations {
     apiSpec
-    lib {
-        artifacts {
-            add("lib", tasks.named("bundle"))
-        }
-    }
+    // lib {
+    //     artifacts {
+    //         add("lib", tasks.named("bundle"))
+    //     }
+    // }
 }
 
 dependencies {
@@ -48,7 +49,8 @@ sonar {
 openApiGenerate {
     inputSpec = configurations.apiSpec.asPath
     outputDir = "$buildDir/generated/openApi"
-    generatorName = "typescript-fetch"
+    generatorName = "typescript"
+    
     // packageName = "org.opendcs"
     // apiPackage = "org.opendcs"
     // modelPackage = "org.opendcs"
@@ -58,7 +60,10 @@ openApiGenerate {
         modelTests: "false",
         apiDocs: "true",
         apiTests: "false",
-        enabledPostProcessFile: "false"
+        enabledPostProcessFile: "false",
+        useErasableSyntax: "true",
+        useObjectParameters: "true",
+        npmName: "opendcs-api"
     ])
     ignoreFileOverride = "$projectDir/.openapi-generator-ignore"
 }
@@ -70,8 +75,9 @@ openApiValidate {
 
 genTask.configure {
     dependsOn configurations.apiSpec
-    mustRunAfter npmInstall
 }
+
+npmInstall.dependsOn genTask
 
 node {
     // Version of Node.js to install. Required.
@@ -85,11 +91,12 @@ node {
     
     // Configure a proxy for the download. Optional.
     // distBaseUrl = 'https://custom.node.dist.mirror'
+    nodeProjectDir = project.layout.buildDirectory.dir("generated/openApi")
 }
 
-jar.dependsOn bundle
+//jar.dependsOn bundle
 
-processResources {
-    dependsOn bundle
-    from(file("dist"))
-}
+// processResources {
+//     dependsOn bundle
+//     from(file("dist"))
+// }
