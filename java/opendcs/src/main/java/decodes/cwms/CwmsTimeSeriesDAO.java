@@ -1289,7 +1289,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
     }
 
     @Override
-    public DataCollection getNewData(DbKey applicationId)
+    public DataCollection getNewData(DbKey applicationId, int maxTake)
         throws DbIoException
     {
         DataCollection dataCollection = new DataCollection();
@@ -1304,7 +1304,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
             + "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
             + "from CP_COMP_TASKLIST a "
             + "where a.LOADING_APPLICATION_ID = ?"
-            + " and ROWNUM < 20000"
+            + " and ROWNUM < " + maxTake
             + failTimeClause
             + " ORDER BY a.site_datatype_id, a.start_date_time";
 

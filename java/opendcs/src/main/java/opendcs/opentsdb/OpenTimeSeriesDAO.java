@@ -1693,7 +1693,7 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 
 
 	@Override
-	public DataCollection getNewData(DbKey applicationId)
+	public DataCollection getNewData(DbKey applicationId, int maxTake)
 		throws DbIoException
 	{
 		// Reload the TSID cache every hour.
@@ -1733,7 +1733,7 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			if (db.isOracle())
 			{
 				// ROWNUM needs to be part of where clause before ORDER BY clause
-				getTaskListStmtQuery = getTaskListStmtQuery + " and ROWNUM < 20000"
+				getTaskListStmtQuery = getTaskListStmtQuery + " and ROWNUM < " + maxTake
 					+ " order by a.ts_id, a.sample_time";
 			}
 			else // PostgreSQL
@@ -1741,7 +1741,7 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				// LIMIT goes after the ORDER BY clause.
 				getTaskListStmtQuery = getTaskListStmtQuery
 					+ " order by a.ts_id, a.sample_time"
-					+ " limit 20000";
+					+ " limit " + maxTake;
 			}
 
 			try (ResultSet rs = doQuery(getMinStmtQuery))

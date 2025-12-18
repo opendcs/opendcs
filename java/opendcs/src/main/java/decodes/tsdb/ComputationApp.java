@@ -69,6 +69,13 @@ execute it. The logic should be gathered in one place.
 public class ComputationApp extends TsdbAppTemplate
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	// wait 30 seconds between runs by default. Drastically reduces system load
+	// especially with multiple instances pointing to a single database.
+	private static final long COMP_RUN_WAIT_TIME =
+		Long.parseLong(System.getProperty("opendcs.computations.getNew.interval.milliseconds", "30000"));
+	// maximum number of records to take at a time from the task list.
+	private static final int COMP_RUN_MAX_TAKE =
+		Integer.parseInt(System.getProperty("opendcs.computations.getNew.maxTake", "20000"));
 	/** Holds app name, id, & description. */
 	CompAppInfo appInfo;
 
@@ -94,9 +101,7 @@ public class ComputationApp extends TsdbAppTemplate
 	private int checkTimedCompsSec = 600;
 	private SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 
-	private long compRunWaitTime = 30000L; // wait 30 seconds between runs by default. Drastically reduces system load
-										   // especially with multiple instances pointing to a single database.
-
+	
 	private static ComputationApp _instance = null;
 	public static ComputationApp instance() { return _instance; }
 
@@ -332,7 +337,7 @@ public class ComputationApp extends TsdbAppTemplate
 					}
 
 					action = "Getting new data";
-					dataCollection = timeSeriesDAO.getNewData(getAppId());
+					dataCollection = timeSeriesDAO.getNewData(getAppId(), COMP_RUN_MAX_TAKE);
 					// In Regression Test Mode, exit after 5 sec of idle
 					if (!dataCollection.isEmpty())
 						lastDataTime = System.currentTimeMillis();
@@ -403,7 +408,7 @@ public class ComputationApp extends TsdbAppTemplate
 					}
 					else // MJM 6.4 RC08 Only sleep if data was empty.
 					{
-						try { Thread.sleep(compRunWaitTime); }
+						try { Thread.sleep(COMP_RUN_WAIT_TIME); }
 						catch(InterruptedException ex) {}
 					}
 

@@ -193,6 +193,12 @@ public abstract class TsdbAppTemplate implements PropertiesOwner
 				databaseFailed = !ex.toString().contains("Cannot determine app ID");
 				continue;
 			}
+			catch (RuntimeException ex)
+			{
+				log.atError().setCause(ex).log("Error setting up database connection.");
+				throw ex; // make sure it logs, but we can't do much. Just want to make sure full
+						  // error is in the log.
+			}
 			// Note: App must handle its own exceptions, detect database failure
 			// and set databaseFailed if it wants a restart. Any exception thrown
 			// from runApp will terminate the program.
