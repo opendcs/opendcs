@@ -3,6 +3,7 @@ plugins {
     id 'opendcs.deps-conventions'
     id 'opendcs.sonar-conventions'
     id 'opendcs.version-conventions'
+    id "org.openapi.generator" version "7.17.0"
     id 'com.github.node-gradle.node' version '7.1.0'
 }
 
@@ -19,10 +20,19 @@ dependencies {
 
 
 def buildUi = tasks.register("buildUi", NpxTask) {
+    dependsOn genTask
     dependsOn npmInstall
-    dependsOn configurations.api
+    dependsOn api
     command = "npm"
     args = ['run', 'build']
+    outputs.dir(file("build/dist"))
+}
+
+def bundleUi = tasks.register("bundleUi", NpxTask) {
+    dependsOn buildUi
+    command = "npm"
+    args = ['run', 'bundle']
+    inputs.files file("build/dist")
     outputs.dir(file("dist"))
 }
 
@@ -40,14 +50,13 @@ node {
     // distBaseUrl = 'https://custom.node.dist.mirror'
 }
 
-build.dependsOn buildUi
 
 def runUiDev = tasks.register("runUiDev", NpxTask) {
     group 'application'
     description 'Runs npm run dev to begin UI development. Assumes an OpenDCS Api instances in available on localhost:7000/odcsapi'
     dependsOn npmInstall
     dependsOn configurations.api
-    project(":api-client-typescript")
     command = "npm"
     args = ['run', 'dev']
+    //outputs.dir(file("build/dist"))
 }
