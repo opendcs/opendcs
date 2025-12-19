@@ -40,7 +40,7 @@ password4j = "1.8.4"
 
 # Lookup and Service Annotations
 org-netbeans = "RELEASE280"
-
+hec-lookup-compat = "4.0.0"
 
 # API deps
 swagger = "2.2.41"
@@ -153,7 +153,7 @@ auto-service-processor = { module = "com.google.auto.service:auto-service", vers
 com-password4j-password4j = { module = "com.password4j:password4j", version.ref = "password4j" }
 # Netbeans Lookup
 org-netbeans-lookup = { module = "org.netbeans.api:org-openide-util-lookup", version.ref = "org-netbeans" }
-
+hec-lookup-compat = { module ="mil.army.usace.hec:lookup-compat", version.ref = "hec-lookup-compat" }
 
 # CWMS
 cwms-db-jooq = { module = "mil.army.usace.hec:cwms-db-jooq", version.ref = "cwms-db" }
