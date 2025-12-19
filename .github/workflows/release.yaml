@@ -66,7 +66,7 @@ jobs:
         run: echo ${VERSION}
       - name: Build
         run: |
-          ./gradlew --info build war
+          ./gradlew --info build war -PversionOverride=$VERSION -x test
       - name: Push to central
         # We don't publish to maven central for the nightly builds
         if: inputs.nightly == false
