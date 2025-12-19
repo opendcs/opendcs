@@ -1,3 +1,5 @@
+import org.apache.tools.ant.filters.FixCrLfFilter
+
 plugins
 {
     id 'opendcs.deps-conventions'
@@ -37,6 +39,7 @@ test {
     dependsOn createUserDir
     environment "DCSTOOL_USERDIR", project.layout.buildDirectory.dir("user_dir").get()
     environment "DCSTOOL_HOME", project.layout.buildDirectory.dir("install/opendcs").get()
+    environment "JAVA_HOME", System.properties['java.home']
 }
 
 
@@ -52,6 +55,11 @@ distributions
             into('bin')
             {
                 from ('src/main/dist/scripts')
+
+                filesMatching('**/*.bat') {
+                    filter(FixCrLfFilter, eol: FixCrLfFilter.CrLf.CRLF)
+                }
+
                 filePermissions
                 {
                     user

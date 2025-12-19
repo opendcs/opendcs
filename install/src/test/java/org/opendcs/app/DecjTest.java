@@ -2,83 +2,18 @@ package org.opendcs.app;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.opendcs.app.RunDecj.Result;
+
+import static org.opendcs.app.RunDecj.appOutput;
 
 class DecjTest 
 {
-    private Result appOutput(String ...args) throws IOException, InterruptedException
-    {
-        List<String> argsList = new ArrayList<>();
-        String script = "build/install/opendcs/bin/decj";
-        if (System.getProperty("os.name").toLowerCase().contains("win"))
-        {
-            script += ".bat";
-        }
-        else
-        {
-            argsList.add("bash");
-            argsList.add("-x");
-        }
-        argsList.add(script);
-        argsList.add("org.opendcs.app.ArgumentEchoApp");
-        for (String arg: args)
-        {
-            argsList.add(arg);    
-        }
-        ProcessBuilder pb = new ProcessBuilder(argsList.toArray(new String[0]));
-        pb.environment().putAll(System.getenv());
-        Process proc = pb.start();
-        Properties props = new Properties();
-        InputStream procOutput = proc.getInputStream();
-        InputStream procError = proc.getErrorStream();
-        try (ByteArrayOutputStream errorBuffer = new ByteArrayOutputStream();
-             ByteArrayOutputStream outBuffer = new ByteArrayOutputStream())
-        {
-            byte[] data = new byte[2048];
-            int bytesRead = 0;
-            while ((bytesRead = procError.read(data, 0, data.length)) != -1)
-            {
-                errorBuffer.write(data, 0, bytesRead);
-            }
-            bytesRead = 0;
-            while ((bytesRead = procOutput.read(data, 0, data.length)) != -1)
-            {
-                outBuffer.write(data, 0, bytesRead);
-            }
-            int code = proc.waitFor();
-            final String stdErr = new String(errorBuffer.toByteArray());
-            final String stdOut = new String(outBuffer.toByteArray());
-            props.load(new StringReader(stdOut));
-            assertEquals(0, code, () -> "Unexpected exit stderr: " + stdErr +
-                                                  "\n stdout: "+ stdOut +
-                                                 "\nCommand was " + String.join(" ", pb.command()) +
-                                                " \nCli was " + props.getProperty("cli"));
-
-            List<String> argsListOut = new ArrayList<>();
-            String theArgs = props.getProperty("args","").trim();
-            theArgs = theArgs.trim();
-            if (!theArgs.isEmpty())
-            {
-                String[] argsArray = theArgs.split(",");
-                for (String arg: argsArray)
-                {
-                    argsListOut.add(arg.trim());
-                }
-            }
-            return new Result(argsListOut, props, stdOut, stdErr);
-        }
-        
-    }
+    
 
 
     @Test
@@ -138,19 +73,5 @@ class DecjTest
                            "\n stderr was:\n" + output.errorOut);
     }
 
-    public static class Result
-    {
-        final List<String> args;
-        final Properties props;
-        final String errorOut;
-        final String standardOut;
-
-        public Result(List<String> args, Properties props, String standardOut, String errorOut)
-        {
-            this.args = args;
-            this.props = props;
-            this.errorOut = errorOut;
-            this.standardOut = standardOut;
-        }
-    }
+    
 }
