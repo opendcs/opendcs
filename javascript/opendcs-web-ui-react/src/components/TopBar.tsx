@@ -1,6 +1,9 @@
+import { useContext } from 'react';
 import { Container, NavDropdown } from 'react-bootstrap';
+import { PersonGear } from 'react-bootstrap-icons';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
+import { AuthContext } from '../contexts/AuthContext';
 
 
 {/* <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
@@ -20,17 +23,29 @@ import Navbar from 'react-bootstrap/Navbar';
                 </svg> */}
 
 export function TopBar() {
+    const user = useContext(AuthContext)
+    
     return (
         <Navbar fixed="top" expand="lg" className="bg-primary">
             <Container fluid>
                     <Navbar.Brand href="#">OpenDCS</Navbar.Brand>
             </Container>
             <Nav className="navbar-right ms-md-auto flex-row-flex-warp">
-                <NavDropdown title="ColorMode">
-                    <NavDropdown.Item>Light</NavDropdown.Item>
-                    <NavDropdown.Item>Dark</NavDropdown.Item>
-                    <NavDropdown.Item>Auto</NavDropdown.Item>
-                </NavDropdown>
+                <Nav.Item>
+                    <NavDropdown title="ColorMode" id="color-mode">
+                        <NavDropdown.Item>Light</NavDropdown.Item>
+                        <NavDropdown.Item>Dark</NavDropdown.Item>
+                        <NavDropdown.Item>Auto</NavDropdown.Item>
+                    </NavDropdown>
+                </Nav.Item>
+                {user?.user?.username ? 
+                <NavDropdown title={<PersonGear className="theme-icon my-1"/>} id="user-settings" drop="start" >
+                    <NavDropdown.Item>Profile</NavDropdown.Item>
+                    <NavDropdown.Item>Admin</NavDropdown.Item>
+                </NavDropdown> : <div/>
+                }
+                
+                
             </Nav>
         </Navbar>        
         //  <nav class="navbar  navbar-expand-lg bg-primary sticky-top">
