@@ -1,16 +1,16 @@
-export { default as ModeIcons } from "../assets/mode-icons.svg?react";
+import icons from '../assets/mode-icons.svg';
 
 interface IconProps {
-  name: string;
-  className?: string;
+    name: string,
+    className?: string
 }
 
-export const ModeIcon: React.FC<IconProps> = ({ name, className }) => {
-  return (
-    <svg className={className}>
-      <use href={`#${name}`}></use>
-    </svg>
-  );
+const ModeIcon: React.FC<IconProps> = ({name, className}) => {
+    return (
+        <svg className={className}>
+            <use xlinkHref={`${icons}#${name}`} />
+        </svg>
+    );
 };
 
 export default ModeIcon;
