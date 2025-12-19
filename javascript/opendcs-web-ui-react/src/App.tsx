@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import './App.css'
-import { AuthContext } from './contexts/AuthContext';
+import { AuthContext, type User } from './contexts/AuthContext';
 import Login from './pages/Login';
 import { TopBar } from './components/TopBar';
 
@@ -8,7 +8,7 @@ import { TopBar } from './components/TopBar';
 
 
 function App() {
-   const [user, setUser] = useState("");
+  const [user, setUser] = useState<User>({});
   // const conf = createConfiguration({ 
   //   baseServer: new ServerConfiguration("/odcsapi", {}),
 
@@ -18,7 +18,7 @@ function App() {
   return (
     <AuthContext value={{user, setUser}}>
       <TopBar />
-      Current user: {user}
+      Current user: {user.username}
       <Login />
     </AuthContext>
   )
