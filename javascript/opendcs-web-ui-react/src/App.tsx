@@ -18,8 +18,8 @@ function App() {
   return (
     <AuthContext value={{user, setUser}}>
       <TopBar />
-      Current user: {user.username}
-      <Login />
+      
+      {user?.username ? <div>Hello</div> : <Login />}
     </AuthContext>
   )
 }

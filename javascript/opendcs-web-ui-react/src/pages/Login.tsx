@@ -15,19 +15,33 @@ export default function Login() {
     }
 
     return (
-        <Container className="page-content">
-            <Container className="content-wrapper">
-                
-                <Container className="content loginPageBackground">
-                    <div className="fadeIn first">
-                        <Image src={user_img} id="icon" alt="User icon" />
-                    </div>
-                    <form onSubmit={handleLogin}>
-                        Username: <input name="username" defaultValue={user?.user?.username}/><br/>
-                        Password: TODO<br/>
-                        Organization: TODO (select)<br/>
-                        <button type="submit">Login</button>
-                    </form>
+        <Container className="page-content" fluid>
+            <Container className="content-wrapper" fluid>
+                <div className="page-header page-header-light">
+					<div className="page-header-content header-elements-md-inline">
+						<div className="page-title d-flex">
+							<h4><i className="bi bi-arrow-left me-2"></i> <span
+									className="font-weight-semibold">OpenDCS Web Client</span> - Login</h4>
+							<a href="#" className="header-elements-toggle text-default d-md-none"><i
+									className="bi bi-three-dots-vertical"></i></a>
+						</div>
+					</div>
+				</div>
+                <Container className="content loginPageBackground" fluid>
+                    <Container className="wrapper fadeInDown" fluid>
+                        <Container id="formContent" className="slightOpacity" fluid>
+                            <div className="fadeIn first">
+                                <Image src={user_img} id="icon" alt="User icon" />
+                            </div>
+                            <form onSubmit={handleLogin}>
+                                Username: <input name="username" defaultValue={user?.user?.username}/><br/>
+                                Password: TODO<br/>
+                                Organization: TODO (select)<br/>
+                                <button type="submit">Login</button>
+                            </form>
+                        </Container>    
+                    </Container>
+                    
                 </Container>
             </Container>
             <div>

@@ -6,11 +6,6 @@
 
 /* LINKS & HEADINGS INSIDE THE LOGIN FORM */
 
-.loginPageBackground {
-	background-image: url('img/river_2.jpg');
-	background-size: 100% 100%;
-}
-
 #formContent a {
   color: var(--bs-link-color, #0d6efd);
   text-decoration: none;
