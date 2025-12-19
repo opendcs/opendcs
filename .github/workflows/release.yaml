@@ -64,6 +64,9 @@ jobs:
         run: echo "VERSION=${{inputs.branch}}" >> $GITHUB_ENV
       - name: show version
         run: echo ${VERSION}
+      - name: Build
+        run: |
+          ./gradle --info build war
       - name: Push to central
         # We don't publish to maven central for the nightly builds
         if: inputs.nightly == false
