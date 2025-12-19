@@ -11,7 +11,7 @@ export default function Login() {
         const formData = new FormData(event.currentTarget);
     // Convert FormData to a plain object for easier use
         const dataObject = Object.fromEntries(formData.entries());
-        user?.setUser(dataObject.username.toString())
+        user?.setUser({username: dataObject.username.toString()})
     }
 
     return (
@@ -23,7 +23,7 @@ export default function Login() {
                         <Image src={user_img} id="icon" alt="User icon" />
                     </div>
                     <form onSubmit={handleLogin}>
-                        Username: <input name="username" defaultValue={user?.user}/><br/>
+                        Username: <input name="username" defaultValue={user?.user?.username}/><br/>
                         Password: TODO<br/>
                         Organization: TODO (select)<br/>
                         <button type="submit">Login</button>

@@ -1,8 +1,12 @@
 import { createContext } from "react";
 
-export interface AuthContextType {
-    user: string,
-    setUser: (name: string) => void
+export type User = {
+    username?: string
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export interface AuthContextType {
+    user?: User,
+    setUser: React.Dispatch<React.SetStateAction<User>>
+}
+
+export const AuthContext = createContext<AuthContextType|undefined>(undefined);
