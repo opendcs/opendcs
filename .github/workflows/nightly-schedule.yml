@@ -24,7 +24,8 @@ jobs:
       packages: write
       contents: write
       id-token: write
-    uses: ./.github/workflows/release.yaml
+    # make sure we're using a version that applies to the targeted release.
+    uses: opendcs/opendcs/.github/workflows/release.yaml@7.0
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
       signingKey: ${{ secrets.SIGNING_KEY }}
@@ -34,4 +35,3 @@ jobs:
     with:
       branch: "7.0"
       nightly: true
-
