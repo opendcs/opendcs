@@ -3,6 +3,7 @@ import './App.css'
 import { AuthContext, type User } from './contexts/AuthContext';
 import Login from './pages/Login';
 import { TopBar } from './components/TopBar';
+import { ModeIcons } from './components/ModeIcon';
 
 //import {createConfiguration, RESTAuthenticationAndAuthorizationApi, ServerConfiguration} from 'opendcs-api'
 
@@ -17,6 +18,7 @@ function App() {
   //tmp.checkSessionAuthorization();
   return (
     <AuthContext value={{user, setUser}}>
+      <ModeIcons />
       <TopBar />
       
       {user?.username ? <div>Hello</div> : <Login />}
