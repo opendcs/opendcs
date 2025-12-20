@@ -251,14 +251,15 @@ final class ComputationResourcesIT extends BaseApiIT
 		;
 		final var actualItem = response.body()
 									   .jsonPath()
-									   .getMap("find { it -> it.name = '" + expectedJson.getString("name") + "'}");
+									   .setRootPath("find { it -> it.name == '" + expectedJson.getString("name") + "'}");
+
 		assertNotNull(actualItem);
-		assertEquals(expectedJson.getString("name"), actualItem.get("name"));
-		assertEquals(expectedJson.getString("description"), actualItem.get("description"), () -> "Return was: " + response.asPrettyString());
-		assertEquals(expectedJson.getBoolean("enabled"), actualItem.get("enabled"));
-		assertEquals(expectedJson.getString("groupName"), actualItem.get("groupName"));
-		assertEquals(expectedJson.getString("algorithmName"), actualItem.get("algorithmName"));
-		assertEquals(expectedJson.getString("processName"), actualItem.get("processName"));
+		assertEquals(expectedJson.getString("name"), actualItem.getString("name"));
+		assertEquals(expectedJson.getString("description"), actualItem.getString("description"), () -> "Return was: " + response.asPrettyString());
+		assertEquals(expectedJson.getBoolean("enabled"), actualItem.getBoolean("enabled"));
+		assertEquals(expectedJson.getString("groupName"), actualItem.getString("groupName"));
+		assertEquals(expectedJson.getString("algorithmName"), actualItem.getString("algorithmName"));
+		assertEquals(expectedJson.getString("processName"), actualItem.getString("processName"));
 	}
 
 	@Test
