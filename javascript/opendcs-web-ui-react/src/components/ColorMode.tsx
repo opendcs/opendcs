@@ -13,6 +13,7 @@ export default function ColorModes () {
         } else {
             document.documentElement.dataset.bsTheme = theme.colorMode
         }
+        localStorage.setItem('theme-mode', theme.colorMode);
     }, [theme])
 
     let ActiveIcon;
