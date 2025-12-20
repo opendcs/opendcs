@@ -676,7 +676,7 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
             editDatabaseTypeCode = DB_SQL;
         else if (editDatabaseType.equalsIgnoreCase("nwis"))
             editDatabaseTypeCode = DB_NWIS;
-        else if (editDatabaseType.equalsIgnoreCase("cwms"))
+        else if (editDatabaseType.toLowerCase().startsWith("cwms"))
             editDatabaseTypeCode = DB_CWMS;
         else if (editDatabaseType.equalsIgnoreCase("opentsdb"))
             editDatabaseTypeCode = DB_OPENTSDB;
@@ -721,11 +721,12 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
         else if (editDatabaseTypeCode ==  DB_NWIS)
             editDatabaseType = "NWIS";
         else if (editDatabaseTypeCode ==  DB_CWMS)
-            editDatabaseType = "CWMS";
+            editDatabaseType = "CWMS-Oracle";
         else if (editDatabaseTypeCode ==  DB_OPENTSDB)
             editDatabaseType = "OPENTSDB";
         else if (editDatabaseTypeCode == DB_HDB)
             editDatabaseType = "HDB";
+        
 
         PropertiesUtil.storeInProps(this, props, null);
         props.remove("databaseTypeCode");

@@ -261,6 +261,10 @@ public final class BasicAuthResource extends OpenDcsResource
 	{
 		OpenDcsDatabase db = createDb();
 		ApiAuthorizationDAI dao = getAuthDao(db);
+		if (dao == null)
+		{
+			return Set.of(OpenDcsApiRoles.ODCS_API_GUEST);
+		}
 		try(DataTransaction tx = db.newTransaction())
 		{
 			return dao.getRoles(tx, username, organizationId);
@@ -274,15 +278,16 @@ public final class BasicAuthResource extends OpenDcsResource
 	private ApiAuthorizationDAI getAuthDao(OpenDcsDatabase db)
 	{
 		String databaseType = db.getSettings(DecodesSettings.class).orElseThrow().editDatabaseType;
+		log.info("Getting Auth DAO for {}", databaseType);
 		// Username+Password login only supported by OpenTSDB
-		if("opentsdb".equalsIgnoreCase(databaseType))
+		if("opendcs-postgres".equalsIgnoreCase(databaseType))
 		{
 			return new OpenTsdbAuthorizationDAO();
 		}
-		else if("cwms".equalsIgnoreCase(databaseType))
+		else if("cwms-oracle".equalsIgnoreCase(databaseType))
 		{
 			return new CwmsAuthorizationDAO();
 		}
-		throw new UnsupportedOperationException("Endpoint is unsupported by the OpenDCS REST API.");
+		return null;
 	}
 }
