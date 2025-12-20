@@ -1,7 +1,9 @@
 import { createContext, useContext } from "react";
 
+export type ColorMode = 'light' | 'dark' | 'auto';
+
 export type Theme = {
-    colorMode: 'light' | 'dark' | 'auto';
+    colorMode: ColorMode;
 }
 
 export interface ThemeContextType {
