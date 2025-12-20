@@ -1,71 +1,19 @@
 package org.opendcs.app;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.opendcs.app.RunDecj.Result;
+
+import static org.opendcs.app.RunDecj.appOutput;
 
 class DecjTest 
 {
-    private Result appOutput(String ...args) throws IOException, InterruptedException
-    {
-        List<String> argsList = new ArrayList<>();
-        String script = "build/install/opendcs/bin/decj";
-        if (System.getProperty("os.name").toLowerCase().contains("win"))
-        {
-            script += ".bat";
-        }
-        argsList.add(script);
-        argsList.add("org.opendcs.app.ArgumentEchoApp");
-        for (String arg: args)
-        {
-            argsList.add(arg);    
-        }
-        ProcessBuilder pb = new ProcessBuilder(argsList.toArray(new String[0]));
-        
-        Process proc = pb.start();
-        Properties props = new Properties();
-        
-        InputStream procOutput = proc.getInputStream();
-        InputStream procError = proc.getErrorStream();
-        props.load(procOutput);
-        try (ByteArrayOutputStream buffer = new ByteArrayOutputStream())
-        {
-            byte[] data = new byte[2048];
-            int bytesRead = 0;
-            while ((bytesRead = procError.read(data, 0, data.length)) != -1)
-            {
-                buffer.write(data, 0, bytesRead);
-            }
-            int code = proc.waitFor();
-            final String result = new String(buffer.toByteArray());
-            assertEquals(0, code, () -> "Unexpected exit: " + result);
-
-            List<String> argsListOut = new ArrayList<>();
-            String theArgs = props.getProperty("args","").trim();
-            if (!theArgs.isEmpty())
-            {
-                String[] argsArray = theArgs.split(",");
-                for (String arg: argsArray)
-                {
-                    argsListOut.add(arg.trim());
-                }
-            }
-            return new Result(argsListOut, props);
-        }
-        
-    }
+    
 
 
     @Test
@@ -110,15 +58,20 @@ class DecjTest
                            output.props.getProperty("cli", "could not retrieve CLI value") + "'");
     }
 
-    public static class Result
-    {
-        final List<String> args;
-        final Properties props;
 
-        public Result(List<String> args, Properties props)
-        {
-            this.args = args;
-            this.props = props;
-        }
+    @ParameterizedTest
+    @ArgsSource({"-S", "now - 1 hour"})
+    void test_arguments_with_spaces(String[] args) throws Exception
+    {
+        final Result output = appOutput(args);
+        assertEquals(args.length,
+                     output.args.size(),
+                     () -> "In correct number of arguments provided to application" +
+                           "\ncli was " + output.props.getProperty("cli", "CLI not created") +
+                           "\n args was " + output.props.getProperty("args", "no args?") +
+                           "\n stdout was:\n" + output.standardOut +
+                           "\n stderr was:\n" + output.errorOut);
     }
+
+    
 }

@@ -15,7 +15,7 @@
 ::   -D<prop>=<value>  Pass to JVM 
 ::
 :: Environment Variables:
-::   JAVA_HOME         Path to Java installation (required)
+::   JAVA_HOME         Path to Java installation (if not set, java.exe must be in system PATH)
 ::   DCSTOOL_USERDIR   User config directory (default: %APPDATA%\.opendcs)
 ::   DECJ_MAXHEAP      Max heap size (e.g., -Xmx512m)
 ::   DECJ_OPTS         Additional JVM options
@@ -30,7 +30,6 @@
 setLocal EnableDelayedExpansion
 
 set "DEFAULT_HEAP=-Xms240m"
-set "DEBUG_DECJ="
 
 call :InitializePaths
 
@@ -93,9 +92,17 @@ exit /B %ERRORLEVEL%
 
 :ValidateJavaHome
     if not defined JAVA_HOME (
-        call :LogStderr "ERROR: JAVA_HOME environment variable is not set."
-        call :LogStderr "Please set JAVA_HOME to a Java %MIN_JAVA_VERSION%+ installation."
-        exit /B 1
+        call :FindJavaExe
+        if "!JAVA_EXE_PATH!"=="" (
+            echo java.exe not found in the system PATH.
+            call :LogStderr "ERROR: JAVA_HOME environment variable is not set."
+            call :LogStderr "Please set JAVA_HOME to a Java installation, or ensure java.exe is in the system PATH."
+            exit /B 1
+        )
+        for /f "delims=" %%i in ("!JAVA_EXE_PATH!") do set "JAVA_BIN_DIR=%%~dpi"
+        set "JAVA_BIN_DIR=!JAVA_BIN_DIR:~0,-1!"
+        for /f "delims=" %%i in ("!JAVA_BIN_DIR!") do set "JAVA_HOME=%%~dpi"
+        set "JAVA_HOME=!JAVA_HOME:~0,-1!"
     )
     if not exist "%JAVA_HOME%\bin\java.exe" (
         call :LogStderr "ERROR: Java executable not found at %JAVA_HOME%\bin\java.exe"
@@ -104,6 +111,14 @@ exit /B %ERRORLEVEL%
     )
     exit /B 0
 
+:FindJavaExe
+    set "JAVA_EXE_PATH="
+    for /f "delims=" %%i in ('where java 2^>nul') do (
+        if not defined JAVA_EXE_PATH set "JAVA_EXE_PATH=%%i"
+    )
+    exit /B 0
+
+
 
 :LaunchApplication
     set CLI_CMD="%JAVA_HOME%\bin\java" %DEFAULT_HEAP% %DECJ_MAXHEAP% %DECJ_OPTS% !JVM_ARGS! -cp "!CLASSPATH!" -DDCSTOOL_HOME="%APP_PATH%" -DDECODES_INSTALL_DIR="%APP_PATH%" -DDCSTOOL_USERDIR="%DCSTOOL_USERDIR%" !LOGBACK! !ARGS!
@@ -111,8 +126,6 @@ exit /B %ERRORLEVEL%
     if defined DEBUG_DECJ (
         echo [DEBUG] === Launching Application ===
         echo [DEBUG] JAVA_HOME: %JAVA_HOME%
-        set "CLI_DISPLAY=!CLI_CMD:\=\\!"
-        echo [DEBUG] cli: !CLI_DISPLAY!
     )
 
     !CLI_CMD!
@@ -140,7 +153,14 @@ exit /B %ERRORLEVEL%
     if "!CURRENT_ARG!"=="-a" goto :_HandleApp
 
     if defined DEBUG_DECJ echo [DEBUG] Adding to ARGS: !CURRENT_ARG!
-    set "ARGS=!ARGS! !CURRENT_ARG!"
+    :: Check if argument contains spaces - if so, preserve quotes
+    set "_NEEDS_QUOTES="
+    echo !CURRENT_ARG! | findstr /C:" " >nul && set "_NEEDS_QUOTES=1"
+    if defined _NEEDS_QUOTES (
+        set "ARGS=!ARGS! "!CURRENT_ARG!""
+    ) else (
+        set "ARGS=!ARGS! !CURRENT_ARG!"
+    )
     shift
     goto :_ParseLoop
 
