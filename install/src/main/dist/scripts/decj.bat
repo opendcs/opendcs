@@ -30,7 +30,6 @@
 setLocal EnableDelayedExpansion
 
 set "DEFAULT_HEAP=-Xms240m"
-set "DEBUG_DECJ="
 
 call :InitializePaths
 
@@ -127,8 +126,6 @@ exit /B %ERRORLEVEL%
     if defined DEBUG_DECJ (
         echo [DEBUG] === Launching Application ===
         echo [DEBUG] JAVA_HOME: %JAVA_HOME%
-        set "CLI_DISPLAY=!CLI_CMD:\=\\!"
-        echo [DEBUG] cli: !CLI_DISPLAY!
     )
 
     !CLI_CMD!
@@ -156,7 +153,14 @@ exit /B %ERRORLEVEL%
     if "!CURRENT_ARG!"=="-a" goto :_HandleApp
 
     if defined DEBUG_DECJ echo [DEBUG] Adding to ARGS: !CURRENT_ARG!
-    set "ARGS=!ARGS! !CURRENT_ARG!"
+    :: Check if argument contains spaces - if so, preserve quotes
+    set "_NEEDS_QUOTES="
+    echo !CURRENT_ARG! | findstr /C:" " >nul && set "_NEEDS_QUOTES=1"
+    if defined _NEEDS_QUOTES (
+        set "ARGS=!ARGS! "!CURRENT_ARG!""
+    ) else (
+        set "ARGS=!ARGS! !CURRENT_ARG!"
+    )
     shift
     goto :_ParseLoop
 
