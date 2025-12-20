@@ -40,7 +40,9 @@ The integration tests are only run if explicitly called out:
 
 .. code-block:: bash
 
-    ./gradlew :testing:opendcs-test:test --info -Popendcs.test.engine=OpenDCS-XML
+    ./gradlew :testing:opendcs-tests:test --info -Popendcs.test.engine=OpenDCS-XML
+    # OR
+    ./gradlew :testing:opendcs-tests:testOpenDCSXML
 
 .. WARNING::
 
@@ -447,13 +449,13 @@ To run use the following commands:
 
 .. code-block:: bash
 
-    ./gradlew :testing:opendcs-test:test -Popendcs.test.engine=OpenDCS-XML
+    ./gradlew :testing:opendcs-tests:test -Popendcs.test.engine=OpenDCS-XML
     # or 
-    ./gradlew :testing:opendcs-test:test -Popendcs.test.engine=OpenDCS-Postgres
+    ./gradlew :testing:opendcs-tests:test -Popendcs.test.engine=OpenDCS-Postgres
     # or 
-    ./gradlew :testing:opendcs-test:test -Popendcs.test.engine=OpenDCS-Oracle
+    ./gradlew :testing:opendcs-tests:test -Popendcs.test.engine=OpenDCS-Oracle
     # or 
-    ./gradlew :testing:opendcs-test:test -Popendcs.test.engine=CWMS-Oracle
+    ./gradlew :testing:opendcs-tests:test -Popendcs.test.engine=CWMS-Oracle
 
 Algorithm tests
 ---------------
