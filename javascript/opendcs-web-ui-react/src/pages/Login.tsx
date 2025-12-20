@@ -1,23 +1,35 @@
-import { useContext, type FormEvent } from "react";
+import { useContext, useEffect, type FormEvent } from "react";
 import { AuthContext } from "../contexts/AuthContext";
 import { Container, Image } from "react-bootstrap";
 import './Login.css';
 import user_img from '../assets/img/user_profile_image_large.png'
+import { createConfiguration, RESTAuthenticationAndAuthorizationApi, ServerConfiguration } from "opendcs-api";
+
+const conf = createConfiguration({ 
+        baseServer: new ServerConfiguration("/odcsapi", {}),
+        });
+const auth = new RESTAuthenticationAndAuthorizationApi(conf);
 
 export default function Login() {
-    const user = useContext(AuthContext);
+    const user = useContext(AuthContext)!;
     function handleLogin(event: FormEvent<HTMLFormElement>): void {
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
-    // Convert FormData to a plain object for easier use
         const dataObject = Object.fromEntries(formData.entries());
-        user?.setUser({username: dataObject.username.toString()})
+        // Convert FormData to a plain object for easier use
+        
+        
+        auth.postCredentials("", {username: dataObject.username.toString(), password: dataObject.password.toString()})
+            .then(() => user.setUser({username: dataObject.username.toString()}))
+            .catch((error_: { toString: () => string; }) => alert('Login failed' + error_.toString()));
+
     }
 
+    
     return (
-        <Container className="page-content" fluid>
+        <Container className="page-content d-flex" fluid>
             <Container className="content-wrapper" fluid>
-                <div className="page-header page-header-light">
+                <Container className="page-header page-header-light" fluid>
 					<div className="page-header-content header-elements-md-inline">
 						<div className="page-title d-flex">
 							<h4><i className="bi bi-arrow-left me-2"></i> <span
@@ -26,7 +38,7 @@ export default function Login() {
 									className="bi bi-three-dots-vertical"></i></a>
 						</div>
 					</div>
-				</div>
+				</Container>
                 <Container className="content loginPageBackground" fluid>
                     <Container className="wrapper fadeInDown" fluid>
                         <Container id="formContent" className="slightOpacity" fluid>
@@ -34,8 +46,8 @@ export default function Login() {
                                 <Image src={user_img} id="icon" alt="User icon" />
                             </div>
                             <form onSubmit={handleLogin}>
-                                Username: <input name="username" defaultValue={user?.user?.username}/><br/>
-                                Password: TODO<br/>
+                                Username: <input name="username" /><br/>
+                                Password: <input name="password" type="password" /><br/>
                                 Organization: TODO (select)<br/>
                                 <button type="submit">Login</button>
                             </form>

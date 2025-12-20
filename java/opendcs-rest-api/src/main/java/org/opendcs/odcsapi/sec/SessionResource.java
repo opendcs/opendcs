@@ -31,11 +31,10 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-
+import java.util.HashMap;
 import java.util.Map;
 
+import org.opendcs.database.model.User;
 import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.util.ApiConstants;
 
@@ -57,7 +56,7 @@ public final class SessionResource
 					@ApiResponse(responseCode = "200", description = "If the session is valid," +
 							" a successful response will be returned.",
 						content = @Content(mediaType = MediaType.APPLICATION_JSON,
-								schema = @Schema(implementation = User.class)
+								schema = @Schema(implementation = Map.class)
 							) ),
 					@ApiResponse(
 							responseCode = "401",
@@ -89,7 +88,7 @@ public final class SessionResource
 		OpenDcsPrincipal principal = (OpenDcsPrincipal) sessionPrincipal;
 		var user = principal.getName();
 		final HashMap<String,String> ret = new HashMap<>();
-		ret.put("email", user);
+		ret.put("username", user);
 		return Response.ok().entity(ret).build();
 	}
 

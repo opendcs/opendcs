@@ -5,7 +5,7 @@ export type User = {
 }
 
 export interface AuthContextType {
-    user?: User,
+    user: User,
     setUser: React.Dispatch<React.SetStateAction<User>>
 }
 
