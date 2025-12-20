@@ -1,22 +1,12 @@
-import { createContext, useContext } from "react";
-
-export type ColorMode = "light" | "dark" | "auto";
+import { createContext } from "react";
 
 export type Theme = {
-  colorMode: ColorMode;
-};
-
-export interface ThemeContextType {
-  theme: Theme;
-  setTheme: React.Dispatch<React.SetStateAction<Theme>>;
+    colorMode: 'light' | 'dark' | 'auto';
 }
 
-export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+export interface ThemeContextType {
+    theme: Theme,
+    setUser: React.Dispatch<React.SetStateAction<Theme>>
+}
 
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
-  if (context == undefined) {
-    throw new Error("Theme isn't defined?");
-  }
-  return context;
-};
+export const ThemeContext = createContext<Theme>({colorMode: "auto"});

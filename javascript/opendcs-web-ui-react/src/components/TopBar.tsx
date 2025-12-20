@@ -4,7 +4,7 @@ import { PersonGear } from 'react-bootstrap-icons';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import { AuthContext } from '../contexts/AuthContext';
-import ModeIcon from './ModeIcon';
+import ColorModes from './ColorMode';
 
 
 
@@ -18,11 +18,7 @@ export function TopBar() {
             </Container>
             <Nav className="navbar-right ms-md-auto flex-row-flex-warp">
                 <Nav.Item>
-                    <NavDropdown title={<ModeIcon name='circle-half' className='bi me-2 opacity-50 my-1 mode-icon-active  theme-icon' />} id="color-mode" drop='start'>
-                        <NavDropdown.Item><ModeIcon name='sun-fill' className='bi me-2 opacity-50 theme-icon' />Light</NavDropdown.Item>
-                        <NavDropdown.Item><ModeIcon name='moon-stars-fill' className='bi me-2 opacity-50 theme-icon' />Dark</NavDropdown.Item>
-                        <NavDropdown.Item><ModeIcon name='circle-half' className='bi me-2 opacity-50 theme-icon' />Auto</NavDropdown.Item>
-                    </NavDropdown>
+                    <ColorModes />
                 </Nav.Item>
                 {user?.user?.username ? 
                 <NavDropdown title={<PersonGear className="theme-icon my-1"/>} id="user-settings" drop="start" >
