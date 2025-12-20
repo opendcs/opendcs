@@ -59,6 +59,7 @@ public final class SecurityFilter implements ContainerRequestFilter
 		if (sessionPrincipal != null)
 		{
 			OpenDcsPrincipal principal = (OpenDcsPrincipal) sessionPrincipal;
+			
 			requestContext.setSecurityContext(
 				new OpenDcsSecurityContext(principal, httpServletRequest.isSecure(), SecurityContext.BASIC_AUTH));
 		}

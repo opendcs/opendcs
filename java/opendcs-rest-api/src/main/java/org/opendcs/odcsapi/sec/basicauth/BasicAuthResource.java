@@ -18,6 +18,8 @@ package org.opendcs.odcsapi.sec.basicauth;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import javax.sql.DataSource;
 
@@ -99,7 +101,10 @@ public final class BasicAuthResource extends OpenDcsResource
 			responses = {
 					@ApiResponse(
 							responseCode = "200",
-							description = "Successful authentication."
+							description = "Successful authentication.",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+								schema = @Schema(implementation = Map.class)
+							)
 					),
 					@ApiResponse(
 							responseCode = "400",
@@ -150,9 +155,12 @@ public final class BasicAuthResource extends OpenDcsResource
 			oldSession.invalidate();
 		}
 		HttpSession session = httpServletRequest.getSession(true);
+		
 		session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, principal);
+		HashMap<String,String> ret = new HashMap<>();
+		ret.put("username", credentials.getUsername());
 		return Response.ok()
-				.entity(new Status("Authentication Successful."))
+				.entity(ret)
 				.build();
 	}
 

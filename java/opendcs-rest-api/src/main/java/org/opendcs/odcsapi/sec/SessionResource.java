@@ -31,11 +31,10 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-
+import java.util.HashMap;
 import java.util.Map;
 
+import org.opendcs.database.model.User;
 import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.util.ApiConstants;
 
@@ -55,7 +54,10 @@ public final class SessionResource
 			description = "The ‘check’ GET method can be called with a configured session.",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "If the session is valid," +
-							" a successful response will be returned."),
+							" a successful response will be returned.",
+						content = @Content(mediaType = MediaType.APPLICATION_JSON,
+								schema = @Schema(implementation = Map.class)
+							) ),
 					@ApiResponse(
 							responseCode = "410",
 							description = "If the session is not valid, HTTP 410 is returned.",
@@ -76,8 +78,14 @@ public final class SessionResource
 	public Response checkSessionAuthorization()
 	{
 		//Security filters will ensure this method is only accessible via an authenticated client
-		return Response.ok().entity(new Status("Session Valid"))
-			.build();
+		var session = request.getSession();
+		Object sessionPrincipal = session.getAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE);
+		
+		OpenDcsPrincipal principal = (OpenDcsPrincipal) sessionPrincipal;
+		var user = principal.getName();
+		final HashMap<String,String> ret = new HashMap<>();
+		ret.put("username", user);
+		return Response.ok().entity(ret).build();
 	}
 
 	@DELETE
