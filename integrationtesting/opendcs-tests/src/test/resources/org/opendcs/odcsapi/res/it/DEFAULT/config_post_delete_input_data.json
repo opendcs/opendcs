@@ -34,7 +34,7 @@
             "fromAbbr" : "m",
             "toAbbr" : "ft",
             "algorithm" : "None",
-            "a" : 3.28084,
+            "a" : 3.280839895,
             "b" : null,
             "c" : null,
             "d" : null,
