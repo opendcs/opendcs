@@ -344,6 +344,10 @@ public class TopLevelParser implements XmlObjectParser
                         topLevelObject = Database.getDb();
                   DatabaseParser dp = new DatabaseParser((Database)topLevelObject);
                   dp.setFileLMT(getFileLMT());
+                  if (elementFilter != null)
+                  {
+                        dp.setElementFilter(elementFilter);
+                  }
                   hier.pushObjectParser(dp);
             }
             else if (elementFilter != null && !elementFilter.acceptElement(localName))
