@@ -19,9 +19,8 @@ dependencies {
 
 
 def buildUi = tasks.register("buildUi", NpxTask) {
-    dependsOn genTask
     dependsOn npmInstall
-    dependsOn api
+    dependsOn configurations.api
     command = "npm"
     args = ['run', 'build']
     outputs.dir(file("build/dist"))
