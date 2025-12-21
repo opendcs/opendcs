@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { Container, NavDropdown } from 'react-bootstrap';
+import { Button, Container, NavDropdown } from 'react-bootstrap';
 import { PersonGear } from 'react-bootstrap-icons';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
@@ -9,7 +9,7 @@ import ColorModes from './ColorMode';
 
 
 export function TopBar() {
-    const user = useContext(AuthContext)
+    const {user, logout} = useContext(AuthContext)
     
     return (
         <Navbar fixed="top" expand="lg" className="bg-primary">
@@ -20,11 +20,15 @@ export function TopBar() {
                 <Nav.Item>
                     <ColorModes />
                 </Nav.Item>
-                {user?.user?.username ? 
+                {user?.username ?
                 <NavDropdown title={<PersonGear className="theme-icon my-1"/>} id="user-settings" drop="start" >
                     <NavDropdown.Item>Profile</NavDropdown.Item>
                     <NavDropdown.Item>Admin</NavDropdown.Item>
-                </NavDropdown> : <div/>
+                    <NavDropdown.Divider/>
+                    <NavDropdown.Item><Button onClick={logout}>Logout</Button></NavDropdown.Item>
+                </NavDropdown> 
+                : 
+                <div/>
                 }
                 
                 
