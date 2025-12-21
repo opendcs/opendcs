@@ -12,14 +12,17 @@ function App() {
   const {user, setUser} = useAuth();
   const api = useApi();
 
+  const username: string | undefined = user?.username;
+  const haveUser = user !== undefined;
+
   useEffect(() => {
         const auth = new RESTAuthenticationAndAuthorizationApi(api.conf);
         auth.checkSessionAuthorization()
+            // The current API spec (in the generated api) shows string as the return still
+            // the endpoint *correctly* returns a user object. likely just an issue
+            // with the autocomplete cache on my system.
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .then((value: any) => {
-                console.log(value);
-                setUser({username: value.username});
-            })
+            .then((value: any) => setUser(value))
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             .catch((_error) => { /* do nothing, just means we don't have a session */});
     }, [api.conf, setUser]);
@@ -30,7 +33,10 @@ function App() {
         <ModeIcons />
         <TopBar />
         
-        {user?.username ? <div>Hello, {user.username}</div> : <Login />}
+        {haveUser ? 
+          <div>Hello, {username}</div> 
+          :
+          <Login />}
       </>
   )
 }
