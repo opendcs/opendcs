@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from "react";
-import { AuthContext } from "./AuthContext";
+import { useMemo, useState, type ReactNode } from "react";
+import { AuthContext, type AuthContextType } from "./AuthContext";
 import type { User } from "./AuthContext";
 
 interface ProviderProps {
@@ -7,10 +7,18 @@ interface ProviderProps {
 }
 
 export const AuthProvider = ({children}: ProviderProps) => {
-    const [user, setUser] = useState<User>({username: undefined});
+    const [user, setUser] = useState<User|undefined>(undefined);
+
+    const logout = () => {};
+
+    const authValue = useMemo<AuthContextType>(() => ({
+        user,
+        setUser,
+        logout
+    }), [user,setUser]);
 
     return (
-        <AuthContext value={{user, setUser}}>
+        <AuthContext value={authValue}>
             {children}
         </AuthContext>
     );

@@ -25,7 +25,7 @@ function App() {
             })
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             .catch((_error) => { /* do nothing, just means we don't have a session */});
-    }, [user]);
+    }, [setUser]);
 
 
   return (
@@ -33,7 +33,7 @@ function App() {
         <ModeIcons />
         <TopBar />
         
-        {user.username ? <div>Hello, {user.username}</div> : <Login />}
+        {user?.username ? <div>Hello, {user.username}</div> : <Login />}
       </>
   )
 }
