@@ -1,6 +1,7 @@
-import { useMemo, useState, type ReactNode } from "react";
-import { AuthContext, type AuthContextType } from "./AuthContext";
-import type { User } from "./AuthContext";
+import { useState, type ReactNode } from "react";
+import { AuthContext, type AuthContextType, type User } from "./AuthContext";
+import { useApi } from "./ApiContext";
+import { RESTAuthenticationAndAuthorizationApi } from 'opendcs-api';
 
 interface ProviderProps {
     children: ReactNode;
@@ -9,13 +10,19 @@ interface ProviderProps {
 export const AuthProvider = ({children}: ProviderProps) => {
     const [user, setUser] = useState<User|undefined>(undefined);
 
-    const logout = () => {};
+    const apiContext = useApi();
 
-    const authValue = useMemo<AuthContextType>(() => ({
+    const logout = () => {
+        const auth = new RESTAuthenticationAndAuthorizationApi(apiContext.conf);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        auth.logout().then((_value: void) => setUser(undefined));
+    };
+
+    const authValue: AuthContextType = {
         user,
         setUser,
         logout
-    }), [user,setUser]);
+    };
 
     return (
         <AuthContext value={authValue}>

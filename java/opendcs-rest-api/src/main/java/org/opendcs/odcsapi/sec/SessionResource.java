@@ -96,7 +96,7 @@ public final class SessionResource
 			summary = "Remove access tokens and clear the client's session.",
 			description = "Session variables for the client will be cleared. The auth token will be invalidated.",
 			responses = {
-					@ApiResponse(responseCode = "200", description = "Session was cleared.")
+					@ApiResponse(responseCode = "204", description = "Session was cleared.")
 			},
 			tags = {"REST - Authentication and Authorization"}
 	)

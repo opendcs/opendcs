@@ -1,17 +1,17 @@
-import { useContext, useEffect, type FormEvent } from "react";
-import { AuthContext } from "../contexts/AuthContext";
+import { type FormEvent } from "react";
+import { useAuth } from "../contexts/AuthContext";
 import { Container, Image } from "react-bootstrap";
 import './Login.css';
 import user_img from '../assets/img/user_profile_image_large.png'
-import { createConfiguration, RESTAuthenticationAndAuthorizationApi, ServerConfiguration } from "opendcs-api";
-
-const conf = createConfiguration({ 
-        baseServer: new ServerConfiguration("/odcsapi", {}),
-        });
-const auth = new RESTAuthenticationAndAuthorizationApi(conf);
+import { RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
+import { useApi } from "../contexts/ApiContext";
 
 export default function Login() {
-    const user = useContext(AuthContext)!;
+    const user = useAuth();
+    const api = useApi();
+
+    const auth = new RESTAuthenticationAndAuthorizationApi(api.conf);
+
     function handleLogin(event: FormEvent<HTMLFormElement>): void {
         event.preventDefault();
         const formData = new FormData(event.currentTarget);

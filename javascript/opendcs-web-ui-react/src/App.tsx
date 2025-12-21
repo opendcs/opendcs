@@ -5,18 +5,15 @@ import Login from './pages/Login';
 import { TopBar } from './components/TopBar';
 import { ModeIcons } from './components/ModeIcon';
 
-import {createConfiguration, RESTAuthenticationAndAuthorizationApi, ServerConfiguration} from 'opendcs-api'
-const conf = createConfiguration({ 
-    baseServer: new ServerConfiguration("/odcsapi", {}),
-
-});
-const auth = new RESTAuthenticationAndAuthorizationApi(conf);
-
+import {RESTAuthenticationAndAuthorizationApi} from 'opendcs-api'
+import { useApi } from './contexts/ApiContext';
 
 function App() {  
   const {user, setUser} = useAuth();
+  const api = useApi();
+
   useEffect(() => {
-        console.log("Checking auth");
+        const auth = new RESTAuthenticationAndAuthorizationApi(api.conf);
         auth.checkSessionAuthorization()
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .then((value: any) => {
@@ -25,7 +22,7 @@ function App() {
             })
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             .catch((_error) => { /* do nothing, just means we don't have a session */});
-    }, [setUser]);
+    }, [api.conf, setUser]);
 
 
   return (
