@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import './App.css'
-import { AuthContext, type User } from './contexts/AuthContext';
+import { useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import { TopBar } from './components/TopBar';
 import { ModeIcons } from './components/ModeIcon';
-import { ThemeProvider } from './contexts/ThemeProvider';
 
 import {createConfiguration, RESTAuthenticationAndAuthorizationApi, ServerConfiguration} from 'opendcs-api'
 const conf = createConfiguration({ 
@@ -14,10 +13,8 @@ const conf = createConfiguration({
 const auth = new RESTAuthenticationAndAuthorizationApi(conf);
 
 
-function App() {
-  const [user, setUser] = useState<User>({});
-  
-
+function App() {  
+  const {user, setUser} = useAuth();
   useEffect(() => {
         console.log("Checking auth");
         auth.checkSessionAuthorization()
@@ -28,18 +25,16 @@ function App() {
             })
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             .catch((_error) => { /* do nothing, just means we don't have a session */});
-    }, []);
+    }, [user]);
 
 
   return (
-    <ThemeProvider>
-      <AuthContext value={{user, setUser}}>
+    <>
         <ModeIcons />
         <TopBar />
         
         {user.username ? <div>Hello, {user.username}</div> : <Login />}
-      </AuthContext>
-    </ThemeProvider>
+      </>
   )
 }
 
