@@ -1,33 +1,17 @@
 import { useState, type ReactNode } from "react";
-import { AuthContext, type AuthContextType } from "./AuthContext";
-import { useApi } from "./ApiContext";
-import { RESTAuthenticationAndAuthorizationApi, User } from "opendcs-api";
-import { useNavigate } from "react-router-dom";
+import { AuthContext } from "./AuthContext";
+import type { User } from "./AuthContext";
 
 interface ProviderProps {
-  children: ReactNode;
+    children: ReactNode;
 }
 
-export const AuthProvider = ({ children }: ProviderProps) => {
-  const navigate = useNavigate();
-  const [user, setUser] = useState<User | undefined>(undefined);
+export const AuthProvider = ({children}: ProviderProps) => {
+    const [user, setUser] = useState<User>({username: undefined});
 
-  const apiContext = useApi();
-
-  const logout = () => {
-    const auth = new RESTAuthenticationAndAuthorizationApi(apiContext.conf);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    auth.logout().then((_value: void) => {
-      setUser(undefined);
-      navigate("/login");
-    });
-  };
-
-  const authValue: AuthContextType = {
-    user,
-    setUser,
-    logout,
-  };
-
-  return <AuthContext value={authValue}>{children}</AuthContext>;
+    return (
+        <AuthContext value={{user, setUser}}>
+            {children}
+        </AuthContext>
+    );
 };

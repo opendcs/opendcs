@@ -55,6 +55,7 @@ def runUiDev = tasks.register("runUiDev", NpxTask) {
     description 'Runs npm run dev to begin UI development. Assumes an OpenDCS Api instances in available on localhost:7000/odcsapi'
     dependsOn npmInstall
     dependsOn configurations.api
+    project(":api-client-typescript")
     command = "npm"
     args = ['run', 'dev']
     //outputs.dir(file("build/dist"))
