@@ -226,7 +226,9 @@ public class WebAbstractDataSource extends DataSourceExec
 			try
 			{
 				currentWebDs.init(myProps, rsSince, rsUntil, null);
-				return currentWebDs.getRawMessage();
+				RawMessage msg = currentWebDs.getRawMessage();
+				Thread.sleep(100);
+				return msg;
 			}
 			catch(Exception ex)
 			{

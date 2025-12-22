@@ -393,6 +393,17 @@ public abstract class StreamDataSource extends DataSourceExec
         pmp.setProperties(allProps);
 
         // Call subclass method to open the stream
+        if (inputStream != null)
+        {
+            try
+            {
+                inputStream.close();
+            }
+            catch (IOException ex)
+            {
+                log.atError().setCause(ex).log("Unable to close input stream before reopening.");
+            }
+        }
         inputStream = open();
         startOfStream = true;
         huntMode = true;
