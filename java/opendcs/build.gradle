@@ -16,6 +16,8 @@ configurations {
         exclude group: "log4j"
         exclude group: "org.apache.xmlbeans", module: "xmlbeans"
         exclude group: "dom4j", module: "dom4j"
+        exclude group: "com.rmanet", module: "lookup"
+        exclude group: "mil.army.usace.hec", module: "lookup"
     }
 }
 
@@ -104,6 +106,7 @@ dependencies {
     implementation(libs.com.faster.xml.jackson.databind)
     implementation(libs.com.password4j.password4j)
     implementation(libs.org.netbeans.lookup)
+    implementation(libs.hec.lookup.compat)
 
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)
