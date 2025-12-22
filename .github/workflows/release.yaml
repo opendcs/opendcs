@@ -93,7 +93,7 @@ jobs:
              -PsigningKey="${{ secrets.signingKey != null && secrets.signingKey || secrets.SIGNING_KEY }}"
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5.8.0
+        uses: docker/metadata-action@v5.10.0
         with:
           tags: |
             type=sha
@@ -119,7 +119,7 @@ jobs:
           gh release upload ${VERSION} java/opendcs-web-ui/build/libs/opendcs-web-ui-${VERSION}.war.asc#opendcs-rest-ui-${VERSION}.asc --clobber
           gh release upload ${VERSION} java/opendcs-rest-api/build/swagger/opendcs-openapi.json#opendcs-openapi.json --clobber
       - name: Log in to the Container registry
-        uses: docker/login-action@v3.4.0
+        uses: docker/login-action@v3.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
