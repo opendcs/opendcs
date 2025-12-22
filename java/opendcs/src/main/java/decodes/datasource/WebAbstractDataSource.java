@@ -17,6 +17,7 @@
 */
 package decodes.datasource;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -123,6 +124,7 @@ public class WebAbstractDataSource extends DataSourceExec
 			String until, Vector<NetworkList> netlists) 
 		throws DataSourceException
 	{
+		
 		log.info("Initializing ...");
 		PropertiesUtil.copyProps(myProps, rsProps);
 
@@ -139,6 +141,12 @@ public class WebAbstractDataSource extends DataSourceExec
 			
 		rsSince = since;
 		rsUntil = until;
+
+		String limit = myProps.getProperty("rateLimit", null);
+		if (limit != null)
+		{
+			this.requestRateLimit = Integer.parseInt(limit);
+		}
 
 		// The URL is allowed to contain $SINCE and/or $UNTIL.
 		// Evaluate these strings according to the routing spec and format
@@ -207,12 +215,12 @@ public class WebAbstractDataSource extends DataSourceExec
 	}
 
 	@Override
-	public RawMessage getRawMessage() 
+	protected RawMessage getSourceRawMessage() 
 		throws DataSourceException
 	{
 		if (currentWebDs.isOpen())
 		{
-			try { return currentWebDs.getRawMessage(); }
+			try { return currentWebDs.getSourceRawMessage(); }
 			catch(DataSourceEndException ex)
 			{
 				log.info("End of '{}'", currentWebDs.getActiveSource());
@@ -227,7 +235,6 @@ public class WebAbstractDataSource extends DataSourceExec
 			{
 				currentWebDs.init(myProps, rsSince, rsUntil, null);
 				RawMessage msg = currentWebDs.getRawMessage();
-				Thread.sleep(100);
 				return msg;
 			}
 			catch(Exception ex)

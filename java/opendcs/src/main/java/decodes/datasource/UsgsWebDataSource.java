@@ -308,12 +308,12 @@ public class UsgsWebDataSource extends DataSourceExec
 	}
 
 	@Override
-	public RawMessage getRawMessage() 
+	protected RawMessage getSourceRawMessage() 
 		throws DataSourceException
 	{
 		if (currentWebDs.isOpen())
 		{
-			try { return currentWebDs.getRawMessage(); }
+			try { return currentWebDs.getSourceRawMessage(); }
 			catch(DataSourceEndException ex)
 			{
 				log.info("End of '{}'", currentWebDs.getActiveSource());
@@ -329,7 +329,7 @@ public class UsgsWebDataSource extends DataSourceExec
 			try
 			{
 				currentWebDs.init(myProps, "", "", null);
-				RawMessage ret = currentWebDs.getRawMessage();
+				RawMessage ret = currentWebDs.getSourceRawMessage();
 				return ret;
 			}
 			catch(Exception ex)

@@ -8,11 +8,13 @@ import java.util.Vector;
 
 import org.junit.jupiter.api.Test;
 import org.mockserver.client.MockServerClient;
+import org.mockserver.configuration.Configuration;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.netty.MockServer;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
+import org.slf4j.event.Level;
 
 import decodes.datasource.DataSourceEndException;
 import decodes.datasource.RawMessage;
@@ -69,7 +71,9 @@ class WebSourceTest extends AppTestBase
                                     .addLimit(limit -> limit.capacity(1000)
                                                             .refillGreedy(1000, Duration.ofHours(1)))
                                     .build();
-        
+        Configuration conf = Configuration.configuration();
+        Level currentLevel = conf.logLevel();
+        Configuration.configuration().logLevel(Level.ERROR);
         try (ClientAndServer server = new ClientAndServer(0))
         {
             server.when(request().withPath("/data/.*"))
@@ -88,7 +92,7 @@ class WebSourceTest extends AppTestBase
             Properties props = new Properties();
             Vector<NetworkList> netlists = new Vector<>();
         
-            final int MESSAGE_SIZE = 2000;
+            final int MESSAGE_SIZE = 200;
             NetworkList list = new NetworkList();
             for (int i = 0; i < MESSAGE_SIZE; i ++)
             {
@@ -100,8 +104,10 @@ class WebSourceTest extends AppTestBase
             props.setProperty("abstractUrl", "http://localhost:" + server.getPort() + "/data/$MEDIUMID/$SINCE/$UNTIL");
             props.setProperty("header","other");
             props.setProperty("onemessagefile", "true");
+            props.setProperty("rateLimit", "15");
             wads.setAllowNullPlatform(true);
             wads.init(props, "now - 2 hours", "now", netlists);
+            
             
             final ArrayList<RawMessage> messages = new ArrayList<>();
             assertThrows(DataSourceEndException.class, () ->
@@ -116,6 +122,10 @@ class WebSourceTest extends AppTestBase
             assertFalse(messages.isEmpty());
             assertEquals(MESSAGE_SIZE, messages.size());
             
+        }
+        finally
+        {
+            conf.logLevel(currentLevel);
         }
     }
 

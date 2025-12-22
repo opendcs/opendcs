@@ -190,7 +190,7 @@ commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
 apache-derby = { module = "org.apache.derby:derby", version.ref = "derby" }
 webcompere-system-stubs-jupiter = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "webcompere" }
 greenmail = { module = "com.icegreen:greenmail", version.ref = "greenmail" }
-org-mock-server = { module = "org.mock-server:mockserver-junit-jupiter-no-dependencies", version.ref = "mock-server" }
+org-mock-server = { module = "org.mock-server:mockserver-junit-jupiter", version.ref = "mock-server" }
 
 org-slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j-api" }
 #integration test deps

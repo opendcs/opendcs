@@ -334,6 +334,10 @@ public abstract class StreamDataSource extends DataSourceExec
             else if (name.equalsIgnoreCase("paritycheck")
                   || name.equalsIgnoreCase("parity"))
                 parityCheck = value.trim().toLowerCase();
+            else if (name.equalsIgnoreCase("ratelimit"))
+            {
+                this.requestRateLimit = Integer.parseInt(value.trim());
+            }
             else
                 processed = false;
 
@@ -428,7 +432,8 @@ public abstract class StreamDataSource extends DataSourceExec
 
       @throws DataSourceException if some other problem arises.
     */
-    public RawMessage getRawMessage()
+    @Override
+    protected RawMessage getSourceRawMessage()
         throws DataSourceException
     {
         RawMessage ret;
