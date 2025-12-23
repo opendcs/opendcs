@@ -29,9 +29,11 @@ class DecjTest
     @ParameterizedTest
     @ArgsSource({"-l","test.log"})
     @ArgsSource({"-l","test.log", "-Dtest=test"})
+    @ArgsSource({"-l","test.log", "-Dtest=test", "-DLRGSHOME=testdir"})
     @ArgsSource({"-ltest.log"})
-    @ArgsSource({"-ltest.log","-d3"})
-    @ArgsSource({"-ltest.log","-d", "3"})
+    @ArgsSource({"-ltest.log", "-d3"})
+    @ArgsSource({"-ltest.log", "-d", "3"})
+    @ArgsSource({"-DLRGSHOME=testdir", "-l", "test.log", "-Dtest=test"})
     void test_arguments_consumed(String[] args) throws Exception
     {
         final Result output = appOutput(args);

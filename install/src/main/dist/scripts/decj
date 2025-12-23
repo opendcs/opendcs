@@ -74,6 +74,7 @@ APP_NAME=$1
 LOG_FILE=""
 LOG_LEVEL="-DLOG_LEVEL=info"
 APP_ARGS=()
+JVM_ARGS=()
 
 # https://stackoverflow.com/a/36475789
 _ARGS=( "$@" )
@@ -108,7 +109,7 @@ function handle_jvm_prop {
   else
     prop="${arg:2}"
   fi
-  APP_ARGS+=("-D$prop") # these come before the class name so that the jvm sets them for us.
+  JVM_ARGS+=("-D$prop") # these come before the class name so that the jvm sets them for us.
 }
 
 
@@ -194,5 +195,5 @@ fi
 cmd=(java -Xms120m $DECJ_MAXHEAP $DECJ_OPTS)
 cmd+=(-cp $CP -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH)
 cmd+=(-DDCSTOOL_USERDIR=$DCSTOOL_USERDIR $LOGBACK)
-echo "cli: ${cmd[@]} ${APP_ARGS[@]@Q}"
-exec "${cmd[@]}"  "${APP_ARGS[@]}"
+echo "cli: ${cmd[@]} ${JVM_ARGS[@]} ${APP_ARGS[@]@Q}"
+exec "${cmd[@]}" "${JVM_ARGS[@]}"  "${APP_ARGS[@]}"
