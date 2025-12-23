@@ -56,7 +56,7 @@ public final class SessionResource
 					@ApiResponse(responseCode = "200", description = "If the session is valid," +
 							" a successful response will be returned.",
 						content = @Content(mediaType = MediaType.APPLICATION_JSON,
-								schema = @Schema(implementation = Map.class)
+								schema = @Schema(implementation = User.class)
 							) ),
 					@ApiResponse(
 							responseCode = "410",
@@ -84,7 +84,7 @@ public final class SessionResource
 		OpenDcsPrincipal principal = (OpenDcsPrincipal) sessionPrincipal;
 		var user = principal.getName();
 		final HashMap<String,String> ret = new HashMap<>();
-		ret.put("username", user);
+		ret.put("email", user);
 		return Response.ok().entity(ret).build();
 	}
 
