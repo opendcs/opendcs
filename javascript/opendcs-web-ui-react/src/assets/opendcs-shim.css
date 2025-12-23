@@ -87,6 +87,7 @@ body.sidebar-collapsed .nav-sidebar .nav-link {
 /* --------------------- Page content offset -------------------------------- */
 .page-content {
     margin-left: 0;
+    padding-left: 0;
 }
 
 body.has-sidebar:not(.sidebar-collapsed) .page-content {
