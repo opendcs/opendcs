@@ -7,13 +7,18 @@ import { ModeIcons } from './components/ModeIcon';
 
 import {RESTAuthenticationAndAuthorizationApi} from 'opendcs-api'
 import { useApi } from './contexts/ApiContext';
+import { BrowserRouter, Route, Routes, useNavigate } from 'react-router-dom';
+import { SideBar } from './components/SideBar';
+import { Platforms } from './pages/Platforms';
+import { Sites } from './pages/Sites';
+import { Container } from 'react-bootstrap';
+import { Algorithms } from './pages/Algorithms';
 
 function App() {  
+  const navigate = useNavigate();
   const {user, setUser} = useAuth();
   const api = useApi();
 
-  const username: string | undefined = user?.email;
-  const haveUser = user !== undefined;
 
   useEffect(() => {
     const auth = new RESTAuthenticationAndAuthorizationApi(api.conf);
@@ -24,7 +29,7 @@ function App() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .then((value: any) => setUser(value))
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        .catch((_error) => { /* do nothing, just means we don't have a session */});
+        .catch((_error: any) => navigate("/login"));
   }, [api.conf, setUser]);
 
 
@@ -32,11 +37,16 @@ function App() {
     <>
         <ModeIcons />
         <TopBar />
-        
-        {haveUser ? 
-          <div>Hello, {username}</div> 
-          :
-          <Login />}
+        <Container fluid className="page-content d-flex">
+          <Routes>
+            <Route path="/login" element={<Login />}/>
+            <Route element={<SideBar />}>
+              <Route path="/platforms" element={<Platforms />}/>
+              <Route path="/sites" element={<Sites />}/>
+              <Route path="/algorithms" element={<Algorithms />}/>
+            </Route>
+          </Routes>
+        </Container>
       </>
   )
 }

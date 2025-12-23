@@ -5,8 +5,11 @@ import './Login.css';
 import user_img from '../assets/img/user_profile_image_large.png'
 import { Credentials, RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
 import { useApi } from "../contexts/ApiContext";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function Login() {
+    const navigate = useNavigate();
+    const location = useLocation();
     const {setUser} = useAuth();
     const api = useApi();
 
@@ -28,7 +31,11 @@ export default function Login() {
 
         auth.postCredentials("", credentials)
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .then((user_value: any) => setUser(user_value))
+            .then((user_value: any) => {
+                setUser(user_value);
+                const redirectPath = location.state?.from || '/platforms';
+                navigate(redirectPath, { replace: true })
+            })
             .catch((error_: { toString: () => string; }) => alert('Login failed' + error_.toString()));
 
     }
