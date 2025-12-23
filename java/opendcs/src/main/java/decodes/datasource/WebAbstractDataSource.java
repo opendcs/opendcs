@@ -142,12 +142,6 @@ public class WebAbstractDataSource extends DataSourceExec
 		rsSince = since;
 		rsUntil = until;
 
-		String limit = myProps.getProperty("rateLimit", null);
-		if (limit != null)
-		{
-			this.requestRateLimit = Integer.parseInt(limit);
-		}
-
 		// The URL is allowed to contain $SINCE and/or $UNTIL.
 		// Evaluate these strings according to the routing spec and format
 		// them in the specified way.
@@ -220,7 +214,7 @@ public class WebAbstractDataSource extends DataSourceExec
 	{
 		if (currentWebDs.isOpen())
 		{
-			try { return currentWebDs.getSourceRawMessage(); }
+			try { return currentWebDs.getRawMessage(); }
 			catch(DataSourceEndException ex)
 			{
 				log.info("End of '{}'", currentWebDs.getActiveSource());

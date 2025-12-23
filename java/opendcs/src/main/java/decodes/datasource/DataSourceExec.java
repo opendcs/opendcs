@@ -188,9 +188,10 @@ public abstract class DataSourceExec implements PropertiesOwner
 	public abstract void close();
 
 	/**
-	 * Retrieve raw message from the source, apply rate limiting if configured to do so
+	 * Retrieve raw message from the source, apply rate limiting if configured to do so.
+	 * Aggregating DataSources should call this over getSourceRawMessage so that rate limiting applies to the correct target.
+	 * 
 	 * @return the next RawMessage object from the data source, or null if none currently available.
-	 *
 	 * @throws DataSourceTimeoutException if the data source is still
 	 * waiting for a message and the timeout (as defined in the properties
 	 * when init was called) has expired.
@@ -208,18 +209,26 @@ public abstract class DataSourceExec implements PropertiesOwner
 
 		if (requestRateLimit == -1) // no limiting just return
 		{
-			log.info("Not rate limited request.");
 			return getSourceRawMessage();
 		}
 
 		try
 		{
-			log.info("Supposedly rate limited request.");
 			RequestDelay take = rateQueue.take();
-			log.info("Delay was {}, inserted was {}, current time millis is {}, getDelay {}", take.delay, take.inserted, System.currentTimeMillis(), take.getDelay(TimeUnit.MILLISECONDS));
+			if (log.isTraceEnabled())
+			{
+				log.trace("Delay was {}, inserted was {}, current time millis is {}, getDelay {}",
+						  take.delay, take.inserted, System.currentTimeMillis(), take.getDelay(TimeUnit.MILLISECONDS));
+			}
 			RequestDelay newDelay = new RequestDelay(1, TimeUnit.MINUTES);
 			rateQueue.add(newDelay);
-			log.info("Delay was {}, inserted was {}, current time millis is {}, getDelay {}, rateQueue size = {}", newDelay.delay, newDelay.inserted, System.currentTimeMillis(), newDelay.getDelay(TimeUnit.MILLISECONDS), rateQueue.size());
+			if (log.isTraceEnabled())
+			{
+				log.trace("Delay was {}, inserted was {}, current time millis is {}, getDelay {}, " +
+						  "rateQueue size = {}",
+						  newDelay.delay, newDelay.inserted, System.currentTimeMillis(),
+						  newDelay.getDelay(TimeUnit.MILLISECONDS), rateQueue.size());
+			}
 
 		}
 		catch (InterruptedException ex)
@@ -382,6 +391,9 @@ public abstract class DataSourceExec implements PropertiesOwner
 		return false;
 	}
 
+	/**
+	 * Logic taken from https://krishnaprasadas.blogspot.com/2012/05/throttling-algorithm.html
+	 */
 	private static class RequestDelay implements Delayed
 	{
 

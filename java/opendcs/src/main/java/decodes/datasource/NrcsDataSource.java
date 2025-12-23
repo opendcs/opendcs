@@ -287,7 +287,7 @@ public class NrcsDataSource	extends DataSourceExec
 	{
 		if (currentWebDs.isOpen())
 		{
-			try { return currentWebDs.getSourceRawMessage(); }
+			try { return currentWebDs.getRawMessage(); }
 			catch(DataSourceEndException ex)
 			{
 				log.info("End of '{}'.", currentWebDs.getActiveSource());

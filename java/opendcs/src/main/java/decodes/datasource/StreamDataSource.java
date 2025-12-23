@@ -199,6 +199,8 @@ public abstract class StreamDataSource extends DataSourceExec
             + "with MediumID and header=NoHeader."),
         new PropertySpec("fileNameTimeStamp", PropertySpec.STRING,
             "(default null) Optional file-name time stamp in format 'MMddyyyyHHmmss'."),
+        new PropertySpec("rateLimit", PropertySpec.INT,
+            "(default -1) Limit on request rate in units of requests per minute.")
 
     };
 

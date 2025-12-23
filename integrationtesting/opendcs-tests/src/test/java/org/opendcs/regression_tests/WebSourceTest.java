@@ -64,12 +64,17 @@ class WebSourceTest extends AppTestBase
         return sb.toString();
     }
 
+    /**
+     * Tests with 1000/minute allowed with 2000 stations requested
+     * Bit artificial but it allows the code to be well excercised without taking excessive wall clock time.
+     * @throws Exception
+     */
     @Test
     void test_abstract_web_source() throws Exception
     {
         final Bucket bucket = Bucket.builder()
                                     .addLimit(limit -> limit.capacity(1000)
-                                                            .refillGreedy(1000, Duration.ofHours(1)))
+                                                            .refillGreedy(1000, Duration.ofMinutes(1)))
                                     .build();
         Configuration conf = Configuration.configuration();
         Level currentLevel = conf.logLevel();
@@ -92,7 +97,7 @@ class WebSourceTest extends AppTestBase
             Properties props = new Properties();
             Vector<NetworkList> netlists = new Vector<>();
         
-            final int MESSAGE_SIZE = 200;
+            final int MESSAGE_SIZE = 2000;
             NetworkList list = new NetworkList();
             for (int i = 0; i < MESSAGE_SIZE; i ++)
             {
@@ -104,7 +109,7 @@ class WebSourceTest extends AppTestBase
             props.setProperty("abstractUrl", "http://localhost:" + server.getPort() + "/data/$MEDIUMID/$SINCE/$UNTIL");
             props.setProperty("header","other");
             props.setProperty("onemessagefile", "true");
-            props.setProperty("rateLimit", "15");
+            props.setProperty("rateLimit", "990");
             wads.setAllowNullPlatform(true);
             wads.init(props, "now - 2 hours", "now", netlists);
             
