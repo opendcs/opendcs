@@ -139,6 +139,8 @@ testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgr
 testcontainers-oracle-free = { module = "org.testcontainers:testcontainers-oracle-free", version.ref="testcontainers" }
 hec-testcontainers-cwms = { module = "mil.army.usace.hec:testcontainers-cwms", version.ref = "hec-testcontainers-cwms" }
 
+com-bucket4j-bucket4j = { module = "com.bucket4j:bucket4j_jdk11-core", version.ref = "bucket4j" }
+
 [bundles]
 junit = [ "junit-api", "junit-engine", "junit-params" ]
 junit-platform = [ "junit-platform-launcher", "junit-platform-engine", "junit-platform-commons" ]
