@@ -11,11 +11,11 @@ repositories {
 
 dependencies {
     implementation 'org.opendcs.testing:gradle-plugin:1.0.0-M11'
-    implementation 'com.palantir.git-version:com.palantir.git-version.gradle.plugin:3.3.0'
+    implementation 'com.palantir.git-version:com.palantir.git-version.gradle.plugin:4.2.0'
 
     implementation 'com.github.spotbugs.snom:spotbugs-gradle-plugin:6.1.5'
 
-    implementation 'dev.sigstore:sigstore-gradle-sign-plugin:1.0.0'
+    implementation 'dev.sigstore:sigstore-gradle-sign-plugin:2.0.0'
     implementation 'io.github.opendcs.maven:maven-central-upload:0.1.2'
 
 }
