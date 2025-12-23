@@ -12,7 +12,7 @@ export function TopBar() {
     const {user, logout} = useContext(AuthContext)
     
     return (
-        <Navbar fixed="top" expand="lg" className="bg-primary">
+        <Navbar sticky="top" expand="lg" bg="primary">
             <Container fluid>
                     <Navbar.Brand href="#">OpenDCS</Navbar.Brand>
             </Container>
@@ -20,9 +20,9 @@ export function TopBar() {
                 <Nav.Item>
                     <ColorModes />
                 </Nav.Item>
-                {user?.username ?
+                {user ?
                 <NavDropdown title={<PersonGear className="theme-icon my-1"/>} id="user-settings" drop="start" >
-                    <NavDropdown.Item>Profile</NavDropdown.Item>
+                    <NavDropdown.Item>Profile - {user?.email}</NavDropdown.Item>
                     <NavDropdown.Item>Admin</NavDropdown.Item>
                     <NavDropdown.Divider/>
                     <NavDropdown.Item><Button onClick={logout}>Logout</Button></NavDropdown.Item>
