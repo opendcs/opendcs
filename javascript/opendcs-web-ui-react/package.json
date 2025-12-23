@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "bootstrap": "^5.3.8",
+    "datatables.net-bs5": "^2.3.6",
+    "datatables.net-react": "^1.0.1",
     "opendcs-api": "file:../../java/api-clients/api-client-typescript/build/generated/openApi",
     "react": "^19.2.0",
     "react-bootstrap": "^2.10.10",
