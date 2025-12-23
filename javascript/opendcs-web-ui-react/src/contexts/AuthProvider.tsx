@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
-import { AuthContext, type AuthContextType, type User } from "./AuthContext";
+import { AuthContext, type AuthContextType } from "./AuthContext";
 import { useApi } from "./ApiContext";
-import { RESTAuthenticationAndAuthorizationApi } from 'opendcs-api';
+import { RESTAuthenticationAndAuthorizationApi, User } from 'opendcs-api';
 
 interface ProviderProps {
     children: ReactNode;
