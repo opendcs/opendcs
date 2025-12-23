@@ -16,6 +16,7 @@
 */
 package decodes.datasource;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -207,7 +208,7 @@ public class WebAbstractDataSource extends DataSourceExec
 	}
 
 	@Override
-	public RawMessage getRawMessage()
+	protected RawMessage getSourceRawMessage()
 		throws DataSourceException
 	{
 		if (currentWebDs.isOpen())
@@ -226,7 +227,8 @@ public class WebAbstractDataSource extends DataSourceExec
 			try
 			{
 				currentWebDs.init(myProps, rsSince, rsUntil, null);
-				return currentWebDs.getRawMessage();
+				RawMessage msg = currentWebDs.getRawMessage();
+				return msg;
 			}
 			catch(Exception ex)
 			{

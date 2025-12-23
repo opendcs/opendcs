@@ -318,26 +318,26 @@ public class ScpDataSource extends DataSourceExec
 	}
 
 	@Override
-	public RawMessage getRawMessage()
+	protected RawMessage getSourceRawMessage()
 		throws DataSourceException
 	{
 		if (currentFileDS == null)
 			throw new DataSourceEndException(module + " file delegate aborted.");
 		try
 		{
-			return currentFileDS.getRawMessage();
+			return currentFileDS.getSourceRawMessage();
 		}
 		catch(DataSourceEndException ex)
 		{
 			log.info("End of file '{}'", currentFile.getPath());
 			openNextFile();
-			return getRawMessage(); // recursive call with newly opened file.
+			return getSourceRawMessage(); // recursive call with newly opened file.
 		}
 		catch(DataSourceException ex)
 		{
 			log.atWarn().setCause(ex).log(" Error processing file '{}'", currentFile.getPath());
 			openNextFile();
-			return getRawMessage(); // recursive call with newly opened file.
+			return getSourceRawMessage(); // recursive call with newly opened file.
 		}
 	}
 

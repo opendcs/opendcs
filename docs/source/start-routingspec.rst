@@ -244,6 +244,7 @@ Additional common parameters defined included for web sources are:
 * OneMessageFile: if True entire web page is assumed to contain one message
 * before: 
 * header: 
+* rateLimit: limit in requests per minute to throttle access to the target (also applies to abstractweb)
 
 .. image:: ./media/start/routingspec/im-06-source-web.JPG
    :alt: sources

@@ -12,11 +12,19 @@
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 * License for the specific language governing permissions and limitations
 * under the License.
+*
+* The rate limiting (in getRawMessage and RequestDelay) is derived from:
+* https://stackoverflow.com/a/1407228 
+* and 
+* https://krishnaprasadas.blogspot.com/2012/05/throttling-algorithm.html
 */
 package decodes.datasource;
 
 import java.util.Properties;
 import java.util.Vector;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.TimeUnit;
 
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -63,6 +71,11 @@ public abstract class DataSourceExec implements PropertiesOwner
 	protected RoutingSpecThread routingSpecThread = null;
 
 	protected Database db = null;
+
+
+	protected int requestRateLimit = -1; // Rate limit of requests per minute
+
+	private final DelayQueue<RequestDelay> rateQueue = new DelayQueue<>();
 
 	/**
 	 * Required constructor for any data source.
@@ -175,6 +188,58 @@ public abstract class DataSourceExec implements PropertiesOwner
 	public abstract void close();
 
 	/**
+	 * Retrieve raw message from the source, apply rate limiting if configured to do so.
+	 * Aggregating DataSources should call this over getSourceRawMessage so that rate limiting applies to the correct target.
+	 * 
+	 * @return the next RawMessage object from the data source, or null if none currently available.
+	 * @throws DataSourceTimeoutException if the data source is still
+	 * waiting for a message and the timeout (as defined in the properties
+	 * when init was called) has expired.
+	 * @throws DataSourceException if some other problem arises.
+	 */
+	public RawMessage getRawMessage() throws DataSourceException
+	{
+		if (requestRateLimit > 0 && rateQueue.size() == 0)
+		{
+			for (int i = 0; i < requestRateLimit; i++)
+			{
+				rateQueue.add(new RequestDelay(0, TimeUnit.SECONDS));
+			}
+		}
+
+		if (requestRateLimit == -1) // no limiting just return
+		{
+			return getSourceRawMessage();
+		}
+
+		try
+		{
+			RequestDelay take = rateQueue.take();
+			if (log.isTraceEnabled())
+			{
+				log.trace("Delay was {}, inserted was {}, current time millis is {}, getDelay {}",
+						  take.delay, take.inserted, System.currentTimeMillis(), take.getDelay(TimeUnit.MILLISECONDS));
+			}
+			RequestDelay newDelay = new RequestDelay(1, TimeUnit.MINUTES);
+			rateQueue.add(newDelay);
+			if (log.isTraceEnabled())
+			{
+				log.trace("Delay was {}, inserted was {}, current time millis is {}, getDelay {}, " +
+						  "rateQueue size = {}",
+						  newDelay.delay, newDelay.inserted, System.currentTimeMillis(),
+						  newDelay.getDelay(TimeUnit.MILLISECONDS), rateQueue.size());
+			}
+
+		}
+		catch (InterruptedException ex)
+		{
+			log.atWarn().setCause(ex).log("Interrupted waiting for delay value.");
+		}
+
+		return getSourceRawMessage();
+	}
+
+	/**
 	  Reads the next raw message from the data source and returns it.
 	  This DataSource will fill in the message data and attempt to
 	  associate it with a TransportMedium object.
@@ -186,7 +251,7 @@ public abstract class DataSourceExec implements PropertiesOwner
 	  when init was called) has expired.
 	  @throws DataSourceException if some other problem arises.
 	*/
-	public abstract RawMessage getRawMessage()
+	protected abstract RawMessage getSourceRawMessage()
 		throws DataSourceException;
 
 	/**
@@ -324,5 +389,35 @@ public abstract class DataSourceExec implements PropertiesOwner
 	public boolean supportsTimeRanges()
 	{
 		return false;
+	}
+
+	/**
+	 * Logic taken from https://krishnaprasadas.blogspot.com/2012/05/throttling-algorithm.html
+	 */
+	private static class RequestDelay implements Delayed
+	{
+
+		private final long delay;
+		private final long inserted;
+		private final TimeUnit delayUnit; // always MILLISECONDS
+
+		public RequestDelay(long providedDelay, TimeUnit providedDelayUnit)
+		{
+			this.delayUnit = TimeUnit.MILLISECONDS;
+			this.delay = this.delayUnit.convert(providedDelay, providedDelayUnit);
+			this.inserted = System.currentTimeMillis();
+		}
+
+		@Override
+		public int compareTo(Delayed o)
+		{
+			return Long.compare(getDelay(delayUnit), o.getDelay(delayUnit));
+		}
+
+		@Override
+		public long getDelay(TimeUnit unit)
+		{
+			return unit.convert((inserted - System.currentTimeMillis()) + delay, delayUnit);
+		}
 	}
 }

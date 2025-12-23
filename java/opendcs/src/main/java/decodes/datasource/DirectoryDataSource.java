@@ -399,7 +399,8 @@ public class DirectoryDataSource extends DataSourceExec
 
 	  @throws DataSourceException if some other problem arises.
 	*/
-	public RawMessage getRawMessage()
+	@Override
+	protected RawMessage getSourceRawMessage()
 		throws DataSourceException
 	{
 		if (dirs.size() == 0)
@@ -509,7 +510,7 @@ public class DirectoryDataSource extends DataSourceExec
 		{
 			try
 			{
-				RawMessage ret = fileDataSource.getRawMessage(); // reads it.
+				RawMessage ret = fileDataSource.getSourceRawMessage(); // reads it.
 				return ret;
 			}
 			catch(DataSourceEndException ex)

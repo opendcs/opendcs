@@ -99,7 +99,7 @@ public class ByteArrayDataSource extends DataSourceExec
 	  when init was called) has expired.
 	  @throws DataSourceException if some other problem arises.
 	*/
-	public RawMessage getRawMessage()
+	protected RawMessage getSourceRawMessage()
 		throws DataSourceException
 	{
 		rawMessage = new RawMessage(bytes, bytes.length);

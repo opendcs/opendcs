@@ -218,7 +218,7 @@ public class WebDirectoryDataSource extends DataSourceExec
 	}
 
 	@Override
-	public RawMessage getRawMessage() 
+	protected RawMessage getSourceRawMessage()
 		throws DataSourceException
 	{
 		String filename;
