@@ -59,15 +59,12 @@ public final class SessionResource
 								schema = @Schema(implementation = User.class)
 							) ),
 					@ApiResponse(
-							responseCode = "410",
-							description = "If the session is not valid, HTTP 410 is returned.",
-							content = @Content(mediaType = MediaType.APPLICATION_JSON,
-									schema = @Schema(implementation = String.class),
-								examples = @ExampleObject(value = "No Session"))
-					),
-					@ApiResponse(
 							responseCode = "401",
-							description = "If the session is not valid, 401 is returned.",
+							description = 
+								"""
+								If there is no session. This could be because it never existed or
+								it had and the user logged out.
+								""",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
 								schema = @Schema(implementation = Map.class)
 							)
