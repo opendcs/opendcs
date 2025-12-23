@@ -104,7 +104,7 @@ public final class BasicAuthResource extends OpenDcsResource
 							responseCode = "200",
 							description = "Successful authentication.",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
-								schema = @Schema(implementation = Map.class)
+								schema = @Schema(implementation = User.class)
 							)
 					),
 					@ApiResponse(
@@ -159,7 +159,7 @@ public final class BasicAuthResource extends OpenDcsResource
 		
 		session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, principal);
 		HashMap<String,String> ret = new HashMap<>();
-		ret.put("username", credentials.getUsername());
+		ret.put("email", credentials.getUsername());
 		return Response.ok()
 				.entity(ret)
 				.build();
