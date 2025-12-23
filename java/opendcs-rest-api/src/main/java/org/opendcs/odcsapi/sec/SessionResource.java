@@ -66,13 +66,6 @@ public final class SessionResource
 								it had and the user logged out.
 								""",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
-									schema = @Schema(implementation = String.class),
-								examples = @ExampleObject(value = "No Session"))
-					),
-					@ApiResponse(
-							responseCode = "401",
-							description = "If the session is not valid, 401 is returned.",
-							content = @Content(mediaType = MediaType.APPLICATION_JSON,
 								schema = @Schema(implementation = Map.class)
 							)
 					)
