@@ -36,7 +36,18 @@ services:
     depends_on:
       db:
        condition: service_healthy
-  
+  set-db-type:
+    image: postgres:16-alpine # Using a lightweight Alpine-based image for PostgreSQL 16
+    restart: no
+    depends_on:
+      migration:
+        required: true
+        condition: service_completed_successfully
+    environment:
+      - PGPASSWORD=dcs_password
+    command: ["psql", "-U", "dcs_owner", "-w", "-f", "/extra.sql", "-h", "db", "-d", "dcs"]
+    volumes:
+      - ./compose_files/extra.sql:/extra.sql:ro
   api:
     build:
       context: .
@@ -54,6 +65,8 @@ services:
       - DB_MIN_IDLE=1
     depends_on:
       migration:
+        condition: service_completed_successfully
+      set-db-type:
         condition: service_completed_successfully
   pgadmin:
     image: dpage/pgadmin4
