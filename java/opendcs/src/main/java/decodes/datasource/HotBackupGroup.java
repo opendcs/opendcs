@@ -230,7 +230,8 @@ public class HotBackupGroup	extends DataSourceExec
 	  Returns the next RawMessage.
 	  @return the next RawMessage.
 	*/
-	public RawMessage getRawMessage()
+	@Override
+	protected RawMessage getSourceRawMessage()
 		throws DataSourceException
 	{
 		long now = System.currentTimeMillis();

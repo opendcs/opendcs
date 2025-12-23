@@ -76,6 +76,7 @@ tomcat = "11.0.14"
 # integration test deps
 testcontainers = { strictly = "2.0.2" }
 hec-testcontainers-cwms = "2.0.0"
+bucket4j = "8.15.0"
 
 # manual test deps
 gherkin-kiwi = "1.0.0-M11"
@@ -189,7 +190,7 @@ commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
 apache-derby = { module = "org.apache.derby:derby", version.ref = "derby" }
 webcompere-system-stubs-jupiter = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "webcompere" }
 greenmail = { module = "com.icegreen:greenmail", version.ref = "greenmail" }
-org-mock-server = { module = "org.mock-server:mockserver-junit-jupiter-no-dependencies", version.ref = "mock-server" }
+org-mock-server = { module = "org.mock-server:mockserver-junit-jupiter", version.ref = "mock-server" }
 
 org-slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j-api" }
 #integration test deps
@@ -205,6 +206,7 @@ web-driver-manager = { module = "io.github.bonigarcia:webdrivermanager", version
 nimbus = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus" }
 jwt = { module = "com.auth0:java-jwt", version.ref = "jwt" }
 
+com-bucket4j-bucket4j = { module = "com.bucket4j:bucket4j_jdk11-core", version.ref = "bucket4j" }
 
 # webjars
 swagger-ui = { module ="org.webjars:swagger-ui", version.ref = "swagger-ui" }

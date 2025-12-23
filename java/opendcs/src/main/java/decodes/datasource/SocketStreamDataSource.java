@@ -340,7 +340,8 @@ public class SocketStreamDataSource extends DataSourceExec
 	  reached the 'until' time specified in the search criteria.
 	  @throws DataSourceException if some other problem arises.
 	*/
-	public RawMessage getRawMessage()
+	@Override
+	protected RawMessage getSourceRawMessage()
 		throws DataSourceException
 	{
 		RawMessage ret;

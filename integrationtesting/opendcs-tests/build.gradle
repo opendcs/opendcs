@@ -39,6 +39,8 @@ dependencies {
     testImplementation project(":testing:fixtures")
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)
+    testImplementation(libs.org.mock.server)
+    testImplementation(libs.com.bucket4j.bucket4j)
     testRuntimeOnly(libs.bundles.junit.platform)
     
     testImplementation(libs.bundles.testcontainers)

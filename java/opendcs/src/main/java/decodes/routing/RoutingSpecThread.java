@@ -426,7 +426,7 @@ public class RoutingSpecThread extends Thread
 			//=====================================================
 			myExec.setSubsystem("acquire");
 			RawMessage rm = null;
-			try 
+			try
 			{
 				rm = source.getRawMessage();
 				if (rm == null)
