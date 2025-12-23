@@ -113,6 +113,7 @@ public class WebDataSource extends StreamDataSource
 		// silently close
 		try 
 		{
+			log.info("Closing '{}'", activeAddr);
 			str.close();
 		}
 		catch(Exception ex)

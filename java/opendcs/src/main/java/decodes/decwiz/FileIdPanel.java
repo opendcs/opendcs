@@ -437,7 +437,7 @@ public class FileIdPanel extends DecWizPanel
 		try
 		{
 			ByteArrayDataSource bads = new ByteArrayDataSource(fileBytes);
-			rawMessage = bads.getRawMessage();
+			rawMessage = bads.getSourceRawMessage();
 			if ( transportMedium != null ) {
 				rawMessage.setTransportMedium(transportMedium);
 				bads.parseHeader();

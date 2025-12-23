@@ -281,7 +281,7 @@ public class NrcsDataSource extends DataSourceExec
 	}
 
 	@Override
-	public RawMessage getRawMessage()
+	protected RawMessage getSourceRawMessage() 
 		throws DataSourceException
 	{
 		if (currentWebDs.isOpen())
@@ -302,7 +302,7 @@ public class NrcsDataSource extends DataSourceExec
 			try
 			{
 				currentWebDs.init(myProps, "", "", null);
-				RawMessage ret = currentWebDs.getRawMessage();
+				RawMessage ret = currentWebDs.getSourceRawMessage();
 				return ret;
 			}
 			catch(Exception ex)

@@ -635,7 +635,8 @@ public class LrgsDataSource extends DataSourceExec
 
       @throws DataSourceException if some other problem arises.
     */
-    public RawMessage getRawMessage()
+    @Override
+    protected RawMessage getSourceRawMessage()
         throws DataSourceException
     {
         if (lddsClient == null || !lddsClient.isConnected())
@@ -780,7 +781,7 @@ public class LrgsDataSource extends DataSourceExec
             }
             else
             {
-                return getRawMessage();
+                return getSourceRawMessage();
             }
         }
         // Allow UnknownPlatformException to be propagated.

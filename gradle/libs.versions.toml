@@ -55,6 +55,7 @@ greenmail = "1.6.5"
 # integration test deps
 testcontainers = "2.0.2"
 hec-testcontainers-cwms = "2.0.0"
+bucket4j = "8.15.0"
 
 # manual test deps
 gherkin-kiwi = "1.0.0-M11"
@@ -130,7 +131,6 @@ webcompere-system-stubs-jupiter = { module = "uk.org.webcompere:system-stubs-jup
 fasterxml-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 greenmail = { module = "com.icegreen:greenmail", version.ref = "greenmail" }
 org-mock-server = { module = "org.mock-server:mockserver-junit-jupiter", version.ref = "mock-server" }
-
 
 #integration test deps
 
