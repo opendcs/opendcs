@@ -7,10 +7,8 @@ import java.util.Random;
 import java.util.Vector;
 
 import org.junit.jupiter.api.Test;
-import org.mockserver.client.MockServerClient;
 import org.mockserver.configuration.Configuration;
 import org.mockserver.integration.ClientAndServer;
-import org.mockserver.netty.MockServer;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
@@ -29,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.notFoundResponse;
 import static org.mockserver.model.HttpResponse.response;
 
 
@@ -96,7 +93,7 @@ class WebSourceTest extends AppTestBase
                   );
             Properties props = new Properties();
             Vector<NetworkList> netlists = new Vector<>();
-        
+
             final int MESSAGE_SIZE = 2000;
             NetworkList list = new NetworkList();
             for (int i = 0; i < MESSAGE_SIZE; i ++)
@@ -112,8 +109,8 @@ class WebSourceTest extends AppTestBase
             props.setProperty("rateLimit", "990");
             wads.setAllowNullPlatform(true);
             wads.init(props, "now - 2 hours", "now", netlists);
-            
-            
+
+
             final ArrayList<RawMessage> messages = new ArrayList<>();
             assertThrows(DataSourceEndException.class, () ->
             {
@@ -126,7 +123,7 @@ class WebSourceTest extends AppTestBase
             });
             assertFalse(messages.isEmpty());
             assertEquals(MESSAGE_SIZE, messages.size());
-            
+
         }
         finally
         {

@@ -432,7 +432,7 @@ public class FtpDataSource extends DataSourceExec
 	}
 
 	@Override
-	protected RawMessage getSourceRawMessage() 
+	protected RawMessage getSourceRawMessage()
 		throws DataSourceException
 	{
 		if (currentFileDS == null)

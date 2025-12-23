@@ -419,6 +419,5 @@ public abstract class DataSourceExec implements PropertiesOwner
 		{
 			return unit.convert((inserted - System.currentTimeMillis()) + delay, delayUnit);
 		}
-		
 	}
 }

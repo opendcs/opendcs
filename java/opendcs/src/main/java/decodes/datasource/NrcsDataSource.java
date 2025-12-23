@@ -281,7 +281,7 @@ public class NrcsDataSource extends DataSourceExec
 	}
 
 	@Override
-	protected RawMessage getSourceRawMessage() 
+	protected RawMessage getSourceRawMessage()
 		throws DataSourceException
 	{
 		if (currentWebDs.isOpen())
