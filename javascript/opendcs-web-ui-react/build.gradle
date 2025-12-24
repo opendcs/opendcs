@@ -26,14 +26,6 @@ def buildUi = tasks.register("buildUi", NpxTask) {
     outputs.dir(file("build/dist"))
 }
 
-def bundleUi = tasks.register("bundleUi", NpxTask) {
-    dependsOn buildUi
-    command = "npm"
-    args = ['run', 'bundle']
-    inputs.files file("build/dist")
-    outputs.dir(file("dist"))
-}
-
 node {
     // Version of Node.js to install. Required.
     version = '24.12.0'
@@ -48,6 +40,7 @@ node {
     // distBaseUrl = 'https://custom.node.dist.mirror'
 }
 
+build.dependsOn buildUi
 
 def runUiDev = tasks.register("runUiDev", NpxTask) {
     group 'application'

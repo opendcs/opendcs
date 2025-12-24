@@ -7,7 +7,7 @@ import { ModeIcons } from './components/ModeIcon';
 
 import {RESTAuthenticationAndAuthorizationApi} from 'opendcs-api'
 import { useApi } from './contexts/ApiContext';
-import { BrowserRouter, Route, Routes, useNavigate } from 'react-router-dom';
+import { Route, Routes, useNavigate } from 'react-router-dom';
 import { SideBar } from './components/SideBar';
 import { Platforms } from './pages/Platforms';
 import { Sites } from './pages/Sites';
@@ -16,7 +16,7 @@ import { Algorithms } from './pages/Algorithms';
 
 function App() {  
   const navigate = useNavigate();
-  const {user, setUser} = useAuth();
+  const {setUser} = useAuth();
   const api = useApi();
 
 
