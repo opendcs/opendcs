@@ -23,7 +23,7 @@ def buildUi = tasks.register("buildUi", NpxTask) {
     dependsOn configurations.api
     command = "npm"
     args = ['run', 'build']
-    outputs.dir(file("build/dist"))
+    outputs.dir(file("dist"))
 }
 
 node {
@@ -50,5 +50,4 @@ def runUiDev = tasks.register("runUiDev", NpxTask) {
     project(":api-client-typescript")
     command = "npm"
     args = ['run', 'dev']
-    //outputs.dir(file("build/dist"))
 }
