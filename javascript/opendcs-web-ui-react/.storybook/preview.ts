@@ -1,4 +1,9 @@
 import type { Preview } from '@storybook/react-vite'
+import 'bootstrap/dist/css/bootstrap.min.css'
+import 'datatables.net-bs5/css/dataTables.bootstrap5.min.css'
+import '../src/main.css'
+import '../src/assets/opendcs-shim.css'
+
 
 const preview: Preview = {
   parameters: {
