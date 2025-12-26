@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+    <Algorithm name="WeightedAverage">
+        <Comment>
+            Calculate Weighted Average values (eg Water Temperature) using:
+            sum(inputN*weightN) / weightTotal weightTotal is required input
+            timeseries, other input timeseries obey FAIL/IGNORE specifications.
+        </Comment>
+        <ExecClass>decodes.tsdb.algo.WeightedAverage</ExecClass>
+        <AlgoParm roleName="weightTotal">
+            <ParmType>i</ParmType>
+        </AlgoParm>
+        <AlgoParm roleName="input1">
+            <ParmType>i</ParmType>
+        </AlgoParm>
+        <AlgoParm roleName="input2">
+            <ParmType>i</ParmType>
+        </AlgoParm>
+        <AlgoParm roleName="weight1">
+            <ParmType>i</ParmType>
+        </AlgoParm>
+        <AlgoParm roleName="weight2">
+            <ParmType>i</ParmType>
+        </AlgoParm>
+        <AlgoParm roleName="output">
+            <ParmType>o</ParmType>
+        </AlgoParm>
+    </Algorithm>
+  <Computation name="Test1WeightedAverage">
+    <Comment></Comment>
+    <Enabled>false</Enabled>
+    <AlgorithmName>WeightedAverage</AlgorithmName>
+    <LastModified>2025-12-22 13:40:00 MST</LastModified>
+    <ValidStart>2024-10-01 00:00:00 UTC</ValidStart>
+    <ValidEnd>2024-10-09 00:00:00 UTC</ValidEnd>
+    <CompParm roleName="input1">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Temp-Water"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.Rev-Test</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="input2">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE2</SiteName>
+        <DataType Standard="CWMS" code="Temp-Water"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.Rev-Test</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="weight1">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Flow"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Ave.1Hour.Rev-Test</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="weight2">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE2</SiteName>
+        <DataType Standard="CWMS" code="Flow"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Ave.1Hour.Rev-Test</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="weightTotal">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE3</SiteName>
+        <DataType Standard="CWMS" code="Flow"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Ave.1Hour.Rev-Test</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="output">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE3</SiteName>
+        <DataType Standard="CWMS" code="Temp-Water"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.Rev-Weighted-Test</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+  </Computation>
+</CompMetaData>
