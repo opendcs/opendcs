@@ -1,5 +1,3 @@
-
-
 export const Algorithms = () => {
-    return (<div>Algorithms</div>);
+  return <div>Algorithms</div>;
 };

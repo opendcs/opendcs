@@ -23,7 +23,7 @@
   font-weight: 600;
   text-transform: uppercase;
   display: inline-block;
-  margin: 2.5rem 0 .75rem;
+  margin: 2.5rem 0 0.75rem;
   color: var(--bs-secondary-color, #6c757d);
 }
 
@@ -53,7 +53,7 @@
 #formContent {
   background-color: var(--bs-body-bg, #fff);
   border-radius: var(--bs-border-radius-lg, 0.5rem);
-  box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   width: 100%;
   max-width: 450px;
   position: relative;
@@ -67,8 +67,9 @@
   border-top: 1px solid var(--bs-border-color, #dee2e6);
   padding: 1rem;
   text-align: center;
-  border-radius: 0 0 var(--bs-border-radius-lg, 0.5rem) var(--bs-border-radius-lg, 0.5rem);
-  font-size: .875rem;
+  border-radius: 0 0 var(--bs-border-radius-lg, 0.5rem)
+    var(--bs-border-radius-lg, 0.5rem);
+  font-size: 0.875rem;
 }
 
 /* FORM FIELDS
@@ -84,7 +85,7 @@ select#id_organization {
   display: block;
   width: 100%;
   margin-bottom: 1rem;
-  padding: .375rem .75rem;
+  padding: 0.375rem 0.75rem;
   font-size: 1rem;
   font-weight: 400;
   line-height: 1.5;
@@ -92,8 +93,11 @@ select#id_organization {
   background-color: var(--bs-form-control-bg, #fff);
   background-clip: padding-box;
   border: 1px solid var(--bs-border-color, #ced4da);
-  border-radius: var(--bs-border-radius, .375rem);
-  transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out, background-color .15s ease-in-out;
+  border-radius: var(--bs-border-radius, 0.375rem);
+  transition:
+    border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out,
+    background-color 0.15s ease-in-out;
   text-align: center;
 }
 
@@ -112,7 +116,7 @@ select#id_organization:focus {
   background-color: var(--bs-form-control-bg, #fff);
   border-color: var(--bs-primary, #0d6efd);
   outline: 0;
-  box-shadow: 0 0 0 .25rem rgba(var(--bs-primary-rgb, 13, 110, 253), .25);
+  box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb, 13, 110, 253), 0.25);
 }
 
 /* BUTTONS
@@ -126,18 +130,22 @@ input[type="reset"] {
   display: inline-block;
   width: 100%;
   margin: 1rem 0 1.5rem;
-  padding: .6rem 1.5rem;
-  font-size: .875rem;
+  padding: 0.6rem 1.5rem;
+  font-size: 0.875rem;
   font-weight: 600;
   text-transform: uppercase;
   text-align: center;
-  border-radius: var(--bs-border-radius-pill, var(--bs-border-radius, .375rem));
+  border-radius: var(--bs-border-radius-pill, var(--bs-border-radius, 0.375rem));
   border: 1px solid var(--bs-primary, #0d6efd);
   color: #fff;
   background-color: var(--bs-primary, #0d6efd);
-  box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   cursor: pointer;
-  transition: background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out, transform .1s ease-in-out;
+  transition:
+    background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out,
+    transform 0.1s ease-in-out;
 }
 
 input[type="button"]:hover,
@@ -145,7 +153,7 @@ input[type="submit"]:hover,
 input[type="reset"]:hover {
   background-color: var(--bs-primary, #0d6efd);
   border-color: var(--bs-primary, #0d6efd);
-  box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .25);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.25);
   filter: brightness(0.95);
 }
 
@@ -153,7 +161,7 @@ input[type="button"]:active,
 input[type="submit"]:active,
 input[type="reset"]:active {
   transform: scale(0.97);
-  box-shadow: 0 .25rem .5rem rgba(0, 0, 0, .2);
+  box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.2);
 }
 
 /* SELECT2 INTEGRATION (organization dropdown) */
@@ -166,11 +174,11 @@ input[type="reset"]:active {
 .select2-container--default .select2-selection--single {
   background-color: var(--bs-form-control-bg, #fff);
   border: 1px solid var(--bs-border-color, #ced4da);
-  border-radius: var(--bs-border-radius, .375rem);
+  border-radius: var(--bs-border-radius, 0.375rem);
   min-height: calc(2.25rem + 2px);
   display: flex;
   align-items: center;
-  padding: .375rem .75rem;
+  padding: 0.375rem 0.75rem;
   box-shadow: none;
 }
 
@@ -181,14 +189,14 @@ input[type="reset"]:active {
 
 .select2-container--default .select2-selection--single .select2-selection__arrow {
   height: 100%;
-  right: .75rem;
+  right: 0.75rem;
 }
 
 /* Focus state for Select2 to match Bootstrap */
 .select2-container--default.select2-container--focus .select2-selection--single {
   border-color: var(--bs-primary, #0d6efd);
   outline: 0;
-  box-shadow: 0 0 0 .25rem rgba(var(--bs-primary-rgb, 13, 110, 253), .25);
+  box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb, 13, 110, 253), 0.25);
 }
 
 /* ANIMATIONS */
@@ -230,9 +238,30 @@ input[type="reset"]:active {
 
 /* Simple fade-in */
 
-@-webkit-keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
-@-moz-keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
-@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+@-webkit-keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@-moz-keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 
 .fadeIn {
   opacity: 0;
@@ -247,10 +276,26 @@ input[type="reset"]:active {
   animation-duration: 1s;
 }
 
-.fadeIn.first   { -webkit-animation-delay: 0.4s; -moz-animation-delay: 0.4s; animation-delay: 0.4s; }
-.fadeIn.second  { -webkit-animation-delay: 0.6s; -moz-animation-delay: 0.6s; animation-delay: 0.6s; }
-.fadeIn.third   { -webkit-animation-delay: 0.8s; -moz-animation-delay: 0.8s; animation-delay: 0.8s; }
-.fadeIn.fourth  { -webkit-animation-delay: 1s;   -moz-animation-delay: 1s;   animation-delay: 1s; }
+.fadeIn.first {
+  -webkit-animation-delay: 0.4s;
+  -moz-animation-delay: 0.4s;
+  animation-delay: 0.4s;
+}
+.fadeIn.second {
+  -webkit-animation-delay: 0.6s;
+  -moz-animation-delay: 0.6s;
+  animation-delay: 0.6s;
+}
+.fadeIn.third {
+  -webkit-animation-delay: 0.8s;
+  -moz-animation-delay: 0.8s;
+  animation-delay: 0.8s;
+}
+.fadeIn.fourth {
+  -webkit-animation-delay: 1s;
+  -moz-animation-delay: 1s;
+  animation-delay: 1s;
+}
 
 /* Underline hover effect for links inside form */
 
