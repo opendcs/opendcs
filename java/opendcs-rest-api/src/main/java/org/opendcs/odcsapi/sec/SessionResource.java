@@ -30,6 +30,11 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.opendcs.database.model.User;
 import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.util.ApiConstants;
 
@@ -49,13 +54,20 @@ public final class SessionResource
 			description = "The ‘check’ GET method can be called with a configured session.",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "If the session is valid," +
-							" a successful response will be returned."),
+							" a successful response will be returned.",
+						content = @Content(mediaType = MediaType.APPLICATION_JSON,
+								schema = @Schema(implementation = User.class)
+							) ),
 					@ApiResponse(
-							responseCode = "410",
-							description = "If the session is not valid, HTTP 410 is returned.",
+							responseCode = "401",
+							description = 
+								"""
+								If there is no session. This could be because it never existed or
+								it had and the user logged out.
+								""",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
-									schema = @Schema(implementation = String.class),
-								examples = @ExampleObject(value = "Session Valid"))
+								schema = @Schema(implementation = Map.class)
+							)
 					)
 			},
 			tags = {"REST - Authentication and Authorization"}
@@ -63,8 +75,14 @@ public final class SessionResource
 	public Response checkSessionAuthorization()
 	{
 		//Security filters will ensure this method is only accessible via an authenticated client
-		return Response.ok().entity(new Status("Session Valid"))
-			.build();
+		var session = request.getSession();
+		Object sessionPrincipal = session.getAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE);
+		
+		OpenDcsPrincipal principal = (OpenDcsPrincipal) sessionPrincipal;
+		var user = principal.getName();
+		final HashMap<String,String> ret = new HashMap<>();
+		ret.put("email", user);
+		return Response.ok().entity(ret).build();
 	}
 
 	@DELETE
@@ -75,7 +93,7 @@ public final class SessionResource
 			summary = "Remove access tokens and clear the client's session.",
 			description = "Session variables for the client will be cleared. The auth token will be invalidated.",
 			responses = {
-					@ApiResponse(responseCode = "200", description = "Session was cleared.")
+					@ApiResponse(responseCode = "204", description = "Session was cleared.")
 			},
 			tags = {"REST - Authentication and Authorization"}
 	)

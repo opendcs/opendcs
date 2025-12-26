@@ -112,18 +112,13 @@ public final class PlatformResources extends OpenDcsResource
 			throws DbException
 	{
 		DatabaseIO dbIo = getLegacyDatabase();
-		Map<String, ApiPlatformRef> ret = new HashMap<>();
 		try
 		{
 
 			PlatformList platformList = new PlatformList();
 			dbIo.readPlatformList(platformList, tmtype);
 			List<ApiPlatformRef> platSpecs = map(platformList);
-			for(ApiPlatformRef ps : platSpecs)
-			{
-				ret.put(ps.getName(), ps);
-			}
-			return Response.ok().entity(ret).build();
+			return Response.ok().entity(platSpecs).build();
 		}
 		catch (DatabaseException ex)
 		{

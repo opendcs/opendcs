@@ -75,7 +75,7 @@ final class FormAuthIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.assertThat()
 			.statusCode(is(Response.Status.OK.getStatusCode()))
-			.body("message", equalTo("Authentication Successful."))
+			.body("email", equalTo(credentials.getUsername()))
 		;
 
 		given()
@@ -90,6 +90,7 @@ final class FormAuthIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(Response.Status.OK.getStatusCode()))
+			.body("email", equalTo(credentials.getUsername()))
 		;
 
 	}

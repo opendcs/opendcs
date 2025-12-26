@@ -75,12 +75,19 @@ public class OpenDcsResource
 	protected final DatabaseIO getLegacyDatabase()
 	{
 		return createDb().getLegacyDatabase(Database.class)
-				.map(Database::getDbIo)
+				.map(db -> 
+				{
+					// if you hate this line... good. but it can't go away until we've made all the new DAOs.
+					// or someone goes through and makes sure Database is always injected. (NOTE: The DAOs will be easier.)
+					Database.setDb(db);
+					return db.getDbIo();
+				})
 				.orElseThrow(() -> new UnsupportedOperationException(UNSUPPORTED_OPERATION_MESSAGE));
 	}
 
 	protected TimeSeriesDb getLegacyTimeseriesDB()
 	{
+		getLegacyDatabase(); // make sure Database.setDb is called because way too many things use it.
 		return createDb().getLegacyDatabase(TimeSeriesDb.class)
 				.orElseThrow(() -> new UnsupportedOperationException(UNSUPPORTED_OPERATION_MESSAGE));
 	}

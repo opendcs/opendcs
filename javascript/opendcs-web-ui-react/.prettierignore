@@ -1,0 +1,6 @@
+.gradle
+.settings
+.vscode
+build
+dist
+node_modules
