@@ -1,17 +1,10 @@
 import { type ReactNode } from "react";
 import { ApiContext, defaultValue } from "./ApiContext";
 
-
 interface ProviderProps {
-    children: ReactNode;
+  children: ReactNode;
 }
 
-export const ApiProvider = ({children}: ProviderProps) => {
-    
-
-    return (
-        <ApiContext value={defaultValue}>
-            {children}
-        </ApiContext>
-    );
+export const ApiProvider = ({ children }: ProviderProps) => {
+  return <ApiContext value={defaultValue}>{children}</ApiContext>;
 };
