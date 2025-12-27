@@ -2,6 +2,8 @@ import DataTable, { type DataTableProps } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import { Button, Container } from "react-bootstrap";
 import 'datatables.net-responsive';
+import 'react-bootstrap-icons'
+import { Trash } from "react-bootstrap-icons";
   
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -16,12 +18,13 @@ export interface Property {
 interface PropertiesTableProps {
     theProps: Property[];
     addProp: () => void;
+    removeProp: (prop: string) => void,
     width?: React.CSSProperties['width'];
     height?: React.CSSProperties['height'];
     classes?: string;
 };
 
-export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, addProp, width = '20em', height = '100vh', classes = ''}) => {
+export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, addProp, removeProp, width = '20em', height = '100vh', classes = ''}) => {
     const columns = [
         {data: "name"},
         {data: "value"},
@@ -33,10 +36,16 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, addPr
         responsive: true
     };
 
+    const slots = {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        2: (data: Property, _row: unknown) => (
+        <div><Button onClick={() => removeProp(data.name)} aria-label="delete property"><Trash /></Button>
+        </div>)
+    };
 
     return (
         <Container fluid style={{width: width, height: height}} className={`${classes}`}>
-            <DataTable columns={columns} data={theProps} options={options}
+            <DataTable columns={columns} data={theProps} options={options} slots={slots}
                            className="table table-hover table-striped tablerow-cursor w-100 border">
                 <caption className="captionTitleCenter">
 					Properties
