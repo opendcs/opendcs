@@ -801,9 +801,8 @@ document.addEventListener('DOMContentLoaded', function() {
 	openDcsData = new OpenDcsData();
     openDcsData.getData(["platformrefs", "netlistrefs"], 
         function(classInstance, response) {
-    	for (var key in classInstance.data.platformrefs.data)
+    	for (var curPlatform in classInstance.data.platformrefs.data)
         {
-            var curPlatform = classInstance.data.platformrefs.data[key];
             var desc = (curPlatform.description != null ? curPlatform.description : "");
             var tmDataHtml = "";
             for (var key in curPlatform.transportMedia)

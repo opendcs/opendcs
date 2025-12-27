@@ -52,7 +52,7 @@ dependencies {
 
     
     runtimeOnly("org.webjars:webjars-locator-core:0.59")
-    runtimeOnly("org.webjars:webjars-servlet-2.x:1.6")
+    runtimeOnly("org.webjars:webjars-servlet-6.x:1.7")
 
     // DataTables + Bootstrap 5
     runtimeOnly("org.webjars.npm:datatables.net:1.13.8") {

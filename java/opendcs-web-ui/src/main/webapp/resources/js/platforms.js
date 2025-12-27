@@ -218,10 +218,8 @@ function updatePlatformsTable()
     platformsTable.init();
     platformsTable.clear();
     platformsTable.draw(false);
-    for (var key in openDcsData.data.platformrefs.data)
+    for (const curPlatform in openDcsData.data.platformrefs)
     {
-        var curPlatform = openDcsData.data.platformrefs.data[key];
-
         var params = {
                 "objectType": "platform",
                 "objectTypeDisplayName": "Platform",

@@ -196,9 +196,8 @@ function getTransportMediaIds(platform)
 function setNetlistPlatforms(netlistDetails)
 {
     let allPlatformsModded = {};
-    for (let platKey in openDcsData.data.platformrefs.data)
+    for (const curPlatform in openDcsData.data.platformrefs.data)
     {
-        let curPlatform = openDcsData.data.platformrefs.data[platKey];
 
         //TODO: Need to get transportMediumType as a property from the API call.
         curPlatform.transportMediumType = getTransportMediaTypes(curPlatform)
