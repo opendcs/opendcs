@@ -6,10 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "api:start": "cd ../../ && ./gradlew runWeb --info",
+    "api:generate": "cd ../../ && ./gradlew :api-client-typescript:build --info",
     "lint": "eslint .",
     "preview": "vite preview",
     "format:check": "prettier --check .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "predev": "npm run api:generate",
+    "prebuild": "npm run api:generate"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
