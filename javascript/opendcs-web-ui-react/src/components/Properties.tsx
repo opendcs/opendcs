@@ -1,7 +1,7 @@
 import DataTable, { type DataTableProps } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import { Button, Container } from "react-bootstrap";
-import 'datatables.net-responsive-dt';
+import 'datatables.net-responsive';
   
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -37,7 +37,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, addPr
     return (
         <Container fluid style={{width: width, height: height}} className={`${classes}`}>
             <DataTable columns={columns} data={theProps} options={options}
-                           className="table-hover table-striped tablerow-cursor w-100 border">
+                           className="table table-hover table-striped tablerow-cursor w-100 border">
                 <caption className="captionTitleCenter">
 					Properties
                     <Button variant="secondary" className="float-right captionButton mt-1"

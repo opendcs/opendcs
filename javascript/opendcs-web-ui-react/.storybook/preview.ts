@@ -1,6 +1,7 @@
 import type { Preview } from '@storybook/react-vite'
-import 'bootstrap/dist/css/bootstrap.min.css'
-import 'datatables.net-bs5/css/dataTables.bootstrap5.min.css'
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'datatables.net-bs5'
+import 'datatables.net-responsive-bs5'
 import '../src/main.css'
 import '../src/assets/opendcs-shim.css'
 
