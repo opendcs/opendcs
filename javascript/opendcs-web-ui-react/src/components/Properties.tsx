@@ -53,7 +53,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, addPr
                         onClick={
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         (_e: unknown) => addProp()
-                    }>+</Button>
+                    } aria-label="add property">+</Button>
                 </caption>
                 <thead>
                     <tr>
