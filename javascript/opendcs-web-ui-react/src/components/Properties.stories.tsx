@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-
 import { PropertiesTable, type PropertiesTableProps, type Property } from './Properties';
 import { useArgs } from 'storybook/internal/preview-api';
 
@@ -36,7 +35,12 @@ export const Empty: Story = {
     }
 
     return <PropertiesTable {...args} theProps={theProps} addProp={addProp} removeProp={removeProp} />;
-  }
+  },
+  play: async ({canvas, userEvent}) => {
+    const add = canvas.getByRole('button', {name: 'add property'});
+    console.log(userEvent);
+    await userEvent.click(add);
+  },
 };
 
 
