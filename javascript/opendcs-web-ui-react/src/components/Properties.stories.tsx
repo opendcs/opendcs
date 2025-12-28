@@ -1,17 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import Properties, { type Property } from './Properties';
+import { PropertiesTable, type PropertiesTableProps, type Property } from './Properties';
+import { useArgs } from 'storybook/internal/preview-api';
 
 const meta = {
-  component: Properties,
-  argTypes: {
-    theProps: {
-      control: {
-        type: 'object'
-      }
-    }
-  }
-} satisfies Meta<typeof Properties>;
+  component: PropertiesTable,
+} satisfies Meta<typeof PropertiesTable>;
 
 export default meta;
 
@@ -24,27 +18,32 @@ export const Empty: Story = {
 
   args: {
     theProps: theProps,
-    addProp: () => {theProps.push({
-      name: 'test',
-      value: 'test value'
-    })},
-    removeProp: (p: string) => {
-      console.log(p)
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const tmp = theProps.filter((pa: Property, _idx: number, _array: Property[]) => {
-        console.log(pa.name)
-        console.log(pa.name !== p);
-        return pa.name !== p;
-    });
-      Empty.args.theProps = tmp;
-    },
-    classes: ""
+    addProp: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    removeProp: (_prop: string) => {},
+  },
+  render: function Render(args: PropertiesTableProps) {
+    const [{theProps}, updateArgs] = useArgs();
+
+    function addProp() {
+      const tmp = [...theProps, {name: "", value: ""}];
+        updateArgs({theProps: tmp});
+    }
+
+    function removeProp(prop: string) {
+      const tmp = theProps.filter((e: Property) => e.name !== prop);
+      updateArgs({theProps: tmp});
+    }
+
+    return <PropertiesTable {...args} theProps={theProps} addProp={addProp} removeProp={removeProp} />;
   }
 };
 
 
 export const NotEmpty: Story = {
+  
   args: {
+    ...Empty.args,
     theProps: [
       {name: 'prop1', value: 'val1'},
       {name: 'prop2', value: 'val2'},
@@ -56,9 +55,6 @@ export const NotEmpty: Story = {
       {name: 'prop8', value: 'val8'},
       
     ],
-    addProp: () => {},
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    removeProp: (_p: string) => {},
-    classes: ""
-  }
+  },
+  render: Empty.render
 };
