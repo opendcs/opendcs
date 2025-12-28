@@ -15,7 +15,7 @@ export interface Property {
     tooltip?: string;
 }
 
-interface PropertiesTableProps {
+export interface PropertiesTableProps {
     theProps: Property[];
     addProp: () => void;
     removeProp: (prop: string) => void,
