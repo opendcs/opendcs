@@ -15,6 +15,7 @@ import uk.org.webcompere.systemstubs.SystemStubs;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,6 +29,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class DBImportExportTest extends AppTestBase
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
+    //TODO: try DBExport @Before this complete test, and DBImport @After, so other tests aren't impacted by the clean imports.
+    //TODO: remove golden comparisons since they have indeterminate orders and won't compare cleanly crossplatform
+    //TODO: change name of class since DBExport tests will not be included
+    //TODO: move try handling to assertdoesnotthrow per PR review comments
 
     @ParameterizedTest
     @CsvSource(useHeadersInDisplayName = true, value = { // would check datasources here too, but they're always zero in the DB for some reason
@@ -94,9 +99,9 @@ public class DBImportExportTest extends AppTestBase
         //File goldenFile = new File(TestResources.getResource(configuration,expectedResultFile));
         //String golden = cleanString(IOUtils.toString(goldenFile.toURI().toURL().openStream(), StandardCharsets.UTF_8));
         // code to generate golden results
-        FileWriter exportXMLFile = new FileWriter(TestResources.getResource(configuration,type + "export.xml"));
-        IOUtils.write(exportOut, exportXMLFile);
-        IOUtils.closeQuietly(exportXMLFile);
+        //FileWriter exportXMLFile = new FileWriter(TestResources.getResource(configuration,type + "export.xml"));
+        //IOUtils.write(exportOut, exportXMLFile);
+        //IOUtils.closeQuietly(exportXMLFile);
         //assertEquals(golden, cleanedOut, "Output Doesn't match expected data."); //how to handle modified times?!?
 
         try
