@@ -3,7 +3,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import ModeIcon from "./ModeIcon";
 import { Button, NavDropdown } from "react-bootstrap";
 
-export default function ColorModes() {
+export const ColorModes = () => {
   const { theme, setTheme } = useTheme();
 
   useEffect(() => {
@@ -70,3 +70,6 @@ export default function ColorModes() {
     </NavDropdown>
   );
 }
+
+
+export default ColorModes;
