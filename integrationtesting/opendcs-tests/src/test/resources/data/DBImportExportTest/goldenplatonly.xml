@@ -1,0 +1,5421 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Database>
+  <Platform PlatformId="7">
+    <Description>Site used for Regression Testing</Description>
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>12/29/2025 08:56:52</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>1.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Timezone>EST5EDT</Timezone>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">TESTSITE1</SiteName>
+      <SiteProperty PropertyName="PUBLIC_NAME">TESTSITE1</SiteProperty>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>Dummy config to allow import platform records.</Description>
+    </PlatformConfig>
+    <TransportMedium MediumType="goes-self-timed" MediumId="4561A4AE">
+      <DecodesScript ScriptName="ST"/>
+      <ChannelNum>22</ChannelNum>
+      <AssignedTime>00:18:40</AssignedTime>
+      <TransmitWindow>00:00:10</TransmitWindow>
+      <TransmitInterval>01:00</TransmitInterval>
+      <Preamble>S</Preamble>
+      <TimeZone>UTC</TimeZone>
+      <parity>U</parity>
+    </TransportMedium>
+  </Platform>
+  <Platform PlatformId="8">
+    <Description>Site used for Regression Testing</Description>
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>12/29/2025 08:56:52</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>10.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Timezone>EST5EDT</Timezone>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">TESTSITE5</SiteName>
+      <SiteProperty PropertyName="PUBLIC_NAME">TESTSITE5</SiteProperty>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>Dummy config to allow import platform records.</Description>
+    </PlatformConfig>
+    <TransportMedium MediumType="goes-self-timed" MediumId="4565121A">
+      <DecodesScript ScriptName="ST"/>
+      <ChannelNum>22</ChannelNum>
+      <AssignedTime>00:18:40</AssignedTime>
+      <TransmitWindow>00:00:10</TransmitWindow>
+      <TransmitInterval>01:00</TransmitInterval>
+      <Preamble>S</Preamble>
+      <TimeZone>UTC</TimeZone>
+      <parity>U</parity>
+    </TransportMedium>
+  </Platform>
+  <Platform PlatformId="9">
+    <Description>
+      Dummy site to import and test that elevation is updated.
+    </Description>
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>12/29/2025 08:56:52</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>10.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Timezone>EST5EDT</Timezone>
+      <Country>UNITED STATES</Country>
+      <Description>
+        Dummy site to import and test that elevation is updated.
+      </Description>
+      <SiteName NameType="CWMS">TESTSITE1</SiteName>
+      <SiteProperty PropertyName="PUBLIC_NAME">TESTSITE1</SiteProperty>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+    <TransportMedium MediumType="goes-self-timed" MediumId="4568117C">
+      <DecodesScript ScriptName="ST"/>
+      <ChannelNum>22</ChannelNum>
+      <AssignedTime>00:18:40</AssignedTime>
+      <TransmitWindow>00:00:10</TransmitWindow>
+      <TransmitInterval>01:00</TransmitInterval>
+      <Preamble>S</Preamble>
+      <TimeZone>UTC</TimeZone>
+      <parity>U</parity>
+    </TransportMedium>
+  </Platform>
+  <Platform PlatformId="10">
+    <Description>Site used for Platform Import Regression Testing</Description>
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>12/29/2025 08:56:52</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>10.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Timezone>EST5EDT</Timezone>
+      <Country>UNITED STATES</Country>
+      <NearestCity>TESTSITE4</NearestCity>
+      <Description>
+        Site used for Platform Import Regression Testing
+      </Description>
+      <SiteName NameType="CWMS">TESTSITE4</SiteName>
+      <SiteProperty PropertyName="PUBLIC_NAME">TESTSITE4</SiteProperty>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+    <TransportMedium MediumType="goes-self-timed" MediumId="45D467B8">
+      <DecodesScript ScriptName="ST"/>
+      <ChannelNum>22</ChannelNum>
+      <AssignedTime>00:18:40</AssignedTime>
+      <TransmitWindow>00:00:10</TransmitWindow>
+      <TransmitInterval>01:00</TransmitInterval>
+      <Preamble>S</Preamble>
+      <TimeZone>UTC</TimeZone>
+      <parity>U</parity>
+    </TransportMedium>
+  </Platform>
+  <RoutingSpec Name="TestExistingRS">
+    <IsProduction>false</IsProduction>
+    <DataSource Name="HotBackup" Type="hotbackupgroup1">
+      <DataSourceGroupMember SequenceNum="1">
+        <DataSource Name="EDDN1" Type="lrgs">
+          <DataSourceArg>
+            hostname=EDDN1, port=16003, password=password, username=userid
+          </DataSourceArg>
+        </DataSource>
+      </DataSourceGroupMember>
+      <DataSourceGroupMember SequenceNum="2">
+        <DataSource Name="EDDN2" Type="lrgs">
+          <DataSourceArg>
+            hostname=EDDN2, port=16003, password=password, username=userid
+          </DataSourceArg>
+        </DataSource>
+      </DataSourceGroupMember>
+    </DataSource>
+    <EnableEquations>false</EnableEquations>
+    <UsePerformanceMeasurements>false</UsePerformanceMeasurements>
+    <OutputFormat>transmit-monitor</OutputFormat>
+    <OutputTimeZone>GMT-08:00</OutputTimeZone>
+    <ConsumerType>directory</ConsumerType>
+    <ConsumerArg>/tmp/hotbackupgroup1</ConsumerArg>
+    <SinceTime>now - 15 minutes</SinceTime>
+    <RoutingSpecNetworkList Name="TestExistingNL"/>
+    <RoutingSpecProperty PropertyName="bufferTimeSec">
+      30
+    </RoutingSpecProperty>
+    <RoutingSpecProperty PropertyName="includeTZ">
+      False
+    </RoutingSpecProperty>
+    <RoutingSpecProperty PropertyName="tmpdir">
+      /tmp/hotbackupgroup1/tmp
+    </RoutingSpecProperty>
+  </RoutingSpec>
+  <DataSource Name="EDDN1" Type="lrgs">
+    <DataSourceArg>
+      hostname=EDDN1, port=16003, password=your_password, username=your_username
+    </DataSourceArg>
+  </DataSource>
+  <DataSource Name="EDDN2" Type="lrgs">
+    <DataSourceArg>
+      hostname=EDDN2, port=16003, password=your_password, username=your_username
+    </DataSourceArg>
+  </DataSource>
+  <DataSource Name="HotBackup" Type="hotbackupgroup1">
+    <DataSourceArg></DataSourceArg>
+    <DataSourceGroupMember SequenceNum="1">
+      <DataSource Name="EDDN1" Type="lrgs">
+        <DataSourceArg>
+          hostname=EDDN1, port=16003, password=your_password,
+          username=your_username
+        </DataSourceArg>
+      </DataSource>
+    </DataSourceGroupMember>
+    <DataSourceGroupMember SequenceNum="2">
+      <DataSource Name="EDDN2" Type="lrgs">
+        <DataSourceArg>
+          hostname=EDDN2, port=16003, password=your_password,
+          username=your_username
+        </DataSourceArg>
+      </DataSource>
+    </DataSourceGroupMember>
+  </DataSource>
+  <DataSource Name="CDADATA" Type="lrgs">
+    <DataSourceArg>
+      hostname=CDADATA, port=16003, password=your_password,
+      username=your_username
+    </DataSourceArg>
+  </DataSource>
+  <NetworkList Name="TestExistingNL">
+    <TransportMediumType>goes</TransportMediumType>
+    <SiteNameTypePreference>nwshb5</SiteNameTypePreference>
+    <NetworkListEntry TransportId="190166">
+      <PlatformName>TESTSITE1</PlatformName>
+      <Description>Test site</Description>
+    </NetworkListEntry>
+  </NetworkList>
+  <NetworkList Name="TestNewNL">
+    <TransportMediumType>goes</TransportMediumType>
+    <SiteNameTypePreference>nwshb5</SiteNameTypePreference>
+    <NetworkListEntry TransportId="190566">
+      <PlatformName>TESTSITE4</PlatformName>
+      <Description>Test site</Description>
+    </NetworkListEntry>
+  </NetworkList>
+  <PresentationGroup Name="CWMS-English">
+    <IsProduction>false</IsProduction>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stage" Name="CWMS:Stage">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Height" Name="CWMS:Height">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Irrad" Name="CWMS:Irrad">
+      </DataType>
+      <UnitsAbbr>W/m2</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening" Name="CWMS:Opening">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="pH" Name="CWMS:pH">
+      </DataType>
+      <UnitsAbbr>su</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Power" Name="CWMS:Power">
+      </DataType>
+      <UnitsAbbr>kW</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Precip" Name="CWMS:Precip">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Pres" Name="CWMS:Pres">
+      </DataType>
+      <UnitsAbbr>mb</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Rad" Name="CWMS:Rad">
+      </DataType>
+      <UnitsAbbr>J/m2</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Ratio" Name="CWMS:Ratio">
+      </DataType>
+      <UnitsAbbr>%</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="%-RelativeHumidity" Name="CWMS:%-RelativeHumidity">
+      </DataType>
+      <UnitsAbbr>%</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Rotation" Name="CWMS:Rotation">
+      </DataType>
+      <UnitsAbbr>rev</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Speed" Name="CWMS:Speed">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="SpinRate" Name="CWMS:SpinRate">
+      </DataType>
+      <UnitsAbbr>rpm</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stor" Name="CWMS:Stor">
+      </DataType>
+      <UnitsAbbr>ac-ft</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Temp" Name="CWMS:Temp">
+      </DataType>
+      <UnitsAbbr>F</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Thick" Name="CWMS:Thick">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Timing" Name="CWMS:Timing">
+      </DataType>
+      <UnitsAbbr>hr</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Travel" Name="CWMS:Travel">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Turb" Name="CWMS:Turb">
+      </DataType>
+      <UnitsAbbr>JTU</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="TurbF" Name="CWMS:TurbF">
+      </DataType>
+      <UnitsAbbr>FNU</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="TurbJ" Name="CWMS:TurbJ">
+      </DataType>
+      <UnitsAbbr>JTU</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="TurbN" Name="CWMS:TurbN">
+      </DataType>
+      <UnitsAbbr>NTU</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Volt" Name="CWMS:Volt">
+      </DataType>
+      <UnitsAbbr>v</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Volume" Name="CWMS:Volume">
+      </DataType>
+      <UnitsAbbr>ac-ft</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Depth-Snow" Name="CWMS:Depth-Snow">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Depth-Snowwater" Name="CWMS:Depth-Snowwater">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Elev-Pool" Name="CWMS:Elev-Pool">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Elev-Tail" Name="CWMS:Elev-Tail">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Flow-In" Name="CWMS:Flow-In">
+      </DataType>
+      <UnitsAbbr>cfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Flow-Out" Name="CWMS:Flow-Out">
+      </DataType>
+      <UnitsAbbr>cfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Flow" Name="CWMS:Flow">
+      </DataType>
+      <UnitsAbbr>cfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-East" Name="CWMS:Opening-East">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-West" Name="CWMS:Opening-West">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-Rollers" Name="CWMS:Opening-Rollers">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-Tainters" Name="CWMS:Opening-Tainters">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-Wickets" Name="CWMS:Opening-Wickets">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Speed-Water" Name="CWMS:Speed-Water">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Speed-Wind" Name="CWMS:Speed-Wind">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stage-Pool" Name="CWMS:Stage-Pool">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stage-Tail" Name="CWMS:Stage-Tail">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Temp-Air" Name="CWMS:Temp-Air">
+      </DataType>
+      <UnitsAbbr>F</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Temp-Water" Name="CWMS:Temp-Water">
+      </DataType>
+      <UnitsAbbr>F</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Thick-Ice" Name="CWMS:Thick-Ice">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stage" Name="CWMS:Stage">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Height" Name="CWMS:Height">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Irrad" Name="CWMS:Irrad">
+      </DataType>
+      <UnitsAbbr>W/m2</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening" Name="CWMS:Opening">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="pH" Name="CWMS:pH">
+      </DataType>
+      <UnitsAbbr>su</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Power" Name="CWMS:Power">
+      </DataType>
+      <UnitsAbbr>kW</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Precip" Name="CWMS:Precip">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Pres" Name="CWMS:Pres">
+      </DataType>
+      <UnitsAbbr>mb</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Rad" Name="CWMS:Rad">
+      </DataType>
+      <UnitsAbbr>J/m2</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Ratio" Name="CWMS:Ratio">
+      </DataType>
+      <UnitsAbbr>%</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="%-RelativeHumidity" Name="CWMS:%-RelativeHumidity">
+      </DataType>
+      <UnitsAbbr>%</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Rotation" Name="CWMS:Rotation">
+      </DataType>
+      <UnitsAbbr>rev</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Speed" Name="CWMS:Speed">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="SpinRate" Name="CWMS:SpinRate">
+      </DataType>
+      <UnitsAbbr>rpm</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stor" Name="CWMS:Stor">
+      </DataType>
+      <UnitsAbbr>ac-ft</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Temp" Name="CWMS:Temp">
+      </DataType>
+      <UnitsAbbr>F</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Thick" Name="CWMS:Thick">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Timing" Name="CWMS:Timing">
+      </DataType>
+      <UnitsAbbr>hr</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Travel" Name="CWMS:Travel">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Turb" Name="CWMS:Turb">
+      </DataType>
+      <UnitsAbbr>JTU</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="TurbF" Name="CWMS:TurbF">
+      </DataType>
+      <UnitsAbbr>FNU</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="TurbJ" Name="CWMS:TurbJ">
+      </DataType>
+      <UnitsAbbr>JTU</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="TurbN" Name="CWMS:TurbN">
+      </DataType>
+      <UnitsAbbr>NTU</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Volt" Name="CWMS:Volt">
+      </DataType>
+      <UnitsAbbr>v</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Volume" Name="CWMS:Volume">
+      </DataType>
+      <UnitsAbbr>ac-ft</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Depth-Snow" Name="CWMS:Depth-Snow">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Depth-Snowwater" Name="CWMS:Depth-Snowwater">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Elev-Pool" Name="CWMS:Elev-Pool">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Elev-Tail" Name="CWMS:Elev-Tail">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Flow-In" Name="CWMS:Flow-In">
+      </DataType>
+      <UnitsAbbr>cfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Flow-Out" Name="CWMS:Flow-Out">
+      </DataType>
+      <UnitsAbbr>cfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Flow" Name="CWMS:Flow">
+      </DataType>
+      <UnitsAbbr>cfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-East" Name="CWMS:Opening-East">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-West" Name="CWMS:Opening-West">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-Rollers" Name="CWMS:Opening-Rollers">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-Tainters" Name="CWMS:Opening-Tainters">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-Wickets" Name="CWMS:Opening-Wickets">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Speed-Water" Name="CWMS:Speed-Water">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Speed-Wind" Name="CWMS:Speed-Wind">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stage-Pool" Name="CWMS:Stage-Pool">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stage-Tail" Name="CWMS:Stage-Tail">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Temp-Air" Name="CWMS:Temp-Air">
+      </DataType>
+      <UnitsAbbr>F</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Temp-Water" Name="CWMS:Temp-Water">
+      </DataType>
+      <UnitsAbbr>F</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Thick-Ice" Name="CWMS:Thick-Ice">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+  </PresentationGroup>
+  <PresentationGroup Name="CWMS-Metric">
+    <IsProduction>false</IsProduction>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stage" Name="CWMS:Stage">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Height" Name="CWMS:Height">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Irrad" Name="CWMS:Irrad">
+      </DataType>
+      <UnitsAbbr>W/m2</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening" Name="CWMS:Opening">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="pH" Name="CWMS:pH">
+      </DataType>
+      <UnitsAbbr>su</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Power" Name="CWMS:Power">
+      </DataType>
+      <UnitsAbbr>kW</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Precip" Name="CWMS:Precip">
+      </DataType>
+      <UnitsAbbr>mm</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Pres" Name="CWMS:Pres">
+      </DataType>
+      <UnitsAbbr>mb</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Rad" Name="CWMS:Rad">
+      </DataType>
+      <UnitsAbbr>J/m2</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Ratio" Name="CWMS:Ratio">
+      </DataType>
+      <UnitsAbbr>%</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Rotation" Name="CWMS:Rotation">
+      </DataType>
+      <UnitsAbbr>rev</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Speed" Name="CWMS:Speed">
+      </DataType>
+      <UnitsAbbr>kph</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="SpinRate" Name="CWMS:SpinRate">
+      </DataType>
+      <UnitsAbbr>rpm</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stor" Name="CWMS:Stor">
+      </DataType>
+      <UnitsAbbr>m3</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Temp" Name="CWMS:Temp">
+      </DataType>
+      <UnitsAbbr>C</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Thick" Name="CWMS:Thick">
+      </DataType>
+      <UnitsAbbr>cm</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Timing" Name="CWMS:Timing">
+      </DataType>
+      <UnitsAbbr>hr</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Travel" Name="CWMS:Travel">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Turb" Name="CWMS:Turb">
+      </DataType>
+      <UnitsAbbr>JTU</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="TurbF" Name="CWMS:TurbF">
+      </DataType>
+      <UnitsAbbr>FNU</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="TurbJ" Name="CWMS:TurbJ">
+      </DataType>
+      <UnitsAbbr>JTU</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="TurbN" Name="CWMS:TurbN">
+      </DataType>
+      <UnitsAbbr>NTU</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Volt" Name="CWMS:Volt">
+      </DataType>
+      <UnitsAbbr>v</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Volume" Name="CWMS:Volume">
+      </DataType>
+      <UnitsAbbr>m3</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Depth-Snow" Name="CWMS:Depth-Snow">
+      </DataType>
+      <UnitsAbbr>mm</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Depth-Snowwater" Name="CWMS:Depth-Snowwater">
+      </DataType>
+      <UnitsAbbr>mm</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Elev-Pool" Name="CWMS:Elev-Pool">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Elev-Tail" Name="CWMS:Elev-Tail">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Flow-In" Name="CWMS:Flow-In">
+      </DataType>
+      <UnitsAbbr>cms</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Flow-Out" Name="CWMS:Flow-Out">
+      </DataType>
+      <UnitsAbbr>cms</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Flow" Name="CWMS:Flow">
+      </DataType>
+      <UnitsAbbr>cms</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-East" Name="CWMS:Opening-East">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-West" Name="CWMS:Opening-West">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-Rollers" Name="CWMS:Opening-Rollers">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-Tainters" Name="CWMS:Opening-Tainters">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-Wickets" Name="CWMS:Opening-Wickets">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Speed-Water" Name="CWMS:Speed-Water">
+      </DataType>
+      <UnitsAbbr>kph</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Speed-Wind" Name="CWMS:Speed-Wind">
+      </DataType>
+      <UnitsAbbr>kph</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stage-Pool" Name="CWMS:Stage-Pool">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stage-Tail" Name="CWMS:Stage-Tail">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Temp-Air" Name="CWMS:Temp-Air">
+      </DataType>
+      <UnitsAbbr>C</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Temp-Water" Name="CWMS:Temp-Water">
+      </DataType>
+      <UnitsAbbr>C</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Thick-Ice" Name="CWMS:Thick-Ice">
+      </DataType>
+      <UnitsAbbr>cm</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stage" Name="CWMS:Stage">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Height" Name="CWMS:Height">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Irrad" Name="CWMS:Irrad">
+      </DataType>
+      <UnitsAbbr>W/m2</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening" Name="CWMS:Opening">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="pH" Name="CWMS:pH">
+      </DataType>
+      <UnitsAbbr>su</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Power" Name="CWMS:Power">
+      </DataType>
+      <UnitsAbbr>kW</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Precip" Name="CWMS:Precip">
+      </DataType>
+      <UnitsAbbr>mm</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Pres" Name="CWMS:Pres">
+      </DataType>
+      <UnitsAbbr>mb</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Rad" Name="CWMS:Rad">
+      </DataType>
+      <UnitsAbbr>J/m2</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Ratio" Name="CWMS:Ratio">
+      </DataType>
+      <UnitsAbbr>%</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Rotation" Name="CWMS:Rotation">
+      </DataType>
+      <UnitsAbbr>rev</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Speed" Name="CWMS:Speed">
+      </DataType>
+      <UnitsAbbr>kph</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="SpinRate" Name="CWMS:SpinRate">
+      </DataType>
+      <UnitsAbbr>rpm</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stor" Name="CWMS:Stor">
+      </DataType>
+      <UnitsAbbr>m3</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Temp" Name="CWMS:Temp">
+      </DataType>
+      <UnitsAbbr>C</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Thick" Name="CWMS:Thick">
+      </DataType>
+      <UnitsAbbr>cm</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Timing" Name="CWMS:Timing">
+      </DataType>
+      <UnitsAbbr>hr</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Travel" Name="CWMS:Travel">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Turb" Name="CWMS:Turb">
+      </DataType>
+      <UnitsAbbr>JTU</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="TurbF" Name="CWMS:TurbF">
+      </DataType>
+      <UnitsAbbr>FNU</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="TurbJ" Name="CWMS:TurbJ">
+      </DataType>
+      <UnitsAbbr>JTU</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="TurbN" Name="CWMS:TurbN">
+      </DataType>
+      <UnitsAbbr>NTU</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Volt" Name="CWMS:Volt">
+      </DataType>
+      <UnitsAbbr>v</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Volume" Name="CWMS:Volume">
+      </DataType>
+      <UnitsAbbr>m3</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Depth-Snow" Name="CWMS:Depth-Snow">
+      </DataType>
+      <UnitsAbbr>mm</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Depth-Snowwater" Name="CWMS:Depth-Snowwater">
+      </DataType>
+      <UnitsAbbr>mm</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Elev-Pool" Name="CWMS:Elev-Pool">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Elev-Tail" Name="CWMS:Elev-Tail">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Flow-In" Name="CWMS:Flow-In">
+      </DataType>
+      <UnitsAbbr>cms</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Flow-Out" Name="CWMS:Flow-Out">
+      </DataType>
+      <UnitsAbbr>cms</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Flow" Name="CWMS:Flow">
+      </DataType>
+      <UnitsAbbr>cms</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-East" Name="CWMS:Opening-East">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-West" Name="CWMS:Opening-West">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-Rollers" Name="CWMS:Opening-Rollers">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-Tainters" Name="CWMS:Opening-Tainters">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-Wickets" Name="CWMS:Opening-Wickets">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Speed-Water" Name="CWMS:Speed-Water">
+      </DataType>
+      <UnitsAbbr>kph</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Speed-Wind" Name="CWMS:Speed-Wind">
+      </DataType>
+      <UnitsAbbr>kph</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stage-Pool" Name="CWMS:Stage-Pool">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stage-Tail" Name="CWMS:Stage-Tail">
+      </DataType>
+      <UnitsAbbr>m</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Temp-Air" Name="CWMS:Temp-Air">
+      </DataType>
+      <UnitsAbbr>C</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Temp-Water" Name="CWMS:Temp-Water">
+      </DataType>
+      <UnitsAbbr>C</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Thick-Ice" Name="CWMS:Thick-Ice">
+      </DataType>
+      <UnitsAbbr>cm</UnitsAbbr>
+      <MaxDecimals>3</MaxDecimals>
+    </DataPresentation>
+  </PresentationGroup>
+  <PresentationGroup Name="NRCS">
+    <IsProduction>false</IsProduction>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="TAVG" Name="AIR TEMPERATURE AVERAGE">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="TMAX" Name="AIR TEMPERATURE MAXIMUM">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="TMIN" Name="AIR TEMPERATURE MINIMUM">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="TOBS" Name="AIR TEMPERATURE OBSERVED">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="DIV" Name="DIVERSION FLOW VOLUME OBSERVED">
+      </DataType>
+      <UnitsAbbr>acre-feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="DIVD" Name="DIVERSION DISCHARGE OBSERVED MEAN">
+      </DataType>
+      <UnitsAbbr>cfs</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRDOX" Name="DISCHARGE MANUAL/EXTERNAL ADJUSTED MEAN">
+      </DataType>
+      <UnitsAbbr>cfs</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="PREC" Name="PRECIPITATION ACCUMULATION">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="PRCP" Name="PRECIPITATION INCREMENT">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="PRCPSA" Name="PRECIPITATION INCREMENT &#226;€&#8220; SNOW-ADJUSTED">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="RESC" Name="RESERVOIR STORAGE VOLUME">
+      </DataType>
+      <UnitsAbbr>acre-feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRDOO" Name="RIVER DISCHARGE OBSERVED MEAN">
+      </DataType>
+      <UnitsAbbr>cfs</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SNWD" Name="SNOW DEPTH">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WTEQ" Name="SNOW WATER EQUIVALENT">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRVA" Name="STREAM VOLUME ADJUSTED">
+      </DataType>
+      <UnitsAbbr>acre-feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRVOX" Name="STREAM VOLUME ADJUSTED EXTERNALLY">
+      </DataType>
+      <UnitsAbbr>acre-feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRVO" Name="STREAM VOLUME OBSERVED">
+      </DataType>
+      <UnitsAbbr>acre-feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="OI" Name="TELECONNECTION INDEX (also known as OSCILLATION INDEX)">
+      </DataType>
+      <UnitsAbbr>N/A</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="PRES" Name="BAROMETRIC PRESSURE">
+      </DataType>
+      <UnitsAbbr>inches of Mercury</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="ETIB" Name="BATTERY-ETI PRECIP GAGE">
+      </DataType>
+      <UnitsAbbr>volt</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="COND" Name="CONDUCTIVITY">
+      </DataType>
+      <UnitsAbbr>umho</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="DPTP" Name="DEW POINT TEMPERATURE">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="DIAG" Name="DIAGNOSTICS">
+      </DataType>
+      <UnitsAbbr>unitless</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="DISO" Name="DISSOLVED OXYGEN">
+      </DataType>
+      <UnitsAbbr>mgram/l</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="DISP" Name="DISSOLVED OXYGEN - PERCENT SATURATION">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="HFTV" Name="ENERGY GAIN OR LOSS FROM GROUND">
+      </DataType>
+      <UnitsAbbr>watt/m2</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="EVAP" Name="EVAPORATION">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="FUEL" Name="FUEL MOISTURE">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="FMTMP" Name="FUEL TEMPERATURE INTERNAL">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="TGSV" Name="GROUND SURFACE INTERFACE TEMPERATURE AVERAGE">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="TGSX" Name="GROUND SURFACE INTERFACE TEMPERATURE MAXIMUM">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="TGSN" Name="GROUND SURFACE INTERFACE TEMPERATURE MINIMUM">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="TGSI" Name="GROUND SURFACE INTERFACE TEMPERATURE OBSERVED">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="JDAY" Name="JULIAN DATE">
+      </DataType>
+      <UnitsAbbr>julian_day</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="NTRDV" Name="NET SOLAR RADIATION AVERAGE">
+      </DataType>
+      <UnitsAbbr>watt/m2</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="NTRDX" Name="NET SOLAR RADIATION MAXIMUM">
+      </DataType>
+      <UnitsAbbr>watt/m2</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="NTRDN" Name="NET SOLAR RADIATION MINIMUM">
+      </DataType>
+      <UnitsAbbr>watt/m2</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="NTRDC" Name="NET SOLAR RADIATION OBSERVED">
+      </DataType>
+      <UnitsAbbr>watt/m2</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="H2OPH" Name="PH">
+      </DataType>
+      <UnitsAbbr>unitless</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="PARV" Name="PHOTOSYNTHETICALLY ACTIVE RADIATION (PAR) AVERAGE">
+      </DataType>
+      <UnitsAbbr>micromole/m2/s</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="ETIL" Name="PULSE LINE MONITOR-ETI GUAGE">
+      </DataType>
+      <UnitsAbbr>volt</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="RDC" Name="REAL DIELECTRIC CONSTANT">
+      </DataType>
+      <UnitsAbbr>unitless</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="RHUM" Name="RELATIVE HUMIDITY">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="RHUMV" Name="RELATIVE HUMIDITY AVERAGE">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="RHENC" Name="RELATIVE HUMIDITY ENCLOSURE">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="RHUMX" Name="RELATIVE HUMIDITY MAXIMUM">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="RHUMN" Name="RELATIVE HUMIDITY MINIMUM">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="REST" Name="RESERVOIR STAGE">
+      </DataType>
+      <UnitsAbbr>feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SAL" Name="SALINITY">
+      </DataType>
+      <UnitsAbbr>gram/l</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SNWDV" Name="SNOW DEPTH AVERAGE">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SNWDX" Name="SNOW DEPTH MAXIMUM">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SNWDN" Name="SNOW DEPTH MINIMUM">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SNOW" Name="SNOW FALL">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WTEQV" Name="SNOW WATER EQUIVALENT AVERAGE">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WTEQX" Name="SNOW WATER EQUIVALENT MAXIMUM">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WTEQN" Name="SNOW WATER EQUIVALENT min">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SMV" Name="SOIL MOISTURE BARS AVERAGE">
+      </DataType>
+      <UnitsAbbr>inches of Mercury</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SMX" Name="SOIL MOISTURE BARS MAXIMUM">
+      </DataType>
+      <UnitsAbbr>inches of Mercury</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SMN" Name="SOIL MOISTURE BARS MINIMUM">
+      </DataType>
+      <UnitsAbbr>inches of Mercury</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SMO" Name="SOIL MOISTURE BARS OBSERVED">
+      </DataType>
+      <UnitsAbbr>inches of Mercury</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SMS" Name="SOIL MOISTURE PERCENT">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="STV" Name="SOIL TEMPERATURE AVERAGE">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="STX" Name="SOIL TEMPERATURE MAXIMUM">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="STN" Name="SOIL TEMPERATURE MINIMUM">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="STO" Name="SOIL TEMPERATURE OBSERVED">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRAD" Name="SOLAR RADIATION">
+      </DataType>
+      <UnitsAbbr>watt/m2</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRADV" Name="SOLAR RADIATION AVERAGE">
+      </DataType>
+      <UnitsAbbr>watt/m2</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRADX" Name="SOLAR RADIATION MAXIMUM">
+      </DataType>
+      <UnitsAbbr>watt/m2</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRADN" Name="SOLAR RADIATION MINIMUM">
+      </DataType>
+      <UnitsAbbr>watt/m2</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRADT" Name="SOLAR RADIATION TOTAL">
+      </DataType>
+      <UnitsAbbr>watt/m2</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="LRAD" Name="SOLAR RADIATION/LANGLEY">
+      </DataType>
+      <UnitsAbbr>langley</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="LRADX" Name="SOLAR RADIATION/LANGLEY MAXIMUM">
+      </DataType>
+      <UnitsAbbr>langley</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="LRADT" Name="SOLAR RADIATION/LANGLEY TOTAL">
+      </DataType>
+      <UnitsAbbr>langley</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRMV" Name="STREAM STAGE (GAUGE HEIGHT) AVERAGE">
+      </DataType>
+      <UnitsAbbr>feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRMX" Name="STREAM STAGE (GAUGE HEIGHT) MAXIMUM">
+      </DataType>
+      <UnitsAbbr>feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRMN" Name="STREAM STAGE (GAUGE HEIGHT) MINIMUM">
+      </DataType>
+      <UnitsAbbr>feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRMO" Name="STREAM STAGE (GAUGE HEIGHT) OBSERVED">
+      </DataType>
+      <UnitsAbbr>feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="STRV" Name="STRM FLOW AVERAGE">
+      </DataType>
+      <UnitsAbbr>cfs</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="TURB" Name="TURBIDITY">
+      </DataType>
+      <UnitsAbbr>ntu</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="RESA" Name="USABLE LAKE STORAGE VOLUME">
+      </DataType>
+      <UnitsAbbr>acre-feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="PVPV" Name="VAPOR PRESSURE - PARTIAL">
+      </DataType>
+      <UnitsAbbr>kPa</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SVPV" Name="VAPOR PRESSURE - SATURATED">
+      </DataType>
+      <UnitsAbbr>kPa</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WLEVV" Name="WATER LEVEL AVERAGE">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WLEVX" Name="WATER LEVEL MAXIMUM">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WLEVN" Name="WATER LEVEL MINIMUM">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WLEV" Name="WATER LEVEL OBSERVED">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WTEMP" Name="WATER TEMPERATURE">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WTAVG" Name="WATER TEMPERATURE AVERAGE">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WTMAX" Name="WATER TEMPERATURE MAXIMUM">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WTMIN" Name="WATER TEMPERATURE MINIMUM">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WELL" Name="WELL DEPTH">
+      </DataType>
+      <UnitsAbbr>feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WDIRV" Name="WIND DIRECTION AVERAGE">
+      </DataType>
+      <UnitsAbbr>degree</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WDIR" Name="WIND DIRECTION OBSERVED">
+      </DataType>
+      <UnitsAbbr>degree</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WDMVV" Name="WIND MOVEMENT AVERAGE">
+      </DataType>
+      <UnitsAbbr>mile</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WDMVX" Name="WIND MOVEMENT MAXIMUM">
+      </DataType>
+      <UnitsAbbr>mile</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WDMVN" Name="WIND MOVEMENT MINIMUM">
+      </DataType>
+      <UnitsAbbr>mile</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WDMV" Name="WIND MOVEMENT OBSERVED">
+      </DataType>
+      <UnitsAbbr>mile</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WDMVT" Name="WIND MOVEMENT TOTAL">
+      </DataType>
+      <UnitsAbbr>mile</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WSPDV" Name="WIND SPEED AVERAGE">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WSPDX" Name="WIND SPEED MAXIMUM">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WSPDN" Name="WIND SPEED MINIMUM">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WSPD" Name="WIND SPEED OBSERVED">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="TAVG" Name="AIR TEMPERATURE AVERAGE">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="TMAX" Name="AIR TEMPERATURE MAXIMUM">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="TMIN" Name="AIR TEMPERATURE MINIMUM">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="TOBS" Name="AIR TEMPERATURE OBSERVED">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="DIV" Name="DIVERSION FLOW VOLUME OBSERVED">
+      </DataType>
+      <UnitsAbbr>acre-feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="DIVD" Name="DIVERSION DISCHARGE OBSERVED MEAN">
+      </DataType>
+      <UnitsAbbr>cfs</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRDOX" Name="DISCHARGE MANUAL/EXTERNAL ADJUSTED MEAN">
+      </DataType>
+      <UnitsAbbr>cfs</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="PREC" Name="PRECIPITATION ACCUMULATION">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="PRCP" Name="PRECIPITATION INCREMENT">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="PRCPSA" Name="PRECIPITATION INCREMENT &#226;€&#8220; SNOW-ADJUSTED">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="RESC" Name="RESERVOIR STORAGE VOLUME">
+      </DataType>
+      <UnitsAbbr>acre-feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRDOO" Name="RIVER DISCHARGE OBSERVED MEAN">
+      </DataType>
+      <UnitsAbbr>cfs</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SNWD" Name="SNOW DEPTH">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WTEQ" Name="SNOW WATER EQUIVALENT">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRVA" Name="STREAM VOLUME ADJUSTED">
+      </DataType>
+      <UnitsAbbr>acre-feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRVOX" Name="STREAM VOLUME ADJUSTED EXTERNALLY">
+      </DataType>
+      <UnitsAbbr>acre-feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRVO" Name="STREAM VOLUME OBSERVED">
+      </DataType>
+      <UnitsAbbr>acre-feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="OI" Name="TELECONNECTION INDEX (also known as OSCILLATION INDEX)">
+      </DataType>
+      <UnitsAbbr>N/A</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="PRES" Name="BAROMETRIC PRESSURE">
+      </DataType>
+      <UnitsAbbr>inches of Mercury</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="ETIB" Name="BATTERY-ETI PRECIP GAGE">
+      </DataType>
+      <UnitsAbbr>volt</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="COND" Name="CONDUCTIVITY">
+      </DataType>
+      <UnitsAbbr>umho</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="DPTP" Name="DEW POINT TEMPERATURE">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="DIAG" Name="DIAGNOSTICS">
+      </DataType>
+      <UnitsAbbr>unitless</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="DISO" Name="DISSOLVED OXYGEN">
+      </DataType>
+      <UnitsAbbr>mgram/l</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="DISP" Name="DISSOLVED OXYGEN - PERCENT SATURATION">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="HFTV" Name="ENERGY GAIN OR LOSS FROM GROUND">
+      </DataType>
+      <UnitsAbbr>watt/m2</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="EVAP" Name="EVAPORATION">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="FUEL" Name="FUEL MOISTURE">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="FMTMP" Name="FUEL TEMPERATURE INTERNAL">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="TGSV" Name="GROUND SURFACE INTERFACE TEMPERATURE AVERAGE">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="TGSX" Name="GROUND SURFACE INTERFACE TEMPERATURE MAXIMUM">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="TGSN" Name="GROUND SURFACE INTERFACE TEMPERATURE MINIMUM">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="TGSI" Name="GROUND SURFACE INTERFACE TEMPERATURE OBSERVED">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="JDAY" Name="JULIAN DATE">
+      </DataType>
+      <UnitsAbbr>julian_day</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="NTRDV" Name="NET SOLAR RADIATION AVERAGE">
+      </DataType>
+      <UnitsAbbr>watt/m2</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="NTRDX" Name="NET SOLAR RADIATION MAXIMUM">
+      </DataType>
+      <UnitsAbbr>watt/m2</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="NTRDN" Name="NET SOLAR RADIATION MINIMUM">
+      </DataType>
+      <UnitsAbbr>watt/m2</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="NTRDC" Name="NET SOLAR RADIATION OBSERVED">
+      </DataType>
+      <UnitsAbbr>watt/m2</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="H2OPH" Name="PH">
+      </DataType>
+      <UnitsAbbr>unitless</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="PARV" Name="PHOTOSYNTHETICALLY ACTIVE RADIATION (PAR) AVERAGE">
+      </DataType>
+      <UnitsAbbr>micromole/m2/s</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="ETIL" Name="PULSE LINE MONITOR-ETI GUAGE">
+      </DataType>
+      <UnitsAbbr>volt</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="RDC" Name="REAL DIELECTRIC CONSTANT">
+      </DataType>
+      <UnitsAbbr>unitless</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="RHUM" Name="RELATIVE HUMIDITY">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="RHUMV" Name="RELATIVE HUMIDITY AVERAGE">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="RHENC" Name="RELATIVE HUMIDITY ENCLOSURE">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="RHUMX" Name="RELATIVE HUMIDITY MAXIMUM">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="RHUMN" Name="RELATIVE HUMIDITY MINIMUM">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="REST" Name="RESERVOIR STAGE">
+      </DataType>
+      <UnitsAbbr>feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SAL" Name="SALINITY">
+      </DataType>
+      <UnitsAbbr>gram/l</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SNWDV" Name="SNOW DEPTH AVERAGE">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SNWDX" Name="SNOW DEPTH MAXIMUM">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SNWDN" Name="SNOW DEPTH MINIMUM">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SNOW" Name="SNOW FALL">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WTEQV" Name="SNOW WATER EQUIVALENT AVERAGE">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WTEQX" Name="SNOW WATER EQUIVALENT MAXIMUM">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WTEQN" Name="SNOW WATER EQUIVALENT min">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SMV" Name="SOIL MOISTURE BARS AVERAGE">
+      </DataType>
+      <UnitsAbbr>inches of Mercury</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SMX" Name="SOIL MOISTURE BARS MAXIMUM">
+      </DataType>
+      <UnitsAbbr>inches of Mercury</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SMN" Name="SOIL MOISTURE BARS MINIMUM">
+      </DataType>
+      <UnitsAbbr>inches of Mercury</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SMO" Name="SOIL MOISTURE BARS OBSERVED">
+      </DataType>
+      <UnitsAbbr>inches of Mercury</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SMS" Name="SOIL MOISTURE PERCENT">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="STV" Name="SOIL TEMPERATURE AVERAGE">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="STX" Name="SOIL TEMPERATURE MAXIMUM">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="STN" Name="SOIL TEMPERATURE MINIMUM">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="STO" Name="SOIL TEMPERATURE OBSERVED">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRAD" Name="SOLAR RADIATION">
+      </DataType>
+      <UnitsAbbr>watt/m2</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRADV" Name="SOLAR RADIATION AVERAGE">
+      </DataType>
+      <UnitsAbbr>watt/m2</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRADX" Name="SOLAR RADIATION MAXIMUM">
+      </DataType>
+      <UnitsAbbr>watt/m2</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRADN" Name="SOLAR RADIATION MINIMUM">
+      </DataType>
+      <UnitsAbbr>watt/m2</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRADT" Name="SOLAR RADIATION TOTAL">
+      </DataType>
+      <UnitsAbbr>watt/m2</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="LRAD" Name="SOLAR RADIATION/LANGLEY">
+      </DataType>
+      <UnitsAbbr>langley</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="LRADX" Name="SOLAR RADIATION/LANGLEY MAXIMUM">
+      </DataType>
+      <UnitsAbbr>langley</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="LRADT" Name="SOLAR RADIATION/LANGLEY TOTAL">
+      </DataType>
+      <UnitsAbbr>langley</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRMV" Name="STREAM STAGE (GAUGE HEIGHT) AVERAGE">
+      </DataType>
+      <UnitsAbbr>feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRMX" Name="STREAM STAGE (GAUGE HEIGHT) MAXIMUM">
+      </DataType>
+      <UnitsAbbr>feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRMN" Name="STREAM STAGE (GAUGE HEIGHT) MINIMUM">
+      </DataType>
+      <UnitsAbbr>feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SRMO" Name="STREAM STAGE (GAUGE HEIGHT) OBSERVED">
+      </DataType>
+      <UnitsAbbr>feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="STRV" Name="STRM FLOW AVERAGE">
+      </DataType>
+      <UnitsAbbr>cfs</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="TURB" Name="TURBIDITY">
+      </DataType>
+      <UnitsAbbr>ntu</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="RESA" Name="USABLE LAKE STORAGE VOLUME">
+      </DataType>
+      <UnitsAbbr>acre-feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="PVPV" Name="VAPOR PRESSURE - PARTIAL">
+      </DataType>
+      <UnitsAbbr>kPa</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="SVPV" Name="VAPOR PRESSURE - SATURATED">
+      </DataType>
+      <UnitsAbbr>kPa</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WLEVV" Name="WATER LEVEL AVERAGE">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WLEVX" Name="WATER LEVEL MAXIMUM">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WLEVN" Name="WATER LEVEL MINIMUM">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WLEV" Name="WATER LEVEL OBSERVED">
+      </DataType>
+      <UnitsAbbr>inches</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WTEMP" Name="WATER TEMPERATURE">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WTAVG" Name="WATER TEMPERATURE AVERAGE">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WTMAX" Name="WATER TEMPERATURE MAXIMUM">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WTMIN" Name="WATER TEMPERATURE MINIMUM">
+      </DataType>
+      <UnitsAbbr>Fahrenheit</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WELL" Name="WELL DEPTH">
+      </DataType>
+      <UnitsAbbr>feet</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WDIRV" Name="WIND DIRECTION AVERAGE">
+      </DataType>
+      <UnitsAbbr>degree</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WDIR" Name="WIND DIRECTION OBSERVED">
+      </DataType>
+      <UnitsAbbr>degree</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WDMVV" Name="WIND MOVEMENT AVERAGE">
+      </DataType>
+      <UnitsAbbr>mile</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WDMVX" Name="WIND MOVEMENT MAXIMUM">
+      </DataType>
+      <UnitsAbbr>mile</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WDMVN" Name="WIND MOVEMENT MINIMUM">
+      </DataType>
+      <UnitsAbbr>mile</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WDMV" Name="WIND MOVEMENT OBSERVED">
+      </DataType>
+      <UnitsAbbr>mile</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WDMVT" Name="WIND MOVEMENT TOTAL">
+      </DataType>
+      <UnitsAbbr>mile</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WSPDV" Name="WIND SPEED AVERAGE">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WSPDX" Name="WIND SPEED MAXIMUM">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WSPDN" Name="WIND SPEED MINIMUM">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="NRCS" Code="WSPD" Name="WIND SPEED OBSERVED">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+    </DataPresentation>
+  </PresentationGroup>
+  <PresentationGroup Name="SHEF-English">
+    <IsProduction>false</IsProduction>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BA" Name="SHEF-PE:BA">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BB" Name="SHEF-PE:BB">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BC" Name="SHEF-PE:BC">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BD" Name="SHEF-PE:BD">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BE" Name="SHEF-PE:BE">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BF" Name="SHEF-PE:BF">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BG" Name="SHEF-PE:BG">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BH" Name="SHEF-PE:BH">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BI" Name="SHEF-PE:BI">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BJ" Name="SHEF-PE:BJ">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BK" Name="SHEF-PE:BK">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BL" Name="SHEF-PE:BL">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BM" Name="SHEF-PE:BM">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BN" Name="SHEF-PE:BN">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BO" Name="SHEF-PE:BO">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BP" Name="SHEF-PE:BP">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BQ" Name="SHEF-PE:BQ">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CA" Name="SHEF-PE:CA">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CB" Name="SHEF-PE:CB">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CC" Name="SHEF-PE:CC">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CD" Name="SHEF-PE:CD">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CE" Name="SHEF-PE:CE">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CF" Name="SHEF-PE:CF">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CG" Name="SHEF-PE:CG">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CH" Name="SHEF-PE:CH">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CI" Name="SHEF-PE:CI">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CJ" Name="SHEF-PE:CJ">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CK" Name="SHEF-PE:CK">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CL" Name="SHEF-PE:CL">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CM" Name="SHEF-PE:CM">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CN" Name="SHEF-PE:CN">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CP" Name="SHEF-PE:CP">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CQ" Name="SHEF-PE:CQ">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CR" Name="SHEF-PE:CR">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CS" Name="SHEF-PE:CS">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CU" Name="SHEF-PE:CU">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CV" Name="SHEF-PE:CV">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CW" Name="SHEF-PE:CW">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="EA" Name="SHEF-PE:EA">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="ER" Name="SHEF-PE:ER">
+      </DataType>
+      <UnitsAbbr>in/day</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="GD" Name="SHEF-PE:GD">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HA" Name="SHEF-PE:HA">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HB" Name="SHEF-PE:HB">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HC" Name="SHEF-PE:HC">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HD" Name="SHEF-PE:HD">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HE" Name="SHEF-PE:HE">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HF" Name="SHEF-PE:HF">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HG" Name="SHEF-PE:HG">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HH" Name="SHEF-PE:HH">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HJ" Name="SHEF-PE:HJ">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HK" Name="SHEF-PE:HK">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HL" Name="SHEF-PE:HL">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HM" Name="SHEF-PE:HM">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HN" Name="SHEF-PE:HN">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HO" Name="SHEF-PE:HO">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HP" Name="SHEF-PE:HP">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HQ" Name="SHEF-PE:HQ">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HR" Name="SHEF-PE:HR">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HS" Name="SHEF-PE:HS">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HT" Name="SHEF-PE:HT">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HU" Name="SHEF-PE:HU">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HW" Name="SHEF-PE:HW">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HX" Name="SHEF-PE:HX">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HY" Name="SHEF-PE:HY">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HZ" Name="SHEF-PE:HZ">
+      </DataType>
+      <UnitsAbbr>kft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="IC" Name="SHEF-PE:IC">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="IT" Name="SHEF-PE:IT">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="LA" Name="SHEF-PE:LA">
+      </DataType>
+      <UnitsAbbr>kac</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="LC" Name="SHEF-PE:LC">
+      </DataType>
+      <UnitsAbbr>KAF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="LS" Name="SHEF-PE:LS">
+      </DataType>
+      <UnitsAbbr>KAF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="MI" Name="SHEF-PE:MI">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="ML" Name="SHEF-PE:ML">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="MM" Name="SHEF-PE:MM">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="MS" Name="SHEF-PE:MS">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="MT" Name="SHEF-PE:MT">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="MU" Name="SHEF-PE:MU">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="MW" Name="SHEF-PE:MW">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="NG" Name="SHEF-PE:NG">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="PA" Name="SHEF-PE:PA">
+      </DataType>
+      <UnitsAbbr>inHg</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="PC" Name="SHEF-PE:PC">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="PD" Name="SHEF-PE:PD">
+      </DataType>
+      <UnitsAbbr>inHg</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="PE" Name="SHEF-PE:PE">
+      </DataType>
+      <UnitsAbbr>inHg</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="PF" Name="SHEF-PE:PF">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="PL" Name="SHEF-PE:PL">
+      </DataType>
+      <UnitsAbbr>inHg</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="PP" Name="SHEF-PE:PP">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="PR" Name="SHEF-PE:PR">
+      </DataType>
+      <UnitsAbbr>in/day</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QA" Name="SHEF-PE:QA">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QB" Name="SHEF-PE:QB">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QC" Name="SHEF-PE:QC">
+      </DataType>
+      <UnitsAbbr>KAF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QD" Name="SHEF-PE:QD">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QE" Name="SHEF-PE:QE">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QF" Name="SHEF-PE:QF">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QG" Name="SHEF-PE:QG">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QI" Name="SHEF-PE:QI">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QL" Name="SHEF-PE:QL">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QM" Name="SHEF-PE:QM">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QN" Name="SHEF-PE:QN">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QP" Name="SHEF-PE:QP">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QR" Name="SHEF-PE:QR">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QS" Name="SHEF-PE:QS">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QT" Name="SHEF-PE:QT">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QU" Name="SHEF-PE:QU">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QV" Name="SHEF-PE:QV">
+      </DataType>
+      <UnitsAbbr>KAF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QY" Name="SHEF-PE:QY">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TA" Name="SHEF-PE:TA">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TC" Name="SHEF-PE:TC">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TD" Name="SHEF-PE:TD">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TF" Name="SHEF-PE:TF">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TH" Name="SHEF-PE:TH">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TM" Name="SHEF-PE:TM">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TN" Name="SHEF-PE:TN">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TP" Name="SHEF-PE:TP">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TS" Name="SHEF-PE:TS">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TW" Name="SHEF-PE:TW">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TX" Name="SHEF-PE:TX">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="UC" Name="SHEF-PE:UC">
+      </DataType>
+      <UnitsAbbr>mi</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="UD" Name="SHEF-PE:UD">
+      </DataType>
+      <UnitsAbbr>deg*10</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="UG" Name="SHEF-PE:UG">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="UL" Name="SHEF-PE:UL">
+      </DataType>
+      <UnitsAbbr>mi</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="UR" Name="SHEF-PE:UR">
+      </DataType>
+      <UnitsAbbr>deg*10</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="US" Name="SHEF-PE:US">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="VB" Name="SHEF-PE:VB">
+      </DataType>
+      <UnitsAbbr>V</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="WA" Name="SHEF-PE:WA">
+      </DataType>
+      <UnitsAbbr>ppm</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="WC" Name="SHEF-PE:WC">
+      </DataType>
+      <UnitsAbbr>uMHOs/cm</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="WG" Name="SHEF-PE:WG">
+      </DataType>
+      <UnitsAbbr>inHg</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="WH" Name="SHEF-PE:WH">
+      </DataType>
+      <UnitsAbbr>ppm</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="WL" Name="SHEF-PE:WL">
+      </DataType>
+      <UnitsAbbr>ppm</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="WO" Name="SHEF-PE:WO">
+      </DataType>
+      <UnitsAbbr>ppm</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="WP" Name="SHEF-PE:WP">
+      </DataType>
+      <UnitsAbbr>pH</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="WT" Name="SHEF-PE:WT">
+      </DataType>
+      <UnitsAbbr>jtu</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="WV" Name="SHEF-PE:WV">
+      </DataType>
+      <UnitsAbbr>ft/s</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BA" Name="SHEF-PE:BA">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BB" Name="SHEF-PE:BB">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BC" Name="SHEF-PE:BC">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BD" Name="SHEF-PE:BD">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BE" Name="SHEF-PE:BE">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BF" Name="SHEF-PE:BF">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BG" Name="SHEF-PE:BG">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BH" Name="SHEF-PE:BH">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BI" Name="SHEF-PE:BI">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BJ" Name="SHEF-PE:BJ">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BK" Name="SHEF-PE:BK">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BL" Name="SHEF-PE:BL">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BM" Name="SHEF-PE:BM">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BN" Name="SHEF-PE:BN">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BO" Name="SHEF-PE:BO">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BP" Name="SHEF-PE:BP">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="BQ" Name="SHEF-PE:BQ">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CA" Name="SHEF-PE:CA">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CB" Name="SHEF-PE:CB">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CC" Name="SHEF-PE:CC">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CD" Name="SHEF-PE:CD">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CE" Name="SHEF-PE:CE">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CF" Name="SHEF-PE:CF">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CG" Name="SHEF-PE:CG">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CH" Name="SHEF-PE:CH">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CI" Name="SHEF-PE:CI">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CJ" Name="SHEF-PE:CJ">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CK" Name="SHEF-PE:CK">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CL" Name="SHEF-PE:CL">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CM" Name="SHEF-PE:CM">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CN" Name="SHEF-PE:CN">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CP" Name="SHEF-PE:CP">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CQ" Name="SHEF-PE:CQ">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CR" Name="SHEF-PE:CR">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CS" Name="SHEF-PE:CS">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CU" Name="SHEF-PE:CU">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CV" Name="SHEF-PE:CV">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="CW" Name="SHEF-PE:CW">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="EA" Name="SHEF-PE:EA">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="ER" Name="SHEF-PE:ER">
+      </DataType>
+      <UnitsAbbr>in/day</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="GD" Name="SHEF-PE:GD">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HA" Name="SHEF-PE:HA">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HB" Name="SHEF-PE:HB">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HC" Name="SHEF-PE:HC">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HD" Name="SHEF-PE:HD">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HE" Name="SHEF-PE:HE">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HF" Name="SHEF-PE:HF">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HG" Name="SHEF-PE:HG">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HH" Name="SHEF-PE:HH">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HJ" Name="SHEF-PE:HJ">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HK" Name="SHEF-PE:HK">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HL" Name="SHEF-PE:HL">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HM" Name="SHEF-PE:HM">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HN" Name="SHEF-PE:HN">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HO" Name="SHEF-PE:HO">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HP" Name="SHEF-PE:HP">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HQ" Name="SHEF-PE:HQ">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HR" Name="SHEF-PE:HR">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HS" Name="SHEF-PE:HS">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HT" Name="SHEF-PE:HT">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HU" Name="SHEF-PE:HU">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HW" Name="SHEF-PE:HW">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HX" Name="SHEF-PE:HX">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HY" Name="SHEF-PE:HY">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="HZ" Name="SHEF-PE:HZ">
+      </DataType>
+      <UnitsAbbr>kft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="IC" Name="SHEF-PE:IC">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="IT" Name="SHEF-PE:IT">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="LA" Name="SHEF-PE:LA">
+      </DataType>
+      <UnitsAbbr>kac</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="LC" Name="SHEF-PE:LC">
+      </DataType>
+      <UnitsAbbr>KAF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="LS" Name="SHEF-PE:LS">
+      </DataType>
+      <UnitsAbbr>KAF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="MI" Name="SHEF-PE:MI">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="ML" Name="SHEF-PE:ML">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="MM" Name="SHEF-PE:MM">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="MS" Name="SHEF-PE:MS">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="MT" Name="SHEF-PE:MT">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="MU" Name="SHEF-PE:MU">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="MW" Name="SHEF-PE:MW">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="NG" Name="SHEF-PE:NG">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="PA" Name="SHEF-PE:PA">
+      </DataType>
+      <UnitsAbbr>inHg</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="PC" Name="SHEF-PE:PC">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="PD" Name="SHEF-PE:PD">
+      </DataType>
+      <UnitsAbbr>inHg</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="PE" Name="SHEF-PE:PE">
+      </DataType>
+      <UnitsAbbr>inHg</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="PF" Name="SHEF-PE:PF">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="PL" Name="SHEF-PE:PL">
+      </DataType>
+      <UnitsAbbr>inHg</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="PP" Name="SHEF-PE:PP">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="PR" Name="SHEF-PE:PR">
+      </DataType>
+      <UnitsAbbr>in/day</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QA" Name="SHEF-PE:QA">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QB" Name="SHEF-PE:QB">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QC" Name="SHEF-PE:QC">
+      </DataType>
+      <UnitsAbbr>KAF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QD" Name="SHEF-PE:QD">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QE" Name="SHEF-PE:QE">
+      </DataType>
+      <UnitsAbbr>pct</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QF" Name="SHEF-PE:QF">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QG" Name="SHEF-PE:QG">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QI" Name="SHEF-PE:QI">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QL" Name="SHEF-PE:QL">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QM" Name="SHEF-PE:QM">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QN" Name="SHEF-PE:QN">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QP" Name="SHEF-PE:QP">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QR" Name="SHEF-PE:QR">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QS" Name="SHEF-PE:QS">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QT" Name="SHEF-PE:QT">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QU" Name="SHEF-PE:QU">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QV" Name="SHEF-PE:QV">
+      </DataType>
+      <UnitsAbbr>KAF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="QY" Name="SHEF-PE:QY">
+      </DataType>
+      <UnitsAbbr>kcfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TA" Name="SHEF-PE:TA">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TC" Name="SHEF-PE:TC">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TD" Name="SHEF-PE:TD">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TF" Name="SHEF-PE:TF">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TH" Name="SHEF-PE:TH">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TM" Name="SHEF-PE:TM">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TN" Name="SHEF-PE:TN">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TP" Name="SHEF-PE:TP">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TS" Name="SHEF-PE:TS">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TW" Name="SHEF-PE:TW">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="TX" Name="SHEF-PE:TX">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="UC" Name="SHEF-PE:UC">
+      </DataType>
+      <UnitsAbbr>mi</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="UD" Name="SHEF-PE:UD">
+      </DataType>
+      <UnitsAbbr>deg*10</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="UG" Name="SHEF-PE:UG">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="UL" Name="SHEF-PE:UL">
+      </DataType>
+      <UnitsAbbr>mi</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="UR" Name="SHEF-PE:UR">
+      </DataType>
+      <UnitsAbbr>deg*10</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="US" Name="SHEF-PE:US">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="VB" Name="SHEF-PE:VB">
+      </DataType>
+      <UnitsAbbr>V</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="WA" Name="SHEF-PE:WA">
+      </DataType>
+      <UnitsAbbr>ppm</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="WC" Name="SHEF-PE:WC">
+      </DataType>
+      <UnitsAbbr>uMHOs/cm</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="WG" Name="SHEF-PE:WG">
+      </DataType>
+      <UnitsAbbr>inHg</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="WH" Name="SHEF-PE:WH">
+      </DataType>
+      <UnitsAbbr>ppm</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="WL" Name="SHEF-PE:WL">
+      </DataType>
+      <UnitsAbbr>ppm</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="WO" Name="SHEF-PE:WO">
+      </DataType>
+      <UnitsAbbr>ppm</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="WP" Name="SHEF-PE:WP">
+      </DataType>
+      <UnitsAbbr>pH</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="WT" Name="SHEF-PE:WT">
+      </DataType>
+      <UnitsAbbr>jtu</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="SHEF-PE" Code="WV" Name="SHEF-PE:WV">
+      </DataType>
+      <UnitsAbbr>ft/s</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+  </PresentationGroup>
+  <EngineeringUnitList>
+    <EngineeringUnit UnitsAbbr="degC">
+      <Name>degrees Celsius</Name>
+      <Family>Metric</Family>
+      <Measures>temperature</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mi/hr">
+      <Name>miles per hour</Name>
+      <Family>English</Family>
+      <Measures>velocity</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mph">
+      <Name>miles per hour</Name>
+      <Family>English</Family>
+      <Measures>velocity</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="pt">
+      <Name>pint</Name>
+      <Family>English</Family>
+      <Measures>volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="kcfs">
+      <Name>Kilo-cubic feet per second</Name>
+      <Family>English</Family>
+      <Measures>Volume Rate</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="hp">
+      <Name>horsepower</Name>
+      <Family>English</Family>
+      <Measures>power</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="raw">
+      <Name>Raw Undefined Units</Name>
+      <Family>univ</Family>
+      <Measures>undefined</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="hr">
+      <Name>hours</Name>
+      <Family>univ</Family>
+      <Measures>time</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="yd">
+      <Name>yards</Name>
+      <Family>English</Family>
+      <Measures>length</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mM^2">
+      <Name>square millimeters</Name>
+      <Family>Metric</Family>
+      <Measures>area</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="M/s">
+      <Name>Meters per second</Name>
+      <Family>Metric</Family>
+      <Measures>Linear Speed</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="km3">
+      <Name>Cubic kilometers</Name>
+      <Family>Metric</Family>
+      <Measures>Volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="floz">
+      <Name>fluid ounce</Name>
+      <Family>English</Family>
+      <Measures>volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="km2">
+      <Name>Square kilometers</Name>
+      <Family>Metric</Family>
+      <Measures>Area</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mi^2">
+      <Name>square miles</Name>
+      <Family>English</Family>
+      <Measures>area</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mho">
+      <Name>Mhos</Name>
+      <Family>univ</Family>
+      <Measures>Conductance</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="W/m2">
+      <Name>Watts per square meter</Name>
+      <Family>Metric</Family>
+      <Measures>Irradiance</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="ft^3/s">
+      <Name>cubic feet per second</Name>
+      <Family>English</Family>
+      <Measures>flow</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="langley/min">
+      <Name>Langley per minute</Name>
+      <Family>English</Family>
+      <Measures>Irradiance</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="gm/cm3">
+      <Name>Grams per cubic centimeters</Name>
+      <Family>Metric</Family>
+      <Measures>Mass Concentration</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="in/hr">
+      <Name>Inches per hour</Name>
+      <Family>English</Family>
+      <Measures>Linear Speed</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="qt">
+      <Name>quart</Name>
+      <Family>English</Family>
+      <Measures>volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="$">
+      <Name>Dollars</Name>
+      <Family>univ</Family>
+      <Measures>Currency</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="TWh">
+      <Name>Terawatt-hour</Name>
+      <Family>univ</Family>
+      <Measures>Energy</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="ft3">
+      <Name>Cubic feet</Name>
+      <Family>English</Family>
+      <Measures>Volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="in">
+      <Name>inches</Name>
+      <Family>English</Family>
+      <Measures>length</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="%">
+      <Name>percent</Name>
+      <Family>univ</Family>
+      <Measures>ratio</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="ft2">
+      <Name>Square feet</Name>
+      <Family>English</Family>
+      <Measures>Area</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="uG/L">
+      <Name>micrograms per liter</Name>
+      <Family>Metric</Family>
+      <Measures>concentration</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="umho/cm">
+      <Name>Micro-mhos per centimeter</Name>
+      <Family>univ</Family>
+      <Measures>Conductivity</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="cms">
+      <Name>Cubic meters per second</Name>
+      <Family>Metric</Family>
+      <Measures>Volume Rate</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="volt">
+      <Name>Volts</Name>
+      <Family>Metric</Family>
+      <Measures>Electromotive Potential</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mm-hg">
+      <Name>Millimeters of mercury</Name>
+      <Family>Metric</Family>
+      <Measures>Pressure</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="in/deg-day">
+      <Name>Inches per degree-day</Name>
+      <Family>English</Family>
+      <Measures>Phase Change Rate Index</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="sec">
+      <Name>second</Name>
+      <Family>univ</Family>
+      <Measures>time</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="ton">
+      <Name>tons</Name>
+      <Family>English</Family>
+      <Measures>mass</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="min">
+      <Name>minutes</Name>
+      <Family>univ</Family>
+      <Measures>time</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mG/L">
+      <Name>Milligrams per liter</Name>
+      <Family>Metric</Family>
+      <Measures>Mass Concentration</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mm/day">
+      <Name>Millimeters per day</Name>
+      <Family>Metric</Family>
+      <Measures>Linear Speed</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="count">
+      <Name>counts</Name>
+      <Family>univ</Family>
+      <Measures>count</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="degK">
+      <Name>degrees Kelvin</Name>
+      <Family>Metric</Family>
+      <Measures>temperature</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="erg">
+      <Name>ergs</Name>
+      <Family>English</Family>
+      <Measures>energy</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="degF">
+      <Name>degrees Fahrenheit</Name>
+      <Family>English</Family>
+      <Measures>temperature</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mm/deg-day">
+      <Name>Millimeters per degree-day</Name>
+      <Family>Metric</Family>
+      <Measures>Phase Change Rate Index</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="btu">
+      <Name>british thermal unit</Name>
+      <Family>English</Family>
+      <Measures>energy</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="C">
+      <Name>Centigrade</Name>
+      <Family>Metric</Family>
+      <Measures>Temperature</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="uMHOs">
+      <Name>MicroMHOs per centimeter</Name>
+      <Family>metric</Family>
+      <Measures>conductance</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="F">
+      <Name>Fahrenheit</Name>
+      <Family>English</Family>
+      <Measures>Temperature</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="G">
+      <Name>grams</Name>
+      <Family>Metric</Family>
+      <Measures>mass</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="J/m2">
+      <Name>Joules per square meters</Name>
+      <Family>Metric</Family>
+      <Measures>Irradiation</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="j">
+      <Name>joules</Name>
+      <Family>Metric</Family>
+      <Measures>energy</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="JTU">
+      <Name>Jackson Turbitiy Unit</Name>
+      <Family>univ</Family>
+      <Measures>Turbidity</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="ppm">
+      <Name>parts per million</Name>
+      <Family>univ</Family>
+      <Measures>ratio</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="L">
+      <Name>liter</Name>
+      <Family>Metric</Family>
+      <Measures>volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="M">
+      <Name>Meters</Name>
+      <Family>Metric</Family>
+      <Measures>Length</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="m^3/s">
+      <Name>cubic meters per second</Name>
+      <Family>Metric</Family>
+      <Measures>flow</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="N">
+      <Name>newtons</Name>
+      <Family>Metric</Family>
+      <Measures>force</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="NTU">
+      <Name>Nephelometric Turbidity Unit</Name>
+      <Family>univ</Family>
+      <Measures>Turbidity</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="cfs">
+      <Name>cubic feet per second</Name>
+      <Family>English</Family>
+      <Measures>flow</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="1000 m2">
+      <Name>Thousands of square meters</Name>
+      <Family>Metric</Family>
+      <Measures>Area</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="S">
+      <Name>Siemens</Name>
+      <Family>univ</Family>
+      <Measures>Conductance</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="1000 m3">
+      <Name>Thousands of cubic meters</Name>
+      <Family>Metric</Family>
+      <Measures>Volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="kM^2">
+      <Name>square kilometers</Name>
+      <Family>Metric</Family>
+      <Measures>area</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="ppt">
+      <Name>parts per thousand</Name>
+      <Family>univ</Family>
+      <Measures>ratio</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="V">
+      <Name>volts</Name>
+      <Family>Metric</Family>
+      <Measures>voltage</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="W">
+      <Name>watts</Name>
+      <Family>Metric</Family>
+      <Measures>power</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="dyn">
+      <Name>dyn</Name>
+      <Family>Metric</Family>
+      <Measures>force</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="in^3">
+      <Name>cubic inches</Name>
+      <Family>English</Family>
+      <Measures>volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="GWh">
+      <Name>Gigawatt-hours</Name>
+      <Family>univ</Family>
+      <Measures>Energy</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="in^2">
+      <Name>square inches</Name>
+      <Family>English</Family>
+      <Measures>area</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="kG">
+      <Name>kilograms</Name>
+      <Family>Metric</Family>
+      <Measures>mass</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="kWh">
+      <Name>Kilowatt-hours</Name>
+      <Family>univ</Family>
+      <Measures>Energy</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="kj">
+      <Name>kilojoules</Name>
+      <Family>Metric</Family>
+      <Measures>energy</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="cc">
+      <Name>cubic centimeter</Name>
+      <Family>Metric</Family>
+      <Measures>volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="kL">
+      <Name>kiloliter</Name>
+      <Family>Metric</Family>
+      <Measures>volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="cM^2">
+      <Name>square centimeters</Name>
+      <Family>Metric</Family>
+      <Measures>area</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="in/day">
+      <Name>Inches per day</Name>
+      <Family>English</Family>
+      <Measures>Linear Speed</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mgal">
+      <Name>Millions of gallons</Name>
+      <Family>English</Family>
+      <Measures>Volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="kM">
+      <Name>Kilometers</Name>
+      <Family>Metric</Family>
+      <Measures>Length</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="su">
+      <Name>Standard pH units</Name>
+      <Family>univ</Family>
+      <Measures>pH</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="cms/km2">
+      <Name>Cms per square kilometer</Name>
+      <Family>Metric</Family>
+      <Measures>Areal Volume Rate</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="yd/s">
+      <Name>yards per second</Name>
+      <Family>English</Family>
+      <Measures>velocity</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="cM">
+      <Name>Centimeters</Name>
+      <Family>Metric</Family>
+      <Measures>Length</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="nmi">
+      <Name>nautical miles</Name>
+      <Family>English</Family>
+      <Measures>length</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="kW">
+      <Name>kilowatts</Name>
+      <Family>Metric</Family>
+      <Measures>power</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="ft/s">
+      <Name>feet per second</Name>
+      <Family>English</Family>
+      <Measures>velocity</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="lb">
+      <Name>Pounds</Name>
+      <Family>English</Family>
+      <Measures>Force</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="atm">
+      <Name>atmospheres</Name>
+      <Family>Metric</Family>
+      <Measures>pressure</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="kpa">
+      <Name>Kilopascals</Name>
+      <Family>Metric</Family>
+      <Measures>Pressure</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="day">
+      <Name>days</Name>
+      <Family>univ</Family>
+      <Measures>time</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mM/s">
+      <Name>millimeters per second</Name>
+      <Family>Metric</Family>
+      <Measures>velocity</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="kph">
+      <Name>Kilometers per hour</Name>
+      <Family>Metric</Family>
+      <Measures>Linear Speed</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="rev">
+      <Name>Revolution</Name>
+      <Family>univ</Family>
+      <Measures>Angle</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="TW">
+      <Name>Terawatts</Name>
+      <Family>univ</Family>
+      <Measures>Power</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="g/L">
+      <Name>Grams per liter</Name>
+      <Family>Metric</Family>
+      <Measures>Mass Concentration</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="m2">
+      <Name>Square meters</Name>
+      <Family>Metric</Family>
+      <Measures>Area</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="gpm">
+      <Name>Gallons per minute</Name>
+      <Family>English</Family>
+      <Measures>Volume Rate</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="m3">
+      <Name>Cubic meters</Name>
+      <Family>Metric</Family>
+      <Measures>Volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="cfs/mi2">
+      <Name>Cfs per square mile</Name>
+      <Family>English</Family>
+      <Measures>Areal Volume Rate</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="FNU">
+      <Name>Formazin Nephelometric Unit</Name>
+      <Family>univ</Family>
+      <Measures>Turbidity</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="knots">
+      <Name>nautical miles per hour</Name>
+      <Family>Metric</Family>
+      <Measures>velocity</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="in-hg">
+      <Name>Inches of mercury</Name>
+      <Family>English</Family>
+      <Measures>Pressure</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="lbf">
+      <Name>pound-force</Name>
+      <Family>English</Family>
+      <Measures>force</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="uG">
+      <Name>micrograms</Name>
+      <Family>Metric</Family>
+      <Measures>mass</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="kM/hr">
+      <Name>kilometers per hour</Name>
+      <Family>Metric</Family>
+      <Measures>velocity</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mb">
+      <Name>Millibars</Name>
+      <Family>Metric</Family>
+      <Measures>Pressure</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="dsf">
+      <Name>day-second-foot</Name>
+      <Family>English</Family>
+      <Measures>Volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="uL">
+      <Name>microliter</Name>
+      <Family>Metric</Family>
+      <Measures>volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="uM">
+      <Name>micrometers</Name>
+      <Family>Metric</Family>
+      <Measures>length</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mG">
+      <Name>milligrams</Name>
+      <Family>Metric</Family>
+      <Measures>mass</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mi">
+      <Name>miles</Name>
+      <Family>English</Family>
+      <Measures>length</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="uS">
+      <Name>Micro-Siemens</Name>
+      <Family>univ</Family>
+      <Measures>Conductance</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mL">
+      <Name>milliliter</Name>
+      <Family>Metric</Family>
+      <Measures>volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="M^2">
+      <Name>square meters</Name>
+      <Family>Metric</Family>
+      <Measures>area</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mM">
+      <Name>Millimeters</Name>
+      <Family>Metric</Family>
+      <Measures>Length</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="kcal">
+      <Name>Kilocalories</Name>
+      <Family>English</Family>
+      <Measures>energy</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mbar">
+      <Name>millibars</Name>
+      <Family>Metric</Family>
+      <Measures>pressure</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="m^3">
+      <Name>Cubic meters</Name>
+      <Family>Metric</Family>
+      <Measures>Volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="unit">
+      <Name>Count</Name>
+      <Family>univ</Family>
+      <Measures>Count</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="kgal">
+      <Name>Kilogallons</Name>
+      <Family>English</Family>
+      <Measures>Volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="uMHOs/cm">
+      <Name>MicroMHOs per centimeter</Name>
+      <Family>metric</Family>
+      <Measures>conductance</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mt">
+      <Name>Metric ton</Name>
+      <Family>Metric</Family>
+      <Measures>mass</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="psi">
+      <Name>pounds per square inch</Name>
+      <Family>English</Family>
+      <Measures>pressure</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="MW">
+      <Name>Megawatts</Name>
+      <Family>univ</Family>
+      <Measures>Power</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="cal">
+      <Name>Calories</Name>
+      <Family>English</Family>
+      <Measures>energy</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="uS/cm">
+      <Name>Micro Siemens per Centimeter</Name>
+      <Family>Metric</Family>
+      <Measures>Conductance</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="kaf">
+      <Name>Kiloacre-feet</Name>
+      <Family>English</Family>
+      <Measures>Volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="gal">
+      <Name>gallon</Name>
+      <Family>English</Family>
+      <Measures>volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="nmi/hr">
+      <Name>nautical miles per hour</Name>
+      <Family>English</Family>
+      <Measures>velocity</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="uMHO">
+      <Name>Micro-mhos</Name>
+      <Family>univ</Family>
+      <Measures>Conductance</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mm/hr">
+      <Name>Millimeters per hour</Name>
+      <Family>Metric</Family>
+      <Measures>Linear Speed</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mmHg">
+      <Name>millimeters of mercury</Name>
+      <Family>Metric</Family>
+      <Measures>pressure</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="pct">
+      <Name>percent</Name>
+      <Family>univ</Family>
+      <Measures>ratio</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="ft^3">
+      <Name>cubic feet</Name>
+      <Family>English</Family>
+      <Measures>volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="ft^2">
+      <Name>square feet</Name>
+      <Family>English</Family>
+      <Measures>area</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="inHg">
+      <Name>inches of mercury</Name>
+      <Family>English</Family>
+      <Measures>pressure</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="in/s">
+      <Name>inches per second</Name>
+      <Family>English</Family>
+      <Measures>velocity</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="acre">
+      <Name>acres</Name>
+      <Family>English</Family>
+      <Measures>area</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="ft">
+      <Name>feet</Name>
+      <Family>English</Family>
+      <Measures>length</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="rpm">
+      <Name>Revolutions per minute</Name>
+      <Family>univ</Family>
+      <Measures>Angular Speed</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="Wh">
+      <Name>Watt-hours</Name>
+      <Family>univ</Family>
+      <Measures>Energy</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="deg*10">
+      <Name>Tens of Degrees</Name>
+      <Family>univ</Family>
+      <Measures>angle</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="week">
+      <Name>weeks</Name>
+      <Family>univ</Family>
+      <Measures>time</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="MWh">
+      <Name>Megawatt-hours</Name>
+      <Family>univ</Family>
+      <Measures>Energy</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mile3">
+      <Name>Cubic miles</Name>
+      <Family>English</Family>
+      <Measures>Volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mile2">
+      <Name>Square miles</Name>
+      <Family>English</Family>
+      <Measures>Area</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="langley">
+      <Name>Langley</Name>
+      <Family>English</Family>
+      <Measures>Irradiation</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="deg">
+      <Name>Degrees</Name>
+      <Family>univ</Family>
+      <Measures>angle</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="ac-ft">
+      <Name>Acre-feet</Name>
+      <Family>English</Family>
+      <Measures>Volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="oz">
+      <Name>ounces</Name>
+      <Family>English</Family>
+      <Measures>mass</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="mgd">
+      <Name>Millions of gallons per day</Name>
+      <Family>English</Family>
+      <Measures>Volume Rate</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="acre*ft">
+      <Name>acre feet</Name>
+      <Family>English</Family>
+      <Measures>volume</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="ft*lbf/s">
+      <Name>foot-pounds per second</Name>
+      <Family>English</Family>
+      <Measures>power</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="GW">
+      <Name>Gigawatts</Name>
+      <Family>univ</Family>
+      <Measures>Power</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="cM/s">
+      <Name>centimeters per second</Name>
+      <Family>Metric</Family>
+      <Measures>velocity</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="pa">
+      <Name>pascals</Name>
+      <Family>Metric</Family>
+      <Measures>pressure</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="bar">
+      <Name>bars</Name>
+      <Family>Metric</Family>
+      <Measures>pressure</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="yd^2">
+      <Name>square yards</Name>
+      <Family>English</Family>
+      <Measures>area</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="pH">
+      <Name>pH</Name>
+      <Family>univ</Family>
+      <Measures>acidity</Measures>
+    </EngineeringUnit>
+    <EngineeringUnit UnitsAbbr="ha">
+      <Name>Hectares</Name>
+      <Family>English</Family>
+      <Measures>Area</Measures>
+    </EngineeringUnit>
+    <UnitConverter FromUnitsAbbr="m^3/s" ToUnitsAbbr="cms">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="ft" ToUnitsAbbr="in">
+      <Algorithm>linear</Algorithm>
+      <A>12.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="kG" ToUnitsAbbr="G">
+      <Algorithm>linear</Algorithm>
+      <A>1000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="count" ToUnitsAbbr="unit">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="G" ToUnitsAbbr="mG">
+      <Algorithm>linear</Algorithm>
+      <A>1000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="cM" ToUnitsAbbr="cm">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mi" ToUnitsAbbr="m">
+      <Algorithm>linear</Algorithm>
+      <A>1609.344</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="acre*ft" ToUnitsAbbr="ac-ft">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="%" ToUnitsAbbr="pct">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="inHg" ToUnitsAbbr="pa">
+      <Algorithm>linear</Algorithm>
+      <A>3386.38</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mG/L" ToUnitsAbbr="uG/L">
+      <Algorithm>linear</Algorithm>
+      <A>1000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="kW" ToUnitsAbbr="W">
+      <Algorithm>linear</Algorithm>
+      <A>1000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mi^2" ToUnitsAbbr="mile2">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="M" ToUnitsAbbr="m">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="ft/s" ToUnitsAbbr="M/s">
+      <Algorithm>linear</Algorithm>
+      <A>0.3048</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="ac-ft" ToUnitsAbbr="m3">
+      <Algorithm>linear</Algorithm>
+      <A>1233.4818</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="uMHO" ToUnitsAbbr="umho">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="MWh" ToUnitsAbbr="GWh">
+      <Algorithm>linear</Algorithm>
+      <A>0.001</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="g/l" ToUnitsAbbr="gm/cm3">
+      <Algorithm>linear</Algorithm>
+      <A>0.001</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="ft" ToUnitsAbbr="m">
+      <Algorithm>linear</Algorithm>
+      <A>0.3048</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="kpa" ToUnitsAbbr="kPa">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="bar" ToUnitsAbbr="pa">
+      <Algorithm>linear</Algorithm>
+      <A>100000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mG" ToUnitsAbbr="uG">
+      <Algorithm>linear</Algorithm>
+      <A>1000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="m" ToUnitsAbbr="km">
+      <Algorithm>linear</Algorithm>
+      <A>0.001</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="M/s" ToUnitsAbbr="m/s">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="qt" ToUnitsAbbr="pt">
+      <Algorithm>linear</Algorithm>
+      <A>2.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="kM^2" ToUnitsAbbr="M^2">
+      <Algorithm>linear</Algorithm>
+      <A>1000000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="week" ToUnitsAbbr="day">
+      <Algorithm>linear</Algorithm>
+      <A>7.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="ft/s" ToUnitsAbbr="mph">
+      <Algorithm>linear</Algorithm>
+      <A>0.681818181818</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="acre" ToUnitsAbbr="ft^2">
+      <Algorithm>linear</Algorithm>
+      <A>43560.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="m" ToUnitsAbbr="cm">
+      <Algorithm>linear</Algorithm>
+      <A>100.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="ft/s" ToUnitsAbbr="in/s">
+      <Algorithm>linear</Algorithm>
+      <A>12.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="m^3/s" ToUnitsAbbr="cfs">
+      <Algorithm>linear</Algorithm>
+      <A>35.31466247</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="kj" ToUnitsAbbr="j">
+      <Algorithm>linear</Algorithm>
+      <A>1000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="cal" ToUnitsAbbr="j">
+      <Algorithm>linear</Algorithm>
+      <A>4.184</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="min" ToUnitsAbbr="sec">
+      <Algorithm>linear</Algorithm>
+      <A>60.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="psi" ToUnitsAbbr="pa">
+      <Algorithm>linear</Algorithm>
+      <A>6874.75729</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mph" ToUnitsAbbr="knots">
+      <Algorithm>linear</Algorithm>
+      <A>0.8689762419006</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="kM^2" ToUnitsAbbr="km2">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="ft^3" ToUnitsAbbr="ft3">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="V" ToUnitsAbbr="volt">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="lb" ToUnitsAbbr="oz">
+      <Algorithm>linear</Algorithm>
+      <A>16.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="pt" ToUnitsAbbr="floz">
+      <Algorithm>linear</Algorithm>
+      <A>16.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mL" ToUnitsAbbr="cc">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="gal" ToUnitsAbbr="mgal">
+      <Algorithm>linear</Algorithm>
+      <A>1.0E-6</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="gal" ToUnitsAbbr="qt">
+      <Algorithm>linear</Algorithm>
+      <A>4.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="in/hr" ToUnitsAbbr="in/day">
+      <Algorithm>linear</Algorithm>
+      <A>24.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="ft^2" ToUnitsAbbr="ft2">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="lbf" ToUnitsAbbr="N">
+      <Algorithm>linear</Algorithm>
+      <A>4.448222</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="kL" ToUnitsAbbr="L">
+      <Algorithm>linear</Algorithm>
+      <A>1000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="L" ToUnitsAbbr="mL">
+      <Algorithm>linear</Algorithm>
+      <A>1000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="g/L" ToUnitsAbbr="mG/L">
+      <Algorithm>linear</Algorithm>
+      <A>1000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="lbf" ToUnitsAbbr="lb">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="m" ToUnitsAbbr="um">
+      <Algorithm>linear</Algorithm>
+      <A>1000000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="cfs" ToUnitsAbbr="ft^3/s">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="btu" ToUnitsAbbr="j">
+      <Algorithm>linear</Algorithm>
+      <A>1055.056</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="kW" ToUnitsAbbr="MW">
+      <Algorithm>linear</Algorithm>
+      <A>0.001</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="yd^2" ToUnitsAbbr="ft^2">
+      <Algorithm>linear</Algorithm>
+      <A>9.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="Wh" ToUnitsAbbr="kWh">
+      <Algorithm>linear</Algorithm>
+      <A>0.001</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="ft/s" ToUnitsAbbr="in/hr">
+      <Algorithm>linear</Algorithm>
+      <A>43200.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="m" ToUnitsAbbr="mm">
+      <Algorithm>linear</Algorithm>
+      <A>1000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mph" ToUnitsAbbr="kM/hr">
+      <Algorithm>linear</Algorithm>
+      <A>1.609344</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="kpa" ToUnitsAbbr="mbar">
+      <Algorithm>linear</Algorithm>
+      <A>10.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="m3" ToUnitsAbbr="km3">
+      <Algorithm>linear</Algorithm>
+      <A>1.0E-9</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="ac-ft" ToUnitsAbbr="kaf">
+      <Algorithm>linear</Algorithm>
+      <A>0.001</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="langley/min" ToUnitsAbbr="W/m2">
+      <Algorithm>linear</Algorithm>
+      <A>697.3333333333333</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="cM^2" ToUnitsAbbr="M^2">
+      <Algorithm>linear</Algorithm>
+      <A>1.0E-4</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="umho" ToUnitsAbbr="mho">
+      <Algorithm>linear</Algorithm>
+      <A>1.0E-6</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="uMHOs" ToUnitsAbbr="uMHOs/cm">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="gal" ToUnitsAbbr="L">
+      <Algorithm>linear</Algorithm>
+      <A>3.785412</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="yd" ToUnitsAbbr="ft">
+      <Algorithm>linear</Algorithm>
+      <A>3.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="m^3" ToUnitsAbbr="L">
+      <Algorithm>linear</Algorithm>
+      <A>1000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mi^2" ToUnitsAbbr="ft^2">
+      <Algorithm>linear</Algorithm>
+      <A>2.78784E7</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mho" ToUnitsAbbr="S">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="kM" ToUnitsAbbr="km">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="m2" ToUnitsAbbr="1000 m2">
+      <Algorithm>linear</Algorithm>
+      <A>0.001</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="GW" ToUnitsAbbr="TW">
+      <Algorithm>linear</Algorithm>
+      <A>0.001</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="deg" ToUnitsAbbr="deg*10">
+      <Algorithm>linear</Algorithm>
+      <A>0.1</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mL" ToUnitsAbbr="uL">
+      <Algorithm>linear</Algorithm>
+      <A>1000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="M^2" ToUnitsAbbr="m2">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="kWh" ToUnitsAbbr="MWh">
+      <Algorithm>linear</Algorithm>
+      <A>0.001</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mi" ToUnitsAbbr="ft">
+      <Algorithm>linear</Algorithm>
+      <A>5280.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="MW" ToUnitsAbbr="GW">
+      <Algorithm>linear</Algorithm>
+      <A>0.001</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="kcfs" ToUnitsAbbr="cfs">
+      <Algorithm>linear</Algorithm>
+      <A>1000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="gal" ToUnitsAbbr="kgal">
+      <Algorithm>linear</Algorithm>
+      <A>0.001</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="ppt" ToUnitsAbbr="ppm">
+      <Algorithm>linear</Algorithm>
+      <A>1000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="uMHOs" ToUnitsAbbr="uMHO">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="ft^3" ToUnitsAbbr="in^3">
+      <Algorithm>linear</Algorithm>
+      <A>1728.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="cM/s" ToUnitsAbbr="mM/s">
+      <Algorithm>linear</Algorithm>
+      <A>10.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mbar" ToUnitsAbbr="kpa">
+      <Algorithm>linear</Algorithm>
+      <A>0.1</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="atm" ToUnitsAbbr="pa">
+      <Algorithm>linear</Algorithm>
+      <A>101325.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mmHg" ToUnitsAbbr="mm-hg">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="acre" ToUnitsAbbr="ha">
+      <Algorithm>linear</Algorithm>
+      <A>0.4046856</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mM" ToUnitsAbbr="mm">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mM^2" ToUnitsAbbr="M^2">
+      <Algorithm>linear</Algorithm>
+      <A>1.0E-6</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="kpa" ToUnitsAbbr="pa">
+      <Algorithm>linear</Algorithm>
+      <A>1000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="ft*lbf/s" ToUnitsAbbr="W">
+      <Algorithm>linear</Algorithm>
+      <A>1.355818</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mmHg" ToUnitsAbbr="pa">
+      <Algorithm>linear</Algorithm>
+      <A>133.3224</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="%" ToUnitsAbbr="ppt">
+      <Algorithm>linear</Algorithm>
+      <A>10.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="lb" ToUnitsAbbr="G">
+      <Algorithm>linear</Algorithm>
+      <A>453.59237</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="gal" ToUnitsAbbr="in^3">
+      <Algorithm>linear</Algorithm>
+      <A>231.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="inHg" ToUnitsAbbr="in-hg">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="ft^2" ToUnitsAbbr="in^2">
+      <Algorithm>linear</Algorithm>
+      <A>144.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="ton" ToUnitsAbbr="lb">
+      <Algorithm>linear</Algorithm>
+      <A>2000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="W/m2" ToUnitsAbbr="langley/min">
+      <Algorithm>linear</Algorithm>
+      <A>0.001434034416826004</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="M^3" ToUnitsAbbr="m3">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mi^2" ToUnitsAbbr="acre">
+      <Algorithm>linear</Algorithm>
+      <A>640.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mbar" ToUnitsAbbr="mb">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mt" ToUnitsAbbr="G">
+      <Algorithm>linear</Algorithm>
+      <A>1000000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="GWh" ToUnitsAbbr="TWh">
+      <Algorithm>linear</Algorithm>
+      <A>0.001</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="kM/hr" ToUnitsAbbr="kph">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="degF" ToUnitsAbbr="F">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mM/s" ToUnitsAbbr="mm/hr">
+      <Algorithm>linear</Algorithm>
+      <A>3600.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="uS/cm" ToUnitsAbbr="umho/cm">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="km3" ToUnitsAbbr="mile3">
+      <Algorithm>linear</Algorithm>
+      <A>0.2399128</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="kj" ToUnitsAbbr="Wh">
+      <Algorithm>linear</Algorithm>
+      <A>0.2777778</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="M/s" ToUnitsAbbr="cM/s">
+      <Algorithm>linear</Algorithm>
+      <A>100.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="dyn" ToUnitsAbbr="N">
+      <Algorithm>linear</Algorithm>
+      <A>1.0E-5</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="hr" ToUnitsAbbr="min">
+      <Algorithm>linear</Algorithm>
+      <A>60.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="ft^2" ToUnitsAbbr="M^2">
+      <Algorithm>linear</Algorithm>
+      <A>0.09290304</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="g/L" ToUnitsAbbr="g/l">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="hp" ToUnitsAbbr="W">
+      <Algorithm>linear</Algorithm>
+      <A>746.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mm/hr" ToUnitsAbbr="mm/day">
+      <Algorithm>linear</Algorithm>
+      <A>24.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="day" ToUnitsAbbr="hr">
+      <Algorithm>linear</Algorithm>
+      <A>24.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="j" ToUnitsAbbr="erg">
+      <Algorithm>linear</Algorithm>
+      <A>1.0E7</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mph" ToUnitsAbbr="mi/hr">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="uMHOs/cm" ToUnitsAbbr="umho/cm">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="pH" ToUnitsAbbr="su">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mG/L" ToUnitsAbbr="mg/l">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="acre*ft" ToUnitsAbbr="ft^3">
+      <Algorithm>linear</Algorithm>
+      <A>43560.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="degC" ToUnitsAbbr="degK">
+      <Algorithm>linear</Algorithm>
+      <A>1.0</A>
+      <B>273.15</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="kcal" ToUnitsAbbr="cal">
+      <Algorithm>linear</Algorithm>
+      <A>1000.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="degC" ToUnitsAbbr="C">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="degC" ToUnitsAbbr="degF">
+      <Algorithm>linear</Algorithm>
+      <A>1.8</A>
+      <B>32.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="umho" ToUnitsAbbr="uS">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="m3" ToUnitsAbbr="1000 m3">
+      <Algorithm>linear</Algorithm>
+      <A>0.001</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="yd/s" ToUnitsAbbr="ft/s">
+      <Algorithm>linear</Algorithm>
+      <A>3.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="nmi" ToUnitsAbbr="m">
+      <Algorithm>linear</Algorithm>
+      <A>1852.0</A>
+      <B>0.0</B>
+    </UnitConverter>
+    <UnitConverter FromUnitsAbbr="mG/L" ToUnitsAbbr="ppm">
+      <Algorithm>none</Algorithm>
+    </UnitConverter>
+  </EngineeringUnitList>
+  <DataTypeEquivalenceList>
+    <DataTypeEquivalence>
+      <DataType Standard="SHEF-PE" Code="QR" Name="SHEF-PE:QR">
+      </DataType>
+      <DataType Standard="EPA-CODE" Code="00061" Name="EPA-CODE:00061">
+      </DataType>
+    </DataTypeEquivalence>
+    <DataTypeEquivalence>
+      <DataType Standard="EPA-CODE" Code="70969" Name="EPA-CODE:70969">
+      </DataType>
+      <DataType Standard="SHEF-PE" Code="VB" Name="SHEF-PE:VB">
+      </DataType>
+      <DataType Standard="HYDSTRA-CODE" Code="300" Name="HYDSTRA-CODE:300">
+      </DataType>
+    </DataTypeEquivalence>
+    <DataTypeEquivalence>
+      <DataType Standard="SHEF-PE" Code="PC" Name="SHEF-PE:PC">
+      </DataType>
+      <DataType Standard="EPA-CODE" Code="00045" Name="EPA-CODE:00045">
+      </DataType>
+    </DataTypeEquivalence>
+    <DataTypeEquivalence>
+      <DataType Standard="SHEF-PE" Code="PA" Name="SHEF-PE:PA">
+      </DataType>
+      <DataType Standard="EPA-CODE" Code="00047" Name="EPA-CODE:00047">
+      </DataType>
+    </DataTypeEquivalence>
+    <DataTypeEquivalence>
+      <DataType Standard="EPA-CODE" Code="00065" Name="EPA-CODE:00065">
+      </DataType>
+      <DataType Standard="SHEF-PE" Code="HG" Name="SHEF-PE:HG">
+      </DataType>
+    </DataTypeEquivalence>
+    <DataTypeEquivalence>
+      <DataType Standard="HYDSTRA-CODE" Code="100" Name="HYDSTRA-CODE:100">
+      </DataType>
+      <DataType Standard="EPA-CODE" Code="99065" Name="EPA-CODE:99065">
+      </DataType>
+    </DataTypeEquivalence>
+    <DataTypeEquivalence>
+      <DataType Standard="HYDSTRA-CODE" Code="10" Name="HYDSTRA-CODE:10">
+      </DataType>
+      <DataType Standard="EPA-CODE" Code="99772" Name="EPA-CODE:99772">
+      </DataType>
+    </DataTypeEquivalence>
+    <DataTypeEquivalence>
+      <DataType Standard="EPA-CODE" Code="00095" Name="EPA-CODE:00095">
+      </DataType>
+      <DataType Standard="SHEF-PE" Code="WC" Name="SHEF-PE:WC">
+      </DataType>
+    </DataTypeEquivalence>
+    <DataTypeEquivalence>
+      <DataType Standard="SHEF-PE" Code="TW" Name="SHEF-PE:TW">
+      </DataType>
+      <DataType Standard="EPA-CODE" Code="00010" Name="EPA-CODE:00010">
+      </DataType>
+    </DataTypeEquivalence>
+    <DataTypeEquivalence>
+      <DataType Standard="SHEF-PE" Code="TA" Name="SHEF-PE:TA">
+      </DataType>
+      <DataType Standard="EPA-CODE" Code="00020" Name="EPA-CODE:00020">
+      </DataType>
+    </DataTypeEquivalence>
+  </DataTypeEquivalenceList>
+  <EnumList>
+    <Enum Name="SiteNameType">
+      <EnumValue EnumValue="cwms">
+        <Description>CWMS Name Types</Description>
+      </EnumValue>
+    </Enum>
+  </EnumList>
+  <LoadingApplication name="AlbertaScada">
+    <Comment>Retrieves data from Lethbridge SCADA database</Comment>
+    <AppProperty name="tagfile">$HOME/SHARED/dacq/scada-tags.lst</AppProperty>
+    <AppProperty name="jdbcDriverClass">
+      net.sourceforge.jtds.jdbc.Driver
+    </AppProperty>
+    <AppProperty name="dbTZ">MST</AppProperty>
+    <AppProperty name="numdays">2</AppProperty>
+    <AppProperty name="tmpDir">$HOME/SHARED/dacq/tmp</AppProperty>
+    <AppProperty name="interval">1</AppProperty>
+    <AppProperty name="firstQuery">00:05</AppProperty>
+    <AppProperty name="appType">albertascada</AppProperty>
+    <AppProperty name="outputDir">$HOME/SHARED/dacq/zrxp</AppProperty>
+    <AppProperty name="username">your_username</AppProperty>
+    <AppProperty name="dailyArchiveDir">$HOME/SHARED/dacq/archive</AppProperty>
+    <AppProperty name="queryFile">$DCSTOOL_HOME/scada-query.sql</AppProperty>
+    <AppProperty name="password">your_password</AppProperty>
+    <AppProperty name="dbUrl">jdbc:jtds:sqlserver://sdmsdata</AppProperty>
+    <AppProperty name="LastModified">20141023144426</AppProperty>
+  </LoadingApplication>
+  <LoadingApplication name="CompEdit">
+    <Comment>GUI Computation Editor</Comment>
+    <AppProperty name="monitor">false</AppProperty>
+    <AppProperty name="apptype">gui</AppProperty>
+  </LoadingApplication>
+  <LoadingApplication name="RoutingScheduler">
+    <Comment></Comment>
+    <AppProperty name="monitor">true</AppProperty>
+    <AppProperty name="startCmd">$DCSTOOL_HOME/bin/routsched</AppProperty>
+    <AppProperty name="apptype">routingscheduler</AppProperty>
+    <AppProperty name="LastModified">20221004180705</AppProperty>
+  </LoadingApplication>
+  <LoadingApplication name="compdepends">
+    <Comment>Daemon to determine computation dependencies</Comment>
+    <AppProperty name="monitor">true</AppProperty>
+    <AppProperty name="apptype">compdepends</AppProperty>
+  </LoadingApplication>
+  <LoadingApplication name="compproc">
+    <Comment>Executes Computations in the Background</Comment>
+    <AppProperty name="monitor">true</AppProperty>
+    <AppProperty name="startCmd">$DCSTOOL_HOME/bin/compproc</AppProperty>
+    <AppProperty name="apptype">computationprocess</AppProperty>
+  </LoadingApplication>
+  <LoadingApplication name="decodes">
+    <Comment>Manual DECODES Routing Specs</Comment>
+    <AppProperty name="monitor">true</AppProperty>
+    <AppProperty name="apptype">routingspec</AppProperty>
+  </LoadingApplication>
+  <LoadingApplication name="utility">
+    <Comment>Utility Program -- used by several apps</Comment>
+    <AppProperty name="monitor">false</AppProperty>
+    <AppProperty name="apptype">utility</AppProperty>
+  </LoadingApplication>
+  <ScheduleEntry Name="TestExistingSchedule">
+    <LoadingAppName>RoutingScheduler</LoadingAppName>
+    <RoutingSpecName>TestExistingRS</RoutingSpecName>
+    <Enabled>true</Enabled>
+    <TimeZone>America/Los_Angeles</TimeZone>
+    <LastModifyTime>12/29/2025 08:56:52</LastModifyTime>
+  </ScheduleEntry>
+</Database>

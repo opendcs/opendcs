@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Database>
+  <EnumList>
+    <Enum Name="SiteNameType">
+      <EnumValue EnumValue="cwms">
+        <Description>CWMS Name Types</Description>
+      </EnumValue>
+    </Enum>
+  </EnumList>
+  <Platform PlatformId="190166">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:19:43</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>10.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Timezone>EST5EDT</Timezone>
+      <Country>UNITED STATES</Country>
+      <Description>Dummy site to import and test that elevation is updated.</Description>
+      <SiteName NameType="CWMS">TESTSITE1</SiteName>
+      <SiteProperty PropertyName="PUBLIC_NAME">TESTSITE1</SiteProperty>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+          Dummy config to allow import platform records.
+      </Description>
+    </PlatformConfig>
+    <TransportMedium MediumType="goes-self-timed" MediumId="4568117C">
+      <DecodesScript ScriptName="ST"/>
+      <ChannelNum>22</ChannelNum>
+      <AssignedTime>00:18:40</AssignedTime>
+      <TransmitWindow>00:00:10</TransmitWindow>
+      <TransmitInterval>01:00</TransmitInterval>
+      <Preamble>S</Preamble>
+      <TimeZone>UTC</TimeZone>
+      <parity>U</parity>
+    </TransportMedium>
+  </Platform>
+  <Platform PlatformId="190566">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:20:04</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>10.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Timezone>EST5EDT</Timezone>
+      <Country>UNITED STATES</Country>
+      <NearestCity>TESTSITE4</NearestCity>
+      <Description>Site used for Platform Import Regression Testing</Description>
+      <SiteName NameType="CWMS">TESTSITE4</SiteName>
+      <SiteProperty PropertyName="PUBLIC_NAME">TESTSITE4</SiteProperty>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+    <TransportMedium MediumType="goes-self-timed" MediumId="45D467B8">
+      <DecodesScript ScriptName="ST"/>
+      <ChannelNum>22</ChannelNum>
+      <AssignedTime>00:18:40</AssignedTime>
+      <TransmitWindow>00:00:10</TransmitWindow>
+      <TransmitInterval>01:00</TransmitInterval>
+      <Preamble>S</Preamble>
+      <TimeZone>UTC</TimeZone>
+      <parity>U</parity>
+    </TransportMedium>
+  </Platform>
+  <RoutingSpec Name="TestNewRS">
+    <IsProduction>false</IsProduction>
+    <DataSource Name="HotBackup" Type="hotbackupgroup2">
+      <DataSourceGroupMember SequenceNum="1">
+        <DataSource Name="NLRGS1" Type="lrgs">
+          <DataSourceArg>
+            hostname=NLRGS1, port=16003, password=password,
+            username=userid
+          </DataSourceArg>
+        </DataSource>
+      </DataSourceGroupMember>
+      <DataSourceGroupMember SequenceNum="2">
+        <DataSource Name="NLRGS2" Type="lrgs">
+          <DataSourceArg>
+            hostname=NLRGS2, port=16003, password=password,
+            username=userid
+          </DataSourceArg>
+        </DataSource>
+      </DataSourceGroupMember>
+    </DataSource>
+    <EnableEquations>false</EnableEquations>
+    <UsePerformanceMeasurements>false</UsePerformanceMeasurements>
+    <OutputFormat>transmit-monitor</OutputFormat>
+    <OutputTimeZone>GMT-08:00</OutputTimeZone>
+    <ConsumerType>directory</ConsumerType>
+    <ConsumerArg>/tmp/hotbackupgroup2</ConsumerArg>
+    <SinceTime>now - 15 minutes</SinceTime>
+    <RoutingSpecNetworkList Name="TestNewNL"/>
+    <RoutingSpecProperty PropertyName="tmpdir">
+      /tmp/hotbackupgroup2/tmp
+    </RoutingSpecProperty>
+    <RoutingSpecProperty PropertyName="includeTZ">
+      False
+    </RoutingSpecProperty>
+    <RoutingSpecProperty PropertyName="bufferTimeSec">
+      30
+    </RoutingSpecProperty>
+  </RoutingSpec>
+  <DataSource Name="CDABACKUP" Type="lrgs">
+    <DataSourceArg>
+      hostname=CDABACKUP, port=16003, password=password,
+      username=userid
+    </DataSourceArg>
+  </DataSource>
+  <NetworkList Name="TestNewNL">
+    <TransportMediumType>goes</TransportMediumType>
+    <SiteNameTypePreference>nwshb5</SiteNameTypePreference>
+    <NetworkListEntry TransportId="190566">
+      <PlatformName>TESTSITE4</PlatformName>
+      <Description>Test site</Description>
+    </NetworkListEntry>
+  </NetworkList>
+  <ScheduleEntry Name="TestNewSchedule">
+    <LoadingAppName>RoutingScheduler</LoadingAppName>
+    <RoutingSpecName>TestNewRS</RoutingSpecName>
+    <Enabled>true</Enabled>
+    <TimeZone>America/Los_Angeles</TimeZone>
+    <LastModifyTime>11/12/2025 22:30:20</LastModifyTime>
+  </ScheduleEntry>
+</Database>
