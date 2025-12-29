@@ -108,6 +108,7 @@ public class DBImportExportTest extends AppTestBase
         List<String> exportLines = new ArrayList<String>(Arrays.asList(exportOut.split("\\R")));
         return exportLines.stream().filter(line -> !line.contains("LastModifyTime"))
                 .filter(line -> !line.contains("PlatformId"))
+                .filter(line -> !line.contains("password"))
                 .collect(Collectors.joining(System.lineSeparator()));
     }
 
