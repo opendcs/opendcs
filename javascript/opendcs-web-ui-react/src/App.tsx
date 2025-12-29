@@ -1,18 +1,18 @@
 import { useEffect } from "react";
 import "./App.css";
 import { useAuth } from "./contexts/AuthContext";
-import Login from "./pages/Login";
-import { TopBar } from "./components/TopBar";
+import Login from "./pages/auth/login/Login";
+import { TopBar } from "./components/layout/TopBar";
 import { ModeIcons } from "./components/ModeIcon";
 
 import { RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
 import { useApi } from "./contexts/ApiContext";
 import { Route, Routes, useNavigate } from "react-router-dom";
-import { SideBar } from "./components/SideBar";
-import { Platforms } from "./pages/Platforms";
-import { Sites } from "./pages/Sites";
+import { SideBar } from "./components/layout/SideBar";
+import { Platforms } from "./pages/platforms/Platforms";
+import { Sites } from "./pages/sites/Sites";
 import { Container } from "react-bootstrap";
-import { Algorithms } from "./pages/Algorithms";
+import { Algorithms } from "./pages/computations/algorithms/Algorithms";
 
 function App() {
   const navigate = useNavigate();
@@ -29,7 +29,7 @@ function App() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .then((value: any) => setUser(value))
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      .catch((_error: any) => navigate("/login"));
+      .catch((_error: unknown) => navigate("/login"));
   }, [api.conf, setUser]);
 
   return (
