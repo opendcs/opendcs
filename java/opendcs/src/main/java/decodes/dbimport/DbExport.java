@@ -38,7 +38,6 @@ Writes output to stdout.
 public class DbExport
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
-	static CmdLineArgs cmdLineArgs = new CmdLineArgs(false, "util.log");
 
 	static
 	{
@@ -64,6 +63,7 @@ public class DbExport
 
 		BooleanToken insecureArg = new BooleanToken("insecure", "include passwords and username in output",
 													"", TokenOptions.optSwitch, false);
+        CmdLineArgs cmdLineArgs = new CmdLineArgs(false, "util.log");
 		cmdLineArgs.addToken(insecureArg);
 		cmdLineArgs.parseArgs(args);
 
