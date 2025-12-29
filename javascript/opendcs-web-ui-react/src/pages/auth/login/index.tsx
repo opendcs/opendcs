@@ -2,7 +2,6 @@ import { type FormEvent } from "react";
 import { useAuth } from "../../../contexts/AuthContext";
 import { Button, Container, Form, Image } from "react-bootstrap";
 import "./Login.css";
-import user_img from "./user_profile_image_large.png";
 import { Credentials, RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
 import { useApi } from "../../../contexts/ApiContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -49,7 +48,7 @@ export default function Login() {
           <Container className="wrapper fadeInDown" fluid>
             <Container id="formContent" className="slightOpacity" fluid>
               <div className="fadeIn first">
-                <Image src={user_img} id="icon" alt="User icon" />
+                <Image src="/user_profile_image_large.png" id="icon" alt="User icon" />
               </div>
               <Form onSubmit={handleLogin}>
                 <Form.Group className="mb-3">
