@@ -1,10 +1,10 @@
 import { type FormEvent } from "react";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../../../contexts/AuthContext";
 import { Button, Container, Form, Image } from "react-bootstrap";
 import "./Login.css";
-import user_img from "../assets/img/user_profile_image_large.png";
+import user_img from "./user_profile_image_large.png";
 import { Credentials, RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
-import { useApi } from "../contexts/ApiContext";
+import { useApi } from "../../../contexts/ApiContext";
 import { useNavigate, useLocation } from "react-router-dom";
 
 export default function Login() {

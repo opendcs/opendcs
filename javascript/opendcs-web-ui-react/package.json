@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "api:start": "cd ../../ && ./gradlew runWeb --info",
-    "api:generate": "./gradlew -p ../../ :api-client-typescript:build --info",
+    "api:generate": "../../gradlew -p ../../ :api-client-typescript:build --info",
     "lint": "eslint .",
     "preview": "vite preview",
     "format:check": "prettier --check .",
