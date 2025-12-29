@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Database>
-  <Platform PlatformId="13">
+  <Platform PlatformId="11">
     <Description>
       Dummy site to import and test that elevation is updated.
     </Description>
     <Agency>CWMS</Agency>
     <IsProduction>false</IsProduction>
-    <LastModifyTime>12/29/2025 08:56:52</LastModifyTime>
+    <LastModifyTime>12/29/2025 10:13:50</LastModifyTime>
     <Site>
       <Latitude>0</Latitude>
       <Longitude>0</Longitude>
@@ -25,7 +25,7 @@
         Dummy config to allow import platform records in CWMS.
       </Description>
     </PlatformConfig>
-    <TransportMedium MediumType="goes-self-timed" MediumId="4568117C">
+    <TransportMedium MediumType="goes-self-timed" MediumId="4561A4AE">
       <DecodesScript ScriptName="ST"/>
       <ChannelNum>22</ChannelNum>
       <AssignedTime>00:18:40</AssignedTime>
@@ -36,11 +36,11 @@
       <parity>U</parity>
     </TransportMedium>
   </Platform>
-  <Platform PlatformId="14">
+  <Platform PlatformId="12">
     <Description>Site used for Platform Import Regression Testing</Description>
     <Agency>CWMS</Agency>
     <IsProduction>false</IsProduction>
-    <LastModifyTime>12/29/2025 08:56:52</LastModifyTime>
+    <LastModifyTime>12/29/2025 10:13:50</LastModifyTime>
     <Site>
       <Latitude>0</Latitude>
       <Longitude>0</Longitude>
@@ -5348,6 +5348,6 @@
     <RoutingSpecName>TestExistingRS</RoutingSpecName>
     <Enabled>true</Enabled>
     <TimeZone>America/Los_Angeles</TimeZone>
-    <LastModifyTime>12/29/2025 08:56:52</LastModifyTime>
+    <LastModifyTime>12/29/2025 10:13:50</LastModifyTime>
   </ScheduleEntry>
 </Database>

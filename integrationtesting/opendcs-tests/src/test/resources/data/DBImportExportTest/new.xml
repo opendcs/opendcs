@@ -27,7 +27,7 @@
           Dummy config to allow import platform records.
       </Description>
     </PlatformConfig>
-    <TransportMedium MediumType="goes-self-timed" MediumId="4568117C">
+    <TransportMedium MediumType="goes-self-timed" MediumId="4561A4AE">
       <DecodesScript ScriptName="ST"/>
       <ChannelNum>22</ChannelNum>
       <AssignedTime>00:18:40</AssignedTime>
