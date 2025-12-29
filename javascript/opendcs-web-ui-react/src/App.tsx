@@ -1,18 +1,17 @@
 import { useEffect } from "react";
 import "./App.css";
 import { useAuth } from "./contexts/AuthContext";
-import Login from "./pages/auth/login/Login";
-import { TopBar } from "./components/layout/TopBar";
+import Login from "./pages/auth/login";
+import { TopBar, SideBar } from "./components/layout";
 import { ModeIcons } from "./components/ModeIcon";
 
 import { RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
 import { useApi } from "./contexts/ApiContext";
 import { Route, Routes, useNavigate } from "react-router-dom";
-import { SideBar } from "./components/layout/SideBar";
-import { Platforms } from "./pages/platforms/Platforms";
-import { Sites } from "./pages/sites/Sites";
+import { Platforms } from "./pages/platforms";
+import { Sites } from "./pages/sites";
 import { Container } from "react-bootstrap";
-import { Algorithms } from "./pages/computations/algorithms/Algorithms";
+import { Algorithms } from "./pages/computations/algorithms";
 
 function App() {
   const navigate = useNavigate();
