@@ -72,24 +72,6 @@ export default defineConfig({
         },
         setupFiles: ['.storybook/vitest.setup.ts']
       }
-    },
-    {
-      extends: true,
-      test: {
-        name: 'ui',
-        include: ['**/*.uitest.(ts|tsx)'],
-        exclude: ['**/*.stories.(ts|tsx)'],
-        browser: {
-          enabled: true,
-          headless: true,
-          provider: playwright({}),
-          instances: [{
-            browser: 'chromium'
-          }]
-        },
-        setupFiles: ['.storybook/vitest.setup.ts']
-      }
-
     }]
   }
 });

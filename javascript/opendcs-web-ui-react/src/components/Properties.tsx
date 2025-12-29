@@ -39,8 +39,9 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, addPr
     const slots = {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         2: (data: Property, _row: unknown) => (
-        <div><Button onClick={() => removeProp(data.name)} aria-label="delete property"><Trash /></Button>
-        </div>)
+        <Button onClick={() => removeProp(data.name)} variant='warning' size='sm'
+                     aria-label="delete property"><Trash /></Button>
+        )
     };
 
     return (

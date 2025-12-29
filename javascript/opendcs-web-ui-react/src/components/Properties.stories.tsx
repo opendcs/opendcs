@@ -1,6 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PropertiesTable, type PropertiesTableProps, type Property } from './Properties';
 import { useArgs } from 'storybook/internal/preview-api';
+import { userEvent } from '@storybook/testing-library';
+
+
+userEvent.setup();
 
 const meta = {
   component: PropertiesTable,
@@ -36,10 +40,19 @@ export const Empty: Story = {
 
     return <PropertiesTable {...args} theProps={theProps} addProp={addProp} removeProp={removeProp} />;
   },
+};
+
+export const EmptyAddThenRemove: Story = {
+  args: {
+    ...Empty.args,
+  },
+  render: Empty.render,
   play: async ({canvas, userEvent}) => {
+    // NOTE: needs some actual assertions, but at the moment it's just an empty uneditable row.
     const add = canvas.getByRole('button', {name: 'add property'});
-    console.log(userEvent);
     await userEvent.click(add);
+    const remove = canvas.getByRole('button', {name: 'delete property'});
+    await userEvent.click(remove);
   },
 };
 
