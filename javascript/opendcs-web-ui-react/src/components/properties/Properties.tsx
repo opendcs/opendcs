@@ -1,18 +1,19 @@
 import DataTable, { type DataTableProps } from "datatables.net-react";
 import DT from "datatables.net-bs5";
-import { Button, Container } from "react-bootstrap";
+import { Button, ButtonGroup, Container } from "react-bootstrap";
 import 'datatables.net-responsive';
-import 'react-bootstrap-icons'
-import { Trash } from "react-bootstrap-icons";
+import { Pencil, Trash } from "react-bootstrap-icons";
+import type { ApiPropSpec } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
   
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
 
+
 export interface Property {
     name: string;
     value: unknown;
-    tooltip?: string;
+    spec?: ApiPropSpec;
 }
 
 export interface PropertiesTableProps {
@@ -23,6 +24,20 @@ export interface PropertiesTableProps {
     height?: React.CSSProperties['height'];
     classes?: string;
 };
+export interface ActionProps {
+    data: Property,
+    removeProp: (prop: string) => void
+}
+
+export const PropertyActions: React.FC<ActionProps> = ({data, removeProp}) => {
+    return (
+        <div>
+            <Button onClick={() => console.log("would edit")} aria-label="edit property" size='sm'><Pencil /></Button>
+            <Button onClick={() => removeProp(data.name)} variant='danger' size='sm'
+                    aria-label="delete property"><Trash /></Button>
+        </div>
+    )
+};
 
 export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, addProp, removeProp, width = '20em', height = '100vh', classes = ''}) => {
     const columns = [
@@ -32,16 +47,19 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, addPr
     ];
     const options: DataTableProps["options"] = {
         paging: false,
-        stripeClasses: ["bg-primary-subtle", "bg--subtle"],
+        stripeClasses: ["bg-primary-subtle", "bg-subtle"],
         responsive: true
     };
 
     const slots = {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        2: (data: Property, _row: unknown) => (
-        <Button onClick={() => removeProp(data.name)} variant='warning' size='sm'
-                     aria-label="delete property"><Trash /></Button>
-        )
+        Actions: (data: Property, type: unknown, _row: unknown) => {
+            if (type === 'display') {
+                return (<PropertyActions data={data} removeProp={removeProp}/>)
+            } else {
+                return data;
+            }
+        } 
     };
 
     return (
