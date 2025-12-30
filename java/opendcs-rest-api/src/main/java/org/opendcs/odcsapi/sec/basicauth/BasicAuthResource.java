@@ -18,6 +18,8 @@ package org.opendcs.odcsapi.sec.basicauth;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import javax.sql.DataSource;
 
@@ -44,6 +46,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.model.User;
 import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.dao.ApiAuthorizationDAI;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
@@ -99,7 +102,10 @@ public final class BasicAuthResource extends OpenDcsResource
 			responses = {
 					@ApiResponse(
 							responseCode = "200",
-							description = "Successful authentication."
+							description = "Successful authentication.",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+								schema = @Schema(implementation = User.class)
+							)
 					),
 					@ApiResponse(
 							responseCode = "400",
@@ -150,9 +156,12 @@ public final class BasicAuthResource extends OpenDcsResource
 			oldSession.invalidate();
 		}
 		HttpSession session = httpServletRequest.getSession(true);
+		
 		session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, principal);
+		HashMap<String,String> ret = new HashMap<>();
+		ret.put("email", credentials.getUsername());
 		return Response.ok()
-				.entity(new Status("Authentication Successful."))
+				.entity(ret)
 				.build();
 	}
 

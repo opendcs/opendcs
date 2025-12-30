@@ -18,11 +18,6 @@ plugins {
     id "opendcs.deps-conventions"
     id "opendcs.publishing-conventions"
     id "war"
-    id "com.netflix.nebula.jakartaee-migration" version "2.0.0"
-}
-
-configurations {
-    local_js
 }
 
 dependencies {
@@ -33,8 +28,6 @@ dependencies {
     implementation(libs.jstl)
     runtimeOnly(libs.jstl.impl)
     runtimeOnly(libs.slf4j.jdk14)
-
-    local_js(project(":api-client-typescript"))
 
     runtimeOnly("org.webjars:bootstrap:5.3.8")
     constraints {
@@ -59,7 +52,7 @@ dependencies {
 
     
     runtimeOnly("org.webjars:webjars-locator-core:0.59")
-    runtimeOnly("org.webjars:webjars-servlet-2.x:1.6")
+    runtimeOnly("org.webjars:webjars-servlet-6.x:1.7")
 
     // DataTables + Bootstrap 5
     runtimeOnly("org.webjars.npm:datatables.net:1.13.8") {
@@ -100,20 +93,6 @@ dependencies {
     testImplementation(libs.junit.api)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
-}
-
-// Until webjars-servlet is built for Jakarta EE need to migrate with tool.
-jakartaeeMigration {
-    migrate()
-    includeTransform('org.webjars:webjars-servlet-2.x')
-}
-
-war {
-    dependsOn configurations.local_js
-    from(zipTree(configurations.local_js.singleFile)) {
-        into("resources/js")
-        include('**/*js')
-    }
 }
 
 tasks.named('war') {

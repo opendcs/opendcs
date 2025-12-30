@@ -50,8 +50,8 @@ dependencies {
     testImplementation(libs.bundles.junit.platform)
     testRuntimeOnly(libs.slf4j.jdk14)
 
-    testRuntimeOnly project(":opendcs-schemas")
-    testRuntimeOnly project(":opendcs-schemas-cwms-oracle")
+    runtimeOnly project(":opendcs-schemas")
+    runtimeOnly project(":opendcs-schemas-cwms-oracle")
     testRuntimeOnly(libs.bundles.testcontainers)
 }
 

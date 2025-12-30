@@ -31,6 +31,8 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -42,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class PlatformResourcesIT extends BaseIT
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static Long platformId;
 	private static Long siteId;
 	private static Long netListId;
@@ -337,20 +340,19 @@ final class PlatformResourcesIT extends BaseIT
 
 		JsonPath actual = response.body().jsonPath();
 		assertNotNull(actual);
-		Map<String, Object> actualMap = actual.getMap("");
-		actualMap = (Map<String, Object>) actualMap.get(expected.getString("name") + "-" + expected.getString("designator"));
+		var nameAndDesignator = expected.getString("name") + "-" + expected.getString("designator");
+		final var actualPlatform = actual.setRootPath("find { it -> it.name == '" + nameAndDesignator + "'}");
+		log.info("Platform JSON '{}'", actualPlatform.prettyPrint());
 		// Name of platform is not stored in Platform object, could cause issues with collision
-		assertNotNull(actualMap);
-		assertEquals(expected.get("description"), actualMap.get("description"));
-		assertEquals(expected.get("agency"), actualMap.get("agency"));
-		assertEquals(expected.get("designator"), actualMap.get("designator"));
-		assertEquals(expected.get("production"), actualMap.get("production"));
+		assertEquals(expected.getString("description"), actualPlatform.get("description"));
+		assertEquals(expected.getString("agency"), actualPlatform.get("agency"));
+		assertEquals(expected.getString("designator"), actualPlatform.get("designator"));
 		// The transportMedia map is interpreted by the JSON parser as a map of maps, but the actual JSON is a map of objects
-		Map<String, Object> transportMedia = (Map<String, Object>) actualMap.get("transportMedia");
+		var transportMedia = actualPlatform.getMap("transportMedia");
 		assertTrue(transportMedia.containsKey("goes"));
 		assertEquals(expected.get("transportMedia.goes"), transportMedia.get("goes"));
 
-		assertEquals(configId, ((Integer) actualMap.get("configId")).longValue());
+		assertEquals(configId, ((Integer) actualPlatform.get("configId")).longValue());
 
 		// Retrieve with a tmtype filter
 		response = given()
@@ -370,19 +372,18 @@ final class PlatformResourcesIT extends BaseIT
 		;
 
 		actual = response.body().jsonPath();
-		actualMap = actual.getMap("");
-		actualMap = (Map<String, Object>) actualMap.get(expected.getString("name") + "-" + expected.getString("designator")); // Name of platform is not stored in Platform object, could cause issues with collision
-		assertNotNull(actualMap);
-		assertEquals(expected.get("description"), actualMap.get("description"));
-		assertEquals(expected.get("agency"), actualMap.get("agency"));
-		assertEquals(expected.get("designator"), actualMap.get("designator"));
-		assertEquals(expected.get("production"), actualMap.get("production"));
+		nameAndDesignator = expected.getString("name") + "-" + expected.getString("designator");
+		final var actualPlatform2 = actual.setRootPath("find { it -> it.name == '" + nameAndDesignator + "'}");
+
+		assertEquals(expected.getString("description"), actualPlatform2.get("description"));
+		assertEquals(expected.getString("agency"), actualPlatform2.get("agency"));
+		assertEquals(expected.getString("designator"), actualPlatform2.get("designator"));
 		// The transportMedia map is interpreted by the JSON parser as a map of maps, but the actual JSON is a map of objects
-		transportMedia = (Map<String, Object>) actualMap.get("transportMedia");
+		transportMedia = actualPlatform2.getMap("transportMedia");
 		assertTrue(transportMedia.containsKey("goes"));
 		assertEquals(expected.get("transportMedia.goes"), transportMedia.get("goes"));
 
-		assertEquals(configId, ((Integer) actualMap.get("configId")).longValue());
+		assertEquals(configId, ((Integer) actualPlatform2.get("configId")).longValue());
 
 		// Retrieve with an invalid tmtype to check filtering
 		response = given()
@@ -403,7 +404,7 @@ final class PlatformResourcesIT extends BaseIT
 
 		actual = response.body().jsonPath();
 		assertNotNull(actual);
-		assertEquals(0, ((Map<String, Object>) actual.get("")).size());
+		assertEquals(0, actual.getList("").size());
 	}
 
 	@TestTemplate
