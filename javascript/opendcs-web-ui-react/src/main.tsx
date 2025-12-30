@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
 import "bootstrap/dist/css/bootstrap.min.css";
+import 'datatables.net-buttons-dt/css/buttons.dataTables.css';
 import "./main.css";
 import "./assets/opendcs-shim.css";
 import { ThemeProvider } from "./contexts/ThemeProvider.tsx";
