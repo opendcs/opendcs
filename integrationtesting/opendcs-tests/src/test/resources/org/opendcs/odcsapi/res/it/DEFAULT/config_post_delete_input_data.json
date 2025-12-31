@@ -33,7 +33,7 @@
             "ucId" : null,
             "fromAbbr" : "m",
             "toAbbr" : "ft",
-            "algorithm" : "None",
+            "algorithm" : "Linear",
             "a" : 3.280839895,
             "b" : null,
             "c" : null,
