@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PropertiesTable, type PropertiesTableProps, type Property } from './Properties';
 import { useArgs } from 'storybook/internal/preview-api';
 import { userEvent } from '@storybook/testing-library';
-import { expect } from 'storybook/test';
+import { expect, waitFor, within } from 'storybook/test';
 
 userEvent.setup();
 
@@ -14,23 +14,21 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-// eslint-disable-next-line no-var
-var theProps: Property[] = [];
-
 export const Empty: Story = {
 
   args: {
-    theProps: theProps,
+    theProps: [],
     saveProp: () => {},
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     removeProp: (_prop: string) => {},
   },
   render: function Render(args: PropertiesTableProps) {
     const [{theProps}, updateArgs] = useArgs();
-
+    console.log("hello");
     function saveProp(data: Property) {
+      console.log("prop saved");
       const tmp = theProps.filter((p: Property) => p.name !== data.name);
-        updateArgs({theProps: [...tmp, data]});
+      updateArgs({theProps: [...tmp, data]});
     }
 
     function removeProp(prop: string) {
@@ -52,12 +50,53 @@ export const EmptyAddThenRemove: Story = {
     const add = canvas.getByRole('button', {name: '+'});
     await userEvent.click(add);
 
-    const nameInput = canvas.getByRole("textbox", {name: "input for property named "})
+    const nameInput = canvas.getByRole("textbox", {name: "name input for property named"})
     expect(nameInput).toBeInTheDocument();
     const remove = canvas.getByRole('button', {name: 'delete property named'});
     await userEvent.click(remove);
   },
 };
+
+export const EmptyAddThenSaveThenRemove: Story = {
+  args: {
+    ...Empty.args,
+  },
+  render: Empty.render,
+  play: async ({canvasElement, userEvent, step}) => {
+    const canvas = within(canvasElement);
+    await step("add new prop", async () => {
+      const add = canvas.getByRole('button', {name: '+'});
+      await userEvent.click(add);
+
+      const nameInput = canvas.getByRole("textbox", {name: "name input for property named"})
+      expect(nameInput).toBeInTheDocument();
+      const valueInput = canvas.getByRole("textbox", {name: "value input for property named"})
+      expect(valueInput).toBeInTheDocument();
+
+      await userEvent.type(nameInput, "testprop");
+      await userEvent.type(valueInput, "testvalue");
+    });
+
+    const save = canvas.getByRole('button', {name: 'save property named'});
+    await step("save prop", async () => {
+      await userEvent.click(save);
+    })
+
+    await waitFor(async () => {
+      const prop = await canvas.findByText("testprop");
+      expect(prop).not.toBeNull();
+    }, {timeout: 3000});
+
+    await step("delete prop", async () => {
+      const remove = await canvas.findByRole('button', {name: 'delete property named testprop'});
+      await userEvent.click(remove);
+  
+      await waitFor(async () => {
+        expect(canvas.queryByText("testprop")).toBeNull();
+      });
+    });
+  }
+}
 
 
 export const NotEmpty: Story = {

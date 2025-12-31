@@ -38,7 +38,6 @@ export interface ActionProps {
 }
 
 export const PropertyActions: React.FC<ActionProps> = ({data, editMode, removeProp, editProp, saveProp}) => {
-    console.log(editMode);
     return (
         <>
             {editMode === true ?
@@ -63,9 +62,10 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveP
         }
         const api = table.current!.dt();
         const rowNode = api?.row(meta.row).node();
+        const inputName: string = meta.col == 0 ? "name" : "value";
         if (rowNode?.dataset.edit === "true" || data === "") {
             return renderToString(<Form.Control type="text" name={meta.settings.aoColumns[meta.col].mData} defaultValue={data} 
-                                                aria-label={`input for property named ${data}`} />);
+                                                aria-label={`${inputName} input for property named ${data}`} />);
         } else {
             return data;
         }
@@ -106,17 +106,14 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveP
 
     const getAndSaveProp = (data: Property): void => {
         const api = table.current!.dt();
-        console.log(api);
         if (api) {
             const row = api.row(`tr[data-prop-name="${data.name}"]`)?.node();
             
             if (row) {
                 const tds = row.children;
-                console.log(tds);
                 const name = tds[0].hasChildNodes() ? (tds[0].children[0] as HTMLInputElement).value : tds[0].innerHTML;
                 const value = (tds[1].children[0] as HTMLInputElement).value;
                 const prop: Property = {name: name, value: value}
-                console.log(prop);
                 saveProp(prop);
                 
             }
