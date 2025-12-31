@@ -64,7 +64,8 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveP
         const api = table.current!.dt();
         const rowNode = api?.row(meta.row).node();
         if (rowNode?.dataset.edit === "true" || data === "") {
-            return renderToString(<Form.Control type="text" name={meta.settings.aoColumns[meta.col].mData} defaultValue={data} />);
+            return renderToString(<Form.Control type="text" name={meta.settings.aoColumns[meta.col].mData} defaultValue={data} 
+                                                aria-label={`input for property named ${data}`} />);
         } else {
             return data;
         }

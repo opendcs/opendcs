@@ -51,8 +51,10 @@ export const EmptyAddThenRemove: Story = {
     // NOTE: needs some actual assertions, but at the moment it's just an empty uneditable row.
     const add = canvas.getByRole('button', {name: '+'});
     await userEvent.click(add);
-    
-    const remove = canvas.getByRole('button', {name: 'delete property named '});
+
+    const nameInput = canvas.getByRole("textbox", {name: "input for property named "})
+    expect(nameInput).toBeInTheDocument();
+    const remove = canvas.getByRole('button', {name: 'delete property named'});
     await userEvent.click(remove);
   },
 };
