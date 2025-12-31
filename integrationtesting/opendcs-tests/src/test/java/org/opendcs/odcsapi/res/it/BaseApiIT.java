@@ -28,6 +28,7 @@ import decodes.db.DatabaseIO;
 import decodes.db.PlatformStatus;
 import decodes.db.ScheduleEntry;
 import decodes.db.ScheduleEntryStatus;
+import decodes.db.Site;
 import decodes.sql.DbKey;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.TimeSeriesDb;
@@ -46,6 +47,12 @@ import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.TimeSeriesDAI;
 import org.apache.catalina.session.StandardSession;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.opendcs.odcsapi.beans.ApiSite;
+import org.opendcs.odcsapi.fixtures.DatabaseContextProvider;
+import org.opendcs.odcsapi.fixtures.DatabaseSetupExtension;
+import org.opendcs.odcsapi.fixtures.DbType;
+import org.opendcs.odcsapi.fixtures.TomcatServer;
 import org.opendcs.odcsapi.res.ObjectMapperContextResolver;
 import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
 import org.opendcs.odcsapi.sec.OpenDcsPrincipal;
@@ -61,6 +68,7 @@ import org.opendcs.fixtures.annotations.EnableIfApiSupported;
 import static io.restassured.RestAssured.given;
 import static java.util.stream.Collectors.joining;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.opendcs.odcsapi.util.ApiConstants.ORGANIZATION_HEADER;
 
 @EnableIfApiSupported
@@ -141,7 +149,7 @@ public class BaseApiIT extends AppTestBase
 	{
 		final String COOKIE = "IntegrationTestAuthCookie";
 		String username = System.getProperty("DB_USERNAME");
-		
+		TomcatServer tomcat = DatabaseSetupExtension.getCurrentTomcat();
 		StandardSession session = (StandardSession) tomcat.getTestSessionManager()
 				.createSession(COOKIE);
 		if(session == null) {
@@ -306,5 +314,97 @@ public class BaseApiIT extends AppTestBase
 		{
 			throw new IllegalStateException(e);
 		}
+	}
+
+	Site map(ApiSite apiSite) throws DatabaseException
+	{
+		Site site = new Site();
+		site.setPublicName(apiSite.getPublicName());
+		site.setLocationType(apiSite.getLocationType());
+		site.setElevation(apiSite.getElevation());
+		site.setElevationUnits(apiSite.getElevUnits());
+		site.latitude = apiSite.getLatitude();
+		site.longitude = apiSite.getLongitude();
+		if (apiSite.getSiteId() != null)
+		{
+			site.setId(DbKey.createDbKey(apiSite.getSiteId()));
+		}
+		site.setLastModifyTime(apiSite.getLastModified());
+		site.setDescription(apiSite.getDescription());
+		site.timeZoneAbbr = apiSite.getTimezone();
+		site.nearestCity = apiSite.getNearestCity();
+		site.state = apiSite.getState();
+		site.country = apiSite.getCountry();
+		site.region = apiSite.getRegion();
+		site.setActive(apiSite.isActive());
+
+		for (String props : apiSite.getProperties().stringPropertyNames())
+		{
+			site.setProperty(props, apiSite.getProperties().getProperty(props));
+		}
+		return site;
+	}
+
+	void tearDownSite(Long siteId)
+	{
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.queryParam("siteid", siteId)
+			.spec(authSpec)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("site")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
+		;
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.queryParam("siteid", siteId)
+			.spec(authSpec)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("site")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
+		;
+	}
+
+	ApiSite storeSite(String jsonPath) throws Exception
+	{
+		assertNotNull(jsonPath);
+		String siteJson = getJsonFromResource(jsonPath);
+
+		var response = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.contentType(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.body(siteJson)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("site")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
+			.extract()
+			;
+
+		Long localSiteId = response.body().jsonPath().getLong("siteId");
+
+		ObjectMapper mapper = new ObjectMapper();
+		ApiSite retVal = mapper.readValue(siteJson, ApiSite.class);
+		retVal.setSiteId(localSiteId);
+		return retVal;
 	}
 }

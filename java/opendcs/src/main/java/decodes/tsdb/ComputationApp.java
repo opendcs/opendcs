@@ -39,6 +39,20 @@ import org.slf4j.MDC.MDCCloseable;
 
 import java.net.InetAddress;
 
+import decodes.sql.DbKey;
+import decodes.tsdb.alarm.AlarmLimitSet;
+import decodes.tsdb.alarm.AlarmManager;
+import decodes.tsdb.alarm.AlarmScreening;
+import decodes.tsdb.alarm.AlarmScreeningAlgorithm;
+import decodes.util.CmdLineArgs;
+import decodes.util.DecodesException;
+import decodes.util.DecodesSettings;
+import decodes.util.PropertySpec;
+import ilex.cmdline.BooleanToken;
+import ilex.cmdline.StringToken;
+import ilex.cmdline.TokenOptions;
+import ilex.util.TextUtil;
+import lrgs.gui.DecodesInterface;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -189,6 +203,7 @@ public class ComputationApp extends TsdbAppTemplate
 		shutdownFlag = false;
 	}
 
+	@Override
 	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
 		cmdLineArgs.addToken(regressionTestModeArg);
@@ -205,7 +220,7 @@ public class ComputationApp extends TsdbAppTemplate
 		try { hostname = InetAddress.getLocalHost().getHostName(); }
 		catch(Exception e) { hostname = "unknown"; }
 
-		if (officeIdArg.getValue() != null && officeIdArg.getValue().length() > 0)
+		if (officeIdArg.getValue() != null && !officeIdArg.getValue().isEmpty())
 			DecodesSettings.instance().CwmsOfficeId = officeIdArg.getValue();
 	}
 
@@ -356,41 +371,14 @@ public class ComputationApp extends TsdbAppTemplate
 					if (!dataCollection.isEmpty())
 					{
 						action = "Resolving computations";
-						DbComputation comps[] = resolver.resolve(dataCollection);
+						DbComputation[] comps = resolver.resolve(dataCollection);
 
 						action = "Applying computations";
-						for(DbComputation comp : comps)
-						{
-							log.debug("Trying computation '{}' #trigs={}",
-									  comp.getName(), comp.getTriggeringRecNums().size());
-							compsTried++;
-							try (var mdcComputation = MDC.putCloseable("computation", comp.getName());
-								 var compTimer = MDCTimer.startTimer(comp.getName()))
-							{
-								comp.prepareForExec(theDb);
-								comp.apply(dataCollection, theDb);
-							}
-							catch(DbCompException ex)
-							{
-								log.atWarn().setCause(ex).log("Computation '{}' failed.", comp.getName());
-								compErrors++;
-								for (Integer rn : comp.getTriggeringRecNums())
-								{
-									 dataCollection.getTasklistHandle().markComputationFailed(rn);
-								}
-							}
-							catch(Exception ex)
-							{
-								log.atError().setCause(ex).log("Unexpected error in computation '{}'", comp.getName());
-								compErrors++;
-								for(Integer rn : comp.getTriggeringRecNums())
-								{
-									 dataCollection.getTasklistHandle().markComputationFailed(rn);
-								}
-							}
-							comp.getTriggeringRecNums().clear();
-							log.debug("End of computation '{}'", comp.getName());
-						}
+						ComputationExecution execution = new ComputationExecution(theDb);
+
+						execution.execute(List.of(comps), dataCollection);
+						compsTried += execution.getComputesTried();
+						compErrors += execution.getNumErrors();
 
 						action = "Saving results";
 						List<CTimeSeries> tsList = dataCollection.getAllTimeSeries();
@@ -558,7 +546,6 @@ public class ComputationApp extends TsdbAppTemplate
 			// This means a bad app name was given on the command line. Exit.
 			log.atError().setCause(ex).log("runAppInit failed.");
 			shutdownFlag = true;
-			return;
 		}
 		catch(DbIoException ex)
 		{
@@ -574,6 +561,7 @@ public class ComputationApp extends TsdbAppTemplate
 		}
 	}
 
+	@Override
 	public void initDecodes()
 		throws DecodesException
 	{
@@ -627,9 +615,9 @@ public class ComputationApp extends TsdbAppTemplate
 	public static Date computeNextRunTime(String timedCompInterval, String timedCompOffset,
 		Calendar cal, Date now)
 	{
-		if (timedCompInterval == null || timedCompInterval.trim().length() == 0)
+		if (timedCompInterval == null || timedCompInterval.trim().isEmpty())
 			return null;
-		if (timedCompOffset != null && timedCompOffset.trim().length() == 0)
+		if (timedCompOffset != null && timedCompOffset.trim().isEmpty())
 			timedCompOffset = null;
 
 
@@ -812,7 +800,7 @@ public class ComputationApp extends TsdbAppTemplate
 
 		// Since is controlled by timedCompDataSince property, or, if not defined, by timedCompInterval.
 		String incS = tc.getProperty("timedCompDataSince");
-		if (incS == null || incS.trim().length() == 0)
+		if (incS == null || incS.trim().isEmpty())
 			incS = tc.getProperty("timedCompInterval");
 		IntervalIncrement inc = IntervalIncrement.parse(incS);
 		if (inc == null)
@@ -824,7 +812,7 @@ public class ComputationApp extends TsdbAppTemplate
 
 		// Until is controlled by timedCompDataUntil property, defaults to this execution time.
 		incS = tc.getProperty("timedCompDataUntil");
-		if (incS != null && incS.trim().length() > 0 && (inc = IntervalIncrement.parse(incS)) != null)
+		if (incS != null && !incS.trim().isEmpty() && (inc = IntervalIncrement.parse(incS)) != null)
 		{
 			if (inc.getCount() < 0)
 				inc.setCount(-inc.getCount());
@@ -832,6 +820,8 @@ public class ComputationApp extends TsdbAppTemplate
 			timedCompCal.add(inc.getCalConstant(), -inc.getCount());
 			until = timedCompCal.getTime();
 		}
+
+		ComputationExecution execution = new ComputationExecution(theDb);
 
 		log.debug("Executing comp '{}' over time period {} to {}", tc.getName(), since, until);
 		if (!DbKey.isNull(tc.getGroupId()))
@@ -841,7 +831,7 @@ public class ComputationApp extends TsdbAppTemplate
 			{
 				try (MDCCloseable mdc = MDC.putCloseable("computation", concreteClone.getName()))
 				{
-					executeSingleComp(concreteClone, since, until, dataCollection, timeSeriesDAO);
+					execution.executeSingleComp(concreteClone, since, until, dataCollection, timeSeriesDAO);
 				}
 			}
 		}
@@ -849,7 +839,7 @@ public class ComputationApp extends TsdbAppTemplate
 		{
 			try (MDCCloseable mdc = MDC.putCloseable("computation", tc.getName()))
 			{
-				executeSingleComp(tc, since, until, dataCollection, timeSeriesDAO);
+				execution.executeSingleComp(tc, since, until, dataCollection, timeSeriesDAO);
 			}
 		}
 
@@ -950,65 +940,6 @@ public class ComputationApp extends TsdbAppTemplate
 		return executeList;
 	}
 
-	private void executeSingleComp(DbComputation tc, Date since, Date until, DataCollection dataCollection,
-		TimeSeriesDAI timeSeriesDAO)
-		throws DbIoException
-	{
-		// Make a data collection with inputs filled from ... until
-		ParmRef parmRef = null;
-		try
-		{
-			// The prepare method maps all input parms
-			tc.prepareForExec(theDb);
-			for(DbCompParm parm : tc.getParmList())
-			{
-				if (!parm.isInput())
-					continue;
-				// 'prepare' method doesn't actually create the CTimeSeries. Do that now.
-				tc.getExecutive().setDc(dataCollection);
-				tc.getExecutive().addTsToParmRef(parm.getRoleName(), false);
-				parmRef = tc.getExecutive().getParmRef(parm.getRoleName());
-				CTimeSeries cts = parmRef.timeSeries;
-
-				// Read values between previous and this run. Then flag them as DB_ADDED
-				// Thus, they will be treated as triggers by the computation.
-				int numRead = timeSeriesDAO.fillTimeSeries(cts, since, until, true, true, false);
-				if (numRead > 0)
-				{
-					for(int idx = 0; idx < cts.size(); idx++)
-					{
-						TimedVariable tv = cts.sampleAt(idx);
-						if (!tv.getTime().before(since) && !tv.getTime().after(until))
-							VarFlags.setWasAdded(tv);
-					}
-					if (dataCollection.getTimeSeriesByUniqueSdi(cts.getTimeSeriesIdentifier().getKey()) == null)
-						try { dataCollection.addTimeSeries(cts); }
-						catch (DuplicateTimeSeriesException ex)
-						{
-							// Should not happen! We checked first.
-							log.atError().setCause(ex).log("Unexpected duplicate time series.");
-						}
-				}
-			}
-
-			tc.apply(dataCollection, theDb);
-		}
-		catch (DbCompException ex)
-		{
-			log.atWarn().setCause(ex).log("Cannot initialize computation '{}'", tc.getName());
-		}
-		catch (BadTimeSeriesException ex)
-		{
-			String msg = "Error in running computation " + tc.getKey() + ":" + tc.getName() + " -- ";
-			msg = msg + "No such input time series for parm '" + parmRef.role + "'";
-			if (parmRef.tsid == null)
-				msg = msg + " -- No TSID assigned.";
-			else
-				msg = msg + " -- TSID '" + parmRef.tsid.getUniqueString() + "' does not exist in db.";
-			log.atWarn().setCause(ex).log(msg);
-		}
-	}
-
 
 	private void checkMissingChecks(TimeSeriesDAI timeSeriesDAO, TsGroupDAI tsGroupDAO)
 	{
@@ -1041,7 +972,6 @@ public class ComputationApp extends TsdbAppTemplate
 						catch(DbCompException ex)
 						{
 							log.atWarn().setCause(ex).log("CMC: Error in group comp.");
-							continue;
 						}
 					}
 				}
@@ -1054,7 +984,6 @@ public class ComputationApp extends TsdbAppTemplate
 					catch (DbCompException ex)
 					{
 						log.atWarn().setCause(ex).log("CMC: Error in comp.");
-						continue;
 					}
 				}
 			}
@@ -1067,7 +996,7 @@ public class ComputationApp extends TsdbAppTemplate
 
 			sortMissingChecks();
 			log.info("CMC: There are {} missing checks.", missingChecks.size());
-			if (missingChecks.size() > 0)
+			if (!missingChecks.isEmpty())
 			{
 				log.info("CMC: The next missing check scheduled for {}",
 						 new Date(missingChecks.get(0).nextRunMsec));
@@ -1086,10 +1015,7 @@ public class ComputationApp extends TsdbAppTemplate
 	private void sortMissingChecks()
 	{
 		Collections.sort(missingChecks,
-			new Comparator<MissingCheck>()
-			{
-				@Override
-				public int compare(MissingCheck o1, MissingCheck o2)
+				(o1, o2) ->
 				{
 					if (o1.nextRunMsec < o2.nextRunMsec)
 						return -1;
@@ -1097,8 +1023,7 @@ public class ComputationApp extends TsdbAppTemplate
 						return 1;
 
 					return 0;
-				}
-			});
+				});
 	}
 
 	private void doCMC(DbComputation ecomp, Date now)
@@ -1142,7 +1067,7 @@ public class ComputationApp extends TsdbAppTemplate
 		AlarmLimitSet limitSet = exec.gettLimitSet();
 		String mIntv = limitSet.getMissingInterval();
 		String mPer = limitSet.getMissingPeriod();
-		if (mIntv == null || mIntv.trim().length() == 0 || mPer == null || mPer.trim().length() == 0)
+		if (mIntv == null || mIntv.trim().isEmpty() || mPer == null || mPer.trim().isEmpty())
 		{
 			// The limit set does not do a Missing Check
 			// remove from array if there is one.

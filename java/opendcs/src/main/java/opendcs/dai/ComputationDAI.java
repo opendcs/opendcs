@@ -9,6 +9,7 @@
 package opendcs.dai;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -18,7 +19,7 @@ import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.compedit.ComputationInList;
+import decodes.tsdb.TimeSeriesIdentifier;
 
 /**
  * Defines public interface for reading/writing site (i.e. location) objects.
@@ -94,6 +95,15 @@ public interface ComputationDAI
 	 */
 	void deleteComputation(DbKey id)
 		throws DbIoException, ConstraintException;
+
+	/**
+	 * Execute the computation with the given ID.
+	 *
+	 * @param comp the computation to execute
+	 * @throws DbIoException         on Database IO error.
+	 */
+	void executeComputation(DbComputation comp, Date start, Date end, List<TimeSeriesIdentifier> tdIds)
+			throws DbIoException;
 
 	/**
 	 * Closes any resources opened by the DAO

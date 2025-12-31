@@ -92,8 +92,8 @@ public class CompExec extends TsdbAppTemplate
 	private StringToken tzArg = new StringToken("Z", "Time Zone", "",
 		TokenOptions.optSwitch, "UTC");
 
-	private HashSet<TimeSeriesIdentifier> tsids = new HashSet<TimeSeriesIdentifier>();
-	private HashSet<DbKey> specifiedCompIDs = new HashSet<DbKey>();
+	private HashSet<TimeSeriesIdentifier> tsids = new HashSet<>();
+	private HashSet<DbKey> specifiedCompIDs = new HashSet<>();
 	private Date since = null, until = null;
 	private SimpleDateFormat sdf = new SimpleDateFormat(dateSpec);
 	private TimeSeriesDAI timeSeriesDAO = null;
@@ -159,7 +159,7 @@ public class CompExec extends TsdbAppTemplate
 
 		// if outputFmt and presGrp are provided, initialize them.
 		String pgName = presGrpToken.getValue();
-		if (pgName != null && pgName.length() > 0)
+		if (pgName != null && !pgName.isEmpty())
 		{
 			presGrp = Database.getDb().presentationGroupList.find(pgName);
 			try
@@ -225,7 +225,7 @@ public class CompExec extends TsdbAppTemplate
 		log.info("After eval, there are {} TSIDs and {} comps.", tsids.size(), specifiedCompIDs.size());
 
 		// This will hold list of fully expanded comps to run
-		ArrayList<DbComputation> toRun = new ArrayList<DbComputation>();
+		ArrayList<DbComputation> toRun = new ArrayList<>();
 
 		// The resolver will make concrete clones and maintain toRun list of comps.
 		DbCompResolver resolver = new DbCompResolver(theDb);
@@ -286,20 +286,9 @@ public class CompExec extends TsdbAppTemplate
 				System.exit(0);
 		}
 
-		// Execute the computations
-		for(DbComputation comp2run : toRun)
-		{
-			try
-			{
-				log.info("Executing computation '{}'", comp2run.getName());
-				comp2run.prepareForExec(theDb);
-				comp2run.apply(theData, theDb);
-			}
-			catch (Exception ex)
-			{
-				log.atWarn().setCause(ex).log("Error executing comp '{}'", comp2run.getName());
-			}
-		}
+		ComputationExecution execution = new ComputationExecution(theDb);
+
+		theData = execution.execute(toRun, theData);
 
 		// if an output format is specified, format the data and send to stdout
 		if (outputFormatter != null)
@@ -372,6 +361,7 @@ public class CompExec extends TsdbAppTemplate
 	 * the user to turn off the Db Computations list filter.
 	 * By default is on.
 	 */
+	@Override
 	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
 		cmdLineArgs.addToken(ctrlFileToken);
@@ -414,14 +404,13 @@ public class CompExec extends TsdbAppTemplate
 			log.error("Cannot read control file '{}' -- check name and permissions.", exp);
 			System.exit(1);
 		}
-		try
+		try (LineNumberReader lnr = new LineNumberReader(new FileReader(ctrlfile)))
 		{
-			LineNumberReader lnr = new LineNumberReader(new FileReader(ctrlfile));
 			String line;
 			while ((line = lnr.readLine()) != null)
 			{
 				line = line.trim();
-				if (line.length() == 0 || line.charAt(0) == '#')
+				if (line.isEmpty() || line.charAt(0) == '#')
 					continue;
 
 				if (TextUtil.startsWithIgnoreCase(line, "tsid "))
@@ -457,7 +446,6 @@ public class CompExec extends TsdbAppTemplate
 
 
 			}
-			lnr.close();
 		}
 		catch (IOException ex)
 		{
@@ -505,7 +493,7 @@ public class CompExec extends TsdbAppTemplate
 		if (tsGroup == null)
 		{
 			log.error("No matching group ID or name for '{}'", nameOrId);
-			System.exit(1);;
+			System.exit(1);
 		}
 
 		GroupHelper groupHelper = theDb.makeGroupHelper();
@@ -531,7 +519,7 @@ public class CompExec extends TsdbAppTemplate
 			{
 				ex2.addSuppressed(ex);
 				log.atError().setCause(ex).log("No matching computation ID or name for '{}'", nameOrId);
-				System.exit(1);;
+				System.exit(1);
 			}
 		}
 	}

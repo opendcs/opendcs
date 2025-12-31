@@ -15,6 +15,9 @@
 */
 package opendcs.dao;
 
+import decodes.tsdb.ComputationExecution;
+import decodes.tsdb.TimeSeriesDb;
+import decodes.tsdb.TimeSeriesIdentifier;
 import ilex.util.TextUtil;
 
 import java.sql.Connection;
@@ -28,6 +31,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Predicate;
 
+import opendcs.dai.TimeSeriesDAI;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -65,7 +69,7 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	protected static DbObjectCache<DbComputation> compCache =
-		new DbObjectCache<DbComputation>(60 * 60 * 1000L, false);
+		new DbObjectCache<>(60 * 60 * 1000L, false);
 	private static long lastCacheFill = 0L;
 	public static final long CACHE_TIME_LIMIT = 20 * 60 * 1000L;
 
@@ -519,7 +523,7 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 		if (compCache.size() == 0)
 			fillCache();
 
-		ArrayList<DbComputation> ret = new ArrayList<DbComputation>();
+		ArrayList<DbComputation> ret = new ArrayList<>();
 		for(CacheIterator it = compCache.iterator(); it.hasNext(); )
 		{
 			DbComputation comp = (DbComputation)it.next();
@@ -600,7 +604,7 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 				if (tmpAppId.isNull())
 				{
 					String appName = comp.getApplicationName();
-					if (appName != null && appName.length() > 0)
+					if (appName != null && !appName.isEmpty())
 					{
 						String q = "select LOADING_APPLICATION_ID from "
 						+ "hdb_loading_application "
@@ -624,7 +628,7 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 			{
 				String algoName = comp.getAlgorithmName();
 				log.trace("Computation has undefined algo ID, will lookup name '{}'", algoName);
-				if (algoName != null && algoName.trim().length() > 0)
+				if (algoName != null && !algoName.trim().isEmpty())
 				{
 					DbCompAlgorithm algo = null;
 					try
@@ -880,6 +884,18 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 		catch (Exception ex)
 		{
 			throw new DbIoException("Unable to delete computation with id="+id.toString(), ex);
+		}
+	}
+
+	@Override
+	public void executeComputation(DbComputation comp, Date start, Date end, List<TimeSeriesIdentifier> tsIds)
+			throws DbIoException
+	{
+		TimeSeriesDb tsDb = (TimeSeriesDb) db;
+		ComputationExecution execution = new ComputationExecution(tsDb);
+		try (TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO())
+		{
+			execution.execute(timeSeriesDAO, comp, tsIds, start, end);
 		}
 	}
 
