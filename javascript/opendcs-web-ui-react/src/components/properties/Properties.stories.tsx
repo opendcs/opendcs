@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PropertiesTable, type PropertiesTableProps, type Property } from './Properties';
 import { useArgs } from 'storybook/internal/preview-api';
 import { userEvent } from '@storybook/testing-library';
-
+import { expect } from 'storybook/test';
 
 userEvent.setup();
 
@@ -21,16 +21,16 @@ export const Empty: Story = {
 
   args: {
     theProps: theProps,
-    addProp: () => {},
+    saveProp: () => {},
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     removeProp: (_prop: string) => {},
   },
   render: function Render(args: PropertiesTableProps) {
     const [{theProps}, updateArgs] = useArgs();
 
-    function addProp() {
-      const tmp = [...theProps, {name: "", value: ""}];
-        updateArgs({theProps: tmp});
+    function saveProp(data: Property) {
+      const tmp = theProps.filter((p: Property) => p.name !== data.name);
+        updateArgs({theProps: [...tmp, data]});
     }
 
     function removeProp(prop: string) {
@@ -38,7 +38,7 @@ export const Empty: Story = {
       updateArgs({theProps: tmp});
     }
 
-    return <PropertiesTable {...args} theProps={theProps} addProp={addProp} removeProp={removeProp} />;
+    return <PropertiesTable {...args} theProps={theProps} saveProp={saveProp} removeProp={removeProp} />;
   },
 };
 
@@ -49,9 +49,10 @@ export const EmptyAddThenRemove: Story = {
   render: Empty.render,
   play: async ({canvas, userEvent}) => {
     // NOTE: needs some actual assertions, but at the moment it's just an empty uneditable row.
-    const add = canvas.getByRole('button', {name: 'add property'});
+    const add = canvas.getByRole('button', {name: '+'});
     await userEvent.click(add);
-    const remove = canvas.getByRole('button', {name: 'delete property'});
+    
+    const remove = canvas.getByRole('button', {name: 'delete property named '});
     await userEvent.click(remove);
   },
 };
