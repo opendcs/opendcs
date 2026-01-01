@@ -6,23 +6,21 @@ import javax.sql.DataSource;
 
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.SimpleDataSource;
-import org.opendcs.database.SimpleOpenDcsDatabaseWrapper;
 import org.opendcs.spi.database.DatabaseProvider;
 
 import decodes.db.Database;
 import decodes.db.DatabaseException;
-import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
 import decodes.xml.XmlDatabaseIO;
-import opendcs.dai.DaiBase;
 
 public class XmlDatabaseProvider implements DatabaseProvider
 {
     @Override
     public boolean canCreate(DecodesSettings settings)
     {
-        return settings.editDatabaseTypeCode == DecodesSettings.DB_XML;
+        return settings.editDatabaseTypeCode == DecodesSettings.DB_XML
+            || "OpenDCS-XML".equals(settings.editDatabaseType);
     }
 
     @Override
