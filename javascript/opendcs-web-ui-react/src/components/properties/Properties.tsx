@@ -55,7 +55,8 @@ export const PropertyActions: React.FC<ActionProps> = ({data, editMode, removePr
 
 export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveProp, removeProp, width = '20em', height = '100vh', classes = ''}) => {
     const table = useRef<DataTableRef>(null);
-
+    console.log("table rendering");
+    console.log(theProps);
     const renderEditable = (data: string | number | readonly string[] | undefined, type: string, row: any, meta: any) =>{
         if (type !== "display") {
             return data;

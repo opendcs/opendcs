@@ -24,9 +24,7 @@ export const Empty: Story = {
   },
   render: function Render(args: PropertiesTableProps) {
     const [{theProps}, updateArgs] = useArgs();
-    console.log("hello");
     function saveProp(data: Property) {
-      console.log("prop saved");
       const tmp = theProps.filter((p: Property) => p.name !== data.name);
       updateArgs({theProps: [...tmp, data]});
     }
@@ -36,7 +34,7 @@ export const Empty: Story = {
       updateArgs({theProps: tmp});
     }
 
-    return <PropertiesTable {...args} theProps={theProps} saveProp={saveProp} removeProp={removeProp} />;
+    return <PropertiesTable {...args} saveProp={saveProp} removeProp={removeProp} />;
   },
 };
 
@@ -62,7 +60,8 @@ export const EmptyAddThenSaveThenRemove: Story = {
     ...Empty.args,
   },
   render: Empty.render,
-  play: async ({canvasElement, userEvent, step}) => {
+  play: async ({canvasElement, userEvent, step, mount}) => {
+    await mount();
     const canvas = within(canvasElement);
     await step("add new prop", async () => {
       const add = canvas.getByRole('button', {name: '+'});
@@ -79,13 +78,12 @@ export const EmptyAddThenSaveThenRemove: Story = {
 
     const save = canvas.getByRole('button', {name: 'save property named'});
     await step("save prop", async () => {
+      await mount();
       await userEvent.click(save);
     })
 
-    await waitFor(async () => {
-      const prop = await canvas.findByText("testprop");
-      expect(prop).not.toBeNull();
-    }, {timeout: 3000});
+    const prop = await canvas.findByText("testprop");
+    expect(prop).not.toBeNull();
 
     await step("delete prop", async () => {
       const remove = await canvas.findByRole('button', {name: 'delete property named testprop'});
