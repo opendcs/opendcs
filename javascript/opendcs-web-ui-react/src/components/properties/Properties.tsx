@@ -5,7 +5,7 @@ import { Button, Container, Form } from "react-bootstrap";
 import 'datatables.net-responsive';
 import { Pencil, Save, Trash } from "react-bootstrap-icons";
 import type { ApiPropSpec } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { renderToString } from "react-dom/server";
   
 
@@ -80,11 +80,11 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveP
         }
     };
 
-    const columns: ConfigColumns[]  = [
+    const columns = useMemo((): ConfigColumns[]  => [
         {data: "name", render: renderEditable},
         {data: "value", render: renderEditable,},
         {data: null, name:"actions"}
-    ];
+    ], []);
     const options: DataTableProps["options"] = {
         paging: false,
         responsive: true,
