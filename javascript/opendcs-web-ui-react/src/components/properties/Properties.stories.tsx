@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { PropertiesTable, type PropertiesTableProps, type Property } from './Properties';
-import { useArgs } from 'storybook/internal/preview-api';
+import { PropertiesTable, type Property } from './Properties';
 import { userEvent } from '@storybook/testing-library';
 import { expect, waitFor, within } from 'storybook/test';
 
@@ -8,41 +7,46 @@ userEvent.setup();
 
 const meta = {
   component: PropertiesTable,
+  
 } satisfies Meta<typeof PropertiesTable>;
 
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Empty: Story = {
+export const StartEmpty: Story = {
 
   args: {
     theProps: [],
-    saveProp: () => {},
+    saveProp: () => {console.log("default save")},
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    removeProp: (_prop: string) => {},
+    removeProp: (_prop: string) => {console.log("default remove")},
   },
-  render: function Render(args: PropertiesTableProps) {
-    const [{theProps}, updateArgs] = useArgs();
+  render: (args, {updateArgs}) => {
+    console.log("render func");
     function saveProp(data: Property) {
-      const tmp = theProps.filter((p: Property) => p.name !== data.name);
-      updateArgs({theProps: [...tmp, data]});
+      const tmp = args.theProps.filter((p: Property) => p.name !== data.name);
+      console.log("save");
+      updateArgs({...args, theProps: [...tmp, data]});
+      console.log(args.theProps);
     }
 
     function removeProp(prop: string) {
-      const tmp = theProps.filter((e: Property) => e.name !== prop);
-      updateArgs({theProps: tmp});
+      const tmp = args.theProps.filter((e: Property) => e.name !== prop);
+      console.log("delete");
+      updateArgs({...args, theProps: tmp});
+      console.log(args.theProps);
     }
 
-    return <PropertiesTable {...args} saveProp={saveProp} removeProp={removeProp} />;
+    return (<PropertiesTable {...args} saveProp={saveProp} removeProp={removeProp} />);
   },
 };
 
 export const EmptyAddThenRemove: Story = {
   args: {
-    ...Empty.args,
+    ...StartEmpty.args,
   },
-  render: Empty.render,
+  render: StartEmpty.render,
   play: async ({canvas, userEvent}) => {
     // NOTE: needs some actual assertions, but at the moment it's just an empty uneditable row.
     const add = canvas.getByRole('button', {name: '+'});
@@ -57,11 +61,10 @@ export const EmptyAddThenRemove: Story = {
 
 export const EmptyAddThenSaveThenRemove: Story = {
   args: {
-    ...Empty.args,
+    ...StartEmpty.args,
   },
-  render: Empty.render,
-  play: async ({canvasElement, userEvent, step, mount}) => {
-    await mount();
+  render: StartEmpty.render,
+  play: async ({canvasElement, userEvent, step}) => {
     const canvas = within(canvasElement);
     await step("add new prop", async () => {
       const add = canvas.getByRole('button', {name: '+'});
@@ -78,17 +81,16 @@ export const EmptyAddThenSaveThenRemove: Story = {
 
     const save = canvas.getByRole('button', {name: 'save property named'});
     await step("save prop", async () => {
-      await mount();
       await userEvent.click(save);
     })
 
-    const prop = await canvas.findByText("testprop");
+    const prop = await canvas.findByText("testprop", undefined, {timeout:3000});
     expect(prop).not.toBeNull();
 
     await step("delete prop", async () => {
       const remove = await canvas.findByRole('button', {name: 'delete property named testprop'});
       await userEvent.click(remove);
-  
+
       await waitFor(async () => {
         expect(canvas.queryByText("testprop")).toBeNull();
       });
@@ -100,7 +102,7 @@ export const EmptyAddThenSaveThenRemove: Story = {
 export const NotEmpty: Story = {
   
   args: {
-    ...Empty.args,
+    ...StartEmpty.args,
     theProps: [
       {name: 'prop1', value: 'val1'},
       {name: 'prop2', value: 'val2'},
@@ -113,5 +115,5 @@ export const NotEmpty: Story = {
       
     ],
   },
-  render: Empty.render
+  render: StartEmpty.render
 };
