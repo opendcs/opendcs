@@ -29,7 +29,7 @@ function App() {
       .then((value: any) => setUser(value))
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .catch((_error: unknown) => navigate("/login"));
-  }, [api.conf, setUser]);
+  }, [api.conf, setUser, navigate]);
 
   return (
     <>

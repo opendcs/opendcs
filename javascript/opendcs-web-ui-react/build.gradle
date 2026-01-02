@@ -26,6 +26,12 @@ def buildUi = tasks.register("buildUi", NpxTask) {
     outputs.dir(file("dist"))
 }
 
+def testUi = tasks.register("testStorybook", NpxTask) {
+    dependsOn buildUi
+    command = "npm"
+    args = ['run', 'test-storybook']
+}
+
 node {
     // Version of Node.js to install. Required.
     version = '24.12.0'

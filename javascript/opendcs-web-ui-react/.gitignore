@@ -23,3 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 .gradle
+
+*storybook.log
+storybook-static
+
+**/__screenshots__

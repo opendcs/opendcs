@@ -1,0 +1,181 @@
+import DataTable, { type DataTableProps, type DataTableRef, type DataTableSlots } from "datatables.net-react";
+import DT, { type ConfigColumns } from "datatables.net-bs5";
+import dtButtons from "datatables.net-buttons-bs5"
+import { Button, Container, Form } from "react-bootstrap";
+import 'datatables.net-responsive';
+import { Pencil, Save, Trash } from "react-bootstrap-icons";
+import type { ApiPropSpec } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
+import { useMemo, useRef } from "react";
+import { renderToString } from "react-dom/server";
+  
+
+// eslint-disable-next-line react-hooks/rules-of-hooks
+DataTable.use(DT);
+// eslint-disable-next-line react-hooks/rules-of-hooks
+DataTable.use(dtButtons);
+
+
+export interface Property {
+    name: string;
+    value: unknown;
+    spec?: ApiPropSpec;
+}
+
+export interface PropertiesTableProps {
+    theProps: Property[];
+    saveProp: (prop: Property) => void;
+    removeProp: (prop: string) => void,
+    width?: React.CSSProperties['width'];
+    height?: React.CSSProperties['height'];
+    classes?: string;
+};
+export interface ActionProps {
+    data: Property,
+    editMode: boolean,
+    removeProp: (prop: string) => void,
+    editProp: (prop: string) => void,
+    saveProp: (prop: Property) => void,
+}
+
+export const PropertyActions: React.FC<ActionProps> = ({data, editMode, removeProp, editProp, saveProp}) => {
+    return (
+        <>
+            {editMode === true ?
+                <Button onClick={() => {saveProp(data)}} variant="primary"
+                        aria-label={`save property named ${data.name}`} size='sm'><Save/></Button>
+                :
+                <Button onClick={() => editProp(data.name)} variant="warning"
+                        aria-label={`edit property named ${data.name}`} size='sm'><Pencil /></Button>
+            }
+            <Button onClick={() => removeProp(data.name)} variant='danger' size='sm'
+                    aria-label={`delete property named ${data.name}`}><Trash /></Button>
+        </>
+    )
+};
+
+/**
+ * Properties table component for use by all pages. Control of the properties by what uses the component to the save and remove 
+ * method provided should behave as such.
+ * 
+ * Developer Note: You may notice we are likely doing direct dom manipulation, this is due to the use od DataTables.net which assumes it has control
+ * of the dom. There is little to be done in the regard so we'll accept it, but try to keep it minimal.
+ * 
+ */
+export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveProp, removeProp, width = '20em', height = '100vh', classes = ''}) => {
+    const table = useRef<DataTableRef>(null);
+    console.log("table rendering");
+    console.log(theProps);
+    const renderEditable = (data: string | number | readonly string[] | undefined, type: string, row: any, meta: any) =>{
+        if (type !== "display") {
+            return data;
+        }
+        const api = table.current!.dt();
+        const rowNode = api?.row(meta.row).node();
+        const inputName: string = meta.col == 0 ? "name" : "value";
+        if (rowNode?.dataset.edit === "true" || data === "") {
+            return renderToString(<Form.Control type="text" name={meta.settings.aoColumns[meta.col].mData} defaultValue={data} 
+                                                aria-label={`${inputName} input for property named ${data}`} />);
+        } else {
+            return data;
+        }
+    };
+
+    const columns = useMemo((): ConfigColumns[]  => [
+        {data: "name", render: renderEditable},
+        {data: "value", render: renderEditable,},
+        {data: null, name:"actions"}
+    ], []);
+    const options: DataTableProps["options"] = {
+        paging: false,
+        responsive: true,
+        layout: {
+            top1Start: {
+                buttons: [
+                    {
+                        text:'+',
+                        action: () => {
+                            const api = table.current!.dt();
+                            if (api) {
+                                api.row.add({name: "", value:""}).draw();
+                            }
+                        },
+                    }
+                ]
+            }
+        },
+        createdRow: (row: HTMLElement, data: Property) => {
+            row.dataset.propName = data.name;
+            if (data.name === "") {
+                row.dataset.edit = "true";
+            } else {
+                row.dataset.edit = "false";
+            }
+        },
+    };
+
+    const getAndSaveProp = (data: Property): void => {
+        const api = table.current?.dt();
+        console.log(table);
+        if (api) {
+            const row = api.row(`tr[data-prop-name="${data.name}"]`)?.node();
+            
+            if (row) {
+                const tds = row.children;
+                const name = tds[0].hasChildNodes() ? (tds[0].children[0] as HTMLInputElement).value : tds[0].innerHTML;
+                const value = (tds[1].children[0] as HTMLInputElement).value;
+                const prop: Property = {name: name, value: value}
+                saveProp(prop);
+                
+            }
+        } else {
+            console.log("no dt api?");
+        }
+    };
+
+    const slots: DataTableSlots = {
+        actions: (data: Property, type: unknown, row: Property) => {
+            if (type === 'display') {
+                const api = table.current!.dt();
+                let inEdit = false;
+                if (api) {
+                    const rowNode = api?.row(`tr[data-prop-name="${data.name}"]`).node();
+                    // either the row doesn't exist yet or the value is set.
+                    inEdit = row.name === "" ? true : rowNode?.dataset.edit === "true";
+                }
+
+                return (<PropertyActions data={data} editMode={inEdit} removeProp={removeProp} saveProp={getAndSaveProp} editProp={(name: string) => {
+                    const api = table.current!.dt();
+                    const rowNode = api?.row(`tr[data-prop-name="${name}"]`);
+                    if (rowNode) {
+                        rowNode.node().dataset.edit = "true";
+                        rowNode.draw();
+                        api?.draw();
+                        api?.rows().invalidate();
+                    }
+                }}/>)
+            } else {
+                return data;
+            }
+        } 
+    };
+
+    return (
+        <Container fluid style={{width: width, height: height}} className={`${classes}`}>
+            <DataTable columns={columns} data={theProps} options={options} slots={slots} ref={table}
+                           className="table table-hover table-striped tablerow-cursor w-100 border">
+                <caption className="captionTitleCenter">
+					Properties
+                </caption>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Value</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+            </DataTable>
+        </Container>
+    );
+};
+
+export default PropertiesTable;
