@@ -53,6 +53,14 @@ export const PropertyActions: React.FC<ActionProps> = ({data, editMode, removePr
     )
 };
 
+/**
+ * Properties table component for use by all pages. Control of the properties by what uses the component to the save and remove 
+ * method provided should behave as such.
+ * 
+ * Developer Note: You may notice we are likely doing direct dom manipulation, this is due to the use od DataTables.net which assumes it has control
+ * of the dom. There is little to be done in the regard so we'll accept it, but try to keep it minimal.
+ * 
+ */
 export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveProp, removeProp, width = '20em', height = '100vh', classes = ''}) => {
     const table = useRef<DataTableRef>(null);
     console.log("table rendering");
@@ -106,7 +114,8 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveP
     };
 
     const getAndSaveProp = (data: Property): void => {
-        const api = table.current!.dt();
+        const api = table.current?.dt();
+        console.log(table);
         if (api) {
             const row = api.row(`tr[data-prop-name="${data.name}"]`)?.node();
             
@@ -118,6 +127,8 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveP
                 saveProp(prop);
                 
             }
+        } else {
+            console.log("no dt api?");
         }
     };
 
