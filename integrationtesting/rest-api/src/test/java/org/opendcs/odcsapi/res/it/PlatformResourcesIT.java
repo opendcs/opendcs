@@ -87,7 +87,7 @@ final class PlatformResourcesIT extends BaseIT
 		String platformInsert = getJsonFromResource("platform_insert_data.json");
 		assertNotNull(platformInsert);
 
-		siteId = storeSite("platform_site_data.json");
+		siteId = storeSite("platform_site_data.json").getSiteId();
 		assertNotNull(siteId);
 
 		String platformJson = platformInsert.replace("\"[SITE_ID]\"", siteId.toString());
@@ -482,7 +482,7 @@ final class PlatformResourcesIT extends BaseIT
 		Long newConfigId = response.body().jsonPath().getLong("configId");
 
 		String platformJson = getJsonFromResource("platform_post_delete_insert_data.json");
-		Long newSiteId = storeSite("platform_site_post_delete_data.json");
+		Long newSiteId = storeSite("platform_site_post_delete_data.json").getSiteId();
 		assertNotNull(newSiteId);
 		platformJson = platformJson.replace("\"[SITE_ID]\"", newSiteId.toString());
 		platformJson = platformJson.replace("\"[CONFIG_ID]\"", newConfigId.toString());
@@ -677,64 +677,5 @@ final class PlatformResourcesIT extends BaseIT
 			}
 		}
 		assertTrue(found);
-	}
-
-	private Long storeSite(String jsonPath) throws Exception
-	{
-		assertNotNull(jsonPath);
-		String siteJson = getJsonFromResource(jsonPath);
-		assertNotNull(siteJson);
-
-		var response = given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(MediaType.APPLICATION_JSON)
-			.contentType(MediaType.APPLICATION_JSON)
-			.spec(authSpec)
-			.body(siteJson)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.post("site")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(Response.Status.CREATED.getStatusCode()))
-			.extract()
-		;
-
-		return response.body().jsonPath().getLong("siteId");
-	}
-
-	private static void tearDownSite(Long siteId)
-	{
-		given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(MediaType.APPLICATION_JSON)
-			.queryParam("siteid", siteId)
-			.spec(authSpec)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.delete("site")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
-		;
-
-		given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(MediaType.APPLICATION_JSON)
-			.queryParam("siteid", siteId)
-			.spec(authSpec)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("site")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
-		;
 	}
 }

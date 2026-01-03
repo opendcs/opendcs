@@ -15,8 +15,6 @@
 */
 package opendcs.dao;
 
-import ilex.util.TextUtil;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,19 +26,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Predicate;
 
-import org.opendcs.utils.logging.OpenDcsLoggerFactory;
-import org.slf4j.Logger;
-
-import opendcs.dai.AlgorithmDAI;
-import opendcs.dai.CompDependsDAI;
-import opendcs.dai.CompDependsNotifyDAI;
-import opendcs.dai.ComputationDAI;
-import opendcs.dai.DataTypeDAI;
-import opendcs.dai.LoadingAppDAI;
-import opendcs.dai.PropertiesDAI;
-import opendcs.dai.TsGroupDAI;
-import opendcs.dao.DbObjectCache.CacheIterator;
-import opendcs.util.sql.WrappedConnection;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.sql.DbKey;
@@ -55,7 +40,20 @@ import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbDatabaseVersion;
+import ilex.util.TextUtil;
+import opendcs.dai.AlgorithmDAI;
+import opendcs.dai.CompDependsDAI;
+import opendcs.dai.CompDependsNotifyDAI;
+import opendcs.dai.ComputationDAI;
+import opendcs.dai.DataTypeDAI;
+import opendcs.dai.LoadingAppDAI;
+import opendcs.dai.PropertiesDAI;
+import opendcs.dai.TsGroupDAI;
+import opendcs.dao.DbObjectCache.CacheIterator;
 import opendcs.util.functional.ThrowingSupplier;
+import opendcs.util.sql.WrappedConnection;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
 Data Access Object for reading/writing computations.
@@ -65,7 +63,7 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	protected static DbObjectCache<DbComputation> compCache =
-		new DbObjectCache<DbComputation>(60 * 60 * 1000L, false);
+		new DbObjectCache<>(60 * 60 * 1000L, false);
 	private static long lastCacheFill = 0L;
 	public static final long CACHE_TIME_LIMIT = 20 * 60 * 1000L;
 
@@ -519,7 +517,7 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 		if (compCache.size() == 0)
 			fillCache();
 
-		ArrayList<DbComputation> ret = new ArrayList<DbComputation>();
+		ArrayList<DbComputation> ret = new ArrayList<>();
 		for(CacheIterator it = compCache.iterator(); it.hasNext(); )
 		{
 			DbComputation comp = (DbComputation)it.next();
@@ -600,7 +598,7 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 				if (tmpAppId.isNull())
 				{
 					String appName = comp.getApplicationName();
-					if (appName != null && appName.length() > 0)
+					if (appName != null && !appName.isEmpty())
 					{
 						String q = "select LOADING_APPLICATION_ID from "
 						+ "hdb_loading_application "
@@ -624,7 +622,7 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 			{
 				String algoName = comp.getAlgorithmName();
 				log.trace("Computation has undefined algo ID, will lookup name '{}'", algoName);
-				if (algoName != null && algoName.trim().length() > 0)
+				if (algoName != null && !algoName.trim().isEmpty())
 				{
 					DbCompAlgorithm algo = null;
 					try

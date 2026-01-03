@@ -46,6 +46,7 @@ dependencies {
     swaggerDeps(libs.rs.api)
     swaggerDeps(libs.swagger.jaxrs2)
     compileOnly(libs.jakarta.servlet)
+    implementation(libs.jersey.media.sse)
     compileOnly(libs.rs.api)
     implementation(libs.json.jackson)
     implementation(libs.jersey.container.servlet)

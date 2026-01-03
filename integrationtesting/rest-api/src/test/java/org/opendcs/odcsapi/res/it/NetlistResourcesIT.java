@@ -50,7 +50,7 @@ final class NetlistResourcesIT extends BaseIT
 
 		ObjectMapper mapper = new ObjectMapper();
 
-		siteId = storeSite("netlist_site_insert_data.json");
+		siteId = storeSite("netlist_site_insert_data.json").getSiteId();
 
 		String configJson = getJsonFromResource("config_input_data.json");
 		var response = given()
@@ -443,63 +443,5 @@ final class NetlistResourcesIT extends BaseIT
 		assertEquals(expected.get("transportId"), actual.get("transportId"));
 		assertEquals(expected.get("platformName"), actual.get("platformName"));
 		assertEquals(expected.get("description"), actual.get("description"));
-	}
-
-	private Long storeSite(String jsonPath) throws Exception
-	{
-		assertNotNull(jsonPath);
-		String siteJson = getJsonFromResource(jsonPath);
-
-		var response = given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(MediaType.APPLICATION_JSON)
-			.contentType(MediaType.APPLICATION_JSON)
-			.spec(authSpec)
-			.body(siteJson)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.post("site")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(Response.Status.CREATED.getStatusCode()))
-			.extract()
-		;
-
-		return response.body().jsonPath().getLong("siteId");
-	}
-
-	private void tearDownSite(Long siteId)
-	{
-		given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(MediaType.APPLICATION_JSON)
-			.queryParam("siteid", siteId)
-			.spec(authSpec)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.delete("site")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
-		;
-
-		given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(MediaType.APPLICATION_JSON)
-			.queryParam("siteid", siteId)
-			.spec(authSpec)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("site")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
-		;
 	}
 }

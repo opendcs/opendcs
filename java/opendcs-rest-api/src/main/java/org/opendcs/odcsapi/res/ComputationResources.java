@@ -16,18 +16,22 @@
 package org.opendcs.odcsapi.res;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import decodes.db.DataType;
 import decodes.db.Site;
 import decodes.sql.DbKey;
 import decodes.tsdb.CompFilter;
+import decodes.tsdb.ComputationExecution;
 import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -45,11 +49,16 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.container.AsyncResponse;
+import jakarta.ws.rs.container.Suspended;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import opendcs.dai.ComputationDAI;
+import opendcs.dai.TimeSeriesDAI;
+import org.glassfish.jersey.media.sse.OutboundEvent;
+import org.glassfish.jersey.media.sse.SseBroadcaster;
 import org.opendcs.odcsapi.beans.ApiCompParm;
 import org.opendcs.odcsapi.beans.ApiComputation;
 import org.opendcs.odcsapi.beans.ApiComputationRef;
@@ -58,12 +67,15 @@ import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static java.util.stream.Collectors.toList;
 
 @Path("/")
 public final class ComputationResources extends OpenDcsResource
 {
+	private static final Logger log = LoggerFactory.getLogger(ComputationResources.class);
 	@Context HttpHeaders httpHeaders;
 
 	@GET
@@ -122,7 +134,7 @@ public final class ComputationResources extends OpenDcsResource
 			{
 				compFilter.setIntervalCode(interval);
 			}
-			List<ApiComputationRef> computationRefs = map(dai.listComps(c -> compFilter.passes(c)));
+			List<ApiComputationRef> computationRefs = map(dai.listComps(compFilter::passes));
 			return Response.ok().entity(computationRefs).build();
 		}
 		catch(DbIoException ex)
@@ -476,5 +488,108 @@ public final class ComputationResources extends OpenDcsResource
 		{
 			throw new DbException(String.format("Unable to delete computation by ID: %s", computationId), ex);
 		}
+	}
+
+	@POST
+	@Path("runcomputation")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
+	@Operation(
+			summary = "Execute an Existing OpenDCS Computation",
+			description = "Endpoint takes in a computation name and a list of timeseries IDs to execute a computation. "
+					+ "Optionally takes in a start and end date for a time window to use for the computation",
+			tags = {"REST - Computation Methods"},
+			responses = {
+					@ApiResponse(responseCode = "202", description = "Successfully initiated execution of computation"),
+					@ApiResponse(responseCode = "400", description = "Missing required computationid parameter"),
+					@ApiResponse(responseCode = "404", description = "Computation with the specified ID not found"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
+	public Response runComputation(@Context SseBroadcaster broadcaster, @Suspended final AsyncResponse asyncResp,
+			@Parameter(required = true, description = "Unique Computation ID",
+					schema = @Schema(implementation = Long.class, example = "4"))
+			@QueryParam("computationid") Long computationId,
+			@Parameter(required = true, description = "List of time series IDs, comma delimited",
+					schema = @Schema(implementation = String.class, example = "LOC.TS.ID,LOC2.TS.ID"))
+			@QueryParam("tsids") String timeseriesIds,
+			@Parameter(description = "Optional parameter to specify the beginning of the time range to execute the computation on.",
+					schema = @Schema(implementation = Date.class, example = "2025-10-25T12:00:00.000Z"))
+			@QueryParam("since") Date since,
+			@Parameter(description = "Optional parameter to specify the end of the time range to execute the computation on",
+					schema = @Schema(implementation = Date.class, example = "2025-10-25T12:00:00.000Z"))
+			@QueryParam("until") Date until)
+			throws DbException, WebAppException
+	{
+		String[] tsList = timeseriesIds.split(",");
+
+		if(computationId == null)
+		{
+			throw new MissingParameterException("Missing required computationid parameter.");
+		}
+
+		try(ComputationDAI dai = getLegacyTimeseriesDB().makeComputationDAO();
+			TimeSeriesDAI tsDai = getLegacyTimeseriesDB().makeTimeSeriesDAO())
+		{
+			DbComputation comp = dai.getComputationById(DbKey.createDbKey(computationId));
+
+			List<TimeSeriesIdentifier> tsiList = new ArrayList<>();
+
+			for(String tsId : tsList)
+			{
+				tsiList.add(tsDai.getTimeSeriesIdentifier(tsId));
+			}
+
+			String taskID = UUID.randomUUID().toString();
+
+			executor.submit(() ->
+			{
+				OutboundEvent event = new OutboundEvent.Builder()
+						.name("computation-status")
+						.id(taskID)
+						.data(String.class, String.format("Running computation: %s", comp.getApplicationName()))
+						.reconnectDelay(3000)
+						.build();
+				broadcaster.broadcast(event);
+
+				try
+				{
+					ComputationExecution execution = new ComputationExecution(createDb());
+					ComputationExecution.CompResults results = execution.execute(comp, tsiList, since, until);
+
+					event = new OutboundEvent.Builder()
+							.name("computation-status")
+							.id(taskID)
+							.data(String.class, String.format("Computation executed with %d errors", results.getNumErrors()))
+							.reconnectDelay(3000)
+							.build();
+					broadcaster.broadcast(event);
+				}
+				catch(DbIoException ex)
+				{
+					log.error("Error while executing computation", ex);
+					event = new OutboundEvent.Builder()
+							.name("computation-status")
+							.id(taskID)
+							.data(String.class, String.format("Error while executing computation: %s", comp.getApplicationName()))
+							.reconnectDelay(3000)
+							.build();
+					broadcaster.broadcast(event);
+				}
+				asyncResp.isDone();
+			});
+		}
+		catch(NoSuchObjectException ex)
+		{
+			throw new DatabaseItemNotFoundException(String.format("Computation with ID %s not found", computationId), ex);
+		}
+		catch(DbIoException ex)
+		{
+			throw new DbException(String.format("Error retrieving computation to execute by ID: %s", computationId), ex);
+		}
+
+		return Response.status(Response.Status.ACCEPTED)
+				.entity(String.format("Execution of computation with ID: %d started asynchronously.", computationId)).build();
 	}
 }

@@ -118,7 +118,7 @@ json-jackson = { module = "org.glassfish.jersey.media:jersey-media-json-jackson"
 jersey-container-servlet = { module = "org.glassfish.jersey.containers:jersey-container-servlet", version.ref = "jersey" }
 jersey-hk2 = { module = "org.glassfish.jersey.inject:jersey-hk2", version.ref = "jersey" }
 jersey-core = { module = "org.glassfish.jersey.core:jersey-client", version.ref = "jersey" }
-jersey-media-multipart = { module = "org.glassfish.jersey.media:jersey-media-multipart", version.ref = "jersey" }
+jersey-media-sse = { module = "org.glassfish.jersey.media:jersey-media-sse", version.ref = "jersey" }
 
 jstl = { module = "jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api", version = "3.0.2"}
 jstl-impl = { module = "org.glassfish.web:jakarta.servlet.jsp.jstl", version = "3.0.1"}
