@@ -32,29 +32,28 @@ public final class ComputationExecution
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	private final OpenDcsDatabase db;
-	private final TimeSeriesDb tsdb;
 	private int numErrors = 0;
 	private int computesTried = 0;
 
 	public ComputationExecution(OpenDcsDatabase db)
 	{
 		this.db = db;
-		this.tsdb = getTsDb();
 	}
 
+	/**
+	 * @return TimeSeriesDb the legacy database.
+	 * @deprecated Prefer to use the OpenDcsDatabase interface, not yet supported for computation classes.
+	 */
 	@Deprecated
 	private TimeSeriesDb getTsDb()
 	{
-		TimeSeriesDb tempDb = tsdb;
-		if (tempDb == null)
+		TimeSeriesDb tsdb = null;
+		Optional<TimeSeriesDb> dbOpt = db.getLegacyDatabase(TimeSeriesDb.class);
+		if(dbOpt.isPresent())
 		{
-			Optional<TimeSeriesDb> dbOpt = db.getLegacyDatabase(TimeSeriesDb.class);
-			if(dbOpt.isPresent())
-			{
-				tempDb = dbOpt.get();
-			}
+			tsdb = dbOpt.get();
 		}
-		return tempDb;
+		return tsdb;
 	}
 
 	public CompResults execute(List<DbComputation> toRun, DataCollection theData)
@@ -94,7 +93,7 @@ public final class ComputationExecution
 		throws DbIoException
 	{
 		DataCollection theData = new DataCollection();
-		try (TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO())
+		try (TimeSeriesDAI timeSeriesDAO = getTsDb().makeTimeSeriesDAO())
 		{
 			for(TimeSeriesIdentifier tsid : tsIds)
 			{
@@ -135,7 +134,7 @@ public final class ComputationExecution
 			throws DbIoException
 	{
 		try(MDC.MDCCloseable mdc = MDC.putCloseable("computation", tc.getName());
-			TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO())
+			TimeSeriesDAI timeSeriesDAO = getTsDb().makeTimeSeriesDAO())
 		{
 			// Make a data collection with inputs filled from ... until
 			ParmRef parmRef = null;
