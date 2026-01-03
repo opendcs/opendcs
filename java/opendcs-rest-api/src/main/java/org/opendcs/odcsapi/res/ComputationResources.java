@@ -16,16 +16,15 @@
 package org.opendcs.odcsapi.res;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.UUID;
 
 import decodes.db.DataType;
 import decodes.db.Site;
 import decodes.sql.DbKey;
 import decodes.tsdb.CompFilter;
+import decodes.tsdb.ComputationExecution;
 import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbCompParm;
@@ -42,12 +41,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import jakarta.annotation.Resource;
 import jakarta.annotation.security.RolesAllowed;
-import jakarta.ws.rs.container.AsyncResponse;
-import jakarta.ws.rs.container.Suspended;
-import org.glassfish.jersey.media.sse.OutboundEvent;
-import org.glassfish.jersey.media.sse.SseBroadcaster;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -55,12 +49,16 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.container.AsyncResponse;
+import jakarta.ws.rs.container.Suspended;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.TimeSeriesDAI;
+import org.glassfish.jersey.media.sse.OutboundEvent;
+import org.glassfish.jersey.media.sse.SseBroadcaster;
 import org.opendcs.odcsapi.beans.ApiCompParm;
 import org.opendcs.odcsapi.beans.ApiComputation;
 import org.opendcs.odcsapi.beans.ApiComputationRef;
@@ -79,9 +77,6 @@ public final class ComputationResources extends OpenDcsResource
 {
 	private static final Logger log = LoggerFactory.getLogger(ComputationResources.class);
 	@Context HttpHeaders httpHeaders;
-
-	@Resource
-	private ExecutorService executor;
 
 	@GET
 	@Path("computationrefs")
@@ -546,12 +541,13 @@ public final class ComputationResources extends OpenDcsResource
 				tsiList.add(tsDai.getTimeSeriesIdentifier(tsId));
 			}
 
-			executor = Executors.newCachedThreadPool();
+			String taskID = UUID.randomUUID().toString();
 
 			executor.submit(() ->
 			{
 				OutboundEvent event = new OutboundEvent.Builder()
 						.name("computation-status")
+						.id(taskID)
 						.data(String.class, String.format("Running computation: %s", comp.getApplicationName()))
 						.reconnectDelay(3000)
 						.build();
@@ -559,13 +555,23 @@ public final class ComputationResources extends OpenDcsResource
 
 				try
 				{
-					dai.executeComputation(comp, since, until, tsiList);
+					ComputationExecution execution = new ComputationExecution(createDb());
+					ComputationExecution.CompResults results = execution.execute(comp, tsiList, since, until);
+
+					event = new OutboundEvent.Builder()
+							.name("computation-status")
+							.id(taskID)
+							.data(String.class, String.format("Computation executed with %d errors", results.getNumErrors()))
+							.reconnectDelay(3000)
+							.build();
+					broadcaster.broadcast(event);
 				}
 				catch(DbIoException ex)
 				{
 					log.error("Error while executing computation", ex);
 					event = new OutboundEvent.Builder()
 							.name("computation-status")
+							.id(taskID)
 							.data(String.class, String.format("Error while executing computation: %s", comp.getApplicationName()))
 							.reconnectDelay(3000)
 							.build();

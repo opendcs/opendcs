@@ -286,9 +286,9 @@ public class CompExec extends TsdbAppTemplate
 				System.exit(0);
 		}
 
-		ComputationExecution execution = new ComputationExecution(theDb);
+		ComputationExecution execution = new ComputationExecution(db);
 
-		theData = execution.execute(toRun, theData);
+		execution.execute(toRun, theData);
 
 		// if an output format is specified, format the data and send to stdout
 		if (outputFormatter != null)

@@ -15,7 +15,11 @@
 
 package org.opendcs.odcsapi.res;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.annotation.Resource;
 import jakarta.servlet.ServletContext;
 import javax.sql.DataSource;
 
@@ -55,6 +59,9 @@ public class OpenDcsResource
 
 	@Context
 	protected ServletContext context;
+
+	@Resource
+	protected ExecutorService executor = Executors.newCachedThreadPool();
 
 	protected final synchronized OpenDcsDatabase createDb()
 	{

@@ -15,11 +15,6 @@
 */
 package opendcs.dao;
 
-import decodes.tsdb.ComputationExecution;
-import decodes.tsdb.TimeSeriesDb;
-import decodes.tsdb.TimeSeriesIdentifier;
-import ilex.util.TextUtil;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -31,20 +26,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Predicate;
 
-import opendcs.dai.TimeSeriesDAI;
-import org.opendcs.utils.logging.OpenDcsLoggerFactory;
-import org.slf4j.Logger;
-
-import opendcs.dai.AlgorithmDAI;
-import opendcs.dai.CompDependsDAI;
-import opendcs.dai.CompDependsNotifyDAI;
-import opendcs.dai.ComputationDAI;
-import opendcs.dai.DataTypeDAI;
-import opendcs.dai.LoadingAppDAI;
-import opendcs.dai.PropertiesDAI;
-import opendcs.dai.TsGroupDAI;
-import opendcs.dao.DbObjectCache.CacheIterator;
-import opendcs.util.sql.WrappedConnection;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.sql.DbKey;
@@ -59,7 +40,20 @@ import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbDatabaseVersion;
+import ilex.util.TextUtil;
+import opendcs.dai.AlgorithmDAI;
+import opendcs.dai.CompDependsDAI;
+import opendcs.dai.CompDependsNotifyDAI;
+import opendcs.dai.ComputationDAI;
+import opendcs.dai.DataTypeDAI;
+import opendcs.dai.LoadingAppDAI;
+import opendcs.dai.PropertiesDAI;
+import opendcs.dai.TsGroupDAI;
+import opendcs.dao.DbObjectCache.CacheIterator;
 import opendcs.util.functional.ThrowingSupplier;
+import opendcs.util.sql.WrappedConnection;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
 Data Access Object for reading/writing computations.
@@ -884,18 +878,6 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 		catch (Exception ex)
 		{
 			throw new DbIoException("Unable to delete computation with id="+id.toString(), ex);
-		}
-	}
-
-	@Override
-	public void executeComputation(DbComputation comp, Date start, Date end, List<TimeSeriesIdentifier> tsIds)
-			throws DbIoException
-	{
-		TimeSeriesDb tsDb = (TimeSeriesDb) db;
-		ComputationExecution execution = new ComputationExecution(tsDb);
-		try (TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO())
-		{
-			execution.execute(timeSeriesDAO, comp, tsIds, start, end);
 		}
 	}
 
