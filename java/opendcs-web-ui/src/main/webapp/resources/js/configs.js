@@ -466,16 +466,28 @@ function clearSensorDialog()
     $("#sensorNameTextbox").val("");
     $("#configurationText").text("");
     $("#sensorNumberText").text("");
-    $("#standard1Selectbox").val($("#standard1Selectbox option")[0].value);
+    if ($("#standard1Selectbox option").length !== 0)
+    {
+        $("#standard1Selectbox").val($("#standard1Selectbox option")[0].value);
+    }
     $("#code1Textbox").val("");
-    $("#standard2Selectbox").val($("#standard2Selectbox option")[0].value);
+    if ($("#standard2Selectbox option").length !== 0)
+    {
+        $("#standard2Selectbox").val($("#standard2Selectbox option")[0].value);
+    }
     $("#code2Textbox").val("");
-    $("#standard3Selectbox").val($("#standard3Selectbox option")[0].value);
+    if ($("#standard3Selectbox option").length !== 0)
+    {
+        $("#standard3Selectbox").val($("#standard3Selectbox option")[0].value);
+    }
     $("#code3Textbox").val("");
     $("#usgsStatCodeTextbox").val("");
     $("#validRangeMin").val("");
     $("#validRangeMax").val("");
-    $("#recordingModeSelectbox").val($("#recordingModeSelectbox option")[0].value);
+    if ($("#recordingModeSelectbox option").length !== 0)
+    {
+        $("#recordingModeSelectbox").val($("#recordingModeSelectbox option")[0].value);
+    }
     $("#firstSampleTime").val("00:00:00");
     $("#samplingInterval").val("00:00:00");
 }
@@ -518,8 +530,8 @@ function openSensorDialog(rowClicked)
             counter++;
         }
         $("#usgsStatCodeTextbox").val(data[11]);
-        $("#validRangeMin").val(data[7]);
-        $("#validRangeMax").val(data[8]);
+        $("#validRangeMax").val(data[7]);
+        $("#validRangeMin").val(data[8]);
 
 
         for (var key in recordingModeRefs)
