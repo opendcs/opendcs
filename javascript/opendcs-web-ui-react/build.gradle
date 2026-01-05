@@ -56,4 +56,7 @@ def runUiDev = tasks.register("runUiDev", NpxTask) {
     project(":api-client-typescript")
     command = "npm"
     args = ['run', 'dev']
+    environment = [
+        "IN_GRADLE": "1"
+    ]
 }
