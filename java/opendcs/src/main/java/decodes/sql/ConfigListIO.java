@@ -1,5 +1,5 @@
 /*
-* Where Applicable, Copyright 2026 OpenDCS Consortium and/or its contributors
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 * 
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
@@ -266,8 +266,8 @@ public class ConfigListIO extends SqlDbObjIo
                             equipId, _pcList.getDatabase());
                 }
 
-				if (hasAbsMin) cs.absoluteMin = absMin;
-				if (hasAbsMax) cs.absoluteMax = absMax;
+                if (hasAbsMin) cs.absoluteMin = absMin;
+                if (hasAbsMax) cs.absoluteMax = absMax;
                 cs.recordingInterval = recInterval;
                 cs.recordingMode = recordingMode.charAt(0);
                 cs.timeOfFirstSample = timeSecs;
