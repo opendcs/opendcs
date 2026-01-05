@@ -7,6 +7,8 @@ import '../src/main.css'
 import '../src/assets/opendcs-shim.css'
 import { useArgs } from 'storybook/internal/preview-api';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 const preview: Preview = {
   parameters: {

@@ -14,17 +14,24 @@ DataTable.use(DT);
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(dtButtons);
 
-
+/**
+ * NOTE: this should primarily be extracted from the API spec with the state value
+ * added as a type extension.
+ */
 export interface Property {
     name: string;
     value: unknown;
     spec?: ApiPropSpec;
+    state?: 'new' | 'edit'; // Table component will add this if new or in edit mode
+                            // if value is 'new' name will be an index value.
 }
 
 export interface PropertiesTableProps {
     theProps: Property[];
     saveProp: (prop: Property) => void;
     removeProp: (prop: string) => void,
+    addProp: () => void,
+    editProp: (prop: string) => void,
     width?: React.CSSProperties['width'];
     height?: React.CSSProperties['height'];
     classes?: string;
@@ -61,7 +68,7 @@ export const PropertyActions: React.FC<ActionProps> = ({data, editMode, removePr
  * of the dom. There is little to be done in the regard so we'll accept it, but try to keep it minimal.
  * 
  */
-export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveProp, removeProp, width = '20em', height = '100vh', classes = ''}) => {
+export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveProp, removeProp, addProp, editProp, width = '20em', height = '100vh', classes = ''}) => {
     const table = useRef<DataTableRef>(null);
     console.log("table rendering");
     console.log(theProps);
@@ -69,12 +76,10 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveP
         if (type !== "display") {
             return data;
         }
-        const api = table.current!.dt();
-        const rowNode = api?.row(meta.row).node();
         const inputName: string = meta.col == 0 ? "name" : "value";
-        if (rowNode?.dataset.edit === "true" || data === "") {
-            return renderToString(<Form.Control type="text" name={meta.settings.aoColumns[meta.col].mData} defaultValue={data} 
-                                                aria-label={`${inputName} input for property named ${data}`} />);
+        if (row?.state !== undefined) {
+            return renderToString(<Form.Control type="text" name={meta.settings.aoColumns[meta.col].mData} defaultValue={row.state == 'edit' ? data : ''}
+                                                aria-label={`${inputName} input for property named ${row.name}`} />);
         } else {
             return data;
         }
@@ -83,7 +88,8 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveP
     const columns = useMemo((): ConfigColumns[]  => [
         {data: "name", render: renderEditable},
         {data: "value", render: renderEditable,},
-        {data: null, name:"actions"}
+        {data: null, name:"actions"},
+        {data: "state", visible: false}
     ], []);
     const options: DataTableProps["options"] = {
         paging: false,
@@ -93,22 +99,9 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveP
                 buttons: [
                     {
                         text:'+',
-                        action: () => {
-                            const api = table.current!.dt();
-                            if (api) {
-                                api.row.add({name: "", value:""}).draw();
-                            }
-                        },
+                        action: () => {addProp()},
                     }
                 ]
-            }
-        },
-        createdRow: (row: HTMLElement, data: Property) => {
-            row.dataset.propName = data.name;
-            if (data.name === "") {
-                row.dataset.edit = "true";
-            } else {
-                row.dataset.edit = "false";
             }
         },
     };
@@ -125,7 +118,6 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveP
                 const value = (tds[1].children[0] as HTMLInputElement).value;
                 const prop: Property = {name: name, value: value}
                 saveProp(prop);
-                
             }
         } else {
             console.log("no dt api?");
@@ -133,26 +125,10 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveP
     };
 
     const slots: DataTableSlots = {
-        actions: (data: Property, type: unknown, row: Property) => {
+        actions: (data: Property, type: unknown, _row: Property) => {
             if (type === 'display') {
-                const api = table.current!.dt();
-                let inEdit = false;
-                if (api) {
-                    const rowNode = api?.row(`tr[data-prop-name="${data.name}"]`).node();
-                    // either the row doesn't exist yet or the value is set.
-                    inEdit = row.name === "" ? true : rowNode?.dataset.edit === "true";
-                }
-
-                return (<PropertyActions data={data} editMode={inEdit} removeProp={removeProp} saveProp={getAndSaveProp} editProp={(name: string) => {
-                    const api = table.current!.dt();
-                    const rowNode = api?.row(`tr[data-prop-name="${name}"]`);
-                    if (rowNode) {
-                        rowNode.node().dataset.edit = "true";
-                        rowNode.draw();
-                        api?.draw();
-                        api?.rows().invalidate();
-                    }
-                }}/>)
+                const inEdit = (data.state !== undefined);
+                return (<PropertyActions data={data} editMode={inEdit} removeProp={removeProp} saveProp={getAndSaveProp} editProp={editProp}/>);
             } else {
                 return data;
             }
