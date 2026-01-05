@@ -266,8 +266,8 @@ public class ConfigListIO extends SqlDbObjIo
                             equipId, _pcList.getDatabase());
                 }
 
-				cs.absoluteMin = hasAbsMin ? absMin : Double.MIN_VALUE;
-				cs.absoluteMax = hasAbsMax ? absMax : Double.MAX_VALUE;
+				if (hasAbsMin) cs.absoluteMin = absMin;
+				if (hasAbsMax) cs.absoluteMax = absMax;
                 cs.recordingInterval = recInterval;
                 cs.recordingMode = recordingMode.charAt(0);
                 cs.timeOfFirstSample = timeSecs;

@@ -225,8 +225,8 @@ public final class ConfigResources extends OpenDcsResource
 			apiSensor.setSensorNumber(sensor.sensorNumber);
 			apiSensor.setSensorName(sensor.sensorName);
 			apiSensor.setProperties(sensor.getProperties());
-			apiSensor.setAbsoluteMax(sensor.absoluteMax == Double.MAX_VALUE ? null : sensor.absoluteMax);
-			apiSensor.setAbsoluteMin(sensor.absoluteMin == Double.MIN_VALUE ? null : sensor.absoluteMin);
+			apiSensor.setAbsoluteMax(sensor.absoluteMax == Constants.undefinedDouble ? null : sensor.absoluteMax);
+			apiSensor.setAbsoluteMin(sensor.absoluteMin == Constants.undefinedDouble ? null : sensor.absoluteMin);
 			apiSensor.setRecordingInterval(sensor.recordingInterval);
 			apiSensor.setTimeOfFirstSample(sensor.timeOfFirstSample);
 			apiSensor.setUsgsStatCode(sensor.getUsgsStatCode());
