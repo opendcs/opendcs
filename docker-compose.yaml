@@ -52,6 +52,12 @@ services:
     build:
       context: .
       target: web-api
+    healthcheck:
+      test: ["CMD-SHELL", "curl http://localhost:7000/odcsapi/health/live"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
     ports:
       - 7000:7000
     environment:

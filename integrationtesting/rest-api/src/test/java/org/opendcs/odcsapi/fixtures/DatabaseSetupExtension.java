@@ -113,11 +113,11 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 			try
 			{
 				given()
-						.when()
-						.delete("/logout")
-						.then()
-						.assertThat()
-						.statusCode(Matchers.is(Response.Status.NO_CONTENT.getStatusCode()));
+					.when()
+					.get("health/live")
+					.then()
+					.assertThat()
+					.statusCode(Matchers.is(Response.Status.OK.getStatusCode()));
 				log.debug("Server is up!");
 				break;
 			}
