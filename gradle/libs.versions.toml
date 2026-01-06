@@ -50,7 +50,7 @@ rs-api = "4.0.0"
 jackson = "2.20.1"
 jackson-annotations = "2.20"
 selenium = "4.38.0"
-nimbus = "9.41.1"
+nimbus = "10.6"
 jwt = "4.4.0"
 jaxb = "4.0.0"
 
