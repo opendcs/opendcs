@@ -48,17 +48,6 @@ jobs:
         run: |
           echo "TEMP=$env:USERPROFILE\AppData\Local\Temp" >> $env:GITHUB_ENV
           echo "TMP=$env:USERPROFILE\AppData\Local\Temp" >> $env:GITHUB_ENV
-      - name: Unit and LRGS tests
-        run: |
-          ./gradlew test --info
-      - name: integration tests (XML)
-        # There is an odd issues with the log file name on the windows runner.
-        # It does work locally though. Will work on it later.
-        # Integration tests require docker now for test containers.
-        # More work required to deal with the other platforms. Should be workable
-        # at some point though.
-        run: |
-          ./gradlew :testing:opendcs-tests:test -P"opendcs.test.engine=OpenDCS-XML" --info
       - name: install node for react ui and tests
         uses: actions/setup-node@v4
         with:
@@ -70,6 +59,17 @@ jobs:
         run : |
           npm install
           npx playwright install
+      - name: Unit and LRGS tests
+        run: |
+          ./gradlew test --info
+      - name: integration tests (XML)
+        # There is an odd issues with the log file name on the windows runner.
+        # It does work locally though. Will work on it later.
+        # Integration tests require docker now for test containers.
+        # More work required to deal with the other platforms. Should be workable
+        # at some point though.
+        run: |
+          ./gradlew :testing:opendcs-tests:test -P"opendcs.test.engine=OpenDCS-XML" --info
       - name: integration tests (OpenDCS-Postgres)
         # There is an odd issues with the log file name on the windows runner.
         # It does work locally though. Will work on it later.
