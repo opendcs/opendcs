@@ -31,11 +31,11 @@ def bundle = tasks.register("bundle", NpxTask) {
 
 configurations {
     apiSpec
-    // lib {
-    //     artifacts {
-    //         add("lib", tasks.named("bundle"))
-    //     }
-    // }
+    lib {
+        artifacts {
+            add("lib", tasks.named("buildLib"))
+        }
+    }
 }
 
 dependencies {
