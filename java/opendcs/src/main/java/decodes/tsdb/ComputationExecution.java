@@ -26,6 +26,7 @@ import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
+import org.slf4j.event.Level;
 
 public final class ComputationExecution
 {
@@ -63,19 +64,24 @@ public final class ComputationExecution
 
 	public CompResults execute(List<DbComputation> toRun, DataCollection theData, Date since, Date until)
 	{
+		return	execute(toRun, theData, since, until, new LoggingProgressListener());
+	}
+
+	public CompResults execute(List<DbComputation> toRun, DataCollection theData, Date since, Date until, ProgressListener listener)
+	{
 		// Execute the computations
 		for(DbComputation comp : toRun)
 		{
 			try
 			{
-				log.debug("Executing computation '{}' #trigs={}",
-						comp.getName(), comp.getTriggeringRecNums().size());
+				listener.onProgress(String.format("Executing computation '%s' #trigs=%d",
+						comp.getName(), comp.getTriggeringRecNums().size()), Level.DEBUG, null);
 				computesTried++;
-				executeSingleComp(comp, since, until, theData, true);
+				executeSingleComp(comp, since, until, theData, true, listener);
 			}
 			catch(Exception ex)
 			{
-				log.atWarn().setCause(ex).log("Computation '{}' failed.", comp.getName());
+				listener.onProgress(String.format("Computation '%s' failed.", comp.getName()), Level.WARN, ex);
 				numErrors++;
 				for (Integer rn : comp.getTriggeringRecNums())
 				{
@@ -83,13 +89,13 @@ public final class ComputationExecution
 				}
 			}
 			comp.getTriggeringRecNums().clear();
-			log.debug("End of computation '{}'", comp.getName());
+			listener.onProgress(String.format("End of computation '%s'", comp.getName()), Level.DEBUG, null);
 		}
 		return new CompResults(numErrors, computesTried);
 	}
 
 	public CompResults execute(DbComputation computation,
-			List<TimeSeriesIdentifier> tsIds, Date since, Date until)
+			List<TimeSeriesIdentifier> tsIds, Date since, Date until, ProgressListener listener)
 		throws DbIoException
 	{
 		DataCollection theData = new DataCollection();
@@ -101,9 +107,8 @@ public final class ComputationExecution
 				{
 					CTimeSeries cts = timeSeriesDAO.makeTimeSeries(tsid);
 					int n = timeSeriesDAO.fillTimeSeries(cts, since, until);
-					String msg = String.format("Read tsid '%s' since=%s, until=%s, result=%d values.",
-							tsid.getUniqueString(), since, until, n);
-					log.info(msg);
+					listener.onProgress(String.format("Read tsid '%s' since=%s, until=%s, result=%d values.",
+							tsid.getUniqueString(), since, until, n), Level.INFO, null);
 					// Set the flag so that every value read is treated as a trigger.
 					for(int idx = 0; idx < n; idx++)
 					{
@@ -113,24 +118,23 @@ public final class ComputationExecution
 				}
 				catch(Exception ex)
 				{
-					String msg = "Error fetching input data.";
-					log.atWarn().setCause(ex).log(msg);
+					listener.onProgress("Error fetching input data.", Level.WARN, ex);
 					numErrors++;
 				}
 			}
 		}
 		computesTried++;
-		executeSingleComp(computation, since, until, theData);
+		executeSingleComp(computation, since, until, theData, false, listener);
 		return new CompResults(numErrors, computesTried);
 	}
 
 	public void executeSingleComp(DbComputation tc, Date since, Date until, DataCollection dataCollection)
 			throws DbIoException
 	{
-		executeSingleComp(tc, since, until, dataCollection, false);
+		executeSingleComp(tc, since, until, dataCollection, false, new LoggingProgressListener());
 	}
 
-	private void executeSingleComp(DbComputation tc, Date since, Date until, DataCollection dataCollection, boolean ignoreTimeWindow)
+	private void executeSingleComp(DbComputation tc, Date since, Date until, DataCollection dataCollection, boolean ignoreTimeWindow, ProgressListener listener)
 			throws DbIoException
 	{
 		try(MDC.MDCCloseable mdc = MDC.putCloseable("computation", tc.getName());
@@ -174,8 +178,7 @@ public final class ComputationExecution
 								catch(DuplicateTimeSeriesException ex)
 								{
 									// Should not happen! We checked first.
-									String msg = "Unexpected duplicate time series.";
-									log.atError().setCause(ex).log(msg);
+									listener.onProgress("Unexpected duplicate time series.", Level.ERROR, ex);
 									numErrors++;
 								}
 							}
@@ -187,8 +190,7 @@ public final class ComputationExecution
 			}
 			catch(DbCompException ex)
 			{
-				String msg = String.format("Cannot initialize computation '%s'", tc.getName());
-				log.atWarn().setCause(ex).log(msg);
+				listener.onProgress(String.format("Cannot initialize computation '%s'", tc.getName()), Level.WARN, ex);
 				numErrors++;
 			}
 			catch(BadTimeSeriesException ex)
@@ -199,7 +201,7 @@ public final class ComputationExecution
 					msg = msg + " -- No TSID assigned.";
 				else
 					msg = msg + " -- TSID '" + parmRef.tsid.getUniqueString() + "' does not exist in db.";
-				log.atWarn().setCause(ex).log(msg);
+				listener.onProgress(msg, Level.WARN, ex);
 				numErrors++;
 			}
 		}
@@ -207,5 +209,19 @@ public final class ComputationExecution
 
 	public record CompResults(int numErrors, int computesTried)
 	{
+	}
+
+	public interface ProgressListener
+	{
+		void onProgress(String message, Level logLevel, Throwable cause);
+	}
+
+	public static final class LoggingProgressListener implements ProgressListener
+	{
+		@Override
+		public void onProgress(String message, Level logLevel, Throwable cause)
+		{
+			log.atLevel(logLevel).setCause(cause).log(message);
+		}
 	}
 }

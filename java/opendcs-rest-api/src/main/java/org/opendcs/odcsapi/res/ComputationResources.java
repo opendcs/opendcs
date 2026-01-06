@@ -15,6 +15,7 @@
 
 package org.opendcs.odcsapi.res;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -49,16 +50,15 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.container.AsyncResponse;
-import jakarta.ws.rs.container.Suspended;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.sse.OutboundSseEvent;
+import jakarta.ws.rs.sse.Sse;
+import jakarta.ws.rs.sse.SseEventSink;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.TimeSeriesDAI;
-import org.glassfish.jersey.media.sse.OutboundEvent;
-import org.glassfish.jersey.media.sse.SseBroadcaster;
 import org.opendcs.odcsapi.beans.ApiCompParm;
 import org.opendcs.odcsapi.beans.ApiComputation;
 import org.opendcs.odcsapi.beans.ApiComputationRef;
@@ -69,6 +69,7 @@ import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 
 import static java.util.stream.Collectors.toList;
 
@@ -492,7 +493,7 @@ public final class ComputationResources extends OpenDcsResource
 
 	@GET
 	@Path("runcomputation")
-	@Produces({MediaType.APPLICATION_JSON, MediaType.SERVER_SENT_EVENTS})
+	@Produces(MediaType.SERVER_SENT_EVENTS)
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Execute an Existing OpenDCS Computation",
@@ -500,13 +501,15 @@ public final class ComputationResources extends OpenDcsResource
 					+ "Optionally takes in a start and end date for a time window to use for the computation",
 			tags = {"REST - Computation Methods"},
 			responses = {
-					@ApiResponse(responseCode = "202", description = "Successfully initiated execution of computation"),
+					@ApiResponse(responseCode = "200", description = "Successfully initiated execution of computation"),
 					@ApiResponse(responseCode = "400", description = "Missing required computationid parameter"),
 					@ApiResponse(responseCode = "404", description = "Computation with the specified ID not found"),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			}
 	)
-	public Response runComputation(@Context SseBroadcaster broadcaster, @Suspended final AsyncResponse asyncResp,
+	public void runComputation(
+			@Context Sse sse,
+			@Context SseEventSink eventSink,
 			@Parameter(required = true, description = "Unique Computation ID",
 					schema = @Schema(implementation = Long.class, example = "4"))
 			@QueryParam("computationid") Long computationId,
@@ -522,6 +525,8 @@ public final class ComputationResources extends OpenDcsResource
 			throws DbException, WebAppException
 	{
 		String[] tsList = timeseriesIds.split(",");
+
+		final String compStatus = "computation-status";
 
 		if(computationId == null)
 		{
@@ -544,39 +549,47 @@ public final class ComputationResources extends OpenDcsResource
 
 			executor.submit(() ->
 			{
-				OutboundEvent event = new OutboundEvent.Builder()
-						.name("computation-status")
+				OutboundSseEvent event = sse.newEventBuilder()
+						.name(compStatus)
 						.id(taskID)
-						.data(String.class, String.format("Running computation: %s", comp.getApplicationName()))
-						.reconnectDelay(3000)
+						.data(String.format("Running computation with ID: %s", computationId))
 						.build();
-				broadcaster.broadcast(event);
+				eventSink.send(event);
 
 				try
 				{
 					ComputationExecution execution = new ComputationExecution(createDb());
-					ComputationExecution.CompResults results = execution.execute(comp, tsiList, since, until);
+					SseProgressListener listener = new SseProgressListener(eventSink, sse, compStatus, taskID);
+					ComputationExecution.CompResults results = execution.execute(comp, tsiList, since, until, listener);
 
-					event = new OutboundEvent.Builder()
-							.name("computation-status")
+					event = sse.newEventBuilder()
+							.name(compStatus)
 							.id(taskID)
-							.data(String.class, String.format("Computation executed with %d errors", results.numErrors()))
-							.reconnectDelay(3000)
+							.data(String.format("Computation executed with %d errors", results.numErrors()))
 							.build();
-					broadcaster.broadcast(event);
+					eventSink.send(event);
 				}
 				catch(DbIoException ex)
 				{
 					log.error("Error while executing computation", ex);
-					event = new OutboundEvent.Builder()
-							.name("computation-status")
+					event = sse.newEventBuilder()
+							.name(compStatus)
 							.id(taskID)
-							.data(String.class, String.format("Error while executing computation: %s", comp.getApplicationName()))
-							.reconnectDelay(3000)
+							.data(String.format("Error while executing computation: %s", comp.getApplicationName()))
 							.build();
-					broadcaster.broadcast(event);
+					eventSink.send(event);
 				}
-				asyncResp.isDone();
+				finally
+				{
+					try
+					{
+						eventSink.close();
+					}
+					catch (IOException ignored)
+					{
+						// ignored
+					}
+				}
 			});
 		}
 		catch(NoSuchObjectException ex)
@@ -587,8 +600,21 @@ public final class ComputationResources extends OpenDcsResource
 		{
 			throw new DbException(String.format("Error retrieving computation to execute by ID: %s", computationId), ex);
 		}
+	}
 
-		return Response.status(Response.Status.ACCEPTED)
-				.entity(String.format("Execution of computation with ID: %d started asynchronously.", computationId)).build();
+	private record SseProgressListener(SseEventSink eventSink, Sse sse, String name, String taskId)
+		implements ComputationExecution.ProgressListener
+	{
+		@Override
+		public void onProgress(String message, Level logLevel, Throwable cause)
+		{
+			log.atLevel(logLevel).setCause(cause).log(message);
+			OutboundSseEvent event = sse.newEventBuilder()
+					.name(name)
+					.id(taskId)
+					.data(message)
+					.build();
+			eventSink.send(event);
+		}
 	}
 }
