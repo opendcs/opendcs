@@ -26,13 +26,7 @@ const preview: Preview = {
       test: 'todo'
     }
   },
-  decorators: [
-    (story, context) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const [_, updateArgs] = useArgs();
-      return story({ ...context, updateArgs });
-    },
-  ],
+  
 };
 
 export default preview;

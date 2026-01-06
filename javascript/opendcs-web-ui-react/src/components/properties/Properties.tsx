@@ -22,8 +22,9 @@ export interface Property {
     name: string;
     value: unknown;
     spec?: ApiPropSpec;
-    state?: 'new' | 'edit'; // Table component will add this if new or in edit mode
+    state?: 'new' | 'edit' | number; // Table component will add this if new or in edit mode
                             // if value is 'new' name will be an index value.
+                            // number will be the initial ID number if this was new
 }
 
 export interface PropertiesTableProps {
@@ -36,6 +37,7 @@ export interface PropertiesTableProps {
     height?: React.CSSProperties['height'];
     classes?: string;
 };
+
 export interface ActionProps {
     data: Property,
     editMode: boolean,
@@ -48,7 +50,7 @@ export const PropertyActions: React.FC<ActionProps> = ({data, editMode, removePr
     return (
         <>
             {editMode === true ?
-                <Button onClick={() => {saveProp(data)}} variant="primary"
+                <Button onClick={() => {console.log("save prop"); saveProp(data)}} variant="primary"
                         aria-label={`save property named ${data.name}`} size='sm'><Save/></Button>
                 :
                 <Button onClick={() => editProp(data.name)} variant="warning"
@@ -72,6 +74,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveP
     const table = useRef<DataTableRef>(null);
     console.log("table rendering");
     console.log(theProps);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const renderEditable = (data: string | number | readonly string[] | undefined, type: string, row: any, meta: any) =>{
         if (type !== "display") {
             return data;
@@ -89,7 +92,6 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveP
         {data: "name", render: renderEditable},
         {data: "value", render: renderEditable,},
         {data: null, name:"actions"},
-        {data: "state", visible: false}
     ], []);
     const options: DataTableProps["options"] = {
         paging: false,
@@ -104,11 +106,11 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveP
                 ]
             }
         },
+        createdRow: (row: HTMLElement, data: Property) => row.dataset.propName = data.name
     };
 
     const getAndSaveProp = (data: Property): void => {
         const api = table.current?.dt();
-        console.log(table);
         if (api) {
             const row = api.row(`tr[data-prop-name="${data.name}"]`)?.node();
             
@@ -116,8 +118,11 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveP
                 const tds = row.children;
                 const name = tds[0].hasChildNodes() ? (tds[0].children[0] as HTMLInputElement).value : tds[0].innerHTML;
                 const value = (tds[1].children[0] as HTMLInputElement).value;
-                const prop: Property = {name: name, value: value}
+                const prop: Property = {name: name, value: value, state: parseInt(data.name)}
+                console.log(`saving ${JSON.stringify(prop)}`);
                 saveProp(prop);
+            } else {
+                console.log(`can't find entries for ${JSON.stringify(data)}`)
             }
         } else {
             console.log("no dt api?");
@@ -125,6 +130,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveP
     };
 
     const slots: DataTableSlots = {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         actions: (data: Property, type: unknown, _row: Property) => {
             if (type === 'display') {
                 const inEdit = (data.state !== undefined);

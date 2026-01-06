@@ -4,10 +4,10 @@ import path from 'path';
 const inGradle = process.env.IN_GRADLE? true : false;
 
 const workingDirectory = path.resolve(process.cwd(),"..","..");
-
 if (!inGradle) { // if we're in a gradle environment, it would've done this for us already
     try {
-        execSync("gradlew :api-client-typescript:build --info -Pno.docs=true", {cwd: workingDirectory, stdio: 'inherit'});
+        execSync("./gradlew :api-client-typescript:build --info -Pno.docs=true",
+                 {cwd: workingDirectory, stdio: 'inherit'});
         process.exit(0);
     } catch (error) {
         console.error(`Command failed ${error.message}`);

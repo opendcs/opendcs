@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PropertiesTable, type Property } from './Properties';
 import { userEvent } from '@storybook/testing-library';
-//import { UserEvent } from 'vitest/browser';
 import { expect, waitFor, within } from 'storybook/test';
 import { useArgs } from 'storybook/internal/preview-api';
 import { act } from '@testing-library/react';
@@ -10,7 +9,13 @@ userEvent.setup();
 
 const meta = {
   component: PropertiesTable,
-  
+  decorators: [
+    (story, context) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const [_, updateArgs] = useArgs();
+      return story({ ...context, updateArgs });
+    },
+  ],
 } satisfies Meta<typeof PropertiesTable>;
 
 export default meta;
@@ -27,11 +32,25 @@ export const StartEmpty: Story = {
     editProp: () => {},
     addProp: () => {},
   },
-  render: (args) => {
-    const [{theProps}, updateArgs] = useArgs();
+  render: function Render(args, {updateArgs}) {
+    //const [{theProps}, updateArgs] = useArgs();
+    const theProps = args.theProps;
+
     function saveProp(data: Property) {
-      const tmp = theProps.filter((p: Property) => p.name !== data.name);
-      updateArgs({theProps: [...tmp, {name: data.name, value: data.value}]});
+      console.log(`saving prop ${JSON.stringify(data)}`);
+      console.log(`current props ${JSON.stringify(theProps)}`);
+      console.log(`current props from args ${JSON.stringify(args.theProps)}`);
+      let newProps: Property[];
+      if (typeof data.state === 'number' ) {
+        newProps = theProps.map((p: Property) => `${data.state}` === p.name ? {name: data.name, value: data.value} : p);
+      } else if (data.state === 'edit') {
+        newProps = theProps.map((p: Property) => p.name === data.name ? {...p, value: data.value, state: undefined} : p);
+      } else {
+        throw new Error(`Attempt to save property with invalid state ${data.state}`);
+      }
+      
+      args.theProps = newProps;
+      updateArgs({theProps: newProps});
       
     }
 
@@ -41,13 +60,17 @@ export const StartEmpty: Story = {
     }
 
     function addProp() {
+      console.log(`current props ${JSON.stringify(theProps)}`);
+      console.log(`current props from args ${JSON.stringify(args.theProps)}`);
       const existingNew = theProps
                               .filter((p: Property) => p.state === 'new')
                               .sort((a: Property,b: Property) => {return parseInt(a.name) - parseInt(b.name)});
-      
+      console.log(`existing new props ${JSON.stringify(existingNew)}`);
       const idx = existingNew.length > 0 ? parseInt(existingNew[0].name)+1 : 1;
       
-      const tmp = [...theProps, {name: `${idx}`, value: '', state: 'new'}]
+      const tmp = [...theProps, {name: `${idx}`, value: '', state: 'new'} as Property]
+      console.log(`new props ${JSON.stringify(tmp)}`);
+      args.theProps = tmp;
       updateArgs({theProps: tmp});
     }
 
@@ -65,7 +88,8 @@ export const StartEmpty: Story = {
       updateArgs({theProps: tmp});
     }
 
-    return (<PropertiesTable {...args} theProps={theProps} saveProp={saveProp} removeProp={removeProp} addProp={addProp} editProp={editProp} />);
+    return (<PropertiesTable {...args} saveProp={saveProp} 
+                             removeProp={removeProp} addProp={addProp} editProp={editProp} />);
   },
 };
 
@@ -74,15 +98,17 @@ export const EmptyAddThenRemove: Story = {
     ...StartEmpty.args,
   },
   render: StartEmpty.render,
-  play: async ({canvas, userEvent}) => {
+  play: async ({canvasElement, userEvent}) => {
+    const canvas = within(canvasElement);
     // NOTE: needs some actual assertions, but at the moment it's just an empty uneditable row.
     const add = canvas.getByRole('button', {name: '+'});
-    await act(async () =>userEvent.click(add));
+    await userEvent.click(add);
 
     const nameInput = await canvas.findByRole("textbox", {name: "name input for property named 1"})
     expect(nameInput).toBeInTheDocument();
     const remove = await canvas.findByRole('button', {name: 'delete property named 1'});
-    await act(async () => userEvent.click(remove));
+    
+    await userEvent.click(remove);
   },
 };
 
@@ -95,7 +121,7 @@ export const EmptyAddThenSaveThenRemove: Story = {
     const canvas = within(canvasElement);
     await step("add new prop", async () => {
       const add = canvas.getByRole('button', {name: '+'});
-      await act( async () => userEvent.click(add));
+      await userEvent.click(add);
 
       const nameInput = await canvas.findByRole("textbox", {name: "name input for property named 1"})
       expect(nameInput).toBeInTheDocument();
