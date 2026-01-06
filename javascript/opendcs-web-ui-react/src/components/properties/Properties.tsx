@@ -50,7 +50,7 @@ export const PropertyActions: React.FC<ActionProps> = ({data, editMode, removePr
     return (
         <>
             {editMode === true ?
-                <Button onClick={() => {console.log("save prop"); saveProp(data)}} variant="primary"
+                <Button onClick={() => {saveProp(data)}} variant="primary"
                         aria-label={`save property named ${data.name}`} size='sm'><Save/></Button>
                 :
                 <Button onClick={() => editProp(data.name)} variant="warning"
@@ -72,15 +72,13 @@ export const PropertyActions: React.FC<ActionProps> = ({data, editMode, removePr
  */
 export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveProp, removeProp, addProp, editProp, width = '20em', height = '100vh', classes = ''}) => {
     const table = useRef<DataTableRef>(null);
-    console.log("table rendering");
-    console.log(theProps);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const renderEditable = (data: string | number | readonly string[] | undefined, type: string, row: any, meta: any) =>{
         if (type !== "display") {
             return data;
         }
         const inputName: string = meta.col == 0 ? "name" : "value";
-        if (row?.state !== undefined) {
+        if (row?.state === 'new' || (row?.state == 'edit' && meta.col == 1)) {
             return renderToString(<Form.Control type="text" name={meta.settings.aoColumns[meta.col].mData} defaultValue={row.state == 'edit' ? data : ''}
                                                 aria-label={`${inputName} input for property named ${row.name}`} />);
         } else {
@@ -102,6 +100,9 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveP
                     {
                         text:'+',
                         action: () => {addProp()},
+                        attr: {
+                            'aria-label': 'Add new property'
+                        }
                     }
                 ]
             }
@@ -116,10 +117,9 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveP
             
             if (row) {
                 const tds = row.children;
-                const name = tds[0].hasChildNodes() ? (tds[0].children[0] as HTMLInputElement).value : tds[0].innerHTML;
+                const name = tds[0].children[0] instanceof HTMLInputElement ? (tds[0].children[0] as HTMLInputElement).value : tds[0].innerHTML;
                 const value = (tds[1].children[0] as HTMLInputElement).value;
-                const prop: Property = {name: name, value: value, state: parseInt(data.name)}
-                console.log(`saving ${JSON.stringify(prop)}`);
+                const prop: Property = {name: name, value: value, state: data.state == 'new' ? parseInt(data.name) : data.state}
                 saveProp(prop);
             } else {
                 console.log(`can't find entries for ${JSON.stringify(data)}`)

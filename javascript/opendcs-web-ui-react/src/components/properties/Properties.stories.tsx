@@ -2,19 +2,76 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PropertiesTable, type Property } from './Properties';
 import { userEvent } from '@storybook/testing-library';
 import { expect, waitFor, within } from 'storybook/test';
-import { useArgs } from 'storybook/internal/preview-api';
+import { useArgs, useState } from 'storybook/internal/preview-api';
 import { act } from '@testing-library/react';
 
-userEvent.setup();
+//userEvent.setup();
 
 const meta = {
   component: PropertiesTable,
   decorators: [
-    (story, context) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const [_, updateArgs] = useArgs();
-      return story({ ...context, updateArgs });
-    },
+    (Story, context) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [_, updateArgs] = useArgs();
+    const [theProps, setTheProps] = useState<Property[]>(context.args.theProps);
+    
+
+    function saveProp(data: Property) {
+      act(() => setTheProps((prev) => {
+        let newProps: Property[];
+        if (typeof data.state === 'number' ) {
+          newProps = prev.map((p: Property) => `${data.state}` === p.name ? {name: data.name, value: data.value} : p);
+        } else if (data.state === 'edit') {
+          newProps = prev.map((p: Property) => p.name === data.name ? {...p, value: data.value, state: undefined} : p);
+        } else {
+          throw new Error(`Attempt to save property with invalid state ${data.state}`);
+        }
+        updateArgs({theProps: newProps});
+        return newProps;
+      }));
+    }
+
+    function removeProp(prop: string) {
+      act(() => setTheProps((prev) => {
+        const tmp = prev.filter((e: Property) => e.name !== prop);
+        updateArgs({theProps: tmp});
+        return tmp;
+      }));
+    }
+
+    function addProp() {
+      act(() => setTheProps((prev)=> {        
+        const existingNew = prev
+                                .filter((p: Property) => p.state === 'new')
+                                .sort((a: Property,b: Property) => {return parseInt(a.name) - parseInt(b.name)});
+        const idx = existingNew.length > 0 ? parseInt(existingNew[0].name)+1 : 1;
+        
+        const tmp = [...prev, {name: `${idx}`, value: '', state: 'new'} as Property]
+        updateArgs({theProps: tmp});
+        return tmp;
+      }));
+    }
+
+    function editProp(prop: string) {
+      act(() => setTheProps((prev) => {
+        const tmp: Property[] = prev.map ((p: Property) => {
+          if (p.name === prop) {
+            return {
+              ...p,
+              state: 'edit'
+            };
+          } else {
+            return p;
+          }        
+        });
+        updateArgs({theProps: tmp});
+        return tmp;
+      }));
+      
+    }
+    return (<Story args={{...context.args, theProps: theProps,  saveProp:saveProp,
+                            removeProp: removeProp, addProp: addProp, editProp: editProp}} />);
+  },
   ],
 } satisfies Meta<typeof PropertiesTable>;
 
@@ -22,93 +79,36 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+const propList: Property[] = [];
+
 export const StartEmpty: Story = {
 
   args: {
-    theProps: [],
+    theProps: propList,
     saveProp: () => {console.log("default save")},
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    removeProp: (_prop: string) => {console.log("default remove")},
-    editProp: () => {},
-    addProp: () => {},
-  },
-  render: function Render(args, {updateArgs}) {
-    //const [{theProps}, updateArgs] = useArgs();
-    const theProps = args.theProps;
-
-    function saveProp(data: Property) {
-      console.log(`saving prop ${JSON.stringify(data)}`);
-      console.log(`current props ${JSON.stringify(theProps)}`);
-      console.log(`current props from args ${JSON.stringify(args.theProps)}`);
-      let newProps: Property[];
-      if (typeof data.state === 'number' ) {
-        newProps = theProps.map((p: Property) => `${data.state}` === p.name ? {name: data.name, value: data.value} : p);
-      } else if (data.state === 'edit') {
-        newProps = theProps.map((p: Property) => p.name === data.name ? {...p, value: data.value, state: undefined} : p);
-      } else {
-        throw new Error(`Attempt to save property with invalid state ${data.state}`);
-      }
-      
-      args.theProps = newProps;
-      updateArgs({theProps: newProps});
-      
-    }
-
-    function removeProp(prop: string) {
-      const tmp = theProps.filter((e: Property) => e.name !== prop);
-      updateArgs({theProps: tmp});
-    }
-
-    function addProp() {
-      console.log(`current props ${JSON.stringify(theProps)}`);
-      console.log(`current props from args ${JSON.stringify(args.theProps)}`);
-      const existingNew = theProps
-                              .filter((p: Property) => p.state === 'new')
-                              .sort((a: Property,b: Property) => {return parseInt(a.name) - parseInt(b.name)});
-      console.log(`existing new props ${JSON.stringify(existingNew)}`);
-      const idx = existingNew.length > 0 ? parseInt(existingNew[0].name)+1 : 1;
-      
-      const tmp = [...theProps, {name: `${idx}`, value: '', state: 'new'} as Property]
-      console.log(`new props ${JSON.stringify(tmp)}`);
-      args.theProps = tmp;
-      updateArgs({theProps: tmp});
-    }
-
-    function editProp(prop: string) {
-      const tmp = theProps.map ((p: Property) => {
-        if (p.name === prop) {
-          return {
-            ...p,
-            state: 'edit'
-          };
-        } else {
-          return p;
-        }
-      });
-      updateArgs({theProps: tmp});
-    }
-
-    return (<PropertiesTable {...args} saveProp={saveProp} 
-                             removeProp={removeProp} addProp={addProp} editProp={editProp} />);
-  },
+    removeProp: () => {console.log("default remove")},
+    editProp: () => {console.log("default edit")},
+    addProp: () => {console.log("default add")},
+  },  
 };
 
 export const EmptyAddThenRemove: Story = {
   args: {
     ...StartEmpty.args,
   },
-  render: StartEmpty.render,
-  play: async ({canvasElement, userEvent}) => {
+  play: async ({canvasElement, userEvent, mount}) => {
+    console.log("***************************mounting");
+    await mount();
     const canvas = within(canvasElement);
-    // NOTE: needs some actual assertions, but at the moment it's just an empty uneditable row.
-    const add = canvas.getByRole('button', {name: '+'});
-    await userEvent.click(add);
-
+    const add = canvas.getByRole('button', {name: /add new property/i});
+    console.log("***************************Clicking add");
+    await act(async () => userEvent.click(add));
+    await mount();
     const nameInput = await canvas.findByRole("textbox", {name: "name input for property named 1"})
     expect(nameInput).toBeInTheDocument();
     const remove = await canvas.findByRole('button', {name: 'delete property named 1'});
     
-    await userEvent.click(remove);
+    await act(async () => userEvent.click(remove));
   },
 };
 
@@ -116,33 +116,35 @@ export const EmptyAddThenSaveThenRemove: Story = {
   args: {
     ...StartEmpty.args,
   },
-  render: StartEmpty.render,
-  play: async ({canvasElement, userEvent, step}) => {
+  play: async ({canvasElement, userEvent, step, mount}) => {
+    await mount();
     const canvas = within(canvasElement);
     await step("add new prop", async () => {
-      const add = canvas.getByRole('button', {name: '+'});
-      await userEvent.click(add);
-
+      const add = canvas.getByRole('button', {name: /add new property/i});
+      await act(async () => userEvent.click(add));
+      await mount();
       const nameInput = await canvas.findByRole("textbox", {name: "name input for property named 1"})
       expect(nameInput).toBeInTheDocument();
       const valueInput = await canvas.findByRole("textbox", {name: "value input for property named 1"})
       expect(valueInput).toBeInTheDocument();
 
-      await userEvent.type(nameInput, "testprop");
-      await userEvent.type(valueInput, "testvalue");
+      await act(async () => userEvent.type(nameInput, "testprop"));
+      await act(async () => userEvent.type(valueInput, "testvalue"));
     });
 
     const save = await canvas.findByRole('button', {name: 'save property named 1'});
     await step("save prop", async () => {
-      await userEvent.click(save);
+      await act(async () => userEvent.click(save));
     })
 
+    await mount();
     const prop = await canvas.findByText("testprop", undefined, {timeout:3000});
     expect(prop).not.toBeNull();
 
     await step("delete prop", async () => {
       const remove = await canvas.findByRole('button', {name: 'delete property named testprop'});
-      await userEvent.click(remove);
+      await act(async () => userEvent.click(remove));
+      await mount();
 
       await waitFor(async () => {
         expect(canvas.queryByText("testprop")).toBeNull();
@@ -165,8 +167,6 @@ export const NotEmpty: Story = {
       {name: 'prop6', value: 'val6'},
       {name: 'prop7', value: 'val7'},
       {name: 'prop8', value: 'val8'},
-      
     ],
   },
-  render: StartEmpty.render
 };
