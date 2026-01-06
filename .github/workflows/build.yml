@@ -59,6 +59,17 @@ jobs:
         # at some point though.
         run: |
           ./gradlew :testing:opendcs-tests:test -P"opendcs.test.engine=OpenDCS-XML" --info
+      - name: install node for react ui and tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: javascript/opendcs-web-ui-react/package-lock.json
+      - name: Install/Setup playwright
+        working-directory: javascript/opendcs-web-ui-react
+        run : |
+          npm install
+          npx playwright install
       - name: integration tests (OpenDCS-Postgres)
         # There is an odd issues with the log file name on the windows runner.
         # It does work locally though. Will work on it later.
