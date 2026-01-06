@@ -205,35 +205,7 @@ public final class ComputationExecution
 		}
 	}
 
-	public static final class CompResults
+	public record CompResults(int numErrors, int computesTried)
 	{
-		private final int numErrors;
-		private final int computesTried;
-
-		public CompResults(int numErrors, int computesTried)
-		{
-			this.numErrors = numErrors;
-			this.computesTried = computesTried;
-		}
-
-		public int getNumErrors()
-		{
-			return numErrors;
-		}
-
-		public int getNumComputesTried()
-		{
-			return computesTried;
-		}
-
-		public boolean isSuccess()
-		{
-			return numErrors == 0;
-		}
-
-		public String toString()
-		{
-			return String.format("Computations tried=%d, errors=%d", computesTried, numErrors);
-		}
 	}
 }

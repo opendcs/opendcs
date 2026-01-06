@@ -490,10 +490,9 @@ public final class ComputationResources extends OpenDcsResource
 		}
 	}
 
-	@POST
+	@GET
 	@Path("runcomputation")
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON, MediaType.SERVER_SENT_EVENTS})
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Execute an Existing OpenDCS Computation",
@@ -561,7 +560,7 @@ public final class ComputationResources extends OpenDcsResource
 					event = new OutboundEvent.Builder()
 							.name("computation-status")
 							.id(taskID)
-							.data(String.class, String.format("Computation executed with %d errors", results.getNumErrors()))
+							.data(String.class, String.format("Computation executed with %d errors", results.numErrors()))
 							.reconnectDelay(3000)
 							.build();
 					broadcaster.broadcast(event);

@@ -377,8 +377,8 @@ public class ComputationApp extends TsdbAppTemplate
 						ComputationExecution execution = new ComputationExecution(db);
 
 						ComputationExecution.CompResults results = execution.execute(List.of(comps), dataCollection);
-						compsTried += results.getNumComputesTried();
-						compErrors += results.getNumErrors();
+						compsTried += results.computesTried();
+						compErrors += results.numErrors();
 
 						action = "Saving results";
 						List<CTimeSeries> tsList = dataCollection.getAllTimeSeries();
