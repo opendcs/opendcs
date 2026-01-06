@@ -28,3 +28,4 @@ dist-ssr
 storybook-static
 
 **/__screenshots__
+coverage

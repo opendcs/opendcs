@@ -23,13 +23,25 @@ def buildUi = tasks.register("buildUi", NpxTask) {
     dependsOn configurations.api
     command = "npm"
     args = ['run', 'build']
+    environment = [
+        "IN_GRADLE": "1"
+    ]
     outputs.dir(file("dist"))
 }
 
 def testUi = tasks.register("testStorybook", NpxTask) {
+    group "Verification"
     dependsOn buildUi
     command = "npm"
-    args = ['run', 'test-storybook']
+    environment = [
+        "IN_GRADLE": "1"
+    ]
+    args = ['run', 'test-storybook', '--', '--coverage', '--reporter=junit', '--outputFile', 'build/test-results/test-storybook.xml']
+}
+
+tasks.register("test") {
+    group "Verification"
+    dependsOn testUi
 }
 
 node {

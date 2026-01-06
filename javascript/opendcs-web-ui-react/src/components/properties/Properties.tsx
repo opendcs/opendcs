@@ -107,7 +107,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({theProps, saveP
                 ]
             }
         },
-        createdRow: (row: HTMLElement, data: Property) => row.dataset.propName = data.name
+        createdRow: (row: HTMLElement, data: any, _index: number, _cells: HTMLTableCellElement[]) => row.dataset.propName = data.name
     };
 
     const getAndSaveProp = (data: Property): void => {
