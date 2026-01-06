@@ -4,7 +4,7 @@ import { PersonGear } from "react-bootstrap-icons";
 import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 import { AuthContext } from "../../contexts/AuthContext";
-import { ColorModes }  from "../";
+import { ColorModes } from "../";
 
 export function TopBar() {
   const { user, logout } = useContext(AuthContext);
@@ -31,7 +31,7 @@ export function TopBar() {
               <Button onClick={logout}>Logout</Button>
             </NavDropdown.Item>
           </NavDropdown>
-        ) }
+        )}
       </Nav>
     </Navbar>
     //  <nav class="navbar  navbar-expand-lg bg-primary sticky-top">
