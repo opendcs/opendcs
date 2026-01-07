@@ -116,19 +116,19 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 				// Is there a more reasonable natural way to test these? also no.
 				given()
 					.when()
-					.get("health/startup")
+					.get("/health/started")
 					.then()
 					.assertThat()
 					.statusCode(Matchers.is(Response.Status.OK.getStatusCode()));
 				given()
 					.when()
-					.get("health/ready")
+					.get("/health/ready")
 					.then()
 					.assertThat()
 					.statusCode(Matchers.is(Response.Status.OK.getStatusCode()));
 				given()
 					.when()
-					.get("health/live")
+					.get("/health/live")
 					.then()
 					.assertThat()
 					.statusCode(Matchers.is(Response.Status.OK.getStatusCode()));
