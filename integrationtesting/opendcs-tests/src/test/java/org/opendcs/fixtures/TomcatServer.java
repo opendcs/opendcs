@@ -38,7 +38,6 @@ import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.jdbc.pool.DataSourceFactory;
 import org.apache.tomcat.util.scan.StandardJarScanner;
 import org.jdbi.v3.core.Handle;
-import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.fixtures.configurations.cwms.CwmsOracleConfiguration;

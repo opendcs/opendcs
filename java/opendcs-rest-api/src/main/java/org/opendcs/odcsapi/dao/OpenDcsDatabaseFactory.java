@@ -50,7 +50,7 @@ public final class OpenDcsDatabaseFactory
 	{
 		var db = dbCache.computeIfAbsent(organization, o -> newDatabase(dataSource, organization));
 		var decodesDb = db.getLegacyDatabase(Database.class);
-		decodesDb.ifPresent(liveDb -> Database.setDb(liveDb));
+		decodesDb.ifPresent(Database::setDb);
 		return db;
 	}
 

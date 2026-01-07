@@ -36,9 +36,6 @@ import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.fixtures.spi.ConfigurationProvider;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.apache.tomcat.jdbc.pool.DataSourceFactory;
-import org.hamcrest.Matchers;
-
 import decodes.db.Database;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
@@ -443,7 +440,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
 		String restWarFile = Objects.requireNonNull(System.getProperty("opendcs.restapi.warfile"), "opendcs.restapi.warfile is not set");
 		String guiWarFile = Objects.requireNonNull(System.getProperty("opendcs.gui.warfile"), "opendcs.gui.warfile is not set");
 		TomcatServer tomcat = new TomcatServer("build/tomcat", 0, restWarFile, guiWarFile);
-        withEnvProps(() -> tomcat.start());
+        withEnvProps(tomcat::start);
 		return tomcat;
 	}
 

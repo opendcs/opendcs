@@ -39,7 +39,7 @@ final class LoginPageTest extends BaseApiIT
 	private WebDriverWait wait;
 
 	@BeforeEach
-	public void setUp()
+	void setUp()
 	{
 		WebDriverManager.chromedriver().setup();
 		ChromeOptions options = new ChromeOptions();
@@ -53,7 +53,7 @@ final class LoginPageTest extends BaseApiIT
 	}
 
 	@AfterEach
-	public void tearDown()
+	void tearDown()
 	{
 		if(driver != null)
 		{
@@ -62,7 +62,7 @@ final class LoginPageTest extends BaseApiIT
 	}
 
 	@Test
-	public void testInvalidLoginShowsError()
+	void testInvalidLoginShowsError()
 	{
 		driver.get(RestAssured.baseURI + ":" + RestAssured.port + "/" + "login");
 		String pageSource = driver.getPageSource();

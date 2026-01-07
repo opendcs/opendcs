@@ -99,7 +99,7 @@ public final class OwaspZap
 			});
 			while(zapContainer.isRunning())
 			{
-				Thread.sleep(200);
+				Thread.sleep(200); // NOSONAR
 			}
 			printAllFilesInDirectory(reportDir);
 

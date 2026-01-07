@@ -1,8 +1,6 @@
 package org.opendcs.regression_tests;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.util.Properties;
 
 import org.jdbi.v3.core.Handle;

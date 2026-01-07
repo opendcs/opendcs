@@ -16,7 +16,6 @@
 package org.opendcs.odcsapi.res.it;
 
 import io.restassured.filter.log.LogDetail;
-import io.restassured.filter.session.SessionFilter;
 import io.restassured.path.json.JsonPath;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -30,14 +29,12 @@ import static org.hamcrest.Matchers.is;
 
 final class ConfigResourcesIT extends BaseApiIT
 {
-	private static SessionFilter sessionFilter;
 	private static Long configId;
 
 	@BeforeEach
 	void setUp() throws Exception
 	{
 		setUpCreds();
-		sessionFilter = new SessionFilter();
 
 		authenticate();
 
@@ -82,7 +79,7 @@ final class ConfigResourcesIT extends BaseApiIT
 			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
-		logout(sessionFilter);
+		logout();
 	}
 
 	@Test
