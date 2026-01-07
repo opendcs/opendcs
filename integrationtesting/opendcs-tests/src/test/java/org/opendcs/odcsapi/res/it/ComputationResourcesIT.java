@@ -20,14 +20,12 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.filter.log.LogDetail;
-import io.restassured.filter.session.SessionFilter;
 import io.restassured.path.json.JsonPath;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestTemplate;
 import org.opendcs.odcsapi.beans.ApiAlgorithm;
 import org.opendcs.odcsapi.beans.ApiCompParm;
 import org.opendcs.odcsapi.beans.ApiComputation;
@@ -43,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 final class ComputationResourcesIT extends BaseApiIT
 {
 	private static final ObjectMapper MAPPER = new ObjectMapper();
-	private static SessionFilter sessionFilter;
+
 	private Long compId;
 	private Long siteId;
 	private Long appId;
@@ -53,7 +51,6 @@ final class ComputationResourcesIT extends BaseApiIT
 	void init() throws Exception
 	{
 		setUpCreds();
-		sessionFilter = new SessionFilter();
 		authenticate();
 
 		ApiComputation comp = getDtoFromResource("computation_insert_data.json", ApiComputation.class);
@@ -227,7 +224,7 @@ final class ComputationResourcesIT extends BaseApiIT
 			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
-		logout(sessionFilter);
+		logout();
 	}
 
 	@Test

@@ -33,13 +33,18 @@ public @interface EnableIfApiSupported
             Optional<Object> testInstance = ctx.getTestInstance();
             if (testInstance.isPresent())
             {
-                List<Configuration> configs = AnnotationSupport.findAnnotatedFieldValues(testInstance.get(), ConfiguredField.class, Configuration.class);
+                List<Configuration> configs = AnnotationSupport.findAnnotatedFieldValues(testInstance.get(),
+                                                                                         ConfiguredField.class,
+                                                                                         Configuration.class);
                 if (configs.size() == 1 && configs.get(0) != null)
                 {
-                    return configs.get(0).supportsRestApi() ? ConditionEvaluationResult.enabled("Rest API Support expected") : ConditionEvaluationResult.disabled("Rest Api Support not expected.");                
+                    return configs.get(0).supportsRestApi() ?
+                                ConditionEvaluationResult.enabled("Rest API Support expected")
+                                :
+                                ConditionEvaluationResult.disabled("Rest Api Support not expected.");
                 }
-                return ConditionEvaluationResult.disabled("No " + Configuration.class.getName() + " member fields present in Test class.");
-
+                return ConditionEvaluationResult.disabled("No " + Configuration.class.getName() +
+                                                          " member fields present in Test class.");
             }
             return ConditionEvaluationResult.enabled("No determinative information at present level.");
         }

@@ -30,7 +30,7 @@ import static org.hamcrest.Matchers.is;
 final class AlgorithmResourcesIT extends BaseApiIT
 {
 	@BeforeEach
-	void setUp() throws Exception
+	void setUp()
 	{
 		setUpCreds();
 		authenticate();

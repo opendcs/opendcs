@@ -164,7 +164,7 @@ public class CwmsOracleConfiguration implements Configuration
     
     private void createPropertiesFile(UserPropertiesBuilder configBuilder, File propertiesFile) throws Exception
     {
-        configBuilder.withEditDatabaseType("CWMS-Oracle");
+        configBuilder.withEditDatabaseType(NAME);
         configBuilder.withDatabaseDriver("oracle.jdbc.driver.OracleDriver");
         configBuilder.withSiteNameTypePreference("CWMS");
         configBuilder.withDecodesAuth("env-auth-source:username=DB_USERNAME,password=DB_PASSWORD");

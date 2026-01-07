@@ -139,7 +139,7 @@ public class BaseApiIT extends AppTestBase
 
 	void authenticate()
 	{
-		String COOKIE = "IntegrationTestAuthCookie";
+		final String COOKIE = "IntegrationTestAuthCookie";
 		String username = System.getProperty("DB_USERNAME");
 		
 		StandardSession session = (StandardSession) tomcat.getTestSessionManager()
@@ -179,7 +179,7 @@ public class BaseApiIT extends AppTestBase
 		;
 	}
 
-	void logout(SessionFilter sessionFilter)
+	void logout()
 	{
 		if (OpenDcsPgProvider.NAME.equals(configuration.getName()))
 		{

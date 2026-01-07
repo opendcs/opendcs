@@ -27,7 +27,6 @@ import org.opendcs.odcsapi.res.it.BaseApiIT;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.ArgumentMatchers.isNotNull;
 
 @EnableIfTsDb({"OpenDCS-Postgres"})
 final class FormAuthIT extends BaseApiIT
@@ -42,7 +41,7 @@ final class FormAuthIT extends BaseApiIT
 	}
 
 	@Test
-	void testBasicAuthFlow() throws Exception
+	void testBasicAuthFlow()
 	{
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)

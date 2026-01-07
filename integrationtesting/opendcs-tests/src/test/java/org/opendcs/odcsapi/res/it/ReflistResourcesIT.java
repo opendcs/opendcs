@@ -18,7 +18,6 @@ package org.opendcs.odcsapi.res.it;
 import java.util.Map;
 
 import io.restassured.filter.log.LogDetail;
-import io.restassured.filter.session.SessionFilter;
 import io.restassured.path.json.JsonPath;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -33,7 +32,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ReflistResourcesIT extends BaseApiIT
 {
-	private static SessionFilter sessionFilter;
 	private static Long refListId;
 	private static String reflistName;
 	private static String seasonId;
@@ -126,7 +124,7 @@ final class ReflistResourcesIT extends BaseApiIT
 			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
-		logout(sessionFilter);
+		logout();
 	}
 
 	@Test

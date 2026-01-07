@@ -41,7 +41,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 final class OdcsapiResourceIT extends BaseApiIT
 {
 	private static final ObjectMapper MAPPER = new ObjectMapper();
-	private Properties props;
 	private Long platformId;
 	private Long siteId;
 
@@ -58,8 +57,6 @@ final class OdcsapiResourceIT extends BaseApiIT
 		properties.setProperty("key2", "value");
 		properties.setProperty("key3", "value");
 		properties.setProperty("key4", "value");
-
-		props = properties;
 
 		String propertiesJson = MAPPER.writeValueAsString(properties);
 
