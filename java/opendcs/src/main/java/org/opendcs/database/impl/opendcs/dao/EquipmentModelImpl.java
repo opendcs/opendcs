@@ -21,6 +21,8 @@ import decodes.db.EquipmentModel;
 import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
 
+import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
+
 @ServiceProvider(service = EquipmentModelDao.class)
 public class EquipmentModelImpl implements EquipmentModelDao
 {
@@ -67,17 +69,7 @@ public class EquipmentModelImpl implements EquipmentModelDao
         }
     }
 
-    /**
-     * Helper function to add limit and offset fields to queries
-     * @param limit
-     * @param offset
-     * @return
-     */
-    private static String addLimitOffset(int limit, int offset)
-    {
-        return (offset != -1 ? " offset :offset rows" : "") +
-               (limit != -1 ? " fetch next :limit rows only": "");
-    }
+    
 
 
     @Override

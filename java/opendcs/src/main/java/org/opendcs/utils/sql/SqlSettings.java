@@ -5,8 +5,12 @@ package org.opendcs.utils.sql;
  * set as jvm properties as opposed to user facing settings in the application
  * .properties files.
  */
-public class SqlSettings
+public final class SqlSettings
 {
+    private SqlSettings()
+    {
+        /* static methods only */
+    }
     /**
      * Determines whether or not to maintain and print track traces of
      * various java.sql.Connection operations. Primarily @see opendcs.util.sql.WrappedConnection
