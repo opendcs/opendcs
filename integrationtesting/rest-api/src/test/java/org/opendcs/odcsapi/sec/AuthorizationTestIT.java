@@ -82,6 +82,7 @@ final class AuthorizationTestIT
 				.filter(e -> !e.getKey().equals("/credentials"))
 				.filter(e -> !e.getKey().equals("/logout"))
 				.filter(e -> !e.getKey().equals("/organizations"))
+				.filter(e -> !e.getKey().startsWith("/health"))
 				.flatMap(e ->
 						e.getValue().readOperationsMap().entrySet().stream().map(opEntry ->
 						{

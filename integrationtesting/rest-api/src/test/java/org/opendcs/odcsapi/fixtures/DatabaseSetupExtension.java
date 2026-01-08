@@ -112,12 +112,26 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 		{
 			try
 			{
+				// do we need to call all of them? no.
+				// Is there a more reasonable natural way to test these? also no.
 				given()
-						.when()
-						.delete("/logout")
-						.then()
-						.assertThat()
-						.statusCode(Matchers.is(Response.Status.NO_CONTENT.getStatusCode()));
+					.when()
+					.get("/health/started")
+					.then()
+					.assertThat()
+					.statusCode(Matchers.is(Response.Status.OK.getStatusCode()));
+				given()
+					.when()
+					.get("/health/ready")
+					.then()
+					.assertThat()
+					.statusCode(Matchers.is(Response.Status.OK.getStatusCode()));
+				given()
+					.when()
+					.get("/health/live")
+					.then()
+					.assertThat()
+					.statusCode(Matchers.is(Response.Status.OK.getStatusCode()));
 				log.debug("Server is up!");
 				break;
 			}

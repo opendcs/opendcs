@@ -21,6 +21,7 @@ import jakarta.ws.rs.ext.ContextResolver;
 import jakarta.ws.rs.ext.Provider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
 @Provider
 public final class ObjectMapperContextResolver implements ContextResolver<ObjectMapper>
@@ -41,6 +42,7 @@ public final class ObjectMapperContextResolver implements ContextResolver<Object
     private ObjectMapper createObjectMapper() 
     {
         ObjectMapper objMap = new ObjectMapper();
+        objMap.registerModule(new Jdk8Module());
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'[z]");
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         objMap.setDateFormat(sdf);

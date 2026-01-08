@@ -42,6 +42,8 @@ dependencies {
     implementation(project(":opendcs"))
 
     implementation(libs.bundles.jdbi)
+    implementation(libs.microprofile.health) // use to get the HealthCheckResponse object
+    implementation(libs.bundles.jersey)
     swaggerDeps(libs.jakarta.servlet)
     swaggerDeps(libs.rs.api)
     swaggerDeps(libs.swagger.jaxrs2)
