@@ -1,5 +1,7 @@
 package org.opendcs.database.impl.opendcs.dao;
 
+import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -11,6 +13,7 @@ import org.opendcs.database.dai.DataTypeDao;
 import org.opendcs.database.model.mappers.datatype.DataTypeMapper;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
+import org.opendcs.utils.sql.SqlKeywords;
 import org.openide.util.lookup.ServiceProvider;
 
 import decodes.db.DataType;
@@ -119,9 +122,29 @@ public class DataTypeDaoImpl implements DataTypeDao
     }
 
     @Override
-    public List<DataType> getDataTypes(DataTransaction tx, int limit, int offset) throws OpenDcsDataException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getDataTypes'");
+    public List<DataType> getDataTypes(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
+    {
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        final String dataTypeSelect = """
+                    select id, standard, code, display_name from datatype
+                """ +
+                addLimitOffset(limit, offset);
+        try (var q = handle.createQuery(dataTypeSelect))
+        {
+            if (limit != -1)
+            {
+                q.bind(SqlKeywords.LIMIT, limit);
+            }
+
+            if (offset != -1)
+            {
+                q.bind(SqlKeywords.OFFSET, offset);
+            }
+            return q.registerRowMapper(DataType.class, DataTypeMapper.withPrefix(""))
+                    .mapTo(DataType.class)
+                    .collectIntoList();
+        }
     }
 
     @Override
