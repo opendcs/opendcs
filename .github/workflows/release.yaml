@@ -45,7 +45,7 @@ jobs:
         packages: write
     steps:
       - name: checkout code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5
         with:
           ref: ${{inputs.branch}}
       - name: setup java
