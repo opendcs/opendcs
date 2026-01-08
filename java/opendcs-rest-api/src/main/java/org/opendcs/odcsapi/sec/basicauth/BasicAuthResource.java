@@ -19,7 +19,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Base64;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 import javax.sql.DataSource;
 
@@ -45,9 +44,10 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.model.User;
-import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.dao.ApiAuthorizationDAI;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.res.OpenDcsResource;
@@ -245,10 +245,13 @@ public final class BasicAuthResource extends OpenDcsResource
 
 	private void validateDbCredentials(Credentials creds) throws WebAppException
 	{
-
+		var db = this.createDb();
 		// Use username and password to attempt to connect to the database
-		try
+
+		try (var tx = db.newTransaction())
 		{
+			var userMgmt = db.getDao(UserManagementDao.class).orElseThrow()
+			var user userMgmt.getUser(tx, )
 			/*
 			 Intentional unused connection. Makes a new db connection using passed credentials
 			 This validates the username & password and will throw SQLException if user/pw is not valid.
@@ -260,7 +263,7 @@ public final class BasicAuthResource extends OpenDcsResource
 
 			}
 		}
-		catch(SQLException ex)
+		catch(OpenDcsDataException | SQLException ex)
 		{
 			throw new WebAppException(Response.Status.FORBIDDEN.getStatusCode(), "Unable to authorize user.", ex);
 		}
