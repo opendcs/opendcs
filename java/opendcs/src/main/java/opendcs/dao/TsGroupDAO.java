@@ -15,7 +15,7 @@
 */
 package opendcs.dao;
 
-import hec.util.TextUtil;
+import ilex.util.TextUtil;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -231,7 +231,7 @@ public class TsGroupDAO extends DaoBase  implements TsGroupDAI
 		{
 			TsGroup g = ci.next();
 			if (groupType == null || groupType.length() == 0
-			 || TextUtil.equalsIgnoreCase(groupType, g.getGroupType()))
+			 || TextUtil.strEqualIgnoreCase(groupType, g.getGroupType()))
 				ret.add(g);
 		}
 		return ret;

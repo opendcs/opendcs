@@ -32,7 +32,6 @@ import ilex.var.Variable;
 import ilex.var.IFlags;
 
 import decodes.db.*;
-import hec.util.TextUtil;
 
 /**
 FieldOperation is a DecodesOperation that extracts and parses a field 
