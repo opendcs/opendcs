@@ -20,6 +20,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.*;
 
 import ilex.util.TextUtil;
@@ -31,6 +33,7 @@ Top-level parser for LRGS Status Snapshot XML.
 */
 public class TopLevelXio implements XmlObjectParser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** SAX parser object */
 	private XMLReader parser;
 
@@ -54,7 +57,7 @@ public class TopLevelXio implements XmlObjectParser
 		parser = sp.getXMLReader();
 		parser.setFeature("http://xml.org/sax/features/namespaces", true);
 
-		ErrorHandler eh = new PrintStreamErrorHandler(System.out);
+		ErrorHandler eh = new LoggerErrorHandler(log);
 		xhp = new XmlHierarchyParser(eh);
 		setErrorHandler(eh);
 		parser.setContentHandler(xhp);

@@ -162,7 +162,7 @@ public class XmlDatabaseIO extends DatabaseIO
 		{
 			myParser = new TopLevelParser();
 
-			errorHandler = new LoggerErrorHandler();
+			errorHandler = new LoggerErrorHandler(log);
 			errorHandler.stopOnWarnings(false);
 			errorHandler.stopOnErrors(false);
 			myParser.setErrorHandler(errorHandler);
