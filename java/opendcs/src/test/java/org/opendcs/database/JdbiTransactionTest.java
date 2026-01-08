@@ -1,6 +1,5 @@
 package org.opendcs.database;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,7 +12,6 @@ import java.util.Optional;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.opendcs.database.api.DataTransaction;
@@ -46,15 +44,6 @@ class JdbiTransactionTest
             throw new UnsupportedOperationException("Unimplemented method 'getDatabase'");
         }
     };
-
-    @BeforeAll
-    static void setup() throws Exception
-    {
-        Class<?> clazz = Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
-        var dbC = clazz.getConstructor();
-        var obj = dbC.newInstance();
-        assertNotNull(obj);
-    }
 
     @BeforeEach
     void create_db()
