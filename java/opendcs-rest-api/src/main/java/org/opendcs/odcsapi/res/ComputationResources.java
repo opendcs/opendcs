@@ -32,6 +32,7 @@ import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.ProgressListener;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 import io.swagger.v3.oas.annotations.Operation;
@@ -501,7 +502,8 @@ public final class ComputationResources extends OpenDcsResource
 					+ "Optionally takes in a start and end date for a time window to use for the computation",
 			tags = {"REST - Computation Methods"},
 			responses = {
-					@ApiResponse(responseCode = "200", description = "Successfully initiated execution of computation"),
+					@ApiResponse(responseCode = "200", description = "Successfully initiated execution of computation",
+							content = {@Content(mediaType = MediaType.SERVER_SENT_EVENTS)}),
 					@ApiResponse(responseCode = "400", description = "Missing required computationid parameter"),
 					@ApiResponse(responseCode = "404", description = "Computation with the specified ID not found"),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
@@ -552,9 +554,10 @@ public final class ComputationResources extends OpenDcsResource
 				OutboundSseEvent event = sse.newEventBuilder()
 						.name(compStatus)
 						.id(taskID)
+						.mediaType(MediaType.SERVER_SENT_EVENTS_TYPE)
 						.data(String.format("Running computation with ID: %s", computationId))
 						.build();
-				eventSink.send(event);
+				eventSink.send(event).toCompletableFuture().join();
 
 				try
 				{
@@ -565,9 +568,10 @@ public final class ComputationResources extends OpenDcsResource
 					event = sse.newEventBuilder()
 							.name(compStatus)
 							.id(taskID)
+							.mediaType(MediaType.SERVER_SENT_EVENTS_TYPE)
 							.data(String.format("Computation executed with %d errors", results.numErrors()))
 							.build();
-					eventSink.send(event);
+					eventSink.send(event).toCompletableFuture().join();
 				}
 				catch(DbIoException ex)
 				{
@@ -575,9 +579,10 @@ public final class ComputationResources extends OpenDcsResource
 					event = sse.newEventBuilder()
 							.name(compStatus)
 							.id(taskID)
+							.mediaType(MediaType.SERVER_SENT_EVENTS_TYPE)
 							.data(String.format("Error while executing computation: %s", comp.getApplicationName()))
 							.build();
-					eventSink.send(event);
+					eventSink.send(event).toCompletableFuture().join();
 				}
 				finally
 				{
@@ -585,9 +590,9 @@ public final class ComputationResources extends OpenDcsResource
 					{
 						eventSink.close();
 					}
-					catch (IOException ignored)
+					catch (IOException ex)
 					{
-						// ignored
+						log.error("Error closing SSE event sink", ex);
 					}
 				}
 			});
@@ -602,19 +607,33 @@ public final class ComputationResources extends OpenDcsResource
 		}
 	}
 
-	private record SseProgressListener(SseEventSink eventSink, Sse sse, String name, String taskId)
-		implements ComputationExecution.ProgressListener
+	private static final class SseProgressListener extends ProgressListener
 	{
+		private final SseEventSink eventSink;
+		private final Sse sse;
+		private final String name;
+		private final String taskId;
+
+		public SseProgressListener(SseEventSink eventSink, Sse sse, String name, String taskId)
+		{
+			this.eventSink = eventSink;
+			this.sse = sse;
+			this.name = name;
+			this.taskId = taskId;
+		}
+
 		@Override
 		public void onProgress(String message, Level logLevel, Throwable cause)
 		{
-			log.atLevel(logLevel).setCause(cause).log(message);
+			logEvent(message, logLevel, cause);
 			OutboundSseEvent event = sse.newEventBuilder()
 					.name(name)
 					.id(taskId)
+					.reconnectDelay(3000L)
 					.data(message)
+					.mediaType(MediaType.SERVER_SENT_EVENTS_TYPE)
 					.build();
-			eventSink.send(event);
+			eventSink.send(event).toCompletableFuture().join();
 		}
 	}
 }

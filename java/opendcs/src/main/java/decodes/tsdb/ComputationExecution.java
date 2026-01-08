@@ -23,15 +23,11 @@ import java.util.Optional;
 import ilex.var.TimedVariable;
 import opendcs.dai.TimeSeriesDAI;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.utils.logging.OpenDcsLoggerFactory;
-import org.slf4j.Logger;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
 public final class ComputationExecution
 {
-	private static final Logger log = OpenDcsLoggerFactory.getLogger();
-
 	private final OpenDcsDatabase db;
 	private int numErrors = 0;
 	private int computesTried = 0;
@@ -64,7 +60,7 @@ public final class ComputationExecution
 
 	public CompResults execute(List<DbComputation> toRun, DataCollection theData, Date since, Date until)
 	{
-		return	execute(toRun, theData, since, until, new LoggingProgressListener());
+		return	execute(toRun, theData, since, until, new ProgressListener.LoggingProgressListener());
 	}
 
 	public CompResults execute(List<DbComputation> toRun, DataCollection theData, Date since, Date until, ProgressListener listener)
@@ -79,7 +75,7 @@ public final class ComputationExecution
 				computesTried++;
 				executeSingleComp(comp, since, until, theData, true, listener);
 			}
-			catch(Exception ex)
+			catch(DbIoException ex)
 			{
 				listener.onProgress(String.format("Computation '%s' failed.", comp.getName()), Level.WARN, ex);
 				numErrors++;
@@ -131,7 +127,7 @@ public final class ComputationExecution
 	public void executeSingleComp(DbComputation tc, Date since, Date until, DataCollection dataCollection)
 			throws DbIoException
 	{
-		executeSingleComp(tc, since, until, dataCollection, false, new LoggingProgressListener());
+		executeSingleComp(tc, since, until, dataCollection, false, new ProgressListener.LoggingProgressListener());
 	}
 
 	private void executeSingleComp(DbComputation tc, Date since, Date until, DataCollection dataCollection, boolean ignoreTimeWindow, ProgressListener listener)
@@ -209,19 +205,5 @@ public final class ComputationExecution
 
 	public record CompResults(int numErrors, int computesTried)
 	{
-	}
-
-	public interface ProgressListener
-	{
-		void onProgress(String message, Level logLevel, Throwable cause);
-	}
-
-	public static final class LoggingProgressListener implements ProgressListener
-	{
-		@Override
-		public void onProgress(String message, Level logLevel, Throwable cause)
-		{
-			log.atLevel(logLevel).setCause(cause).log(message);
-		}
 	}
 }
