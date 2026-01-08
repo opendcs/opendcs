@@ -27,9 +27,9 @@ openApiGenerate {
     outputDir = "$buildDir/generated/openApi"
     generatorName = "java"
     library = "native"
-    apiPackage = "org/opendcs/rest/client/api"
-    modelPackage = "org/opendcs/rest/client/model"
-    invokerPackage = "org/opendcs/rest/client/invoker"
+    apiPackage = "org.opendcs.rest.client.api"
+    modelPackage = "org.opendcs.rest.client/model"
+    invokerPackage = "org.opendcs.rest.client/invoker"
     globalProperties.set([
         modelDocs: "true",
         modelTests: "false",
@@ -37,6 +37,9 @@ openApiGenerate {
         apiTests: "false",
         enabledPostProcessFile: "false"
     ])
+    configOptions = [
+        useJakartaEe: "true"
+    ]
     ignoreFileOverride = "$projectDir/.openapi-generator-ignore"
     
 }
