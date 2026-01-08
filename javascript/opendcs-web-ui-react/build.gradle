@@ -6,24 +6,42 @@ plugins {
     id 'com.github.node-gradle.node' version '7.1.0'
 }
 
-
-
 configurations {
     api
 }
 
 dependencies {
-    api(project(":api-client-typescript"))
+    api(project(path: ":api-client-typescript", configuration: "lib"))
 }
 
-
+//npmSetup.dependsOn configurations.api
 
 def buildUi = tasks.register("buildUi", NpxTask) {
     dependsOn npmInstall
     dependsOn configurations.api
     command = "npm"
     args = ['run', 'build']
+    environment = [
+        "IN_GRADLE": "1"
+    ]
     outputs.dir(file("dist"))
+}
+
+def testUi = tasks.register("testStorybook", NpxTask) {
+    group "Verification"
+    dependsOn buildUi
+    dependsOn configurations.api
+    command = "npm"
+    environment = [
+        "IN_GRADLE": "1"
+    ]
+    args = ['run', 'test-storybook', '--', '--coverage', '--reporter=junit', '--outputFile', 'build/test-results/test-storybook.xml']
+}
+
+tasks.register("test") {
+    group "Verification"
+    dependsOn testUi
+    dependsOn configurations.api
 }
 
 node {
@@ -46,8 +64,10 @@ def runUiDev = tasks.register("runUiDev", NpxTask) {
     group 'application'
     description 'Runs npm run dev to begin UI development. Assumes an OpenDCS Api instances in available on localhost:7000/odcsapi'
     dependsOn npmInstall
-    dependsOn configurations.api
-    project(":api-client-typescript")
+    dependsOn configurations.api  
     command = "npm"
     args = ['run', 'dev']
+    environment = [
+        "IN_GRADLE": "1"
+    ]
 }

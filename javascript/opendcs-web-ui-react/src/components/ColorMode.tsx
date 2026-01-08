@@ -69,7 +69,6 @@ export const ColorModes = () => {
       </NavDropdown.Item>
     </NavDropdown>
   );
-}
-
+};
 
 export default ColorModes;
