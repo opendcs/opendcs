@@ -7,6 +7,7 @@ import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponse.Status;
 import org.opendcs.odcsapi.util.ApiConstants;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -24,6 +25,7 @@ import opendcs.dao.EnumSqlDao;
  * up 3 individual endpoints and using the HeckCheckResponse from the API should be sufficient.
  */
 @Path("/health")
+@Hidden // not specifically documented.
 public final class HealthCheckResources extends OpenDcsResource
 {
     @GET
