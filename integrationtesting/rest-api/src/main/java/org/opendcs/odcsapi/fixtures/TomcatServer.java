@@ -28,6 +28,7 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
 
+import decodes.sql.DbKey;
 import decodes.util.DecodesSettings;
 import org.apache.catalina.Host;
 import org.apache.catalina.LifecycleException;
@@ -37,8 +38,15 @@ import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.jdbc.pool.DataSourceFactory;
 import org.apache.tomcat.util.scan.StandardJarScanner;
+import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityProvider;
+import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInProviderCredentials;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.model.IdentityProvider;
+import org.opendcs.database.model.IdentityProviderMapping;
+import org.opendcs.database.model.Role;
+import org.opendcs.database.model.UserBuilder;
 import org.opendcs.fixtures.configurations.cwms.CwmsOracleConfiguration;
 import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.fixtures.spi.ConfigurationProvider;
@@ -269,6 +277,48 @@ public final class TomcatServer implements AutoCloseable
 		{
 			log.atInfo().setCause(ex).log("error setting props");
 			throw new OpenDcsDataException("Unable to set database type property.", ex);
+		}
+
+		try
+		{
+			var db = config.getOpenDcsDatabase();
+			var dao = db.getDao(UserManagementDao.class)
+						.orElseThrow(() -> new OpenDcsDataException("No User Management class available for this implem,entation."));
+			try (var tx = db.newTransaction())
+			{
+				var idps = dao.getIdentityProviders(tx, -1, -1);
+				IdentityProvider idp = null;
+				for (var provider: idps)
+				{
+					if (provider instanceof BuiltInIdentityProvider)
+					{
+						idp = provider;
+						break;
+					}
+				}
+				if (idp == null)
+				{
+					throw new OpenDcsDataException("Database not initialized with builtin identity provider.");
+				}
+                final var ub = new UserBuilder();
+				String[] roles = new String[] {"ODCS_API_USER", "ODCS_API_ADMIN"};
+                for (var role: roles) {
+                    ub.withRole(new Role(DbKey.NullKey, role, null, null));
+                }
+				final String userName = "test_user";
+                ub.withEmail(userName);
+
+                ub.withIdentityMapping(new IdentityProviderMapping(idp, userName));
+                var user = dao.addUser(tx, ub.build());
+				var creds = new BuiltInProviderCredentials(userName, "test_password"); // NOSONAR
+				idp.updateUserCredentials(db, tx, user, creds);
+			}
+
+		}
+		catch (Throwable ex)
+		{
+			log.atInfo().setCause(ex).log("error setting up initial user");
+			throw new OpenDcsDataException("Unable to setup initial user.", ex);
 		}
 		environment.getVariables().forEach(System::setProperty);
 		config.getEnvironment().forEach((key, value) -> System.setProperty(key.toString(), value.toString()));

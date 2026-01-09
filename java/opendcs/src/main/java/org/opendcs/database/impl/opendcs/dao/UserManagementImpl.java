@@ -56,7 +56,6 @@ public class UserManagementImpl implements UserManagementDao
     public List<User> getUsers(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        handle.getJdbi().installPlugin(new Jackson2Plugin());
         final String userSelect = "select u.id u_id, u.preferences::text u_preferences, u.email u_email," +
             "       u.created_at u_created_at, u.updated_at u_updated_at, " +
             "       r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at," +
@@ -90,11 +89,22 @@ public class UserManagementImpl implements UserManagementDao
         }
     }
 
+    public Optional<Role> getRoleByName(DataTransaction tx, String role) throws OpenDcsDataException
+    {
+        Handle handle = getHandle(tx);
+        try (Query select = handle.createQuery("select id, name, description, updated_at from opendcs_role where name = :name"))
+        {
+            return select.bind(GenericColumns.NAME, role)
+                         .map(ROLE_MAPPER)
+                         .findOne();
+        }
+    }
+
+
     @Override
     public User addUser(DataTransaction tx, User user) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        handle.getJdbi().installPlugin(new Jackson2Plugin());
 
         DbKey id = DbKey.NullKey;
 
@@ -113,8 +123,15 @@ public class UserManagementImpl implements UserManagementDao
         {
             for (Role role: user.roles)
             {
+                var roleId = role.id;
+                if (DbKey.isNull(role.id))
+                {
+                    roleId = getRoleByName(tx, role.name)
+                                .orElseThrow(() -> new OpenDcsDataException("Request to map role '" + role.name + "' that doesn't exist."))
+                                .id;
+                }
                 roleBatch.bind(UserBuilderMapper.USER_ID, id)
-                        .bind(RoleMapper.ROLE_ID, role.id)
+                        .bind(RoleMapper.ROLE_ID, roleId)
                         .add();
             }
             roleBatch.execute();
@@ -143,7 +160,6 @@ public class UserManagementImpl implements UserManagementDao
     public Optional<User> getUser(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        handle.getJdbi().installPlugin(new Jackson2Plugin());
 
         try (Query user = handle.createQuery(
             "select u.id u_id, u.preferences::text u_preferences, u.email u_email," +
@@ -285,8 +301,6 @@ public class UserManagementImpl implements UserManagementDao
     public Optional<IdentityProvider> getIdentityProvider(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        handle.getJdbi().installPlugin(new Jackson2Plugin());
-
         try (Query getIdp = handle.createQuery("select id, name, type, updated_at, config::text from identity_provider where id = :id"))
         {
             return getIdp.bind(GenericColumns.ID, id).map(PROVIDER_MAPPER).findOne();
@@ -298,7 +312,6 @@ public class UserManagementImpl implements UserManagementDao
             throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        handle.getJdbi().installPlugin(new Jackson2Plugin());
         try (Query updateIdp =
                 handle.createQuery("update identity_provider set name = :name, type = :type, " +
                                     "config = :config::jsonb where id = :id returning id, name, type, updated_at, config::text"))
@@ -404,6 +417,8 @@ public class UserManagementImpl implements UserManagementDao
     {
         Handle h = tx.connection(Handle.class)
                             .orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Connection from transaction."));
+        h.getJdbi()
+         .installPlugin(new Jackson2Plugin());
         return h.registerArgument(new ConfigArgumentFactory())
                 .registerColumnMapper(new ConfigColumnMapper());
     }
@@ -418,5 +433,24 @@ public class UserManagementImpl implements UserManagementDao
     {
         return (limit != -1 ? " limit :limit ": "") +
                (offset != -1 ? " offset :offset " : "");
+    }
+
+    @Override
+    public List<IdentityProvider> getIdentityProvidersForSubject(DataTransaction tx, String subject)
+            throws OpenDcsDataException
+    {
+        var handle = getHandle(tx);
+        final String idpsSql = """
+                    select idp.id idp_id, idp.name idp_name, idp.type idp_type, idp.updated_at idp_updated_at, idp.config::text idp_config
+                      from user_identity_provider mapping
+                      join identity_provider idp on idp.id = mapping.identity_provider_id
+                      where mapping.subject = :subject
+                """;
+        try (var getIdps = handle.createQuery(idpsSql))
+        {
+            return getIdps.bind(GenericColumns.SUBJECT, subject)
+                          .map(IdentityProviderMapper.withPrefix("idp"))
+                          .collectIntoList();
+        }
     }
 }
