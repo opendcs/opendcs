@@ -59,8 +59,8 @@ final class FormAuthIT
 			.statusCode(is(Response.Status.UNAUTHORIZED.getStatusCode()))
 		;
 		Credentials credentials = new Credentials();
-		credentials.setUsername(System.getProperty("DB_USERNAME"));
-		credentials.setPassword(System.getProperty("DB_PASSWORD"));
+		credentials.setUsername("test_user");
+		credentials.setPassword("test_password");
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
