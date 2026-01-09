@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.MDCTimer;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
@@ -257,7 +258,7 @@ public class ComputationApp extends TsdbAppTemplate
 			while(!shutdownFlag)
 			{
 				log.trace("ComputationApp start of main loop.");
-				try(
+				try(var timer = MDCTimer.startTimer("computationCycle");
 					TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
 					LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
 					TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
@@ -361,7 +362,7 @@ public class ComputationApp extends TsdbAppTemplate
 							log.debug("Trying computation '{}' #trigs={}",
 									  comp.getName(), comp.getTriggeringRecNums().size());
 							compsTried++;
-							try
+							try (var compTimer = MDCTimer.startTimer("timer:"+comp.getName()))
 							{
 								comp.prepareForExec(theDb);
 								comp.apply(dataCollection, theDb);
@@ -391,14 +392,17 @@ public class ComputationApp extends TsdbAppTemplate
 						action = "Saving results";
 						List<CTimeSeries> tsList = dataCollection.getAllTimeSeries();
 						log.trace("{} {} time series in data.", action, tsList.size());
-						for(CTimeSeries ts : tsList)
+						try (var allTsTimer = MDCTimer.startTimer("Saving Time Series"))
 						{
-							try { timeSeriesDAO.saveTimeSeries(ts); }
-							catch(Exception ex)
+							for(CTimeSeries ts : tsList)
 							{
-								log.atWarn()
-								   .setCause(ex)
-								   .log("Cannot save time series '{}'", ts.getNameString());
+								try { timeSeriesDAO.saveTimeSeries(ts); }
+								catch(Exception ex)
+								{
+									log.atWarn()
+									.setCause(ex)
+									.log("Cannot save time series '{}'", ts.getNameString());
+								}
 							}
 						}
 
