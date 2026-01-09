@@ -5,11 +5,11 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
+import decodes.db.DatabaseException;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.TsGroup;
-import decodes.tsdb.compedit.ComputationInList;
 import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiComputation;
 import org.opendcs.odcsapi.beans.ApiComputationRef;
@@ -67,7 +67,7 @@ final class ComputationResourcesTest
 	}
 
 	@Test
-	void testDbComputeMap()
+	void testDbComputeMap() throws Exception
 	{
 		ApiComputation apiComp = new ApiComputation();
 		apiComp.setComputationId(16704L);
@@ -101,7 +101,17 @@ final class ComputationResourcesTest
 		assertEquals(apiComp.getGroupId(), dbComp.getGroupId().getValue());
 		assertEquals(apiComp.getName(), dbComp.getName());
 		assertEquals(apiComp.getProps(), dbComp.getProperties());
-		assertEquals(apiComp.getParmList().stream().map(ComputationResources::map).collect(Collectors.toList()),
+		assertEquals(apiComp.getParmList().stream().map(value ->
+				{
+					try
+					{
+						return ComputationResources.map(value);
+					}
+					catch(DatabaseException e)
+					{
+						throw new RuntimeException(e);
+					}
+				}).collect(Collectors.toList()),
 				dbComp.getParmList());
 		assertEquals(apiComp.getAlgorithmId(), dbComp.getAlgorithm().getId().getValue());
 	}

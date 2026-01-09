@@ -201,7 +201,7 @@ final class RoutingResourcesIT extends BaseIT
 		// Insert the schedule entry status
 		storeScheduleEntryStatus(status);
 
-		siteId = storeSite("routing_site_insert.json");
+		siteId = storeSite("routing_site_insert.json").getSiteId();
 
 		String configJson = getJsonFromResource("routing_config_insert_data.json");
 
@@ -1039,64 +1039,6 @@ final class RoutingResourcesIT extends BaseIT
 			}
 		}
 		assertTrue(found);
-	}
-
-	private Long storeSite(String jsonPath) throws Exception
-	{
-		assertNotNull(jsonPath);
-		String siteJson = getJsonFromResource(jsonPath);
-
-		var response = given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(MediaType.APPLICATION_JSON)
-			.contentType(MediaType.APPLICATION_JSON)
-			.spec(authSpec)
-			.body(siteJson)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.post("site")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(Response.Status.CREATED.getStatusCode()))
-			.extract()
-		;
-
-		return response.body().jsonPath().getLong("siteId");
-	}
-
-	private void tearDownSite(Long siteId)
-	{
-		given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(MediaType.APPLICATION_JSON)
-			.queryParam("siteid", siteId)
-			.spec(authSpec)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.delete("site")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
-		;
-
-		given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(MediaType.APPLICATION_JSON)
-			.queryParam("siteid", siteId)
-			.spec(authSpec)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("site")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
-		;
 	}
 
 	private Long storePlatform(String jsonPath, Long siteId, Long configId) throws Exception
