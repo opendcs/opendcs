@@ -82,19 +82,20 @@ class UserManagementDaoTestIT extends AppTestBase
         {
             for (int i = 0; i < 100; i++)
             {
-                dao.addRole(tx, new Role(DbKey.NullKey, "user" + i, "a test " + i, null));
+                // silly name so it should sort first and make the checks easier.
+                dao.addRole(tx, new Role(DbKey.NullKey, "arole" + String.format("%03d",i), "a test role " + i, null));
             }
 
             List<Role> roles = dao.getRoles(tx, -1, -1);
-            assertEquals(100, roles.size());
+            assertTrue(roles.size() >= 100);
 
             List<Role> rolesLimit = dao.getRoles(tx, 10, 0);
             assertEquals(10, rolesLimit.size());
-            assertEquals("user9", rolesLimit.get(rolesLimit.size()-1).name);
+            assertEquals("arole009", rolesLimit.get(rolesLimit.size()-1).name);
 
             List<Role> rolesLimitOffset = dao.getRoles(tx, 10, 10);
             assertEquals(10, rolesLimitOffset.size());
-            assertEquals("user19", rolesLimitOffset.get(rolesLimitOffset.size()-1).name);
+            assertEquals("arole019", rolesLimitOffset.get(rolesLimitOffset.size()-1).name);
 
         }
     }
@@ -141,19 +142,20 @@ class UserManagementDaoTestIT extends AppTestBase
             {
                 HashMap<String, Object> config = new HashMap<>();
                 config.put("i", i);
-                dao.addIdentityProvider(tx, new BuiltInIdentityProvider(DbKey.NullKey, "idp" + i, null, config));
+                dao.addIdentityProvider(tx, new BuiltInIdentityProvider(DbKey.NullKey, "idp" + String.format("%03d", i), null, config));
             }
 
             List<IdentityProvider> providers = dao.getIdentityProviders(tx, -1, -1);
-            assertEquals(100, providers.size());
+            assertTrue(providers.size() >= 100);
 
             List<IdentityProvider> providerLimit = dao.getIdentityProviders(tx, 10, 0);
             assertEquals(10, providerLimit.size());
-            assertEquals("idp9", providerLimit.get(providerLimit.size()-1).getName());
+            // The default builtin is provided by the schema migration as part of initial setup.
+            assertEquals("idp008", providerLimit.get(providerLimit.size()-1).getName());
 
             List<IdentityProvider> providerLimitOffset = dao.getIdentityProviders(tx, 10, 10);
             assertEquals(10, providerLimitOffset.size());
-            assertEquals("idp19", providerLimitOffset.get(providerLimitOffset.size()-1).getName());
+            assertEquals("idp018", providerLimitOffset.get(providerLimitOffset.size()-1).getName());
 
         }
     }
@@ -212,7 +214,7 @@ class UserManagementDaoTestIT extends AppTestBase
             }
 
             List<User> users = dao.getUsers(tx, -1, -1);
-            assertEquals(100, users.size());
+            assertTrue(users.size() >= 100);
 
             List<User> usersLimit = dao.getUsers(tx, 10, 0);
             assertEquals(10, usersLimit.size());

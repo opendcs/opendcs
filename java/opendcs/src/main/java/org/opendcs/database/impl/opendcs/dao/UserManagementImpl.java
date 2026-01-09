@@ -338,8 +338,10 @@ public class UserManagementImpl implements UserManagementDao
     public List<Role> getRoles(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        try (Query select = handle.createQuery("select id, name, description, updated_at from opendcs_role" +
-                                              addLimitOffset(limit, offset)))
+        try (Query select = handle.createQuery("""
+                        select id, name, description, updated_at from opendcs_role order by name ASC
+                    """ +
+                    addLimitOffset(limit, offset)))
         {
             if (limit != -1)
             {
