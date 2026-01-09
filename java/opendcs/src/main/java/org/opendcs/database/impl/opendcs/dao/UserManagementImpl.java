@@ -45,6 +45,8 @@ import org.opendcs.utils.sql.GenericColumns;
 
 import decodes.sql.DbKey;
 
+import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
+
 @ServiceProvider(service = UserManagementDao.class)
 public class UserManagementImpl implements UserManagementDao
 {
@@ -406,17 +408,5 @@ public class UserManagementImpl implements UserManagementDao
                             .orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Connection from transaction."));
         return h.registerArgument(new ConfigArgumentFactory())
                 .registerColumnMapper(new ConfigColumnMapper());
-    }
-
-    /**
-     * Helper function to add limit and offset fields to queries
-     * @param limit
-     * @param offset
-     * @return
-     */
-    private static String addLimitOffset(int limit, int offset)
-    {
-        return (limit != -1 ? " limit :limit ": "") +
-               (offset != -1 ? " offset :offset " : "");
     }
 }

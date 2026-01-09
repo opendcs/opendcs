@@ -57,6 +57,8 @@ import decodes.sql.KeyGenerator;
 import decodes.tsdb.DbIoException;
 import decodes.util.DecodesSettings;
 
+import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
+
 /**
  * Data Access Object for writing/reading DbEnum objects to/from a SQL database
  * @author mmaloney Mike Maloney, Cove Software, LLC
@@ -735,17 +737,6 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
         {
             throw new OpenDcsDataException("Unable to generate new key for Enum", ex);
         }
-    }
-    /**
-     * Helper function to add limit and offset fields to queries
-     * @param limit
-     * @param offset
-     * @return
-     */
-    private static String addLimitOffset(int limit, int offset)
-    {
-        return (offset != -1 ? " offset :offset rows" : "") +
-               (limit != -1 ? " fetch next :limit rows only": "");
     }
 
     @Override
