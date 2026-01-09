@@ -51,6 +51,8 @@ import org.opendcs.odcsapi.beans.ApiCompParm;
 import org.opendcs.odcsapi.beans.ApiComputation;
 import org.opendcs.odcsapi.beans.ApiLoadingApp;
 import org.opendcs.odcsapi.beans.ApiSite;
+import org.opendcs.odcsapi.fixtures.DatabaseSetupExtension;
+import org.opendcs.odcsapi.util.ApiConstants;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
@@ -58,7 +60,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 final class ComputationResourcesIT extends BaseApiIT
 {
@@ -155,16 +156,16 @@ final class ComputationResourcesIT extends BaseApiIT
 		// Create an active time series
 		CwmsTsId identifier = new CwmsTsId();
 		identifier.setUniqueString(String.format("%s.%s.%s.%s.%s.%s", tsSite.getDisplayName(),
-				"Precip-Cum", "Inst", "1Hour", "0", "test"));
+				"Stor-FilledCon", "Inst", "~6Hours", "0", "CENWP-COMPUTED-FCST"));
 		identifier.setSite(tsSite);
-		identifier.setStorageUnits("in");
+		identifier.setStorageUnits("ac-ft");
 		identifier.setActive(true);
-		identifier.setInterval("1Hour");
+		identifier.setInterval("~6Hours");
 		identifier.setDuration("0");
-		identifier.setDescription("Area at TS test site");
+		identifier.setDescription("Storage at TS test site");
 		CTimeSeries ts = new CTimeSeries(identifier);
 		tsId = identifier;
-		ts.setUnitsAbbr("in");
+		ts.setUnitsAbbr("ac-ft");
 
 		TimedVariable tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T00:00:00Z")), 0.01, 0);
 		tv.setFlags(VarFlags.TO_WRITE);
@@ -187,76 +188,22 @@ final class ComputationResourcesIT extends BaseApiIT
 		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T06:00:00Z")), 0.13, 0);
 		tv.setFlags(VarFlags.TO_WRITE);
 		ts.addSample(tv);
-		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T07:00:00Z")), 0.21, 0);
-		tv.setFlags(VarFlags.TO_WRITE);
-		ts.addSample(tv);
-		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T08:00:00Z")), 0.34, 0);
-		tv.setFlags(VarFlags.TO_WRITE);
-		ts.addSample(tv);
-		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T09:00:00Z")), 0.55, 0);
-		tv.setFlags(VarFlags.TO_WRITE);
-		ts.addSample(tv);
-		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T10:00:00Z")), 0.89, 0);
-		tv.setFlags(VarFlags.TO_WRITE);
-		ts.addSample(tv);
-		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T11:00:00Z")), 1.44, 0);
-		tv.setFlags(VarFlags.TO_WRITE);
-		ts.addSample(tv);
-		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T12:00:00Z")), 2.33, 0);
-		tv.setFlags(VarFlags.TO_WRITE);
-		ts.addSample(tv);
-		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T13:00:00Z")), 3.77, 0);
-		tv.setFlags(VarFlags.TO_WRITE);
-		ts.addSample(tv);
-		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T14:00:00Z")), 6.10, 0);
-		tv.setFlags(VarFlags.TO_WRITE);
-		ts.addSample(tv);
-		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T15:00:00Z")), 9.87, 0);
-		tv.setFlags(VarFlags.TO_WRITE);
-		ts.addSample(tv);
-		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T16:00:00Z")), 15.97, 0);
-		tv.setFlags(VarFlags.TO_WRITE);
-		ts.addSample(tv);
-		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T17:00:00Z")), 0.20, 0);
-		tv.setFlags(VarFlags.TO_WRITE);
-		ts.addSample(tv);
-		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T18:00:00Z")), 0.20, 0);
-		tv.setFlags(VarFlags.TO_WRITE);
-		ts.addSample(tv);
-		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T19:00:00Z")), 0.20, 0);
-		tv.setFlags(VarFlags.TO_WRITE);
-		ts.addSample(tv);
-		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T20:00:00Z")), 0.20, 0);
-		tv.setFlags(VarFlags.TO_WRITE);
-		ts.addSample(tv);
-		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T21:00:00Z")), 0.20, 0);
-		tv.setFlags(VarFlags.TO_WRITE);
-		ts.addSample(tv);
-		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T22:00:00Z")), 0.20, 0);
-		tv.setFlags(VarFlags.TO_WRITE);
-		ts.addSample(tv);
-		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T23:00:00Z")), 0.20, 0);
-		tv.setFlags(VarFlags.TO_WRITE);
-		ts.addSample(tv);
-		tv = new TimedVariable(Date.from(Instant.parse("2012-01-02T00:00:00Z")), 0.20, 0);
-		tv.setFlags(VarFlags.TO_WRITE);
-		ts.addSample(tv);
 
 		storeTimeSeries(ts);
 
 		// Create an active time series
 		CwmsTsId identifier2 = new CwmsTsId();
 		identifier2.setUniqueString(String.format("%s.%s.%s.%s.%s.%s", tsSite.getDisplayName(),
-				"Precip-Cum", "Inst", "1Hour", "0", "test1"));
+				"Stor-AuthorizedCon", "Inst", "~6Hours", "0", "CENWP-COMPUTED-FCST"));
 		identifier2.setSite(tsSite);
-		identifier2.setStorageUnits("in");
+		identifier2.setStorageUnits("ac-ft");
 		identifier2.setActive(true);
-		identifier2.setInterval("1Hour");
+		identifier2.setInterval("~6Hours");
 		identifier2.setDuration("0");
-		identifier2.setDescription("Area at TS test site");
+		identifier2.setDescription("Storage at TS test site");
 		CTimeSeries ts2 = new CTimeSeries(identifier2);
 		tsId2 = identifier2;
-		ts2.setUnitsAbbr("in");
+		ts2.setUnitsAbbr("ac-ft");
 
 		TimedVariable tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T00:00:00Z")), 0.01, 0);
 		tv2.setFlags(VarFlags.TO_WRITE);
@@ -280,60 +227,6 @@ final class ComputationResourcesIT extends BaseApiIT
 		tv2.setFlags(VarFlags.TO_WRITE);
 		ts2.addSample(tv2);
 		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T06:00:00Z")), 0.21, 0);
-		tv2.setFlags(VarFlags.TO_WRITE);
-		ts2.addSample(tv2);
-		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T07:00:00Z")), 0.34, 0);
-		tv2.setFlags(VarFlags.TO_WRITE);
-		ts2.addSample(tv2);
-		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T08:00:00Z")), 0.55, 0);
-		tv2.setFlags(VarFlags.TO_WRITE);
-		ts2.addSample(tv2);
-		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T09:00:00Z")), 0.89, 0);
-		tv2.setFlags(VarFlags.TO_WRITE);
-		ts2.addSample(tv2);
-		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T10:00:00Z")), 1.44, 0);
-		tv2.setFlags(VarFlags.TO_WRITE);
-		ts2.addSample(tv2);
-		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T11:00:00Z")), 0.00, 0);
-		tv2.setFlags(VarFlags.TO_WRITE);
-		ts2.addSample(tv2);
-		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T12:00:00Z")), 0.10, 0);
-		tv2.setFlags(VarFlags.TO_WRITE);
-		ts2.addSample(tv2);
-		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T13:00:00Z")), 0.20, 0);
-		tv2.setFlags(VarFlags.TO_WRITE);
-		ts2.addSample(tv2);
-		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T14:00:00Z")), 0.20, 0);
-		tv2.setFlags(VarFlags.TO_WRITE);
-		ts2.addSample(tv2);
-		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T15:00:00Z")), 0.20, 0);
-		tv2.setFlags(VarFlags.TO_WRITE);
-		ts2.addSample(tv2);
-		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T16:00:00Z")), 0.20, 0);
-		tv2.setFlags(VarFlags.TO_WRITE);
-		ts2.addSample(tv2);
-		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T17:00:00Z")), 0.20, 0);
-		tv2.setFlags(VarFlags.TO_WRITE);
-		ts2.addSample(tv2);
-		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T18:00:00Z")), 0.20, 0);
-		tv2.setFlags(VarFlags.TO_WRITE);
-		ts2.addSample(tv2);
-		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T19:00:00Z")), 0.20, 0);
-		tv2.setFlags(VarFlags.TO_WRITE);
-		ts2.addSample(tv2);
-		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T20:00:00Z")), 0.20, 0);
-		tv2.setFlags(VarFlags.TO_WRITE);
-		ts2.addSample(tv2);
-		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T21:00:00Z")), 0.20, 0);
-		tv2.setFlags(VarFlags.TO_WRITE);
-		ts2.addSample(tv2);
-		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T22:00:00Z")), 0.20, 0);
-		tv2.setFlags(VarFlags.TO_WRITE);
-		ts2.addSample(tv2);
-		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T23:00:00Z")), 0.20, 0);
-		tv2.setFlags(VarFlags.TO_WRITE);
-		ts2.addSample(tv2);
-		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-02T00:00:00Z")), 0.20, 0);
 		tv2.setFlags(VarFlags.TO_WRITE);
 		ts2.addSample(tv2);
 
@@ -376,8 +269,11 @@ final class ComputationResourcesIT extends BaseApiIT
 		assertTrue(found);
 		assertTrue(found2);
 
-		comp.getParmList().get(0).setSiteName(site.getPublicName());
-		comp.getParmList().get(0).setSiteId(siteId);
+		for (int i = 0; i < 2; i++)
+		{
+			comp.getParmList().get(i).setSiteName(site.getPublicName());
+			comp.getParmList().get(i).setSiteId(siteId);
+		}
 		comp.setApplicationName(app.getAppName());
 		comp.setAppId(appId);
 		comp.setAlgorithmName(alg.getName());
@@ -633,13 +529,19 @@ final class ComputationResourcesIT extends BaseApiIT
 		assertEquals(expected.getString("enabled"), actual.getString("enabled"));
 		assertEquals(expected.getString("groupName"), actual.getString("groupName"));
 		assertEquals(expected.getString("applicationName"), actual.getString("applicationName"));
-		assertEquals("Test Algorithm", actual.getString("algorithmName"));
+		assertEquals(expected.getString("algorithmName"), actual.getString("algorithmName"));
 		assertEquals(algId, actual.getLong("algorithmId"));
 		assertEquals(appId, actual.getLong("appId"));
-		assertEquals(siteId, actual.getLong("parmList[0].siteId"));
-		assertEquals(expected.getString("parmList[0].siteName"), actual.getString("parmList[0].siteName"));
-		assertEquals(expected.getString("parmList[0].dataType"), actual.getString("parmList[0].dataType"));
-		assertEquals(expected.getString("parmList[0].interval"), actual.getString("parmList[0].interval"));
+		for (int i = 0; i < 2; i++)
+		{
+			assertEquals(siteId, actual.getLong("parmList[" + i + "].siteId"));
+			String dataType = actual.getString("parmList[" + i + "].dataType");
+			String[] dataTypeParts = dataType != null ? dataType.split(":") : null;
+			assertEquals(expected.getString("parmList[" + i + "].dataType"),
+					dataTypeParts != null ? String.format("%s:%s", dataTypeParts[0], dataTypeParts[1]): null);
+			assertEquals(expected.getString("parmList[" + i + "].interval"),
+					actual.getString("parmList[" + i + "].interval"));
+		}
 		assertEquals(expected.getString("comment"), actual.getString("comment"));
 	}
 
@@ -742,10 +644,16 @@ final class ComputationResourcesIT extends BaseApiIT
 	@TestTemplate
 	void testExecuteComputation() throws Exception
 	{
-		String tsids = "Test Site.Precip-Cum.Inst.1Hour.0.test,Test Site.Precip-Cum.Inst.1Hour.0.test1";
+		String tsids = "Test Site.Stor-AuthorizedCon.Inst.~6Hours.0.CENWP-COMPUTED-FCST,"
+				+ "Test Site.Stor-FilledCon.Inst.~6Hours.0.CENWP-COMPUTED-FCST";
+
+		String organization = DatabaseSetupExtension.getOrganization();
 
 		ClientRequestFilter auth = ctx ->
-				ctx.getHeaders().putSingle("Authorization", authHeader);
+		{
+			ctx.getHeaders().putSingle(ApiConstants.ORGANIZATION_HEADER, organization);
+			ctx.getHeaders().putSingle("Cookie", getCookie());
+		};
 
 		WebTarget target;
 		try (Client client = ClientBuilder.newBuilder()
@@ -753,15 +661,14 @@ final class ComputationResourcesIT extends BaseApiIT
 				.register(auth)
 				.build())
 		{
-
-			URI baseURI = URI.create(RestAssured.baseURI);
+			URI baseURI = URI.create(String.format("%s:%d/%s", RestAssured.baseURI, RestAssured.port, RestAssured.basePath));
 			target = client.target(baseURI)
 					.path("runcomputation")
 					.queryParam("computationid", compId)
 					.queryParam("tsids", tsids);
 
 			List<InboundSseEvent> events = new CopyOnWriteArrayList<>();
-			CountDownLatch latch = new CountDownLatch(1);
+			CountDownLatch latch = new CountDownLatch(5);
 
 			try(SseEventSource source = SseEventSource.target(target).build())
 			{
@@ -771,13 +678,17 @@ final class ComputationResourcesIT extends BaseApiIT
 						events.add(event);
 						latch.countDown();
 					},
-					(Throwable error) -> fail("SSE Error: " + error.getMessage())
+					(Throwable error) -> {
+						throw new AssertionError("SSE Error: " + error.getMessage());
+					},
+					() -> System.out.println("SSE completed")
 				);
-
 				source.open();
-
+				assertTrue(source.isOpen());
 				boolean received = latch.await(60, TimeUnit.SECONDS);
 				assertTrue(received, "Timed out waiting for SSE events");
+				source.close();
+				assertFalse(source.isOpen());
 
 				assertFalse(events.isEmpty(), "SSE did not receive any events");
 				InboundSseEvent event = events.getFirst();

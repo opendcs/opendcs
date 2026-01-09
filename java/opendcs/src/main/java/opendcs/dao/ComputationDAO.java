@@ -54,6 +54,7 @@ import opendcs.util.functional.ThrowingSupplier;
 import opendcs.util.sql.WrappedConnection;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.event.Level;
 
 /**
 Data Access Object for reading/writing computations.
@@ -223,11 +224,11 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 			);
 			PreparedStatement getAppId = c.prepareStatement(
 				"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?"
-			);
+			)
 		)
 		{
 			getComp.setLong(1,compId.getValue());
-			try( ResultSet rs = getComp.executeQuery(); ) {
+			try( ResultSet rs = getComp.executeQuery() ) {
 				if (rs.next())
 				{
 					DbComputation comp = rs2comp(rs);
@@ -251,12 +252,13 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 					if (!appId.isNull())
 					{
 						getAppId.setLong(1,appId.getValue());
-						try( ResultSet rs2 = getAppId.executeQuery(); ){
-							if (rs.next())
-							comp.setApplicationName(rs.getString(1));
+						try (ResultSet rs2 = getAppId.executeQuery())
+						{
+							if (rs2.next())
+							{
+								comp.setApplicationName(rs2.getString(1));
+							}
 						}
-
-
 					}
 					compCache.put(comp);
 					return comp;
@@ -418,10 +420,10 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 		try(
 			PreparedStatement getTimeLoaded = conn.prepareStatement(
 				"select DATE_TIME_LOADED from CP_COMPUTATION where COMPUTATION_ID = ?"
-			);
+			)
 		) {
 			getTimeLoaded.setLong(1,comp.getId().getValue());
-			try(ResultSet rs = getTimeLoaded.executeQuery(); )
+			try(ResultSet rs = getTimeLoaded.executeQuery() )
 			{
 				if (!rs.next())
 				{
@@ -452,11 +454,11 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 			);
 			PreparedStatement getAppId = conn.prepareStatement(
 				"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?"
-			);
+			)
 		){
 			getComp.setString(1,name);
 
-			try(ResultSet rs = getComp.executeQuery(); )
+			try(ResultSet rs = getComp.executeQuery() )
 			{
 				if (rs.next())
 				{
@@ -648,7 +650,7 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 			inTransaction(dao ->
 			{
 				try (CompDependsDAI compDependsDAO = db.makeCompDependsDAO();
-					 DataTypeDAI dataTypeDao = db.makeDataTypeDAO();)
+					 DataTypeDAI dataTypeDao = db.makeDataTypeDAO())
 				{
 					dataTypeDao.inTransactionOf(dao);
 					compDependsDAO.inTransactionOf(dao);
@@ -749,7 +751,17 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 							// parm uses previously unknown ID? Must write it too.
 							if (dt != null && dt.getId() == Constants.undefinedId)
 							{
-								dataTypeDao.writeDataType(dt);
+								try
+								{
+									DataType tempDt = dataTypeDao.lookupDataType(dt.getCode());
+									dt.setId(tempDt.getId());
+								}
+								catch (NoSuchObjectException ex)
+								{
+									dataTypeDao.writeDataType(dt);
+									log.atLevel(Level.DEBUG).setCause(ex)
+											.log("Unable to find DataType, writing a new record");
+								}
 								dcp.setDataTypeId(dt.getId());
 							}
 							query.append(", ?");
@@ -891,5 +903,4 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 		algorithmDAO.close();
 		propsDao.close();
 	}
-
 }

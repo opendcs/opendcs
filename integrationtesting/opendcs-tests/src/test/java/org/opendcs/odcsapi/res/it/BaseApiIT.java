@@ -78,6 +78,7 @@ public class BaseApiIT extends AppTestBase
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	protected static String authHeader = null;
 	protected static RequestSpecification authSpec = null;
+	private static Cookie cookie;
 
 	@ConfiguredField
 	protected TomcatServer tomcat;
@@ -160,7 +161,7 @@ public class BaseApiIT extends AppTestBase
 		session.setPrincipal(mcup);
 		session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, mcup);
 		
-		Cookie cookie = new Cookie.Builder("JSESSIONID", COOKIE)
+		cookie = new Cookie.Builder("JSESSIONID", COOKIE)
 								  .setHttpOnly(true)
 								  .setSecured(true)
 								  .setMaxAge(-1)
@@ -185,6 +186,16 @@ public class BaseApiIT extends AppTestBase
 		.assertThat()
 			.statusCode(is(Response.Status.OK.getStatusCode()))
 		;
+	}
+
+	void logout()
+	String getCookie()
+	{
+		if (cookie == null)
+		{
+			authenticate();
+		}
+		return String.format("%s=%s", cookie.getName(), cookie.getValue());
 	}
 
 	void logout()

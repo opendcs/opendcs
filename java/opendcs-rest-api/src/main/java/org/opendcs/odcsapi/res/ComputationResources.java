@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.UUID;
 
 import decodes.db.DataType;
+import decodes.db.DatabaseException;
 import decodes.db.Site;
 import decodes.sql.DbKey;
 import decodes.tsdb.CompFilter;
@@ -355,13 +356,13 @@ public final class ComputationResources extends OpenDcsResource
 			dai.writeComputation(dbComp);
 			return Response.status(Response.Status.CREATED).entity(map(dbComp)).build();
 		}
-		catch(DbIoException ex)
+		catch(DbIoException | DatabaseException ex)
 		{
 			throw new DbException("Unable to store computation", ex);
 		}
 	}
 
-	static DbComputation map(ApiComputation comp)
+	static DbComputation map(ApiComputation comp) throws DatabaseException
 	{
 		DbComputation ret;
 		if (comp.getComputationId() != null)
@@ -412,7 +413,7 @@ public final class ComputationResources extends OpenDcsResource
 		return ret;
 	}
 
-	static DbCompParm map(ApiCompParm parm)
+	static DbCompParm map(ApiCompParm parm) throws DatabaseException
 	{
 		if (parm == null)
 		{
@@ -421,9 +422,14 @@ public final class ComputationResources extends OpenDcsResource
 		DbCompParm ret = new DbCompParm(parm.getAlgoRoleName(),
 				parm.getDataTypeId() != null ? DbKey.createDbKey(parm.getDataTypeId()) : DbKey.NullKey,
 				parm.getInterval(), parm.getTableSelector(), parm.getDeltaT());
-		if (parm.getDataTypeId() != null)
+		if (parm.getDataTypeId() != null || parm.getDataType() != null)
 		{
-			DataType dt = new DataType(parm.getDataType(), parm.getDataTypeId().toString());
+			String[] parts = parm.getDataType().split(":");
+			DataType dt = new DataType(parts[0], parts[1]);
+			if (parm.getDataTypeId() != null)
+			{
+				dt.setId(DbKey.createDbKey(parm.getDataTypeId()));
+			}
 			ret.setDataType(dt);
 		}
 		ret.setInterval(parm.getInterval());

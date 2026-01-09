@@ -5,8 +5,8 @@
   "appType" : "Computation",
   "comment" : "Performs computations",
   "lastModified" : null,
-  "manualEditingApp" : true,
+  "manualEditingApp" : false,
   "properties" : {
-    "prop1" : "value1"
+    "compproc_util": "True"
   }
 }
