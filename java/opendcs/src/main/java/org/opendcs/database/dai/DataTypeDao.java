@@ -1,6 +1,5 @@
 package org.opendcs.database.dai;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,7 +47,7 @@ public interface DataTypeDao extends OpenDcsDao
      * @return
      * @throws OpenDcsDataException
      */
-	Optional<DataType> lookupDataType(DataTransaction tx, String dataTypeCode) throws OpenDcsDataException;;
+	Optional<DataType> lookupDataType(DataTransaction tx, String dataTypeCode) throws OpenDcsDataException;
 
 	/**
      * Retrei

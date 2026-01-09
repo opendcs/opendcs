@@ -17,7 +17,7 @@ import decodes.db.DataType;
 import decodes.util.DecodesSettings;
 
 @EnableIfTsDb
-public class DataTypeDaoTestIT extends AppTestBase
+class DataTypeDaoTestIT extends AppTestBase
 {
     @ConfiguredField
     OpenDcsDatabase db;

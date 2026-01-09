@@ -12,7 +12,7 @@ import decodes.db.DataType;
 import decodes.db.DatabaseException;
 import decodes.sql.DbKey;
 
-public class DataTypeMapper extends PrefixRowMapper<DataType>
+public final class DataTypeMapper extends PrefixRowMapper<DataType>
 {
 
     private DataTypeMapper(String prefix)

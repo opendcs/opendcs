@@ -81,7 +81,8 @@ public class DataTypeDaoImpl implements DataTypeDao
     }
 
     @Override
-    public Optional<DataType> lookupDataType(DataTransaction tx, String dataTypeCode) throws OpenDcsDataException {
+    public Optional<DataType> lookupDataType(DataTransaction tx, String dataTypeCode) throws OpenDcsDataException
+    {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
 
