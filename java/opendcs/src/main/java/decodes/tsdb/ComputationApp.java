@@ -258,7 +258,7 @@ public class ComputationApp extends TsdbAppTemplate
 			while(!shutdownFlag)
 			{
 				log.trace("ComputationApp start of main loop.");
-				try(
+				try(var timer = MDCTimer.startTimer("computationCycle");
 					TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
 					LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
 					TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
@@ -362,7 +362,7 @@ public class ComputationApp extends TsdbAppTemplate
 							log.debug("Trying computation '{}' #trigs={}",
 									  comp.getName(), comp.getTriggeringRecNums().size());
 							compsTried++;
-							try
+							try (var compTimer = MDCTimer.startTimer("timer:"+comp.getName()))
 							{
 								comp.prepareForExec(theDb);
 								comp.apply(dataCollection, theDb);
