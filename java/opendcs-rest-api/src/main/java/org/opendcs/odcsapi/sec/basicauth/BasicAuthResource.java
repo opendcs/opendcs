@@ -15,13 +15,10 @@
 
 package org.opendcs.odcsapi.sec.basicauth;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Base64;
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
-import javax.sql.DataSource;
-
 import decodes.util.DecodesSettings;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.StringToClassMapItem;
@@ -43,6 +40,11 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+
+import org.opendcs.authentication.OpenDcsAuthException;
+import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityProvider;
+import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInProviderCredentials;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
@@ -57,8 +59,6 @@ import org.opendcs.odcsapi.sec.cwms.CwmsAuthorizationDAO;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-
-import static org.opendcs.odcsapi.res.DataSourceContextCreator.DATA_SOURCE_ATTRIBUTE_KEY;
 
 @Path("/")
 @Tag(name = "REST - Authentication and Authorization", description = "Endpoints for authentication and authorization.")
@@ -89,7 +89,7 @@ public final class BasicAuthResource extends OpenDcsResource
 					They may also be passed in a GET call to the 'credentials' method, \
 					(e.g. '*http://localhost:8080/odcsapi/credentials*') containing an HTTP Authentication Basic \
 					header in the form 'username:password'.
-					
+
 					The returned data to the GET call will be empty.""",
 			requestBody = @RequestBody(
 					description = "Login Credentials",
@@ -147,22 +147,27 @@ public final class BasicAuthResource extends OpenDcsResource
 
 		String authorizationHeader = httpHeaders.getHeaderString(HttpHeaders.AUTHORIZATION);
 		credentials = getCredentials(credentials, authorizationHeader);
-		validateDbCredentials(credentials);
-		Set<OpenDcsApiRoles> roles = getUserRoles(credentials.getUsername(), organizationId);
-		OpenDcsPrincipal principal = new OpenDcsPrincipal(credentials.getUsername(), roles);
-		HttpSession oldSession = httpServletRequest.getSession(false);
-		if(oldSession != null)
+		var user = validateDbCredentials(credentials);
+		if (user.isPresent())
 		{
-			oldSession.invalidate();
+			var theUser = user.get();
+			var roles = new HashSet<OpenDcsApiRoles>();
+			for (var role: theUser.roles)
+			{
+				roles.add(OpenDcsApiRoles.valueOf(role.name));
+			}
+			OpenDcsPrincipal principal = new OpenDcsPrincipal(theUser.email, roles);
+			HttpSession oldSession = httpServletRequest.getSession(false);
+			if(oldSession != null)
+			{
+				oldSession.invalidate();
+			}
+			HttpSession session = httpServletRequest.getSession(true);
+
+			session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, principal);
+			return Response.ok().entity(user.get()).build();
 		}
-		HttpSession session = httpServletRequest.getSession(true);
-		
-		session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, principal);
-		HashMap<String,String> ret = new HashMap<>();
-		ret.put("email", credentials.getUsername());
-		return Response.ok()
-				.entity(ret)
-				.build();
+		return Response.status(Status.UNAUTHORIZED).build();
 	}
 
 	private static void verifyCredentials(Credentials credentials)
@@ -173,22 +178,7 @@ public final class BasicAuthResource extends OpenDcsResource
 		{
 			throw new BadRequestException("Neither username nor password may be null.");
 		}
-		for(int i = 0; i < u.length(); i++)
-		{
-			char c = u.charAt(i);
-			if(!Character.isLetterOrDigit(c) && c != '_' && c != '.')
-			{
-				throw new BadRequestException("Username may only contain alphanumeric, underscore, or period.");
-			}
-		}
-		for(int i = 0; i < p.length(); i++)
-		{
-			char c = p.charAt(i);
-			if(Character.isWhitespace(c) || c == '\'')
-			{
-				throw new BadRequestException("Password may not contain whitespace or quote.");
-			}
-		}
+
 	}
 
 	private static Credentials getCredentials(Credentials postBody, String authorizationHeader)
@@ -243,27 +233,25 @@ public final class BasicAuthResource extends OpenDcsResource
 		return credentials;
 	}
 
-	private void validateDbCredentials(Credentials creds) throws WebAppException
+	private Optional<User> validateDbCredentials(Credentials creds) throws WebAppException
 	{
 		var db = this.createDb();
 		// Use username and password to attempt to connect to the database
 
 		try (var tx = db.newTransaction())
 		{
-			var userMgmt = db.getDao(UserManagementDao.class).orElseThrow()
-			var user userMgmt.getUser(tx, )
-			/*
-			 Intentional unused connection. Makes a new db connection using passed credentials
-			 This validates the username & password and will throw SQLException if user/pw is not valid.
-			*/
-			DataSource dataSource = (DataSource) context.getAttribute(DATA_SOURCE_ATTRIBUTE_KEY);
-			//noinspection EmptyTryBlock
-			try (Connection ignored = dataSource.getConnection(creds.getUsername(), creds.getPassword()))
-			{// NOSONAR
-
+			var userMgmt = db.getDao(UserManagementDao.class).orElseThrow();
+			var providers = userMgmt.getIdentityProvidersForSubject(tx, creds.getUsername());
+			for (var provider: providers)
+			{
+				if (provider instanceof BuiltInIdentityProvider idp)
+				{
+					return idp.login(db, tx, new BuiltInProviderCredentials(creds.getUsername(), creds.getPassword()));
+				}
 			}
+			throw new WebAppException(Response.Status.FORBIDDEN.getStatusCode(), "Unable to authorize user.");
 		}
-		catch(OpenDcsDataException | SQLException ex)
+		catch(OpenDcsDataException | OpenDcsAuthException ex)
 		{
 			throw new WebAppException(Response.Status.FORBIDDEN.getStatusCode(), "Unable to authorize user.", ex);
 		}

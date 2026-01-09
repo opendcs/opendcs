@@ -29,8 +29,20 @@ import java.util.stream.Collectors;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.statement.Call;
 import org.jdbi.v3.postgres.PostgresPlugin;
+import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityProvider;
 import org.opendcs.database.DatabaseService;
+import org.opendcs.database.JdbiTransaction;
+import org.opendcs.database.TransactionContextImpl;
+import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.DatabaseEngine;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.impl.opendcs.dao.UserManagementImpl;
+import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
+import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
+import org.opendcs.database.model.IdentityProvider;
+import org.opendcs.database.model.Role;
 import org.opendcs.spi.database.MigrationHelper;
 import org.opendcs.spi.database.MigrationProvider;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -38,6 +50,7 @@ import org.slf4j.Logger;
 
 import decodes.dbimport.DbImport;
 import decodes.launcher.Profile;
+import decodes.sql.DbKey;
 import decodes.tsdb.ImportComp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
@@ -88,6 +101,8 @@ public class OpenDcsPgProvider implements MigrationProvider
     public void registerJdbiPlugins(Jdbi jdbi)
     {
         jdbi.installPlugin(new PostgresPlugin());
+        jdbi.registerArgument(new DatabaseKeyArgumentFactory());
+        jdbi.registerColumnMapper(new DatabaseKeyColumnMapper());
     }
 
     @Override
@@ -99,11 +114,16 @@ public class OpenDcsPgProvider implements MigrationProvider
     @Override
     public void createUser(Jdbi jdbi, String username, String password, List<String> roles)
     {
+        final var context = new TransactionContextImpl(null, null, DatabaseEngine.POSTGRES);
         jdbi.useTransaction(h ->
         {
+            var tx = new JdbiTransaction(h, context);
+            var dao = new UserManagementImpl();
+
             try(Call createUser = h.createCall("call create_user(:user,:pw)");
                 Call assignRole = h.createCall("call assign_role(:user,:role)");)
             {
+                setupIdentityProvider(tx, dao);
                 createUser.bind("user",username)
                           .bind("pw", password)
                           .invoke();
@@ -114,7 +134,30 @@ public class OpenDcsPgProvider implements MigrationProvider
                               .invoke();
                 }
             }
+            catch (OpenDcsDataException ex)
+            {
+                throw new RuntimeException("Unable to setup builtin identity provider.", ex);
+            }
         });
+    }
+
+    private void setupIdentityProvider(DataTransaction tx, UserManagementDao dao) throws OpenDcsDataException
+    {
+        var providers = dao.getIdentityProviders(tx, -1, -1);
+        for (var provider: providers)
+        {
+            if (provider instanceof BuiltInIdentityProvider)
+            {
+                return;
+            }
+        }
+        dao.addRole(tx, new Role(null, "ODCS_API_GUEST", null, null));
+        dao.addRole(tx, new Role(null, "ODCS_API_USER", null, null));
+        dao.addRole(tx, new Role(null, "ODCS_API_ADMIN", null, null));
+
+        var newProvider = new BuiltInIdentityProvider(DbKey.NullKey, "builttin", null, Map.of());
+
+        dao.addIdentityProvider(tx, newProvider);
     }
 
 
