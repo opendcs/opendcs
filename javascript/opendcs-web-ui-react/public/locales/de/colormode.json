@@ -1,0 +1,4 @@
+{
+  "activate": "Farbmodus auf $t({{mode}}) setzen",
+  "dropdownLabel": "Öffnen Sie das Farbmodus-Menü"
+}

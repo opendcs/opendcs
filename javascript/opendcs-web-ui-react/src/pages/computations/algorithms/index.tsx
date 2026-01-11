@@ -1,3 +1,6 @@
+import { useTranslation } from "react-i18next";
+
 export const Algorithms = () => {
-  return <div>Algorithms</div>;
+  const [t] = useTranslation("algorithms");
+  return <div>{t("algorithms:algorithmsTitle")}</div>;
 };

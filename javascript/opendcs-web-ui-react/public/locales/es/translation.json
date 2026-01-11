@@ -1,0 +1,12 @@
+{
+  "actions": "Comportamiento",
+  "login": "Acceso",
+  "logout": "Cerrar sesión",
+  "name": "Nombre",
+  "password": "Contraseña",
+  "username": "Nombre de usuario",
+  "value": "Valor",
+  "Auto": "Auto",
+  "Dark": "Oscuro",
+  "Light": "Luz"
+}

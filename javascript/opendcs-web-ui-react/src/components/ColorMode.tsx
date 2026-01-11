@@ -2,10 +2,11 @@ import { useEffect } from "react";
 import { useTheme } from "../contexts/ThemeContext";
 import ModeIcon from "./ModeIcon";
 import { Button, NavDropdown } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
 
 export const ColorModes = () => {
   const { theme, setTheme } = useTheme();
-
+  const [t] = useTranslation("colormode");
   useEffect(() => {
     if (theme.colorMode === "auto") {
       document.documentElement.dataset.bsTheme = globalThis.matchMedia(
@@ -48,23 +49,27 @@ export const ColorModes = () => {
   }
 
   return (
-    <NavDropdown title={ActiveIcon} id="color-mode" drop="start">
-      <NavDropdown.Item>
-        <Button onClick={() => setTheme({ colorMode: "light" })}>
+    <NavDropdown title={ActiveIcon} id="color-mode" drop="start"
+                 aria-label={t("colormode:dropdownLabel")}>
+      <NavDropdown.Item role="menuitem">
+        <Button onClick={() => setTheme({ colorMode: "light" })}
+                aria-label={t("colormode:activate", {mode: 'Light'})}>
           <ModeIcon name="sun-fill" className="bi me-2 opacity-50 theme-icon" />
-          Light
+          {t("translation:Light")}
         </Button>
       </NavDropdown.Item>
-      <NavDropdown.Item>
-        <Button onClick={() => setTheme({ colorMode: "dark" })}>
+      <NavDropdown.Item role="menuitem">
+        <Button onClick={() => setTheme({ colorMode: "dark" })}
+                aria-label={t("colormode:activate", {mode: 'Dark'})}>
           <ModeIcon name="moon-stars-fill" className="bi me-2 opacity-50 theme-icon" />
-          Dark
+          {t("translation:Dark")}
         </Button>
       </NavDropdown.Item>
-      <NavDropdown.Item>
-        <Button onClick={() => setTheme({ colorMode: "auto" })}>
+      <NavDropdown.Item role="menuitem">
+        <Button onClick={() => setTheme({ colorMode: "auto" })}
+                aria-label={t("colormode:activate", {mode: 'Auto'})}>
           <ModeIcon name="circle-half" className="bi me-2 opacity-50 theme-icon" />
-          Auto
+          {t("translation:Auto")}
         </Button>
       </NavDropdown.Item>
     </NavDropdown>

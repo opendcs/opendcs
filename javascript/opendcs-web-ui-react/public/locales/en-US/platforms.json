@@ -1,0 +1,12 @@
+{
+    "platformsTitle": "Platforms",
+    "header": {
+        "Id": "Id",
+        "Platform": "Platform",
+        "Agency": "Agency",
+        "TransportId": "Transport ID",
+        "Config": "Config",
+        "Description": "Description",
+        "Expiration": "Expiration"
+    }
+}

@@ -5,5 +5,8 @@
     "logout": "Logout",
     "name": "Name",
     "value": "Value",
-    "actions": "Actions"
+    "actions": "Actions",
+    "Auto": "Auto",
+    "Light": "Light",
+    "Dark": "Dark"
 }

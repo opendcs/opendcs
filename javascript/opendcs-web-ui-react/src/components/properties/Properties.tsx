@@ -9,7 +9,7 @@ import { Button, Container, Form } from "react-bootstrap";
 import "datatables.net-responsive";
 import { Pencil, Save, Trash } from "react-bootstrap-icons";
 import type { ApiPropSpec } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import { renderToString } from "react-dom/server";
 import { useTranslation } from "react-i18next";
 
@@ -66,7 +66,7 @@ export const PropertyActions: React.FC<ActionProps> = ({
             saveProp(data);
           }}
           variant="primary"
-          aria-label={t("save prop", {name: data.name})}
+          aria-label={t("properties:save prop", {name: data.name})}
           size="sm"
         >
           <Save />
@@ -75,7 +75,7 @@ export const PropertyActions: React.FC<ActionProps> = ({
         <Button
           onClick={() => editProp(data.name)}
           variant="warning"
-          aria-label={t("edit prop", {name: data.name})}
+          aria-label={t("properties:edit prop", {name: data.name})}
           size="sm"
         >
           <Pencil />
@@ -85,7 +85,7 @@ export const PropertyActions: React.FC<ActionProps> = ({
         onClick={() => removeProp(data.name)}
         variant="danger"
         size="sm"
-        aria-label={t("delete prop", {name: data.name})}
+        aria-label={t("properties:delete prop", {name: data.name})}
       >
         <Trash />
       </Button>
@@ -112,7 +112,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
   classes = "",
 }) => {
   const table = useRef<DataTableRef>(null);
-  const [t] = useTranslation();
+  const [t] = useTranslation(["properties"]);
 
   const renderEditable = (
     data: string | number | readonly string[] | undefined,
@@ -158,7 +158,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
               addProp();
             },
             attr: {
-              "aria-label": t("add prop"),
+              "aria-label": t("properties:add prop"),
             },
           },
         ],
@@ -231,12 +231,12 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
         ref={table}
         className="table table-hover table-striped tablerow-cursor w-100 border"
       >
-        <caption className="captionTitleCenter">t("PropertiesTitle")</caption>
+        <caption className="captionTitleCenter">{t("properties:PropertiesTitle")}</caption>
         <thead>
           <tr>
-            <th>{t("name")}</th>
-            <th>{t("value")}</th>
-            <th>{t("actions")}</th>
+            <th>{t("translation:name")}</th>
+            <th>{t("translation:value")}</th>
+            <th>{t("translation:actions")}</th>
           </tr>
         </thead>
       </DataTable>

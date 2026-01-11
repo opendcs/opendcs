@@ -1,6 +1,12 @@
 {
-    "username": "Benutzernamen",
-    "password": "Passwort",
-    "login": "Login",
-    "logout": "Anmeldung"
+  "username": "Benutzernamen",
+  "password": "Passwort",
+  "login": "Login",
+  "logout": "Anmeldung",
+  "actions": "Aktionen",
+  "name": "Name",
+  "value": "Wert",
+  "Auto": "Auto",
+  "Dark": "Dunkel",
+  "Light": "Licht"
 }

@@ -1,0 +1,12 @@
+{
+  "platformsTitle": "Plattformen",
+  "header": {
+    "Agency": "Agentur",
+    "Config": "Konfig",
+    "Description": "Beschreibung",
+    "Expiration": "Ablauf",
+    "Id": "Ausweis",
+    "Platform": "Plattform",
+    "TransportId": "Transport-ID"
+  }
+}

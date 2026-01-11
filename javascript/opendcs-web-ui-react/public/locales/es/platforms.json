@@ -1,0 +1,13 @@
+{
+  "header": {
+    "Agency": "Agencia",
+    "Config": "configuración",
+    "Description": "Descripción",
+    "Expiration": "Vencimiento",
+    "Id": "Identificación",
+    "Platform": "Plataforma",
+    "TransportId": "Identificación de transporte"
+  
+  },
+  "platformsTitle": "Plataformas"
+}

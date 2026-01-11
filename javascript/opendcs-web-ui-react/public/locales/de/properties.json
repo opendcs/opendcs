@@ -1,0 +1,9 @@
+{
+  "PropertiesTitle": "Eigenschaften",
+  "add prop": "Neue Eigenschaft hinzufügen",
+  "delete prop": "Eigenschaft mit dem Namen {{name}} löschen",
+  "edit prop": "Bearbeiten Sie die Eigenschaft mit dem Namen {{name}}",
+  "name input": "Namenseingabe für die Eigenschaft mit dem Namen {{name}}",
+  "save prop": "Eigenschaft mit dem Namen {{name}} speichern",
+  "value input": "Werteingabe für die Eigenschaft mit dem Namen {{name}}"
+}

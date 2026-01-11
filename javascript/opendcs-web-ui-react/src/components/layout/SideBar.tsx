@@ -1,7 +1,10 @@
 import { Container, ListGroup, Nav } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
 import { Link, Outlet } from "react-router-dom";
 
 export const SideBar = () => {
+  const [t] = useTranslation(["platforms", "sites", "algorithms"]);
+
   return (
     <>
       <Nav
@@ -12,17 +15,17 @@ export const SideBar = () => {
           <Nav.Item as={ListGroup.Item} className="mb-2">
             <span className="text-primary-emphasis fw-bold">Decodes</span>
             <Nav.Link as={Link} to="/platforms" className="">
-              Platforms
+              {t("platforms:platformsTitle")}
             </Nav.Link>
             <Nav.Link as={Link} to="/sites">
-              Sites
+              {t("sites:sitesTitle")}
             </Nav.Link>
           </Nav.Item>
 
           <Nav.Item as={ListGroup.Item} className="mb-2">
             <span className="text-primary-emphasis fw-bold">Computation</span>
             <Nav.Link as={Link} to="/algorithms">
-              Algorithms
+              {t("algorithms:algorithmsTitle")}
             </Nav.Link>
           </Nav.Item>
         </ListGroup>

@@ -4,12 +4,14 @@ import { Card } from "react-bootstrap";
 import { useEffect, useState } from "react";
 import { ApiPlatformRef, RESTDECODESPlatformRecordsApi } from "opendcs-api";
 import { useApi } from "../../contexts/ApiContext";
+import { useTranslation } from "react-i18next";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
 
 export const Platforms = () => {
   const api = useApi();
+  const [t] = useTranslation();
   const [tableData, setTableData] = useState<ApiPlatformRef[]>([]);
 
   const columns = [
@@ -42,14 +44,14 @@ export const Platforms = () => {
         >
           <thead>
             <tr>
-              <th>Id</th>
-              <th>Platform</th>
-              <th>Agency</th>
-              <th>Transport-ID</th>
-              <th>Config</th>
-              {/*<th>Expiration</th>*/}
-              <th>Description</th>
-              {/*<th>Actions</th>*/}
+              <th>{t("platforms:header.Id")}</th>
+              <th>{t("platforms:header.Platform")}</th>
+              <th>{t("platforms:header.Agency")}</th>
+              <th>{t("platforms:header.TransportId")}</th>
+              <th>{t("platforms:header.Config")}</th>
+              {/*<th>{t("platforms:header.Expiration")}</th>*/}
+              <th>{t("platforms:header.Description")}</th>
+              {/*<th>{t("actions")}</th>*/}
             </tr>
           </thead>
         </DataTable>
