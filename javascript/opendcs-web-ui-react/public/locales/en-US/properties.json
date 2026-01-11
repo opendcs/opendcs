@@ -1,0 +1,9 @@
+{
+    "PropertiesTitle": "Properties",
+    "add prop": "Add new property",
+    "edit prop": "Edit property named {{name}}",
+    "delete prop": "Delete property named {{name}}",
+    "save prop": "Save property named {{name}}",
+    "name input": "name input for property named {{name}}",
+    "value input": "value input for property named {{name}}"
+}

@@ -1,11 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { PropertiesTable, type Property } from "./Properties";
-import { userEvent } from "@storybook/testing-library";
 import { expect, waitFor, within } from "storybook/test";
 import { useArgs, useState } from "storybook/internal/preview-api";
 import { act } from "@testing-library/react";
-
-//userEvent.setup();
 
 const meta = {
   component: PropertiesTable,

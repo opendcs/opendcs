@@ -5,18 +5,26 @@ import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 import { AuthContext } from "../../contexts/AuthContext";
 import { ColorModes } from "../";
+import { useTranslation } from "react-i18next";
+import availableLanguages from "../../lang";
 
 export function TopBar() {
+  const { t, i18n } = useTranslation();
   const { user, logout } = useContext(AuthContext);
 
   return (
     <Navbar sticky="top" expand="lg" bg="primary">
       <Container fluid>
-        <Navbar.Brand href="#">OpenDCS</Navbar.Brand>
+        <Navbar.Brand href="#">OpenDCS lang="{i18n.language}" resolvlang="{i18n.resolvedLanguage}" langs={JSON.stringify(availableLanguages)}
+          - {navigator.language} - {JSON.stringify(navigator.languages)}
+        </Navbar.Brand>
       </Container>
       <Nav className="navbar-right ms-md-auto flex-row-flex-warp">
         <Nav.Item>
           <ColorModes />
+        </Nav.Item>
+        <Nav.Item>
+
         </Nav.Item>
         {user && (
           <NavDropdown
@@ -28,7 +36,7 @@ export function TopBar() {
             <NavDropdown.Item>Admin</NavDropdown.Item>
             <NavDropdown.Divider />
             <NavDropdown.Item>
-              <Button onClick={logout}>Logout</Button>
+              <Button onClick={logout}>{t("logout")}</Button>
             </NavDropdown.Item>
           </NavDropdown>
         )}

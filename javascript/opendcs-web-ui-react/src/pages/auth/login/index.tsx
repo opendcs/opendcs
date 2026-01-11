@@ -5,8 +5,10 @@ import "./Login.css";
 import { Credentials, RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
 import { useApi } from "../../../contexts/ApiContext";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export default function Login() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { setUser } = useAuth();
@@ -52,11 +54,11 @@ export default function Login() {
               </div>
               <Form onSubmit={handleLogin}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Username</Form.Label>
+                  <Form.Label>{t("username")}</Form.Label>
                   <Form.Control type="text" id="username" required name="username" />
                 </Form.Group>
                 <Form.Group className="mb-3">
-                  <Form.Label>Password</Form.Label>
+                  <Form.Label>{t("password")}</Form.Label>
                   <Form.Control
                     type="password"
                     id="password"
@@ -65,7 +67,7 @@ export default function Login() {
                   />
                 </Form.Group>
                 <Button variant="primary" type="submit">
-                  Login
+                  {t("login")}
                 </Button>
               </Form>
             </Container>
