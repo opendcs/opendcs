@@ -158,7 +158,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
               addProp();
             },
             attr: {
-              "aria-label": t("properties:add prop"),
+              "aria-label": t("properties:add_prop"),
             },
           },
         ],
