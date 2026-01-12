@@ -8,5 +8,7 @@
   "value": "Valor",
   "Auto": "Auto",
   "Dark": "Oscuro",
-  "Light": "Luz"
+  "Light": "Luz",
+  "Change language": "Cambiar idioma a {{lang}}",
+  "Language Menu": "Abrir menú de traducción"
 }

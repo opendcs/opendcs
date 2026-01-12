@@ -1,12 +1,14 @@
 {
-    "username": "Username",
-    "password": "Password",
-    "login": "Login",
-    "logout": "Logout",
-    "name": "Name",
-    "value": "Value",
-    "actions": "Actions",
-    "Auto": "Auto",
-    "Light": "Light",
-    "Dark": "Dark"
+  "username": "Username",
+  "password": "Password",
+  "login": "Login",
+  "logout": "Logout",
+  "name": "Name",
+  "value": "Value",
+  "actions": "Actions",
+  "Auto": "Auto",
+  "Light": "Light",
+  "Dark": "Dark",
+  "Language Menu": "Open Translation Menu",
+  "Change language": "Change language to {{lang}}"
 }

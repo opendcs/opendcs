@@ -8,5 +8,7 @@
   "value": "Wert",
   "Auto": "Auto",
   "Dark": "Dunkel",
-  "Light": "Licht"
+  "Light": "Licht",
+  "Change language": "Sprache ändern zu {{lang}}",
+  "Language Menu": "Öffnen Sie das Übersetzungsmenü"
 }

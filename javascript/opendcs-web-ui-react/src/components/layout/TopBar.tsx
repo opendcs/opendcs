@@ -6,6 +6,7 @@ import Navbar from "react-bootstrap/Navbar";
 import { AuthContext } from "../../contexts/AuthContext";
 import { ColorModes } from "../";
 import { useTranslation } from "react-i18next";
+import LangPicker from "../LangPicker";
 
 export function TopBar() {
   const { t } = useTranslation();
@@ -17,6 +18,9 @@ export function TopBar() {
         <Navbar.Brand href="#">OpenDCS</Navbar.Brand>
       </Container>
       <Nav className="navbar-right ms-md-auto flex-row-flex-warp">
+        <Nav.Item>
+          <LangPicker />
+        </Nav.Item>
         <Nav.Item>
           <ColorModes />
         </Nav.Item>

@@ -1,4 +1,4 @@
 {
-    "activate": "Set color mode to $t({{mode}})",
-    "dropdownLabel": "Open color mode menu"
+  "activate": "Set color mode to $t({{mode}})",
+  "dropdownLabel": "Open color mode menu"
 }
