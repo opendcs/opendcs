@@ -455,21 +455,21 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
 					.when()
 					.get("/health/started")
 					.then()
-					.assertThat()
+					.extract()
 					.statusCode() == Response.Status.OK.getStatusCode()
                 &&
 				given()
 					.when()
 					.get("/health/ready")
 					.then()
-					.assertThat()
+					.extract()
 					.statusCode() == Response.Status.OK.getStatusCode()
                 &&
 				given()
 					.when()
 					.get("/health/live")
 					.then()
-					.assertThat()
+					.extract()
 					.statusCode() == Response.Status.OK.getStatusCode();
         },
         1, TimeUnit.MINUTES, 
