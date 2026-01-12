@@ -6,7 +6,6 @@ import availableLanguages from "../lang";
 
 interface ToggleProperties {
     i18n: i18n;
-    //args: unknown[];
 }
 
 const LangToggle: React.FC<ToggleProperties> = ({i18n, ...args}) => {
