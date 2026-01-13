@@ -8,7 +8,7 @@ file += `const availableLanguages: Array<string> = ${JSON.stringify(locales)};\n
 file += "export default availableLanguages\n";
 file += "export const dtLangs: Map<string, ConfigLanguage> = new Map();\n"
 
-let imports = `import { type ConfigLanguage } from "datatables.net-bs5";`;
+let imports = `import { type ConfigLanguage } from "datatables.net-bs5";\n`;
 
 for(const locale of locales) {
     const friendly = locale.replace("-", "_");
@@ -30,8 +30,8 @@ for(const locale of locales) {
     }
 
     if (importName) {
-        imports += `import ${friendly} from "datatables.net-plugins/i18n/${importName}.mjs";\n`;
-        file += `dtLangs.set("${locale}", ${friendly});\n`;
+        imports += `// @ts-ignore\nimport ${friendly} from "datatables.net-plugins/i18n/${importName}.mjs";\n`;
+        file += `dtLangs.set("${locale}", ${friendly} as ConfigLanguage);\n`;
     } else {
         file += `dtLangs.set("${locale}", {});\n`;
     }
