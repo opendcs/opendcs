@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Database>
+  <EnumList>
+    <Enum Name="SiteNameType">
+      <EnumValue EnumValue="cwms">
+        <Description>CWMS Name Types</Description>
+      </EnumValue>
+    </Enum>
+  </EnumList>
+  <Platform PlatformId="190166">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:19:43</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>1.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Timezone>EST5EDT</Timezone>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">TESTSITE1</SiteName>
+      <SiteProperty PropertyName="PUBLIC_NAME">TESTSITE1</SiteProperty>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records.
+      </Description>
+    </PlatformConfig>
+    <TransportMedium MediumType="goes-self-timed" MediumId="4561A4AE">
+      <DecodesScript ScriptName="ST"/>
+      <ChannelNum>22</ChannelNum>
+      <AssignedTime>00:18:40</AssignedTime>
+      <TransmitWindow>00:00:10</TransmitWindow>
+      <TransmitInterval>01:00</TransmitInterval>
+      <Preamble>S</Preamble>
+      <TimeZone>UTC</TimeZone>
+      <parity>U</parity>
+    </TransportMedium>
+  </Platform>
+  <Platform PlatformId="190766">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:19:43</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>10.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Timezone>EST5EDT</Timezone>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">TESTSITE5</SiteName>
+      <SiteProperty PropertyName="PUBLIC_NAME">TESTSITE5</SiteProperty>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+          Dummy config to allow import platform records.
+      </Description>
+    </PlatformConfig>
+    <TransportMedium MediumType="goes-self-timed" MediumId="4565121A">
+      <DecodesScript ScriptName="ST"/>
+      <ChannelNum>22</ChannelNum>
+      <AssignedTime>00:18:40</AssignedTime>
+      <TransmitWindow>00:00:10</TransmitWindow>
+      <TransmitInterval>01:00</TransmitInterval>
+      <Preamble>S</Preamble>
+      <TimeZone>UTC</TimeZone>
+      <parity>U</parity>
+    </TransportMedium>
+  </Platform>
+  <RoutingSpec Name="TestExistingRS">
+    <IsProduction>false</IsProduction>
+    <DataSource Name="HotBackup" Type="hotbackupgroup1">
+      <DataSourceGroupMember SequenceNum="1">
+        <DataSource Name="EDDN1" Type="lrgs">
+          <DataSourceArg>
+            hostname=EDDN1, port=16003, password=password,
+            username=userid
+          </DataSourceArg>
+        </DataSource>
+      </DataSourceGroupMember>
+      <DataSourceGroupMember SequenceNum="2">
+        <DataSource Name="EDDN2" Type="lrgs">
+          <DataSourceArg>
+            hostname=EDDN2, port=16003, password=password,
+            username=userid
+          </DataSourceArg>
+        </DataSource>
+      </DataSourceGroupMember>
+    </DataSource>
+    <EnableEquations>false</EnableEquations>
+    <UsePerformanceMeasurements>false</UsePerformanceMeasurements>
+    <OutputFormat>transmit-monitor</OutputFormat>
+    <OutputTimeZone>GMT-08:00</OutputTimeZone>
+    <ConsumerType>directory</ConsumerType>
+    <ConsumerArg>/tmp/hotbackupgroup1</ConsumerArg>
+    <SinceTime>now - 15 minutes</SinceTime>
+    <RoutingSpecNetworkList Name="TestExistingNL"/>
+    <RoutingSpecProperty PropertyName="tmpdir">
+      /tmp/hotbackupgroup1/tmp
+    </RoutingSpecProperty>
+    <RoutingSpecProperty PropertyName="includeTZ">
+      False
+    </RoutingSpecProperty>
+    <RoutingSpecProperty PropertyName="bufferTimeSec">
+      30
+    </RoutingSpecProperty>
+  </RoutingSpec>
+  <DataSource Name="CDADATA" Type="lrgs">
+    <DataSourceArg>
+      hostname=CDADATA, port=16003, password=password,
+      username=userid
+    </DataSourceArg>
+  </DataSource>
+  <NetworkList Name="TestExistingNL">
+    <TransportMediumType>goes</TransportMediumType>
+    <SiteNameTypePreference>nwshb5</SiteNameTypePreference>
+    <NetworkListEntry TransportId="190166">
+      <PlatformName>TESTSITE1</PlatformName>
+      <Description>Test site</Description>
+    </NetworkListEntry>
+  </NetworkList>
+  <LoadingApplication name="RoutingScheduler">
+    <AppProperty name="monitor">true</AppProperty>
+    <AppProperty name="startCmd">$DCSTOOL_HOME/bin/routsched</AppProperty>
+    <AppProperty name="apptype">routingscheduler</AppProperty>
+    <AppProperty name="LastModified">20221004180705</AppProperty>
+  </LoadingApplication>
+  <ScheduleEntry Name="TestExistingSchedule">
+    <LoadingAppName>RoutingScheduler</LoadingAppName>
+    <RoutingSpecName>TestExistingRS</RoutingSpecName>
+    <Enabled>true</Enabled>
+    <TimeZone>America/Los_Angeles</TimeZone>
+    <LastModifyTime>11/12/2025 22:30:20</LastModifyTime>
+  </ScheduleEntry>
+</Database>
