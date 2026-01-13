@@ -1,3 +1,6 @@
+import { useTranslation } from "react-i18next";
+
 export const Sites = () => {
-  return <div>Sites</div>;
+  const [t] = useTranslation("sites")
+  return <div>{t("sites:sitesTitle")}</div>;
 };

@@ -5,8 +5,11 @@ import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 import { AuthContext } from "../../contexts/AuthContext";
 import { ColorModes } from "../";
+import { useTranslation } from "react-i18next";
+import LangPicker from "../LangPicker";
 
 export function TopBar() {
+  const { t } = useTranslation();
   const { user, logout } = useContext(AuthContext);
 
   return (
@@ -16,7 +19,13 @@ export function TopBar() {
       </Container>
       <Nav className="navbar-right ms-md-auto flex-row-flex-warp">
         <Nav.Item>
+          <LangPicker />
+        </Nav.Item>
+        <Nav.Item>
           <ColorModes />
+        </Nav.Item>
+        <Nav.Item>
+
         </Nav.Item>
         {user && (
           <NavDropdown
@@ -28,7 +37,7 @@ export function TopBar() {
             <NavDropdown.Item>Admin</NavDropdown.Item>
             <NavDropdown.Divider />
             <NavDropdown.Item>
-              <Button onClick={logout}>Logout</Button>
+              <Button onClick={logout}>{t("translation:logout")}</Button>
             </NavDropdown.Item>
           </NavDropdown>
         )}

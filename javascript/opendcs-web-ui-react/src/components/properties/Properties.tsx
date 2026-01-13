@@ -9,8 +9,10 @@ import { Button, Container, Form } from "react-bootstrap";
 import "datatables.net-responsive";
 import { Pencil, Save, Trash } from "react-bootstrap-icons";
 import type { ApiPropSpec } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import { renderToString } from "react-dom/server";
+import { useTranslation } from "react-i18next";
+import { dtLangs } from "../../lang";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -56,6 +58,7 @@ export const PropertyActions: React.FC<ActionProps> = ({
   editProp,
   saveProp,
 }) => {
+  const [t] = useTranslation(["properties"]);
   return (
     <>
       {editMode === true ? (
@@ -64,7 +67,7 @@ export const PropertyActions: React.FC<ActionProps> = ({
             saveProp(data);
           }}
           variant="primary"
-          aria-label={`save property named ${data.name}`}
+          aria-label={t("properties:save_prop", {name: data.name})}
           size="sm"
         >
           <Save />
@@ -73,7 +76,7 @@ export const PropertyActions: React.FC<ActionProps> = ({
         <Button
           onClick={() => editProp(data.name)}
           variant="warning"
-          aria-label={`edit property named ${data.name}`}
+          aria-label={t("properties:edit_prop", {name: data.name})}
           size="sm"
         >
           <Pencil />
@@ -83,7 +86,7 @@ export const PropertyActions: React.FC<ActionProps> = ({
         onClick={() => removeProp(data.name)}
         variant="danger"
         size="sm"
-        aria-label={`delete property named ${data.name}`}
+        aria-label={t("properties:delete_prop", {name: data.name})}
       >
         <Trash />
       </Button>
@@ -110,11 +113,14 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
   classes = "",
 }) => {
   const table = useRef<DataTableRef>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [t, i18n] = useTranslation(["properties"]);
+
   const renderEditable = (
     data: string | number | readonly string[] | undefined,
     type: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     row: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     meta: any,
   ) => {
     if (type !== "display") {
@@ -127,7 +133,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
           type="text"
           name={meta.settings.aoColumns[meta.col].mData}
           defaultValue={row.state == "edit" ? data : ""}
-          aria-label={`${inputName} input for property named ${row.name}`}
+          aria-label={t(`properties:${inputName}_input`, {name: row.name})}
         />,
       );
     } else {
@@ -135,17 +141,16 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
     }
   };
 
-  const columns = useMemo(
-    (): ConfigColumns[] => [
+  const columns : ConfigColumns[] = [
       { data: "name", render: renderEditable },
       { data: "value", render: renderEditable },
       { data: null, name: "actions" },
-    ],
-    [],
-  );
+    ];
+
   const options: DataTableProps["options"] = {
     paging: false,
     responsive: true,
+    language: dtLangs.get(i18n.language),
     layout: {
       top1Start: {
         buttons: [
@@ -155,7 +160,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
               addProp();
             },
             attr: {
-              "aria-label": "Add new property",
+              "aria-label": t("properties:add_prop"),
             },
           },
         ],
@@ -163,8 +168,11 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
     },
     createdRow: (
       row: HTMLElement,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data: any,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       _index: number,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       _cells: HTMLTableCellElement[],
     ) => (row.dataset.propName = data.name),
   };
@@ -218,6 +226,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
   return (
     <Container fluid style={{ width: width, height: height }} className={`${classes}`}>
       <DataTable
+        key={i18n.language} // convient way to force a render of the components and aria labels on a language change.
         columns={columns}
         data={theProps}
         options={options}
@@ -225,12 +234,12 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
         ref={table}
         className="table table-hover table-striped tablerow-cursor w-100 border"
       >
-        <caption className="captionTitleCenter">Properties</caption>
+        <caption className="captionTitleCenter">{t("properties:PropertiesTitle")}</caption>
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Value</th>
-            <th>Actions</th>
+            <th>{t("translation:name")}</th>
+            <th>{t("translation:value")}</th>
+            <th>{t("translation:actions")}</th>
           </tr>
         </thead>
       </DataTable>
