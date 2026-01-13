@@ -40,6 +40,8 @@ import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColu
 import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.openide.util.Lookup;
+import org.openide.util.Lookup.Template;
+import org.openide.util.lookup.Lookups;
 import org.slf4j.Logger;
 
 import decodes.db.Database;
@@ -199,10 +201,18 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
 
     private <T extends OpenDcsDao> Optional<DaoWrapper<T>> fromLookup(Class<T> dao)
     {
-        final var instance = Lookup.getDefault().lookup(dao);
+        final String impl = this.settings.editDatabaseType;
+        final var implLookup = Lookups.forPath("impl/"+impl);
+        var instance = implLookup.lookup(dao);
+        if (instance == null)
+        {
+            instance = Lookup.getDefault().lookup(dao);
+        }
+        
         if (instance != null)
         {
-            return Optional.of(new DaoWrapper<>(() -> instance));
+            final var tmp = instance;
+            return Optional.of(new DaoWrapper<>(() -> tmp));
         }
         else
         {

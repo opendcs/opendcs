@@ -296,7 +296,7 @@ public final class TomcatServer implements AutoCloseable
 		{
 			var db = config.getOpenDcsDatabase();
 			var dao = db.getDao(UserManagementDao.class)
-						.orElseThrow(() -> new OpenDcsDataException("No User Management class available for this implem,entation."));
+						.orElseThrow(() -> new OpenDcsDataException("No User Management class available for this implementation."));
 			try (var tx = db.newTransaction())
 			{
 				var idps = dao.getIdentityProviders(tx, -1, -1);
