@@ -12,6 +12,7 @@ import type { ApiPropSpec } from "../../../../../java/api-clients/api-client-typ
 import { useRef } from "react";
 import { renderToString } from "react-dom/server";
 import { useTranslation } from "react-i18next";
+import { dtLangs } from "../../lang";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -112,7 +113,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
   classes = "",
 }) => {
   const table = useRef<DataTableRef>(null);
-  const [t] = useTranslation(["properties"]);
+  const [t, i18n] = useTranslation(["properties"]);
 
   const renderEditable = (
     data: string | number | readonly string[] | undefined,
@@ -149,7 +150,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
   const options: DataTableProps["options"] = {
     paging: false,
     responsive: true,
-    
+    language: dtLangs.get(i18n.language),
     layout: {
       top1Start: {
         buttons: [
@@ -225,6 +226,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
   return (
     <Container fluid style={{ width: width, height: height }} className={`${classes}`}>
       <DataTable
+        key={i18n.language} // convient way to force a render of the components and aria labels on a language change.
         columns={columns}
         data={theProps}
         options={options}

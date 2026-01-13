@@ -15,6 +15,9 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {},
+  globals: {
+    "locale": "en-US"
+  }
 };
 
 
@@ -25,14 +28,15 @@ export const StartingFromEnglish : Story = {
   play: async ({ canvas, userEvent, mount}) => {
     await mount();
 
+    const spanishLocale = "es-ES";
     const menu = canvas.getByRole("button", {name: i18n.t("Language Menu")});
     await act(async () => userEvent.click(menu));
 
-    const nativeName = new Intl.DisplayNames( ['es'], {type: "language"} ).of("es")
-    const spanish = await canvas.findByRole("button", {name: i18n.t("Change language", {lang: nativeName, lng: 'es'})})
+    const nativeName = new Intl.DisplayNames( ['es'], {type: "language"} ).of("es-ES")
+    const spanish = await canvas.findByRole("button", {name: i18n.t("Change language", {lang: nativeName, lng: spanishLocale})})
     await act(async () => userEvent.click(spanish));
 
-    const menuSpanish = await canvas.findByRole("button", {name: i18n.t("Language Menu", {lng: "es"})})
+    const menuSpanish = await canvas.findByRole("button", {name: i18n.t("Language Menu", {lng: spanishLocale})})
     await act(async () => userEvent.click(menuSpanish));
 
     const english = await canvas.findByRole("button", {name: "Change language to American English"});
