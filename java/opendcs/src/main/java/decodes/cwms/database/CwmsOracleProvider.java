@@ -128,6 +128,13 @@ public class CwmsOracleProvider implements MigrationProvider
                               .bind("role",role)
                               .bind("office", placeholders.get("DEFAULT_OFFICE"))
                               .invoke();
+                    // we're moving away from a single office but we need something
+                    // in place now to avoid too many changes while merging these
+                    // tests together. This is an easy stop-gap.
+                    assignRole.bind("user",username)
+                              .bind("role",role)
+                              .bind("office", "HQ")
+                              .invoke();
                 }
             }
         });

@@ -1116,7 +1116,7 @@ public class PlatformListIO extends SqlDbObjIo
         }
 
         String q = "DELETE FROM Platform WHERE ID = " + p.getId();
-        executeUpdate(q);
+        tryUpdate(q);
 
         // NOTE: it's up to the caller to remove from Database collection(s).
     }
