@@ -39,6 +39,11 @@ public class NumberParser
 
 	// Constants for datatype:
 
+	/**	NOS sensor flags */
+	private static final String NORTEK_LEGACY = "CA";
+	private static final String NORTEK_GEN2 = "CN";
+	private static final String RESERVED_VAR = "CX";
+
 	/** ASCII data format */
 	public static final char ASCII_FMT               = 'a';
 	/** ASCII data format that allows numbers of length zero */
@@ -68,7 +73,7 @@ public class NumberParser
 	/** Pure binary Unsigned MSB-first */
 	public static final char BIN_UNSIGNED_LSB        = 'g';
 	/** Pseudobinary Aton message */
-	public static final char PBINARY_ATON 			 = 'n';
+	public static final char PBINARY_NOS 			 = 'n';
 	/** Pseudobinary Sontek message */
 	public static final char PBINARY_SONTEK			 = 'k';
 	/** Pseudobinary to hex */
@@ -103,7 +108,7 @@ public class NumberParser
 		 && type != BIN_UNSIGNED_MSB
 		 && type != BIN_SIGNED_LSB
 		 && type != BIN_UNSIGNED_LSB
-		 && type != PBINARY_ATON
+		 && type != PBINARY_NOS
 		 && type != PBINARY_SONTEK
 		 && type != PBINARY_HEX)
 			throw new ScriptFormatException("Unknown field data-type '" + type + "'");
@@ -174,8 +179,8 @@ public class NumberParser
 		case BIN_UNSIGNED_LSB:
 			return parsePureBinary(field);
 
-		case PBINARY_ATON:
-			return parseAtonString(field);
+		case PBINARY_NOS:
+			return parseNosString(field);
 
 		case PBINARY_SONTEK:
 			return parseSontekString(field);
@@ -492,135 +497,30 @@ public class NumberParser
 		return new Variable((double)ival * factor1);
 	}
 
-	private Variable parseAtonString(byte[] field)
-			throws FieldParseException
+	private Variable parseNosString(byte[] field) 
+			throws FieldParseException 
 	{
-		log.debug("parseAtonString field='{}', len={}", new String(field), field.length);
-		String result = "";
-		int fieldIndex = 0;
-		DecimalFormat dFormat = new DecimalFormat("0.000");
+		field = NosMessageDecoder.appendHeaderByte(field);
+		String result  = "";
 
-		// ====================================
-		// MJM New Header Code:
-		NumberFormat dp1 = NumberFormat.getNumberInstance();
-		dp1.setGroupingUsed(false);
-		dp1.setMinimumFractionDigits(1);
-		NumberFormat dp2 = NumberFormat.getNumberInstance();
-		dp2.setGroupingUsed(false);
-		dp2.setMinimumFractionDigits(2);
-		NumberFormat dp3 = NumberFormat.getNumberInstance();
-		dp3.setGroupingUsed(false);
-		dp3.setMinimumFractionDigits(3);
-		NumberFormat i2 = NumberFormat.getIntegerInstance();
-		i2.setGroupingUsed(false);
-		i2.setMinimumIntegerDigits(2);
-		NumberFormat i8 = NumberFormat.getIntegerInstance();
-		i8.setGroupingUsed(false);
-		i8.setMinimumIntegerDigits(8);
-
-		StringBuilder header = new StringBuilder();
-		for(int idx = 3; idx < 11; idx++)
-			header.append((char)field[idx]);
-		header.append('\n');
-
-		int x = PseudoBinary.decodePB(new String(field, 12, 2), false); // MM
-		header.append(i2.format(x) + ' ');
-		x = PseudoBinary.decodePB(new String(field, 14, 2), false);     // DD
-		header.append(i2.format(x) + ' ');
-		x = PseudoBinary.decodePB(new String(field, 16, 2), false);     // YYYY
-		header.append(i2.format(x) + ' '); // will always be 4 digits, no need to pad or check
-		x = PseudoBinary.decodePB(new String(field, 18, 2), false);     // HR
-		header.append(i2.format(x) + ' ');
-		x = PseudoBinary.decodePB(new String(field, 20, 2), false);     // MN
-		header.append(i2.format(x) + ' ');
-		x = PseudoBinary.decodePB(new String(field, 22, 2), false);     // SS
-		header.append(i2.format(x) + ' ');
-
-		x = PseudoBinary.decodePB(new String(field, 24, 3), false);     // 8 dig binary #
-		header.append(i8.format(x) + ' ');
-		x = PseudoBinary.decodePB(new String(field, 27, 3), false);     // 8 dig binary #
-		header.append(i8.format(x) + ' ');
-
-		double d = PseudoBinary.decodePB(new String(field, 30, 2), false) * .1;
-		header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ' ');
-
-		d = PseudoBinary.decodePB(new String(field, 32, 3), false) * .1;
-		header.append(TextUtil.setLengthRightJustify(dp1.format(d), 6) + ' ');
-
-		d = PseudoBinary.decodePB(new String(field, 35, 2), false) * .1;
-		header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ' ');
-
-		d = PseudoBinary.decodePB(new String(field, 37, 2), true) * .1;
-		header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ' ');
-
-		d = PseudoBinary.decodePB(new String(field, 39, 2), true) * .1;
-		header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ' ');
-
-		d = PseudoBinary.decodePB(new String(field, 41, 2), false) * .001;
-		header.append(TextUtil.setLengthRightJustify(dp3.format(d), 7) + ' ');
-
-		d = PseudoBinary.decodePB(new String(field, 43, 2), false) * .01;
-		header.append(TextUtil.setLengthRightJustify(dp2.format(d), 6) + ' ');
-
-		x = PseudoBinary.decodePB(new String(field, 45, 3), false);
-		header.append(TextUtil.setLengthRightJustify(i2.format(x), 5) + ' ');
-
-		x = PseudoBinary.decodePB(new String(field, 48, 3), false);
-		header.append(TextUtil.setLengthRightJustify(i2.format(x), 5) + '\n');
-
-		log.debug("header: '{}'", header.toString());
-		result = result + header.toString();
-
-		//processing data
-		String strResult = "";
-		for(fieldIndex = 52; fieldIndex < field.length-1; fieldIndex++)
+		switch(NosMessageDecoder.updateSensortype(field)) 
 		{
-			for(int i = 0; i < 6; i++)
-			{
-				if(fieldIndex>field.length-2)
-					break;
-				String temp = "";
+			case NORTEK_LEGACY:
+				result += NosMessageDecoder.decodeLegacyHeader(field);
+				result += NosMessageDecoder.decodeLegacyBins(field);
+				break;
 
-				temp += (char)field[fieldIndex++];
-				temp += (char)field[fieldIndex++];
+			case NORTEK_GEN2:
+				result += NosMessageDecoder.decodeGen2Header(field);
+				result += NosMessageDecoder.decodeGen2Body(field);
+				break;
 
-				//the first three values in each bin/line are
-				//represented by three bytes of pseudo-binary
-				if(i==0 || i==1 || i==2 && fieldIndex < field.length-1)
-				{
-					temp += (char)field[fieldIndex++];
-				}
-				int number = PseudoBinary.decodePB(temp, true);
-
-				double dnum = 0.000;
-				String blank = "";
-				if(i==0 || i==1 || i==2)
-				{
-					dnum = number*0.001;
-					strResult = dnum + "";
-					strResult = dFormat.format(dnum);
-
-					for(int j = strResult.length(); j<8; j++)
-						blank += " ";
-					strResult = blank + strResult;
-				}
-				else
-				{
-					dnum = number;
-					strResult = dnum + "";
-					if(strResult.equalsIgnoreCase("0.0"))
-						strResult = "0.000";
-					for(int j = strResult.length(); j<6; j++)
-						blank += " ";
-					strResult = blank + strResult;
-				}
-				result += strResult;// + " ";
-			}
-			result = result + "\n";
+			case RESERVED_VAR:
+			default:
+				throw new FieldParseException("No valid NOS ID in raw message");
 		}
 		return new Variable(result);
 	}
-
 
 	private Variable parseSontekString(byte[] field)
 			throws FieldParseException
