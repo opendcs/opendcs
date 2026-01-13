@@ -66,7 +66,7 @@ export const PropertyActions: React.FC<ActionProps> = ({
             saveProp(data);
           }}
           variant="primary"
-          aria-label={t("properties:save prop", {name: data.name})}
+          aria-label={t("properties:save_prop", {name: data.name})}
           size="sm"
         >
           <Save />
@@ -75,7 +75,7 @@ export const PropertyActions: React.FC<ActionProps> = ({
         <Button
           onClick={() => editProp(data.name)}
           variant="warning"
-          aria-label={t("properties:edit prop", {name: data.name})}
+          aria-label={t("properties:edit_prop", {name: data.name})}
           size="sm"
         >
           <Pencil />
@@ -85,7 +85,7 @@ export const PropertyActions: React.FC<ActionProps> = ({
         onClick={() => removeProp(data.name)}
         variant="danger"
         size="sm"
-        aria-label={t("properties:delete prop", {name: data.name})}
+        aria-label={t("properties:delete_prop", {name: data.name})}
       >
         <Trash />
       </Button>
@@ -132,7 +132,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
           type="text"
           name={meta.settings.aoColumns[meta.col].mData}
           defaultValue={row.state == "edit" ? data : ""}
-          aria-label={t(`${inputName} input`, {name: row.name})}
+          aria-label={t(`properties:${inputName}_input`, {name: row.name})}
         />,
       );
     } else {

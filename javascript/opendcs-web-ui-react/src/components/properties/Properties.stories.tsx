@@ -3,6 +3,8 @@ import { PropertiesTable, type Property } from "./Properties";
 import { expect, waitFor, within } from "storybook/test";
 import { useArgs, useState } from "storybook/internal/preview-api";
 import { act } from "@testing-library/react";
+import i18n from "../../i18n";
+import { useTranslation } from "react-i18next";
 
 const meta = {
   component: PropertiesTable,
@@ -10,6 +12,7 @@ const meta = {
     (Story, context) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const [_, updateArgs] = useArgs();
+      //const [_t] = useTranslation(["properties"]);
       const [theProps, setTheProps] = useState<Property[]>(context.args.theProps);
 
       function saveProp(data: Property) {
@@ -130,19 +133,17 @@ export const EmptyAddThenRemove: Story = {
     ...StartEmpty.args,
   },
   play: async ({ canvasElement, userEvent, mount }) => {
-    console.log("***************************mounting");
     await mount();
     const canvas = within(canvasElement);
-    const add = canvas.getByRole("button", { name: /add new property/i });
-    console.log("***************************Clicking add");
+    const add = canvas.getByRole("button", { name: i18n.t("properties:add_prop") });
     await act(async () => userEvent.click(add));
     await mount();
     const nameInput = await canvas.findByRole("textbox", {
-      name: "name input for property named 1",
+      name: i18n.t("properties:name_input", {name: "1"}),
     });
     expect(nameInput).toBeInTheDocument();
     const remove = await canvas.findByRole("button", {
-      name: "delete property named 1",
+      name: i18n.t("properties:delete_prop", {name: "1"}),
     });
 
     await act(async () => userEvent.click(remove));
@@ -157,15 +158,15 @@ export const EmptyAddThenSaveThenRemove: Story = {
     await mount();
     const canvas = within(canvasElement);
     await step("add new prop", async () => {
-      const add = canvas.getByRole("button", { name: /add new property/i });
+      const add = canvas.getByRole("button", { name: i18n.t("properties:add_prop") });
       await act(async () => userEvent.click(add));
       await mount();
       const nameInput = await canvas.findByRole("textbox", {
-        name: "name input for property named 1",
+        name: i18n.t("properties:name_input", {name: "1"}),
       });
       expect(nameInput).toBeInTheDocument();
       const valueInput = await canvas.findByRole("textbox", {
-        name: "value input for property named 1",
+        name: i18n.t("properties:value_input", {name: "1"}),
       });
       expect(valueInput).toBeInTheDocument();
 
@@ -173,7 +174,7 @@ export const EmptyAddThenSaveThenRemove: Story = {
       await act(async () => userEvent.type(valueInput, "testvalue"));
     });
 
-    const save = await canvas.findByRole("button", { name: "save property named 1" });
+    const save = await canvas.findByRole("button", { name: i18n.t("properties:save_prop", {name: "1"})});
     await step("save prop", async () => {
       await act(async () => userEvent.click(save));
     });
@@ -184,7 +185,7 @@ export const EmptyAddThenSaveThenRemove: Story = {
 
     await step("delete prop", async () => {
       const remove = await canvas.findByRole("button", {
-        name: "delete property named testprop",
+        name: i18n.t("properties:delete_prop", {name: "testprop"}),
       });
       await act(async () => userEvent.click(remove));
       await mount();

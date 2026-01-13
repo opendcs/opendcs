@@ -22,7 +22,7 @@ i18n
   // init i18next
   // for all options read: https://www.i18next.com/overview/configuration-options
   .init({
-    fallbackLng: ["en", "en-US"],    
+    fallbackLng: ["en-US"],
     debug: true,
     supportedLngs: availableLanguages,
     preload: availableLanguages, // will only load translation.json, so we will keep that file small.
