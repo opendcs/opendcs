@@ -149,6 +149,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
   const options: DataTableProps["options"] = {
     paging: false,
     responsive: true,
+    
     layout: {
       top1Start: {
         buttons: [

@@ -3,8 +3,6 @@ import { PropertiesTable, type Property } from "./Properties";
 import { expect, waitFor, within } from "storybook/test";
 import { useArgs, useState } from "storybook/internal/preview-api";
 import { act } from "@testing-library/react";
-import i18n from "../../i18n";
-import { useTranslation } from "react-i18next";
 
 const meta = {
   component: PropertiesTable,
@@ -132,7 +130,8 @@ export const EmptyAddThenRemove: Story = {
   args: {
     ...StartEmpty.args,
   },
-  play: async ({ canvasElement, userEvent, mount }) => {
+  play: async ({ canvasElement, userEvent, mount, parameters }) => {
+    const {i18n} = parameters;
     await mount();
     const canvas = within(canvasElement);
     const add = canvas.getByRole("button", { name: i18n.t("properties:add_prop") });
@@ -154,7 +153,8 @@ export const EmptyAddThenSaveThenRemove: Story = {
   args: {
     ...StartEmpty.args,
   },
-  play: async ({ canvasElement, userEvent, step, mount }) => {
+  play: async ({ canvasElement, userEvent, step, mount, parameters }) => {
+    const {i18n} = parameters;
     await mount();
     const canvas = within(canvasElement);
     await step("add new prop", async () => {
