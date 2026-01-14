@@ -52,21 +52,21 @@ export const ColorModes = () => {
     <NavDropdown title={ActiveIcon} id="color-mode" drop="start"
                  aria-label={t("colormode:dropdownLabel")}>
       <NavDropdown.Item role="menuitem">
-        <Button onClick={() => setTheme({ colorMode: "light" })}
+        <Button onClick={() => setTheme({ colorMode: "light" })} variant="link" color="text-primary" size="sm"
                 aria-label={t("colormode:activate", {mode: 'Light'})}>
-          <ModeIcon name="sun-fill" className="bi me-2 opacity-50 theme-icon" />
+          <ModeIcon name="sun-fill" className="bi me-2 opacity-50 theme-icon text-primary" />
           {t("translation:Light")}
         </Button>
       </NavDropdown.Item>
       <NavDropdown.Item role="menuitem">
-        <Button onClick={() => setTheme({ colorMode: "dark" })}
+        <Button onClick={() => setTheme({ colorMode: "dark" })} variant="link" color="text-primary"
                 aria-label={t("colormode:activate", {mode: 'Dark'})}>
           <ModeIcon name="moon-stars-fill" className="bi me-2 opacity-50 theme-icon" />
           {t("translation:Dark")}
         </Button>
       </NavDropdown.Item>
       <NavDropdown.Item role="menuitem">
-        <Button onClick={() => setTheme({ colorMode: "auto" })}
+        <Button onClick={() => setTheme({ colorMode: "auto" })} variant="link" color="text-primary"
                 aria-label={t("colormode:activate", {mode: 'Auto'})}>
           <ModeIcon name="circle-half" className="bi me-2 opacity-50 theme-icon" />
           {t("translation:Auto")}
