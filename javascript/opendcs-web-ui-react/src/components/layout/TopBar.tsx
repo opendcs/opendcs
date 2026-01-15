@@ -17,7 +17,7 @@ export function TopBar() {
       <Container fluid>
         <Navbar.Brand href="#">OpenDCS</Navbar.Brand>
       </Container>
-      <Nav className="navbar-right ms-md-auto flex-row-flex-warp">
+      <Nav className="justify-content-end" variant="pills">
         <Nav.Item>
           <LangPicker />
         </Nav.Item>

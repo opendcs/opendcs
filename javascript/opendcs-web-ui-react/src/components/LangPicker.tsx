@@ -1,6 +1,6 @@
 import type { i18n } from "i18next";
 import React from "react";
-import { Button, Dropdown } from "react-bootstrap";
+import { Button, ButtonGroup, Dropdown } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import availableLanguages from "../lang";
 
@@ -32,8 +32,8 @@ const LangToggle: React.FC<ToggleProperties> = ({i18n, ...args}) => {
     const region = getRegion(new Intl.Locale(lang))?.toLocaleUpperCase();
     const flagEmoji = getFlagEmoji(region!);
     return (
-        <Button {...args} variant="link" className="text-primary">
-            {flagEmoji} - {lang}
+        <Button {...args} variant="light">
+            {flagEmoji} {lang}
         </Button>
     );
 }
@@ -47,9 +47,10 @@ export const LangPicker = () => {
     };
 
     return (
-        <Dropdown drop="start">
+        <Dropdown drop="start" >
             <Dropdown.Toggle as={LangToggle} aria-label={t("Language Menu")} i18n={i18n} />
             <Dropdown.Menu>
+                <ButtonGroup vertical className="d-grid gap-1">
                 {availableLanguages.map((lang) => {
                     const locale = new Intl.DisplayNames([lang], {type: "language"})
                     const nativeName = locale.of(lang);
@@ -58,7 +59,7 @@ export const LangPicker = () => {
                     const ariaLabel = t("Change language", {lang: nativeName, lng: lang});
                     return (
                         <Dropdown.Item key={lang}>
-                            <Button aria-label={ariaLabel} variant="link"
+                            <Button aria-label={ariaLabel} variant="primary"
                                     onClick={() => changeLang(lang)}>
                                 {flagEmoji} - {locale.of(lang)}
                             </Button>
@@ -66,6 +67,7 @@ export const LangPicker = () => {
                         )
                     })
                 }
+                </ButtonGroup>
             </Dropdown.Menu>
         </Dropdown>
     )

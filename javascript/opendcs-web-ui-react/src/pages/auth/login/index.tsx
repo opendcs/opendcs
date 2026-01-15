@@ -1,6 +1,6 @@
 import { type FormEvent } from "react";
 import { useAuth } from "../../../contexts/AuthContext";
-import { Button, Container, Form, Image } from "react-bootstrap";
+import { Button, Col, Container, Form, Image, Row } from "react-bootstrap";
 import "./Login.css";
 import { Credentials, RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
 import { useApi } from "../../../contexts/ApiContext";
@@ -45,32 +45,39 @@ export default function Login() {
 
   return (
     <Container className="page-content d-flex" fluid>
-      <Container className="content-wrapper" fluid>
-        <Container className="content loginPageBackground" fluid>
-          <Container className="wrapper fadeInDown" fluid>
-            <Container id="formContent" className="slightOpacity" fluid>
-              <div className="fadeIn first">
-                <Image src="/user_profile_image_large.png" id="icon" alt="User icon" />
-              </div>
-              <Form onSubmit={handleLogin}>
-                <Form.Group className="mb-3">
-                  <Form.Label>{t("username")}</Form.Label>
-                  <Form.Control type="text" id="username" required name="username" />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>{t("password")}</Form.Label>
-                  <Form.Control
-                    type="password"
-                    id="password"
-                    required
-                    name="password"
-                  />
-                </Form.Group>
-                <Button variant="primary" type="submit">
-                  {t("login")}
-                </Button>
-              </Form>
-            </Container>
+      <Container className="content loginPageBackground" fluid>
+        <Container className="wrapper fadeInDown" fluid>
+          <Container className="slightOpacity" fluid="md">
+            <Row>
+              <Col>
+                <div className="fadeIn first">
+                  <Image src="/user_profile_image_large.png" id="icon" alt="User icon"
+                    fluid className="mx-auto d-block" />
+                </div>
+              </Col>
+            </Row>
+            <Row>
+              <Col md>
+                <Form onSubmit={handleLogin} className="mx-auto bg-body-secondary text-secondary-emphasis d-grid">
+                  <Form.Group className="mb-3">
+                    <Form.Label>{t("username")}</Form.Label>
+                    <Form.Control type="text" id="username" required name="username" />
+                  </Form.Group>
+                  <Form.Group className="mb-3">
+                    <Form.Label>{t("password")}</Form.Label>
+                    <Form.Control
+                      type="password"
+                      id="password"
+                      required
+                      name="password"
+                    />
+                  </Form.Group>
+                  <Button variant="primary" type="submit">
+                    {t("login")}
+                  </Button>
+                </Form>
+              </Col>
+            </Row>
           </Container>
         </Container>
       </Container>
