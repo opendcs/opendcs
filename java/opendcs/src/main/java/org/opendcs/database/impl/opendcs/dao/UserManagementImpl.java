@@ -47,7 +47,8 @@ import decodes.sql.DbKey;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 
-@ServiceProvider(service = UserManagementDao.class)
+// This uses Postgres specific features and is not compatible with Oracle
+@ServiceProvider(service = UserManagementDao.class, path = "dao/OpenDCS-Postgres")
 public class UserManagementImpl implements UserManagementDao
 {
 

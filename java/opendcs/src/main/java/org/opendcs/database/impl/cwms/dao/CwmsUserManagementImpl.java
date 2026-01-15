@@ -15,6 +15,8 @@
 */
 package org.opendcs.database.impl.cwms.dao;
 
+import java.sql.SQLType;
+import java.sql.Types;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -45,7 +47,7 @@ import org.opendcs.utils.sql.GenericColumns;
 
 import decodes.sql.DbKey;
 
-@ServiceProvider(service = UserManagementDao.class, path ="impl/CWMS-Oracle")
+@ServiceProvider(service = UserManagementDao.class, path ="dao/CWMS-Oracle")
 public class CwmsUserManagementImpl implements UserManagementDao
 {
     private static final RoleMapper ROLE_MAPPER = RoleMapper.withPrefix(null);
@@ -55,16 +57,19 @@ public class CwmsUserManagementImpl implements UserManagementDao
     public List<User> getUsers(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        final String userSelect = "select u.id u_id, u.preferences u_preferences, u.email u_email," +
-            "       u.created_at u_created_at, u.updated_at u_updated_at, " +
-            "       r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at," +
-            "       uip.identity_provider_id i_id, uip.subject i_subject,  " +
-            "       idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config" +
-            "  from opendcs_user u" +
-            "  left join user_roles ur on ur.user_id = u.id" +
-            "  left join opendcs_role r on r.id = ur.role_id" +
-            "  left join user_identity_provider uip on uip.user_id = u.id" +
-            "  left join identity_provider idp on idp.id = uip.identity_provider_id" +
+        final String userSelect = """
+            select u.id u_id, u.preferences u_preferences, u.email u_email,
+                u.created_at u_created_at, u.updated_at u_updated_at,
+                r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
+                uip.identity_provider_id i_id, uip.subject i_subject,
+                idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config
+            from opendcs_user u
+            left join user_roles ur on ur.user_id = u.id
+            left join opendcs_role r on r.id = ur.role_id
+            left join user_identity_provider uip on uip.user_id = u.id
+            left join identity_provider idp on idp.id = uip.identity_provider_id
+            order by u.id
+            """ +
             addLimitOffset(limit, offset);
 
         try (Query q = handle.createQuery(userSelect))
@@ -107,18 +112,22 @@ public class CwmsUserManagementImpl implements UserManagementDao
 
         DbKey id = DbKey.NullKey;
 
-        try (Query addUser = handle.createQuery("insert into opendcs_user(email, updated_at, preferences) " +
-                                        "values (:email, now(), :preferences::jsonb) returning id"))
+        try (var addUser = handle.createUpdate(
+                    """
+                        insert into opendcs_user(email, preferences)
+                        values (:email, :preferences)               
+                    """
+            ))
         {
-            id = DbKey.createDbKey(
-                addUser.bind(GenericColumns.EMAIL, user.email)
-                    .bind(GenericColumns.PREFERENCES, user.preferences)
-                    .mapTo(Long.class)
-                    .one()
-                );
+            id = addUser.bind(GenericColumns.EMAIL, user.email)
+                        .bindByType(GenericColumns.PREFERENCES, user.preferences, ConfigColumnMapper.CONFIG_TYPE)
+                        .executeAndReturnGeneratedKeys("id")
+                        .mapTo(DbKey.class)
+                        .one();
         }
 
-        try (PreparedBatch roleBatch = handle.prepareBatch("insert into user_roles(user_id, role_id) values (:user_id, :role_id)"))
+        try (PreparedBatch roleBatch = handle.prepareBatch(
+                    "insert into user_roles(user_id, role_id) values (:user_id, :role_id)"))
         {
             for (Role role: user.roles)
             {
@@ -126,7 +135,8 @@ public class CwmsUserManagementImpl implements UserManagementDao
                 if (DbKey.isNull(role.id))
                 {
                     roleId = getRoleByName(tx, role.name)
-                                .orElseThrow(() -> new OpenDcsDataException("Request to map role '" + role.name + "' that doesn't exist."))
+                                .orElseThrow(() -> new OpenDcsDataException("Request to map role '" + role.name +
+                                                                            "' that doesn't exist."))
                                 .id;
                 }
                 roleBatch.bind(UserBuilderMapper.USER_ID, id)
@@ -161,17 +171,19 @@ public class CwmsUserManagementImpl implements UserManagementDao
         Handle handle = getHandle(tx);
 
         try (Query user = handle.createQuery(
-            "select u.id u_id, u.preferences u_preferences, u.email u_email," +
-            "       u.created_at u_created_at, u.updated_at u_updated_at, " +
-            "       r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at," +
-            "       uip.identity_provider_id i_id, uip.subject i_subject,  " +
-            "       idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config" +
-            "  from opendcs_user u" +
-            "  left join user_roles ur on ur.user_id = u.id" +
-            "  left join opendcs_role r on r.id = ur.role_id" +
-            "  left join user_identity_provider uip on uip.user_id = u.id" +
-            "  left join identity_provider idp on idp.id = uip.identity_provider_id" +
-            "  where u.id = :id"
+            """
+              select u.id u_id, u.preferences u_preferences, u.email u_email,
+                   u.created_at u_created_at, u.updated_at u_updated_at,
+                   r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
+                   uip.identity_provider_id i_id, uip.subject i_subject,
+                   idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config
+              from opendcs_user u
+              left join user_roles ur on ur.user_id = u.id
+              left join opendcs_role r on r.id = ur.role_id
+              left join user_identity_provider uip on uip.user_id = u.id
+              left join identity_provider idp on idp.id = uip.identity_provider_id
+              where u.id = :id
+            """
             ))
         {
              return user.bind(GenericColumns.ID, id)
@@ -193,7 +205,7 @@ public class CwmsUserManagementImpl implements UserManagementDao
         Handle handle = getHandle(tx);
         
         try (Update userUpdate =handle.createUpdate(
-            "update opendcs_user set email = :email, preferences = :preferences::jsonb " +
+            "update opendcs_user set email = :email, preferences = :preferences " +
             "where id = :id"))
         {
             userUpdate.bind(GenericColumns.ID, id)
@@ -205,7 +217,8 @@ public class CwmsUserManagementImpl implements UserManagementDao
         {
             deleteRoles.bind(GenericColumns.ID, id).execute();
         }
-        try (PreparedBatch roleBatch = handle.prepareBatch("insert into user_roles(user_id, role_id) values (:user_id, :role_id)"))
+        try (PreparedBatch roleBatch = handle.prepareBatch(
+            "insert into user_roles(user_id, role_id) values (:user_id, :role_id)"))
         {
             for (Role role: user.roles)
             {
@@ -216,7 +229,8 @@ public class CwmsUserManagementImpl implements UserManagementDao
             roleBatch.execute();
         }
 
-        try (Update deleteProviders = handle.createUpdate("delete from user_identity_provider where user_id=:id"))
+        try (Update deleteProviders = handle.createUpdate(
+            "delete from user_identity_provider where user_id=:id"))
         {
             deleteProviders.bind(GenericColumns.ID, id).execute();
         }
@@ -285,14 +299,20 @@ public class CwmsUserManagementImpl implements UserManagementDao
         Handle handle = getHandle(tx);
         handle.getJdbi().installPlugin(new Jackson2Plugin());
 
-        try (Query addIdp = 
-                handle.createQuery("insert into identity_provider (name, type, updated_at, config) " +
-                                                            "values (:name, :type, now(), :config::jsonb) returning id, name, type, updated_at, config"))
+        try (var addIdp = handle.createUpdate("""
+                    insert into identity_provider (name, type, config)
+                     values (:name, :type, :config)
+                    """))
         {
-            return addIdp.bind(GenericColumns.NAME, provider.getName())
-                            .bind(IdentityProviderMapper.TYPE, provider.getType())
-                            .bind(GenericColumns.CONFIG, provider.configToMap())
-                            .map(PROVIDER_MAPPER).one();
+            var id = addIdp.bind(GenericColumns.NAME, provider.getName())
+                           .bind(IdentityProviderMapper.TYPE, provider.getType())
+                           .bindByType(GenericColumns.CONFIG, provider.configToMap(), ConfigColumnMapper.CONFIG_TYPE)
+                           .executeAndReturnGeneratedKeys(GenericColumns.ID)
+                           .mapTo(DbKey.class)
+                           .one();
+            return getIdentityProvider(tx, id).orElseThrow(
+                () -> new OpenDcsDataException("Unable to retrieve Identity Provider that was just saved.")
+            );
         }
     }
 
@@ -311,15 +331,19 @@ public class CwmsUserManagementImpl implements UserManagementDao
             throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        try (Query updateIdp =
-                handle.createQuery("update identity_provider set name = :name, type = :type, " +
-                                    "config = :config::jsonb where id = :id returning id, name, type, updated_at, config"))
+        try (var updateIdp =
+                handle.createUpdate("""
+                    update identity_provider set name = :name, type = :type, config = :config where id = :id
+                    """))
         {
-            return updateIdp.bind(GenericColumns.ID, id)
-                            .bind(GenericColumns.NAME, provider.getName())
-                            .bind(IdentityProviderMapper.TYPE, provider.getType())
-                            .bind(GenericColumns.CONFIG, provider.configToMap())
-                            .map(PROVIDER_MAPPER).one();
+            updateIdp.bind(GenericColumns.ID, id)
+                     .bind(GenericColumns.NAME, provider.getName())
+                     .bind(IdentityProviderMapper.TYPE, provider.getType())
+                     .bindByType(GenericColumns.CONFIG, provider.configToMap(), ConfigColumnMapper.CONFIG_TYPE)
+                     .execute();
+            return getIdentityProvider(tx, id).orElseThrow(
+                () -> new OpenDcsDataException("Unable to retrieve Identity Provider that was just updated.")
+            );
         }
     }
 
@@ -359,13 +383,20 @@ public class CwmsUserManagementImpl implements UserManagementDao
     public Role addRole(DataTransaction tx, Role role) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        try (Query addRole = 
-                handle.createQuery("insert into opendcs_role (name, description, updated_at) " +
-                                                     "values (:name, :description, now()) returning id, name, description,updated_at"))
+        try (var addRole = 
+                handle.createUpdate("""
+                    insert into opendcs_role (name, description)
+                    values (:name, :description)   
+                    """))
         {
-            return addRole.bind(GenericColumns.NAME, role.name)
-                          .bind(GenericColumns.DESCRIPTION, role.description)
-                          .map(ROLE_MAPPER).one();
+            final var id = addRole.bind(GenericColumns.NAME, role.name)
+                                  .bind(GenericColumns.DESCRIPTION, role.description)
+                                  .executeAndReturnGeneratedKeys("id")
+                                  .mapTo(DbKey.class)
+                                  .one();
+            return getRole(tx, id).orElseThrow(
+                () -> new OpenDcsDataException("Unable to retrieve Role we just saved.")
+            );
         }
     }
 
@@ -384,12 +415,16 @@ public class CwmsUserManagementImpl implements UserManagementDao
     public Role updateRole(DataTransaction tx, DbKey id, Role role) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        try (Query update = handle.createQuery("update opendcs_role set name =:name, description = :description where id=:id returning id, name, description,updated_at"))
+        try (var update = handle.createUpdate(
+            "update opendcs_role set name =:name, description = :description where id=:id"))
         {
-            return update.bind(GenericColumns.NAME, role.name)
-                         .bind(GenericColumns.DESCRIPTION, role.description)
-                         .bind(GenericColumns.ID, id)
-                         .map(ROLE_MAPPER).one();
+            update.bind(GenericColumns.NAME, role.name)
+                  .bind(GenericColumns.DESCRIPTION, role.description)
+                  .bind(GenericColumns.ID, id)
+                  .execute();
+            return getRole(tx, id).orElseThrow(
+                () -> new OpenDcsDataException("Unable to retrieve Role we just updated.")
+            );
         }
     }
 

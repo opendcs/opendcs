@@ -38,7 +38,7 @@ import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import decodes.sql.DbKey;
 
 
-@EnableIfTsDb({"OpenDCS-Postgres"})
+@EnableIfTsDb({"OpenDCS-Postgres", "CWMS-Oracle"})
 class UserManagementDaoTestIT extends AppTestBase
 {
 

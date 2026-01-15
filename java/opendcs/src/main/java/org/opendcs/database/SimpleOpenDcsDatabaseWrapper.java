@@ -199,10 +199,17 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         return Optional.ofNullable((T)wrapper.create());
     }
 
+    /**
+     * Does lookup for the current implementation first, and then attempts to retrieve a 
+     * generic implementation.
+     * @param <T>
+     * @param dao
+     * @return
+     */
     private <T extends OpenDcsDao> Optional<DaoWrapper<T>> fromLookup(Class<T> dao)
     {
         final String impl = this.settings.editDatabaseType;
-        final var implLookup = Lookups.forPath("impl/"+impl);
+        final var implLookup = Lookups.forPath("dao/"+impl);
         var instance = implLookup.lookup(dao);
         if (instance == null)
         {

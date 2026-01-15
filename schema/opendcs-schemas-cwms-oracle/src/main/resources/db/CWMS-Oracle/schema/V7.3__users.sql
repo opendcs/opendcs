@@ -1,5 +1,5 @@
 create table identity_provider (
-    id number(14) primary key,
+    id number(14) generated always as identity primary key,
     name varchar(256) not null unique,
     type varchar(256) not null,
     config varchar(4000) default '{}',
@@ -7,7 +7,7 @@ create table identity_provider (
 ) ${TABLE_SPACE_SPEC};
 
 create table opendcs_user(
-    id number(14) primary key,
+    id number(14) generated always as identity primary key,
     preferred_name_provider number(14) references identity_provider(id),
     email varchar(256) not null unique,
     preferences varchar(4000) default '{}',
@@ -22,7 +22,7 @@ create table opendcs_user_password(
 ) ${TABLE_SPACE_SPEC};
 
 create table opendcs_role(
-    id number(14) primary key,
+    id number(14) generated always as identity primary key,
     name varchar(128) not null unique,
     description varchar(4000),
     updated_at timestamp with time zone not null
