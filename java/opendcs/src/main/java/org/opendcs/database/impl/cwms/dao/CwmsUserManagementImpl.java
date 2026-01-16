@@ -58,19 +58,25 @@ public class CwmsUserManagementImpl implements UserManagementDao
     {
         Handle handle = getHandle(tx);
         final String userSelect = """
+            with user_cte (id, preferences, email, created_at, updated_at) as
+                (select id, preferences, email, created_at, updated_at
+                 from opendcs_user
+            """ +
+            addLimitOffset(limit, offset) +
+            """
+                )
             select u.id u_id, u.preferences u_preferences, u.email u_email,
                 u.created_at u_created_at, u.updated_at u_updated_at,
                 r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
                 uip.identity_provider_id i_id, uip.subject i_subject,
                 idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config
-            from opendcs_user u
+            from user_cte u
             left join user_roles ur on ur.user_id = u.id
             left join opendcs_role r on r.id = ur.role_id
             left join user_identity_provider uip on uip.user_id = u.id
             left join identity_provider idp on idp.id = uip.identity_provider_id
-            order by u.id
-            """ +
-            addLimitOffset(limit, offset);
+            order by u.email asc
+            """;
 
         try (Query q = handle.createQuery(userSelect))
         {
@@ -275,7 +281,7 @@ public class CwmsUserManagementImpl implements UserManagementDao
         Handle handle = getHandle(tx);
 
         try (Query select = handle.createQuery(
-            "select id, name, type, updated_at, config from identity_provider" +
+            "select id, name, type, updated_at, config from identity_provider order by name asc" +
             addLimitOffset(limit, offset)))
         {
             if (limit != -1)
@@ -467,8 +473,8 @@ public class CwmsUserManagementImpl implements UserManagementDao
      */
     private static String addLimitOffset(int limit, int offset)
     {
-        return (limit != -1 ? " limit :limit ": "") +
-               (offset != -1 ? " offset :offset " : "");
+        return (offset != -1 ? " offset :offset rows" : "") +
+               (limit != -1 ? " fetch next :limit rows only": "");
     }
 
     @Override

@@ -151,11 +151,11 @@ class UserManagementDaoTestIT extends AppTestBase
             List<IdentityProvider> providerLimit = dao.getIdentityProviders(tx, 10, 0);
             assertEquals(10, providerLimit.size());
             // The default builtin is provided by the schema migration as part of initial setup.
-            assertEquals("idp008", providerLimit.get(providerLimit.size()-1).getName());
+            assertEquals("idp009", providerLimit.get(providerLimit.size()-1).getName());
 
             List<IdentityProvider> providerLimitOffset = dao.getIdentityProviders(tx, 10, 10);
             assertEquals(10, providerLimitOffset.size());
-            assertEquals("idp018", providerLimitOffset.get(providerLimitOffset.size()-1).getName());
+            assertEquals("idp019", providerLimitOffset.get(providerLimitOffset.size()-1).getName());
 
         }
     }
@@ -209,7 +209,7 @@ class UserManagementDaoTestIT extends AppTestBase
                 preferences.put("i", i);
                 dao.addUser(tx, new UserBuilder()
                                         .withPreferences(preferences)
-                                        .withEmail("user"+i)
+                                        .withEmail(String.format("user%03d",i))
                                         .build());
             }
 
@@ -218,11 +218,11 @@ class UserManagementDaoTestIT extends AppTestBase
 
             List<User> usersLimit = dao.getUsers(tx, 10, 0);
             assertEquals(10, usersLimit.size());
-            assertEquals("user9", usersLimit.get(usersLimit.size()-1).email);
+            assertEquals("user009", usersLimit.get(usersLimit.size()-1).email);
 
             List<User> usersLimitOffset = dao.getUsers(tx, 10, 10);
             assertEquals(10, usersLimitOffset.size());
-            assertEquals("user19", usersLimitOffset.get(usersLimitOffset.size()-1).email);
+            assertEquals("user019", usersLimitOffset.get(usersLimitOffset.size()-1).email);
 
         }
     }

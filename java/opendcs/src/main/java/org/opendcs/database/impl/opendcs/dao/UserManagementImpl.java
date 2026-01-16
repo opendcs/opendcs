@@ -59,17 +59,26 @@ public class UserManagementImpl implements UserManagementDao
     public List<User> getUsers(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        final String userSelect = "select u.id u_id, u.preferences::text u_preferences, u.email u_email," +
-            "       u.created_at u_created_at, u.updated_at u_updated_at, " +
-            "       r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at," +
-            "       uip.identity_provider_id i_id, uip.subject i_subject,  " +
-            "       idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config::text i_config" +
-            "  from opendcs_user u" +
-            "  left join user_roles ur on ur.user_id = u.id" +
-            "  left join opendcs_role r on r.id = ur.role_id" +
-            "  left join user_identity_provider uip on uip.user_id = u.id" +
-            "  left join identity_provider idp on idp.id = uip.identity_provider_id" +
-            addLimitOffset(limit, offset);
+        final String userSelect = """
+            with user_cte (id, preferences, email, created_at, updated_at) as
+                (select id, preferences, email, created_at, updated_at
+                 from opendcs_user
+            """ +
+            addLimitOffset(limit, offset) +
+            """
+                )
+            select u.id u_id, u.preferences u_preferences, u.email u_email,
+                u.created_at u_created_at, u.updated_at u_updated_at,
+                r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
+                uip.identity_provider_id i_id, uip.subject i_subject,
+                idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config
+            from user_cte u
+            left join user_roles ur on ur.user_id = u.id
+            left join opendcs_role r on r.id = ur.role_id
+            left join user_identity_provider uip on uip.user_id = u.id
+            left join identity_provider idp on idp.id = uip.identity_provider_id
+            order by u.email asc
+            """;
 
         try (Query q = handle.createQuery(userSelect))
         {
