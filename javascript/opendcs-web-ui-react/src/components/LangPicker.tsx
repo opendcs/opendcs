@@ -32,7 +32,7 @@ const LangToggle: React.FC<ToggleProperties> = ({i18n, ...args}) => {
     const region = getRegion(new Intl.Locale(lang))?.toLocaleUpperCase();
     const flagEmoji = getFlagEmoji(region!);
     return (
-        <Button {...args} variant="light">
+        <Button {...args} size="lg">
             {flagEmoji} {lang}
         </Button>
     );
@@ -59,7 +59,7 @@ export const LangPicker = () => {
                     const ariaLabel = t("Change language", {lang: nativeName, lng: lang});
                     return (
                         <Dropdown.Item key={lang}>
-                            <Button aria-label={ariaLabel} variant="primary"
+                            <Button aria-label={ariaLabel} variant="primary" size="lg"
                                     onClick={() => changeLang(lang)}>
                                 {flagEmoji} - {locale.of(lang)}
                             </Button>
