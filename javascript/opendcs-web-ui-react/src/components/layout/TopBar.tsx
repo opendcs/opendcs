@@ -24,12 +24,10 @@ export function TopBar() {
         <Nav.Item>
           <ColorModes />
         </Nav.Item>
-        <Nav.Item>
-
-        </Nav.Item>
+        <Nav.Item></Nav.Item>
         {user && (
           <NavDropdown
-            title={<PersonGear className="theme-icon my-1" />}
+            title={<PersonGear className="theme-icon my-1" height="1em" />}
             id="user-settings"
             drop="start"
           >

@@ -51,14 +51,22 @@ export default function Login() {
             <Row>
               <Col>
                 <div className="fadeIn first">
-                  <Image src="/user_profile_image_large.png" id="icon" alt="User icon"
-                    fluid className="mx-auto d-block" />
+                  <Image
+                    src="/user_profile_image_large.png"
+                    id="icon"
+                    alt="User icon"
+                    fluid
+                    className="mx-auto d-block"
+                  />
                 </div>
               </Col>
             </Row>
             <Row>
               <Col md>
-                <Form onSubmit={handleLogin} className="mx-auto bg-body-secondary text-secondary-emphasis d-grid">
+                <Form
+                  onSubmit={handleLogin}
+                  className="mx-auto bg-body-secondary text-secondary-emphasis d-grid"
+                >
                   <Form.Group className="mb-3">
                     <Form.Label>{t("username")}</Form.Label>
                     <Form.Control type="text" id="username" required name="username" />

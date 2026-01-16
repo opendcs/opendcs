@@ -11,21 +11,20 @@ import { AuthProvider } from "./contexts/AuthProvider.tsx";
 import { ApiProvider } from "./contexts/ApiProvider.tsx";
 import { BrowserRouter } from "react-router-dom";
 
-import './i18n';
+import "./i18n";
 
 createRoot(document.getElementById("root")!).render(
-  
   <StrictMode>
     <Suspense fallback="loading">
-    <BrowserRouter>
-      <ThemeProvider>
-        <ApiProvider>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-        </ApiProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+      <BrowserRouter>
+        <ThemeProvider>
+          <ApiProvider>
+            <AuthProvider>
+              <App />
+            </AuthProvider>
+          </ApiProvider>
+        </ThemeProvider>
+      </BrowserRouter>
     </Suspense>
   </StrictMode>,
 );

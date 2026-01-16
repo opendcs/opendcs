@@ -67,7 +67,7 @@ export const PropertyActions: React.FC<ActionProps> = ({
             saveProp(data);
           }}
           variant="primary"
-          aria-label={t("properties:save_prop", {name: data.name})}
+          aria-label={t("properties:save_prop", { name: data.name })}
           size="sm"
         >
           <Save />
@@ -76,7 +76,7 @@ export const PropertyActions: React.FC<ActionProps> = ({
         <Button
           onClick={() => editProp(data.name)}
           variant="warning"
-          aria-label={t("properties:edit_prop", {name: data.name})}
+          aria-label={t("properties:edit_prop", { name: data.name })}
           size="sm"
         >
           <Pencil />
@@ -86,7 +86,7 @@ export const PropertyActions: React.FC<ActionProps> = ({
         onClick={() => removeProp(data.name)}
         variant="danger"
         size="sm"
-        aria-label={t("properties:delete_prop", {name: data.name})}
+        aria-label={t("properties:delete_prop", { name: data.name })}
       >
         <Trash />
       </Button>
@@ -133,7 +133,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
           type="text"
           name={meta.settings.aoColumns[meta.col].mData}
           defaultValue={row.state == "edit" ? data : ""}
-          aria-label={t(`properties:${inputName}_input`, {name: row.name})}
+          aria-label={t(`properties:${inputName}_input`, { name: row.name })}
         />,
       );
     } else {
@@ -141,11 +141,11 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
     }
   };
 
-  const columns : ConfigColumns[] = [
-      { data: "name", render: renderEditable },
-      { data: "value", render: renderEditable },
-      { data: null, name: "actions" },
-    ];
+  const columns: ConfigColumns[] = [
+    { data: "name", render: renderEditable },
+    { data: "value", render: renderEditable },
+    { data: null, name: "actions" },
+  ];
 
   const options: DataTableProps["options"] = {
     paging: false,
@@ -234,7 +234,9 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
         ref={table}
         className="table table-hover table-striped tablerow-cursor w-100 border"
       >
-        <caption className="captionTitleCenter">{t("properties:PropertiesTitle")}</caption>
+        <caption className="captionTitleCenter">
+          {t("properties:PropertiesTitle")}
+        </caption>
         <thead>
           <tr>
             <th>{t("translation:name")}</th>
