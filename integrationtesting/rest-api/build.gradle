@@ -168,7 +168,7 @@ testEngines.each { engine  ->
     def tmpdir = "${project.layout.buildDirectory.get()}/runs/${engine}/tmp"
 
     def task = tasks.register("test"+engine.replace("-",""), Test) { task ->
-        group "verification"
+        group = "verification"
         dependsOn ":install:installDist"
         dependsOn(':opendcs-rest-api:war')
         dependsOn(':opendcs-web-ui:war')

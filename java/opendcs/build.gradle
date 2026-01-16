@@ -145,6 +145,8 @@ javadoc {
 def versionFile = tasks.register("versionFile") {
     def outdir = layout.buildDirectory.dir('generated/sources/java/org/opendcs/utils')
     outputs.dir(outdir)
+    def projectVersion = project.version
+    def commitHash = project.gitCommit
     doLast {
         File sourceDir = outdir.get().asFile
         new File(sourceDir,"OpenDcsVersion.java").text = """
@@ -152,8 +154,8 @@ package org.opendcs.utils;
 
 public final class OpenDcsVersion
 {
-    public static final String VERSION="${project.version}";
-    public static final String COMMIT_HASH="${project.gitCommit}";
+    public static final String VERSION="${projectVersion}";
+    public static final String COMMIT_HASH="${commitHash}";
 }
         """
     }
