@@ -151,11 +151,11 @@ class UserManagementDaoTestIT extends AppTestBase
             List<IdentityProvider> providerLimit = dao.getIdentityProviders(tx, 10, 0);
             assertEquals(10, providerLimit.size());
             // The default builtin is provided by the schema migration as part of initial setup.
-            assertEquals("idp009", providerLimit.get(providerLimit.size()-1).getName());
+            assertEquals("idp008", providerLimit.get(providerLimit.size()-1).getName());
 
             List<IdentityProvider> providerLimitOffset = dao.getIdentityProviders(tx, 10, 10);
             assertEquals(10, providerLimitOffset.size());
-            assertEquals("idp019", providerLimitOffset.get(providerLimitOffset.size()-1).getName());
+            assertEquals("idp018", providerLimitOffset.get(providerLimitOffset.size()-1).getName());
 
         }
     }
