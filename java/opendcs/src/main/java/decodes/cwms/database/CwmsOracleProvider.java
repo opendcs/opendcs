@@ -38,7 +38,6 @@ import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.impl.cwms.dao.CwmsUserManagementImpl;
-import org.opendcs.database.impl.opendcs.dao.UserManagementImpl;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
 import org.opendcs.database.model.Role;
