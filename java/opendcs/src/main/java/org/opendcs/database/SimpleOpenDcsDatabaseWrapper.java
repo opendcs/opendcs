@@ -223,6 +223,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         }
         else
         {
+            log.trace("No DAO instance of '{}' found for implementation '{}' or as default", dao.getName(), impl);
             return Optional.empty();
         }
     }

@@ -41,6 +41,7 @@ import org.opendcs.database.model.mappers.user.UserBuilderMapper;
 import org.opendcs.database.model.mappers.user.UserBuilderReducer;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.openide.util.lookup.ServiceProvider;
+import org.openide.util.lookup.ServiceProviders;
 import org.opendcs.utils.sql.GenericColumns;
 
 import decodes.sql.DbKey;
@@ -48,7 +49,13 @@ import decodes.sql.DbKey;
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 
 // This uses Postgres specific features and is not compatible with Oracle
-@ServiceProvider(service = UserManagementDao.class, path = "dao/OpenDCS-Postgres")
+@ServiceProviders({
+    @ServiceProvider(service = UserManagementDao.class, path = "dao/OpenDCS-Postgres"),
+    // deprecated and also implies supported by the Oracle impl which is false.
+    // Unfortunately correct behavior requires eliminating the use of the editDatabaseCode so the names are used.
+    // This will be done in a follow up PR.
+    @ServiceProvider(service = UserManagementDao.class, path = "dao/OPENTSDB")
+})
 public class UserManagementImpl implements UserManagementDao
 {
 
