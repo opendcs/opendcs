@@ -23,7 +23,7 @@ export const StartingFromEnglish: Story = {
   args: {
     ...Default.args,
   },
-  play: async ({ canvas, mount }) => {
+  play: async ({ canvas, userEvent, mount }) => {
     await mount();
     const spanishLocale = "es-ES";
     const menu = canvas.getByRole("button", { name: i18n.t("Language Menu") });
