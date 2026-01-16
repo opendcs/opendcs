@@ -60,7 +60,7 @@ public class CwmsUserManagementImpl implements UserManagementDao
         final String userSelect = """
             with user_cte (id, preferences, email, created_at, updated_at) as
                 (select id, preferences, email, created_at, updated_at
-                 from opendcs_user
+                 from opendcs_user order by email asc
             """ +
             addLimitOffset(limit, offset) +
             """
