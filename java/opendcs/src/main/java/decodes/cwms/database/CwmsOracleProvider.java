@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import org.jdbi.v3.oracle12.Oracle12Plugin;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.statement.Call;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityProvider;
@@ -111,7 +110,6 @@ public class CwmsOracleProvider implements MigrationProvider
     @Override
     public void registerJdbiPlugins(Jdbi jdbi)
     {
-        jdbi.installPlugin(new Oracle12Plugin());
         jdbi.registerArgument(new DatabaseKeyArgumentFactory());
         jdbi.registerColumnMapper(new DatabaseKeyColumnMapper());
     }

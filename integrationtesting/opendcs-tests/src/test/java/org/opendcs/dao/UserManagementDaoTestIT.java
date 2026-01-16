@@ -218,11 +218,11 @@ class UserManagementDaoTestIT extends AppTestBase
 
             List<User> usersLimit = dao.getUsers(tx, 10, 0);
             assertEquals(10, usersLimit.size());
-            assertEquals("user009", usersLimit.get(usersLimit.size()-1).email);
+            assertEquals("user008", usersLimit.get(usersLimit.size()-1).email);
 
             List<User> usersLimitOffset = dao.getUsers(tx, 10, 10);
             assertEquals(10, usersLimitOffset.size());
-            assertEquals("user019", usersLimitOffset.get(usersLimitOffset.size()-1).email);
+            assertEquals("user018", usersLimitOffset.get(usersLimitOffset.size()-1).email);
 
         }
     }
