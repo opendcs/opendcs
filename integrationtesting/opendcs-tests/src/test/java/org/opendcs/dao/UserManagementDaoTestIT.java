@@ -91,11 +91,11 @@ class UserManagementDaoTestIT extends AppTestBase
 
             List<Role> rolesLimit = dao.getRoles(tx, 10, 0);
             assertEquals(10, rolesLimit.size());
-            assertEquals("arole009", rolesLimit.get(rolesLimit.size()-1).name);
+            assertEquals("arole008", rolesLimit.get(rolesLimit.size()-1).name);
 
             List<Role> rolesLimitOffset = dao.getRoles(tx, 10, 10);
             assertEquals(10, rolesLimitOffset.size());
-            assertEquals("arole019", rolesLimitOffset.get(rolesLimitOffset.size()-1).name);
+            assertEquals("arole018", rolesLimitOffset.get(rolesLimitOffset.size()-1).name);
 
         }
     }
