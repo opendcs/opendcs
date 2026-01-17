@@ -3,7 +3,6 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { ColorModes } from "./ColorMode";
 import { Nav } from "react-bootstrap";
 import { ModeIcons } from "./ModeIcon";
-import { ThemeProvider } from "../contexts/ThemeProvider";
 
 const meta = {
   component: ColorModes,

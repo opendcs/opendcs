@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { PropertiesTable, type Property } from "./Properties";
 import { expect, waitFor, within } from "storybook/test";
-import { useArgs, useState } from "storybook/internal/preview-api";
+import { useState } from "storybook/internal/preview-api";
 import { act } from "@testing-library/react";
 
 const meta = {
