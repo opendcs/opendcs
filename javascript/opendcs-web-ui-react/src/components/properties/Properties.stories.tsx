@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { PropertiesTable, type Property } from "./Properties";
-import { expect, userEvent, waitFor, within } from "storybook/test";
+import { expect, waitFor, within } from "storybook/test";
 import { useArgs, useState } from "storybook/internal/preview-api";
 import { act } from "@testing-library/react";
 
@@ -8,8 +8,6 @@ const meta = {
   component: PropertiesTable,
   decorators: [
     (Story, context) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const [_, updateArgs] = useArgs();
       const [theProps, setTheProps] = useState<Property[]>(context.args.theProps);
 
       function saveProp(data: Property) {
@@ -31,7 +29,6 @@ const meta = {
                 `Attempt to save property with invalid state ${data.state}`,
               );
             }
-            updateArgs({ theProps: newProps });
             return newProps;
           }),
         );
@@ -41,7 +38,6 @@ const meta = {
         act(() =>
           setTheProps((prev) => {
             const tmp = prev.filter((e: Property) => e.name !== prop);
-            updateArgs({ theProps: tmp });
             return tmp;
           }),
         );
@@ -61,7 +57,6 @@ const meta = {
               ...prev,
               { name: `${idx}`, value: "", state: "new" } as Property,
             ];
-            updateArgs({ theProps: tmp });
             return tmp;
           }),
         );
@@ -80,7 +75,6 @@ const meta = {
                 return p;
               }
             });
-            updateArgs({ theProps: tmp });
             return tmp;
           }),
         );
@@ -129,13 +123,12 @@ export const EmptyAddThenRemove: Story = {
   args: {
     ...StartEmpty.args,
   },
-  play: async ({ canvasElement, mount, parameters }) => {
-    console.log(userEvent);
+  play: async ({ canvasElement, mount, parameters, userEvent }) => {
     const { i18n } = parameters;
     await mount();
     const canvas = within(canvasElement);
     const add = await canvas.findByRole("button", { name: i18n.t("properties:add_prop") });
-    userEvent.click(add);
+    await userEvent.click(add);
     await mount();
     console.log(canvas);
     const nameInput = await canvas.findByRole("textbox", {
@@ -146,7 +139,8 @@ export const EmptyAddThenRemove: Story = {
       name: i18n.t("properties:delete_prop", { name: "1" }),
     });
 
-    userEvent.click(remove);
+    await userEvent.click(remove);
+    await mount();
   },
 };
 
@@ -154,13 +148,13 @@ export const EmptyAddThenSaveThenRemove: Story = {
   args: {
     ...StartEmpty.args,
   },
-  play: async ({ canvasElement, step, mount, parameters }) => {
+  play: async ({ canvasElement, step, mount, parameters, userEvent }) => {
     const { i18n } = parameters;
     await mount();
     const canvas = within(canvasElement);
     await step("add new prop", async () => {
       const add = await canvas.findByRole("button", { name: i18n.t("properties:add_prop") });
-      userEvent.click(add);
+      await userEvent.click(add);
       await mount();
       const nameInput = await canvas.findByRole("textbox", {
         name: i18n.t("properties:name_input", { name: "1" }),
