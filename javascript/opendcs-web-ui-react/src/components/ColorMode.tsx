@@ -9,9 +9,9 @@ interface ToggleProperties {
 }
 
 export const ColorToggle: React.FC<ToggleProperties> = ({ icon, ...args }) => {
-  const [t] = useTranslation();
+  //const [t] = useTranslation();
   return (
-    <Button {...args} aria-label={t("colormode:dropdownlabel")}>
+    <Button {...args}>
       {icon}
     </Button>
   );

@@ -6,13 +6,14 @@ import "../src/main.css";
 import "../src/assets/opendcs-shim.css";
 import i18n from "../src/i18n";
 
-import { Suspense, useEffect, useState } from "react";
+import { Dispatch, SetStateAction, Suspense, useEffect, useState } from "react";
 import { I18nextProvider } from "react-i18next";
-import { ThemeProvider } from "../src/contexts/ThemeProvider";
-import { Theme, ThemeContext, useTheme } from "../src/contexts/ThemeContext";
+import { Theme, ThemeContext} from "../src/contexts/ThemeContext";
+import { useGlobals } from "storybook/internal/preview-api";
 
 // Wrap your stories in the I18nextProvider component
 // lifted direct from https://storybook.js.org/recipes/react-i18next
+// eslint-disable-next-line react-refresh/only-export-components
 const WithI18next: Decorator = (Story, context) => {
   const { locale } = context.globals;
 
@@ -34,22 +35,34 @@ const WithI18next: Decorator = (Story, context) => {
 };
 
 i18n.on("languageChanged", (locale) => {
-  console.log("Hello?");
   const direction = i18n.dir(locale);
   document.dir = direction;
 });
 
-const WithTheme: Decorator = (Story, context) => {
-  const { colorMode } = context.globals;
-
+// eslint-disable-next-line react-refresh/only-export-components
+const WithTheme: Decorator = (Story) => {
+  const [{colorMode}, updateGlobals] = useGlobals();
+ 
   const [theme, setTheme] = useState<Theme>({ colorMode: colorMode });
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme({ colorMode: colorMode });
   }, [colorMode]);
 
+
+  const setGlobalTheme: Dispatch<SetStateAction<Theme>> = (action) =>  {
+    if (action as Theme) {
+      updateGlobals({colorMode: (action as Theme).colorMode});
+    }
+    
+    setTheme(action);
+    
+  };
+
+
   return (
-    <ThemeContext value={{ theme: theme, setTheme: setTheme }}>
+    <ThemeContext value={{ theme: theme, setTheme: setGlobalTheme }}>
       <Story />
     </ThemeContext>
   );
@@ -88,8 +101,8 @@ const preview: Preview = {
         title: "Language",
         items: [
           { value: "en-US", title: "English" },
-          { value: "de", title: "Deutsch" },
-          { value: "es", title: "Spanish" },
+          { value: "de-DE", title: "Deutsch" },
+          { value: "es-ES", title: "Spanish" },
         ],
         dynamicTitle: true,
       },
@@ -100,7 +113,7 @@ const preview: Preview = {
       toolbar: {
         title: "ColorMode",
         icon: "sun",
-        items: ["Light", "Dark", "Auto"],
+        items: ["light", "dark", "auto"],
         dynamicTitle: true,
       },
     },
