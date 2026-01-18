@@ -10,7 +10,7 @@ const meta = {
       return (
         <>
           <ModeIcons />
-          <Story />   
+          <Story />
         </>
       );
     },

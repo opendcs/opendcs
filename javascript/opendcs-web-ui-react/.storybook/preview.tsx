@@ -20,6 +20,7 @@ const WithI18next: Decorator = (Story, context) => {
   // When the locale global changes
   // Set the new locale in i18n
   useEffect(() => {
+    console.log(`changing lang to ${locale}`);
     i18n.changeLanguage(locale);
   }, [locale]);
 
