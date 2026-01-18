@@ -1,4 +1,5 @@
 import { readdirSync, writeFile } from "node:fs";
+import { exit } from "node:process";
 
 const locales = readdirSync("public/locales");
 
@@ -8,7 +9,7 @@ file += "export default availableLanguages\n";
 file += "export const dtLangs: Map<string, ConfigLanguage> = new Map();\n";
 
 let imports = `import { type ConfigLanguage } from "datatables.net-bs5";\n`;
-
+let foundAtLeastOne = false
 for (const locale of locales) {
   const friendly = locale.replace("-", "_");
   const langOnly = locale.split("-")[0];
@@ -30,8 +31,9 @@ for (const locale of locales) {
   }
 
   if (importName) {
-    imports += `// @ts-ignore\nimport ${friendly} from "datatables.net-plugins/i18n/${importName}.mjs";\n`;
+    imports += `// @ts-expect-error("no definitions")\nimport ${friendly} from "datatables.net-plugins/i18n/${importName}.mjs";\n`;
     file += `dtLangs.set("${locale}", ${friendly} as ConfigLanguage);\n`;
+    foundAtLeastOne = true
   } else {
     file += `dtLangs.set("${locale}", {});\n`;
   }
@@ -42,3 +44,8 @@ writeFile("src/lang/index.ts", imports + file, (err) => {
     console.log(err);
   }
 });
+
+if (!foundAtLeastOne) {
+  console.log("No DataTable translations were found. Most likely you need to run 'npm install'");
+  exit(1);
+}
