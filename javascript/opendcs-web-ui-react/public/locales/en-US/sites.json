@@ -1,3 +1,8 @@
 {
-  "sitesTitle": "Sites"
+  "sitesTitle": "Sites",
+  "siteId": "Site ID",
+  "siteName": "Site Name",
+  "configuredNames": "Configured Site Names",
+  "description": "Description",
+  "add_site": "Add new Site"
 }

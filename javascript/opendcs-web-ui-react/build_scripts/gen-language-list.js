@@ -22,7 +22,7 @@ for (const locale of locales) {
   } catch {
     // doesn't exist
     try {
-      console.log("attempting lang only");
+      console.log(`attempting lang only ${langOnly}`);
       await import(`datatables.net-plugins/i18n/${langOnly}.mjs`);
       importName = langOnly;
     } catch {
