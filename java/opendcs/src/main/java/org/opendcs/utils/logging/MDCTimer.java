@@ -13,10 +13,11 @@ public final class MDCTimer implements AutoCloseable
 
     private MDCTimer(String name)
     {
-        mdc = MDC.putCloseable("timer", name);
         this.start = System.currentTimeMillis();
+        mdc = MDC.putCloseable("timer:" + name, String.format("%d", this.start));
+
         this.name = name;
-        log.info("Timer {} started {}", name, start);
+        log.info("Timer '{}' started {}", name, start);
     }
 
     public static MDCTimer startTimer(String name)
@@ -28,7 +29,7 @@ public final class MDCTimer implements AutoCloseable
     public void close() throws Exception
     {
         long diff = System.currentTimeMillis() - start;
-        log.info("Timer {} ended in {} ms", name, diff);
+        log.info("Timer '{}' ended in {} ms", name, diff);
         mdc.close();
     }
     
