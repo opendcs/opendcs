@@ -15,7 +15,7 @@ public final class MDCTimer implements AutoCloseable
     {
         this.start = System.currentTimeMillis();
         mdc = MDC.putCloseable("timer:" + name, String.format("%d", this.start));
-        
+
         this.name = name;
         log.info("Timer {} started {}", name, start);
     }
