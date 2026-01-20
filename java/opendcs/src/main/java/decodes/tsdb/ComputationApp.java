@@ -102,7 +102,6 @@ public class ComputationApp extends TsdbAppTemplate
 	private int checkTimedCompsSec = 600;
 	private SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 
-	
 	private static ComputationApp _instance = null;
 	public static ComputationApp instance() { return _instance; }
 
