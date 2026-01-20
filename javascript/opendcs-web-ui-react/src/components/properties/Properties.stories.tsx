@@ -130,7 +130,6 @@ export const EmptyAddThenRemove: Story = {
     const add = await canvas.findByRole("button", { name: i18n.t("properties:add_prop") });
     await userEvent.click(add);
     await mount();
-    console.log(canvas);
     const nameInput = await canvas.findByRole("textbox", {
       name: i18n.t("properties:name_input", { name: "1" }),
     });

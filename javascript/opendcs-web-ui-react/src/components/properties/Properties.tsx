@@ -157,7 +157,6 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
           {
             text: "+",
             action: () => {
-              console.log("hello")
               addProp();
             },
             attr: {
