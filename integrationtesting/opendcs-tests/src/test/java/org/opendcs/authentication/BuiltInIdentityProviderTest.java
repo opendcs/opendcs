@@ -29,7 +29,7 @@ import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import decodes.sql.DbKey;
 
 @TestInstance(Lifecycle.PER_CLASS)
-@EnableIfTsDb({"OpenDCS-Postgres"})
+@EnableIfTsDb({"OpenDCS-Postgres", "CWMS-Oracle"})
 class BuiltInIdentityProviderTest extends AppTestBase
 {
     @ConfiguredField
@@ -48,7 +48,7 @@ class BuiltInIdentityProviderTest extends AppTestBase
         }
         var userDao = db.getDao(UserManagementDao.class)
                         .orElseGet(() -> fail("No user management DAO available."));
-        provider = new BuiltInIdentityProvider(DbKey.NullKey, "builtin", null, Map.of());
+        provider = new BuiltInIdentityProvider(DbKey.NullKey, "builtin-idp-test", null, Map.of());
         try (var tx = db.newTransaction())
         {
             provider = userDao.addIdentityProvider(tx, provider);
