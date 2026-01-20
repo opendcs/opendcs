@@ -142,7 +142,7 @@ project.tasks.findAll { task -> task.name.startsWith("publish")}.each { task -> 
 def javaVersion = Double.parseDouble(project.findProperty("org.gradle.java.version") ?: "1.8" )
 
 task runApp(type: Exec) {
-    group 'application'
+    group = 'application'
     dependsOn installDist
     def runDir = "${project.layout.getBuildDirectory().dir("run").get()}"
     doFirst {
