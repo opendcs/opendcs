@@ -38,7 +38,7 @@ import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.UserManagementDao;
-import org.opendcs.database.impl.opendcs.dao.UserManagementImpl;
+import org.opendcs.database.impl.opendcs.dao.OpenDcsPgUserManagementImpl;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
 import org.opendcs.database.model.IdentityProvider;
@@ -118,7 +118,7 @@ public class OpenDcsPgProvider implements MigrationProvider
         jdbi.useTransaction(h ->
         {
             var tx = new JdbiTransaction(h, context);
-            var dao = new UserManagementImpl();
+            var dao = new OpenDcsPgUserManagementImpl();
 
             try(Call createUser = h.createCall("call create_user(:user,:pw)");
                 Call assignRole = h.createCall("call assign_role(:user,:role)");)

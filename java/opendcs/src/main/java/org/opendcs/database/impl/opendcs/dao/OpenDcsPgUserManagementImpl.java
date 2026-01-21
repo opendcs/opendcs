@@ -56,7 +56,7 @@ import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
     // This will be done in a follow up PR.
     @ServiceProvider(service = UserManagementDao.class, path = "dao/OPENTSDB")
 })
-public class UserManagementImpl implements UserManagementDao
+public class OpenDcsPgUserManagementImpl implements UserManagementDao
 {
 
     private static final RoleMapper ROLE_MAPPER = RoleMapper.withPrefix(null);
