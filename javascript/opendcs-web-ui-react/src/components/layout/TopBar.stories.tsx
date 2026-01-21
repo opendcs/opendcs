@@ -22,8 +22,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  play: ({canvas}) => {
-    const text = canvas.queryByText("OpenDCS");
+  play: async ({canvas, mount}) => {
+    await mount();
+    const text = await canvas.findByText("OpenDCS");
     expect(text).toBeInTheDocument();
   }
 };
