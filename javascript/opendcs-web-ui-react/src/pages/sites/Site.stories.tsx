@@ -19,7 +19,10 @@ export const WithSite: Story = {
   args: {
     site: {
       siteId: 1,
-      description: "A test"
+      description: "A test",
+      properties: {
+        "prop1": "value1"
+      }
     }
   }
 }
