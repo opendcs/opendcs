@@ -22,7 +22,7 @@ public interface DataTypeDao extends OpenDcsDao
      * @return the DataType instance, if found, otherwise empty.
      * @throws OpenDcsDataException
      */
-	Optional<DataType> getDataType(DataTransaction tx, DbKey id) throws OpenDcsDataException;
+	Optional<DataType> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException;
 
 	/**
      * Write/Update specific data type.
@@ -30,7 +30,7 @@ public interface DataTypeDao extends OpenDcsDao
      * @param dataType DataType to write
      * @throws OpenDcsDataException
      */
-	DataType saveDataType(DataTransaction tx, DataType dataType) throws OpenDcsDataException;
+	DataType save(DataTransaction tx, DataType dataType) throws OpenDcsDataException;
 	
     /**
      * Remove a specific data type.
@@ -38,7 +38,7 @@ public interface DataTypeDao extends OpenDcsDao
      * @param id id of the DataType to delete.
      * @throws OpenDcsDataException
      */
-    void deleteDataType(DataTransaction tx, DbKey id) throws OpenDcsDataException;
+    void delete(DataTransaction tx, DbKey id) throws OpenDcsDataException;
 
 	/**
      * Given a DataType Code attempt to find a matching data type. {@see DataType for more information}
@@ -47,13 +47,13 @@ public interface DataTypeDao extends OpenDcsDao
      * @return
      * @throws OpenDcsDataException
      */
-	Optional<DataType> lookupDataType(DataTransaction tx, String dataTypeCode) throws OpenDcsDataException;
+	Optional<DataType> lookup(DataTransaction tx, String dataTypeCode) throws OpenDcsDataException;
 
 	/**
-     * Retrei
+     * Retreive all DataTypes constrained to a limit and office if desired.
      * @param tx active transaction
-     * @param limit
-     * @param offset
+     * @param limit -1 for all, otherwise maximum amount
+     * @param offset -1 for no offset, otherwise a valid office from the start of data
      * @return
      * @throws OpenDcsDataException
      */

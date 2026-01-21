@@ -32,12 +32,12 @@ class DataTypeDaoTestIT extends AppTestBase
         {
             var dtIn = new DataType("test_standard","test_code");
             
-            final var dtOut = dao.saveDataType(tx, dtIn);
+            final var dtOut = dao.save(tx, dtIn);
             assertEquals(dtIn.getStandard(), dtOut.getStandard());
             assertEquals(dtIn.getCode(), dtOut.getCode());
             assertNotEquals(dtIn.getId(), dtOut.getId());
 
-            final var dtByName = dao.lookupDataType(tx, dtIn.getCode())
+            final var dtByName = dao.lookup(tx, dtIn.getCode())
                                     .orElseGet(() -> fail("unable to retrieve data type given options."));
             assertEquals(dtIn.getStandard(), dtByName.getStandard());
             assertEquals(dtIn.getCode(), dtByName.getCode());
@@ -49,14 +49,14 @@ class DataTypeDaoTestIT extends AppTestBase
                                                 .orElseThrow()
                                                 .dataTypeStdPreference;
             final var dtInSameCodeWithPrefStd = new DataType(dataTypePreference, "test_code");
-            dao.saveDataType(tx, dtInSameCodeWithPrefStd);
+            dao.save(tx, dtInSameCodeWithPrefStd);
 
-            final var dtByCodeWithPref = dao.lookupDataType(tx, "test_code")
+            final var dtByCodeWithPref = dao.lookup(tx, "test_code")
                                             .orElseGet(() -> fail("No datatype at all returned?"));
             assertEquals(dataTypePreference, dtByCodeWithPref.getStandard());
 
-            dao.deleteDataType(tx, dtOut.getId());
-            var emShouldNotExist = dao.getDataType(tx, dtOut.getId());
+            dao.delete(tx, dtOut.getId());
+            var emShouldNotExist = dao.getById(tx, dtOut.getId());
             assertFalse(emShouldNotExist.isPresent());
         }
     }
@@ -73,7 +73,7 @@ class DataTypeDaoTestIT extends AppTestBase
             {
                 final var dt = new DataType("test_standard", "test_code" + i);
                 
-                dao.saveDataType(tx, dt);
+                dao.save(tx, dt);
             }
 
             var dts = dao.getDataTypes(tx, -1, -1);

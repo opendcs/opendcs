@@ -26,7 +26,7 @@ import decodes.util.DecodesSettings;
 public class DataTypeDaoImpl implements DataTypeDao
 {
     @Override
-    public Optional<DataType> getDataType(DataTransaction tx, DbKey id) throws OpenDcsDataException
+    public Optional<DataType> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
@@ -44,7 +44,7 @@ public class DataTypeDaoImpl implements DataTypeDao
     }
 
     @Override
-    public DataType saveDataType(DataTransaction tx, DataType dataType) throws OpenDcsDataException
+    public DataType save(DataTransaction tx, DataType dataType) throws OpenDcsDataException
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
@@ -72,7 +72,7 @@ public class DataTypeDaoImpl implements DataTypeDao
                  .bind("code", dataType.getCode())
                  .bind("display_name", dataType.getDisplayName())
                  .execute();
-            return getDataType(tx, id).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve DataType we just saved."));
+            return getById(tx, id).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve DataType we just saved."));
         }
         catch (DatabaseException ex)
         {
@@ -81,7 +81,7 @@ public class DataTypeDaoImpl implements DataTypeDao
     }
 
     @Override
-    public Optional<DataType> lookupDataType(DataTransaction tx, String dataTypeCode) throws OpenDcsDataException
+    public Optional<DataType> lookup(DataTransaction tx, String dataTypeCode) throws OpenDcsDataException
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
@@ -149,7 +149,7 @@ public class DataTypeDaoImpl implements DataTypeDao
     }
 
     @Override
-    public void deleteDataType(DataTransaction tx, DbKey id) throws OpenDcsDataException
+    public void delete(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
