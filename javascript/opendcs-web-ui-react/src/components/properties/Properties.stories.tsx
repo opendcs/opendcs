@@ -1,16 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { PropertiesTable, type Property } from "./Properties";
 import { expect, waitFor, within } from "storybook/test";
-import { useArgs, useState } from "storybook/internal/preview-api";
+import { useState } from "storybook/internal/preview-api";
 import { act } from "@testing-library/react";
 
 const meta = {
   component: PropertiesTable,
   decorators: [
     (Story, context) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const [_, updateArgs] = useArgs();
-      //const [_t] = useTranslation(["properties"]);
       const [theProps, setTheProps] = useState<Property[]>(context.args.theProps);
 
       function saveProp(data: Property) {
@@ -32,7 +29,6 @@ const meta = {
                 `Attempt to save property with invalid state ${data.state}`,
               );
             }
-            updateArgs({ theProps: newProps });
             return newProps;
           }),
         );
@@ -42,7 +38,6 @@ const meta = {
         act(() =>
           setTheProps((prev) => {
             const tmp = prev.filter((e: Property) => e.name !== prop);
-            updateArgs({ theProps: tmp });
             return tmp;
           }),
         );
@@ -62,7 +57,6 @@ const meta = {
               ...prev,
               { name: `${idx}`, value: "", state: "new" } as Property,
             ];
-            updateArgs({ theProps: tmp });
             return tmp;
           }),
         );
@@ -81,7 +75,6 @@ const meta = {
                 return p;
               }
             });
-            updateArgs({ theProps: tmp });
             return tmp;
           }),
         );
@@ -130,22 +123,23 @@ export const EmptyAddThenRemove: Story = {
   args: {
     ...StartEmpty.args,
   },
-  play: async ({ canvasElement, userEvent, mount, parameters }) => {
-    const {i18n} = parameters;
+  play: async ({ canvasElement, mount, parameters, userEvent }) => {
+    const { i18n } = parameters;
     await mount();
     const canvas = within(canvasElement);
-    const add = canvas.getByRole("button", { name: i18n.t("properties:add_prop") });
-    await act(async () => userEvent.click(add));
+    const add = await canvas.findByRole("button", { name: i18n.t("properties:add_prop") });
+    await userEvent.click(add);
     await mount();
     const nameInput = await canvas.findByRole("textbox", {
-      name: i18n.t("properties:name_input", {name: "1"}),
+      name: i18n.t("properties:name_input", { name: "1" }),
     });
     expect(nameInput).toBeInTheDocument();
     const remove = await canvas.findByRole("button", {
-      name: i18n.t("properties:delete_prop", {name: "1"}),
+      name: i18n.t("properties:delete_prop", { name: "1" }),
     });
 
-    await act(async () => userEvent.click(remove));
+    await userEvent.click(remove);
+    await mount();
   },
 };
 
@@ -153,30 +147,32 @@ export const EmptyAddThenSaveThenRemove: Story = {
   args: {
     ...StartEmpty.args,
   },
-  play: async ({ canvasElement, userEvent, step, mount, parameters }) => {
-    const {i18n} = parameters;
+  play: async ({ canvasElement, step, mount, parameters, userEvent }) => {
+    const { i18n } = parameters;
     await mount();
     const canvas = within(canvasElement);
     await step("add new prop", async () => {
-      const add = canvas.getByRole("button", { name: i18n.t("properties:add_prop") });
-      await act(async () => userEvent.click(add));
+      const add = await canvas.findByRole("button", { name: i18n.t("properties:add_prop") });
+      await userEvent.click(add);
       await mount();
       const nameInput = await canvas.findByRole("textbox", {
-        name: i18n.t("properties:name_input", {name: "1"}),
+        name: i18n.t("properties:name_input", { name: "1" }),
       });
       expect(nameInput).toBeInTheDocument();
       const valueInput = await canvas.findByRole("textbox", {
-        name: i18n.t("properties:value_input", {name: "1"}),
+        name: i18n.t("properties:value_input", { name: "1" }),
       });
       expect(valueInput).toBeInTheDocument();
 
-      await act(async () => userEvent.type(nameInput, "testprop"));
-      await act(async () => userEvent.type(valueInput, "testvalue"));
+      await userEvent.type(nameInput, "testprop");
+      await userEvent.type(valueInput, "testvalue");
     });
 
-    const save = await canvas.findByRole("button", { name: i18n.t("properties:save_prop", {name: "1"})});
+    const save = await canvas.findByRole("button", {
+      name: i18n.t("properties:save_prop", { name: "1" }),
+    });
     await step("save prop", async () => {
-      await act(async () => userEvent.click(save));
+      await userEvent.click(save);
     });
 
     await mount();
@@ -185,9 +181,9 @@ export const EmptyAddThenSaveThenRemove: Story = {
 
     await step("delete prop", async () => {
       const remove = await canvas.findByRole("button", {
-        name: i18n.t("properties:delete_prop", {name: "testprop"}),
+        name: i18n.t("properties:delete_prop", { name: "testprop" }),
       });
-      await act(async () => userEvent.click(remove));
+      await userEvent.click(remove);
       await mount();
 
       await waitFor(async () => {

@@ -18,7 +18,8 @@ const dirname =
 export default defineConfig({
   plugins: [react(), svgr()],
   optimizeDeps: {
-    exclude: ["opendcs-api"], // Replace with actual package name
+    exclude: ["opendcs-api", "whatwg-fetch"],
+    include: ["react-dom/client", "react-router-dom"]
   },
   server: {
     fs: {

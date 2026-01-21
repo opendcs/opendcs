@@ -17,19 +17,17 @@ export function TopBar() {
       <Container fluid>
         <Navbar.Brand href="#">OpenDCS</Navbar.Brand>
       </Container>
-      <Nav className="navbar-right ms-md-auto flex-row-flex-warp">
+      <Nav className="justify-content-end" variant="pills">
         <Nav.Item>
           <LangPicker />
         </Nav.Item>
         <Nav.Item>
           <ColorModes />
         </Nav.Item>
-        <Nav.Item>
-
-        </Nav.Item>
+        <Nav.Item></Nav.Item>
         {user && (
           <NavDropdown
-            title={<PersonGear className="theme-icon my-1" />}
+            title={<PersonGear className="theme-icon my-1" height="1em" />}
             id="user-settings"
             drop="start"
           >

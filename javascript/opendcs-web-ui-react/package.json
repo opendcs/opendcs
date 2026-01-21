@@ -19,7 +19,8 @@
     "prepare": "husky",
     "predev": "npm run api:generate && npm run lang:generate",
     "prebuild": "npm run api:generate && npm run lang:generate",
-    "prestorybook": "npm run api:generate && npm run lang:generate"
+    "prestorybook": "npm run api:generate && npm run lang:generate",
+    "pretest-storybook": "npm run api:generate && npm run lang:generate"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [

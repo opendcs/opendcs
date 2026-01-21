@@ -6,18 +6,21 @@ import "../src/main.css";
 import "../src/assets/opendcs-shim.css";
 import i18n from "../src/i18n";
 
-import { Suspense, useEffect } from "react";
+import { Dispatch, SetStateAction, Suspense, useEffect, useState } from "react";
 import { I18nextProvider } from "react-i18next";
-
+import { Theme, ThemeContext} from "../src/contexts/ThemeContext";
+import { useGlobals } from "storybook/internal/preview-api";
 
 // Wrap your stories in the I18nextProvider component
 // lifted direct from https://storybook.js.org/recipes/react-i18next
+// eslint-disable-next-line react-refresh/only-export-components
 const WithI18next: Decorator = (Story, context) => {
-  const {locale} = context.globals;
+  const { locale } = context.globals;
 
   // When the locale global changes
   // Set the new locale in i18n
   useEffect(() => {
+    console.log(`changing lang to ${locale}`);
     i18n.changeLanguage(locale);
   }, [locale]);
 
@@ -32,11 +35,39 @@ const WithI18next: Decorator = (Story, context) => {
   );
 };
 
-i18n.on('languageChanged', (locale) => {
-  console.log("Hello?");
+i18n.on("languageChanged", (locale) => {
   const direction = i18n.dir(locale);
   document.dir = direction;
 });
+
+// eslint-disable-next-line react-refresh/only-export-components
+const WithTheme: Decorator = (Story) => {
+  const [{colorMode}, updateGlobals] = useGlobals();
+ 
+  const [theme, setTheme] = useState<Theme>({ colorMode: colorMode });
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTheme({ colorMode: colorMode });
+  }, [colorMode]);
+
+
+  const setGlobalTheme: Dispatch<SetStateAction<Theme>> = (action) =>  {
+    if (action as Theme) {
+      updateGlobals({colorMode: (action as Theme).colorMode});
+    }
+    
+    setTheme(action);
+    
+  };
+
+
+  return (
+    <ThemeContext value={{ theme: theme, setTheme: setGlobalTheme }}>
+      <Story />
+    </ThemeContext>
+  );
+};
 
 // end lift
 
@@ -52,7 +83,7 @@ const preview: Preview = {
       legacyRootApi: true,
       strictMode: false,
     },
-    
+
     a11y: {
       // 'todo' - show a11y violations in the test UI only
       // 'error' - fail CI on a11y violations
@@ -61,27 +92,36 @@ const preview: Preview = {
     },
     i18n,
   },
-  decorators: [WithI18next],
+  decorators: [WithI18next, WithTheme],
   globalTypes: {
     locale: {
-      name: 'Locale',
-      description: 'Internationalization locale',
+      name: "Locale",
+      description: "Internationalization locale",
       toolbar: {
-        icon: 'globe',
-        title: 'Language',
+        icon: "globe",
+        title: "Language",
         items: [
-          { value: 'en-US', title: 'English' },
-          { value: 'de', title: 'Deutsch' },
-          { value: 'es', title: 'Spanish'}
+          { value: "en-US", title: "English" },
+          { value: "de-DE", title: "Deutsch" },
+          { value: "es-ES", title: "Spanish" },
         ],
-        dynamicTitle: true
+        dynamicTitle: true,
+      },
+    },
+    colorMode: {
+      name: "ColorMode",
+      description: "Whether to show as light/dark/or auto color scheme",
+      toolbar: {
+        title: "ColorMode",
+        icon: "sun",
+        items: ["light", "dark", "auto"],
+        dynamicTitle: true,
       },
     },
   },
   initialGlobals: {
-    locale: 'en-US',
+    locale: "en-US",
   },
- 
 };
 
 export default preview;

@@ -33,9 +33,14 @@ def testUi = tasks.register("testStorybook", NpxTask) {
     dependsOn configurations.api
     command = "npm"
     environment = [
-        "IN_GRADLE": "1"
+        "IN_GRADLE": "1",
+        "CI": "true"
     ]
-    args = ['run', 'test-storybook', '--', '--coverage', '--reporter=junit', '--outputFile', 'build/test-results/test-storybook.xml']
+    args = ['run', 'test-storybook', '--', '--coverage',
+            '--reporter=default',
+            '--reporter=verbose',
+            '--reporter=junit',
+            '--outputFile', 'build/test-results/TEST-storybook.xml']
 }
 
 tasks.register("test") {
