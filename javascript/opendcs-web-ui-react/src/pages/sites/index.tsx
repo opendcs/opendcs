@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { useEffect, useRef } from "react";
 import { dtLangs } from "../../lang";
 import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
+import { renderToString } from "react-dom/server";
+import Site from "./Site";
 
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -56,17 +58,18 @@ export const SitesTable: React.FC<SiteTableProperties> = ({sites}) => {
     console.log(table.current);
     // Add event listener for opening and closing details
     table.current?.dt()!.on('click', 'tbody td', function (e) {
-       console.log("hello")
+        const dt = table.current!.dt()!;
         const tr = (e.target! as Element).closest('tr');
-        const row = table.current!.dt()!.row(tr as HTMLTableRowElement);
-
+        const row = dt.row(tr as HTMLTableRowElement);
+        
         if (row.child.isShown()) {
             // This row is already open - close it
             row.child.hide();
         }
         else {
+            const data: ApiSite = row.data as ApiSite;
             // Open this row
-            row.child("test?").show();
+            row.child(renderToString(<Site site={data}/>)).show();
         }
     });
   }, [i18n.language]);
