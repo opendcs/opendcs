@@ -358,7 +358,7 @@ public class UserManagementImpl implements UserManagementDao
     {
         Handle handle = getHandle(tx);
         try (Query select = handle.createQuery("""
-                        select id, name, description, updated_at from opendcs_role order by name ASC
+                        select id, name, description, updated_at from opendcs_role order by name COLLATE "C" ASC
                     """ +
                     addLimitOffset(limit, offset)))
         {
