@@ -40,27 +40,27 @@ export const Site: React.FC<SiteProperties> = ({site}) => {
                     <Col>
                     
                     <FormGroup as={Row} className="mb-3">
-                        <Form.Label column sm={2} for="latitude">{t("Latitude")}</Form.Label>
+                        <Form.Label column sm={2} for="latitude">{t("latitude")}</Form.Label>
                         <Col sm={10}>
                         <Form.Control type="text" id="latitude" name="latitude" readOnly={!editMode} 
-                                      placeholder={t("sites:UseDecimalFormat")}/>
+                                      placeholder={t("sites:use_decimal_format")}/>
                         </Col>
                     </FormGroup>
                     <FormGroup as={Row} className="mb-3">
-                        <Form.Label column sm={2} for="longitude">{t("Longitude")}</Form.Label>
+                        <Form.Label column sm={2} for="longitude">{t("longitude")}</Form.Label>
                         <Col sm={10}>
                         <Form.Control type="text" id="longitude" name="longitude" readOnly={!editMode}
-                                      placeholder={t("sites:UseDecimalFormat")}/>
+                                      placeholder={t("sites:use_decimal_format")}/>
                         </Col>
                     </FormGroup>
                     <FormGroup as={Row} className="mb-3">
-                        <Form.Label column sm={2} for="elevation">{t("Elevation")}</Form.Label>
+                        <Form.Label column sm={2} for="elevation">{t("elevation")}</Form.Label>
                         <Col sm={10}>
                         <Form.Control type="text" id="elevation" name="elevation " readOnly={!editMode} />
                         </Col>
                     </FormGroup>
                     <FormGroup as={Row} className="mb-3">
-                        <Form.Label column sm={2} for="elevationUnits">{t("ElevationUnits")}</Form.Label>
+                        <Form.Label column sm={2} for="elevationUnits">{t("elevation_units")}</Form.Label>
                         <Col sm={10}>
                         <FormSelect id="elevationUnits" disabled={!editMode}>
                             <option value="m">M (Meters)</option>
@@ -79,17 +79,43 @@ export const Site: React.FC<SiteProperties> = ({site}) => {
                     <FormGroup as={Row} className="mb-3">
                         <Form.Label column sm={2} for="nearestCity">{t("sites:nearestCity")}</Form.Label>
                         <Col sm={10}>
-                        <Form.Control type="text" id="nearestCity" name="nearestCity" readOnly={!editMode}
-                                      placeholder={t("sites:Enter Nearest City")} />
+                        <Form.Control type="text" id="nearestCity" name="nearest_city" readOnly={!editMode}/>
                         </Col>
                     </FormGroup>
                     <FormGroup as={Row} className="mb-3">
-                        <Form.Label column sm={2} for="state">{t("State")}</Form.Label>
+                        <Form.Label column sm={2} for="state">{t("state")}</Form.Label>
                         <Col sm={10}>
-                        <Form.Control type="text" id="state" name="state" readOnly={!editMode}
-                                      placeholder={t("sites:TwoLetterState")}/>
+                        <Form.Control type="text" id="state" name="state" readOnly={!editMode}/>
                         </Col>
                     </FormGroup>
+                    <FormGroup as={Row} className="mb-3">
+                        <Form.Label column sm={2} for="country">{t("country")}</Form.Label>
+                        <Col sm={10}>
+                        <Form.Control type="text" id="country" name="country" readOnly={!editMode}
+                                      placeholder={t("sites:enter_country")}/>
+                        </Col>
+                    </FormGroup>
+                    <FormGroup as={Row} className="mb-3">
+                        <Form.Label column sm={2} for="region">{t("Region")}</Form.Label>
+                        <Col sm={10}>
+                        <Form.Control type="text" id="region" name="region" readOnly={!editMode}
+                                      placeholder={t("sites:enter_region")}/>
+                        </Col>
+                    </FormGroup>
+                    <FormGroup as={Row} className="mb-3">
+                        <Form.Label column sm={2} for="publicName">{t("sites:public_name")}</Form.Label>
+                        <Col sm={10}>
+                        <Form.Control type="text" id="publicName" name="publicName" readOnly={!editMode}/>
+                        </Col>
+                    </FormGroup>
+                    <FormGroup as={Row} className="mb-3">
+                        <Form.Label column sm={2} for="description">{t("description")}</Form.Label>
+                        <Col sm={10}>
+                        <Form.Control type="text" id="description" name="description" readOnly={!editMode}/>
+                        </Col>
+                    </FormGroup>
+                    
+                    
                     
                     </Col>
                 </Row>

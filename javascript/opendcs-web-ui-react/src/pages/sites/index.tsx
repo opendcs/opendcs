@@ -85,13 +85,13 @@ export const SitesTable: React.FC<SiteTableProperties> = ({sites}) => {
           className="table table-hover table-striped tablerow-cursor w-100 border"
         >
           <caption className="captionTitleCenter">
-          {t("sites:sitesTitle")}
+          {t("sites:title")}
         </caption>
           <thead>
 							<tr>
-								<th>{t("sites:siteId")}</th>
-								<th id="siteNameColumnHeader">{t("sites:siteName")}</th>
-								<th>{t("sites:Description")}</th>
+								<th>{t("sites:site_id")}</th>
+								<th id="siteNameColumnHeader">{t("sites:site_name")}</th>
+								<th>{t("sites:description")}</th>
                 <th>{t("translation:actions")}</th>
 							</tr>
 						</thead>
