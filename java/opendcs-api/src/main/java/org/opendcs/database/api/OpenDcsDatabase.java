@@ -19,7 +19,7 @@ public interface OpenDcsDatabase
      */
     @Deprecated
     <T> Optional<T> getLegacyDatabase(Class<T> legacyDatabaseType);
-    
+
     /**
      * Retrieve DAO from the database
      * @param <T> DAO Type
@@ -49,4 +49,5 @@ public interface OpenDcsDatabase
      * @return
      */
     DatabaseEngine getDatabase();
+
 }

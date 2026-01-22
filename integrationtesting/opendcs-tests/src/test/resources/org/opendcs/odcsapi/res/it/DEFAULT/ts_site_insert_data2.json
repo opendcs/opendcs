@@ -1,0 +1,21 @@
+{
+  "siteId" : null,
+  "sitenames" : {
+    "Stream" : "TS test site 2"
+  },
+  "description" : "A second TS site",
+  "latitude" : "38.55",
+  "longitude" : "-121.75",
+  "elevation" : 10.0,
+  "elevUnits" : "ft",
+  "nearestCity" : "Davis",
+  "timezone" : "UTC",
+  "state" : "CA",
+  "country" : "US",
+  "region" : null,
+  "active" : true,
+  "locationType" : "TS",
+  "publicName" : "TS test site 2",
+  "properties" : { },
+  "lastModified" : 1736815678000
+}

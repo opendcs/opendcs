@@ -923,7 +923,7 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
         if (props == null)
             return;
 
-        DaiBase dao = new DaoBase(this,"writeTsdbProperties");
+        DaoBase dao = new DaoBase(this,"writeTsdbProperties");
         try
         {
             for(Object keyo : props.keySet())
@@ -934,15 +934,18 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
                     setProperty(key, val);
                 else
                     props.remove(key);
-                String q = "delete from tsdb_property where prop_name = " + sqlString(key);
-                dao.doModify(q);
+                String q = "delete from tsdb_property where prop_name = ?";
+                dao.doModify(q, key);
                 if (val != null)
                 {
-                    q = "insert into tsdb_property values(" + sqlString(key)
-                        + ", " + sqlString(val) + ")";
-                    dao.doModify(q);
+                    q = "insert into tsdb_property(prop_name, prop_value) values(?,?)";
+                    dao.doModify(q, key, val);
                 }
             }
+        }
+        catch (SQLException ex)
+        {
+            throw new DbIoException("unable to update properties.", ex);
         }
         finally
         {
@@ -968,7 +971,14 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
      */
     public void setProperty(String name, String value)
     {
-        props.setProperty(name, value);
+        if (value != null)
+        {
+            props.setProperty(name, value);
+        }
+        else
+        {
+            props.remove(name);
+        }
     }
 
     /**
@@ -1370,7 +1380,7 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
     @Override
     public EnumDAI makeEnumDAO()
     {
-        return new EnumSqlDao(this, dcsDb);
+        return new EnumSqlDao(this);
     }
 
     @Override

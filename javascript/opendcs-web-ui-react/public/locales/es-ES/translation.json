@@ -1,0 +1,14 @@
+{
+  "actions": "Comportamiento",
+  "login": "Acceso",
+  "logout": "Cerrar sesión",
+  "name": "Nombre",
+  "password": "Contraseña",
+  "username": "Nombre de usuario",
+  "value": "Valor",
+  "Auto": "Auto",
+  "Dark": "Oscuro",
+  "Light": "Luz",
+  "Change language": "Cambiar idioma a {{lang}}",
+  "Language Menu": "Abrir menú de traducción"
+}

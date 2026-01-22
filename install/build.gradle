@@ -1,3 +1,5 @@
+import org.apache.tools.ant.filters.FixCrLfFilter
+
 plugins
 {
     id 'opendcs.deps-conventions'
@@ -55,6 +57,10 @@ distributions
             into('bin')
             {
                 from ('src/main/dist/scripts')
+
+                filesMatching('**/*.bat') {
+                    filter(FixCrLfFilter, eol: FixCrLfFilter.CrLf.CRLF)
+                }
 
                 filePermissions
                 {
@@ -136,6 +142,7 @@ project.tasks.findAll { task -> task.name.startsWith("publish")}.each { task -> 
 def javaVersion = Double.parseDouble(project.findProperty("org.gradle.java.version") ?: "1.8" )
 
 task runApp(type: Exec) {
+    group = 'application'
     dependsOn installDist
     def runDir = "${project.layout.getBuildDirectory().dir("run").get()}"
     doFirst {

@@ -1,0 +1,91 @@
+services:
+  db:
+    image: postgres:16-alpine # Using a lightweight Alpine-based image for PostgreSQL 16
+    restart: always # Ensure the container restarts if it crashes
+    environment:
+      POSTGRES_USER: dcs_owner # Database username
+      POSTGRES_PASSWORD: dcs_password # Database password
+      POSTGRES_DB: dcs # Name of the database to create
+    ports:
+      - "5432:5432" # Map host port 5432 to container port 5432
+    volumes:
+      - db_data:/var/lib/postgresql/data # Persistent storage for database data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dcs_owner -d dcs -h localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+  migration:
+    build:
+      context: .
+      target: tsdbapp
+    environment:
+      - DCS_OWNER=dcs_owner
+      - DCS_OWNER_PASS=dcs_password
+      - DCS_USER=app
+      - DCS_PASS=app_pass
+      - DCS_IMPLEMENTATION=OpenDCS-Postgres
+      - DATABASE_URL=jdbc:postgresql://db:5432/dcs
+      - placeholder_NUM_TS_TABLES=1
+      - placeholder_NUM_TEXT_TABLES=1
+    command: ["/schema.sh"]
+    volumes:
+      - ./compose_files/schema.sh:/schema.sh:ro
+    restart: no
+    depends_on:
+      db:
+       condition: service_healthy
+  set-db-type:
+    image: postgres:16-alpine # Using a lightweight Alpine-based image for PostgreSQL 16
+    restart: no
+    depends_on:
+      migration:
+        required: true
+        condition: service_completed_successfully
+    environment:
+      - PGPASSWORD=dcs_password
+    command: ["psql", "-U", "dcs_owner", "-w", "-f", "/extra.sql", "-h", "db", "-d", "dcs"]
+    volumes:
+      - ./compose_files/extra.sql:/extra.sql:ro
+  api:
+    build:
+      context: .
+      target: web-api
+    healthcheck:
+      test: ["CMD-SHELL", "curl http://localhost:7000/odcsapi/health/live"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    ports:
+      - 7000:7000
+    environment:
+      - DB_DRIVER_CLASS=org.postgresql.Driver
+      - DB_USERNAME=app
+      - DB_PASSWORD=app_pass
+      - DB_VALIDATION_QUERY=SELECT 1
+      - DB_URL=jdbc:postgresql://db:5432/dcs
+      - DB_MAX_CONNECTIONS=10
+      - DB_MAX_IDLE=5
+      - DB_MIN_IDLE=1
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+      set-db-type:
+        condition: service_completed_successfully
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: user@exaple.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "unless-stopped"
+    volumes:
+      - ./compose_files/servers.json:/tmp/servers.json
+volumes:
+  db_data: # Define the named volume for data persistence

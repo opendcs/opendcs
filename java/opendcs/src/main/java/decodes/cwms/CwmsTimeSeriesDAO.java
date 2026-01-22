@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.opendcs.database.ExceptionHelpers;
 import org.opendcs.utils.FailableResult;
+import org.opendcs.utils.logging.MDCTimer;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -768,9 +769,12 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
                     values[idx] = valueArray.get(idx);
                     qualities[idx] = qualArray.get(idx);
 
-                    log.trace("sample[{}] time={}, value={}, qual=0x{}",
-                              idx, db.getLogDateFormat().format(new Date(times[idx])),
-                              values[idx], Integer.toHexString(qualities[idx]));
+                    if (log.isTraceEnabled())
+                    {
+                        log.trace("sample[{}] time={}, value={}, qual=0x{}",
+                                idx, new Date(times[idx]),
+                                values[idx], Integer.toHexString(qualities[idx]));
+                    }
                 }
                 // The "Replace All" store-rule means:
                 //  -- Values at same time stamp I provide will replace existing values
@@ -778,11 +782,8 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
                 //  -- Existing values at different time stamps will be left alone.
                 log.debug(" Calling store for ts_id='{}', office='{}' with {} values, units='{}'",
                           path, dbOfficeId, num2write, ts.getUnitsAbbr());
-                cwmsDbTs.store(
-                    conn,
-                    dbOfficeId, path, ts.getUnitsAbbr(), times, values,
-                    qualities, num2write, CwmsConstants.REPLACE_ALL,
-                    overrideProtection, versionDate,false);
+                timedStore(ts, path, versionDate, overrideProtection, CwmsConstants.REPLACE_ALL,
+                          conn, cwmsDbTs, num2write, times, values,qualities);
             }
 
             // Handle the special values with No OVERWRITE flag:
@@ -798,19 +799,19 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
                     times[idx] = msecArray.get(idx);
                     values[idx] = valueArray.get(idx);
                     qualities[idx] = qualArray.get(idx);
-
-                    log.trace("sample[{}] time={}, value={}, qual=0x{}",
-                              idx, db.getLogDateFormat().format(new Date(times[idx])),
-                              values[idx], Integer.toHexString(qualities[idx]));
+                    if (log.isTraceEnabled())
+                    {
+                        log.trace("sample[{}] time={}, value={}, qual=0x{}",
+                                idx, db.getLogDateFormat().format(new Date(times[idx])),
+                                values[idx], Integer.toHexString(qualities[idx]));
+                    }
                 }
                 // The "REPLACE_MISSING_VALUES_ONLY" store-rule means:
                 //  -- Do not overwrite if a value exists at that time-slice.
                 log.debug(" Calling store (no overwrite) for ts_id='{}' with {} values, units='{}'",
                        path, num2write, ts.getUnitsAbbr());
-
-                cwmsDbTs.store(conn, dbOfficeId, path, ts.getUnitsAbbr(), times, values,
-                    qualities, num2write, CwmsConstants.REPLACE_MISSING_VALUES_ONLY,
-                    overrideProtection, versionDate, false);
+                timedStore(ts, path, versionDate, overrideProtection, CwmsConstants.REPLACE_MISSING_VALUES_ONLY,
+                           conn, cwmsDbTs, num2write, times, values, qualities);
             }
 
             TimeSeriesIdentifier tsIdCached = cache.getByUniqueName(tsId.getUniqueString());
@@ -837,6 +838,37 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
             // Note: There are so many business rules in CWMS which can
             // cause the store to fail, so don't throw DBIO.
             //            throw new DbIoException(msg);
+        }
+    }
+
+    /**
+     * Wrapp the call in a timer for diagnostics
+     * @param ts
+     * @param path
+     * @param versionDate
+     * @param overrideProtection
+     * @param method
+     * @param conn
+     * @param cwmsDbTs
+     * @param num2write
+     * @param times
+     * @param values
+     * @param qualities
+     */
+    private void timedStore(CTimeSeries ts, String path, java.sql.Timestamp versionDate, boolean overrideProtection,
+                            String method, Connection conn, CwmsDbTs cwmsDbTs, int num2write,
+                            long[] times, double[] values, int[] qualities) {
+        try (var tsStoreTimer = MDCTimer.startTimer("storeTs"))
+        {
+            cwmsDbTs.store(
+                conn,
+                dbOfficeId, path, ts.getUnitsAbbr(), times, values,
+                qualities, num2write, method,
+                overrideProtection, versionDate,false);
+        }
+        catch (Exception ex)
+        {
+            log.atError().setCause(ex).log("Unable to close timer. This should not be able to happen.");
         }
     }
 
@@ -1289,7 +1321,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
     }
 
     @Override
-    public DataCollection getNewData(DbKey applicationId)
+    public DataCollection getNewData(DbKey applicationId, int maxTake)
         throws DbIoException
     {
         DataCollection dataCollection = new DataCollection();
@@ -1304,7 +1336,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
             + "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
             + "from CP_COMP_TASKLIST a "
             + "where a.LOADING_APPLICATION_ID = ?"
-            + " and ROWNUM < 20000"
+            + " and ROWNUM < " + maxTake
             + failTimeClause
             + " ORDER BY a.site_datatype_id, a.start_date_time";
 

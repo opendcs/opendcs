@@ -15,7 +15,7 @@
 ::   -D<prop>=<value>  Pass to JVM 
 ::
 :: Environment Variables:
-::   JAVA_HOME         Path to Java installation (required)
+::   JAVA_HOME         Path to Java installation (if not set, java.exe must be in system PATH)
 ::   DCSTOOL_USERDIR   User config directory (default: %APPDATA%\.opendcs)
 ::   DECJ_MAXHEAP      Max heap size (e.g., -Xmx512m)
 ::   DECJ_OPTS         Additional JVM options
@@ -93,14 +93,29 @@ exit /B %ERRORLEVEL%
 
 :ValidateJavaHome
     if not defined JAVA_HOME (
-        call :LogStderr "ERROR: JAVA_HOME environment variable is not set."
-        call :LogStderr "Please set JAVA_HOME to a Java %MIN_JAVA_VERSION%+ installation."
-        exit /B 1
+        call :FindJavaExe
+        if "!JAVA_EXE_PATH!"=="" (
+            echo java.exe not found in the system PATH.
+            call :LogStderr "ERROR: JAVA_HOME environment variable is not set."
+            call :LogStderr "Please set JAVA_HOME to a Java installation, or ensure java.exe is in the system PATH."
+            exit /B 1
+        )
+        for /f "delims=" %%i in ("!JAVA_EXE_PATH!") do set "JAVA_BIN_DIR=%%~dpi"
+        set "JAVA_BIN_DIR=!JAVA_BIN_DIR:~0,-1!"
+        for /f "delims=" %%i in ("!JAVA_BIN_DIR!") do set "JAVA_HOME=%%~dpi"
+        set "JAVA_HOME=!JAVA_HOME:~0,-1!"
     )
     if not exist "%JAVA_HOME%\bin\java.exe" (
         call :LogStderr "ERROR: Java executable not found at %JAVA_HOME%\bin\java.exe"
         call :LogStderr "Please verify JAVA_HOME is set correctly."
         exit /B 1
+    )
+    exit /B 0
+
+:FindJavaExe
+    set "JAVA_EXE_PATH="
+    for /f "delims=" %%i in ('where java 2^>nul') do (
+        if not defined JAVA_EXE_PATH set "JAVA_EXE_PATH=%%i"
     )
     exit /B 0
 

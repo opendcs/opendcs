@@ -332,7 +332,7 @@ public class PollingDataSource extends DataSourceExec
 	}
 
 	@Override
-	public RawMessage getRawMessage()
+	protected RawMessage getSourceRawMessage()
 		throws DataSourceException
 	{
 		RawMessage ret = rawMessageQueue.poll();

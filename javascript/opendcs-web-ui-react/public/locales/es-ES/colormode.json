@@ -1,0 +1,4 @@
+{
+  "activate": "Establecer el modo de color en $t(translation:{{mode}})",
+  "dropdownLabel": "Abrir menú de modo de color"
+}

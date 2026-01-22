@@ -16,12 +16,15 @@ configurations {
         exclude group: "log4j"
         exclude group: "org.apache.xmlbeans", module: "xmlbeans"
         exclude group: "dom4j", module: "dom4j"
+        exclude group: "com.rmanet", module: "lookup"
+        exclude group: "mil.army.usace.hec", module: "lookup"
     }
 }
 
 dependencies {
     annotationProcessor(project(":opendcs-annotations"))
     annotationProcessor(libs.auto.service.processor)
+    annotationProcessor(libs.org.netbeans.lookup)
 
     api(project(":opendcs-annotations"))
     api(project(":opendcs-api"))
@@ -99,9 +102,11 @@ dependencies {
     implementation(libs.hec.nucleus.metadata)
     api(libs.org.slf4j.api)
     implementation(libs.bundles.jdbi)
-    implementation(libs.org.flywaydb.flyway.core)
-    implementation(libs.fasterxml.jackson.databind)
+    implementation(libs.bundles.flyway)
+    implementation(libs.com.faster.xml.jackson.databind)
     implementation(libs.com.password4j.password4j)
+    implementation(libs.org.netbeans.lookup)
+    implementation(libs.hec.lookup.compat)
 
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)
@@ -140,6 +145,8 @@ javadoc {
 def versionFile = tasks.register("versionFile") {
     def outdir = layout.buildDirectory.dir('generated/sources/java/org/opendcs/utils')
     outputs.dir(outdir)
+    def projectVersion = project.version
+    def commitHash = project.gitCommit
     doLast {
         File sourceDir = outdir.get().asFile
         new File(sourceDir,"OpenDcsVersion.java").text = """
@@ -147,8 +154,8 @@ package org.opendcs.utils;
 
 public final class OpenDcsVersion
 {
-    public static final String VERSION="${project.version}";
-    public static final String COMMIT_HASH="${project.gitCommit}";
+    public static final String VERSION="${projectVersion}";
+    public static final String COMMIT_HASH="${commitHash}";
 }
         """
     }

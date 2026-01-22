@@ -40,10 +40,12 @@ import org.opendcs.database.model.mappers.user.IdentityProviderMappingMapper;
 import org.opendcs.database.model.mappers.user.UserBuilderMapper;
 import org.opendcs.database.model.mappers.user.UserBuilderReducer;
 import org.opendcs.utils.sql.SqlKeywords;
+import org.openide.util.lookup.ServiceProvider;
 import org.opendcs.utils.sql.GenericColumns;
 
 import decodes.sql.DbKey;
 
+@ServiceProvider(service = UserManagementDao.class)
 public class UserManagementImpl implements UserManagementDao
 {
 

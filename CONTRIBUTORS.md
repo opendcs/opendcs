@@ -6,8 +6,10 @@
 
 - Copyright 2012-2019 U.S. Federal Government (in countries where recognized)
 -                     Michael A Neilson (michael.a.neilson@usace.army.mil)
-- Copyright 2021 Resource Management Associates Inc.
--                    Adam Korynta (adam@rmanet.com)
+- Copyright 2021-2024 Resource Management Associates Inc.
+-                     Adam Korynta (adam@rmanet.com)
+                      Deziree Seidner (deziree@rmanet.com)
+                      Ryan Ripken (ryan@rmanet.com)
 - Copyright 2021 Michael A Neilson (m.allan.neilson@gmail.com)
 -
 - U.S. Federal Government (in countries where recognized)

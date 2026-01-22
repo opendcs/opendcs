@@ -18,7 +18,8 @@ import java.util.Optional;
  * For any additional connection types, transaction support is the responsibility of the implementation.
  *
  */
-public interface DataTransaction extends AutoCloseable {
+public interface DataTransaction extends AutoCloseable
+{
 
     /**
      * Retrieve a connection of a given type, such as java.sql.Connection or
@@ -47,6 +48,12 @@ public interface DataTransaction extends AutoCloseable {
      * @throws OpenDcsDataException if a failure to rollback occurs
      */
     void rollback() throws OpenDcsDataException;
+
+    /**
+     * Contains information about the database, such as the database engine and settings.
+     * @return
+     */
+    TransactionContext getContext();
 
     /**
      * Remove because downstream things need to be responsible for closing any actually connections and such.

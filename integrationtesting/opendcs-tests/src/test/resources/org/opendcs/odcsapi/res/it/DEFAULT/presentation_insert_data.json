@@ -1,0 +1,26 @@
+{
+  "groupId" : null,
+  "name" : "Test Presentation Group",
+  "inheritsFrom" : "Parent Presentation Group",
+  "inheritsFromId" : null,
+  "lastModified" : 1736530715000,
+  "elements" : [
+    {
+      "dataTypeStd" : "CWMS",
+      "dataTypeCode" : "Speed",
+      "units" : "kph",
+      "fractionalDigits" : 2,
+      "min" : 0.0,
+      "max" : 1000.0
+    },
+    {
+      "dataTypeStd" : "NRCS",
+      "dataTypeCode" : "PRES",
+      "units" : "pa",
+      "fractionalDigits" : 2,
+      "min" : 0.0,
+      "max" : 15000.0
+    }
+  ],
+  "production" : true
+}

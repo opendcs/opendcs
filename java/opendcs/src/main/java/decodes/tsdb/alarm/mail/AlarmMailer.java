@@ -20,12 +20,12 @@ import ilex.util.PropertiesUtil;
 import java.util.ArrayList;
 import java.util.Properties;
 
-import javax.mail.Message;
-import javax.mail.PasswordAuthentication;
-import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.Message;
+import jakarta.mail.PasswordAuthentication;
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
 
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -108,7 +108,7 @@ public class AlarmMailer
 		if (username != null && password != null)
 		{
 			session = Session.getInstance(mailProps,
-				new javax.mail.Authenticator() 
+				new jakarta.mail.Authenticator() 
 				{
 					protected PasswordAuthentication getPasswordAuthentication()
 					{

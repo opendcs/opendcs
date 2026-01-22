@@ -1,0 +1,8 @@
+{
+  "configId" : null,
+  "name" : "TestConfig",
+  "numPlatforms" : 0,
+  "description" : "Test Description",
+  "configSensors" : [ ],
+  "scripts" : [ ]
+}

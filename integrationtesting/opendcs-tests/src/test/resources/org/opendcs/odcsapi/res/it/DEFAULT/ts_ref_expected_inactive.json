@@ -1,0 +1,7 @@
+{
+  "uniqueString": "TS test site 2.Depth.Total.30Minutes.2Hours.Final",
+  "key": 2,
+  "description": "Depth at TS test site 2",
+  "storageUnits": "ft",
+  "active": false
+}

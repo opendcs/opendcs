@@ -1,0 +1,9 @@
+{
+  "appId" : null,
+  "appName" : "Hostname Generator",
+  "appType" : "Utility",
+  "comment" : "Generates a pseudo-random hostname",
+  "lastModified" : 1609459200000,
+  "manualEditingApp" : false,
+  "properties" : {}
+}

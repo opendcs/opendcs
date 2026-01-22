@@ -15,7 +15,6 @@
 */
 package ilex.xml;
 
-import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
@@ -26,41 +25,51 @@ import org.xml.sax.SAXParseException;
 */
 public class LoggerErrorHandler implements ErrorHandler
 {
-	private static final Logger log = OpenDcsLoggerFactory.getLogger();
-	private boolean _stopOnWarnings;
-	private boolean _stopOnErrors;
+	private final Logger log;
+	private boolean stopOnWarnings;
+	private boolean stopOnErrors;
 
 	/** constructor */
-	public LoggerErrorHandler( )
+	public LoggerErrorHandler(Logger logger)
 	{
-		_stopOnWarnings = true;
-		_stopOnErrors = true;
+		stopOnWarnings = true;
+		stopOnErrors = true;
+		this.log = logger;
 	}
 
 	/**
 	* Call with true if you want parsing to stop on a warning.
 	* @param tf true/false value
 	*/
-	public void stopOnWarnings( boolean tf ) { _stopOnWarnings = tf; }
+	public void stopOnWarnings(boolean tf)
+	{
+		stopOnWarnings = tf;
+	}
 
 	/**
 	* Call with true if you want parsing to stop on an error.
 	* @param tf true/false value
 	*/
-	public void stopOnErrors( boolean tf ) { _stopOnErrors = tf; }
+	public void stopOnErrors(boolean tf)
+	{
+		stopOnErrors = tf;
+	}
 
 	/**
 	* Issue a warning message.
 	* @param e the exception
 	* @throws SAXException if stop-on-warnings is true.
 	*/
-	public void warning( SAXParseException e ) throws SAXException
+	public void warning(SAXParseException ex) throws SAXException
 	{
-		String msg = e.getPublicId() + ": " + e.getLineNumber()
-			+ " " + e.getMessage();
-		log.warn(msg);
-		if (_stopOnWarnings)
-			throw new SAXException("SAX Warning: " + msg);
+		if (stopOnWarnings)
+		{
+			throw new SAXException("SAX Warning", ex);
+		}
+		else
+		{
+			log.atWarn().setCause(ex).log("{}: {} {}", ex.getPublicId(), ex.getLineNumber(), ex.getMessage());
+		}
 	}
 
 	/**
@@ -68,15 +77,16 @@ public class LoggerErrorHandler implements ErrorHandler
 	* @param e the exception
 	* @throws SAXException if stop-on-errors is true.
 	*/
-	public void error( SAXParseException e ) throws SAXException
+	public void error(SAXParseException ex) throws SAXException
 	{
-		//String msg = e.getSystemId() + ": " + e.getLineNumber()
-		String msg = e.getPublicId() + ": " + e.getLineNumber()
-			+ " " + e.getMessage();
-		log.error(msg);
-
-		if (_stopOnErrors)
-			throw new SAXException("SAX Error: " + msg);
+		if (stopOnErrors)
+		{
+			throw new SAXException("SAX Error", ex);
+		}
+		else
+		{
+			log.atError().setCause(ex).log("{}: {} {}", ex.getPublicId(), ex.getLineNumber(), ex.getMessage());
+		}
 	}
 
 	/**
@@ -84,11 +94,8 @@ public class LoggerErrorHandler implements ErrorHandler
 	* @param e the exception
 	* @throws SAXException rethrows the exception
 	*/
-	public void fatalError( SAXParseException e ) throws SAXException
+	public void fatalError(SAXParseException ex) throws SAXException
 	{
-		String msg = e.getPublicId() + ": " + e.getLineNumber()
-			+ " " + e.getMessage();
-		log.error(msg);
-		throw new SAXException("SAX Fatal: " + msg);
+		throw new SAXException("SAX Fatal", ex);
 	}
 }

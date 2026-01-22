@@ -8,7 +8,7 @@ if [ $# -lt 2 ]; then
     exit 1
 fi
 
-images=("lrgs"  "routingscheduler"  "compproc" "compdepends")
+images=("lrgs"  "routingscheduler"  "compproc" "compdepends" "web-api")
 tag=$1
 version=$2
 extra_versions=$3
@@ -17,6 +17,8 @@ for image in ${images[@]}; do
     echo "Building $tag/$image:$version"
     docker build --target $image -t $tag/$image:$version .
     while IFS= read -r version2; do
-        docker tag $tag/$image:$version $tag/$image:$version2
+        if [[ "$version2" != "" ]]; then
+            docker tag $tag/$image:$version $tag/$image:$version2
+        fi
     done <<< "$extra_versions"
 done;

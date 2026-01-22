@@ -116,6 +116,10 @@ public class OpenDCSPGConfiguration implements Configuration
         environmentVars.put("DB_PASSWORD",DCS_ADMIN_USER_PASSWORD);
         environment.set("DB_USERNAME",DCS_ADMIN_USER);
         environment.set("DB_PASSWORD",DCS_ADMIN_USER_PASSWORD);
+        String validationQuery = "SELECT 1";
+		environment.set("DB_DRIVER_CLASS", "org.postgresql.Driver");
+		environment.set("DB_DATASOURCE_CLASS", "org.apache.tomcat.jdbc.pool.DataSourceFactory");
+		environment.set("DB_VALIDATION_QUERY", validationQuery);
         if (isRunning())
         {
             return;
@@ -148,6 +152,13 @@ public class OpenDCSPGConfiguration implements Configuration
         mp.createUser(jdbi, DCS_ADMIN_USER, DCS_ADMIN_USER_PASSWORD, roles);
         log.info("Setting authentication environment vars.");
         mp.loadBaselineData(profile, DCS_ADMIN_USER, DCS_ADMIN_USER_PASSWORD);
+        try (var handle = jdbi.open();
+             var insertDbType = handle.createUpdate("insert into tsdb_property(prop_name, prop_value) values(:name, :value)"))
+        {
+            insertDbType.bind("name", "editDatabaseType")
+                        .bind("value", getName())
+                        .execute();
+        }
         setStarted();
     }
 
@@ -272,5 +283,11 @@ public class OpenDCSPGConfiguration implements Configuration
             }
             return databases;
         }
+    }
+
+    @Override
+    public boolean supportsRestApi()
+    {
+        return true;
     }
 }

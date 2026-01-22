@@ -329,8 +329,8 @@ class CwmsLocationLevelDAOTestIT extends AppTestBase
 
                     if (Math.abs(meterSample.getDoubleValue()) > 0.001)
                     {
-                        // 1 meter = 3.28084 feet
-                        double expectedFeet = meterSample.getDoubleValue() * 3.28084;
+                        // 1 meter = 3.280839895 feet
+                        double expectedFeet = meterSample.getDoubleValue() * 3.280839895;
                         assertEquals(expectedFeet, feetSample.getDoubleValue(), 0.01,
                                     "Conversion from meters to feet should be accurate");
                     }
@@ -446,10 +446,10 @@ class CwmsLocationLevelDAOTestIT extends AppTestBase
                 assertEquals("m", valueMeters.getUnits(), "Units should be meters");
                 assertEquals("ft", valueFeet.getUnits(), "Units should be feet");
 
-                // Verify conversion is correct (1 meter = 3.28084 feet)
+                // Verify conversion is correct (1 meter = 3.280839895 feet)
                 if (Math.abs(valueMeters.getLevelValue()) > 0.001)
                 {
-                    double expectedFeet = valueMeters.getLevelValue() * 3.28084;
+                    double expectedFeet = valueMeters.getLevelValue() * 3.280839895;
                     assertEquals(expectedFeet, valueFeet.getLevelValue(), 0.01,
                                 "Conversion from meters to feet should be accurate");
                 }

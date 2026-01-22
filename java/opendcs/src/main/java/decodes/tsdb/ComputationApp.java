@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.MDCTimer;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
@@ -69,6 +70,13 @@ execute it. The logic should be gathered in one place.
 public class ComputationApp extends TsdbAppTemplate
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	// wait 30 seconds between runs by default. Drastically reduces system load
+	// especially with multiple instances pointing to a single database.
+	private static final long COMP_RUN_WAIT_TIME =
+		Long.parseLong(System.getProperty("opendcs.computations.getNew.interval.milliseconds", "30000"));
+	// maximum number of records to take at a time from the task list.
+	private static final int COMP_RUN_MAX_TAKE =
+		Integer.parseInt(System.getProperty("opendcs.computations.getNew.maxTake", "20000"));
 	/** Holds app name, id, & description. */
 	CompAppInfo appInfo;
 
@@ -93,9 +101,6 @@ public class ComputationApp extends TsdbAppTemplate
 	private ArrayList<DbComputation> timedComps = new ArrayList<DbComputation>();
 	private int checkTimedCompsSec = 600;
 	private SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
-
-	private long compRunWaitTime = 30000L; // wait 30 seconds between runs by default. Drastically reduces system load
-										   // especially with multiple instances pointing to a single database.
 
 	private static ComputationApp _instance = null;
 	public static ComputationApp instance() { return _instance; }
@@ -252,7 +257,7 @@ public class ComputationApp extends TsdbAppTemplate
 			while(!shutdownFlag)
 			{
 				log.trace("ComputationApp start of main loop.");
-				try(
+				try(var timer = MDCTimer.startTimer("computationCycle");
 					TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
 					LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
 					TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
@@ -332,7 +337,10 @@ public class ComputationApp extends TsdbAppTemplate
 					}
 
 					action = "Getting new data";
-					dataCollection = timeSeriesDAO.getNewData(getAppId());
+					try (var newDataTime = MDCTimer.startTimer(action))
+					{
+						dataCollection = timeSeriesDAO.getNewData(getAppId(), COMP_RUN_MAX_TAKE);
+					}
 					// In Regression Test Mode, exit after 5 sec of idle
 					if (!dataCollection.isEmpty())
 						lastDataTime = System.currentTimeMillis();
@@ -356,7 +364,8 @@ public class ComputationApp extends TsdbAppTemplate
 							log.debug("Trying computation '{}' #trigs={}",
 									  comp.getName(), comp.getTriggeringRecNums().size());
 							compsTried++;
-							try
+							try (var mdcComputation = MDC.putCloseable("computation", comp.getName());
+								 var compTimer = MDCTimer.startTimer(comp.getName()))
 							{
 								comp.prepareForExec(theDb);
 								comp.apply(dataCollection, theDb);
@@ -386,24 +395,31 @@ public class ComputationApp extends TsdbAppTemplate
 						action = "Saving results";
 						List<CTimeSeries> tsList = dataCollection.getAllTimeSeries();
 						log.trace("{} {} time series in data.", action, tsList.size());
-						for(CTimeSeries ts : tsList)
+						try (var allTsTimer = MDCTimer.startTimer(action))
 						{
-							try { timeSeriesDAO.saveTimeSeries(ts); }
-							catch(Exception ex)
+							for(CTimeSeries ts : tsList)
 							{
-								log.atWarn()
-								   .setCause(ex)
-								   .log("Cannot save time series '{}'", ts.getNameString());
+								try { timeSeriesDAO.saveTimeSeries(ts); }
+								catch(Exception ex)
+								{
+									log.atWarn()
+									.setCause(ex)
+									.log("Cannot save time series '{}'", ts.getNameString());
+								}
 							}
 						}
 
 						action = "Releasing new data";
-						theDb.releaseNewData(dataCollection, timeSeriesDAO);
+						try (var dataReleaseTimer = MDCTimer.startTimer(action))
+						{
+							theDb.releaseNewData(dataCollection, timeSeriesDAO);
+						}
 						lastDataTime = System.currentTimeMillis();
 					}
 					else // MJM 6.4 RC08 Only sleep if data was empty.
 					{
-						try { Thread.sleep(compRunWaitTime); }
+						log.info("No data was processed, waiting {} ms to check again.", COMP_RUN_WAIT_TIME);
+						try { Thread.sleep(COMP_RUN_WAIT_TIME); }
 						catch(InterruptedException ex) {}
 					}
 
@@ -907,7 +923,7 @@ public class ComputationApp extends TsdbAppTemplate
 				continue nextGroupTSID;
 			}
 			// ELSE I can execute this clone. Make it concrete and add it to the execute list.
-			try
+			try (var makeConcreteTimer = MDCTimer.startTimer("makeConcrete"))
 			{
 				// Use the resolver's method to avoid duplicates (multiple TSIDs in the group that
 				// result in the same set of computation params.)
@@ -924,6 +940,10 @@ public class ComputationApp extends TsdbAppTemplate
 			catch (NoSuchObjectException ex)
 			{
 				log.atWarn().setCause(ex).log("Could not make concrete computation.");
+			}
+			catch (Exception ex)
+			{
+				log.atError().setCause(ex).log("Unable to close timer?");
 			}
 		}
 

@@ -68,7 +68,7 @@ public class TopLevelParser implements XmlObjectParser
 		parser = sp.getXMLReader();
 		parser.setFeature("http://xml.org/sax/features/namespaces", true);
 
-		ErrorHandler eh = new PrintStreamErrorHandler(System.out);
+		ErrorHandler eh = new LoggerErrorHandler(log);
 		xhp = new XmlHierarchyParser(eh);
 		setErrorHandler(eh);
 		parser.setContentHandler(xhp);

@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.jdbi.v3.core.Jdbi;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.MigrationManager;
 import org.opendcs.database.api.OpenDcsDatabase;
@@ -118,11 +119,23 @@ public class CwmsOracleConfiguration implements Configuration
             createPropertiesFile(configBuilder, this.propertiesFile);
             profile = Profile.getProfile(this.propertiesFile);
             mp.loadBaselineData(profile, dcsUser, dcsUserPassword);
+            Jdbi jdbi = mm.getJdbiHandle();
+            try (var handle = jdbi.open();
+                 var insertDbType = handle.createUpdate("insert into tsdb_property(prop_name, prop_value) values(:name, :value)"))
+            {
+                insertDbType.bind("name", "editDatabaseType")
+                            .bind("value", getName())
+                            .execute();
+                insertDbType.bind("name", "sqlKeyGenerator")
+                            .bind("value", OracleSequenceKeyGenerator.class.getName())
+                            .execute();
+            }
         }
 
 
         environment.set("DB_USERNAME",dcsUser);
         environment.set("DB_PASSWORD",dcsUserPassword);
+        environment.set("DB_URL", cwmsDb.getJdbcUrl());
         environmentVars.put("DB_USERNAME",dcsUser);
         environmentVars.put("DB_PASSWORD",dcsUserPassword);
         environmentVars.put("DB_OFFICE", cwmsDb.getOfficeId());
@@ -151,7 +164,7 @@ public class CwmsOracleConfiguration implements Configuration
     
     private void createPropertiesFile(UserPropertiesBuilder configBuilder, File propertiesFile) throws Exception
     {
-        configBuilder.withEditDatabaseType("CWMS");
+        configBuilder.withEditDatabaseType(NAME);
         configBuilder.withDatabaseDriver("oracle.jdbc.driver.OracleDriver");
         configBuilder.withSiteNameTypePreference("CWMS");
         configBuilder.withDecodesAuth("env-auth-source:username=DB_USERNAME,password=DB_PASSWORD");
@@ -284,6 +297,7 @@ public class CwmsOracleConfiguration implements Configuration
         }
         return false;
     }
+
     @Override
     public OpenDcsDatabase getOpenDcsDatabase() throws Throwable
     {
@@ -295,5 +309,11 @@ public class CwmsOracleConfiguration implements Configuration
             }
             return databases;
         }
+    }
+
+    @Override
+    public boolean supportsRestApi()
+    {
+        return true;
     }
 }

@@ -2,7 +2,7 @@
 # The 'EditDatabase' is the provisional working database.
 # The default installation is set up for a local XML database.
 #
-EditDatabaseType=CWMS
+EditDatabaseType=CWMS-Oracle
 EditDatabaseLocation=$DECODES_INSTALL_DIR/edit-db
 
 #

@@ -199,6 +199,8 @@ public abstract class StreamDataSource extends DataSourceExec
             + "with MediumID and header=NoHeader."),
         new PropertySpec("fileNameTimeStamp", PropertySpec.STRING,
             "(default null) Optional file-name time stamp in format 'MMddyyyyHHmmss'."),
+        new PropertySpec("rateLimit", PropertySpec.INT,
+            "(default -1) Limit on request rate in units of requests per minute.")
 
     };
 
@@ -334,6 +336,10 @@ public abstract class StreamDataSource extends DataSourceExec
             else if (name.equalsIgnoreCase("paritycheck")
                   || name.equalsIgnoreCase("parity"))
                 parityCheck = value.trim().toLowerCase();
+            else if (name.equalsIgnoreCase("ratelimit"))
+            {
+                this.requestRateLimit = Integer.parseInt(value.trim());
+            }
             else
                 processed = false;
 
@@ -393,6 +399,17 @@ public abstract class StreamDataSource extends DataSourceExec
         pmp.setProperties(allProps);
 
         // Call subclass method to open the stream
+        if (inputStream != null)
+        {
+            try
+            {
+                inputStream.close();
+            }
+            catch (IOException ex)
+            {
+                log.atError().setCause(ex).log("Unable to close input stream before reopening.");
+            }
+        }
         inputStream = open();
         startOfStream = true;
         huntMode = true;
@@ -417,7 +434,8 @@ public abstract class StreamDataSource extends DataSourceExec
 
       @throws DataSourceException if some other problem arises.
     */
-    public RawMessage getRawMessage()
+    @Override
+    protected RawMessage getSourceRawMessage()
         throws DataSourceException
     {
         RawMessage ret;

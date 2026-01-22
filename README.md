@@ -1,4 +1,9 @@
 ![current build](https://github.com/opendcs/opendcs/actions/workflows/build.yml/badge.svg)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=opendcs&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=opendcs)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=opendcs&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=opendcs)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=opendcs&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=opendcs)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=opendcs&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=opendcs)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=opendcs&metric=coverage)](https://sonarcloud.io/summary/new_code?id=opendcs)
 
 [Docker documentation](README.docker.md)
 
@@ -177,3 +182,52 @@ Intellij detects the gradle project and has a Gradle tool window.
 Some gradle tasks require a python environment.  Here is an example that launches inteliJ from a conda environment to have python enabled.
 (base) C:\>conda activate karl
 (karl) C:\project\opendcs>C:\Programs\ideaIC-2022.1.win\bin\idea64.exe
+
+
+# rest_api
+OpenDCS Rest API is web application that provides access to the OpenDCS database using JSON (Java Script Object Notation).
+OpenDCS Rest API is intended to run as a stand-alone Java program. It uses embedded JETTY to implement the web services.
+
+## Structure
+./java/opendcs-rest-api - contains source files for the OpenDCS REST API
+./java/opendcs-web-ui - contains source files for the OpenDCS Web Application Client
+./opendcs-integration-test - contains scripts for running embedded tomcat to deploy the REST API and Web Client wars for testing.
+
+
+## Building
+
+JDK 21 and Node 22 or higher are required to build the project.
+
+### OPENDCS API
+The gradle task `./gradlew :opendcs-rest-api:war` will create a war file in the `build/libs` directory.
+
+The SwaggerUI location can be found at the relative url path of /<context>/swaggerui.
+Assuming the context is 'odcsapi', an example of the SwaggerUI location is http://localhost:8080/odcsapi/swaggerui.
+These files are being served up from the resource file 'SwaggerResources.java' file located at 
+'src/main/java/org/opendcs/odcsapi/res/SwaggerResources.java'.
+
+#### web.xml configurations
+The bundled [web.xml](opendcs-rest-api/src/main/webapp/WEB-INF/web.xml) contains the following
+properties that should be configured for your system.
+- `opendcs.rest.api.authorization.type` - supports a comma separated list of authorization types. These can include basic,sso,openid. See section on authorization for details.
+- `opendcs.rest.api.authorization.expiration.duration` - denotes the duration that an authorization attempt is valid for. Defaults to 15 minutes.
+- `opendcs.rest.api.cwms.office` - office id specific to CWMS systems. This is the office the authorizing user will check privileges for.
+- `opendcs.rest.api.authorization.jwt.jwkset.url` - for openid authorization this is the JWK Set URL
+- `opendcs.rest.api.authorization.jwt.issuer.url`  - for openid authorization this is the Issuer URL
+
+### OPENDCS Web Client
+The gradle task `./gradlew :opendcs-web-ui:war` will create a war file in the `build/libs` directory.
+
+
+### Testing
+
+If you are on a platform with Docker, or establish the appropriate database configuration override properties you can run the api and web ui with the following:
+
+```
+./gradlew runApi --info
+# The appropriate link will be provided in the terminal output, by default it will be http://localhost:7000.
+
+
+```
+
+The default user name and password are `dcs_admin` and `dcs_admin_password`

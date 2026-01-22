@@ -200,8 +200,8 @@ final public class ResWaterTemperatureCompute
 
         double avgRhow = getAvgRhow(resj, rhow, delz);
 
-        // Calculate Stability Frequency and then Diffusion coefficient
 
+        // Calculate the stability frequency and then Diffusion Coefficient for each reservoir layer.
         for (int i = resj; i >= 1; i--)  //TODO check
         {
             if ((rhow[i] - rhow[i - 1]) != 0.)
@@ -229,7 +229,7 @@ final public class ResWaterTemperatureCompute
             kzx = .000817 * Math.pow(surfAreaX, 0.56) *
                     Math.pow((Math.abs(sFreq)), (-0.43)); // cm^2/s
             kzx = .0001 * kzx;                                // m^2/s
-            kz[i] = thermalDiffusivityCoefficient * kzx * cp[i] * rhow[i]; // j/(s m C) factor to arbitrarly reduce diffusion
+            kz[i] = thermalDiffusivityCoefficient * kzx * cp[i] * rhow[i]; // j/(s m C) factor to arbitrarily reduce diffusion
         }
 
         // Perform diffusion calculation

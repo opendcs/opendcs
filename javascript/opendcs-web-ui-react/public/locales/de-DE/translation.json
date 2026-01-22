@@ -1,0 +1,14 @@
+{
+  "username": "Benutzernamen",
+  "password": "Passwort",
+  "login": "Login",
+  "logout": "Anmeldung",
+  "actions": "Aktionen",
+  "name": "Name",
+  "value": "Wert",
+  "Auto": "Auto",
+  "Dark": "Dunkel",
+  "Light": "Licht",
+  "Change language": "Sprache ändern zu {{lang}}",
+  "Language Menu": "Öffnen Sie das Übersetzungsmenü"
+}
