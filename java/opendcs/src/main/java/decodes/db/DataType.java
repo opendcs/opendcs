@@ -75,7 +75,9 @@ public class DataType extends IdDatabaseObject
 	  that equivalences will be known.
 	  @param standard the standard, e.g. SHEF-PE or EPA-CODE
 	  @param code the code
+	  @deprecated if possible, use the new DAOs.
 	*/
+	@Deprecated(forRemoval = true)
 	public static synchronized DataType
 		getDataType(String standard, String code)
 	{

@@ -5,7 +5,7 @@ package org.opendcs.utils.sql;
  * set as jvm properties as opposed to user facing settings in the application
  * .properties files.
  */
-public class SqlSettings
+public final class SqlSettings
 {
     /**
      * Determines whether or not to maintain and print track traces of
@@ -20,4 +20,9 @@ public class SqlSettings
                 System.getProperty("cwms.connection.pool.trace", "false")
                 )
         );
+
+    private SqlSettings()
+    {
+        /* static methods only */
+    }
 }
