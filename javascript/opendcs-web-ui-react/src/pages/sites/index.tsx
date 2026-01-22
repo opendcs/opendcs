@@ -1,7 +1,7 @@
 import DataTable, { type DataTableProps, type DataTableRef } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import { useTranslation } from "react-i18next";
-import { useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { dtLangs } from "../../lang";
 import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { renderToString } from "react-dom/server";
@@ -54,8 +54,6 @@ export const SitesTable: React.FC<SiteTableProperties> = ({sites}) => {
   };
 
   useEffect(() => {
-    console.log("setup");
-    console.log(table.current);
     // Add event listener for opening and closing details
     table.current?.dt()!.on('click', 'tbody td', function (e) {
         const dt = table.current!.dt()!;
@@ -69,7 +67,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({sites}) => {
         else {
             const data: ApiSite = row.data as ApiSite;
             // Open this row
-            row.child(renderToString(<Site site={data}/>)).show();
+            row.child(renderToString(<Suspense fallback="Loading..."><Site site={data}/></Suspense>)).show();
         }
     });
   }, [i18n.language]);

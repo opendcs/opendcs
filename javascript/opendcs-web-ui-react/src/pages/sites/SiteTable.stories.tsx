@@ -33,6 +33,18 @@ const sites: ApiSite[] = [
       CWMS: "Alpha Site"
     },
     siteId: 2
+  },
+  {
+      siteId: 3,
+      description: "A test",
+      properties: {
+        "prop1": "value1"
+      },
+      sitenames: {
+        "CWMS": "Alder Springs",
+        "NWSHB5": "ALS"
+
+      }
   }
 ];
 

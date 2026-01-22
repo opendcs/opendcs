@@ -22,6 +22,11 @@ export const WithSite: Story = {
       description: "A test",
       properties: {
         "prop1": "value1"
+      },
+      sitenames: {
+        "CWMS": "Alder Springs",
+        "NWSHB5": "ALS"
+
       }
     }
   }
