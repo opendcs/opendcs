@@ -64,37 +64,53 @@ public class CwmsIntervalDAO extends DaoBase implements IntervalDAI
 	    IntervalCodes.int_one_hour_nc, 
 	    IntervalCodes.int_two_hours,
 	    IntervalCodes.int_two_hours_nc,
+		IntervalCodes.int_two_hours_local,
 	    
 	    IntervalCodes.int_three_hours, 
 	    IntervalCodes.int_three_hours_dst, 
+		IntervalCodes.int_three_hours_local, 
 	    IntervalCodes.int_four_hours,
 	    IntervalCodes.int_four_hours_dst,
+		IntervalCodes.int_four_hours_local,
 	    IntervalCodes.int_six_hours, 
 	    IntervalCodes.int_six_hours_dst, 
+		IntervalCodes.int_six_hours_local, 
 	    IntervalCodes.int_eight_hours,
 	    IntervalCodes.int_eight_hours_dst,
+		IntervalCodes.int_eight_hours_local,
 	    IntervalCodes.int_twelve_hours, 
 	    IntervalCodes.int_twelve_hours_dst, 
+		IntervalCodes.int_twelve_hours_local,
 	    IntervalCodes.int_one_day,
 	    IntervalCodes.int_one_day_dst,
+		IntervalCodes.int_one_day_local,
 	    IntervalCodes.int_two_days,
 	    IntervalCodes.int_two_days_dst,
+		IntervalCodes.int_two_days_local,
 	    IntervalCodes.int_three_days,
 	    IntervalCodes.int_three_days_dst,
+		IntervalCodes.int_three_days_local,
 	    IntervalCodes.int_four_days,
 	    IntervalCodes.int_four_days_dst,
+		IntervalCodes.int_four_days_local,
 	    IntervalCodes.int_five_days,
 	    IntervalCodes.int_five_days_dst,
+		IntervalCodes.int_five_days_local,
 	    IntervalCodes.int_six_days,
 	    IntervalCodes.int_six_days_dst,
+		IntervalCodes.int_six_days_local,
 	    IntervalCodes.int_one_week, 
 	    IntervalCodes.int_one_week_dst,
+		IntervalCodes.int_one_week_local,
 	    IntervalCodes.int_one_month,
 	    IntervalCodes.int_one_month_dst,
+		IntervalCodes.int_one_month_local,
 	    IntervalCodes.int_one_year, 
 	    IntervalCodes.int_one_year_dst,
+		IntervalCodes.int_one_year_local,
 	    IntervalCodes.int_one_decade,
-	    IntervalCodes.int_one_decade_dst
+	    IntervalCodes.int_one_decade_dst,
+		IntervalCodes.int_one_decade_local
 	};
 	
 	// TODO: Read these from the database CWMS_V_DURATION view
@@ -129,7 +145,9 @@ public class CwmsIntervalDAO extends DaoBase implements IntervalDAI
 	    IntervalCodes.int_one_week, 
 	    IntervalCodes.int_one_month,
 	    IntervalCodes.int_one_year, 
-	    IntervalCodes.int_one_decade
+	    IntervalCodes.int_one_decade,
+		"Variable",
+		"UntilChanged"
 	};
 
 	
@@ -183,37 +201,53 @@ public class CwmsIntervalDAO extends DaoBase implements IntervalDAI
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_one_hour_nc, Calendar.HOUR_OF_DAY, 1));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_two_hours, Calendar.HOUR_OF_DAY, 2));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_two_hours_nc, Calendar.HOUR_OF_DAY, 2));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_two_hours_local, Calendar.HOUR_OF_DAY, 2));
 
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_three_hours, Calendar.HOUR_OF_DAY, 3));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_three_hours_dst, Calendar.HOUR_OF_DAY, 3));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_three_hours_local, Calendar.HOUR_OF_DAY, 3));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_four_hours, Calendar.HOUR_OF_DAY, 4));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_four_hours_dst, Calendar.HOUR_OF_DAY, 4));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_four_hours_local, Calendar.HOUR_OF_DAY, 4));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_six_hours, Calendar.HOUR_OF_DAY, 6));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_six_hours_dst, Calendar.HOUR_OF_DAY, 6));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_six_hours_local, Calendar.HOUR_OF_DAY, 6));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_eight_hours, Calendar.HOUR_OF_DAY, 8));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_eight_hours_dst, Calendar.HOUR_OF_DAY, 8));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_eight_hours_local, Calendar.HOUR_OF_DAY, 8));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_twelve_hours, Calendar.HOUR_OF_DAY, 12));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_twelve_hours_dst, Calendar.HOUR_OF_DAY, 12));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_twelve_hours_local, Calendar.HOUR_OF_DAY, 12));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_one_day, Calendar.DAY_OF_MONTH, 1));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_one_day_dst, Calendar.DAY_OF_MONTH, 1));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_one_day_local, Calendar.DAY_OF_MONTH, 1));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_two_days, Calendar.DAY_OF_MONTH, 2));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_two_days_dst, Calendar.DAY_OF_MONTH, 2));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_two_days_local, Calendar.DAY_OF_MONTH, 2));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_three_days, Calendar.DAY_OF_MONTH, 3));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_three_days_dst, Calendar.DAY_OF_MONTH, 3));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_three_days_local, Calendar.DAY_OF_MONTH, 3));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_four_days, Calendar.DAY_OF_MONTH, 4));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_four_days_dst, Calendar.DAY_OF_MONTH, 4));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_four_days_local, Calendar.DAY_OF_MONTH, 4));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_five_days, Calendar.DAY_OF_MONTH, 5));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_five_days_dst, Calendar.DAY_OF_MONTH, 5));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_five_days_local, Calendar.DAY_OF_MONTH, 5));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_six_days, Calendar.DAY_OF_MONTH, 6));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_six_days_dst, Calendar.DAY_OF_MONTH, 6));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_six_days_local, Calendar.DAY_OF_MONTH, 6));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_one_week, Calendar.WEEK_OF_YEAR, 1));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_one_week_dst, Calendar.WEEK_OF_YEAR, 1));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_one_week_local, Calendar.WEEK_OF_YEAR, 1));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_one_month, Calendar.MONTH, 1));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_one_month_dst, Calendar.MONTH, 1));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_one_month_local, Calendar.MONTH, 1));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_one_year, Calendar.YEAR, 1));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_one_year_dst, Calendar.YEAR, 1));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_one_year_local, Calendar.YEAR, 1));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_one_decade, Calendar.YEAR, 10));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_one_decade_dst, Calendar.YEAR, 10));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_one_decade_local, Calendar.YEAR, 10));
 	}
 
 	@Override
