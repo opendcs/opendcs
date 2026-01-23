@@ -14,20 +14,18 @@ export const Default: Story = {
   args: {},
 };
 
-
 export const WithSite: Story = {
   args: {
     site: {
       siteId: 1,
       description: "A test",
       properties: {
-        "prop1": "value1"
+        prop1: "value1",
       },
       sitenames: {
-        "CWMS": "Alder Springs",
-        "NWSHB5": "ALS"
-
-      }
-    }
-  }
-}
+        CWMS: "Alder Springs",
+        NWSHB5: "ALS",
+      },
+    },
+  },
+};
