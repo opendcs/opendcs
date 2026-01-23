@@ -2,7 +2,7 @@ import { StrictMode, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "datatables.net-bs5/css/dataTables.bootstrap5.css"
+import "datatables.net-bs5/css/dataTables.bootstrap5.css";
 import "datatables.net-buttons-bs5/css/buttons.bootstrap5.css";
 import { ThemeProvider } from "./contexts/ThemeProvider.tsx";
 import { AuthProvider } from "./contexts/AuthProvider.tsx";

@@ -11,11 +11,9 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-
-
 export const Default: Story = {
   args: {
-    sites: []
+    sites: [],
   },
 };
 
@@ -23,37 +21,35 @@ const sites: ApiSite[] = [
   {
     description: "Test site 1",
     sitenames: {
-      CWMS: "TEST SITE 1"
+      CWMS: "TEST SITE 1",
     },
-    siteId: 1
+    siteId: 1,
   },
   {
     description: "Stargate command's backup location.",
     sitenames: {
-      CWMS: "Alpha Site"
+      CWMS: "Alpha Site",
     },
     elevation: 5.21,
     elevUnits: "ft",
     publicName: "Clearly, this site is not public.",
-    siteId: 2
+    siteId: 2,
   },
   {
-      siteId: 3,
-      description: "A test",
-      properties: {
-        "prop1": "value1"
-      },
-      sitenames: {
-        "CWMS": "Alder Springs",
-        "NWSHB5": "ALS"
-
-      }
-  }
+    siteId: 3,
+    description: "A test",
+    properties: {
+      prop1: "value1",
+    },
+    sitenames: {
+      CWMS: "Alder Springs",
+      NWSHB5: "ALS",
+    },
+  },
 ];
 
 export const WithSites: Story = {
   args: {
     sites: sites,
-  
-  }
-}
+  },
+};
