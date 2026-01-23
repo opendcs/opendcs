@@ -35,6 +35,7 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 import org.opendcs.database.ExceptionHelpers;
+import org.opendcs.database.OracleSqlExceptionHelper;
 import org.opendcs.utils.FailableResult;
 import org.opendcs.utils.logging.MDCTimer;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -826,23 +827,29 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
         }
         catch(SQLException ex)
         {
-            String msg = "Error in cwmsTsJdbc.store for '{}'";
+            String msg = "Error in cwmsTsJdbc.store for '" + path + "'";
             log.atError()
                .setCause(ex)
-               .log(msg, path);
+               .log(msg);
 
-            if (msg.contains("read from socket") || msg.contains("connection is closed"))
+            if (OracleSqlExceptionHelper.isConnectionError(ex))
             {
+                // Connection errors indicate the DB connection may be compromised
                 throw new DbIoException(msg, ex);
             }
-            // Note: There are so many business rules in CWMS which can
-            // cause the store to fail, so don't throw DBIO.
-            //            throw new DbIoException(msg);
+            if (OracleSqlExceptionHelper.isUserDefinedError(ex))
+            {
+                // User-defined errors (ORA >= 20000) are CWMS business rule violations
+                // (e.g., ORA-20998, ORA-20101 for UTC_OFFSET mismatch).
+                // The connection is still valid but the data was NOT stored.
+                throw new BadTimeSeriesException(msg, ex);
+            }
+            throw new DbIoException(msg, ex);
         }
     }
 
     /**
-     * Wrapp the call in a timer for diagnostics
+     * Wrap the call in a timer for diagnostics
      * @param ts
      * @param path
      * @param versionDate
@@ -854,10 +861,11 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
      * @param times
      * @param values
      * @param qualities
+     * @throws SQLException if the store operation fails
      */
     private void timedStore(CTimeSeries ts, String path, java.sql.Timestamp versionDate, boolean overrideProtection,
                             String method, Connection conn, CwmsDbTs cwmsDbTs, int num2write,
-                            long[] times, double[] values, int[] qualities) {
+                            long[] times, double[] values, int[] qualities) throws SQLException {
         try (var tsStoreTimer = MDCTimer.startTimer("storeTs"))
         {
             cwmsDbTs.store(
@@ -869,6 +877,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
         catch (Exception ex)
         {
             log.atError().setCause(ex).log("Unable to close timer. This should not be able to happen.");
+            throw new SQLException(ex);
         }
     }
 
@@ -1247,36 +1256,16 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
         }
         catch(SQLException ex)
         {
+            String msg = "Error creating time series for '" + path + "' with officeId '" + dbOfficeId + "'";
             // CWMS-5773 If the create error is due to some kind of user-level constraint,
             // then throw NoSuchObject, meaning that the tsid is bad but the connection is still
-            // Ok. Prasad says ORA numbers > 20000 mean user-defined. Probably some kind of
-            // constraint violation.
-            String exs = ex.toString();
-            int oraidx = exs.indexOf("ORA-");
-            if (oraidx >= 0)
+            // Ok. ORA numbers >= 20000 are user-defined, probably some kind of constraint violation.
+            if (OracleSqlExceptionHelper.isUserDefinedError(ex))
             {
-                exs = exs.substring(oraidx+4);
-                int intlen = 0;
-                for(; intlen < exs.length() && Character.isDigit(exs.charAt(intlen)); intlen++);
-                if (intlen > 0)
-                {
-                    try
-                    {
-                        int oraerr = Integer.parseInt(exs.substring(0, intlen));
-                        if (oraerr >= 20000)
-                        {
-                            throw new NoSuchObjectException(
-                                "Error creating time series for '" + path + "' with officeId '"
-                                + dbOfficeId + "': " + ex, ex);
-                        }
-                    }
-                    catch(NumberFormatException ex2) { /* fall through & throw DbIoException */ }
-                }
+                throw new NoSuchObjectException(msg + ": " + ex, ex);
             }
             // This must be more serious. Assume db connection is now hosed.
-            throw new DbIoException(
-                "Error creating time series for '" + path + "' with officeId '"
-                + dbOfficeId, ex);
+            throw new DbIoException(msg, ex);
         }
     }
 
