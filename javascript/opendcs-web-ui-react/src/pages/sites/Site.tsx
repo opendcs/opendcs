@@ -10,6 +10,19 @@ interface SiteProperties {
     site?: ApiSite
 }
 
+const elevationUnits = [
+    {units: "m", name: "M (Meters)"},
+    {units: "cm", name: "cM (Centimeters)"},
+    {units: "ft", name: "ft (Feet)"},
+    {units: "in", name: "in (Inches)"},
+    {units: "km", name: "kM (Kilometers)"},
+    {units: "mm", name: "mM (Millimeters)"},
+    {units: "mi", name: "mi (Miles)"},
+    {units: "nmi", name: "nmi (Nautical Miles)"},
+    {units: "um", name: "uM (Micrometers)"},
+    {units: "yd", name: "yd (Yards)"}
+];
+
 export const Site: React.FC<SiteProperties> = ({site}) => {
     const {t} = useTranslation();
     const [realSite, _updateSite] = useState(site ? site : {properties: {}});
@@ -59,50 +72,52 @@ export const Site: React.FC<SiteProperties> = ({site}) => {
                     <FormGroup as={Row} className="mb-3">
                         <Form.Label column sm={2} htmlFor="elevation">{t("elevation")}</Form.Label>
                         <Col sm={10}>
-                        <Form.Control type="text" id="elevation" name="elevation " readOnly={!editMode} />
+                        <Form.Control type="text" id="elevation" name="elevation " readOnly={!editMode}
+                                      defaultValue={realSite.elevation} />
                         </Col>
                     </FormGroup>
                     <FormGroup as={Row} className="mb-3">
                         <Form.Label column sm={2} htmlFor="elevationUnits">{t("elevation_units")}</Form.Label>
                         <Col sm={10}>
                         <FormSelect id="elevationUnits" disabled={!editMode}>
-                            <option value="m">M (Meters)</option>
-                            <option value="cm">cM (Centimeters)</option>
-                            <option value="ft">ft (Feet)</option>
-                            <option value="in">in (Inches)</option>
-                            <option value="km">kM (Kilometers)</option>
-                            <option value="mm">mM (Millimeters)</option>
-                            <option value="mi">mi (Miles)</option>
-                            <option value="nmi">nmi (Nautical Miles)</option>
-                            <option value="um">uM (Micrometers)</option>
-                            <option value="yd">yd (Yards)</option>
+                            {elevationUnits.map((unit) => {
+                                return (<option key={unit.units} value={unit.units}
+                                                selected={realSite.elevUnits === unit.units}>
+                                            {unit.name}
+                                        </option>
+                                );
+                            })}
                         </FormSelect>
                         </Col>
                     </FormGroup>
                     <FormGroup as={Row} className="mb-3">
                         <Form.Label column sm={2} htmlFor="nearestCity">{t("sites:nearestCity")}</Form.Label>
                         <Col sm={10}>
-                        <Form.Control type="text" id="nearestCity" name="nearest_city" readOnly={!editMode}/>
+                        <Form.Control type="text" id="nearestCity" name="nearest_city" readOnly={!editMode}
+                                      defaultValue={realSite.nearestCity}/>
                         </Col>
                     </FormGroup>
                     <FormGroup as={Row} className="mb-3">
                         <Form.Label column sm={2} htmlFor="state">{t("state")}</Form.Label>
                         <Col sm={10}>
-                        <Form.Control type="text" id="state" name="state" readOnly={!editMode}/>
+                        <Form.Control type="text" id="state" name="state" readOnly={!editMode}
+                                      defaultValue={realSite.state}/>
                         </Col>
                     </FormGroup>
                     <FormGroup as={Row} className="mb-3">
                         <Form.Label column sm={2} htmlFor="country">{t("country")}</Form.Label>
                         <Col sm={10}>
                         <Form.Control type="text" id="country" name="country" readOnly={!editMode}
-                                      placeholder={t("sites:enter_country")}/>
+                                      placeholder={t("sites:enter_country")}
+                                      defaultValue={realSite.country}/>
                         </Col>
                     </FormGroup>
                     <FormGroup as={Row} className="mb-3">
                         <Form.Label column sm={2} htmlFor="region">{t("Region")}</Form.Label>
                         <Col sm={10}>
                         <Form.Control type="text" id="region" name="region" readOnly={!editMode}
-                                      placeholder={t("sites:enter_region")}/>
+                                      placeholder={t("sites:enter_region")}
+                                      defaultValue={realSite.region}/>
                         </Col>
                     </FormGroup>
                     <FormGroup as={Row} className="mb-3">

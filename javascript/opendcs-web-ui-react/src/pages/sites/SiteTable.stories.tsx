@@ -32,6 +32,9 @@ const sites: ApiSite[] = [
     sitenames: {
       CWMS: "Alpha Site"
     },
+    elevation: 5.21,
+    elevUnits: "ft",
+    publicName: "Clearly, this site is not public.",
     siteId: 2
   },
   {
