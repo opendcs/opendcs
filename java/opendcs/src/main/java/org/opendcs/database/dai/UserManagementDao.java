@@ -88,6 +88,15 @@ public interface UserManagementDao extends OpenDcsDao
     List<IdentityProvider> getIdentityProviders(DataTransaction tx, int limit, int offset) throws OpenDcsDataException;
 
     /**
+     * Retreieve a list of identity providers that can verify this subject
+     * @param tx
+     * @param subject username, email, subject provided by the user and listed in the mappings table.
+     * @return All valid providers or empty list if the subject is not registered.
+     * @throws OpenDcsDataException
+     */
+    List<IdentityProvider> getIdentityProvidersForSubject(DataTransaction tx, String subject) throws OpenDcsDataException;
+
+    /**
      * Add a new Identity provider configuration to the system
      * @param tx
      * @param provider

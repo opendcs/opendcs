@@ -41,14 +41,22 @@ import org.opendcs.database.model.mappers.user.UserBuilderMapper;
 import org.opendcs.database.model.mappers.user.UserBuilderReducer;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.openide.util.lookup.ServiceProvider;
+import org.openide.util.lookup.ServiceProviders;
 import org.opendcs.utils.sql.GenericColumns;
 
 import decodes.sql.DbKey;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 
-@ServiceProvider(service = UserManagementDao.class)
-public class UserManagementImpl implements UserManagementDao
+// This uses Postgres specific features and is not compatible with Oracle
+@ServiceProviders({
+    @ServiceProvider(service = UserManagementDao.class, path = "dao/OpenDCS-Postgres"),
+    // deprecated and also implies supported by the Oracle impl which is false.
+    // Unfortunately correct behavior requires eliminating the use of the editDatabaseCode so the names are used.
+    // This will be done in a follow up PR.
+    @ServiceProvider(service = UserManagementDao.class, path = "dao/OPENTSDB")
+})
+public class OpenDcsPgUserManagementImpl implements UserManagementDao
 {
 
     private static final RoleMapper ROLE_MAPPER = RoleMapper.withPrefix(null);
@@ -58,18 +66,26 @@ public class UserManagementImpl implements UserManagementDao
     public List<User> getUsers(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        handle.getJdbi().installPlugin(new Jackson2Plugin());
-        final String userSelect = "select u.id u_id, u.preferences::text u_preferences, u.email u_email," +
-            "       u.created_at u_created_at, u.updated_at u_updated_at, " +
-            "       r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at," +
-            "       uip.identity_provider_id i_id, uip.subject i_subject,  " +
-            "       idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config::text i_config" +
-            "  from opendcs_user u" +
-            "  left join user_roles ur on ur.user_id = u.id" +
-            "  left join opendcs_role r on r.id = ur.role_id" +
-            "  left join user_identity_provider uip on uip.user_id = u.id" +
-            "  left join identity_provider idp on idp.id = uip.identity_provider_id" +
-            addLimitOffset(limit, offset);
+        final String userSelect = """
+            with user_cte (id, preferences, email, created_at, updated_at) as
+                (select id, preferences, email, created_at, updated_at
+                 from opendcs_user order by email asc
+            """ +
+            addLimitOffset(limit, offset) +
+            """
+                )
+            select u.id u_id, u.preferences u_preferences, u.email u_email,
+                u.created_at u_created_at, u.updated_at u_updated_at,
+                r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
+                uip.identity_provider_id i_id, uip.subject i_subject,
+                idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config
+            from user_cte u
+            left join user_roles ur on ur.user_id = u.id
+            left join opendcs_role r on r.id = ur.role_id
+            left join user_identity_provider uip on uip.user_id = u.id
+            left join identity_provider idp on idp.id = uip.identity_provider_id
+            order by u.email asc
+            """;
 
         try (Query q = handle.createQuery(userSelect))
         {
@@ -92,11 +108,22 @@ public class UserManagementImpl implements UserManagementDao
         }
     }
 
+    public Optional<Role> getRoleByName(DataTransaction tx, String role) throws OpenDcsDataException
+    {
+        Handle handle = getHandle(tx);
+        try (Query select = handle.createQuery("select id, name, description, updated_at from opendcs_role where name = :name"))
+        {
+            return select.bind(GenericColumns.NAME, role)
+                         .map(ROLE_MAPPER)
+                         .findOne();
+        }
+    }
+
+
     @Override
     public User addUser(DataTransaction tx, User user) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        handle.getJdbi().installPlugin(new Jackson2Plugin());
 
         DbKey id = DbKey.NullKey;
 
@@ -115,8 +142,15 @@ public class UserManagementImpl implements UserManagementDao
         {
             for (Role role: user.roles)
             {
+                var roleId = role.id;
+                if (DbKey.isNull(role.id))
+                {
+                    roleId = getRoleByName(tx, role.name)
+                                .orElseThrow(() -> new OpenDcsDataException("Request to map role '" + role.name + "' that doesn't exist."))
+                                .id;
+                }
                 roleBatch.bind(UserBuilderMapper.USER_ID, id)
-                        .bind(RoleMapper.ROLE_ID, role.id)
+                        .bind(RoleMapper.ROLE_ID, roleId)
                         .add();
             }
             roleBatch.execute();
@@ -145,7 +179,6 @@ public class UserManagementImpl implements UserManagementDao
     public Optional<User> getUser(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        handle.getJdbi().installPlugin(new Jackson2Plugin());
 
         try (Query user = handle.createQuery(
             "select u.id u_id, u.preferences::text u_preferences, u.email u_email," +
@@ -287,8 +320,6 @@ public class UserManagementImpl implements UserManagementDao
     public Optional<IdentityProvider> getIdentityProvider(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        handle.getJdbi().installPlugin(new Jackson2Plugin());
-
         try (Query getIdp = handle.createQuery("select id, name, type, updated_at, config::text from identity_provider where id = :id"))
         {
             return getIdp.bind(GenericColumns.ID, id).map(PROVIDER_MAPPER).findOne();
@@ -300,7 +331,6 @@ public class UserManagementImpl implements UserManagementDao
             throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        handle.getJdbi().installPlugin(new Jackson2Plugin());
         try (Query updateIdp =
                 handle.createQuery("update identity_provider set name = :name, type = :type, " +
                                     "config = :config::jsonb where id = :id returning id, name, type, updated_at, config::text"))
@@ -327,8 +357,10 @@ public class UserManagementImpl implements UserManagementDao
     public List<Role> getRoles(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        try (Query select = handle.createQuery("select id, name, description, updated_at from opendcs_role" +
-                                              addLimitOffset(limit, offset)))
+        try (Query select = handle.createQuery("""
+                        select id, name, description, updated_at from opendcs_role order by name COLLATE "C" ASC
+                    """ +
+                    addLimitOffset(limit, offset)))
         {
             if (limit != -1)
             {
@@ -406,7 +438,28 @@ public class UserManagementImpl implements UserManagementDao
     {
         Handle h = tx.connection(Handle.class)
                             .orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Connection from transaction."));
+        h.getJdbi()
+         .installPlugin(new Jackson2Plugin());
         return h.registerArgument(new ConfigArgumentFactory())
                 .registerColumnMapper(new ConfigColumnMapper());
+    }
+
+    @Override
+    public List<IdentityProvider> getIdentityProvidersForSubject(DataTransaction tx, String subject)
+            throws OpenDcsDataException
+    {
+        var handle = getHandle(tx);
+        final String idpsSql = """
+                    select idp.id idp_id, idp.name idp_name, idp.type idp_type, idp.updated_at idp_updated_at, idp.config::text idp_config
+                      from user_identity_provider mapping
+                      join identity_provider idp on idp.id = mapping.identity_provider_id
+                      where mapping.subject = :subject
+                """;
+        try (var getIdps = handle.createQuery(idpsSql))
+        {
+            return getIdps.bind(GenericColumns.SUBJECT, subject)
+                          .map(IdentityProviderMapper.withPrefix("idp"))
+                          .collectIntoList();
+        }
     }
 }
