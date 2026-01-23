@@ -3,6 +3,7 @@ import DT from "datatables.net-bs5";
 import { useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { dtLangs } from "../../lang";
+import type { Actions } from "../../util/Actions";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 
@@ -10,9 +11,10 @@ DataTable.use(DT);
 
 interface SiteNameListProperties {
     siteNames: {[k: string]: string}
+    actions?: Actions<String>;
 }
 
-export const SiteNameList: React.FC<SiteNameListProperties> = ({siteNames}) => {
+export const SiteNameList: React.FC<SiteNameListProperties> = ({siteNames, actions}) => {
   const table = useRef<DataTableRef>(null);
   const [t, i18n] = useTranslation(["sites"]);
 
@@ -36,8 +38,8 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({siteNames}) => {
     language: dtLangs.get(i18n.language),
     layout: {
       top1Start: {
-        buttons: [
-          {
+        buttons: actions?.add !== undefined ? [
+           {
             text: "+",
             action: () => {
               console.log("Add site name")
@@ -46,7 +48,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({siteNames}) => {
               "aria-label": t("sites:add_site_name"),
             },
           },
-        ],
+        ] : [],
       },
     }
   };
