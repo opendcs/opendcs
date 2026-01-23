@@ -833,23 +833,17 @@ a routing spec named 'mySpec'.
 |rs -**e** mySpec              |(deprecated -- does nothing)                                     |
 +------------------------------+-----------------------------------------------------------------+
 
-Manual Routing Specs Common Options
------------------------------------
 
-Troubleshooting - Use Debugger
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Manual Routing Spec Command Examples (Unix)**
 
-... more content coming soon ...
+Run in background with nohup, debug level 3, log to lrgs.log, suppress all output::
 
-Backfilling - Use Since and Until
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    nohup rs -d3 -l lrgs.log NWO-LRGS > /dev/null 2>&1 &
 
-... more content coming soon ...
+Run in background, debug level 3, log to lrgs.log, suppress errors only::
 
-Lockfile Significance
-~~~~~~~~~~~~~~~~~~~~~
+    rs -d3 -l lrgs.log NWO-LRGS 2>/dev/null &
 
-... more content coming soon ...
 
 9.Routing Scheduler
 ===================
