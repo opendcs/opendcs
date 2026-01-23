@@ -4,6 +4,7 @@ import DataTable, {
   type DataTableSlots,
 } from "datatables.net-react";
 import DT, { type ConfigButtons, type ConfigColumns } from "datatables.net-bs5";
+import DT, { type ConfigButtons, type ConfigColumns } from "datatables.net-bs5";
 import dtButtons from "datatables.net-buttons-bs5";
 import { Button, Container, Form } from "react-bootstrap";
 import "datatables.net-responsive";
