@@ -1,13 +1,12 @@
 import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
 import { PropertiesTable, PropertiesTableProps, type Property } from "./Properties";
-import { expect, waitFor, within } from "storybook/test";
-import { useState } from "storybook/internal/preview-api";
+import { expect, fn, waitFor, within } from "storybook/test";
+import { useCallback, useState } from "storybook/internal/preview-api";
 import { act } from "@testing-library/react";
 
 const WithActions: Decorator<PropertiesTableProps> = (Story, context) => {
   const [theProps, setTheProps] = useState<Property[]>(context.args.theProps);
-
-  function saveProp(data: Property) {
+  const saveProp = useCallback((data: Property) => {
     act(() =>
       setTheProps((prev) => {
         let newProps: Property[];
@@ -29,18 +28,18 @@ const WithActions: Decorator<PropertiesTableProps> = (Story, context) => {
         return newProps;
       }),
     );
-  }
+  }, [theProps]);
 
-  function removeProp(prop: string) {
+  const removeProp = useCallback((prop: string) => {
     act(() =>
       setTheProps((prev) => {
         const tmp = prev.filter((e: Property) => e.name !== prop);
         return tmp;
       }),
     );
-  }
+  }, [theProps]);
 
-  function addProp() {
+  const addProp = useCallback(() => {
     act(() =>
       setTheProps((prev) => {
         const existingNew = prev
@@ -57,9 +56,9 @@ const WithActions: Decorator<PropertiesTableProps> = (Story, context) => {
         return tmp;
       }),
     );
-  }
+  }, [theProps]);
 
-  function editProp(prop: string) {
+  const editProp = useCallback((prop: string) => {
     act(() =>
       setTheProps((prev) => {
         const tmp: Property[] = prev.map((p: Property) => {
@@ -75,7 +74,8 @@ const WithActions: Decorator<PropertiesTableProps> = (Story, context) => {
         return tmp;
       }),
     );
-  }
+  }, [theProps]);
+
   return (
     <Story
       args={{
@@ -174,6 +174,13 @@ export const PropertyNameCannotBeBlank: Story = {
           name: i18n.t("properties:name_input", { name: "1" }),
       });
       expect(nameInputAfterSave).toBeInTheDocument();
+
+      //There is something forcing a rerender that then strips this warning border
+      //An attempt to useMemo/useCallback all the functions did not work.
+      //It is also failing in the CLI run so is at least consistent.
+      //For now... dunno, something to investigate later. I suspect it is something
+      //to do with how the decorator is configured
+      //expect(nameInputAfterSave).toHaveClass("border-warning");
     });
 
 
@@ -260,5 +267,58 @@ export const ReadOnly: Story = {
   args: {
     theProps: propList,
     actions: {}
+  },
+  play: async ({ canvasElement, mount, parameters}) => {
+    const { i18n } = parameters;
+    await mount();
+    const canvas = within(canvasElement);
+    const add = canvas.queryByRole("button", { name: i18n.t("properties:add_prop") });
+    expect(add).toBeNull();
+
+    const deleteButton = canvas.queryByRole("button", {name: i18n.t("properties:delete_prop", {name: "prop1"})});
+    expect(deleteButton).toBeNull();
+
+    const edit = canvas.queryByRole("button", {name: i18n.t("properties:edit_prop", {name: "prop1"})});
+
+    expect(edit).toBeNull();
+  }
+}
+
+
+export const CanEditOnly: Story = {
+  args: {
+    theProps: [...propList, {name: "propInEdit", value: "Test value", state: "edit"}, {name:"1", value: null, state:"new"}],
+    actions: {
+      edit: fn(),
+      save: fn()
+    }
+  },
+  play: async ({ canvasElement, mount, parameters, userEvent, args }) => {
+    const { i18n } = parameters;
+    await mount();
+    const canvas = within(canvasElement);
+    const add = canvas.queryByRole("button", { name: i18n.t("properties:add_prop") });
+    expect(add).toBeNull();
+
+    const deleteButton = canvas.queryByRole("button", {name: i18n.t("properties:delete_prop", {name: "prop1"})});
+    expect(deleteButton).toBeNull();
+
+    const edit = canvas.getByRole("button", {name: i18n.t("properties:edit_prop", {name: "prop1"})});
+    await userEvent.click(edit);
+    expect(args.actions.edit).toHaveBeenCalled();
+
+
+    const save = canvas.getByRole("button", {name: i18n.t("properties:save_prop", {name: "propInEdit"})});
+    await userEvent.click(save);
+    expect(args.actions.save).toHaveBeenCalled();
+
+    const saveNew = canvas.getByRole("button", {name: i18n.t("properties:save_prop", {name: "1"})});
+    await userEvent.click(saveNew);
+
+    // for some reason this behavior, while it can be visibly seen, does not stay static with the "can't save empty name test"
+    // So we at least assert it here so that we some record of the behavior.
+    expect(args.actions.save).toHaveBeenCalled();
+    const newInput = canvas.getByRole("textbox", {name: i18n.t("properties:name_input", {name:"1"})});
+    expect(newInput).toHaveClass("border-warning");
   }
 }

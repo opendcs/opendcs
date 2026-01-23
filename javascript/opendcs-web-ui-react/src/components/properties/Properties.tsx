@@ -9,7 +9,7 @@ import { Button, Container, Form } from "react-bootstrap";
 import "datatables.net-responsive";
 import { Pencil, Save, Trash } from "react-bootstrap-icons";
 import type { ApiPropSpec } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
-import { useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { renderToString } from "react-dom/server";
 import { useTranslation } from "react-i18next";
 import { dtLangs } from "../../lang";
@@ -72,7 +72,7 @@ export const PropertyActions: React.FC<ActionProps> = ({
         >
           <Save />
         </Button>
-  } else if(editMode && editProp !== undefined) {
+  } else if(!editMode && editProp !== undefined) {
     changeAction = <Button
           onClick={() => editProp(data.name)}
           variant="warning"
@@ -91,7 +91,6 @@ export const PropertyActions: React.FC<ActionProps> = ({
       >
         <Trash />
       </Button> : <></>;
-
 
   return (
     <>
@@ -118,8 +117,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
 }) => {
   const table = useRef<DataTableRef>(null);
   const [t, i18n] = useTranslation(["properties"]);
-
-  const renderEditable = (
+  const renderEditable = useCallback((
     data: string | number | readonly string[] | undefined,
     type: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -143,48 +141,54 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
     } else {
       return data;
     }
-  };
+  }, []);
 
-  const columns: ConfigColumns[] = [
+  const columns: ConfigColumns[] = useMemo(() => [
     { data: "name", render: renderEditable },
     { data: "value", render: renderEditable },
     { data: null, name: "actions" },
-  ];
+  ], []);
 
-  const buttons: ConfigButtons = {buttons: []};
-  if (actions.add !== undefined) {
-    buttons.buttons.push({
-      text: "+",
-      action: () => {
-        actions.add!();
-      },
-      attr: {
-        "aria-label": t("properties:add_prop"),
-      },
-          });
-  }
+  const buttons: ConfigButtons = useMemo(() => {
+    if (actions.add !== undefined) {
+      return {
+        buttons: [{
+        text: "+",
+        action: () => {
+          actions.add!();
+        },
+        attr: {
+          "aria-label": t("properties:add_prop"),
+        },
+        }]
+     };
+  } else {
+    return {buttons: []};
+  }}, [actions]);
 
-  const options: DataTableProps["options"] = {
-    paging: false,
-    responsive: true,
-    language: dtLangs.get(i18n.language),
-    layout: {
-      top1Start: {
-        buttons: buttons,
+  const options: DataTableProps["options"] = useMemo(() => {
+    return {
+      paging: false,
+      responsive: true,
+      language: dtLangs.get(i18n.language),
+      layout: {
+        top1Start: {
+          buttons: buttons,
+        },
       },
-    },
-    createdRow: (
-      row: HTMLElement,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      data: any,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      _index: number,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      _cells: HTMLTableCellElement[],
-    ) => (row.dataset.propName = data.name),
-  };
+      createdRow: (
+        row: HTMLElement,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        data: any,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        _index: number,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        _cells: HTMLTableCellElement[],
+      ) => (row.dataset.propName = data.name),
+    };
+  }, [buttons]);
 
-  const getAndSaveProp = (data: Property): void => {
+  const getAndSaveProp: (data: Property) => void = useCallback((data: Property): void => {
     const api = table.current?.dt();
     if (api) {
       const row = api.row(`tr[data-prop-name="${data.name}"]`)?.node();
@@ -211,9 +215,9 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
     } else {
       console.log("no dt api?");
     }
-  };
+  }, [actions]);
 
-  const slots: DataTableSlots = {
+  const slots = useMemo<DataTableSlots>(() => { return {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     actions: (data: Property, type: unknown, _row: Property) => {
       if (type === "display") {
@@ -231,7 +235,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
         return data;
       }
     },
-  };
+  }}, [actions]);
 
   return (
     <Container fluid style={{ width: width, height: height }} className={`${classes}`}>
