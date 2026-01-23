@@ -34,21 +34,28 @@ export const Site: React.FC<SiteProperties> = ({site}) => {
                                     : []);
     const editMode = site ? false : true;
 
-    const actions: Actions<Property,string> = editMode ? {
+    const propertyActions: Actions<Property,string> = editMode ? {
         add: () => {},
         edit: () => {},
         remove: () => {},
         save: () => {}
     } : {};
 
+    const siteNameActions: Actions<String> = editMode ? {
+        add: () => {},
+        edit: () => {},
+        remove: () => {},
+        save: () => {}
+    }: {};
+
     return (
         <Card>
             <Card.Body>
                 <Row>
                     <Col>
-                        <Row><SiteNameList siteNames={realSite.sitenames || {}}/></Row>
+                        <Row><SiteNameList siteNames={realSite.sitenames || {}} actions={siteNameActions}/></Row>
                         <Row>{/* TODO: need to have list be read only unless we're in edit mode */}
-                            <PropertiesTable theProps={props} actions={actions} width={"100%"} />
+                            <PropertiesTable theProps={props} actions={propertyActions} width={"100%"} />
                         </Row>
                     </Col>
                     <Col>
