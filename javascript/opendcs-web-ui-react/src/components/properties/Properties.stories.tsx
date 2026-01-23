@@ -143,6 +143,55 @@ export const EmptyAddThenRemove: Story = {
   },
 };
 
+export const PropertyNameCannotBeBlank: Story = {
+  args: {
+    ...StartEmpty.args
+  },
+  play: async ({ canvasElement, mount, parameters, userEvent }) => {
+    const { i18n } = parameters;
+    await mount();
+    const canvas = within(canvasElement);
+    const add = await canvas.findByRole("button", { name: i18n.t("properties:add_prop") });
+    await userEvent.click(add);
+    await mount();
+    const nameInput = await canvas.findByRole("textbox", {
+      name: i18n.t("properties:name_input", { name: "1" }),
+    });
+    expect(nameInput).toBeInTheDocument();
+
+
+    const valueInput = await canvas.findByRole("textbox", {
+        name: i18n.t("properties:value_input", { name: "1" }),
+    });
+    expect(valueInput).toBeInTheDocument();
+
+    // only set the value
+    await userEvent.type(valueInput, "testvalue");
+
+    const save = await canvas.findByRole("button", {
+      name: i18n.t("properties:save_prop", { name: "1" }),
+    });
+
+    await userEvent.click(save);
+    await mount();
+
+    await waitFor(async () => {
+      const nameInputAfterSave = canvas.queryByRole("textbox", {
+          name: i18n.t("properties:name_input", { name: "1" }),
+      });
+      expect(nameInputAfterSave).toBeInTheDocument();
+    });
+
+
+    const remove = await canvas.findByRole("button", {
+      name: i18n.t("properties:delete_prop", { name: "1" }),
+    });
+
+    await userEvent.click(remove);
+    await mount();
+  },
+}
+
 export const EmptyAddThenSaveThenRemove: Story = {
   args: {
     ...StartEmpty.args,

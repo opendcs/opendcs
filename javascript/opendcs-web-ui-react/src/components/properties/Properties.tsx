@@ -181,7 +181,6 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
     const api = table.current?.dt();
     if (api) {
       const row = api.row(`tr[data-prop-name="${data.name}"]`)?.node();
-
       if (row) {
         const tds = row.children;
         const name =
@@ -194,7 +193,11 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
           value: value,
           state: data.state == "new" ? parseInt(data.name) : data.state,
         };
-        saveProp(prop);
+        if (!(name === undefined || name === "")) {
+          saveProp(prop);
+        } else {
+          (tds[0].children[0] as HTMLElement).classList.add("border", "border-warning")
+        }
       } else {
         console.log(`can't find entries for ${JSON.stringify(data)}`);
       }
