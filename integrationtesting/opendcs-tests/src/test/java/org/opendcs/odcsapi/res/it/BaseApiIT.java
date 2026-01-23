@@ -48,6 +48,7 @@ import opendcs.dai.TimeSeriesDAI;
 import org.apache.catalina.session.StandardSession;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.odcsapi.beans.ApiSite;
 import org.opendcs.odcsapi.fixtures.DatabaseContextProvider;
 import org.opendcs.odcsapi.fixtures.DatabaseSetupExtension;
@@ -232,6 +233,11 @@ public class BaseApiIT extends AppTestBase
 	protected TimeSeriesDb getTsdb() throws Throwable
 	{
 		return configuration.getTsdb();
+	}
+
+	protected static Configuration getConfig()
+	{
+		return DatabaseSetupExtension.getCurrentConfig();
 	}
 
 	protected DatabaseIO getDbIo() throws Throwable

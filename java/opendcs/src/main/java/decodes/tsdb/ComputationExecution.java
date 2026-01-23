@@ -58,12 +58,12 @@ public final class ComputationExecution
 		return execute(toRun, theData, Date.from(Instant.MIN), Date.from(Instant.MAX));
 	}
 
-	public CompResults execute(List<DbComputation> toRun, DataCollection theData, Date since, Date until)
+	public CompResults execute(List<DbComputation> toRun, DataCollection theData, Date start, Date end)
 	{
-		return	execute(toRun, theData, since, until, new ProgressListener.LoggingProgressListener());
+		return execute(toRun, theData, start, end, new ProgressListener.LoggingProgressListener());
 	}
 
-	public CompResults execute(List<DbComputation> toRun, DataCollection theData, Date since, Date until, ProgressListener listener)
+	public CompResults execute(List<DbComputation> toRun, DataCollection theData, Date start, Date end, ProgressListener listener)
 	{
 		// Execute the computations
 		for(DbComputation comp : toRun)
@@ -73,7 +73,7 @@ public final class ComputationExecution
 				listener.onProgress(String.format("Executing computation '%s' #trigs=%d",
 						comp.getName(), comp.getTriggeringRecNums().size()), Level.DEBUG, null);
 				computesTried++;
-				executeSingleComp(comp, since, until, theData, true, listener);
+				executeSingleComp(comp, start, end, theData, true, listener);
 			}
 			catch(DbIoException ex)
 			{
@@ -91,7 +91,7 @@ public final class ComputationExecution
 	}
 
 	public CompResults execute(DbComputation computation,
-			List<TimeSeriesIdentifier> tsIds, Date since, Date until, ProgressListener listener)
+			List<TimeSeriesIdentifier> tsIds, Date start, Date end, ProgressListener listener)
 		throws DbIoException
 	{
 		DataCollection theData = new DataCollection();
@@ -102,9 +102,9 @@ public final class ComputationExecution
 				try
 				{
 					CTimeSeries cts = timeSeriesDAO.makeTimeSeries(tsid);
-					int n = timeSeriesDAO.fillTimeSeries(cts, since, until);
+					int n = timeSeriesDAO.fillTimeSeries(cts, start, end);
 					listener.onProgress(String.format("Read tsid '%s' since=%s, until=%s, result=%d values.",
-							tsid.getUniqueString(), since, until, n), Level.INFO, null);
+							tsid.getUniqueString(), start, end, n), Level.INFO, null);
 					// Set the flag so that every value read is treated as a trigger.
 					for(int idx = 0; idx < n; idx++)
 					{
@@ -120,20 +120,20 @@ public final class ComputationExecution
 			}
 		}
 		computesTried++;
-		executeSingleComp(computation, since, until, theData, false, listener);
+		executeSingleComp(computation, start, end, theData, false, listener);
 		return new CompResults(numErrors, computesTried);
 	}
 
-	public void executeSingleComp(DbComputation tc, Date since, Date until, DataCollection dataCollection)
+	public void executeSingleComp(DbComputation comp, Date start, Date end, DataCollection dataCollection)
 			throws DbIoException
 	{
-		executeSingleComp(tc, since, until, dataCollection, false, new ProgressListener.LoggingProgressListener());
+		executeSingleComp(comp, start, end, dataCollection, false, new ProgressListener.LoggingProgressListener());
 	}
 
-	private void executeSingleComp(DbComputation tc, Date since, Date until, DataCollection dataCollection, boolean ignoreTimeWindow, ProgressListener listener)
+	private void executeSingleComp(DbComputation comp, Date start, Date end, DataCollection dataCollection, boolean ignoreTimeWindow, ProgressListener listener)
 			throws DbIoException
 	{
-		try(MDC.MDCCloseable mdc = MDC.putCloseable("computation", tc.getName());
+		try(MDC.MDCCloseable mdc = MDC.putCloseable("computation", comp.getName());
 			TimeSeriesDAI timeSeriesDAO = getTsDb().makeTimeSeriesDAO())
 		{
 			// Make a data collection with inputs filled from ... until
@@ -141,28 +141,28 @@ public final class ComputationExecution
 			try
 			{
 				// The prepare method maps all input parms
-				tc.prepareForExec(getTsDb());
+				comp.prepareForExec(getTsDb());
 				if(!ignoreTimeWindow)
 				{
-					for(DbCompParm parm : tc.getParmList())
+					for(DbCompParm parm : comp.getParmList())
 					{
 						if(!parm.isInput())
 							continue;
 						// 'prepare' method doesn't actually create the CTimeSeries. Do that now.
-						tc.getExecutive().setDc(dataCollection);
-						tc.getExecutive().addTsToParmRef(parm.getRoleName(), false);
-						parmRef = tc.getExecutive().getParmRef(parm.getRoleName());
+						comp.getExecutive().setDc(dataCollection);
+						comp.getExecutive().addTsToParmRef(parm.getRoleName(), false);
+						parmRef = comp.getExecutive().getParmRef(parm.getRoleName());
 						CTimeSeries cts = parmRef.timeSeries;
 
 						// Read values between previous and this run. Then flag them as DB_ADDED
 						// Thus, they will be treated as triggers by the computation.
-						int numRead = timeSeriesDAO.fillTimeSeries(cts, since, until, true, true, false);
+						int numRead = timeSeriesDAO.fillTimeSeries(cts, start, end, true, true, false);
 						if(numRead > 0)
 						{
 							for(int idx = 0; idx < cts.size(); idx++)
 							{
 								TimedVariable tv = cts.sampleAt(idx);
-								if(!tv.getTime().before(since) && !tv.getTime().after(until))
+								if(!tv.getTime().before(start) && !tv.getTime().after(end))
 									VarFlags.setWasAdded(tv);
 							}
 							if(dataCollection.getTimeSeriesByUniqueSdi(cts.getTimeSeriesIdentifier().getKey()) == null)
@@ -182,16 +182,20 @@ public final class ComputationExecution
 					}
 				}
 
-				tc.apply(dataCollection, getTsDb());
+				comp.apply(dataCollection, getTsDb());
 			}
 			catch(DbCompException ex)
 			{
-				listener.onProgress(String.format("Cannot initialize computation '%s'", tc.getName()), Level.WARN, ex);
+				listener.onProgress(String.format("Cannot initialize computation '%s'", comp.getName()), Level.WARN, ex);
 				numErrors++;
+				for (Integer rn : comp.getTriggeringRecNums())
+				{
+					dataCollection.getTasklistHandle().markComputationFailed(rn);
+				}
 			}
 			catch(BadTimeSeriesException ex)
 			{
-				String msg = "Error in running computation " + tc.getKey() + ":" + tc.getName() + " -- ";
+				String msg = "Error in running computation " + comp.getKey() + ":" + comp.getName() + " -- ";
 				msg = msg + "No such input time series for parm '" + parmRef.role + "'";
 				if(parmRef.tsid == null)
 					msg = msg + " -- No TSID assigned.";

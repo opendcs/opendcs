@@ -758,9 +758,9 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 								}
 								catch (NoSuchObjectException ex)
 								{
-									dataTypeDao.writeDataType(dt);
 									log.atLevel(Level.DEBUG).setCause(ex)
 											.log("Unable to find DataType, writing a new record");
+									dataTypeDao.writeDataType(dt);
 								}
 								dcp.setDataTypeId(dt.getId());
 							}

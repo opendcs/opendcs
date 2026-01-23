@@ -16,18 +16,25 @@
 package org.opendcs.odcsapi.res;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
+import decodes.cwms.CwmsTsId;
 import decodes.db.DataType;
 import decodes.db.DatabaseException;
 import decodes.db.Site;
+import decodes.hdb.HdbTsId;
 import decodes.sql.DbKey;
+import decodes.tsdb.BadTimeSeriesException;
+import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.CompFilter;
 import decodes.tsdb.ComputationExecution;
 import decodes.tsdb.ConstraintException;
+import decodes.tsdb.DataCollection;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbComputation;
@@ -52,6 +59,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.container.AsyncResponse;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -60,10 +68,12 @@ import jakarta.ws.rs.sse.OutboundSseEvent;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
 import opendcs.dai.ComputationDAI;
+import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import org.opendcs.odcsapi.beans.ApiCompParm;
 import org.opendcs.odcsapi.beans.ApiComputation;
 import org.opendcs.odcsapi.beans.ApiComputationRef;
+import org.opendcs.odcsapi.beans.ApiTimeSeriesData;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
@@ -79,6 +89,7 @@ import static java.util.stream.Collectors.toList;
 public final class ComputationResources extends OpenDcsResource
 {
 	private static final Logger log = LoggerFactory.getLogger(ComputationResources.class);
+
 	@Context HttpHeaders httpHeaders;
 
 	@GET
@@ -518,22 +529,18 @@ public final class ComputationResources extends OpenDcsResource
 	public void runComputation(
 			@Context Sse sse,
 			@Context SseEventSink eventSink,
+			@Context AsyncResponse asyncResp,
 			@Parameter(required = true, description = "Unique Computation ID",
 					schema = @Schema(implementation = Long.class, example = "4"))
 			@QueryParam("computationid") Long computationId,
-			@Parameter(required = true, description = "List of time series IDs, comma delimited",
-					schema = @Schema(implementation = String.class, example = "LOC.TS.ID,LOC2.TS.ID"))
-			@QueryParam("tsids") String timeseriesIds,
 			@Parameter(description = "Optional parameter to specify the beginning of the time range to execute the computation on.",
 					schema = @Schema(implementation = Date.class, example = "2025-10-25T12:00:00.000Z"))
-			@QueryParam("since") Date since,
+			@QueryParam("since") Date start,
 			@Parameter(description = "Optional parameter to specify the end of the time range to execute the computation on",
 					schema = @Schema(implementation = Date.class, example = "2025-10-25T12:00:00.000Z"))
-			@QueryParam("until") Date until)
+			@QueryParam("until") Date end)
 			throws DbException, WebAppException
 	{
-		String[] tsList = timeseriesIds.split(",");
-
 		final String compStatus = "computation-status";
 
 		if(computationId == null)
@@ -542,42 +549,122 @@ public final class ComputationResources extends OpenDcsResource
 		}
 
 		try(ComputationDAI dai = getLegacyTimeseriesDB().makeComputationDAO();
-			TimeSeriesDAI tsDai = getLegacyTimeseriesDB().makeTimeSeriesDAO())
+			TimeSeriesDAI tsDai = getLegacyTimeseriesDB().makeTimeSeriesDAO();
+			SiteDAI siteDai = getLegacyTimeseriesDB().makeSiteDAO())
 		{
 			DbComputation comp = dai.getComputationById(DbKey.createDbKey(computationId));
 
-			List<TimeSeriesIdentifier> tsiList = new ArrayList<>();
-
-			for(String tsId : tsList)
-			{
-				tsiList.add(tsDai.getTimeSeriesIdentifier(tsId));
-			}
+			List<TimeSeriesIdentifier> outputList = new ArrayList<>();
 
 			String taskID = UUID.randomUUID().toString();
 
-			executor.submit(() ->
+			final Date startTime = start != null ? start : Date.from(Instant.parse("1800-01-01T12:00:00Z"));
+			final Date endTime = end != null ? end : Date.from(Instant.parse("2200-12-31T12:00:00Z"));
+
+			for(DbCompParm parm : comp.getParmList())
+			{
+				if(parm.getAlgoParmType().contains("o"))
+				{
+					boolean isCwms = (parm.getDataType() != null
+							&& parm.getDataType().getStandard().equalsIgnoreCase("CWMS"));
+					TimeSeriesIdentifier identifier;
+					if(isCwms)
+					{
+						identifier = new CwmsTsId();
+						((CwmsTsId) identifier).setUtcOffset(parm.getDeltaT());
+						((CwmsTsId) identifier).setDuration(parm.getDuration());
+						((CwmsTsId) identifier).setVersion(parm.getVersion());
+						identifier.setPart("paramtype", parm.getParamType());
+					}
+					else
+					{
+						identifier = new HdbTsId();
+						((HdbTsId) identifier).setSdi(parm.getSiteDataTypeId());
+						((HdbTsId) identifier).setModelId(parm.getModelId());
+						identifier.setTableSelector(parm.getTableSelector());
+					}
+					identifier.setDataType(parm.getDataType());
+					identifier.setStorageUnits(parm.getUnitsAbbr());
+					identifier.setInterval(parm.getInterval());
+
+					try
+					{
+						Site site = siteDai.getSiteById(parm.getSiteId());
+						if (site != null)
+						{
+							identifier.setSiteName(site.getDisplayName());
+							identifier.setSite(site);
+						}
+					}
+					catch(NoSuchObjectException ex)
+					{
+						log.error(String.format("Unable to retrieve site name for site ID: %s", parm.getSiteId()), ex);
+						OutboundSseEvent event = sse.newEventBuilder()
+								.name("ERROR")
+								.id(taskID)
+								.mediaType(MediaType.TEXT_PLAIN_TYPE)
+								.data(String.format("No site found with ID: %s for computation with ID: %s", parm.getSiteId().getValue(), computationId))
+								.build();
+						eventSink.send(event);
+					}
+					identifier.setInterval(parm.getInterval());
+					identifier.setTableSelector(parm.getTableSelector());
+					outputList.add(identifier);
+				}
+			}
+
+			CompletableFuture.runAsync(() ->
 			{
 				OutboundSseEvent event = sse.newEventBuilder()
 						.name(compStatus)
 						.id(taskID)
-						.mediaType(MediaType.SERVER_SENT_EVENTS_TYPE)
+						.mediaType(MediaType.TEXT_PLAIN_TYPE)
 						.data(String.format("Running computation with ID: %s", computationId))
 						.build();
-				eventSink.send(event).toCompletableFuture().join();
+				eventSink.send(event);
 
 				try
 				{
 					ComputationExecution execution = new ComputationExecution(createDb());
 					SseProgressListener listener = new SseProgressListener(eventSink, sse, compStatus, taskID);
-					ComputationExecution.CompResults results = execution.execute(comp, tsiList, since, until, listener);
+					ComputationExecution.CompResults results = execution.execute(List.of(comp), new DataCollection(), start, end, listener);
 
 					event = sse.newEventBuilder()
 							.name(compStatus)
 							.id(taskID)
-							.mediaType(MediaType.SERVER_SENT_EVENTS_TYPE)
+							.mediaType(MediaType.TEXT_PLAIN_TYPE)
 							.data(String.format("Computation executed with %d errors", results.numErrors()))
 							.build();
-					eventSink.send(event).toCompletableFuture().join();
+					eventSink.send(event);
+
+					for(TimeSeriesIdentifier id : outputList)
+					{
+						try
+						{
+							CTimeSeries timeSeries = new CTimeSeries(id);
+							tsDai.fillTimeSeries(timeSeries, start, end);
+							ApiTimeSeriesData data = dataMap(timeSeries, startTime, endTime);
+							event = sse.newEventBuilder()
+									.name("Results")
+									.id(taskID)
+									.mediaType(MediaType.APPLICATION_JSON_TYPE)
+									.data(ApiTimeSeriesData.class, data)
+									.build();
+							eventSink.send(event);
+						}
+						catch(BadTimeSeriesException ex)
+						{
+							String errorMsg = String.format("Error while retrieving timeseries data for computation output: %s", id.getUniqueString());
+							log.error(errorMsg, ex);
+							event = sse.newEventBuilder()
+									.name(compStatus)
+									.id(taskID)
+									.mediaType(MediaType.TEXT_PLAIN_TYPE)
+									.data(errorMsg)
+									.build();
+							eventSink.send(event);
+						}
+					}
 				}
 				catch(DbIoException ex)
 				{
@@ -585,10 +672,10 @@ public final class ComputationResources extends OpenDcsResource
 					event = sse.newEventBuilder()
 							.name(compStatus)
 							.id(taskID)
-							.mediaType(MediaType.SERVER_SENT_EVENTS_TYPE)
+							.mediaType(MediaType.TEXT_PLAIN_TYPE)
 							.data(String.format("Error while executing computation: %s", comp.getApplicationName()))
 							.build();
-					eventSink.send(event).toCompletableFuture().join();
+					eventSink.send(event);
 				}
 				finally
 				{
@@ -596,7 +683,7 @@ public final class ComputationResources extends OpenDcsResource
 					{
 						eventSink.close();
 					}
-					catch (IOException ex)
+					catch(IOException ex)
 					{
 						log.error("Error closing SSE event sink", ex);
 					}
@@ -637,9 +724,9 @@ public final class ComputationResources extends OpenDcsResource
 					.id(taskId)
 					.reconnectDelay(3000L)
 					.data(message)
-					.mediaType(MediaType.SERVER_SENT_EVENTS_TYPE)
+					.mediaType(MediaType.TEXT_PLAIN_TYPE)
 					.build();
-			eventSink.send(event).toCompletableFuture().join();
+			eventSink.send(event);
 		}
 	}
 }
