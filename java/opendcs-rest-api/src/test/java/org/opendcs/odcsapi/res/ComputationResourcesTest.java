@@ -109,7 +109,9 @@ final class ComputationResourcesTest
 					}
 					catch(DatabaseException e)
 					{
-						throw new RuntimeException(e);
+						throw new RuntimeException(
+								String.format("Failed to map parameter with data type ID: %s", value.getDataTypeId()),
+								e);
 					}
 				}).collect(Collectors.toList()),
 				dbComp.getParmList());

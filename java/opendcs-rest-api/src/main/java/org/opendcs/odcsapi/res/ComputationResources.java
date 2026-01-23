@@ -84,6 +84,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
 
 import static java.util.stream.Collectors.toList;
+import static org.opendcs.odcsapi.util.DTOMappers.dataMap;
 
 @Path("/")
 public final class ComputationResources extends OpenDcsResource
@@ -534,11 +535,11 @@ public final class ComputationResources extends OpenDcsResource
 					schema = @Schema(implementation = Long.class, example = "4"))
 			@QueryParam("computationid") Long computationId,
 			@Parameter(description = "Optional parameter to specify the beginning of the time range to execute the computation on.",
-					schema = @Schema(implementation = Date.class, example = "2025-10-25T12:00:00.000Z"))
-			@QueryParam("since") Date start,
+					schema = @Schema(implementation = Instant.class, example = "2025-10-25T12:00:00.000Z"))
+			@QueryParam("start") Instant start,
 			@Parameter(description = "Optional parameter to specify the end of the time range to execute the computation on",
-					schema = @Schema(implementation = Date.class, example = "2025-10-25T12:00:00.000Z"))
-			@QueryParam("until") Date end)
+					schema = @Schema(implementation = Instant.class, example = "2025-10-25T12:00:00.000Z"))
+			@QueryParam("end") Instant end)
 			throws DbException, WebAppException
 	{
 		final String compStatus = "computation-status";
@@ -558,15 +559,15 @@ public final class ComputationResources extends OpenDcsResource
 
 			String taskID = UUID.randomUUID().toString();
 
-			final Date startTime = start != null ? start : Date.from(Instant.parse("1800-01-01T12:00:00Z"));
-			final Date endTime = end != null ? end : Date.from(Instant.parse("2200-12-31T12:00:00Z"));
+			final Instant startTime = start != null ? start : Instant.parse("1800-01-01T12:00:00Z");
+			final Instant endTime = end != null ? end : Instant.parse("2200-12-31T12:00:00Z");
 
 			for(DbCompParm parm : comp.getParmList())
 			{
 				if(parm.getAlgoParmType().contains("o"))
 				{
 					boolean isCwms = (parm.getDataType() != null
-							&& parm.getDataType().getStandard().equalsIgnoreCase("CWMS"));
+							&& "CWMS".equalsIgnoreCase(parm.getDataType().getStandard()));
 					TimeSeriesIdentifier identifier;
 					if(isCwms)
 					{
@@ -625,9 +626,11 @@ public final class ComputationResources extends OpenDcsResource
 
 				try
 				{
+					Date startDate = Date.from(startTime);
+					Date endDate = Date.from(endTime);
 					ComputationExecution execution = new ComputationExecution(createDb());
 					SseProgressListener listener = new SseProgressListener(eventSink, sse, compStatus, taskID);
-					ComputationExecution.CompResults results = execution.execute(List.of(comp), new DataCollection(), start, end, listener);
+					ComputationExecution.CompResults results = execution.execute(List.of(comp), new DataCollection(), startDate, endDate, listener);
 
 					event = sse.newEventBuilder()
 							.name(compStatus)
@@ -642,8 +645,8 @@ public final class ComputationResources extends OpenDcsResource
 						try
 						{
 							CTimeSeries timeSeries = new CTimeSeries(id);
-							tsDai.fillTimeSeries(timeSeries, start, end);
-							ApiTimeSeriesData data = dataMap(timeSeries, startTime, endTime);
+							tsDai.fillTimeSeries(timeSeries, startDate, endDate);
+							ApiTimeSeriesData data = dataMap(timeSeries, Date.from(startTime), Date.from(endTime));
 							event = sse.newEventBuilder()
 									.name("Results")
 									.id(taskID)

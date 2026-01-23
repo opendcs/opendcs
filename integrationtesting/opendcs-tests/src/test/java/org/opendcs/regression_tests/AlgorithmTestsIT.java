@@ -1,81 +1,51 @@
 package org.opendcs.regression_tests;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
-import static org.opendcs.fixtures.assertions.TimeSeries.assertEquals;
-import static org.opendcs.fixtures.helpers.TestResources.getResource;
-
-import java.io.IOException;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
-import java.nio.file.Path;
-import java.nio.file.Files;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.Statement;
-import java.sql.CallableStatement;
-import java.util.Collection;
-import java.util.TimeZone;
-import java.util.stream.Collectors;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
+import java.util.Collection;
 import java.util.Iterator;
-
-import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestFactory;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.opendcs.fixtures.AppTestBase;
-import org.opendcs.fixtures.annotations.ConfiguredField;
-import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
-import org.opendcs.fixtures.annotations.EnableIfTsDb;
-import org.opendcs.fixtures.Programs;
-import org.opendcs.fixtures.helpers.TestResources;
-import org.opendcs.utils.FailableResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.List;
+import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 import decodes.db.Constants;
-import decodes.db.DatabaseException;
 import decodes.db.Site;
 import decodes.db.SiteName;
-import decodes.db.UnitConverter;
-import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.DataCollection;
+import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.ImportComp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsImporter;
-import decodes.tsdb.ImportComp;
-import decodes.tsdb.TsdbException;
 import decodes.tsdb.VarFlags;
 import decodes.util.DecodesSettings;
 import decodes.util.TSUtil;
-import decodes.tsdb.DataCollection;
-import decodes.tsdb.DbCompParm;
-import decodes.tsdb.DbComputation;
-import opendcs.dai.TimeSeriesDAI;
-import opendcs.dao.ComputationDAO;
+import ilex.var.TimedVariable;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.SiteDAI;
-import decodes.cwms.CwmsFlags;
-import decodes.cwms.CwmsTimeSeriesDb;
-import decodes.cwms.rating.CwmsRatingDao;
-import ilex.var.TimedVariable;
-import ilex.util.FileUtil;
-import org.opendcs.database.api.DataTransaction;
+import opendcs.dai.TimeSeriesDAI;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.TestFactory;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.fixtures.AppTestBase;
+import org.opendcs.fixtures.ImporterHelper;
+import org.opendcs.fixtures.annotations.ConfiguredField;
+import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import hec.data.RatingException;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.opendcs.fixtures.ImporterHelper.buildFilePath;
+import static org.opendcs.fixtures.assertions.TimeSeries.assertEquals;
 
 @DecodesConfigurationRequired({
     "shared/test-sites.xml"})
@@ -164,7 +134,10 @@ public class AlgorithmTestsIT extends AppTestBase
         }
     }
 
-    private DynamicTest getDynamicTest(File test, File comp, TsImporter importer, TimeSeriesDAI tsDao){
+    private DynamicTest getDynamicTest(File test, File comp, TsImporter importer, TimeSeriesDAI tsDao)
+	{
+		ImporterHelper helper = new ImporterHelper(tsDb, configuration, environment, exit, ImporterHelper.CONTEXT.TOOLKIT);
+
         return DynamicTest.dynamicTest(comp.getName() +" "+test.getName(), () -> {
             for (File comp_data : test.listFiles()) 
             {
@@ -195,16 +168,16 @@ public class AlgorithmTestsIT extends AppTestBase
                 else if (name.endsWith(".sql"))
                 {
                     log.info("Found SQL file: " + comp_data.getAbsolutePath());
-                    executeSqlFile(comp_data);
+					helper.executeSqlFile(db, comp_data);
                 }
             }
             
-            List<CTimeSeries> inputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","inputs"), importer);
-            Collection<CTimeSeries> outputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","outputs"), importer);
-            Collection<CTimeSeries> expectedOutputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","expectedOutputs"), importer);
+            List<CTimeSeries> inputTS = helper.loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","inputs"), importer);
+            Collection<CTimeSeries> outputTS = helper.loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","outputs"), importer);
+            Collection<CTimeSeries> expectedOutputTS = helper.loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","expectedOutputs"), importer);
 
-            loadRatingimport(buildFilePath(test.getAbsolutePath(),"rating"));
-            loadScreenings(buildFilePath(test.getAbsolutePath(), "screenings"));
+            helper.loadRatingimport(buildFilePath(test.getAbsolutePath(),"rating"));
+            helper.loadScreenings(buildFilePath(test.getAbsolutePath(), "screenings"));
 
 
             DbComputation testComp = null;
@@ -262,130 +235,5 @@ public class AlgorithmTestsIT extends AppTestBase
                 assertEquals(currExpect, algoOutput, "expected true", testComp.getValidStart(), testComp.getValidEnd());
             }
         });
-    }
-
-    private void loadScreenings(String screeningsFile) throws Exception
-    {
-        File folderTS = new File(screeningsFile);
-        if (!folderTS.exists())
-        {
-            return;
-        }
-        File log = new File(configuration.getUserDir().getParentFile(), "screenings-import-"+ folderTS.getName()+".log");
-        Programs.ImportScreenings(log, configuration.getPropertiesFile(), environment, exit, screeningsFile);
-	}
-
-	public static String buildFilePath(String... parts) {
-        // Start with the first part
-        Path path = Paths.get(parts[0]);
-    
-        // Append all the other parts using resolve() so it's platform independent
-        for (int i = 1; i < parts.length; i++) {
-            path = path.resolve(parts[i]);
-        }
-    
-        // Return the platform-specific path as a string
-        return path.toString();
-    }
-
-    private ArrayList<CTimeSeries> loadTSimport(String folderTSstr, TsImporter importer)
-    throws Exception
-    {
-        File folderTS = new File(folderTSstr);
-        ArrayList<CTimeSeries> fullTs = new ArrayList<CTimeSeries>();
-        if (!folderTS.exists()){
-            return fullTs;
-        }
-        for (File tsfiles : folderTS.listFiles())
-        {
-            String relativePath = "Comps"+tsfiles.getAbsolutePath().split("Comps")[1];
-
-            try(TimeSeriesDAI tsDao = tsDb.makeTimeSeriesDAO();
-                InputStream inputStream = TestResources.getResourceAsStream(configuration, relativePath);)
-            {
-                Collection<CTimeSeries> allTs = importer.readTimeSeriesFile(inputStream);
-                for (CTimeSeries tsIn: allTs)
-                {
-                    log.info("load: " + tsIn.getDisplayName());
-                    log.info("Saving {}", tsIn.getTimeSeriesIdentifier());
-
-                    tsDao.saveTimeSeries(tsIn);
-                    FailableResult<TimeSeriesIdentifier,TsdbException> tsIdSavedResult = tsDao.findTimeSeriesIdentifier(tsIn.getTimeSeriesIdentifier().getUniqueString());
-                    assertTrue(tsIdSavedResult.isSuccess(), "Time series was not correctly saved.");
-                }
-                fullTs.addAll(allTs);
-            }
-        }
-        return fullTs;
-    }
-
-    private void loadRatingimport(String folderRatingStr) throws Exception
-    {
-        File folderTS = new File(folderRatingStr);
-        if (!folderTS.exists())
-            return;
-        try (CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsDb)){
-            crd.setUseReference(false);
-            for (File tsfiles : folderTS.listFiles())
-            {
-                try
-                {
-                    String xml = FileUtil.getFileContents(tsfiles);
-                    crd.importXmlToDatabase(xml);
-                } 
-                catch(Exception ex)
-                {
-                    log.error(ex.getMessage(), ex);
-                }
-            }
-        }
-    }
-    
-    /**
-     * Execute SQL file in the database for test setup
-     * @param sqlFile The SQL file to execute
-     */
-    private void executeSqlFile(File sqlFile)
-    {
-        if (db == null)
-        {
-            log.warn("OpenDcsDatabase not available, skipping SQL file execution: " + sqlFile.getName());
-            return;
-        }
-        
-        try
-        {
-            // Read the SQL file content
-            String sqlContent = new String(Files.readAllBytes(sqlFile.toPath()), StandardCharsets.UTF_8);
-            
-            // Replace office ID placeholder if this is a CWMS database
-            if (tsDb instanceof CwmsTimeSeriesDb)
-            {
-                CwmsTimeSeriesDb cwmsDb = (CwmsTimeSeriesDb) tsDb;
-                String officeId = cwmsDb.getDbOfficeId();
-                sqlContent = sqlContent.replace("DEFAULT_OFFICE", officeId);
-            }
-            
-            // Execute the SQL using a transaction
-            try (DataTransaction tx = db.newTransaction())
-            {
-                Connection conn = tx.connection(Connection.class)
-                    .orElseThrow(() -> new RuntimeException("JDBC Connection not available in this transaction."));
-                
-                // Use CallableStatement to execute the SQL (handles PL/SQL blocks properly)
-                try (CallableStatement stmt = conn.prepareCall(sqlContent))
-                {
-                    log.info("Executing SQL from file: " + sqlFile.getName());
-                    log.debug("SQL Content: " + sqlContent.substring(0, Math.min(200, sqlContent.length())) + "...");
-                    stmt.execute();
-                }
-                log.info("Successfully executed SQL file: " + sqlFile.getName());
-            }
-        }
-        catch (Exception ex)
-        {
-            log.error("Failed to execute SQL file " + sqlFile.getName() + ": " + ex.getMessage(), ex);
-            // Don't fail the test, just log the error
-        }
     }
 }

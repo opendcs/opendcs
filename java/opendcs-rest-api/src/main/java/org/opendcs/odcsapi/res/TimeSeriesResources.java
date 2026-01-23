@@ -71,6 +71,9 @@ import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
 
+import static org.opendcs.odcsapi.util.DTOMappers.dataMap;
+import static org.opendcs.odcsapi.util.DTOMappers.mapTsId;
+
 /**
  * HTTP resources relating to Time Series data and descriptors
  * @author mmaloney
@@ -229,7 +232,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 	static ApiTimeSeriesSpec specMap(TimeSeriesIdentifier id)
 	{
 		ApiTimeSeriesSpec ret = new ApiTimeSeriesSpec();
-		ApiTimeSeriesIdentifier tsId = map(id);
+		ApiTimeSeriesIdentifier tsId = mapTsId(id);
 		ret.setTsid(tsId);
 		if (id instanceof CwmsTsId)
 		{
@@ -736,7 +739,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 		List<ApiTimeSeriesIdentifier> tsids = new ArrayList<>();
 		for (TimeSeriesIdentifier tsid : group.getTsMemberList())
 		{
-			tsids.add(map(tsid));
+			tsids.add(mapTsId(tsid));
 		}
 		ret.getTsIds().addAll(tsids);
 		List<ApiSiteRef> sites = new ArrayList<>();
