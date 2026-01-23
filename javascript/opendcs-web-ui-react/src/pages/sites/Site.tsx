@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { useTranslation } from "react-i18next";
 import { SiteNameList } from "./SiteNameList";
+import type { Actions } from "../../util/Actions";
 
 
 interface SiteProperties {
@@ -33,6 +34,13 @@ export const Site: React.FC<SiteProperties> = ({site}) => {
                                     : []);
     const editMode = site ? false : true;
 
+    const actions: Actions<Property,string> = editMode ? {
+        add: () => {},
+        edit: () => {},
+        remove: () => {},
+        save: () => {}
+    } : {};
+
     return (
         <Card>
             <Card.Body>
@@ -40,23 +48,15 @@ export const Site: React.FC<SiteProperties> = ({site}) => {
                     <Col>
                         <Row><SiteNameList siteNames={realSite.sitenames || {}}/></Row>
                         <Row>{/* TODO: need to have list be read only unless we're in edit mode */}
-                            <PropertiesTable theProps={props} saveProp={function (prop: Property): void {
-                                throw new Error("Function not implemented.");
-                            } } removeProp={function (prop: string): void {
-                                throw new Error("Function not implemented.");
-                            } } addProp={function (): void {
-                                throw new Error("Function not implemented.");
-                            } } editProp={function (prop: string): void {
-                                throw new Error("Function not implemented.");
-                            } } width={"100%"} />
+                            <PropertiesTable theProps={props} actions={actions} width={"100%"} />
                         </Row>
                     </Col>
                     <Col>
-                    
+
                     <FormGroup as={Row} className="mb-3">
                         <Form.Label column sm={2} htmlFor="latitude">{t("latitude")}</Form.Label>
                         <Col sm={10}>
-                        <Form.Control type="text" id="latitude" name="latitude" readOnly={!editMode} 
+                        <Form.Control type="text" id="latitude" name="latitude" readOnly={!editMode}
                                       placeholder={t("sites:use_decimal_format")}
                                       defaultValue={realSite.latitude}/>
                         </Col>
@@ -134,9 +134,9 @@ export const Site: React.FC<SiteProperties> = ({site}) => {
                                       defaultValue={realSite.description}/>
                         </Col>
                     </FormGroup>
-                    
-                    
-                    
+
+
+
                     </Col>
                 </Row>
                 <Row>
