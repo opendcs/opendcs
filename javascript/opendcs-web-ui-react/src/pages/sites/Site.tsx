@@ -44,14 +44,16 @@ export const Site: React.FC<SiteProperties> = ({site}) => {
                         <Form.Label column sm={2} htmlFor="latitude">{t("latitude")}</Form.Label>
                         <Col sm={10}>
                         <Form.Control type="text" id="latitude" name="latitude" readOnly={!editMode} 
-                                      placeholder={t("sites:use_decimal_format")}/>
+                                      placeholder={t("sites:use_decimal_format")}
+                                      defaultValue={realSite.latitude}/>
                         </Col>
                     </FormGroup>
                     <FormGroup as={Row} className="mb-3">
                         <Form.Label column sm={2} htmlFor="longitude">{t("longitude")}</Form.Label>
                         <Col sm={10}>
                         <Form.Control type="text" id="longitude" name="longitude" readOnly={!editMode}
-                                      placeholder={t("sites:use_decimal_format")}/>
+                                      placeholder={t("sites:use_decimal_format")}
+                                      defaultValue={realSite.longitude}/>
                         </Col>
                     </FormGroup>
                     <FormGroup as={Row} className="mb-3">
@@ -106,13 +108,15 @@ export const Site: React.FC<SiteProperties> = ({site}) => {
                     <FormGroup as={Row} className="mb-3">
                         <Form.Label column sm={2} htmlFor="publicName">{t("sites:public_name")}</Form.Label>
                         <Col sm={10}>
-                        <Form.Control type="text" id="publicName" name="publicName" readOnly={!editMode}/>
+                        <Form.Control type="text" id="publicName" name="publicName" readOnly={!editMode}
+                                      defaultValue={realSite.publicName}/>
                         </Col>
                     </FormGroup>
                     <FormGroup as={Row} className="mb-3">
                         <Form.Label column sm={2} htmlFor="description">{t("description")}</Form.Label>
                         <Col sm={10}>
-                        <Form.Control type="text" id="description" name="description" readOnly={!editMode}/>
+                        <Form.Control type="text" id="description" name="description" readOnly={!editMode}
+                                      defaultValue={realSite.description}/>
                         </Col>
                     </FormGroup>
                     

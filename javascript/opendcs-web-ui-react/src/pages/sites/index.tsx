@@ -1,11 +1,13 @@
 import DataTable, { type DataTableProps, type DataTableRef } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import { useTranslation } from "react-i18next";
-import { Suspense, useEffect, useRef } from "react";
+import { createElement, Suspense, useEffect, useRef } from "react";
 import { dtLangs } from "../../lang";
 import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { renderToString } from "react-dom/server";
 import Site from "./Site";
+import { createPortal } from "react-dom";
+import { createRoot } from "react-dom/client";
 
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -57,7 +59,11 @@ export const SitesTable: React.FC<SiteTableProperties> = ({sites}) => {
     // Add event listener for opening and closing details
     table.current?.dt()!.on('click', 'tbody td', function (e) {
         const dt = table.current!.dt()!;
-        const tr = (e.target! as Element).closest('tr');
+        const target = e.target! as Element;
+        const tr = target.closest('tr');
+        if (tr?.classList.contains("child-row")) {
+          return; // don't do anything if we click the child row.
+        }
         const row = dt.row(tr as HTMLTableRowElement);
         
         if (row.child.isShown()) {
@@ -66,8 +72,12 @@ export const SitesTable: React.FC<SiteTableProperties> = ({sites}) => {
         }
         else {
             const data: ApiSite = row.data as ApiSite;
+            const container = document.createElement("div");
+            const root = createRoot(container);
+            root.render(<Suspense fallback="Loading..."><Site site={data}/></Suspense>);
             // Open this row
-            row.child(renderToString(<Suspense fallback="Loading..."><Site site={data}/></Suspense>)).show();
+            row.child(container,
+                      "child-row").show();
         }
     });
   }, [i18n.language]);
