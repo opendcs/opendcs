@@ -5,10 +5,13 @@ import java.util.Date;
 import java.util.List;
 
 import decodes.cwms.CwmsTsId;
+import decodes.db.DatabaseException;
+import decodes.db.Site;
 import decodes.sql.DbKey;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.TimeSeriesIdentifier;
 import ilex.var.TimedVariable;
+import org.opendcs.odcsapi.beans.ApiSite;
 import org.opendcs.odcsapi.beans.ApiTimeSeriesData;
 import org.opendcs.odcsapi.beans.ApiTimeSeriesIdentifier;
 import org.opendcs.odcsapi.beans.ApiTimeSeriesValue;
@@ -64,6 +67,35 @@ public final class DTOMappers
 		{
 			return value.getTime();
 		}
+	}
+
+	public static Site mapSite(ApiSite apiSite) throws DatabaseException
+	{
+		Site site = new Site();
+		site.setPublicName(apiSite.getPublicName());
+		site.setLocationType(apiSite.getLocationType());
+		site.setElevation(apiSite.getElevation());
+		site.setElevationUnits(apiSite.getElevUnits());
+		site.latitude = apiSite.getLatitude();
+		site.longitude = apiSite.getLongitude();
+		if (apiSite.getSiteId() != null)
+		{
+			site.setId(DbKey.createDbKey(apiSite.getSiteId()));
+		}
+		site.setLastModifyTime(apiSite.getLastModified());
+		site.setDescription(apiSite.getDescription());
+		site.timeZoneAbbr = apiSite.getTimezone();
+		site.nearestCity = apiSite.getNearestCity();
+		site.state = apiSite.getState();
+		site.country = apiSite.getCountry();
+		site.region = apiSite.getRegion();
+		site.setActive(apiSite.isActive());
+
+		for (String props : apiSite.getProperties().stringPropertyNames())
+		{
+			site.setProperty(props, apiSite.getProperties().getProperty(props));
+		}
+		return site;
 	}
 
 	public static ApiTimeSeriesIdentifier mapTsId(TimeSeriesIdentifier tsid)

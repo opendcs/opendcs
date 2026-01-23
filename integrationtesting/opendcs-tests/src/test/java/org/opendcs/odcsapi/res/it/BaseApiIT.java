@@ -28,7 +28,6 @@ import decodes.db.DatabaseIO;
 import decodes.db.PlatformStatus;
 import decodes.db.ScheduleEntry;
 import decodes.db.ScheduleEntryStatus;
-import decodes.db.Site;
 import decodes.sql.DbKey;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.TimeSeriesDb;
@@ -36,7 +35,6 @@ import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.util.DecodesSettings;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.filter.log.LogDetail;
-import io.restassured.filter.session.SessionFilter;
 import io.restassured.http.Cookie;
 import io.restassured.path.json.JsonPath;
 import io.restassured.specification.RequestSpecification;
@@ -47,13 +45,9 @@ import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.TimeSeriesDAI;
 import org.apache.catalina.session.StandardSession;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.odcsapi.beans.ApiSite;
-import org.opendcs.odcsapi.fixtures.DatabaseContextProvider;
-import org.opendcs.odcsapi.fixtures.DatabaseSetupExtension;
-import org.opendcs.odcsapi.fixtures.DbType;
-import org.opendcs.odcsapi.fixtures.TomcatServer;
+import org.opendcs.fixtures.TomcatServer;
 import org.opendcs.odcsapi.res.ObjectMapperContextResolver;
 import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
 import org.opendcs.odcsapi.sec.OpenDcsPrincipal;
@@ -62,7 +56,6 @@ import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
 import org.opendcs.fixtures.AppTestBase;
-import org.opendcs.fixtures.TomcatServer;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.EnableIfApiSupported;
 
@@ -151,7 +144,6 @@ public class BaseApiIT extends AppTestBase
 	{
 		final String COOKIE = "IntegrationTestAuthCookie";
 		String username = System.getProperty("DB_USERNAME");
-		TomcatServer tomcat = DatabaseSetupExtension.getCurrentTomcat();
 		StandardSession session = (StandardSession) tomcat.getTestSessionManager()
 				.createSession(COOKIE);
 		if(session == null) {
@@ -189,7 +181,6 @@ public class BaseApiIT extends AppTestBase
 		;
 	}
 
-	void logout()
 	String getCookie()
 	{
 		if (cookie == null)
@@ -235,9 +226,9 @@ public class BaseApiIT extends AppTestBase
 		return configuration.getTsdb();
 	}
 
-	protected static Configuration getConfig()
+	protected Configuration getConfig()
 	{
-		return DatabaseSetupExtension.getCurrentConfig();
+		return configuration;
 	}
 
 	protected DatabaseIO getDbIo() throws Throwable
@@ -331,35 +322,6 @@ public class BaseApiIT extends AppTestBase
 		{
 			throw new IllegalStateException(e);
 		}
-	}
-
-	Site map(ApiSite apiSite) throws DatabaseException
-	{
-		Site site = new Site();
-		site.setPublicName(apiSite.getPublicName());
-		site.setLocationType(apiSite.getLocationType());
-		site.setElevation(apiSite.getElevation());
-		site.setElevationUnits(apiSite.getElevUnits());
-		site.latitude = apiSite.getLatitude();
-		site.longitude = apiSite.getLongitude();
-		if (apiSite.getSiteId() != null)
-		{
-			site.setId(DbKey.createDbKey(apiSite.getSiteId()));
-		}
-		site.setLastModifyTime(apiSite.getLastModified());
-		site.setDescription(apiSite.getDescription());
-		site.timeZoneAbbr = apiSite.getTimezone();
-		site.nearestCity = apiSite.getNearestCity();
-		site.state = apiSite.getState();
-		site.country = apiSite.getCountry();
-		site.region = apiSite.getRegion();
-		site.setActive(apiSite.isActive());
-
-		for (String props : apiSite.getProperties().stringPropertyNames())
-		{
-			site.setProperty(props, apiSite.getProperties().getProperty(props));
-		}
-		return site;
 	}
 
 	void tearDownSite(Long siteId)

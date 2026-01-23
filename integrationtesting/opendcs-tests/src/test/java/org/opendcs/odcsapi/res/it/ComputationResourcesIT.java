@@ -56,17 +56,12 @@ import opendcs.dai.TimeSeriesDAI;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.opendcs.database.api.DataTransaction;
-import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.fixtures.Programs;
-import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.fixtures.ImporterHelper;
 import org.opendcs.odcsapi.beans.ApiAlgorithm;
 import org.opendcs.odcsapi.beans.ApiCompParm;
 import org.opendcs.odcsapi.beans.ApiComputation;
 import org.opendcs.odcsapi.beans.ApiLoadingApp;
 import org.opendcs.odcsapi.beans.ApiSite;
-import org.opendcs.odcsapi.fixtures.DatabaseSetupExtension;
 import org.opendcs.odcsapi.res.ComputationResources;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.slf4j.Logger;
@@ -80,6 +75,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.opendcs.odcsapi.util.DTOMappers.mapSite;
 
 final class ComputationResourcesIT extends BaseApiIT
 {
@@ -106,7 +102,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		ApiComputation comp = getDtoFromResource("computation_insert_data.json", ApiComputation.class);
 
 		ApiSite site = getDtoFromResource("computation_site_data.json", ApiSite.class);
-		Site tsSite = map(site);
+		Site tsSite = mapSite(site);
 
 		ApiLoadingApp app = getDtoFromResource("computation_app_data.json", ApiLoadingApp.class);
 		String appJson = MAPPER.writeValueAsString(app);
@@ -665,10 +661,10 @@ final class ComputationResourcesIT extends BaseApiIT
 		;
 	}
 
-	@TestTemplate
+	@Test
 	void testExecuteComputation() throws Exception
 	{
-		String organization = DatabaseSetupExtension.getOrganization();
+		String organization = getOrganization();
 
 		importData(Optional.of(Path.of("ResEvap", "Test1")));
 		assertFalse(expectedTsList.isEmpty(), "No time series found imported");

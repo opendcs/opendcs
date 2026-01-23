@@ -68,7 +68,7 @@ public final class ComputationExecution
 		// Execute the computations
 		for(DbComputation comp : toRun)
 		{
-			try
+			try (var mdcComputation = MDC.putCloseable("computation", comp.getName()))
 			{
 				listener.onProgress(String.format("Executing computation '%s' #trigs=%d",
 						comp.getName(), comp.getTriggeringRecNums().size()), Level.DEBUG, null);
@@ -120,7 +120,10 @@ public final class ComputationExecution
 			}
 		}
 		computesTried++;
-		executeSingleComp(computation, start, end, theData, false, listener);
+		try (var mdcComputation = MDC.putCloseable("computation", computation.getName()))
+		{
+			executeSingleComp(computation, start, end, theData, false, listener);
+		}
 		return new CompResults(numErrors, computesTried);
 	}
 

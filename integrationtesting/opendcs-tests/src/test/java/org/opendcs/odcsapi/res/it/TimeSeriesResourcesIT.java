@@ -34,13 +34,13 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.opendcs.odcsapi.beans.ApiSite;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.opendcs.odcsapi.util.DTOMappers.mapSite;
 
 final class TimeSeriesResourcesIT extends BaseApiIT
 {
@@ -57,10 +57,10 @@ final class TimeSeriesResourcesIT extends BaseApiIT
 		authenticate();
 
 		// create a site
-		Site tsSite = map(storeSite("ts_site_insert_data.json"));
+		Site tsSite = mapSite(storeSite("ts_site_insert_data.json"));
 		siteId = tsSite.getId().getValue();
 
-		Site tsSite2 = map(storeSite("ts_site_insert_data2.json"));
+		Site tsSite2 = mapSite(storeSite("ts_site_insert_data2.json"));
 		siteId2 = tsSite2.getId().getValue();
 
 		// Create an active time series
