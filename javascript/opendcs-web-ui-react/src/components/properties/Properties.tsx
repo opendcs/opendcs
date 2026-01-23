@@ -262,7 +262,6 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
     };
   }, [actions]);
 
-
   return (
     <Container fluid style={{ width: width, height: height }} className={`${classes}`}>
       <DataTable
