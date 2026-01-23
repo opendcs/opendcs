@@ -1,128 +1,121 @@
-import type { Meta, StoryObj } from "@storybook/react-vite";
-import { PropertiesTable, type Property } from "./Properties";
+import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
+import { PropertiesTable, PropertiesTableProps, type Property } from "./Properties";
 import { expect, waitFor, within } from "storybook/test";
 import { useState } from "storybook/internal/preview-api";
 import { act } from "@testing-library/react";
 
+const WithActions: Decorator<PropertiesTableProps> = (Story, context) => {
+  const [theProps, setTheProps] = useState<Property[]>(context.args.theProps);
+
+  function saveProp(data: Property) {
+    act(() =>
+      setTheProps((prev) => {
+        let newProps: Property[];
+        if (typeof data.state === "number") {
+          newProps = prev.map((p: Property) =>
+            `${data.state}` === p.name ? { name: data.name, value: data.value } : p,
+          );
+        } else if (data.state === "edit") {
+          newProps = prev.map((p: Property) =>
+            p.name === data.name
+              ? { ...p, value: data.value, state: undefined }
+              : p,
+          );
+        } else {
+          throw new Error(
+            `Attempt to save property with invalid state ${data.state}`,
+          );
+        }
+        return newProps;
+      }),
+    );
+  }
+
+  function removeProp(prop: string) {
+    act(() =>
+      setTheProps((prev) => {
+        const tmp = prev.filter((e: Property) => e.name !== prop);
+        return tmp;
+      }),
+    );
+  }
+
+  function addProp() {
+    act(() =>
+      setTheProps((prev) => {
+        const existingNew = prev
+          .filter((p: Property) => p.state === "new")
+          .sort((a: Property, b: Property) => {
+            return parseInt(a.name) - parseInt(b.name);
+          });
+        const idx = existingNew.length > 0 ? parseInt(existingNew[0].name) + 1 : 1;
+
+        const tmp = [
+          ...prev,
+          { name: `${idx}`, value: "", state: "new" } as Property,
+        ];
+        return tmp;
+      }),
+    );
+  }
+
+  function editProp(prop: string) {
+    act(() =>
+      setTheProps((prev) => {
+        const tmp: Property[] = prev.map((p: Property) => {
+          if (p.name === prop) {
+            return {
+              ...p,
+              state: "edit",
+            };
+          } else {
+            return p;
+          }
+        });
+        return tmp;
+      }),
+    );
+  }
+  return (
+    <Story
+      args={{
+        ...context.args,
+        theProps: theProps,
+        actions: {
+        save: saveProp,
+        remove: removeProp,
+        add: addProp,
+        edit: editProp,
+        }
+      }}
+    />
+  );
+}
+
+
 const meta = {
-  component: PropertiesTable,
-  decorators: [
-    (Story, context) => {
-      const [theProps, setTheProps] = useState<Property[]>(context.args.theProps);
-
-      function saveProp(data: Property) {
-        act(() =>
-          setTheProps((prev) => {
-            let newProps: Property[];
-            if (typeof data.state === "number") {
-              newProps = prev.map((p: Property) =>
-                `${data.state}` === p.name ? { name: data.name, value: data.value } : p,
-              );
-            } else if (data.state === "edit") {
-              newProps = prev.map((p: Property) =>
-                p.name === data.name
-                  ? { ...p, value: data.value, state: undefined }
-                  : p,
-              );
-            } else {
-              throw new Error(
-                `Attempt to save property with invalid state ${data.state}`,
-              );
-            }
-            return newProps;
-          }),
-        );
-      }
-
-      function removeProp(prop: string) {
-        act(() =>
-          setTheProps((prev) => {
-            const tmp = prev.filter((e: Property) => e.name !== prop);
-            return tmp;
-          }),
-        );
-      }
-
-      function addProp() {
-        act(() =>
-          setTheProps((prev) => {
-            const existingNew = prev
-              .filter((p: Property) => p.state === "new")
-              .sort((a: Property, b: Property) => {
-                return parseInt(a.name) - parseInt(b.name);
-              });
-            const idx = existingNew.length > 0 ? parseInt(existingNew[0].name) + 1 : 1;
-
-            const tmp = [
-              ...prev,
-              { name: `${idx}`, value: "", state: "new" } as Property,
-            ];
-            return tmp;
-          }),
-        );
-      }
-
-      function editProp(prop: string) {
-        act(() =>
-          setTheProps((prev) => {
-            const tmp: Property[] = prev.map((p: Property) => {
-              if (p.name === prop) {
-                return {
-                  ...p,
-                  state: "edit",
-                };
-              } else {
-                return p;
-              }
-            });
-            return tmp;
-          }),
-        );
-      }
-      return (
-        <Story
-          args={{
-            ...context.args,
-            theProps: theProps,
-            saveProp: saveProp,
-            removeProp: removeProp,
-            addProp: addProp,
-            editProp: editProp,
-          }}
-        />
-      );
-    },
-  ],
+  component: PropertiesTable
 } satisfies Meta<typeof PropertiesTable>;
 
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-const propList: Property[] = [];
+const emptyPropList: Property[] = [];
 
 export const StartEmpty: Story = {
   args: {
-    theProps: propList,
-    saveProp: () => {
-      console.log("default save");
-    },
-    removeProp: () => {
-      console.log("default remove");
-    },
-    editProp: () => {
-      console.log("default edit");
-    },
-    addProp: () => {
-      console.log("default add");
-    },
+    theProps: emptyPropList,
+    actions : {}
   },
+  decorators: [WithActions]
 };
 
 export const EmptyAddThenRemove: Story = {
   args: {
     ...StartEmpty.args,
   },
+  decorators: [WithActions],
   play: async ({ canvasElement, mount, parameters, userEvent }) => {
     const { i18n } = parameters;
     await mount();
@@ -147,6 +140,7 @@ export const PropertyNameCannotBeBlank: Story = {
   args: {
     ...StartEmpty.args
   },
+  decorators: [WithActions],
   play: async ({ canvasElement, mount, parameters, userEvent }) => {
     const { i18n } = parameters;
     await mount();
@@ -196,6 +190,7 @@ export const EmptyAddThenSaveThenRemove: Story = {
   args: {
     ...StartEmpty.args,
   },
+  decorators: [WithActions],
   play: async ({ canvasElement, step, mount, parameters, userEvent }) => {
     const { i18n } = parameters;
     await mount();
@@ -242,10 +237,7 @@ export const EmptyAddThenSaveThenRemove: Story = {
   },
 };
 
-export const NotEmpty: Story = {
-  args: {
-    ...StartEmpty.args,
-    theProps: [
+const propList: Property[] = [
       { name: "prop1", value: "val1" },
       { name: "prop2", value: "val2" },
       { name: "prop3", value: "val3" },
@@ -254,6 +246,19 @@ export const NotEmpty: Story = {
       { name: "prop6", value: "val6" },
       { name: "prop7", value: "val7" },
       { name: "prop8", value: "val8" },
-    ],
+  ];
+export const NotEmpty: Story = {
+  args: {
+    ...StartEmpty.args,
+    theProps: propList
   },
+  decorators: [WithActions],
 };
+
+
+export const ReadOnly: Story = {
+  args: {
+    theProps: propList,
+    actions: {}
+  }
+}

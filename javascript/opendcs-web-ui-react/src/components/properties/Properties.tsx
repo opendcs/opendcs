@@ -3,7 +3,7 @@ import DataTable, {
   type DataTableRef,
   type DataTableSlots,
 } from "datatables.net-react";
-import DT, { type ConfigColumns } from "datatables.net-bs5";
+import DT, { type ConfigButtons, type ConfigColumns } from "datatables.net-bs5";
 import dtButtons from "datatables.net-buttons-bs5";
 import { Button, Container, Form } from "react-bootstrap";
 import "datatables.net-responsive";
@@ -13,6 +13,7 @@ import { useRef } from "react";
 import { renderToString } from "react-dom/server";
 import { useTranslation } from "react-i18next";
 import { dtLangs } from "../../lang";
+import type { Actions } from "../../util/Actions";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -34,10 +35,7 @@ export interface Property {
 
 export interface PropertiesTableProps {
   theProps: Property[];
-  saveProp: (prop: Property) => void;
-  removeProp: (prop: string) => void;
-  addProp: () => void;
-  editProp: (prop: string) => void;
+  actions: Actions<Property,string>;
   width?: React.CSSProperties["width"];
   height?: React.CSSProperties["height"];
   classes?: string;
@@ -46,9 +44,9 @@ export interface PropertiesTableProps {
 export interface ActionProps {
   data: Property;
   editMode: boolean;
-  removeProp: (prop: string) => void;
-  editProp: (prop: string) => void;
-  saveProp: (prop: Property) => void;
+  removeProp?: (prop: string) => void;
+  editProp?: (prop: string) => void;
+  saveProp?: (prop: Property) => void;
 }
 
 export const PropertyActions: React.FC<ActionProps> = ({
@@ -59,9 +57,11 @@ export const PropertyActions: React.FC<ActionProps> = ({
   saveProp,
 }) => {
   const [t] = useTranslation(["properties"]);
-  return (
-    <>
-      {editMode === true ? (
+
+
+  let changeAction = <></>;
+  if (editMode && saveProp !== undefined) {
+    changeAction =
         <Button
           onClick={() => {
             saveProp(data);
@@ -72,8 +72,8 @@ export const PropertyActions: React.FC<ActionProps> = ({
         >
           <Save />
         </Button>
-      ) : (
-        <Button
+  } else if(editMode && editProp !== undefined) {
+    changeAction = <Button
           onClick={() => editProp(data.name)}
           variant="warning"
           aria-label={t("properties:edit_prop", { name: data.name })}
@@ -81,15 +81,22 @@ export const PropertyActions: React.FC<ActionProps> = ({
         >
           <Pencil />
         </Button>
-      )}
-      <Button
+  }
+
+  const deleteAction = removeProp !== undefined ? <Button
         onClick={() => removeProp(data.name)}
         variant="danger"
         size="sm"
         aria-label={t("properties:delete_prop", { name: data.name })}
       >
         <Trash />
-      </Button>
+      </Button> : <></>;
+
+
+  return (
+    <>
+      {changeAction}
+      {deleteAction}
     </>
   );
 };
@@ -104,10 +111,7 @@ export const PropertyActions: React.FC<ActionProps> = ({
  */
 export const PropertiesTable: React.FC<PropertiesTableProps> = ({
   theProps,
-  saveProp,
-  removeProp,
-  addProp,
-  editProp,
+  actions,
   width = "20em",
   height = "100vh",
   classes = "",
@@ -147,23 +151,26 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
     { data: null, name: "actions" },
   ];
 
+  const buttons: ConfigButtons = {buttons: []};
+  if (actions.add !== undefined) {
+    buttons.buttons.push({
+      text: "+",
+      action: () => {
+        actions.add!();
+      },
+      attr: {
+        "aria-label": t("properties:add_prop"),
+      },
+          });
+  }
+
   const options: DataTableProps["options"] = {
     paging: false,
     responsive: true,
     language: dtLangs.get(i18n.language),
     layout: {
       top1Start: {
-        buttons: [
-          {
-            text: "+",
-            action: () => {
-              addProp();
-            },
-            attr: {
-              "aria-label": t("properties:add_prop"),
-            },
-          },
-        ],
+        buttons: buttons,
       },
     },
     createdRow: (
@@ -193,10 +200,10 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
           value: value,
           state: data.state == "new" ? parseInt(data.name) : data.state,
         };
-        if (!(name === undefined || name === "")) {
-          saveProp(prop);
+        if (!(name === undefined || name.trim() === "")) {
+          actions.save?.(prop);
         } else {
-          (tds[0].children[0] as HTMLElement).classList.add("border", "border-warning")
+          (tds[0].children[0] as HTMLElement).classList.add("border", "border-warning");
         }
       } else {
         console.log(`can't find entries for ${JSON.stringify(data)}`);
@@ -215,9 +222,9 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
           <PropertyActions
             data={data}
             editMode={inEdit}
-            removeProp={removeProp}
-            saveProp={getAndSaveProp}
-            editProp={editProp}
+            removeProp={actions.remove}
+            saveProp={actions.save? getAndSaveProp : undefined}
+            editProp={actions.edit}
           />
         );
       } else {
