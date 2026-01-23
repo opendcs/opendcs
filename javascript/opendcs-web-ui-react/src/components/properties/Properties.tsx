@@ -35,7 +35,7 @@ export interface Property {
 
 export interface PropertiesTableProps {
   theProps: Property[];
-  actions: Actions<Property,string>;
+  actions: Actions<Property, string>;
   width?: React.CSSProperties["width"];
   height?: React.CSSProperties["height"];
   classes?: string;
@@ -58,39 +58,46 @@ export const PropertyActions: React.FC<ActionProps> = ({
 }) => {
   const [t] = useTranslation(["properties"]);
 
-
   let changeAction = <></>;
   if (editMode && saveProp !== undefined) {
-    changeAction =
-        <Button
-          onClick={() => {
-            saveProp(data);
-          }}
-          variant="primary"
-          aria-label={t("properties:save_prop", { name: data.name })}
-          size="sm"
-        >
-          <Save />
-        </Button>
-  } else if(!editMode && editProp !== undefined) {
-    changeAction = <Button
-          onClick={() => editProp(data.name)}
-          variant="warning"
-          aria-label={t("properties:edit_prop", { name: data.name })}
-          size="sm"
-        >
-          <Pencil />
-        </Button>
+    changeAction = (
+      <Button
+        onClick={() => {
+          saveProp(data);
+        }}
+        variant="primary"
+        aria-label={t("properties:save_prop", { name: data.name })}
+        size="sm"
+      >
+        <Save />
+      </Button>
+    );
+  } else if (!editMode && editProp !== undefined) {
+    changeAction = (
+      <Button
+        onClick={() => editProp(data.name)}
+        variant="warning"
+        aria-label={t("properties:edit_prop", { name: data.name })}
+        size="sm"
+      >
+        <Pencil />
+      </Button>
+    );
   }
 
-  const deleteAction = removeProp !== undefined ? <Button
+  const deleteAction =
+    removeProp !== undefined ? (
+      <Button
         onClick={() => removeProp(data.name)}
         variant="danger"
         size="sm"
         aria-label={t("properties:delete_prop", { name: data.name })}
       >
         <Trash />
-      </Button> : <></>;
+      </Button>
+    ) : (
+      <></>
+    );
 
   return (
     <>
@@ -117,54 +124,63 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
 }) => {
   const table = useRef<DataTableRef>(null);
   const [t, i18n] = useTranslation(["properties"]);
-  const renderEditable = useCallback((
-    data: string | number | readonly string[] | undefined,
-    type: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    row: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    meta: any,
-  ) => {
-    if (type !== "display") {
-      return data;
-    }
-    const inputName: string = meta.col == 0 ? "name" : "value";
-    if (row?.state === "new" || (row?.state == "edit" && meta.col == 1)) {
-      return renderToString(
-        <Form.Control
-          type="text"
-          name={meta.settings.aoColumns[meta.col].mData}
-          defaultValue={row.state == "edit" ? data : ""}
-          aria-label={t(`properties:${inputName}_input`, { name: row.name })}
-        />,
-      );
-    } else {
-      return data;
-    }
-  }, []);
+  const renderEditable = useCallback(
+    (
+      data: string | number | readonly string[] | undefined,
+      type: string,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      row: any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      meta: any,
+    ) => {
+      if (type !== "display") {
+        return data;
+      }
+      const inputName: string = meta.col == 0 ? "name" : "value";
+      if (row?.state === "new" || (row?.state == "edit" && meta.col == 1)) {
+        return renderToString(
+          <Form.Control
+            type="text"
+            name={meta.settings.aoColumns[meta.col].mData}
+            defaultValue={row.state == "edit" ? data : ""}
+            aria-label={t(`properties:${inputName}_input`, { name: row.name })}
+          />,
+        );
+      } else {
+        return data;
+      }
+    },
+    [],
+  );
 
-  const columns: ConfigColumns[] = useMemo(() => [
-    { data: "name", render: renderEditable },
-    { data: "value", render: renderEditable },
-    { data: null, name: "actions" },
-  ], []);
+  const columns: ConfigColumns[] = useMemo(
+    () => [
+      { data: "name", render: renderEditable },
+      { data: "value", render: renderEditable },
+      { data: null, name: "actions" },
+    ],
+    [],
+  );
 
   const buttons: ConfigButtons = useMemo(() => {
     if (actions.add !== undefined) {
       return {
-        buttons: [{
-        text: "+",
-        action: () => {
-          actions.add!();
-        },
-        attr: {
-          "aria-label": t("properties:add_prop"),
-        },
-        }]
-     };
-  } else {
-    return {buttons: []};
-  }}, [actions]);
+        buttons: [
+          {
+            text: "+",
+            action: () => {
+              actions.add!();
+            },
+            attr: {
+              "aria-label": t("properties:add_prop"),
+            },
+          },
+        ],
+      };
+    } else {
+      return { buttons: [] };
+    }
+  }, [actions]);
 
   const options: DataTableProps["options"] = useMemo(() => {
     return {
@@ -188,54 +204,62 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
     };
   }, [buttons]);
 
-  const getAndSaveProp: (data: Property) => void = useCallback((data: Property): void => {
-    const api = table.current?.dt();
-    if (api) {
-      const row = api.row(`tr[data-prop-name="${data.name}"]`)?.node();
-      if (row) {
-        const tds = row.children;
-        const name =
-          tds[0].children[0] instanceof HTMLInputElement
-            ? (tds[0].children[0] as HTMLInputElement).value
-            : tds[0].innerHTML;
-        const value = (tds[1].children[0] as HTMLInputElement).value;
-        const prop: Property = {
-          name: name,
-          value: value,
-          state: data.state == "new" ? parseInt(data.name) : data.state,
-        };
-        if (!(name === undefined || name.trim() === "")) {
-          actions.save?.(prop);
+  const getAndSaveProp: (data: Property) => void = useCallback(
+    (data: Property): void => {
+      const api = table.current?.dt();
+      if (api) {
+        const row = api.row(`tr[data-prop-name="${data.name}"]`)?.node();
+        if (row) {
+          const tds = row.children;
+          const name =
+            tds[0].children[0] instanceof HTMLInputElement
+              ? (tds[0].children[0] as HTMLInputElement).value
+              : tds[0].innerHTML;
+          const value = (tds[1].children[0] as HTMLInputElement).value;
+          const prop: Property = {
+            name: name,
+            value: value,
+            state: data.state == "new" ? parseInt(data.name) : data.state,
+          };
+          if (!(name === undefined || name.trim() === "")) {
+            actions.save?.(prop);
+          } else {
+            (tds[0].children[0] as HTMLElement).classList.add(
+              "border",
+              "border-warning",
+            );
+          }
         } else {
-          (tds[0].children[0] as HTMLElement).classList.add("border", "border-warning");
+          console.log(`can't find entries for ${JSON.stringify(data)}`);
         }
       } else {
-        console.log(`can't find entries for ${JSON.stringify(data)}`);
-      }
-    } else {
-      console.log("no dt api?");
-    }
-  }, [actions]);
-
-  const slots = useMemo<DataTableSlots>(() => { return {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    actions: (data: Property, type: unknown, _row: Property) => {
-      if (type === "display") {
-        const inEdit = data.state !== undefined;
-        return (
-          <PropertyActions
-            data={data}
-            editMode={inEdit}
-            removeProp={actions.remove}
-            saveProp={actions.save? getAndSaveProp : undefined}
-            editProp={actions.edit}
-          />
-        );
-      } else {
-        return data;
+        console.log("no dt api?");
       }
     },
-  }}, [actions]);
+    [actions],
+  );
+
+  const slots = useMemo<DataTableSlots>(() => {
+    return {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      actions: (data: Property, type: unknown, _row: Property) => {
+        if (type === "display") {
+          const inEdit = data.state !== undefined;
+          return (
+            <PropertyActions
+              data={data}
+              editMode={inEdit}
+              removeProp={actions.remove}
+              saveProp={actions.save ? getAndSaveProp : undefined}
+              editProp={actions.edit}
+            />
+          );
+        } else {
+          return data;
+        }
+      },
+    };
+  }, [actions]);
 
   return (
     <Container fluid style={{ width: width, height: height }} className={`${classes}`}>
