@@ -2,7 +2,6 @@ import {
   Card,
   Col,
   Form,
-  FormControl,
   FormGroup,
   FormSelect,
   Row,
@@ -33,7 +32,9 @@ const elevationUnits = [
 
 export const Site: React.FC<SiteProperties> = ({ site }) => {
   const { t } = useTranslation();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [realSite, _updateSite] = useState(site ? site : { properties: {} });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [props, _updateProps] = useState(
     realSite.properties
       ? Object.values(realSite.properties).map(([k, v]) => {
@@ -52,7 +53,7 @@ export const Site: React.FC<SiteProperties> = ({ site }) => {
       }
     : {};
 
-  const siteNameActions: Actions<String> = editMode
+  const siteNameActions: Actions<string> = editMode
     ? {
         add: () => {},
         edit: () => {},
