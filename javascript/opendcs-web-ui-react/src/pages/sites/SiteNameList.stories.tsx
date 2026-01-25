@@ -1,9 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { SiteNameList } from "./SiteNameList";
+import { WithRefLists } from "../../../.storybook/mock/WithRefLists";
 
 const meta = {
   component: SiteNameList,
+  decorators: [WithRefLists]
 } satisfies Meta<typeof SiteNameList>;
 
 export default meta;
