@@ -7,14 +7,15 @@ import { useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { dtLangs } from "../../lang";
 import type { Actions } from "../../util/Actions";
+import { renderToString } from "react-dom/server";
+import SiteNameTypeSelect from "./SiteNameTypeSelect";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
-
 DataTable.use(DT);
 
 interface SiteNameListProperties {
   siteNames: { [k: string]: string };
-  actions?: Actions<String>;
+  actions?: Actions<string>;
 }
 
 export const SiteNameList: React.FC<SiteNameListProperties> = ({
@@ -24,6 +25,26 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
   const table = useRef<DataTableRef>(null);
   const [t, i18n] = useTranslation(["sites"]);
 
+  const renderEditableType = (
+      data: string | number | readonly string[] | undefined,
+      type: string,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      row: any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      meta: any,
+    ) => {
+      if (type !== "display") {
+        return data;
+      }
+      if (row?.state === "new" || (row?.state == "edit" && meta.col == 1)) {
+        return renderToString(
+          <SiteNameTypeSelect current={""}/>,
+        );
+      } else {
+        return data;
+      }
+    };
+
   const site_names = useMemo(() => {
     return Object.entries(siteNames).map(([k, v]) => {
       return { type: k, value: v };
@@ -31,7 +52,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
   }, [siteNames]);
   console.log(JSON.stringify(site_names));
   const columns = [
-    { data: "type" },
+    { data: "type", renderer: renderEditableType },
     { data: "value" },
     {
       data: null,
@@ -60,7 +81,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
                     console.log("Add site name");
                   },
                   attr: {
-                    "aria-label": t("sites:add_site_name"),
+                    "aria-label": t("sites:site_name.add_name"),
                   },
                 },
               ]
@@ -81,7 +102,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
     >
       <thead>
         <tr>
-          <th>{t("sites:site_name_type")}</th>
+          <th>{t("sites:site_name.name_type")}</th>
           <th>{t("translation:value")}</th>
           <th>{t("translation:actions")}</th>
         </tr>
