@@ -3,7 +3,7 @@
  */
 
 import { Decorator } from "@storybook/react-vite";
-import {RefListContext} from "../../src/contexts/RefListContext";
+import {RefListContext} from "../../src/contexts/data/RefListContext";
 import { ApiRefList } from "../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 
 export const WithRefLists: Decorator = (Story) => {
