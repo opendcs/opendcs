@@ -33,11 +33,11 @@ const elevationUnits = [
 export const Site: React.FC<SiteProperties> = ({ site }) => {
   const { t } = useTranslation();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [realSite, _updateSite] = useState(site ? site : { properties: {} });
+  const [localSite, _updateSite] = useState(site ? site : { properties: {} });
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [props, _updateProps] = useState(
-    realSite.properties
-      ? Object.values(realSite.properties).map(([k, v]) => {
+    localSite.properties
+      ? Object.values(localSite.properties).map(([k, v]) => {
           return { name: k, value: v };
         })
       : [],
@@ -69,7 +69,7 @@ export const Site: React.FC<SiteProperties> = ({ site }) => {
           <Col>
             <Row>
               <SiteNameList
-                siteNames={realSite.sitenames || {}}
+                siteNames={localSite.sitenames || {}}
                 actions={siteNameActions}
               />
             </Row>
@@ -94,7 +94,7 @@ export const Site: React.FC<SiteProperties> = ({ site }) => {
                   name="latitude"
                   readOnly={!editMode}
                   placeholder={t("sites:use_decimal_format")}
-                  defaultValue={realSite.latitude}
+                  defaultValue={localSite.latitude}
                 />
               </Col>
             </FormGroup>
@@ -109,7 +109,7 @@ export const Site: React.FC<SiteProperties> = ({ site }) => {
                   name="longitude"
                   readOnly={!editMode}
                   placeholder={t("sites:use_decimal_format")}
-                  defaultValue={realSite.longitude}
+                  defaultValue={localSite.longitude}
                 />
               </Col>
             </FormGroup>
@@ -123,7 +123,7 @@ export const Site: React.FC<SiteProperties> = ({ site }) => {
                   id="elevation"
                   name="elevation "
                   readOnly={!editMode}
-                  defaultValue={realSite.elevation}
+                  defaultValue={localSite.elevation}
                 />
               </Col>
             </FormGroup>
@@ -138,7 +138,7 @@ export const Site: React.FC<SiteProperties> = ({ site }) => {
                       <option
                         key={unit.units}
                         value={unit.units}
-                        selected={realSite.elevUnits === unit.units}
+                        selected={localSite.elevUnits === unit.units}
                       >
                         {unit.name}
                       </option>
@@ -157,7 +157,7 @@ export const Site: React.FC<SiteProperties> = ({ site }) => {
                   id="nearestCity"
                   name="nearest_city"
                   readOnly={!editMode}
-                  defaultValue={realSite.nearestCity}
+                  defaultValue={localSite.nearestCity}
                 />
               </Col>
             </FormGroup>
@@ -171,7 +171,7 @@ export const Site: React.FC<SiteProperties> = ({ site }) => {
                   id="state"
                   name="state"
                   readOnly={!editMode}
-                  defaultValue={realSite.state}
+                  defaultValue={localSite.state}
                 />
               </Col>
             </FormGroup>
@@ -186,7 +186,7 @@ export const Site: React.FC<SiteProperties> = ({ site }) => {
                   name="country"
                   readOnly={!editMode}
                   placeholder={t("sites:enter_country")}
-                  defaultValue={realSite.country}
+                  defaultValue={localSite.country}
                 />
               </Col>
             </FormGroup>
@@ -201,7 +201,7 @@ export const Site: React.FC<SiteProperties> = ({ site }) => {
                   name="region"
                   readOnly={!editMode}
                   placeholder={t("sites:enter_region")}
-                  defaultValue={realSite.region}
+                  defaultValue={localSite.region}
                 />
               </Col>
             </FormGroup>
@@ -215,7 +215,7 @@ export const Site: React.FC<SiteProperties> = ({ site }) => {
                   id="publicName"
                   name="publicName"
                   readOnly={!editMode}
-                  defaultValue={realSite.publicName}
+                  defaultValue={localSite.publicName}
                 />
               </Col>
             </FormGroup>
@@ -229,7 +229,7 @@ export const Site: React.FC<SiteProperties> = ({ site }) => {
                   id="description"
                   name="description"
                   readOnly={!editMode}
-                  defaultValue={realSite.description}
+                  defaultValue={localSite.description}
                 />
               </Col>
             </FormGroup>
