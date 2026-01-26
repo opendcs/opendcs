@@ -9,6 +9,7 @@ import { dtLangs } from "../../lang";
 import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import Site from "./Site";
 import { createRoot } from "react-dom/client";
+import RefListContext, { useRefList } from "../../contexts/data/RefListContext";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -18,6 +19,11 @@ interface SiteTableProperties {
 }
 
 export const SitesTable: React.FC<SiteTableProperties> = ({ sites }) => {
+  // Note entirely sure how I feel about this but it appears to primarily be a limitation
+  // of the interactions of React with DataTables since DataTables has to control this DOM node
+  // So we are doing a lot of "I want to render a react component but need it to be a DomNode"
+  // which as the wonderful affect of breaking out of the context tree
+  const refContext = useRefList();
   const table = useRef<DataTableRef>(null);
   const [t, i18n] = useTranslation(["sites"]);
 
@@ -80,9 +86,11 @@ export const SitesTable: React.FC<SiteTableProperties> = ({ sites }) => {
         const container = document.createElement("div");
         const root = createRoot(container);
         root.render(
+          <RefListContext value={refContext}>
           <Suspense fallback="Loading...">
             <Site site={data} />
-          </Suspense>,
+          </Suspense>
+          </RefListContext>,
         );
         // Open this row
         row.child(container, "child-row").show();

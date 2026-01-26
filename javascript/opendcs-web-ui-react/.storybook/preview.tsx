@@ -10,6 +10,7 @@ import { Dispatch, SetStateAction, Suspense, useEffect, useState } from "react";
 import { I18nextProvider } from "react-i18next";
 import { Theme, ThemeContext } from "../src/contexts/app/ThemeContext";
 import { useGlobals } from "storybook/internal/preview-api";
+import { WithRefLists } from "./mock/WithRefLists";
 
 // Wrap your stories in the I18nextProvider component
 // lifted direct from https://storybook.js.org/recipes/react-i18next
@@ -89,7 +90,7 @@ const preview: Preview = {
     },
     i18n,
   },
-  decorators: [WithI18next, WithTheme],
+  decorators: [WithI18next, WithTheme, WithRefLists],
   globalTypes: {
     locale: {
       name: "Locale",
