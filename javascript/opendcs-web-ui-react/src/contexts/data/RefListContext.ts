@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { ApiRefList } from "../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
+import type { ApiRefList } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 
 
 export interface RefListContextType {
