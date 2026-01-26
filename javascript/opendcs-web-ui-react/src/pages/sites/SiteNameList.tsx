@@ -38,7 +38,6 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     meta: any,
     ) => {
-      console.log("hello?")
       if (type !== "display") {
         return data;
       }
