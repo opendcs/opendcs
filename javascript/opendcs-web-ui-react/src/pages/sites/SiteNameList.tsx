@@ -3,15 +3,19 @@ import DataTable, {
   type DataTableRef,
 } from "datatables.net-react";
 import DT from "datatables.net-bs5";
-import { useMemo, useRef } from "react";
+import dtButtons from "datatables.net-buttons-bs5";
+import { Suspense, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { dtLangs } from "../../lang";
 import type { Actions } from "../../util/Actions";
-import { renderToString } from "react-dom/server";
 import SiteNameTypeSelect from "./SiteNameTypeSelect";
+import { createRoot } from "react-dom/client";
+import RefListContext, { useRefList } from "../../contexts/data/RefListContext";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
+// eslint-disable-next-line react-hooks/rules-of-hooks
+DataTable.use(dtButtons);
 
 interface SiteNameListProperties {
   siteNames: { [k: string]: string };
@@ -22,24 +26,40 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
   siteNames,
   actions,
 }) => {
+  const refContext = useRefList();
   const table = useRef<DataTableRef>(null);
   const [t, i18n] = useTranslation(["sites"]);
 
   const renderEditableType = (
-      data: string | number | readonly string[] | undefined,
-      type: string,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      row: any,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      meta: any,
+    data: string | number | readonly string[] | undefined,
+    type: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    row: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    meta: any,
     ) => {
+      console.log("hello?")
       if (type !== "display") {
         return data;
       }
-      if (row?.state === "new" || (row?.state == "edit" && meta.col == 1)) {
-        return renderToString(
-          <SiteNameTypeSelect current={""}/>,
+      
+      if (actions?.edit !== undefined) {
+        try {
+        const container = document.createElement("div");
+        const root = createRoot(container);
+        root.render(
+          <RefListContext value={refContext}>
+          <Suspense fallback="Loading...">
+            <SiteNameTypeSelect current={row.type}/>
+          </Suspense>
+          </RefListContext>,
         );
+        console.log(container);
+        console.log(root);
+        return container;
+        } catch(error) {
+          return JSON.stringify(error);
+        }
       } else {
         return data;
       }
@@ -50,9 +70,9 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
       return { type: k, value: v };
     });
   }, [siteNames]);
-  console.log(JSON.stringify(site_names));
+
   const columns = [
-    { data: "type", renderer: renderEditableType },
+    { data: "type", render: renderEditableType },
     { data: "value" },
     {
       data: null,
@@ -81,7 +101,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
                     console.log("Add site name");
                   },
                   attr: {
-                    "aria-label": t("sites:site_name.add_name"),
+                    "aria-label": t("sites:site_names.add_name"),
                   },
                 },
               ]
@@ -102,7 +122,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
     >
       <thead>
         <tr>
-          <th>{t("sites:site_name.name_type")}</th>
+          <th>{t("sites:site_names.name_type")}</th>
           <th>{t("translation:value")}</th>
           <th>{t("translation:actions")}</th>
         </tr>

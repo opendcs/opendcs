@@ -13,7 +13,7 @@ export const defaultValue: RefListContextType = {
 };
 
 
-export const RefListContext = createContext<RefListContextType>(defaultValue);
+export const RefListContext = createContext<RefListContextType|undefined>(undefined);
 
 export const useRefList = () => {
   const context = useContext(RefListContext);

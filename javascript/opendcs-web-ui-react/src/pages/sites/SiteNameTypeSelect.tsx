@@ -8,10 +8,15 @@ export interface SiteNameTypeSelectProperties {
 
 export const SiteNameTypeSelect: React.FC<SiteNameTypeSelectProperties> = ({current}) => {
     const {refList} = useRefList();
+    const siteNameTypes = refList(REFLIST_SITE_NAME_TYPE);
+    
+    console.log(refList);
+    console.log(siteNameTypes);
+
     return (
         <FormSelect name="siteNameType">
-            {refList("nametype").items ?
-                Object.values(refList(REFLIST_SITE_NAME_TYPE).items!)
+            {siteNameTypes.items ?
+                Object.values(siteNameTypes.items!)
                       .map((item) => {
                             return <option key={item.value} value={item.value} selected={current === item.value}>{item.value}</option>
                       })
@@ -19,7 +24,6 @@ export const SiteNameTypeSelect: React.FC<SiteNameTypeSelectProperties> = ({curr
             null
             }
         </FormSelect>
-
     );
 };
 
