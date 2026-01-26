@@ -541,6 +541,7 @@ To add new tests for the Decoding language and functions, developers need to cre
 1. **`.assertions` file**:  
     - Purpose: Defines the expected output for the test to validate the Decoding.
     - Example:  
+
       .. code-block:: csv
 
          #sensor number, time (ISO8601), expected value (double or string), precision, message
@@ -566,6 +567,7 @@ To add new tests for the Decoding language and functions, developers need to cre
 2. **`.decodescript` file**:  
     - Purpose: Contains the Decodes script that defines how the input data should be processed.  
     - Example:  
+
       .. code-block:: text
 
          csv: 3(/, F(D,A,10,4), x, F(T,A,8), csv(1, 2, 4, 5, 6, 3))
@@ -573,6 +575,7 @@ To add new tests for the Decoding language and functions, developers need to cre
 3. **`.input` file**:  
     - Purpose: Provides the raw input data to be decoded.  
     - Example:  
+
       .. code-block:: text
 
          # Ignored header line
@@ -583,6 +586,7 @@ To add new tests for the Decoding language and functions, developers need to cre
 4. **`.sensors` file**:  
     - Purpose: Describes the sensors and their configurations used in the decoding process.  
     - Example:  
+
       .. code-block:: csv
 
          #sensor number, sensor name, units, description
