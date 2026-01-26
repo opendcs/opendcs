@@ -6,7 +6,7 @@
  * @param T Is the primary type that will be interacted with. The whole object
  * @param V can be either the same as T, or another type such as for a "key"
  */
-export interface Actions<T, V = T> {
+export interface CollectionActions<T, V = T> {
   /**
    * Peform appropriate operation to "save" and item
    * @param item The item to save
