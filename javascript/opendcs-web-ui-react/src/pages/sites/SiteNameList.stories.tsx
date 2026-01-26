@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-
+import { fn } from "storybook/test";
 import { SiteNameList } from "./SiteNameList";
 import { WithRefLists } from "../../../.storybook/mock/WithRefLists";
 
 const meta = {
   component: SiteNameList,
-  decorators: [WithRefLists]
+  decorators: [WithRefLists],
 } satisfies Meta<typeof SiteNameList>;
 
 export default meta;
@@ -31,5 +31,17 @@ export const WithNames: Story = {
       CWMS: "Alder Springs",
       NWSHB5: "ALS",
     },
+  },
+}
+
+export const WithNamesInEdit: Story = {
+  args: {
+     siteNames: {
+      CWMS: "Alder Springs",
+      NWSHB5: "ALS",
+    },
+    actions: {
+      edit: fn()
+    }
   },
 }
