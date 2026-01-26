@@ -13,7 +13,7 @@ import { useCallback, useMemo, useRef } from "react";
 import { renderToString } from "react-dom/server";
 import { useTranslation } from "react-i18next";
 import { dtLangs } from "../../lang";
-import type { Actions } from "../../util/Actions";
+import type { CollectionActions } from "../../util/Actions";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -35,7 +35,7 @@ export interface Property {
 
 export interface PropertiesTableProps {
   theProps: Property[];
-  actions: Actions<Property, string>;
+  actions: CollectionActions<Property, string>;
   width?: React.CSSProperties["width"];
   height?: React.CSSProperties["height"];
   classes?: string;
