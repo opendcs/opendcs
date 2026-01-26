@@ -4,12 +4,10 @@ import DataTable, {
 } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import { useTranslation } from "react-i18next";
-import { createElement, Suspense, useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { dtLangs } from "../../lang";
 import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
-import { renderToString } from "react-dom/server";
 import Site from "./Site";
-import { createPortal } from "react-dom";
 import { createRoot } from "react-dom/client";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks

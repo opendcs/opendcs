@@ -8,7 +8,7 @@ import "datatables.net-buttons-bs5/css/buttons.bootstrap5.css";
 
 import { Dispatch, SetStateAction, Suspense, useEffect, useState } from "react";
 import { I18nextProvider } from "react-i18next";
-import { Theme, ThemeContext } from "../src/contexts/ThemeContext";
+import { Theme, ThemeContext } from "../src/contexts/app/ThemeContext";
 import { useGlobals } from "storybook/internal/preview-api";
 
 // Wrap your stories in the I18nextProvider component
