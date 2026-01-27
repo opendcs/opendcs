@@ -17,9 +17,12 @@ DataTable.use(DT);
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(dtButtons);
 
+
+export type SiteNameType = {type: string, name: string};
+
 interface SiteNameListProperties {
   siteNames: { [k: string]: string };
-  actions?: CollectionActions<string>;
+  actions?: CollectionActions<SiteNameType>;
 }
 
 export const SiteNameList: React.FC<SiteNameListProperties> = ({
@@ -97,6 +100,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
                 {
                   text: "+",
                   action: () => {
+                    actions.add?.({name:"new", type: "new"});
                     console.log("Add site name");
                   },
                   attr: {
