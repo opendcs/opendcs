@@ -1,4 +1,5 @@
 import {
+  Button,
   Card,
   Col,
   Form,
@@ -11,10 +12,13 @@ import { useState } from "react";
 import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { useTranslation } from "react-i18next";
 import { SiteNameList } from "./SiteNameList";
-import type { CollectionActions } from "../../util/Actions";
+import type { CollectionActions, SaveAction, UiState } from "../../util/Actions";
+
+export type UiSite = Partial<ApiSite & { ui_state?: UiState }>;
 
 interface SiteProperties {
-  site?: ApiSite;
+  site: UiSite;
+  actions?: SaveAction<ApiSite>
 }
 
 const elevationUnits = [
@@ -30,7 +34,7 @@ const elevationUnits = [
   { units: "yd", name: "yd (Yards)" },
 ];
 
-export const Site: React.FC<SiteProperties> = ({ site }) => {
+export const Site: React.FC<SiteProperties> = ({ site, actions = {}}) => {
   const { t } = useTranslation();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [localSite, _updateSite] = useState(site ? site : { properties: {} });
@@ -42,7 +46,7 @@ export const Site: React.FC<SiteProperties> = ({ site }) => {
         })
       : [],
   );
-  const editMode = site ? false : true;
+  const editMode = site?.ui_state ? false : true;
 
   const propertyActions: CollectionActions<Property, string> = editMode
     ? {
@@ -236,10 +240,9 @@ export const Site: React.FC<SiteProperties> = ({ site }) => {
           </Col>
         </Row>
         <Row>
-          <Col>Controls?</Col>
+          <Col><Button onClick={() => actions.save?.(localSite)} variant="primary">Save</Button></Col>
         </Row>
 
-        {JSON.stringify(site)}
       </Card.Body>
     </Card>
   );
