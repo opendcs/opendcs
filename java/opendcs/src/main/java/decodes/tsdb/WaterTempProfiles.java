@@ -192,7 +192,8 @@ final public class WaterTempProfiles
                     else if (check.getFailure() instanceof NoSuchObjectException)
                     {
                         timeSeriesDAO.createTimeSeries(newTSID);
-                        CTProfile = new CTimeSeries(newTSID);
+                        CTProfile = timeSeriesDAO.makeTimeSeries(newTSID);
+                        tseries.addTimeSeries(CTProfile);
                     }
                     else
                     {

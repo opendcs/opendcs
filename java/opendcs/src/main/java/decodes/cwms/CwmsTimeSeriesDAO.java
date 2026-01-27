@@ -1016,7 +1016,13 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
             String existingUnits = ts.getUnitsAbbr();
             if (existingUnits == null || existingUnits.isEmpty() || existingUnits.equalsIgnoreCase("unknown"))
             {
-                ts.setUnitsAbbr(tsid.getStorageUnits());
+                String storageUnits = tsid.getStorageUnits();
+                if (storageUnits == null && db instanceof TimeSeriesDb)
+                {
+                    storageUnits = ((TimeSeriesDb) db).getStorageUnitsForDataType(tsid.getDataType());
+                    tsid.setStorageUnits(storageUnits);
+                }
+                ts.setUnitsAbbr(storageUnits);
             }
         }
         catch(NoSuchObjectException ex)
