@@ -7,7 +7,7 @@ export type SiteAction =
   // save/edit/add prop functionally equivalent
   | { type: "save_prop"; payload: { name: string; value: string } }
   | { type: "delete_prop"; payload: { name: string } }
-  | { type: "save"; payload: { site: UiSite } };
+  | { type: "save"; payload: UiSite };
 
 export function SiteReducer(currentSite: UiSite, action: SiteAction): UiSite {
   switch (action.type) {
@@ -34,6 +34,15 @@ export function SiteReducer(currentSite: UiSite, action: SiteAction): UiSite {
         },
       };
     }
+    case "delete_name": {
+      const { [action.payload.type]: _, ...names } = currentSite.sitenames!;
+      return {
+        ...currentSite,
+        sitenames: {
+          ...names,
+        },
+      };
+    }
     case "save_prop": {
       return {
         ...currentSite,
@@ -52,7 +61,11 @@ export function SiteReducer(currentSite: UiSite, action: SiteAction): UiSite {
         },
       };
     }
-    default:
-      throw new Error(`Type ${action.type} not yet implemented.`);
+    case "save": {
+      return {
+        ...currentSite,
+        ...action.payload,
+      };
+    }
   }
 }
