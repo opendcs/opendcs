@@ -212,12 +212,16 @@ public class IridiumPMParser extends PMParser
 			// if false, the IE:02 part is removed, and this really is the length of the header.
 
 			int idx = hdr.indexOf(" ");
+			if (idx == -1)
+			{
+				throw new HeaderParseException("Expected space not found in Iridium header");
+			}
+				
 			if (!hdr.substring(idx+1, idx+6).equals("IE:02"))
 			{
 				idx++;	// include the ending space in the header portion
 			}
 
-			if (idx < 75) idx = 75;
 			msg.setHeaderLength(idx);
 			headerLength = idx;
 		}
