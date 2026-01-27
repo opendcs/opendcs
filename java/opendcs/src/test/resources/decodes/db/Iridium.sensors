@@ -1,2 +1,2 @@
-1, Stage, ft, none;
-2, Batt, volts, none;
+1, Stage, ft, iridium-test, type1:code1, linear, 0.01:0.0
+2, Batt, volts, iridium-test,type2:code2, linear, 0.234:10.6

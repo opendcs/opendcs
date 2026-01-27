@@ -105,13 +105,14 @@ public class DecodesHelper {
         {
             while ((sensorLine = reader.readLine()) != null)
             {
+                //sensor number, sensor name, units, description, type:code, alog, A:B:C:D:E:F
                 sensorIndex++;
                 String parts[] = sensorLine.split(",");
                 ScriptSensor stage = new ScriptSensor(decodesScript, sensorIndex);
 
-                stage.rawConverter = new UnitConverterDb("raw", parts[1]);
-                // TODO: lookup algo and parts
-                stage.rawConverter.algorithm = Constants.eucvt_none;
+                stage.rawConverter = new UnitConverterDb("raw", parts[1]); 
+                stage.rawConverter.algorithm = lookupAlgo(parts);
+                stage.rawConverter.coefficients = lookupCoefficients(parts);
                 decodesScript.scriptSensors.add(stage);
                 ConfigSensor configSensor = new ConfigSensor(decodesScript.platformConfig, Integer.parseInt(parts[0]));
                 configSensor.sensorName = parts[1];
@@ -165,6 +166,25 @@ public class DecodesHelper {
         return arguments(testName,decodesScript,rawMessage,decodedMessage,assertions);
     }
 
+    private static String lookupAlgo(String[] parts)
+    {
+        if (parts.length >=6) {
+               return parts[5].trim(); 
+        }
+         else return Constants.eucvt_none;
+    }
+
+    private static double[] lookupCoefficients(String[] parts)
+    {
+        double[] coefs = new double[6];
+        if (parts.length >=7) {
+            String[] tokens = parts[6].trim().split(":");
+                for (int i = 0; i < Math.min(tokens.length, coefs.length); i++) {
+                    coefs[i] = Double.parseDouble(tokens[i].trim());
+                }
+        }
+        return coefs;
+    }
     private static URL getInputResource(final String path, final String testName) throws FileNotFoundException
     {
         String[] extensions = {".input_shef", ".input_iridium", ".input_goes", ".input_edl", ".input_data-logger", ".input"};
