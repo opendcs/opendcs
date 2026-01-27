@@ -589,13 +589,16 @@ To add new tests for the Decoding language and functions, developers need to cre
 
       .. code-block:: csv
 
-         #sensor number, sensor name, units, description
+         #sensor number, sensor name, units, description, typeStandard:typeCode, algorithm, coefA:coefB:..., 
          1, Stage, ft, none
          2, Humidity, %, none
          3, Temp, degF, none
          4, Storage, acft, none
          5, Precip, in, none
          6, Zero, raw, none
+         7, Stage, ft, none, SHEF-PE:HGIFF, linear, 0.01:0.0
+         8, Batt, volts, none, SHEF:BV, linear, 0.234:10.6
+
 
 By adding these files, developers can create tests to ensure the correctness and reliability of the Decodes language including new or modified Decodes Functions.
 
