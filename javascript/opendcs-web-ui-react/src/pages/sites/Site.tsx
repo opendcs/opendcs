@@ -11,7 +11,7 @@ import { useState } from "react";
 import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { useTranslation } from "react-i18next";
 import { SiteNameList } from "./SiteNameList";
-import type { Actions } from "../../util/Actions";
+import type { CollectionActions } from "../../util/Actions";
 
 interface SiteProperties {
   site?: ApiSite;
@@ -44,7 +44,7 @@ export const Site: React.FC<SiteProperties> = ({ site }) => {
   );
   const editMode = site ? false : true;
 
-  const propertyActions: Actions<Property, string> = editMode
+  const propertyActions: CollectionActions<Property, string> = editMode
     ? {
         add: () => {},
         edit: () => {},
@@ -53,7 +53,7 @@ export const Site: React.FC<SiteProperties> = ({ site }) => {
       }
     : {};
 
-  const siteNameActions: Actions<string> = editMode
+  const siteNameActions: CollectionActions<string> = editMode
     ? {
         add: () => {},
         edit: () => {},

@@ -7,7 +7,7 @@ import dtButtons from "datatables.net-buttons-bs5";
 import { Suspense, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { dtLangs } from "../../lang";
-import type { Actions } from "../../util/Actions";
+import type { CollectionActions } from "../../util/Actions";
 import SiteNameTypeSelect from "./SiteNameTypeSelect";
 import { createRoot } from "react-dom/client";
 import RefListContext, { useRefList } from "../../contexts/data/RefListContext";
@@ -19,7 +19,7 @@ DataTable.use(dtButtons);
 
 interface SiteNameListProperties {
   siteNames: { [k: string]: string };
-  actions?: Actions<string>;
+  actions?: CollectionActions<string>;
 }
 
 export const SiteNameList: React.FC<SiteNameListProperties> = ({
