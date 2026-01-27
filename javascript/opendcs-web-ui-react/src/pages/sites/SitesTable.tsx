@@ -1,24 +1,31 @@
 import DataTable, {
   type DataTableProps,
   type DataTableRef,
+  type DataTableSlots,
 } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import { useTranslation } from "react-i18next";
-import { Suspense, useEffect, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { dtLangs } from "../../lang";
-import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
-import Site from "./Site";
+import type { ApiSiteRef } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
+import Site, { type UiSite } from "./Site";
 import { createRoot } from "react-dom/client";
 import RefListContext, { useRefList } from "../../contexts/data/RefListContext";
+import type { CollectionActions, UiState } from "../../util/Actions";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
 
+type TableSiteRef = Partial<ApiSiteRef & { state?: UiState, actualSite?: UiSite} >;
+
 interface SiteTableProperties {
-  sites: ApiSite[];
+  sites: TableSiteRef[];
+  // NOTE: primarily used for testing as there is no way to inject this data wise, 
+  newSites?: TableSiteRef[];
+  actions?: CollectionActions<ApiSiteRef, number>;
 }
 
-export const SitesTable: React.FC<SiteTableProperties> = ({ sites }) => {
+export const SitesTable: React.FC<SiteTableProperties> = ({ sites, newSites = [], actions = {} }) => {
   // Note entirely sure how I feel about this but it appears to primarily be a limitation
   // of the interactions of React with DataTables since DataTables has to control this DOM node
   // So we are doing a lot of "I want to render a react component but need it to be a DomNode"
@@ -26,25 +33,37 @@ export const SitesTable: React.FC<SiteTableProperties> = ({ sites }) => {
   const refContext = useRefList();
   const table = useRef<DataTableRef>(null);
   const [t, i18n] = useTranslation(["sites"]);
+  const [localSites, updateLocalSites] = useState(newSites);
+  
+  const siteData = useMemo(() => [...sites, ...localSites], [sites, localSites]);
 
   const columns = [
-    { data: "siteId" },
+    { data: "siteId", defaultContent: "new" },
     {
       data: null,
       render: (_data: unknown, _type: unknown, row: unknown) => {
-        const site = row as ApiSite;
-        return site.sitenames?.CWMS;
+        const site = row as ApiSiteRef;
+        return site.sitenames?.CWMS || ""; // TODO need configured sitename preference
       },
     },
+    { data: "publicName", defaultContent: ""},
     { data: "description", defaultContent: "" },
-    {
-      data: null,
-      name: "actions",
-      render: () => {
-        return "action";
-      },
-    },
+    { data: null, name: "actions" },
   ];
+
+  const slots = useMemo<DataTableSlots>(() => {
+    return {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      actions: (data: TableSiteRef, type: unknown, _row: TableSiteRef) => {
+        if (type === "display") {
+          const inEdit = data.state !== undefined;
+          return inEdit ? "edit actions" : "default actions";
+        } else {
+          return data;
+        }
+      },
+    };
+  }, []);
 
   const options: DataTableProps["options"] = {
     paging: true,
@@ -56,7 +75,14 @@ export const SitesTable: React.FC<SiteTableProperties> = ({ sites }) => {
           {
             text: "+",
             action: () => {
-              console.log("Add site");
+              updateLocalSites((prev) => {
+                // modal here for sitename?... or focus on automatically created new entry?
+                let existing = prev.map(v => v.siteId!)
+                                   // we want the lowest
+                                   .sort((a: number, b: number) => {return b-a});
+                const newId = existing.length > 0 ? existing[0]-1 : -1; // use negative indexes for new elements
+                return [...prev, {state: "new", actualSite: {}, siteId: newId}]
+              });
             },
             attr: {
               "aria-label": t("sites:add_site"),
@@ -82,13 +108,16 @@ export const SitesTable: React.FC<SiteTableProperties> = ({ sites }) => {
         // This row is already open - close it
         row.child.hide();
       } else {
-        const data: ApiSite = row.data as ApiSite;
+        // TODO: need to lookup data. Given use of suspense, should be able to pass a promise
+        const data: TableSiteRef = row.data as TableSiteRef;
         const container = document.createElement("div");
         const root = createRoot(container);
+        const emptySite: UiSite = {};
+        // how to determine control?
         root.render(
           <RefListContext value={refContext}>
           <Suspense fallback="Loading...">
-            <Site site={data} />
+            <Site site={data.state === 'new' ? data.actualSite! : emptySite} actions={{save: actions.save}}/>
           </Suspense>
           </RefListContext>,
         );
@@ -103,8 +132,9 @@ export const SitesTable: React.FC<SiteTableProperties> = ({ sites }) => {
       key={i18n.language} // convient way to force a render of the components and aria labels on a language change.
       id="siteTable"
       columns={columns}
-      data={sites}
+      data={siteData}
       options={options}
+      slots={slots}
       ref={table}
       className="table table-hover table-striped tablerow-cursor w-100 border"
     >
@@ -113,6 +143,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({ sites }) => {
         <tr>
           <th>{t("sites:site_id")}</th>
           <th id="siteNameColumnHeader">{t("sites:site_name")}</th>
+          <th>{t("sites:public_name")}</th>
           <th>{t("sites:description")}</th>
           <th>{t("translation:actions")}</th>
         </tr>
