@@ -1,6 +1,6 @@
 #sensor number, time (ISO8601), expected value (double or string), precision, message
-1,2026-01-12T14:15:00Z, 0.1900, 0.0, Expected value not parsed (stage)
-1,2026-01-12T14:30:00Z, 0.1800, 0.0, Expected value not parsed (stage)
-1,2026-01-12T14:45:00Z, 0.1900, 0.0, Expected value not parsed (stage)
-1,2026-01-12T15:00:00Z, 0.1800, 0.0, Expected value not parsed (stage)
-2,2026-01-12T15:00:00Z, 14.11, 0.0, Expected value not parsed (Battery)
+1,2026-01-12T15:15:00Z, 0.1900, 0.0, Expected value not parsed (stage)
+1,2026-01-12T15:30:00Z, 0.1800, 0.0, Expected value not parsed (stage)
+1,2026-01-12T15:45:00Z, 0.1900, 0.0, Expected value not parsed (stage)
+1,2026-01-12T16:00:00Z, 0.1900, 0.0, Expected value not parsed (stage)
+2,2026-01-12T16:00:00Z, 13.876, 0.0, Expected value not parsed (Battery)

@@ -105,7 +105,11 @@ public class DecodesHelper {
         {
             while ((sensorLine = reader.readLine()) != null)
             {
-                //sensor number, sensor name, units, description, type:code, alog, A:B:C:D:E:F
+                //sensor number, sensor name, units, description, type:code, alogrithm, A:B:C:D:E:F, recording mode, interval
+                if( sensorLine.trim().startsWith("#"))
+                {
+                    continue;
+                }
                 sensorIndex++;
                 String parts[] = sensorLine.split(",");
                 ScriptSensor stage = new ScriptSensor(decodesScript, sensorIndex);
@@ -115,6 +119,7 @@ public class DecodesHelper {
                 stage.rawConverter.coefficients = lookupCoefficients(parts);
                 decodesScript.scriptSensors.add(stage);
                 ConfigSensor configSensor = new ConfigSensor(decodesScript.platformConfig, Integer.parseInt(parts[0]));
+                setRecordingModeAndInterval(configSensor, parts);
                 configSensor.sensorName = parts[1];
 
                 if( parts.length >= 5)
@@ -165,6 +170,21 @@ public class DecodesHelper {
         DecodedMessage decodedMessage = decodesScript.decodeMessage(rawMessage);
         return arguments(testName,decodesScript,rawMessage,decodedMessage,assertions);
     }
+
+    private static void setRecordingModeAndInterval(ConfigSensor configSensor, String[] parts)
+    {
+        if (parts.length >=8) {
+            configSensor.recordingMode = parts[7].trim().charAt(0);
+        }
+        if (parts.length >=9) {
+            String intervalStr = parts[8].trim();
+            try {
+                int interval = Integer.parseInt(intervalStr);
+                configSensor.recordingInterval = interval;
+            } catch (NumberFormatException ex) {
+            }
+        }
+    }   
 
     private static String lookupAlgo(String[] parts)
     {
