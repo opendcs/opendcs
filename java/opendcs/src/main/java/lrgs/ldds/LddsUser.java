@@ -83,7 +83,7 @@ public class LddsUser
 		if (!directory.isDirectory())
 		{
 			log.debug("Cannot access directory for user {}, path='{}", name, dirpath);
-			throw new UnknownUserException("No such LRGS User '" + name + "'", true);
+			throw new UnknownUserException("No such LRGS User '" + name + "' in path: "+dirpath, true);
 		}
 		isAuthenticated = false;
 		sessionKey = null;
