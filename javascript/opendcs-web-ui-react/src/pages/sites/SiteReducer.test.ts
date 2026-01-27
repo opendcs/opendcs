@@ -16,7 +16,7 @@ test("Reducer Add SiteName", () => {
   expect(result.sitenames?.CWMS).toEqual("Test Site 1");
 });
 
-test("Change a SiteName Type", () => {
+test("Change a SiteName Type Then Delete", () => {
   const testSite: UiSite = {
     sitenames: {
       CWMS: "Test 1",
@@ -33,6 +33,12 @@ test("Change a SiteName Type", () => {
   expect(result).toBeDefined();
   expect(result.sitenames?.CWMS).not.toBeDefined();
   expect(result.sitenames?.local).toEqual("Test 1");
+
+  const deletedName = SiteReducer(result, {
+    type: "delete_name",
+    payload: { type: "local" },
+  });
+  expect(deletedName.sitenames?.local).not.toBeDefined();
 });
 
 test("Modify properties", () => {
@@ -62,4 +68,35 @@ test("Modify properties", () => {
     payload: { name: "prop1" },
   });
   expect(resultDeleteProp.properties?.prop1).toBeUndefined();
+});
+
+test("Modify Site itself", () => {
+  const testSite: UiSite = {}; // start new
+
+  const withPublicName = SiteReducer(testSite, {
+    type: "save",
+    payload: { publicName: "A test site" },
+  });
+  expect(withPublicName.publicName).toEqual("A test site");
+
+  const withNames = SiteReducer(withPublicName, {
+    type: "add_name",
+    payload: { type: "CWMS", name: "Test Site full" },
+  });
+  expect(withNames.sitenames).toBeDefined();
+
+  const setLatLongElv = SiteReducer(withNames, {
+    type: "save",
+    payload: {
+      elevation: 20.0,
+      elevUnits: "ft",
+      latitude: "89.0",
+      longitude: "-120.0",
+    },
+  });
+  expect(setLatLongElv.elevUnits).toEqual("ft");
+  expect(setLatLongElv.elevation).toEqual(20.0);
+  expect(setLatLongElv.latitude).toEqual("89.0");
+  expect(setLatLongElv.longitude).toEqual("-120.0");
+  expect(setLatLongElv.sitenames?.CWMS).toBeDefined(); // make sure we haven't lost something important.
 });
