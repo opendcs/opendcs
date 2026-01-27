@@ -36,33 +36,33 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     row: any,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    meta: any,
-    ) => {
-      if (type !== "display") {
-        return data;
-      }
-      
-      if (actions?.edit !== undefined) {
-        try {
+    _meta: any,
+  ) => {
+    if (type !== "display") {
+      return data;
+    }
+
+    if (actions?.edit !== undefined) {
+      try {
         const container = document.createElement("div");
         const root = createRoot(container);
         root.render(
           <RefListContext value={refContext}>
-          <Suspense fallback="Loading...">
-            <SiteNameTypeSelect current={row.type}/>
-          </Suspense>
+            <Suspense fallback="Loading...">
+              <SiteNameTypeSelect current={row.type} />
+            </Suspense>
           </RefListContext>,
         );
         console.log(container);
         console.log(root);
         return container;
-        } catch(error) {
-          return JSON.stringify(error);
-        }
-      } else {
-        return data;
+      } catch (error) {
+        return JSON.stringify(error);
       }
-    };
+    } else {
+      return data;
+    }
+  };
 
   const site_names = useMemo(() => {
     return Object.entries(siteNames).map(([k, v]) => {
