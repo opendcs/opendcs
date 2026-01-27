@@ -1,6 +1,7 @@
 import type { UiSite } from "./Site";
 
 export type SiteAction =
+  // add/edit also the same
   | { type: "add_name"; payload: { type: string; name: string } }
   | { type: "change_type"; payload: { old_type: string; new_type: string } }
   | { type: "delete_name"; payload: { type: string } }

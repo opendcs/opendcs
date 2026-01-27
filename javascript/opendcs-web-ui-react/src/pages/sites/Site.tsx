@@ -8,11 +8,12 @@ import {
   Row,
 } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../components/properties";
-import { useState } from "react";
+import { useReducer, useState } from "react";
 import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { useTranslation } from "react-i18next";
-import { SiteNameList } from "./SiteNameList";
+import { SiteNameList, type SiteNameType } from "./SiteNameList";
 import type { CollectionActions, SaveAction, UiState } from "../../util/Actions";
+import { SiteReducer } from "./SiteReducer";
 
 export type UiSite = Partial<ApiSite & { ui_state?: UiState }>;
 
@@ -37,32 +38,63 @@ const elevationUnits = [
 export const Site: React.FC<SiteProperties> = ({ site, actions = {}}) => {
   const { t } = useTranslation();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [localSite, _updateSite] = useState(site ? site : { properties: {} });
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [props, _updateProps] = useState(
-    localSite.properties
-      ? Object.values(localSite.properties).map(([k, v]) => {
-          return { name: k, value: v };
-        })
-      : [],
-  );
+  const [localSite, dispatch] = useReducer(SiteReducer, site ? site : {  });
+  
   const editMode = site?.ui_state ? false : true;
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [props, updateProps] = useState<Property[]>(()=> {
+    const props = localSite.properties || {};
+    return Object.values(props).map(([k, v]) => {
+      return { name: k as string, value: v as string};
+      });
+    }
+  );
 
   const propertyActions: CollectionActions<Property, string> = editMode
     ? {
-        add: () => {},
-        edit: () => {},
+        add: () => {
+          updateProps((prev) => {
+          const existingNew = prev
+            .filter((p: Property) => p.state === "new")
+            .sort((a: Property, b: Property) => {
+              return parseInt(a.name) - parseInt(b.name);
+            });
+          const idx = existingNew.length > 0 ? parseInt(existingNew[0].name) + 1 : 1;
+
+          const tmp = [...prev, { name: `${idx}`, value: "", state: "new" } as Property];
+          return tmp;
+        })},
+        edit: (propName) => {
+          updateProps((prev) => {
+            const tmp: Property[] = prev.map((p: Property) => {
+              if (p.name === propName) {
+                return {
+                  ...p,
+                  state: "edit",
+                };
+              } else {
+                return p;
+              }
+            });
+            return tmp;
+          })
+        },
         remove: () => {},
-        save: () => {},
+        save: (prop) => {
+          dispatch({type: "save_prop", payload: {name: prop.name, value: prop.value as string}});
+        },
       }
     : {};
 
-  const siteNameActions: CollectionActions<string> = editMode
+
+
+  const siteNameActions: CollectionActions<SiteNameType> = editMode
     ? {
-        add: () => {},
-        edit: () => {},
-        remove: () => {},
-        save: () => {},
+        add: (siteName: SiteNameType) => {dispatch({type: "add_name", payload: siteName!})},
+        //edit: () => {},
+        //remove: () => {},
+        save: (siteName: SiteNameType) => {dispatch({type: "add_name", payload: siteName!})},
       }
     : {};
 
