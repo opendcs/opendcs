@@ -5,7 +5,12 @@
   "site_names": {
     "title": "Site Names",
     "add_name": "Add Site Name",
-    "name_type": "Type"
+    "name_type": "Type",
+    "type_select_for": "Site name type select for name {{name}}",
+    "value_input_for": "Site name value input for type {{type}}",
+    "save_for": "Site name save button for type {{type}} with value {{name}}",
+    "edit_for": "Site name edit button for type {{type}} with value {{name}}",
+    "delete_for": "Site name delete button for type {{type}} with value {{name}}"
   },
   "configured_names": "Configured Site Names",
   "description": "Description",
