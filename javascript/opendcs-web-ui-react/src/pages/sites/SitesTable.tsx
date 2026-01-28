@@ -5,9 +5,12 @@ import DataTable, {
 } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import { useTranslation } from "react-i18next";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { dtLangs } from "../../lang";
-import type { ApiSiteRef } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
+import type {
+  ApiSite,
+  ApiSiteRef,
+} from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import Site, { type UiSite } from "./Site";
 // import { createRoot } from "react-dom/client";
 // import RefListContext, { useRefList } from "../../contexts/data/RefListContext";
@@ -21,14 +24,13 @@ type TableSiteRef = Partial<ApiSiteRef & { state?: UiState; actualSite?: UiSite 
 
 interface SiteTableProperties {
   sites: TableSiteRef[];
-  // NOTE: primarily used for testing as there is no way to inject this data wise,
-  newSites?: TableSiteRef[];
+  getSite?: (siteId: number) => Promise<ApiSite | undefined>;
   actions?: CollectionActions<ApiSiteRef, number>;
 }
 
 export const SitesTable: React.FC<SiteTableProperties> = ({
   sites,
-  newSites = [],
+  getSite,
   actions = {},
 }) => {
   // Note entirely sure how I feel about this but it appears to primarily be a limitation
@@ -38,7 +40,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
   const { toDom } = useContextWrapper();
   const table = useRef<DataTableRef>(null);
   const [t, i18n] = useTranslation(["sites"]);
-  const [localSites, updateLocalSites] = useState(newSites);
+  const [localSites, updateLocalSites] = useState<TableSiteRef[]>([]);
 
   const siteData = useMemo(() => [...sites, ...localSites], [sites, localSites]);
 
@@ -104,6 +106,9 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
   useEffect(() => {
     // Add event listener for opening and closing details
     table.current?.dt()!.on("click", "tbody td", function (e) {
+      if (getSite === undefined) {
+        return; // do nothing, we can't look it up.
+      }
       const dt = table.current!.dt()!;
       const target = e.target! as Element;
       const tr = target.closest("tr");
@@ -111,19 +116,16 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
         return; // don't do anything if we click the child row.
       }
       const row = dt.row(tr as HTMLTableRowElement);
-
       if (row.child.isShown()) {
         // This row is already open - close it
         row.child.hide();
       } else {
-        // TODO: need to lookup data. Given use of suspense, should be able to pass a promise
-        const data: TableSiteRef = row.data as TableSiteRef;
-        const emptySite: UiSite = {};
+        const data: TableSiteRef = row.data() as TableSiteRef;
+        const site =
+          data.siteId && data.siteId > 0 ? getSite(data.siteId!) : Promise.resolve({});
+        const workingSite = data.state === "new" ? data.actualSite! : (site as UiSite);
         const container = toDom(
-          <Site
-            site={data.state === "new" ? data.actualSite! : emptySite}
-            actions={{ save: actions.save }}
-          />,
+          <Site site={workingSite} actions={{ save: actions.save }} />,
         );
         // Open this row
         row.child(container, "child-row").show();

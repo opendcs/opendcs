@@ -1,14 +1,6 @@
-import {
-  Button,
-  Card,
-  Col,
-  Form,
-  FormGroup,
-  FormSelect,
-  Row,
-} from "react-bootstrap";
+import { Button, Card, Col, Form, FormGroup, FormSelect, Row } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../components/properties";
-import { useReducer, useState } from "react";
+import { use, useReducer, useState } from "react";
 import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { useTranslation } from "react-i18next";
 import { SiteNameList, type SiteNameType } from "./SiteNameList";
@@ -18,8 +10,8 @@ import { SiteReducer } from "./SiteReducer";
 export type UiSite = Partial<ApiSite & { ui_state?: UiState }>;
 
 interface SiteProperties {
-  site: UiSite;
-  actions?: SaveAction<ApiSite>
+  site: Promise<UiSite> | UiSite;
+  actions?: SaveAction<ApiSite>;
 }
 
 const elevationUnits = [
@@ -35,36 +27,40 @@ const elevationUnits = [
   { units: "yd", name: "yd (Yards)" },
 ];
 
-export const Site: React.FC<SiteProperties> = ({ site, actions = {}}) => {
+export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
   const { t } = useTranslation();
+  const providedSite = use(site instanceof Promise ? site : Promise.resolve(site));
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [localSite, dispatch] = useReducer(SiteReducer, site ? site : {  });
-  
-  const editMode = site?.ui_state ? false : true;
+  const [localSite, dispatch] = useReducer(SiteReducer, providedSite);
+
+  const editMode = providedSite.ui_state ? false : true;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [props, updateProps] = useState<Property[]>(()=> {
+  const [props, updateProps] = useState<Property[]>(() => {
     const props = localSite.properties || {};
     return Object.values(props).map(([k, v]) => {
-      return { name: k as string, value: v as string};
-      });
-    }
-  );
+      return { name: k as string, value: v as string };
+    });
+  });
 
   const propertyActions: CollectionActions<Property, string> = editMode
     ? {
         add: () => {
           updateProps((prev) => {
-          const existingNew = prev
-            .filter((p: Property) => p.state === "new")
-            .sort((a: Property, b: Property) => {
-              return parseInt(a.name) - parseInt(b.name);
-            });
-          const idx = existingNew.length > 0 ? parseInt(existingNew[0].name) + 1 : 1;
+            const existingNew = prev
+              .filter((p: Property) => p.state === "new")
+              .sort((a: Property, b: Property) => {
+                return parseInt(a.name) - parseInt(b.name);
+              });
+            const idx = existingNew.length > 0 ? parseInt(existingNew[0].name) + 1 : 1;
 
-          const tmp = [...prev, { name: `${idx}`, value: "", state: "new" } as Property];
-          return tmp;
-        })},
+            const tmp = [
+              ...prev,
+              { name: `${idx}`, value: "", state: "new" } as Property,
+            ];
+            return tmp;
+          });
+        },
         edit: (propName) => {
           updateProps((prev) => {
             const tmp: Property[] = prev.map((p: Property) => {
@@ -78,23 +74,28 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {}}) => {
               }
             });
             return tmp;
-          })
+          });
         },
         remove: () => {},
         save: (prop) => {
-          dispatch({type: "save_prop", payload: {name: prop.name, value: prop.value as string}});
+          dispatch({
+            type: "save_prop",
+            payload: { name: prop.name, value: prop.value as string },
+          });
         },
       }
     : {};
 
-
-
   const siteNameActions: CollectionActions<SiteNameType> = editMode
     ? {
-        add: (siteName?: SiteNameType) => {dispatch({type: "add_name", payload: siteName!})},
+        add: (siteName?: SiteNameType) => {
+          dispatch({ type: "add_name", payload: siteName! });
+        },
         //edit: () => {},
         //remove: () => {},
-        save: (siteName: SiteNameType) => {dispatch({type: "add_name", payload: siteName!})},
+        save: (siteName: SiteNameType) => {
+          dispatch({ type: "add_name", payload: siteName! });
+        },
       }
     : {};
 
@@ -272,9 +273,12 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {}}) => {
           </Col>
         </Row>
         <Row>
-          <Col><Button onClick={() => actions.save?.(localSite)} variant="primary">Save</Button></Col>
+          <Col>
+            <Button onClick={() => actions.save?.(localSite)} variant="primary">
+              Save
+            </Button>
+          </Col>
         </Row>
-
       </Card.Body>
     </Card>
   );
