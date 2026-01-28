@@ -25,6 +25,8 @@ import decodes.db.DataType;
 import decodes.decoder.TimeSeries;
 import org.junit.jupiter.params.provider.Arguments;
 import org.opendcs.utils.ClasspathIO;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.datasource.EdlPMParser;
 import decodes.datasource.GoesPMParser;
@@ -59,6 +61,7 @@ import ilex.var.Variable;
  * @since 2022-11-10
  */
 public class DecodesHelper {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     /**
      * Given a base name read the appropriate files off the classpath.
@@ -173,33 +176,45 @@ public class DecodesHelper {
 
     private static void setRecordingModeAndInterval(ConfigSensor configSensor, String[] parts)
     {
-        if (parts.length >=8) {
+        if (parts.length >=8) 
+        {
             configSensor.recordingMode = parts[7].trim().charAt(0);
         }
-        if (parts.length >=9) {
+        if (parts.length >=9)
+        {
             String intervalStr = parts[8].trim();
-            try {
+            try 
+            {
                 int interval = Integer.parseInt(intervalStr);
                 configSensor.recordingInterval = interval;
-            } catch (NumberFormatException ex) {
+            } 
+            catch (NumberFormatException ex) 
+            {
+                log.atWarn().setCause(ex).log("Cann't parse recording interval '{}' in .sensors file", intervalStr);
             }
         }
     }   
 
     private static String lookupAlgo(String[] parts)
     {
-        if (parts.length >=6) {
-               return parts[5].trim(); 
+        if (parts.length >=6) 
+        {
+            return parts[5].trim(); 
         }
-         else return Constants.eucvt_none;
+         else
+        {
+            return Constants.eucvt_none;
+        }
     }
 
     private static double[] lookupCoefficients(String[] parts)
     {
         double[] coefs = new double[6];
-        if (parts.length >=7) {
+        if (parts.length >=7) 
+        {
             String[] tokens = parts[6].trim().split(":");
-                for (int i = 0; i < Math.min(tokens.length, coefs.length); i++) {
+                for (int i = 0; i < Math.min(tokens.length, coefs.length); i++) 
+                {
                     coefs[i] = Double.parseDouble(tokens[i].trim());
                 }
         }
