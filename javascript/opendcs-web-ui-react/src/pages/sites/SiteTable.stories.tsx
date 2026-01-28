@@ -1,7 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { SitesTable } from "./SitesTable";
-import { ApiSite, ApiSiteRef } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
+import {
+  ApiSite,
+  ApiSiteRef,
+} from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 
 const meta = {
   component: SitesTable,
@@ -17,7 +20,7 @@ export const Default: Story = {
   },
 };
 
-const sites: ApiSiteRef[] = [
+const sites: ApiSite[] = [
   {
     description: "Test site 1",
     sitenames: {
@@ -30,17 +33,17 @@ const sites: ApiSiteRef[] = [
     sitenames: {
       CWMS: "Alpha Site",
     },
-    //elevation: 5.21,
-    //elevUnits: "ft",
+    elevation: 5.21,
+    elevUnits: "ft",
     publicName: "Clearly, this site is not public.",
     siteId: 2,
   },
   {
     siteId: 3,
     description: "A test",
-    //properties: {
-    //  prop1: "value1",
-    //},
+    properties: {
+      prop1: "value1",
+    },
     sitenames: {
       CWMS: "Alder Springs",
       NWSHB5: "ALS",
@@ -48,15 +51,28 @@ const sites: ApiSiteRef[] = [
   },
 ];
 
+const siteRefs: ApiSiteRef[] = sites.map((site) => {
+  return {
+    siteId: site.siteId,
+    sitenames: site.sitenames,
+    description: site.description,
+    publicName: site.publicName,
+  };
+});
+
+const getSite = async (id: number): Promise<ApiSite | undefined> => {
+  return Promise.resolve(sites.find((site) => site.siteId == id));
+};
+
 export const WithSites: Story = {
   args: {
-    sites: sites,
+    sites: siteRefs,
+    getSite: getSite,
   },
 };
 
-export const WithExistingSitesAndNewSite: Story = {
+export const WithExistingAndNewSite: Story = {
   args: {
-    sites: [...sites],
-    newSites: [{state: "new"}, {sitenames: {CWMS: "Another Test"}, state: "new"}]
-  }
-}
+    sites: siteRefs,
+  },
+};
