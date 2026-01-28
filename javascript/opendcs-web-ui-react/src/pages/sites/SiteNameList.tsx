@@ -1,16 +1,15 @@
 import DataTable, {
   type DataTableProps,
   type DataTableRef,
+  type DataTableSlots,
 } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import dtButtons from "datatables.net-buttons-bs5";
-import { Suspense, useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { dtLangs } from "../../lang";
-import type { CollectionActions } from "../../util/Actions";
+import type { CollectionActions, UiState } from "../../util/Actions";
 import SiteNameTypeSelect from "./SiteNameTypeSelect";
-import { createRoot } from "react-dom/client";
-import RefListContext, { useRefList } from "../../contexts/data/RefListContext";
 import { useContextWrapper } from "../../util/ContextWrapper";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -18,16 +17,16 @@ DataTable.use(DT);
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(dtButtons);
 
-export type SiteNameType = { type: string; name: string };
+export type SiteNameType = { type: string; name: string, ui_state?: UiState };
 
 interface SiteNameListProperties {
-  siteNames: { [k: string]: string };
+  siteNames: SiteNameType[];
   actions?: CollectionActions<SiteNameType>;
 }
 
 export const SiteNameList: React.FC<SiteNameListProperties> = ({
   siteNames,
-  actions,
+  actions = {},
 }) => {
   const { toDom } = useContextWrapper();
   const table = useRef<DataTableRef>(null);
@@ -57,23 +56,33 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
     }
   };
 
-  const site_names = useMemo(() => {
-    return Object.entries(siteNames).map(([k, v]) => {
-      return { type: k, value: v };
-    });
-  }, [siteNames]);
-
-  const columns = [
+  const columnsBase = [
     { data: "type", render: renderEditableType },
-    { data: "value" },
+    { data: "name" },
+  ]
+  const actionColumn = 
     {
       data: null,
-      name: "actions",
-      render: () => {
-        return "action";
+      name: "actions"
+    }
+  ;
+
+  const columns = useMemo(() => actions?.edit === undefined ? columnsBase : [...columnsBase, actionColumn], [actions]);
+  console.log(columns);
+  const slots = useMemo<DataTableSlots>(() => {
+    return {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      actions: (data: SiteNameType, type: unknown, _row: SiteNameType) => {
+        if (type === "display") {
+
+          
+          return 
+        } else {
+          return data;
+        }
       },
-    },
-  ];
+    };
+  }, [columns]);
 
   const options: DataTableProps["options"] = {
     paging: false,
@@ -108,8 +117,9 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
       key={i18n.language} // convient way to force a render of the components and aria labels on a language change.
       id="siteNamesTable"
       columns={columns}
-      data={site_names}
+      data={siteNames}
       options={options}
+      slots={columns.length === 3 ? slots : undefined}
       ref={table}
       className="table table-hover table-striped tablerow-cursor w-100 border"
     >
@@ -117,7 +127,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
         <tr>
           <th>{t("sites:site_names.name_type")}</th>
           <th>{t("translation:value")}</th>
-          <th>{t("translation:actions")}</th>
+          {columns.length === 3 ? <th>{t("translation:actions")}</th> : null}
         </tr>
       </thead>
     </DataTable>
