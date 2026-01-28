@@ -41,7 +41,7 @@ public class IridiumPMParser extends PMParser
 	private static final Logger logger = OpenDcsLoggerFactory.getLogger();
 	// Allow more flexibiity in Header parsing
 	private static final Pattern SEPARATOR_MATCHER = 
-		Pattern.compile("^(.*?)[\\s|,]+.*?$", Pattern.MULTILINE | Pattern.DOTALL);
+		Pattern.compile("^(.*?)[\\s,]+.*?$", Pattern.MULTILINE | Pattern.DOTALL);
 	// Performance Measurement tags:
 	public static final String LATITUDE = "latitude";
 	public static final String LONGITUDE = "longitude";
@@ -211,13 +211,18 @@ public class IridiumPMParser extends PMParser
 
 			// If iridiumIEInPayload is true, this length does not include the IE:02 portion;
 			// if false, the IE:02 part is removed, and this really is the length of the header.
+
 			int idx = hdr.indexOf(" ");
+			if (idx == -1)
+			{
+				throw new HeaderParseException("Expected space not found in Iridium header");
+			}
+				
 			if (!hdr.substring(idx+1, idx+6).equals("IE:02"))
 			{
 				idx++;	// include the ending space in the header portion
 			}
 
-			if (idx < 75) idx = 75;
 			msg.setHeaderLength(idx);
 			headerLength = idx;
 		}
