@@ -1,3 +1,4 @@
 cd javascript/opendcs-web-ui-react
+echo "hello?"
 npx lint-staged
 exit 1
