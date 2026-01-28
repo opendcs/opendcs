@@ -3,7 +3,7 @@ plugins {
     id 'opendcs.deps-conventions'
     id 'opendcs.sonar-conventions'
     id 'opendcs.version-conventions'
-    id "org.openapi.generator" version "7.17.0"
+    id "org.openapi.generator" version "7.19.0"
     id 'com.github.node-gradle.node' version '7.1.0'
 }
 // configured later
