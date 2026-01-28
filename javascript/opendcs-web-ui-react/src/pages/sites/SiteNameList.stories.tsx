@@ -14,7 +14,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-     siteNames: {},
+     siteNames: [],
      actions: {
       add: () => {},
       edit: () => {},
@@ -27,19 +27,19 @@ export const Default: Story = {
 
 export const WithNames: Story = {
   args: {
-     siteNames: {
-      CWMS: "Alder Springs",
-      NWSHB5: "ALS",
-    },
+     siteNames: [
+      {type: "CWMS", name: "Alder Springs"},
+      {type: "NWSHB5", name: "ALS"},
+     ],
   },
 }
 
 export const WithNamesInEdit: Story = {
   args: {
-     siteNames: {
-      CWMS: "Alder Springs",
-      NWSHB5: "ALS",
-    },
+     siteNames: [
+      {type: "CWMS", name: "Alder Springs", ui_state: "edit"},
+      {type: "NWSHB5", name: "ALS"},
+     ],
     actions: {
       edit: fn()
     }

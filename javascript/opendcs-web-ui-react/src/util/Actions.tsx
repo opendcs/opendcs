@@ -45,4 +45,6 @@ export interface AddAction<T> {
  */
 export type CollectionActions<T, V = T> = SaveAction<T> & EditAction<V> & RemoveAction<V> & AddAction<T>;
 
+export type ItemActions<T> = SaveAction<T> & EditAction<T> & RemoveAction<T>;
+
 export type  UiState = "new" | "edit" | undefined;
