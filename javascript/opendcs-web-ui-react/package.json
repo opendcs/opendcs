@@ -16,7 +16,7 @@
     "test-storybook": "vitest --project=storybook",
     "build-storybook": "storybook build",
     "format:check": "prettier --check .",
-    "prepare": "husky",
+    "prepare": "cd .. && husky javascript/opendcs-web-ui-react",
     "predev": "npm run api:generate && npm run lang:generate",
     "prebuild": "npm run api:generate && npm run lang:generate",
     "prestorybook": "npm run api:generate && npm run lang:generate",
