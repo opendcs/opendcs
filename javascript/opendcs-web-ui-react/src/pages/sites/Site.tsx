@@ -1,6 +1,6 @@
 import { Button, Card, Col, Form, FormGroup, FormSelect, Row } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../components/properties";
-import { use, useReducer, useState } from "react";
+import { use, useMemo, useReducer, useState } from "react";
 import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { useTranslation } from "react-i18next";
 import { SiteNameList, type SiteNameType } from "./SiteNameList";
@@ -29,7 +29,7 @@ const elevationUnits = [
 
 export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
   const { t } = useTranslation();
-  const providedSite = use(site instanceof Promise ? site : Promise.resolve(site));
+  const providedSite = site instanceof Promise ? use(site) : site;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [localSite, dispatch] = useReducer(SiteReducer, providedSite);
 
@@ -99,6 +99,13 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
       }
     : {};
 
+  const siteNames = useMemo<SiteNameType[]>(() => {
+    return Object.entries(localSite.sitenames || {})
+                 .map(([k,v]) => {
+                    return {type: k, name: v}
+                  });
+  }, [localSite.sitenames]);
+
   return (
     <Card>
       <Card.Body>
@@ -106,7 +113,7 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
           <Col>
             <Row>
               <SiteNameList
-                siteNames={localSite.sitenames || {}}
+                siteNames={siteNames}
                 actions={siteNameActions}
               />
             </Row>
