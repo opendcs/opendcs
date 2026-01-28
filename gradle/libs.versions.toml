@@ -71,7 +71,7 @@ greenmail = "2.1.8"
 mockito = "5.21.0"
 byte-buddy = "1.15.3"
 rest-assured = "6.0.0"
-tomcat = "11.0.14"
+tomcat = "11.0.18"
 microprofile-health = "4.0.1"
 
 # integration test deps
