@@ -9,32 +9,37 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { dtLangs } from "../../lang";
 import type { ApiSiteRef } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import Site, { type UiSite } from "./Site";
-import { createRoot } from "react-dom/client";
-import RefListContext, { useRefList } from "../../contexts/data/RefListContext";
+// import { createRoot } from "react-dom/client";
+// import RefListContext, { useRefList } from "../../contexts/data/RefListContext";
 import type { CollectionActions, UiState } from "../../util/Actions";
+import { useContextWrapper } from "../../util/ContextWrapper";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
 
-type TableSiteRef = Partial<ApiSiteRef & { state?: UiState, actualSite?: UiSite} >;
+type TableSiteRef = Partial<ApiSiteRef & { state?: UiState; actualSite?: UiSite }>;
 
 interface SiteTableProperties {
   sites: TableSiteRef[];
-  // NOTE: primarily used for testing as there is no way to inject this data wise, 
+  // NOTE: primarily used for testing as there is no way to inject this data wise,
   newSites?: TableSiteRef[];
   actions?: CollectionActions<ApiSiteRef, number>;
 }
 
-export const SitesTable: React.FC<SiteTableProperties> = ({ sites, newSites = [], actions = {} }) => {
+export const SitesTable: React.FC<SiteTableProperties> = ({
+  sites,
+  newSites = [],
+  actions = {},
+}) => {
   // Note entirely sure how I feel about this but it appears to primarily be a limitation
   // of the interactions of React with DataTables since DataTables has to control this DOM node
   // So we are doing a lot of "I want to render a react component but need it to be a DomNode"
   // which as the wonderful affect of breaking out of the context tree
-  const refContext = useRefList();
+  const { toDom } = useContextWrapper();
   const table = useRef<DataTableRef>(null);
   const [t, i18n] = useTranslation(["sites"]);
   const [localSites, updateLocalSites] = useState(newSites);
-  
+
   const siteData = useMemo(() => [...sites, ...localSites], [sites, localSites]);
 
   const columns = [
@@ -46,7 +51,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({ sites, newSites = []
         return site.sitenames?.CWMS || ""; // TODO need configured sitename preference
       },
     },
-    { data: "publicName", defaultContent: ""},
+    { data: "publicName", defaultContent: "" },
     { data: "description", defaultContent: "" },
     { data: null, name: "actions" },
   ];
@@ -77,11 +82,14 @@ export const SitesTable: React.FC<SiteTableProperties> = ({ sites, newSites = []
             action: () => {
               updateLocalSites((prev) => {
                 // modal here for sitename?... or focus on automatically created new entry?
-                let existing = prev.map(v => v.siteId!)
-                                   // we want the lowest
-                                   .sort((a: number, b: number) => {return b-a});
-                const newId = existing.length > 0 ? existing[0]-1 : -1; // use negative indexes for new elements
-                return [...prev, {state: "new", actualSite: {}, siteId: newId}]
+                let existing = prev
+                  .map((v) => v.siteId!)
+                  // we want the lowest
+                  .sort((a: number, b: number) => {
+                    return b - a;
+                  });
+                const newId = existing.length > 0 ? existing[0] - 1 : -1; // use negative indexes for new elements
+                return [...prev, { state: "new", actualSite: {}, siteId: newId }];
               });
             },
             attr: {
@@ -110,16 +118,12 @@ export const SitesTable: React.FC<SiteTableProperties> = ({ sites, newSites = []
       } else {
         // TODO: need to lookup data. Given use of suspense, should be able to pass a promise
         const data: TableSiteRef = row.data as TableSiteRef;
-        const container = document.createElement("div");
-        const root = createRoot(container);
         const emptySite: UiSite = {};
-        // how to determine control?
-        root.render(
-          <RefListContext value={refContext}>
-          <Suspense fallback="Loading...">
-            <Site site={data.state === 'new' ? data.actualSite! : emptySite} actions={{save: actions.save}}/>
-          </Suspense>
-          </RefListContext>,
+        const container = toDom(
+          <Site
+            site={data.state === "new" ? data.actualSite! : emptySite}
+            actions={{ save: actions.save }}
+          />,
         );
         // Open this row
         row.child(container, "child-row").show();

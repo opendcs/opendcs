@@ -11,14 +11,14 @@ import type { CollectionActions } from "../../util/Actions";
 import SiteNameTypeSelect from "./SiteNameTypeSelect";
 import { createRoot } from "react-dom/client";
 import RefListContext, { useRefList } from "../../contexts/data/RefListContext";
+import { useContextWrapper } from "../../util/ContextWrapper";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(dtButtons);
 
-
-export type SiteNameType = {type: string, name: string};
+export type SiteNameType = { type: string; name: string };
 
 interface SiteNameListProperties {
   siteNames: { [k: string]: string };
@@ -29,7 +29,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
   siteNames,
   actions,
 }) => {
-  const refContext = useRefList();
+  const { toDom } = useContextWrapper();
   const table = useRef<DataTableRef>(null);
   const [t, i18n] = useTranslation(["sites"]);
 
@@ -47,17 +47,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
 
     if (actions?.edit !== undefined) {
       try {
-        const container = document.createElement("div");
-        const root = createRoot(container);
-        root.render(
-          <RefListContext value={refContext}>
-            <Suspense fallback="Loading...">
-              <SiteNameTypeSelect current={row.type} />
-            </Suspense>
-          </RefListContext>,
-        );
-        console.log(container);
-        console.log(root);
+        const container = toDom(<SiteNameTypeSelect current={row.type} />);
         return container;
       } catch (error) {
         return JSON.stringify(error);
@@ -100,7 +90,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
                 {
                   text: "+",
                   action: () => {
-                    actions.add?.({name:"new", type: "new"});
+                    actions.add?.({ name: "new", type: "new" });
                     console.log("Add site name");
                   },
                   attr: {
