@@ -91,7 +91,7 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {}}) => {
 
   const siteNameActions: CollectionActions<SiteNameType> = editMode
     ? {
-        add: (siteName: SiteNameType) => {dispatch({type: "add_name", payload: siteName!})},
+        add: (siteName?: SiteNameType) => {dispatch({type: "add_name", payload: siteName!})},
         //edit: () => {},
         //remove: () => {},
         save: (siteName: SiteNameType) => {dispatch({type: "add_name", payload: siteName!})},
@@ -228,7 +228,7 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {}}) => {
             </FormGroup>
             <FormGroup as={Row} className="mb-3">
               <Form.Label column sm={2} htmlFor="region">
-                {t("Region")}
+                {t("region")}
               </Form.Label>
               <Col sm={10}>
                 <Form.Control
