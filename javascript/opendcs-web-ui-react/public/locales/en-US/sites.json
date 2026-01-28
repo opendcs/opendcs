@@ -9,5 +9,10 @@
   },
   "configured_names": "Configured Site Names",
   "description": "Description",
-  "add_site": "Add new Site"
+  "add_site": "Add new Site",
+  "enter_region": "Region",
+  "enter_country": "Provide Country",
+  "use_decimal_format": "Provide value in Decimal format",
+  "nearestCity": "Nearest City",
+  "public_name": "Public Name"
 }
