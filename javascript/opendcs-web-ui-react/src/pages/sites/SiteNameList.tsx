@@ -5,7 +5,7 @@ import DataTable, {
 } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import dtButtons from "datatables.net-buttons-bs5";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { dtLangs } from "../../lang";
 import type { CollectionActions, UiState } from "../../util/Actions";
