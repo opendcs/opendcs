@@ -3,16 +3,17 @@ import DataTable, {
   type DataTableRef,
   type DataTableSlots,
 } from "datatables.net-react";
-import DT, { type ConfigColumns } from "datatables.net-bs5";
+import DT, { type ConfigButtons, type ConfigColumns } from "datatables.net-bs5";
 import dtButtons from "datatables.net-buttons-bs5";
 import { Button, Container, Form } from "react-bootstrap";
 import "datatables.net-responsive";
 import { Pencil, Save, Trash } from "react-bootstrap-icons";
 import type { ApiPropSpec } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
-import { useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { renderToString } from "react-dom/server";
 import { useTranslation } from "react-i18next";
 import { dtLangs } from "../../lang";
+import type { CollectionActions } from "../../util/Actions";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -34,10 +35,7 @@ export interface Property {
 
 export interface PropertiesTableProps {
   theProps: Property[];
-  saveProp: (prop: Property) => void;
-  removeProp: (prop: string) => void;
-  addProp: () => void;
-  editProp: (prop: string) => void;
+  actions: CollectionActions<Property, string>;
   width?: React.CSSProperties["width"];
   height?: React.CSSProperties["height"];
   classes?: string;
@@ -46,9 +44,9 @@ export interface PropertiesTableProps {
 export interface ActionProps {
   data: Property;
   editMode: boolean;
-  removeProp: (prop: string) => void;
-  editProp: (prop: string) => void;
-  saveProp: (prop: Property) => void;
+  removeProp?: (prop: string) => void;
+  editProp?: (prop: string) => void;
+  saveProp?: (prop: Property) => void;
 }
 
 export const PropertyActions: React.FC<ActionProps> = ({
@@ -59,29 +57,36 @@ export const PropertyActions: React.FC<ActionProps> = ({
   saveProp,
 }) => {
   const [t] = useTranslation(["properties"]);
-  return (
-    <>
-      {editMode === true ? (
-        <Button
-          onClick={() => {
-            saveProp(data);
-          }}
-          variant="primary"
-          aria-label={t("properties:save_prop", { name: data.name })}
-          size="sm"
-        >
-          <Save />
-        </Button>
-      ) : (
-        <Button
-          onClick={() => editProp(data.name)}
-          variant="warning"
-          aria-label={t("properties:edit_prop", { name: data.name })}
-          size="sm"
-        >
-          <Pencil />
-        </Button>
-      )}
+
+  let changeAction = <></>;
+  if (editMode && saveProp !== undefined) {
+    changeAction = (
+      <Button
+        onClick={() => {
+          saveProp(data);
+        }}
+        variant="primary"
+        aria-label={t("properties:save_prop", { name: data.name })}
+        size="sm"
+      >
+        <Save />
+      </Button>
+    );
+  } else if (!editMode && editProp !== undefined) {
+    changeAction = (
+      <Button
+        onClick={() => editProp(data.name)}
+        variant="warning"
+        aria-label={t("properties:edit_prop", { name: data.name })}
+        size="sm"
+      >
+        <Pencil />
+      </Button>
+    );
+  }
+
+  const deleteAction =
+    removeProp !== undefined ? (
       <Button
         onClick={() => removeProp(data.name)}
         variant="danger"
@@ -90,6 +95,14 @@ export const PropertyActions: React.FC<ActionProps> = ({
       >
         <Trash />
       </Button>
+    ) : (
+      <></>
+    );
+
+  return (
+    <>
+      {changeAction}
+      {deleteAction}
     </>
   );
 };
@@ -104,124 +117,149 @@ export const PropertyActions: React.FC<ActionProps> = ({
  */
 export const PropertiesTable: React.FC<PropertiesTableProps> = ({
   theProps,
-  saveProp,
-  removeProp,
-  addProp,
-  editProp,
+  actions,
   width = "20em",
   height = "100vh",
   classes = "",
 }) => {
   const table = useRef<DataTableRef>(null);
   const [t, i18n] = useTranslation(["properties"]);
+  const renderEditable = useCallback(
+    (
+      data: string | number | readonly string[] | undefined,
+      type: string,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      row: any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      meta: any,
+    ) => {
+      if (type !== "display") {
+        return data;
+      }
+      const inputName: string = meta.col == 0 ? "name" : "value";
+      if (row?.state === "new" || (row?.state == "edit" && meta.col == 1)) {
+        return renderToString(
+          <Form.Control
+            type="text"
+            name={meta.settings.aoColumns[meta.col].mData}
+            defaultValue={row.state == "edit" ? data : ""}
+            aria-label={t(`properties:${inputName}_input`, { name: row.name })}
+          />,
+        );
+      } else {
+        return data;
+      }
+    },
+    [],
+  );
 
-  const renderEditable = (
-    data: string | number | readonly string[] | undefined,
-    type: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    row: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    meta: any,
-  ) => {
-    if (type !== "display") {
-      return data;
-    }
-    const inputName: string = meta.col == 0 ? "name" : "value";
-    if (row?.state === "new" || (row?.state == "edit" && meta.col == 1)) {
-      return renderToString(
-        <Form.Control
-          type="text"
-          name={meta.settings.aoColumns[meta.col].mData}
-          defaultValue={row.state == "edit" ? data : ""}
-          aria-label={t(`properties:${inputName}_input`, { name: row.name })}
-        />,
-      );
-    } else {
-      return data;
-    }
-  };
+  const columns: ConfigColumns[] = useMemo(
+    () => [
+      { data: "name", render: renderEditable },
+      { data: "value", render: renderEditable },
+      { data: null, name: "actions" },
+    ],
+    [],
+  );
 
-  const columns: ConfigColumns[] = [
-    { data: "name", render: renderEditable },
-    { data: "value", render: renderEditable },
-    { data: null, name: "actions" },
-  ];
-
-  const options: DataTableProps["options"] = {
-    paging: false,
-    responsive: true,
-    language: dtLangs.get(i18n.language),
-    layout: {
-      top1Start: {
+  const buttons: ConfigButtons = useMemo(() => {
+    if (actions.add !== undefined) {
+      return {
         buttons: [
           {
             text: "+",
             action: () => {
-              addProp();
+              actions.add!();
             },
             attr: {
               "aria-label": t("properties:add_prop"),
             },
           },
         ],
-      },
-    },
-    createdRow: (
-      row: HTMLElement,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      data: any,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      _index: number,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      _cells: HTMLTableCellElement[],
-    ) => (row.dataset.propName = data.name),
-  };
-
-  const getAndSaveProp = (data: Property): void => {
-    const api = table.current?.dt();
-    if (api) {
-      const row = api.row(`tr[data-prop-name="${data.name}"]`)?.node();
-
-      if (row) {
-        const tds = row.children;
-        const name =
-          tds[0].children[0] instanceof HTMLInputElement
-            ? (tds[0].children[0] as HTMLInputElement).value
-            : tds[0].innerHTML;
-        const value = (tds[1].children[0] as HTMLInputElement).value;
-        const prop: Property = {
-          name: name,
-          value: value,
-          state: data.state == "new" ? parseInt(data.name) : data.state,
-        };
-        saveProp(prop);
-      } else {
-        console.log(`can't find entries for ${JSON.stringify(data)}`);
-      }
+      };
     } else {
-      console.log("no dt api?");
+      return { buttons: [] };
     }
-  };
+  }, [actions]);
 
-  const slots: DataTableSlots = {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    actions: (data: Property, type: unknown, _row: Property) => {
-      if (type === "display") {
-        const inEdit = data.state !== undefined;
-        return (
-          <PropertyActions
-            data={data}
-            editMode={inEdit}
-            removeProp={removeProp}
-            saveProp={getAndSaveProp}
-            editProp={editProp}
-          />
-        );
+  const options: DataTableProps["options"] = useMemo(() => {
+    return {
+      paging: false,
+      responsive: true,
+      language: dtLangs.get(i18n.language),
+      layout: {
+        top1Start: {
+          buttons: buttons,
+        },
+      },
+      createdRow: (
+        row: HTMLElement,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        data: any,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        _index: number,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        _cells: HTMLTableCellElement[],
+      ) => (row.dataset.propName = data.name),
+    };
+  }, [buttons]);
+
+  const getAndSaveProp: (data: Property) => void = useCallback(
+    (data: Property): void => {
+      const api = table.current?.dt();
+      if (api) {
+        const row = api.row(`tr[data-prop-name="${data.name}"]`)?.node();
+        if (row) {
+          const tds = row.children;
+          const name =
+            tds[0].children[0] instanceof HTMLInputElement
+              ? (tds[0].children[0] as HTMLInputElement).value
+              : tds[0].innerHTML;
+          const value = (tds[1].children[0] as HTMLInputElement).value;
+          const prop: Property = {
+            name: name,
+            value: value,
+            state: data.state == "new" ? parseInt(data.name) : data.state,
+          };
+          if (!(name === undefined || name.trim() === "")) {
+            actions.save?.(prop);
+          } else {
+            (tds[0].children[0] as HTMLElement).classList.add(
+              "border",
+              "border-warning",
+            );
+          }
+        } else {
+          console.log(`can't find entries for ${JSON.stringify(data)}`);
+        }
       } else {
-        return data;
+        console.log("no dt api?");
       }
     },
-  };
+    [actions],
+  );
+
+  const slots = useMemo<DataTableSlots>(() => {
+    return {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      actions: (data: Property, type: unknown, _row: Property) => {
+        if (type === "display") {
+          const inEdit = data.state !== undefined;
+          return (
+            <PropertyActions
+              data={data}
+              editMode={inEdit}
+              removeProp={actions.remove}
+              saveProp={actions.save ? getAndSaveProp : undefined}
+              editProp={actions.edit}
+            />
+          );
+        } else {
+          return data;
+        }
+      },
+    };
+  }, [actions]);
 
   return (
     <Container fluid style={{ width: width, height: height }} className={`${classes}`}>
