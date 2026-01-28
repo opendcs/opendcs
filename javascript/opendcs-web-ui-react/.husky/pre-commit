@@ -1,0 +1,3 @@
+cd javascript/opendcs-web-ui-react
+npx lint-staged
+echo $?
