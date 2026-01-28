@@ -718,12 +718,17 @@ final public class ResEvapAlgo
     }
 
     @Override
-    public void afterAllTimeSlices(){
+    public void afterAllTimeSlices() throws DbCompException
+    {
         try
         {
             //TODO save HourlyWTP
             //		hourlyWTP.SaveProfiles(timeSeriesDAO);
             dailyWTP.SaveProfiles(timeSeriesDAO);
+        }
+        catch (DbIoException | BadTimeSeriesException ex)
+        {
+            throw new DbCompException("Failed to save water temperature profiles", ex);
         }
         finally
         {
