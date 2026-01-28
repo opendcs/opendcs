@@ -18,6 +18,9 @@ export const Default: Story = {
   args: {
     sites: [],
   },
+  play: async ({mount}) => {
+    await mount();
+  }
 };
 
 const sites: ApiSite[] = [
@@ -69,10 +72,16 @@ export const WithSites: Story = {
     sites: siteRefs,
     getSite: getSite,
   },
+  play: async ({mount}) => {
+    await mount();
+  }
 };
 
 export const WithExistingAndNewSite: Story = {
   args: {
     sites: siteRefs,
   },
+  play: async ({mount}) => {
+    await mount();
+  }
 };

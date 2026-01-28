@@ -38,10 +38,16 @@ export const WithSite: Story = {
   args: {
     site: site1,
   },
+  play: async ({mount}) => {
+    await mount();
+  }
 };
 
 export const WithSiteAsPromise: Story = {
   args: {
     site: Promise.resolve(site1),
   },
+  play: async ({mount}) => {
+    await mount();
+  }
 };
