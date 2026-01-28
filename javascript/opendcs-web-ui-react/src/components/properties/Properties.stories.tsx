@@ -105,7 +105,6 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const emptyPropList: Property[] = [];
-const emptyPropList: Property[] = [];
 
 export const StartEmpty: Story = {
   args: {
@@ -119,7 +118,6 @@ export const EmptyAddThenRemove: Story = {
   args: {
     ...StartEmpty.args,
   },
-  decorators: [WithActions],
   decorators: [WithActions],
   play: async ({ canvasElement, mount, parameters, userEvent }) => {
     const { i18n } = parameters;
@@ -147,7 +145,6 @@ export const PropertyNameCannotBeBlank: Story = {
   args: {
     ...StartEmpty.args,
   },
-  decorators: [WithActions],
   decorators: [WithActions],
   play: async ({ canvasElement, mount, parameters, userEvent }) => {
     const { i18n } = parameters;
@@ -205,7 +202,6 @@ export const EmptyAddThenSaveThenRemove: Story = {
   args: {
     ...StartEmpty.args,
   },
-  decorators: [WithActions],
   decorators: [WithActions],
   play: async ({ canvasElement, step, mount, parameters, userEvent }) => {
     const { i18n } = parameters;
