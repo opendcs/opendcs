@@ -3,7 +3,7 @@ import { Button, Container, NavDropdown } from "react-bootstrap";
 import { PersonGear } from "react-bootstrap-icons";
 import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
-import { AuthContext } from "../../contexts/AuthContext";
+import { AuthContext } from "../../contexts/app/AuthContext";
 import { ColorModes } from "../";
 import { useTranslation } from "react-i18next";
 import LangPicker from "../LangPicker";

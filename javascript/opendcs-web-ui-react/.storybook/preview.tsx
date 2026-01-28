@@ -1,15 +1,16 @@
 import type { Decorator, Preview } from "@storybook/react-vite";
-import "bootstrap/dist/css/bootstrap.min.css";
 import "datatables.net-bs5";
 import "datatables.net-responsive-bs5";
-import "../src/main.css";
-import "../src/assets/opendcs-shim.css";
 import i18n from "../src/i18n";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "datatables.net-bs5/css/dataTables.bootstrap5.css";
+import "datatables.net-buttons-bs5/css/buttons.bootstrap5.css";
 
 import { Dispatch, SetStateAction, Suspense, useEffect, useState } from "react";
 import { I18nextProvider } from "react-i18next";
-import { Theme, ThemeContext} from "../src/contexts/ThemeContext";
+import { Theme, ThemeContext } from "../src/contexts/app/ThemeContext";
 import { useGlobals } from "storybook/internal/preview-api";
+import { WithRefLists } from "./mock/WithRefLists";
 
 // Wrap your stories in the I18nextProvider component
 // lifted direct from https://storybook.js.org/recipes/react-i18next
@@ -42,8 +43,8 @@ i18n.on("languageChanged", (locale) => {
 
 // eslint-disable-next-line react-refresh/only-export-components
 const WithTheme: Decorator = (Story) => {
-  const [{colorMode}, updateGlobals] = useGlobals();
- 
+  const [{ colorMode }, updateGlobals] = useGlobals();
+
   const [theme, setTheme] = useState<Theme>({ colorMode: colorMode });
 
   useEffect(() => {
@@ -51,16 +52,13 @@ const WithTheme: Decorator = (Story) => {
     setTheme({ colorMode: colorMode });
   }, [colorMode]);
 
-
-  const setGlobalTheme: Dispatch<SetStateAction<Theme>> = (action) =>  {
+  const setGlobalTheme: Dispatch<SetStateAction<Theme>> = (action) => {
     if (action as Theme) {
-      updateGlobals({colorMode: (action as Theme).colorMode});
+      updateGlobals({ colorMode: (action as Theme).colorMode });
     }
-    
-    setTheme(action);
-    
-  };
 
+    setTheme(action);
+  };
 
   return (
     <ThemeContext value={{ theme: theme, setTheme: setGlobalTheme }}>
@@ -92,7 +90,7 @@ const preview: Preview = {
     },
     i18n,
   },
-  decorators: [WithI18next, WithTheme],
+  decorators: [WithI18next, WithTheme, WithRefLists],
   globalTypes: {
     locale: {
       name: "Locale",

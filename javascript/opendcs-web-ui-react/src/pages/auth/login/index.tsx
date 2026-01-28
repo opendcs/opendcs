@@ -1,9 +1,9 @@
 import { type FormEvent } from "react";
-import { useAuth } from "../../../contexts/AuthContext";
+import { useAuth } from "../../../contexts/app/AuthContext";
 import { Button, Col, Container, Form, Image, Row } from "react-bootstrap";
 import "./Login.css";
 import { Credentials, RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
-import { useApi } from "../../../contexts/ApiContext";
+import { useApi } from "../../../contexts/app/ApiContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 

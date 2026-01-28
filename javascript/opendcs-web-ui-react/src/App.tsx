@@ -1,15 +1,15 @@
 import { useEffect } from "react";
 import "./App.css";
-import { useAuth } from "./contexts/AuthContext";
+import { useAuth } from "./contexts/app/AuthContext";
 import Login from "./pages/auth/login";
 import { TopBar, SideBar } from "./components/layout";
 import { ModeIcons } from "./components/ModeIcon";
 
 import { RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
-import { useApi } from "./contexts/ApiContext";
+import { useApi } from "./contexts/app/ApiContext";
 import { Route, Routes, useNavigate } from "react-router-dom";
 import { Platforms } from "./pages/platforms";
-import { Sites } from "./pages/sites";
+import { SitesTable } from "./pages/sites/SitesTable";
 import { Container } from "react-bootstrap";
 import { Algorithms } from "./pages/computations/algorithms";
 
@@ -40,7 +40,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route element={<SideBar />}>
             <Route path="/platforms" element={<Platforms />} />
-            <Route path="/sites" element={<Sites />} />
+            <Route path="/sites" element={<SitesTable sites={[]} />} />
             <Route path="/algorithms" element={<Algorithms />} />
           </Route>
         </Routes>
