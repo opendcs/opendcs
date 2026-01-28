@@ -16,10 +16,16 @@ export const Default: Story = {
   args: {
     current: undefined
   },
+  play: async ({mount}) => {
+    await mount();
+  }
 };
 
 export const OtherSelected: Story = {
   args: {
     current: "local"
+  },
+  play: async ({mount}) => {
+    await mount();
   }
 }
