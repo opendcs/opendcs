@@ -4,6 +4,7 @@
   "site_name": "Site Name",
   "site_names": {
     "title": "Site Names",
+    "select": "Site Name Type Selector",
     "add_name": "Add Site Name",
     "name_type": "Type",
     "type_select_for": "Site name type select for name {{name}}",

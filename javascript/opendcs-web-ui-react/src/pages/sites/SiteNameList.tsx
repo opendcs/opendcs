@@ -52,7 +52,9 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
       //
       try {
         const container = toDom(
-          <SiteNameTypeSelect current={refList(REFLIST_SITE_NAME_TYPE).defaultValue} />,
+          <SiteNameTypeSelect
+            defaultValue={refList(REFLIST_SITE_NAME_TYPE).defaultValue}
+          />,
         );
         return container;
       } catch (error) {
