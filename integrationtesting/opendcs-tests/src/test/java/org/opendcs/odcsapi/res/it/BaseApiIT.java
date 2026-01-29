@@ -35,7 +35,6 @@ import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.util.DecodesSettings;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.filter.log.LogDetail;
-import io.restassured.filter.session.SessionFilter;
 import io.restassured.http.Cookie;
 import io.restassured.path.json.JsonPath;
 import io.restassured.specification.RequestSpecification;
@@ -46,6 +45,9 @@ import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.TimeSeriesDAI;
 import org.apache.catalina.session.StandardSession;
 import org.junit.jupiter.api.Tag;
+import org.opendcs.fixtures.spi.Configuration;
+import org.opendcs.odcsapi.beans.ApiSite;
+import org.opendcs.fixtures.TomcatServer;
 import org.opendcs.odcsapi.res.ObjectMapperContextResolver;
 import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
 import org.opendcs.odcsapi.sec.OpenDcsPrincipal;
@@ -54,13 +56,13 @@ import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
 import org.opendcs.fixtures.AppTestBase;
-import org.opendcs.fixtures.TomcatServer;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.EnableIfApiSupported;
 
 import static io.restassured.RestAssured.given;
 import static java.util.stream.Collectors.joining;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.opendcs.odcsapi.util.ApiConstants.ORGANIZATION_HEADER;
 
 @EnableIfApiSupported
@@ -70,6 +72,7 @@ public class BaseApiIT extends AppTestBase
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	protected static String authHeader = null;
 	protected static RequestSpecification authSpec = null;
+	private static Cookie cookie;
 
 	@ConfiguredField
 	protected TomcatServer tomcat;
@@ -141,7 +144,6 @@ public class BaseApiIT extends AppTestBase
 	{
 		final String COOKIE = "IntegrationTestAuthCookie";
 		String username = System.getProperty("DB_USERNAME");
-		
 		StandardSession session = (StandardSession) tomcat.getTestSessionManager()
 				.createSession(COOKIE);
 		if(session == null) {
@@ -152,7 +154,7 @@ public class BaseApiIT extends AppTestBase
 		session.setPrincipal(mcup);
 		session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, mcup);
 		
-		Cookie cookie = new Cookie.Builder("JSESSIONID", COOKIE)
+		cookie = new Cookie.Builder("JSESSIONID", COOKIE)
 								  .setHttpOnly(true)
 								  .setSecured(true)
 								  .setMaxAge(-1)
@@ -177,6 +179,15 @@ public class BaseApiIT extends AppTestBase
 		.assertThat()
 			.statusCode(is(Response.Status.OK.getStatusCode()))
 		;
+	}
+
+	String getCookie()
+	{
+		if (cookie == null)
+		{
+			authenticate();
+		}
+		return String.format("%s=%s", cookie.getName(), cookie.getValue());
 	}
 
 	void logout()
@@ -213,6 +224,11 @@ public class BaseApiIT extends AppTestBase
 	protected TimeSeriesDb getTsdb() throws Throwable
 	{
 		return configuration.getTsdb();
+	}
+
+	protected Configuration getConfig()
+	{
+		return configuration;
 	}
 
 	protected DatabaseIO getDbIo() throws Throwable
@@ -306,5 +322,68 @@ public class BaseApiIT extends AppTestBase
 		{
 			throw new IllegalStateException(e);
 		}
+	}
+
+	void tearDownSite(Long siteId)
+	{
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.queryParam("siteid", siteId)
+			.spec(authSpec)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("site")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
+		;
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.queryParam("siteid", siteId)
+			.spec(authSpec)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("site")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
+		;
+	}
+
+	ApiSite storeSite(String jsonPath) throws Exception
+	{
+		assertNotNull(jsonPath);
+		String siteJson = getJsonFromResource(jsonPath);
+
+		var response = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.contentType(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.body(siteJson)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("site")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
+			.extract()
+			;
+
+		Long localSiteId = response.body().jsonPath().getLong("siteId");
+
+		ObjectMapper mapper = new ObjectMapper();
+		ApiSite retVal = mapper.readValue(siteJson, ApiSite.class);
+		retVal.setSiteId(localSiteId);
+		return retVal;
 	}
 }

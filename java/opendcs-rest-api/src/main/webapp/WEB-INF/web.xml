@@ -38,6 +38,7 @@
             </param-value>
         </init-param>
         <load-on-startup>1</load-on-startup>
+		<async-supported>true</async-supported>
     </servlet>
     <session-config>
         <session-timeout>15</session-timeout> <!-- Timeout after 15 minutes of inactivity -->
