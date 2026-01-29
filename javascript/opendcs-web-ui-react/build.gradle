@@ -36,7 +36,7 @@ def testUi = tasks.register("testStorybook", NpxTask) {
         "IN_GRADLE": "1",
         "CI": "true"
     ]
-    args = ['run', 'test-storybook', '--', '--coverage',
+    args = ['run', 'test', '--', '--coverage',
             '--reporter=default',
             '--reporter=verbose',
             '--reporter=junit',

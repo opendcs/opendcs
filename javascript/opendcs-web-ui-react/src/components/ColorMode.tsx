@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useTheme } from "../contexts/ThemeContext";
+import { useTheme } from "../contexts/app/ThemeContext";
 import { ModeIcon } from "./ModeIcon";
 import { Button, Dropdown } from "react-bootstrap";
 import { useTranslation } from "react-i18next";

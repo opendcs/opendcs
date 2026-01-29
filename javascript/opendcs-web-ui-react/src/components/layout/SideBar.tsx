@@ -18,7 +18,7 @@ export const SideBar = () => {
               {t("platforms:platformsTitle")}
             </Nav.Link>
             <Nav.Link as={Link} to="/sites">
-              {t("sites:sitesTitle")}
+              {t("sites:title")}
             </Nav.Link>
           </Nav.Item>
 
