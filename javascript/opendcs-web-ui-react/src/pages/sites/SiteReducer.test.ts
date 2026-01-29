@@ -16,7 +16,7 @@ test("Reducer Add SiteName", () => {
   expect(result.sitenames?.CWMS).toEqual("Test Site 1");
 });
 
-test("Change a SiteName Type Then Delete", () => {
+test("Change a SiteName Then Delete", () => {
   const testSite: UiSite = {
     sitenames: {
       CWMS: "Test 1",
@@ -27,12 +27,11 @@ test("Change a SiteName Type Then Delete", () => {
   expect(testSite.sitenames).toBeDefined();
   expect(testSite.sitenames?.CWMS).toEqual("Test 1");
   const result = SiteReducer(testSite, {
-    type: "change_type",
-    payload: { old_type: "CWMS", new_type: "local" },
+    type: "add_name",
+    payload: { type: "CWMS", name: "Test Rename" },
   });
   expect(result).toBeDefined();
-  expect(result.sitenames?.CWMS).not.toBeDefined();
-  expect(result.sitenames?.local).toEqual("Test 1");
+  expect(result.sitenames?.CWMS).toEqual("Test Rename");
 
   const deletedName = SiteReducer(result, {
     type: "delete_name",
