@@ -13,6 +13,7 @@ import SiteNameTypeSelect from "./SiteNameTypeSelect";
 import { useContextWrapper } from "../../util/ContextWrapper";
 import { Button } from "react-bootstrap";
 import { Pencil, Save, Trash } from "react-bootstrap-icons";
+import { REFLIST_SITE_NAME_TYPE, useRefList } from "../../contexts/data/RefListContext";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -31,6 +32,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
   actions = {},
 }) => {
   const { toDom } = useContextWrapper();
+  const { refList } = useRefList();
   const table = useRef<DataTableRef>(null);
   const [t, i18n] = useTranslation(["sites"]);
 
@@ -46,9 +48,12 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
       return data;
     }
 
-    if (actions?.edit !== undefined || data === undefined) {
+    if (data === undefined) {
+      //
       try {
-        const container = toDom(<SiteNameTypeSelect current={data as string} />);
+        const container = toDom(
+          <SiteNameTypeSelect current={refList(REFLIST_SITE_NAME_TYPE).defaultValue} />,
+        );
         return container;
       } catch (error) {
         return JSON.stringify(error);
