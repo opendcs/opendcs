@@ -230,4 +230,4 @@ If you are on a platform with Docker, or establish the appropriate database conf
 
 ```
 
-The default user name and password are `dcs_admin` and `dcs_admin_password`
+The default user name and password are `test_user` and `test_password`
