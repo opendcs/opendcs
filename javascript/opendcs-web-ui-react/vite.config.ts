@@ -19,7 +19,7 @@ export default defineConfig({
   plugins: [react(), svgr()],
   optimizeDeps: {
     exclude: ["opendcs-api", "whatwg-fetch"],
-    include: ["react-dom/client", "react-router-dom"]
+    include: ["react-dom/client", "react-router-dom"],
   },
   server: {
     fs: {
@@ -80,13 +80,13 @@ export default defineConfig({
           setupFiles: [".storybook/vitest.setup.ts"],
         },
       },
-      { 
+      {
         extends: true,
         test: {
           name: "unit",
-          include: ["src/**/*.test.(ts|tsx|js|jsx)"]
-        }
-      }
+          include: ["src/**/*.test.(ts|tsx|js|jsx)"],
+        },
+      },
     ],
   },
 });

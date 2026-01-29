@@ -14,18 +14,18 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    current: undefined
+    current: undefined,
   },
-  play: async ({mount}) => {
+  play: async ({ mount }) => {
     await mount();
-  }
+  },
 };
 
 export const OtherSelected: Story = {
   args: {
-    current: "local"
+    current: "local",
   },
-  play: async ({mount}) => {
+  play: async ({ mount }) => {
     await mount();
-  }
-}
+  },
+};

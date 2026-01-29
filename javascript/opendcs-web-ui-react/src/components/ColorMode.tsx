@@ -10,11 +10,7 @@ interface ToggleProperties {
 
 export const ColorToggle: React.FC<ToggleProperties> = ({ icon, ...args }) => {
   //const [t] = useTranslation();
-  return (
-    <Button {...args}>
-      {icon}
-    </Button>
-  );
+  return <Button {...args}>{icon}</Button>;
 };
 
 export const ColorModes = () => {

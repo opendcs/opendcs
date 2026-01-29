@@ -11,7 +11,6 @@ export interface ThemeContextType {
   setTheme: React.Dispatch<React.SetStateAction<Theme>>;
 }
 
-
 export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const useTheme = () => {

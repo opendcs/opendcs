@@ -100,10 +100,9 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
     : {};
 
   const siteNames = useMemo<SiteNameType[]>(() => {
-    return Object.entries(localSite.sitenames || {})
-                 .map(([k,v]) => {
-                    return {type: k, name: v}
-                  });
+    return Object.entries(localSite.sitenames || {}).map(([k, v]) => {
+      return { type: k, name: v };
+    });
   }, [localSite.sitenames]);
 
   return (
@@ -112,10 +111,7 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
         <Row>
           <Col>
             <Row>
-              <SiteNameList
-                siteNames={siteNames}
-                actions={siteNameActions}
-              />
+              <SiteNameList siteNames={siteNames} actions={siteNameActions} />
             </Row>
             <Row>
               {/* TODO: need to have list be read only unless we're in edit mode */}
