@@ -5,6 +5,7 @@ import {
   ApiSite,
   ApiSiteRef,
 } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
+import { expect, userEvent, waitFor } from "storybook/test";
 
 const meta = {
   component: SitesTable,
@@ -77,11 +78,20 @@ export const WithSites: Story = {
   },
 };
 
-export const WithExistingAndNewSite: Story = {
+export const WithExistingAddNewSite: Story = {
   args: {
     sites: siteRefs,
   },
-  play: async ({ mount }) => {
+  play: async ({ canvas, mount, parameters }) => {
+    const { i18n } = parameters;
     await mount();
+    const addSite = await canvas.findByRole("button", {
+      name: i18n.t("sites:add_site"),
+    });
+    await userEvent.click(addSite);
+    const negativeIndex = await waitFor(() => {
+      return canvas.queryByText("-1");
+    });
+    expect(negativeIndex).toBeInTheDocument();
   },
 };

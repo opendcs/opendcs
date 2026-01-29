@@ -125,7 +125,11 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
           data.siteId && data.siteId > 0 ? getSite(data.siteId!) : Promise.resolve({});
         const workingSite = data.state === "new" ? data.actualSite! : (site as UiSite);
         const container = toDom(
-          <Site site={workingSite} actions={{ save: actions.save }} />,
+          <Site
+            site={workingSite}
+            actions={{ save: actions.save }}
+            edit={data.state === "edit"}
+          />,
         );
         // Open this row
         row.child(container, "child-row").show();

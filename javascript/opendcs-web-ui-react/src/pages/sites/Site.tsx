@@ -1,4 +1,13 @@
-import { Button, Card, Col, Form, FormGroup, FormSelect, Row } from "react-bootstrap";
+import {
+  Button,
+  Card,
+  Col,
+  Container,
+  Form,
+  FormGroup,
+  FormSelect,
+  Row,
+} from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../components/properties";
 import { use, useMemo, useReducer, useState } from "react";
 import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
@@ -6,12 +15,14 @@ import { useTranslation } from "react-i18next";
 import { SiteNameList, type SiteNameType } from "./SiteNameList";
 import type { CollectionActions, SaveAction, UiState } from "../../util/Actions";
 import { SiteReducer } from "./SiteReducer";
+import { Save, X } from "react-bootstrap-icons";
 
 export type UiSite = Partial<ApiSite & { ui_state?: UiState }>;
 
 interface SiteProperties {
   site: Promise<UiSite> | UiSite;
   actions?: SaveAction<ApiSite>;
+  edit?: boolean;
 }
 
 const elevationUnits = [
@@ -27,13 +38,15 @@ const elevationUnits = [
   { units: "yd", name: "yd (Yards)" },
 ];
 
-export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
+export const Site: React.FC<SiteProperties> = ({
+  site,
+  actions = {},
+  edit = false,
+}) => {
   const { t } = useTranslation();
   const providedSite = site instanceof Promise ? use(site) : site;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [localSite, dispatch] = useReducer(SiteReducer, providedSite);
-
-  const editMode = providedSite.ui_state ? false : true;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [props, updateProps] = useState<Property[]>(() => {
@@ -43,7 +56,7 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
     });
   });
 
-  const propertyActions: CollectionActions<Property, string> = editMode
+  const propertyActions: CollectionActions<Property, string> = edit
     ? {
         add: () => {
           updateProps((prev) => {
@@ -86,7 +99,7 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
       }
     : {};
 
-  const siteNameActions: CollectionActions<SiteNameType> = editMode
+  const siteNameActions: CollectionActions<SiteNameType> = edit
     ? {
         add: (siteName?: SiteNameType) => {
           dispatch({ type: "add_name", payload: siteName! });
@@ -132,7 +145,7 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
                   type="text"
                   id="latitude"
                   name="latitude"
-                  readOnly={!editMode}
+                  readOnly={!edit}
                   placeholder={t("sites:use_decimal_format")}
                   defaultValue={localSite.latitude}
                 />
@@ -147,7 +160,7 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
                   type="text"
                   id="longitude"
                   name="longitude"
-                  readOnly={!editMode}
+                  readOnly={!edit}
                   placeholder={t("sites:use_decimal_format")}
                   defaultValue={localSite.longitude}
                 />
@@ -162,7 +175,7 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
                   type="text"
                   id="elevation"
                   name="elevation "
-                  readOnly={!editMode}
+                  readOnly={!edit}
                   defaultValue={localSite.elevation}
                 />
               </Col>
@@ -172,7 +185,7 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
                 {t("elevation_units")}
               </Form.Label>
               <Col sm={10}>
-                <FormSelect id="elevationUnits" disabled={!editMode}>
+                <FormSelect id="elevationUnits" disabled={!edit}>
                   {elevationUnits.map((unit) => {
                     return (
                       <option
@@ -196,7 +209,7 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
                   type="text"
                   id="nearestCity"
                   name="nearest_city"
-                  readOnly={!editMode}
+                  readOnly={!edit}
                   defaultValue={localSite.nearestCity}
                 />
               </Col>
@@ -210,7 +223,7 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
                   type="text"
                   id="state"
                   name="state"
-                  readOnly={!editMode}
+                  readOnly={!edit}
                   defaultValue={localSite.state}
                 />
               </Col>
@@ -224,7 +237,7 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
                   type="text"
                   id="country"
                   name="country"
-                  readOnly={!editMode}
+                  readOnly={!edit}
                   placeholder={t("sites:enter_country")}
                   defaultValue={localSite.country}
                 />
@@ -239,7 +252,7 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
                   type="text"
                   id="region"
                   name="region"
-                  readOnly={!editMode}
+                  readOnly={!edit}
                   placeholder={t("sites:enter_region")}
                   defaultValue={localSite.region}
                 />
@@ -254,7 +267,7 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
                   type="text"
                   id="publicName"
                   name="publicName"
-                  readOnly={!editMode}
+                  readOnly={!edit}
                   defaultValue={localSite.publicName}
                 />
               </Col>
@@ -268,7 +281,7 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
                   type="text"
                   id="description"
                   name="description"
-                  readOnly={!editMode}
+                  readOnly={!edit}
                   defaultValue={localSite.description}
                 />
               </Col>
@@ -276,9 +289,17 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
           </Col>
         </Row>
         <Row>
-          <Col>
+          <Col className="d-flex justify-content-end">
+            <Button
+              onClick={() => {
+                // how to cancel?
+              }}
+              variant="secondary"
+            >
+              <X /> Cancel
+            </Button>
             <Button onClick={() => actions.save?.(localSite)} variant="primary">
-              Save
+              <Save /> Save
             </Button>
           </Col>
         </Row>

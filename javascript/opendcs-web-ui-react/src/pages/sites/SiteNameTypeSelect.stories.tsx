@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { SiteNameTypeSelect } from "./SiteNameTypeSelect";
 import { WithRefLists } from "../../../.storybook/mock/WithRefLists";
+import { expect } from "storybook/test";
 
 const meta = {
   component: SiteNameTypeSelect,
@@ -14,18 +15,28 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    current: undefined,
+    defaultValue: undefined,
   },
-  play: async ({ mount }) => {
+  play: async ({ mount, canvas, parameters }) => {
+    const { i18n } = parameters;
     await mount();
+    const selectBox = canvas.queryByRole("combobox", {
+      name: i18n.t("sites:site_names.select"),
+    });
+    expect(selectBox).toHaveValue("CWMS");
   },
 };
 
 export const OtherSelected: Story = {
   args: {
-    current: "local",
+    defaultValue: "local",
   },
-  play: async ({ mount }) => {
+  play: async ({ mount, canvas, parameters }) => {
+    const { i18n } = parameters;
     await mount();
+    const selectBox = canvas.queryByRole("combobox", {
+      name: i18n.t("sites:site_names.select"),
+    });
+    expect(selectBox).toHaveValue("local");
   },
 };
