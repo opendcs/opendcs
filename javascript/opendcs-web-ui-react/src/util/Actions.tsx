@@ -1,4 +1,3 @@
-
 export interface SaveAction<T> {
   /**
    * Peform appropriate operation to "save" and item
@@ -7,7 +6,6 @@ export interface SaveAction<T> {
    */
   save?: (item: T) => void;
 }
-
 
 export interface EditAction<V> {
   /**
@@ -36,6 +34,14 @@ export interface AddAction<T> {
 }
 
 /**
+ * Tell parent whatever operations is currently going on should be terminated.
+ * Example: Deciding *NOT* to save a value.
+ */
+export interface CancelAction<T> {
+  cancel?: (item: T) => void;
+}
+
+/**
  * Interface that provides for various actions. All actions are
  * optional indicating that that action is not supported and those controls should
  * be disabled or not rendered.
@@ -43,8 +49,11 @@ export interface AddAction<T> {
  * @param T Is the primary type that will be interacted with. The whole object
  * @param V can be either the same as T, or another type such as for a "key"
  */
-export type CollectionActions<T, V = T> = SaveAction<T> & EditAction<V> & RemoveAction<V> & AddAction<T>;
+export type CollectionActions<T, V = T> = SaveAction<T> &
+  EditAction<V> &
+  RemoveAction<V> &
+  AddAction<T>;
 
 export type ItemActions<T> = SaveAction<T> & EditAction<T> & RemoveAction<T>;
 
-export type  UiState = "new" | "edit" | undefined;
+export type UiState = "new" | "edit" | undefined;

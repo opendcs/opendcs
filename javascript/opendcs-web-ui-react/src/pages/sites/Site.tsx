@@ -13,7 +13,12 @@ import { use, useMemo, useReducer, useState } from "react";
 import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { useTranslation } from "react-i18next";
 import { SiteNameList, type SiteNameType } from "./SiteNameList";
-import type { CollectionActions, SaveAction, UiState } from "../../util/Actions";
+import type {
+  CancelAction,
+  CollectionActions,
+  SaveAction,
+  UiState,
+} from "../../util/Actions";
 import { SiteReducer } from "./SiteReducer";
 import { Save, X } from "react-bootstrap-icons";
 
@@ -21,7 +26,7 @@ export type UiSite = Partial<ApiSite & { ui_state?: UiState }>;
 
 interface SiteProperties {
   site: Promise<UiSite> | UiSite;
-  actions?: SaveAction<ApiSite>;
+  actions?: SaveAction<ApiSite> & CancelAction<number>;
   edit?: boolean;
 }
 
@@ -288,21 +293,23 @@ export const Site: React.FC<SiteProperties> = ({
             </FormGroup>
           </Col>
         </Row>
-        <Row>
-          <Col className="d-flex justify-content-end">
-            <Button
-              onClick={() => {
-                // how to cancel?
-              }}
-              variant="secondary"
-            >
-              <X /> Cancel
-            </Button>
-            <Button onClick={() => actions.save?.(localSite)} variant="primary">
-              <Save /> Save
-            </Button>
-          </Col>
-        </Row>
+        {edit && (
+          <Row>
+            <Col className="d-flex justify-content-end">
+              <Button
+                onClick={() => {
+                  actions.cancel?.(providedSite.siteId!);
+                }}
+                variant="secondary"
+              >
+                <X /> Cancel
+              </Button>
+              <Button onClick={() => actions.save?.(localSite)} variant="primary">
+                <Save /> Save
+              </Button>
+            </Col>
+          </Row>
+        )}
       </Card.Body>
     </Card>
   );

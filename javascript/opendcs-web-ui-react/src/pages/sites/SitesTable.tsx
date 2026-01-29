@@ -16,13 +16,17 @@ import Site, { type UiSite } from "./Site";
 // import RefListContext, { useRefList } from "../../contexts/data/RefListContext";
 import type { CollectionActions, UiState } from "../../util/Actions";
 import { useContextWrapper } from "../../util/ContextWrapper";
+import { Button } from "react-bootstrap";
+import { Pencil } from "react-bootstrap-icons";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
 
-type TableSiteRef = Partial<ApiSiteRef & { state?: UiState; actualSite?: UiSite }>;
+export type TableSiteRef = Partial<
+  ApiSiteRef & { state?: UiState; actualSite?: UiSite }
+>;
 
-interface SiteTableProperties {
+export interface SiteTableProperties {
   sites: TableSiteRef[];
   getSite?: (siteId: number) => Promise<ApiSite | undefined>;
   actions?: CollectionActions<ApiSiteRef, number>;
@@ -64,7 +68,21 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
       actions: (data: TableSiteRef, type: unknown, _row: TableSiteRef) => {
         if (type === "display") {
           const inEdit = data.state !== undefined;
-          return inEdit ? "edit actions" : "default actions";
+          const id: number = data.siteId!;
+          console.log(data);
+          return !inEdit ? (
+            <Button
+              variant="warning"
+              onClick={(e) => {
+                actions?.edit?.(id);
+              }}
+              aria-label={t("sites:edit_site", { id: id })}
+            >
+              <Pencil />
+            </Button>
+          ) : (
+            <></>
+          );
         } else {
           return data;
         }
@@ -101,11 +119,59 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
         ],
       },
     },
+    createdRow(row, data, dataIndex) {
+      if (data as TableSiteRef) {
+        const ref = data as TableSiteRef;
+        switch (ref.state) {
+          case "new":
+          case "edit": {
+            const tmp = table.current!.dt()!.row(row);
+            if (!tmp.child.isShown()) {
+              tmp.child(renderSite(ref)).show();
+            }
+          }
+        }
+      }
+    },
+  };
+
+  const renderSite = (data: TableSiteRef): Node => {
+    const site =
+      data.siteId && data.siteId > 0 ? getSite!(data.siteId!) : Promise.resolve({});
+    const workingSite = data.state === "new" ? data.actualSite! : (site as UiSite);
+    const container = toDom(
+      <Site
+        site={workingSite}
+        actions={{
+          save: actions.save,
+          cancel: (item) => {
+            if (item < 0) {
+              updateLocalSites((prev) => {
+                return prev.map((site) => {
+                  if (site.siteId === item) {
+                    return {
+                      ...site,
+                      state: undefined,
+                    };
+                  } else {
+                    return site;
+                  }
+                });
+              });
+            } else {
+              actions?.edit?.(item);
+            }
+          },
+        }}
+        edit={data.state === "edit"}
+      />,
+    );
+    return container;
   };
 
   useEffect(() => {
     // Add event listener for opening and closing details
-    table.current?.dt()!.on("click", "tbody td", function (e) {
+    table.current?.dt()?.on("click", "tbody tr", function (e) {
       if (getSite === undefined) {
         return; // do nothing, we can't look it up.
       }
@@ -121,18 +187,9 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
         row.child.hide();
       } else {
         const data: TableSiteRef = row.data() as TableSiteRef;
-        const site =
-          data.siteId && data.siteId > 0 ? getSite(data.siteId!) : Promise.resolve({});
-        const workingSite = data.state === "new" ? data.actualSite! : (site as UiSite);
-        const container = toDom(
-          <Site
-            site={workingSite}
-            actions={{ save: actions.save }}
-            edit={data.state === "edit"}
-          />,
-        );
+
         // Open this row
-        row.child(container, "child-row").show();
+        row.child(renderSite(data), "child-row").show();
       }
     });
   }, [i18n.language]);

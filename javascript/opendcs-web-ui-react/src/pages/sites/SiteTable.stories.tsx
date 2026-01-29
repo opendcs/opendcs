@@ -1,11 +1,12 @@
-import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
 
-import { SitesTable } from "./SitesTable";
+import { SitesTable, SiteTableProperties, TableSiteRef } from "./SitesTable";
 import {
   ApiSite,
   ApiSiteRef,
 } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { expect, userEvent, waitFor } from "storybook/test";
+import { useCallback, useState } from "react";
 
 const meta = {
   component: SitesTable,
@@ -22,6 +23,41 @@ export const Default: Story = {
   play: async ({ mount }) => {
     await mount();
   },
+};
+
+const WithSitesState: Decorator<SiteTableProperties> = (Story, context) => {
+  const { args } = context;
+  const [siteRefs, updateSiteRefs] = useState<TableSiteRef[]>(
+    args.sites as TableSiteRef[],
+  );
+
+  const editSite = useCallback(
+    (id: number) => {
+      updateSiteRefs((prev) => {
+        return prev.map((siteRef) => {
+          if (siteRef.siteId === id) {
+            return {
+              ...siteRef,
+              state: siteRef.state === "edit" ? undefined : "edit",
+            };
+          } else {
+            return siteRef;
+          }
+        });
+      });
+    },
+    [args],
+  );
+
+  return (
+    <Story
+      args={{
+        ...args,
+        sites: siteRefs,
+        actions: { edit: editSite },
+      }}
+    />
+  );
 };
 
 const sites: ApiSite[] = [
@@ -73,6 +109,7 @@ export const WithSites: Story = {
     sites: siteRefs,
     getSite: getSite,
   },
+  decorators: [WithSitesState],
   play: async ({ mount }) => {
     await mount();
   },
