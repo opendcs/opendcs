@@ -21,3 +21,13 @@ This will start an instance with "permanent" data. `--build` will be required if
 3. manually
 
 the vite.config.js current assumes localhost:7000, setup accordingly or improve the environment usage of the config.
+
+## Formatting
+
+`npm install` will setup a huksy pre-commit hook to run `lint-staged` on commit to ensure formatting remains consistent.
+Since that can be disabled by you, a github action step will run the `npm run format:check` command to prevent merges
+of incorrectly formatted code.
+
+If you disable the huksy pre-comment hook please run
+
+`npm run precommit` manually to adjust the formatting.
