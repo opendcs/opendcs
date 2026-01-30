@@ -71,6 +71,7 @@ dependencies {
     }
 
     implementation(libs.hec.monolith) {
+        exclude group: 'commons-lang', module: 'commons-lang'
         exclude group: "codebase"
         exclude group: "org.jdom"
         exclude group: "org.bouncycastle"
