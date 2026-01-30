@@ -6,7 +6,7 @@ import {
   ApiSiteRef,
 } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { expect, userEvent, waitFor } from "storybook/test";
-import { use, useCallback, useMemo, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useState } from "react";
 
 const meta = {
   component: SitesTable,
@@ -14,7 +14,7 @@ const meta = {
 
 export default meta;
 
-const sites: ApiSite[] = [
+const sharedSites: ApiSite[] = [
   {
     description: "Test site 1",
     sitenames: {
@@ -56,10 +56,10 @@ const toSiteRefs = (sites: ApiSite[]): ApiSiteRef[] => {
   });
 };
 
-const siteRefs: ApiSiteRef[] = toSiteRefs(sites);
+const sharedSiteRefs: ApiSiteRef[] = toSiteRefs(sharedSites);
 
 const getSite = async (id: number): Promise<ApiSite | undefined> => {
-  return Promise.resolve(sites.find((site) => site.siteId == id));
+  return Promise.resolve(sharedSites.find((site) => site.siteId == id));
 };
 
 type Story = StoryObj<typeof meta>;
@@ -73,53 +73,79 @@ export const Default: Story = {
   },
 };
 
-const WithSitesState: Decorator<SiteTableProperties> = (Story, context) => {
-  const { args } = context;
-  const tmpSites: ApiSite[] = args.sites.map(
-    (sf: ApiSiteRef) => use(getSite(sf.siteId!))!,
-  );
-  console.log(tmpSites);
-  const [sites, updateSites] = useState<ApiSite[]>(tmpSites);
-  const siteRefs = useMemo(() => toSiteRefs(sites), [sites]);
-
-  const saveSite = useCallback(
-    (site: ApiSite) => {
-      updateSites((prev) => {
-        if (site.siteId! < 0) {
-          // new site
-          return [...sites, { ...site, siteId: Math.floor(Math.random() * 100) + 10 }];
-        } else {
-          return prev.map((prev) => {
-            if (prev.siteId === site.siteId) {
-              console.log("Update site.");
-              return site;
-            } else {
-              return prev;
-            }
-          });
-        }
-      });
-    },
-    [args],
-  );
-
-  return (
-    <Story
-      args={{
-        ...args,
-        sites: siteRefs,
-        actions: { save: saveSite },
-      }}
-    />
-  );
-};
-
 export const WithSites: Story = {
   args: {
-    sites: siteRefs,
+    sites: sharedSiteRefs,
     getSite: getSite,
   },
-  decorators: [WithSitesState],
+  render: (args) => {
+    const [sites, updateSites] = useState<ApiSite[]>([]);
+    const siteRefs = useMemo(() => toSiteRefs(sites), [sites]);
+
+    useEffect(() => {
+      const setupSites = async () => {
+        console.log(`With input ${JSON.stringify(args.sites)}`);
+        const tmpSites: (ApiSite | undefined)[] = await Promise.all(
+          args.sites.map(async (sf: ApiSiteRef) => args.getSite!(sf.siteId!)),
+        );
+        const filtered = tmpSites.filter((s) => s !== undefined);
+        console.log(`updating sites ${JSON.stringify(filtered)}`);
+        updateSites(filtered);
+      };
+      if (sites.length === 0) {
+        console.log("loading sites");
+        setupSites();
+      }
+    }, []);
+
+    const saveSite = useCallback(
+      (site: ApiSite) => {
+        updateSites((prev) => {
+          if (site.siteId! < 0) {
+            // new site
+            return [
+              ...sites,
+              { ...site, siteId: Math.floor(Math.random() * 100) + 10 },
+            ];
+          } else {
+            return prev.map((prev) => {
+              if (prev.siteId === site.siteId) {
+                console.log(
+                  `Update site. from '${JSON.stringify(prev)}' to '${JSON.stringify(site)}'`,
+                );
+                return {
+                  ...prev,
+                  ...site,
+                };
+              } else {
+                return prev;
+              }
+            });
+          }
+        });
+      },
+      [sites],
+    );
+
+    const localGetSite = useCallback(
+      (id: number) => {
+        console.log(`Retrieving site from ${JSON.stringify(sites)}`);
+        const site = sites.find((site) => site.siteId === id);
+
+        console.log(site);
+        return Promise.resolve(site);
+      },
+      [sites, siteRefs],
+    );
+
+    return (
+      <SitesTable
+        sites={siteRefs}
+        getSite={localGetSite}
+        actions={{ save: saveSite }}
+      />
+    );
+  },
   play: async ({ mount }) => {
     await mount();
   },
@@ -127,7 +153,8 @@ export const WithSites: Story = {
 
 export const WithExistingAddNewSite: Story = {
   args: {
-    sites: siteRefs,
+    sites: sharedSiteRefs,
+    getSite: getSite,
   },
   play: async ({ canvas, mount, parameters }) => {
     const { i18n } = parameters;

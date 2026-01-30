@@ -50,7 +50,6 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
   const [rowState, updateRowState] = useState<RowState>({});
 
   const siteData = useMemo(() => [...sites, ...localSites], [sites, localSites]);
-
   const columns = [
     { data: "siteId", defaultContent: "new" },
     {
@@ -197,12 +196,13 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
       if (getSite === undefined) {
         return; // do nothing, we can't look it up.
       }
-      const dt = table.current!.dt()!;
       const target = e.target! as Element;
       const tr = target.closest("tr");
       if (tr?.classList.contains("child-row")) {
         return; // don't do anything if we click the child row.
       }
+      const dt = table.current!.dt()!;
+
       const row = dt.row(tr as HTMLTableRowElement);
       if (row.child.isShown()) {
         // This row is already open - close it
