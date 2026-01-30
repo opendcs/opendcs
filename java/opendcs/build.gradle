@@ -43,10 +43,7 @@ dependencies {
     implementation(libs.jfree.jfreechart)
     implementation(libs.jython.standalone)
 
-    implementation(libs.scijava.jep) {
-        exclude group: "jama", module: "jama"
-    }
-    implementation(libs.jama)
+    implementation(libs.scijava.jep) 
     implementation(libs.dropwizard.metrics.core)
     implementation(libs.passay)
     implementation(libs.sun.mailapi)
