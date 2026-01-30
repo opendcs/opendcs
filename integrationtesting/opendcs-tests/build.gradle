@@ -194,6 +194,11 @@ testEngines.each { engine ->
     }
 }
 
+tasks.register('runWeb') {
+    dependsOn 'runApi'
+    group "application"
+    description "Alias for runApi task"
+}
 
 tasks.register('runApi', JavaExec) {
     dependsOn build
