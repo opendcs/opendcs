@@ -9,7 +9,7 @@ import {
   Row,
 } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../components/properties";
-import { use, useMemo, useReducer, useState } from "react";
+import { use, useCallback, useMemo, useReducer, useState } from "react";
 import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { useTranslation } from "react-i18next";
 import { SiteNameList, type SiteNameType } from "./SiteNameList";
@@ -123,6 +123,18 @@ export const Site: React.FC<SiteProperties> = ({
     });
   }, [localSite.sitenames]);
 
+  const saveSite = useCallback((site: UiSite) => {
+    actions.save!(site as ApiSite);
+  }, []);
+
+  const inputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const { name, value } = event.target;
+      dispatch({ type: "save", payload: { [name]: value } });
+    },
+    [dispatch],
+  );
+
   return (
     <Card>
       <Card.Body>
@@ -132,7 +144,6 @@ export const Site: React.FC<SiteProperties> = ({
               <SiteNameList siteNames={siteNames} actions={siteNameActions} />
             </Row>
             <Row>
-              {/* TODO: need to have list be read only unless we're in edit mode */}
               <PropertiesTable
                 theProps={props}
                 actions={propertyActions}
@@ -153,6 +164,7 @@ export const Site: React.FC<SiteProperties> = ({
                   readOnly={!edit}
                   placeholder={t("sites:use_decimal_format")}
                   defaultValue={localSite.latitude}
+                  onChange={inputChange}
                 />
               </Col>
             </FormGroup>
@@ -168,6 +180,7 @@ export const Site: React.FC<SiteProperties> = ({
                   readOnly={!edit}
                   placeholder={t("sites:use_decimal_format")}
                   defaultValue={localSite.longitude}
+                  onChange={inputChange}
                 />
               </Col>
             </FormGroup>
@@ -182,6 +195,7 @@ export const Site: React.FC<SiteProperties> = ({
                   name="elevation "
                   readOnly={!edit}
                   defaultValue={localSite.elevation}
+                  onChange={inputChange}
                 />
               </Col>
             </FormGroup>
@@ -216,6 +230,7 @@ export const Site: React.FC<SiteProperties> = ({
                   name="nearest_city"
                   readOnly={!edit}
                   defaultValue={localSite.nearestCity}
+                  onChange={inputChange}
                 />
               </Col>
             </FormGroup>
@@ -230,6 +245,7 @@ export const Site: React.FC<SiteProperties> = ({
                   name="state"
                   readOnly={!edit}
                   defaultValue={localSite.state}
+                  onChange={inputChange}
                 />
               </Col>
             </FormGroup>
@@ -245,6 +261,7 @@ export const Site: React.FC<SiteProperties> = ({
                   readOnly={!edit}
                   placeholder={t("sites:enter_country")}
                   defaultValue={localSite.country}
+                  onChange={inputChange}
                 />
               </Col>
             </FormGroup>
@@ -260,6 +277,7 @@ export const Site: React.FC<SiteProperties> = ({
                   readOnly={!edit}
                   placeholder={t("sites:enter_region")}
                   defaultValue={localSite.region}
+                  onChange={inputChange}
                 />
               </Col>
             </FormGroup>
@@ -274,6 +292,7 @@ export const Site: React.FC<SiteProperties> = ({
                   name="publicName"
                   readOnly={!edit}
                   defaultValue={localSite.publicName}
+                  onChange={inputChange}
                 />
               </Col>
             </FormGroup>
@@ -288,6 +307,7 @@ export const Site: React.FC<SiteProperties> = ({
                   name="description"
                   readOnly={!edit}
                   defaultValue={localSite.description}
+                  onChange={inputChange}
                 />
               </Col>
             </FormGroup>
@@ -304,7 +324,7 @@ export const Site: React.FC<SiteProperties> = ({
               >
                 <X /> Cancel
               </Button>
-              <Button onClick={() => actions.save?.(localSite)} variant="primary">
+              <Button onClick={() => saveSite(localSite)} variant="primary">
                 <Save /> Save
               </Button>
             </Col>

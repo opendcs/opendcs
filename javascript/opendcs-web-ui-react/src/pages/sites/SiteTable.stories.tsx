@@ -6,59 +6,14 @@ import {
   ApiSiteRef,
 } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { expect, userEvent, waitFor } from "storybook/test";
-import { useCallback, useState } from "react";
+import { use, useCallback, useMemo, useState } from "react";
+import { UiSite } from "./Site";
 
 const meta = {
   component: SitesTable,
 } satisfies Meta<typeof SitesTable>;
 
 export default meta;
-
-type Story = StoryObj<typeof meta>;
-
-export const Default: Story = {
-  args: {
-    sites: [],
-  },
-  play: async ({ mount }) => {
-    await mount();
-  },
-};
-
-const WithSitesState: Decorator<SiteTableProperties> = (Story, context) => {
-  const { args } = context;
-  const [siteRefs, updateSiteRefs] = useState<TableSiteRef[]>(
-    args.sites as TableSiteRef[],
-  );
-
-  const editSite = useCallback(
-    (id: number) => {
-      updateSiteRefs((prev) => {
-        return prev.map((siteRef) => {
-          if (siteRef.siteId === id) {
-            return {
-              ...siteRef,
-              state: siteRef.state === "edit" ? undefined : "edit",
-            };
-          } else {
-            return siteRef;
-          }
-        });
-      });
-    },
-    [args],
-  );
-
-  return (
-    <Story
-      args={{
-        ...args,
-        sites: siteRefs,
-        actions: { edit: editSite },
-      }}
-    />
-  );
-};
 
 const sites: ApiSite[] = [
   {
@@ -91,17 +46,73 @@ const sites: ApiSite[] = [
   },
 ];
 
-const siteRefs: ApiSiteRef[] = sites.map((site) => {
-  return {
-    siteId: site.siteId,
-    sitenames: site.sitenames,
-    description: site.description,
-    publicName: site.publicName,
-  };
-});
+const toSiteRefs = (sites: ApiSite[]): ApiSiteRef[] => {
+  return sites.map((site) => {
+    return {
+      siteId: site.siteId,
+      sitenames: site.sitenames,
+      description: site.description,
+      publicName: site.publicName,
+    };
+  });
+};
+
+const siteRefs: ApiSiteRef[] = toSiteRefs(sites);
 
 const getSite = async (id: number): Promise<ApiSite | undefined> => {
   return Promise.resolve(sites.find((site) => site.siteId == id));
+};
+
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  args: {
+    sites: [],
+  },
+  play: async ({ mount }) => {
+    await mount();
+  },
+};
+
+const WithSitesState: Decorator<SiteTableProperties> = (Story, context) => {
+  const { args } = context;
+  const tmpSites: ApiSite[] = args.sites.map(
+    (sf: ApiSiteRef) => use(getSite(sf.siteId!))!,
+  );
+  console.log(tmpSites);
+  const [sites, updateSites] = useState<ApiSite[]>(tmpSites);
+  const siteRefs = useMemo(() => toSiteRefs(sites), [sites]);
+
+  const saveSite = useCallback(
+    (site: ApiSite) => {
+      updateSites((prev) => {
+        if (site.siteId! < 0) {
+          // new site
+          return [...sites, { ...site, siteId: Math.floor(Math.random() * 100) + 10 }];
+        } else {
+          return prev.map((prev) => {
+            if (prev.siteId === site.siteId) {
+              console.log("Update site.");
+              return site;
+            } else {
+              return prev;
+            }
+          });
+        }
+      });
+    },
+    [args],
+  );
+
+  return (
+    <Story
+      args={{
+        ...args,
+        sites: siteRefs,
+        actions: { save: saveSite },
+      }}
+    />
+  );
 };
 
 export const WithSites: Story = {
