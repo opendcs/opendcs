@@ -1,10 +1,9 @@
 import { createContext, useContext } from "react";
 import type { ApiRefList } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 
-
 export interface RefListContextType {
-    refList: (k: string) => ApiRefList
-};
+  refList: (k: string) => ApiRefList;
+}
 
 export const defaultValue: RefListContextType = {
   refList: () => {
@@ -12,8 +11,7 @@ export const defaultValue: RefListContextType = {
   },
 };
 
-
-export const RefListContext = createContext<RefListContextType|undefined>(undefined);
+export const RefListContext = createContext<RefListContextType | undefined>(undefined);
 
 export const useRefList = () => {
   const context = useContext(RefListContext);

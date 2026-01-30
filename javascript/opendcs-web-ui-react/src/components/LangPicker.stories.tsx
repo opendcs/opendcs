@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { userEvent } from 'storybook/test';
+import { userEvent } from "storybook/test";
 
 import LangPicker from "./LangPicker";
 import i18n from "../i18n";

@@ -61,9 +61,6 @@ jobs:
           npx playwright install
       - name: Enforce Formatting
         working-directory: javascript/opendcs-web-ui-react
-        # Will enforce in followup that changes formating
-        # keeping this PR smaller
-        if: false
         run : |
           npm run format:check
       - name: Unit and LRGS tests
