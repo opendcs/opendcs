@@ -30,7 +30,7 @@ jobs:
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /opt/ghc
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@v6.0.3
       - name: Set up JDK
         uses: actions/setup-java@v4.7.1
         with:
@@ -111,14 +111,14 @@ jobs:
         run: |
           ./gradlew codeCoverageReport --info
       - name: Cache SonarCloud packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5.0.3
         if: matrix.platform == 'ubuntu-latest' && matrix.jdk == env.sonarJdk
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
       - name: Cache Gradle packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5.0.3
         if: matrix.platform == 'ubuntu-latest' && matrix.jdk == env.sonarJdk
         with:
           path: ~/.gradle/caches
@@ -159,7 +159,7 @@ jobs:
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /opt/ghc
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@v6.0.3
       - name: Build base container images
         run: |
           docker build -t opendcs:test-container --target opendcs_base . 
