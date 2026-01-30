@@ -18,5 +18,7 @@
   "elevation": "Elevation",
   "elevation_units": "Elevation Units",
   "state": "State",
-  "description": "Description"
+  "description": "Description",
+  "cancel": "Cancel",
+  "save": "Save"
 }

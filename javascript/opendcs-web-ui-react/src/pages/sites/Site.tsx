@@ -135,6 +135,14 @@ export const Site: React.FC<SiteProperties> = ({
     [dispatch],
   );
 
+  const selectChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const { name, value } = event.target;
+      dispatch({ type: "save", payload: { [name]: value } });
+    },
+    [dispatch],
+  );
+
   return (
     <Card>
       <Card.Body>
@@ -193,7 +201,6 @@ export const Site: React.FC<SiteProperties> = ({
                   type="text"
                   id="elevation"
                   name="elevation"
-                  aria-label="elevation"
                   readOnly={!edit}
                   defaultValue={localSite.elevation}
                   onChange={inputChange}
@@ -205,7 +212,12 @@ export const Site: React.FC<SiteProperties> = ({
                 {t("elevation_units")}
               </Form.Label>
               <Col sm={10}>
-                <FormSelect id="elevationUnits" disabled={!edit}>
+                <FormSelect
+                  id="elevationUnits"
+                  disabled={!edit}
+                  name="elevUnits"
+                  onChange={selectChange}
+                >
                   {elevationUnits.map((unit) => {
                     return (
                       <option
@@ -323,14 +335,14 @@ export const Site: React.FC<SiteProperties> = ({
                 }}
                 variant="secondary"
               >
-                <X /> Cancel
+                <X /> {t("cancel")}
               </Button>
               <Button
                 onClick={() => saveSite(localSite)}
                 variant="primary"
                 aria-label={t("sites:save_site", { id: localSite.siteId })}
               >
-                <Save /> Save
+                <Save /> {t("save")}
               </Button>
             </Col>
           </Row>
