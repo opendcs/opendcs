@@ -45,7 +45,6 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.xml.sax.SAXException;
@@ -729,7 +728,7 @@ public class XmlDatabaseIO extends DatabaseIO
 	 */
 	public void readNetworkListList( NetworkListList nll, String tmType)
 	{
-		throw new NotImplementedException("XmlDatabaseIO.readNetworkListList with filter not implemented for XML.");
+		throw new UnsupportedOperationException("XmlDatabaseIO.readNetworkListList with filter not implemented for XML.");
 	}
 	
 	/**
@@ -983,7 +982,7 @@ public class XmlDatabaseIO extends DatabaseIO
 	public synchronized List<RoutingSpec> routeSpecsUsing(long groupId)
 			throws DatabaseException
 	{
-		throw new NotImplementedException("routeSpecsUsing not implemented for XML.");
+		throw new UnsupportedOperationException("routeSpecsUsing not implemented for XML.");
 	}
 
 

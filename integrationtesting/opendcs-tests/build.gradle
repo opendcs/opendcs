@@ -57,7 +57,6 @@ dependencies {
     testImplementation(libs.webcompere.system.stubs.jupiter)
     testImplementation(libs.rest.assured)
     testImplementation(libs.json.jackson)
-    testImplementation(libs.commons.lang)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.hamcrest)
