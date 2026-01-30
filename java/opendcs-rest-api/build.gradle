@@ -24,7 +24,7 @@ plugins {
     // plugin needs additional updates. Newest, while it interacts with the cache
     // correctly, does not correctly differ processing of the sourceSets which
     // causes issues with various bits.
-    id "io.swagger.core.v3.swagger-gradle-plugin" version "2.2.26"
+    id "io.swagger.core.v3.swagger-gradle-plugin" version "2.2.42"
 }
 
 configurations {
