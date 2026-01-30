@@ -7,7 +7,6 @@ import {
 } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { expect, userEvent, waitFor } from "storybook/test";
 import { use, useCallback, useMemo, useState } from "react";
-import { UiSite } from "./Site";
 
 const meta = {
   component: SitesTable,

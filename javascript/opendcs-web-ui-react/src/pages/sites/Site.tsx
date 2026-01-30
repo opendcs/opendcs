@@ -192,7 +192,8 @@ export const Site: React.FC<SiteProperties> = ({
                 <Form.Control
                   type="text"
                   id="elevation"
-                  name="elevation "
+                  name="elevation"
+                  aria-label="elevation"
                   readOnly={!edit}
                   defaultValue={localSite.elevation}
                   onChange={inputChange}
@@ -324,7 +325,11 @@ export const Site: React.FC<SiteProperties> = ({
               >
                 <X /> Cancel
               </Button>
-              <Button onClick={() => saveSite(localSite)} variant="primary">
+              <Button
+                onClick={() => saveSite(localSite)}
+                variant="primary"
+                aria-label={t("sites:save_site", { id: localSite.siteId })}
+              >
                 <Save /> Save
               </Button>
             </Col>
