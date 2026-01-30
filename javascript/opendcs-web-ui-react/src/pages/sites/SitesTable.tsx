@@ -14,7 +14,7 @@ import type {
 import Site, { type UiSite } from "./Site";
 // import { createRoot } from "react-dom/client";
 // import RefListContext, { useRefList } from "../../contexts/data/RefListContext";
-import type { CollectionActions, UiState } from "../../util/Actions";
+import type { SaveAction, UiState } from "../../util/Actions";
 import { useContextWrapper } from "../../util/ContextWrapper";
 import { Button } from "react-bootstrap";
 import { Pencil } from "react-bootstrap-icons";
@@ -22,14 +22,16 @@ import { Pencil } from "react-bootstrap-icons";
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
 
-export type TableSiteRef = Partial<
-  ApiSiteRef & { state?: UiState; actualSite?: UiSite }
->;
+export type TableSiteRef = Partial<ApiSiteRef>;
 
 export interface SiteTableProperties {
   sites: TableSiteRef[];
   getSite?: (siteId: number) => Promise<ApiSite | undefined>;
-  actions?: CollectionActions<ApiSiteRef, number>;
+  actions?: SaveAction<ApiSite>;
+}
+
+export interface RowState {
+  [k: number]: UiState;
 }
 
 export const SitesTable: React.FC<SiteTableProperties> = ({
@@ -45,6 +47,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
   const table = useRef<DataTableRef>(null);
   const [t, i18n] = useTranslation(["sites"]);
   const [localSites, updateLocalSites] = useState<TableSiteRef[]>([]);
+  const [rowState, updateRowState] = useState<RowState>({});
 
   const siteData = useMemo(() => [...sites, ...localSites], [sites, localSites]);
 
@@ -65,16 +68,26 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
   const slots = useMemo<DataTableSlots>(() => {
     return {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      actions: (data: TableSiteRef, type: unknown, _row: TableSiteRef) => {
+      actions: (data: TableSiteRef, type: unknown, _row: any, meta: any) => {
         if (type === "display") {
-          const inEdit = data.state !== undefined;
           const id: number = data.siteId!;
-          console.log(data);
+          const inEdit = rowState[id] !== undefined;
           return !inEdit ? (
             <Button
               variant="warning"
               onClick={(e) => {
-                actions?.edit?.(id);
+                e.stopPropagation();
+                const activeRow = table.current?.dt()?.row(meta.row)!;
+                if (activeRow.child.isShown()) {
+                  activeRow.child.hide();
+                }
+                activeRow.child(renderSite(data, true), "child-row").show();
+                updateRowState((prev) => {
+                  return {
+                    ...prev,
+                    [id]: "edit",
+                  };
+                });
               }}
               aria-label={t("sites:edit_site", { id: id })}
             >
@@ -93,6 +106,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
   const options: DataTableProps["options"] = {
     paging: true,
     responsive: true,
+    stateSave: true,
     language: dtLangs.get(i18n.language),
     layout: {
       top1Start: {
@@ -109,7 +123,13 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
                     return b - a;
                   });
                 const newId = existing.length > 0 ? existing[0] - 1 : -1; // use negative indexes for new elements
-                return [...prev, { state: "new", actualSite: {}, siteId: newId }];
+                updateRowState((prev) => {
+                  return {
+                    ...prev,
+                    [newId]: "new",
+                  };
+                });
+                return [...prev, { siteId: newId }];
               });
             },
             attr: {
@@ -119,15 +139,15 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
         ],
       },
     },
-    createdRow(row, data, dataIndex) {
+    createdRow(row, data, _dataIndex) {
       if (data as TableSiteRef) {
         const ref = data as TableSiteRef;
-        switch (ref.state) {
+        switch (rowState[ref.siteId!]) {
           case "new":
           case "edit": {
             const tmp = table.current!.dt()!.row(row);
             if (!tmp.child.isShown()) {
-              tmp.child(renderSite(ref)).show();
+              tmp.child(renderSite(ref, true), "child-row").show();
             }
           }
         }
@@ -135,35 +155,37 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
     },
   };
 
-  const renderSite = (data: TableSiteRef): Node => {
+  const renderSite = (data: TableSiteRef, edit: boolean = false): Node => {
     const site =
       data.siteId && data.siteId > 0 ? getSite!(data.siteId!) : Promise.resolve({});
-    const workingSite = data.state === "new" ? data.actualSite! : (site as UiSite);
+    console.log(`Actual site${JSON.stringify(site)}`);
+    const workingSite = rowState[data.siteId!] === "new" ? {} : site; // maybe put in "row state"?
     const container = toDom(
       <Site
         site={workingSite}
         actions={{
-          save: actions.save,
+          save: (site: ApiSite) => {
+            actions.save!(site); // todo: error handling?
+            updateLocalSites((prev) => {
+              return prev.filter((ps) => ps.siteId !== site.siteId);
+            });
+            updateRowState((prev) => {
+              const { [site.siteId!]: _, ...states } = prev;
+              return {
+                ...states,
+              };
+            });
+          },
           cancel: (item) => {
-            if (item < 0) {
-              updateLocalSites((prev) => {
-                return prev.map((site) => {
-                  if (site.siteId === item) {
-                    return {
-                      ...site,
-                      state: undefined,
-                    };
-                  } else {
-                    return site;
-                  }
-                });
-              });
-            } else {
-              actions?.edit?.(item);
-            }
+            updateRowState((prev) => {
+              return {
+                ...prev,
+                [item]: undefined,
+              };
+            });
           },
         }}
-        edit={data.state === "edit"}
+        edit={edit}
       />,
     );
     return container;
