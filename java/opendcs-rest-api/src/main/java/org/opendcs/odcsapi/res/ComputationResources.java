@@ -15,19 +15,33 @@
 
 package org.opendcs.odcsapi.res;
 
+import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
+import decodes.cwms.CwmsTsId;
 import decodes.db.DataType;
+import decodes.db.DatabaseException;
 import decodes.db.Site;
+import decodes.hdb.HdbTsId;
 import decodes.sql.DbKey;
+import decodes.tsdb.BadTimeSeriesException;
+import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.CompFilter;
+import decodes.tsdb.ComputationExecution;
 import decodes.tsdb.ConstraintException;
+import decodes.tsdb.DataCollection;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.ProgressListener;
+import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -45,25 +59,38 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.container.AsyncResponse;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.sse.OutboundSseEvent;
+import jakarta.ws.rs.sse.Sse;
+import jakarta.ws.rs.sse.SseEventSink;
 import opendcs.dai.ComputationDAI;
+import opendcs.dai.SiteDAI;
+import opendcs.dai.TimeSeriesDAI;
 import org.opendcs.odcsapi.beans.ApiCompParm;
 import org.opendcs.odcsapi.beans.ApiComputation;
 import org.opendcs.odcsapi.beans.ApiComputationRef;
+import org.opendcs.odcsapi.beans.ApiTimeSeriesData;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 
 import static java.util.stream.Collectors.toList;
+import static org.opendcs.odcsapi.util.DTOMappers.dataMap;
 
 @Path("/")
 public final class ComputationResources extends OpenDcsResource
 {
+	private static final Logger log = LoggerFactory.getLogger(ComputationResources.class);
+
 	@Context HttpHeaders httpHeaders;
 
 	@GET
@@ -122,7 +149,7 @@ public final class ComputationResources extends OpenDcsResource
 			{
 				compFilter.setIntervalCode(interval);
 			}
-			List<ApiComputationRef> computationRefs = map(dai.listComps(c -> compFilter.passes(c)));
+			List<ApiComputationRef> computationRefs = map(dai.listComps(compFilter::passes));
 			return Response.ok().entity(computationRefs).build();
 		}
 		catch(DbIoException ex)
@@ -341,13 +368,13 @@ public final class ComputationResources extends OpenDcsResource
 			dai.writeComputation(dbComp);
 			return Response.status(Response.Status.CREATED).entity(map(dbComp)).build();
 		}
-		catch(DbIoException ex)
+		catch(DbIoException | DatabaseException ex)
 		{
 			throw new DbException("Unable to store computation", ex);
 		}
 	}
 
-	static DbComputation map(ApiComputation comp)
+	static DbComputation map(ApiComputation comp) throws DatabaseException
 	{
 		DbComputation ret;
 		if (comp.getComputationId() != null)
@@ -398,7 +425,7 @@ public final class ComputationResources extends OpenDcsResource
 		return ret;
 	}
 
-	static DbCompParm map(ApiCompParm parm)
+	static DbCompParm map(ApiCompParm parm) throws DatabaseException
 	{
 		if (parm == null)
 		{
@@ -407,9 +434,14 @@ public final class ComputationResources extends OpenDcsResource
 		DbCompParm ret = new DbCompParm(parm.getAlgoRoleName(),
 				parm.getDataTypeId() != null ? DbKey.createDbKey(parm.getDataTypeId()) : DbKey.NullKey,
 				parm.getInterval(), parm.getTableSelector(), parm.getDeltaT());
-		if (parm.getDataTypeId() != null)
+		if (parm.getDataTypeId() != null || parm.getDataType() != null)
 		{
-			DataType dt = new DataType(parm.getDataType(), parm.getDataTypeId().toString());
+			String[] parts = parm.getDataType().split(":");
+			DataType dt = new DataType(parts[0], parts[1]);
+			if (parm.getDataTypeId() != null)
+			{
+				dt.setId(DbKey.createDbKey(parm.getDataTypeId()));
+			}
 			ret.setDataType(dt);
 		}
 		ret.setInterval(parm.getInterval());
@@ -475,6 +507,229 @@ public final class ComputationResources extends OpenDcsResource
 		catch(DbIoException | ConstraintException ex)
 		{
 			throw new DbException(String.format("Unable to delete computation by ID: %s", computationId), ex);
+		}
+	}
+
+	@GET
+	@Path("runcomputation")
+	@Produces(MediaType.SERVER_SENT_EVENTS)
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
+	@Operation(
+			summary = "Execute an Existing OpenDCS Computation",
+			description = "Endpoint takes in a computation name and a list of timeseries IDs to execute a computation. "
+					+ "Optionally takes in a start and end date for a time window to use for the computation",
+			tags = {"REST - Computation Methods"},
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Successfully initiated execution of computation",
+							content = {@Content(mediaType = MediaType.SERVER_SENT_EVENTS)}),
+					@ApiResponse(responseCode = "400", description = "Missing required computationid parameter"),
+					@ApiResponse(responseCode = "404", description = "Computation with the specified ID not found"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
+	public void runComputation(
+			@Context Sse sse,
+			@Context SseEventSink eventSink,
+			@Context AsyncResponse asyncResp,
+			@Parameter(required = true, description = "Unique Computation ID",
+					schema = @Schema(implementation = Long.class, example = "4"))
+			@QueryParam("computationid") Long computationId,
+			@Parameter(description = "Optional parameter to specify the beginning of the time range to execute the computation on.",
+					schema = @Schema(implementation = Instant.class, example = "2025-10-25T12:00:00.000Z"))
+			@QueryParam("start") Instant start,
+			@Parameter(description = "Optional parameter to specify the end of the time range to execute the computation on",
+					schema = @Schema(implementation = Instant.class, example = "2025-10-25T12:00:00.000Z"))
+			@QueryParam("end") Instant end)
+			throws DbException, WebAppException
+	{
+		final String compStatus = "computation-status";
+
+		if(computationId == null)
+		{
+			throw new MissingParameterException("Missing required computationid parameter.");
+		}
+
+		try(ComputationDAI dai = getLegacyTimeseriesDB().makeComputationDAO();
+			TimeSeriesDAI tsDai = getLegacyTimeseriesDB().makeTimeSeriesDAO();
+			SiteDAI siteDai = getLegacyTimeseriesDB().makeSiteDAO())
+		{
+			DbComputation comp = dai.getComputationById(DbKey.createDbKey(computationId));
+
+			List<TimeSeriesIdentifier> outputList = new ArrayList<>();
+
+			String taskID = UUID.randomUUID().toString();
+
+			final Instant startTime = start != null ? start : Instant.parse("1800-01-01T12:00:00Z");
+			final Instant endTime = end != null ? end : Instant.parse("2200-12-31T12:00:00Z");
+
+			for(DbCompParm parm : comp.getParmList())
+			{
+				if(parm.getAlgoParmType().contains("o"))
+				{
+					boolean isCwms = (parm.getDataType() != null
+							&& "CWMS".equalsIgnoreCase(parm.getDataType().getStandard()));
+					TimeSeriesIdentifier identifier;
+					if(isCwms)
+					{
+						identifier = new CwmsTsId();
+						((CwmsTsId) identifier).setUtcOffset(parm.getDeltaT());
+						((CwmsTsId) identifier).setDuration(parm.getDuration());
+						((CwmsTsId) identifier).setVersion(parm.getVersion());
+						identifier.setPart("paramtype", parm.getParamType());
+					}
+					else
+					{
+						identifier = new HdbTsId();
+						((HdbTsId) identifier).setSdi(parm.getSiteDataTypeId());
+						((HdbTsId) identifier).setModelId(parm.getModelId());
+						identifier.setTableSelector(parm.getTableSelector());
+					}
+					identifier.setDataType(parm.getDataType());
+					identifier.setStorageUnits(parm.getUnitsAbbr());
+					identifier.setInterval(parm.getInterval());
+
+					try
+					{
+						Site site = siteDai.getSiteById(parm.getSiteId());
+						if (site != null)
+						{
+							identifier.setSiteName(site.getDisplayName());
+							identifier.setSite(site);
+						}
+					}
+					catch(NoSuchObjectException ex)
+					{
+						log.error(String.format("Unable to retrieve site name for site ID: %s", parm.getSiteId()), ex);
+						OutboundSseEvent event = sse.newEventBuilder()
+								.name("ERROR")
+								.id(taskID)
+								.mediaType(MediaType.TEXT_PLAIN_TYPE)
+								.data(String.format("No site found with ID: %s for computation with ID: %s", parm.getSiteId().getValue(), computationId))
+								.build();
+						eventSink.send(event);
+					}
+					identifier.setInterval(parm.getInterval());
+					identifier.setTableSelector(parm.getTableSelector());
+					outputList.add(identifier);
+				}
+			}
+
+			CompletableFuture.runAsync(() ->
+			{
+				OutboundSseEvent event = sse.newEventBuilder()
+						.name(compStatus)
+						.id(taskID)
+						.mediaType(MediaType.TEXT_PLAIN_TYPE)
+						.data(String.format("Running computation with ID: %s", computationId))
+						.build();
+				eventSink.send(event);
+
+				try
+				{
+					Date startDate = Date.from(startTime);
+					Date endDate = Date.from(endTime);
+					ComputationExecution execution = new ComputationExecution(createDb());
+					SseProgressListener listener = new SseProgressListener(eventSink, sse, compStatus, taskID);
+					ComputationExecution.CompResults results = execution.execute(List.of(comp), new DataCollection(), startDate, endDate, listener);
+
+					event = sse.newEventBuilder()
+							.name(compStatus)
+							.id(taskID)
+							.mediaType(MediaType.TEXT_PLAIN_TYPE)
+							.data(String.format("Computation executed with %d errors", results.numErrors()))
+							.build();
+					eventSink.send(event);
+
+					for(TimeSeriesIdentifier id : outputList)
+					{
+						try
+						{
+							CTimeSeries timeSeries = new CTimeSeries(id);
+							tsDai.fillTimeSeries(timeSeries, startDate, endDate);
+							ApiTimeSeriesData data = dataMap(timeSeries, Date.from(startTime), Date.from(endTime));
+							event = sse.newEventBuilder()
+									.name("Results")
+									.id(taskID)
+									.mediaType(MediaType.APPLICATION_JSON_TYPE)
+									.data(ApiTimeSeriesData.class, data)
+									.build();
+							eventSink.send(event);
+						}
+						catch(BadTimeSeriesException ex)
+						{
+							String errorMsg = String.format("Error while retrieving timeseries data for computation output: %s", id.getUniqueString());
+							log.error(errorMsg, ex);
+							event = sse.newEventBuilder()
+									.name(compStatus)
+									.id(taskID)
+									.mediaType(MediaType.TEXT_PLAIN_TYPE)
+									.data(errorMsg)
+									.build();
+							eventSink.send(event);
+						}
+					}
+				}
+				catch(DbIoException ex)
+				{
+					log.error("Error while executing computation", ex);
+					event = sse.newEventBuilder()
+							.name(compStatus)
+							.id(taskID)
+							.mediaType(MediaType.TEXT_PLAIN_TYPE)
+							.data(String.format("Error while executing computation: %s", comp.getApplicationName()))
+							.build();
+					eventSink.send(event);
+				}
+				finally
+				{
+					try
+					{
+						eventSink.close();
+					}
+					catch(IOException ex)
+					{
+						log.error("Error closing SSE event sink", ex);
+					}
+				}
+			});
+		}
+		catch(NoSuchObjectException ex)
+		{
+			throw new DatabaseItemNotFoundException(String.format("Computation with ID %s not found", computationId), ex);
+		}
+		catch(DbIoException ex)
+		{
+			throw new DbException(String.format("Error retrieving computation to execute by ID: %s", computationId), ex);
+		}
+	}
+
+	private static final class SseProgressListener extends ProgressListener
+	{
+		private final SseEventSink eventSink;
+		private final Sse sse;
+		private final String name;
+		private final String taskId;
+
+		public SseProgressListener(SseEventSink eventSink, Sse sse, String name, String taskId)
+		{
+			this.eventSink = eventSink;
+			this.sse = sse;
+			this.name = name;
+			this.taskId = taskId;
+		}
+
+		@Override
+		public void onProgress(String message, Level logLevel, Throwable cause)
+		{
+			logEvent(message, logLevel, cause);
+			OutboundSseEvent event = sse.newEventBuilder()
+					.name(name)
+					.id(taskId)
+					.reconnectDelay(3000L)
+					.data(message)
+					.mediaType(MediaType.TEXT_PLAIN_TYPE)
+					.build();
+			eventSink.send(event);
 		}
 	}
 }
