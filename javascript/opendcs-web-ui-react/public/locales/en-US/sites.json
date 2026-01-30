@@ -21,5 +21,6 @@
   "use_decimal_format": "Provide value in Decimal format",
   "nearestCity": "Nearest City",
   "public_name": "Public Name",
-  "edit_site": "Edit site with id {{id}}"
+  "edit_site": "Edit site with id {{id}}",
+  "save_site": "Save site with id {{id}}"
 }
