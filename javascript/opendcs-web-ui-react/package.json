@@ -16,11 +16,12 @@
     "test-storybook": "vitest --project=storybook",
     "build-storybook": "storybook build",
     "format:check": "prettier --check .",
-    "prepare": "husky",
+    "prepare": "node build_scripts/husky.js",
     "predev": "npm run api:generate && npm run lang:generate",
     "prebuild": "npm run api:generate && npm run lang:generate",
     "prestorybook": "npm run api:generate && npm run lang:generate",
-    "pretest-storybook": "npm run api:generate && npm run lang:generate"
+    "pretest-storybook": "npm run api:generate && npm run lang:generate",
+    "precommit": "lint-staged"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
@@ -80,6 +81,7 @@
     "typescript-eslint": "^8.46.4",
     "vite": "^7.3.0",
     "vite-plugin-svgr": "^4.5.0",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.16",
+    "datatables.net-plugins": "^2.3.6"
   }
 }

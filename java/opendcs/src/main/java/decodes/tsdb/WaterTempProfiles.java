@@ -192,7 +192,8 @@ final public class WaterTempProfiles
                     else if (check.getFailure() instanceof NoSuchObjectException)
                     {
                         timeSeriesDAO.createTimeSeries(newTSID);
-                        CTProfile = new CTimeSeries(newTSID);
+                        CTProfile = timeSeriesDAO.makeTimeSeries(newTSID);
+                        tseries.addTimeSeries(CTProfile);
                     }
                     else
                     {
@@ -219,7 +220,7 @@ final public class WaterTempProfiles
         }
     }
 
-    public void SaveProfiles(TimeSeriesDAI timeSeriesDAO)
+    public void SaveProfiles(TimeSeriesDAI timeSeriesDAO) throws DbIoException, BadTimeSeriesException
     {
         for (CTimeSeries tsery : tseries.getAllTimeSeries())
         {
@@ -227,9 +228,15 @@ final public class WaterTempProfiles
             {
                 timeSeriesDAO.saveTimeSeries(tsery);
             }
-            catch (Exception ex)
+            catch (DbIoException | BadTimeSeriesException ex)
             {
-                log.atError().setCause(ex).log("Error saving water temperature profile data");
+                log.atError()
+                   .setCause(ex)
+                   .log("Error saving water temperature profile data for time series: {}",
+                        tsery.getTimeSeriesIdentifier() != null
+                            ? tsery.getTimeSeriesIdentifier().getUniqueString()
+                            : tsery.getDisplayName());
+                throw ex;
             }
         }
     }

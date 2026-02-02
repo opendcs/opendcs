@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useTheme } from "../contexts/ThemeContext";
+import { useTheme } from "../contexts/app/ThemeContext";
 import { ModeIcon } from "./ModeIcon";
 import { Button, Dropdown } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
@@ -10,11 +10,7 @@ interface ToggleProperties {
 
 export const ColorToggle: React.FC<ToggleProperties> = ({ icon, ...args }) => {
   //const [t] = useTranslation();
-  return (
-    <Button {...args}>
-      {icon}
-    </Button>
-  );
+  return <Button {...args}>{icon}</Button>;
 };
 
 export const ColorModes = () => {
