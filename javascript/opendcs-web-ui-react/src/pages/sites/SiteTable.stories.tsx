@@ -1,6 +1,6 @@
 import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
 
-import { SitesTable, SiteTableProperties, TableSiteRef } from "./SitesTable";
+import { SitesTable } from "./SitesTable";
 import {
   ApiSite,
   ApiSiteRef,
@@ -79,18 +79,20 @@ export const WithSites: Story = {
     getSite: getSite,
   },
   render: (args) => {
+    console.log("Rendering With Sites");
     const [sites, updateSites] = useState<ApiSite[]>([]);
     const siteRefs = useMemo(() => toSiteRefs(sites), [sites]);
-
+    console.log(`Sites are currently ${JSON.stringify(sites)}`);
     useEffect(() => {
       const setupSites = async () => {
         console.log(`With input ${JSON.stringify(args.sites)}`);
         const tmpSites: (ApiSite | undefined)[] = await Promise.all(
           args.sites.map(async (sf: ApiSiteRef) => args.getSite!(sf.siteId!)),
         );
+        console.log(`Temp sites ${JSON.stringify(tmpSites)}`);
         const filtered = tmpSites.filter((s) => s !== undefined);
-        console.log(`updating sites ${JSON.stringify(filtered)}`);
-        updateSites(filtered);
+        console.log(`updating sites to ${JSON.stringify(filtered)}`);
+        updateSites([...filtered]);
       };
       if (sites.length === 0) {
         console.log("loading sites");
@@ -133,6 +135,7 @@ export const WithSites: Story = {
         const site = sites.find((site) => site.siteId === id);
 
         console.log(site);
+        console.log(this);
         return Promise.resolve(site);
       },
       [sites, siteRefs],
