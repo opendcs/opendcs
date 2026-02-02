@@ -67,35 +67,29 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
   const slots = useMemo<DataTableSlots>(() => {
     return {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      actions: (data: TableSiteRef, type: unknown, _row: any, _meta: any) => {
-        if (type === "display") {
-          const id: number = data.siteId!;
-          const inEdit = rowState![id] === "edit" || rowState[id] === "new";
-          return !inEdit ? (
-            <Button
-              variant="warning"
-              onClick={(e) => {
-                e.stopPropagation();
-                updateRowState((prev) => {
-                  return {
-                    ...prev,
-                    [id]: "edit",
-                  };
-                });
-              }}
-              aria-label={t("sites:edit_site", { id: id })}
-            >
-              <Pencil />
-            </Button>
-          ) : (
-            <></>
-          );
-        } else {
-          return data;
-        }
+      actions: (data: TableSiteRef, _row: any) => {
+        const id: number = data.siteId!;
+        const inEdit = rowState![id] === "edit" || rowState[id] === "new";
+        return !inEdit ? (
+          <Button
+            variant="warning"
+            onClick={(e) => {
+              e.stopPropagation();
+              updateRowState((prev) => {
+                return {
+                  ...prev,
+                  [id]: "edit",
+                };
+              });
+            }}
+            aria-label={t("sites:edit_site", { id: id })}
+          >
+            <Pencil />
+          </Button>
+        ) : null;
       },
     };
-  }, [rowState]);
+  }, [rowState, i18n.language]);
 
   const options: DataTableProps["options"] = {
     paging: true,
@@ -117,9 +111,9 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
                     return b - a;
                   });
                 const newId = existing.length > 0 ? existing[0] - 1 : -1; // use negative indexes for new elements
-                updateRowState((prev) => {
+                updateRowState((prevRowState) => {
                   return {
-                    ...prev,
+                    ...prevRowState,
                     [newId]: "new",
                   };
                 });
@@ -218,6 +212,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
         } else {
           row.child()?.hide();
         }
+        row.draw(false);
       });
     }
   }, [rowState, sites, siteData]);
