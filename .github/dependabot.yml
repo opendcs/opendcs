@@ -15,3 +15,7 @@ updates:
       schedule:
           interval: "weekly"
       rebase-strategy: "disabled"
+      groups:
+        all-github-actions-dependencies:
+          patterns:
+            - "*"
