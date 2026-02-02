@@ -109,7 +109,6 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
       actions: (data: Partial<SiteNameType>, type: unknown, _row: SiteNameType) => {
         if (type === "display") {
           const inEdit = data.ui_state === "new" || data.ui_state === "edit";
-          console.log(data);
           return (
             <>
               {inEdit && (

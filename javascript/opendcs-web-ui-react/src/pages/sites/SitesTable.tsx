@@ -157,7 +157,6 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
   const renderSite = (data: TableSiteRef, edit: boolean = false): Node => {
     const site =
       data.siteId && data.siteId > 0 ? getSite!(data.siteId!) : Promise.resolve({});
-    console.log(`Actual site${JSON.stringify(site)}`);
     const workingSite = rowState[data.siteId!] === "new" ? {} : site; // maybe put in "row state"?
     const container = toDom(
       <Site

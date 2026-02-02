@@ -6,7 +6,8 @@ import {
   ApiSiteRef,
 } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { expect, userEvent, waitFor } from "storybook/test";
-import { use, useCallback, useEffect, useMemo, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { act } from "@testing-library/react";
 
 const meta = {
   component: SitesTable,
@@ -79,23 +80,23 @@ export const WithSites: Story = {
     getSite: getSite,
   },
   render: (args) => {
-    console.log("Rendering With Sites");
-    const [sites, updateSites] = useState<ApiSite[]>([]);
-    const siteRefs = useMemo(() => toSiteRefs(sites), [sites]);
-    console.log(`Sites are currently ${JSON.stringify(sites)}`);
+    const [storySites, updateSites] = useState<ApiSite[]>([]);
+    const siteRefs = useMemo(() => toSiteRefs(storySites), [storySites]);
+    const storySitesRef = useRef(storySites);
+
+    useEffect(() => {
+      storySitesRef.current = storySites;
+    }, [storySites]);
+
     useEffect(() => {
       const setupSites = async () => {
-        console.log(`With input ${JSON.stringify(args.sites)}`);
         const tmpSites: (ApiSite | undefined)[] = await Promise.all(
           args.sites.map(async (sf: ApiSiteRef) => args.getSite!(sf.siteId!)),
         );
-        console.log(`Temp sites ${JSON.stringify(tmpSites)}`);
         const filtered = tmpSites.filter((s) => s !== undefined);
-        console.log(`updating sites to ${JSON.stringify(filtered)}`);
-        updateSites([...filtered]);
+        updateSites((_) => [...filtered]);
       };
-      if (sites.length === 0) {
-        console.log("loading sites");
+      if (storySites.length === 0) {
         setupSites();
       }
     }, []);
@@ -106,15 +107,12 @@ export const WithSites: Story = {
           if (site.siteId! < 0) {
             // new site
             return [
-              ...sites,
+              ...storySites,
               { ...site, siteId: Math.floor(Math.random() * 100) + 10 },
             ];
           } else {
             return prev.map((prev) => {
               if (prev.siteId === site.siteId) {
-                console.log(
-                  `Update site. from '${JSON.stringify(prev)}' to '${JSON.stringify(site)}'`,
-                );
                 return {
                   ...prev,
                   ...site,
@@ -126,19 +124,15 @@ export const WithSites: Story = {
           }
         });
       },
-      [sites],
+      [storySites],
     );
 
     const localGetSite = useCallback(
       (id: number) => {
-        console.log(`Retrieving site from ${JSON.stringify(sites)}`);
-        const site = sites.find((site) => site.siteId === id);
-
-        console.log(site);
-        console.log(this);
+        const site = storySitesRef.current.find((site) => site.siteId === id);
         return Promise.resolve(site);
       },
-      [sites, siteRefs],
+      [storySitesRef],
     );
 
     return (
