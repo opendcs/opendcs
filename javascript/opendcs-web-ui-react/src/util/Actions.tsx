@@ -56,4 +56,4 @@ export type CollectionActions<T, V = T> = SaveAction<T> &
 
 export type ItemActions<T> = SaveAction<T> & EditAction<T> & RemoveAction<T>;
 
-export type UiState = "new" | "edit" | undefined;
+export type UiState = "new" | "edit" | "show" | undefined;

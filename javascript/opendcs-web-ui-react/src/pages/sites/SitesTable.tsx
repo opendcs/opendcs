@@ -11,7 +11,7 @@ import type {
   ApiSite,
   ApiSiteRef,
 } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
-import Site, { type UiSite } from "./Site";
+import Site from "./Site";
 // import { createRoot } from "react-dom/client";
 // import RefListContext, { useRefList } from "../../contexts/data/RefListContext";
 import type { SaveAction, UiState } from "../../util/Actions";
@@ -67,20 +67,15 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
   const slots = useMemo<DataTableSlots>(() => {
     return {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      actions: (data: TableSiteRef, type: unknown, _row: any, meta: any) => {
+      actions: (data: TableSiteRef, type: unknown, _row: any, _meta: any) => {
         if (type === "display") {
           const id: number = data.siteId!;
-          const inEdit = rowState[id] !== undefined;
+          const inEdit = rowState![id] === "edit" || rowState[id] === "new";
           return !inEdit ? (
             <Button
               variant="warning"
               onClick={(e) => {
                 e.stopPropagation();
-                const activeRow = table.current?.dt()?.row(meta.row)!;
-                if (activeRow.child.isShown()) {
-                  activeRow.child.hide();
-                }
-                activeRow.child(renderSite(data, true), "child-row").show();
                 updateRowState((prev) => {
                   return {
                     ...prev,
@@ -100,7 +95,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
         }
       },
     };
-  }, []);
+  }, [rowState]);
 
   const options: DataTableProps["options"] = {
     paging: true,
@@ -138,32 +133,19 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
         ],
       },
     },
-    createdRow(row, data, _dataIndex) {
-      if (data as TableSiteRef) {
-        const ref = data as TableSiteRef;
-        switch (rowState[ref.siteId!]) {
-          case "new":
-          case "edit": {
-            const tmp = table.current!.dt()!.row(row);
-            if (!tmp.child.isShown()) {
-              tmp.child(renderSite(ref, true), "child-row").show();
-            }
-          }
-        }
-      }
-    },
   };
 
   const renderSite = (data: TableSiteRef, edit: boolean = false): Node => {
     const site =
       data.siteId && data.siteId > 0 ? getSite!(data.siteId!) : Promise.resolve({});
     const workingSite = rowState[data.siteId!] === "new" ? {} : site; // maybe put in "row state"?
+
     const container = toDom(
       <Site
         site={workingSite}
         actions={{
           save: (site: ApiSite) => {
-            actions.save!(site); // todo: error handling?
+            actions.save!(site); // todo: error handling, plus the hold "update the row thing"
             updateLocalSites((prev) => {
               return prev.filter((ps) => ps.siteId !== site.siteId);
             });
@@ -171,14 +153,16 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
               const { [site.siteId!]: _, ...states } = prev;
               return {
                 ...states,
+                [site.siteId!]: "show",
               };
             });
           },
           cancel: (item) => {
             updateRowState((prev) => {
+              const { [item]: _, ...states } = prev;
               return {
-                ...prev,
-                [item]: undefined,
+                ...states,
+                [item]: "show",
               };
             });
           },
@@ -203,17 +187,40 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
       const dt = table.current!.dt()!;
 
       const row = dt.row(tr as HTMLTableRowElement);
-      if (row.child.isShown()) {
-        // This row is already open - close it
-        row.child.hide();
-      } else {
-        const data: TableSiteRef = row.data() as TableSiteRef;
-
-        // Open this row
-        row.child(renderSite(data), "child-row").show();
-      }
+      updateRowState((prev) => {
+        const idx = (row.data() as TableSiteRef).siteId!;
+        const { [idx]: existing, ...remaining } = prev;
+        let newValue: UiState = "show";
+        if (existing !== undefined) {
+          newValue = undefined;
+        }
+        return {
+          ...remaining,
+          [idx]: newValue,
+        };
+      });
     });
   }, [i18n.language]);
+
+  useEffect(() => {
+    if (table.current?.dt()) {
+      const dt = table.current.dt()!;
+      const visibleRows = dt.rows({ page: "current", search: "applied" });
+      visibleRows.every(function () {
+        const row = this;
+        const idx = (row.data() as TableSiteRef).siteId!;
+        row.invalidate();
+        if (rowState[idx] !== undefined) {
+          row.child()?.hide();
+          const data: TableSiteRef = row.data() as TableSiteRef;
+          const edit = rowState[idx] !== "show";
+          row.child(renderSite(data, edit), "child-row").show();
+        } else {
+          row.child()?.hide();
+        }
+      });
+    }
+  }, [rowState, sites, siteData]);
 
   return (
     <DataTable

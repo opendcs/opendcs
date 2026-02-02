@@ -1,13 +1,4 @@
-import {
-  Button,
-  Card,
-  Col,
-  Container,
-  Form,
-  FormGroup,
-  FormSelect,
-  Row,
-} from "react-bootstrap";
+import { Button, Card, Col, Form, FormGroup, FormSelect, Row } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../components/properties";
 import { use, useCallback, useMemo, useReducer, useState } from "react";
 import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";

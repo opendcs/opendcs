@@ -82,11 +82,6 @@ export const WithSites: Story = {
   render: (args) => {
     const [storySites, updateSites] = useState<ApiSite[]>([]);
     const siteRefs = useMemo(() => toSiteRefs(storySites), [storySites]);
-    const storySitesRef = useRef(storySites);
-
-    useEffect(() => {
-      storySitesRef.current = storySites;
-    }, [storySites]);
 
     useEffect(() => {
       const setupSites = async () => {
@@ -106,15 +101,11 @@ export const WithSites: Story = {
         updateSites((prev) => {
           if (site.siteId! < 0) {
             // new site
-            return [
-              ...storySites,
-              { ...site, siteId: Math.floor(Math.random() * 100) + 10 },
-            ];
+            return [...prev, { ...site, siteId: Math.floor(Math.random() * 100) + 10 }];
           } else {
             return prev.map((prev) => {
               if (prev.siteId === site.siteId) {
                 return {
-                  ...prev,
                   ...site,
                 };
               } else {
@@ -129,10 +120,10 @@ export const WithSites: Story = {
 
     const localGetSite = useCallback(
       (id: number) => {
-        const site = storySitesRef.current.find((site) => site.siteId === id);
+        const site = storySites.find((site) => site.siteId === id);
         return Promise.resolve(site);
       },
-      [storySitesRef],
+      [storySites],
     );
 
     return (
