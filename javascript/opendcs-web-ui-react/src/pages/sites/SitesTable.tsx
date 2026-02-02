@@ -203,16 +203,16 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
       visibleRows.every(function () {
         const row = this;
         const idx = (row.data() as TableSiteRef).siteId!;
-        row.invalidate();
+        //row.invalidate();
         if (rowState[idx] !== undefined) {
-          row.child()?.hide();
+          //row.child()?.hide();
           const data: TableSiteRef = row.data() as TableSiteRef;
           const edit = rowState[idx] !== "show";
           row.child(renderSite(data, edit), "child-row").show();
         } else {
           row.child()?.hide();
         }
-        row.draw(false);
+        //row.draw(false);
       });
     }
   }, [rowState, sites, siteData]);

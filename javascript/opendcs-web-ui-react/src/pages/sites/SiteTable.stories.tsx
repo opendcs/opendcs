@@ -6,7 +6,7 @@ import {
   ApiSiteRef,
 } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { expect, userEvent, waitFor } from "storybook/test";
-import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { act } from "@testing-library/react";
 import { SaveAction } from "../../util/Actions";
 import { ArgsStoryFn } from "storybook/internal/types";
@@ -133,6 +133,10 @@ export const Default: Story = {
   render: StoryRender,
   play: async ({ mount }) => {
     await mount();
+    /**
+     * This test intentionally does nothing but supports behavior so it can be used for exploratory
+     * work without storybook constantly trying to rerender or manually call things.
+     */
   },
 };
 
@@ -142,8 +146,26 @@ export const WithSites: Story = {
     getSite: getSite,
   },
   render: StoryRender,
-  play: async ({ mount }) => {
-    await mount();
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+    const editAlderSpringsButton = await canvas.findByRole("button", {
+      name: i18n.t("sites:edit_site", { id: 3 }),
+    });
+    await act(async () => userEvent.click(editAlderSpringsButton));
+    const elevInput = await canvas.findByRole("textbox", { name: i18n.t("elevation") });
+    expect((elevInput as HTMLInputElement)?.readOnly).toBeFalsy();
+    expect(elevInput).toHaveValue("");
+    await userEvent.type(elevInput!, "5");
+    const saveButton = await canvas.findByRole("button", {
+      name: i18n.t("sites:save_site", { id: 3 }),
+    });
+    await act(async () => userEvent.click(saveButton));
+    const elevInputAfter = await canvas.findByRole("textbox", {
+      name: i18n.t("elevation"),
+    });
+    expect((elevInputAfter as HTMLInputElement)?.readOnly).toBeTruthy();
+    expect(elevInputAfter).toHaveValue("5");
   },
 };
 
@@ -153,13 +175,13 @@ export const WithExistingAddNewSite: Story = {
     getSite: getSite,
   },
   render: StoryRender,
-  play: async ({ canvas, mount, parameters }) => {
+  play: async ({ mount, parameters }) => {
+    const canvas = await mount();
     const { i18n } = parameters;
-    await mount();
     const addSite = await canvas.findByRole("button", {
       name: i18n.t("sites:add_site"),
     });
-    await userEvent.click(addSite);
+    await act(async () => userEvent.click(addSite));
     const negativeIndex = await waitFor(() => {
       return canvas.queryByText("-1");
     });
