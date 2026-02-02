@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import decodes.cwms.CwmsTimeSeriesDAO;
 import decodes.cwms.CwmsTsId;
 import decodes.db.DataType;
 import decodes.db.DatabaseException;
@@ -59,7 +60,6 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.container.AsyncResponse;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -530,16 +530,15 @@ public final class ComputationResources extends OpenDcsResource
 	public void runComputation(
 			@Context Sse sse,
 			@Context SseEventSink eventSink,
-			@Context AsyncResponse asyncResp,
 			@Parameter(required = true, description = "Unique Computation ID",
 					schema = @Schema(implementation = Long.class, example = "4"))
 			@QueryParam("computationid") Long computationId,
 			@Parameter(description = "Optional parameter to specify the beginning of the time range to execute the computation on.",
-					schema = @Schema(implementation = Instant.class, example = "2025-10-25T12:00:00.000Z"))
-			@QueryParam("start") Instant start,
+					schema = @Schema(implementation = Instant.class, example = "2025-10-25T12:00:00Z"))
+			@QueryParam("start") String start,
 			@Parameter(description = "Optional parameter to specify the end of the time range to execute the computation on",
-					schema = @Schema(implementation = Instant.class, example = "2025-10-25T12:00:00.000Z"))
-			@QueryParam("end") Instant end)
+					schema = @Schema(implementation = Instant.class, example = "2025-10-25T12:00:00Z"))
+			@QueryParam("end") String end)
 			throws DbException, WebAppException
 	{
 		final String compStatus = "computation-status";
@@ -555,64 +554,14 @@ public final class ComputationResources extends OpenDcsResource
 		{
 			DbComputation comp = dai.getComputationById(DbKey.createDbKey(computationId));
 
-			List<TimeSeriesIdentifier> outputList = new ArrayList<>();
-
 			String taskID = UUID.randomUUID().toString();
 
-			final Instant startTime = start != null ? start : Instant.parse("1800-01-01T12:00:00Z");
-			final Instant endTime = end != null ? end : Instant.parse("2200-12-31T12:00:00Z");
+			final Instant startTime = start != null ? Instant.parse(start) : Instant.parse("1800-01-01T12:00:00Z");
+			final Instant endTime = end != null ? Instant.parse(end) : Instant.parse("2200-12-31T12:00:00Z");
+			Date startDate = Date.from(startTime);
+			Date endDate = Date.from(endTime);
 
-			for(DbCompParm parm : comp.getParmList())
-			{
-				if(parm.getAlgoParmType().contains("o"))
-				{
-					boolean isCwms = (parm.getDataType() != null
-							&& "CWMS".equalsIgnoreCase(parm.getDataType().getStandard()));
-					TimeSeriesIdentifier identifier;
-					if(isCwms)
-					{
-						identifier = new CwmsTsId();
-						((CwmsTsId) identifier).setUtcOffset(parm.getDeltaT());
-						((CwmsTsId) identifier).setDuration(parm.getDuration());
-						((CwmsTsId) identifier).setVersion(parm.getVersion());
-						identifier.setPart("paramtype", parm.getParamType());
-					}
-					else
-					{
-						identifier = new HdbTsId();
-						((HdbTsId) identifier).setSdi(parm.getSiteDataTypeId());
-						((HdbTsId) identifier).setModelId(parm.getModelId());
-						identifier.setTableSelector(parm.getTableSelector());
-					}
-					identifier.setDataType(parm.getDataType());
-					identifier.setStorageUnits(parm.getUnitsAbbr());
-					identifier.setInterval(parm.getInterval());
-
-					try
-					{
-						Site site = siteDai.getSiteById(parm.getSiteId());
-						if (site != null)
-						{
-							identifier.setSiteName(site.getDisplayName());
-							identifier.setSite(site);
-						}
-					}
-					catch(NoSuchObjectException ex)
-					{
-						log.error(String.format("Unable to retrieve site name for site ID: %s", parm.getSiteId()), ex);
-						OutboundSseEvent event = sse.newEventBuilder()
-								.name("ERROR")
-								.id(taskID)
-								.mediaType(MediaType.TEXT_PLAIN_TYPE)
-								.data(String.format("No site found with ID: %s for computation with ID: %s", parm.getSiteId().getValue(), computationId))
-								.build();
-						eventSink.send(event);
-					}
-					identifier.setInterval(parm.getInterval());
-					identifier.setTableSelector(parm.getTableSelector());
-					outputList.add(identifier);
-				}
-			}
+			List<TimeSeriesIdentifier> outputList = processOutputTsIds(comp, tsDai, siteDai, computationId, taskID, sse, eventSink);
 
 			CompletableFuture.runAsync(() ->
 			{
@@ -626,8 +575,6 @@ public final class ComputationResources extends OpenDcsResource
 
 				try
 				{
-					Date startDate = Date.from(startTime);
-					Date endDate = Date.from(endTime);
 					ComputationExecution execution = new ComputationExecution(createDb());
 					SseProgressListener listener = new SseProgressListener(eventSink, sse, compStatus, taskID);
 					ComputationExecution.CompResults results = execution.execute(List.of(comp), new DataCollection(), startDate, endDate, listener);
@@ -640,34 +587,7 @@ public final class ComputationResources extends OpenDcsResource
 							.build();
 					eventSink.send(event);
 
-					for(TimeSeriesIdentifier id : outputList)
-					{
-						try
-						{
-							CTimeSeries timeSeries = new CTimeSeries(id);
-							tsDai.fillTimeSeries(timeSeries, startDate, endDate);
-							ApiTimeSeriesData data = dataMap(timeSeries, Date.from(startTime), Date.from(endTime));
-							event = sse.newEventBuilder()
-									.name("Results")
-									.id(taskID)
-									.mediaType(MediaType.APPLICATION_JSON_TYPE)
-									.data(ApiTimeSeriesData.class, data)
-									.build();
-							eventSink.send(event);
-						}
-						catch(BadTimeSeriesException ex)
-						{
-							String errorMsg = String.format("Error while retrieving timeseries data for computation output: %s", id.getUniqueString());
-							log.error(errorMsg, ex);
-							event = sse.newEventBuilder()
-									.name(compStatus)
-									.id(taskID)
-									.mediaType(MediaType.TEXT_PLAIN_TYPE)
-									.data(errorMsg)
-									.build();
-							eventSink.send(event);
-						}
-					}
+					processOutput(outputList, tsDai, taskID, sse, eventSink, compStatus, startDate, endDate);
 				}
 				catch(DbIoException ex)
 				{
@@ -700,6 +620,121 @@ public final class ComputationResources extends OpenDcsResource
 		catch(DbIoException ex)
 		{
 			throw new DbException(String.format("Error retrieving computation to execute by ID: %s", computationId), ex);
+		}
+	}
+
+	private List<TimeSeriesIdentifier> processOutputTsIds(DbComputation comp, TimeSeriesDAI tsDai, SiteDAI siteDai,
+				Long computationId, String taskID, Sse sse, SseEventSink eventSink) throws DbIoException
+	{
+		List<TimeSeriesIdentifier> outputList = new ArrayList<>();
+		DbKey dataTypeId = null;
+		DataType dataType = null;
+		for(DbCompParm parm : comp.getParmList())
+		{
+			if(parm.getAlgoParmType().contains("o"))
+			{
+				boolean isCwms = tsDai instanceof CwmsTimeSeriesDAO;
+				TimeSeriesIdentifier identifier;
+				if(isCwms)
+				{
+					identifier = new CwmsTsId();
+					((CwmsTsId) identifier).setUtcOffset(parm.getDeltaT());
+					((CwmsTsId) identifier).setDuration(parm.getDuration());
+					((CwmsTsId) identifier).setVersion(parm.getVersion());
+					identifier.setPart("paramtype", parm.getParamType());
+				}
+				else
+				{
+					identifier = new HdbTsId();
+					if(parm.getSiteDataTypeId() != null && dataTypeId == null)
+					{
+						dataTypeId = parm.getSiteDataTypeId();
+						((HdbTsId) identifier).setSdi(parm.getSiteDataTypeId());
+					}
+					else if(parm.getDataTypeId() == null && dataTypeId != null)
+					{
+						((HdbTsId) identifier).setSdi(dataTypeId);
+					}
+					((HdbTsId) identifier).setModelId(parm.getModelId());
+					identifier.setTableSelector(parm.getTableSelector());
+				}
+				if(parm.getDataType() != null)
+				{
+					dataType = parm.getDataType();
+				}
+				identifier.setDataType(dataType);
+				identifier.setStorageUnits(parm.getUnitsAbbr());
+				identifier.setInterval(parm.getInterval());
+
+				try
+				{
+					Site site = siteDai.getSiteById(parm.getSiteId());
+					if(site != null)
+					{
+						identifier.setSiteName(site.getDisplayName());
+						identifier.setSite(site);
+					}
+					else
+					{
+						String name = comp.getProperty("reservoirId");
+						if(name != null && !name.isEmpty())
+						{
+							identifier.setSiteName(name);
+						}
+					}
+				}
+				catch(NoSuchObjectException ex)
+				{
+					log.error(String.format("Unable to retrieve site name for site ID: %s", parm.getSiteId()), ex);
+					OutboundSseEvent event = sse.newEventBuilder()
+							.name("ERROR")
+							.id(taskID)
+							.mediaType(MediaType.TEXT_PLAIN_TYPE)
+							.data(String.format("No site found with ID: %s for computation with ID: %s", parm.getSiteId().getValue(), computationId))
+							.build();
+					eventSink.send(event);
+				}
+				finally
+				{
+					outputList.add(identifier);
+				}
+			}
+		}
+		return outputList;
+	}
+
+	private void processOutput(List<TimeSeriesIdentifier> outputList, TimeSeriesDAI tsDai, String taskID, Sse sse,
+			SseEventSink eventSink, String compStatus, Date startDate, Date endDate) throws DbIoException
+	{
+		OutboundSseEvent event;
+		for(TimeSeriesIdentifier id : outputList)
+		{
+			try
+			{
+				TimeSeriesIdentifier idWithKey = tsDai.getTimeSeriesIdentifier(id.getUniqueString());
+				CTimeSeries timeSeries = new CTimeSeries(idWithKey);
+				tsDai.fillTimeSeries(timeSeries, startDate, endDate);
+				ApiTimeSeriesData data = dataMap(timeSeries, startDate, endDate);
+				event = sse.newEventBuilder()
+						.name("Results")
+						.id(taskID)
+						.mediaType(MediaType.APPLICATION_JSON_TYPE)
+						.data(ApiTimeSeriesData.class, data)
+						.build();
+				eventSink.send(event);
+			}
+			catch(BadTimeSeriesException | NoSuchObjectException ex)
+			{
+				String errorMsg = String.format("Error while retrieving timeseries data for computation output: %s", id.getUniqueString());
+				log.error(errorMsg, ex);
+				event = sse.newEventBuilder()
+						.name(compStatus)
+						.id(taskID)
+						.mediaType(MediaType.TEXT_PLAIN_TYPE)
+						.data(errorMsg)
+						.build();
+				eventSink.send(event);
+			}
 		}
 	}
 

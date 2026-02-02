@@ -688,7 +688,7 @@ final class ComputationResourcesIT extends BaseApiIT
 					.queryParam("computationid", tsCompId);
 
 			List<InboundSseEvent> events = new CopyOnWriteArrayList<>();
-			CountDownLatch done = new CountDownLatch(1);
+			CountDownLatch done = new CountDownLatch(10);
 			CountDownLatch firstEvent = new CountDownLatch(1);
 
 			try(SseEventSource source = SseEventSource.target(target).build())
@@ -727,16 +727,15 @@ final class ComputationResourcesIT extends BaseApiIT
 				assertNotNull(data);
 				assertFalse(data.isBlank());
 
-				boolean found = false;
+				int foundCount = 0;
 				for (InboundSseEvent sseEvent : events)
 				{
 					if (sseEvent.getName().equalsIgnoreCase("Results"))
 					{
-						found = true;
-						break;
+						foundCount++;
 					}
 				}
-				assertTrue(found);
+				assertEquals(10, foundCount, "Expected 10 SSE Result events, found " + foundCount);
 			}
 		}
 	}
@@ -769,8 +768,7 @@ final class ComputationResourcesIT extends BaseApiIT
 									{
 										ImporterHelper.ImportResults results = helper.doImport(comp_data, comp, importer);
 										expectedTsList = results.getImportedTsList();
-										compId = results.getTsCompIds().getFirst();
-
+										tsCompId = results.getTsCompIds().getFirst();
 									}
 								}
 							}
@@ -779,8 +777,9 @@ final class ComputationResourcesIT extends BaseApiIT
 				}
 				else
 				{
-					log.error("Invalid directory: " + currentDirectory);
-					throw new RuntimeException("Invalid directory: " + currentDirectory);
+					String msg = String.format("Invalid directory: %s", currentDirectory);
+					log.error(msg);
+					throw new RuntimeException(msg);
 				}
 			}
 		}
