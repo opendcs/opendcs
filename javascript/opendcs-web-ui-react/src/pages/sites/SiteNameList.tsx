@@ -5,7 +5,7 @@ import DataTable, {
 } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import dtButtons from "datatables.net-buttons-bs5";
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState, type JSX } from "react";
 import { useTranslation } from "react-i18next";
 import { dtLangs } from "../../lang";
 import type { CollectionActions, UiState } from "../../util/Actions";
@@ -14,6 +14,7 @@ import { useContextWrapper } from "../../util/ContextWrapper";
 import { Button } from "react-bootstrap";
 import { Pencil, Save, Trash } from "react-bootstrap-icons";
 import { REFLIST_SITE_NAME_TYPE, useRefList } from "../../contexts/data/RefListContext";
+import type { RowState } from "../../util/DataTables";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -25,17 +26,20 @@ export type SiteNameType = { type: string; name: string; ui_state?: UiState };
 interface SiteNameListProperties {
   siteNames: Partial<SiteNameType>[];
   actions?: CollectionActions<SiteNameType>;
+  edit?: boolean;
 }
 
 export const SiteNameList: React.FC<SiteNameListProperties> = ({
   siteNames,
   actions = {},
+  edit = false,
 }) => {
   const { toDom } = useContextWrapper();
   const { refList } = useRefList();
   const table = useRef<DataTableRef>(null);
   const [t, i18n] = useTranslation(["sites"]);
-
+  const [rowState, updateRowState] = useState<RowState<string>>({});
+  console.log(`Is editable = ${edit}`);
   const renderEditableType = (
     data: string | number | readonly string[] | undefined,
     type: string,
@@ -77,7 +81,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
       return data;
     }
 
-    if (data === undefined || row.ui_state === "edit") {
+    if (data === undefined || rowState[row.type!] === "edit") {
       try {
         const container = toDom(<input type="text" name="value" defaultValue={data} />);
         return container;
@@ -99,72 +103,75 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
     name: "actions",
   };
   const columns = useMemo(
-    () => (actions?.edit === undefined ? columnsBase : [...columnsBase, actionColumn]),
-    [actions],
+    () => (edit ? [...columnsBase, actionColumn] : columnsBase),
+    [edit],
   );
+
+  // todo: all the useeffect magic so the datatables handles the rendering.
 
   const slots = useMemo<DataTableSlots>(() => {
     return {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      actions: (data: Partial<SiteNameType>, type: unknown, _row: SiteNameType) => {
-        if (type === "display") {
-          const inEdit = data.ui_state === "new" || data.ui_state === "edit";
-          return (
-            <>
-              {inEdit && (
-                <Button
-                  onClick={() => {
-                    const snt: SiteNameType = data as SiteNameType;
-                    actions.save!(snt);
-                  }}
-                  variant="primary"
-                  size="sm"
-                  aria-label={t("sites:site_names.save_for", {
-                    type: data.type,
-                    name: data.name,
-                  })}
-                >
-                  <Save />
-                </Button>
-              )}
-              {actions.edit !== undefined && !inEdit && (
-                <Button
-                  onClick={() => {
-                    actions.edit!(data as SiteNameType);
-                  }}
-                  variant="warning"
-                  size="sm"
-                  aria-label={t("sites:site_names.edit_for", {
-                    type: data.type,
-                    name: data.name,
-                  })}
-                >
-                  <Pencil />
-                </Button>
-              )}
-              {actions.remove !== undefined && (
-                <Button
-                  onClick={() => {
-                    actions.remove!(data as SiteNameType);
-                  }}
-                  variant="danger"
-                  size="sm"
-                  aria-label={t("sites:site_names.delete_for", {
-                    type: data.type,
-                    name: data.name,
-                  })}
-                >
-                  <Trash />
-                </Button>
-              )}
-            </>
-          );
-        } else {
-          return data;
-        }
+      actions: (data: Partial<SiteNameType>, _row: SiteNameType) => {
+        const inEdit = data.type === undefined || rowState[data.type!] === "edit";
+        return (
+          <>
+            {edit && inEdit && (
+              <Button
+                onClick={() => {
+                  const snt: SiteNameType = data as SiteNameType;
+                  actions.save!(snt);
+                }}
+                variant="primary"
+                size="sm"
+                aria-label={t("sites:site_names.save_for", {
+                  type: data.type,
+                  name: data.name,
+                })}
+              >
+                <Save />
+              </Button>
+            )}
+            {edit && !inEdit && (
+              <Button
+                onClick={() => {
+                  updateRowState((prev) => {
+                    return {
+                      ...prev,
+                      [data.type!]: "edit",
+                    };
+                  });
+                }}
+                variant="warning"
+                size="sm"
+                aria-label={t("sites:site_names.edit_for", {
+                  type: data.type,
+                  name: data.name,
+                })}
+              >
+                <Pencil />
+              </Button>
+            )}
+            {edit && actions.remove !== undefined && (
+              <Button
+                onClick={() => {
+                  actions.remove!(data as SiteNameType);
+                }}
+                variant="danger"
+                size="sm"
+                aria-label={t("sites:site_names.delete_for", {
+                  type: data.type,
+                  name: data.name,
+                })}
+              >
+                <Trash />
+              </Button>
+            )}
+          </>
+        );
       },
     };
-  }, [columns]);
+  }, [rowState, edit]);
 
   const options: DataTableProps["options"] = {
     paging: false,

@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn } from "storybook/test";
 import { SiteNameList } from "./SiteNameList";
 import { WithRefLists } from "../../../.storybook/mock/WithRefLists";
+import { act } from "@testing-library/react";
 
 const meta = {
   component: SiteNameList,
@@ -42,22 +43,25 @@ export const WithNamesInEdit: Story = {
     ],
     actions: {
       add: fn(),
-      edit: fn(),
       save: fn(),
       remove: fn(),
     },
+    edit: true,
   },
-  play: async ({ canvas, mount, userEvent, parameters, args }) => {
+  play: async ({ mount, userEvent, parameters, args }) => {
+    const canvas = await mount();
     const { i18n } = parameters;
-    await mount();
 
-    const saveButton = await canvas.findByRole("button", {
-      name: i18n.t("sites:site_names.save_for", {
+    const editButton = await canvas.findByRole("button", {
+      name: i18n.t("sites:site_names.edit_for", {
         type: "CWMS",
         name: "Alder Springs",
       }),
     });
-    await userEvent.click(saveButton);
-    expect(args.actions?.save).toHaveBeenCalled();
+    await act(async () => userEvent.click(editButton));
+    const cwmsValue = await canvas.findByRole("textbox", {
+      name: i18n.t("sites:site_names.value_input_for", { type: "CWMS" }),
+    });
+    expect(cwmsValue).toBeInTheDocument();
   },
 };

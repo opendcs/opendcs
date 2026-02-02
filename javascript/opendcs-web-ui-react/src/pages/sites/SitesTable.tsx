@@ -18,6 +18,7 @@ import type { SaveAction, UiState } from "../../util/Actions";
 import { useContextWrapper } from "../../util/ContextWrapper";
 import { Button } from "react-bootstrap";
 import { Pencil } from "react-bootstrap-icons";
+import type { RowState } from "../../util/DataTables";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -28,10 +29,6 @@ export interface SiteTableProperties {
   sites: TableSiteRef[];
   getSite?: (siteId: number) => Promise<ApiSite | undefined>;
   actions?: SaveAction<ApiSite>;
-}
-
-export interface RowState {
-  [k: number]: UiState;
 }
 
 export const SitesTable: React.FC<SiteTableProperties> = ({
@@ -47,7 +44,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
   const table = useRef<DataTableRef>(null);
   const [t, i18n] = useTranslation(["sites"]);
   const [localSites, updateLocalSites] = useState<TableSiteRef[]>([]);
-  const [rowState, updateRowState] = useState<RowState>({});
+  const [rowState, updateRowState] = useState<RowState<number>>({});
 
   const siteData = useMemo(() => [...sites, ...localSites], [sites, localSites]);
   const columns = [
