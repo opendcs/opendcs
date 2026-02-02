@@ -32,15 +32,15 @@ jobs:
           sudo rm -rf /opt/ghc
       - uses: actions/checkout@v6.0.2
       - name: Set up JDK
-        uses: actions/setup-java@v4.7.1
+        uses: actions/setup-java@v5.2.0
         with:
           java-version: ${{matrix.jdk}}
           distribution: temurin
-      - uses: actions/setup-python@v5.6.0
+      - uses: actions/setup-python@v6.2.0
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4.4.1
+        uses: gradle/actions/setup-gradle@v5.0.1
         with:
           dependency-graph: generate-and-submit
       - name: Change temp dir in windows
@@ -49,7 +49,7 @@ jobs:
           echo "TEMP=$env:USERPROFILE\AppData\Local\Temp" >> $env:GITHUB_ENV
           echo "TMP=$env:USERPROFILE\AppData\Local\Temp" >> $env:GITHUB_ENV
       - name: install node for react ui and tests
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'npm'
@@ -126,7 +126,7 @@ jobs:
           restore-keys: ${{ runner.os }}-gradle
       - name: Upload Coverage
         if: matrix.platform == 'ubuntu-latest' && matrix.jdk == env.sonarJdk
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v6.0.0
         with:
           name: coverage
           path: |
@@ -135,7 +135,7 @@ jobs:
             ./**/build/**/*.class
             ./javascript/opendcs-web-ui-react/coverage/**
       - name: Upload Test Reports
-        uses: actions/upload-artifact@v5.0.0
+        uses: actions/upload-artifact@v6.0.0
         if: always()
         with:
           name: test-report-${{ runner.os }}-${{ matrix.jdk }}
@@ -144,7 +144,7 @@ jobs:
             ./**/build/test-results/**
           if-no-files-found: error
       - name: Test Report
-        uses: mikepenz/action-junit-report@v5
+        uses: mikepenz/action-junit-report@v6
         if: always()
         with:
           annotate_only: true

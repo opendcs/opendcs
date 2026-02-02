@@ -25,7 +25,7 @@ jobs:
       contents: write
       id-token: write
     # make sure we're using a version that applies to the targeted release.
-    uses: opendcs/opendcs/.github/workflows/release.yaml@7.0
+    uses: opendcs/opendcs/.github/workflows/release.yaml@8.0
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
       signingKey: ${{ secrets.SIGNING_KEY }}
