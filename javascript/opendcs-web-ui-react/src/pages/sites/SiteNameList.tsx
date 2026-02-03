@@ -3,7 +3,7 @@ import DataTable, {
   type DataTableRef,
   type DataTableSlots,
 } from "datatables.net-react";
-import DT, { type CellSelector } from "datatables.net-bs5";
+import DT from "datatables.net-bs5";
 import dtButtons from "datatables.net-buttons-bs5";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -24,7 +24,7 @@ DataTable.use(dtButtons);
 export type SiteNameType = { type: string; name: string };
 
 interface SiteNameListProperties {
-  siteNames: Partial<SiteNameType>[];
+  siteNames: SiteNameType[];
   actions?: CollectionActions<SiteNameType>;
   edit?: boolean;
 }
@@ -40,18 +40,25 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
   const [t, i18n] = useTranslation(["sites"]);
   const [rowState, updateRowState] = useState<RowState<string>>({});
   const rowStateRef = useRef(rowState);
+  const rowInputRef = useRef<Record<string, { type?: string; name?: string }>>({});
+
+  const [localSiteNames, updateLocalSitenames] = useState<Partial<SiteNameType>[]>([]);
+
+  const allSites = useMemo(
+    () => [...siteNames, ...localSiteNames],
+    [siteNames, localSiteNames],
+  );
 
   useEffect(() => {
     rowStateRef.current = rowState;
   }, [rowState]);
 
-  console.log(`Is editable = ${edit}`);
   const renderEditableType = useCallback(
     (
       data: string | number | readonly string[] | undefined,
       type: string,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      _row: any,
+      row: any,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       _meta: any,
     ) => {
@@ -59,11 +66,22 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
         return data;
       }
 
-      if (data === undefined) {
+      if (data === "-") {
         //
         try {
+          rowInputRef.current[row.type] = {
+            ...rowInputRef.current[row.type],
+            type: refList(REFLIST_SITE_NAME_TYPE).defaultValue,
+          };
           const container = toDom(
             <SiteNameTypeSelect
+              onChange={(e) => {
+                e.stopPropagation();
+                rowInputRef.current[row.type] = {
+                  ...rowInputRef.current[row.type],
+                  type: e.target.value,
+                };
+              }}
               defaultValue={refList(REFLIST_SITE_NAME_TYPE).defaultValue}
             />,
           );
@@ -75,7 +93,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
         return data;
       }
     },
-    [rowStateRef],
+    [rowStateRef, rowInputRef],
   );
 
   const renderEditableName = useCallback(
@@ -87,12 +105,9 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       _meta: any,
     ) => {
-      console.log("render name: " + data);
       if (type !== "display") {
         return data;
       }
-      console.log(`row -> ${JSON.stringify(row)}`);
-      console.log(`rowState ${JSON.stringify(rowStateRef.current)}`);
       if (data === undefined || rowStateRef.current[row.type!] === "edit") {
         try {
           const container = toDom(
@@ -100,6 +115,13 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
               type="text"
               name="value"
               defaultValue={data}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                e.stopPropagation();
+                rowInputRef.current[row.type] = {
+                  ...rowInputRef.current[row.type],
+                  name: e.target.value,
+                };
+              }}
               aria-label={t("sites:site_names.value_input_for", { type: row.type })}
             />,
           );
@@ -111,7 +133,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
         return data;
       }
     },
-    [rowStateRef],
+    [rowState, rowStateRef, rowInputRef],
   );
 
   const columnsBase = useMemo(
@@ -140,78 +162,105 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
         const idx = (row.data() as SiteNameType).type;
         if (rowState[idx] !== undefined) {
           row.invalidate().draw(false);
-          row.cell({ column: 1 } as CellSelector).draw(false);
         }
       });
     }
   }, [rowState, siteNames, edit, rowStateRef]);
 
-  const slots = useMemo<DataTableSlots>(() => {
-    return {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      actions: (data: Partial<SiteNameType>, _row: SiteNameType) => {
-        console.log("calling action slot");
-        const inEdit =
-          data.type === undefined || rowStateRef.current[data.type!] === "edit";
-        return (
-          <>
-            {edit && inEdit && (
-              <Button
-                onClick={() => {
-                  const snt: SiteNameType = data as SiteNameType;
-                  actions.save!(snt);
-                }}
-                variant="primary"
-                size="sm"
-                aria-label={t("sites:site_names.save_for", {
-                  type: data.type,
-                  name: data.name,
-                })}
-              >
-                <Save />
-              </Button>
-            )}
-            {edit && !inEdit && (
-              <Button
-                onClick={() => {
-                  updateRowState((prev) => {
-                    console.log(`Updating ${data.type} to edit`);
-                    return {
-                      ...prev,
-                      [data.type!]: "edit",
-                    };
-                  });
-                }}
-                variant="warning"
-                size="sm"
-                aria-label={t("sites:site_names.edit_for", {
-                  type: data.type,
-                  name: data.name,
-                })}
-              >
-                <Pencil />
-              </Button>
-            )}
-            {edit && actions.remove !== undefined && (
-              <Button
-                onClick={() => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const renderActions = useCallback(
+    (data: Partial<SiteNameType>, _row: SiteNameType) => {
+      const inEdit = data.type === "-" || rowStateRef.current[data.type!] === "edit";
+      return (
+        <>
+          {edit && inEdit && (
+            <Button
+              onClick={() => {
+                const snt: SiteNameType = data as SiteNameType;
+                actions.save!({
+                  type:
+                    snt.type.charAt(0) != "-"
+                      ? snt.type
+                      : rowInputRef.current[snt.type].type!,
+                  name: rowInputRef.current[snt.type].name!,
+                });
+                delete rowInputRef.current[snt.type];
+                updateLocalSitenames((prev) => {
+                  return [...prev.filter((sn) => sn.type !== data.type)];
+                });
+                updateRowState((prev) => {
+                  return {
+                    ...prev,
+                    [snt.type]: "show",
+                  };
+                });
+              }}
+              variant="primary"
+              size="sm"
+              aria-label={t("sites:site_names.save_for", {
+                type: data.type,
+                name: data.name,
+              })}
+            >
+              <Save />
+            </Button>
+          )}
+          {edit && !inEdit && (
+            <Button
+              onClick={() => {
+                updateRowState((prev) => {
+                  return {
+                    ...prev,
+                    [data.type!]: "edit",
+                  };
+                });
+              }}
+              variant="warning"
+              size="sm"
+              aria-label={t("sites:site_names.edit_for", {
+                type: data.type,
+                name: data.name,
+              })}
+            >
+              <Pencil />
+            </Button>
+          )}
+          {edit && (actions.remove !== undefined || data.type === "-") && (
+            <Button
+              onClick={() => {
+                const snt = data as SiteNameType;
+                console.log(
+                  `Checking ${JSON.stringify(localSiteNames)} for ${JSON.stringify(data)}`,
+                );
+                if (localSiteNames.includes({ type: snt.type })) {
+                  console.log("removing local");
+                  updateLocalSitenames((prev) => [
+                    ...prev.filter((sn) => sn.type != snt.type),
+                  ]);
+                } else {
                   actions.remove!(data as SiteNameType);
-                }}
-                variant="danger"
-                size="sm"
-                aria-label={t("sites:site_names.delete_for", {
-                  type: data.type,
-                  name: data.name,
-                })}
-              >
-                <Trash />
-              </Button>
-            )}
-          </>
-        );
-      },
-    };
-  }, [edit, rowStateRef, i18n.language]);
+                }
+              }}
+              variant="danger"
+              size="sm"
+              aria-label={t("sites:site_names.delete_for", {
+                type: data.type,
+                name: data.name,
+              })}
+            >
+              <Trash />
+            </Button>
+          )}
+        </>
+      );
+      //    },
+    },
+    [localSiteNames, edit, i18n.language, rowStateRef, allSites],
+  );
+
+  const slots = {
+    actions: renderActions,
+  }; //, [localSiteNames, edit, rowStateRef, i18n.language, rowInputRef, allSites]);
 
   const options: DataTableProps["options"] = {
     paging: false,
@@ -222,20 +271,21 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
     language: dtLangs.get(i18n.language),
     layout: {
       top1Start: {
-        buttons:
-          actions?.add !== undefined
-            ? [
-                {
-                  text: "+",
-                  action: () => {
-                    actions.add?.({ name: "new", type: "new" });
-                  },
-                  attr: {
-                    "aria-label": t("sites:site_names.add_name"),
-                  },
+        buttons: edit
+          ? [
+              {
+                text: "+",
+                action: () => {
+                  updateLocalSitenames((prev) => {
+                    return [...prev, { type: "-" }];
+                  });
                 },
-              ]
-            : [],
+                attr: {
+                  "aria-label": t("sites:site_names.add_name"),
+                },
+              },
+            ]
+          : [],
       },
     },
   };
@@ -245,7 +295,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
       key={i18n.language} // convient way to force a render of the components and aria labels on a language change.
       id="siteNamesTable"
       columns={columns}
-      data={siteNames}
+      data={allSites}
       options={options}
       slots={columns.length === 3 ? slots : undefined}
       ref={table}
