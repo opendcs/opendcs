@@ -101,6 +101,16 @@ jobs:
         if: matrix.platform == 'ubuntu-latest'
         run: |
           ./gradlew :testing:opendcs-tests:testCWMSOracle  --info
+      - name: integration tests (CWMS-Oracle, Latest Schema)
+        # There is an odd issues with the log file name on the windows runner.
+        # It does work locally though. Will work on it later.
+        # Integration tests require docker now for test containers.
+        # More work required to deal with the other platforms. Should be workable
+        # at some point though.
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          ./gradlew :testing:opendcs-tests:testCWMSOracle -P"opendcs.test.engine=CWMS-Oracle" --info \
+                -Popendcs.cwms.oracle.image=ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:latest-dev
       - name: Gather Code Coverage into single report
         # There is an odd issues with the log file name on the windows runner.
         # It does work locally though. Will work on it later.
