@@ -3,22 +3,22 @@ package org.opendcs.odcsapi.res;
 import java.sql.Date;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
+import java.util.List;
 
-import decodes.db.DatabaseException;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.TsGroup;
 import org.junit.jupiter.api.Test;
+import org.opendcs.odcsapi.beans.ApiCompParm;
 import org.opendcs.odcsapi.beans.ApiComputation;
 import org.opendcs.odcsapi.beans.ApiComputationRef;
+import org.opendcs.odcsapi.util.APIStreamMapper;
+import org.opendcs.odcsapi.util.DTOMappers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.opendcs.odcsapi.res.ComputationResources.map;
-
 final class ComputationResourcesTest
 {
 	@Test
@@ -43,7 +43,7 @@ final class ComputationResourcesTest
 		dbComp.setAlgorithmId(DbKey.createDbKey(197865L));
 		dbComp.setValidEnd(Date.from(Instant.parse("2023-08-03T00:30:00Z")));
 
-		ApiComputation apiComp = map(dbComp);
+		ApiComputation apiComp = DTOMappers.map(dbComp);
 
 		assertNotNull(apiComp);
 		assertEquals(dbComp.getId().getValue(), apiComp.getComputationId());
@@ -62,7 +62,7 @@ final class ComputationResourcesTest
 		assertEquals(dbComp.getGroupId().getValue(), apiComp.getGroupId());
 		assertEquals(dbComp.getName(), apiComp.getName());
 		assertEquals(dbComp.getProperties(), apiComp.getProps());
-		assertEquals(dbComp.getParmList().stream().map(ComputationResources::map).collect(Collectors.toList()),
+		assertEquals(APIStreamMapper.mapList(dbComp.getParmList(), ApiCompParm.class),
 				apiComp.getParmList());
 	}
 
@@ -83,7 +83,7 @@ final class ComputationResourcesTest
 		apiComp.setAlgorithmId(197865L);
 		apiComp.setGroupName("Computation Group");
 		apiComp.setGroupId(16753096L);
-		DbComputation dbComp = map(apiComp);
+		DbComputation dbComp = DTOMappers.map(apiComp);
 		assertNotNull(dbComp);
 		assertEquals(apiComp.getComputationId(), dbComp.getKey().getValue());
 		assertEquals(apiComp.getName(), dbComp.getName());
@@ -101,19 +101,7 @@ final class ComputationResourcesTest
 		assertEquals(apiComp.getGroupId(), dbComp.getGroupId().getValue());
 		assertEquals(apiComp.getName(), dbComp.getName());
 		assertEquals(apiComp.getProps(), dbComp.getProperties());
-		assertEquals(apiComp.getParmList().stream().map(value ->
-				{
-					try
-					{
-						return ComputationResources.map(value);
-					}
-					catch(DatabaseException e)
-					{
-						throw new RuntimeException(
-								String.format("Failed to map parameter with data type ID: %s", value.getDataTypeId()),
-								e);
-					}
-				}).collect(Collectors.toList()),
+		assertEquals(APIStreamMapper.mapList(apiComp.getParmList(), ApiCompParm.class),
 				dbComp.getParmList());
 		assertEquals(apiComp.getAlgorithmId(), dbComp.getAlgorithm().getId().getValue());
 	}
@@ -121,7 +109,7 @@ final class ComputationResourcesTest
 	@Test
 	void testComputationRefMap()
 	{
-		ArrayList<DbComputation> comps = new ArrayList<>();
+		List<DbComputation> comps = new ArrayList<>();
 		DbComputation dbComp = new DbComputation(DbKey.createDbKey(16704L), "Flow Computation");
 		dbComp.setAlgorithmId(DbKey.createDbKey(197865L));
 		dbComp.setAppId(DbKey.createDbKey(51981L));
@@ -133,7 +121,7 @@ final class ComputationResourcesTest
 		dbComp.setEnabled(true);
 		comps.add(dbComp);
 
-		ArrayList<ApiComputationRef> apiComps = map(comps);
+		List<ApiComputationRef> apiComps = APIStreamMapper.mapList(comps, ApiComputationRef.class);
 
 		assertNotNull(apiComps);
 		assertEquals(1, apiComps.size());
