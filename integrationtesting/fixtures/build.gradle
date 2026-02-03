@@ -47,8 +47,6 @@ configurations.all {
     exclude group: "com.oracle.database.jdbc", module: "jmscommon"
     exclude group: "org.jooq.pro", module: "jooq-meta"
     exclude group: "org.jooq.pro", module: "jooq-codegen"
-    exclude group: "com.mrsid"
-    exclude group: "javax.help"
     exclude group: "javax.media"
     exclude group: "com.sun.media"
     exclude group: "org.eclipse.jetty"
