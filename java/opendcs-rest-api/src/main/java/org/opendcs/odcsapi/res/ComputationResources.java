@@ -30,8 +30,6 @@ import decodes.db.DatabaseException;
 import decodes.db.Site;
 import decodes.hdb.HdbTsId;
 import decodes.sql.DbKey;
-import decodes.tsdb.BadTimeSeriesException;
-import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.CompFilter;
 import decodes.tsdb.ComputationExecution;
 import decodes.tsdb.ConstraintException;
@@ -68,9 +66,10 @@ import jakarta.ws.rs.sse.SseEventSink;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
+import org.opendcs.odcsapi.beans.ApiCompResults;
 import org.opendcs.odcsapi.beans.ApiComputation;
 import org.opendcs.odcsapi.beans.ApiComputationRef;
-import org.opendcs.odcsapi.beans.ApiTimeSeriesData;
+import org.opendcs.odcsapi.beans.ApiTimeSeriesIdentifier;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
@@ -81,8 +80,6 @@ import org.opendcs.odcsapi.util.DTOMappers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
-
-import static org.opendcs.odcsapi.util.DTOMappers.dataMap;
 
 @Path("/")
 public final class ComputationResources extends OpenDcsResource
@@ -362,18 +359,7 @@ public final class ComputationResources extends OpenDcsResource
 							.build();
 					eventSink.send(event);
 
-					processOutput(outputList, tsDai, taskID, sse, eventSink, compStatus, startDate, endDate);
-				}
-				catch(DbIoException ex)
-				{
-					log.error("Error while executing computation", ex);
-					event = sse.newEventBuilder()
-							.name(compStatus)
-							.id(taskID)
-							.mediaType(MediaType.TEXT_PLAIN_TYPE)
-							.data(String.format("Error while executing computation: %s", comp.getApplicationName()))
-							.build();
-					eventSink.send(event);
+					processOutput(outputList, taskID, sse, eventSink, startTime, endTime);
 				}
 				finally
 				{
@@ -478,39 +464,23 @@ public final class ComputationResources extends OpenDcsResource
 		return outputList;
 	}
 
-	private void processOutput(List<TimeSeriesIdentifier> outputList, TimeSeriesDAI tsDai, String taskID, Sse sse,
-			SseEventSink eventSink, String compStatus, Date startDate, Date endDate) throws DbIoException
+	private void processOutput(List<TimeSeriesIdentifier> outputList, String taskID, Sse sse,
+			SseEventSink eventSink, Instant startDate, Instant endDate)
 	{
 		OutboundSseEvent event;
-		for(TimeSeriesIdentifier id : outputList)
-		{
-			try
-			{
-				TimeSeriesIdentifier idWithKey = tsDai.getTimeSeriesIdentifier(id.getUniqueString());
-				CTimeSeries timeSeries = new CTimeSeries(idWithKey);
-				tsDai.fillTimeSeries(timeSeries, startDate, endDate);
-				ApiTimeSeriesData data = dataMap(timeSeries, startDate, endDate);
-				event = sse.newEventBuilder()
-						.name("Results")
-						.id(taskID)
-						.mediaType(MediaType.APPLICATION_JSON_TYPE)
-						.data(ApiTimeSeriesData.class, data)
-						.build();
-				eventSink.send(event);
-			}
-			catch(BadTimeSeriesException | NoSuchObjectException ex)
-			{
-				String errorMsg = String.format("Error while retrieving timeseries data for computation output: %s", id.getUniqueString());
-				log.error(errorMsg, ex);
-				event = sse.newEventBuilder()
-						.name(compStatus)
-						.id(taskID)
-						.mediaType(MediaType.TEXT_PLAIN_TYPE)
-						.data(errorMsg)
-						.build();
-				eventSink.send(event);
-			}
-		}
+		List<ApiTimeSeriesIdentifier> ids = APIStreamMapper.mapList(outputList, ApiTimeSeriesIdentifier.class);
+		ApiCompResults results = new ApiCompResults();
+		results.setEndTime(endDate.toString());
+		results.setStartTime(startDate.toString());
+		results.setTsIds(ids);
+
+		event = sse.newEventBuilder()
+				.name("Results")
+				.id(taskID)
+				.mediaType(MediaType.APPLICATION_JSON_TYPE)
+				.data(ApiCompResults.class, results)
+				.build();
+		eventSink.send(event);
 	}
 
 	private static final class SseProgressListener extends ProgressListener

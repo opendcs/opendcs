@@ -19,8 +19,9 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.sql.Time;
+import java.time.Instant;
 import java.util.Base64;
+import java.util.Date;
 import java.util.EnumSet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -303,9 +304,22 @@ public class BaseApiIT extends AppTestBase
 		}
 		catch (Throwable ex)
 		{
-			throw new DatabaseException("Error storing time series", ex);
+			throw new DatabaseException("Error retrieving time series", ex);
 		}
 		return id;
+	}
+
+	public CTimeSeries fillTimeSeries(CTimeSeries ts, Instant from, Instant to) throws Exception
+	{
+		try(TimeSeriesDAI dai = getTsdb().makeTimeSeriesDAO())
+		{
+			dai.fillTimeSeries(ts, Date.from(from), Date.from(to));
+		}
+		catch(Throwable ex)
+		{
+			throw new DatabaseException("Error retrieving time series", ex);
+		}
+		return ts;
 	}
 
 	public void deleteTimeSeries(TimeSeriesIdentifier id) throws Exception

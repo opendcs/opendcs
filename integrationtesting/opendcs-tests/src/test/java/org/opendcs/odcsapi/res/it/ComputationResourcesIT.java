@@ -32,7 +32,6 @@ import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import decodes.cwms.CwmsTsId;
 import decodes.db.Site;
-import decodes.sql.DbKey;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
@@ -640,6 +639,9 @@ final class ComputationResourcesIT extends BaseApiIT
 
 		URI baseURI = URI.create(String.format("%s:%d/%s", RestAssured.baseURI, RestAssured.port, RestAssured.basePath));
 
+		String from = "1800-01-01T00:00:00Z";
+		String to = "2040-01-02T00:00:00Z";
+
 		WebTarget target;
 		try (Client client = ClientBuilder.newBuilder()
 				.register(SseEventSource.class)
@@ -649,11 +651,11 @@ final class ComputationResourcesIT extends BaseApiIT
 			target = client.target(baseURI)
 					.path("runcomputation")
 					.queryParam("computationid", tsCompId)
-					.queryParam("start", "1800-01-01T00:00:00Z")
-					.queryParam("end", "2040-01-02T00:00:00Z");
+					.queryParam("start", from)
+					.queryParam("end", to);
 
 			List<InboundSseEvent> events = new CopyOnWriteArrayList<>();
-			CountDownLatch done = new CountDownLatch(expectedTsList.size());
+			CountDownLatch done = new CountDownLatch(1);
 			CountDownLatch firstEvent = new CountDownLatch(1);
 
 			try(SseEventSource source = SseEventSource.target(target).build())
@@ -698,9 +700,19 @@ final class ComputationResourcesIT extends BaseApiIT
 					if (sseEvent.getName().equalsIgnoreCase("Results"))
 					{
 						foundCount++;
+						JsonPath jsonPath = JsonPath.from(sseEvent.readData(String.class, MediaType.TEXT_PLAIN_TYPE));
+						assertEquals(expectedTsList.size(), jsonPath.getList("tsIds").size(), "Expected " + expectedTsList.size() + " results");
 					}
 				}
-				assertEquals(expectedTsList.size(), foundCount, String.format("Expected %d SSE Result events, found %d", expectedTsList.size(), foundCount));
+				assertEquals(1, foundCount, String.format("Expected %d SSE Result events, found %d", 1, foundCount));
+
+				for (CTimeSeries ts : expectedTsList)
+				{
+					CTimeSeries cts = fillTimeSeries(ts, Instant.parse(from), Instant.parse(to));
+					assertNotNull(cts);
+					assertNotNull(cts.getTimeSeriesIdentifier());
+					assertTrue(cts.size() > 0, "No data found for time series " + cts.getTimeSeriesIdentifier());
+				}
 			}
 		}
 	}
