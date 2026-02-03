@@ -186,6 +186,7 @@ public final class ComputationExecution
 				}
 
 				comp.apply(dataCollection, getTsDb());
+				listener.onProgress("Successfully initiated computation", Level.INFO, null);
 			}
 			catch(DbCompException ex)
 			{

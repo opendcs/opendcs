@@ -209,7 +209,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		tv.setFlags(VarFlags.TO_WRITE);
 		ts.addSample(tv);
 
-		storeTimeSeries(ts);
+		tsId = storeTimeSeries(ts);
 
 		// Create an active time series
 		CwmsTsId identifier2 = new CwmsTsId();
@@ -249,44 +249,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		tv2.setFlags(VarFlags.TO_WRITE);
 		ts2.addSample(tv2);
 
-		storeTimeSeries(ts2);
-
-		// get TS DbKeys and save to the identifiers
-		response = given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(MediaType.APPLICATION_JSON)
-			.spec(authSpec)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("tsrefs")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(Response.Status.OK.getStatusCode()))
-			.extract()
-			;
-
-		JsonPath actual = response.body().jsonPath();
-		List<Map<String, Object>> actualList = actual.getList("");
-		assertFalse(actualList.isEmpty());
-		boolean found = false;
-		boolean found2 = false;
-		for (Map<String, Object> actualMap : actualList)
-		{
-			if (actualMap.get("uniqueString").equals(identifier.getUniqueString()))
-			{
-				tsId.setKey(DbKey.createDbKey(((Integer) actualMap.get("key")).longValue()));
-				found = true;
-			}
-			else if (actualMap.get("uniqueString").equals(identifier2.getUniqueString()))
-			{
-				tsId2.setKey(DbKey.createDbKey(((Integer) actualMap.get("key")).longValue()));
-				found2 = true;
-			}
-		}
-		assertTrue(found);
-		assertTrue(found2);
+		tsId2 = storeTimeSeries(ts2);
 
 		String siteNameTypePreference = DecodesSettings.instance().siteNameTypePreference;
 		for (int i = 0; i < 2; i++)
@@ -685,10 +648,12 @@ final class ComputationResourcesIT extends BaseApiIT
 		{
 			target = client.target(baseURI)
 					.path("runcomputation")
-					.queryParam("computationid", tsCompId);
+					.queryParam("computationid", tsCompId)
+					.queryParam("start", "1800-01-01T00:00:00Z")
+					.queryParam("end", "2040-01-02T00:00:00Z");
 
 			List<InboundSseEvent> events = new CopyOnWriteArrayList<>();
-			CountDownLatch done = new CountDownLatch(10);
+			CountDownLatch done = new CountDownLatch(expectedTsList.size());
 			CountDownLatch firstEvent = new CountDownLatch(1);
 
 			try(SseEventSource source = SseEventSource.target(target).build())
@@ -735,7 +700,7 @@ final class ComputationResourcesIT extends BaseApiIT
 						foundCount++;
 					}
 				}
-				assertEquals(10, foundCount, "Expected 10 SSE Result events, found " + foundCount);
+				assertEquals(expectedTsList.size(), foundCount, String.format("Expected %d SSE Result events, found %d", expectedTsList.size(), foundCount));
 			}
 		}
 	}

@@ -308,10 +308,10 @@ public final class ComputationResources extends OpenDcsResource
 			@Parameter(required = true, description = "Unique Computation ID",
 					schema = @Schema(implementation = Long.class, example = "4"))
 			@QueryParam("computationid") Long computationId,
-			@Parameter(description = "Optional parameter to specify the beginning of the time range to execute the computation on.",
+			@Parameter(required = true, description = "Parameter to specify the beginning of the time range to execute the computation on.",
 					schema = @Schema(implementation = Instant.class, example = "2025-10-25T12:00:00Z"))
 			@QueryParam("start") String start,
-			@Parameter(description = "Optional parameter to specify the end of the time range to execute the computation on",
+			@Parameter(required = true, description = "Parameter to specify the end of the time range to execute the computation on",
 					schema = @Schema(implementation = Instant.class, example = "2025-10-25T12:00:00Z"))
 			@QueryParam("end") String end)
 			throws DbException, WebAppException
@@ -331,8 +331,8 @@ public final class ComputationResources extends OpenDcsResource
 
 			String taskID = UUID.randomUUID().toString();
 
-			final Instant startTime = start != null ? Instant.parse(start) : Instant.parse("1800-01-01T12:00:00Z");
-			final Instant endTime = end != null ? Instant.parse(end) : Instant.parse("2200-12-31T12:00:00Z");
+			final Instant startTime = Instant.parse(start);
+			final Instant endTime = Instant.parse(end);
 			Date startDate = Date.from(startTime);
 			Date endDate = Date.from(endTime);
 

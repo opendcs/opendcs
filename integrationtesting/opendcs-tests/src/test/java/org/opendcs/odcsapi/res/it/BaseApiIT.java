@@ -19,6 +19,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.sql.Time;
 import java.util.Base64;
 import java.util.EnumSet;
 
@@ -285,8 +286,9 @@ public class BaseApiIT extends AppTestBase
 		}
 	}
 
-	public void storeTimeSeries(CTimeSeries ts) throws Exception
+	public TimeSeriesIdentifier storeTimeSeries(CTimeSeries ts) throws Exception
 	{
+		TimeSeriesIdentifier id;
 		try (TimeSeriesDAI dai = getTsdb().makeTimeSeriesDAO())
 		{
 			dai.saveTimeSeries(ts);
@@ -295,6 +297,15 @@ public class BaseApiIT extends AppTestBase
 		{
 			throw new DatabaseException("Error storing time series", ex);
 		}
+		try (TimeSeriesDAI dai = getTsdb().makeTimeSeriesDAO())
+		{
+			id = dai.getTimeSeriesIdentifier(ts.getNameString());
+		}
+		catch (Throwable ex)
+		{
+			throw new DatabaseException("Error storing time series", ex);
+		}
+		return id;
 	}
 
 	public void deleteTimeSeries(TimeSeriesIdentifier id) throws Exception
