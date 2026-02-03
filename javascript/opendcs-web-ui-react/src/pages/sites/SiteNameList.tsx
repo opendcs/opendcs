@@ -3,12 +3,12 @@ import DataTable, {
   type DataTableRef,
   type DataTableSlots,
 } from "datatables.net-react";
-import DT from "datatables.net-bs5";
+import DT, { type CellSelector } from "datatables.net-bs5";
 import dtButtons from "datatables.net-buttons-bs5";
-import { useMemo, useRef, useState, type JSX } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { dtLangs } from "../../lang";
-import type { CollectionActions, UiState } from "../../util/Actions";
+import type { CollectionActions } from "../../util/Actions";
 import SiteNameTypeSelect from "./SiteNameTypeSelect";
 import { useContextWrapper } from "../../util/ContextWrapper";
 import { Button } from "react-bootstrap";
@@ -21,7 +21,7 @@ DataTable.use(DT);
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(dtButtons);
 
-export type SiteNameType = { type: string; name: string; ui_state?: UiState };
+export type SiteNameType = { type: string; name: string };
 
 interface SiteNameListProperties {
   siteNames: Partial<SiteNameType>[];
@@ -39,64 +39,88 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
   const table = useRef<DataTableRef>(null);
   const [t, i18n] = useTranslation(["sites"]);
   const [rowState, updateRowState] = useState<RowState<string>>({});
+  const rowStateRef = useRef(rowState);
+
+  useEffect(() => {
+    rowStateRef.current = rowState;
+  }, [rowState]);
+
   console.log(`Is editable = ${edit}`);
-  const renderEditableType = (
-    data: string | number | readonly string[] | undefined,
-    type: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    _row: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    _meta: any,
-  ) => {
-    if (type !== "display") {
-      return data;
-    }
-
-    if (data === undefined) {
-      //
-      try {
-        const container = toDom(
-          <SiteNameTypeSelect
-            defaultValue={refList(REFLIST_SITE_NAME_TYPE).defaultValue}
-          />,
-        );
-        return container;
-      } catch (error) {
-        return JSON.stringify(error);
+  const renderEditableType = useCallback(
+    (
+      data: string | number | readonly string[] | undefined,
+      type: string,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      _row: any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      _meta: any,
+    ) => {
+      if (type !== "display") {
+        return data;
       }
-    } else {
-      return data;
-    }
-  };
 
-  const renderEditableName = (
-    data: string | number | readonly string[] | undefined,
-    type: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    row: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    _meta: any,
-  ) => {
-    if (type !== "display") {
-      return data;
-    }
-
-    if (data === undefined || rowState[row.type!] === "edit") {
-      try {
-        const container = toDom(<input type="text" name="value" defaultValue={data} />);
-        return container;
-      } catch (error) {
-        return JSON.stringify(error);
+      if (data === undefined) {
+        //
+        try {
+          const container = toDom(
+            <SiteNameTypeSelect
+              defaultValue={refList(REFLIST_SITE_NAME_TYPE).defaultValue}
+            />,
+          );
+          return container;
+        } catch (error) {
+          return JSON.stringify(error);
+        }
+      } else {
+        return data;
       }
-    } else {
-      return data;
-    }
-  };
+    },
+    [rowStateRef],
+  );
 
-  const columnsBase = [
-    { data: "type", render: renderEditableType, defaultContent: "" },
-    { data: "name", render: renderEditableName, defaultContent: "" },
-  ];
+  const renderEditableName = useCallback(
+    (
+      data: string | number | readonly string[] | undefined,
+      type: string,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      row: any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      _meta: any,
+    ) => {
+      console.log("render name: " + data);
+      if (type !== "display") {
+        return data;
+      }
+      console.log(`row -> ${JSON.stringify(row)}`);
+      console.log(`rowState ${JSON.stringify(rowStateRef.current)}`);
+      if (data === undefined || rowStateRef.current[row.type!] === "edit") {
+        try {
+          const container = toDom(
+            <input
+              type="text"
+              name="value"
+              defaultValue={data}
+              aria-label={t("sites:site_names.value_input_for", { type: row.type })}
+            />,
+          );
+          return container;
+        } catch (error) {
+          return JSON.stringify(error);
+        }
+      } else {
+        return data;
+      }
+    },
+    [rowStateRef],
+  );
+
+  const columnsBase = useMemo(
+    () => [
+      { data: "type", render: renderEditableType, defaultContent: "" },
+      { data: "name", render: renderEditableName, defaultContent: "" },
+    ],
+    [rowStateRef],
+  );
 
   const actionColumn = {
     data: null,
@@ -104,16 +128,31 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
   };
   const columns = useMemo(
     () => (edit ? [...columnsBase, actionColumn] : columnsBase),
-    [edit],
+    [edit, columnsBase],
   );
 
-  // todo: all the useeffect magic so the datatables handles the rendering.
+  useEffect(() => {
+    if (table.current?.dt()) {
+      const dt = table.current.dt()!;
+      const visibleRows = dt.rows({ page: "current", search: "applied" });
+      visibleRows.every(function () {
+        const row = this;
+        const idx = (row.data() as SiteNameType).type;
+        if (rowState[idx] !== undefined) {
+          row.invalidate().draw(false);
+          row.cell({ column: 1 } as CellSelector).draw(false);
+        }
+      });
+    }
+  }, [rowState, siteNames, edit, rowStateRef]);
 
   const slots = useMemo<DataTableSlots>(() => {
     return {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       actions: (data: Partial<SiteNameType>, _row: SiteNameType) => {
-        const inEdit = data.type === undefined || rowState[data.type!] === "edit";
+        console.log("calling action slot");
+        const inEdit =
+          data.type === undefined || rowStateRef.current[data.type!] === "edit";
         return (
           <>
             {edit && inEdit && (
@@ -136,6 +175,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
               <Button
                 onClick={() => {
                   updateRowState((prev) => {
+                    console.log(`Updating ${data.type} to edit`);
                     return {
                       ...prev,
                       [data.type!]: "edit",
@@ -171,7 +211,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
         );
       },
     };
-  }, [rowState, edit]);
+  }, [edit, rowStateRef, i18n.language]);
 
   const options: DataTableProps["options"] = {
     paging: false,

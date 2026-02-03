@@ -37,9 +37,8 @@ export const WithNames: Story = {
 export const WithNamesInEdit: Story = {
   args: {
     siteNames: [
-      { type: "CWMS", name: "Alder Springs", ui_state: "edit" },
+      { type: "CWMS", name: "Alder Springs" },
       { type: "NWSHB5", name: "ALS" },
-      { ui_state: "new" },
     ],
     actions: {
       add: fn(),
