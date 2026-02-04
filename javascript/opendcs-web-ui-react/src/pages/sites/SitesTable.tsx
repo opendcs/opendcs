@@ -95,6 +95,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
     language: dtLangs.get(i18n.language),
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     createdRow: (_row, _data, dataIndex) => {
+      // this prevent clicks on elements within the child row from triggering the handler defined in the useEffect below
       table.current?.dt()?.row(dataIndex).node().classList.add("child-toggle");
     },
     layout: {

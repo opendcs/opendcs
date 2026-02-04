@@ -1,7 +1,6 @@
 import DataTable, {
   type DataTableProps,
   type DataTableRef,
-  type DataTableSlots,
 } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import dtButtons from "datatables.net-buttons-bs5";
