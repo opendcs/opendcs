@@ -68,6 +68,7 @@ webcompere = "2.1.8"
 greenmail = "2.1.8"
 mockito = "5.21.0"
 byte-buddy = "1.15.3"
+commons-beanutils = "1.11.0"
 rest-assured = "6.0.0"
 tomcat = "11.0.14"
 microprofile-health = "4.0.1"
@@ -190,6 +191,7 @@ tomcat-embedded-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper
 tomcat-jdbc = { module = "org.apache.tomcat:tomcat-jdbc", version.ref = "tomcat" }
 slf4j-jdk14 = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j-api"}
 swagger-parser = { module = "io.swagger.parser.v3:swagger-parser-v3", version.ref = "swagger-parser"}
+commons-beanutils = { module = "commons-beanutils:commons-beanutils", version.ref = "commons-beanutils" }
 commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
 apache-derby = { module = "org.apache.derby:derby", version.ref = "derby" }
 webcompere-system-stubs-jupiter = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "webcompere" }

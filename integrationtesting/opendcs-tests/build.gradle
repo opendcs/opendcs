@@ -20,6 +20,9 @@ configurations {
 }
 
 dependencies {
+    constraints {
+        testImplementation(libs.commons.beanutils)
+    }
     implementation project(":install")
     implementation(libs.bundles.junit)
     implementation(libs.bundles.junit.platform)
