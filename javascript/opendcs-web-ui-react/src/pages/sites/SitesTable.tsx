@@ -93,6 +93,10 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
     responsive: true,
     stateSave: true,
     language: dtLangs.get(i18n.language),
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    createdRow: (_row, _data, dataIndex) => {
+      table.current?.dt()?.row(dataIndex).node().classList.add("child-toggle");
+    },
     layout: {
       top1Start: {
         buttons: [
@@ -166,7 +170,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
 
   useEffect(() => {
     // Add event listener for opening and closing details
-    table.current?.dt()?.on("click", "tbody tr", function (e) {
+    table.current?.dt()?.on("click", "tbody tr.child-toggle", function (e) {
       if (getSite === undefined) {
         return; // do nothing, we can't look it up.
       }

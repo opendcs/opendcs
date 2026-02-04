@@ -101,7 +101,9 @@ export const Site: React.FC<SiteProperties> = ({
           dispatch({ type: "add_name", payload: siteName! });
         },
         //edit: () => {},
-        //remove: () => {},
+        remove: (snt: SiteNameType) => {
+          dispatch({ type: "delete_name", payload: { type: snt.type } });
+        },
         save: (siteName: SiteNameType) => {
           dispatch({ type: "add_name", payload: siteName! });
         },
@@ -140,7 +142,11 @@ export const Site: React.FC<SiteProperties> = ({
         <Row>
           <Col>
             <Row>
-              <SiteNameList siteNames={siteNames} actions={siteNameActions} />
+              <SiteNameList
+                siteNames={siteNames}
+                actions={siteNameActions}
+                edit={edit}
+              />
             </Row>
             <Row>
               <PropertiesTable
