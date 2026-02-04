@@ -1,7 +1,6 @@
 import DataTable, {
   type DataTableProps,
   type DataTableRef,
-  type DataTableSlots,
 } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import { useTranslation } from "react-i18next";
