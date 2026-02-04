@@ -5,19 +5,19 @@ import DataTable, {
 } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import { useTranslation } from "react-i18next";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { dtLangs } from "../../lang";
 import type {
   ApiSite,
   ApiSiteRef,
 } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
-import Site from "./Site";
+import Site, { type UiSite } from "./Site";
 // import { createRoot } from "react-dom/client";
 // import RefListContext, { useRefList } from "../../contexts/data/RefListContext";
-import type { SaveAction, UiState } from "../../util/Actions";
+import type { RemoveAction, SaveAction, UiState } from "../../util/Actions";
 import { useContextWrapper } from "../../util/ContextWrapper";
 import { Button } from "react-bootstrap";
-import { Pencil } from "react-bootstrap-icons";
+import { Pencil, Trash } from "react-bootstrap-icons";
 import type { RowState } from "../../util/DataTables";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -27,8 +27,8 @@ export type TableSiteRef = Partial<ApiSiteRef>;
 
 export interface SiteTableProperties {
   sites: TableSiteRef[];
-  getSite?: (siteId: number) => Promise<ApiSite | undefined>;
-  actions?: SaveAction<ApiSite>;
+  getSite?: (siteId: number) => Promise<ApiSite>;
+  actions?: SaveAction<ApiSite> & RemoveAction<number>;
 }
 
 export const SitesTable: React.FC<SiteTableProperties> = ({
@@ -45,8 +45,19 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
   const [t, i18n] = useTranslation(["sites"]);
   const [localSites, updateLocalSites] = useState<TableSiteRef[]>([]);
   const [rowState, updateRowState] = useState<RowState<number>>({});
+  const rowStateRef = useRef(rowState);
+  const localSitesRef = useRef(localSites);
+
+  useEffect(() => {
+    rowStateRef.current = rowState;
+  }, [rowState]);
+
+  useEffect(() => {
+    localSitesRef.current = localSites;
+  }, [localSites]);
 
   const siteData = useMemo(() => [...sites, ...localSites], [sites, localSites]);
+
   const columns = [
     { data: "siteId", defaultContent: "new" },
     {
@@ -61,32 +72,52 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
     { data: null, name: "actions" },
   ];
 
-  const slots = useMemo<DataTableSlots>(() => {
-    return {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      actions: (data: TableSiteRef, _row: any) => {
-        const id: number = data.siteId!;
-        const inEdit = rowState![id] === "edit" || rowState[id] === "new";
-        return !inEdit ? (
-          <Button
-            variant="warning"
-            onClick={(e) => {
-              e.stopPropagation();
-              updateRowState((prev) => {
-                return {
-                  ...prev,
-                  [id]: "edit",
-                };
-              });
-            }}
-            aria-label={t("sites:edit_site", { id: id })}
-          >
-            <Pencil />
-          </Button>
-        ) : null;
-      },
-    };
-  }, [rowState, i18n.language]);
+  const renderActions = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    (data: TableSiteRef, _row: any) => {
+      const id: number = data.siteId!;
+      const curRowState = rowStateRef.current[id];
+      const inEdit = curRowState === "edit" || curRowState === "new";
+      return (
+        <>
+          {!inEdit && (
+            <Button
+              variant="warning"
+              onClick={(e) => {
+                e.stopPropagation();
+                updateRowState((prev) => {
+                  return {
+                    ...prev,
+                    [id]: "edit",
+                  };
+                });
+              }}
+              aria-label={t("sites:edit_site", { id: id })}
+            >
+              <Pencil />
+            </Button>
+          )}
+          {!inEdit && data.siteId! > 0 && (
+            <Button
+              variant="danger"
+              aria-label={t("sites:delete_for", { id: data.siteId })}
+              onClick={(e) => {
+                e.stopPropagation();
+                actions.remove!(id);
+              }}
+            >
+              <Trash />
+            </Button>
+          )}
+        </>
+      );
+    },
+    [rowStateRef, i18n.language],
+  );
+
+  const slots = {
+    actions: renderActions,
+  };
 
   const options: DataTableProps["options"] = {
     paging: true,
@@ -131,43 +162,60 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
     },
   };
 
-  const renderSite = (data: TableSiteRef, edit: boolean = false): Node => {
-    const site =
-      data.siteId && data.siteId > 0 ? getSite!(data.siteId!) : Promise.resolve({});
-    const workingSite = rowState[data.siteId!] === "new" ? {} : site; // maybe put in "row state"?
+  const renderSite = useCallback(
+    (data: TableSiteRef, edit: boolean = false): Node => {
+      const site =
+        data.siteId && data.siteId > 0
+          ? getSite!(data.siteId!)
+          : Promise.resolve({ siteId: data.siteId! } as UiSite);
 
-    const container = toDom(
-      <Site
-        site={workingSite}
-        actions={{
-          save: (site: ApiSite) => {
-            actions.save!(site); // todo: error handling, plus the hold "update the row thing"
-            updateLocalSites((prev) => {
-              return prev.filter((ps) => ps.siteId !== site.siteId);
-            });
-            updateRowState((prev) => {
-              const { [site.siteId!]: _, ...states } = prev;
-              return {
-                ...states,
-                [site.siteId!]: "show",
-              };
-            });
-          },
-          cancel: (item) => {
-            updateRowState((prev) => {
-              const { [item]: _, ...states } = prev;
-              return {
-                ...states,
-                [item]: "show",
-              };
-            });
-          },
-        }}
-        edit={edit}
-      />,
-    );
-    return container;
-  };
+      console.log(site);
+      const container = toDom(
+        <Site
+          site={site}
+          actions={{
+            save: (site: ApiSite) => {
+              actions.save!(site); // todo: error handling, plus the hold "update the row thing"
+              updateLocalSites((prev) => [
+                ...prev.filter((ps) => ps.siteId !== site.siteId),
+              ]);
+              updateRowState((prev) => {
+                const { [site.siteId!]: _, ...states } = prev;
+                return {
+                  ...states,
+                  [site.siteId!]: "show",
+                };
+              });
+            },
+            cancel: (item) => {
+              const local = localSitesRef.current.find((ls) => ls.siteId === item);
+              if (local) {
+                updateLocalSites((prev) => [
+                  ...prev.filter((pls) => pls.siteId !== item),
+                ]);
+              }
+              updateRowState((prev) => {
+                const { [item]: _, ...states } = prev;
+                if (local) {
+                  return {
+                    ...states,
+                  };
+                } else {
+                  return {
+                    ...states,
+                    [item]: "show",
+                  };
+                }
+              });
+            },
+          }}
+          edit={edit}
+        />,
+      );
+      return container;
+    },
+    [localSitesRef, rowStateRef, getSite, updateLocalSites, updateRowState],
+  );
 
   useEffect(() => {
     // Add event listener for opening and closing details
@@ -205,19 +253,17 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
       visibleRows.every(function () {
         const row = this;
         const idx = (row.data() as TableSiteRef).siteId!;
-        //row.invalidate();
-        if (rowState[idx] !== undefined) {
-          //row.child()?.hide();
+        row.invalidate().draw(false);
+        if (rowStateRef.current[idx] !== undefined) {
           const data: TableSiteRef = row.data() as TableSiteRef;
-          const edit = rowState[idx] !== "show";
+          const edit = rowStateRef.current[idx] !== "show";
           row.child(renderSite(data, edit), "child-row").show();
         } else {
           row.child()?.hide();
         }
-        //row.draw(false);
       });
     }
-  }, [rowState, sites, siteData]);
+  }, [rowState, sites, siteData, localSites, localSitesRef, rowStateRef]);
 
   return (
     <DataTable

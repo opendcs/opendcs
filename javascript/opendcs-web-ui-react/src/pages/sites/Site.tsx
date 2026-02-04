@@ -4,18 +4,13 @@ import { use, useCallback, useMemo, useReducer, useState } from "react";
 import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { useTranslation } from "react-i18next";
 import { SiteNameList, type SiteNameType } from "./SiteNameList";
-import type {
-  CancelAction,
-  CollectionActions,
-  SaveAction,
-  UiState,
-} from "../../util/Actions";
+import type { CancelAction, CollectionActions, SaveAction } from "../../util/Actions";
 import { SiteReducer } from "./SiteReducer";
 import { Save, X } from "react-bootstrap-icons";
 
-export type UiSite = Partial<ApiSite & { ui_state?: UiState }>;
+export type UiSite = Partial<ApiSite>;
 
-interface SiteProperties {
+export interface SiteProperties {
   site: Promise<UiSite> | UiSite;
   actions?: SaveAction<ApiSite> & CancelAction<number>;
   edit?: boolean;
@@ -43,10 +38,9 @@ export const Site: React.FC<SiteProperties> = ({
   const providedSite = site instanceof Promise ? use(site) : site;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [localSite, dispatch] = useReducer(SiteReducer, providedSite);
-
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [props, updateProps] = useState<Property[]>(() => {
-    const props = localSite.properties || {};
+    const props = providedSite.properties || {};
     return Object.values(props).map(([k, v]) => {
       return { name: k as string, value: v as string };
     });
@@ -331,6 +325,7 @@ export const Site: React.FC<SiteProperties> = ({
                   actions.cancel?.(providedSite.siteId!);
                 }}
                 variant="secondary"
+                aria-label={t("sites:cancel_for", { id: providedSite.siteId })}
               >
                 <X /> {t("cancel")}
               </Button>

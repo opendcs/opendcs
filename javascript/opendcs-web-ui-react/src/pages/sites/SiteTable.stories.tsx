@@ -8,7 +8,7 @@ import {
 import { expect, userEvent, waitFor } from "storybook/test";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { act } from "@testing-library/react";
-import { SaveAction } from "../../util/Actions";
+import { RemoveAction, SaveAction } from "../../util/Actions";
 import { ArgsStoryFn } from "storybook/internal/types";
 
 const meta = {
@@ -61,8 +61,13 @@ const toSiteRefs = (sites: ApiSite[]): ApiSiteRef[] => {
 
 const sharedSiteRefs: ApiSiteRef[] = toSiteRefs(sharedSites);
 
-const getSite = async (id: number): Promise<ApiSite | undefined> => {
-  return Promise.resolve(sharedSites.find((site) => site.siteId == id));
+const getSite = async (id: number): Promise<ApiSite> => {
+  const site = sharedSites.find((site) => site.siteId == id);
+  if (site) {
+    return Promise.resolve(site);
+  } else {
+    return Promise.reject("No site available with id " + id);
+  }
 };
 
 type Story = StoryObj<typeof meta>;
@@ -72,11 +77,16 @@ const StoryRender: ArgsStoryFn<
   {
     sites: TableSiteRef[];
     getSite?: ((siteId: number) => Promise<ApiSite | undefined>) | undefined;
-    actions?: SaveAction<ApiSite> | undefined;
+    actions?: SaveAction<ApiSite> & RemoveAction<number>;
   }
 > = (args) => {
   const [storySites, updateSites] = useState<ApiSite[]>([]);
   const siteRefs = useMemo(() => toSiteRefs(storySites), [storySites]);
+  const storySitesRef = useRef(storySites);
+
+  useEffect(() => {
+    storySitesRef.current = storySites;
+  }, [storySites]);
 
   useEffect(() => {
     const setupSites = async () => {
@@ -86,9 +96,8 @@ const StoryRender: ArgsStoryFn<
       const filtered = tmpSites.filter((s) => s !== undefined);
       updateSites((_) => [...filtered]);
     };
-    if (storySites.length === 0) {
-      setupSites();
-    }
+
+    setupSites();
   }, []);
 
   const saveSite = useCallback(
@@ -113,16 +122,33 @@ const StoryRender: ArgsStoryFn<
     [storySites],
   );
 
+  const removeSite = useCallback(
+    (siteId: number) => {
+      updateSites((prev) => {
+        return [...prev.filter((site) => site.siteId !== siteId)];
+      });
+    },
+    [storySites],
+  );
+
   const localGetSite = useCallback(
     (id: number) => {
       const site = storySites.find((site) => site.siteId === id);
-      return Promise.resolve(site);
+      if (site) {
+        return Promise.resolve(site);
+      } else {
+        return Promise.reject("No site available with id " + id);
+      }
     },
     [storySites],
   );
 
   return (
-    <SitesTable sites={siteRefs} getSite={localGetSite} actions={{ save: saveSite }} />
+    <SitesTable
+      sites={siteRefs}
+      getSite={localGetSite}
+      actions={{ save: saveSite, remove: removeSite }}
+    />
   );
 };
 
@@ -169,7 +195,7 @@ export const WithSites: Story = {
   },
 };
 
-export const WithExistingAddNewSite: Story = {
+export const WithExistingAddNewSiteThenCancel: Story = {
   args: {
     sites: sharedSiteRefs,
     getSite: getSite,
@@ -186,5 +212,21 @@ export const WithExistingAddNewSite: Story = {
       return canvas.queryByText("-1");
     });
     expect(negativeIndex).toBeInTheDocument();
+
+    const cancelButton = await canvas.findByRole("button", {
+      name: i18n.t("sites:cancel_for", { id: -1 }),
+    });
+    await act(async () => userEvent.click(cancelButton));
+    await waitFor(() => {
+      expect(canvas.queryByText("-1")).not.toBeInTheDocument();
+    });
+
+    const deleteButton = await canvas.findByRole("button", {
+      name: i18n.t("sites:delete_for", { id: 1 }),
+    });
+    await act(async () => userEvent.click(deleteButton));
+    await waitFor(() => {
+      expect(canvas.queryByText("TEST SITE 1")).not.toBeInTheDocument();
+    });
   },
 };

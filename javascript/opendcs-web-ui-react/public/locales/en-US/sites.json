@@ -22,5 +22,7 @@
   "nearestCity": "Nearest City",
   "public_name": "Public Name",
   "edit_site": "Edit site with id {{id}}",
-  "save_site": "Save site with id {{id}}"
+  "save_site": "Save site with id {{id}}",
+  "cancel_for": "Cancel editing for Site with id {{id}}",
+  "delete_for": "Delete Site with id {{id}}"
 }
