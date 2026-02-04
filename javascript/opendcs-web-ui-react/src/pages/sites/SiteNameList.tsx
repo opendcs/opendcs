@@ -41,8 +41,13 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
   const [rowState, updateRowState] = useState<RowState<string>>({});
   const rowStateRef = useRef(rowState);
   const rowInputRef = useRef<Record<string, { type?: string; name?: string }>>({});
-
   const [localSiteNames, updateLocalSitenames] = useState<Partial<SiteNameType>[]>([]);
+  const localSiteNamesRef = useRef(localSiteNames);
+  const siteNamesRef = useRef(siteNames);
+
+  useEffect(() => {
+    siteNamesRef.current = siteNames;
+  }, [siteNames]);
 
   const allSites = useMemo(
     () => [...siteNames, ...localSiteNames],
@@ -52,6 +57,10 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
   useEffect(() => {
     rowStateRef.current = rowState;
   }, [rowState]);
+
+  useEffect(() => {
+    localSiteNamesRef.current = localSiteNames;
+  }, [localSiteNames]);
 
   const renderEditableType = useCallback(
     (
@@ -83,6 +92,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
                 };
               }}
               defaultValue={refList(REFLIST_SITE_NAME_TYPE).defaultValue}
+              existing={siteNamesRef.current}
             />,
           );
           return container;
@@ -93,7 +103,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
         return data;
       }
     },
-    [rowStateRef, rowInputRef],
+    [rowStateRef, rowInputRef, siteNamesRef],
   );
 
   const renderEditableName = useCallback(
@@ -167,8 +177,8 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
     }
   }, [rowState, siteNames, edit, rowStateRef]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const renderActions = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     (data: Partial<SiteNameType>, _row: SiteNameType) => {
       const inEdit = data.type === "-" || rowStateRef.current[data.type!] === "edit";
       return (
@@ -179,7 +189,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
                 const snt: SiteNameType = data as SiteNameType;
                 actions.save!({
                   type:
-                    snt.type.charAt(0) != "-"
+                    snt.type.charAt(0) !== "-"
                       ? snt.type
                       : rowInputRef.current[snt.type].type!,
                   name: rowInputRef.current[snt.type].name!,
@@ -229,13 +239,9 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
             <Button
               onClick={() => {
                 const snt = data as SiteNameType;
-                console.log(
-                  `Checking ${JSON.stringify(localSiteNames)} for ${JSON.stringify(data)}`,
-                );
-                if (localSiteNames.includes({ type: snt.type })) {
-                  console.log("removing local");
+                if (localSiteNamesRef.current?.find((sn) => sn.type === snt.type)) {
                   updateLocalSitenames((prev) => [
-                    ...prev.filter((sn) => sn.type != snt.type),
+                    ...prev.filter((sn) => sn.type !== snt.type),
                   ]);
                 } else {
                   actions.remove!(data as SiteNameType);
@@ -253,14 +259,13 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
           )}
         </>
       );
-      //    },
     },
-    [localSiteNames, edit, i18n.language, rowStateRef, allSites],
+    [localSiteNamesRef, edit, i18n.language, rowStateRef],
   );
 
   const slots = {
     actions: renderActions,
-  }; //, [localSiteNames, edit, rowStateRef, i18n.language, rowInputRef, allSites]);
+  };
 
   const options: DataTableProps["options"] = {
     paging: false,

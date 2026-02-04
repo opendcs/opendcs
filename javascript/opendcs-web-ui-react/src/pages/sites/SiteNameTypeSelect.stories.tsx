@@ -40,3 +40,18 @@ export const OtherSelected: Story = {
     expect(selectBox).toHaveValue("local");
   },
 };
+
+export const ExistingNames: Story = {
+  args: {
+    defaultValue: "local",
+    existing: [{ type: "CWMS" }],
+  },
+  play: async ({ mount, canvas, parameters }) => {
+    const { i18n } = parameters;
+    await mount();
+    const selectBox = canvas.queryByRole("combobox", {
+      name: i18n.t("sites:site_names.select"),
+    });
+    expect(selectBox).toHaveValue("local");
+  },
+};
