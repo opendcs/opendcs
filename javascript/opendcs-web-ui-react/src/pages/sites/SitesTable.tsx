@@ -11,8 +11,6 @@ import type {
   ApiSiteRef,
 } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import Site, { type UiSite } from "./Site";
-// import { createRoot } from "react-dom/client";
-// import RefListContext, { useRefList } from "../../contexts/data/RefListContext";
 import type { RemoveAction, SaveAction, UiState } from "../../util/Actions";
 import { useContextWrapper } from "../../util/ContextWrapper";
 import { Button } from "react-bootstrap";
