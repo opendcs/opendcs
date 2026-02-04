@@ -31,6 +31,7 @@ of incorrectly formatted code.
 If you disable the huksy pre-comment hook please run
 
 `npm run precommit` manually to adjust the formatting.
+
 ## UI Tests and Development
 
 ### Development
