@@ -86,7 +86,9 @@ export const WithSiteInEdit: Story = {
     expect(newSite.elevation).toEqual("5");
     expect(newSite.elevUnits).toEqual("ft");
 
-    const cancelButton = await canvas.findByRole("button", { name: i18n.t("cancel") });
+    const cancelButton = await canvas.findByRole("button", {
+      name: i18n.t("sites:cancel_for", { id: site1.siteId }),
+    });
     await userEvent.click(cancelButton);
     expect(args.actions?.cancel).toHaveBeenCalled();
   },
