@@ -44,7 +44,6 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
   const [rowState, updateRowState] = useState<RowState<number>>({});
   const rowStateRef = useRef(rowState);
   const localSitesRef = useRef(localSites);
-
   useEffect(() => {
     rowStateRef.current = rowState;
   }, [rowState]);
@@ -216,32 +215,37 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
 
   useEffect(() => {
     // Add event listener for opening and closing details
-    table.current?.dt()?.on("click", "tbody tr.child-toggle", function (e) {
-      if (getSite === undefined) {
-        return; // do nothing, we can't look it up.
-      }
-      const target = e.target! as Element;
-      const tr = target.closest("tr");
-      if (tr?.classList.contains("child-row")) {
-        return; // don't do anything if we click the child row.
-      }
-      const dt = table.current!.dt()!;
-
-      const row = dt.row(tr as HTMLTableRowElement);
-      updateRowState((prev) => {
-        const idx = (row.data() as TableSiteRef).siteId!;
-        const { [idx]: existing, ...remaining } = prev;
-        let newValue: UiState = "show";
-        if (existing !== undefined) {
-          newValue = undefined;
+    table.current
+      ?.dt()
+      ?.off("click")
+      .on("click", "tbody tr.child-toggle", function (e) {
+        if (getSite === undefined) {
+          return; // do nothing, we can't look it up.
         }
-        return {
-          ...remaining,
-          [idx]: newValue,
-        };
+        const target = e.target! as Element;
+        const tr = target.closest("tr");
+        if (tr?.classList.contains("child-row")) {
+          return; // don't do anything if we click the child row.
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        const dt = table.current!.dt()!;
+
+        const row = dt.row(tr as HTMLTableRowElement);
+        updateRowState((prev) => {
+          const idx = (row.data() as TableSiteRef).siteId!;
+          const { [idx]: existing, ...remaining } = prev;
+          let newValue: UiState = "show";
+          if (existing !== undefined) {
+            newValue = undefined;
+          }
+          return {
+            ...remaining,
+            [idx]: newValue,
+          };
+        });
       });
-    });
-  }, [i18n.language]);
+  }, [i18n.language, getSite]);
 
   useEffect(() => {
     if (table.current?.dt()) {
