@@ -1,17 +1,19 @@
 import { Button, Card, Col, Form, FormGroup, FormSelect, Row } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../components/properties";
-import { use, useMemo, useReducer, useState } from "react";
+import { use, useCallback, useMemo, useReducer, useState } from "react";
 import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { useTranslation } from "react-i18next";
 import { SiteNameList, type SiteNameType } from "./SiteNameList";
-import type { CollectionActions, SaveAction, UiState } from "../../util/Actions";
+import type { CancelAction, CollectionActions, SaveAction } from "../../util/Actions";
 import { SiteReducer } from "./SiteReducer";
+import { Save, X } from "react-bootstrap-icons";
 
-export type UiSite = Partial<ApiSite & { ui_state?: UiState }>;
+export type UiSite = Partial<ApiSite>;
 
-interface SiteProperties {
+export interface SiteProperties {
   site: Promise<UiSite> | UiSite;
-  actions?: SaveAction<ApiSite>;
+  actions?: SaveAction<ApiSite> & CancelAction<number>;
+  edit?: boolean;
 }
 
 const elevationUnits = [
@@ -27,23 +29,24 @@ const elevationUnits = [
   { units: "yd", name: "yd (Yards)" },
 ];
 
-export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
+export const Site: React.FC<SiteProperties> = ({
+  site,
+  actions = {},
+  edit = false,
+}) => {
   const { t } = useTranslation();
   const providedSite = site instanceof Promise ? use(site) : site;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [localSite, dispatch] = useReducer(SiteReducer, providedSite);
-
-  const editMode = providedSite.ui_state ? false : true;
-
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [props, updateProps] = useState<Property[]>(() => {
-    const props = localSite.properties || {};
+    const props = providedSite.properties || {};
     return Object.values(props).map(([k, v]) => {
       return { name: k as string, value: v as string };
     });
   });
 
-  const propertyActions: CollectionActions<Property, string> = editMode
+  const propertyActions: CollectionActions<Property, string> = edit
     ? {
         add: () => {
           updateProps((prev) => {
@@ -86,13 +89,15 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
       }
     : {};
 
-  const siteNameActions: CollectionActions<SiteNameType> = editMode
+  const siteNameActions: CollectionActions<SiteNameType> = edit
     ? {
         add: (siteName?: SiteNameType) => {
           dispatch({ type: "add_name", payload: siteName! });
         },
         //edit: () => {},
-        //remove: () => {},
+        remove: (snt: SiteNameType) => {
+          dispatch({ type: "delete_name", payload: { type: snt.type } });
+        },
         save: (siteName: SiteNameType) => {
           dispatch({ type: "add_name", payload: siteName! });
         },
@@ -105,16 +110,39 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
     });
   }, [localSite.sitenames]);
 
+  const saveSite = useCallback((site: UiSite) => {
+    actions.save!(site as ApiSite);
+  }, []);
+
+  const inputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const { name, value } = event.target;
+      dispatch({ type: "save", payload: { [name]: value } });
+    },
+    [dispatch],
+  );
+
+  const selectChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const { name, value } = event.target;
+      dispatch({ type: "save", payload: { [name]: value } });
+    },
+    [dispatch],
+  );
+
   return (
     <Card>
       <Card.Body>
         <Row>
           <Col>
             <Row>
-              <SiteNameList siteNames={siteNames} actions={siteNameActions} />
+              <SiteNameList
+                siteNames={siteNames}
+                actions={siteNameActions}
+                edit={edit}
+              />
             </Row>
             <Row>
-              {/* TODO: need to have list be read only unless we're in edit mode */}
               <PropertiesTable
                 theProps={props}
                 actions={propertyActions}
@@ -132,9 +160,10 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
                   type="text"
                   id="latitude"
                   name="latitude"
-                  readOnly={!editMode}
+                  readOnly={!edit}
                   placeholder={t("sites:use_decimal_format")}
                   defaultValue={localSite.latitude}
+                  onChange={inputChange}
                 />
               </Col>
             </FormGroup>
@@ -147,9 +176,10 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
                   type="text"
                   id="longitude"
                   name="longitude"
-                  readOnly={!editMode}
+                  readOnly={!edit}
                   placeholder={t("sites:use_decimal_format")}
                   defaultValue={localSite.longitude}
+                  onChange={inputChange}
                 />
               </Col>
             </FormGroup>
@@ -161,9 +191,10 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
                 <Form.Control
                   type="text"
                   id="elevation"
-                  name="elevation "
-                  readOnly={!editMode}
+                  name="elevation"
+                  readOnly={!edit}
                   defaultValue={localSite.elevation}
+                  onChange={inputChange}
                 />
               </Col>
             </FormGroup>
@@ -172,7 +203,12 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
                 {t("elevation_units")}
               </Form.Label>
               <Col sm={10}>
-                <FormSelect id="elevationUnits" disabled={!editMode}>
+                <FormSelect
+                  id="elevationUnits"
+                  disabled={!edit}
+                  name="elevUnits"
+                  onChange={selectChange}
+                >
                   {elevationUnits.map((unit) => {
                     return (
                       <option
@@ -195,9 +231,10 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
                 <Form.Control
                   type="text"
                   id="nearestCity"
-                  name="nearest_city"
-                  readOnly={!editMode}
+                  name="nearestCity"
+                  readOnly={!edit}
                   defaultValue={localSite.nearestCity}
+                  onChange={inputChange}
                 />
               </Col>
             </FormGroup>
@@ -210,8 +247,9 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
                   type="text"
                   id="state"
                   name="state"
-                  readOnly={!editMode}
+                  readOnly={!edit}
                   defaultValue={localSite.state}
+                  onChange={inputChange}
                 />
               </Col>
             </FormGroup>
@@ -224,9 +262,10 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
                   type="text"
                   id="country"
                   name="country"
-                  readOnly={!editMode}
+                  readOnly={!edit}
                   placeholder={t("sites:enter_country")}
                   defaultValue={localSite.country}
+                  onChange={inputChange}
                 />
               </Col>
             </FormGroup>
@@ -239,9 +278,10 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
                   type="text"
                   id="region"
                   name="region"
-                  readOnly={!editMode}
+                  readOnly={!edit}
                   placeholder={t("sites:enter_region")}
                   defaultValue={localSite.region}
+                  onChange={inputChange}
                 />
               </Col>
             </FormGroup>
@@ -254,8 +294,9 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
                   type="text"
                   id="publicName"
                   name="publicName"
-                  readOnly={!editMode}
+                  readOnly={!edit}
                   defaultValue={localSite.publicName}
+                  onChange={inputChange}
                 />
               </Col>
             </FormGroup>
@@ -268,20 +309,36 @@ export const Site: React.FC<SiteProperties> = ({ site, actions = {} }) => {
                   type="text"
                   id="description"
                   name="description"
-                  readOnly={!editMode}
+                  readOnly={!edit}
                   defaultValue={localSite.description}
+                  onChange={inputChange}
                 />
               </Col>
             </FormGroup>
           </Col>
         </Row>
-        <Row>
-          <Col>
-            <Button onClick={() => actions.save?.(localSite)} variant="primary">
-              Save
-            </Button>
-          </Col>
-        </Row>
+        {edit && (
+          <Row>
+            <Col className="d-flex justify-content-end">
+              <Button
+                onClick={() => {
+                  actions.cancel?.(providedSite.siteId!);
+                }}
+                variant="secondary"
+                aria-label={t("sites:cancel_for", { id: providedSite.siteId })}
+              >
+                <X /> {t("cancel")}
+              </Button>
+              <Button
+                onClick={() => saveSite(localSite)}
+                variant="primary"
+                aria-label={t("sites:save_site", { id: localSite.siteId })}
+              >
+                <Save /> {t("save")}
+              </Button>
+            </Col>
+          </Row>
+        )}
       </Card.Body>
     </Card>
   );

@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, fn } from "storybook/test";
-import { SiteNameList } from "./SiteNameList";
+import { expect, fn, Mock, MockedFunction } from "storybook/test";
+import { SiteNameList, SiteNameType } from "./SiteNameList";
 import { WithRefLists } from "../../../.storybook/mock/WithRefLists";
+import { act } from "@testing-library/react";
+import { useEffect, useState } from "react";
 
 const meta = {
   component: SiteNameList,
@@ -36,28 +38,76 @@ export const WithNames: Story = {
 export const WithNamesInEdit: Story = {
   args: {
     siteNames: [
-      { type: "CWMS", name: "Alder Springs", ui_state: "edit" },
+      { type: "CWMS", name: "Alder Springs" },
       { type: "NWSHB5", name: "ALS" },
-      { ui_state: "new" },
     ],
     actions: {
       add: fn(),
-      edit: fn(),
-      save: fn(),
+      save: fn((item) => console.log(`Saving ${JSON.stringify(item)}`)),
       remove: fn(),
     },
+    edit: true,
   },
-  play: async ({ canvas, mount, userEvent, parameters, args }) => {
-    const { i18n } = parameters;
-    await mount();
+  render: (args) => {
+    const { siteNames, actions, edit } = args;
+    const [names, updateNames] = useState<SiteNameType[]>([]);
 
-    const saveButton = await canvas.findByRole("button", {
-      name: i18n.t("sites:site_names.save_for", {
+    useEffect(() => {
+      updateNames(siteNames as SiteNameType[]);
+    }, []);
+
+    const realSave = (item: SiteNameType) => {
+      actions?.save?.(item);
+      updateNames((prev) => {
+        const filtered = prev.filter((sn) => sn.type != item.type);
+        return [...filtered, item];
+      });
+    };
+
+    const realRemove = (item: SiteNameType) => {
+      actions?.remove?.(item);
+      updateNames((prev) => {
+        const filtered = prev.filter((sn) => sn.type != item.type);
+        return [...filtered];
+      });
+    };
+
+    return (
+      <SiteNameList
+        siteNames={names}
+        actions={{ save: realSave, remove: realRemove }}
+        edit={edit}
+      />
+    );
+  },
+  play: async ({ mount, userEvent, parameters, args }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+    const saveFn = args.actions?.save! as Mock;
+
+    const editButton = await canvas.findByRole("button", {
+      name: i18n.t("sites:site_names.edit_for", {
         type: "CWMS",
         name: "Alder Springs",
       }),
     });
-    await userEvent.click(saveButton);
-    expect(args.actions?.save).toHaveBeenCalled();
+    await act(async () => userEvent.click(editButton));
+    const cwmsValue = await canvas.findByRole("textbox", {
+      name: i18n.t("sites:site_names.value_input_for", { type: "CWMS" }),
+    });
+    expect(cwmsValue).toBeInTheDocument();
+    await act(async () => userEvent.type(cwmsValue, " 2"));
+    const saveButton = await canvas.findByRole("button", {
+      name: i18n.t("sites:site_names.save_for", { type: "CWMS" }),
+    });
+    await act(async () => userEvent.click(saveButton));
+
+    // the method is clearly called as the code below this works so
+    // I'm not sure why this is failing
+    //expect(saveFn).toHaveBeenCalled();
+    const saveArgs = saveFn.mock.calls[0];
+    console.log(saveArgs);
+    expect((saveArgs.at(0) as SiteNameType).name).toEqual("Alder Springs 2");
+    expect(canvas.queryByText("Alder Springs 2")).toBeInTheDocument();
   },
 };

@@ -16,6 +16,7 @@ export const WithRefLists: Decorator = (Story) => {
     if (k === REFLIST_SITE_NAME_TYPE) {
       return {
         enumName: k,
+        defaultValue: "local",
         items: {
           CWMS: { value: "CWMS" },
           local: { value: "local" },
