@@ -1,5 +1,5 @@
+import type { User } from "opendcs-api";
 import { createContext, useContext, type SetStateAction } from "react";
-import { User } from "opendcs-api";
 
 export interface AuthContextType {
   user?: User;
