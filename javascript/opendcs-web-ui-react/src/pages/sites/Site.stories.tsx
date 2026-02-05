@@ -3,7 +3,6 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import Site from "./Site";
 import { expect, fn, Mock } from "storybook/test";
 import { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
-import { SaveAction } from "../../util/Actions";
 
 const meta = {
   component: Site,
