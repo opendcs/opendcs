@@ -231,7 +231,7 @@ export const Site: React.FC<SiteProperties> = ({
                 <Form.Control
                   type="text"
                   id="nearestCity"
-                  name="nearest_city"
+                  name="nearestCity"
                   readOnly={!edit}
                   defaultValue={localSite.nearestCity}
                   onChange={inputChange}
