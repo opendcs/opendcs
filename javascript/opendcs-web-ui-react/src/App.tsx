@@ -9,9 +9,9 @@ import { RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
 import { useApi } from "./contexts/app/ApiContext";
 import { Route, Routes, useNavigate } from "react-router-dom";
 import { Platforms } from "./pages/platforms";
-import { SitesTable } from "./pages/sites/SitesTable";
 import { Container } from "react-bootstrap";
 import { Algorithms } from "./pages/computations/algorithms";
+import { SitesPage } from "./pages/sites";
 
 function App() {
   const navigate = useNavigate();
@@ -40,7 +40,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route element={<SideBar />}>
             <Route path="/platforms" element={<Platforms />} />
-            <Route path="/sites" element={<SitesTable sites={[]} />} />
+            <Route path="/sites" element={<SitesPage />} />
             <Route path="/algorithms" element={<Algorithms />} />
           </Route>
         </Routes>
