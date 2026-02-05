@@ -50,7 +50,7 @@ automatically run the play functions, and depending on what the developer does, 
 
 ### Tests
 
-We have found some quirks in how tests run. While we're sure some of this is how we are using storybook we have yet to "fix" the situtation. That said, the quirks
+We have found some quirks in how tests run. While we're sure some of this is how we are using Storybook we have yet to "fix" the situtation. That said, the quirks
 are managable.
 
 1. The internationalization (i18n) Decorator doesn't seem to finish before the Story is fully rendered and the play method starts running when storybook first loads.
