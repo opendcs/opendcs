@@ -46,7 +46,7 @@ provided with data from the API; however, we "mimic" that API with local source 
 To confirm the behavior of a component rendering from an API we will use appropriate Mocks. As of this writing the exact method has not been determined.
 
 When creating a component please create a Story that includes a play method that performs no actions. This is beneficial for exploratory use as Storybook will
-automatically run the play functions and depending on what the developer does and remove the user actions.
+automatically run the play functions, and depending on what the developer does, remove the user actions.
 
 ### Tests
 
