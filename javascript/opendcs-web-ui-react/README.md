@@ -55,7 +55,7 @@ are manageable.
 
 1. The internationalization (i18n) Decorator doesn't seem to finish before the Story is fully rendered and the play method starts running when Storybook first loads.
    Usually clicking the reload test fixes this and tests run fine. You'll see errors with i18n keys instead of expanded strings when this is happening.
-2. For some reason we have to keep call `userEvent.<anything>` within an `await act(async () => userEvent.<anything>)`. Otherwise tests fail when run in vitest, but will pass in the storybook UI.
+2. For some reason we have to keep call calling `userEvent.<anything>` within an `await act(async () => userEvent.<anything>)`. Otherwise tests fail when run in Vitest, but will pass in the storybook UI.
    The Storybook UI will log a bunch of "act not supported" or "you've called act within act" but so far they run.
 3. Especially for anything using DataTables, make sure to `const canvas = await mount()` or just `await mount()` at once at the top of the play method.
 
