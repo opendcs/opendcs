@@ -22,9 +22,6 @@ function App() {
     const auth = new RESTAuthenticationAndAuthorizationApi(api.conf);
     auth
       .checkSessionAuthorization()
-      // The current API spec (in the generated api) shows string as the return still
-      // the endpoint *correctly* returns a user object. likely just an issue
-      // with the autocomplete cache on my system.
       .then((value: User) => setUser(value))
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .catch((_error: unknown) => navigate("/login"));
