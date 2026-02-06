@@ -11,7 +11,7 @@ export const SitesPage: React.FC = () => {
 
   useEffect(() => {
     const fetchSites = async () => {
-      const sites = await sitesApi.getsiterefs(api.org || "");
+      const sites = await sitesApi.getsiterefs(api.org);
       updateSites(sites);
       setStale(false);
     };
@@ -22,14 +22,14 @@ export const SitesPage: React.FC = () => {
 
   const getSite = useCallback(
     (siteId: number) => {
-      return sitesApi.getsite(api.org || "", siteId!);
+      return sitesApi.getsite(api.org, siteId!);
     },
     [api],
   );
 
   const saveSite = useCallback(
     (site: ApiSite) => {
-      sitesApi.postsite(api.org || "", site);
+      sitesApi.postsite(api.org, site);
       setStale(true);
     },
     [api],
@@ -37,7 +37,7 @@ export const SitesPage: React.FC = () => {
 
   const deleteSite = useCallback(
     (siteId: number) => {
-      sitesApi.deletesite(api.org || "", siteId);
+      sitesApi.deletesite(api.org, siteId);
       setStale(true);
     },
     [api],

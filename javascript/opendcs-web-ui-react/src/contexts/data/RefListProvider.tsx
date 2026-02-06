@@ -16,7 +16,7 @@ export const RefListProvider = ({ children }: ProviderProps) => {
   useEffect(() => {
     const fetchLists = async () => {
       const refListApi = new RESTReferenceListsApi(api.conf);
-      const refs = await refListApi.getRefLists(api.org || "");
+      const refs = await refListApi.getRefLists(api.org);
       updateRefLists(refs);
     };
     fetchLists();
