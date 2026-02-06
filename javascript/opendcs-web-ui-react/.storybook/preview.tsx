@@ -11,6 +11,9 @@ import { I18nextProvider } from "react-i18next";
 import { Theme, ThemeContext } from "../src/contexts/app/ThemeContext";
 import { useGlobals } from "storybook/internal/preview-api";
 import { WithRefLists } from "./mock/WithRefLists";
+import { initialize, mswLoader } from "msw-storybook-addon";
+import { http, HttpResponse } from "msw";
+import { ApiSiteRef } from "../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 
 // Wrap your stories in the I18nextProvider component
 // lifted direct from https://storybook.js.org/recipes/react-i18next
@@ -69,6 +72,22 @@ const WithTheme: Decorator = (Story) => {
 
 // end lift
 
+// MSW setup
+initialize(
+  {
+    onUnhandledRequest(request, print) {
+      const url = new URL(request.url);
+      // Ignore warnings for specific URLs (e.g., /api/health)
+      if (!url.pathname.startsWith("/odcsapi")) {
+        return;
+      }
+      // For all other unhandled requests, print the warning
+      print.warning();
+    },
+  },
+  [],
+);
+
 const preview: Preview = {
   parameters: {
     controls: {
@@ -120,6 +139,7 @@ const preview: Preview = {
   initialGlobals: {
     locale: "en-US",
   },
+  loaders: [mswLoader],
 };
 
 export default preview;
