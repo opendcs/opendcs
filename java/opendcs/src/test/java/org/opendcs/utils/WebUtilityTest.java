@@ -3,6 +3,7 @@ package org.opendcs.utils;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
@@ -29,6 +30,16 @@ import uk.org.webcompere.systemstubs.properties.SystemProperties;
 @ExtendWith(SystemStubsExtension.class)
 class WebUtilityTest 
 {
+    private static final String TEST_MESSAGE = "test message";
+    private static final HttpHandler TEST_HANDLER = httpExchange -> {
+        byte[] responseBytes = TEST_MESSAGE.getBytes(StandardCharsets.UTF_8);
+        httpExchange.getResponseHeaders().add("Content-Type", "text/plain; charset=utf-8");
+        httpExchange.sendResponseHeaders(200, responseBytes.length);
+        try (OutputStream os = httpExchange.getResponseBody()) {
+            os.write(responseBytes);
+        }
+    };
+
     SystemProperties properties = null ;
 
     @TempDir
@@ -48,15 +59,7 @@ class WebUtilityTest
         server.setHttpsConfigurator(new HttpsConfigurator(createSslContextFromKeystore()));
 
         try {
-            server.createContext("/", httpExchange -> {
-                String response = "test message";
-                byte[] responseBytes = response.getBytes(StandardCharsets.UTF_8);
-                httpExchange.getResponseHeaders().add("Content-Type", "text/plain; charset=utf-8");
-                httpExchange.sendResponseHeaders(200, responseBytes.length);
-                try (OutputStream os = httpExchange.getResponseBody()) {
-                    os.write(responseBytes);
-                }
-            });
+            server.createContext("/", TEST_HANDLER);
             server.start();
 
             int port = server.getAddress().getPort();
@@ -79,15 +82,7 @@ class WebUtilityTest
     {
         HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
         try {
-            server.createContext("/", httpExchange -> {
-                String response = "test message";
-                byte[] responseBytes = response.getBytes(StandardCharsets.UTF_8);
-                httpExchange.getResponseHeaders().add("Content-Type", "text/plain; charset=utf-8");
-                httpExchange.sendResponseHeaders(200, responseBytes.length);
-                try (OutputStream os = httpExchange.getResponseBody()) {
-                    os.write(responseBytes);
-                }
-            });
+            server.createContext("/", TEST_HANDLER);
             server.start();
 
             int port = server.getAddress().getPort();
