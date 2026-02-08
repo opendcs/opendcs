@@ -15,7 +15,7 @@
 
 package org.opendcs.odcsapi.beans;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -71,7 +71,7 @@ public final class ApiSite
 	private Properties properties = new Properties();
 
 	@Schema(description = "The last modification timestamp for the site.")
-	private Date lastModified = null;
+	private Instant lastModified = null;
 	
 	public Long getSiteId()
 	{
@@ -213,12 +213,12 @@ public final class ApiSite
 		this.properties = properties;
 	}
 
-	public Date getLastModified()
+	public Instant getLastModified()
 	{
 		return lastModified;
 	}
 
-	public void setLastModified(Date lastModified)
+	public void setLastModified(Instant lastModified)
 	{
 		this.lastModified = lastModified;
 	}

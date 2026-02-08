@@ -758,7 +758,7 @@ final class TimeSeriesResourcesIT extends BaseApiIT
 		site.latitude = apiSite.getLatitude();
 		site.longitude = apiSite.getLongitude();
 		site.setId(DbKey.createDbKey(apiSite.getSiteId()));
-		site.setLastModifyTime(apiSite.getLastModified());
+		site.setLastModifyTime(Date.from(apiSite.getLastModified()));
 		site.setDescription(apiSite.getDescription());
 		site.timeZoneAbbr = apiSite.getTimezone();
 		site.nearestCity = apiSite.getNearestCity();

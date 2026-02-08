@@ -78,7 +78,7 @@ final class SiteResourcesTest
 		apiSite.setState("NM");
 		apiSite.setLatitude("35.0844");
 		apiSite.setLongitude("-106.6506");
-		apiSite.setLastModified(Date.from(Instant.now()));
+		apiSite.setLastModified(Instant.now());
 		apiSite.setPublicName("Albuquerque Pump Station");
 
 		Site result = map(apiSite);

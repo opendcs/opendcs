@@ -196,7 +196,7 @@ public final class SiteResources extends OpenDcsResource
 		returnSite.setElevUnits(site.getElevationUnits());
 		returnSite.setActive(site.isActive());
 		returnSite.setDescription(site.getDescription());
-		returnSite.setLastModified(site.getLastModifyTime());
+		returnSite.setLastModified(site.getLastModifyTime().toInstant());
 		returnSite.setCountry(site.country);
 		returnSite.setState(site.state);
 		returnSite.setProperties(properties);
