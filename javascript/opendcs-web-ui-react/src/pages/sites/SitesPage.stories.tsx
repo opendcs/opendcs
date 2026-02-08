@@ -25,15 +25,15 @@ export const Default: Story = {
       handlers: {
         sites: http.get("/odcsapi/siterefs", () => {
           return HttpResponse.json<ApiSiteRef[]>([
-            { siteId: 1, sitenames: { CWMS: "Alder Springs" } },
-            { siteId: 2, sitenames: { CWMS: "test" } },
+            { siteId: 1, sitenames: { cwms: "Alder Springs" } },
+            { siteId: 2, sitenames: { cwms: "test" } },
           ]);
         }),
         site: http.get("/odcsapi/site", ({ request }) => {
           const url = new URL(request.url);
           return HttpResponse.json<ApiSite>({
             siteId: parseInt(url.searchParams.get("siteId") || "-2"),
-            sitenames: { CWMS: "Alder Springs" },
+            sitenames: { cwms: "Alder Springs" },
             elevation: 5,
             elevUnits: "ft",
             publicName: "Alder Springs",

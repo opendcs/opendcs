@@ -137,7 +137,7 @@ public final class SiteResources extends OpenDcsResource
 					+ "\"latitude\": \"42.4278\",\n  \"longitude\": \"-72.0261\",\n  \"nearestCity\": "
 					+ "\"Barre Falls Dam\",\n  \"properties\": {\n    \"some\": \"thing\",\n    "
 					+ "\"something\": \"else\"\n  },\n  \"region\": \"\",\n  \"siteId\": 7,\n  "
-					+ "\"sitenames\": {\n    \"CWMS\": \"BFD\",\n    \"NWSHB5\": \"BFD\"\n  },\n  "
+					+ "\"sitenames\": {\n    \"cwms\": \"BFD\",\n    \"nwshb5\": \"BFD\"\n  },\n  "
 					+ "\"state\": \"MA\",\n  \"timezone\": \"America/New_York\"\n}\n```",
 			operationId = "getsite",
 			tags = {"REST - DECODES Site Records"},

@@ -60,7 +60,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
       data: null,
       render: (_data: unknown, _type: unknown, row: unknown) => {
         const site = row as ApiSiteRef;
-        return site.sitenames?.CWMS || ""; // TODO need configured sitename preference
+        return site.sitenames?.cwms || ""; // TODO need configured sitename preference
       },
     },
     { data: "publicName", defaultContent: "" },
@@ -133,7 +133,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
             action: () => {
               updateLocalSites((prev) => {
                 // modal here for sitename?... or focus on automatically created new entry?
-                let existing = prev
+                const existing = prev
                   .map((v) => v.siteId!)
                   // we want the lowest
                   .sort((a: number, b: number) => {

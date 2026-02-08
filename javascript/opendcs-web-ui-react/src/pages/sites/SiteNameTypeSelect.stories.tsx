@@ -23,7 +23,7 @@ export const Default: Story = {
     const selectBox = canvas.queryByRole("combobox", {
       name: i18n.t("sites:site_names.select"),
     });
-    expect(selectBox).toHaveValue("CWMS");
+    expect(selectBox).toHaveValue("cwms");
   },
 };
 
@@ -44,7 +44,7 @@ export const OtherSelected: Story = {
 export const ExistingNames: Story = {
   args: {
     defaultValue: "local",
-    existing: [{ type: "CWMS" }],
+    existing: [{ type: "cwms" }],
   },
   play: async ({ mount, canvas, parameters }) => {
     const { i18n } = parameters;

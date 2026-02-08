@@ -18,9 +18,9 @@ export const WithRefLists: Decorator = (Story) => {
         enumName: k,
         defaultValue: "local",
         items: {
-          CWMS: { value: "CWMS" },
+          cwms: { value: "cwms" },
           local: { value: "local" },
-          NWSHB5: { value: "NWSHB5" },
+          nwshb5: { value: "nwshb5" },
         },
       };
     } else {

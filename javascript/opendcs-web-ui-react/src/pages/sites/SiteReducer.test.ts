@@ -7,31 +7,31 @@ test("Reducer Add SiteName", () => {
 
   const result = SiteReducer(testSite, {
     type: "add_name",
-    payload: { type: "CWMS", name: "Test Site 1" },
+    payload: { type: "cwms", name: "Test Site 1" },
   });
   console.log(result);
   expect(result).toBeDefined();
   expect(result.sitenames).toBeDefined();
 
-  expect(result.sitenames?.CWMS).toEqual("Test Site 1");
+  expect(result.sitenames?.cwms).toEqual("Test Site 1");
 });
 
 test("Change a SiteName Then Delete", () => {
   const testSite: UiSite = {
     sitenames: {
-      CWMS: "Test 1",
-      NWSHDB5: "Test1",
+      cwms: "Test 1",
+      nwshb5: "Test1",
     },
   };
 
   expect(testSite.sitenames).toBeDefined();
-  expect(testSite.sitenames?.CWMS).toEqual("Test 1");
+  expect(testSite.sitenames?.cwms).toEqual("Test 1");
   const result = SiteReducer(testSite, {
     type: "add_name",
-    payload: { type: "CWMS", name: "Test Rename" },
+    payload: { type: "cwms", name: "Test Rename" },
   });
   expect(result).toBeDefined();
-  expect(result.sitenames?.CWMS).toEqual("Test Rename");
+  expect(result.sitenames?.cwms).toEqual("Test Rename");
 
   const deletedName = SiteReducer(result, {
     type: "delete_name",
@@ -43,8 +43,8 @@ test("Change a SiteName Then Delete", () => {
 test("Modify properties", () => {
   const testSite: UiSite = {
     sitenames: {
-      CWMS: "Test Mod Properties",
-      NWSHDB5: "Test1",
+      cwms: "Test Mod Properties",
+      nwshb5: "Test1",
     },
   };
 
@@ -80,7 +80,7 @@ test("Modify Site itself", () => {
 
   const withNames = SiteReducer(withPublicName, {
     type: "add_name",
-    payload: { type: "CWMS", name: "Test Site full" },
+    payload: { type: "cwms", name: "Test Site full" },
   });
   expect(withNames.sitenames).toBeDefined();
 
@@ -97,5 +97,5 @@ test("Modify Site itself", () => {
   expect(setLatLongElv.elevation).toEqual(20.0);
   expect(setLatLongElv.latitude).toEqual("89.0");
   expect(setLatLongElv.longitude).toEqual("-120.0");
-  expect(setLatLongElv.sitenames?.CWMS).toBeDefined(); // make sure we haven't lost something important.
+  expect(setLatLongElv.sitenames?.cwms).toBeDefined(); // make sure we haven't lost something important.
 });
