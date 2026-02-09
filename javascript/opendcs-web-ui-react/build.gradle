@@ -63,6 +63,15 @@ node {
     // distBaseUrl = 'https://custom.node.dist.mirror'
 }
 
+sonar {
+    properties {
+        property "sonar.sources", "src"
+        property "sonar.tests", "src"
+        property "sonar.test.inclusions", "/**/*.(stories|tests).(js|jsx|ts|tsx)"
+        property "sonar.exclusions", "/**/*.(stories|tests).(js|jsx|ts|tsx)"
+    }
+}
+
 build.dependsOn buildUi
 
 def runUiDev = tasks.register("runUiDev", NpxTask) {
