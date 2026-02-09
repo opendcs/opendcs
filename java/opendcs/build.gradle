@@ -113,7 +113,6 @@ dependencies {
     testImplementation(libs.apache.derby)
     testImplementation(libs.webcompere.system.stubs.jupiter)
     testImplementation(libs.greenmail)
-    testImplementation(libs.org.mock.server)
     testRuntimeOnly(libs.ch.qos.logback)
     testImplementation(project(":opendcs-api"))
 
