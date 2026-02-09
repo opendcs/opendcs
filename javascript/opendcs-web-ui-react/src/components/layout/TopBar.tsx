@@ -1,15 +1,13 @@
 import { useContext } from "react";
-import { Button, Container, NavDropdown } from "react-bootstrap";
-import { PersonGear } from "react-bootstrap-icons";
 import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 import { AuthContext } from "../../contexts/app/AuthContext";
 import { ColorModes } from "../";
-import { useTranslation } from "react-i18next";
-import LangPicker from "../LangPicker";
+import LangPicker from "../menus/Language/LangPicker";
+import UserMenu from "../menus/User/UserMenu";
+import { Container } from "react-bootstrap";
 
 export function TopBar() {
-  const { t } = useTranslation();
   const { user, logout } = useContext(AuthContext);
 
   return (
@@ -25,20 +23,7 @@ export function TopBar() {
           <ColorModes />
         </Nav.Item>
         <Nav.Item></Nav.Item>
-        {user && (
-          <NavDropdown
-            title={<PersonGear className="theme-icon my-1" height="1em" />}
-            id="user-settings"
-            drop="start"
-          >
-            <NavDropdown.Item>Profile - {user?.email}</NavDropdown.Item>
-            <NavDropdown.Item>Admin</NavDropdown.Item>
-            <NavDropdown.Divider />
-            <NavDropdown.Item>
-              <Button onClick={logout}>{t("translation:logout")}</Button>
-            </NavDropdown.Item>
-          </NavDropdown>
-        )}
+        {user && <UserMenu user={user} logout={logout} />}
       </Nav>
     </Navbar>
     //  <nav class="navbar  navbar-expand-lg bg-primary sticky-top">

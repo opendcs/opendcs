@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { ColorModes } from "./ColorMode";
 import { Nav } from "react-bootstrap";
-import { ModeIcons } from "./ModeIcon";
+import { ModeIcons } from "../../ModeIcon";
 
 const meta = {
   component: ColorModes,

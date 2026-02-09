@@ -21,5 +21,6 @@
   "description": "Description",
   "cancel": "Cancel",
   "save": "Save",
-  "loading_reference_lists": "Loading Reference Lists Data..."
+  "loading_reference_lists": "Loading Reference Lists Data...",
+  "user-settings": "User Settings"
 }
