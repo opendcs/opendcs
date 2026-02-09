@@ -8,6 +8,8 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 
+import ilex.util.EnvExpander;
+
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -31,11 +33,13 @@ import uk.org.webcompere.systemstubs.properties.SystemProperties;
 class WebUtilityTest 
 {
     private static final String TEST_MESSAGE = "test message";
-    private static final HttpHandler TEST_HANDLER = httpExchange -> {
+    private static final HttpHandler TEST_HANDLER = httpExchange -> 
+    {
         byte[] responseBytes = TEST_MESSAGE.getBytes(StandardCharsets.UTF_8);
         httpExchange.getResponseHeaders().add("Content-Type", "text/plain; charset=utf-8");
         httpExchange.sendResponseHeaders(200, responseBytes.length);
-        try (OutputStream os = httpExchange.getResponseBody()) {
+        try (OutputStream os = httpExchange.getResponseBody()) 
+        {
             os.write(responseBytes);
         }
     };
@@ -55,25 +59,31 @@ class WebUtilityTest
     @Test
     void test_open_url_https() throws Exception 
     {
-        HttpsServer server = HttpsServer.create(new InetSocketAddress(0), 0);
-        server.setHttpsConfigurator(new HttpsConfigurator(createSslContextFromKeystore()));
+        properties.execute(() -> 
+        {
+            System.out.println(EnvExpander.expand("$DCSTOOL_USERDIR"));
+            HttpsServer server = HttpsServer.create(new InetSocketAddress(0), 0);
+            server.setHttpsConfigurator(new HttpsConfigurator(createSslContextFromKeystore()));
 
-        try {
-            server.createContext("/", TEST_HANDLER);
-            server.start();
+            try 
+            {
+                server.createContext("/", TEST_HANDLER);
+                server.start();
 
-            int port = server.getAddress().getPort();
-            String url = "https://localhost:" + port;
+                int port = server.getAddress().getPort();
+                String url = "https://localhost:" + port;
 
-            assertThrows(SSLHandshakeException.class, () -> WebUtility.readStringFromURL(url));
+                assertThrows(SSLHandshakeException.class, () -> WebUtility.readStringFromURL(url));
 
-            final String result = WebUtility.readStringFromURL(url, certs ->
-                certs.getHostname().orElse("null").equals("localhost")
-            );
-            assertEquals("test message", result);
-        } finally {
-            server.stop(0);
-        }
+                final String result = WebUtility.readStringFromURL(url, certs ->
+                    certs.getHostname().orElse("null").equals("localhost")
+                );
+                assertEquals("test message", result);
+            } finally 
+            {
+                server.stop(0);
+            }
+        });
     }
 
 
