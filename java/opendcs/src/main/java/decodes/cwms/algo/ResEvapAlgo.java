@@ -15,6 +15,7 @@
 */
 package decodes.cwms.algo;
 
+import decodes.cwms.CwmsLocationLevelDAO;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.rating.CwmsRatingDao;
 import decodes.cwms.resevapcalc.*;
@@ -47,6 +48,7 @@ import hec.data.cwmsRating.RatingSet;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.model.cwms.CwmsSiteReferenceValue;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -183,6 +185,9 @@ final public class ResEvapAlgo
     @org.opendcs.annotations.PropertySpec(name = "rating", propertySpecType = PropertySpec.STRING,
             description = "Rating Curve specification for Elevation-Area curve, Example: FTPK.Elev;Area.Linear.Step")
     public String rating;
+    @org.opendcs.annotations.PropertySpec(name = "LocationLevel", propertySpecType = PropertySpec.STRING,
+            description = "Location Level ID for Secchi Depth, Example: FTPK.Depth.Const.0.Secchi Depth")
+    public String LocationLevel;
 //AW:PROPERTIES_END
 
     // Allow javac to generate a no-args constructor.
@@ -322,6 +327,7 @@ final public class ResEvapAlgo
         siteDAO = tsdb.makeSiteDAO();
         timeSeriesDAO = tsdb.makeTimeSeriesDAO();
         crd = new CwmsRatingDao((CwmsTimeSeriesDb) tsdb);
+        CwmsLocationLevelDAO locLevDAO = null;
 
         //Get site Data from Database
         try
@@ -329,6 +335,7 @@ final public class ResEvapAlgo
             conn = tsdb.getConnection();
             DbKey siteID = siteDAO.lookupSiteID(reservoirId);
             site = siteDAO.getSiteById(siteID);
+            locLevDAO = new CwmsLocationLevelDAO((CwmsTimeSeriesDb) tsdb);
         }
         catch (DbIoException | NoSuchObjectException ex)
         {
@@ -342,6 +349,17 @@ final public class ResEvapAlgo
         catch (RatingException ex)
         {
             throw new DbCompException("Failed to load rating table", ex);
+        }
+
+        if (secchi == 0){
+            try
+            {
+                secchi = ((CwmsSiteReferenceValue) locLevDAO.getLatestLocationLevelValue(LocationLevel, "ft")).getLevelValue();
+            }
+            catch (Exception ex)
+            {
+                throw new DbCompException("Failed to load Location Level " + LocationLevel, ex);
+            }
         }
 
         //initialized Water Temperature Profiles
