@@ -9,6 +9,7 @@ import tseslint from "typescript-eslint";
 import { defineConfig, globalIgnores } from "eslint/config";
 
 export default defineConfig([
+  storybook,
   globalIgnores(["dist"]),
   {
     files: ["**/*.{ts,tsx}"],
@@ -28,7 +29,7 @@ export default defineConfig([
   {
     rules: {
       "@typescript-eslint/no-unused-vars": [
-        error,
+        "error",
         {
           args: "all",
           argsIgnorePattern: "^_",
@@ -40,5 +41,8 @@ export default defineConfig([
         },
       ],
     },
+  },
+  {
+    ignores: ["node_modules/opendcs-api/", "**/.gradle"],
   },
 ]);
