@@ -37,6 +37,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiSite;
+import org.opendcs.odcsapi.res.ObjectMapperContextResolver;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
@@ -709,7 +710,7 @@ final class TimeSeriesResourcesIT extends BaseApiIT
 
 		Long localSiteId = response.body().jsonPath().getLong("siteId");
 
-		ObjectMapper mapper = new ObjectMapper();
+		ObjectMapper mapper = new ObjectMapperContextResolver().getContext(ApiSite.class);
 		ApiSite retVal = mapper.readValue(siteJson, ApiSite.class);
 		retVal.setSiteId(localSiteId);
 		return retVal;

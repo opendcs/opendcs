@@ -44,6 +44,7 @@ dependencies {
     implementation(libs.bundles.jdbi)
     implementation(libs.microprofile.health) // use to get the HealthCheckResponse object
     implementation(libs.bundles.jersey)
+    implementation(libs.bundles.faster.xml)
     swaggerDeps(libs.jakarta.servlet)
     swaggerDeps(libs.rs.api)
     swaggerDeps(libs.swagger.jaxrs2)

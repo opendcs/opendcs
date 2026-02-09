@@ -66,6 +66,7 @@ dependencies {
     testImplementation(libs.selenium)
     testImplementation(libs.web.driver.manager)
     testRuntimeOnly(libs.byte.buddy)
+    runtimeOnly(libs.bundles.faster.xml)
     runtimeOnly(libs.com.faster.xml.jackson.databind) // for swagger compatibility
     runtimeOnly(libs.com.faster.xml.jackson.annotations) // for swagger compatibility
 
