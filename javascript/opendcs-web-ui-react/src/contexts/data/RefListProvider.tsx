@@ -10,14 +10,16 @@ interface ProviderProps {
 
 export const RefListProvider = ({ children }: ProviderProps) => {
   const api = useApi();
-  const [refLists, updateRefLists] = useState<Record<string, ApiRefList>>({});
+  const [refLists, setRefLists] = useState<Record<string, ApiRefList>>({});
+  const [ready, setReady] = useState(false);
   const refListsRef = useRef(refLists);
 
   useEffect(() => {
     const fetchLists = async () => {
       const refListApi = new RESTReferenceListsApi(api.conf);
       const refs = await refListApi.getRefLists(api.org);
-      updateRefLists(refs);
+      setRefLists(refs);
+      setReady(true);
     };
     fetchLists();
   }, []);
@@ -35,6 +37,7 @@ export const RefListProvider = ({ children }: ProviderProps) => {
 
   const refListvalue: RefListContextType = {
     refList: getRefList,
+    ready: ready,
   };
 
   return <RefListContext value={refListvalue}>{children}</RefListContext>;

@@ -32,7 +32,7 @@ export const WithRefLists: Decorator = (Story) => {
   }, []);
 
   return (
-    <RefListContext value={{ refList: list }}>
+    <RefListContext value={{ refList: list, ready: true }}>
       <Story />
     </RefListContext>
   );

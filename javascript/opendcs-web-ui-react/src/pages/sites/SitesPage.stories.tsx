@@ -7,7 +7,6 @@ import {
   ApiSiteRef,
 } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { act } from "react";
-import { waitFor } from "@testing-library/dom";
 import { expect } from "storybook/test";
 
 const meta = {
@@ -52,6 +51,5 @@ export const Default: Story = {
 
     const elevationInput = await canvas.findByLabelText(i18n.t("elevation"));
     expect((elevationInput as HTMLInputElement).value).toEqual("5");
-    //await waitFor(async () => );
   },
 };

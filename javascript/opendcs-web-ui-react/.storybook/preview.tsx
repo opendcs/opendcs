@@ -12,8 +12,6 @@ import { Theme, ThemeContext } from "../src/contexts/app/ThemeContext";
 import { useGlobals } from "storybook/internal/preview-api";
 import { WithRefLists } from "./mock/WithRefLists";
 import { initialize, mswLoader } from "msw-storybook-addon";
-import { http, HttpResponse } from "msw";
-import { ApiSiteRef } from "../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 
 // Wrap your stories in the I18nextProvider component
 // lifted direct from https://storybook.js.org/recipes/react-i18next
