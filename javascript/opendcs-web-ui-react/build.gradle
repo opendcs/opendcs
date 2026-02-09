@@ -53,7 +53,7 @@ def lint = tasks.register("eslint", NpxTask) {
         "IN_GRADLE": "1",
         "CI": "true"
     ]
-    inputs.files(fileTree("**/*.*"))
+    doNotTrackState("Instrumentation needs to re-run every time")
     outputs.file(project.layout.buildDir.file("eslint-report.json"))
     args = ['run', 'lint', '--', '-f', 'json', '-o', 'build/eslint-report.json']
 }
