@@ -14,19 +14,20 @@ export const SiteNameTypeSelect: React.FC<SiteNameTypeSelectProperties> = ({
   onChange,
   existing = [],
 }) => {
-  const { refList } = useRefList();
-  const { t } = useTranslation();
+  const { refList, ready } = useRefList();
+  const { t, i18n } = useTranslation(["sites"]);
   const siteNameTypes = refList(REFLIST_SITE_NAME_TYPE);
-  return (
+  return ready ? (
     <FormSelect
+      key={i18n.language}
       name="siteNameType"
       defaultValue={defaultValue}
       aria-label={t("sites:site_names.select")}
       onChange={onChange}
     >
       {siteNameTypes.items
-        ? Object.values(siteNameTypes.items!)
-            .filter((snt) => !existing.find((esnt) => snt.value === esnt.type))
+        ? Object.values(siteNameTypes.items)
+            .filter((snt) => !existing.some((esnt) => snt.value === esnt.type))
             .map((item) => {
               return (
                 <option key={item.value} value={item.value}>
@@ -36,6 +37,8 @@ export const SiteNameTypeSelect: React.FC<SiteNameTypeSelectProperties> = ({
             })
         : null}
     </FormSelect>
+  ) : (
+    <p>{t("loading_reference_lists")}</p>
   );
 };
 

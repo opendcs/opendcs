@@ -10,6 +10,7 @@ import { ApiProvider } from "./contexts/app/ApiProvider.tsx";
 import { BrowserRouter } from "react-router-dom";
 
 import "./i18n";
+import { RefListProvider } from "./contexts/data/RefListProvider.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -18,7 +19,9 @@ createRoot(document.getElementById("root")!).render(
         <ThemeProvider>
           <ApiProvider>
             <AuthProvider>
-              <App />
+              <RefListProvider>
+                <App />
+              </RefListProvider>
             </AuthProvider>
           </ApiProvider>
         </ThemeProvider>

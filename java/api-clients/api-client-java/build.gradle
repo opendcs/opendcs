@@ -14,10 +14,11 @@ configurations {
 
 dependencies {
     api(libs.bundles.openapi.deps)
+    api(libs.bundles.faster.xml)
 
     implementation(project(":opendcs-rest-api"))
     implementation(libs.org.slf4j.api)
-    implementation(libs.com.faster.xml.jackson.databind)
+    implementation(libs.bundles.faster.xml)
 
     apiSpec(project(path: ":opendcs-rest-api", configuration: 'api_spec'))
 }

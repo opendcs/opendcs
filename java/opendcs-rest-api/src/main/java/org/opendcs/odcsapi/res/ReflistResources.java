@@ -34,6 +34,7 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.AdditionalPropertiesValue;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -116,11 +117,11 @@ public final class ReflistResources extends OpenDcsResource
 									+ "            The JSON returned is an map of reference names to reference objects.",
 							content = @Content(
 									mediaType = MediaType.APPLICATION_JSON,
+									
 									schema = @Schema(type = "object",
-										additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
-										properties = {
-											@StringToClassMapItem(key = "string", value = ApiRefList.class)
-									})
+													 additionalProperties = AdditionalPropertiesValue.USE_ADDITIONAL_PROPERTIES_ANNOTATION,
+													 additionalPropertiesSchema = ApiRefList.class
+									)
 							)
 					),
 					@ApiResponse(responseCode = "404", description = "Matching reference lists not found"),

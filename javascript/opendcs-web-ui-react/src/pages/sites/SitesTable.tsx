@@ -17,6 +17,7 @@ import { Button } from "react-bootstrap";
 import { Pencil, Trash } from "react-bootstrap-icons";
 import type { RowState } from "../../util/DataTables";
 
+// this isn't a hook, it just has "use" as the name.
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
 
@@ -44,7 +45,6 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
   const [rowState, updateRowState] = useState<RowState<number>>({});
   const rowStateRef = useRef(rowState);
   const localSitesRef = useRef(localSites);
-
   useEffect(() => {
     rowStateRef.current = rowState;
   }, [rowState]);
@@ -61,7 +61,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
       data: null,
       render: (_data: unknown, _type: unknown, row: unknown) => {
         const site = row as ApiSiteRef;
-        return site.sitenames?.CWMS || ""; // TODO need configured sitename preference
+        return site.sitenames?.cwms || ""; // TODO need configured sitename preference
       },
     },
     { data: "publicName", defaultContent: "" },
@@ -70,7 +70,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
   ];
 
   const renderActions = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     (data: TableSiteRef, _row: any) => {
       const id: number = data.siteId!;
       const curRowState = rowStateRef.current[id];
@@ -109,7 +109,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
         </>
       );
     },
-    [rowStateRef, i18n.language],
+    [t, actions.remove],
   );
 
   const slots = {
@@ -121,7 +121,6 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
     responsive: true,
     stateSave: true,
     language: dtLangs.get(i18n.language),
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     createdRow: (_row, _data, dataIndex) => {
       // this prevent clicks on elements within the child row from triggering the handler defined in the useEffect below
       table.current?.dt()?.row(dataIndex).node().classList.add("child-toggle");
@@ -134,7 +133,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
             action: () => {
               updateLocalSites((prev) => {
                 // modal here for sitename?... or focus on automatically created new entry?
-                let existing = prev
+                const existing = prev
                   .map((v) => v.siteId!)
                   // we want the lowest
                   .sort((a: number, b: number) => {
@@ -211,56 +210,60 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
       );
       return container;
     },
-    [localSitesRef, rowStateRef, getSite, updateLocalSites, updateRowState],
+    [getSite, toDom, actions.save],
   );
 
   useEffect(() => {
     // Add event listener for opening and closing details
-    table.current?.dt()?.on("click", "tbody tr.child-toggle", function (e) {
-      if (getSite === undefined) {
-        return; // do nothing, we can't look it up.
-      }
-      const target = e.target! as Element;
-      const tr = target.closest("tr");
-      if (tr?.classList.contains("child-row")) {
-        return; // don't do anything if we click the child row.
-      }
-      const dt = table.current!.dt()!;
-
-      const row = dt.row(tr as HTMLTableRowElement);
-      updateRowState((prev) => {
-        const idx = (row.data() as TableSiteRef).siteId!;
-        const { [idx]: existing, ...remaining } = prev;
-        let newValue: UiState = "show";
-        if (existing !== undefined) {
-          newValue = undefined;
+    table.current
+      ?.dt()
+      ?.off("click")
+      .on("click", "tbody tr.child-toggle", function (e) {
+        if (getSite === undefined) {
+          return; // do nothing, we can't look it up.
         }
-        return {
-          ...remaining,
-          [idx]: newValue,
-        };
+        const target = e.target! as Element;
+        const tr = target.closest("tr");
+        if (tr?.classList.contains("child-row")) {
+          return; // don't do anything if we click the child row.
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        const dt = table.current!.dt()!;
+
+        const row = dt.row(tr as HTMLTableRowElement);
+        updateRowState((prev) => {
+          const idx = (row.data() as TableSiteRef).siteId!;
+          const { [idx]: existing, ...remaining } = prev;
+          let newValue: UiState = "show";
+          if (existing !== undefined) {
+            newValue = undefined;
+          }
+          return {
+            ...remaining,
+            [idx]: newValue,
+          };
+        });
       });
-    });
-  }, [i18n.language]);
+  }, [i18n.language, getSite]);
 
   useEffect(() => {
     if (table.current?.dt()) {
       const dt = table.current.dt()!;
       const visibleRows = dt.rows({ page: "current", search: "applied" });
       visibleRows.every(function () {
-        const row = this;
-        const idx = (row.data() as TableSiteRef).siteId!;
-        row.invalidate().draw(false);
+        const idx = (this.data() as TableSiteRef).siteId!;
+        this.invalidate().draw(false);
         if (rowStateRef.current[idx] !== undefined) {
-          const data: TableSiteRef = row.data() as TableSiteRef;
+          const data: TableSiteRef = this.data() as TableSiteRef;
           const edit = rowStateRef.current[idx] !== "show";
-          row.child(renderSite(data, edit), "child-row").show();
+          this.child(renderSite(data, edit), "child-row").show();
         } else {
-          row.child()?.hide();
+          this.child()?.hide();
         }
       });
     }
-  }, [rowState, sites, siteData, localSites, localSitesRef, rowStateRef]);
+  }, [rowState, sites, siteData, localSites, localSitesRef, rowStateRef, renderSite]);
 
   return (
     <DataTable

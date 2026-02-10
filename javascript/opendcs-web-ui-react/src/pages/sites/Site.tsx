@@ -1,6 +1,6 @@
 import { Button, Card, Col, Form, FormGroup, FormSelect, Row } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../components/properties";
-import { use, useCallback, useMemo, useReducer, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { useTranslation } from "react-i18next";
 import { SiteNameList, type SiteNameType } from "./SiteNameList";
@@ -45,6 +45,13 @@ export const Site: React.FC<SiteProperties> = ({
       return { name: k as string, value: v as string };
     });
   });
+
+  // need an initial set of the units if it isn't defined as it's a required field in the database.
+  useEffect(() => {
+    if (providedSite.elevUnits === undefined) {
+      dispatch({ type: "save", payload: { elevUnits: elevationUnits[0].units } });
+    }
+  }, []);
 
   const propertyActions: CollectionActions<Property, string> = edit
     ? {

@@ -9,7 +9,7 @@ export type ApiSetup = {
 
 export interface ApiContextType {
   conf: Configuration;
-  org: string | undefined;
+  org: string;
   setOrg: React.Dispatch<React.SetStateAction<string | undefined>>;
 }
 
@@ -17,7 +17,7 @@ export const defaultValue: ApiContextType = {
   conf: createConfiguration({
     baseServer: new ServerConfiguration("/odcsapi", {}),
   }),
-  org: undefined,
+  org: "",
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setOrg: (_value: SetStateAction<string | undefined>): void => {},
 };

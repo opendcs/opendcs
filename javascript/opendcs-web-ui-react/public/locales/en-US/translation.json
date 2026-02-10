@@ -20,5 +20,6 @@
   "state": "State",
   "description": "Description",
   "cancel": "Cancel",
-  "save": "Save"
+  "save": "Save",
+  "loading_reference_lists": "Loading Reference Lists Data..."
 }
