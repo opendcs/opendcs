@@ -23,6 +23,7 @@ import java.util.Optional;
 import ilex.var.TimedVariable;
 import opendcs.dai.TimeSeriesDAI;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.utils.logging.MDCTimer;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
@@ -68,7 +69,8 @@ public final class ComputationExecution
 		// Execute the computations
 		for(DbComputation comp : toRun)
 		{
-			try (var mdcComputation = MDC.putCloseable("computation", comp.getName()))
+			try (var mdcComputation = MDC.putCloseable("computation", comp.getName());
+				 var compTimer = MDCTimer.startTimer(comp.getName()))
 			{
 				listener.onProgress(String.format("Executing computation '%s' #trigs=%d",
 						comp.getName(), comp.getTriggeringRecNums().size()), Level.DEBUG, null);
@@ -84,6 +86,15 @@ public final class ComputationExecution
 					theData.getTasklistHandle().markComputationFailed(rn);
 				}
 			}
+			catch (Exception ex)
+			{
+				listener.onProgress(String.format("Unexpected error in computation %s", comp.getName()), Level.WARN, ex);
+				numErrors++;
+				for(Integer rn : comp.getTriggeringRecNums())
+				{
+					theData.getTasklistHandle().markComputationFailed(rn);
+				}
+			}
 			comp.getTriggeringRecNums().clear();
 			listener.onProgress(String.format("End of computation '%s'", comp.getName()), Level.DEBUG, null);
 		}
@@ -95,11 +106,12 @@ public final class ComputationExecution
 		throws DbIoException
 	{
 		DataCollection theData = new DataCollection();
-		try (TimeSeriesDAI timeSeriesDAO = getTsDb().makeTimeSeriesDAO())
+		try (TimeSeriesDAI timeSeriesDAO = getTsDb().makeTimeSeriesDAO();
+			 var compTimer = MDCTimer.startTimer(computation.getName()))
 		{
 			for(TimeSeriesIdentifier tsid : tsIds)
 			{
-				try
+				try (var compTimer2 = MDCTimer.startTimer(tsid.getUniqueString()))
 				{
 					CTimeSeries cts = timeSeriesDAO.makeTimeSeries(tsid);
 					int n = timeSeriesDAO.fillTimeSeries(cts, start, end);
@@ -119,6 +131,10 @@ public final class ComputationExecution
 				}
 			}
 		}
+		catch (Exception ex)
+		{
+			listener.onProgress("Unexpected error fetching input data.", Level.WARN, ex);
+		}
 		computesTried++;
 		try (var mdcComputation = MDC.putCloseable("computation", computation.getName()))
 		{
@@ -137,6 +153,7 @@ public final class ComputationExecution
 			throws DbIoException
 	{
 		try(MDC.MDCCloseable mdc = MDC.putCloseable("computation", comp.getName());
+			var compTimer = MDCTimer.startTimer(comp.getName());
 			TimeSeriesDAI timeSeriesDAO = getTsDb().makeTimeSeriesDAO())
 		{
 			// Make a data collection with inputs filled from ... until
@@ -208,6 +225,10 @@ public final class ComputationExecution
 				listener.onProgress(msg, Level.WARN, ex);
 				numErrors++;
 			}
+		}
+		catch (Exception ex)
+		{
+			listener.onProgress("Unexpected error in computation.", Level.WARN, ex);
 		}
 	}
 
