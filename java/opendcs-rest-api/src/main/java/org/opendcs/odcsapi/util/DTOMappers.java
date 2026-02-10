@@ -92,7 +92,7 @@ public final class DTOMappers
 		{
 			site.setId(DbKey.createDbKey(apiSite.getSiteId()));
 		}
-		site.setLastModifyTime(apiSite.getLastModified());
+		site.setLastModifyTime(Date.from(apiSite.getLastModified()));
 		site.setDescription(apiSite.getDescription());
 		site.timeZoneAbbr = apiSite.getTimezone();
 		site.nearestCity = apiSite.getNearestCity();
@@ -110,9 +110,8 @@ public final class DTOMappers
 
 	public static ApiTimeSeriesIdentifier mapTsId(TimeSeriesIdentifier tsid)
 	{
-		if (tsid instanceof CwmsTsId)
+		if (tsid instanceof CwmsTsId cTsId)
 		{
-			CwmsTsId cTsId = (CwmsTsId)tsid;
 			ApiTimeSeriesIdentifier ret = new ApiTimeSeriesIdentifier();
 			if(tsid.getKey() != null)
 			{

@@ -406,7 +406,7 @@ public class BaseApiIT extends AppTestBase
 
 		Long localSiteId = response.body().jsonPath().getLong("siteId");
 
-		ObjectMapper mapper = new ObjectMapper();
+		ObjectMapper mapper = new ObjectMapperContextResolver().getContext(ApiSite.class);
 		ApiSite retVal = mapper.readValue(siteJson, ApiSite.class);
 		retVal.setSiteId(localSiteId);
 		return retVal;
