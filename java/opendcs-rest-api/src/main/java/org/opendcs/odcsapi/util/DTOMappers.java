@@ -92,7 +92,8 @@ public final class DTOMappers
 		{
 			site.setId(DbKey.createDbKey(apiSite.getSiteId()));
 		}
-		site.setLastModifyTime(Date.from(apiSite.getLastModified()));
+		site.setLastModifyTime(apiSite.getLastModified() == null
+				? null : Date.from(apiSite.getLastModified()));
 		site.setDescription(apiSite.getDescription());
 		site.timeZoneAbbr = apiSite.getTimezone();
 		site.nearestCity = apiSite.getNearestCity();

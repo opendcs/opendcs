@@ -107,11 +107,11 @@ public final class ComputationExecution
 	{
 		DataCollection theData = new DataCollection();
 		try (TimeSeriesDAI timeSeriesDAO = getTsDb().makeTimeSeriesDAO();
-			 var compTimer = MDCTimer.startTimer(computation.getName()))
+			 var compTimer = MDCTimer.startTimer("fill time series"))
 		{
 			for(TimeSeriesIdentifier tsid : tsIds)
 			{
-				try (var compTimer2 = MDCTimer.startTimer(tsid.getUniqueString()))
+				try (var compTimer2 = MDCTimer.startTimer("saving: " + tsid.getUniqueString()))
 				{
 					CTimeSeries cts = timeSeriesDAO.makeTimeSeries(tsid);
 					int n = timeSeriesDAO.fillTimeSeries(cts, start, end);
@@ -153,7 +153,7 @@ public final class ComputationExecution
 			throws DbIoException
 	{
 		try(MDC.MDCCloseable mdc = MDC.putCloseable("computation", comp.getName());
-			var compTimer = MDCTimer.startTimer(comp.getName());
+			var compTimer = MDCTimer.startTimer("executing single computation: " + comp.getName());
 			TimeSeriesDAI timeSeriesDAO = getTsDb().makeTimeSeriesDAO())
 		{
 			// Make a data collection with inputs filled from ... until
