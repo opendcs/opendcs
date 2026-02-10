@@ -33,7 +33,6 @@ jdbi = "3.39.1"
 flywaydb = "11.20.1"
 sun-mailapi="2.0.2"
 ayza = "10.0.0"
-mock-server = "5.15.0"
 auto-service = "1.1.1"
 password4j = "1.8.4"
 
@@ -194,7 +193,6 @@ commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
 apache-derby = { module = "org.apache.derby:derby", version.ref = "derby" }
 webcompere-system-stubs-jupiter = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "webcompere" }
 greenmail = { module = "com.icegreen:greenmail", version.ref = "greenmail" }
-org-mock-server = { module = "org.mock-server:mockserver-junit-jupiter", version.ref = "mock-server" }
 
 org-slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j-api" }
 #integration test deps
