@@ -48,7 +48,7 @@ jobs:
       - name: Show jacoco files
         run : |
           find . -name "jacoco*.xml" -type f
-      - name: Analyze
+      - name: Analyze Main Code
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -57,4 +57,18 @@ jobs:
             -Dsonar.scm.revision=${{ github.event.workflow_run.head_sha }} \
             -Dsonar.pullrequest.key=${{ github.event.workflow_run.pull_requests[0].number }} \
             -Dsonar.pullrequest.branch=${{ github.event.workflow_run.pull_requests[0].head.ref }} \
-            -Dsonar.pullrequest.base=${{ github.event.workflow_run.pull_requests[0].base.ref }}
+            -Dsonar.pullrequest.base=${{ github.event.workflow_run.pull_requests[0].base.ref }} \
+            -Dsonar.exclusions=javascript/opendcs-web-ui-react
+      - name: Analyze UI
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+         ./gradlew sonar --info -Dorg.gradle.jvmargs=-Xmx4096M \
+            -Dsonar.scm.revision=${{ github.event.workflow_run.head_sha }} \
+            -Dsonar.pullrequest.key=${{ github.event.workflow_run.pull_requests[0].number }} \
+            -Dsonar.pullrequest.branch=${{ github.event.workflow_run.pull_requests[0].head.ref }} \
+            -Dsonar.pullrequest.base=${{ github.event.workflow_run.pull_requests[0].base.ref }} \
+            -Dsonar.inclusions=javascript/opendcs-web-ui-react \
+            -Dsonar.projectKey=opendcs_opendcs_ui
+          
