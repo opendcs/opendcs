@@ -1,74 +1,15 @@
 import type { Decorator, Preview } from "@storybook/react-vite";
 import "datatables.net-bs5";
 import "datatables.net-responsive-bs5";
-import i18n from "../src/i18n";
+
 import "bootstrap/dist/css/bootstrap.min.css";
 import "datatables.net-bs5/css/dataTables.bootstrap5.css";
 import "datatables.net-buttons-bs5/css/buttons.bootstrap5.css";
-
-import { Dispatch, SetStateAction, Suspense, useEffect, useState } from "react";
-import { I18nextProvider } from "react-i18next";
-import { Theme, ThemeContext } from "../src/contexts/app/ThemeContext";
-import { useGlobals } from "storybook/internal/preview-api";
 import { WithRefLists } from "./mock/WithRefLists";
 import { initialize, mswLoader } from "msw-storybook-addon";
-
-// Wrap your stories in the I18nextProvider component
-// lifted direct from https://storybook.js.org/recipes/react-i18next
-// eslint-disable-next-line react-refresh/only-export-components
-const WithI18next: Decorator = (Story, context) => {
-  const { locale } = context.globals;
-
-  // When the locale global changes
-  // Set the new locale in i18n
-  useEffect(() => {
-    console.log(`changing lang to ${locale}`);
-    i18n.changeLanguage(locale);
-  }, [locale]);
-
-  return (
-    // This catches the suspense from components not yet ready (still loading translations)
-    // Alternative: set useSuspense to false on i18next.options.react when initializing i18next
-    <Suspense fallback={<div>loading translations...</div>}>
-      <I18nextProvider i18n={i18n}>
-        <Story />
-      </I18nextProvider>
-    </Suspense>
-  );
-};
-
-i18n.on("languageChanged", (locale) => {
-  const direction = i18n.dir(locale);
-  document.dir = direction;
-});
-
-// eslint-disable-next-line react-refresh/only-export-components
-const WithTheme: Decorator = (Story) => {
-  const [{ colorMode }, updateGlobals] = useGlobals();
-
-  const [theme, setTheme] = useState<Theme>({ colorMode: colorMode });
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setTheme({ colorMode: colorMode });
-  }, [colorMode]);
-
-  const setGlobalTheme: Dispatch<SetStateAction<Theme>> = (action) => {
-    if (action as Theme) {
-      updateGlobals({ colorMode: (action as Theme).colorMode });
-    }
-
-    setTheme(action);
-  };
-
-  return (
-    <ThemeContext value={{ theme: theme, setTheme: setGlobalTheme }}>
-      <Story />
-    </ThemeContext>
-  );
-};
-
-// end lift
+import { WithI18next } from "./mock/WithI18Next";
+import i18n from "../src/i18n";
+import { WithTheme } from "./mock/WithTheme";
 
 // MSW setup
 initialize(

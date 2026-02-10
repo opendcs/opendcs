@@ -17,10 +17,10 @@ export const Default: Story = {
   args: {
     defaultValue: undefined,
   },
-  play: async ({ mount, canvas, parameters }) => {
+  play: async ({ mount, parameters }) => {
+    const canvas = await mount();
     const { i18n } = parameters;
-    await mount();
-    const selectBox = canvas.queryByRole("combobox", {
+    const selectBox = await canvas.findByRole("combobox", {
       name: i18n.t("sites:site_names.select"),
     });
     expect(selectBox).toHaveValue("cwms");
@@ -31,10 +31,10 @@ export const OtherSelected: Story = {
   args: {
     defaultValue: "local",
   },
-  play: async ({ mount, canvas, parameters }) => {
+  play: async ({ mount, parameters }) => {
+    const canvas = await mount();
     const { i18n } = parameters;
-    await mount();
-    const selectBox = canvas.queryByRole("combobox", {
+    const selectBox = await canvas.findByRole("combobox", {
       name: i18n.t("sites:site_names.select"),
     });
     expect(selectBox).toHaveValue("local");
@@ -46,10 +46,10 @@ export const ExistingNames: Story = {
     defaultValue: "local",
     existing: [{ type: "cwms" }],
   },
-  play: async ({ mount, canvas, parameters }) => {
+  play: async ({ mount, parameters }) => {
+    const canvas = await mount();
     const { i18n } = parameters;
-    await mount();
-    const selectBox = canvas.queryByRole("combobox", {
+    const selectBox = await canvas.findByRole("combobox", {
       name: i18n.t("sites:site_names.select"),
     });
     expect(selectBox).toHaveValue("local");

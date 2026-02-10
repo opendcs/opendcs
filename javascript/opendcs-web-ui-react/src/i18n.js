@@ -20,6 +20,9 @@ i18n
   .init({
     fallbackLng: ["en-US"],
     debug: true,
+    react: {
+      useSuspense: true,
+    },
     supportedLngs: ["en", ...availableLanguages],
     preload: availableLanguages, // will only load translation.json, so we will keep that file small.
     interpolation: {
