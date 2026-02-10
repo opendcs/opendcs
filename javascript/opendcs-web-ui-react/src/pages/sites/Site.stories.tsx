@@ -30,8 +30,8 @@ const site1 = {
     prop1: "value1",
   },
   sitenames: {
-    CWMS: "Alder Springs",
-    NWSHB5: "ALS",
+    cwms: "Alder Springs",
+    nwshb5: "ALS",
   },
 };
 

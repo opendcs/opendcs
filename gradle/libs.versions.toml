@@ -226,7 +226,9 @@ jersey = [ "org-eclipse-jetty-jsp", "org-eclipse-jetty-annotations", "org-eclips
 tomcat = ["tomcat-embedded-core", "tomcat-embedded-jasper", "tomcat-jdbc"]
 testcontainers = [ "testcontainers-core", "testcontainers-jdbc", "testcontainers-postgresql", "testcontainers-oracle"]
 openapi-deps = [
-    "com-google-jsr305", "org-openapitools-jackson-databind", "jakarta-annotation-api",
+    "com-google-jsr305", "org-openapitools-jackson-databind", "jakarta-annotation-api"
+]
+faster-xml = [
     "com-faster-xml-jackson-core", "com-faster-xml-jackson-databind", "com-faster-xml-jackson-annotations",
     "com-faster-xml-jackson-jsr310", "com-faster-xml-jackson-datatypes-jdk8"
 ]

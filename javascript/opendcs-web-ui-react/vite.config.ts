@@ -38,7 +38,7 @@ export default defineConfig({
       // Proxy requests starting with '/api'
       "/odcsapi": {
         target: "http://localhost:7000", // The address of your backend server
-        //changeOrigin: true, // Needed for virtual hosted sites
+        changeOrigin: true, // Needed for virtual hosted sites
       },
     },
   },

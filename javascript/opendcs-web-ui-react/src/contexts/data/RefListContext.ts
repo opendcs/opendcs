@@ -3,12 +3,14 @@ import type { ApiRefList } from "../../../../../java/api-clients/api-client-type
 
 export interface RefListContextType {
   refList: (k: string) => ApiRefList;
+  ready: boolean;
 }
 
 export const defaultValue: RefListContextType = {
   refList: () => {
     return {};
   },
+  ready: true,
 };
 
 export const RefListContext = createContext<RefListContextType | undefined>(undefined);

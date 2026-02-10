@@ -29,8 +29,8 @@ export const Default: Story = {
 export const WithNames: Story = {
   args: {
     siteNames: [
-      { type: "CWMS", name: "Alder Springs" },
-      { type: "NWSHB5", name: "ALS" },
+      { type: "cwms", name: "Alder Springs" },
+      { type: "nwshb5", name: "ALS" },
     ],
   },
 };
@@ -38,8 +38,8 @@ export const WithNames: Story = {
 export const WithNamesInEdit: Story = {
   args: {
     siteNames: [
-      { type: "CWMS", name: "Alder Springs" },
-      { type: "NWSHB5", name: "ALS" },
+      { type: "cwms", name: "Alder Springs" },
+      { type: "nwshb5", name: "ALS" },
     ],
     actions: {
       add: fn(),
@@ -87,18 +87,18 @@ export const WithNamesInEdit: Story = {
 
     const editButton = await canvas.findByRole("button", {
       name: i18n.t("sites:site_names.edit_for", {
-        type: "CWMS",
+        type: "cwms",
         name: "Alder Springs",
       }),
     });
     await act(async () => userEvent.click(editButton));
     const cwmsValue = await canvas.findByRole("textbox", {
-      name: i18n.t("sites:site_names.value_input_for", { type: "CWMS" }),
+      name: i18n.t("sites:site_names.value_input_for", { type: "cwms" }),
     });
     expect(cwmsValue).toBeInTheDocument();
     await act(async () => userEvent.type(cwmsValue, " 2"));
     const saveButton = await canvas.findByRole("button", {
-      name: i18n.t("sites:site_names.save_for", { type: "CWMS" }),
+      name: i18n.t("sites:site_names.save_for", { type: "cwms" }),
     });
     await act(async () => userEvent.click(saveButton));
 

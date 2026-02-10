@@ -21,14 +21,14 @@ const sharedSites: ApiSite[] = [
   {
     description: "Test site 1",
     sitenames: {
-      CWMS: "TEST SITE 1",
+      cwms: "TEST SITE 1",
     },
     siteId: 1,
   },
   {
     description: "Stargate command's backup location.",
     sitenames: {
-      CWMS: "Alpha Site",
+      cwms: "Alpha Site",
     },
     elevation: 5.21,
     elevUnits: "ft",
@@ -42,8 +42,8 @@ const sharedSites: ApiSite[] = [
       prop1: "value1",
     },
     sitenames: {
-      CWMS: "Alder Springs",
-      NWSHB5: "ALS",
+      cwms: "Alder Springs",
+      nwshb5: "ALS",
     },
   },
 ];
