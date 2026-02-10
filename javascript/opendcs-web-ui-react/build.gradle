@@ -4,6 +4,7 @@ plugins {
     id 'opendcs.sonar-conventions'
     id 'opendcs.version-conventions'
     id 'com.github.node-gradle.node' version '7.1.0'
+    //id 'org.sonarqube'
 }
 
 configurations {
@@ -81,6 +82,7 @@ node {
 
 sonar {
     properties {
+        property "sonar.projectKey", "opendcs_opendcs_ui"
         property "sonar.language", "typescript"
         property "sonar.sources", "src"
         property "sonar.tests", "src"
