@@ -5,7 +5,7 @@ plugins {
     id 'opendcs.sonar-conventions'
     id 'opendcs.version-conventions'
     id 'java-library'
-    id "org.openapi.generator" version "7.17.0"
+    id "org.openapi.generator" version "7.19.0"
 }
 
 configurations {
