@@ -9,11 +9,12 @@ import { Button, Container, Form } from "react-bootstrap";
 import "datatables.net-responsive";
 import { Pencil, Save, Trash } from "react-bootstrap-icons";
 import type { ApiPropSpec } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { renderToString } from "react-dom/server";
 import { useTranslation } from "react-i18next";
 import { dtLangs } from "../../lang";
 import type { CollectionActions } from "../../util/Actions";
+import type { RowState } from "../../util/DataTables";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -26,7 +27,7 @@ DataTable.use(dtButtons);
  */
 export interface Property {
   name: string;
-  value: unknown;
+  value: string;
   spec?: ApiPropSpec;
   state?: "new" | "edit" | number; // Table component will add this if new or in edit mode
   // if value is 'new' name will be an index value.
@@ -35,6 +36,8 @@ export interface Property {
 
 export interface PropertiesTableProps {
   theProps: Property[];
+  edit?: boolean; // can we edit existing props?
+  canAdd?: boolean; // can we add additional props?
   actions: CollectionActions<Property, string>;
   width?: React.CSSProperties["width"];
   height?: React.CSSProperties["height"];
@@ -49,64 +52,6 @@ export interface ActionProps {
   saveProp?: (prop: Property) => void;
 }
 
-export const PropertyActions: React.FC<ActionProps> = ({
-  data,
-  editMode,
-  removeProp,
-  editProp,
-  saveProp,
-}) => {
-  const [t] = useTranslation(["properties"]);
-
-  let changeAction = <></>;
-  if (editMode && saveProp !== undefined) {
-    changeAction = (
-      <Button
-        onClick={() => {
-          saveProp(data);
-        }}
-        variant="primary"
-        aria-label={t("properties:save_prop", { name: data.name })}
-        size="sm"
-      >
-        <Save />
-      </Button>
-    );
-  } else if (!editMode && editProp !== undefined) {
-    changeAction = (
-      <Button
-        onClick={() => editProp(data.name)}
-        variant="warning"
-        aria-label={t("properties:edit_prop", { name: data.name })}
-        size="sm"
-      >
-        <Pencil />
-      </Button>
-    );
-  }
-
-  const deleteAction =
-    removeProp !== undefined ? (
-      <Button
-        onClick={() => removeProp(data.name)}
-        variant="danger"
-        size="sm"
-        aria-label={t("properties:delete_prop", { name: data.name })}
-      >
-        <Trash />
-      </Button>
-    ) : (
-      <></>
-    );
-
-  return (
-    <>
-      {changeAction}
-      {deleteAction}
-    </>
-  );
-};
-
 /**
  * Properties table component for use by all pages. Control of the properties by what uses the component to the save and remove
  * method provided should behave as such.
@@ -118,58 +63,116 @@ export const PropertyActions: React.FC<ActionProps> = ({
 export const PropertiesTable: React.FC<PropertiesTableProps> = ({
   theProps,
   actions,
+  edit = false,
+  canAdd = true,
   width = "20em",
   height = "100vh",
   classes = "",
 }) => {
   const table = useRef<DataTableRef>(null);
   const [t, i18n] = useTranslation(["properties"]);
-  const renderEditable = useCallback(
+  const [localProps, setLocalProps] = useState<Property[]>([]);
+  const [rowState, setRowState] = useState<RowState<string>>({});
+
+  const rowStateRef = useRef(rowState);
+  const localPropsRef = useRef(localProps);
+
+  useEffect(() => {
+    rowStateRef.current = rowState;
+  }, [rowState]);
+  useEffect(() => {
+    localPropsRef.current = localProps;
+  }, [localProps]);
+
+  const allProps = useMemo(() => [...theProps, ...localProps], [theProps, localProps]);
+
+  const renderName = useCallback(
     (
       data: string | number | readonly string[] | undefined,
       type: string,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       row: any,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      meta: any,
+      _meta: any,
     ) => {
       if (type !== "display") {
         return data;
       }
-      const inputName: string = meta.col == 0 ? "name" : "value";
-      if (row?.state === "new" || (row?.state == "edit" && meta.col == 1)) {
+      const state = rowStateRef.current[row.name];
+      if (data === undefined || state === "new") {
         return renderToString(
           <Form.Control
             type="text"
-            name={meta.settings.aoColumns[meta.col].mData}
-            defaultValue={row.state == "edit" ? data : ""}
-            aria-label={t(`properties:${inputName}_input`, { name: row.name })}
+            name="name"
+            defaultValue={state == "edit" ? data : ""}
+            aria-label={t(`properties:name_input`, { name: row.name })}
           />,
         );
       } else {
         return data;
       }
     },
-    [],
+    [rowStateRef],
+  );
+
+  const renderValue = useCallback(
+    (
+      data: string | number | readonly string[] | undefined,
+      type: string,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      row: any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      _meta: any,
+    ) => {
+      if (type !== "display") {
+        return data;
+      }
+      const state = rowStateRef.current[row.name];
+      if (data === undefined || state === "new") {
+        return renderToString(
+          <Form.Control
+            type="text"
+            name="value"
+            defaultValue={state == "edit" ? data : ""}
+            aria-label={t(`properties:value_input`, { name: row.name })}
+          />,
+        );
+      } else {
+        return data;
+      }
+    },
+    [rowStateRef],
   );
 
   const columns: ConfigColumns[] = useMemo(
     () => [
-      { data: "name", render: renderEditable },
-      { data: "value", render: renderEditable },
+      { data: "name", render: renderName },
+      { data: "value", render: renderValue },
       { data: null, name: "actions" },
     ],
-    [],
+    [renderName, renderValue],
   );
 
   const buttons: ConfigButtons = useMemo(() => {
-    if (actions.add !== undefined) {
+    if (edit && canAdd) {
       return {
         buttons: [
           {
             text: "+",
             action: () => {
-              actions.add!();
+              setLocalProps((prev) => {
+                const existingNew = prev
+                  .filter((p: Property) => p.state === "new")
+                  .sort((a: Property, b: Property) => {
+                    return Number.parseInt(a.name) - Number.parseInt(b.name);
+                  });
+                const idx =
+                  existingNew.length > 0 ? Number.parseInt(existingNew[0].name) + 1 : 1;
+                setRowState((prev) => {
+                  return { ...prev, [`${idx}`]: "new" };
+                });
+                return [...prev, { name: `${idx}`, value: "" }];
+              });
             },
             attr: {
               "aria-label": t("properties:add_prop"),
@@ -180,7 +183,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
     } else {
       return { buttons: [] };
     }
-  }, [actions]);
+  }, [actions, edit, canAdd]);
 
   const options: DataTableProps["options"] = useMemo(() => {
     return {
@@ -219,10 +222,17 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
           const prop: Property = {
             name: name,
             value: value,
-            state: data.state == "new" ? parseInt(data.name) : data.state,
           };
           if (!(name === undefined || name.trim() === "")) {
             actions.save?.(prop);
+            if (rowStateRef.current[name] === "new") {
+              setRowState((prev) => {
+                const { [name]: _, ...others } = prev;
+                return {
+                  ...others,
+                };
+              });
+            }
           } else {
             (tds[0].children[0] as HTMLElement).classList.add(
               "border",
@@ -236,37 +246,80 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
         console.log("no dt api?");
       }
     },
-    [actions],
+    [actions, rowStateRef],
+  );
+
+  const renderActions = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    (data: Property, _row: Property) => {
+      const state = rowStateRef.current[data.name];
+      const inEdit = state !== undefined;
+      return (
+        <>
+          {edit && inEdit && (
+            <Button
+              onClick={() => {
+                getAndSaveProp(data);
+              }}
+              variant="primary"
+              aria-label={t("properties:save_prop", { name: data.name })}
+              size="sm"
+            >
+              <Save />
+            </Button>
+          )}
+
+          {edit && !inEdit && (
+            <Button
+              onClick={() => {
+                setRowState((prev) => {
+                  return {
+                    ...prev,
+                    [data.name]: "edit",
+                  };
+                });
+              }}
+              variant="warning"
+              aria-label={t("properties:edit_prop", { name: data.name })}
+              size="sm"
+            >
+              <Pencil />
+            </Button>
+          )}
+          {((edit && actions.remove !== undefined) || state === "new") && (
+            <Button
+              onClick={() => {
+                setLocalProps((prev) => {
+                  return [...prev.filter((p) => p.name !== data.name)];
+                });
+                actions.remove!(data.name);
+              }}
+              variant="danger"
+              size="sm"
+              aria-label={t("properties:delete_prop", { name: data.name })}
+            >
+              <Trash />
+            </Button>
+          )}
+        </>
+      );
+    },
+    [t, actions.remove, edit, rowStateRef, getAndSaveProp],
   );
 
   const slots = useMemo<DataTableSlots>(() => {
     return {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      actions: (data: Property, type: unknown, _row: Property) => {
-        if (type === "display") {
-          const inEdit = data.state !== undefined;
-          return (
-            <PropertyActions
-              data={data}
-              editMode={inEdit}
-              removeProp={actions.remove}
-              saveProp={actions.save ? getAndSaveProp : undefined}
-              editProp={actions.edit}
-            />
-          );
-        } else {
-          return data;
-        }
-      },
+      actions: renderActions,
     };
-  }, [actions]);
+  }, [actions, rowStateRef]);
 
   return (
     <Container fluid style={{ width: width, height: height }} className={`${classes}`}>
       <DataTable
         key={i18n.language} // convient way to force a render of the components and aria labels on a language change.
         columns={columns}
-        data={theProps}
+        data={allProps}
         options={options}
         slots={slots}
         ref={table}
@@ -279,7 +332,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
           <tr>
             <th>{t("translation:name")}</th>
             <th>{t("translation:value")}</th>
-            <th>{t("translation:actions")}</th>
+            {edit && <th>{t("translation:actions")}</th>}
           </tr>
         </thead>
       </DataTable>

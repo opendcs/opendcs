@@ -3,93 +3,29 @@ import { PropertiesTable, PropertiesTableProps, type Property } from "./Properti
 import { expect, fn, waitFor, within } from "storybook/test";
 import { useCallback, useState } from "storybook/internal/preview-api";
 import { act } from "@testing-library/react";
+import { useReducer } from "react";
+import { PropertiesReducer } from "./PropertiesReducer";
 
 const WithActions: Decorator<PropertiesTableProps> = (Story, context) => {
-  const [theProps, setTheProps] = useState<Property[]>(context.args.theProps);
-  const saveProp = useCallback(
-    (data: Property) => {
-      act(() =>
-        setTheProps((prev) => {
-          let newProps: Property[];
-          if (typeof data.state === "number") {
-            newProps = prev.map((p: Property) =>
-              `${data.state}` === p.name ? { name: data.name, value: data.value } : p,
-            );
-          } else if (data.state === "edit") {
-            newProps = prev.map((p: Property) =>
-              p.name === data.name ? { ...p, value: data.value, state: undefined } : p,
-            );
-          } else {
-            throw new Error(
-              `Attempt to save property with invalid state ${data.state}`,
-            );
-          }
-          return newProps;
-        }),
-      );
-    },
-    [theProps],
-  );
+  const [theProps, dispatch] = useReducer(PropertiesReducer, context.args.theProps);
 
-  const removeProp = useCallback(
-    (prop: string) => {
-      act(() =>
-        setTheProps((prev) => {
-          const tmp = prev.filter((e: Property) => e.name !== prop);
-          return tmp;
-        }),
-      );
-    },
-    [theProps],
-  );
+  const saveProp = useCallback((data: Property) => {
+    act(() => dispatch({ type: "save_prop", payload: data }));
+  }, []);
 
-  const addProp = useCallback(() => {
-    act(() =>
-      setTheProps((prev) => {
-        const existingNew = prev
-          .filter((p: Property) => p.state === "new")
-          .sort((a: Property, b: Property) => {
-            return parseInt(a.name) - parseInt(b.name);
-          });
-        const idx = existingNew.length > 0 ? parseInt(existingNew[0].name) + 1 : 1;
-
-        const tmp = [...prev, { name: `${idx}`, value: "", state: "new" } as Property];
-        return tmp;
-      }),
-    );
-  }, [theProps]);
-
-  const editProp = useCallback(
-    (prop: string) => {
-      act(() =>
-        setTheProps((prev) => {
-          const tmp: Property[] = prev.map((p: Property) => {
-            if (p.name === prop) {
-              return {
-                ...p,
-                state: "edit",
-              };
-            } else {
-              return p;
-            }
-          });
-          return tmp;
-        }),
-      );
-    },
-    [theProps],
-  );
+  const removeProp = useCallback((prop: string) => {
+    act(() => dispatch({ type: "delete_prop", payload: { name: prop } }));
+  }, []);
 
   return (
     <Story
       args={{
         ...context.args,
         theProps: theProps,
+        edit: true,
         actions: {
           save: saveProp,
           remove: removeProp,
-          add: addProp,
-          edit: editProp,
         },
       }}
     />
@@ -296,11 +232,7 @@ export const ReadOnly: Story = {
 
 export const CanEditOnly: Story = {
   args: {
-    theProps: [
-      ...propList,
-      { name: "propInEdit", value: "Test value", state: "edit" },
-      { name: "1", value: null, state: "new" },
-    ],
+    theProps: [...propList],
     actions: {
       edit: fn(),
       save: fn(),
