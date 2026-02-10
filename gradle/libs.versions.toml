@@ -1,7 +1,7 @@
 [versions]
 #General/Shared Versions
 oracle = { strictly = "23.5.0.24.07" }
-postgres = "42.7.7"
+postgres = "42.7.9"
 commons-logging = "1.0.4"
 commons-net = "3.3"
 dom4j = { strictly = "2.1.4" }
@@ -33,7 +33,6 @@ jdbi = "3.39.1"
 flywaydb = "11.20.1"
 sun-mailapi="2.0.2"
 ayza = "10.0.0"
-mock-server = "5.15.0"
 auto-service = "1.1.1"
 password4j = "1.8.4"
 
@@ -63,7 +62,6 @@ junit = "6.0.2"
 junit-launcher = "6.0.2"
 hamcrest = "3.0"
 commons-io = "2.11.0"
-commons-lang = "2.5"
 derby = "10.17.1.0"
 webcompere = "2.1.8"
 greenmail = "2.1.8"
@@ -189,14 +187,12 @@ hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
 tomcat-embedded-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version.ref = "tomcat" }
 tomcat-embedded-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version.ref = "tomcat" }
 tomcat-jdbc = { module = "org.apache.tomcat:tomcat-jdbc", version.ref = "tomcat" }
-commons-lang = { module = "commons-lang:commons-lang", version.ref = "commons-lang" }
 slf4j-jdk14 = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j-api"}
 swagger-parser = { module = "io.swagger.parser.v3:swagger-parser-v3", version.ref = "swagger-parser"}
 commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
 apache-derby = { module = "org.apache.derby:derby", version.ref = "derby" }
 webcompere-system-stubs-jupiter = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "webcompere" }
 greenmail = { module = "com.icegreen:greenmail", version.ref = "greenmail" }
-org-mock-server = { module = "org.mock-server:mockserver-junit-jupiter", version.ref = "mock-server" }
 
 org-slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j-api" }
 #integration test deps

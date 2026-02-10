@@ -1,20 +1,19 @@
 package org.opendcs.regression_tests;
 
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Vector;
 
+import com.sun.net.httpserver.HttpServer;
+
 import org.junit.jupiter.api.Test;
-import org.mockserver.client.MockServerClient;
-import org.mockserver.configuration.Configuration;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.netty.MockServer;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
-import org.slf4j.event.Level;
 
 import decodes.datasource.DataSourceEndException;
 import decodes.datasource.RawMessage;
@@ -28,9 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.notFoundResponse;
-import static org.mockserver.model.HttpResponse.response;
 
 
 @DecodesConfigurationRequired({
@@ -76,27 +72,35 @@ class WebSourceTest extends AppTestBase
                                     .addLimit(limit -> limit.capacity(1000)
                                                             .refillGreedy(1000, Duration.ofMinutes(1)))
                                     .build();
-        Configuration conf = Configuration.configuration();
-        Level currentLevel = conf.logLevel();
-        Configuration.configuration().logLevel(Level.ERROR);
-        try (ClientAndServer server = new ClientAndServer(0))
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/data/", exchange ->
         {
-            server.when(request().withPath("/data/.*"))
-                  .respond(request ->
-                  {
-                    if(bucket.tryConsume(1))
-                    {
-                        return response().withBody(generateMessage(120));
-                    }
-                    else
-                    {
-                        return response().withStatusCode(429).withBody("Too many requests.");
-                    }
-                  }
-                  );
+            String body;
+            int statusCode;
+            if (bucket.tryConsume(1))
+            {
+                body = generateMessage(120);
+                statusCode = 200;
+            }
+            else
+            {
+                body = "Too many requests.";
+                statusCode = 429;
+            }
+            byte[] responseBytes = body.getBytes();
+            exchange.sendResponseHeaders(statusCode, responseBytes.length);
+            try (OutputStream os = exchange.getResponseBody())
+            {
+                os.write(responseBytes);
+            }
+        });
+        server.start();
+        try
+        {
+            int port = server.getAddress().getPort();
             Properties props = new Properties();
             Vector<NetworkList> netlists = new Vector<>();
-        
+
             final int MESSAGE_SIZE = 2000;
             NetworkList list = new NetworkList();
             for (int i = 0; i < MESSAGE_SIZE; i ++)
@@ -106,14 +110,14 @@ class WebSourceTest extends AppTestBase
             netlists.add(list);
 
             WebAbstractDataSource wads = new WebAbstractDataSource(null, db);
-            props.setProperty("abstractUrl", "http://localhost:" + server.getPort() + "/data/$MEDIUMID/$SINCE/$UNTIL");
+            props.setProperty("abstractUrl", "http://localhost:" + port + "/data/$MEDIUMID/$SINCE/$UNTIL");
             props.setProperty("header","other");
             props.setProperty("onemessagefile", "true");
             props.setProperty("rateLimit", "990");
             wads.setAllowNullPlatform(true);
             wads.init(props, "now - 2 hours", "now", netlists);
-            
-            
+
+
             final ArrayList<RawMessage> messages = new ArrayList<>();
             assertThrows(DataSourceEndException.class, () ->
             {
@@ -126,11 +130,10 @@ class WebSourceTest extends AppTestBase
             });
             assertFalse(messages.isEmpty());
             assertEquals(MESSAGE_SIZE, messages.size());
-            
         }
         finally
         {
-            conf.logLevel(currentLevel);
+            server.stop(0);
         }
     }
 

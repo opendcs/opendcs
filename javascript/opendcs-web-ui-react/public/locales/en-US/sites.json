@@ -4,12 +4,13 @@
   "site_name": "Site Name",
   "site_names": {
     "title": "Site Names",
+    "select": "Site Name Type Selector",
     "add_name": "Add Site Name",
     "name_type": "Type",
     "type_select_for": "Site name type select for name {{name}}",
     "value_input_for": "Site name value input for type {{type}}",
-    "save_for": "Site name save button for type {{type}} with value {{name}}",
-    "edit_for": "Site name edit button for type {{type}} with value {{name}}",
+    "save_for": "Site name save button for type {{type}}",
+    "edit_for": "Site name edit button for type {{type}}",
     "delete_for": "Site name delete button for type {{type}} with value {{name}}"
   },
   "configured_names": "Configured Site Names",
@@ -19,5 +20,9 @@
   "enter_country": "Provide Country",
   "use_decimal_format": "Provide value in Decimal format",
   "nearestCity": "Nearest City",
-  "public_name": "Public Name"
+  "public_name": "Public Name",
+  "edit_site": "Edit site with id {{id}}",
+  "save_site": "Save site with id {{id}}",
+  "cancel_for": "Cancel editing for Site with id {{id}}",
+  "delete_for": "Delete Site with id {{id}}"
 }

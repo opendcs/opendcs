@@ -34,6 +34,14 @@ export interface AddAction<T> {
 }
 
 /**
+ * Tell parent whatever operations is currently going on should be terminated.
+ * Example: Deciding *NOT* to save a value.
+ */
+export interface CancelAction<T> {
+  cancel?: (item: T) => void;
+}
+
+/**
  * Interface that provides for various actions. All actions are
  * optional indicating that that action is not supported and those controls should
  * be disabled or not rendered.
@@ -48,4 +56,4 @@ export type CollectionActions<T, V = T> = SaveAction<T> &
 
 export type ItemActions<T> = SaveAction<T> & EditAction<T> & RemoveAction<T>;
 
-export type UiState = "new" | "edit" | undefined;
+export type UiState = "new" | "edit" | "show" | undefined;
