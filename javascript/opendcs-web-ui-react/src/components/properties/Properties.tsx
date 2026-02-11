@@ -324,17 +324,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
   }, [actions, rowStateRef]);
 
   useEffect(() => {
-    if (table.current?.dt()) {
-      console.log(`Checking on rows ${JSON.stringify(rowState)}`);
-      const dt = table.current.dt()!;
-      const visibleRows = dt.rows();
-      visibleRows.every(function () {
-        const prop = this.data() as LocalProperty;
-        if (rowState[prop.name || prop.idx] !== undefined) {
-          this.invalidate().draw(false);
-        }
-      });
-    }
+    table.current?.dt()?.rows().invalidate().draw(false);
   }, [rowState, allProps]);
 
   return (
