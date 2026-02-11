@@ -55,7 +55,7 @@ import opendcs.dai.TimeSeriesDAI;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.opendcs.fixtures.ImporterHelper;
+import org.opendcs.fixtures.helpers.ImporterHelper;
 import org.opendcs.odcsapi.beans.ApiAlgorithm;
 import org.opendcs.odcsapi.beans.ApiCompParm;
 import org.opendcs.odcsapi.beans.ApiComputation;

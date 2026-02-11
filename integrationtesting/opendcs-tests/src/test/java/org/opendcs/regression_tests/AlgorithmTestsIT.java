@@ -36,7 +36,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.fixtures.AppTestBase;
-import org.opendcs.fixtures.ImporterHelper;
+import org.opendcs.fixtures.helpers.ImporterHelper;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
@@ -44,7 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
-import static org.opendcs.fixtures.ImporterHelper.buildFilePath;
+import static org.opendcs.fixtures.helpers.ImporterHelper.buildFilePath;
 import static org.opendcs.fixtures.assertions.TimeSeries.assertEquals;
 
 @DecodesConfigurationRequired({

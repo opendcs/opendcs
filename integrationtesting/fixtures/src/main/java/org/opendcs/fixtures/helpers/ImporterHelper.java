@@ -1,4 +1,4 @@
-package org.opendcs.fixtures;
+package org.opendcs.fixtures.helpers;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -39,6 +39,7 @@ import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.fixtures.Programs;
 import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.utils.FailableResult;
 import org.slf4j.Logger;
@@ -225,14 +226,11 @@ public class ImporterHelper
 		}
 		for (File tsfiles : folderTS.listFiles())
 		{
-			String relativePath = tsfiles.getAbsolutePath();
-			if (context == CONTEXT.TOOLKIT)
+			String relativePath = "Comps"+tsfiles.getAbsolutePath().split("Comps")[1];
+			try(TimeSeriesDAI tsDao = tsDb.makeTimeSeriesDAO();
+				InputStream inputStream = TestResources.getResourceAsStream(configuration, relativePath))
 			{
-				relativePath = "Comps"+tsfiles.getAbsolutePath().split("Comps")[1];
-			}
-			try(TimeSeriesDAI tsDao = tsDb.makeTimeSeriesDAO())
-			{
-				Collection<CTimeSeries> allTs = importer.readTimeSeriesFile(relativePath);
+				Collection<CTimeSeries> allTs = importer.readTimeSeriesFile(inputStream);
 				for (CTimeSeries tsIn: allTs)
 				{
 					log.info("load: " + tsIn.getDisplayName());
@@ -248,7 +246,7 @@ public class ImporterHelper
 		return fullTs;
 	}
 
-	public void loadRatingimport(String folderRatingStr) throws Exception
+	public void loadRatingimport(String folderRatingStr)
 	{
 		File folderTS = new File(folderRatingStr);
 		if (!folderTS.exists())
