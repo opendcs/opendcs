@@ -9,13 +9,19 @@ import { PropertiesReducer } from "./PropertiesReducer";
 const WithActions: Decorator<PropertiesTableProps> = (Story, context) => {
   const [theProps, dispatch] = useReducer(PropertiesReducer, context.args.theProps);
 
-  const saveProp = useCallback((data: Property) => {
-    act(() => dispatch({ type: "save_prop", payload: data }));
-  }, []);
+  const saveProp = useCallback(
+    (data: Property) => {
+      act(() => dispatch({ type: "save_prop", payload: data }));
+    },
+    [dispatch],
+  );
 
-  const removeProp = useCallback((prop: string) => {
-    act(() => dispatch({ type: "delete_prop", payload: { name: prop } }));
-  }, []);
+  const removeProp = useCallback(
+    (prop: string) => {
+      act(() => dispatch({ type: "delete_prop", payload: { name: prop } }));
+    },
+    [dispatch],
+  );
 
   return (
     <Story
