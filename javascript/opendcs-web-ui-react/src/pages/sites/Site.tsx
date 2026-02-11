@@ -1,13 +1,12 @@
 import { Button, Card, Col, Form, FormGroup, FormSelect, Row } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../components/properties";
-import { use, useCallback, useEffect, useMemo, useReducer, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useReducer } from "react";
 import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { useTranslation } from "react-i18next";
 import { SiteNameList, type SiteNameType } from "./SiteNameList";
 import type { CancelAction, CollectionActions, SaveAction } from "../../util/Actions";
 import { SiteReducer } from "./SiteReducer";
 import { Save, X } from "react-bootstrap-icons";
-import { PropertiesReducer } from "../../components/properties/PropertiesReducer";
 
 export type UiSite = Partial<ApiSite>;
 
@@ -49,7 +48,6 @@ export const Site: React.FC<SiteProperties> = ({
     () => mapProps(localSite.properties || {}),
     [localSite.properties],
   );
-  console.log(`Site props ${JSON.stringify(props)}`);
 
   // need an initial set of the units if it isn't defined as it's a required field in the database.
   useEffect(() => {
