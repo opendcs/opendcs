@@ -89,9 +89,6 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
 
   const allProps = useMemo(() => [...theProps, ...localProps], [theProps, localProps]);
 
-  console.log(`The props ${JSON.stringify(theProps)}`);
-  console.log(`Local props ${JSON.stringify(localProps)}`);
-  console.log(`All props ${JSON.stringify(allProps)}`);
   const renderName = useCallback(
     (
       data: LocalProperty,
@@ -134,7 +131,6 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
         return data;
       }
       const state = data.name ? rowStateRef.current[data.name] : "new";
-      console.log(`Current data ${JSON.stringify(data)} state ${state}`);
       if (state === undefined) {
         return data.value || "";
       } else {
@@ -235,7 +231,6 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
               "border-warning",
             );
           } else {
-            console.log(`Saving! ${JSON.stringify(prop)}`);
             actions.save?.(prop);
 
             setLocalProps((prevProps) => prevProps.filter((p) => p.idx !== data.idx));
@@ -260,7 +255,6 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
   const renderActions = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     (data: LocalProperty, _row: Property) => {
-      console.log(`Row state ${JSON.stringify(rowStateRef.current)}`);
       const rowState = rowStateRef.current;
       const state = data.name ? rowState[data.name] : rowState[data.idx];
       const inEdit = state !== undefined || data.idx !== undefined;
