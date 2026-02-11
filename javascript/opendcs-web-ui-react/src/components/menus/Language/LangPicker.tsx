@@ -2,7 +2,7 @@ import type { i18n } from "i18next";
 import React from "react";
 import { Button, ButtonGroup, Dropdown } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import availableLanguages from "../lang";
+import availableLanguages from "../../../lang";
 
 interface ToggleProperties {
   i18n: i18n;
