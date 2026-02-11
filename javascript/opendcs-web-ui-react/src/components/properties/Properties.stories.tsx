@@ -61,15 +61,14 @@ export const EmptyAddThenRemove: Story = {
     ...StartEmpty.args,
   },
   decorators: [WithActions],
-  play: async ({ canvasElement, mount, parameters, userEvent }) => {
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
     const { i18n } = parameters;
-    await mount();
-    const canvas = within(canvasElement);
+
     const add = await canvas.findByRole("button", {
       name: i18n.t("properties:add_prop"),
     });
     await userEvent.click(add);
-    await mount();
     const nameInput = await canvas.findByRole("textbox", {
       name: i18n.t("properties:name_input", { name: "1" }),
     });
@@ -79,7 +78,6 @@ export const EmptyAddThenRemove: Story = {
     });
 
     await userEvent.click(remove);
-    await mount();
   },
 };
 
@@ -88,15 +86,15 @@ export const PropertyNameCannotBeBlank: Story = {
     ...StartEmpty.args,
   },
   decorators: [WithActions],
-  play: async ({ canvasElement, mount, parameters, userEvent }) => {
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
     const { i18n } = parameters;
-    await mount();
-    const canvas = within(canvasElement);
+
     const add = await canvas.findByRole("button", {
       name: i18n.t("properties:add_prop"),
     });
     await userEvent.click(add);
-    await mount();
+
     const nameInput = await canvas.findByRole("textbox", {
       name: i18n.t("properties:name_input", { name: "1" }),
     });
@@ -115,7 +113,6 @@ export const PropertyNameCannotBeBlank: Story = {
     });
 
     await userEvent.click(save);
-    await mount();
 
     await waitFor(async () => {
       const nameInputAfterSave = canvas.queryByRole("textbox", {
@@ -123,12 +120,7 @@ export const PropertyNameCannotBeBlank: Story = {
       });
       expect(nameInputAfterSave).toBeInTheDocument();
 
-      //There is something forcing a rerender that then strips this warning border
-      //An attempt to useMemo/useCallback all the functions did not work.
-      //It is also failing in the CLI run so is at least consistent.
-      //For now... dunno, something to investigate later. I suspect it is something
-      //to do with how the decorator is configured
-      //expect(nameInputAfterSave).toHaveClass("border-warning");
+      expect(nameInputAfterSave).toHaveClass("border-warning");
     });
 
     const remove = await canvas.findByRole("button", {
@@ -136,7 +128,6 @@ export const PropertyNameCannotBeBlank: Story = {
     });
 
     await userEvent.click(remove);
-    await mount();
   },
 };
 
@@ -146,15 +137,15 @@ export const EmptyAddThenSaveThenRemove: Story = {
   },
   decorators: [WithActions],
   play: async ({ canvasElement, step, mount, parameters, userEvent }) => {
+    const canvas = await mount();
     const { i18n } = parameters;
-    await mount();
-    const canvas = within(canvasElement);
+
     await step("add new prop", async () => {
       const add = await canvas.findByRole("button", {
         name: i18n.t("properties:add_prop"),
       });
       await userEvent.click(add);
-      await mount();
+
       const nameInput = await canvas.findByRole("textbox", {
         name: i18n.t("properties:name_input", { name: "1" }),
       });
@@ -175,7 +166,6 @@ export const EmptyAddThenSaveThenRemove: Story = {
       await userEvent.click(save);
     });
 
-    await mount();
     const prop = await canvas.findByText("testprop", undefined, { timeout: 3000 });
     expect(prop).not.toBeNull();
 
@@ -184,7 +174,6 @@ export const EmptyAddThenSaveThenRemove: Story = {
         name: i18n.t("properties:delete_prop", { name: "testprop" }),
       });
       await userEvent.click(remove);
-      await mount();
 
       await waitFor(async () => {
         expect(canvas.queryByText("testprop")).toBeNull();
@@ -216,10 +205,10 @@ export const ReadOnly: Story = {
     theProps: propList,
     actions: {},
   },
-  play: async ({ canvasElement, mount, parameters }) => {
+  play: async ({ mount, parameters }) => {
+    const canvas = await mount();
     const { i18n } = parameters;
-    await mount();
-    const canvas = within(canvasElement);
+
     const add = canvas.queryByRole("button", { name: i18n.t("properties:add_prop") });
     expect(add).toBeNull();
 
@@ -239,15 +228,16 @@ export const ReadOnly: Story = {
 export const CanEditOnly: Story = {
   args: {
     theProps: [...propList],
+    edit: true,
+    canAdd: false,
     actions: {
-      edit: fn(),
       save: fn(),
     },
   },
-  play: async ({ canvasElement, mount, parameters, userEvent, args }) => {
+  play: async ({ mount, parameters, userEvent, args }) => {
+    const canvas = await mount();
     const { i18n } = parameters;
-    await mount();
-    const canvas = within(canvasElement);
+
     const add = canvas.queryByRole("button", { name: i18n.t("properties:add_prop") });
     expect(add).toBeNull();
 
@@ -256,29 +246,15 @@ export const CanEditOnly: Story = {
     });
     expect(deleteButton).toBeNull();
 
-    const edit = canvas.getByRole("button", {
+    const edit = await canvas.findByRole("button", {
       name: i18n.t("properties:edit_prop", { name: "prop1" }),
     });
     await userEvent.click(edit);
-    expect(args.actions.edit).toHaveBeenCalled();
 
-    const save = canvas.getByRole("button", {
-      name: i18n.t("properties:save_prop", { name: "propInEdit" }),
+    const save = await canvas.findByRole("button", {
+      name: i18n.t("properties:save_prop", { name: "prop1" }),
     });
     await userEvent.click(save);
     expect(args.actions.save).toHaveBeenCalled();
-
-    const saveNew = canvas.getByRole("button", {
-      name: i18n.t("properties:save_prop", { name: "1" }),
-    });
-    await userEvent.click(saveNew);
-
-    // for some reason this behavior, while it can be visibly seen, does not stay static with the "can't save empty name test"
-    // So we at least assert it here so that we some record of the behavior.
-    expect(args.actions.save).toHaveBeenCalled();
-    const newInput = canvas.getByRole("textbox", {
-      name: i18n.t("properties:name_input", { name: "1" }),
-    });
-    expect(newInput).toHaveClass("border-warning");
   },
 };

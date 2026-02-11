@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { PropertiesReducer } from "./PropertiesReducer";
 import type { Property } from "./Properties";
 
-test("Reducer Add Proper", () => {
+test("Reducer Add Property", () => {
   const testProps: Property[] = [];
 
   const result = PropertiesReducer(testProps, {
@@ -12,7 +12,7 @@ test("Reducer Add Proper", () => {
   console.log(result);
   expect(result).toBeDefined();
 
-  expect(result[0]).toEqual("value");
+  expect(result[0].value).toEqual("value");
 });
 
 test("Change a Prop Then Delete", () => {
@@ -26,7 +26,7 @@ test("Change a Prop Then Delete", () => {
     payload: { name: "prop1", value: "Test Rename" },
   });
   expect(result).toBeDefined();
-  expect(result[0]).toEqual("Test Rename");
+  expect(result.find((p) => p.name === "prop1")?.value).toEqual("Test Rename");
 
   const deletedName = PropertiesReducer(result, {
     type: "delete_prop",

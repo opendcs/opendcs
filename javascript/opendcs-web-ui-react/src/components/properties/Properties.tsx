@@ -110,8 +110,8 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
           <Form.Control
             type="text"
             name="name"
-            defaultValue={state == "edit" ? data.name : ""}
-            aria-label={t(`properties:name_input`, { name: data.name })}
+            defaultValue=""
+            aria-label={t(`properties:name_input`, { name: data.name || data.idx })}
           />,
         );
       } else {
@@ -126,25 +126,26 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
       data: LocalProperty,
       type: string,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      row: any,
+      _row: any,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       _meta: any,
     ) => {
       if (type !== "display") {
         return data;
       }
-      const state = rowStateRef.current[data.name || data.idx];
-      if (data.value === undefined || state === "new") {
+      const state = data.name ? rowStateRef.current[data.name] : "new";
+      console.log(`Current data ${JSON.stringify(data)} state ${state}`);
+      if (state === undefined) {
+        return data.value || "";
+      } else {
         return renderToString(
           <Form.Control
             type="text"
             name="value"
             defaultValue={state == "edit" ? data.value : ""}
-            aria-label={t(`properties:value_input`, { name: row.name })}
+            aria-label={t(`properties:value_input`, { name: data.name || data.idx })}
           />,
         );
-      } else {
-        return data.value || "";
       }
     },
     [rowStateRef],
@@ -176,9 +177,6 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
                 };
                 const existingNew = [...prev].sort(sortAsc);
                 const idx = existingNew.length > 0 ? existingNew[0].idx + 1 : 1;
-                setRowState((prev) => {
-                  return { ...prev, [`${idx}`]: "new" };
-                });
                 return [...prev, { idx: idx }];
               });
             },
@@ -237,6 +235,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
               "border-warning",
             );
           } else {
+            console.log(`Saving! ${JSON.stringify(prop)}`);
             actions.save?.(prop);
 
             setLocalProps((prevProps) => prevProps.filter((p) => p.idx !== data.idx));
@@ -255,13 +254,14 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
         console.log("no dt api?");
       }
     },
-    [actions, rowStateRef],
+    [actions, setRowState, setLocalProps],
   );
 
   const renderActions = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     (data: LocalProperty, _row: Property) => {
-      console.log(`Row state ref ${JSON.stringify(rowState)}`);
+      console.log(`Row state ${JSON.stringify(rowStateRef.current)}`);
+      const rowState = rowStateRef.current;
       const state = data.name ? rowState[data.name] : rowState[data.idx];
       const inEdit = state !== undefined || data.idx !== undefined;
       return (
@@ -272,7 +272,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
                 getAndSaveProp(data);
               }}
               variant="primary"
-              aria-label={t("properties:save_prop", { name: data.name })}
+              aria-label={t("properties:save_prop", { name: data.name || data.idx })}
               size="sm"
             >
               <Save />
@@ -306,7 +306,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
               }}
               variant="danger"
               size="sm"
-              aria-label={t("properties:delete_prop", { name: data.name })}
+              aria-label={t("properties:delete_prop", { name: data.name || data.idx })}
             >
               <Trash />
             </Button>
@@ -314,7 +314,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
         </>
       );
     },
-    [t, actions.remove, edit, rowState, getAndSaveProp],
+    [t, actions.remove, edit, rowStateRef, setRowState, setLocalProps, getAndSaveProp],
   );
 
   const slots = useMemo<DataTableSlots>(() => {
@@ -325,16 +325,17 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
 
   useEffect(() => {
     if (table.current?.dt()) {
+      console.log(`Checking on rows ${JSON.stringify(rowState)}`);
       const dt = table.current.dt()!;
       const visibleRows = dt.rows();
       visibleRows.every(function () {
-        const prop = this.data() as Property;
-        if (rowStateRef.current[prop.name] !== undefined) {
+        const prop = this.data() as LocalProperty;
+        if (rowState[prop.name || prop.idx] !== undefined) {
           this.invalidate().draw(false);
         }
       });
     }
-  }, [rowState, localProps]);
+  }, [rowState, allProps]);
 
   return (
     <Container fluid style={{ width: width, height: height }} className={`${classes}`}>
