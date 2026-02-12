@@ -22,7 +22,7 @@ export const DataOrderSelect: React.FC<DataOrderSelectProperties> = ({
   onChange,
   edit = true,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(["decodes"]);
 
   const values = useMemo(() => {
     return {
