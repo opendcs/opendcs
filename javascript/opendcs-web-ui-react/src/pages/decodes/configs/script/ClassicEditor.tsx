@@ -8,6 +8,8 @@ import DataTable, {
 } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import "datatables.net-rowreorder";
+import { ArrowDownUp } from "react-bootstrap-icons";
+import { renderToString } from "react-dom/server";
 
 // this isn't a hook, it just has "use" as the name.
 // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -15,7 +17,7 @@ DataTable.use(DT);
 
 export interface ClassicFormatStatememntEditorProperties {
   formatStatements: ApiScriptFormatStatement[];
-  onChange?: () => void;
+  onChange?: (statements: ApiScriptFormatStatement[]) => void;
   edit?: boolean;
 }
 
@@ -30,18 +32,35 @@ const ClassicFormatStatementEditor: React.FC<
   const table = useRef<DataTableRef>(null);
 
   const columns = [
-    { data: null, defaultValue: "[move me]" },
+    {
+      data: null,
+      render: (data: unknown, type: string, _row: unknown, _meta: unknown) => {
+        if (type === "display") {
+          return renderToString(<ArrowDownUp />);
+        } else {
+          return data;
+        }
+      },
+    },
     { data: "label" },
     { data: "format" },
     { data: null },
   ];
 
   useEffect(() => {
-    table.current?.dt()?.on("row-reordered", function (e, params) {
-      console.log(e);
-      console.log(params);
-    });
-  }, [table.current]);
+    table.current
+      ?.dt()
+      ?.off("row-reordered")
+      .on("row-reordered", function (e, params) {
+        if (params.length === 0) {
+          return;
+        }
+        if (onChange) {
+          console.log(`new format statements ${JSON.stringify(formatStatements)}`);
+          onChange(formatStatements);
+        }
+      });
+  }, [table.current, formatStatements]);
 
   return (
     <Card>
@@ -54,16 +73,23 @@ const ClassicFormatStatementEditor: React.FC<
               dataSrc: "sequenceNum",
             },
             search: false,
+            searching: false,
+            paging: false,
+            ordering: false,
+            responsive: true,
+            order: { name: "sequenceNum", dir: "asc" },
           }}
           columns={columns}
           ref={table}
           data={formatStatements}
         >
           <thead>
-            <th></th>
-            <th>Label</th>
-            <th>Format Statement</th>
-            <th>Actions</th>
+            <tr>
+              <th></th>
+              <th>Label</th>
+              <th>Format Statement</th>
+              <th>Actions</th>
+            </tr>
           </thead>
         </DataTable>
       </Card.Body>
