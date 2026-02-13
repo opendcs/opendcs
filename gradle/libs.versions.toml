@@ -20,7 +20,7 @@ slf4j-api= { strictly = "2.0.17" }
 logback = "1.5.25" 
 jetty = "12.1.4"
 jetty-jsp = "12.1.4"
-jersey = "4.0.0"
+jersey = "4.0.2"
 servlet-api = "6.1.0"
 jakarta-jakartaee-api = "11.0.0"
 # CWMS Dep version
@@ -41,21 +41,21 @@ org-netbeans = "RELEASE280"
 hec-lookup-compat = "4.0.0"
 
 # API deps
-swagger = "2.2.41"
+swagger = "2.2.42"
 swagger-ui = "5.18.3"
 swagger-parser = "2.1.25"
 rs-api = "4.0.0"
-jackson = "2.20.1"
-jackson-annotations = "2.20"
+jackson = "2.21.1"
+jackson-annotations = "2.21"
 selenium = "4.38.0"
 nimbus = "10.7"
 jwt = "4.4.0"
-jaxb = "4.0.0"
+jaxb = "4.0.5"
 
 swagger-codegen = "3.0.61"
 jakarta-annotation-api = "3.0.0"
 jsr305 = "3.0.2"
-openapitools-databind-nullable = "0.2.1"
+openapitools-databind-nullable = "0.2.9"
 
 #test deps
 junit = "6.0.2"
