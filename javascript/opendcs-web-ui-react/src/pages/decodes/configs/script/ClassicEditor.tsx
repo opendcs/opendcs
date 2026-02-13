@@ -1,15 +1,17 @@
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import type { ApiScriptFormatStatement } from "opendcs-api";
-import { Card, ListGroup, Table } from "react-bootstrap";
+import { Card, Form } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import DataTable, {
-  type DataTableProps,
-  type DataTableRef,
-} from "datatables.net-react";
+import DataTable, { type DataTableRef } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import "datatables.net-rowreorder";
 import { ArrowDownUp } from "react-bootstrap-icons";
 import { renderToString } from "react-dom/server";
+import hljs from "highlight.js";
+import decodes from "../../../../util/languages/decodes";
+import "highlight.js/styles/default.css";
+
+hljs.registerLanguage("decodes", decodes);
 
 // this isn't a hook, it just has "use" as the name.
 // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -31,6 +33,37 @@ const ClassicFormatStatementEditor: React.FC<
   const { t } = useTranslation(["decodes"]);
   const table = useRef<DataTableRef>(null);
 
+  const renderFormat = useCallback(
+    (
+      data: string,
+      type: string,
+      row: ApiScriptFormatStatement,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      _meta: any,
+    ) => {
+      if (type === "display") {
+        return renderToString(
+          <pre>
+            <code
+              className="language-decodes"
+              role="textbox"
+              contentEditable={edit}
+              aria-label={t("decodes:config.script.format_statement_input", {
+                label: row.label,
+                sequence: row.sequenceNum,
+              })}
+            >
+              {data}
+            </code>
+          </pre>,
+        );
+      } else {
+        return data;
+      }
+    },
+    [table],
+  );
+
   const columns = [
     {
       data: null,
@@ -43,20 +76,23 @@ const ClassicFormatStatementEditor: React.FC<
       },
     },
     { data: "label" },
-    { data: "format" },
+    { data: "format", render: renderFormat },
     { data: null },
   ];
+
+  useEffect(() => {
+    hljs.highlightAll();
+  }, [formatStatements, table]);
 
   useEffect(() => {
     table.current
       ?.dt()
       ?.off("row-reordered")
-      .on("row-reordered", function (e, params) {
+      .on("row-reordered", function (_event, params) {
         if (params.length === 0) {
           return;
         }
         if (onChange) {
-          console.log(`new format statements ${JSON.stringify(formatStatements)}`);
           onChange(formatStatements);
         }
       });

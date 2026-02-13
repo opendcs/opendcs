@@ -30,8 +30,6 @@ const StoryRender: ArgsStoryFn<
   const onChange = useCallback(
     (statements: ApiScriptFormatStatement[]) => {
       args.onChange?.(statements);
-      console.log(`Update statement list with ${JSON.stringify(statements)}`);
-
       setStoryStatements(
         statements.toSorted((a, b) => a.sequenceNum! - b.sequenceNum!),
       );
@@ -39,7 +37,6 @@ const StoryRender: ArgsStoryFn<
     [setStoryStatements],
   );
 
-  console.log(`Storystatements are now ${JSON.stringify(storyStatements)}`);
   return (
     <ClassicEditor
       formatStatements={storyStatements}
@@ -55,13 +52,23 @@ export const Default: Story = {
   },
 };
 
+const simpleScript: ApiScriptFormatStatement[] = [
+  { sequenceNum: 1, label: "stage", format: "/,4f(s,a,6D' ', 1)" },
+  { sequenceNum: 2, label: "precip", format: "/,4f(s,a,6D' ', 2)" },
+  { sequenceNum: 3, label: "battery", format: "/,1f(s,a,6D' ', 3)" },
+];
+
 export const WithScript: Story = {
   args: {
-    formatStatements: [
-      { sequenceNum: 1, label: "stage", format: "/,4f(s,a,6D' ', 1)" },
-      { sequenceNum: 2, label: "precip", format: "/,4f(s,a,6D' ', 2)" },
-      { sequenceNum: 3, label: "battery", format: "/,1f(s,a,6D' ', 3)" },
-    ],
+    formatStatements: simpleScript,
+  },
+  render: StoryRender,
+};
+
+export const WithScriptEdit: Story = {
+  args: {
+    formatStatements: simpleScript,
+    edit: true,
   },
   render: StoryRender,
 };
