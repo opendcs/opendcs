@@ -181,6 +181,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		identifier.setActive(true);
 		identifier.setInterval("~6Hours");
 		identifier.setDuration("0");
+		identifier.setStorageUnits("ac-ft");
 		identifier.setDescription("Storage at TS test site");
 		CTimeSeries ts = new CTimeSeries(identifier);
 		tsId = identifier;
@@ -218,6 +219,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		identifier2.setActive(true);
 		identifier2.setInterval("~6Hours");
 		identifier2.setDuration("0");
+		identifier2.setStorageUnits("ac-ft");
 		identifier2.setDescription("Storage at TS test site");
 		CTimeSeries ts2 = new CTimeSeries(identifier2);
 		tsId2 = identifier2;
