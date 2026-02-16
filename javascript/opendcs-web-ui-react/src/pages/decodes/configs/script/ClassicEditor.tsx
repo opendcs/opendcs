@@ -109,15 +109,18 @@ const ClassicFormatStatementEditor: React.FC<
               dataSrc: "sequenceNum",
             },
             search: false,
+            scrollY: "20em",
             searching: false,
             paging: false,
             ordering: false,
+            info: false,
             responsive: true,
             order: { name: "sequenceNum", dir: "asc" },
           }}
           columns={columns}
           ref={table}
           data={formatStatements}
+          className="table table-hover table-striped tablerow-cursor w-100 border"
         >
           <thead>
             <tr>
