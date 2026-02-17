@@ -28,6 +28,8 @@
 		<CompProperty name="wtpTsId">
 			FTPK-Lower-D000,0m.Temp-Water.Inst.1Day.0.Rev-NWO-Evap-test
 		</CompProperty>
+		<CompProperty name="input_EU">C</CompProperty>
+		<CompProperty name="output_EU">C</CompProperty>
 		<CompProperty name="latitude">48.0007194444444</CompProperty>
 		<CompProperty name="longitude">-106.418</CompProperty>
 		<CompProperty name="windShear">Fischer</CompProperty>
@@ -49,7 +51,7 @@
 				<DataType Standard="CWMS" code="Temp-Air"/>
 			</SiteDataType>
 			<Interval>1Hour</Interval>
-			<TableSelector>Inst.0.Rev-AWC</TableSelector>
+			<TableSelector>Inst.0.Rev-AWC-Out</TableSelector>
 			<DeltaT>0</DeltaT>
 			<DeltaTUnits>Seconds</DeltaTUnits>
 		</CompParm>
