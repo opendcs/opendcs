@@ -55,7 +55,7 @@ import opendcs.dai.TimeSeriesDAI;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.opendcs.fixtures.annotations.EnableForEngine;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import org.opendcs.fixtures.helpers.ImporterHelper;
 import org.opendcs.odcsapi.beans.ApiAlgorithm;
 import org.opendcs.odcsapi.beans.ApiCompParm;
@@ -627,8 +627,8 @@ final class ComputationResourcesIT extends BaseApiIT
 	}
 
 	@Test
-	@EnableForEngine(engines = {"CWMS-Oracle"})
-	void testExecuteComputation() throws Exception
+	@EnableIfTsDb(value = "CWMS-Oracle")
+	void testExecuteComputationCWMS() throws Exception
 	{
 		String organization = getOrganization();
 
@@ -684,6 +684,100 @@ final class ComputationResourcesIT extends BaseApiIT
 					(Throwable error) -> {
 						throw new AssertionError("SSE Error: " + error.getMessage());
 					}
+				);
+				source.open();
+				boolean received = firstEvent.await(10, TimeUnit.SECONDS);
+				boolean completed = done.await(100, TimeUnit.SECONDS);
+				assertTrue(received, "Timed out waiting for SSE events");
+				assertTrue(completed, "Timed out waiting for SSE completion");
+
+				assertFalse(events.isEmpty(), "SSE did not receive any events");
+				InboundSseEvent event = events.getFirst();
+
+				String data = event.readData(String.class, MediaType.TEXT_PLAIN_TYPE);
+				assertNotNull(data);
+				assertFalse(data.isBlank());
+
+				int foundCount = 0;
+				for (InboundSseEvent sseEvent : events)
+				{
+					if (sseEvent.getName().equalsIgnoreCase("Results"))
+					{
+						foundCount++;
+						JsonPath jsonPath = JsonPath.from(sseEvent.readData(String.class, MediaType.TEXT_PLAIN_TYPE));
+						assertEquals(expectedTsList.size(), jsonPath.getList("tsIds").size(), "Expected " + expectedTsList.size() + " results");
+					}
+				}
+				assertEquals(1, foundCount, String.format("Expected %d SSE Result events, found %d", 1, foundCount));
+
+				for (CTimeSeries ts : expectedTsList)
+				{
+					CTimeSeries cts = fillTimeSeries(ts, Instant.parse(from), Instant.parse(to));
+					assertNotNull(cts);
+					assertNotNull(cts.getTimeSeriesIdentifier());
+					assertTrue(cts.size() > 0, "No data found for time series " + cts.getTimeSeriesIdentifier());
+				}
+			}
+		}
+	}
+
+	@Test
+	void testExecuteComputation() throws Exception
+	{
+		String organization = getOrganization();
+
+		importData(Optional.of(Path.of("CopyTest", "Test1")));
+		assertFalse(expectedTsList.isEmpty(), "No time series found imported");
+
+		ClientRequestFilter auth = ctx ->
+		{
+			ctx.getHeaders().putSingle(ApiConstants.ORGANIZATION_HEADER, organization);
+			ctx.getHeaders().putSingle("Cookie", getCookie());
+		};
+
+		URI baseURI = URI.create(String.format("%s:%d/%s", RestAssured.baseURI, RestAssured.port, RestAssured.basePath));
+
+		String from = "1800-01-01T00:00:00Z";
+		String to = "2040-01-02T00:00:00Z";
+
+		WebTarget target;
+		try (Client client = ClientBuilder.newBuilder()
+				.register(SseEventSource.class)
+				.register(auth)
+				.build())
+		{
+			target = client.target(baseURI)
+					.path("runcomputation")
+					.queryParam("computationid", tsCompId)
+					.queryParam("start", from)
+					.queryParam("end", to);
+
+			List<InboundSseEvent> events = new CopyOnWriteArrayList<>();
+			CountDownLatch done = new CountDownLatch(1);
+			CountDownLatch firstEvent = new CountDownLatch(1);
+
+			try(SseEventSource source = SseEventSource.target(target).build())
+			{
+				source.register(
+						(InboundSseEvent event) ->
+						{
+							events.add(event);
+							firstEvent.countDown();
+
+							if (event.getName().equalsIgnoreCase("Results"))
+							{
+								done.countDown();
+							}
+							else
+							{
+								String data = event.readData(String.class, MediaType.TEXT_PLAIN_TYPE);
+								String name = event.getName();
+								log.atInfo().log(String.format("Received SSE event: %s, %s", name, data));
+							}
+						},
+						(Throwable error) -> {
+							throw new AssertionError("SSE Error: " + error.getMessage());
+						}
 				);
 				source.open();
 				boolean received = firstEvent.await(10, TimeUnit.SECONDS);
