@@ -4,6 +4,7 @@ plugins {
     id 'opendcs.sonar-conventions'
     id 'opendcs.version-conventions'
     id 'com.github.node-gradle.node' version '7.1.0'
+    //id 'org.sonarqube'
 }
 
 configurations {
@@ -36,17 +37,33 @@ def testUi = tasks.register("testStorybook", NpxTask) {
         "IN_GRADLE": "1",
         "CI": "true"
     ]
-    args = ['run', 'test', '--', '--coverage',
+    args = ['run', 'test', '--', '--coverage.enabled',
             '--reporter=default',
             '--reporter=verbose',
             '--reporter=junit',
             '--outputFile', 'build/test-results/TEST-storybook.xml']
 }
 
+def lint = tasks.register("eslint", NpxTask) {
+    group "Verification"
+    dependsOn buildUi
+    dependsOn configurations.api
+    command = "npm"
+    ignoreExitValue = true // At this level we don't care if it's a good report, just that we have it.
+    environment = [
+        "IN_GRADLE": "1",
+        "CI": "true"
+    ]
+    doNotTrackState("Instrumentation needs to re-run every time")
+    outputs.file(project.layout.buildDir.file("eslint-report.json"))
+    args = ['run', 'lint', '--', '-f', 'json', '-o', 'build/eslint-report.json']
+}
+
 tasks.register("test") {
     group "Verification"
     dependsOn testUi
     dependsOn configurations.api
+    dependsOn lint
 }
 
 node {
@@ -61,6 +78,20 @@ node {
     
     // Configure a proxy for the download. Optional.
     // distBaseUrl = 'https://custom.node.dist.mirror'
+}
+
+sonar {
+    properties {
+        property "sonar.projectKey", "opendcs_opendcs_ui"
+        property "sonar.language", "typescript"
+        property "sonar.sources", "src"
+        property "sonar.tests", "src"
+        property "sonar.test.inclusions", "/**/*.(stories|tests).(js|jsx|ts|tsx)"
+        property "sonar.exclusions", "/**/*.(stories|tests).(js|jsx|ts|tsx)"
+        property "sonar.javascript.lcov.reportPaths", "coverage/lcov.info"
+        property "sonar.typescript.tsconfigPaths", "tsconfig.app.json"
+        property "sonar.eslint.reportPaths", "build/eslint-report.json"
+    }
 }
 
 build.dependsOn buildUi
