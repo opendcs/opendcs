@@ -55,6 +55,7 @@ import opendcs.dai.TimeSeriesDAI;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.opendcs.fixtures.annotations.EnableForEngine;
 import org.opendcs.fixtures.helpers.ImporterHelper;
 import org.opendcs.odcsapi.beans.ApiAlgorithm;
 import org.opendcs.odcsapi.beans.ApiCompParm;
@@ -626,6 +627,7 @@ final class ComputationResourcesIT extends BaseApiIT
 	}
 
 	@Test
+	@EnableForEngine(engines = {"CWMS-Oracle"})
 	void testExecuteComputation() throws Exception
 	{
 		String organization = getOrganization();
