@@ -74,6 +74,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "0.4.26",
     "eslint-plugin-storybook": "^10.1.11",
+    "fast-xml-parser": "^5.3.6",
     "globals": "^16.5.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
