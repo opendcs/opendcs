@@ -1,6 +1,6 @@
 import { Button, Card, Col, Form, FormGroup, FormSelect, Row } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../components/properties";
-import { use, useCallback, useEffect, useMemo, useReducer, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useReducer } from "react";
 import type { ApiSite } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { useTranslation } from "react-i18next";
 import { SiteNameList, type SiteNameType } from "./SiteNameList";
@@ -29,6 +29,12 @@ const elevationUnits = [
   { units: "yd", name: "yd (Yards)" },
 ];
 
+const mapProps: (props: { [k: string]: string }) => Property[] = (props) => {
+  return Object.entries(props).map(([k, v]): Property => {
+    return { name: k, value: v };
+  });
+};
+
 export const Site: React.FC<SiteProperties> = ({
   site,
   actions = {},
@@ -36,15 +42,12 @@ export const Site: React.FC<SiteProperties> = ({
 }) => {
   const { t } = useTranslation();
   const providedSite = site instanceof Promise ? use(site) : site;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [localSite, dispatch] = useReducer(SiteReducer, providedSite);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [props, updateProps] = useState<Property[]>(() => {
-    const props = providedSite.properties || {};
-    return Object.values(props).map(([k, v]) => {
-      return { name: k as string, value: v as string };
-    });
-  });
+
+  const props = useMemo(
+    () => mapProps(localSite.properties || {}),
+    [localSite.properties],
+  );
 
   // need an initial set of the units if it isn't defined as it's a required field in the database.
   useEffect(() => {
@@ -55,42 +58,13 @@ export const Site: React.FC<SiteProperties> = ({
 
   const propertyActions: CollectionActions<Property, string> = edit
     ? {
-        add: () => {
-          updateProps((prev) => {
-            const existingNew = prev
-              .filter((p: Property) => p.state === "new")
-              .sort((a: Property, b: Property) => {
-                return parseInt(a.name) - parseInt(b.name);
-              });
-            const idx = existingNew.length > 0 ? parseInt(existingNew[0].name) + 1 : 1;
-
-            const tmp = [
-              ...prev,
-              { name: `${idx}`, value: "", state: "new" } as Property,
-            ];
-            return tmp;
-          });
+        remove: (propName) => {
+          dispatch({ type: "delete_prop", payload: { name: propName } });
         },
-        edit: (propName) => {
-          updateProps((prev) => {
-            const tmp: Property[] = prev.map((p: Property) => {
-              if (p.name === propName) {
-                return {
-                  ...p,
-                  state: "edit",
-                };
-              } else {
-                return p;
-              }
-            });
-            return tmp;
-          });
-        },
-        remove: () => {},
         save: (prop) => {
           dispatch({
             type: "save_prop",
-            payload: { name: prop.name, value: prop.value as string },
+            payload: { name: prop.name, value: prop.value },
           });
         },
       }
@@ -153,6 +127,8 @@ export const Site: React.FC<SiteProperties> = ({
               <PropertiesTable
                 theProps={props}
                 actions={propertyActions}
+                edit={edit}
+                canAdd={true}
                 width={"100%"}
               />
             </Row>

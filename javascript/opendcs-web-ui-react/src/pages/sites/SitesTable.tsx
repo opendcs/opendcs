@@ -165,7 +165,6 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
           ? getSite!(data.siteId!)
           : Promise.resolve({ siteId: data.siteId! } as UiSite);
 
-      console.log(site);
       const container = toDom(
         <Site
           site={site}
