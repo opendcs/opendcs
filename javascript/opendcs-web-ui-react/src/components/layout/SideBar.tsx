@@ -1,38 +1,60 @@
-import { Container, ListGroup, Nav } from "react-bootstrap";
+import { Nav } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 
-export const SideBar = () => {
+export interface SideBarProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+export const SideBar = ({ open, onClose }: SideBarProps) => {
   const [t] = useTranslation(["platforms", "sites", "algorithms"]);
+  const location = useLocation();
 
   return (
     <>
-      <Nav
-        defaultActiveKey="/platform"
-        className="navbar-light bg-primary d-inline-flex d-inline-flex vh-100 page-sidebar"
-      >
-        <ListGroup title="DECODES" className="nav-item ps-2 flex-column">
-          <Nav.Item as={ListGroup.Item} className="mb-2">
-            <span className="text-primary-emphasis fw-bold">Decodes</span>
-            <Nav.Link as={Link} to="/platforms" className="">
-              {t("platforms:platformsTitle")}
-            </Nav.Link>
-            <Nav.Link as={Link} to="/sites">
-              {t("sites:title")}
-            </Nav.Link>
-          </Nav.Item>
+      {/* Overlay backdrop for mobile */}
+      {open && (
+        <div className="odcs-sidebar__overlay" onClick={onClose} aria-hidden="true" />
+      )}
 
-          <Nav.Item as={ListGroup.Item} className="mb-2">
-            <span className="text-primary-emphasis fw-bold">Computation</span>
-            <Nav.Link as={Link} to="/algorithms">
-              {t("algorithms:algorithmsTitle")}
-            </Nav.Link>
-          </Nav.Item>
-        </ListGroup>
-      </Nav>
-      <Container className="page-content flex-grow-1">
+      <nav className={`odcs-sidebar ${open ? "show" : ""}`}>
+        <div className="odcs-sidebar__section-title">Decodes</div>
+        <Nav className="flex-column">
+          <Nav.Link
+            as={Link}
+            to="/platforms"
+            active={location.pathname === "/platforms"}
+            onClick={onClose}
+          >
+            {t("platforms:platformsTitle")}
+          </Nav.Link>
+          <Nav.Link
+            as={Link}
+            to="/sites"
+            active={location.pathname === "/sites"}
+            onClick={onClose}
+          >
+            {t("sites:title")}
+          </Nav.Link>
+        </Nav>
+
+        <div className="odcs-sidebar__section-title">Computation</div>
+        <Nav className="flex-column">
+          <Nav.Link
+            as={Link}
+            to="/algorithms"
+            active={location.pathname === "/algorithms"}
+            onClick={onClose}
+          >
+            {t("algorithms:algorithmsTitle")}
+          </Nav.Link>
+        </Nav>
+      </nav>
+
+      <main className="odcs-main">
         <Outlet />
-      </Container>
+      </main>
     </>
   );
 };

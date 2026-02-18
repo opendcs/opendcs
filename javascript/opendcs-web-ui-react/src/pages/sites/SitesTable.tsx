@@ -275,7 +275,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
       ref={table}
       className="table table-hover table-striped tablerow-cursor w-100 border"
     >
-      <caption className="captionTitleCenter">{t("sites:title")}</caption>
+      <caption className="caption-title-center">{t("sites:title")}</caption>
       <thead>
         <tr>
           <th>{t("sites:site_id")}</th>

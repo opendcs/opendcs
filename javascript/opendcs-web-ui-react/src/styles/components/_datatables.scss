@@ -1,0 +1,74 @@
+// =============================================================================
+// DataTables overrides
+// =============================================================================
+
+.tablerow-cursor tbody tr {
+  cursor: pointer;
+}
+
+.caption-title-center {
+  caption-side: top;
+  width: auto;
+  text-align: center;
+  margin-bottom: 0.3125rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--odcs-text-primary);
+}
+
+.table thead th {
+  background-color: var(--odcs-table-header-bg);
+  color: var(--odcs-table-header-color);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom-width: 2px;
+}
+
+.dataTable td {
+  padding-top: 0.3rem;
+  padding-bottom: 0.3rem;
+  vertical-align: middle;
+}
+
+.dataTable tbody,
+input,
+select,
+option,
+textarea {
+  font-family: $font-family-mono;
+}
+
+.datatable-disabled {
+  pointer-events: none;
+  cursor: default;
+
+  tbody {
+    background-color: #ddd;
+  }
+
+  tr.selected {
+    background-color: #b3b3b3 !important;
+  }
+}
+
+.dataTables_empty {
+  cursor: default;
+  pointer-events: none;
+}
+
+.source-dialog .dt-buttons {
+  margin-bottom: 2px;
+}
+
+.opendcs-bordered-cells td {
+  border-style: solid;
+  border-width: 1px;
+  border-color: #d6d6d6;
+}
+
+.row-to-be-deleted,
+.row-to-be-deleted [data-modified="true"] {
+  background-color: #f0756c !important;
+}

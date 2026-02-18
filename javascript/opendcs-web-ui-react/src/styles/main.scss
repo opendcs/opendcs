@@ -1,0 +1,39 @@
+// =============================================================================
+// Main entry point — imports everything in order
+// =============================================================================
+
+// 1. Design tokens (SCSS vars + CSS custom properties)
+@import "tokens";
+
+// 2. Bootstrap variable overrides (must come before Bootstrap source)
+@import "bootstrap-overrides";
+
+// 3. Bootstrap source (replaces compiled bootstrap.min.css)
+@import "bootstrap/scss/bootstrap";
+
+// 4. Component partials
+@import "components/topbar";
+@import "components/sidebar";
+@import "components/layout";
+@import "components/datatables";
+@import "components/modals";
+@import "components/forms";
+@import "components/login";
+
+// 5. Utility helpers
+@import "utilities/helpers";
+
+// =============================================================================
+// Base styles
+// =============================================================================
+
+#root {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0;
+}
+
+body {
+  background-color: var(--odcs-bg-page);
+  overflow-x: hidden;
+}

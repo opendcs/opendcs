@@ -35,7 +35,7 @@ export const Platforms = () => {
 
   return (
     <div className="content">
-      <Card border="primary" className="large-padding">
+      <Card border="primary" className="p-3">
         <DataTable
           id="platformTable"
           columns={columns}

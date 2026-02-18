@@ -1,0 +1,29 @@
+// =============================================================================
+// Bootstrap variable overrides — loaded BEFORE Bootstrap source
+// =============================================================================
+
+$primary: $blue-600;
+$danger: $red-500;
+$success: $green-500;
+$warning: $amber-500;
+
+$body-bg: $gray-50;
+$body-color: $gray-900;
+
+$font-family-sans-serif: $font-family-sans;
+$font-size-base: $font-size-base;
+
+$border-color: $gray-200;
+$card-border-color: $gray-200;
+
+$table-bg: transparent;
+$table-hover-bg: rgba(0, 0, 0, 0.03);
+$table-striped-bg: rgba(0, 0, 0, 0.02);
+
+$dropdown-border-color: $gray-200;
+$dropdown-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+$input-border-color: $gray-300;
+$input-focus-border-color: $blue-500;
+
+$navbar-padding-y: 0;

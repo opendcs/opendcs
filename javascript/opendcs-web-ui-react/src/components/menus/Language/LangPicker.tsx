@@ -31,7 +31,7 @@ const LangToggle: React.FC<ToggleProperties> = ({ i18n, ...args }) => {
   const region = getRegion(new Intl.Locale(lang))?.toLocaleUpperCase();
   const flagEmoji = getFlagEmoji(region!);
   return (
-    <Button {...args} size="lg">
+    <Button {...args}>
       {flagEmoji} {lang}
     </Button>
   );

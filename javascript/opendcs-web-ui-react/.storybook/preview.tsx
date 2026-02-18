@@ -2,7 +2,7 @@ import type { Decorator, Preview } from "@storybook/react-vite";
 import "datatables.net-bs5";
 import "datatables.net-responsive-bs5";
 
-import "bootstrap/dist/css/bootstrap.min.css";
+import "../src/styles/main.scss";
 import "datatables.net-bs5/css/dataTables.bootstrap5.css";
 import "datatables.net-buttons-bs5/css/buttons.bootstrap5.css";
 import { WithRefLists } from "./mock/WithRefLists";

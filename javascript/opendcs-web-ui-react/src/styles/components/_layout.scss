@@ -1,0 +1,16 @@
+// =============================================================================
+// Layout — main app structure
+// =============================================================================
+
+.odcs-layout {
+  display: flex;
+  min-height: calc(100vh - var(--odcs-topbar-height));
+}
+
+.odcs-main {
+  flex: 1;
+  min-width: 0; // prevent flex children from overflowing
+  padding: 1.25rem 1.5rem;
+  background-color: var(--odcs-bg-page);
+  overflow-y: auto;
+}
