@@ -1,13 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import SensorConversions from "./SensorConversions";
-import {
-  ApiConfigRef,
-  ApiConfigScript,
-  ApiConfigScriptSensor,
-  ApiConfigSensor,
-  ApiPlatformConfig,
-} from "opendcs-api";
+import { ApiConfigScriptSensor, ApiConfigSensor } from "opendcs-api";
 import { WithUnits } from "../../../../../.storybook/mock/WithUnits";
 
 const meta = {
