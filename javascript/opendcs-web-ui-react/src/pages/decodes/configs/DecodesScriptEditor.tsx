@@ -1,18 +1,32 @@
 import type React from "react";
-import { Card, Col, Form, FormGroup, Row } from "react-bootstrap";
-import { DataOrderSelect } from "./DataOrderSelect";
-import { DecodesHeaderTypeSelect } from "./HeaderTypeSelect";
-import { ApiConfigScriptDataOrderEnum, type ApiConfigScript } from "opendcs-api";
-import { useCallback, useEffect, useState } from "react";
+import { Card, Row } from "react-bootstrap";
+import {
+  ApiConfigScriptDataOrderEnum,
+  ApiConfigSensor,
+  type ApiConfigScript,
+} from "opendcs-api";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import DecodesScriptHeader from "./DecodesScriptHeader";
+import ClassicEditor from "./script/ClassicEditor";
+import SensorConversion from "./script/SensorConversions";
 
 export interface DecodesScriptEditorProperties {
   script?: Partial<ApiConfigScript>;
+  sensors: ApiConfigSensor[];
+  edit?: boolean;
 }
 
 export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
   script,
+  sensors,
+  edit = false,
 }) => {
   const [localScript, setLocalScript] = useState<Partial<ApiConfigScript>>({});
+
+  const sensorMap: { [k: number]: ApiConfigSensor } = useMemo(
+    () => Object.fromEntries(sensors.map((sensor) => [sensor.sensorNumber, sensor])),
+    [sensors],
+  );
 
   useEffect(() => setLocalScript(script || {}), [script]);
 
@@ -35,49 +49,23 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
     <Card>
       <Card.Body>
         <Row>
-          <Col lg={6}>
-            <FormGroup as={Row}>
-              <Form.Label column htmlFor="scriptName" lg="auto">
-                ScriptName:
-              </Form.Label>
-              <Col>
-                <Form.Control
-                  type="text"
-                  name="scriptName"
-                  id="scriptName"
-                  defaultValue={localScript.name}
-                />
-              </Col>
-            </FormGroup>
-          </Col>
-          <Col xxl={false}></Col>
-          <Col lg="auto">
-            <FormGroup as={Row}>
-              <Form.Label column htmlFor="dataOrder" lg="auto">
-                Order:
-              </Form.Label>
-              <Col lg="auto">
-                <DataOrderSelect
-                  id="dataOrder"
-                  defaultValue={localScript.dataOrder}
-                  onChange={orderChange}
-                />
-              </Col>
-            </FormGroup>
-          </Col>
-          <Col lg="auto">
-            <FormGroup as={Row}>
-              <Form.Label column lg="auto" htmlFor="headerType">
-                Header Type:
-              </Form.Label>
-              <Col lg="auto">
-                <DecodesHeaderTypeSelect
-                  id="headerType"
-                  defaultValue={localScript.headerType}
-                />
-              </Col>
-            </FormGroup>
-          </Col>
+          <DecodesScriptHeader
+            decodesScript={localScript}
+            onOrderChange={orderChange}
+          />
+        </Row>
+        <Row>
+          <ClassicEditor
+            formatStatements={localScript.formatStatements || []}
+            edit={edit}
+          />
+        </Row>
+        <Row>
+          Sensors {/** yes this needs much better styling. */}
+          <SensorConversion
+            configSensors={sensorMap}
+            scriptSensors={localScript.scriptSensors || []}
+          />
         </Row>
       </Card.Body>
     </Card>

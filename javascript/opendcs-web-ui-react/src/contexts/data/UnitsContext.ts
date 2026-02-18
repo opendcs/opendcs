@@ -26,7 +26,7 @@ export const UnitsContext = createContext<UnitsContextType | undefined>(undefine
 export const useUnits = () => {
   const context = useContext(UnitsContext);
   if (context == undefined) {
-    throw new Error("RefList isn't defined?");
+    throw new Error("Units context isn't defined?");
   }
   return context;
 };
