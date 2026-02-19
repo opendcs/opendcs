@@ -11,7 +11,7 @@ export const WithTheme: Decorator = (Story) => {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme({ colorMode: colorMode });
-  }, [colorMode]);
+  }, [colorMode, setTheme]);
 
   const setGlobalTheme: Dispatch<SetStateAction<Theme>> = (action) => {
     if (action as Theme) {
