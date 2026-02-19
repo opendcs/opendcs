@@ -136,6 +136,7 @@ const WithDecodedMessage: ArgsStoryFn<ReactRenderer, DecodesSampleProperties> = 
   args,
 ) => {
   const decodeData = useCallback((raw: string): ApiDecodedMessage => {
+    args.decodeData?.(raw);
     return testDataSets.find((tds) => tds.input === raw)?.result || {};
   }, []);
 

@@ -18,6 +18,7 @@ const DecodesSampleRetrieve: React.FC<DecodesSampleRetrieveProperties> = ({
     <>
       <Col lg={6}>
         <textarea
+          aria-label="Raw Message Data input"
           ref={textAreaRef}
           style={{ resize: "both", width: "100%" }}
         ></textarea>
