@@ -43,9 +43,9 @@ const ClassicFormatStatementEditor: React.FC<
     ) => {
       if (type === "display") {
         return renderToString(
-          <pre>
+          <pre className="m-1 p-0">
             <code
-              className="language-decodes"
+              className="language-decodes m-0 p-0"
               role="textbox"
               contentEditable={edit}
               aria-label={t("decodes:config.script.format_statement_input", {
@@ -120,7 +120,7 @@ const ClassicFormatStatementEditor: React.FC<
           columns={columns}
           ref={table}
           data={formatStatements}
-          className="table table-hover table-striped tablerow-cursor w-100 border"
+          className="table table-hover table-striped table-sm tablerow-cursor w-100 border"
         >
           <thead>
             <tr>

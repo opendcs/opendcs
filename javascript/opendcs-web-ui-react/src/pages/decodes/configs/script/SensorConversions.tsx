@@ -63,7 +63,7 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
     <DataTable
       ref={table}
       data={scriptSensors}
-      className="table table-hover table-striped tablerow-cursor w-100 border"
+      className="table table-hover table-striped tablerow-cursor w-100 border table-sm"
       columns={columns}
       options={{
         search: false,
