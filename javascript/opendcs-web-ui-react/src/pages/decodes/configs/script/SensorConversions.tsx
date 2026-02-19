@@ -1,12 +1,7 @@
 import type React from "react";
 import DataTable, { type DataTableRef } from "datatables.net-react";
 import DT from "datatables.net-bs5";
-import {
-  ApiConfigRef,
-  ApiConfigSensor,
-  type ApiConfigScript,
-  type ApiConfigScriptSensor,
-} from "opendcs-api";
+import { ApiConfigSensor, type ApiConfigScriptSensor } from "opendcs-api";
 import { useRef } from "react";
 import { useUnits } from "../../../../contexts/data/UnitsContext";
 // this isn't a hook, it just has "use" as the name.
