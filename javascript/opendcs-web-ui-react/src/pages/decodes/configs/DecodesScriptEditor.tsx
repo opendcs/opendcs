@@ -10,6 +10,7 @@ import DecodesScriptHeader from "./DecodesScriptHeader";
 import ClassicEditor from "./script/ClassicEditor";
 import SensorConversion from "./script/SensorConversions";
 import { useTranslation } from "react-i18next";
+import DecodesSample from "./Sample/Sample";
 
 export interface DecodesScriptEditorProperties {
   script?: Partial<ApiConfigScript>;
@@ -74,7 +75,9 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
             </Card.Body>
           </Card>
         </Row>
-        <Row></Row>
+        <Row>
+          <DecodesSample />
+        </Row>
       </Card.Body>
     </Card>
   );
