@@ -10,7 +10,8 @@ interface ProviderProps {
 
 export const AuthProvider = ({ children }: ProviderProps) => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null | undefined>(undefined);
+  const [user, setUser] = useState<User | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
 
   const apiContext = useApi();
 
@@ -20,21 +21,25 @@ export const AuthProvider = ({ children }: ProviderProps) => {
       .checkSessionAuthorization()
       .then((value: User) => setUser(value))
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      .catch((_error: unknown) => setUser(null));
+      .catch((_error: unknown) => setUser(undefined))
+      .finally(() => setIsLoading(false));
   }, [apiContext.conf]);
 
   const logout = () => {
+    if (!user) {
+      return;
+    }
     const auth = new RESTAuthenticationAndAuthorizationApi(apiContext.conf);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     auth.logout().then((_value: void) => {
-      setUser(null);
+      setUser(undefined);
       navigate("/login");
     });
   };
 
   const authValue: AuthContextType = {
     user,
-    isLoading: user === undefined,
+    isLoading,
     setUser,
     logout,
   };
