@@ -76,7 +76,11 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
           </Card>
         </Row>
         <Row>
-          <DecodesSample />
+          <DecodesSample
+            decodeData={(raw: string) => {
+              return {};
+            }}
+          />
         </Row>
       </Card.Body>
     </Card>
