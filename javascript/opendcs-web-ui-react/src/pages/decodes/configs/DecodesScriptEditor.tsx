@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import DecodesScriptHeader from "./DecodesScriptHeader";
 import ClassicEditor from "./script/ClassicEditor";
 import SensorConversion from "./script/SensorConversions";
+import { useTranslation } from "react-i18next";
 
 export interface DecodesScriptEditorProperties {
   script?: Partial<ApiConfigScript>;
@@ -21,6 +22,7 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
   sensors,
   edit = false,
 }) => {
+  const { t } = useTranslation(["decodes"]);
   const [localScript, setLocalScript] = useState<Partial<ApiConfigScript>>({});
 
   const sensorMap: { [k: number]: ApiConfigSensor } = useMemo(
@@ -55,18 +57,24 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
           />
         </Row>
         <Row>
-          <ClassicEditor
-            formatStatements={localScript.formatStatements || []}
-            edit={edit}
-          />
+          <Card>
+            <Card.Header>
+              {t("decodes:script_editor.format_statement_title")}
+            </Card.Header>
+            <Card.Body>
+              <ClassicEditor
+                formatStatements={localScript.formatStatements || []}
+                edit={edit}
+              />
+              Sensors {/** yes this needs much better styling. */}
+              <SensorConversion
+                configSensors={sensorMap}
+                scriptSensors={localScript.scriptSensors || []}
+              />
+            </Card.Body>
+          </Card>
         </Row>
-        <Row>
-          Sensors {/** yes this needs much better styling. */}
-          <SensorConversion
-            configSensors={sensorMap}
-            scriptSensors={localScript.scriptSensors || []}
-          />
-        </Row>
+        <Row></Row>
       </Card.Body>
     </Card>
   );

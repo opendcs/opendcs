@@ -99,40 +99,37 @@ const ClassicFormatStatementEditor: React.FC<
   }, [table.current, formatStatements]);
 
   return (
-    <Card>
-      <Card.Header>{t("decodes:script_editor.format_statement_title")}</Card.Header>
-      <Card.Body>
-        <DataTable
-          options={{
-            rowReorder: {
-              enable: true,
-              dataSrc: "sequenceNum",
-            },
-            search: false,
-            scrollY: "20em",
-            searching: false,
-            paging: false,
-            ordering: false,
-            info: false,
-            responsive: true,
-            order: { name: "sequenceNum", dir: "asc" },
-          }}
-          columns={columns}
-          ref={table}
-          data={formatStatements}
-          className="table table-hover table-striped table-sm tablerow-cursor w-100 border"
-        >
-          <thead>
-            <tr>
-              <th></th>
-              <th>Label</th>
-              <th>Format Statement</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-        </DataTable>
-      </Card.Body>
-    </Card>
+    <DataTable
+      options={{
+        rowReorder: {
+          enable: true,
+          dataSrc: "sequenceNum",
+        },
+
+        search: false,
+        scrollY: "7em",
+        scrollCollapse: true,
+        searching: false,
+        paging: false,
+        ordering: false,
+        info: false,
+        responsive: true,
+        order: { name: "sequenceNum", dir: "asc" },
+      }}
+      columns={columns}
+      ref={table}
+      data={formatStatements}
+      className="table table-hover table-striped table-sm tablerow-cursor w-100 border"
+    >
+      <thead>
+        <tr>
+          <th></th>
+          <th>Label</th>
+          <th>Format Statement</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+    </DataTable>
   );
 };
 

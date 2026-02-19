@@ -30,6 +30,9 @@ export const WithScript: Story = {
       formatStatements: [
         { sequenceNum: 1, label: "Stage", format: "/,4f(s,a,6D' ', 1)>Volts" },
         { sequenceNum: 2, label: "Battery", format: "/,f(s,a,6D' ', 2" },
+        { sequenceNum: 3, label: "Battery", format: "/,f(s,a,6D' ', 2" },
+        { sequenceNum: 4, label: "Battery", format: "/,f(s,a,6D' ', 2" },
+        { sequenceNum: 5, label: "Battery", format: "/,f(s,a,6D' ', 2" },
       ],
     },
     sensors: [
