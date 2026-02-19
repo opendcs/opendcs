@@ -347,12 +347,12 @@ public final class TomcatServer implements AutoCloseable
 			for (var role: roles) {
 				ub.withRole(new Role(DbKey.NullKey, role, null, null));
 			}
-			final String userName = "test_user";
+			final String userName = "dcs_user";
 			ub.withEmail(userName);
 
 			ub.withIdentityMapping(new IdentityProviderMapping(idp, userName));
 			var user = dao.addUser(tx, ub.build());
-			var creds = new BuiltInProviderCredentials(userName, "test_password"); // NOSONAR
+			var creds = new BuiltInProviderCredentials(userName, "dcs_user"); // NOSONAR
 			idp.updateUserCredentials(db, tx, user, creds);
 		}
 		catch (OpenDcsAuthException ex)
