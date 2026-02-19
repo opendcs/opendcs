@@ -33,7 +33,7 @@ function App() {
         onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
         sidebarOpen={sidebarOpen}
       />
-      <div className="odcs-layout">
+      <div className="odcs-layout d-flex">
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route

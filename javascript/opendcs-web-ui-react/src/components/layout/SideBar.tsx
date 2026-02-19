@@ -52,7 +52,7 @@ export const SideBar = ({ open, onClose }: SideBarProps) => {
         </Nav>
       </nav>
 
-      <main className="odcs-main">
+      <main className="flex-grow-1 p-3 overflow-auto" style={{ minWidth: 0 }}>
         <Outlet />
       </main>
     </>

@@ -40,35 +40,7 @@ textarea {
   font-family: $font-family-mono;
 }
 
-.datatable-disabled {
-  pointer-events: none;
-  cursor: default;
-
-  tbody {
-    background-color: #ddd;
-  }
-
-  tr.selected {
-    background-color: #b3b3b3 !important;
-  }
-}
-
 .dataTables_empty {
   cursor: default;
   pointer-events: none;
-}
-
-.source-dialog .dt-buttons {
-  margin-bottom: 2px;
-}
-
-.opendcs-bordered-cells td {
-  border-style: solid;
-  border-width: 1px;
-  border-color: #d6d6d6;
-}
-
-.row-to-be-deleted,
-.row-to-be-deleted [data-modified="true"] {
-  background-color: #f0756c !important;
 }

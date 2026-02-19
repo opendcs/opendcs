@@ -40,7 +40,7 @@
         background-color 0.15s ease,
         color 0.15s ease,
         border-color 0.15s ease;
-      border-left: 3px solid transparent;
+      border-left: 0.1875rem solid transparent;
       text-decoration: none;
 
       &:hover,
@@ -79,7 +79,7 @@
 
     &.show {
       transform: translateX(0);
-      box-shadow: 4px 0 16px rgba(0, 0, 0, 0.2);
+      box-shadow: 0.25rem 0 1rem rgba(0, 0, 0, 0.2);
     }
   }
 

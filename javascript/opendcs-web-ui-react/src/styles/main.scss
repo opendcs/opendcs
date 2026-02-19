@@ -14,14 +14,8 @@
 // 4. Component partials
 @import "components/topbar";
 @import "components/sidebar";
-@import "components/layout";
 @import "components/datatables";
-@import "components/modals";
-@import "components/forms";
 @import "components/login";
-
-// 5. Utility helpers
-@import "utilities/helpers";
 
 // =============================================================================
 // Base styles
@@ -36,4 +30,26 @@
 body {
   background-color: var(--odcs-bg-page);
   overflow-x: hidden;
+}
+
+// =============================================================================
+// Layout
+// =============================================================================
+
+.odcs-layout {
+  min-height: calc(100vh - var(--odcs-topbar-height));
+}
+
+// =============================================================================
+// Theme / mode icons
+// =============================================================================
+
+.theme-icon {
+  width: 1.5em;
+  height: 1.5em;
+}
+
+.mode-icon-active {
+  width: 1.5em;
+  height: 1.5em;
 }

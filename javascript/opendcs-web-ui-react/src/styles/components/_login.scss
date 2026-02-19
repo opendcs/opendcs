@@ -18,8 +18,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -45%);
-  width: min(1100px, 90vw);
-  height: min(700px, 80vh);
+  width: min(68.75rem, 90vw);
+  height: min(43.75rem, 80vh);
   background-image: url("/river_2.jpg");
   background-size: cover;
   background-position: center;
@@ -31,7 +31,7 @@
 
 .odcs-login__card {
   width: 100%;
-  max-width: 420px;
+  max-width: 26.25rem;
   position: relative;
   z-index: 1;
 }
@@ -41,7 +41,7 @@
   border-radius: $radius-lg;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
   background-color: var(--odcs-bg-surface);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(0.5rem);
 
   [data-bs-theme="dark"] & {
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
@@ -63,8 +63,8 @@
 }
 
 .odcs-login__avatar {
-  width: 80px;
-  height: 80px;
+  width: 5rem;
+  height: 5rem;
   color: var(--bs-primary, #{$blue-600});
   opacity: 0.8;
 }
@@ -80,7 +80,7 @@
 @keyframes fadeInDown {
   0% {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateY(-1.25rem);
   }
 
   100% {
@@ -119,25 +119,5 @@
 
   &.fourth {
     animation-delay: 0.8s;
-  }
-}
-
-// --- Underline hover effect ---
-.underline-hover::after {
-  display: block;
-  left: 0;
-  bottom: -0.625rem;
-  width: 0;
-  height: 2px;
-  background-color: var(--bs-primary, #0d6efd);
-  content: "";
-  transition: width 0.2s;
-}
-
-.underline-hover:hover {
-  color: var(--bs-body-color, #212529);
-
-  &::after {
-    width: 100%;
   }
 }
