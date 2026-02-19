@@ -57,8 +57,8 @@ final class FormAuthIT extends BaseApiIT
 			.statusCode(is(Response.Status.UNAUTHORIZED.getStatusCode()))
 		;
 		Credentials credentials = new Credentials();
-		credentials.setUsername("test_user");
-		credentials.setPassword("test_password");
+		credentials.setUsername("dcs_user");
+		credentials.setPassword("dcs_user");
 
 		var auth = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
