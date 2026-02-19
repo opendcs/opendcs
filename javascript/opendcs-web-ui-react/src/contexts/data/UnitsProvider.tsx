@@ -4,9 +4,7 @@ import { useApi } from "../app/ApiContext";
 import { Record } from "react-bootstrap-icons";
 import {
   ApiUnitConverter,
-  RESTDataTypeMethodsApi,
   RESTEngineeringUnitMethodsApi,
-  RESTReferenceListsApi,
   type ApiUnit,
 } from "opendcs-api";
 
