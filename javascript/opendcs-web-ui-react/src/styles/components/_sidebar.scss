@@ -1,0 +1,96 @@
+// =============================================================================
+// SideBar — dark neutral, compact nav
+// =============================================================================
+
+.odcs-sidebar {
+  width: var(--odcs-sidebar-width);
+  min-width: var(--odcs-sidebar-width);
+  background-color: var(--odcs-bg-sidebar);
+  min-height: calc(100vh - var(--odcs-topbar-height));
+  padding: 0.75rem 0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow-y: auto;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+
+  .odcs-sidebar__section-title {
+    padding: 1rem 1rem 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--odcs-sidebar-section-text);
+    user-select: none;
+
+    &:not(:first-child) {
+      margin-top: 0.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+  }
+
+  .nav {
+    .nav-link {
+      color: var(--odcs-sidebar-text);
+      padding: 0.5rem 1rem 0.5rem 1.25rem;
+      font-size: 0.9375rem;
+      border-radius: 0;
+      transition:
+        background-color 0.15s ease,
+        color 0.15s ease,
+        border-color 0.15s ease;
+      border-left: 0.1875rem solid transparent;
+      text-decoration: none;
+
+      &:hover,
+      &:focus {
+        background-color: var(--odcs-sidebar-hover-bg);
+        color: var(--odcs-sidebar-text-active);
+      }
+
+      &.active {
+        background-color: var(--odcs-sidebar-active-bg);
+        color: var(--odcs-sidebar-text-active);
+        font-weight: 500;
+        border-left-color: var(--bs-primary, #{$blue-500});
+      }
+    }
+  }
+}
+
+// --- Overlay backdrop for mobile ---
+.odcs-sidebar__overlay {
+  display: none;
+}
+
+// --- Mobile responsive ---
+@media (max-width: 991.98px) {
+  .odcs-sidebar {
+    position: fixed;
+    top: var(--odcs-topbar-height);
+    left: 0;
+    bottom: 0;
+    z-index: 1025;
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: auto;
+    box-shadow: none;
+
+    &.show {
+      transform: translateX(0);
+      box-shadow: 0.25rem 0 1rem rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  .odcs-sidebar__overlay {
+    display: block;
+    position: fixed;
+    top: var(--odcs-topbar-height);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 1024;
+    cursor: pointer;
+  }
+}

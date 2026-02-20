@@ -27,7 +27,7 @@
     "*.{js,jsx,ts,tsx}": [
       "prettier --write"
     ],
-    "*.{json,css,md,html}": [
+    "*.{json,css,scss,md,html}": [
       "prettier --write"
     ]
   },
@@ -79,6 +79,7 @@
     "msw-storybook-addon": "^2.0.6",
     "playwright": "^1.57.0",
     "prettier": "^3.7.4",
+    "sass": "^1.97.3",
     "storybook": "^10.1.11",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",

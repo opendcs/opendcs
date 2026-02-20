@@ -1,0 +1,123 @@
+// =============================================================================
+// Login page — centered card with subtle background
+// =============================================================================
+
+.odcs-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - var(--odcs-topbar-height));
+  width: 100%;
+  background-color: var(--odcs-bg-page);
+  padding: 2rem 1rem;
+  position: relative;
+}
+
+.odcs-login__bg-image {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -45%);
+  width: min(68.75rem, 90vw);
+  height: min(43.75rem, 80vh);
+  background-image: url("/river_2.jpg");
+  background-size: cover;
+  background-position: center;
+  border-radius: 1rem;
+  z-index: 0;
+  pointer-events: none;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.odcs-login__card {
+  width: 100%;
+  max-width: 26.25rem;
+  position: relative;
+  z-index: 1;
+}
+
+.odcs-login__form-card {
+  border: 1px solid var(--odcs-border);
+  border-radius: $radius-lg;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  background-color: var(--odcs-bg-surface);
+  backdrop-filter: blur(0.5rem);
+
+  [data-bs-theme="dark"] & {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  }
+
+  .form-control {
+    padding: 0.625rem 0.875rem;
+    border-radius: $radius-md;
+
+    &:focus {
+      box-shadow: 0 0 0 3px rgba($blue-500, 0.15);
+    }
+  }
+
+  .btn-primary {
+    font-weight: 500;
+    border-radius: $radius-md;
+  }
+}
+
+.odcs-login__avatar {
+  width: 5rem;
+  height: 5rem;
+  color: var(--bs-primary, #{$blue-600});
+  opacity: 0.8;
+}
+
+// --- Animations ---
+.fade-in-down {
+  animation-name: fadeInDown;
+  animation-duration: 0.6s;
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeInDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-1.25rem);
+  }
+
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  opacity: 0;
+  animation: fadeIn ease-in 1;
+  animation-fill-mode: forwards;
+  animation-duration: 0.5s;
+
+  &.first {
+    animation-delay: 0.2s;
+  }
+
+  &.second {
+    animation-delay: 0.4s;
+  }
+
+  &.third {
+    animation-delay: 0.6s;
+  }
+
+  &.fourth {
+    animation-delay: 0.8s;
+  }
+}
