@@ -6,7 +6,7 @@ import type { User } from "../../../../../../java/api-clients/api-client-typescr
 
 const UserToggle: React.FC = ({ ...args }) => {
   return (
-    <Button {...args}>
+    <Button {...args} size="lg">
       <PersonGear className="bi me-2 opacity-50 my-1 mode-icon-active" />
     </Button>
   );

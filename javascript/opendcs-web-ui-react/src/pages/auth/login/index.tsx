@@ -1,6 +1,6 @@
 import { type FormEvent } from "react";
 import { useAuth } from "../../../contexts/app/AuthContext";
-import { Button, Card, Form } from "react-bootstrap";
+import { Button, Card, Container, Form } from "react-bootstrap";
 import { PersonCircle } from "react-bootstrap-icons";
 import { Credentials, RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
 import { useApi } from "../../../contexts/app/ApiContext";
@@ -44,9 +44,9 @@ export default function Login() {
   }
 
   return (
-    <div className="odcs-login">
-      <div className="odcs-login__bg-image" />
-      <div className="odcs-login__card fade-in-down">
+    <Container className="odcs-login">
+      <Container className="odcs-login__bg-image" />
+      <Container className="odcs-login__card fade-in-down">
         <Card className="odcs-login__form-card">
           <Card.Body className="p-4 p-md-5">
             <div className="text-center mb-4 fade-in first">
@@ -83,7 +83,7 @@ export default function Login() {
             </Form>
           </Card.Body>
         </Card>
-      </div>
-    </div>
+      </Container>
+    </Container>
   );
 }

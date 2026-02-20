@@ -3,6 +3,7 @@ import Login from "./pages/auth/login";
 import { TopBar, SideBar, ProtectedRoute, PublicOnlyRoute } from "./components/layout";
 import { ModeIcons } from "./components/ModeIcon";
 
+import { Container } from "react-bootstrap";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Platforms } from "./pages/platforms";
 import { Algorithms } from "./pages/computations/algorithms";
@@ -18,7 +19,7 @@ function App() {
         onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
         sidebarOpen={sidebarOpen}
       />
-      <div className="odcs-layout d-flex">
+      <Container fluid className="odcs-layout d-flex">
         <Routes>
           <Route element={<PublicOnlyRoute />}>
             <Route path="/login" element={<Login />} />
@@ -36,7 +37,7 @@ function App() {
             </Route>
           </Route>
         </Routes>
-      </div>
+      </Container>
     </>
   );
 }
