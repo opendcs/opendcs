@@ -32,7 +32,6 @@ import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 import ilex.util.IDateFormat;
-import ilex.var.TimedVariable;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -64,7 +63,6 @@ import org.opendcs.odcsapi.beans.ApiSiteRef;
 import org.opendcs.odcsapi.beans.ApiTimeSeriesData;
 import org.opendcs.odcsapi.beans.ApiTimeSeriesIdentifier;
 import org.opendcs.odcsapi.beans.ApiTimeSeriesSpec;
-import org.opendcs.odcsapi.beans.ApiTimeSeriesValue;
 import org.opendcs.odcsapi.beans.ApiTsGroup;
 import org.opendcs.odcsapi.beans.ApiTsGroupRef;
 import org.opendcs.odcsapi.dao.DbException;
@@ -72,6 +70,9 @@ import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
+
+import static org.opendcs.odcsapi.util.DTOMappers.dataMap;
+import static org.opendcs.odcsapi.util.DTOMappers.mapTsId;
 
 /**
  * HTTP resources relating to Time Series data and descriptors
@@ -231,7 +232,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 	static ApiTimeSeriesSpec specMap(TimeSeriesIdentifier id)
 	{
 		ApiTimeSeriesSpec ret = new ApiTimeSeriesSpec();
-		ApiTimeSeriesIdentifier tsId = map(id);
+		ApiTimeSeriesIdentifier tsId = mapTsId(id);
 		ret.setTsid(tsId);
 		if (id instanceof CwmsTsId)
 		{
@@ -383,91 +384,6 @@ public final class TimeSeriesResources extends OpenDcsResource
 		catch (DbIoException | BadTimeSeriesException ex)
 		{
 			throw new DbException("Unable to retrieve time series data", ex);
-		}
-	}
-
-	static ApiTimeSeriesData dataMap(CTimeSeries cts, Date start, Date end)
-	{
-		ApiTimeSeriesData ret = new ApiTimeSeriesData();
-		ret.setTsid(map(cts.getTimeSeriesIdentifier()));
-		ret.setValues(map(cts, start, end));
-		return ret;
-	}
-
-	static List<ApiTimeSeriesValue> map(CTimeSeries cts, Date start, Date end)
-	{
-		List<ApiTimeSeriesValue> ret = new ArrayList<>();
-		Date current = start;
-		TimedVariable tv = cts.findWithin(current, 5);
-		if (tv != null && !tv.getTime().before(current))
-		{
-			current = processSample(tv, current, end, ret);
-		}
-
-		while (current.before(end) || current.equals(end))
-		{
-			TimedVariable value = cts.findNext(current);
-
-			if (value == null)
-			{
-				break;
-			}
-			current = processSample(value, current, end, ret);
-		}
-		return ret;
-	}
-
-	static Date processSample(TimedVariable value, Date current, Date end, List<ApiTimeSeriesValue> ret)
-	{
-		double val = Double.parseDouble(value.valueString());
-		ApiTimeSeriesValue apiValue = new ApiTimeSeriesValue(value.getTime(), val, value.getFlags());
-		ret.add(apiValue);
-		if (current.equals(end))
-		{
-			return Date.from(end.toInstant().plusSeconds(1));
-		}
-		else
-		{
-			return value.getTime();
-		}
-	}
-
-	static ApiTimeSeriesIdentifier map(TimeSeriesIdentifier tsid)
-	{
-		if (tsid instanceof CwmsTsId)
-		{
-			CwmsTsId cTsId = (CwmsTsId)tsid;
-			ApiTimeSeriesIdentifier ret = new ApiTimeSeriesIdentifier();
-			if(tsid.getKey() != null)
-			{
-				ret.setKey(cTsId.getKey().getValue());
-			}
-			else
-			{
-				ret.setKey(DbKey.NullKey.getValue());
-			}
-			ret.setUniqueString(cTsId.getUniqueString());
-			ret.setDescription(cTsId.getDescription());
-			ret.setStorageUnits(cTsId.getStorageUnits());
-			ret.setActive(cTsId.isActive());
-			return ret;
-		}
-		else
-		{
-			// Active flag is not set here because it is not part of the TimeSeriesIdentifier
-			ApiTimeSeriesIdentifier ret = new ApiTimeSeriesIdentifier();
-			if(tsid.getKey() != null)
-			{
-				ret.setKey(tsid.getKey().getValue());
-			}
-			else
-			{
-				ret.setKey(DbKey.NullKey.getValue());
-			}
-			ret.setUniqueString(tsid.getUniqueString());
-			ret.setDescription(tsid.getDescription());
-			ret.setStorageUnits(tsid.getStorageUnits());
-			return ret;
 		}
 	}
 
@@ -823,7 +739,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 		List<ApiTimeSeriesIdentifier> tsids = new ArrayList<>();
 		for (TimeSeriesIdentifier tsid : group.getTsMemberList())
 		{
-			tsids.add(map(tsid));
+			tsids.add(mapTsId(tsid));
 		}
 		ret.getTsIds().addAll(tsids);
 		List<ApiSiteRef> sites = new ArrayList<>();

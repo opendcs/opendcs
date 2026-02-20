@@ -15,8 +15,6 @@
 */
 package opendcs.dao;
 
-import ilex.util.TextUtil;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,19 +26,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Predicate;
 
-import org.opendcs.utils.logging.OpenDcsLoggerFactory;
-import org.slf4j.Logger;
-
-import opendcs.dai.AlgorithmDAI;
-import opendcs.dai.CompDependsDAI;
-import opendcs.dai.CompDependsNotifyDAI;
-import opendcs.dai.ComputationDAI;
-import opendcs.dai.DataTypeDAI;
-import opendcs.dai.LoadingAppDAI;
-import opendcs.dai.PropertiesDAI;
-import opendcs.dai.TsGroupDAI;
-import opendcs.dao.DbObjectCache.CacheIterator;
-import opendcs.util.sql.WrappedConnection;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.sql.DbKey;
@@ -55,7 +40,21 @@ import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbDatabaseVersion;
+import ilex.util.TextUtil;
+import opendcs.dai.AlgorithmDAI;
+import opendcs.dai.CompDependsDAI;
+import opendcs.dai.CompDependsNotifyDAI;
+import opendcs.dai.ComputationDAI;
+import opendcs.dai.DataTypeDAI;
+import opendcs.dai.LoadingAppDAI;
+import opendcs.dai.PropertiesDAI;
+import opendcs.dai.TsGroupDAI;
+import opendcs.dao.DbObjectCache.CacheIterator;
 import opendcs.util.functional.ThrowingSupplier;
+import opendcs.util.sql.WrappedConnection;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.event.Level;
 
 /**
 Data Access Object for reading/writing computations.
@@ -65,7 +64,7 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	protected static DbObjectCache<DbComputation> compCache =
-		new DbObjectCache<DbComputation>(60 * 60 * 1000L, false);
+		new DbObjectCache<>(60 * 60 * 1000L, false);
 	private static long lastCacheFill = 0L;
 	public static final long CACHE_TIME_LIMIT = 20 * 60 * 1000L;
 
@@ -225,11 +224,11 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 			);
 			PreparedStatement getAppId = c.prepareStatement(
 				"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?"
-			);
+			)
 		)
 		{
 			getComp.setLong(1,compId.getValue());
-			try( ResultSet rs = getComp.executeQuery(); ) {
+			try( ResultSet rs = getComp.executeQuery() ) {
 				if (rs.next())
 				{
 					DbComputation comp = rs2comp(rs);
@@ -253,12 +252,13 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 					if (!appId.isNull())
 					{
 						getAppId.setLong(1,appId.getValue());
-						try( ResultSet rs2 = getAppId.executeQuery(); ){
-							if (rs.next())
-							comp.setApplicationName(rs.getString(1));
+						try (ResultSet rs2 = getAppId.executeQuery())
+						{
+							if (rs2.next())
+							{
+								comp.setApplicationName(rs2.getString(1));
+							}
 						}
-
-
 					}
 					compCache.put(comp);
 					return comp;
@@ -420,10 +420,10 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 		try(
 			PreparedStatement getTimeLoaded = conn.prepareStatement(
 				"select DATE_TIME_LOADED from CP_COMPUTATION where COMPUTATION_ID = ?"
-			);
+			)
 		) {
 			getTimeLoaded.setLong(1,comp.getId().getValue());
-			try(ResultSet rs = getTimeLoaded.executeQuery(); )
+			try(ResultSet rs = getTimeLoaded.executeQuery() )
 			{
 				if (!rs.next())
 				{
@@ -454,11 +454,11 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 			);
 			PreparedStatement getAppId = conn.prepareStatement(
 				"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?"
-			);
+			)
 		){
 			getComp.setString(1,name);
 
-			try(ResultSet rs = getComp.executeQuery(); )
+			try(ResultSet rs = getComp.executeQuery() )
 			{
 				if (rs.next())
 				{
@@ -519,7 +519,7 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 		if (compCache.size() == 0)
 			fillCache();
 
-		ArrayList<DbComputation> ret = new ArrayList<DbComputation>();
+		ArrayList<DbComputation> ret = new ArrayList<>();
 		for(CacheIterator it = compCache.iterator(); it.hasNext(); )
 		{
 			DbComputation comp = (DbComputation)it.next();
@@ -600,7 +600,7 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 				if (tmpAppId.isNull())
 				{
 					String appName = comp.getApplicationName();
-					if (appName != null && appName.length() > 0)
+					if (appName != null && !appName.isEmpty())
 					{
 						String q = "select LOADING_APPLICATION_ID from "
 						+ "hdb_loading_application "
@@ -624,7 +624,7 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 			{
 				String algoName = comp.getAlgorithmName();
 				log.trace("Computation has undefined algo ID, will lookup name '{}'", algoName);
-				if (algoName != null && algoName.trim().length() > 0)
+				if (algoName != null && !algoName.trim().isEmpty())
 				{
 					DbCompAlgorithm algo = null;
 					try
@@ -650,7 +650,7 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 			inTransaction(dao ->
 			{
 				try (CompDependsDAI compDependsDAO = db.makeCompDependsDAO();
-					 DataTypeDAI dataTypeDao = db.makeDataTypeDAO();)
+					 DataTypeDAI dataTypeDao = db.makeDataTypeDAO())
 				{
 					dataTypeDao.inTransactionOf(dao);
 					compDependsDAO.inTransactionOf(dao);
@@ -751,7 +751,17 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 							// parm uses previously unknown ID? Must write it too.
 							if (dt != null && dt.getId() == Constants.undefinedId)
 							{
-								dataTypeDao.writeDataType(dt);
+								try
+								{
+									DataType tempDt = dataTypeDao.lookupDataType(dt.getCode());
+									dt.setId(tempDt.getId());
+								}
+								catch (NoSuchObjectException ex)
+								{
+									log.atLevel(Level.DEBUG).setCause(ex)
+											.log("Unable to find DataType, writing a new record");
+									dataTypeDao.writeDataType(dt);
+								}
 								dcp.setDataTypeId(dt.getId());
 							}
 							query.append(", ?");
@@ -893,5 +903,4 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 		algorithmDAO.close();
 		propsDao.close();
 	}
-
 }

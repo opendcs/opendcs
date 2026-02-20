@@ -15,37 +15,83 @@
 
 package org.opendcs.odcsapi.res.it;
 
+import java.io.File;
+import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import decodes.cwms.CwmsTsId;
+import decodes.db.Site;
+import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.TimeSeriesDb;
+import decodes.tsdb.TimeSeriesIdentifier;
+import decodes.tsdb.TsImporter;
+import decodes.tsdb.VarFlags;
+import decodes.util.DecodesSettings;
+import ilex.var.TimedVariable;
+import io.restassured.RestAssured;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.JsonPath;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.ClientRequestFilter;
+import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.sse.InboundSseEvent;
+import jakarta.ws.rs.sse.SseEventSource;
+import opendcs.dai.SiteDAI;
+import opendcs.dai.TimeSeriesDAI;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
+import org.opendcs.fixtures.helpers.ImporterHelper;
 import org.opendcs.odcsapi.beans.ApiAlgorithm;
 import org.opendcs.odcsapi.beans.ApiCompParm;
 import org.opendcs.odcsapi.beans.ApiComputation;
 import org.opendcs.odcsapi.beans.ApiLoadingApp;
 import org.opendcs.odcsapi.beans.ApiSite;
+import org.opendcs.odcsapi.res.ComputationResources;
+import org.opendcs.odcsapi.util.ApiConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+import uk.org.webcompere.systemstubs.security.SystemExit;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.opendcs.odcsapi.util.DTOMappers.mapSite;
 
 final class ComputationResourcesIT extends BaseApiIT
 {
+	private static final Logger log = LoggerFactory.getLogger(ComputationResources.class);
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 
+	private TimeSeriesIdentifier tsId;
+	private TimeSeriesIdentifier tsId2;
 	private Long compId;
 	private Long siteId;
 	private Long appId;
 	private Long algId;
+	private Long tsCompId;
+	private final EnvironmentVariables environment = new EnvironmentVariables();
+	private final SystemExit exit = new SystemExit();
+	List<CTimeSeries> expectedTsList = new ArrayList<>();
 
 	@BeforeEach
 	void init() throws Exception
@@ -56,6 +102,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		ApiComputation comp = getDtoFromResource("computation_insert_data.json", ApiComputation.class);
 
 		ApiSite site = getDtoFromResource("computation_site_data.json", ApiSite.class);
+		Site tsSite = mapSite(site);
 
 		ApiLoadingApp app = getDtoFromResource("computation_app_data.json", ApiLoadingApp.class);
 		String appJson = MAPPER.writeValueAsString(app);
@@ -127,8 +174,91 @@ final class ComputationResourcesIT extends BaseApiIT
 
 		siteId = response.body().jsonPath().getLong("siteId");
 
-		comp.getParmList().get(0).setSiteName(site.getPublicName());
-		comp.getParmList().get(0).setSiteId(siteId);
+		// Create an active time series
+		CwmsTsId identifier = new CwmsTsId();
+		identifier.setUniqueString(String.format("%s.%s.%s.%s.%s.%s", tsSite.getDisplayName(),
+				"Stor-FilledCon", "Inst", "~6Hours", "0", "CENWP-COMPUTED-FCST"));
+		identifier.setSite(tsSite);
+		identifier.setActive(true);
+		identifier.setInterval("~6Hours");
+		identifier.setDuration("0");
+		identifier.setStorageUnits("ac-ft");
+		identifier.setDescription("Storage at TS test site");
+		CTimeSeries ts = new CTimeSeries(identifier);
+		tsId = identifier;
+		ts.setUnitsAbbr("ac-ft");
+
+		TimedVariable tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T00:00:00Z")), 0.01, 0);
+		tv.setFlags(VarFlags.TO_WRITE);
+		ts.addSample(tv);
+		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T01:00:00Z")), 0.01, 0);
+		tv.setFlags(VarFlags.TO_WRITE);
+		ts.addSample(tv);
+		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T02:00:00Z")), 0.02, 0);
+		tv.setFlags(VarFlags.TO_WRITE);
+		ts.addSample(tv);
+		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T03:00:00Z")), 0.03, 0);
+		tv.setFlags(VarFlags.TO_WRITE);
+		ts.addSample(tv);
+		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T04:00:00Z")), 0.05, 0);
+		tv.setFlags(VarFlags.TO_WRITE);
+		ts.addSample(tv);
+		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T05:00:00Z")), 0.08, 0);
+		tv.setFlags(VarFlags.TO_WRITE);
+		ts.addSample(tv);
+		tv = new TimedVariable(Date.from(Instant.parse("2012-01-01T06:00:00Z")), 0.13, 0);
+		tv.setFlags(VarFlags.TO_WRITE);
+		ts.addSample(tv);
+
+		tsId = storeTimeSeries(ts);
+
+		// Create an active time series
+		CwmsTsId identifier2 = new CwmsTsId();
+		identifier2.setUniqueString(String.format("%s.%s.%s.%s.%s.%s", tsSite.getDisplayName(),
+				"Stor-AuthorizedCon", "Inst", "~6Hours", "0", "CENWP-COMPUTED-FCST"));
+		identifier2.setSite(tsSite);
+		identifier2.setActive(true);
+		identifier2.setInterval("~6Hours");
+		identifier2.setDuration("0");
+		identifier2.setStorageUnits("ac-ft");
+		identifier2.setDescription("Storage at TS test site");
+		CTimeSeries ts2 = new CTimeSeries(identifier2);
+		tsId2 = identifier2;
+		ts2.setUnitsAbbr("ac-ft");
+
+		TimedVariable tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T00:00:00Z")), 0.01, 0);
+		tv2.setFlags(VarFlags.TO_WRITE);
+		ts2.addSample(tv2);
+		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T00:00:00Z")), 0.01, 0);
+		tv2.setFlags(VarFlags.TO_WRITE);
+		ts2.addSample(tv2);
+		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T01:00:00Z")), 0.02, 0);
+		tv2.setFlags(VarFlags.TO_WRITE);
+		ts2.addSample(tv2);
+		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T02:00:00Z")), 0.03, 0);
+		tv2.setFlags(VarFlags.TO_WRITE);
+		ts2.addSample(tv2);
+		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T03:00:00Z")), 0.05, 0);
+		tv2.setFlags(VarFlags.TO_WRITE);
+		ts2.addSample(tv2);
+		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T04:00:00Z")), 0.08, 0);
+		tv2.setFlags(VarFlags.TO_WRITE);
+		ts2.addSample(tv2);
+		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T05:00:00Z")), 0.13, 0);
+		tv2.setFlags(VarFlags.TO_WRITE);
+		ts2.addSample(tv2);
+		tv2 = new TimedVariable(Date.from(Instant.parse("2012-01-01T06:00:00Z")), 0.21, 0);
+		tv2.setFlags(VarFlags.TO_WRITE);
+		ts2.addSample(tv2);
+
+		tsId2 = storeTimeSeries(ts2);
+
+		String siteNameTypePreference = DecodesSettings.instance().siteNameTypePreference;
+		for (int i = 0; i < 2; i++)
+		{
+			comp.getParmList().get(i).setSiteName(site.getSitenames().get(siteNameTypePreference));
+			comp.getParmList().get(i).setSiteId(siteId);
+		}
 		comp.setApplicationName(app.getAppName());
 		comp.setAppId(appId);
 		comp.setAlgorithmName(alg.getName());
@@ -137,7 +267,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		String compJson = MAPPER.writeValueAsString(comp);
 
 		// Insert the computation
-		 response = given()
+		response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
@@ -158,7 +288,7 @@ final class ComputationResourcesIT extends BaseApiIT
 	}
 
 	@AfterEach
-	void cleanup()
+	void cleanup() throws Exception
 	{
 		// Delete the computation
 		given()
@@ -208,21 +338,9 @@ final class ComputationResourcesIT extends BaseApiIT
 			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 		;
 
-		// Delete the site
-		given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.spec(authSpec)
-			.accept(MediaType.APPLICATION_JSON)
-			.queryParam("siteid", siteId)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.delete("site")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
-		;
+		deleteTimeSeries(tsId);
+		deleteTimeSeries(tsId2);
+		tearDownSite(siteId);
 
 		logout();
 	}
@@ -396,13 +514,19 @@ final class ComputationResourcesIT extends BaseApiIT
 		assertEquals(expected.getString("enabled"), actual.getString("enabled"));
 		assertEquals(expected.getString("groupName"), actual.getString("groupName"));
 		assertEquals(expected.getString("applicationName"), actual.getString("applicationName"));
-		assertEquals("Test Algorithm", actual.getString("algorithmName"));
+		assertEquals(expected.getString("algorithmName"), actual.getString("algorithmName"));
 		assertEquals(algId, actual.getLong("algorithmId"));
 		assertEquals(appId, actual.getLong("appId"));
-		assertEquals(siteId, actual.getLong("parmList[0].siteId"));
-		assertEquals(expected.getString("parmList[0].siteName"), actual.getString("parmList[0].siteName"));
-		assertEquals(expected.getString("parmList[0].dataType"), actual.getString("parmList[0].dataType"));
-		assertEquals(expected.getString("parmList[0].interval"), actual.getString("parmList[0].interval"));
+		for (int i = 0; i < 2; i++)
+		{
+			assertEquals(siteId, actual.getLong("parmList[" + i + "].siteId"));
+			String dataType = actual.getString("parmList[" + i + "].dataType");
+			String[] dataTypeParts = dataType != null ? dataType.split(":") : null;
+			assertEquals(expected.getString("parmList[" + i + "].dataType"),
+					dataTypeParts != null ? String.format("%s:%s", dataTypeParts[0], dataTypeParts[1]): null);
+			assertEquals(expected.getString("parmList[" + i + "].interval"),
+					actual.getString("parmList[" + i + "].interval"));
+		}
 		assertEquals(expected.getString("comment"), actual.getString("comment"));
 	}
 
@@ -500,5 +624,244 @@ final class ComputationResourcesIT extends BaseApiIT
 		.assertThat()
 			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
 		;
+	}
+
+	@Test
+	@EnableIfTsDb(value = "CWMS-Oracle")
+	void testExecuteComputationCWMS() throws Exception
+	{
+		String organization = getOrganization();
+
+		importData(Optional.of(Path.of("ResEvap", "Test1")));
+		assertFalse(expectedTsList.isEmpty(), "No time series found imported");
+
+		ClientRequestFilter auth = ctx ->
+		{
+			ctx.getHeaders().putSingle(ApiConstants.ORGANIZATION_HEADER, organization);
+			ctx.getHeaders().putSingle("Cookie", getCookie());
+		};
+
+		URI baseURI = URI.create(String.format("%s:%d/%s", RestAssured.baseURI, RestAssured.port, RestAssured.basePath));
+
+		String from = "1800-01-01T00:00:00Z";
+		String to = "2040-01-02T00:00:00Z";
+
+		WebTarget target;
+		try (Client client = ClientBuilder.newBuilder()
+				.register(SseEventSource.class)
+				.register(auth)
+				.build())
+		{
+			target = client.target(baseURI)
+					.path("runcomputation")
+					.queryParam("computationid", tsCompId)
+					.queryParam("start", from)
+					.queryParam("end", to);
+
+			List<InboundSseEvent> events = new CopyOnWriteArrayList<>();
+			CountDownLatch done = new CountDownLatch(1);
+			CountDownLatch firstEvent = new CountDownLatch(1);
+
+			try(SseEventSource source = SseEventSource.target(target).build())
+			{
+				source.register(
+					(InboundSseEvent event) ->
+					{
+						events.add(event);
+						firstEvent.countDown();
+
+						if (event.getName().equalsIgnoreCase("Results"))
+						{
+							done.countDown();
+						}
+						else
+						{
+							String data = event.readData(String.class, MediaType.TEXT_PLAIN_TYPE);
+							String name = event.getName();
+							log.atInfo().log(String.format("Received SSE event: %s, %s", name, data));
+						}
+					},
+					(Throwable error) -> {
+						throw new AssertionError("SSE Error: " + error.getMessage());
+					}
+				);
+				source.open();
+				boolean received = firstEvent.await(10, TimeUnit.SECONDS);
+				boolean completed = done.await(100, TimeUnit.SECONDS);
+				assertTrue(received, "Timed out waiting for SSE events");
+				assertTrue(completed, "Timed out waiting for SSE completion");
+
+				assertFalse(events.isEmpty(), "SSE did not receive any events");
+				InboundSseEvent event = events.getFirst();
+
+				String data = event.readData(String.class, MediaType.TEXT_PLAIN_TYPE);
+				assertNotNull(data);
+				assertFalse(data.isBlank());
+
+				int foundCount = 0;
+				for (InboundSseEvent sseEvent : events)
+				{
+					if (sseEvent.getName().equalsIgnoreCase("Results"))
+					{
+						foundCount++;
+						JsonPath jsonPath = JsonPath.from(sseEvent.readData(String.class, MediaType.TEXT_PLAIN_TYPE));
+						assertEquals(expectedTsList.size(), jsonPath.getList("tsIds").size(), "Expected " + expectedTsList.size() + " results");
+					}
+				}
+				assertEquals(1, foundCount, String.format("Expected %d SSE Result events, found %d", 1, foundCount));
+
+				for (CTimeSeries ts : expectedTsList)
+				{
+					CTimeSeries cts = fillTimeSeries(ts, Instant.parse(from), Instant.parse(to));
+					assertNotNull(cts);
+					assertNotNull(cts.getTimeSeriesIdentifier());
+					assertTrue(cts.size() > 0, "No data found for time series " + cts.getTimeSeriesIdentifier());
+				}
+			}
+		}
+	}
+
+	@Test
+	void testExecuteComputation() throws Exception
+	{
+		String organization = getOrganization();
+
+		importData(Optional.of(Path.of("CopyTest", "Test1")));
+		assertFalse(expectedTsList.isEmpty(), "No time series found imported");
+
+		ClientRequestFilter auth = ctx ->
+		{
+			ctx.getHeaders().putSingle(ApiConstants.ORGANIZATION_HEADER, organization);
+			ctx.getHeaders().putSingle("Cookie", getCookie());
+		};
+
+		URI baseURI = URI.create(String.format("%s:%d/%s", RestAssured.baseURI, RestAssured.port, RestAssured.basePath));
+
+		String from = "1800-01-01T00:00:00Z";
+		String to = "2040-01-02T00:00:00Z";
+
+		WebTarget target;
+		try (Client client = ClientBuilder.newBuilder()
+				.register(SseEventSource.class)
+				.register(auth)
+				.build())
+		{
+			target = client.target(baseURI)
+					.path("runcomputation")
+					.queryParam("computationid", tsCompId)
+					.queryParam("start", from)
+					.queryParam("end", to);
+
+			List<InboundSseEvent> events = new CopyOnWriteArrayList<>();
+			CountDownLatch done = new CountDownLatch(1);
+			CountDownLatch firstEvent = new CountDownLatch(1);
+
+			try(SseEventSource source = SseEventSource.target(target).build())
+			{
+				source.register(
+						(InboundSseEvent event) ->
+						{
+							events.add(event);
+							firstEvent.countDown();
+
+							if (event.getName().equalsIgnoreCase("Results"))
+							{
+								done.countDown();
+							}
+							else
+							{
+								String data = event.readData(String.class, MediaType.TEXT_PLAIN_TYPE);
+								String name = event.getName();
+								log.atInfo().log(String.format("Received SSE event: %s, %s", name, data));
+							}
+						},
+						(Throwable error) -> {
+							throw new AssertionError("SSE Error: " + error.getMessage());
+						}
+				);
+				source.open();
+				boolean received = firstEvent.await(10, TimeUnit.SECONDS);
+				boolean completed = done.await(100, TimeUnit.SECONDS);
+				assertTrue(received, "Timed out waiting for SSE events");
+				assertTrue(completed, "Timed out waiting for SSE completion");
+
+				assertFalse(events.isEmpty(), "SSE did not receive any events");
+				InboundSseEvent event = events.getFirst();
+
+				String data = event.readData(String.class, MediaType.TEXT_PLAIN_TYPE);
+				assertNotNull(data);
+				assertFalse(data.isBlank());
+
+				int foundCount = 0;
+				for (InboundSseEvent sseEvent : events)
+				{
+					if (sseEvent.getName().equalsIgnoreCase("Results"))
+					{
+						foundCount++;
+						JsonPath jsonPath = JsonPath.from(sseEvent.readData(String.class, MediaType.TEXT_PLAIN_TYPE));
+						assertEquals(expectedTsList.size(), jsonPath.getList("tsIds").size(), "Expected " + expectedTsList.size() + " results");
+					}
+				}
+				assertEquals(1, foundCount, String.format("Expected %d SSE Result events, found %d", 1, foundCount));
+
+				for (CTimeSeries ts : expectedTsList)
+				{
+					CTimeSeries cts = fillTimeSeries(ts, Instant.parse(from), Instant.parse(to));
+					assertNotNull(cts);
+					assertNotNull(cts.getTimeSeriesIdentifier());
+					assertTrue(cts.size() > 0, "No data found for time series " + cts.getTimeSeriesIdentifier());
+				}
+			}
+		}
+	}
+
+	private void importData(Optional<Path> endPath)
+	{
+		try
+		{
+			TimeSeriesDb tsDb = getTsdb();
+			try (TimeSeriesDAI tsDao = tsDb.makeTimeSeriesDAO();
+				SiteDAI siteDAO = tsDb.makeSiteDAO())
+			{
+				ImporterHelper helper = new ImporterHelper(tsDb, getConfig(), environment, exit, ImporterHelper.CONTEXT.REST_API);
+				String workingDirectoryPath = Paths.get(Paths.get("").toAbsolutePath().getParent().toString(), "opendcs-tests").toString();
+				String currentDirectory = helper.buildFilePath(workingDirectoryPath, "src", "test", "resources", "data", "Comps");
+				File directory = new File(currentDirectory);
+				TsImporter importer = helper.buildTsImporter(tsDao, siteDAO);
+				if(directory.exists() && directory.isDirectory())
+				{
+					File[] comps = directory.listFiles();
+					if(comps != null)
+					{
+						for(File comp : comps)
+						{
+							if(comp.isDirectory())
+							{
+								for (File comp_data : comp.listFiles())
+								{
+									if (comp_data.isDirectory() && (!endPath.isPresent() || comp_data.toPath().endsWith(endPath.get())))
+									{
+										ImporterHelper.ImportResults results = helper.doImport(comp_data, comp, importer);
+										expectedTsList = results.getImportedTsList();
+										tsCompId = results.getTsCompIds().getFirst();
+									}
+								}
+							}
+						}
+					}
+				}
+				else
+				{
+					String msg = String.format("Invalid directory: %s", currentDirectory);
+					log.error(msg);
+					throw new RuntimeException(msg);
+				}
+			}
+		}
+		catch(Throwable e)
+		{
+			log.atError().setCause(e).log("Error getting TsImporter");
+			throw new RuntimeException(e);
+		}
 	}
 }
