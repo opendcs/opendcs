@@ -15,6 +15,10 @@
 */
 package decodes.tsdb;
 
+
+import java.time.Duration;
+import java.time.Period;
+import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.regex.Matcher;
@@ -33,15 +37,15 @@ import org.slf4j.Logger;
  */
 public class IntervalIncrement
 {
-	private static final Logger log = OpenDcsLoggerFactory.getLogger();
-	private int calConstant = Calendar.HOUR_OF_DAY;
-	private int count = 1;
-	private static final IntervalIncrement ONE_HOUR =
-		new IntervalIncrement(Calendar.HOUR_OF_DAY, 1);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
+    private int calConstant = Calendar.HOUR_OF_DAY;
+    private int count = 1;
+    private static final IntervalIncrement ONE_HOUR =
+        new IntervalIncrement(Calendar.HOUR_OF_DAY, 1);
 
-	// digits followed by a word, optionally separated by spaces
-	private static final Pattern iipattern =
-		Pattern.compile("(-?\\d+)\\s*([a-zA-Z]+)[\\s,]*");
+    // digits followed by a word, optionally separated by spaces
+    private static final Pattern iipattern =
+        Pattern.compile("(-?\\d+)\\s*([a-zA-Z]+)[\\s,]*");
 
 	public IntervalIncrement(int calConstant, int count)
 	{
@@ -158,75 +162,96 @@ public class IntervalIncrement
 		return aii.toArray(new IntervalIncrement[aii.size()]);
 	}
 
-	public String toString()
-	{
-		switch(calConstant)
-		{
-		case Calendar.YEAR: return "(" + count + " YR)";
-		case Calendar.SECOND: return "(" + count + " SEC)";
-		case Calendar.HOUR_OF_DAY: return "(" + count + " HR)";
-		case Calendar.MINUTE: return "(" + count + " MIN)";
-		case Calendar.DAY_OF_MONTH: return "(" + count + " DAY)";
-		case Calendar.MONTH: return "(" + count + " MON)";
-		default: return "(" + count + " calInc=" + calConstant + ")";
-		}
-	}
-	/**
+    public String toString()
+    {
+        switch(calConstant)
+        {
+        case Calendar.YEAR: return "(" + count + " YR)";
+        case Calendar.SECOND: return "(" + count + " SEC)";
+        case Calendar.HOUR_OF_DAY: return "(" + count + " HR)";
+        case Calendar.MINUTE: return "(" + count + " MIN)";
+        case Calendar.DAY_OF_MONTH: return "(" + count + " DAY)";
+        case Calendar.MONTH: return "(" + count + " MON)";
+        default: return "(" + count + " calInc=" + calConstant + ")";
+        }
+    }
+    /**
      * @return the calConstant
      */
     public int getCalConstant()
     {
-    	return calConstant;
+        return calConstant;
     }
 
-	/**
+    /**
      * @param calConstant the calConstant to set
      */
     public void setCalConstant(int calConstant)
     {
-    	this.calConstant = calConstant;
+        this.calConstant = calConstant;
     }
 
-	/**
+    /**
      * @return the count
      */
     public int getCount()
     {
-    	return count;
+        return count;
     }
 
-	/**
+    /**
      * @param count the count to set
      */
     public void setCount(int count)
     {
-    	this.count = count;
+        this.count = count;
     }
+
 
     public boolean isLessThanDay()
     {
-    	return calConstant == Calendar.HOUR_OF_DAY
-    	 || calConstant == Calendar.SECOND
-    	 || calConstant == Calendar.MINUTE;
+        return calConstant == Calendar.HOUR_OF_DAY
+         || calConstant == Calendar.SECOND
+         || calConstant == Calendar.MINUTE;
     }
+
 
     public long toMsec()
     {
-    	switch(calConstant)
-    	{
-    	case Calendar.MILLISECOND: return count;
-    	case Calendar.SECOND: return count * 1000L;
-    	case Calendar.MINUTE: return count * 60000L;
-    	case Calendar.HOUR:
-    	case Calendar.HOUR_OF_DAY:
-    		return count * 3600000L;
-    	case Calendar.DAY_OF_MONTH:
-    	case Calendar.DAY_OF_WEEK:
-    	case Calendar.DAY_OF_YEAR: return count * 3600000L * 24;
-    	case Calendar.YEAR: return count * 3600000L * 24 * 365;
-    	}
+        switch(calConstant)
+        {
+        case Calendar.MILLISECOND: return count;
+        case Calendar.SECOND: return count * 1000L;
+        case Calendar.MINUTE: return count * 60000L;
+        case Calendar.HOUR:
+        case Calendar.HOUR_OF_DAY:
+            return count * 3600000L;
+        case Calendar.DAY_OF_MONTH:
+        case Calendar.DAY_OF_WEEK:
+        case Calendar.DAY_OF_YEAR: return count * 3600000L * 24;
+        case Calendar.YEAR: return count * 3600000L * 24 * 365;
+        }
 
-    	return count;
+        return count;
+    }
+
+    public TemporalAmount toTemporalAmount()
+    {
+        switch(calConstant)
+        {
+            case Calendar.MILLISECOND: return Duration.ofMillis(count);
+            case Calendar.SECOND: return Duration.ofSeconds(count);
+            case Calendar.MINUTE: return Duration.ofMinutes(count);
+            case Calendar.HOUR:
+            case Calendar.HOUR_OF_DAY:
+                return Duration.ofHours(count);
+            case Calendar.DAY_OF_MONTH: return Duration.ofDays(count);
+            case Calendar.DAY_OF_WEEK: return Period.ofWeeks(count);
+            case Calendar.DAY_OF_YEAR: return Duration.ofDays(count);
+            case Calendar.YEAR: return Period.ofYears(count);
+            default:
+                throw new IllegalStateException("Calendar Constant has not been defined.");
+        }
     }
 
     /**
@@ -236,74 +261,75 @@ public class IntervalIncrement
      */
     public static IntervalIncrement[] parseIso8601(String s)
     {
-		ArrayList<IntervalIncrement> aii = new ArrayList<IntervalIncrement>();
+        ArrayList<IntervalIncrement> aii = new ArrayList<IntervalIncrement>();
 
-		boolean doingTime = false;
-		int count = 0;
-		for(int idx = 0; idx < s.length(); idx++)
-		{
-			char c = s.charAt(idx);
-			if (Character.isDigit(c))
-			{
-				int start = idx++;
-				while(idx < s.length() && Character.isDigit(s.charAt(idx)))
-					idx++;
-				count = Integer.parseInt(s.substring(start, idx));
-				idx--;
-			}
-			else switch(c)
-			{
-			case 'P': break; // Start of Period indicator -- skip
-			case 'Y':
-				if (count != 0)
-					aii.add(new IntervalIncrement(Calendar.YEAR, count));
-				break;
-			case 'M':
-				if (count != 0)
-					aii.add(new IntervalIncrement(doingTime ? Calendar.MINUTE : Calendar.MONTH, count));
-				break;
-			case 'W':
-				if (count != 0)
-					aii.add(new IntervalIncrement(Calendar.WEEK_OF_YEAR, count));
-				break;
-			case 'D':
-				if (count != 0)
-					aii.add(new IntervalIncrement(Calendar.DAY_OF_MONTH, count));
-				break;
-			case 'T':
-				doingTime = true;
-				break;
-			case 'H':
-				if (count != 0)
-					aii.add(new IntervalIncrement(Calendar.HOUR_OF_DAY, count));
-				break;
-			case 'S':
-				if (count != 0)
-					aii.add(new IntervalIncrement(Calendar.SECOND, count));
-				break;
-			}
-		}
-		return aii.toArray(new IntervalIncrement[aii.size()]);
+        boolean doingTime = false;
+        int count = 0;
+        for(int idx = 0; idx < s.length(); idx++)
+        {
+            char c = s.charAt(idx);
+            if (Character.isDigit(c))
+            {
+                int start = idx++;
+                while(idx < s.length() && Character.isDigit(s.charAt(idx)))
+                    idx++;
+                count = Integer.parseInt(s.substring(start, idx));
+                idx--;
+            }
+            else switch(c)
+            {
+            case 'P': break; // Start of Period indicator -- skip
+            case 'Y':
+                if (count != 0)
+                    aii.add(new IntervalIncrement(Calendar.YEAR, count));
+                break;
+            case 'M':
+                if (count != 0)
+                    aii.add(new IntervalIncrement(doingTime ? Calendar.MINUTE : Calendar.MONTH, count));
+                break;
+            case 'W':
+                if (count != 0)
+                    aii.add(new IntervalIncrement(Calendar.WEEK_OF_YEAR, count));
+                break;
+            case 'D':
+                if (count != 0)
+                    aii.add(new IntervalIncrement(Calendar.DAY_OF_MONTH, count));
+                break;
+            case 'T':
+                doingTime = true;
+                break;
+            case 'H':
+                if (count != 0)
+                    aii.add(new IntervalIncrement(Calendar.HOUR_OF_DAY, count));
+                break;
+            case 'S':
+                if (count != 0)
+                    aii.add(new IntervalIncrement(Calendar.SECOND, count));
+                break;
+            }
+        }
+        return aii.toArray(new IntervalIncrement[aii.size()]);
     }
+
 
     public static void main(String []args)
     {
-    	while(true)
-    	{
-    		String s = System.console().readLine("%nEnter Interval Increment String: ");
-    		try
-    		{
-    			IntervalIncrement iia[] = parseMult(s);
-    			System.out.println("" + iia.length + " intervals found: ");
-    			for(int i=0; i<iia.length; i++)
-    				System.out.println("" + i + ": " + iia[i]);
+        while(true)
+        {
+            String s = System.console().readLine("%nEnter Interval Increment String: ");
+            try
+            {
+                IntervalIncrement iia[] = parseMult(s);
+                System.out.println("" + iia.length + " intervals found: ");
+                for(int i=0; i<iia.length; i++)
+                    System.out.println("" + i + ": " + iia[i]);
 
-    			System.out.println("Parsed as single: " + parse(s));
-    		}
-    		catch(Exception ex)
-    		{
-    			System.out.println(ex);
-    		}
-    	}
+                System.out.println("Parsed as single: " + parse(s));
+            }
+            catch(Exception ex)
+            {
+                System.out.println(ex);
+            }
+        }
     }
 }

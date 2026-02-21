@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="SubSample">
+    <ExecClass>decodes.tsdb.algo.SubSample</ExecClass>
+    <AlgoParm roleName="inputShortInterval">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="outputLongInterval">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+  <Computation name="Regular-1Hour-1DayLocalSubSample">
+    <Comment></Comment>
+    <Enabled>true</Enabled>
+    <AlgorithmName>SubSample</AlgorithmName>
+    <LastModified>2025-01-24 09:13:10 PST</LastModified>
+    <CompProperty name="inputShortInterval_MISSING">IGNORE</CompProperty>
+    <CompProperty name="aggregateTimeZone">US/Pacific</CompProperty>
+    <CompParm roleName="inputShortInterval">
+      <SiteDataType>
+        <SiteName NameType="CWMS">SampleDataSite</SiteName>
+        <DataType Standard="CWMS" code="Precip"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.input</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>   
+    <CompParm roleName="outputLongInterval">
+      <SiteDataType>
+        <SiteName NameType="CWMS">SampleDataSite</SiteName>
+        <DataType Standard="CWMS" code="Precip"/>
+      </SiteDataType>
+      <Interval>1DayLocal</Interval>
+      <TableSelector>Inst.0.output</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+  </Computation>
+</CompMetaData>

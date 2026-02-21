@@ -15,16 +15,25 @@
 */
 package decodes.tsdb.algo;
 
-import java.util.Calendar;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAmount;
 import java.util.Date;
-import java.util.GregorianCalendar;
 
 import ilex.var.NamedVariable;
+
 import decodes.tsdb.DbCompException;
+
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.IntervalIncrement;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.ParmRef;
+
 import decodes.util.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
@@ -37,195 +46,163 @@ import org.slf4j.Logger;
 public class SubSample extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
-	@Input
-	public double inputShortInterval;
-	
-	private IntervalIncrement outputIncr = null;
-	private GregorianCalendar outputCal = null;
-	private PropertySpec subsampPropertySpecs[] = 
-	{
-		new PropertySpec("samplingTimeOffset", PropertySpec.STRING,
-			"(optional) E.g. for a daily subsample: '6 Hours' to grab the 6AM value.")
-	};
-	
-	@Override
-	protected PropertySpec[] getAlgoPropertySpecs()
-	{
-		return subsampPropertySpecs;
-	}
+    @Input
+    public double inputShortInterval;
 
-@Output(type = Double.class)
-public NamedVariable outputLongInterval = new NamedVariable("outputLongInterval", 0);
+    private LocalDateTime nextOutput = null; // LocalDateTime value used for interval math
+    private TemporalAmount outputIncr = null;
 
-	public String samplingTimeOffset = "";
+    @Output(type = Double.class)
+    public NamedVariable outputLongInterval = new NamedVariable("outputLongInterval", 0);
 
-	// Allow javac to generate a no-args constructor.
 
-	/**
-	 * Algorithm-specific initialization provided by the subclass.
-	 */
-	@Override
-	protected void initAWAlgorithm( )
-		throws DbCompException
-	{
-		_awAlgoType = AWAlgoType.TIME_SLICE;
-	}
-	
-	/**
-	 * This method is called once before iterating all time slices.
-	 */
-	@Override
-	protected void beforeTimeSlices()
-		throws DbCompException
-	{
-		
-		// Note aggTZ may be set either globally of specifically for this algo or comp.
-		outputCal = new GregorianCalendar(aggCal.getTimeZone());
-		
-		// We will use outputCal to keep track of the next output time.
-		// Initialize it to the first time >= the first input time.
-		Date firstInputT = baseTimes.first();
-		outputCal.setTime(firstInputT);
-		ParmRef outputParmRef = getParmRef("outputLongInterval");
-		
-		outputIncr = IntervalCodes.getIntervalCalIncr(
-			outputParmRef.compParm.getInterval());
-		if (outputIncr == null || outputIncr.getCount() == 0)
-			throw new DbCompException("SubSample requires regular interval output!");
+    @org.opendcs.annotations.PropertySpec(propertySpecType = PropertySpec.STRING, 
+                                          description = "(optional) E.g. for a daily subsample: '6 Hours' to grab the 6AM value.",
+                                          value = "")
+    public String samplingTimeOffset = "";
 
+    // Allow javac to generate a no-args constructor.
+
+    /**
+     * Algorithm-specific initialization provided by the subclass.
+     */
+    @Override
+    protected void initAWAlgorithm( )
+        throws DbCompException
+    {
+        _awAlgoType = AWAlgoType.TIME_SLICE;
+    }
+
+    /**
+     * This method is called once before iterating all time slices.
+     */
+    @Override
+    protected void beforeTimeSlices()
+        throws DbCompException
+    {
+
+        // Initialize it to the first time >= the first input time.
+        Date firstInputT = baseTimes.first();
+        nextOutput = LocalDateTime.ofInstant(firstInputT.toInstant(), aggTZ.toZoneId());
+        LocalDateTime firstInputLDT = nextOutput;
+
+        ParmRef outputParmRef = getParmRef("outputLongInterval");
+
+        final IntervalIncrement outputIncrTmp = IntervalCodes.getIntervalCalIncr(
+            outputParmRef.compParm.getInterval());
+        if (outputIncrTmp == null || outputIncrTmp.getCount() == 0)
+            throw new DbCompException("SubSample requires regular interval output!");
+
+		outputIncr = outputIncrTmp.toTemporalAmount();
 		log.trace("beforeTimeSlices firstInputT={} outputIncr = {}{}",
 				  firstInputT, outputIncr,
 				  (samplingTimeOffset!= null ? (", samplingTimeOffset=" + samplingTimeOffset) : ""));
 
-		// Always get rid of seconds and msecs.
-		outputCal.set(Calendar.MILLISECOND, 0);
-		outputCal.set(Calendar.SECOND, 0);
 
-		// MJM Added samplingTimeOffset processing for OpenDCS 6.2 RC03
-		IntervalIncrement offsetIncr[] = null;
-		if (samplingTimeOffset != null && samplingTimeOffset.trim().length() > 0)
-		{
-			try
-			{
-				offsetIncr = IntervalIncrement.parseMult(samplingTimeOffset);
-				log.debug("Honoring sampling time offset '{}'", samplingTimeOffset);
-			}
-			catch (NoSuchObjectException ex)
-			{
-				log.atWarn()
+        // MJM Added samplingTimeOffset processing for OpenDCS 6.2 RC03
+        IntervalIncrement offsetIncr[] = null;
+        if (samplingTimeOffset != null && samplingTimeOffset.trim().length() > 0)
+        {
+            try
+            {
+                offsetIncr = IntervalIncrement.parseMult(samplingTimeOffset);
+                log.debug("Honoring sampling time offset '{}'", samplingTimeOffset);
+            }
+            catch (NoSuchObjectException ex)
+            {
+                log.atWarn()
 				   .setCause(ex)
 				   .log("Invalid samplingTimeOffset property '{}' -- ignored.", samplingTimeOffset);
-				offsetIncr = null;
-			}
-		}
-		
-		if (outputIncr.getCalConstant() == Calendar.MINUTE)
-		{
-			// output interval is in # of minutes
-			int min = outputCal.get(Calendar.MINUTE);
-			min = (min / outputIncr.getCount()) * outputIncr.getCount();
-			outputCal.set(Calendar.MINUTE, min);
-		}
-		else if (outputIncr.getCalConstant() == Calendar.HOUR_OF_DAY)
-		{
-			outputCal.set(Calendar.MINUTE, 0);
-			int hr = outputCal.get(Calendar.HOUR_OF_DAY);
-			hr = (hr / outputIncr.getCount()) * outputIncr.getCount();
-			outputCal.set(Calendar.HOUR_OF_DAY, hr);
-		}
-		else if (outputIncr.getCalConstant() == Calendar.DAY_OF_MONTH)
-		{
-			outputCal.set(Calendar.MINUTE, 0);
-			outputCal.set(Calendar.HOUR_OF_DAY, 0);
-			int day = outputCal.get(Calendar.DAY_OF_MONTH);
-			day = (day / outputIncr.getCount()) * outputIncr.getCount();
-			outputCal.set(Calendar.DAY_OF_MONTH, day);
-		}
-		else if (outputIncr.getCalConstant() == Calendar.MONTH)
-		{
-			// Note count should be 1, 2, 3, 4, or 6. Anything else will give weird results.
-			outputCal.set(Calendar.MINUTE, 0);
-			outputCal.set(Calendar.HOUR_OF_DAY, 0);
-			outputCal.set(Calendar.DAY_OF_MONTH, 1);
-			int month = outputCal.get(Calendar.MONTH);
-			month = (month / outputIncr.getCount()) * outputIncr.getCount();
-			outputCal.set(Calendar.MONTH, month);
-		}
-		else
-		{
-			throw new DbCompException("Invalid output interval: " + 
-				outputParmRef.compParm.getInterval());
-		}
-		
-		// If an offset was supplied, add it. Note: it's up to the user to make sure
-		// it makes sense. Good: output interval = 1Day, offsetIncr = 6 hours.
-		// Bad: output interval = 1 hour, offsetIncr = 1 week.
-		if (offsetIncr != null)
-			for(IntervalIncrement ii : offsetIncr)
-			{
-				outputCal.set(ii.getCalConstant(), ii.getCount());
-			}		
-		
-		// Because of the added increment, I could end up with an outputCal time that
-		// is before the first input time.
-		// Example Daily average at 6 AM from hourly inputs, and the first value I'm given is 7 AM.
-		// The above code will set outputCal to 6AM. I need to add the output increment so that
-		// the outputCal is always >= the first input time.
-		while(outputCal.getTime().before(firstInputT))
-		{
-			log.trace("beforeTimeSlices firstInputT={}, outputCal={}, incr={}",
-					  firstInputT, outputCal.getTime(), outputIncr);
-			// should the following be -outputIncr.getCount()
-			outputCal.add(outputIncr.getCalConstant(), outputIncr.getCount());
-		}
-			
-		// Normally for copy, output units will be the same as input.
-		String inUnits = getInputUnitsAbbr("inputShortInterval");
-		if (inUnits != null && inUnits.length() > 0)
-			setOutputUnitsAbbr("outputLongInterval", inUnits);
-		
-		log.debug("first input={}, first output={} outputIncr={}",
-				  firstInputT, outputCal.getTime(), outputIncr.toString());
-	}
+                offsetIncr = null;
+            }
+        }
 
-	/**
-	 * Do the algorithm for a single time slice.
-	 * AW will fill in user-supplied code here.
-	 * Base class will set inputs prior to calling this method.
-	 * User code should call one of the setOutput methods for a time-slice
-	 * output variable.
-	 *
-	 * @throws DbCompException (or subclass thereof) if execution of this
-	 *        algorithm is to be aborted.
-	 */
-	@Override
-	protected void doAWTimeSlice()
-		throws DbCompException
-	{
-		Date nextOutputT = outputCal.getTime();
-		long deltaSec = (_timeSliceBaseTime.getTime() - nextOutputT.getTime()) / 1000L;
-		if (deltaSec <= roundSec && deltaSec >= -roundSec)
-		{
-			log.debug("Outputting value at {}, deltaSec={}, timeSlice={}",
-					  nextOutputT, deltaSec, _timeSliceBaseTime);
-			setOutput(outputLongInterval, inputShortInterval, nextOutputT);
-		}
-		
-		// Regardless of whether te above produced an output, the
-		// next output time should always be > current time slice
-		while (!outputCal.getTime().after(_timeSliceBaseTime))
-		{
-			outputCal.add(outputIncr.getCalConstant(), outputIncr.getCount());
-		}
-		log.debug("Advanced nextOutput to be at {}", outputCal.getTime());
-	}
+        // Truncate to top of interval
+        Instant currentInstant = nextOutput.toInstant(ZoneOffset.ofHours(0));
+        long adjustmentMilliseconds = currentInstant.toEpochMilli() % (outputIncr.get(ChronoUnit.SECONDS)*1000);
+        nextOutput = nextOutput.minus(adjustmentMilliseconds, ChronoUnit.MILLIS);
+        // If an offset was supplied, add it. Note: it's up to the user to make sure
+        // it makes sense. Good: output interval = 1Day, offsetIncr = 6 hours.
+        // Bad: output interval = 1 hour, offsetIncr = 1 week.
 
-	/**
-	 * This method is called once after iterating all time slices.
-	 */
-	@Override
-	protected void afterTimeSlices()
-		throws DbCompException
-	{
-	}
+        if (offsetIncr != null)
+        {
+            for(IntervalIncrement ii : offsetIncr)
+            {
+
+                nextOutput = nextOutput.plus(ii.toTemporalAmount());
+            }
+        }
+
+        // Because of the added increment, I could end up with an outputCal time that
+        // is before the first input time.
+        // Example Daily average at 6 AM from hourly inputs, and the first value I'm given is 7 AM.
+        // The above code will set outputCal to 6AM. I need to add the output increment so that
+        // the outputCal is always >= the first input time.
+
+        while(nextOutput.isBefore(firstInputLDT))
+        {
+            log.trace("beforeTimeSlices firstInputT={}, outputCal={}, incr{}=",
+					  firstInputLDT.format(debugLDTF), nextOutput.format(debugLDTF), outputIncr);
+            nextOutput = nextOutput.plus(outputIncr);
+        }
+
+        // Normally for copy, output units will be the same as input.
+        String inUnits = getInputUnitsAbbr("inputShortInterval");
+        if (inUnits != null && inUnits.length() > 0)
+        {
+            setOutputUnitsAbbr("outputLongInterval", inUnits);
+        }
+
+        log.debug("first input={}, first output={} outputIncr={}",
+				  firstInputLDT.format(debugLDTF), nextOutput.format(debugLDTF), outputIncr.toString());
+    }
+
+    /**
+     * Do the algorithm for a single time slice.
+     * AW will fill in user-supplied code here.
+     * Base class will set inputs prior to calling this method.
+     * User code should call one of the setOutput methods for a time-slice
+     * output variable.
+     *
+     * @throws DbCompException (or subclass thereof) if execution of this
+     *        algorithm is to be aborted.
+     */
+    @Override
+    protected void doAWTimeSlice()
+        throws DbCompException
+    {
+        LocalDateTime currentTime = LocalDateTime.ofInstant(_timeSliceBaseTime.toInstant(), aggTZ.toZoneId());
+        Duration delta = Duration.between(nextOutput, currentTime);
+        final long deltaSec = delta.toSeconds();
+        if (deltaSec <= roundSec && deltaSec >= -roundSec)
+        {
+            ZonedDateTime zdt = currentTime.atZone(aggTZ.toZoneId());
+            zdt = zdt.withZoneSameInstant(ZoneId.of("UTC"));
+            log.debug("Outputting value '{}' at {}, deltaSec={}, timeSlice={} Local/{} UTC",
+					  inputShortInterval, nextOutput.format(debugLDTF), deltaSec,
+					  currentTime.format(debugLDTF), zdt.format(debugZDTF));
+            setOutput(outputLongInterval, inputShortInterval,Date.from(zdt.toInstant()));
+        }
+
+        // Regardless of whether te above produced an output, the
+        // next output time should always be > current time slice
+        while (!nextOutput.isAfter(currentTime))
+        {
+            nextOutput = nextOutput.plus(outputIncr);
+
+        }
+        ZonedDateTime zdt = nextOutput.atZone(aggTZ.toZoneId());
+        zdt = zdt.withZoneSameInstant(ZoneId.of("UTC"));
+        log.debug("Advanced nextOutput to be at {} Local/ {} UTC", nextOutput.format(debugLDTF), zdt.format(debugZDTF));
+    }
+
+    /**
+     * This method is called once after iterating all time slices.
+     */
+    @Override
+    protected void afterTimeSlices()
+        throws DbCompException
+    {
+    }
 }

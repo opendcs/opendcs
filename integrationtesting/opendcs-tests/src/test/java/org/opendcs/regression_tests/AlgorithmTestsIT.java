@@ -1,6 +1,7 @@
 package org.opendcs.regression_tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -13,6 +14,13 @@ import java.io.FileInputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalUnit;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.io.InputStream;
@@ -26,7 +34,9 @@ import java.util.stream.Collectors;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Iterator;
 
 import org.junit.jupiter.api.DynamicTest;
@@ -49,6 +59,7 @@ import decodes.db.DatabaseException;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.db.UnitConverter;
+import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbIoException;
@@ -61,6 +72,7 @@ import decodes.tsdb.VarFlags;
 import decodes.util.DecodesSettings;
 import decodes.util.TSUtil;
 import decodes.tsdb.DataCollection;
+import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbComputation;
 import opendcs.dai.TimeSeriesDAI;
@@ -207,42 +219,63 @@ public class AlgorithmTestsIT extends AppTestBase
             loadScreenings(buildFilePath(test.getAbsolutePath(), "screenings"));
 
 
-            DbComputation testComp = null;
-            try (ComputationDAI compdao = tsDb.makeComputationDAO())
-            {
-               testComp = compdao.getComputationByName(test.getName()+comp.getName());
-            }
-
-            DataCollection theData = new DataCollection();
-
-            for (CTimeSeries ctsi: inputTS){
-                for (int idx = 0; idx < ctsi.size(); idx++){
-                    VarFlags.setWasAdded(ctsi.sampleAt(idx));
+                DbComputation testComp = null;
+                try (ComputationDAI compdao = tsDb.makeComputationDAO())
+                {
+                    testComp = compdao.getComputationByName(test.getName()+comp.getName());
                 }
-                theData.addTimeSeries(ctsi);
-            }
-            for (CTimeSeries ctso: outputTS){
-                theData.addTimeSeries(ctso);
-            }
 
-            // new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss z")
-            //testComp.setProperty("ValidStart", "2024/10/09-23:00:00 UTC");
-            testComp.prepareForExec(tsDb);
-            testComp.apply(theData, tsDb);
+                DataCollection theData = new DataCollection();
 
-            Iterator<CTimeSeries> iterExpect = expectedOutputTS.iterator();
-            
-            while (iterExpect.hasNext())
-            {
-                CTimeSeries currExpect = iterExpect.next();
-                String tsName = currExpect.getNameString();
-                TimeSeriesIdentifier outputID = tsDao.getTimeSeriesIdentifier(tsName);
+                for (CTimeSeries ctsi: inputTS){
+                    for (int idx = 0; idx < ctsi.size(); idx++){
+                        VarFlags.setWasAdded(ctsi.sampleAt(idx));
+                    }
+                    theData.addTimeSeries(ctsi);
+                }
+                for (CTimeSeries ctso: outputTS){
+                    theData.addTimeSeries(ctso);
+                }
 
-                log.info(currExpect.getNameString());
+                // new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss z")
+                //testComp.setProperty("ValidStart", "2024/10/09-23:00:00 UTC");
+                testComp.prepareForExec(tsDb);
+                testComp.apply(theData, tsDb);
+                ZoneId compTz = testComp.getExecutive().aggCal.getTimeZone().toZoneId();
+                theData.getAllTimeSeries()
+                       .stream()
+                       .filter(ts -> !DbKey.isNull(ts.getComputationId())) // Only outputs
+                       .forEach(ts -> 
+                        {
+                            log.info("Output Values for {}", ts.getTimeSeriesIdentifier().getUniqueString());
+                            for(int i = 0; i < ts.size(); i++)
+                            {
+                                TimedVariable tv = ts.sampleAt(i);
+                                LocalDateTime ldt = LocalDateTime.ofInstant(tv.getTime().toInstant(), compTz);
+                                ZonedDateTime zdt = ldt.atZone(compTz);
+                                ZonedDateTime zdtUtc = zdt.withZoneSameInstant(ZoneId.of("UTC"));
+                                log.info("{}/{}: {}",
+                                    zdt.format(DbAlgorithmExecutive.debugLDTF),
+                                    zdtUtc.format(DbAlgorithmExecutive.debugZDTF),
+                                    tv.getStringValue());
+                            }
+                        });  
 
-                CTimeSeries algoOutput = theData.getTimeSeriesByTsidKey(outputID);
-                log.info("expected units: " + currExpect.getUnitsAbbr());
-                TSUtil.convertUnits(algoOutput, currExpect.getUnitsAbbr());
+
+                Iterator<CTimeSeries> iterExpect = expectedOutputTS.iterator();
+                
+                while (iterExpect.hasNext())
+                {
+                    CTimeSeries currExpect = iterExpect.next();
+                    String tsName = currExpect.getNameString();
+                    TimeSeriesIdentifier outputID = tsDao.getTimeSeriesIdentifier(tsName);
+
+                    log.info(currExpect.getNameString());
+
+                    CTimeSeries algoOutput = theData.getTimeSeriesByTsidKey(outputID);
+                    assertNotNull(algoOutput, "No output timeseries.");
+                    log.info("expected units: " + currExpect.getUnitsAbbr());
+                    TSUtil.convertUnits(algoOutput, currExpect.getUnitsAbbr());
 
                 
                 if (log.isInfoEnabled()) 
@@ -288,8 +321,7 @@ public class AlgorithmTestsIT extends AppTestBase
         return path.toString();
     }
 
-    private ArrayList<CTimeSeries> loadTSimport(String folderTSstr, TsImporter importer)
-    throws Exception
+    private ArrayList<CTimeSeries> loadTSimport(String folderTSstr, TsImporter importer) throws Exception
     {
         File folderTS = new File(folderTSstr);
         ArrayList<CTimeSeries> fullTs = new ArrayList<CTimeSeries>();

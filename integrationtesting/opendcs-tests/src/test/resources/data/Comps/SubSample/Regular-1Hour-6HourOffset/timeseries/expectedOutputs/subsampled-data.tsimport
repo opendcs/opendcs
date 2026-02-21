@@ -1,0 +1,8 @@
+SET:TZ=UTC
+SET:UNITS=mm
+TSID:SampleDataSite.Precip.Inst.6Hours.0.output-1hour-offset
+2024/06/13-01:00:00,1.0,0
+2024/06/13-07:00:00,7.0,0
+2024/06/13-13:00:00,13.0,0
+
+2024/06/13-19:00:00,19.0,0

@@ -4,11 +4,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
@@ -83,8 +85,7 @@ public class CwmsOracleConfiguration implements Configuration
                             {
                                 cmd.getHostConfig()
                                    .withMemory(4L*1024*1024*1024)
-                                   .withCpuPeriod(20000L)
-                                   .withCpuQuota(25000L)
+                                   .withCpuCount(2L)
                                 ;
                             })
                             .withLogConsumer(line -> {
@@ -93,8 +94,22 @@ public class CwmsOracleConfiguration implements Configuration
             log.info("starting CWMS Database");
             cwmsDb.start();
             log.info("CWMS Database started.");
-            cwmsDb.executeSQL("create tablespace CCP_DATA DATAFILE 'ccp_data.dbf' SIZE 100M REUSE AUTOEXTEND ON NEXT 1M MAXSIZE 2000M","sys");
-            //cwmsDb.executeSQL("create user CCP no authentication default tablespace ccp_data QUOTA UNLIMITED ON ccp_data", "sys");
+            try
+            {
+                cwmsDb.executeSQL("create tablespace CCP_DATA DATAFILE 'ccp_data.dbf' SIZE 100M REUSE AUTOEXTEND ON NEXT 1M MAXSIZE 2000M","sys");
+            }
+            catch (RuntimeException ex)
+            {
+                if (ex.getCause() instanceof SQLException)
+                {
+                    log.log(Level.WARNING, "Create tablespace failed", ex);
+                }
+                else
+                {
+                    throw ex;
+                }
+            }
+            
             
             String createBuildUser = IOUtils.resourceToString("/database/admin_user.sql", StandardCharsets.UTF_8);
             cwmsDb.executeSQL(createBuildUser, "sys");
