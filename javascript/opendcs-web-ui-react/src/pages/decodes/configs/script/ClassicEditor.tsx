@@ -9,6 +9,7 @@ import { renderToString } from "react-dom/server";
 import hljs from "highlight.js";
 import decodes from "../../../../util/languages/decodes";
 import "highlight.js/styles/default.css";
+import { dtLangs } from "../../../../lang";
 
 hljs.registerLanguage("decodes", decodes);
 
@@ -29,7 +30,7 @@ export interface ClassicFormatStatememntEditorProperties {
 const ClassicFormatStatementEditor: React.FC<
   ClassicFormatStatememntEditorProperties
 > = ({ formatStatements, onChange, edit = false }) => {
-  const { t } = useTranslation(["decodes"]);
+  const { t, i18n } = useTranslation(["decodes"]);
   const table = useRef<DataTableRef>(null);
 
   const renderFormat = useCallback(
@@ -47,7 +48,7 @@ const ClassicFormatStatementEditor: React.FC<
               className="language-decodes m-0 p-0"
               role="textbox"
               contentEditable={edit}
-              aria-label={t("decodes:config.script.format_statement_input", {
+              aria-label={t("decodes:config.script.format_statements.format_input", {
                 label: row.label,
                 sequence: row.sequenceNum,
               })}
@@ -63,6 +64,31 @@ const ClassicFormatStatementEditor: React.FC<
     [table],
   );
 
+  const renderLabel = useCallback(
+    (
+      data: string,
+      type: string,
+      row: ApiScriptFormatStatement,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      _meta: any,
+    ) => {
+      if (type === "display" && edit) {
+        return renderToString(
+          <input
+            defaultValue={data}
+            name={`input_${row.sequenceNum}`}
+            aria-label={t("decodes:script_editor.format_statements.label_input", {
+              sequence: row.sequenceNum,
+            })}
+          />,
+        );
+      } else {
+        return data;
+      }
+    },
+    [table, edit],
+  );
+
   const columns = [
     {
       data: null,
@@ -74,7 +100,7 @@ const ClassicFormatStatementEditor: React.FC<
         }
       },
     },
-    { data: "label" },
+    { data: "label", render: renderLabel },
     { data: "format", render: renderFormat },
     { data: null },
   ];
@@ -104,7 +130,7 @@ const ClassicFormatStatementEditor: React.FC<
           enable: true,
           dataSrc: "sequenceNum",
         },
-
+        language: dtLangs.get(i18n.language),
         search: false,
         scrollY: "7em",
         scrollCollapse: true,
@@ -123,9 +149,9 @@ const ClassicFormatStatementEditor: React.FC<
       <thead>
         <tr>
           <th></th>
-          <th>Label</th>
-          <th>Format Statement</th>
-          <th>Actions</th>
+          <th>{t("decodes:script_editor:format_statements.format_label")}</th>
+          <th>{t("decodes:script_editor:format_statements.format_statement")}</th>
+          <th>{t("actions")}</th>
         </tr>
       </thead>
     </DataTable>

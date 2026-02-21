@@ -1,11 +1,15 @@
 import type { Meta, ReactRenderer, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
-import DecodesSample, { DecodesSampleProperties } from "./Sample";
+import DecodesSample, { type DecodesSampleProperties } from "./Sample";
 import { ApiDecodedMessage } from "opendcs-api";
-import { ArgsStoryFn } from "storybook/internal/csf";
+import type { ArgsStoryFn } from "storybook/internal/csf";
 import { useCallback } from "storybook/internal/preview-api";
 
-const testDataSets: { name: string; input: string; result: ApiDecodedMessage }[] = [
+export const testDataSets: {
+  name: string;
+  input: string;
+  result: ApiDecodedMessage;
+}[] = [
   {
     name: "Single Sensor",
     input: "25.5 26.6",
@@ -132,12 +136,16 @@ const testDataSets: { name: string; input: string; result: ApiDecodedMessage }[]
   },
 ];
 
+export const decodeData = (raw: string): ApiDecodedMessage => {
+  return testDataSets.find((tds) => tds.input === raw)?.result || {};
+};
+
 const WithDecodedMessage: ArgsStoryFn<ReactRenderer, DecodesSampleProperties> = (
   args,
 ) => {
   const decodeData = useCallback((raw: string): ApiDecodedMessage => {
     args.decodeData?.(raw);
-    return testDataSets.find((tds) => tds.input === raw)?.result || {};
+    return decodeData(raw);
   }, []);
 
   return (

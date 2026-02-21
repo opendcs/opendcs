@@ -3,6 +3,8 @@ import type { ApiDecodesTimeSeries } from "opendcs-api";
 import DataTable from "datatables.net-react";
 import DT, { type ConfigColumns } from "datatables.net-bs5";
 import { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import { dtLangs } from "../../../../lang";
 
 // this isn't a hook, it just has "use" as the name.
 // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -13,6 +15,7 @@ export interface DecodesDataGridProperties {
 }
 
 const DecodesDataGrid: React.FC<DecodesDataGridProperties> = ({ output }) => {
+  const { t, i18n } = useTranslation(["decodes"]);
   const times = useMemo(() => {
     let times: Date[] = [];
     output?.forEach((ts) =>
@@ -30,7 +33,6 @@ const DecodesDataGrid: React.FC<DecodesDataGridProperties> = ({ output }) => {
   const lookupData = useCallback(
     (sensorName: string, time: Date): string | undefined => {
       const ts = output?.find((ts) => ts.sensorName === sensorName);
-      console.log(`TS found ${JSON.stringify(ts)}`);
       return ts?.values?.find((tsv) => tsv.time?.valueOf() === time.valueOf())?.value;
     },
     [output],
@@ -39,7 +41,7 @@ const DecodesDataGrid: React.FC<DecodesDataGridProperties> = ({ output }) => {
   let dataColumns =
     output?.map((ts) => {
       return {
-        data: "blash",
+        data: null,
         defaultContent: "-",
         name: `${ts.sensorName}`,
         render: (
@@ -48,7 +50,6 @@ const DecodesDataGrid: React.FC<DecodesDataGridProperties> = ({ output }) => {
           row: { time: Date },
           _meta: unknown,
         ) => {
-          console.log(`Looking for ${ts.sensorName} at time ${JSON.stringify(row)}`);
           return lookupData(ts.sensorName!, row.time);
         },
       };
@@ -61,8 +62,9 @@ const DecodesDataGrid: React.FC<DecodesDataGridProperties> = ({ output }) => {
       /* Using the column length as the key here allows us to reforce the building of the table so 
            the table actually rebuilds and thus renders everything.
         */
-      key={columns.length}
+      key={`${columns.length}_${i18n.language}`}
       options={{
+        language: dtLangs.get(i18n.language),
         paging: false,
         scrollY: "20em",
         scrollCollapse: true,
@@ -78,7 +80,7 @@ const DecodesDataGrid: React.FC<DecodesDataGridProperties> = ({ output }) => {
     >
       <thead>
         <tr>
-          <th key="time">Date/Time</th>
+          <th key="time">{t("translation:date_time")}</th>
           {output?.map((ts) => {
             return <th key={ts.sensorName}>{ts.sensorName}</th>;
           })}
