@@ -39,13 +39,11 @@ public final class ApiConfigScript
 	@Schema(description = "Specifies the type of header used in the configuration script.", example = "decodes:goes")
 	private String headerType = null;
 
-	@Schema(description = "A list of sensors associated with the configuration script.",
-			implementation = ApiConfigScriptSensor.class)
+	@Schema(description = "A list of sensors associated with the configuration script.")
 	private List<ApiConfigScriptSensor> scriptSensors =
 			new ArrayList<>();
 
-	@Schema(description = "A list of format statements used by the configuration script.",
-			implementation = ApiScriptFormatStatement.class)
+	@Schema(description = "A list of format statements used by the configuration script.")
 	private List<ApiScriptFormatStatement> formatStatements =
 			new ArrayList<>();
 
