@@ -1,0 +1,15 @@
+{
+  "script_editor": {
+    "format_statements": {
+      "title": "Format Statments",
+      "format_statement": "Format Statement",
+      "format_label": "Label",
+      "format_input": "editable format statement area for row {{sequence}}, with label {{label}}.",
+      "label_input": "label area for row {{sequence}}."
+    },
+    "sample": {
+      "title": "Sample Data",
+      "raw_data_input": "Sample Data text input"
+    }
+  }
+}

@@ -3,6 +3,7 @@ import { Card, Row } from "react-bootstrap";
 import {
   ApiConfigScriptDataOrderEnum,
   ApiConfigSensor,
+  ApiDecodedMessage,
   type ApiConfigScript,
 } from "opendcs-api";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -15,12 +16,14 @@ import DecodesSample from "./Sample/Sample";
 export interface DecodesScriptEditorProperties {
   script?: Partial<ApiConfigScript>;
   sensors: ApiConfigSensor[];
+  decodeData: (raw: string) => ApiDecodedMessage;
   edit?: boolean;
 }
 
 export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
   script,
   sensors,
+  decodeData,
   edit = false,
 }) => {
   const { t } = useTranslation(["decodes"]);
@@ -60,7 +63,7 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
         <Row>
           <Card>
             <Card.Header>
-              {t("decodes:script_editor.format_statement_title")}
+              {t("decodes:script_editor.format_statements.title")}
             </Card.Header>
             <Card.Body>
               <ClassicEditor
@@ -76,11 +79,16 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
           </Card>
         </Row>
         <Row>
-          <DecodesSample
-            decodeData={(raw: string) => {
-              return {};
-            }}
-          />
+          <Card>
+            <Card.Header>{t("decodes:script_editor.sample.title")}</Card.Header>
+            <Card.Body>
+              <DecodesSample
+                decodeData={(raw: string) => {
+                  return decodeData(raw);
+                }}
+              />
+            </Card.Body>
+          </Card>
         </Row>
       </Card.Body>
     </Card>

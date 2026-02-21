@@ -2,6 +2,7 @@ import type React from "react";
 import type { ApiDecodedMessage } from "opendcs-api";
 import { useRef } from "react";
 import { Button, Col } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
 
 export interface DecodesSampleRetrieveProperties {
   output?: ApiDecodedMessage; // used to highlight the data within the textarea... somehow, probably need to render different element and flip back and forth or something.
@@ -12,13 +13,14 @@ const DecodesSampleRetrieve: React.FC<DecodesSampleRetrieveProperties> = ({
   output,
   decodeData,
 }) => {
+  const { t } = useTranslation();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   return (
     <>
       <Col lg={6}>
         <textarea
-          aria-label="Raw Message Data input"
+          aria-label={t("decodes:script_editor.sample.raw_data_input")}
           ref={textAreaRef}
           style={{ resize: "both", width: "100%" }}
         ></textarea>
