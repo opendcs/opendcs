@@ -12,14 +12,14 @@ import ClassicEditor from "./script/ClassicEditor";
 import SensorConversion from "./script/SensorConversions";
 import { useTranslation } from "react-i18next";
 import DecodesSample from "./Sample/Sample";
-import type { SaveAction } from "../../../util/Actions";
+import type { CancelAction, SaveAction } from "../../../util/Actions";
 
 export interface DecodesScriptEditorProperties {
   script?: Partial<ApiConfigScript>;
   sensors: ApiConfigSensor[];
   decodeData: (raw: string) => ApiDecodedMessage;
   edit?: boolean;
-  actions?: SaveAction<ApiConfigScript>;
+  actions?: SaveAction<ApiConfigScript> & CancelAction<string>;
 }
 
 export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
@@ -54,6 +54,10 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
     [setLocalScript],
   );
 
+  const showSaveCancel = edit && actions !== undefined;
+  console.log(`Show save? ${showSaveCancel}`);
+  console.log(edit);
+  console.log(actions);
   return (
     <Card>
       <Card.Body>
@@ -96,11 +100,19 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
       </Card.Body>
       <Row>
         <Col />
-        <Col>
-          {edit && actions && (
+        <Col lg={{ span: 1 }}>
+          {showSaveCancel && (
             <>
-              <Button>{t("translation:cancel")}</Button>
-              <Button>{t("translation:save")}</Button>
+              <Button
+                onClick={() => {
+                  actions.save?.(script as ApiConfigScript);
+                }}
+              >
+                {t("translation:cancel")}
+              </Button>
+              <Button onClick={() => actions.cancel?.(script?.name!)}>
+                {t("translation:save")}
+              </Button>
             </>
           )}
         </Col>

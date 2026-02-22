@@ -85,6 +85,7 @@ const WithDecodedMessage: ArgsStoryFn<ReactRenderer, DecodesScriptEditorProperti
         script={args.script}
         edit={args.edit}
         decodeData={decodeData}
+        actions={args.actions}
       />
     </>
   );
@@ -96,6 +97,7 @@ export const WithScriptInEdit: Story = {
     edit: true,
     actions: {
       save: fn(),
+      cancel: fn(),
     },
   },
   render: WithDecodedMessage,
