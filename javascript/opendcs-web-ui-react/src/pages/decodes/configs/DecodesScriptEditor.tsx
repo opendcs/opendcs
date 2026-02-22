@@ -1,5 +1,5 @@
 import type React from "react";
-import { Card, Row } from "react-bootstrap";
+import { Button, Card, Col, Row } from "react-bootstrap";
 import {
   ApiConfigScriptDataOrderEnum,
   ApiConfigSensor,
@@ -12,12 +12,14 @@ import ClassicEditor from "./script/ClassicEditor";
 import SensorConversion from "./script/SensorConversions";
 import { useTranslation } from "react-i18next";
 import DecodesSample from "./Sample/Sample";
+import type { SaveAction } from "../../../util/Actions";
 
 export interface DecodesScriptEditorProperties {
   script?: Partial<ApiConfigScript>;
   sensors: ApiConfigSensor[];
   decodeData: (raw: string) => ApiDecodedMessage;
   edit?: boolean;
+  actions?: SaveAction<ApiConfigScript>;
 }
 
 export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
@@ -25,6 +27,7 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
   sensors,
   decodeData,
   edit = false,
+  actions,
 }) => {
   const { t } = useTranslation(["decodes"]);
   const [localScript, setLocalScript] = useState<Partial<ApiConfigScript>>({});
@@ -91,6 +94,17 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
           </Card>
         </Row>
       </Card.Body>
+      <Row>
+        <Col />
+        <Col>
+          {edit && actions && (
+            <>
+              <Button>{t("translation:cancel")}</Button>
+              <Button>{t("translation:save")}</Button>
+            </>
+          )}
+        </Col>
+      </Row>
     </Card>
   );
 };

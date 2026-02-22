@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useRef } from "react";
-import type { ApiScriptFormatStatement } from "opendcs-api";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { ApiScriptFormatStatement } from "opendcs-api";
 import { useTranslation } from "react-i18next";
 import DataTable, { type DataTableRef } from "datatables.net-react";
 import DT from "datatables.net-bs5";
@@ -19,7 +19,6 @@ DataTable.use(DT);
 
 export interface ClassicFormatStatememntEditorProperties {
   formatStatements: ApiScriptFormatStatement[];
-  onChange?: (statements: ApiScriptFormatStatement[]) => void;
   edit?: boolean;
 }
 
@@ -29,9 +28,15 @@ export interface ClassicFormatStatememntEditorProperties {
  */
 const ClassicFormatStatementEditor: React.FC<
   ClassicFormatStatememntEditorProperties
-> = ({ formatStatements, onChange, edit = false }) => {
+> = ({ formatStatements, edit = false }) => {
   const { t, i18n } = useTranslation(["decodes"]);
+  const [localStatements, setLocalStatements] =
+    useState<ApiScriptFormatStatement[]>(formatStatements);
   const table = useRef<DataTableRef>(null);
+
+  useEffect(() => {
+    setLocalStatements(formatStatements);
+  }, [formatStatements]);
 
   const renderFormat = useCallback(
     (
@@ -48,7 +53,7 @@ const ClassicFormatStatementEditor: React.FC<
               className="language-decodes m-0 p-0"
               role="textbox"
               contentEditable={edit}
-              aria-label={t("decodes:config.script.format_statements.format_input", {
+              aria-label={t("decodes:script_editor.format_statements.format_input", {
                 label: row.label,
                 sequence: row.sequenceNum,
               })}
@@ -107,7 +112,16 @@ const ClassicFormatStatementEditor: React.FC<
 
   useEffect(() => {
     hljs.highlightAll();
-  }, [formatStatements, table]);
+  }, [localStatements, formatStatements, table]);
+
+  const onOrderChange = useCallback(
+    (statements: ApiScriptFormatStatement[]) => {
+      setLocalStatements(
+        statements.toSorted((a, b) => a.sequenceNum! - b.sequenceNum!),
+      );
+    },
+    [setLocalStatements],
+  );
 
   useEffect(() => {
     table.current
@@ -117,12 +131,12 @@ const ClassicFormatStatementEditor: React.FC<
         if (params.length === 0) {
           return;
         }
-        if (onChange) {
-          onChange(formatStatements);
-        }
-      });
-  }, [table.current, formatStatements]);
 
+        onOrderChange(localStatements);
+      });
+  }, [table.current, localStatements]);
+  console.log(localStatements);
+  console.log(formatStatements);
   return (
     <DataTable
       options={{
@@ -143,7 +157,7 @@ const ClassicFormatStatementEditor: React.FC<
       }}
       columns={columns}
       ref={table}
-      data={formatStatements}
+      data={localStatements}
       className="table table-hover table-striped table-sm tablerow-cursor w-100 border"
     >
       <thead>
@@ -151,7 +165,7 @@ const ClassicFormatStatementEditor: React.FC<
           <th></th>
           <th>{t("decodes:script_editor:format_statements.format_label")}</th>
           <th>{t("decodes:script_editor:format_statements.format_statement")}</th>
-          <th>{t("actions")}</th>
+          <th>{t("translation:actions")}</th>
         </tr>
       </thead>
     </DataTable>

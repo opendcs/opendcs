@@ -27,23 +27,7 @@ const StoryRender: ArgsStoryFn<
     setStoryStatements(args.formatStatements);
   }, []);
 
-  const onChange = useCallback(
-    (statements: ApiScriptFormatStatement[]) => {
-      args.onChange?.(statements);
-      setStoryStatements(
-        statements.toSorted((a, b) => a.sequenceNum! - b.sequenceNum!),
-      );
-    },
-    [setStoryStatements],
-  );
-
-  return (
-    <ClassicEditor
-      formatStatements={storyStatements}
-      onChange={onChange}
-      edit={args.edit}
-    />
-  );
+  return <ClassicEditor formatStatements={storyStatements} edit={args.edit} />;
 };
 
 export const Default: Story = {

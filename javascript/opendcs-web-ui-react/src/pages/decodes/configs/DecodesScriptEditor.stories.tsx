@@ -94,6 +94,9 @@ export const WithScriptInEdit: Story = {
   args: {
     ...WithScript.args,
     edit: true,
+    actions: {
+      save: fn(),
+    },
   },
   render: WithDecodedMessage,
 };
