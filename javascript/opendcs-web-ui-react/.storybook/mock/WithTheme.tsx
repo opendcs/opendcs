@@ -11,9 +11,8 @@ export const WithTheme: Decorator = (Story) => {
       updateGlobals({ colorMode: (action as Theme).colorMode });
     }
   };
-
   return (
-    <ThemeContext value={{ theme: colorMode, setTheme: setGlobalTheme }}>
+    <ThemeContext value={{ theme: { colorMode: colorMode }, setTheme: setGlobalTheme }}>
       <Story />
     </ThemeContext>
   );

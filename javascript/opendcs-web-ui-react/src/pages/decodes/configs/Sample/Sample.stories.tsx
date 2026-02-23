@@ -170,6 +170,7 @@ const WithDecodedMessage: ArgsStoryFn<ReactRenderer, DecodesSampleProperties> = 
 
 const meta = {
   component: DecodesSample,
+  excludeStories: ["testDataSets", "decodeData"],
 } satisfies Meta<typeof DecodesSample>;
 
 export default meta;
