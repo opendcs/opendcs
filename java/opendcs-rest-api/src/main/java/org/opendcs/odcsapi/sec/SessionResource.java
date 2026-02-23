@@ -15,9 +15,14 @@
 
 package org.opendcs.odcsapi.sec;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.opendcs.database.model.User;
+import org.opendcs.odcsapi.util.ApiConstants;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.annotation.security.RolesAllowed;
@@ -30,13 +35,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import org.opendcs.database.model.User;
-import org.opendcs.odcsapi.beans.Status;
-import org.opendcs.odcsapi.util.ApiConstants;
 
 @Path("/")
 public final class SessionResource
@@ -88,7 +86,7 @@ public final class SessionResource
 	@DELETE
 	@Path("logout")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Remove access tokens and clear the client's session.",
 			description = "Session variables for the client will be cleared. The auth token will be invalidated.",
