@@ -4,14 +4,26 @@ import { useUnits } from "../../contexts/data/UnitsContext";
 
 export interface UnitSelectorProperties {
   current?: string;
-  onChange: () => void;
+  onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+  disabled?: boolean;
 }
 
-const UnitSelect: React.FC<UnitSelectorProperties> = ({ current, onChange }) => {
+const UnitSelect: React.FC<UnitSelectorProperties> = ({
+  current,
+  onChange,
+  disabled,
+}) => {
   const units = useUnits();
 
   return units.ready ? (
-    <FormSelect defaultValue={current}>
+    <FormSelect
+      defaultValue={current}
+      onChange={(e) => {
+        e.preventDefault();
+        onChange?.(e);
+      }}
+      disabled={disabled}
+    >
       {Object.entries(units.units).map(([id, unit]) => {
         return (
           <option key={id} value={unit.name}>

@@ -6,6 +6,8 @@ import { useRef } from "react";
 import { useUnits } from "../../../../contexts/data/UnitsContext";
 import { FormSelect } from "react-bootstrap";
 import { renderToString } from "react-dom/server";
+import UnitSelect from "../../../../components/controls/UnitSelector";
+import { useContextWrapper } from "../../../../util/ContextWrapper";
 // this isn't a hook, it just has "use" as the name.
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -23,6 +25,7 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
 }) => {
   const table = useRef<DataTableRef>(null);
   const units = useUnits();
+  const { toDom } = useContextWrapper();
 
   const columns = [
     { data: "sensorNumber", defaultContent: "" },
@@ -48,16 +51,12 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
           const unitAbbr: string | undefined = data.unitConverter?.ucId
             ? units.units[data.unitConverter.ucId]?.abbr
             : undefined;
-          return renderToString(
-            <FormSelect defaultValue={unitAbbr} disabled={!edit}>
-              {Object.entries(units.units).map(([id, unit]) => {
-                return (
-                  <option key={id} value={id}>
-                    {unit.abbr}
-                  </option>
-                );
-              })}
-            </FormSelect>,
+          return toDom(
+            <UnitSelect
+              current={unitAbbr}
+              disabled={!edit}
+              onChange={(_evt) => console.log("changed units")}
+            />,
           );
         } else {
           return data;
@@ -69,8 +68,8 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
     { data: "unitConverter.b", defaultContent: "" },
     { data: "unitConverter.c", defaultContent: "" },
     { data: "unitConverter.d", defaultContent: "" },
-    { data: "e", defaultContent: "" },
-    { data: "f", defaultContent: "" },
+    { data: "unitConverter.e", defaultContent: "" },
+    { data: "unitConverter.f", defaultContent: "" },
   ];
 
   return (
