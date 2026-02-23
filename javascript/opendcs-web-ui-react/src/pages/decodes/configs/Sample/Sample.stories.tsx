@@ -1,5 +1,5 @@
 import type { Meta, ReactRenderer, StoryObj } from "@storybook/react-vite";
-import { fn } from "storybook/test";
+import { expect, fn, waitFor } from "storybook/test";
 import DecodesSample, { type DecodesSampleProperties } from "./Sample";
 import { ApiDecodedMessage } from "opendcs-api";
 import type { ArgsStoryFn } from "storybook/internal/csf";
@@ -143,7 +143,7 @@ export const decodeData = (raw: string): ApiDecodedMessage => {
 const WithDecodedMessage: ArgsStoryFn<ReactRenderer, DecodesSampleProperties> = (
   args,
 ) => {
-  const decodeData = useCallback((raw: string): ApiDecodedMessage => {
+  const decodeDataLocal = useCallback((raw: string): ApiDecodedMessage => {
     args.decodeData?.(raw);
     return decodeData(raw);
   }, []);
@@ -163,7 +163,7 @@ const WithDecodedMessage: ArgsStoryFn<ReactRenderer, DecodesSampleProperties> = 
           );
         })}
       </ul>
-      <DecodesSample decodeData={decodeData} />
+      <DecodesSample decodeData={decodeDataLocal} />
     </>
   );
 };
@@ -187,5 +187,31 @@ export const Default: Story = {
   render: WithDecodedMessage,
   play: async ({ mount }) => {
     const _canvas = await mount();
+  },
+};
+
+export const DecodeData: Story = {
+  args: {
+    ...Default.args,
+  },
+  render: WithDecodedMessage,
+  play: async ({ mount, userEvent, parameters }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const toDecode = testDataSets.find(
+      (tds) => tds.name === "Three Sensors Non-Matching times",
+    )!;
+    const sampleInput = await canvas.findByRole("textbox", {
+      name: i18n.t("decodes:script_editor.sample.raw_data_input"),
+    });
+    await userEvent.type(sampleInput, toDecode.input);
+
+    const decodeButton = await canvas.findByRole("button", {
+      name: i18n.t("decode:decode"),
+    });
+    await userEvent.click(decodeButton);
+
+    waitFor(() => expect(canvas.queryByText("Battery")).toBeInTheDocument());
   },
 };

@@ -11,5 +11,6 @@
       "title": "Sample Data",
       "raw_data_input": "Sample Data text input"
     }
-  }
+  },
+  "decode": "Decode"
 }

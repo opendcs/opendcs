@@ -35,7 +35,7 @@ const DecodesSampleRetrieve: React.FC<DecodesSampleRetrieveProperties> = ({
             }
           }}
         >
-          Decode
+          {t("decodes:decode")}
         </Button>
       </Col>
     </>
