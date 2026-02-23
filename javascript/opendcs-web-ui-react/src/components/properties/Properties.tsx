@@ -332,7 +332,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
         ref={table}
         className="table table-hover table-striped tablerow-cursor w-100 border"
       >
-        <caption className="captionTitleCenter">
+        <caption className="caption-title-center">
           {t("properties:PropertiesTitle")}
         </caption>
         <thead>

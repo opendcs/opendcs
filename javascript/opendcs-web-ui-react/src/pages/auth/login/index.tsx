@@ -1,7 +1,7 @@
 import { type FormEvent } from "react";
 import { useAuth } from "../../../contexts/app/AuthContext";
-import { Button, Col, Container, Form, Image, Row } from "react-bootstrap";
-import "./Login.css";
+import { Button, Card, Container, Form } from "react-bootstrap";
+import { PersonCircle } from "react-bootstrap-icons";
 import { Credentials, RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
 import { useApi } from "../../../contexts/app/ApiContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -44,50 +44,45 @@ export default function Login() {
   }
 
   return (
-    <Container className="page-content d-flex" fluid>
-      <Container className="content loginPageBackground" fluid>
-        <Container className="wrapper fadeInDown" fluid>
-          <Container className="slightOpacity" fluid="md">
-            <Row>
-              <Col>
-                <div className="fadeIn first">
-                  <Image
-                    src="/user_profile_image_large.png"
-                    id="icon"
-                    alt="User icon"
-                    fluid
-                    className="mx-auto d-block"
-                  />
-                </div>
-              </Col>
-            </Row>
-            <Row>
-              <Col md>
-                <Form
-                  onSubmit={handleLogin}
-                  className="mx-auto bg-body-secondary text-secondary-emphasis d-grid"
-                >
-                  <Form.Group className="mb-3">
-                    <Form.Label>{t("username")}</Form.Label>
-                    <Form.Control type="text" id="username" required name="username" />
-                  </Form.Group>
-                  <Form.Group className="mb-3">
-                    <Form.Label>{t("password")}</Form.Label>
-                    <Form.Control
-                      type="password"
-                      id="password"
-                      required
-                      name="password"
-                    />
-                  </Form.Group>
-                  <Button variant="primary" type="submit">
-                    {t("login")}
-                  </Button>
-                </Form>
-              </Col>
-            </Row>
-          </Container>
-        </Container>
+    <Container className="odcs-login">
+      <Container className="odcs-login__bg-image" />
+      <Container className="odcs-login__card fade-in-down">
+        <Card className="odcs-login__form-card">
+          <Card.Body className="p-4 p-md-5">
+            <div className="text-center mb-4 fade-in first">
+              <PersonCircle className="odcs-login__avatar" />
+              <h4 className="mt-3 fw-semibold">OpenDCS</h4>
+              <p className="text-muted small">{t("login")}</p>
+            </div>
+            <Form onSubmit={handleLogin} className="fade-in second">
+              <Form.Group className="mb-3">
+                <Form.Label className="small fw-medium">{t("username")}</Form.Label>
+                <Form.Control
+                  type="text"
+                  id="username"
+                  required
+                  name="username"
+                  placeholder={t("username")}
+                />
+              </Form.Group>
+              <Form.Group className="mb-4">
+                <Form.Label className="small fw-medium">{t("password")}</Form.Label>
+                <Form.Control
+                  type="password"
+                  id="password"
+                  required
+                  name="password"
+                  placeholder={t("password")}
+                />
+              </Form.Group>
+              <div className="d-grid fade-in third">
+                <Button variant="primary" type="submit" className="py-2">
+                  {t("login")}
+                </Button>
+              </div>
+            </Form>
+          </Card.Body>
+        </Card>
       </Container>
     </Container>
   );

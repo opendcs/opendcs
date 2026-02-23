@@ -1,0 +1,83 @@
+// =============================================================================
+// TopBar — clean minimal bar, always horizontal
+// =============================================================================
+
+.odcs-topbar {
+  background-color: var(--odcs-bg-topbar);
+  border-bottom: 1px solid var(--odcs-border);
+  box-shadow: var(--odcs-shadow-sm);
+  height: var(--odcs-topbar-height);
+  z-index: 1030;
+  padding: 0;
+
+  .odcs-topbar__container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    padding: 0 0.75rem;
+  }
+
+  .odcs-topbar__left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .navbar-brand {
+    font-weight: 600;
+    font-size: 1.25rem;
+    color: var(--odcs-text-primary);
+    letter-spacing: -0.01em;
+    margin: 0;
+    padding: 0;
+  }
+
+  .odcs-topbar__hamburger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    color: var(--odcs-text-secondary);
+    background: transparent;
+    border: none;
+    border-radius: $radius-md;
+    text-decoration: none;
+
+    &:hover,
+    &:focus {
+      color: var(--odcs-text-primary);
+      background-color: rgba(0, 0, 0, 0.06);
+    }
+  }
+
+  .odcs-topbar__actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.125rem;
+    flex-shrink: 0;
+
+    .btn {
+      background: transparent;
+      border: none;
+      color: var(--odcs-text-secondary);
+      padding: 0.375rem 0.5rem;
+      line-height: 1;
+
+      &:hover,
+      &:focus {
+        color: var(--odcs-text-primary);
+        background-color: rgba(0, 0, 0, 0.05);
+        border-radius: $radius-md;
+      }
+    }
+
+    // Override Bootstrap dropdown-toggle caret
+    .dropdown-toggle::after {
+      display: none;
+    }
+  }
+}
