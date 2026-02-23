@@ -537,8 +537,10 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
      * The implementation may use information contained in the collection's
      * opaque handle.
      * @param dc the data collection to be released.
+     * @param tsDao TimeSeries Dao object for this session
+     * @param batchSize max number of records to delete in a single batch.
      */
-    public void releaseNewData(DataCollection dc, TimeSeriesDAI tsDAO)
+    public void releaseNewData(DataCollection dc, TimeSeriesDAI tsDAO, int batchSize)
         throws DbIoException
     {
         RecordRangeHandle rrh = dc.getTasklistHandle();
@@ -573,7 +575,7 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
         ){
             while(rrh.size() > 0)
             {
-                String []records = rrh.getRecNumList(250).split(",");
+                String []records = rrh.getRecNumList(batchSize).split(",");
                 for( String rec: records ){
                     if( "".equalsIgnoreCase(rec) ) continue;
                     deleteNormal.setLong(1, Long.parseLong(rec.trim()));
@@ -585,7 +587,7 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
 
             while(rrh.getFailedRecnums().size() > 0)
             {
-                String failRecNumList = rrh.getFailedRecNumList(250);
+                String failRecNumList = rrh.getFailedRecNumList(batchSize);
                 String records[] = failRecNumList.split(",");
                 // Add the retry limit for failed computations
                 if (doRetryFailed && maxRetries > 0)
