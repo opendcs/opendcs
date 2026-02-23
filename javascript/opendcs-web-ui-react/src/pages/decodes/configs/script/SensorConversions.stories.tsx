@@ -40,3 +40,11 @@ export const WithSensors: Story = {
     configSensors: configSensors,
   },
 };
+
+export const WithSensorsEdit: Story = {
+  args: {
+    scriptSensors: sensors,
+    configSensors: configSensors,
+    edit: true,
+  },
+};

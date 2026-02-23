@@ -10,6 +10,7 @@ export interface DecodesSampleRetrieveProperties {
 }
 
 const DecodesSampleRetrieve: React.FC<DecodesSampleRetrieveProperties> = ({
+  // @ts-ignore
   output,
   decodeData,
 }) => {

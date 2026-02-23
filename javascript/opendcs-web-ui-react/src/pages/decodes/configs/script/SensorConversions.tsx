@@ -4,6 +4,8 @@ import DT from "datatables.net-bs5";
 import { ApiConfigSensor, type ApiConfigScriptSensor } from "opendcs-api";
 import { useRef } from "react";
 import { useUnits } from "../../../../contexts/data/UnitsContext";
+import { FormSelect } from "react-bootstrap";
+import { renderToString } from "react-dom/server";
 // this isn't a hook, it just has "use" as the name.
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -11,11 +13,13 @@ DataTable.use(DT);
 export interface SensorConversionProperties {
   scriptSensors: ApiConfigScriptSensor[];
   configSensors: { [k: number]: ApiConfigSensor };
+  edit?: boolean;
 }
 
 const SensorConversion: React.FC<SensorConversionProperties> = ({
   scriptSensors,
   configSensors,
+  edit = false,
 }) => {
   const table = useRef<DataTableRef>(null);
   const units = useUnits();
@@ -34,12 +38,27 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
     },
     {
       data: null,
-      render: (data: ApiConfigScriptSensor, type: string, _row: unknown) => {
+      render: (
+        data: ApiConfigScriptSensor,
+        type: string,
+        _row: unknown,
+        _meta: unknown,
+      ) => {
         if (type === "display") {
           const unitAbbr: string | undefined = data.unitConverter?.ucId
             ? units.units[data.unitConverter.ucId]?.abbr
             : undefined;
-          return unitAbbr || "not defined";
+          return renderToString(
+            <FormSelect defaultValue={unitAbbr} disabled={!edit}>
+              {Object.entries(units.units).map(([id, unit]) => {
+                return (
+                  <option key={id} value={id}>
+                    {unit.abbr}
+                  </option>
+                );
+              })}
+            </FormSelect>,
+          );
         } else {
           return data;
         }

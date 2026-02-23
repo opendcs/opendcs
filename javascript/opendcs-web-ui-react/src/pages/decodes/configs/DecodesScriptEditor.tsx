@@ -81,6 +81,7 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
               <SensorConversion
                 configSensors={sensorMap}
                 scriptSensors={localScript.scriptSensors || []}
+                edit={edit}
               />
             </Card.Body>
           </Card>
