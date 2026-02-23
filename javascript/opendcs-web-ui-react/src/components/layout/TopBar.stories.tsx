@@ -40,6 +40,7 @@ export const WithUser: Story = {
             logout: fn(),
             setUser: fn(),
             user: { email: "testuser@example.com" },
+            isLoading: false,
           }}
         >
           <Story />

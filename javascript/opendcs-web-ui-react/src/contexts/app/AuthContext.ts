@@ -3,12 +3,14 @@ import { createContext, useContext, type SetStateAction } from "react";
 
 export interface AuthContextType {
   user?: User;
+  isLoading: boolean;
   setUser: React.Dispatch<React.SetStateAction<User | undefined>>;
   logout: () => void;
 }
 
 const defaultValue: AuthContextType = {
   user: undefined,
+  isLoading: true,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setUser: (_value: SetStateAction<User | undefined>) => {},
   logout: () => {},

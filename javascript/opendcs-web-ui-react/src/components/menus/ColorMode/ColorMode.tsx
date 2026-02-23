@@ -57,7 +57,6 @@ export const ColorModes = () => {
         as={ColorToggle}
         id="color-mode"
         icon={ActiveIcon}
-        size="lg"
         aria-label={t("colormode:dropdownLabel")}
       />
       <Dropdown.Menu>

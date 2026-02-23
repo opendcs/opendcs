@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { AuthContext, type AuthContextType } from "./AuthContext";
 import { useApi } from "./ApiContext";
 import { RESTAuthenticationAndAuthorizationApi, User } from "opendcs-api";
@@ -11,10 +11,24 @@ interface ProviderProps {
 export const AuthProvider = ({ children }: ProviderProps) => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
 
   const apiContext = useApi();
 
+  useEffect(() => {
+    const auth = new RESTAuthenticationAndAuthorizationApi(apiContext.conf);
+    auth
+      .checkSessionAuthorization()
+      .then((value: User) => setUser(value))
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      .catch((_error: unknown) => setUser(undefined))
+      .finally(() => setIsLoading(false));
+  }, [apiContext.conf]);
+
   const logout = () => {
+    if (!user) {
+      return;
+    }
     const auth = new RESTAuthenticationAndAuthorizationApi(apiContext.conf);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     auth.logout().then((_value: void) => {
@@ -25,6 +39,7 @@ export const AuthProvider = ({ children }: ProviderProps) => {
 
   const authValue: AuthContextType = {
     user,
+    isLoading,
     setUser,
     logout,
   };

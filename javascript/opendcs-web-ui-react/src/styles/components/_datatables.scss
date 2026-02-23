@@ -1,0 +1,45 @@
+// =============================================================================
+// DataTables overrides
+// =============================================================================
+
+.tablerow-cursor tbody tr {
+  cursor: pointer;
+}
+
+.caption-title-center {
+  caption-side: top;
+  width: auto;
+  text-align: center;
+  margin-bottom: 0.3125rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--odcs-text-primary);
+}
+
+.table thead th {
+  background-color: var(--odcs-table-header-bg);
+  color: var(--odcs-table-header-color);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border-bottom-width: 2px;
+}
+
+.dataTable td {
+  padding-top: 0.3rem;
+  padding-bottom: 0.3rem;
+  vertical-align: middle;
+}
+
+.dataTable tbody,
+input,
+select,
+option,
+textarea {
+  font-family: $font-family-mono;
+}
+
+.dataTables_empty {
+  cursor: default;
+  pointer-events: none;
+}
