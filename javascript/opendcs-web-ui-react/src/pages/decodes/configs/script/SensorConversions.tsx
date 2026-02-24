@@ -2,11 +2,12 @@ import type React from "react";
 import DataTable, { type DataTableRef } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import { ApiConfigSensor, type ApiConfigScriptSensor } from "opendcs-api";
-import { useRef } from "react";
+import { useCallback, useRef } from "react";
 import { useUnits } from "../../../../contexts/data/UnitsContext";
 import UnitSelect from "../../../../components/controls/UnitSelector";
 import { useContextWrapper } from "../../../../util/ContextWrapper";
 import UnitConversionAlgorithmSelect from "../../../../components/controls/UnitConversionAlgorithmSelector";
+import { FormControl } from "react-bootstrap";
 // this isn't a hook, it just has "use" as the name.
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -17,6 +18,25 @@ export interface SensorConversionProperties {
   edit?: boolean;
 }
 
+const colToCoeff = (col: number): string => {
+  switch (col) {
+    case 4:
+      return "a";
+    case 5:
+      return "b";
+    case 6:
+      return "c";
+    case 7:
+      return "d";
+    case 8:
+      return "e";
+    case 9:
+      return "f";
+    default:
+      return "na";
+  }
+};
+
 const SensorConversion: React.FC<SensorConversionProperties> = ({
   scriptSensors,
   configSensors,
@@ -25,6 +45,32 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
   const table = useRef<DataTableRef>(null);
   const units = useUnits();
   const { toDom } = useContextWrapper();
+
+  const renderCoefficient = useCallback(
+    (
+      data: ApiConfigScriptSensor,
+      type: string,
+      _row: unknown,
+      meta: { col: number },
+    ) => {
+      if (type === "display") {
+        console.log(meta);
+        console.log(`data is ${JSON.stringify(data)}`);
+        const coeffIdx = colToCoeff(meta.col) as keyof typeof data.unitConverter;
+        const coeff = data.unitConverter?.[coeffIdx];
+        return toDom(
+          <FormControl
+            value={coeff}
+            disabled={!edit}
+            onChange={(evt) => console.log(`changed Coeff ${evt.currentTarget.value}`)}
+          />,
+        );
+      } else {
+        return data;
+      }
+    },
+    [table],
+  );
 
   const columns = [
     { data: "sensorNumber", defaultContent: "" },
@@ -83,12 +129,12 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
         }
       },
     },
-    { data: "unitConverter.a", defaultContent: "" },
-    { data: "unitConverter.b", defaultContent: "" },
-    { data: "unitConverter.c", defaultContent: "" },
-    { data: "unitConverter.d", defaultContent: "" },
-    { data: "unitConverter.e", defaultContent: "" },
-    { data: "unitConverter.f", defaultContent: "" },
+    { data: null, render: renderCoefficient },
+    { data: null, render: renderCoefficient },
+    { data: null, render: renderCoefficient },
+    { data: null, render: renderCoefficient },
+    { data: null, render: renderCoefficient },
+    { data: null, render: renderCoefficient },
   ];
 
   return (
