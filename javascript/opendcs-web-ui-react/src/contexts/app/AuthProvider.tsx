@@ -37,12 +37,12 @@ export const AuthProvider = ({ children }: ProviderProps) => {
         setUser(undefined);
         navigate("/login");
       })
-      .catch((error_: any) => {
-        if (error_.status === 401) {
+      .catch((error: unknown) => {
+        if ((error as { status: number }).status === 401) {
           setUser(undefined);
           navigate("/login");
         } else {
-          alert("Logout failed" + error_.toString());
+          alert("Logout failed: " + String(error));
         }
       });
   };
