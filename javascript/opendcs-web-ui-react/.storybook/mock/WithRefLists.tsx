@@ -6,6 +6,7 @@ import { Decorator } from "@storybook/react-vite";
 import {
   REFLIST_DECODES_TRANSPORT_MEDIUM_TYPE,
   REFLIST_SITE_NAME_TYPE,
+  REFLIST_UNIT_CONVERSION_ALGORITHM,
   RefListContext,
 } from "../../src/contexts/data/RefListContext";
 import { ApiRefList } from "../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
@@ -38,6 +39,21 @@ export const WithRefLists: Decorator = (Story) => {
           iridium: { value: "iridium", description: "Iridium IMEI" },
           shef: { value: "shef", description: "Standard Hydromet Exchange Format" },
           other: { value: "other" },
+        },
+      },
+      [REFLIST_UNIT_CONVERSION_ALGORITHM]: {
+        enumName: REFLIST_UNIT_CONVERSION_ALGORITHM,
+        items: {
+          none: {
+            value: "none",
+            description: "no conversions",
+            execClassName: "NoConversion",
+          },
+          linear: {
+            value: "linear",
+            description: "Y = Ax + B",
+            execClassName: "LInearConverter",
+          },
         },
       },
     };

@@ -4,10 +4,9 @@ import DT from "datatables.net-bs5";
 import { ApiConfigSensor, type ApiConfigScriptSensor } from "opendcs-api";
 import { useRef } from "react";
 import { useUnits } from "../../../../contexts/data/UnitsContext";
-import { FormSelect } from "react-bootstrap";
-import { renderToString } from "react-dom/server";
 import UnitSelect from "../../../../components/controls/UnitSelector";
 import { useContextWrapper } from "../../../../util/ContextWrapper";
+import UnitConversionAlgorithmSelect from "../../../../components/controls/UnitConversionAlgorithmSelector";
 // this isn't a hook, it just has "use" as the name.
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -63,7 +62,27 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
         }
       },
     },
-    { data: "unitConverter.algorithm", defaultContent: "" },
+    {
+      data: null,
+      render: (
+        data: ApiConfigScriptSensor,
+        type: string,
+        _row: unknown,
+        _meta: unknown,
+      ) => {
+        if (type === "display") {
+          return toDom(
+            <UnitConversionAlgorithmSelect
+              current={data.unitConverter?.algorithm}
+              disabled={!edit}
+              onChange={(_evt) => console.log("changed units")}
+            />,
+          );
+        } else {
+          return data;
+        }
+      },
+    },
     { data: "unitConverter.a", defaultContent: "" },
     { data: "unitConverter.b", defaultContent: "" },
     { data: "unitConverter.c", defaultContent: "" },
