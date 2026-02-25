@@ -77,6 +77,22 @@ public class ComputationApp extends TsdbAppTemplate
 	// maximum number of records to take at a time from the task list.
 	private static final int COMP_RUN_MAX_TAKE =
 		Integer.parseInt(System.getProperty("opendcs.computations.getNew.maxTake", "20000"));
+	private static final int COMP_RUN_BATCH_RELEASE_SIZE;
+
+	static
+	{
+		final String batchSizeStr = System.getProperty("opendcs.computation.releaseNew.batchSize");
+		if (batchSizeStr != null)
+		{
+			COMP_RUN_BATCH_RELEASE_SIZE = Integer.parseInt(batchSizeStr);
+		}
+		else
+		{
+			// previous default was 250; however that is rather low, 1/4 of the maxTake is most likely a reasonable
+			// compromise. Set as a property to allow future experimentation.
+			COMP_RUN_BATCH_RELEASE_SIZE = COMP_RUN_MAX_TAKE/4;
+		}
+	}
 	/** Holds app name, id, & description. */
 	CompAppInfo appInfo;
 
@@ -412,7 +428,7 @@ public class ComputationApp extends TsdbAppTemplate
 						action = "Releasing new data";
 						try (var dataReleaseTimer = MDCTimer.startTimer(action))
 						{
-							theDb.releaseNewData(dataCollection, timeSeriesDAO);
+							theDb.releaseNewData(dataCollection, timeSeriesDAO, COMP_RUN_BATCH_RELEASE_SIZE);
 						}
 						lastDataTime = System.currentTimeMillis();
 					}
