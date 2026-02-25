@@ -82,6 +82,9 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
                 configSensors={sensorMap}
                 scriptSensors={localScript.scriptSensors || []}
                 edit={edit}
+                sensorChanged={(s) => {
+                  console.log(`New sensor is ${JSON.stringify(s)}`);
+                }}
               />
             </Card.Body>
           </Card>

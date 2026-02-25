@@ -15,6 +15,7 @@ DataTable.use(DT);
 export interface SensorConversionProperties {
   scriptSensors: ApiConfigScriptSensor[];
   configSensors: { [k: number]: ApiConfigSensor };
+  sensorChanged?: (sensor: ApiConfigScriptSensor) => void;
   edit?: boolean;
 }
 
@@ -40,18 +41,26 @@ const colToCoeff = (col: number): string => {
 const SensorConversion: React.FC<SensorConversionProperties> = ({
   scriptSensors,
   configSensors,
+  sensorChanged,
   edit = false,
 }) => {
   const table = useRef<DataTableRef>(null);
   const units = useUnits();
   const { toDom } = useContextWrapper();
 
+  const updateSensor = useCallback(
+    (sensor: ApiConfigScriptSensor) => {
+      sensorChanged?.(sensor);
+    },
+    [sensorChanged],
+  );
+
   const renderCoefficient = useCallback(
     (
       data: ApiConfigScriptSensor,
       type: string,
       _row: unknown,
-      meta: { col: number },
+      meta: { col: number; row: number },
     ) => {
       if (type === "display") {
         console.log(meta);
@@ -62,14 +71,20 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
           <FormControl
             value={coeff}
             disabled={!edit}
-            onChange={(evt) => console.log(`changed Coeff ${evt.currentTarget.value}`)}
+            onChange={(evt) => {
+              console.log(`changed Coeff ${evt.currentTarget.value}`);
+              updateSensor({
+                ...data,
+                [coeffIdx]: evt.currentTarget.value,
+              });
+            }}
           />,
         );
       } else {
         return data;
       }
     },
-    [table],
+    [table, updateSensor],
   );
 
   const columns = [
