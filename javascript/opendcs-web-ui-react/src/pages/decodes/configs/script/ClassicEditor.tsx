@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiScriptFormatStatement } from "opendcs-api";
 import { useTranslation } from "react-i18next";
 import DataTable, { type DataTableRef } from "datatables.net-react";
@@ -10,6 +10,8 @@ import hljs from "highlight.js";
 import decodes from "../../../../util/languages/decodes";
 import "highlight.js/styles/default.css";
 import { dtLangs } from "../../../../lang";
+import { Form } from "react-bootstrap";
+import { useContextWrapper } from "../../../../util/ContextWrapper";
 
 hljs.registerLanguage("decodes", decodes);
 
@@ -23,6 +25,9 @@ export interface ClassicFormatStatememntEditorProperties {
   edit?: boolean;
 }
 
+const statementSorter = (a: ApiScriptFormatStatement, b: ApiScriptFormatStatement) =>
+  a.sequenceNum! - b.sequenceNum!;
+
 /**
  * Class editor that has each label/statement on a separate row
  * @returns
@@ -30,6 +35,7 @@ export interface ClassicFormatStatememntEditorProperties {
 const ClassicFormatStatementEditor: React.FC<
   ClassicFormatStatememntEditorProperties
 > = ({ formatStatements, edit = false, onFormatStatementChange }) => {
+  const { toDom } = useContextWrapper();
   const { t, i18n } = useTranslation(["decodes"]);
   const table = useRef<DataTableRef>(null);
 
@@ -42,26 +48,42 @@ const ClassicFormatStatementEditor: React.FC<
       _meta: any,
     ) => {
       if (type === "display") {
-        return renderToString(
-          <pre className="m-1 p-0">
-            <code
-              className="language-decodes m-0 p-0"
-              role="textbox"
-              contentEditable={edit}
-              aria-label={t("decodes:script_editor.format_statements.format_input", {
-                label: row.label,
-                sequence: row.sequenceNum,
-              })}
-            >
-              {data}
-            </code>
-          </pre>,
+        return toDom(
+          <Form.Control
+            type="input"
+            onChange={(e) => {
+              const statements = formatStatements.filter(
+                (s) => s.sequenceNum !== row.sequenceNum,
+              );
+              const toChange = formatStatements.find(
+                (s) => s.sequenceNum === row.sequenceNum,
+              )!;
+              const changed = {
+                ...toChange,
+                format: e.currentTarget.value,
+              };
+              console.log(`Started with ${JSON.stringify(formatStatements)}`);
+              console.log(`filtered to ${JSON.stringify(statements)}`);
+              console.log(`now using ${JSON.stringify(changed)}`);
+              onFormatStatementChange?.(
+                [...statements, changed].toSorted(statementSorter),
+              );
+            }}
+            className="language-decodes m-0 p-0"
+            role="textbox"
+            contentEditable={edit}
+            aria-label={t("decodes:script_editor.format_statements.format_input", {
+              label: row.label,
+              sequence: row.sequenceNum,
+            })}
+            defaultValue={data}
+          />,
         );
       } else {
         return data;
       }
     },
-    [table],
+    [table.current, edit, formatStatements, onFormatStatementChange],
   );
 
   const renderLabel = useCallback(
@@ -73,11 +95,26 @@ const ClassicFormatStatementEditor: React.FC<
       _meta: any,
     ) => {
       if (type === "display" && edit) {
-        return renderToString(
-          <input
+        return toDom(
+          <Form.Control
+            type="input"
             onChange={(e) => {
-              //
+              const statements = formatStatements.filter(
+                (s) => s.sequenceNum !== row.sequenceNum,
+              );
+              const toChange = formatStatements.find(
+                (s) => s.sequenceNum === row.sequenceNum,
+              )!;
+              const changed = {
+                ...toChange,
+                label: e.currentTarget.value,
+              };
+              console.log(`now using ${JSON.stringify(changed)}`);
+              onFormatStatementChange?.(
+                [...statements, changed].toSorted(statementSorter),
+              );
             }}
+            className="m-0 p-0"
             defaultValue={data}
             name={`input_${row.sequenceNum}`}
             aria-label={t("decodes:script_editor.format_statements.label_input", {
@@ -89,34 +126,37 @@ const ClassicFormatStatementEditor: React.FC<
         return data;
       }
     },
-    [table, edit],
+    [table.current, edit, formatStatements, onFormatStatementChange],
   );
 
-  const columns = [
-    {
-      data: null,
-      render: (data: unknown, type: string, _row: unknown, _meta: unknown) => {
-        if (type === "display") {
-          return renderToString(<ArrowDownUp />);
-        } else {
-          return data;
-        }
+  const columns = useMemo(
+    () => [
+      {
+        data: null,
+        render: (data: unknown, type: string, _row: unknown, _meta: unknown) => {
+          if (type === "display") {
+            return renderToString(<ArrowDownUp />);
+          } else {
+            return data;
+          }
+        },
       },
-    },
-    { data: "label", render: renderLabel },
-    { data: "format", render: renderFormat },
-    { data: null },
-  ];
+      { data: "label", render: renderLabel },
+      { data: "format", render: renderFormat },
+      { data: null },
+    ],
+    [renderLabel, renderFormat],
+  );
 
   useEffect(() => {
-    hljs.highlightAll();
-  }, [formatStatements, table]);
+    // to just handle data interaction better this is disabled for now.
+    // need to determine reasonable method of overlapping text input + code output
+    //hljs.highlightAll();
+  }, [formatStatements, table.current]);
 
   const onOrderChange = useCallback(
     (statements: ApiScriptFormatStatement[]) => {
-      onFormatStatementChange?.(
-        statements.toSorted((a, b) => a.sequenceNum! - b.sequenceNum!),
-      );
+      onFormatStatementChange?.(statements.toSorted(statementSorter));
     },
     [onFormatStatementChange],
   );
@@ -133,7 +173,8 @@ const ClassicFormatStatementEditor: React.FC<
         onOrderChange(formatStatements);
       });
   }, [table.current, formatStatements, onOrderChange]);
-
+  console.log(`data is ${JSON.stringify(formatStatements)}`);
+  console.log(table.current);
   return (
     <DataTable
       options={{

@@ -65,12 +65,12 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
               <ClassicEditor
                 formatStatements={localScript.formatStatements || []}
                 edit={edit}
-                onFormatStatementChange={(statements) =>
+                onFormatStatementChange={(statements) => {
                   dispatch({
                     type: "set_statements",
                     payload: { statements: statements },
-                  })
-                }
+                  });
+                }}
               />
               Sensors {/** yes this needs much better styling. */}
               <SensorConversion

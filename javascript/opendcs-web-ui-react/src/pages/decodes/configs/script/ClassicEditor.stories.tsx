@@ -4,8 +4,9 @@ import ClassicEditor, {
   ClassicFormatStatememntEditorProperties,
 } from "./ClassicEditor";
 import { ArgsStoryFn } from "storybook/internal/types";
-import { ApiScriptFormatStatement } from "../../../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
-import { useCallback, useEffect, useState } from "storybook/internal/preview-api";
+import { ApiScriptFormatStatement } from "opendcs-api";
+//import "storybook/test";
+import { useArgs, useCallback } from "storybook/internal/preview-api";
 
 const meta = {
   component: ClassicEditor,
@@ -19,15 +20,28 @@ const StoryRender: ArgsStoryFn<
   ReactRenderer,
   ClassicFormatStatememntEditorProperties
 > = (args) => {
-  const [storyStatements, setStoryStatements] = useState<ApiScriptFormatStatement[]>(
-    [],
+  const [{ formatStatements }, updateArgs] = useArgs();
+
+  console.log("hello?");
+  const updateStatements = useCallback(
+    (statements: ApiScriptFormatStatement[]) => {
+      args.onFormatStatementChange?.(statements);
+      console.log(`Received ${JSON.stringify(statements)}`);
+      updateArgs({
+        formatStatements: statements,
+      });
+      console.log("updated");
+    },
+    [updateArgs],
   );
-
-  useEffect(() => {
-    setStoryStatements(args.formatStatements);
-  }, []);
-
-  return <ClassicEditor formatStatements={storyStatements} edit={args.edit} />;
+  console.log("rending classic editor");
+  return (
+    <ClassicEditor
+      formatStatements={formatStatements}
+      edit={args.edit}
+      onFormatStatementChange={updateStatements}
+    />
+  );
 };
 
 export const Default: Story = {
@@ -47,6 +61,9 @@ export const WithScript: Story = {
     formatStatements: simpleScript,
   },
   render: StoryRender,
+  play: async ({ mount }) => {
+    const _canvas = await mount();
+  },
 };
 
 export const WithScriptEdit: Story = {
@@ -55,4 +72,7 @@ export const WithScriptEdit: Story = {
     edit: true,
   },
   render: StoryRender,
+  play: async ({ mount }) => {
+    const _canvas = await mount();
+  },
 };

@@ -49,7 +49,6 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
 
   const updateSensor = useCallback(
     (sensor: ApiConfigScriptSensor) => {
-      console.log(`Updating ${JSON.stringify(sensor)}`);
       sensorChanged?.(sensor);
     },
     [sensorChanged],
