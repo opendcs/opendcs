@@ -79,11 +79,15 @@ public class ComputationApp extends TsdbAppTemplate
 		Integer.parseInt(System.getProperty("opendcs.computations.getNew.maxTake", "20000"));
 	private static final int COMP_RUN_BATCH_RELEASE_SIZE;
 
-	static {
+	static
+	{
 		final String batchSizeStr = System.getProperty("opendcs.computation.releaseNew.batchSize");
-		if (batchSizeStr != null) {
+		if (batchSizeStr != null)
+		{
 			COMP_RUN_BATCH_RELEASE_SIZE = Integer.parseInt(batchSizeStr);
-		} else {
+		}
+		else
+		{
 			// previous default was 250; however that is rather low, 1/4 of the maxTake is most likely a reasonable
 			// compromise. Set as a property to allow future experimentation.
 			COMP_RUN_BATCH_RELEASE_SIZE = COMP_RUN_MAX_TAKE/4;
