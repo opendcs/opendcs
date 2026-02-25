@@ -129,6 +129,9 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
         }
       },
     },
+    // a future improvement here could be for this to be one column
+    // and use lazy loading to pull the correct method of rendering
+    // the required columns as say none doesn't need any, linear needs 2, etc.
     { data: null, render: renderCoefficient },
     { data: null, render: renderCoefficient },
     { data: null, render: renderCoefficient },
