@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 interface HeaderSelectProperties {
   id?: string;
   defaultValue?: string;
-  onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+  onChange?: (header: string) => void;
   edit?: boolean;
 }
 
@@ -35,7 +35,9 @@ export const DecodesHeaderTypeSelect: React.FC<HeaderSelectProperties> = ({
     <FormSelect
       defaultValue={defaultValue}
       name="decodesHeaderType"
-      onChange={onChange}
+      onChange={(e) => {
+        onChange?.(e.currentTarget.value);
+      }}
       disabled={!edit}
       id={id}
       aria-label={t("decodes:config.transport_medium_select")}

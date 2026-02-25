@@ -1,4 +1,4 @@
-import type { ApiConfigScript } from "opendcs-api";
+import type { ApiConfigScript, ApiConfigScriptDataOrderEnum } from "opendcs-api";
 import type React from "react";
 import { Col, Form, FormGroup, Row } from "react-bootstrap";
 import { DataOrderSelect } from "./DataOrderSelect";
@@ -6,12 +6,16 @@ import { DecodesHeaderTypeSelect } from "./HeaderTypeSelect";
 
 export interface DecodesScriptHeaderProperties {
   decodesScript: ApiConfigScript;
-  onOrderChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  onOrderChange?: (order: ApiConfigScriptDataOrderEnum) => void;
+  onHeaderChange?: (head: string) => void;
+  onNameChange?: (name: string) => void;
 }
 
 const DecodesScriptHeader: React.FC<DecodesScriptHeaderProperties> = ({
   decodesScript,
   onOrderChange,
+  onHeaderChange,
+  onNameChange,
 }) => {
   return (
     <>
@@ -26,6 +30,9 @@ const DecodesScriptHeader: React.FC<DecodesScriptHeaderProperties> = ({
               name="scriptName"
               id="scriptName"
               defaultValue={decodesScript.name}
+              onChange={(e) => {
+                onNameChange?.(e.currentTarget.value);
+              }}
             />
           </Col>
         </FormGroup>
@@ -54,6 +61,7 @@ const DecodesScriptHeader: React.FC<DecodesScriptHeaderProperties> = ({
             <DecodesHeaderTypeSelect
               id="headerType"
               defaultValue={decodesScript.headerType}
+              onChange={onHeaderChange}
             />
           </Col>
         </FormGroup>

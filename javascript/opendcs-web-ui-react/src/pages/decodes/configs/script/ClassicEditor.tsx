@@ -19,6 +19,7 @@ DataTable.use(DT);
 
 export interface ClassicFormatStatememntEditorProperties {
   formatStatements: ApiScriptFormatStatement[];
+  onFormatStatementChange?: (statements: ApiScriptFormatStatement[]) => void;
   edit?: boolean;
 }
 
@@ -28,15 +29,9 @@ export interface ClassicFormatStatememntEditorProperties {
  */
 const ClassicFormatStatementEditor: React.FC<
   ClassicFormatStatememntEditorProperties
-> = ({ formatStatements, edit = false }) => {
+> = ({ formatStatements, edit = false, onFormatStatementChange }) => {
   const { t, i18n } = useTranslation(["decodes"]);
-  const [localStatements, setLocalStatements] =
-    useState<ApiScriptFormatStatement[]>(formatStatements);
   const table = useRef<DataTableRef>(null);
-
-  useEffect(() => {
-    setLocalStatements(formatStatements);
-  }, [formatStatements]);
 
   const renderFormat = useCallback(
     (
@@ -80,6 +75,9 @@ const ClassicFormatStatementEditor: React.FC<
       if (type === "display" && edit) {
         return renderToString(
           <input
+            onChange={(e) => {
+              //
+            }}
             defaultValue={data}
             name={`input_${row.sequenceNum}`}
             aria-label={t("decodes:script_editor.format_statements.label_input", {
@@ -112,15 +110,15 @@ const ClassicFormatStatementEditor: React.FC<
 
   useEffect(() => {
     hljs.highlightAll();
-  }, [localStatements, formatStatements, table]);
+  }, [formatStatements, table]);
 
   const onOrderChange = useCallback(
     (statements: ApiScriptFormatStatement[]) => {
-      setLocalStatements(
+      onFormatStatementChange?.(
         statements.toSorted((a, b) => a.sequenceNum! - b.sequenceNum!),
       );
     },
-    [setLocalStatements],
+    [onFormatStatementChange],
   );
 
   useEffect(() => {
@@ -132,11 +130,10 @@ const ClassicFormatStatementEditor: React.FC<
           return;
         }
 
-        onOrderChange(localStatements);
+        onOrderChange(formatStatements);
       });
-  }, [table.current, localStatements]);
-  console.log(localStatements);
-  console.log(formatStatements);
+  }, [table.current, formatStatements, onOrderChange]);
+
   return (
     <DataTable
       options={{
@@ -157,7 +154,7 @@ const ClassicFormatStatementEditor: React.FC<
       }}
       columns={columns}
       ref={table}
-      data={localStatements}
+      data={formatStatements}
       className="table table-hover table-striped table-sm tablerow-cursor w-100 border"
     >
       <thead>

@@ -45,11 +45,11 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
   edit = false,
 }) => {
   const table = useRef<DataTableRef>(null);
-  const units = useUnits();
   const { toDom } = useContextWrapper();
 
   const updateSensor = useCallback(
     (sensor: ApiConfigScriptSensor) => {
+      console.log(`Updating ${JSON.stringify(sensor)}`);
       sensorChanged?.(sensor);
     },
     [sensorChanged],
@@ -63,8 +63,6 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
       meta: { col: number; row: number },
     ) => {
       if (type === "display") {
-        console.log(meta);
-        console.log(`data is ${JSON.stringify(data)}`);
         const coeffIdx = colToCoeff(meta.col) as keyof typeof data.unitConverter;
         const coeff = data.unitConverter?.[coeffIdx];
         return toDom(
@@ -72,10 +70,12 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
             value={coeff}
             disabled={!edit}
             onChange={(evt) => {
-              console.log(`changed Coeff ${evt.currentTarget.value}`);
               updateSensor({
                 ...data,
-                [coeffIdx]: evt.currentTarget.value,
+                unitConverter: {
+                  ...data.unitConverter,
+                  [coeffIdx]: evt.currentTarget.value,
+                },
               });
             }}
           />,
@@ -90,7 +90,7 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
   const columns = [
     { data: "sensorNumber", defaultContent: "" },
     {
-      data: null,
+      data: null, // sensorName
       render: (data: ApiConfigScriptSensor, type: string, _row: unknown) => {
         if (type === "display") {
           return configSensors[data.sensorNumber!].sensorName;
@@ -100,7 +100,7 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
       },
     },
     {
-      data: null,
+      data: null, // units
       render: (
         data: ApiConfigScriptSensor,
         type: string,
@@ -108,14 +108,20 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
         _meta: unknown,
       ) => {
         if (type === "display") {
-          const unitAbbr: string | undefined = data.unitConverter?.ucId
-            ? units.units[data.unitConverter.ucId]?.abbr
-            : undefined;
+          const unitAbbr: string | undefined = data.unitConverter?.toAbbr;
           return toDom(
             <UnitSelect
               current={unitAbbr}
               disabled={!edit}
-              onChange={(_evt) => console.log("changed units")}
+              onChange={(evt) => {
+                updateSensor({
+                  ...data,
+                  unitConverter: {
+                    ...data.unitConverter,
+                    toAbbr: evt.currentTarget.value,
+                  },
+                });
+              }}
             />,
           );
         } else {
@@ -124,7 +130,7 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
       },
     },
     {
-      data: null,
+      data: null, // algorithm
       render: (
         data: ApiConfigScriptSensor,
         type: string,
@@ -136,7 +142,15 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
             <UnitConversionAlgorithmSelect
               current={data.unitConverter?.algorithm}
               disabled={!edit}
-              onChange={(_evt) => console.log("changed units")}
+              onChange={(evt) => {
+                updateSensor({
+                  ...data,
+                  unitConverter: {
+                    ...data.unitConverter,
+                    algorithm: evt.currentTarget.value,
+                  },
+                });
+              }}
             />,
           );
         } else {

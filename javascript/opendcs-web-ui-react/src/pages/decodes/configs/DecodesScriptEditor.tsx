@@ -6,13 +6,14 @@ import {
   ApiDecodedMessage,
   type ApiConfigScript,
 } from "opendcs-api";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import DecodesScriptHeader from "./DecodesScriptHeader";
 import ClassicEditor from "./script/ClassicEditor";
 import SensorConversion from "./script/SensorConversions";
 import { useTranslation } from "react-i18next";
 import DecodesSample from "./Sample/Sample";
 import type { CancelAction, SaveAction } from "../../../util/Actions";
+import decodesScriptReducer from "../../../data/reducers/DecodesScriptReducer";
 
 export interface DecodesScriptEditorProperties {
   script?: Partial<ApiConfigScript>;
@@ -30,41 +31,29 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
   actions,
 }) => {
   const { t } = useTranslation(["decodes"]);
-  const [localScript, setLocalScript] = useState<Partial<ApiConfigScript>>({});
+  const [localScript, dispatch] = useReducer(decodesScriptReducer, script || {});
 
   const sensorMap: { [k: number]: ApiConfigSensor } = useMemo(
     () => Object.fromEntries(sensors.map((sensor) => [sensor.sensorNumber, sensor])),
     [sensors],
   );
 
-  useEffect(() => setLocalScript(script || {}), [script]);
-
-  const orderChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      setLocalScript((prev) => {
-        return {
-          ...prev,
-          dataOrder:
-            ApiConfigScriptDataOrderEnum[
-              e.target.value as keyof typeof ApiConfigScriptDataOrderEnum
-            ],
-        };
-      });
-    },
-    [setLocalScript],
-  );
-
   const showSaveCancel = edit && actions !== undefined;
-  console.log(`Show save? ${showSaveCancel}`);
-  console.log(edit);
-  console.log(actions);
   return (
     <Card>
       <Card.Body>
         <Row>
           <DecodesScriptHeader
             decodesScript={localScript}
-            onOrderChange={orderChange}
+            onOrderChange={(order) =>
+              dispatch({ type: "set_data_order", payload: { order: order } })
+            }
+            onHeaderChange={(header) =>
+              dispatch({ type: "set_header", payload: { header: header } })
+            }
+            onNameChange={(name) =>
+              dispatch({ type: "set_name", payload: { name: name } })
+            }
           />
         </Row>
         <Row>
@@ -76,15 +65,21 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
               <ClassicEditor
                 formatStatements={localScript.formatStatements || []}
                 edit={edit}
+                onFormatStatementChange={(statements) =>
+                  dispatch({
+                    type: "set_statements",
+                    payload: { statements: statements },
+                  })
+                }
               />
               Sensors {/** yes this needs much better styling. */}
               <SensorConversion
                 configSensors={sensorMap}
                 scriptSensors={localScript.scriptSensors || []}
                 edit={edit}
-                sensorChanged={(s) => {
-                  console.log(`New sensor is ${JSON.stringify(s)}`);
-                }}
+                sensorChanged={(sensor) =>
+                  dispatch({ type: "set_sensor", payload: { sensor: sensor } })
+                }
               />
             </Card.Body>
           </Card>
