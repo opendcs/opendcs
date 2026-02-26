@@ -6,8 +6,8 @@ import ClassicEditor, {
 import { ArgsStoryFn } from "storybook/internal/types";
 import { ApiScriptFormatStatement } from "opendcs-api";
 //import "storybook/test";
-import { useArgs, useCallback, useState } from "storybook/internal/preview-api";
-import { useEffect } from "react";
+import { useArgs } from "storybook/internal/preview-api";
+import React, { useCallback, useEffect, useState } from "react";
 
 const meta = {
   component: ClassicEditor,
@@ -17,34 +17,50 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-const StoryRender: ArgsStoryFn<
-  ReactRenderer,
-  ClassicFormatStatememntEditorProperties
-> = (args) => {
-  const [{ formatStatements }, _updateArgs] = useArgs();
-  const [storyStatements, setStoryStatements] = useState(() => formatStatements);
+const Wrapper: React.FC<ClassicFormatStatememntEditorProperties> = ({
+  formatStatements,
+  edit,
+  onFormatStatementChange,
+}) => {
+  const [storyStatements, setStoryStatements] = useState<ApiScriptFormatStatement[]>(
+    [],
+  );
 
   // keep the state local, if we call updateArgs then the component complete
   // rerenders and you can only type a single character at a time.
   useEffect(() => {
     setStoryStatements(formatStatements);
-  }, [formatStatements]);
+  }, []);
 
   const updateStatements = useCallback(
     (statements: ApiScriptFormatStatement[]) => {
-      args.onFormatStatementChange?.(statements);
+      onFormatStatementChange?.(statements);
       console.log(`Received ${JSON.stringify(statements)}`);
       setStoryStatements(statements);
       console.log("updated");
     },
     [setStoryStatements],
   );
-
+  console.log(`Sending ${JSON.stringify(storyStatements)}`);
   return (
     <ClassicEditor
       formatStatements={storyStatements}
-      edit={args.edit}
+      edit={edit}
       onFormatStatementChange={updateStatements}
+    />
+  );
+};
+
+const StoryRender: ArgsStoryFn<
+  ReactRenderer,
+  ClassicFormatStatememntEditorProperties
+> = (args) => {
+  const [{ formatStatements }, _updateArgs] = useArgs();
+  return (
+    <Wrapper
+      formatStatements={formatStatements}
+      edit={args.edit}
+      onFormatStatementChange={args.onFormatStatementChange}
     />
   );
 };

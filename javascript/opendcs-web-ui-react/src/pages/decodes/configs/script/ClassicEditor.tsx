@@ -49,8 +49,10 @@ const ClassicFormatStatementEditor: React.FC<
   const { t, i18n } = useTranslation(["decodes"]);
   const table = useRef<DataTableRef>(null);
   const statementRef = useRef<ApiScriptFormatStatement[]>(formatStatements);
+  const inputRef = useRef<{ name: string; position: number } | null>(null);
 
   useEffect(() => {
+    console.log(`Statements now ${JSON.stringify(formatStatements)}`);
     statementRef.current = formatStatements;
   }, [formatStatements]);
   // track last edited text box in some way
@@ -78,11 +80,16 @@ const ClassicFormatStatementEditor: React.FC<
                 ...toChange,
                 format: e.currentTarget.value,
               };
+              inputRef.current = {
+                name: `input_format_${row.sequenceNum}`,
+                position: 0,
+              };
               onFormatStatementChange?.(
                 [...statements, changed].toSorted(statementSorter),
               );
             }}
             className="language-decodes m-0 p-0"
+            id={`input_format_${row.sequenceNum}`}
             name={`input_format_${row.sequenceNum}`}
             role="textbox"
             contentEditable={edit}
@@ -124,12 +131,17 @@ const ClassicFormatStatementEditor: React.FC<
                 label: e.currentTarget.value,
               };
               console.log(`now using ${JSON.stringify(changed)}`);
+              inputRef.current = {
+                name: `input_label_${row.sequenceNum}`,
+                position: 0,
+              };
               onFormatStatementChange?.(
                 [...statements, changed].toSorted(statementSorter),
               );
             }}
             className="m-0 p-0"
             defaultValue={data}
+            id={`input_label_${row.sequenceNum}`}
             name={`input_label_${row.sequenceNum}`}
             aria-label={t("decodes:script_editor.format_statements.label_input", {
               sequence: row.sequenceNum,
@@ -189,7 +201,7 @@ const ClassicFormatStatementEditor: React.FC<
         }
         onOrderChange(formatStatements);
       });
-  }, [table.current, formatStatements, onOrderChange]);
+  }, [formatStatements, onOrderChange]);
   const options: DataTableProps["options"] = useMemo(() => {
     return {
       rowReorder: {
@@ -206,15 +218,41 @@ const ClassicFormatStatementEditor: React.FC<
       info: false,
       responsive: true,
       order: { name: "sequenceNum", dir: "asc" },
+      async drawCallback(_settings) {
+        const api = this.api();
+        if (inputRef.current) {
+          // don't even ask, this all clearly needs to happen a different way
+          await new Promise((resolve) => setTimeout(resolve, 20));
+          const input = api
+            .table()
+            .node()
+            .querySelector(
+              `input[name="${inputRef.current.name}"]`,
+            ) as HTMLInputElement;
+          if (input) {
+            input.focus();
+          } else {
+            console.log("element not found");
+          }
+        }
+      },
     };
   }, [i18n.language]);
+
+  useEffect(() => {
+    const dt = table.current?.dt();
+    if (dt) {
+      dt.clear();
+      dt.rows.add(formatStatements);
+      dt.draw();
+    }
+  }, [formatStatements]);
 
   return (
     <DataTable
       options={options}
       columns={columns}
       ref={table}
-      data={formatStatements}
       className="table table-hover table-striped table-sm tablerow-cursor w-100 border"
     >
       <thead>

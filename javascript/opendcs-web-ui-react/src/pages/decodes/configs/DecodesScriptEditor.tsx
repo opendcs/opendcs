@@ -4,6 +4,7 @@ import {
   ApiConfigScriptDataOrderEnum,
   ApiConfigSensor,
   ApiDecodedMessage,
+  ApiScriptFormatStatement,
   type ApiConfigScript,
 } from "opendcs-api";
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
@@ -38,6 +39,16 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
     [sensors],
   );
 
+  const statementChange = useCallback(
+    (statements: ApiScriptFormatStatement[]) => {
+      dispatch({
+        type: "set_statements",
+        payload: { statements: statements },
+      });
+    },
+    [dispatch],
+  );
+
   const showSaveCancel = edit && actions !== undefined;
   return (
     <Card>
@@ -63,14 +74,10 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
             </Card.Header>
             <Card.Body>
               <ClassicEditor
+                key="test"
                 formatStatements={localScript.formatStatements || []}
                 edit={edit}
-                onFormatStatementChange={(statements) => {
-                  dispatch({
-                    type: "set_statements",
-                    payload: { statements: statements },
-                  });
-                }}
+                onFormatStatementChange={statementChange}
               />
               Sensors {/** yes this needs much better styling. */}
               <SensorConversion
