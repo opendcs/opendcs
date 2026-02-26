@@ -31,10 +31,20 @@ export const AuthProvider = ({ children }: ProviderProps) => {
     }
     const auth = new RESTAuthenticationAndAuthorizationApi(apiContext.conf);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    auth.logout().then((_value: void) => {
-      setUser(undefined);
-      navigate("/login");
-    });
+    auth
+      .logout()
+      .then((_value: void) => {
+        setUser(undefined);
+        navigate("/login");
+      })
+      .catch((error: unknown) => {
+        if ((error as { status: number }).status === 401) {
+          setUser(undefined);
+          navigate("/login");
+        } else {
+          alert("Logout failed: " + String(error));
+        }
+      });
   };
 
   const authValue: AuthContextType = {
