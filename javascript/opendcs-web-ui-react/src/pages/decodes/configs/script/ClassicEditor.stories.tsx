@@ -6,7 +6,8 @@ import ClassicEditor, {
 import { ArgsStoryFn } from "storybook/internal/types";
 import { ApiScriptFormatStatement } from "opendcs-api";
 //import "storybook/test";
-import { useArgs, useCallback } from "storybook/internal/preview-api";
+import { useArgs, useCallback, useState } from "storybook/internal/preview-api";
+import { useEffect } from "react";
 
 const meta = {
   component: ClassicEditor,
@@ -20,24 +21,28 @@ const StoryRender: ArgsStoryFn<
   ReactRenderer,
   ClassicFormatStatememntEditorProperties
 > = (args) => {
-  const [{ formatStatements }, updateArgs] = useArgs();
+  const [{ formatStatements }, _updateArgs] = useArgs();
+  const [storyStatements, setStoryStatements] = useState(() => formatStatements);
 
-  console.log("hello?");
+  // keep the state local, if we call updateArgs then the component complete
+  // rerenders and you can only type a single character at a time.
+  useEffect(() => {
+    setStoryStatements(formatStatements);
+  }, [formatStatements]);
+
   const updateStatements = useCallback(
     (statements: ApiScriptFormatStatement[]) => {
       args.onFormatStatementChange?.(statements);
       console.log(`Received ${JSON.stringify(statements)}`);
-      updateArgs({
-        formatStatements: statements,
-      });
+      setStoryStatements(statements);
       console.log("updated");
     },
-    [updateArgs],
+    [setStoryStatements],
   );
-  console.log("rending classic editor");
+
   return (
     <ClassicEditor
-      formatStatements={formatStatements}
+      formatStatements={storyStatements}
       edit={args.edit}
       onFormatStatementChange={updateStatements}
     />
