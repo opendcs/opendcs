@@ -6,7 +6,10 @@
       "format_statement": "Format Statement",
       "format_label": "Label",
       "format_input": "editable format statement area for row {{sequence}}, with label {{label}}.",
-      "label_input": "label area for row {{sequence}}."
+      "label_input": "label area for row {{sequence}}.",
+      "add_above": "Add new Statement row above row {{sequence}}, with label {{label}}",
+      "add_below": "Add new Statement row below row {{sequence}}, with label {{label}}",
+      "delete": "Delete Format Statement for row {{sequence}}, with label {{label}}"
     },
     "sensors": {
       "unit": "Unit for sensor {{name}}",

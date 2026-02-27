@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import { ApiScriptFormatStatement } from "opendcs-api";
+import { ApiConfigScript, ApiScriptFormatStatement } from "opendcs-api";
 import { useTranslation } from "react-i18next";
 import DataTable, {
   type DataTableProps,
@@ -7,13 +7,13 @@ import DataTable, {
 } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import "datatables.net-rowreorder";
-import { ArrowDownUp } from "react-bootstrap-icons";
+import { ArrowDownUp, CaretDown, CaretUp, Trash } from "react-bootstrap-icons";
 import { renderToString } from "react-dom/server";
 import hljs from "highlight.js";
 import decodes from "../../../../util/languages/decodes";
 import "highlight.js/styles/default.css";
 import { dtLangs } from "../../../../lang";
-import { Form } from "react-bootstrap";
+import { Button, Form } from "react-bootstrap";
 import { useContextWrapper } from "../../../../util/ContextWrapper";
 
 hljs.registerLanguage("decodes", decodes);
@@ -167,7 +167,7 @@ const ClassicFormatStatementEditor: React.FC<
   const renderDragArrows = useCallback(
     (data: unknown, type: string, _row: unknown, _meta: unknown) => {
       if (type === "display") {
-        return renderToString(<ArrowDownUp />);
+        return renderToString(<ArrowDownUp size={"1.5em"} />);
       } else {
         return data;
       }
@@ -183,7 +183,7 @@ const ClassicFormatStatementEditor: React.FC<
       },
       { data: "label", render: renderLabel },
       { data: "format", render: renderFormat },
-      { data: null },
+      { data: null, name: "actions" },
     ];
   }, []);
 
@@ -219,7 +219,7 @@ const ClassicFormatStatementEditor: React.FC<
       },
       language: dtLangs.get(i18n.language),
       search: false,
-      scrollY: "7em",
+      scrollY: "15em",
       scrollCollapse: true,
       searching: false,
       paging: false,
@@ -255,6 +255,7 @@ const ClassicFormatStatementEditor: React.FC<
     if (dt) {
       dt.clear();
       dt.rows.add(formatStatements);
+      dt.rows().invalidate();
       dt.draw();
     }
   }, [formatStatements]);
@@ -271,10 +272,93 @@ const ClassicFormatStatementEditor: React.FC<
     }
   }, []);
 
+  const renderActions = useCallback(
+    (statement: ApiScriptFormatStatement, _row: any) => {
+      if (edit) {
+        return toDom(
+          <>
+            <Button
+              onClick={(e) => {
+                e.preventDefault();
+                const existing = [...statementRef.current];
+                const currentSeq = statement.sequenceNum!;
+                const newArray: ApiScriptFormatStatement[] = [
+                  ...existing.slice(0, currentSeq),
+                  { sequenceNum: currentSeq + 1 },
+                  ...existing.slice(currentSeq).map((fs) => {
+                    return { ...fs, sequenceNum: fs.sequenceNum! + 1 };
+                  }),
+                ];
+                onFormatStatementChange?.(newArray);
+              }}
+              aria-label={t("decodes:script_editor.format_statements.add_below", {
+                sequence: statement.sequenceNum,
+                label: statement.label,
+              })}
+            >
+              <CaretDown size={"1.5em"} />
+            </Button>
+            <Button
+              onClick={(e) => {
+                e.preventDefault();
+                const existing = [...statementRef.current];
+                const currentSeq = statement.sequenceNum!;
+                const newArray: ApiScriptFormatStatement[] = [
+                  ...existing.slice(0, currentSeq - 1),
+                  { sequenceNum: currentSeq },
+                  ...existing.slice(currentSeq - 1).map((fs) => {
+                    return { ...fs, sequenceNum: fs.sequenceNum! + 1 };
+                  }),
+                ];
+                onFormatStatementChange?.(newArray);
+              }}
+              aria-label={t("decodes:script_editor.format_statements.add_above", {
+                sequence: statement.sequenceNum,
+                label: statement.label,
+              })}
+            >
+              <CaretUp size={"1.5em"} />
+            </Button>
+            <Button
+              onClick={(e) => {
+                e.preventDefault();
+                const existing = [...statementRef.current];
+                const currentSeq = statement.sequenceNum!;
+                const newArray: ApiScriptFormatStatement[] = [
+                  ...existing.slice(0, currentSeq - 1),
+                  ...existing.slice(currentSeq).map((fs) => {
+                    return { ...fs, sequenceNum: fs.sequenceNum! - 1 };
+                  }),
+                ];
+                onFormatStatementChange?.(newArray);
+              }}
+              aria-label={t("decodes:script_editor.format_statements.delete", {
+                sequence: statement.sequenceNum,
+                label: statement.label,
+              })}
+              variant="danger"
+            >
+              <Trash size={"1.5em"} />
+            </Button>
+            <span>Sequence {statement.sequenceNum}</span>
+          </>,
+        );
+      } else {
+        return "";
+      }
+    },
+    [edit, formatStatements],
+  );
+
+  const slots = {
+    actions: renderActions,
+  };
+
   return (
     <DataTable
       options={options}
       columns={columns}
+      slots={slots}
       ref={table}
       className="table table-hover table-striped table-sm tablerow-cursor w-100 border"
     >

@@ -207,5 +207,46 @@ export const CreateFromEmpty: Story = {
     });
     await userEvent.click(cancel);
     expect(mockSave).toHaveBeenCalled();
+
+    const addBelow = await canvas.findByRole("button", {
+      name: i18n.t("decodes:script_editor.format_statements.add_below", {
+        sequence: 1,
+        label: "Stage",
+      }),
+    });
+    await userEvent.click(addBelow);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const newBelowRowDelete = await canvas.findByRole("button", {
+      name: i18n.t("decodes:script_editor.format_statements.delete", {
+        sequence: 2,
+        label: "",
+      }),
+    });
+    await userEvent.click(newBelowRowDelete);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const addAbove = await canvas.findByRole("button", {
+      name: i18n.t("decodes:script_editor.format_statements.add_above", {
+        sequence: 1,
+        label: "Stage",
+      }),
+    });
+    await userEvent.click(addAbove);
+    const newAboveRowDelete = await canvas.findByRole("button", {
+      name: i18n.t("decodes:script_editor.format_statements.delete", {
+        sequence: 1,
+        label: "",
+      }),
+    });
+    await userEvent.click(newAboveRowDelete);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const stageLabelInputRow = await canvas.findByRole("textbox", {
+      name: i18n.t("decodes:script_editor.format_statements.label_input", {
+        sequence: 1,
+        label: "Stage",
+      }),
+    });
+    expect(stageLabelInputRow).toBeInTheDocument();
   },
 };
