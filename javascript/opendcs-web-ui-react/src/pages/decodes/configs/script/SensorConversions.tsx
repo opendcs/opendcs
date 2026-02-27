@@ -10,6 +10,7 @@ import UnitSelect from "../../../../components/controls/UnitSelector";
 import { useContextWrapper } from "../../../../util/ContextWrapper";
 import UnitConversionAlgorithmSelect from "../../../../components/controls/UnitConversionAlgorithmSelector";
 import { FormControl } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
 // this isn't a hook, it just has "use" as the name.
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -46,6 +47,7 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
   sensorChanged,
   edit = false,
 }) => {
+  const { t } = useTranslation(["decodes"]);
   const table = useRef<DataTableRef>(null);
   const inputRef = useRef<{ name: string; position: number }>(null);
   const { toDom } = useContextWrapper();
@@ -74,12 +76,16 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
             disabled={!edit}
             id={inputName}
             name={inputName}
+            aria-label={t("decodes:script_editor.sensors.coeff", {
+              coeff: coeffIdx,
+              name: configSensors[data.sensorNumber!].sensorName,
+            })}
             onChange={(evt) => {
               updateSensor({
                 ...data,
                 unitConverter: {
                   ...data.unitConverter,
-                  [coeffIdx]: evt.currentTarget.value,
+                  [coeffIdx]: Number.parseFloat(evt.currentTarget.value),
                 },
               });
               inputRef.current = { name: inputName, position: 0 };
@@ -119,6 +125,9 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
             <UnitSelect
               current={unitAbbr}
               disabled={!edit}
+              aria-label={t("decodes:script_editor.sensors.unit", {
+                name: configSensors[data.sensorNumber!].sensorName,
+              })}
               onChange={(evt) => {
                 inputRef.current = null;
                 updateSensor({
@@ -149,6 +158,9 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
             <UnitConversionAlgorithmSelect
               current={data.unitConverter?.algorithm}
               disabled={!edit}
+              aria-label={t("decodes:script_editor.sensors.algorithm", {
+                name: configSensors[data.sensorNumber!].sensorName,
+              })}
               onChange={(evt) => {
                 inputRef.current = null;
                 updateSensor({

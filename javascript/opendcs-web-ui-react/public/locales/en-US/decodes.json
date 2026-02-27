@@ -8,6 +8,11 @@
       "format_input": "editable format statement area for row {{sequence}}, with label {{label}}.",
       "label_input": "label area for row {{sequence}}."
     },
+    "sensors": {
+      "unit": "Unit for sensor {{name}}",
+      "algorithm": "Conversion algoritmn for sensor {{name}}",
+      "coeff": "Algorithm Coefficent {{coeff}} for sensor {{name}}"
+    },
     "sample": {
       "title": "Sample Data",
       "raw_data_input": "Sample Data text input"

@@ -1,19 +1,18 @@
 import type React from "react";
-import { FormSelect } from "react-bootstrap";
+import { FormSelect, type FormSelectProps } from "react-bootstrap";
 import {
   REFLIST_UNIT_CONVERSION_ALGORITHM,
   useRefList,
 } from "../../contexts/data/RefListContext";
 
-export interface UnitConversionAlgorithmSelectorProperties {
+export interface UnitConversionAlgorithmSelectorProperties extends FormSelectProps {
   current?: string;
   onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void;
-  disabled?: boolean;
 }
 
 const UnitConversionAlgorithmSelect: React.FC<
   UnitConversionAlgorithmSelectorProperties
-> = ({ current, onChange, disabled }) => {
+> = ({ current, onChange, disabled, ...props }) => {
   const { refList, ready } = useRefList();
 
   if (!ready) {
@@ -23,12 +22,12 @@ const UnitConversionAlgorithmSelect: React.FC<
 
   return (
     <FormSelect
+      {...props}
       defaultValue={current}
       onChange={(e) => {
         e.preventDefault();
         onChange?.(e);
       }}
-      disabled={disabled}
     >
       {algorithms.items &&
         Object.values(algorithms.items).map((item) => {

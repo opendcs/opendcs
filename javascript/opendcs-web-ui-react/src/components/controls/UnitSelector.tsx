@@ -1,8 +1,8 @@
 import type React from "react";
-import { FormSelect } from "react-bootstrap";
+import { FormSelect, type FormSelectProps } from "react-bootstrap";
 import { useUnits } from "../../contexts/data/UnitsContext";
 
-export interface UnitSelectorProperties {
+export interface UnitSelectorProperties extends FormSelectProps {
   current?: string;
   onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void;
   disabled?: boolean;
@@ -12,11 +12,12 @@ const UnitSelect: React.FC<UnitSelectorProperties> = ({
   current,
   onChange,
   disabled,
+  ...props
 }) => {
   const units = useUnits();
-  console.log(`Will set default value to ${current}`);
   return units.ready ? (
     <FormSelect
+      {...props}
       defaultValue={current}
       onChange={(e) => {
         e.preventDefault();

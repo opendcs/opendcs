@@ -29,6 +29,7 @@ const DecodesScriptHeader: React.FC<DecodesScriptHeaderProperties> = ({
               type="text"
               name="scriptName"
               id="scriptName"
+              aria-label="script name input"
               defaultValue={decodesScript.name}
               onChange={(e) => {
                 onNameChange?.(e.currentTarget.value);

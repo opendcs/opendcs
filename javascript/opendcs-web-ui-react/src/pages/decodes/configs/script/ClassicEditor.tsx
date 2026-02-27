@@ -62,6 +62,15 @@ const ClassicFormatStatementEditor: React.FC<
         return toDom(
           <Form.Control
             type="input"
+            onBlur={() => {
+              inputRef.current = null;
+            }}
+            onFocus={() => {
+              inputRef.current = {
+                name: `input_format_${row.sequenceNum}`,
+                position: 0,
+              };
+            }}
             onChange={(e) => {
               const statements = statementRef.current.filter(
                 (s) => s.sequenceNum !== row.sequenceNum,
@@ -112,6 +121,15 @@ const ClassicFormatStatementEditor: React.FC<
         return toDom(
           <Form.Control
             type="input"
+            onBlur={() => {
+              inputRef.current = null;
+            }}
+            onFocus={() => {
+              inputRef.current = {
+                name: `input_label_${row.sequenceNum}`,
+                position: 0,
+              };
+            }}
             onChange={(e) => {
               const statements = statementRef.current.map((s) => {
                 if (s.sequenceNum === row.sequenceNum) {
