@@ -8,6 +8,8 @@ import { ApiScriptFormatStatement } from "opendcs-api";
 //import "storybook/test";
 import { useArgs } from "storybook/internal/preview-api";
 import React, { useCallback, useEffect, useState } from "react";
+import { expect, userEvent } from "storybook/test";
+import { act } from "@testing-library/react";
 
 const meta = {
   component: ClassicEditor,
@@ -97,5 +99,58 @@ export const WithScriptEdit: Story = {
   render: StoryRender,
   play: async ({ mount }) => {
     const _canvas = await mount();
+  },
+};
+
+export const WithScriptInsertRows: Story = {
+  args: {
+    formatStatements: [{ sequenceNum: 1, label: "Stage", format: "not used" }],
+    edit: true,
+  },
+  render: StoryRender,
+  play: async ({ mount, parameters, canvasElement }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+    const addBelow = await canvas.findByRole("button", {
+      name: i18n.t("decodes:script_editor.format_statements.add_below", {
+        sequence: 1,
+        label: "Stage",
+      }),
+    });
+    await act(async () => userEvent.click(addBelow));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    console.log(canvasElement);
+    const newBelowRowDelete = await canvas.findByRole("button", {
+      name: i18n.t("decodes:script_editor.format_statements.delete", {
+        sequence: 2,
+        label: "",
+      }),
+    });
+    await userEvent.click(newBelowRowDelete);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const addAbove = await canvas.findByRole("button", {
+      name: i18n.t("decodes:script_editor.format_statements.add_above", {
+        sequence: 1,
+        label: "Stage",
+      }),
+    });
+    await userEvent.click(addAbove);
+    const newAboveRowDelete = await canvas.findByRole("button", {
+      name: i18n.t("decodes:script_editor.format_statements.delete", {
+        sequence: 1,
+        label: "",
+      }),
+    });
+    await userEvent.click(newAboveRowDelete);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const stageLabelInputRow = await canvas.findByRole("textbox", {
+      name: i18n.t("decodes:script_editor.format_statements.label_input", {
+        sequence: 1,
+        label: "Stage",
+      }),
+    });
+    expect(stageLabelInputRow).toBeInTheDocument();
   },
 };

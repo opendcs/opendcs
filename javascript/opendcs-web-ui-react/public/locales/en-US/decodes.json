@@ -2,14 +2,13 @@
   "script_editor": {
     "format_statements": {
       "title": "Format Statments",
-      "no_statements": "No format statements. Click this row to add the first statement",
       "format_statement": "Format Statement",
       "format_label": "Label",
       "format_input": "editable format statement area for row {{sequence}}, with label {{label}}.",
       "label_input": "label area for row {{sequence}}.",
-      "add_above": "Add new Statement row above row {{sequence}}, with label {{label}}",
-      "add_below": "Add new Statement row below row {{sequence}}, with label {{label}}",
-      "delete": "Delete Format Statement for row {{sequence}}, with label {{label}}"
+      "add_above": "Add new Statement row above row {{sequence}}, with label {{label}}.",
+      "add_below": "Add new Statement row below row {{sequence}}, with label {{label}}.",
+      "delete": "Delete Format Statement for row {{sequence}}, with label {{label}}."
     },
     "sensors": {
       "unit": "Unit for sensor {{name}}",
