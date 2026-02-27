@@ -29,6 +29,7 @@ const DecodesSampleRetrieve: React.FC<DecodesSampleRetrieveProperties> = ({
       <Col lg={4}>
         <Button
           variant="primary"
+          aria-label={t("decodes:decode")}
           onClick={(e) => {
             e.preventDefault();
             if (textAreaRef.current && textAreaRef.current.value.trim() !== "") {

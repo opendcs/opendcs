@@ -208,7 +208,7 @@ export const DecodeData: Story = {
     await userEvent.type(sampleInput, toDecode.input);
 
     const decodeButton = await canvas.findByRole("button", {
-      name: i18n.t("decode:decode"),
+      name: i18n.t("decodes:decode"),
     });
     await userEvent.click(decodeButton);
 
