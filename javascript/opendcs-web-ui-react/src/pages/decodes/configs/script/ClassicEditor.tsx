@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import { ApiConfigScript, ApiScriptFormatStatement } from "opendcs-api";
+import { ApiScriptFormatStatement } from "opendcs-api";
 import { useTranslation } from "react-i18next";
 import DataTable, {
   type DataTableProps,
