@@ -2,6 +2,7 @@
   "script_editor": {
     "format_statements": {
       "title": "Format Statments",
+      "no_statements": "No format statements. Click this row to add the first statement",
       "format_statement": "Format Statement",
       "format_label": "Label",
       "format_input": "editable format statement area for row {{sequence}}, with label {{label}}.",

@@ -20,10 +20,6 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  args: { sensors: [], decodeData: fn() },
-};
-
 const script = {
   name: "Test Script 1",
   dataOrder: ApiConfigScriptDataOrderEnum.D,
@@ -48,6 +44,15 @@ const sensors = [
   { sensorNumber: 1, sensorName: "Stage" },
   { sensorNumber: 2, sensorName: "Volt-Battery" },
 ];
+
+export const Default: Story = {
+  args: {
+    sensors: sensors,
+    decodeData: fn(),
+    edit: true,
+    actions: { save: fn(), cancel: fn() },
+  },
+};
 
 export const WithScript: Story = {
   args: {

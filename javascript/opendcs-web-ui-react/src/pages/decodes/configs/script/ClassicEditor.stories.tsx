@@ -67,8 +67,10 @@ const StoryRender: ArgsStoryFn<
 
 export const Default: Story = {
   args: {
-    formatStatements: [],
+    formatStatements: [{ sequenceNum: 1 }],
+    edit: true,
   },
+  render: StoryRender,
 };
 
 const simpleScript: ApiScriptFormatStatement[] = [

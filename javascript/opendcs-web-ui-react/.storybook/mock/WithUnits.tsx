@@ -4,8 +4,7 @@
 
 import { Decorator } from "@storybook/react-vite";
 
-import { useCallback, useEffect, useMemo } from "react";
-import { useState } from "storybook/internal/preview-api";
+import { useMemo } from "react";
 import { ApiUnit, ApiUnitConverter } from "opendcs-api";
 import {
   defaultValue,
@@ -30,6 +29,12 @@ export const WithUnits: Decorator = (Story) => {
         abbr: "cms",
         family: "Metrics",
         measures: "flow",
+      },
+      6: {
+        name: "Raw undefined units",
+        abbr: "raw",
+        family: "univ",
+        measures: "undefined",
       },
     };
   }, []);

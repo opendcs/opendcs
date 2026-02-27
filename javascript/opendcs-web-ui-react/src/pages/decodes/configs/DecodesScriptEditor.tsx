@@ -1,6 +1,8 @@
 import type React from "react";
 import { Button, Card, Col, Row } from "react-bootstrap";
 import {
+  ApiConfigScriptDataOrderEnum,
+  ApiConfigScriptSensor,
   ApiConfigSensor,
   ApiDecodedMessage,
   ApiScriptFormatStatement,
@@ -31,7 +33,21 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
   actions,
 }) => {
   const { t } = useTranslation(["decodes"]);
-  const [localScript, dispatch] = useReducer(decodesScriptReducer, script || {});
+  const [localScript, dispatch] = useReducer(
+    decodesScriptReducer,
+    script || {
+      // setup some sane defaults
+      dataOrder: ApiConfigScriptDataOrderEnum.U,
+      headerType: "other",
+      formatStatements: [{ sequenceNum: 1 }],
+      scriptSensors: sensors.map((cs) => {
+        return {
+          sensorNumber: cs.sensorNumber,
+          unitConverter: { algorithm: "none", fromAbbr: "raw", toAbbr: "raw" },
+        } as ApiConfigScriptSensor;
+      }),
+    },
+  );
 
   const sensorMap: { [k: number]: ApiConfigSensor } = useMemo(
     () => Object.fromEntries(sensors.map((sensor) => [sensor.sensorNumber, sensor])),
@@ -48,6 +64,8 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
     [dispatch],
   );
   console.log(`Current script is ${JSON.stringify(localScript)}`);
+  console.log(`Current sensors are ${JSON.stringify(sensors)}`);
+  console.log(`Current sensor Map is ${JSON.stringify(sensorMap)}`);
   const showSaveCancel = edit && actions !== undefined;
   return (
     <Card>
@@ -73,7 +91,7 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
             </Card.Header>
             <Card.Body>
               <ClassicEditor
-                formatStatements={localScript.formatStatements || []}
+                formatStatements={localScript.formatStatements!} // The default local script always includes an initial first row
                 edit={edit}
                 onFormatStatementChange={statementChange}
               />

@@ -14,7 +14,7 @@ const UnitSelect: React.FC<UnitSelectorProperties> = ({
   disabled,
 }) => {
   const units = useUnits();
-
+  console.log(`Will set default value to ${current}`);
   return units.ready ? (
     <FormSelect
       defaultValue={current}
@@ -26,7 +26,7 @@ const UnitSelect: React.FC<UnitSelectorProperties> = ({
     >
       {Object.entries(units.units).map(([id, unit]) => {
         return (
-          <option key={id} value={unit.name}>
+          <option key={id} value={unit.abbr}>
             {unit.abbr}
           </option>
         );

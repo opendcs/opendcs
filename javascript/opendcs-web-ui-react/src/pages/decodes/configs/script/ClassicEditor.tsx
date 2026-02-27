@@ -58,7 +58,7 @@ const ClassicFormatStatementEditor: React.FC<
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       _meta: any,
     ) => {
-      if (type === "display") {
+      if (type === "display" && edit) {
         return toDom(
           <Form.Control
             type="input"
