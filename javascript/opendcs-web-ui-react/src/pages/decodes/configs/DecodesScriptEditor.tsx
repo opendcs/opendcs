@@ -7,7 +7,7 @@ import {
   ApiScriptFormatStatement,
   type ApiConfigScript,
 } from "opendcs-api";
-import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
+import { useCallback, useMemo, useReducer } from "react";
 import DecodesScriptHeader from "./DecodesScriptHeader";
 import ClassicEditor from "./script/ClassicEditor";
 import SensorConversion from "./script/SensorConversions";
@@ -48,7 +48,7 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
     },
     [dispatch],
   );
-
+  console.log(`Current script is ${JSON.stringify(localScript)}`);
   const showSaveCancel = edit && actions !== undefined;
   return (
     <Card>
@@ -74,7 +74,6 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
             </Card.Header>
             <Card.Body>
               <ClassicEditor
-                key="test"
                 formatStatements={localScript.formatStatements || []}
                 edit={edit}
                 onFormatStatementChange={statementChange}
@@ -109,14 +108,14 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
         <Col lg={{ span: 1 }}>
           {showSaveCancel && (
             <>
-              <Button
-                onClick={() => {
-                  actions.save?.(script as ApiConfigScript);
-                }}
-              >
+              <Button onClick={() => actions.cancel?.(script?.name!)}>
                 {t("translation:cancel")}
               </Button>
-              <Button onClick={() => actions.cancel?.(script?.name!)}>
+              <Button
+                onClick={() => {
+                  actions.save?.(localScript as ApiConfigScript);
+                }}
+              >
                 {t("translation:save")}
               </Button>
             </>

@@ -1,9 +1,11 @@
 import type React from "react";
-import DataTable, { type DataTableRef } from "datatables.net-react";
+import DataTable, {
+  type DataTableProps,
+  type DataTableRef,
+} from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import { ApiConfigSensor, type ApiConfigScriptSensor } from "opendcs-api";
-import { useCallback, useRef } from "react";
-import { useUnits } from "../../../../contexts/data/UnitsContext";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import UnitSelect from "../../../../components/controls/UnitSelector";
 import { useContextWrapper } from "../../../../util/ContextWrapper";
 import UnitConversionAlgorithmSelect from "../../../../components/controls/UnitConversionAlgorithmSelector";
@@ -45,6 +47,7 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
   edit = false,
 }) => {
   const table = useRef<DataTableRef>(null);
+  const inputRef = useRef<{ name: string; position: number }>(null);
   const { toDom } = useContextWrapper();
 
   const updateSensor = useCallback(
@@ -64,10 +67,13 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
       if (type === "display") {
         const coeffIdx = colToCoeff(meta.col) as keyof typeof data.unitConverter;
         const coeff = data.unitConverter?.[coeffIdx];
+        const inputName = `input_coeff_${data.sensorNumber}_${coeffIdx}`;
         return toDom(
           <FormControl
             value={coeff}
             disabled={!edit}
+            id={inputName}
+            name={inputName}
             onChange={(evt) => {
               updateSensor({
                 ...data,
@@ -76,6 +82,7 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
                   [coeffIdx]: evt.currentTarget.value,
                 },
               });
+              inputRef.current = { name: inputName, position: 0 };
             }}
           />,
         );
@@ -113,6 +120,7 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
               current={unitAbbr}
               disabled={!edit}
               onChange={(evt) => {
+                inputRef.current = null;
                 updateSensor({
                   ...data,
                   unitConverter: {
@@ -142,6 +150,7 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
               current={data.unitConverter?.algorithm}
               disabled={!edit}
               onChange={(evt) => {
+                inputRef.current = null;
                 updateSensor({
                   ...data,
                   unitConverter: {
@@ -168,22 +177,68 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
     { data: null, render: renderCoefficient },
   ];
 
+  useLayoutEffect(() => {
+    const dt = table.current?.dt();
+    console.log("updating data");
+    if (dt) {
+      dt.clear();
+      dt.rows.add(scriptSensors);
+      dt.draw();
+    }
+  }, [scriptSensors]);
+
+  useEffect(() => {
+    // for some reason we need this for the initial load
+    // it is likely datatables.net is just not the correct choice
+    // for these elements.
+    const dt = table.current?.dt();
+    if (dt) {
+      dt.clear();
+      dt.rows.add(scriptSensors);
+      dt.draw();
+    }
+  }, []);
+
+  const options: DataTableProps["options"] = useMemo(() => {
+    return {
+      search: false,
+      searching: false,
+      paging: false,
+      info: false,
+      ordering: {
+        handler: false,
+        indicators: false,
+      },
+      async drawCallback(_settings) {
+        const api = this.api();
+        console.log(api.table().node().id);
+        console.log(`setting focus to ${inputRef.current?.name}`);
+        if (inputRef.current) {
+          // don't even ask, this all clearly needs to happen a different way
+
+          await new Promise((resolve) => setTimeout(resolve, 30));
+          const input = api
+            .table()
+            .node()
+            .querySelector(
+              `input[name="${inputRef.current.name}"]`,
+            ) as HTMLInputElement;
+          if (input) {
+            input.focus();
+          } else {
+            console.log("element not found");
+          }
+        }
+      },
+    };
+  }, []);
+
   return (
     <DataTable
       ref={table}
-      data={scriptSensors}
       className="table table-hover table-striped tablerow-cursor w-100 border table-sm"
       columns={columns}
-      options={{
-        search: false,
-        searching: false,
-        paging: false,
-        info: false,
-        ordering: {
-          handler: false,
-          indicators: false,
-        },
-      }}
+      options={options}
     >
       <thead>
         <tr>

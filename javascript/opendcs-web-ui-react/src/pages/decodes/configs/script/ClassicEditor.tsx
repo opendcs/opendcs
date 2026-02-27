@@ -97,7 +97,7 @@ const ClassicFormatStatementEditor: React.FC<
               label: row.label,
               sequence: row.sequenceNum,
             })}
-            defaultValue={data}
+            value={data}
           />,
         );
       } else {
@@ -120,27 +120,25 @@ const ClassicFormatStatementEditor: React.FC<
           <Form.Control
             type="input"
             onChange={(e) => {
-              const statements = statementRef.current.filter(
-                (s) => s.sequenceNum !== row.sequenceNum,
-              );
-              const toChange = statementRef.current.find(
-                (s) => s.sequenceNum === row.sequenceNum,
-              )!;
-              const changed = {
-                ...toChange,
-                label: e.currentTarget.value,
-              };
-              console.log(`now using ${JSON.stringify(changed)}`);
+              const statements = statementRef.current.map((s) => {
+                if (s.sequenceNum === row.sequenceNum) {
+                  return {
+                    ...s,
+                    label: e.currentTarget.value,
+                  };
+                } else {
+                  return s;
+                }
+              });
               inputRef.current = {
                 name: `input_label_${row.sequenceNum}`,
                 position: 0,
               };
-              onFormatStatementChange?.(
-                [...statements, changed].toSorted(statementSorter),
-              );
+              console.log(`now using ${JSON.stringify(statements)}`);
+              onFormatStatementChange?.(statements);
             }}
             className="m-0 p-0"
-            defaultValue={data}
+            value={data}
             id={`input_label_${row.sequenceNum}`}
             name={`input_label_${row.sequenceNum}`}
             aria-label={t("decodes:script_editor.format_statements.label_input", {
@@ -220,9 +218,10 @@ const ClassicFormatStatementEditor: React.FC<
       order: { name: "sequenceNum", dir: "asc" },
       async drawCallback(_settings) {
         const api = this.api();
+        console.log(api.table().node().id);
         if (inputRef.current) {
           // don't even ask, this all clearly needs to happen a different way
-          await new Promise((resolve) => setTimeout(resolve, 20));
+          await new Promise((resolve) => setTimeout(resolve, 30));
           const input = api
             .table()
             .node()
@@ -239,14 +238,27 @@ const ClassicFormatStatementEditor: React.FC<
     };
   }, [i18n.language]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const dt = table.current?.dt();
+    console.log("updating data");
     if (dt) {
       dt.clear();
       dt.rows.add(formatStatements);
       dt.draw();
     }
   }, [formatStatements]);
+
+  useEffect(() => {
+    // for some reason we need this for the initial load
+    // it is likely datatables.net is just not the correct choice
+    // for these elements.
+    const dt = table.current?.dt();
+    if (dt) {
+      dt.clear();
+      dt.rows.add(formatStatements);
+      dt.draw();
+    }
+  }, []);
 
   return (
     <DataTable
