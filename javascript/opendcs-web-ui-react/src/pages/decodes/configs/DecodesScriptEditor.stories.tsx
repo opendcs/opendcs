@@ -10,7 +10,7 @@ import {
   ApiDecodedMessage,
 } from "opendcs-api";
 import { WithUnits } from "../../../../.storybook/mock/WithUnits";
-import { testDataSets } from "./Sample/Sample.stories";
+import { decodeData, testDataSets } from "./Sample/Sample.stories";
 import { ArgsStoryFn } from "storybook/internal/types";
 import { useCallback } from "react";
 // NOTE: so far this is the only test where the play function arg decomposition
@@ -71,7 +71,7 @@ export const WithScript: Story = {
 const WithDecodedMessage: ArgsStoryFn<ReactRenderer, DecodesScriptEditorProperties> = (
   args,
 ) => {
-  const decodeData = useCallback((raw: string): ApiDecodedMessage => {
+  const localDecodeData = useCallback((raw: string): ApiDecodedMessage => {
     args.decodeData(raw);
     return decodeData(raw);
   }, []);
@@ -95,7 +95,7 @@ const WithDecodedMessage: ArgsStoryFn<ReactRenderer, DecodesScriptEditorProperti
         sensors={args.sensors}
         script={args.script}
         edit={args.edit}
-        decodeData={decodeData}
+        decodeData={localDecodeData}
         actions={args.actions}
       />
     </>
