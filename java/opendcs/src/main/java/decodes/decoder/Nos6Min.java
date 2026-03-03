@@ -167,17 +167,23 @@ public class Nos6Min extends NosDecoder
                                 sigma = getInt(2, false);
                                 outlier = getInt(1, false);
 
+				// With the switch to MWWL sensors for air gap, we no longer
+                                // require the AQT1 and AQT2 values to be transmitted. Set to
+                                // dummy empty.
+                                log.info("Skipping read of dummy air gap AQT1 and AQT2 values");
+                                x = 999999;
+                                y = 999999;
                                 // For the second DCP Air Gap data, there are no AQT1 or AQT2.
-                                if (Qcount ==0)
-                                {
-                                   x = getInt(2, true); // AQT1
-                                   y = getInt(2, true); // AQT2
-                                }
-                                else
-                                {
-                                   x = 999999;
-                                   y = 999999;
-                                }
+                                // if (Qcount ==0)
+                                // {
+                                //    x = getInt(2, true); // AQT1
+                                //    y = getInt(2, true); // AQT2
+                                // }
+                                // else
+                                // {
+                                //   x = 999999;
+                                //   y = 999999;
+                                //}
 
                                 sensorNum = getSensorNumber(
                                         flag == '1' ? 'A' :
