@@ -100,9 +100,10 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
   );
 
   const columns = [
-    { data: "sensorNumber", defaultContent: "" },
+    { data: "sensorNumber", width: "2em", defaultContent: "" },
     {
       data: null, // sensorName
+      width: "10em",
       render: (data: ApiConfigScriptSensor, type: string, _row: unknown) => {
         if (type === "display") {
           return configSensors[data.sensorNumber!].sensorName;
@@ -113,6 +114,7 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
     },
     {
       data: null, // units
+      width: "7em",
       render: (
         data: ApiConfigScriptSensor,
         type: string,
@@ -147,6 +149,7 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
     },
     {
       data: null, // algorithm
+      width: "10em",
       render: (
         data: ApiConfigScriptSensor,
         type: string,
@@ -181,11 +184,11 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
     // a future improvement here could be for this to be one column
     // and use lazy loading to pull the correct method of rendering
     // the required columns as say none doesn't need any, linear needs 2, etc.
-    { data: null, render: renderCoefficient },
-    { data: null, render: renderCoefficient },
-    { data: null, render: renderCoefficient },
-    { data: null, render: renderCoefficient },
-    { data: null, render: renderCoefficient },
+    { data: null, render: renderCoefficient, width: "7em" },
+    { data: null, render: renderCoefficient, width: "7em" },
+    { data: null, render: renderCoefficient, width: "7em" },
+    { data: null, render: renderCoefficient, width: "7em" },
+    { data: null, render: renderCoefficient, width: "7em" },
     { data: null, render: renderCoefficient },
   ];
 
@@ -254,16 +257,16 @@ const SensorConversion: React.FC<SensorConversionProperties> = ({
     >
       <thead>
         <tr>
-          <td>#</td>
-          <td>Name</td>
-          <td>Units</td>
-          <td>Algorithm</td>
-          <td>A</td>
-          <td>B</td>
-          <td>C</td>
-          <td>D</td>
-          <td>E</td>
-          <td>F</td>
+          <th>#</th>
+          <th>Name</th>
+          <th>Units</th>
+          <th>Algorithm</th>
+          <th>A</th>
+          <th>B</th>
+          <th>C</th>
+          <th>D</th>
+          <th>E</th>
+          <th>F</th>
         </tr>
       </thead>
     </DataTable>

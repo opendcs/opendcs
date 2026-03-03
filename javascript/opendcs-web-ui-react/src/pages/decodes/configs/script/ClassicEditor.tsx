@@ -165,9 +165,17 @@ const ClassicFormatStatementEditor: React.FC<
   );
 
   const renderDragArrows = useCallback(
-    (data: unknown, type: string, _row: unknown, _meta: unknown) => {
+    (data: unknown, type: string, row: ApiScriptFormatStatement, _meta: unknown) => {
       if (type === "display") {
-        return renderToString(<ArrowDownUp size={"1.5em"} />);
+        return renderToString(
+          <ArrowDownUp
+            size={"1.5em"}
+            aria-label={t("decodes:script_editor.format_statements.drag_control", {
+              sequence: row.sequenceNum,
+              label: row.label,
+            })}
+          />,
+        );
       } else {
         return data;
       }
@@ -179,11 +187,12 @@ const ClassicFormatStatementEditor: React.FC<
     return [
       {
         data: null,
+        width: "2em",
         render: renderDragArrows,
       },
-      { data: "label", render: renderLabel },
+      { data: "label", width: "10em", render: renderLabel },
       { data: "format", render: renderFormat },
-      { data: null, name: "actions" },
+      { data: null, width: "15em", name: "actions" },
     ];
   }, []);
 
@@ -340,7 +349,6 @@ const ClassicFormatStatementEditor: React.FC<
             >
               <Trash size={"1.5em"} />
             </Button>
-            <span>Sequence {statement.sequenceNum}</span>
           </>,
         );
       } else {
@@ -364,7 +372,7 @@ const ClassicFormatStatementEditor: React.FC<
     >
       <thead>
         <tr>
-          <th></th>
+          <th aria-label={t("translation:drag_order")}></th>
           <th>{t("decodes:script_editor:format_statements.format_label")}</th>
           <th>{t("decodes:script_editor:format_statements.format_statement")}</th>
           <th>{t("translation:actions")}</th>
