@@ -539,7 +539,7 @@
       "consentRequired": false,
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
+      "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
       "publicClient": true,
       "frontchannelLogout": false,
@@ -662,7 +662,8 @@
       "alwaysDisplayInConsole": true,
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
-        "http://localhost:*"
+        "http://localhost:*",
+        "http://localhost*"
       ],
       "webOrigins": [
         "*"
