@@ -26,6 +26,7 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.extensions.auth.KeyCloakExtension;
+import org.opendcs.fixtures.helpers.Constants;
 import org.opendcs.odcsapi.res.it.BaseApiIT;
 
 import static io.restassured.RestAssured.given;
@@ -36,15 +37,7 @@ import static org.mockito.ArgumentMatchers.isNotNull;
 
 final class OpenIdTestIT extends BaseApiIT
 {
-	private SessionFilter sessionFilter;
-
-	@BeforeEach
-	void setupMock() throws Exception
-	{
-		sessionFilter = new SessionFilter();
 		
-	}
-	
 
 	/**
 	 * Auth Code is to get sent to Auth Provider, and return through redirect URI to a "callback function"
@@ -66,9 +59,9 @@ final class OpenIdTestIT extends BaseApiIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(Response.Status.UNAUTHORIZED.getStatusCode()))
-			.cookie("JSESSIONID")
+			.cookie(Constants.JSESSIONID)
 			.extract()
-			.detailedCookie("JSESSIONID")
+			.detailedCookie(Constants.JSESSIONID)
 		;
 
 		final String redirectUri = RestAssured.baseURI + ":" + RestAssured.port + "/" + RestAssured.basePath + "/oidc-callback";
@@ -120,9 +113,9 @@ final class OpenIdTestIT extends BaseApiIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.assertThat()
 			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
-			.cookie("JSESSIONID")
+			.cookie(Constants.JSESSIONID)
 			.extract()
-			.detailedCookie("JSESSIONID")
+			.detailedCookie(Constants.JSESSIONID)
 		;
 
 		assertNotEquals(initialSession.getValue(), loginSession.getValue(), "Session Cookie was not changed after successful login.");
@@ -146,7 +139,7 @@ final class OpenIdTestIT extends BaseApiIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.cookie(loginSession)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -161,7 +154,7 @@ final class OpenIdTestIT extends BaseApiIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
+			.cookie(loginSession)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
