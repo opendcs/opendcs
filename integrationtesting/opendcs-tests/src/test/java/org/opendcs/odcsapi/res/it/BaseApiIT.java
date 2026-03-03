@@ -46,6 +46,7 @@ import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.TimeSeriesDAI;
 import org.apache.catalina.session.StandardSession;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.opendcs.odcsapi.res.ObjectMapperContextResolver;
 import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
 import org.opendcs.odcsapi.sec.OpenDcsPrincipal;
@@ -57,6 +58,7 @@ import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.TomcatServer;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.EnableIfApiSupported;
+import org.opendcs.fixtures.extensions.auth.KeyCloakExtension;
 
 import static io.restassured.RestAssured.given;
 import static java.util.stream.Collectors.joining;
@@ -64,6 +66,7 @@ import static org.hamcrest.Matchers.is;
 import static org.opendcs.odcsapi.util.ApiConstants.ORGANIZATION_HEADER;
 
 @EnableIfApiSupported
+@ExtendWith(KeyCloakExtension.class)
 @Tag("rest_api")
 public class BaseApiIT extends AppTestBase
 {
