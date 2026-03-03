@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
@@ -54,8 +55,9 @@ public final class KeyCloakExtension implements BeforeAllCallback {
                                                     })
                                                     ;
                                                     
-    private static String authUrl;
+    private static String keyHostPort;
     private static String issuer;
+    private static String authUrl;
     private static String codeUrl;
     private static String tokenUrl;
     
@@ -75,13 +77,13 @@ public final class KeyCloakExtension implements BeforeAllCallback {
                                         .withStartupTimeout(Duration.ofMinutes(5))
         );
         kcc.start();
-        authUrl = "http://"+kcc.getHost()+":"+kcc.getMappedPort(8080);
+        keyHostPort = "http://"+kcc.getHost()+":"+kcc.getMappedPort(8080);
         
         // verify we can get the wellknown config
         var response = 
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .baseUri(authUrl)
+                .baseUri(keyHostPort)
                 .basePath("/")
             .when()
                 .get(WELL_KNOWN);
@@ -94,7 +96,6 @@ public final class KeyCloakExtension implements BeforeAllCallback {
         issuer = oidcConfig.get("issuer").asText();
         codeUrl = oidcConfig.get("authorization_endpoint").asText();
         tokenUrl = oidcConfig.get("token_endpoint").asText();
-        log.atTrace().log(() -> response.asPrettyString());
     }
 
     @Override
@@ -106,14 +107,14 @@ public final class KeyCloakExtension implements BeforeAllCallback {
         }
     }
 
-    public static String getAuthUrl()
+    public static String getKeyHostPort()
     {
-        return authUrl;
+        return keyHostPort;
     }
 
     public static String getOidcWellKnown()
     {
-        return authUrl+"/"+WELL_KNOWN;
+        return keyHostPort+"/"+WELL_KNOWN;
     }
 
     public static String getIssuer()
@@ -153,13 +154,13 @@ public final class KeyCloakExtension implements BeforeAllCallback {
                     .formParam("password",password)
                     .formParam("response_type","token")
                 .when()
-                    .post(new URL(getTokenUrl()));
+                    .post(URI.create(getTokenUrl()));
       
             log.atTrace().log(() -> response.asPrettyString());
             JsonNode tokenInfo = mapper.readTree(response.asString());
             return Optional.of(tokenInfo.get("access_token").asText());
         }
-        catch (JsonProcessingException | MalformedURLException ex)
+        catch (JsonProcessingException ex)
         {
             log.atWarn().setCause(ex).log("Unable to retrieve token for user {}", username);
             return Optional.empty();
