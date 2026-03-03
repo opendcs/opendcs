@@ -16,12 +16,17 @@
 package org.opendcs.odcsapi.sec.openid;
 
 import java.net.URI;
+import java.time.ZonedDateTime;
+import java.util.Date;
+import java.util.UUID;
+
 import jakarta.ws.rs.core.MediaType;
 
 import io.restassured.RestAssured;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.session.SessionFilter;
 import io.restassured.http.ContentType;
+import io.restassured.http.Cookie;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,7 +70,11 @@ final class OpenIdTestIT extends BaseApiIT
 		;
 
 		final String redirectUri = RestAssured.baseURI + ":" + RestAssured.port + "/" + RestAssured.basePath + "/oidc-callback";
-
+		
+		final Cookie stateCookie = new Cookie.Builder("state", "provider-a__" + UUID.randomUUID().toString())
+											.setHttpOnly(true)
+											.setSameSite("Strict")
+											.build();
 		var loginSessionPage = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.contentType(ContentType.URLENC)
@@ -73,6 +82,7 @@ final class OpenIdTestIT extends BaseApiIT
 				.formParam("scope","openid profile email")
 				.formParam("response_type","code")
 				.formParam("redirect_uri", redirectUri)
+				.formParam("state", stateCookie.getValue())
 			.cookie(initialSession)
 		.when()		
 			.redirects().follow(true)
@@ -86,6 +96,8 @@ final class OpenIdTestIT extends BaseApiIT
 		// yank the action URL out of the page 
 		var authUrl = loginSessionPage.body().htmlPath().getString("**.find { it.@id == 'kc-form-login'}.@action");
 
+		
+
 		// manually do the login POST. This *should* redirect us to our oidc-callback
 		var callbackUrl = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
@@ -93,6 +105,7 @@ final class OpenIdTestIT extends BaseApiIT
 			.formParam("username", "test_user")
 			.formParam("password", "test_password")
 			.cookie(initialSession)
+			.cookie(stateCookie)
 			.cookies(loginSessionPage.detailedCookies())
 		.when()
 			.redirects().follow(false)
@@ -107,6 +120,7 @@ final class OpenIdTestIT extends BaseApiIT
 		var loginSession = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.cookie(initialSession)
+			.cookie(stateCookie)
 		.when()
 			.get(callbackUrl)
 		.then()
