@@ -1,6 +1,8 @@
 package org.opendcs.authentication.identityprovider.impl.oidc;
 
 import java.time.ZonedDateTime;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -14,12 +16,17 @@ import org.opendcs.database.model.User;
 import org.opendcs.spi.authentication.IdentityProviderProvider;
 
 import com.google.auto.service.AutoService;
+import com.nimbusds.jose.jwk.JWKSet;
 
 import decodes.sql.DbKey;
 
 public final class OidcIdentityProvider implements IdentityProvider
 {
     public static final String TYPE = "OpenIdConnect";
+
+    public static final Map<String, JWKSet> jwkKeyCache = Collections.synchronizedMap(new HashMap<>());
+
+
     private final DbKey id;
     private final String name;
     private final ZonedDateTime updatedAt;
@@ -28,6 +35,7 @@ public final class OidcIdentityProvider implements IdentityProvider
 
     private final String issuer;
     private final String clientSecret;
+    private final String tokenUrl;
 
 
     public OidcIdentityProvider(DbKey id, String name, ZonedDateTime updateAt, Map<String, Object> configMap)
@@ -38,6 +46,7 @@ public final class OidcIdentityProvider implements IdentityProvider
         this.config = configMap;
         this.issuer = (String)configMap.get("issuer");
         this.clientSecret = (String)configMap.get("clientSecret"); 
+        this.tokenUrl = null;
     }
 
 
