@@ -55,7 +55,7 @@ public final class OidcCallback extends OpenDcsResource
 
         try (var tx = db.newTransaction())
         {
-            var provider = db.getDao(UserManagementDao.class).orElseThrow().getIdentityProvider(tx, state.split("__")[0])
+            var provider = db.getDao(UserManagementDao.class).orElseThrow().getIdentityProvider(tx, state.split("__")[0]);
             if (provider.isEmpty()) 
             {
                 return Response.notAcceptable(null).build();
