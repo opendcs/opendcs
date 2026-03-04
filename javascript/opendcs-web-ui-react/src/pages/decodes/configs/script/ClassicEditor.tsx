@@ -190,8 +190,8 @@ const ClassicFormatStatementEditor: React.FC<
         width: "2em",
         render: renderDragArrows,
       },
-      { data: "label", width: "10em", render: renderLabel },
-      { data: "format", render: renderFormat },
+      { data: "label", width: "10em", render: renderLabel, defaultContent: "" },
+      { data: "format", render: renderFormat, defaultContent: "" },
       { data: null, width: "15em", name: "actions" },
     ];
   }, []);
