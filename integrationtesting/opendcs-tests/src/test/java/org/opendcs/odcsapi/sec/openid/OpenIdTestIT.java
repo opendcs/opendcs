@@ -146,7 +146,7 @@ final class OpenIdTestIT extends BaseApiIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(Response.ok()))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 		;
 
 		//Logout and clear session

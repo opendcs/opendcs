@@ -106,6 +106,10 @@ dependencies {
     implementation(libs.org.netbeans.lookup)
     implementation(libs.hec.lookup.compat)
 
+    implementation(libs.nimbus)
+    implementation(libs.jwt)
+
+
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)
     testRuntimeOnly (libs.bundles.junit.platform)
