@@ -1,0 +1,144 @@
+import type React from "react";
+import { Button, Card, Col, Row } from "react-bootstrap";
+import {
+  ApiConfigScriptDataOrderEnum,
+  ApiConfigScriptSensor,
+  ApiConfigSensor,
+  ApiDecodedMessage,
+  ApiScriptFormatStatement,
+  type ApiConfigScript,
+} from "opendcs-api";
+import { useCallback, useMemo, useReducer } from "react";
+import DecodesScriptHeader from "./DecodesScriptHeader";
+import ClassicEditor from "./script/ClassicEditor";
+import SensorConversion from "./script/SensorConversions";
+import { useTranslation } from "react-i18next";
+import DecodesSample from "./Sample/Sample";
+import type { CancelAction, SaveAction } from "../../../util/Actions";
+import decodesScriptReducer from "../../../data/reducers/DecodesScriptReducer";
+
+export interface DecodesScriptEditorProperties {
+  script?: Partial<ApiConfigScript>;
+  sensors: ApiConfigSensor[];
+  decodeData: (raw: string) => ApiDecodedMessage;
+  edit?: boolean;
+  actions?: SaveAction<ApiConfigScript> & CancelAction<string>;
+}
+
+export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
+  script,
+  sensors,
+  decodeData,
+  edit = false,
+  actions,
+}) => {
+  const { t } = useTranslation(["decodes"]);
+  const [localScript, dispatch] = useReducer(
+    decodesScriptReducer,
+    script || {
+      // setup some sane defaults
+      dataOrder: ApiConfigScriptDataOrderEnum.U,
+      headerType: "other",
+      formatStatements: [{ sequenceNum: 1 }],
+      scriptSensors: sensors.map((cs) => {
+        return {
+          sensorNumber: cs.sensorNumber,
+          unitConverter: { algorithm: "none", fromAbbr: "raw", toAbbr: "raw" },
+        } as ApiConfigScriptSensor;
+      }),
+    },
+  );
+
+  const sensorMap: { [k: number]: ApiConfigSensor } = useMemo(
+    () => Object.fromEntries(sensors.map((sensor) => [sensor.sensorNumber, sensor])),
+    [sensors],
+  );
+
+  const statementChange = useCallback(
+    (statements: ApiScriptFormatStatement[]) => {
+      dispatch({
+        type: "set_statements",
+        payload: { statements: statements },
+      });
+    },
+    [dispatch],
+  );
+  console.log(`Current script is ${JSON.stringify(localScript)}`);
+  console.log(`Current sensors are ${JSON.stringify(sensors)}`);
+  console.log(`Current sensor Map is ${JSON.stringify(sensorMap)}`);
+  const showSaveCancel = edit && actions !== undefined;
+  return (
+    <Card>
+      <Card.Body>
+        <Row>
+          <DecodesScriptHeader
+            decodesScript={localScript}
+            onOrderChange={(order) =>
+              dispatch({ type: "set_data_order", payload: { order: order } })
+            }
+            onHeaderChange={(header) =>
+              dispatch({ type: "set_header", payload: { header: header } })
+            }
+            onNameChange={(name) =>
+              dispatch({ type: "set_name", payload: { name: name } })
+            }
+          />
+        </Row>
+        <Row>
+          <Card>
+            <Card.Header>
+              {t("decodes:script_editor.format_statements.title")}
+            </Card.Header>
+            <Card.Body>
+              <ClassicEditor
+                formatStatements={localScript.formatStatements!} // The default local script always includes an initial first row
+                edit={edit}
+                onFormatStatementChange={statementChange}
+              />
+              Sensors {/** yes this needs much better styling. */}
+              <SensorConversion
+                configSensors={sensorMap}
+                scriptSensors={localScript.scriptSensors || []}
+                edit={edit}
+                sensorChanged={(sensor) =>
+                  dispatch({ type: "set_sensor", payload: { sensor: sensor } })
+                }
+              />
+            </Card.Body>
+          </Card>
+        </Row>
+        <Row>
+          <Card>
+            <Card.Header>{t("decodes:script_editor.sample.title")}</Card.Header>
+            <Card.Body>
+              <DecodesSample
+                decodeData={(raw: string) => {
+                  return decodeData(raw);
+                }}
+              />
+            </Card.Body>
+          </Card>
+        </Row>
+      </Card.Body>
+      <Row>
+        <Col />
+        <Col lg={{ span: 1 }}>
+          {showSaveCancel && (
+            <>
+              <Button onClick={() => actions.cancel?.(script?.name!)}>
+                {t("translation:cancel")}
+              </Button>
+              <Button
+                onClick={() => {
+                  actions.save?.(localScript as ApiConfigScript);
+                }}
+              >
+                {t("translation:save")}
+              </Button>
+            </>
+          )}
+        </Col>
+      </Row>
+    </Card>
+  );
+};
