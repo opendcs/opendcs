@@ -33,6 +33,22 @@ public class UserBuilder
     ZonedDateTime updatedAt = null;
     HashMap<String, Object> preferences = new HashMap<>();
 
+
+    public UserBuilder()
+    {
+        /* everything fresh */
+    }
+
+    public UserBuilder(User original)
+    {
+        this.id = original.id;
+        this.email = original.email;
+        this.idpMap.addAll(original.identityProviders);
+        this.roles.addAll(original.roles);
+        this.preferences.putAll(original.preferences);
+        // we don't edit created at and updated at is automatic
+    }
+
     public User build()
     {
         return new User(this);
