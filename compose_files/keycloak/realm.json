@@ -2264,6 +2264,7 @@
   },
   "users": [
     {
+      "id": "45ee99c4-3dc8-444d-81d8-2c669a148bff",
       "username": "test_user",
       "email": "test_user@localhost.localdomain",
       "emailVerified": true,
@@ -2279,6 +2280,7 @@
       ]
     },
     {
+      "id": "45ee99c4-3dc8-444d-81d8-2c669a148bee",
       "username": "test_admin",
       "email": "test_admin@localhost.localdomain",
       "emailVerified": true,
@@ -2294,6 +2296,7 @@
       ]
     },
     {
+      "id": "45ee99c4-3dc8-444d-81d8-2c669a148b00",
       "username": "no_yet_registered",
       "enabled": true,
       "email": "no_yet_registered@localhost.localdomain",
