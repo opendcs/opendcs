@@ -222,7 +222,7 @@ final class OpenIdTestIT extends BaseApiIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.assertThat()
-			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.cookie(Constants.JSESSIONID)
 			.extract()
 			.detailedCookie(Constants.JSESSIONID)

@@ -110,7 +110,10 @@ public class UserBuilder
 
     public UserBuilder withIdentityMapping(IdentityProviderMapping mapping)
     {
-        this.idpMap.add(mapping);
+        if (idpMap.stream().filter(idmp -> idmp.provider.getId().equals(mapping.provider.getId())).count() == 0)
+        {
+            this.idpMap.add(mapping);
+        }
         return this;
     }
 }
