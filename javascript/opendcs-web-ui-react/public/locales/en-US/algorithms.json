@@ -1,3 +1,10 @@
 {
-  "algorithmsTitle": "Algorithms"
+  "algorithmsTitle": "Algorithms",
+  "header": {
+    "Id": "Id",
+    "Name": "Name",
+    "ExecClass": "Exec Class",
+    "NumCompsUsing": "# Comps Using",
+    "Description": "Description"
+  }
 }
