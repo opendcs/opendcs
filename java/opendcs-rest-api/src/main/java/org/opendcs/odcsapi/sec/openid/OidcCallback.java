@@ -92,6 +92,9 @@ public final class OidcCallback extends OpenDcsResource
                 catch (OpenDcsAuthException ex)
                 {
                     log.atError().setCause(ex).log("Bad login attempt");
+                    return Response.status(Response.Status.UNAUTHORIZED).entity("""
+                        {"message": "provided credentials are invalid."}
+                    """).build();
                 }
             };
         }
