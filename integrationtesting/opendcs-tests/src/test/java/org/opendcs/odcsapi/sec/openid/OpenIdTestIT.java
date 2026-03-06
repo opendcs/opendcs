@@ -71,17 +71,8 @@ final class OpenIdTestIT extends BaseApiIT
 				config.put("redirectUri", redirectUri);
 				var idpIn = new OidcIdentityProvider(null, "test-oidc", null, config);
 				var idpOut = umDao.addIdentityProvider(tx, idpIn);
-				log.info("New OIDC IDP -> {} {}", idpOut.getId(), idpOut.getName());
 				var user = umDao.getUsers(tx, -1, -1).stream().filter(u -> "test_user".equals(u.email)).findFirst().orElseThrow();
-				for (var idmp: user.identityProviders)
-				{
-					log.info("Identity Mapping {} {}", idmp.provider.getName(), idmp.subject);
-				}
 				var userBuilder = new UserBuilder(user).withIdentityMapping(new IdentityProviderMapping(idpOut, "45ee99c4-3dc8-444d-81d8-2c669a148bff"));
-				for (var idmp: userBuilder.build().identityProviders)
-				{
-					log.info("Identity Mapping {} {}", idmp.provider.getName(), idmp.subject);
-				}
 				umDao.updateUser(tx, user.id, userBuilder.build());
 			}
 		}

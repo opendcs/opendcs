@@ -104,7 +104,8 @@ public class UserBuilder
 
     public UserBuilder withIdentityMappings(List<IdentityProviderMapping> mappings)
     {
-        this.idpMap.addAll(mappings);
+        // to avoid duplicates use the single mapping method to update the list.
+        mappings.forEach(this::withIdentityMapping);
         return this;
     }
 
