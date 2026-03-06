@@ -16,6 +16,23 @@ export default function Login() {
 
   const auth = new RESTAuthenticationAndAuthorizationApi(api.conf);
 
+  auth.getOrganizationsWithHttpInfo("").then((orgs) => {
+    let orgList = "";
+    orgs.body.text().then((text) => {
+      let orgBody = JSON.parse(text);
+      for (const org of orgBody) {
+        let obj = document.getElementById("organization");
+        if (obj) {
+          orgList = orgList.concat(`<option value="${org.name}">${org.name}</option>`);
+        }
+      }
+      let obj = document.getElementById("organization");
+      if (obj) {
+        obj.innerHTML = orgList;
+      }
+    });
+  });
+
   function handleLogin(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
     event.stopPropagation();
@@ -31,7 +48,7 @@ export default function Login() {
     };
 
     auth
-      .postCredentials("", credentials)
+      .postCredentials(dataObject.organization.toString(), credentials)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .then((user_value: any) => {
         setUser(user_value);
@@ -74,6 +91,10 @@ export default function Login() {
                   name="password"
                   placeholder={t("password")}
                 />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>{t("organization")}</Form.Label>
+                <Form.Select id="organization" name="organization" required />
               </Form.Group>
               <div className="d-grid fade-in third">
                 <Button variant="primary" type="submit" className="py-2">
