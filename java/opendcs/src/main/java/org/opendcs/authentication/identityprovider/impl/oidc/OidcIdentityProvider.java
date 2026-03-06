@@ -1,6 +1,7 @@
 package org.opendcs.authentication.identityprovider.impl.oidc;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -23,6 +24,7 @@ import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.User;
 import org.opendcs.spi.authentication.IdentityProviderProvider;
+import org.opendcs.utils.WebUtility;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -117,6 +119,10 @@ public final class OidcIdentityProvider implements IdentityProvider
         {
             return loginAuthCode(db, tx, acc);
         }
+        else if (credentials instanceof JwtCredentials jc)
+        {
+            return loginJwt(db, tx, jc);
+        }
         else
         {
             return Optional.empty();
@@ -134,7 +140,7 @@ public final class OidcIdentityProvider implements IdentityProvider
           .append("client_secret=").append(URLEncoder.encode(clientSecret, StandardCharsets.UTF_8)).append("&")
           .append("code=").append(URLEncoder.encode(credentials.code(), StandardCharsets.UTF_8)).append("&")
           .append("redirect_uri=").append(URLEncoder.encode(redirectUri, StandardCharsets.UTF_8))
-          ;
+        ;
 
         var request = HttpRequest.newBuilder(oidcConfig.tokenUri)
                                 .header("Content-Type", "application/x-www-form-urlencoded")
@@ -142,30 +148,16 @@ public final class OidcIdentityProvider implements IdentityProvider
                                 .build();
         
         
-        try (var client = HttpClient.newHttpClient()) // TODO: figure out the hole ssl context thing
+        try (var client = HttpClient.newBuilder()
+                                    .sslContext(WebUtility.sslContext(WebUtility.TRUST_EXISTING_CERTIFICATES))
+                                    .build())
         {
             var response = client.send(request, BodyHandlers.ofString());
             var json = jsonMapper.readTree(response.body());
             var idToken = json.get("id_token").asText();
-            var jwtProcessor = new DefaultJWTProcessor<>();
-            var keySource =JWKSourceBuilder.create(oidcConfig.jwksUri.toURL()).retrying(true).build();
-            var selector = new JWSVerificationKeySelector<>(JWSAlgorithm.RS256, keySource);
-            jwtProcessor.setJWSKeySelector(selector);
-            jwtProcessor.setJWTClaimsSetVerifier(
-                new DefaultJWTClaimsVerifier<>(
-                    new JWTClaimsSet.Builder().issuer(oidcConfig.issuer).build(),
-                    new HashSet<>(Arrays.asList(
-                        JWTClaimNames.SUBJECT,
-                        JWTClaimNames.ISSUED_AT,
-                        JWTClaimNames.EXPIRATION_TIME
-                    ))));
-            var claims = jwtProcessor.process(idToken, null);
-            var subject = claims.getSubject();
-
-            var umDao = db.getDao(UserManagementDao.class).orElseThrow();
-            return umDao.getUsers(tx, -1, -1).stream().filter(u -> u.identityProviders.stream().filter(idpm -> idpm.subject.equals(subject)).count() == 1).findFirst();
+            return getUserFromToken(db, tx, idToken);
         }
-        catch (IOException | InterruptedException | ParseException | BadJOSEException | JOSEException | OpenDcsDataException ex)
+        catch (IOException | InterruptedException ex)
         {
             if (ex instanceof InterruptedException)
             {
@@ -173,6 +165,37 @@ public final class OidcIdentityProvider implements IdentityProvider
             }
             throw new OpenDcsAuthException("Unable to validate authentication data.", ex);
         }
+    }
+
+    private Optional<User> getUserFromToken(OpenDcsDatabase db, DataTransaction tx, String token) throws OpenDcsAuthException
+    {
+        try
+        {
+            var claims = verifyTokenAndGetClaims(oidcConfig, token);
+            var subject = claims.getSubject();
+            var umDao = db.getDao(UserManagementDao.class).orElseThrow();
+            return umDao.getUsers(tx, -1, -1).stream().filter(u -> u.identityProviders.stream().filter(idpm -> idpm.subject.equals(subject)).count() == 1).findFirst();
+        }
+        catch (IOException | ParseException | BadJOSEException | JOSEException | OpenDcsDataException ex)
+        {
+            if (ex instanceof InterruptedException)
+            {
+                Thread.currentThread().interrupt();
+            }
+            throw new OpenDcsAuthException("Unable to validate authentication data.", ex);
+        }
+    }
+
+    private Optional<User> loginJwt(OpenDcsDatabase db, DataTransaction tx, JwtCredentials credentials)
+            throws OpenDcsAuthException
+    {
+        return getUserFromToken(db, tx, credentials.accessToken());
+    }
+
+    private JWTClaimsSet verifyTokenAndGetClaims(OpenIdConfiguration config, String token) throws MalformedURLException, BadJOSEException, ParseException, JOSEException
+    {
+        var keySource =JWKSourceBuilder.create(config.jwksUri.toURL()).retrying(true).build();
+        return JwtVerifier.getInstance().getClaimsSet(keySource, token, oidcConfig.issuer);
     }
 
     @Override

@@ -26,6 +26,7 @@ import java.util.Scanner;
 import java.util.function.Predicate;
 
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -153,5 +154,26 @@ public class WebUtility
                                             certTest)
                                           .build();
         return sslFactory.getSslContext().getSocketFactory();
+    }
+
+    /**
+     * Get a SSLContext using the Java, System, and $DCSTOOL_USERDIR/local_trust.p12 sources.
+     *
+     * @param certTest a user supplied callback used to determine if a certificate chain that isn't already trusted
+     *                 should be.
+     * @return
+     */
+    public static SSLContext sslContext(Predicate<TrustManagerParameters> certTest)
+    {
+        SSLFactory sslFactory = SSLFactory.builder()
+                                          .withDefaultTrustMaterial()
+                                          .withSystemTrustMaterial()
+                                          .withInflatableTrustMaterial(
+                                            Paths.get(EnvExpander.expand("$DCSTOOL_USERDIR/local_trust.p12")),
+                                            "local_trust".toCharArray(),
+                                            "PKCS12",
+                                            certTest)
+                                          .build();
+        return sslFactory.getSslContext();
     }
 }
