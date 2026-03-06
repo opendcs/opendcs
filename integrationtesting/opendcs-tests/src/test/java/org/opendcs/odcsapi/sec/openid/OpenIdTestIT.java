@@ -15,14 +15,11 @@
 
 package org.opendcs.odcsapi.sec.openid;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -30,8 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 import jakarta.ws.rs.core.MediaType;
 
@@ -55,14 +50,9 @@ import org.opendcs.odcsapi.res.it.BaseApiIT;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.mockito.ArgumentMatchers.isNotNull;
 
 
 final class OpenIdTestIT extends BaseApiIT
@@ -325,99 +315,98 @@ final class OpenIdTestIT extends BaseApiIT
 	 */
 	private Cookie doAuthCodePlusPkceLogin(Cookie initialSession) throws Exception
 	{
+		byte[] verifierBytes = new byte[40];
+		SecureRandom.getInstanceStrong().nextBytes(verifierBytes);
+		Base64.Encoder b64encoder = Base64.getUrlEncoder().withoutPadding();
+		final String verifier = b64encoder.encodeToString(verifierBytes);
+		final String originalState = UUID.randomUUID().toString();
+
+		MessageDigest md = MessageDigest.getInstance("SHA-256");
+		final String challenge = b64encoder.encodeToString(md.digest(verifier.getBytes(StandardCharsets.US_ASCII)));
 		
-            byte[] verifierBytes = new byte[128];
-            SecureRandom.getInstanceStrong().nextBytes(verifierBytes);
-            Base64.Encoder b64encoder = Base64.getUrlEncoder().withoutPadding();
-            final String verifier = b64encoder.encodeToString(verifierBytes);
-            final String originalState = UUID.randomUUID().toString();
 
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            final String challenge = b64encoder.encodeToString(md.digest(verifier.getBytes(StandardCharsets.US_ASCII)));
-            
+		final String redirectUri = "http://localhost:5000"; // we never directly call this URI so the port here doesn't matter.
 
-			final String redirectUri = "http://localhost:5000"; // we never directly call this URI so the port here doesn't matter.
-
-			var loginSessionPage = given()
-				.log().ifValidationFails(LogDetail.ALL, true)
-				.queryParam("grant_type", "code")
-                .queryParam("client_id", "opendcs")
-                .queryParam("scope", "openid profile email")
-                .queryParam("response_type", "code")
-                .queryParam("code_challenge_method", "S256")
-                .queryParam("code_challenge", challenge)
-                .queryParam("redirect_uri", redirectUri)
-                .queryParam("state", originalState)
-			.when()
-				.get(KeyCloakExtension.getCodeUrl())
-			.then()
-				.log().ifValidationFails(LogDetail.ALL, true)
-				.assertThat()
-				.statusCode(Response.Status.OK.getStatusCode())
-				.extract()
-
-			;
-			
-			var authUrl = loginSessionPage.htmlPath().getString("**.find { it.@id == 'kc-form-login'}.@action");
-			
-
-			var location = given()
-				.log().ifValidationFails(LogDetail.ALL, true)
-				.contentType(ContentType.URLENC)
-				.formParam("username", "test_user")
-				.formParam("password", "test_password")
-				.cookie(initialSession)
-				.cookies(loginSessionPage.detailedCookies())
-			.when()
-				.redirects().follow(false)
-				.post(URI.create(authUrl))
-			.then()
-				.log().ifValidationFails(LogDetail.ALL, true)
-				.statusCode(is(Response.Status.FOUND.getStatusCode()))
-				.extract().header("Location");
-			;
-
-			log.info("Recevied {}", location);
-			final var responseUri = URI.create(location);
-			var queryParams = QueryParameters.parse(responseUri.getRawQuery());
-
-			var accessToken = given()
-				.log().ifValidationFails(LogDetail.ALL, true)
-				.formParam("client_id", "opendcs")
-				.formParam("grant_type","authorization_code")
-				.formParam("code_verifier", verifier)
-				.formParam("scopes", "openid profile")
-				.formParam("redirect_uri", redirectUri)
-				.formParam("state", queryParams.get("state").get(0))
-				.formParam("session_state", queryParams.get("session_state").get(0))
-				.formParam("code", queryParams.get("code").get(0))
-				.formParam("response_mode", "fragment")
-				.formParam("response_type", "id_token token")
-			.when()
-				.post(KeyCloakExtension.getTokenUrl())
-			.then()
-				.assertThat()
-				.log().ifValidationFails(LogDetail.ALL, true)
-				.statusCode(is(Response.Status.OK.getStatusCode()))
-				.extract()
-				.jsonPath()
-				.getString("access_token")
-				;
-
-			return given()
-				.log().ifValidationFails(LogDetail.ALL, true)
-				.header("Authorization", "Bearer " + accessToken)
-				.cookie(initialSession)
-			.when()
-				.post("/credentials")
-			.then()
-				.assertThat()
-				.statusCode(is(Response.Status.OK.getStatusCode()))
-				.cookie(Constants.JSESSIONID)
+		var loginSessionPage = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.queryParam("grant_type", "code")
+			.queryParam("client_id", "opendcs")
+			.queryParam("scope", "openid profile email")
+			.queryParam("response_type", "code")
+			.queryParam("code_challenge_method", "S256")
+			.queryParam("code_challenge", challenge)
+			.queryParam("redirect_uri", redirectUri)
+			.queryParam("state", originalState)
+		.when()
+			.get(KeyCloakExtension.getCodeUrl())
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.assertThat()
+			.statusCode(Response.Status.OK.getStatusCode())
 			.extract()
-			.detailedCookie(Constants.JSESSIONID)
+
+		;
+		
+		var authUrl = loginSessionPage.htmlPath().getString("**.find { it.@id == 'kc-form-login'}.@action");
+		
+
+		var location = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.contentType(ContentType.URLENC)
+			.formParam("username", "test_user")
+			.formParam("password", "test_password")
+			.cookie(initialSession)
+			.cookies(loginSessionPage.detailedCookies())
+		.when()
+			.redirects().follow(false)
+			.post(URI.create(authUrl))
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.statusCode(is(Response.Status.FOUND.getStatusCode()))
+			.extract().header("Location")
+		;
+
+		log.info("Recevied {}", location);
+		final var responseUri = URI.create(location);
+		var queryParams = QueryParameters.parse(responseUri.getRawQuery());
+
+		var accessToken = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.formParam("client_id", "opendcs")
+			.formParam("grant_type","authorization_code")
+			.formParam("code_verifier", verifier)
+			.formParam("scopes", "openid profile email")
+			.formParam("redirect_uri", redirectUri)
+			.formParam("state", queryParams.get("state").get(0))
+			.formParam("session_state", queryParams.get("session_state").get(0))
+			.formParam("code", queryParams.get("code").get(0))
+			.formParam("response_mode", "fragment")
+			.formParam("response_type", "id_token token")
+		.when()
+			.post(KeyCloakExtension.getTokenUrl())
+		.then()
+			.assertThat()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.statusCode(is(Response.Status.OK.getStatusCode()))
+			.extract()
+			.jsonPath()
+			.getString("access_token")
 			;
 
+		return given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.header("Authorization", "Bearer " + accessToken)
+			.cookie(initialSession)
+		.when()
+			.post("/login_jwt")
+		.then()
+			.assertThat()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.statusCode(is(Response.Status.OK.getStatusCode()))
+			.cookie(Constants.JSESSIONID)
+		.extract()
+		.detailedCookie(Constants.JSESSIONID)
+		;
 	}
 
 	public static final class Result
