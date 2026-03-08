@@ -44,6 +44,7 @@ import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.model.IdentityProviderMapping;
 import org.opendcs.database.model.UserBuilder;
 import org.opendcs.fixtures.annotations.ConfiguredField;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import org.opendcs.fixtures.extensions.auth.KeyCloakExtension;
 import org.opendcs.fixtures.helpers.Constants;
 import org.opendcs.odcsapi.res.it.BaseApiIT;
@@ -54,7 +55,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-
+@EnableIfTsDb({"OpenDCS-Postgres"})
 final class OpenIdTestIT extends BaseApiIT
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
@@ -83,6 +84,7 @@ final class OpenIdTestIT extends BaseApiIT
 				var user = umDao.getUsers(tx, -1, -1).stream().filter(u -> "test_user".equals(u.email)).findFirst().orElseThrow();
 				var userBuilder = new UserBuilder(user).withIdentityMapping(new IdentityProviderMapping(idpOut, "45ee99c4-3dc8-444d-81d8-2c669a148bff"));
 				umDao.updateUser(tx, user.id, userBuilder.build());
+				providerInitialized = true;
 			}
 		}
 	}
