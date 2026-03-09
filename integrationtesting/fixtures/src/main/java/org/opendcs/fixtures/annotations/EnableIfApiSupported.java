@@ -25,7 +25,7 @@ import org.opendcs.fixtures.spi.Configuration;
 @ExtendWith(EnableIfApiSupported.EnableIfApiSupportedCondition.class)
 public @interface EnableIfApiSupported
 {
-    class EnableIfApiSupportedCondition implements ExecutionCondition
+    public class EnableIfApiSupportedCondition implements ExecutionCondition
     {
         @Override
         public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext ctx)
