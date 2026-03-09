@@ -14,7 +14,7 @@ import java.util.Optional;
 import jakarta.ws.rs.core.Response;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.opendcs.fixtures.annotations.EnableIfApiSupported;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -33,8 +33,7 @@ import io.restassured.http.ContentType;
 /**
  * Sets up a KeyCloak instance to use for testing.
  */
-@EnableIfApiSupported
-public final class KeyCloakExtension implements BeforeAllCallback
+public final class KeyCloakExtension implements BeforeEachCallback
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static final String WELL_KNOWN = "realms/opendcs/.well-known/openid-configuration";
@@ -100,7 +99,7 @@ public final class KeyCloakExtension implements BeforeAllCallback
     }
 
     @Override
-    public void beforeAll(ExtensionContext context) throws Exception
+    public void beforeEach(ExtensionContext context) throws Exception
     {
         if (kcc == null)
         {
