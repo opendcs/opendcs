@@ -1,10 +1,34 @@
 {
   "algorithmsTitle": "Algorithms",
+  "add_algorithm": "Add Algorithm",
   "header": {
     "Id": "Id",
     "Name": "Name",
     "ExecClass": "Exec Class",
     "NumCompsUsing": "# Comps Using",
     "Description": "Description"
+  },
+  "editor": {
+    "name": "Name",
+    "execClass": "Exec Class",
+    "description": "Description",
+    "edit_for": "Edit algorithm {{id}}",
+    "delete_for": "Delete algorithm {{id}}",
+    "cancel_for": "Cancel editing algorithm {{id}}",
+    "save_for": "Save algorithm {{id}}"
+  },
+  "parms": {
+    "title": "Parameters",
+    "roleName": "Role Name",
+    "parmType": "Type",
+    "input": "Input",
+    "output": "Output",
+    "add_parm": "Add Parameter",
+    "save_parm": "Save parameter",
+    "cancel_parm": "Cancel parameter edit",
+    "edit_for": "Edit parameter {{name}}",
+    "delete_for": "Delete parameter {{name}}",
+    "roleName_input": "Parameter role name",
+    "parmType_input": "Parameter type"
   }
 }

@@ -99,7 +99,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
       _meta: any,
     ) => {
       if (type !== "display") {
-        return data;
+        return data.name ?? "";
       }
       const state = rowStateRef.current[data.idx];
       if (data.name === undefined || state === "new") {
@@ -128,7 +128,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
       _meta: any,
     ) => {
       if (type !== "display") {
-        return data;
+        return data.value ?? "";
       }
       const state = data.name ? rowStateRef.current[data.name] : "new";
       if (state === undefined) {
@@ -189,7 +189,8 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
 
   const options: DataTableProps["options"] = useMemo(() => {
     return {
-      paging: false,
+      paging: true,
+      pageLength: 10,
       responsive: true,
       language: dtLangs.get(i18n.language),
       layout: {

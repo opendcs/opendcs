@@ -1,10 +1,34 @@
 {
   "algorithmsTitle": "Algoritmos",
+  "add_algorithm": "Agregar algoritmo",
   "header": {
     "Id": "Id",
     "Name": "Nombre",
     "ExecClass": "Clase de Ejecución",
     "NumCompsUsing": "# Cálculos Usando",
     "Description": "Descripción"
+  },
+  "editor": {
+    "name": "Nombre",
+    "execClass": "Clase de Ejecución",
+    "description": "Descripción",
+    "edit_for": "Editar algoritmo {{id}}",
+    "delete_for": "Eliminar algoritmo {{id}}",
+    "cancel_for": "Cancelar edición del algoritmo {{id}}",
+    "save_for": "Guardar algoritmo {{id}}"
+  },
+  "parms": {
+    "title": "Parámetros",
+    "roleName": "Nombre de rol",
+    "parmType": "Tipo",
+    "input": "Entrada",
+    "output": "Salida",
+    "add_parm": "Agregar parámetro",
+    "save_parm": "Guardar parámetro",
+    "cancel_parm": "Cancelar edición de parámetro",
+    "edit_for": "Editar parámetro {{name}}",
+    "delete_for": "Eliminar parámetro {{name}}",
+    "roleName_input": "Nombre de rol del parámetro",
+    "parmType_input": "Tipo de parámetro"
   }
 }
