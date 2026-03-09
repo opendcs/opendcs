@@ -281,7 +281,8 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
       { data: null, render: renderRoleName },
       { data: null, render: renderParmType },
     ];
-    if (edit) cols.push({ data: null, name: "actions" });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (edit) cols.push({ data: null, name: "actions" } as any);
     return cols;
   }, [edit, renderRoleName, renderParmType]);
 
