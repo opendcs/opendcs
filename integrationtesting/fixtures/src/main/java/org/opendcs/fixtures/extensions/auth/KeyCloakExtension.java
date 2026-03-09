@@ -8,6 +8,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Optional;
 import jakarta.ws.rs.core.Response;
@@ -31,12 +32,30 @@ import io.restassured.http.ContentType;
 /**
  * Sets up a KeyCloak instance to use for testing.
  */
-public final class KeyCloakExtension implements BeforeAllCallback {
+public final class KeyCloakExtension implements BeforeAllCallback
+{
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static final String WELL_KNOWN = "realms/opendcs/.well-known/openid-configuration";
     private static final ObjectMapper mapper = new ObjectMapper();
+    
+    private static GenericContainer<?> kcc = null;
+                                                    
+    private static String keyHostPort;
+    private static String issuer;
+    private static String codeUrl;
+    private static String tokenUrl;
+
     @SuppressWarnings("resource") // the testcontaienrs ryuk container will handle cleanup.
-    private static final GenericContainer<?> kcc = new GenericContainer<>("quay.io/keycloak/keycloak:26.5")
+    static void setup() throws IOException
+    {    
+        File realm = new File("../../compose_files/keycloak/realm.json").getAbsoluteFile();
+        String realmJson = null;
+        try (FileInputStream is = new FileInputStream(realm))
+        {
+            realmJson = IOUtils.toString(is, StandardCharsets.UTF_8);
+        }
+        
+        kcc = new GenericContainer<>("quay.io/keycloak/keycloak:26.5")
                                                     .withEnv("KC_HTTP_ENABLED", "true")
                                                     .withEnv("KC_HOSTNAME_STRICT", "false")
                                                     .withEnv("KC_LOG_LEVEL", "info")
@@ -50,21 +69,6 @@ public final class KeyCloakExtension implements BeforeAllCallback {
                                                         log.atInfo().log(frame.getUtf8String());
                                                     })
                                                     ;
-                                                    
-    private static String keyHostPort;
-    private static String issuer;
-    private static String codeUrl;
-    private static String tokenUrl;
-    
-
-    
-    static void setup() throws IOException {
-        
-        File realm = new File("../../compose_files/keycloak/realm.json").getAbsoluteFile();
-        String realmJson = null;
-        try (FileInputStream is = new FileInputStream(realm)) {
-            realmJson = IOUtils.toString(is, Charset.forName("UTF-8"));
-        }
         kcc.withCopyToContainer(Transferable.of(realmJson), "/opt/keycloak/data/import/realm.json");
         kcc.setWaitStrategy(
             new LogMessageWaitStrategy().withRegEx("^.*Listening on:.*$")
@@ -96,7 +100,7 @@ public final class KeyCloakExtension implements BeforeAllCallback {
     @Override
     public void beforeAll(ExtensionContext context) throws Exception
     {
-        if (!kcc.isRunning())
+        if (kcc == null)
         {
             setup();
         }
