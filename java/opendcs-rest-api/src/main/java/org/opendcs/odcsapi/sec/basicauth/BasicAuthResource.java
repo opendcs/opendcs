@@ -15,11 +15,10 @@
 
 package org.opendcs.odcsapi.sec.basicauth;
 
+import static org.opendcs.odcsapi.sec.SessionResource.updateSessionWithUser;
+
 import java.util.Base64;
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
-import decodes.util.DecodesSettings;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.StringToClassMapItem;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -30,10 +29,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -46,17 +43,11 @@ import jakarta.ws.rs.core.Response.Status;
 import org.opendcs.authentication.OpenDcsAuthException;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityProvider;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInProviderCredentials;
-import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.model.User;
-import org.opendcs.odcsapi.dao.ApiAuthorizationDAI;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.res.OpenDcsResource;
-import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
-import org.opendcs.odcsapi.sec.OpenDcsPrincipal;
-import org.opendcs.odcsapi.sec.cwms.CwmsAuthorizationDAO;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -130,6 +121,9 @@ public final class BasicAuthResource extends OpenDcsResource
 	)
 	public Response postCredentials(Credentials credentials) throws WebAppException
 	{
+		var response = Response.status(Status.UNAUTHORIZED).entity("""
+				{"message": "Invalid credentials."}
+				""");
 		//If credentials are null, Authorization header will be checked.
 		if(credentials != null)
 		{
@@ -144,21 +138,7 @@ public final class BasicAuthResource extends OpenDcsResource
 			if (user.isPresent())
 			{
 				var theUser = user.get();
-				var roles = new HashSet<OpenDcsApiRoles>();
-				for (var role: theUser.roles)
-				{
-					roles.add(OpenDcsApiRoles.valueOf(role.name));
-				}
-				OpenDcsPrincipal principal = new OpenDcsPrincipal(theUser.email, roles);
-				HttpSession oldSession = httpServletRequest.getSession(false);
-				if(oldSession != null)
-				{
-					oldSession.invalidate();
-				}
-				HttpSession session = httpServletRequest.getSession(true);
-
-				session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, principal);
-				return Response.ok().entity(user.get()).build();
+				response = updateSessionWithUser(theUser, httpServletRequest);
 			}
 		}
 		catch (IllegalStateException ex)
@@ -173,7 +153,7 @@ public final class BasicAuthResource extends OpenDcsResource
 				throw ex;
 			}
 		}
-		return Response.status(Status.UNAUTHORIZED).build();
+		return response.build();
 	}
 
 	private static void verifyCredentials(Credentials credentials)

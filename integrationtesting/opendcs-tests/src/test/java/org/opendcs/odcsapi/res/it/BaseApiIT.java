@@ -35,7 +35,6 @@ import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.util.DecodesSettings;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.filter.log.LogDetail;
-import io.restassured.filter.session.SessionFilter;
 import io.restassured.http.Cookie;
 import io.restassured.path.json.JsonPath;
 import io.restassured.specification.RequestSpecification;
@@ -54,6 +53,7 @@ import org.opendcs.odcsapi.sec.basicauth.Credentials;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
+import org.opendcs.database.model.UserBuilder;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.TomcatServer;
 import org.opendcs.fixtures.annotations.ConfiguredField;
@@ -150,7 +150,7 @@ public class BaseApiIT extends AppTestBase
 		if(session == null) {
 			throw new RuntimeException("Test Session Manager is unusable.");
 		}
-		OpenDcsPrincipal mcup = new OpenDcsPrincipal(username, EnumSet.allOf(OpenDcsApiRoles.class));
+		OpenDcsPrincipal mcup = new OpenDcsPrincipal(new UserBuilder().withEmail(username).build(), EnumSet.allOf(OpenDcsApiRoles.class));
 		session.setAuthType("CLIENT-CERT");
 		session.setPrincipal(mcup);
 		session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, mcup);

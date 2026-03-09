@@ -20,23 +20,31 @@ import java.security.Principal;
 import java.util.Collections;
 import java.util.Set;
 
+import org.opendcs.database.model.User;
+
 public final class OpenDcsPrincipal implements Principal, Serializable
 {
 	public static final String USER_PRINCIPAL_SESSION_ATTRIBUTE = "opendcs-user-principal";
 	private static final long serialVersionUID = -2116796045388257540L;
-	private final String name;
+	private final User user;
+
 	private final Set<OpenDcsApiRoles> roles;
 
-	public OpenDcsPrincipal(String name, Set<OpenDcsApiRoles> roles)
+	public OpenDcsPrincipal(User user, Set<OpenDcsApiRoles> roles)
 	{
-		this.name = name;
+		this.user = user;
 		this.roles = Collections.unmodifiableSet(roles);
 	}
 
 	@Override
 	public String getName()
 	{
-		return name;
+		return user.email;
+	}
+
+	public User getUser()
+	{
+		return this.user;
 	}
 
 	public Set<OpenDcsApiRoles> getRoles()

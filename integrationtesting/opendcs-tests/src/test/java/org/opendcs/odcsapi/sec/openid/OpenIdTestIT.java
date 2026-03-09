@@ -103,7 +103,7 @@ final class OpenIdTestIT extends BaseApiIT
 	 * This requires a client secret to be setup.
 	 */
 	@Test
-	void test_opendcs_auth_code_flow() throws Exception
+	void test_opendcs_auth_code_flow()
 	{
 		//Initial session should be unauthorized
 		var initialSession = 
