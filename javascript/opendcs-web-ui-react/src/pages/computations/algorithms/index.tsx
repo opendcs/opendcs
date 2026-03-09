@@ -32,23 +32,7 @@ export const Algorithms: React.FC = () => {
   }, [stale, api.org, algorithmApi]);
 
   const getAlgorithm = useCallback(
-    async (algorithmId: number) => {
-      const result = await algorithmApi.getalgorithm(api.org, algorithmId);
-      // ObjectSerializer destroys the parms array (types it as single object).
-      // Fetch raw JSON alongside and attach the real parms array.
-      try {
-        const raw = await fetch(`/odcsapi/algorithm?algorithmid=${algorithmId}`, {
-          headers: { "X-ORGANIZATION-ID": api.org || "" },
-        });
-        if (raw.ok) {
-          const json = (await raw.json()) as Record<string, unknown>;
-          (result as Record<string, unknown>)["parms"] = json["parms"] ?? [];
-        }
-      } catch (e: unknown) {
-        console.warn("Failed to fetch raw algorithm parms", e);
-      }
-      return result;
-    },
+    (algorithmId: number) => algorithmApi.getalgorithm(api.org, algorithmId),
     [api.org, algorithmApi],
   );
 
@@ -66,28 +50,16 @@ export const Algorithms: React.FC = () => {
 
   const saveAlgorithm = useCallback(
     (algorithm: ApiAlgorithm) => {
-      // parms is attached as AlgoParm[] via cast in Algorithm.tsx — extract before stripping.
-      // algoScripts: TS client types it as single object but server expects array — strip it.
-      const parms = (algorithm as unknown as Record<string, unknown>)["parms"] ?? [];
-      const { parms: _parms, algoScripts: _algoScripts, ...rest } = algorithm;
       const algorithmId =
-        rest.algorithmId && rest.algorithmId > 0 ? rest.algorithmId : undefined;
-      // Use raw fetch so parms array is serialized correctly (ObjectSerializer would destroy it).
-      fetch("/odcsapi/algorithm", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-ORGANIZATION-ID": api.org || "",
-        },
-        body: JSON.stringify({ ...rest, algorithmId, parms }),
-      })
-        .then((r) => {
-          if (!r.ok) throw new Error(`HTTP ${r.status}`);
-          setStale(true);
-        })
+        algorithm.algorithmId && algorithm.algorithmId > 0
+          ? algorithm.algorithmId
+          : undefined;
+      algorithmApi
+        .postAlgorithm(api.org, { ...algorithm, algorithmId })
+        .then(() => setStale(true))
         .catch((e: unknown) => console.error("Failed to save algorithm", e));
     },
-    [api.org],
+    [api.org, algorithmApi],
   );
 
   const deleteAlgorithm = useCallback(

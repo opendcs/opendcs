@@ -6,7 +6,6 @@ import { expect, waitFor } from "storybook/test";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ArgsStoryFn } from "storybook/internal/types";
 import type { RemoveAction, SaveAction } from "../../../util/Actions";
-import type { AlgoParm } from "./AlgorithmParamsTable";
 
 const meta = {
   component: AlgorithmsTable,
@@ -18,9 +17,7 @@ type Story = StoryObj<typeof meta>;
 
 // Shared mock data
 
-type RawAlgorithm = ApiAlgorithm & { parms?: AlgoParm[] };
-
-const sharedAlgorithms: RawAlgorithm[] = [
+const sharedAlgorithms: ApiAlgorithm[] = [
   {
     algorithmId: 1,
     name: "CopyAlgorithm",
@@ -45,7 +42,7 @@ const sharedAlgorithms: RawAlgorithm[] = [
   },
 ];
 
-const toAlgoRefs = (algos: RawAlgorithm[]): ApiAlgorithmRef[] =>
+const toAlgoRefs = (algos: ApiAlgorithm[]): ApiAlgorithmRef[] =>
   algos.map(({ algorithmId, name, execClass, description }) => ({
     algorithmId,
     algorithmName: name,
@@ -55,14 +52,11 @@ const toAlgoRefs = (algos: RawAlgorithm[]): ApiAlgorithmRef[] =>
   }));
 
 const getAlgorithmFromList =
-  (list: RawAlgorithm[]) =>
+  (list: ApiAlgorithm[]) =>
   async (id: number): Promise<ApiAlgorithm> => {
     const algo = list.find((a) => a.algorithmId === id);
     if (!algo) return Promise.reject(`No algorithm with id ${id}`);
-    // Simulate the raw-fetch parms attachment done in index.tsx
-    const result = { ...algo } as unknown as ApiAlgorithm;
-    (result as unknown as Record<string, unknown>)["parms"] = algo.parms ?? [];
-    return result;
+    return { ...algo };
   };
 
 const getPropSpecs = async (_execClass: string): Promise<ApiPropSpec[]> => [];
@@ -74,23 +68,16 @@ type StoryArgs = {
   actions?: SaveAction<ApiAlgorithm> & RemoveAction<number>;
 };
 
-const StoryRender: ArgsStoryFn<ReactRenderer, StoryArgs> = (args) => {
-  const [localAlgos, setLocalAlgos] = useState<RawAlgorithm[]>([]);
+// Proper React component that owns algorithm state for editable stories
+const AlgorithmsTableWrapper: React.FC<{ initialAlgos: ApiAlgorithm[] }> = ({
+  initialAlgos,
+}) => {
+  const [localAlgos, setLocalAlgos] = useState<ApiAlgorithm[]>(initialAlgos);
   const localAlgosRef = useRef(localAlgos);
 
   useEffect(() => {
     localAlgosRef.current = localAlgos;
   }, [localAlgos]);
-
-  // Seed from initial refs (for WithAlgorithms story)
-  useEffect(() => {
-    const initial = sharedAlgorithms.filter((a) =>
-      (args.algorithms as ApiAlgorithmRef[]).some(
-        (ref) => ref.algorithmId === a.algorithmId,
-      ),
-    );
-    setLocalAlgos(initial);
-  }, []);
 
   const algoRefs = useMemo(() => toAlgoRefs(localAlgos), [localAlgos]);
 
@@ -101,13 +88,13 @@ const StoryRender: ArgsStoryFn<ReactRenderer, StoryArgs> = (args) => {
 
   const saveAlgorithm = useCallback((algo: ApiAlgorithm) => {
     setLocalAlgos((prev) => {
-      const parms =
-        ((algo as unknown as Record<string, unknown>)["parms"] as AlgoParm[]) ?? [];
-      const raw: RawAlgorithm = { ...algo, parms };
       if (algo.algorithmId! < 0) {
-        return [...prev, { ...raw, algorithmId: Math.floor(Math.random() * 100) + 10 }];
+        return [
+          ...prev,
+          { ...algo, algorithmId: Math.floor(Math.random() * 100) + 10 },
+        ];
       }
-      return prev.map((a) => (a.algorithmId === algo.algorithmId ? raw : a));
+      return prev.map((a) => (a.algorithmId === algo.algorithmId ? algo : a));
     });
   }, []);
 
@@ -123,6 +110,16 @@ const StoryRender: ArgsStoryFn<ReactRenderer, StoryArgs> = (args) => {
       actions={{ save: saveAlgorithm, remove: removeAlgorithm }}
     />
   );
+};
+
+// Thin render function — seeds initial state from story args then delegates
+const StoryRender: ArgsStoryFn<ReactRenderer, StoryArgs> = (args) => {
+  const initialAlgos = sharedAlgorithms.filter((a) =>
+    (args.algorithms as ApiAlgorithmRef[]).some(
+      (ref) => ref.algorithmId === a.algorithmId,
+    ),
+  );
+  return <AlgorithmsTableWrapper initialAlgos={initialAlgos} />;
 };
 
 export const Default: Story = {

@@ -23,11 +23,11 @@ const sampleParms: AlgoParm[] = [
   { roleName: "delta", parmType: "id" },
 ];
 
-// Stateful render wrapper — keeps parms in local state so CRUD actions are visible
-const EditableRender: ArgsStoryFn<ReactRenderer, AlgorithmParamsTableProps> = (
-  args,
-) => {
-  const [parms, setParms] = useState<AlgoParm[]>(args.parms ?? []);
+// Proper React component that owns parms state for editable stories
+const EditableParamsTable: React.FC<{ initialParms: AlgoParm[] }> = ({
+  initialParms,
+}) => {
+  const [parms, setParms] = useState<AlgoParm[]>(initialParms);
 
   const onAdd = useCallback((parm: AlgoParm) => {
     setParms((prev) => [...prev, parm]);
@@ -51,6 +51,11 @@ const EditableRender: ArgsStoryFn<ReactRenderer, AlgorithmParamsTableProps> = (
     />
   );
 };
+
+// Thin render function — delegates to the proper React component
+const EditableRender: ArgsStoryFn<ReactRenderer, AlgorithmParamsTableProps> = (
+  args,
+) => <EditableParamsTable initialParms={args.parms ?? []} />;
 
 export const ViewEmpty: Story = {
   args: { parms: [], edit: false },

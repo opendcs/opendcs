@@ -241,9 +241,7 @@ export const Algorithm: React.FC<AlgorithmProperties> = ({
 
   const saveAlgorithm = useCallback(
     (algo: UiAlgorithm) => {
-      // Attach parms as array alongside the algorithm — index.tsx extracts it via cast
-      const toSave = { ...algo, parms: localParms } as unknown as ApiAlgorithm;
-      actions.save!(toSave);
+      actions.save!({ ...algo, parms: localParms });
     },
     [actions, localParms],
   );

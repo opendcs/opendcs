@@ -142,10 +142,8 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
           ? getAlgorithm!(data.algorithmId!)
           : Promise.resolve({ algorithmId: data.algorithmId! } as UiAlgorithm);
 
-      // Extract parms from the fetched algorithm (attached as array via raw fetch in index.tsx)
       const parmsPromise: Promise<AlgoParm[]> = algorithmPromise.then(
-        (algo) =>
-          ((algo as unknown as Record<string, unknown>)["parms"] as AlgoParm[]) ?? [],
+        (algo) => (algo.parms ?? []) as AlgoParm[],
       );
 
       const propSpecs: Promise<ApiPropSpec[]> =
