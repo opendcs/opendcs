@@ -76,13 +76,22 @@ final class OpenIdTestIT extends BaseApiIT
 				config.put("issuer", KeyCloakExtension.getIssuer());
 				config.put("wellKnown", KeyCloakExtension.getOidcWellKnown());
 				config.put("clientId", "opendcs");
-				config.put("clientSecret", "todo");
+				config.put("clientSecret", "test-secret-value");
 				final String redirectUri = RestAssured.baseURI + ":" + RestAssured.port + "/" + RestAssured.basePath + "/oidc-callback";
 				config.put("redirectUri", redirectUri);
-				var idpIn = new OidcIdentityProvider(null, "test-oidc", null, config);
-				var idpOut = umDao.addIdentityProvider(tx, idpIn);
+				var idpConfIn = new OidcIdentityProvider(null, "test-oidc-conf", null, config);
+				var idpConfOut = umDao.addIdentityProvider(tx, idpConfIn);
+				
+				config.put("clientId", "opendcs-public");
+				config.remove("clientSecret");
+				var idpPubIn = new OidcIdentityProvider(null, "test-oidc-pub", null, config);
+				var idpPubOut = umDao.addIdentityProvider(tx, idpPubIn);
+
 				var user = umDao.getUsers(tx, -1, -1).stream().filter(u -> "test_user".equals(u.email)).findFirst().orElseThrow();
-				var userBuilder = new UserBuilder(user).withIdentityMapping(new IdentityProviderMapping(idpOut, "45ee99c4-3dc8-444d-81d8-2c669a148bff"));
+
+				var userBuilder = new UserBuilder(user)
+								.withIdentityMapping(new IdentityProviderMapping(idpConfOut, "45ee99c4-3dc8-444d-81d8-2c669a148bff"))
+								.withIdentityMapping(new IdentityProviderMapping(idpPubOut, "45ee99c4-3dc8-444d-81d8-2c669a148bff"));
 				umDao.updateUser(tx, user.id, userBuilder.build());
 				providerInitialized = true;
 			}
@@ -241,7 +250,7 @@ final class OpenIdTestIT extends BaseApiIT
 	{
 		final String redirectUri = RestAssured.baseURI + ":" + RestAssured.port + "/" + RestAssured.basePath + "/oidc-callback";
 		
-		final Cookie stateCookie = new Cookie.Builder("state", "test-oidc__" + UUID.randomUUID().toString())
+		final Cookie stateCookie = new Cookie.Builder("state", "test-oidc-conf__" + UUID.randomUUID().toString())
 											.setHttpOnly(true)
 											.setSameSite("Strict")
 											.build();
@@ -332,7 +341,7 @@ final class OpenIdTestIT extends BaseApiIT
 		var loginSessionPage = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.queryParam("grant_type", "code")
-			.queryParam("client_id", "opendcs")
+			.queryParam("client_id", "opendcs-public")
 			.queryParam("scope", "openid profile email")
 			.queryParam("response_type", "code")
 			.queryParam("code_challenge_method", "S256")
@@ -374,7 +383,7 @@ final class OpenIdTestIT extends BaseApiIT
 
 		var accessToken = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.formParam("client_id", "opendcs")
+			.formParam("client_id", "opendcs-public")
 			.formParam("grant_type","authorization_code")
 			.formParam("code_verifier", verifier)
 			.formParam("scopes", "openid profile email")

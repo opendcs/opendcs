@@ -35,13 +35,14 @@ public final class KeyCloakExtension implements BeforeAllCallback {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static final String WELL_KNOWN = "realms/opendcs/.well-known/openid-configuration";
     private static final ObjectMapper mapper = new ObjectMapper();
+    @SuppressWarnings("resource") // the testcontaienrs ryuk container will handle cleanup.
     private static final GenericContainer<?> kcc = new GenericContainer<>("quay.io/keycloak/keycloak:26.5")
                                                     .withEnv("KC_HTTP_ENABLED", "true")
                                                     .withEnv("KC_HOSTNAME_STRICT", "false")
                                                     .withEnv("KC_LOG_LEVEL", "info")
                                                     .withEnv("KEYCLOAK_ADMIN","admin")
                                                     .withEnv("KEYCLOAK_ADMIN_PASSWORD","admin")
-                                                    .withCommand("start-dev --import-realm")
+                                                    .withCommand("start-dev --import-realm --verbose")
                                                     .withExposedPorts(8080)
                                                     .withReuse(false)
                                                     .withLogConsumer(frame -> 
@@ -52,7 +53,6 @@ public final class KeyCloakExtension implements BeforeAllCallback {
                                                     
     private static String keyHostPort;
     private static String issuer;
-    private static String authUrl;
     private static String codeUrl;
     private static String tokenUrl;
     
@@ -141,7 +141,7 @@ public final class KeyCloakExtension implements BeforeAllCallback {
                 given()
                     .log().ifValidationFails(LogDetail.ALL,true)
                     .contentType(ContentType.URLENC)
-                    .formParam("client_id","opendcs")
+                    .formParam("client_id","opendcs-public")
                     .formParam("grant_type","password")
                     .formParam("client_secret","")
                     .formParam("scope","openid profile email")
@@ -151,7 +151,7 @@ public final class KeyCloakExtension implements BeforeAllCallback {
                 .when()
                     .post(URI.create(getTokenUrl()));
       
-            log.atTrace().log(() -> response.asPrettyString());
+            log.atTrace().log(response::asPrettyString);
             JsonNode tokenInfo = mapper.readTree(response.asString());
             return Optional.of(tokenInfo.get("access_token").asText());
         }

@@ -174,7 +174,12 @@ public final class OidcIdentityProvider implements IdentityProvider
             var claims = verifyTokenAndGetClaims(oidcConfig, token);
             var subject = claims.getSubject();
             var umDao = db.getDao(UserManagementDao.class).orElseThrow();
-            return umDao.getUsers(tx, -1, -1).stream().filter(u -> u.identityProviders.stream().filter(idpm -> idpm.subject.equals(subject)).count() == 1).findFirst();
+            return umDao.getUsers(tx, -1, -1)
+                        .stream()
+                        .filter(u -> u.identityProviders.stream()
+                                                          .filter(idpm -> idpm.provider.getId().equals(this.id)
+                                                                         && idpm.subject.equals(subject)).count() == 1)
+                        .findFirst();
         }
         catch (IOException | ParseException | BadJOSEException | JOSEException | OpenDcsDataException ex)
         {
@@ -194,7 +199,7 @@ public final class OidcIdentityProvider implements IdentityProvider
 
     private JWTClaimsSet verifyTokenAndGetClaims(OpenIdConfiguration config, String token) throws MalformedURLException, BadJOSEException, ParseException, JOSEException
     {
-        var keySource =JWKSourceBuilder.create(config.jwksUri.toURL()).retrying(true).build();
+        var keySource = JWKSourceBuilder.create(config.jwksUri.toURL()).retrying(true).build();
         return JwtVerifier.getInstance().getClaimsSet(keySource, token, oidcConfig.issuer);
     }
 
