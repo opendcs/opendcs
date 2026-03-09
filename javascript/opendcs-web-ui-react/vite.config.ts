@@ -68,7 +68,6 @@ export default defineConfig({
     },
   },
   test: {
-    forceExit: true,
     projects: [
       {
         extends: true,
