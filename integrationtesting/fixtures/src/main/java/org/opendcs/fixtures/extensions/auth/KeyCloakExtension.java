@@ -16,6 +16,7 @@ import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.opendcs.fixtures.annotations.EnableIfApiSupported;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.testcontainers.containers.GenericContainer;
@@ -32,6 +33,7 @@ import io.restassured.http.ContentType;
 /**
  * Sets up a KeyCloak instance to use for testing.
  */
+@EnableIfApiSupported
 public final class KeyCloakExtension implements BeforeAllCallback
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
