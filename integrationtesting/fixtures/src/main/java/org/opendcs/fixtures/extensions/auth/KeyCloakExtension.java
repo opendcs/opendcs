@@ -15,7 +15,10 @@ import jakarta.ws.rs.core.Response;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ConditionEvaluationResult;
+import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.opendcs.fixtures.annotations.EnableIfAppsSupportedCondition;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.testcontainers.containers.GenericContainer;
@@ -32,7 +35,7 @@ import io.restassured.http.ContentType;
 /**
  * Sets up a KeyCloak instance to use for testing.
  */
-public final class KeyCloakExtension implements BeforeAllCallback
+public final class KeyCloakExtension implements BeforeAllCallback, ExecutionCondition
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static final String WELL_KNOWN = "realms/opendcs/.well-known/openid-configuration";
@@ -164,5 +167,11 @@ public final class KeyCloakExtension implements BeforeAllCallback
             log.atWarn().setCause(ex).log("Unable to retrieve token for user {}", username);
             return Optional.empty();
         }
+    }
+
+    @Override
+    public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context)
+    {
+        return new EnableIfAppsSupportedCondition().evaluateExecutionCondition(context);
     }
 }
