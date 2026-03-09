@@ -10,8 +10,6 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 
@@ -25,26 +23,18 @@ import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.User;
 import org.opendcs.spi.authentication.IdentityProviderProvider;
 import org.opendcs.utils.WebUtility;
-import org.opendcs.utils.logging.OpenDcsLoggerFactory;
-import org.slf4j.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auto.service.AutoService;
 import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.source.JWKSourceBuilder;
 import com.nimbusds.jose.proc.BadJOSEException;
-import com.nimbusds.jose.proc.JWSVerificationKeySelector;
-import com.nimbusds.jwt.JWTClaimNames;
 import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
-import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 
 import decodes.sql.DbKey;
 
 public final class OidcIdentityProvider implements IdentityProvider
 {
-    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     public static final String TYPE = "OpenIdConnect";
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
@@ -79,7 +69,6 @@ public final class OidcIdentityProvider implements IdentityProvider
         }
         
     }
-
 
     @Override
     public DbKey getId()
@@ -214,7 +203,6 @@ public final class OidcIdentityProvider implements IdentityProvider
     @AutoService(IdentityProviderProvider.class)
     public static class OidcIdentityProviderProvider implements IdentityProviderProvider
     {
-
         @Override
         public IdentityProvider create(DbKey id, String name, ZonedDateTime updatedAt, Map<String, Object> config)
         {

@@ -3,9 +3,6 @@ package org.opendcs.odcsapi.sec.openid;
 import static org.opendcs.odcsapi.util.ApiConstants.ODCS_API_GUEST;
 
 import java.text.ParseException;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.UUID;
 
 import org.opendcs.authentication.OpenDcsAuthException;
 import org.opendcs.authentication.identityprovider.impl.oidc.AuthCodeCredentials;
@@ -15,8 +12,6 @@ import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.model.User;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.res.OpenDcsResource;
-import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
-import org.opendcs.odcsapi.sec.OpenDcsPrincipal;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -31,7 +26,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
@@ -43,6 +37,8 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import static org.opendcs.odcsapi.sec.SessionResource.updateSessionWithUser;
 
 @Path("")
 public final class OidcCallback extends OpenDcsResource
@@ -99,71 +95,50 @@ public final class OidcCallback extends OpenDcsResource
 					)
 			}
 	)
-    public Response handle(@QueryParam("code") String code, @QueryParam("state") String state, @CookieParam("state") Cookie stateFromSession)
+    public Response handle(@QueryParam("code") String code,
+                           @QueryParam("state") String state,
+                           @CookieParam("state") Cookie stateFromSession) throws WebAppException
     {
-
-        if (!state.equals(stateFromSession.getValue()))
+         var response = Response.status(Response.Status.UNAUTHORIZED)
+					           .entity("""
+                            {"message": "Invalid Credentials."}
+                        """);
+        if (state.equals(stateFromSession.getValue()))
         {
-            log.warn("Invalid login attempt.");
-            return Response.status(Response.Status.FORBIDDEN).build();
-        }
+            log.info("Starting login attempt.");
+            var db = createDb();
 
-        var db = createDb();
-        
-        /***
-         * 1. determine appropriate oidc provider
-         * 2. call auth method
-         */
-
-        try (var tx = db.newTransaction())
-        {
-            var provider = db.getDao(UserManagementDao.class).orElseThrow().getIdentityProvider(tx, state.split("__")[0]);
-            if (provider.isEmpty()) 
+            try (var tx = db.newTransaction())
             {
-                return Response.notAcceptable(null).build();
-            }
-            else 
-            {
-                try
+                var provider = db.getDao(UserManagementDao.class).orElseThrow().getIdentityProvider(tx, state.split("__")[0]);
+                if (provider.isEmpty()) 
+                {
+                    return Response.notAcceptable(null).build();
+                }
+                else 
                 {
                     var userOpt = provider.get().login(db, tx, new AuthCodeCredentials(code));
                     if (userOpt.isPresent())
                     {
                         var user = userOpt.get();
-                        var roles = new HashSet<OpenDcsApiRoles>();
-                        for (var role: user.roles)
-                        {
-                            roles.add(OpenDcsApiRoles.valueOf(role.name));
-                        }
-                        OpenDcsPrincipal principal = new OpenDcsPrincipal(user.email, roles);
-                        HttpSession oldSession = httpRequest.getSession(false);
-                        if(oldSession != null)
-                        {
-                            oldSession.invalidate();
-                        }
-                        HttpSession session = httpRequest.getSession(true);
-
-                        session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, principal);
-                        return Response.ok().entity(user).build();
+                        response =  updateSessionWithUser(user, httpRequest);
                     }
                 }
-                catch (OpenDcsAuthException ex)
-                {
-                    log.atError().setCause(ex).log("Bad login attempt");
-                    return Response.status(Response.Status.UNAUTHORIZED).entity("""
-                        {"message": "provided credentials are invalid."}
-                    """).build();
-                }
-            };
+            }
+             catch (OpenDcsAuthException ex)
+            {
+                throw new WebAppException(Response.Status.UNAUTHORIZED.getStatusCode(), "Invalid credentials", ex);
+            }
+            catch (OpenDcsDataException ex)
+            {
+                throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to perform credential verification", ex);
+            }
         }
-        catch (OpenDcsDataException ex)
+        else
         {
-            log.atError().setCause(ex).log("Error during login");
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+            log.warn("Invalid login attempt.");
         }
-
-        httpRequest.changeSessionId();
-        return Response.status(Response.Status.UNAUTHORIZED).entity("not accepted").build();
+        return response.build();
     }
 
 
@@ -221,6 +196,7 @@ public final class OidcCallback extends OpenDcsResource
         final String[] parts = authHeader.split(" ");
         if (parts.length == 2)
         {
+            log.info("Starting login attempt.");
             final String accessToken = parts[1];
             SignedJWT jwt;
             try
@@ -240,21 +216,7 @@ public final class OidcCallback extends OpenDcsResource
                             if (userOpt.isPresent())
                             {
                                 var user = userOpt.get();
-                                var roles = new HashSet<OpenDcsApiRoles>();
-                                for (var role: user.roles)
-                                {
-                                    roles.add(OpenDcsApiRoles.valueOf(role.name));
-                                }
-                                OpenDcsPrincipal principal = new OpenDcsPrincipal(user.email, roles);
-                                HttpSession oldSession = httpRequest.getSession(false);
-                                if(oldSession != null)
-                                {
-                                    oldSession.invalidate();
-                                }
-                                HttpSession session = httpRequest.getSession(true);
-
-                                session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, principal);
-                                response.status(Response.Status.OK).entity(user);
+                                response = updateSessionWithUser(user, httpRequest);
                                 break;
                             }
                         }   
@@ -274,7 +236,10 @@ public final class OidcCallback extends OpenDcsResource
                 throw new WebAppException(Response.Status.BAD_REQUEST.getStatusCode(), "Unable to process provided credentials", ex);
             }
         }
-		
+        else
+        {
+            log.warn("Invalid login attempt.");
+        }
 		return response.build();
 	}
 
