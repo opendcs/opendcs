@@ -18,6 +18,7 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.opendcs.fixtures.annotations.EnableIfApiSupported;
 import org.opendcs.fixtures.annotations.EnableIfAppsSupportedCondition;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -172,6 +173,6 @@ public final class KeyCloakExtension implements BeforeAllCallback, ExecutionCond
     @Override
     public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context)
     {
-        return new EnableIfAppsSupportedCondition().evaluateExecutionCondition(context);
+        return new EnableIfApiSupported.EnableIfApiSupportedCondition().evaluateExecutionCondition(context);
     }
 }
