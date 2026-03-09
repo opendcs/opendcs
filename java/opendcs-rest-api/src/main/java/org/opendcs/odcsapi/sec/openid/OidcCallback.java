@@ -163,7 +163,7 @@ public final class OidcCallback extends OpenDcsResource
         }
 
         httpRequest.changeSessionId();
-        return Response.noContent().build();
+        return Response.status(Response.Status.UNAUTHORIZED).entity("not accepted").build();
     }
 
 
