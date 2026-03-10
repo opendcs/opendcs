@@ -172,10 +172,6 @@ public final class OidcIdentityProvider implements IdentityProvider
         }
         catch (IOException | ParseException | BadJOSEException | JOSEException | OpenDcsDataException ex)
         {
-            if (ex instanceof InterruptedException)
-            {
-                Thread.currentThread().interrupt();
-            }
             throw new OpenDcsAuthException("Unable to validate authentication data.", ex);
         }
     }

@@ -747,7 +747,7 @@
       "enabled": true,
       "alwaysDisplayInConsole": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "no-used",
+      "secret": "not-used",
       "redirectUris": [
         "http://localhost:*",
         "http://localhost*"
