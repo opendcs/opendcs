@@ -5,6 +5,7 @@ import { I18nextProvider, useTranslation } from "react-i18next";
 import { AuthContext } from "../contexts/app/AuthContext";
 import { ThemeContext } from "../contexts/app/ThemeContext";
 import { ApiContext } from "../contexts/app/ApiContext";
+import UnitsContext from "../contexts/data/UnitsContext";
 
 export interface Wrappers {
   /**
@@ -31,6 +32,7 @@ export function useContextWrapper(): Wrappers {
   const authContext = use(AuthContext);
   const themeContext = use(ThemeContext);
   const apiContext = use(ApiContext);
+  const unitsContext = use(UnitsContext);
   const { i18n } = useTranslation();
 
   return {
@@ -44,7 +46,9 @@ export function useContextWrapper(): Wrappers {
             <ApiContext value={apiContext}>
               <AuthContext value={authContext}>
                 <RefListContext value={refContext}>
-                  <Suspense fallback="Loading...">{children}</Suspense>
+                  <UnitsContext value={unitsContext}>
+                    <Suspense fallback="Loading...">{children}</Suspense>
+                  </UnitsContext>
                 </RefListContext>
               </AuthContext>
             </ApiContext>

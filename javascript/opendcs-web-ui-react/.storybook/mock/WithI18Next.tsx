@@ -33,7 +33,14 @@ i18n.on("languageChanged", (locale) => {
   document.dir = direction;
   // preload everything, otherwise the play functions can't always use the translation values
   // correctly.
-  i18n.loadNamespaces(["sites", "algorithms", "colormode", "platforms", "properties"]);
+  i18n.loadNamespaces([
+    "sites",
+    "algorithms",
+    "colormode",
+    "platforms",
+    "properties",
+    "decodes",
+  ]);
 });
 
 // end lift
