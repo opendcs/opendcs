@@ -235,25 +235,40 @@ public final class BasicAuthResource extends OpenDcsResource
 
 	private Optional<User> validateDbCredentials(Credentials creds) throws WebAppException
 	{
-		var db = this.createDb();
-		// Use username and password to attempt to connect to the database
+		try
+		{
+			var db = this.createDb();
+			// Use username and password to attempt to connect to the database
 
-		try (var tx = db.newTransaction())
-		{
-			var userMgmt = db.getDao(UserManagementDao.class).orElseThrow();
-			var providers = userMgmt.getIdentityProvidersForSubject(tx, creds.getUsername());
-			for (var provider: providers)
+			try(var tx = db.newTransaction())
 			{
-				if (provider instanceof BuiltInIdentityProvider idp)
+				var userMgmt = db.getDao(UserManagementDao.class).orElseThrow();
+				var providers = userMgmt.getIdentityProvidersForSubject(tx, creds.getUsername());
+				for(var provider : providers)
 				{
-					return idp.login(db, tx, new BuiltInProviderCredentials(creds.getUsername(), creds.getPassword()));
+					if(provider instanceof BuiltInIdentityProvider idp)
+					{
+						return idp.login(db, tx, new BuiltInProviderCredentials(creds.getUsername(), creds.getPassword()));
+					}
 				}
+				throw new WebAppException(Response.Status.FORBIDDEN.getStatusCode(), "Unable to authorize user.");
 			}
-			throw new WebAppException(Response.Status.FORBIDDEN.getStatusCode(), "Unable to authorize user.");
+			catch(OpenDcsDataException | OpenDcsAuthException ex)
+			{
+				throw new WebAppException(Response.Status.FORBIDDEN.getStatusCode(), "Unable to authorize user.", ex);
+			}
 		}
-		catch(OpenDcsDataException | OpenDcsAuthException ex)
+		catch (IllegalStateException ex)
 		{
-			throw new WebAppException(Response.Status.FORBIDDEN.getStatusCode(), "Unable to authorize user.", ex);
+			String msg = ex.getLocalizedMessage();
+			if (msg.startsWith("User does not have permissions for specified office"))
+			{
+				throw new WebAppException(Response.Status.FORBIDDEN.getStatusCode(), msg);
+			}
+			else 
+			{
+				throw ex;
+			}
 		}
 	}
 

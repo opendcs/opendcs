@@ -4,6 +4,7 @@ import { Button, Card, Container, Form } from "react-bootstrap";
 import { PersonCircle } from "react-bootstrap-icons";
 import { Credentials, RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
 import { useApi } from "../../../contexts/app/ApiContext";
+import { useOrganizations } from "../../../contexts/app/OrganizationsContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -12,26 +13,10 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { setUser } = useAuth();
+  const { organizations } = useOrganizations();
   const api = useApi();
 
   const auth = new RESTAuthenticationAndAuthorizationApi(api.conf);
-
-  auth.getOrganizationsWithHttpInfo("").then((orgs) => {
-    let orgList = "";
-    orgs.body.text().then((text) => {
-      let orgBody = JSON.parse(text);
-      for (const org of orgBody) {
-        let obj = document.getElementById("organization");
-        if (obj) {
-          orgList = orgList.concat(`<option value="${org.name}">${org.name}</option>`);
-        }
-      }
-      let obj = document.getElementById("organization");
-      if (obj) {
-        obj.innerHTML = orgList;
-      }
-    });
-  });
 
   function handleLogin(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
@@ -94,7 +79,13 @@ export default function Login() {
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>{t("organization")}</Form.Label>
-                <Form.Select id="organization" name="organization" required />
+                <Form.Select id="organization" name="organization" required>
+                  {organizations.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </Form.Select>
               </Form.Group>
               <div className="d-grid fade-in third">
                 <Button variant="primary" type="submit" className="py-2">
