@@ -37,6 +37,7 @@ export default function Login() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .then((user_value: any) => {
         setUser(user_value);
+        api.org = dataObject.organization.toString();
         const redirectPath = location.state?.from || "/platforms";
         navigate(redirectPath, { replace: true });
       })
@@ -58,35 +59,45 @@ export default function Login() {
             </div>
             <Form onSubmit={handleLogin} className="fade-in second">
               <Form.Group className="mb-3">
-                <Form.Label className="small fw-medium">{t("username")}</Form.Label>
-                <Form.Control
-                  type="text"
-                  id="username"
-                  required
-                  name="username"
-                  placeholder={t("username")}
-                />
+                <Form.Label className="small fw-medium">
+                  {t("username")}
+                  <Form.Control
+                    type="text"
+                    id="username"
+                    required
+                    name="username"
+                    placeholder={t("username")}
+                  />
+                </Form.Label>
               </Form.Group>
               <Form.Group className="mb-4">
-                <Form.Label className="small fw-medium">{t("password")}</Form.Label>
-                <Form.Control
-                  type="password"
-                  id="password"
-                  required
-                  name="password"
-                  placeholder={t("password")}
-                />
+                <Form.Label className="small fw-medium">
+                  {t("password")}
+                  <Form.Control
+                    type="password"
+                    id="password"
+                    required
+                    name="password"
+                    placeholder={t("password")}
+                  />
+                </Form.Label>
               </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>{t("organization")}</Form.Label>
-                <Form.Select id="organization" name="organization" required>
-                  {organizations.map((name) => (
-                    <option key={name} value={name}>
-                      {name}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
+              {organizations.length > 0 ? (
+                <Form.Group className="mb-3">
+                  <Form.Label>
+                    {t("organization")}
+                    <Form.Select id="organization" name="organization" required>
+                      {organizations.map((name) => (
+                        <option key={name} value={name}>
+                          {name}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Label>
+                </Form.Group>
+              ) : (
+                <input type="hidden" name="organization" value="" />
+              )}
               <div className="d-grid fade-in third">
                 <Button variant="primary" type="submit" className="py-2">
                   {t("login")}
