@@ -2,24 +2,21 @@ import type { Configuration } from "opendcs-api";
 import { createConfiguration, ServerConfiguration } from "opendcs-api";
 import { createContext, useContext, type SetStateAction } from "react";
 
-export type ApiSetup = {
-  conf: Configuration;
-  org: string | undefined;
-};
-
 export interface ApiContextType {
   conf: Configuration;
   org: string;
-  setOrg: React.Dispatch<React.SetStateAction<string | undefined>>;
+  setOrg: React.Dispatch<React.SetStateAction<string>>;
 }
 
 export const defaultValue: ApiContextType = {
   conf: createConfiguration({
     baseServer: new ServerConfiguration("/odcsapi", {}),
   }),
-  org: "",
+  org: window.localStorage.getItem("org") || "",
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  setOrg: (_value: SetStateAction<string | undefined>): void => {},
+  setOrg: (_value: SetStateAction<string>): void => {
+    window.localStorage.setItem("org", _value.toString());
+  },
 };
 
 export const ApiContext = createContext<ApiContextType>(defaultValue);

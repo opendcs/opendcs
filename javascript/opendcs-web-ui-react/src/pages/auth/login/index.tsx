@@ -42,7 +42,7 @@ export default function Login() {
         navigate(redirectPath, { replace: true });
       })
       .catch((error_: { toString: () => string }) =>
-        alert("Login failed" + error_.toString()),
+        alert("Login failed\n" + error_.toString()),
       );
   }
 
