@@ -28,4 +28,4 @@ export default RefListContext;
 // Constants for common ref list names.
 export const REFLIST_SITE_NAME_TYPE = "SiteNameType";
 export const REFLIST_DECODES_TRANSPORT_MEDIUM_TYPE = "TransportMediumType";
-export const REFLIST_UNIT_CONVERSION_ALGORITHM = "UnitConversionAlgoritm";
+export const REFLIST_UNIT_CONVERSION_ALGORITHM = "UnitConversionAlgorithm";
