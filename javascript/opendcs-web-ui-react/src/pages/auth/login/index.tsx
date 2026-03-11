@@ -37,7 +37,7 @@ export default function Login() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .then((user_value: any) => {
         setUser(user_value);
-        api.org = dataObject.organization.toString();
+        api.setOrg(dataObject.organization.toString());
         const redirectPath = location.state?.from || "/platforms";
         navigate(redirectPath, { replace: true });
       })

@@ -11,16 +11,20 @@ import {
 } from "../../../contexts/app/ApiContext";
 
 const MOCK_ORGANIZATIONS = ["SPK", "LRL", "SWT", "MVP"];
+const ORG_HEADER = "x-organization-id";
 
 // A simple stand-in for the page the user is redirected to after login
 function PlatformsPage() {
   return <div data-testid="platforms-page">Platforms Page</div>;
 }
 
-const meta: Meta<typeof Login> = {
+const meta: Meta<typeof Login & { organizations: string[] }> = {
   component: Login,
+  args: {
+    organizations: MOCK_ORGANIZATIONS,
+  },
   decorators: [
-    (Story) => (
+    (Story, { args }) => (
       <ApiContext value={apiDefault}>
         <AuthContext
           value={{
@@ -30,7 +34,7 @@ const meta: Meta<typeof Login> = {
             logout: fn(),
           }}
         >
-          <OrganizationsContext value={{ organizations: MOCK_ORGANIZATIONS }}>
+          <OrganizationsContext value={{ organizations: args.organizations }}>
             <MemoryRouter initialEntries={["/login"]}>
               <Routes>
                 <Route path="/login" element={<Story />} />
@@ -47,7 +51,21 @@ const meta: Meta<typeof Login> = {
     msw: {
       handlers: [
         // Default: successful login handler
-        http.post("/odcsapi/credentials/:org", () => {
+        http.post("/odcsapi/credentials", async ({ request }) => {
+          const body = (await request.json()) as { username: string; password: string };
+          const { username, password } = body;
+          var orgHeader = request.headers.get(ORG_HEADER);
+          if (
+            (orgHeader !== "" && orgHeader !== "SPK") ||
+            username !== "admin" ||
+            password !== "secret"
+          ) {
+            return new HttpResponse(
+              "Invalid credentials or insufficient permissions for office",
+              { status: 403 },
+            );
+          }
+
           return HttpResponse.json({
             username: "admin",
             roles: ["ODCS_USER"],
@@ -62,38 +80,15 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  args: {
-    organization: "SPK",
-  },
-  play: async ({ mount }) => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const _canvas = await mount();
-  },
-};
-
-export const FilledIn: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
-    await userEvent.type(await canvas.getByPlaceholderText(/username/i), "admin");
-    await userEvent.type(await canvas.getByPlaceholderText(/password/i), "secret");
-
-    await expect(canvas.getByRole("button", { name: /login/i })).toBeInTheDocument();
-  },
-};
-
 export const SuccessfulLogin: Story = {
   args: {
     organization: "SPK",
+    organizations: MOCK_ORGANIZATIONS,
   },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
 
-    // Fill in the username
     await userEvent.type(await canvas.getByPlaceholderText(/username/i), "admin");
-
-    // Fill in the password
     await userEvent.type(await canvas.getByPlaceholderText(/password/i), "secret");
 
     // Set the organization
@@ -114,15 +109,16 @@ export const SuccessfulLogin: Story = {
   },
 };
 
-export const FailedLogin: Story = {
+export const FailedLogin_BadCredentials: Story = {
   args: {
     organization: "SPK",
+    organizations: MOCK_ORGANIZATIONS,
   },
   parameters: {
     msw: {
       handlers: [
-        http.post("/odcsapi/credentials/:org", () => {
-          return new HttpResponse(null, { status: 401 });
+        http.post("/odcsapi/credentials", () => {
+          return new HttpResponse("User not authorized for office", { status: 403 });
         }),
       ],
     },
@@ -143,6 +139,63 @@ export const FailedLogin: Story = {
     // The login page should still be visible (no redirect)
     await waitFor(() => {
       expect(canvas.getByRole("button", { name: /login/i })).toBeInTheDocument();
+    });
+  },
+};
+
+export const FailedLogin_BadOrg: Story = {
+  args: {
+    organization: "LRL",
+    organizations: MOCK_ORGANIZATIONS,
+  },
+  parameters: {
+    msw: {
+      handlers: [
+        http.post("/odcsapi/credentials", () => {
+          return new HttpResponse("User not authorized for office", { status: 403 });
+        }),
+      ],
+    },
+  },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await userEvent.type(canvas.getByPlaceholderText(/username/i), "admin");
+    await userEvent.type(canvas.getByPlaceholderText(/password/i), "secret");
+
+    await userEvent.selectOptions(
+      canvas.getByRole("combobox", { name: "" }),
+      args.organization,
+    );
+
+    await userEvent.click(canvas.getByRole("button", { name: /login/i }));
+
+    // The login page should still be visible (no redirect)
+    await waitFor(() => {
+      expect(canvas.getByRole("button", { name: /login/i })).toBeInTheDocument();
+    });
+  },
+};
+
+export const SuccessfulLogin_HiddenOrganizations: Story = {
+  args: {
+    organizations: [],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await userEvent.type(canvas.getByPlaceholderText(/username/i), "admin");
+    await userEvent.type(canvas.getByPlaceholderText(/password/i), "secret");
+
+    await waitFor(() => {
+      expect(canvas.queryByRole("combobox", { name: "" })).toBeNull();
+    });
+
+    await userEvent.click(canvas.getByRole("button", { name: /login/i }));
+
+    // Successful login
+    await waitFor(() => {
+      expect(canvas.getByTestId("platforms-page")).toBeInTheDocument();
     });
   },
 };
