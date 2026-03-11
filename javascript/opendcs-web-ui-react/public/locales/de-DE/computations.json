@@ -1,0 +1,24 @@
+{
+  "computationsTitle": "Berechnungen",
+  "add_computation": "Berechnung hinzufügen",
+  "header": {
+    "Id": "Id",
+    "Name": "Name",
+    "Algorithm": "Algorithmus",
+    "Process": "Prozess",
+    "Enabled": "Aktiviert",
+    "Description": "Beschreibung"
+  },
+  "editor": {
+    "name": "Name",
+    "algorithmName": "Algorithmus",
+    "applicationName": "Prozess",
+    "groupName": "Gruppe",
+    "enabled": "Aktiviert",
+    "description": "Beschreibung",
+    "edit_for": "Berechnung {{id}} bearbeiten",
+    "delete_for": "Berechnung {{id}} löschen",
+    "cancel_for": "Bearbeitung von Berechnung {{id}} abbrechen",
+    "save_for": "Berechnung {{id}} speichern"
+  }
+}

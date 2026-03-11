@@ -1,0 +1,24 @@
+{
+  "computationsTitle": "Cálculos",
+  "add_computation": "Agregar cálculo",
+  "header": {
+    "Id": "Id",
+    "Name": "Nombre",
+    "Algorithm": "Algoritmo",
+    "Process": "Proceso",
+    "Enabled": "Habilitado",
+    "Description": "Descripción"
+  },
+  "editor": {
+    "name": "Nombre",
+    "algorithmName": "Algoritmo",
+    "applicationName": "Proceso",
+    "groupName": "Grupo",
+    "enabled": "Habilitado",
+    "description": "Descripción",
+    "edit_for": "Editar cálculo {{id}}",
+    "delete_for": "Eliminar cálculo {{id}}",
+    "cancel_for": "Cancelar edición del cálculo {{id}}",
+    "save_for": "Guardar cálculo {{id}}"
+  }
+}
