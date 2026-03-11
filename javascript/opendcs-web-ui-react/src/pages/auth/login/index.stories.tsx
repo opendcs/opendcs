@@ -1,8 +1,16 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, within, waitFor } from "storybook/test";
+import { expect, userEvent, within, waitFor, fn } from "storybook/test";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import Login from "./index";
 import { http, HttpResponse } from "msw";
+import { OrganizationsContext } from "../../../contexts/app/OrganizationsContext";
+import { AuthContext } from "../../../contexts/app/AuthContext";
+import {
+  ApiContext,
+  defaultValue as apiDefault,
+} from "../../../contexts/app/ApiContext";
+
+const MOCK_ORGANIZATIONS = ["SPK", "LRL", "SWT", "MVP"];
 
 // A simple stand-in for the page the user is redirected to after login
 function PlatformsPage() {
@@ -13,12 +21,25 @@ const meta: Meta<typeof Login> = {
   component: Login,
   decorators: [
     (Story) => (
-      <MemoryRouter initialEntries={["/login"]}>
-        <Routes>
-          <Route path="/login" element={<Story />} />
-          <Route path="/platforms" element={<PlatformsPage />} />
-        </Routes>
-      </MemoryRouter>
+      <ApiContext value={apiDefault}>
+        <AuthContext
+          value={{
+            user: undefined,
+            isLoading: false,
+            setUser: fn(),
+            logout: fn(),
+          }}
+        >
+          <OrganizationsContext value={{ organizations: MOCK_ORGANIZATIONS }}>
+            <MemoryRouter initialEntries={["/login"]}>
+              <Routes>
+                <Route path="/login" element={<Story />} />
+                <Route path="/platforms" element={<PlatformsPage />} />
+              </Routes>
+            </MemoryRouter>
+          </OrganizationsContext>
+        </AuthContext>
+      </ApiContext>
     ),
   ],
   parameters: {
@@ -26,7 +47,7 @@ const meta: Meta<typeof Login> = {
     msw: {
       handlers: [
         // Default: successful login handler
-        http.post("*/session/:org", () => {
+        http.post("/odcsapi/credentials/:org", () => {
           return HttpResponse.json({
             username: "admin",
             roles: ["ODCS_USER"],
@@ -55,8 +76,8 @@ export const FilledIn: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    await userEvent.type(await canvas.getByLabelText(/username/i), "admin");
-    await userEvent.type(await canvas.getByLabelText(/password/i), "secret");
+    await userEvent.type(await canvas.getByPlaceholderText(/username/i), "admin");
+    await userEvent.type(await canvas.getByPlaceholderText(/password/i), "secret");
 
     await expect(canvas.getByRole("button", { name: /login/i })).toBeInTheDocument();
   },
@@ -66,14 +87,22 @@ export const SuccessfulLogin: Story = {
   args: {
     organization: "SPK",
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
 
     // Fill in the username
-    await userEvent.type(await canvas.getByLabelText(/username/i), "admin");
+    await userEvent.type(await canvas.getByPlaceholderText(/username/i), "admin");
 
     // Fill in the password
-    await userEvent.type(await canvas.getByLabelText(/password/i), "secret");
+    await userEvent.type(await canvas.getByPlaceholderText(/password/i), "secret");
+
+    // Set the organization
+    userEvent.selectOptions(
+      await canvas.getByRole("combobox", {
+        name: "",
+      }),
+      args.organization,
+    );
 
     // Submit the form
     await userEvent.click(canvas.getByRole("button", { name: /login/i }));
@@ -86,20 +115,28 @@ export const SuccessfulLogin: Story = {
 };
 
 export const FailedLogin: Story = {
+  args: {
+    organization: "SPK",
+  },
   parameters: {
     msw: {
       handlers: [
-        http.post("*/session/:org", () => {
+        http.post("/odcsapi/credentials/:org", () => {
           return new HttpResponse(null, { status: 401 });
         }),
       ],
     },
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
 
-    await userEvent.type(canvas.getByLabelText(/username/i), "wronguser");
-    await userEvent.type(canvas.getByLabelText(/password/i), "wrongpass");
+    await userEvent.type(canvas.getByPlaceholderText(/username/i), "wronguser");
+    await userEvent.type(canvas.getByPlaceholderText(/password/i), "wrongpass");
+
+    await userEvent.selectOptions(
+      canvas.getByRole("combobox", { name: "" }),
+      args.organization,
+    );
 
     await userEvent.click(canvas.getByRole("button", { name: /login/i }));
 

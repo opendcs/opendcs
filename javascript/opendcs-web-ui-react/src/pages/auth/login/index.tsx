@@ -59,41 +59,35 @@ export default function Login() {
             </div>
             <Form onSubmit={handleLogin} className="fade-in second">
               <Form.Group className="mb-3">
-                <Form.Label className="small fw-medium">
-                  {t("username")}
-                  <Form.Control
-                    type="text"
-                    id="username"
-                    required
-                    name="username"
-                    placeholder={t("username")}
-                  />
-                </Form.Label>
+                <Form.Label className="small fw-medium">{t("username")}</Form.Label>
+                <Form.Control
+                  type="text"
+                  id="username"
+                  required
+                  name="username"
+                  placeholder={t("username")}
+                />
               </Form.Group>
               <Form.Group className="mb-4">
-                <Form.Label className="small fw-medium">
-                  {t("password")}
-                  <Form.Control
-                    type="password"
-                    id="password"
-                    required
-                    name="password"
-                    placeholder={t("password")}
-                  />
-                </Form.Label>
+                <Form.Label className="small fw-medium">{t("password")}</Form.Label>
+                <Form.Control
+                  type="password"
+                  id="password"
+                  required
+                  name="password"
+                  placeholder={t("password")}
+                />
               </Form.Group>
               {organizations.length > 0 ? (
                 <Form.Group className="mb-3">
-                  <Form.Label>
-                    {t("organization")}
-                    <Form.Select id="organization" name="organization" required>
-                      {organizations.map((name) => (
-                        <option key={name} value={name}>
-                          {name}
-                        </option>
-                      ))}
-                    </Form.Select>
-                  </Form.Label>
+                  <Form.Label>{t("organization")}</Form.Label>
+                  <Form.Select id="organization" name="organization" required>
+                    {organizations.map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                  </Form.Select>
                 </Form.Group>
               ) : (
                 <input type="hidden" name="organization" value="" />
