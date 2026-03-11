@@ -103,7 +103,7 @@ public final class OidcCallback extends OpenDcsResource
 					           .entity("""
                             {"message": "Invalid Credentials."}
                         """);
-        if (state.equals(stateFromSession.getValue()))
+        if (state != null && stateFromSession != null &&  state.equals(stateFromSession.getValue()))
         {
             log.info("Starting login attempt.");
             var db = createDb();
