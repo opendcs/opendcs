@@ -15,7 +15,6 @@
 
 package decodes.tsdb;
 
-import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -56,7 +55,7 @@ public final class ComputationExecution
 
 	public CompResults execute(List<DbComputation> toRun, DataCollection theData)
 	{
-		return execute(toRun, theData, Date.from(Instant.MIN), Date.from(Instant.MAX));
+		return execute(toRun, theData, null, null);
 	}
 
 	public CompResults execute(List<DbComputation> toRun, DataCollection theData, Date start, Date end)
@@ -75,7 +74,8 @@ public final class ComputationExecution
 				listener.onProgress(String.format("Executing computation '%s' #trigs=%d",
 						comp.getName(), comp.getTriggeringRecNums().size()), Level.DEBUG, null);
 				computesTried++;
-				executeSingleComp(comp, start, end, theData, true, listener);
+				boolean ignoreTimeWindow = start == null && end == null;
+				executeSingleComp(comp, start, end, theData, ignoreTimeWindow, listener);
 			}
 			catch(DbIoException ex)
 			{
