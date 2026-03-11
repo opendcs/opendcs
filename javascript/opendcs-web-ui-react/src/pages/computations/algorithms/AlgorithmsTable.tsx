@@ -107,6 +107,7 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
   const options: DataTableProps["options"] = {
     paging: true,
     responsive: true,
+    scrollX: true,
     stateSave: true,
     language: dtLangs.get(i18n.language),
     createdRow: (_row, _data, dataIndex) => {

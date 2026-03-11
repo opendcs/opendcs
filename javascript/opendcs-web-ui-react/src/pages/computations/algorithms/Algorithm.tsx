@@ -18,7 +18,6 @@ const INPUT_H = { height: "2.25rem" };
 const LABEL_H = { height: "1rem" };
 const SEARCH_H = { height: "1.875rem" };
 const INFO_H = { height: "0.8rem" };
-const PAGER_BTN = { width: "1.75rem", height: "1.75rem" };
 
 export const AlgorithmSkeleton: React.FC<{ edit?: boolean }> = ({ edit = false }) => (
   <Card>
@@ -48,12 +47,6 @@ export const AlgorithmSkeleton: React.FC<{ edit?: boolean }> = ({ edit = false }
           {/* Top: [show entries] [+ button (edit)] ... [search] */}
           <div className="d-flex justify-content-between align-items-center mb-2">
             <div className="d-flex align-items-center gap-2">
-              <Placeholder animation="glow">
-                <Placeholder
-                  className="rounded"
-                  style={{ ...SEARCH_H, width: "6rem" }}
-                />
-              </Placeholder>
               {edit && (
                 <Placeholder animation="glow">
                   <Placeholder
@@ -77,16 +70,10 @@ export const AlgorithmSkeleton: React.FC<{ edit?: boolean }> = ({ edit = false }
           <Placeholder animation="glow">
             <Placeholder xs={12} className="rounded" style={{ height: "4rem" }} />
           </Placeholder>
-          {/* Bottom: [info text] ... [pagination] */}
+          {/* Bottom: [info text] */}
           <div className="d-flex justify-content-between align-items-center mt-1">
             <Placeholder animation="glow" style={{ width: "35%" }}>
               <Placeholder xs={12} className="rounded" style={INFO_H} />
-            </Placeholder>
-            <Placeholder animation="glow">
-              <Placeholder
-                className="rounded"
-                style={{ ...PAGER_BTN, width: "8rem" }}
-              />
             </Placeholder>
           </div>
         </Col>
@@ -103,15 +90,9 @@ export const AlgorithmSkeleton: React.FC<{ edit?: boolean }> = ({ edit = false }
             </Placeholder>
           </Row>
           {/* Properties table */}
-          {/* Top: [show entries] [+ button (edit)] ... [search] */}
+          {/* Top: [+ button (edit)] ... [search] */}
           <div className="d-flex justify-content-between align-items-center mb-2">
             <div className="d-flex align-items-center gap-2">
-              <Placeholder animation="glow">
-                <Placeholder
-                  className="rounded"
-                  style={{ ...SEARCH_H, width: "6rem" }}
-                />
-              </Placeholder>
               {edit && (
                 <Placeholder animation="glow">
                   <Placeholder
@@ -133,24 +114,18 @@ export const AlgorithmSkeleton: React.FC<{ edit?: boolean }> = ({ edit = false }
           >
             <Placeholder xs={4} className="rounded" style={LABEL_H} />
           </Placeholder>
-          {/* Properties table block */}
+          {/* Properties table block with scroll */}
           <Placeholder animation="glow">
             <Placeholder
               xs={12}
               className="rounded"
-              style={{ height: edit ? "4rem" : "5rem" }}
+              style={{ height: "calc(10 * 2rem)" }}
             />
           </Placeholder>
-          {/* Bottom: [info text] ... [pagination] */}
-          <div className="d-flex justify-content-between align-items-center mt-1">
+          {/* Bottom: [info text] */}
+          <div className="d-flex justify-content-start align-items-center mt-1">
             <Placeholder animation="glow" style={{ width: "35%" }}>
               <Placeholder xs={12} className="rounded" style={INFO_H} />
-            </Placeholder>
-            <Placeholder animation="glow">
-              <Placeholder
-                className="rounded"
-                style={{ ...PAGER_BTN, width: "8rem" }}
-              />
             </Placeholder>
           </div>
         </Col>
@@ -259,37 +234,60 @@ export const Algorithm: React.FC<AlgorithmProperties> = ({
       <Card.Body>
         <Row>
           {/* Left column — Name, ExecClass, Parameters table */}
+          <Row>
+            <Col>
+              <FormGroup as={Row} className="mb-3">
+                <Form.Label column lg={3} htmlFor="algoName">
+                  {t("algorithms:editor.name")}
+                </Form.Label>
+                <Col lg={9}>
+                  <Form.Control
+                    type="text"
+                    id="algoName"
+                    name="name"
+                    readOnly={!edit}
+                    defaultValue={localAlgorithm.name}
+                    onChange={inputChange}
+                  />
+                </Col>
+              </FormGroup>
+              <FormGroup as={Row} className="mb-3">
+                <Form.Label column lg={3} htmlFor="execClass">
+                  {t("algorithms:editor.execClass")}
+                </Form.Label>
+                <Col lg={9}>
+                  <Form.Control
+                    type="text"
+                    id="execClass"
+                    name="execClass"
+                    readOnly={!edit}
+                    defaultValue={localAlgorithm.execClass}
+                    onChange={inputChange}
+                  />
+                </Col>
+              </FormGroup>
+            </Col>
+            {/* Right column — Description, Properties table */}
+            <Col>
+              <FormGroup as={Row} className="mb-3">
+                <Form.Label column lg={3} htmlFor="algoDescription">
+                  {t("algorithms:editor.description")}
+                </Form.Label>
+                <Col lg={9}>
+                  <Form.Control
+                    as="textarea"
+                    rows={3}
+                    id="algoDescription"
+                    name="description"
+                    readOnly={!edit}
+                    defaultValue={localAlgorithm.description}
+                    onChange={inputChange}
+                  />
+                </Col>
+              </FormGroup>
+            </Col>
+          </Row>
           <Col>
-            <FormGroup as={Row} className="mb-3">
-              <Form.Label column sm={3} htmlFor="algoName">
-                {t("algorithms:editor.name")}
-              </Form.Label>
-              <Col sm={9}>
-                <Form.Control
-                  type="text"
-                  id="algoName"
-                  name="name"
-                  readOnly={!edit}
-                  defaultValue={localAlgorithm.name}
-                  onChange={inputChange}
-                />
-              </Col>
-            </FormGroup>
-            <FormGroup as={Row} className="mb-3">
-              <Form.Label column sm={3} htmlFor="execClass">
-                {t("algorithms:editor.execClass")}
-              </Form.Label>
-              <Col sm={9}>
-                <Form.Control
-                  type="text"
-                  id="execClass"
-                  name="execClass"
-                  readOnly={!edit}
-                  defaultValue={localAlgorithm.execClass}
-                  onChange={inputChange}
-                />
-              </Col>
-            </FormGroup>
             <AlgorithmParamsTable
               parms={localParms}
               edit={edit}
@@ -304,24 +302,7 @@ export const Algorithm: React.FC<AlgorithmProperties> = ({
               }
             />
           </Col>
-          {/* Right column — Description, Properties table */}
           <Col>
-            <FormGroup as={Row} className="mb-3">
-              <Form.Label column sm={3} htmlFor="algoDescription">
-                {t("algorithms:editor.description")}
-              </Form.Label>
-              <Col sm={9}>
-                <Form.Control
-                  as="textarea"
-                  rows={3}
-                  id="algoDescription"
-                  name="description"
-                  readOnly={!edit}
-                  defaultValue={localAlgorithm.description}
-                  onChange={inputChange}
-                />
-              </Col>
-            </FormGroup>
             <PropertiesTable
               theProps={props}
               actions={propertyActions}

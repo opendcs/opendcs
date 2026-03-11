@@ -114,7 +114,7 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
   const parmTypeSelectHtml = useCallback(
     (defaultValue: string) =>
       renderToString(
-        <Form.Select name="parmType" defaultValue={defaultValue} size="sm">
+        <Form.Select name="parmType" defaultValue={defaultValue} size="lg">
           {PARM_TYPES.map((pt) => (
             <option key={pt.value} value={pt.value}>
               {pt.label}
@@ -136,7 +136,7 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
             type="text"
             name="roleName"
             defaultValue={data.kind === "existing" ? data.roleName : ""}
-            size="sm"
+            size="lg"
             aria-label={t("algorithms:parms.roleName_input")}
           />,
         );
@@ -202,7 +202,7 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
           <>
             <Button
               variant="primary"
-              size="sm"
+              size="lg"
               aria-label={t("algorithms:parms.save_parm")}
               onClick={() => handleSaveNew(data.idx)}
             >
@@ -210,7 +210,7 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
             </Button>
             <Button
               variant="secondary"
-              size="sm"
+              size="lg"
               aria-label={t("algorithms:parms.cancel_parm")}
               onClick={() =>
                 setNewParms((prev) => prev.filter((p) => p.idx !== data.idx))
@@ -227,7 +227,7 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
           <>
             <Button
               variant="primary"
-              size="sm"
+              size="lg"
               aria-label={t("algorithms:parms.save_parm")}
               onClick={() => handleSaveExisting(data.roleName)}
             >
@@ -235,7 +235,7 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
             </Button>
             <Button
               variant="secondary"
-              size="sm"
+              size="lg"
               aria-label={t("algorithms:parms.cancel_parm")}
               onClick={() =>
                 setEditingNames((prev) => {
@@ -255,7 +255,7 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
         <>
           <Button
             variant="warning"
-            size="sm"
+            size="lg"
             aria-label={t("algorithms:parms.edit_for", { name: data.roleName })}
             onClick={() => setEditingNames((prev) => new Set([...prev, data.roleName]))}
           >
@@ -263,7 +263,7 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
           </Button>
           <Button
             variant="danger"
-            size="sm"
+            size="lg"
             aria-label={t("algorithms:parms.delete_for", { name: data.roleName })}
             onClick={() => onRemove?.(data.roleName)}
           >
@@ -293,8 +293,9 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
 
   const options: DataTableProps["options"] = useMemo(
     () => ({
-      paging: true,
-      pageLength: 10,
+      paging: false,
+      scrollY: "calc(10 * 2rem)",
+      scrollCollapse: true,
       responsive: true,
       language: dtLangs.get(i18n.language),
       layout: {

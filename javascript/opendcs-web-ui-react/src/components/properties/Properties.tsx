@@ -189,7 +189,9 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
 
   const options: DataTableProps["options"] = useMemo(() => {
     return {
-      paging: true,
+      paging: false,
+      scrollY: "calc(10 * 2rem)",
+      scrollCollapse: true,
       pageLength: 10,
       responsive: true,
       language: dtLangs.get(i18n.language),
