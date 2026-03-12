@@ -22,6 +22,7 @@ export function TopBar({ onToggleSidebar, sidebarOpen }: TopBarProps) {
   const organizations = useOrganizations();
   const api = useApi();
   const auth = new RESTAuthenticationAndAuthorizationApi(api.conf);
+  const orgList = organizations.organizations;
 
   const changeOrg = (org: string) => {
     auth
@@ -61,12 +62,12 @@ export function TopBar({ onToggleSidebar, sidebarOpen }: TopBarProps) {
           <Nav.Item>
             <ColorModes />
           </Nav.Item>
-          {user ? (
+          {orgList.length > 0 && user ? (
             <Nav.Item>
               {api && (
                 <ChangeOrgMenu
                   org={api.org || "Change Organization"}
-                  orgs={organizations.organizations}
+                  orgs={orgList}
                   onChange={changeOrg}
                 />
               )}

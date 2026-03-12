@@ -1,8 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, fn } from "storybook/test";
+import { expect, fn, userEvent } from "storybook/test";
 import { TopBar } from "./TopBar";
 import { ModeIcons } from "../ModeIcon";
 import { AuthContext } from "../../contexts/app/AuthContext";
+import { OrganizationsContext } from "../../contexts/app/OrganizationsContext";
+import { ApiContext, defaultValue as apiDefault } from "../../contexts/app/ApiContext";
 
 const meta = {
   component: TopBar,
@@ -52,5 +54,68 @@ export const WithUser: Story = {
     await mount();
     const text = await canvas.findByText("OpenDCS");
     expect(text).toBeInTheDocument();
+  },
+};
+
+export const WithChangeOrg: Story = {
+  args: {
+    organizations: ["SPK", "HQ", "LRL"],
+  },
+  decorators: [
+    (Story, { args }) => {
+      return (
+        <AuthContext
+          value={{
+            logout: fn(),
+            setUser: fn(),
+            user: { email: "testuser@example.com" },
+            isLoading: false,
+          }}
+        >
+          <OrganizationsContext value={{ organizations: args.organizations }}>
+            <Story />
+          </OrganizationsContext>
+        </AuthContext>
+      );
+    },
+  ],
+  play: async ({ canvas, mount }) => {
+    await mount();
+    const text = await canvas.findByText("Change Organization");
+    expect(text).toBeInTheDocument();
+    await userEvent.click(text);
+    const office = await canvas.findByText("SPK");
+    expect(office).toBeInTheDocument();
+  },
+};
+
+export const NoChangeOrgWhenNoOrgs: Story = {
+  args: {
+    organizations: [],
+  },
+  decorators: [
+    (Story, { args }) => {
+      return (
+        <ApiContext value={apiDefault}>
+          <AuthContext
+            value={{
+              logout: fn(),
+              setUser: fn(),
+              user: { email: "testuser@example.com" },
+              isLoading: false,
+            }}
+          >
+            <OrganizationsContext value={{ organizations: args.organizations }}>
+              <Story />
+            </OrganizationsContext>
+          </AuthContext>
+        </ApiContext>
+      );
+    },
+  ],
+  play: async ({ canvas, mount }) => {
+    await mount();
+    const text = await canvas.queryByText("Change Organization");
+    expect(text).not.toBeInTheDocument();
   },
 };
