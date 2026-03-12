@@ -9,9 +9,12 @@ import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.EngineeringUnitDao;
 import org.opendcs.database.model.mappers.engineeringunit.EngineeringUnitMapper;
 import org.opendcs.utils.sql.SqlErrorMessages;
+import org.opendcs.utils.sql.SqlKeywords;
 import org.openide.util.lookup.ServiceProvider;
 
 import decodes.db.EngineeringUnit;
+
+import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 
 @ServiceProvider(service = EngineeringUnitDao.class)
 public class EngineeringUnitDaoImp implements EngineeringUnitDao
@@ -54,8 +57,30 @@ public class EngineeringUnitDaoImp implements EngineeringUnitDao
     public List<EngineeringUnit> getEngineeringUnits(DataTransaction tx, int limit, int offset)
             throws OpenDcsDataException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getEngineeringUnits'");
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        final String querySql = """
+                    select unitabbr, name, family, measures 
+                      from engineeringunit
+                      <limit>
+                """;
+            
+        try (var query = handle.createQuery(querySql))
+        {
+            if (limit != -1)
+            {
+                query.bind(SqlKeywords.LIMIT, limit);
+            }
+
+            if (offset != -1)
+            {
+                query.bind(SqlKeywords.OFFSET, offset);
+            }
+            return query.define("limit", addLimitOffset(limit, offset))
+                        .registerRowMapper(EngineeringUnit.class, EngineeringUnitMapper.withPrefix(""))
+                        .mapTo(EngineeringUnit.class)
+                        .list();
+        }
     }
     
 }

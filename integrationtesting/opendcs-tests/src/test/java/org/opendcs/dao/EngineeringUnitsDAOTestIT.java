@@ -1,5 +1,6 @@
 package org.opendcs.dao;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -24,4 +25,14 @@ class EngineeringUnitsDAOTestIT extends AppTestBase
         }
     }
 
+    @Test
+    void test_unit_retrieve_all() throws Exception
+    {
+        var unitDao = db.getDao(EngineeringUnitDao.class).orElseThrow();
+        try (var tx = db.newTransaction())
+        {
+            var units = unitDao.getEngineeringUnits(tx, -1, -1);
+            assertFalse(units.isEmpty());
+        }
+    }
 }
