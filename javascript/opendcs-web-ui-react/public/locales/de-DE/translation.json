@@ -10,5 +10,19 @@
   "Dark": "Dunkel",
   "Light": "Licht",
   "Change language": "Sprache ändern zu {{lang}}",
-  "Language Menu": "Öffnen Sie das Übersetzungsmenü"
+  "Language Menu": "Öffnen Sie das Übersetzungsmenü",
+  "country": "Land",
+  "region": "Region",
+  "latitude": "Breitengrad",
+  "longitude": "Längengrad",
+  "elevation": "Höhe",
+  "elevation_units": "Höheneinheiten",
+  "state": "Bundesland",
+  "description": "Beschreibung",
+  "cancel": "Abbrechen",
+  "save": "Speichern",
+  "loading_reference_lists": "Referenzlistendaten werden geladen...",
+  "user-settings": "Benutzereinstellungen",
+  "date_time": "Datum/Uhrzeit",
+  "drag_order": "Verwenden Sie diese Zelle, um die Zeile zu ziehen und neu zu ordnen"
 }
