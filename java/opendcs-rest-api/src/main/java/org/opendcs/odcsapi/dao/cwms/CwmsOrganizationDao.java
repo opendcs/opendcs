@@ -23,10 +23,11 @@ import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.odcsapi.beans.ApiOrganization;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.dao.OrganizationDao;
+import org.openide.util.lookup.ServiceProvider;
 
+@ServiceProvider(service = OrganizationDao.class, path ="dao/CWMS-Oracle")
 public final class CwmsOrganizationDao implements OrganizationDao
 {
-
 	@Override
 	public List<ApiOrganization> retrieveOrganizationIds(DataTransaction tx, int limit, int offset) throws DbException
 	{
