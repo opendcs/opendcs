@@ -161,7 +161,38 @@ public class Nos6Min extends NosDecoder
                                          x, y, timeOffset, dataTime, redundantDataTime);
                                 break;
                         case '1': // PWL Aqua Track = Acousitic Water Level
-                        case '(': // Air Gap
+                  
+				wl = getInt(3, false);
+
+                                sigma = getInt(2, false);
+                                outlier = getInt(1, false);
+
+                                if (Qcount ==0)
+                                {
+                                   x = getInt(2, true); // AQT1
+                                   y = getInt(2, true); // AQT2
+                                }
+                                else
+                                {
+                                  x = 999999;
+                                  y = 999999;
+                                }
+
+                                sensorNum = getSensorNumber('A', config);
+                                if (sensorNum == -1)
+                                        continue;
+
+                                v = new Variable("" + wl + "," + sigma + "," + outlier
+                                        + "," + x + "," + y);
+                                if (isValid(wl))
+                                   msg.addSampleWithTime(sensorNum, v, dataTime, 1);
+                                else
+                                   log.warn("Aqua WL sensor data is discarded for station {}{} WL={}",
+                                            stationId, dcpNum, wl);
+
+                                Qcount++;
+                                break;
+			case '(': // Air Gap
                                 wl = getInt(3, false);
 
                                 sigma = getInt(2, false);
@@ -173,21 +204,8 @@ public class Nos6Min extends NosDecoder
                                 log.info("Skipping read of dummy air gap AQT1 and AQT2 values");
                                 x = 999999;
                                 y = 999999;
-                                // For the second DCP Air Gap data, there are no AQT1 or AQT2.
-                                // if (Qcount ==0)
-                                // {
-                                //    x = getInt(2, true); // AQT1
-                                //    y = getInt(2, true); // AQT2
-                                // }
-                                // else
-                                // {
-                                //   x = 999999;
-                                //   y = 999999;
-                                //}
 
-                                sensorNum = getSensorNumber(
-                                        flag == '1' ? 'A' :
-                                        flag == '(' ? 'Q' : 'A', config);
+                                sensorNum = getSensorNumber('Q', config);
                                 if (sensorNum == -1)
                                         continue;
 
@@ -196,7 +214,7 @@ public class Nos6Min extends NosDecoder
 		         	if (isValid(wl))
                                    msg.addSampleWithTime(sensorNum, v, dataTime, 1);
 				else
-				   log.warn("Aqua or Air Gap WL sensor data is discarded for station {}{} WL={}",
+				   log.warn("Air Gap WL sensor data is discarded for station {}{} WL={}",
                 	                    stationId, dcpNum, wl);
 
                                 Qcount++;
