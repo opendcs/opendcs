@@ -12,7 +12,9 @@ import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
+import decodes.db.Constants;
 import decodes.db.EngineeringUnit;
+import decodes.db.UnitConverterDb;
 import decodes.sql.DbKey;
 
 @EnableIfTsDb
@@ -79,17 +81,21 @@ class UnitConverterDaoTestIT extends AppTestBase
     @Test
     void test_create_delete() throws Exception
     {
-        var unitIn = new EngineeringUnit("flurgl", "Flurgle", "TotallyFake", "Length");
-        var unitDao = db.getDao(EngineeringUnitDao.class).orElseThrow();
+        var ucIn = new UnitConverterDb("raw", "ft");
+        ucIn.algorithm = "linear";
+        ucIn.coefficients = new double[]{10.0, 0.0, Constants.undefinedDouble, Constants.undefinedDouble, Constants.undefinedDouble, Constants.undefinedDouble};
+
+        
+        var ucDao = db.getDao(UnitConverterDao.class).orElseThrow();
         try (var tx = db.newTransaction())
         {
-            var unitOut = unitDao.save(tx, unitIn);
-            assertEquals(unitIn, unitOut);
+            var ucOut = ucDao.save(tx, ucIn);
+            assertEquals(ucIn, ucOut);
 
 
-            unitDao.delete(tx, unitIn.getAbbr());
+            ucDao.delete(tx, ucOut.getId());
 
-            var unitShouldNotExist = unitDao.lookup(tx, unitIn.getName());
+            var unitShouldNotExist = ucDao.getById(tx, ucOut.getId());
             assertFalse(unitShouldNotExist.isPresent());
         }
     }

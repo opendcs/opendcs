@@ -42,22 +42,50 @@ public final class UnitConverterMapper extends PrefixRowMapper<UnitConverterDb>
         String fromUnits = rs.getString(prefix + "fromunitsabbr");
         String toUnits = rs.getString(prefix + "tounitsabbr");
         String algorithm = rs.getString(prefix + "algorithm");
-        double a = rs.getDouble(prefix + "a");
-        double b = rs.getDouble(prefix + "b");
-        double c = rs.getDouble(prefix + "c");
-        double d = rs.getDouble(prefix + "d");
-        double e = rs.getDouble(prefix + "e");
-        double f = rs.getDouble(prefix + "f");
+
+        // well, I can't think of a better way to do this.
+        double[] coefficients = new double[]{Constants.undefinedDouble, Constants.undefinedDouble, Constants.undefinedDouble,
+                                             Constants.undefinedDouble, Constants.undefinedDouble, Constants.undefinedDouble};
+        double tmp = rs.getDouble(prefix + "a");
+        if (!rs.wasNull())
+        {
+            coefficients[0] = tmp;
+        }
+        tmp = rs.getDouble(prefix + "b");
+        if (!rs.wasNull())
+        {
+            coefficients[1] = tmp;
+        }
+        tmp = rs.getDouble(prefix + "c");
+        if (!rs.wasNull())
+        {
+            coefficients[2] = tmp;
+        }
+        tmp = rs.getDouble(prefix + "d");
+        if (!rs.wasNull())
+        {
+            coefficients[3] = tmp;
+        }
+        tmp = rs.getDouble(prefix + "e");
+        if (!rs.wasNull())
+        {
+            coefficients[4] = tmp;
+        }
+        tmp = rs.getDouble(prefix + "f");
+        if (!rs.wasNull())
+        {
+            coefficients[5] = tmp;
+        }
+
         var converter = new UnitConverterDb(fromUnits, toUnits);
         try
         {
             converter.setId(id);
             converter.algorithm = algorithm;
-            converter.coefficients = new double[]{a,b,c,d,e,f};
-            
+            converter.coefficients = coefficients;
+            // implement the logic of UnitConverterDb.prepareForExec so that we simply don't need to.            
             var from = fromMapper.map(rs, ctx);
             var to = toMapper.map(rs, ctx);
-
 
             if (algorithm.equalsIgnoreCase(Constants.eucvt_none))
             {
