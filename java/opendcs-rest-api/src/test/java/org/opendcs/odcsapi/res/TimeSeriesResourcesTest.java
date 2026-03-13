@@ -44,13 +44,13 @@ import org.opendcs.odcsapi.beans.ApiTsGroupRef;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.opendcs.odcsapi.res.TimeSeriesResources.dataMap;
 import static org.opendcs.odcsapi.res.TimeSeriesResources.idMap;
 import static org.opendcs.odcsapi.res.TimeSeriesResources.map;
 import static org.opendcs.odcsapi.res.TimeSeriesResources.mapRef;
-import static org.opendcs.odcsapi.res.TimeSeriesResources.processSample;
 import static org.opendcs.odcsapi.res.TimeSeriesResources.specMap;
 import static org.opendcs.odcsapi.res.TimeSeriesResources.str2const;
+import static org.opendcs.odcsapi.util.DTOMappers.dataMap;
+import static org.opendcs.odcsapi.util.DTOMappers.processSample;
 
 final class TimeSeriesResourcesTest
 {
