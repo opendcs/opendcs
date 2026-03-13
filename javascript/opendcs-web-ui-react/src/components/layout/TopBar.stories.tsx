@@ -5,6 +5,7 @@ import { ModeIcons } from "../ModeIcon";
 import { AuthContext } from "../../contexts/app/AuthContext";
 import { OrganizationsContext } from "../../contexts/app/OrganizationsContext";
 import { ApiContext, defaultValue as apiDefault } from "../../contexts/app/ApiContext";
+import { ApiOrganization } from "opendcs-api";
 
 const meta = {
   component: TopBar,
@@ -59,7 +60,11 @@ export const WithUser: Story = {
 
 export const WithChangeOrg: Story = {
   args: {
-    organizations: ["SPK", "HQ", "LRL"],
+    organizations: [
+      { name: "SPK" } as ApiOrganization,
+      { name: "HQ" } as ApiOrganization,
+      { name: "LRL" } as ApiOrganization,
+    ],
   },
   decorators: [
     (Story, { args }) => {

@@ -1,8 +1,13 @@
 import { createContext, useContext } from "react";
+import { ApiOrganization } from "opendcs-api";
 
 export interface OrganizationsContextType {
-  organizations: string[];
+  organizations: ApiOrganization[];
 }
+
+export const parseOrg = (orgString: string | null) => {
+  return JSON.parse(orgString ?? "{}") as ApiOrganization;
+};
 
 export const OrganizationsContext = createContext<OrganizationsContextType>({
   organizations: [],

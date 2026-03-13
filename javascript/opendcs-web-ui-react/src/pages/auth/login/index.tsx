@@ -2,7 +2,11 @@ import { type FormEvent } from "react";
 import { useAuth } from "../../../contexts/app/AuthContext";
 import { Button, Card, Container, Form } from "react-bootstrap";
 import { PersonCircle } from "react-bootstrap-icons";
-import { Credentials, RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
+import {
+  ApiOrganization,
+  Credentials,
+  RESTAuthenticationAndAuthorizationApi,
+} from "opendcs-api";
 import { useApi } from "../../../contexts/app/ApiContext";
 import { useOrganizations } from "../../../contexts/app/OrganizationsContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -32,12 +36,18 @@ export default function Login() {
       password: dataObject.password.toString(),
     };
 
+    const orgString: string = dataObject.organization.toString();
+    const orgObj: ApiOrganization = orgString
+      ? (JSON.parse(orgString) as ApiOrganization)
+      : {};
+    const org: string = orgObj.name || "";
+
     auth
-      .postCredentials(dataObject.organization.toString(), credentials)
+      .postCredentials(org, credentials)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .then((user_value: any) => {
         setUser(user_value);
-        api.setOrg(dataObject.organization.toString());
+        api.setOrg(orgObj);
         const redirectPath = location.state?.from || "/platforms";
         navigate(redirectPath, { replace: true });
       })
@@ -82,9 +92,9 @@ export default function Login() {
                 <Form.Group className="mb-3">
                   <Form.Label>{t("organization")}</Form.Label>
                   <Form.Select id="organization" name="organization" required>
-                    {organizations.map((name) => (
-                      <option key={name} value={name}>
-                        {name}
+                    {organizations.map((org) => (
+                      <option key={org.name} value={JSON.stringify(org)}>
+                        {org.name}
                       </option>
                     ))}
                   </Form.Select>

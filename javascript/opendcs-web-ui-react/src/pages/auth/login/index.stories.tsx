@@ -9,8 +9,14 @@ import {
   ApiContext,
   defaultValue as apiDefault,
 } from "../../../contexts/app/ApiContext";
+import { ApiOrganization } from "opendcs-api";
 
-const MOCK_ORGANIZATIONS = ["SPK", "LRL", "SWT", "MVP"];
+const MOCK_ORGANIZATIONS = [
+  { name: "SPK" } as ApiOrganization,
+  { name: "LRL" } as ApiOrganization,
+  { name: "SWT" } as ApiOrganization,
+  { name: "MVP" } as ApiOrganization,
+];
 const ORG_HEADER = "x-organization-id";
 
 // A simple stand-in for the page the user is redirected to after login
@@ -82,7 +88,7 @@ type Story = StoryObj<typeof meta>;
 
 export const SuccessfulLogin: Story = {
   args: {
-    organization: "SPK",
+    organization: { name: "SPK" },
     organizations: MOCK_ORGANIZATIONS,
   },
   play: async ({ args, canvasElement }) => {
@@ -96,7 +102,7 @@ export const SuccessfulLogin: Story = {
       await canvas.getByRole("combobox", {
         name: "",
       }),
-      args.organization,
+      JSON.stringify(args.organization),
     );
 
     // Submit the form
@@ -111,7 +117,7 @@ export const SuccessfulLogin: Story = {
 
 export const FailedLogin_BadCredentials: Story = {
   args: {
-    organization: "SPK",
+    organization: { name: "SPK" },
     organizations: MOCK_ORGANIZATIONS,
   },
   parameters: {
@@ -131,7 +137,7 @@ export const FailedLogin_BadCredentials: Story = {
 
     await userEvent.selectOptions(
       canvas.getByRole("combobox", { name: "" }),
-      args.organization,
+      JSON.stringify(args.organization),
     );
 
     await userEvent.click(canvas.getByRole("button", { name: /login/i }));
@@ -145,7 +151,7 @@ export const FailedLogin_BadCredentials: Story = {
 
 export const FailedLogin_BadOrg: Story = {
   args: {
-    organization: "LRL",
+    organization: { name: "LRL" },
     organizations: MOCK_ORGANIZATIONS,
   },
   parameters: {
@@ -165,7 +171,7 @@ export const FailedLogin_BadOrg: Story = {
 
     await userEvent.selectOptions(
       canvas.getByRole("combobox", { name: "" }),
-      args.organization,
+      JSON.stringify(args.organization),
     );
 
     await userEvent.click(canvas.getByRole("button", { name: /login/i }));

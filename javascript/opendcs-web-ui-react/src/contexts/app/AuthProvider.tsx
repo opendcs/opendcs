@@ -26,7 +26,6 @@ export const AuthProvider = ({ children }: ProviderProps) => {
   }, [apiContext.conf]);
 
   const logout = () => {
-    window.localStorage.removeItem("org");
     if (!user) {
       return;
     }
