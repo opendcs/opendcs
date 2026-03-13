@@ -9,11 +9,11 @@ import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.EngineeringUnitDao;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
-import org.opendcs.fixtures.annotations.EnableIfSql;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.db.EngineeringUnit;
 
-@EnableIfSql
+@EnableIfTsDb
 class EngineeringUnitsDAOTestIT extends AppTestBase
 {
     @ConfiguredField
