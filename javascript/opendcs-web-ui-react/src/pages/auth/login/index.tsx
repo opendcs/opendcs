@@ -2,8 +2,13 @@ import { type FormEvent } from "react";
 import { useAuth } from "../../../contexts/app/AuthContext";
 import { Button, Card, Container, Form } from "react-bootstrap";
 import { PersonCircle } from "react-bootstrap-icons";
-import { Credentials, RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
+import {
+  ApiOrganization,
+  Credentials,
+  RESTAuthenticationAndAuthorizationApi,
+} from "opendcs-api";
 import { useApi } from "../../../contexts/app/ApiContext";
+import { useOrganizations } from "../../../contexts/app/OrganizationsContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -12,6 +17,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { setUser } = useAuth();
+  const { organizations } = useOrganizations();
   const api = useApi();
 
   const auth = new RESTAuthenticationAndAuthorizationApi(api.conf);
@@ -30,16 +36,23 @@ export default function Login() {
       password: dataObject.password.toString(),
     };
 
+    const orgString: string = dataObject.organization.toString();
+    const orgObj: ApiOrganization = orgString
+      ? (JSON.parse(orgString) as ApiOrganization)
+      : {};
+    const org: string = orgObj.name || "";
+
     auth
-      .postCredentials("", credentials)
+      .postCredentials(org, credentials)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .then((user_value: any) => {
         setUser(user_value);
+        api.setOrg(orgObj);
         const redirectPath = location.state?.from || "/platforms";
         navigate(redirectPath, { replace: true });
       })
       .catch((error_: { toString: () => string }) =>
-        alert("Login failed" + error_.toString()),
+        alert("Login failed\n" + error_.toString()),
       );
   }
 
@@ -75,6 +88,20 @@ export default function Login() {
                   placeholder={t("password")}
                 />
               </Form.Group>
+              {organizations.length > 0 ? (
+                <Form.Group className="mb-3">
+                  <Form.Label>{t("organization")}</Form.Label>
+                  <Form.Select id="organization" name="organization" required>
+                    {organizations.map((org) => (
+                      <option key={org.name} value={JSON.stringify(org)}>
+                        {org.name}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              ) : (
+                <input type="hidden" name="organization" value="" />
+              )}
               <div className="d-grid fade-in third">
                 <Button variant="primary" type="submit" className="py-2">
                   {t("login")}

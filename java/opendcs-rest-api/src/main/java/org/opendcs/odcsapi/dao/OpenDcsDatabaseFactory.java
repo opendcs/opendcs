@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Pattern;
 import javax.sql.DataSource;
 
 import decodes.db.Database;
@@ -78,6 +79,16 @@ public final class OpenDcsDatabaseFactory
 			if(cause instanceof SQLException sqlException && sqlException.getErrorCode() == 28113)
 			{
 				throw new IllegalArgumentException("Error establishing organization id for request.", ex);
+			}
+			if (cause instanceof SQLException sqlException && sqlException.getErrorCode() == 20998)
+			{
+				String msg = sqlException.getLocalizedMessage();
+				Pattern pattern = Pattern.compile("^(ORA-20998: ERROR: Unable to set SESSION_OFFICE_ID to: )"
+						+ "[A-Z]+( because user: ).+( does not have any assigned privileges for that office.)");
+				if (pattern.matcher(msg).find())
+				{
+					throw new IllegalStateException(String.format("User does not have permissions for specified office %s", organization), cause);
+				}
 			}
 			throw new IllegalStateException("Error establishing database instance through data source.", ex);
 		}
