@@ -26,6 +26,7 @@ import java.util.Scanner;
 import java.util.function.Predicate;
 
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -39,6 +40,8 @@ public class WebUtility
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
+    public static final String DEFAULT_LOCAL_TRUST = "$DCSTOOL_USERDIR/local_trust.p12";
+
     /**
      * Default Certificate Trust that only logs the host information for the user to review.
      */
@@ -51,7 +54,7 @@ public class WebUtility
                  "Certificate you will need to manually add this to {}",
                          cert.getHostname().orElse("No hostname"),
                          chain[0].getIssuerX500Principal().getName(),
-                         EnvExpander.expand("$DCSTOOL_USERDIR/local_trust.p12"));
+                         EnvExpander.expand(DEFAULT_LOCAL_TRUST));
         }
         return false;
     };
@@ -147,11 +150,32 @@ public class WebUtility
                                           .withDefaultTrustMaterial()
                                           .withSystemTrustMaterial()
                                           .withInflatableTrustMaterial(
-                                            Paths.get(EnvExpander.expand("$DCSTOOL_USERDIR/local_trust.p12")),
+                                            Paths.get(EnvExpander.expand(DEFAULT_LOCAL_TRUST)),
                                             "local_trust".toCharArray(),
                                             "PKCS12",
                                             certTest)
                                           .build();
         return sslFactory.getSslContext().getSocketFactory();
+    }
+
+    /**
+     * Get a SSLContext using the Java, System, and $DCSTOOL_USERDIR/local_trust.p12 sources.
+     *
+     * @param certTest a user supplied callback used to determine if a certificate chain that isn't already trusted
+     *                 should be.
+     * @return
+     */
+    public static SSLContext sslContext(Predicate<TrustManagerParameters> certTest)
+    {
+        SSLFactory sslFactory = SSLFactory.builder()
+                                          .withDefaultTrustMaterial()
+                                          .withSystemTrustMaterial()
+                                          .withInflatableTrustMaterial(
+                                            Paths.get(EnvExpander.expand(DEFAULT_LOCAL_TRUST)),
+                                            "local_trust".toCharArray(),
+                                            "PKCS12",
+                                            certTest)
+                                          .build();
+        return sslFactory.getSslContext();
     }
 }

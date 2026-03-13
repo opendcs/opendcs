@@ -35,7 +35,6 @@ import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.util.DecodesSettings;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.filter.log.LogDetail;
-import io.restassured.filter.session.SessionFilter;
 import io.restassured.http.Cookie;
 import io.restassured.path.json.JsonPath;
 import io.restassured.specification.RequestSpecification;
@@ -46,6 +45,7 @@ import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.TimeSeriesDAI;
 import org.apache.catalina.session.StandardSession;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.opendcs.odcsapi.res.ObjectMapperContextResolver;
 import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
 import org.opendcs.odcsapi.sec.OpenDcsPrincipal;
@@ -53,10 +53,12 @@ import org.opendcs.odcsapi.sec.basicauth.Credentials;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
+import org.opendcs.database.model.UserBuilder;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.TomcatServer;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.EnableIfApiSupported;
+import org.opendcs.fixtures.extensions.auth.KeyCloakExtension;
 
 import static io.restassured.RestAssured.given;
 import static java.util.stream.Collectors.joining;
@@ -64,6 +66,7 @@ import static org.hamcrest.Matchers.is;
 import static org.opendcs.odcsapi.util.ApiConstants.ORGANIZATION_HEADER;
 
 @EnableIfApiSupported
+@ExtendWith(KeyCloakExtension.class)
 @Tag("rest_api")
 public class BaseApiIT extends AppTestBase
 {
@@ -147,7 +150,7 @@ public class BaseApiIT extends AppTestBase
 		if(session == null) {
 			throw new RuntimeException("Test Session Manager is unusable.");
 		}
-		OpenDcsPrincipal mcup = new OpenDcsPrincipal(username, EnumSet.allOf(OpenDcsApiRoles.class));
+		OpenDcsPrincipal mcup = new OpenDcsPrincipal(new UserBuilder().withEmail(username).build(), EnumSet.allOf(OpenDcsApiRoles.class));
 		session.setAuthType("CLIENT-CERT");
 		session.setPrincipal(mcup);
 		session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, mcup);

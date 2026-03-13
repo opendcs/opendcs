@@ -327,6 +327,16 @@ public class OpenDcsPgUserManagementImpl implements UserManagementDao
     }
 
     @Override
+    public Optional<IdentityProvider> getIdentityProvider(DataTransaction tx, String name) throws OpenDcsDataException
+    {
+        Handle handle = getHandle(tx);
+        try (Query getIdp = handle.createQuery("select id, name, type, updated_at, config::text from identity_provider where name = :name"))
+        {
+            return getIdp.bind(GenericColumns.NAME, name).map(PROVIDER_MAPPER).findOne();
+        }
+    }
+
+    @Override
     public IdentityProvider updateIdentityProvider(DataTransaction tx, DbKey id, IdentityProvider provider)
             throws OpenDcsDataException
     {
