@@ -104,17 +104,11 @@ public final class OidcIdentityProvider implements IdentityProvider
     public Optional<User> login(OpenDcsDatabase db, DataTransaction tx, IdentityProviderCredentials credentials)
             throws OpenDcsAuthException
     {
-        if(credentials instanceof AuthCodeCredentials acc)
+        switch(credentials)
         {
-            return loginAuthCode(db, tx, acc);
-        }
-        else if (credentials instanceof JwtCredentials jc)
-        {
-            return loginJwt(db, tx, jc);
-        }
-        else
-        {
-            return Optional.empty();
+            case AuthCodeCredentials acc: return loginAuthCode(db, tx, acc);
+            case JwtCredentials jc: return loginJwt(db, tx, jc);
+            default: return Optional.empty();
         }
     }
 
@@ -125,7 +119,7 @@ public final class OidcIdentityProvider implements IdentityProvider
 
         StringBuilder sb = new StringBuilder();
         sb.append("grant_type=authorization_code&")
-          .append("client_id=").append(clientId).append("&")
+          .append("client_id=").append(URLEncoder.encode(clientId, StandardCharsets.UTF_8)).append("&")
           .append("client_secret=").append(URLEncoder.encode(clientSecret, StandardCharsets.UTF_8)).append("&")
           .append("code=").append(URLEncoder.encode(credentials.code(), StandardCharsets.UTF_8)).append("&")
           .append("redirect_uri=").append(URLEncoder.encode(redirectUri, StandardCharsets.UTF_8))
@@ -142,16 +136,30 @@ public final class OidcIdentityProvider implements IdentityProvider
                                     .build())
         {
             var response = client.send(request, BodyHandlers.ofString());
-            var json = jsonMapper.readTree(response.body());
-            var idToken = json.get("id_token").asText();
-            return getUserFromToken(db, tx, idToken);
-        }
-        catch (IOException | InterruptedException ex)
-        {
-            if (ex instanceof InterruptedException)
+            if (response.statusCode() != 200)
             {
-                Thread.currentThread().interrupt();
+                throw new IOException(String.format("""
+                    Requestion for client information was not excepted. Status Code: %d, Reason: %s
+                            """, response.statusCode(), response.body()));
             }
+            var json = jsonMapper.readTree(response.body());
+            if (json.has("id_token"))
+            {
+                var idToken = json.get("id_token").asText();
+                return getUserFromToken(db, tx, idToken);
+            }
+            else
+            {
+                throw new IOException("id_token was not provided by authentication provider.");
+            }
+        }
+        catch (InterruptedException ex)
+        {
+            Thread.currentThread().interrupt();
+            throw new OpenDcsAuthException("Unable to validate authentication data. Request could not complete.", ex);
+        }
+        catch (IOException ex)
+        {
             throw new OpenDcsAuthException("Unable to validate authentication data.", ex);
         }
     }
