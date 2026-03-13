@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { ChangeOrgMenu } from "./ChangeOrgMenu";
 import { expect, fn, waitFor } from "storybook/test";
 import { ApiOrganization } from "opendcs-api";
+import { MOCK_ORGANIZATIONS } from "../../../../.storybook/mock/WithOrganization";
 
 const meta = {
   component: ChangeOrgMenu,
@@ -14,11 +15,7 @@ type Story = StoryObj<typeof meta>;
 export const CanClickChange: Story = {
   args: {
     org: { name: "SPK" } as ApiOrganization,
-    orgs: [
-      { name: "SPK" } as ApiOrganization,
-      { name: "HQ" } as ApiOrganization,
-      { name: "LRL" } as ApiOrganization,
-    ],
+    orgs: MOCK_ORGANIZATIONS,
     changeOrg: fn(),
   },
   play: async ({ args, mount, userEvent }) => {

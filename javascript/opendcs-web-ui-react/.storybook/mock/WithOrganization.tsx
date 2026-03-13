@@ -9,14 +9,15 @@ import { OrganizationsContext } from "../../src/contexts/app/OrganizationsContex
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ApiOrganization } from "opendcs-api";
 
-export const WithOrganization: Decorator = (Story, { args }) => {
-  const MOCK_ORGANIZATIONS = [
-    { name: "SPK" } as ApiOrganization,
-    { name: "LRL" } as ApiOrganization,
-    { name: "SWT" } as ApiOrganization,
-    { name: "MVP" } as ApiOrganization,
-  ];
+export const MOCK_ORGANIZATIONS: ApiOrganization[] = [
+  { name: "SPK" },
+  { name: "HQ" },
+  { name: "LRL" },
+  { name: "SWT" },
+  { name: "MVP" },
+];
 
+export const WithOrganization: Decorator = (Story, { args }) => {
   // A simple stand-in for the page the user is redirected to after login
   function PlatformsPage() {
     return <div data-testid="platforms-page">Platforms Page</div>;
