@@ -11,10 +11,10 @@ import decodes.db.EngineeringUnit;
 import decodes.db.UnitConverterDb;
 import decodes.sql.DbKey;
 
-public interface UnitConversionDao extends OpenDcsDao
+public interface UnitConverterDao extends OpenDcsDao
 {
     /**
-     * Retrieve data type by key
+     * Retrieve Unit converter by key
      * @param tx active transaction
      * @param id known UnitConverterDb key
      * @return the UnitConverterDb instance, if found, otherwise empty.
@@ -23,7 +23,7 @@ public interface UnitConversionDao extends OpenDcsDao
 	Optional<UnitConverterDb> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException;
 
 	/**
-     * Write/Update specific data type.
+     * Write/Update specific Unit converter.
      * @param tx active transaction
      * @param UnitConverterDb UnitConverterDb to write
      * @throws OpenDcsDataException
@@ -31,7 +31,7 @@ public interface UnitConversionDao extends OpenDcsDao
 	UnitConverterDb save(DataTransaction tx, UnitConverterDb unitConverter) throws OpenDcsDataException;
 	
     /**
-     * Remove a specific data type.
+     * Remove a specific Unit converter.
      * @param tx active transaction
      * @param id id of the UnitConverterDb to delete.
      * @throws OpenDcsDataException
@@ -39,18 +39,18 @@ public interface UnitConversionDao extends OpenDcsDao
     void delete(DataTransaction tx, DbKey id) throws OpenDcsDataException;
 
 	/**
-     * Given a UnitConverterDb Code attempt to find a matching data type. {@see UnitConverterDb for more information}
+     * Given a UnitConverterDb Code attempt to find a matching Unit converter. {@see UnitConverterDb for more information}
      * @param tx active transaction
-     * @param UnitConverterDbCode data type code to search for.
+     * @param UnitConverterDbCode Unit converter code to search for.
      * @return
      * @throws OpenDcsDataException
      */
 	Optional<UnitConverterDb> lookup(DataTransaction tx, String fromAbbr, String toAbbr) throws OpenDcsDataException;
 
     /**
-     * Given a UnitConverterDb Code attempt to find a matching data type. {@see UnitConverterDb for more information}
+     * Given a UnitConverterDb Code attempt to find a matching Unit converter. {@see UnitConverterDb for more information}
      * @param tx active transaction
-     * @param UnitConverterDbCode data type code to search for.
+     * @param UnitConverterDbCode Unit converter code to search for.
      * @return
      * @throws OpenDcsDataException
      */
