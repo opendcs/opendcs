@@ -24,7 +24,7 @@ export function TopBar({ onToggleSidebar, sidebarOpen }: TopBarProps) {
   const orgList = organizations.organizations;
 
   return (
-    <Navbar sticky="top" className="odcs-topbar">
+    <Navbar fixed="top" className="odcs-topbar">
       <Container fluid className="odcs-topbar__container">
         <div className="odcs-topbar__left">
           <Button
