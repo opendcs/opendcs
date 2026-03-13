@@ -24,7 +24,6 @@ import decodes.db.DataTypeSet;
 import decodes.db.DatabaseException;
 import decodes.db.DatabaseIO;
 import decodes.db.EngineeringUnit;
-import decodes.db.EngineeringUnitList;
 import decodes.db.LinearConverter;
 import decodes.db.NullConverter;
 import decodes.db.Poly5Converter;
@@ -270,7 +269,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 	public Response deleteEU(@Parameter(description = "Engineering unit abbreviation", required = true,
 			example = "blob", schema = @Schema(implementation = String.class))
 		@QueryParam("abbr") String abbr)
-			throws DbException, WebAppException
+			throws WebAppException
 	{
 		if(abbr == null)
 		{
