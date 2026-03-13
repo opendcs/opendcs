@@ -8,13 +8,16 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.EngineeringUnitDao;
+import org.opendcs.database.model.mappers.datatype.DataTypeMapper;
 import org.opendcs.database.model.mappers.engineeringunit.EngineeringUnitMapper;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.openide.util.lookup.ServiceProvider;
 
+import decodes.db.DatabaseException;
 import decodes.db.EngineeringUnit;
+import decodes.sql.DbKey;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 
