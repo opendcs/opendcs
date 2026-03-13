@@ -12,7 +12,7 @@ import decodes.db.EngineeringUnit;
 public interface EngineeringUnitDao extends OpenDcsDao
 {
 	/**
-     * Write/Update specific data type.
+     * Write/Update specific EngineeringUnit.
      * @param tx active transaction
      * @param EngineeringUnit EngineeringUnit to write
      * @throws OpenDcsDataException
@@ -20,7 +20,7 @@ public interface EngineeringUnitDao extends OpenDcsDao
 	EngineeringUnit save(DataTransaction tx, EngineeringUnit unit) throws OpenDcsDataException;
 	
     /**
-     * Remove a specific data type.
+     * Remove a specific EngineeringUnit .
      * @param tx active transaction
      * @param unitAbberviation short name of the EngineeringUnit to delete.
      * @throws OpenDcsDataException
