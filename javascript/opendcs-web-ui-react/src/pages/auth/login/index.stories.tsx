@@ -1,57 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, within, waitFor, fn } from "storybook/test";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { expect, userEvent, within, waitFor } from "storybook/test";
 import Login from "./index";
 import { http, HttpResponse } from "msw";
-import { OrganizationsContext } from "../../../contexts/app/OrganizationsContext";
-import { AuthContext } from "../../../contexts/app/AuthContext";
-import {
-  ApiContext,
-  defaultValue as apiDefault,
-} from "../../../contexts/app/ApiContext";
-import { ApiOrganization } from "opendcs-api";
+import { WithOrganization } from "../../../../.storybook/mock/WithOrganization";
 
-const MOCK_ORGANIZATIONS = [
-  { name: "SPK" } as ApiOrganization,
-  { name: "LRL" } as ApiOrganization,
-  { name: "SWT" } as ApiOrganization,
-  { name: "MVP" } as ApiOrganization,
-];
 const ORG_HEADER = "x-organization-id";
-
-// A simple stand-in for the page the user is redirected to after login
-function PlatformsPage() {
-  return <div data-testid="platforms-page">Platforms Page</div>;
-}
 
 const meta: Meta<typeof Login & { organizations: string[] }> = {
   component: Login,
-  args: {
-    organizations: MOCK_ORGANIZATIONS,
-  },
-  decorators: [
-    (Story, { args }) => (
-      <ApiContext value={apiDefault}>
-        <AuthContext
-          value={{
-            user: undefined,
-            isLoading: false,
-            setUser: fn(),
-            logout: fn(),
-          }}
-        >
-          <OrganizationsContext value={{ organizations: args.organizations }}>
-            <MemoryRouter initialEntries={["/login"]}>
-              <Routes>
-                <Route path="/login" element={<Story />} />
-                <Route path="/platforms" element={<PlatformsPage />} />
-              </Routes>
-            </MemoryRouter>
-          </OrganizationsContext>
-        </AuthContext>
-      </ApiContext>
-    ),
-  ],
+  decorators: [WithOrganization],
   parameters: {
     layout: "fullscreen",
     msw: {
@@ -89,7 +46,6 @@ type Story = StoryObj<typeof meta>;
 export const SuccessfulLogin: Story = {
   args: {
     organization: { name: "SPK" },
-    organizations: MOCK_ORGANIZATIONS,
   },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
@@ -118,7 +74,6 @@ export const SuccessfulLogin: Story = {
 export const FailedLogin_BadCredentials: Story = {
   args: {
     organization: { name: "SPK" },
-    organizations: MOCK_ORGANIZATIONS,
   },
   parameters: {
     msw: {
@@ -152,7 +107,6 @@ export const FailedLogin_BadCredentials: Story = {
 export const FailedLogin_BadOrg: Story = {
   args: {
     organization: { name: "LRL" },
-    organizations: MOCK_ORGANIZATIONS,
   },
   parameters: {
     msw: {
