@@ -33,7 +33,8 @@ public final class OpenIdConfiguration
             http.setRequestMethod("GET");
             http.setInstanceFollowRedirects(true);            
             int status = http.getResponseCode();
-            if (status == 200) {
+            if (status == 200)
+            {
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode node = mapper.readTree(http.getInputStream());
                 jwksUri = URI.create(node.get("jwks_uri").asText());

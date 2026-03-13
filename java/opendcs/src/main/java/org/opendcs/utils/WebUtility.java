@@ -40,6 +40,8 @@ public class WebUtility
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
+    public static final String DEFAULT_LOCAL_TRUST = "$DCSTOOL_USERDIR/local_trust.p12";
+
     /**
      * Default Certificate Trust that only logs the host information for the user to review.
      */
@@ -52,7 +54,7 @@ public class WebUtility
                  "Certificate you will need to manually add this to {}",
                          cert.getHostname().orElse("No hostname"),
                          chain[0].getIssuerX500Principal().getName(),
-                         EnvExpander.expand("$DCSTOOL_USERDIR/local_trust.p12"));
+                         EnvExpander.expand(DEFAULT_LOCAL_TRUST));
         }
         return false;
     };
@@ -148,7 +150,7 @@ public class WebUtility
                                           .withDefaultTrustMaterial()
                                           .withSystemTrustMaterial()
                                           .withInflatableTrustMaterial(
-                                            Paths.get(EnvExpander.expand("$DCSTOOL_USERDIR/local_trust.p12")),
+                                            Paths.get(EnvExpander.expand(DEFAULT_LOCAL_TRUST)),
                                             "local_trust".toCharArray(),
                                             "PKCS12",
                                             certTest)
@@ -169,7 +171,7 @@ public class WebUtility
                                           .withDefaultTrustMaterial()
                                           .withSystemTrustMaterial()
                                           .withInflatableTrustMaterial(
-                                            Paths.get(EnvExpander.expand("$DCSTOOL_USERDIR/local_trust.p12")),
+                                            Paths.get(EnvExpander.expand(DEFAULT_LOCAL_TRUST)),
                                             "local_trust".toCharArray(),
                                             "PKCS12",
                                             certTest)
