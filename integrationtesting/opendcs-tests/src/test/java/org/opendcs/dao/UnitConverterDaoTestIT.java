@@ -14,7 +14,6 @@ import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.db.Constants;
-import decodes.db.EngineeringUnit;
 import decodes.db.UnitConverterDb;
 import decodes.sql.DbKey;
 
@@ -23,7 +22,7 @@ class UnitConverterDaoTestIT extends AppTestBase
 {
     @ConfiguredField
     OpenDcsDatabase db;
-    
+
     @Test
     void test_unit_converter_retrieve() throws Exception
     {
@@ -68,26 +67,17 @@ class UnitConverterDaoTestIT extends AppTestBase
     @Test
     void test_unit_pagination() throws Exception
     {
-        var unitDao = db.getDao(EngineeringUnitDao.class).orElseThrow();
+        var ucDao = db.getDao(UnitConverterDao.class).orElseThrow();
         try (var tx = db.newTransaction())
         {
-            for (int i = 0; i < 20; i++)
-            {
-                var unit = new EngineeringUnit(String.format("#aaaa.%03d", i), String.format("#aaaa,%03d", i), "univ", "nothing");
-                unitDao.save(tx, unit);
-            }
+            var unitConverter0to20 = ucDao.getUnitConverterDbs(tx, 20, 0);
+            assertFalse(unitConverter0to20.isEmpty());
 
-            var unitsAll = unitDao.getEngineeringUnits(tx, 20, 0);
-            assertFalse(unitsAll.isEmpty());
-            assertEquals("#aaaa.019", unitsAll.get(19).getAbbr(), () -> {
-                return String.join(",", unitsAll.stream().map(Object::toString).toList());
-            });
+            var firstHalf = ucDao.getUnitConverterDbs(tx, 10, 0);
+            assertEquals(unitConverter0to20.get(9), firstHalf.get(9));
 
-            var firstHalf = unitDao.getEngineeringUnits(tx, 10, 0);
-            assertEquals("#aaaa.009", firstHalf.get(9).getAbbr());
-
-            var secondHalf = unitDao.getEngineeringUnits(tx, 10, 10);
-            assertEquals("#aaaa.019", secondHalf.get(9).getAbbr());
+            var secondHalf = ucDao.getUnitConverterDbs(tx, 10, 10);
+            assertEquals(unitConverter0to20.get(19), secondHalf.get(9));
 
             tx.rollback();
         }
@@ -100,7 +90,6 @@ class UnitConverterDaoTestIT extends AppTestBase
         ucIn.algorithm = "linear";
         ucIn.coefficients = new double[]{10.0, 0.0, Constants.undefinedDouble, Constants.undefinedDouble, Constants.undefinedDouble, Constants.undefinedDouble};
 
-        
         var ucDao = db.getDao(UnitConverterDao.class).orElseThrow();
         try (var tx = db.newTransaction())
         {

@@ -18,6 +18,7 @@ import org.opendcs.database.dai.UnitConverterDao;
 import org.opendcs.database.model.mappers.unitconverter.UnitConverterMapper;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
+import org.opendcs.utils.sql.SqlKeywords;
 import org.openide.util.lookup.ServiceProvider;
 
 import decodes.db.CompositeConverter;
@@ -205,6 +206,15 @@ public class UnitConverterDaoImpl implements UnitConverterDao
             if (family != null)
             {
                 query.bind("familyValue", family);
+            }
+            if (limit != -1)
+            {
+                query.bind(SqlKeywords.LIMIT, limit);
+            }
+
+            if (offset != -1)
+            {
+                query.bind(SqlKeywords.OFFSET, offset);
             }
             return query.registerRowMapper(UnitConverterDb.class, UnitConverterMapper.withPrefix(""))
                         .mapTo(UnitConverterDb.class)
