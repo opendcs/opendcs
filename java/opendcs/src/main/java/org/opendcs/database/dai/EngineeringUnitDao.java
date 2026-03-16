@@ -28,7 +28,7 @@ public interface EngineeringUnitDao extends OpenDcsDao
     void delete(DataTransaction tx, String unitAbbreviation) throws OpenDcsDataException;
 
 	/**
-     * Given a EngineeringUnit name or abbrevaition attempt to find a matching unit. {@see EngineeringUnit for more information}
+     * Given a EngineeringUnit name or abbreviation attempt to find a matching unit. {@see EngineeringUnit for more information}
      * @param tx active transaction
      * @param unit unit to search for either by name or abbreviation.
      * @return
