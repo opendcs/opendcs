@@ -9,6 +9,9 @@ import org.opendcs.database.api.OpenDcsDataException;
 
 import decodes.db.EngineeringUnit;
 
+/**
+ * Note that in OpenDCS, unit Conversion Abbreviations are case insenstive
+ */
 public interface EngineeringUnitDao extends OpenDcsDao
 {
 	/**

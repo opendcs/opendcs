@@ -32,7 +32,7 @@ public class EngineeringUnitDaoImp implements EngineeringUnitDao
         final String insertSql = """
                 merge into engineeringunit eu
                 using (select :unitabbr unitabbr, :name name, :family family, :measures measures <dual>) input
-                on (eu.unitabbr = input.unitabbr)
+                on (upper(eu.unitabbr) = upper(input.unitabbr))
                 when matched then
                     update set name = input.name, family = input.family, measures = input.measures
                 when not matched then
@@ -71,7 +71,7 @@ public class EngineeringUnitDaoImp implements EngineeringUnitDao
         final String querySql = """
                     select unitabbr, name, family, measures 
                       from engineeringunit 
-                     where unitabbr = :unit 
+                     where upper(unitabbr) = upper(:unit)
                         or name = :unit
                 """;
         try (var query = handle.createQuery(querySql))

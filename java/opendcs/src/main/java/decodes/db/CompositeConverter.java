@@ -34,7 +34,7 @@ inches -&gt; feet -&gt; meters -&gt; millimeters
 public class CompositeConverter extends UnitConverter
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
-	private Vector conversions;
+	private Vector<UnitConverter> conversions;
 
 	/**
 	  Called from UnitConverterSet.findConversion.
@@ -42,8 +42,8 @@ public class CompositeConverter extends UnitConverter
 	  @param to EU we're converting to.
 	  @param conversions chain of UnitConverter objects to execute.
 	*/
-	private CompositeConverter(EngineeringUnit from, EngineeringUnit to,
-		Vector conversions)
+	public CompositeConverter(EngineeringUnit from, EngineeringUnit to,
+		Vector<UnitConverter> conversions)
 	{
 		super(from, to);
 		this.conversions = conversions;
@@ -111,7 +111,7 @@ public class CompositeConverter extends UnitConverter
 
 		resetSearchedFlags();
 		Stack<UnitConverter> callStack = new Stack<UnitConverter>();
-		Vector solutions = new Vector();
+		Vector<UnitConverter> solutions = new Vector<>();
 		recursiveSearch(from, to, callStack, solutions);
 		UnitConverter best = null;
 		double bestWeight = Double.MAX_VALUE;
@@ -129,12 +129,12 @@ public class CompositeConverter extends UnitConverter
 	}
 
 	private static void recursiveSearch(EngineeringUnit from, 
-		EngineeringUnit to, Stack<UnitConverter> callStack, Vector solutions)
+		EngineeringUnit to, Stack<UnitConverter> callStack, Vector<UnitConverter> solutions)
 	{
 		from.cnvtSearched = true;
 
 		// First look for direct conversion to target.
-		for (Iterator it = Database.getDb().unitConverterSet.iteratorExec(); it.hasNext(); )
+		for (Iterator<UnitConverter> it = Database.getDb().unitConverterSet.iteratorExec(); it.hasNext(); )
 		{
 			UnitConverter uc = (UnitConverter)it.next();
 			if (!uc.getFrom().getAbbr().equalsIgnoreCase(from.getAbbr()))
@@ -143,7 +143,7 @@ public class CompositeConverter extends UnitConverter
 			{
 				callStack.push(uc);
 				CompositeConverter cc = new CompositeConverter(
-					(callStack.elementAt(0)).getFrom(), to, new Vector(callStack));
+					(callStack.elementAt(0)).getFrom(), to, new Vector<>(callStack));
 				solutions.add(cc);
 				callStack.pop();
 				return;
@@ -151,7 +151,7 @@ public class CompositeConverter extends UnitConverter
 		}
 
 		// No direct conversion. Do recursive branching.
-		for (Iterator it = Database.getDb().unitConverterSet.iteratorExec(); it.hasNext(); )
+		for (Iterator<UnitConverter> it = Database.getDb().unitConverterSet.iteratorExec(); it.hasNext(); )
 		{
 			UnitConverter uc = (UnitConverter)it.next();
 

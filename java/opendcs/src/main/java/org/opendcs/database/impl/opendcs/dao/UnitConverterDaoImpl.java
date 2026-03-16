@@ -1,7 +1,11 @@
 package org.opendcs.database.impl.opendcs.dao;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Stack;
+import java.util.Vector;
 
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.stringtemplate4.StringTemplateEngine;
@@ -16,9 +20,11 @@ import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.openide.util.lookup.ServiceProvider;
 
+import decodes.db.CompositeConverter;
 import decodes.db.Constants;
 import decodes.db.DatabaseException;
 import decodes.db.EngineeringUnit;
+import decodes.db.UnitConverter;
 import decodes.db.UnitConverterDb;
 import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
@@ -126,8 +132,8 @@ public class UnitConverterDaoImpl implements UnitConverterDao
     {
         // yes this needs better error handling. getting it to work first
         // don't approve until improved.
-        var from = euDao.getByName(tx, fromAbbr).orElseThrow();
-        var to = euDao.getByName(tx, toAbbr).orElseThrow();
+        var from = euDao.getByName(tx, fromAbbr).orElseThrow(() -> new NoSuchUnitException(fromAbbr));
+        var to = euDao.getByName(tx, toAbbr).orElseThrow(() -> new NoSuchUnitException(toAbbr));
         return findUnitConverterFor(tx, from, to);
     }
 
@@ -145,8 +151,8 @@ public class UnitConverterDaoImpl implements UnitConverterDao
                       from unitconverter uc 
                        left join engineeringunit from_eu on from_eu.unitabbr = uc.fromunitsabbr
                        left join engineeringunit to_eu on to_eu.unitabbr = uc.tounitsabbr
-                      where uc.fromunitsabbr = :from
-                        and uc.tounitsabbr = :to
+                      where upper(uc.fromunitsabbr) = upper(:from)
+                        and upper(uc.tounitsabbr) = upper(:to)
                 """;
         try (var query = handle.createQuery(querySql))
         {
@@ -185,8 +191,8 @@ public class UnitConverterDaoImpl implements UnitConverterDao
                     from_eu.unitabbr from_unitabbr, from_eu.name from_name, from_eu.family from_family, from_eu.measures from_measures,
                     to_eu.unitabbr to_unitabbr, to_eu.name to_name, to_eu.family to_family, to_eu.measures to_measures
                     from unitconverter uc 
-                    left join engineeringunit from_eu on from_eu.unitabbr = uc.fromunitsabbr
-                    left join engineeringunit to_eu on to_eu.unitabbr = uc.tounitsabbr
+                    left join engineeringunit from_eu on from_eu.unitabbr) = uc.fromunitsabbr
+                    left join engineeringunit to_eu on to_eu.unitabbr) = uc.tounitsabbr
                     <if(family)> where upper(from_eu.family) = :familyInput or upper(to_eu.family) = :familyInput <endif>
                     order by uc.fromunitsabbr <collate> asc, uc.toounitsabbr <collate> asc
                     <limit>
@@ -207,16 +213,95 @@ public class UnitConverterDaoImpl implements UnitConverterDao
     /**
      * No direct conversion was available so now it's grab them all (for a family) and and
      * do some graph theory work.
-     * @param tx
-     * @param fromAbbr
-     * @param toAbbr
+     * 
+     * NOTE: this code is intentionally copied from the CompositeConverter class. There
+     * would be too many changes required to clean that up and not depend on the static Database instance.
+     *
+     * Also, while we could cache this, the required list if limited to the specific family of conversions and
+     * is thus rather small. If a performance impact is disocvered either improvements can be made or
+     * points of usage can cache as required.
+     * 
+     * @param tx DataTransaction required to get current list of unit converters
+     * @param fromAbbr source unit
+     * @param toAbbr target unit
      * @return
      */
     private Optional<UnitConverterDb> buildComposite(DataTransaction tx, EngineeringUnit from, EngineeringUnit to)
         throws OpenDcsDataException
     {
         var converters = getUnitConverterDbs(tx, to.getFamily(), -1, -1);
+        List<UnitConverter> solutions = new ArrayList<>();
+        @SuppressWarnings("java:S1149") // copy of existing code
+        Stack<UnitConverter> callStack = new Stack<>();
+        HashSet<String> unitsSearched = new HashSet<>();
+        
+        search(solutions, converters.stream().map(uc -> uc.execConverter).toList(), from, to, callStack, unitsSearched);
+        if (solutions.isEmpty())
+        {
+            return Optional.empty(); // no conversions found.
+        }
+        UnitConverter best = null;
+        double bestWeight = Double.MAX_VALUE;
+        for (var uc: solutions)
+        {
+            double w = uc.getWeight();
+            if (w < bestWeight)
+            {
+                best = uc;
+                bestWeight = w;
+            }
+        }
+        var ucDb = new UnitConverterDb(from.abbr, to.abbr);
+        ucDb.execConverter = best;
 
-        return Optional.empty();
+        return Optional.of(ucDb);
+    }
+
+    /**
+     *
+     * Recursively search through the known unit converters attempting to build a converter that is a sequence of conversions from
+     * the source to target units.
+     *
+     * same note as above, mostly copied from CompositeConverter to avoid dealing the the required changes to allow the new DAOs and old access method.
+     *
+     * @param solutiosn
+     * @param converters
+     * @param from current source unit
+     * @param to current target unit
+     * @param callStack current composite as we search through and keep building
+     * @param unitsSearch set of units we have already searched.
+     */ 
+    @SuppressWarnings({"java:S1149","java:S3047"}) // S1149copy of existing code, S3047 these loops operate in fundementally different ways.
+    private static void search(List<UnitConverter> solutions, List<UnitConverter> converters, EngineeringUnit from, EngineeringUnit to,
+                               Stack<UnitConverter> callStack, HashSet<String> unitsSearched)
+    {
+        unitsSearched.add(from.getAbbr());
+
+        // check for direct
+        for (var uc: converters)
+        {
+			if (!uc.getFrom().getAbbr().equalsIgnoreCase(from.getAbbr()))
+				continue;
+			if (uc.getTo().getAbbr().equalsIgnoreCase(to.getAbbr()))
+			{
+				callStack.push(uc);
+				CompositeConverter cc = new CompositeConverter(
+					(callStack.elementAt(0)).getFrom(), to, new Vector<>(callStack));
+				solutions.add(cc);
+				callStack.pop();
+				return;
+			}
+        }
+
+        for (var uc: converters)
+        {
+            // Skip if 'from' doesn't match or if I've already searched 'To'.
+			if (!uc.getFrom().getAbbr().equalsIgnoreCase(from.getAbbr()) || unitsSearched.contains(to.getAbbr()))
+				continue;
+
+			callStack.push(uc);
+			search(solutions, converters, uc.getTo(), to, callStack, unitsSearched);
+			callStack.pop();
+        }   
     }
 }
