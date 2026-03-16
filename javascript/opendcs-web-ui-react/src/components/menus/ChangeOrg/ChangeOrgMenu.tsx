@@ -62,7 +62,7 @@ export const ChangeOrgMenu: React.FC<ChangeOrgMenuProperties> = ({
       <Dropdown drop="start">
         <Dropdown.Toggle
           as={OrgToggle}
-          aria-label={t("organization-settings")}
+          aria-label={"organization-settings"}
           org={org}
         />
         <Dropdown.Menu style={{ maxHeight: "300px", overflowY: "auto" }}>

@@ -24,5 +24,13 @@
   "loading_reference_lists": "Cargando datos de listas de referencia...",
   "user-settings": "Configuración de usuario",
   "date_time": "Fecha/Hora",
-  "drag_order": "Use esta celda para arrastrar la fila y reordenar"
+  "drag_order": "Use esta celda para arrastrar la fila y reordenar",
+  "organization": "Organización",
+  "Change Organization": "Cambiar organización",
+  "Authorization Error": "Error de autorización",
+  "User does not have authorization for this organization.": "El usuario no tiene autorización para esta organización.",
+  "Close": "Cerrar",
+  "Organizations not defined": "Organizaciones no definidas",
+  "Username and/or password is incorrect, or user does not have access to the selected organization.": "El nombre de usuario y/o contraseña son incorrectos, o el usuario no tiene acceso a la organización seleccionada.",
+  "Login Failed": "Login fallido"
 }

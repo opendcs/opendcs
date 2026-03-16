@@ -24,5 +24,13 @@
   "loading_reference_lists": "Referenzlistendaten werden geladen...",
   "user-settings": "Benutzereinstellungen",
   "date_time": "Datum/Uhrzeit",
-  "drag_order": "Verwenden Sie diese Zelle, um die Zeile zu ziehen und neu zu ordnen"
+  "drag_order": "Verwenden Sie diese Zelle, um die Zeile zu ziehen und neu zu ordnen",
+  "organization": "Organisation",
+  "Change Organization": "Organisation wechseln",
+  "Authorization Error": "Autorisierungsfehler",
+  "User does not have authorization for this organization.": "Der Benutzer ist nicht für diese Organisation autorisiert.",
+  "Close": "Schließen",
+  "Organizations not defined": "Organisationen nicht definiert",
+  "Username and/or password is incorrect, or user does not have access to the selected organization.": "Benutzername und/oder Passwort sind falsch, oder der Benutzer hat keinen Zugriff auf die ausgewählte Organisation.",
+  "Login Failed": "Anmeldung fehlgeschlagen"
 }

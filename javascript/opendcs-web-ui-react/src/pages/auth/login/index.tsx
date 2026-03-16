@@ -1,6 +1,6 @@
-import { type FormEvent } from "react";
+import React, { type FormEvent, useState } from "react";
 import { useAuth } from "../../../contexts/app/AuthContext";
-import { Button, Card, Container, Form } from "react-bootstrap";
+import { Button, Card, Container, Form, Modal } from "react-bootstrap";
 import { PersonCircle } from "react-bootstrap-icons";
 import {
   ApiOrganization,
@@ -19,7 +19,7 @@ export default function Login() {
   const { setUser } = useAuth();
   const { organizations } = useOrganizations();
   const api = useApi();
-
+  var errorMsg = "";
   const auth = new RESTAuthenticationAndAuthorizationApi(api.conf);
 
   function handleLogin(event: FormEvent<HTMLFormElement>): void {
@@ -51,10 +51,13 @@ export default function Login() {
         const redirectPath = location.state?.from || "/platforms";
         navigate(redirectPath, { replace: true });
       })
-      .catch((error_: { toString: () => string }) =>
-        alert("Login failed\n" + error_.toString()),
-      );
+      .catch((error_: { toString: () => string }) => {
+        setShowErrorModal(true);
+        errorMsg = error_.toString();
+      });
   }
+
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   return (
     <Container className="odcs-login">
@@ -110,6 +113,23 @@ export default function Login() {
             </Form>
           </Card.Body>
         </Card>
+        <Modal show={showErrorModal} onHide={() => setShowErrorModal(false)} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>{t("Login Failed")}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {t(
+              "Username and/or password is incorrect, or user does not have access to the selected organization.",
+            )}
+            <br />
+            {errorMsg}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowErrorModal(false)}>
+              {t("Close")}
+            </Button>
+          </Modal.Footer>
+        </Modal>
       </Container>
     </Container>
   );
