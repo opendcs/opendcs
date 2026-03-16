@@ -186,6 +186,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var dbType = tx.getContext().getDatabase();
+        
         final String querySql = """
                 select uc.id, uc.fromunitsabbr, uc.tounitsabbr, uc.algorithm, uc.a,uc.b,uc.c,uc.d,uc.e,uc.f,
                     from_eu.unitabbr from_unitabbr, from_eu.name from_name, from_eu.family from_family, from_eu.measures from_measures,
@@ -193,7 +194,8 @@ public class UnitConverterDaoImpl implements UnitConverterDao
                     from unitconverter uc 
                     left join engineeringunit from_eu on from_eu.unitabbr) = uc.fromunitsabbr
                     left join engineeringunit to_eu on to_eu.unitabbr) = uc.tounitsabbr
-                    <if(family)> where upper(from_eu.family) = :familyInput or upper(to_eu.family) = :familyInput <endif>
+                    where uc.fromunitsabbr != 'raw'
+                    <if(family)> and upper(from_eu.family) = :familyInput or upper(to_eu.family) = :familyInput <endif>
                     order by uc.fromunitsabbr <collate> asc, uc.toounitsabbr <collate> asc
                     <limit>
             """;
