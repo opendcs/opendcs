@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.opendcs.odcsapi.res.DatatypeUnitResources.map;
+import static org.opendcs.odcsapi.res.DatatypeUnitResources.mapUnit;
 import static org.opendcs.odcsapi.res.DatatypeUnitResources.ucDbMap;
 import static org.opendcs.odcsapi.res.DatatypeUnitResources.ucMap;
 
@@ -111,12 +112,18 @@ final class DatatypeUnitResourcesTest
 	void testUnitListMap()
 	{
 		EngineeringUnitList eul = new EngineeringUnitList();
-		EngineeringUnit eu = new EngineeringUnit("C", "Celsius", "Metric", "temperature");
+		EngineeringUnit eu1 = new EngineeringUnit("C", "Celsius", "Metric", "temperature");
 		EngineeringUnit eu2 = new EngineeringUnit("K", "Kelvin", "Metric", "temperature");
-		eul.add(eu);
+		eul.add(eu1);
 		eul.add(eu2);
 
-		ArrayList<ApiUnit> apiUnits = map(eul);
+		ArrayList<ApiUnit> apiUnits = new ArrayList<>();
+		var iter = eul.iterator();
+		while (iter.hasNext())
+		{
+			var eu = iter.next();
+			apiUnits.add(mapUnit(eu));
+		}
 		assertNotNull(apiUnits);
 		assertEquals(2, apiUnits.size());
 		assertEquals("C", apiUnits.get(0).getAbbr());
