@@ -3,6 +3,7 @@ package org.opendcs.dao;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
 import org.opendcs.database.api.OpenDcsDatabase;
@@ -43,11 +44,19 @@ class UnitConverterDaoTestIT extends AppTestBase
     @Test
     void test_unit_retrieve_all() throws Exception
     {
-        var unitDao = db.getDao(EngineeringUnitDao.class).orElseThrow();
+        var unitDao = db.getDao(UnitConverterDao.class).orElseThrow();
         try (var tx = db.newTransaction())
         {
-            var units = unitDao.getEngineeringUnits(tx, -1, -1);
-            assertFalse(units.isEmpty());
+            var unitConverters = unitDao.getUnitConverterDbs(tx, -1, -1);
+            assertFalse(unitConverters.isEmpty());
+
+            for (var unitConvert: unitConverters)
+            {
+                if ("raw".equalsIgnoreCase(unitConvert.fromAbbr))
+                {
+                    fail("Unit conversion from raw was found in retrieve all list.");
+                }
+            }
         }
     }
 

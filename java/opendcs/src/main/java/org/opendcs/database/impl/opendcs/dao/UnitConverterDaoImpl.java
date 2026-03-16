@@ -46,7 +46,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
                     select uc.id, uc.fromunitsabbr, uc.tounitsabbr, uc.algorithm, uc.a,uc.b,uc.c,uc.d,uc.e,uc.f,
                         from_eu.unitabbr from_unitabbr, from_eu.name from_name, from_eu.family from_family, from_eu.measures from_measures,
                         to_eu.unitabbr to_unitabbr, to_eu.name to_name, to_eu.family to_family, to_eu.measures to_measures
-                      from unitconverter uc 
+                      from unitconverter uc
                        join engineeringunit from_eu on from_eu.unitabbr = uc.fromunitsabbr
                        join engineeringunit to_eu on to_eu.unitabbr = uc.tounitsabbr
                       where id =:id
@@ -130,8 +130,6 @@ public class UnitConverterDaoImpl implements UnitConverterDao
     public Optional<UnitConverterDb> findUnitConverterFor(DataTransaction tx, String fromAbbr, String toAbbr)
             throws OpenDcsDataException
     {
-        // yes this needs better error handling. getting it to work first
-        // don't approve until improved.
         var from = euDao.getByName(tx, fromAbbr).orElseThrow(() -> new NoSuchUnitException(fromAbbr));
         var to = euDao.getByName(tx, toAbbr).orElseThrow(() -> new NoSuchUnitException(toAbbr));
         return findUnitConverterFor(tx, from, to);
@@ -148,7 +146,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
                     select uc.id, uc.fromunitsabbr, uc.tounitsabbr, uc.algorithm, uc.a,uc.b,uc.c,uc.d,uc.e,uc.f,
                         from_eu.unitabbr from_unitabbr, from_eu.name from_name, from_eu.family from_family, from_eu.measures from_measures,
                         to_eu.unitabbr to_unitabbr, to_eu.name to_name, to_eu.family to_family, to_eu.measures to_measures
-                      from unitconverter uc 
+                      from unitconverter uc
                        left join engineeringunit from_eu on from_eu.unitabbr = uc.fromunitsabbr
                        left join engineeringunit to_eu on to_eu.unitabbr = uc.tounitsabbr
                       where upper(uc.fromunitsabbr) = upper(:from)
@@ -169,7 +167,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
         }
 
         return ret;
-        
+
     }
 
     @Override
@@ -186,43 +184,46 @@ public class UnitConverterDaoImpl implements UnitConverterDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var dbType = tx.getContext().getDatabase();
-        
+
         final String querySql = """
                 select uc.id, uc.fromunitsabbr, uc.tounitsabbr, uc.algorithm, uc.a,uc.b,uc.c,uc.d,uc.e,uc.f,
                     from_eu.unitabbr from_unitabbr, from_eu.name from_name, from_eu.family from_family, from_eu.measures from_measures,
                     to_eu.unitabbr to_unitabbr, to_eu.name to_name, to_eu.family to_family, to_eu.measures to_measures
-                    from unitconverter uc 
-                    left join engineeringunit from_eu on from_eu.unitabbr) = uc.fromunitsabbr
-                    left join engineeringunit to_eu on to_eu.unitabbr) = uc.tounitsabbr
+                    from unitconverter uc
+                    left join engineeringunit from_eu on from_eu.unitabbr = uc.fromunitsabbr
+                    left join engineeringunit to_eu on to_eu.unitabbr = uc.tounitsabbr
                     where uc.fromunitsabbr != 'raw'
-                    <if(family)> and upper(from_eu.family) = :familyInput or upper(to_eu.family) = :familyInput <endif>
-                    order by uc.fromunitsabbr <collate> asc, uc.toounitsabbr <collate> asc
+                    <if(family)> and upper(from_eu.family) = :familyValue or upper(to_eu.family) = :familyValue <endif>
+                    order by uc.fromunitsabbr <collate> asc, uc.tounitsabbr <collate> asc
                     <limit>
             """;
         try (var query = handle.createQuery(querySql).setTemplateEngine(new StringTemplateEngine()))
         {
-            return query.define("limit", addLimitOffset(limit, offset))
+            query.define("limit", addLimitOffset(limit, offset))
                         .define("family", family)
-                        .bind("familyInput", family)
-                        .define("collate", dbType == DatabaseEngine.POSTGRES ? "COLLATE \"C\"" : "COLLATE BINARY" )
-                        .registerRowMapper(UnitConverterDb.class, UnitConverterMapper.withPrefix(""))
+                        .define("collate", dbType == DatabaseEngine.POSTGRES ? "COLLATE \"C\"" : "COLLATE BINARY" );
+            if (family != null)
+            {
+                query.bind("familyValue", family);
+            }
+            return query.registerRowMapper(UnitConverterDb.class, UnitConverterMapper.withPrefix(""))
                         .mapTo(UnitConverterDb.class)
                         .list();
         }
     }
-    
- 
+
+
     /**
      * No direct conversion was available so now it's grab them all (for a family) and and
      * do some graph theory work.
-     * 
+     *
      * NOTE: this code is intentionally copied from the CompositeConverter class. There
      * would be too many changes required to clean that up and not depend on the static Database instance.
      *
      * Also, while we could cache this, the required list if limited to the specific family of conversions and
      * is thus rather small. If a performance impact is disocvered either improvements can be made or
      * points of usage can cache as required.
-     * 
+     *
      * @param tx DataTransaction required to get current list of unit converters
      * @param fromAbbr source unit
      * @param toAbbr target unit
@@ -236,7 +237,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
         @SuppressWarnings("java:S1149") // copy of existing code
         Stack<UnitConverter> callStack = new Stack<>();
         HashSet<String> unitsSearched = new HashSet<>();
-        
+
         search(solutions, converters.stream().map(uc -> uc.execConverter).toList(), from, to, callStack, unitsSearched);
         if (solutions.isEmpty())
         {
@@ -272,7 +273,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
      * @param to current target unit
      * @param callStack current composite as we search through and keep building
      * @param unitsSearch set of units we have already searched.
-     */ 
+     */
     @SuppressWarnings({"java:S1149","java:S3047"}) // S1149copy of existing code, S3047 these loops operate in fundementally different ways.
     private static void search(List<UnitConverter> solutions, List<UnitConverter> converters, EngineeringUnit from, EngineeringUnit to,
                                Stack<UnitConverter> callStack, HashSet<String> unitsSearched)
@@ -304,6 +305,6 @@ public class UnitConverterDaoImpl implements UnitConverterDao
 			callStack.push(uc);
 			search(solutions, converters, uc.getTo(), to, callStack, unitsSearched);
 			callStack.pop();
-        }   
+        }
     }
 }
