@@ -4,9 +4,11 @@ import java.util.List;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
+import org.jdbi.v3.stringtemplate4.StringTemplateEngine;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.dai.EngineeringUnitDao;
 import org.opendcs.database.dai.UnitConverterDao;
 import org.opendcs.database.model.mappers.unitconverter.UnitConverterMapper;
 import org.opendcs.utils.sql.GenericColumns;
@@ -20,8 +22,10 @@ import decodes.db.UnitConverterDb;
 import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
 
+import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
+
 @ServiceProvider(service = UnitConverterDao.class)
-public class UnitConverterDaoImp implements UnitConverterDao
+public class UnitConverterDaoImpl implements UnitConverterDao
 {
 
     @Override
@@ -115,23 +119,100 @@ public class UnitConverterDaoImp implements UnitConverterDao
 
     @Override
     public Optional<UnitConverterDb> lookup(DataTransaction tx, String fromAbbr, String toAbbr)
-            throws OpenDcsDataException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'lookup'");
+            throws OpenDcsDataException
+    {
+        var euDao = tx.getDao(EngineeringUnitDao.class).orElseThrow();
+        var from = euDao.lookup(tx, fromAbbr).orElseThrow();
+        var to = euDao.lookup(tx, toAbbr).orElseThrow(0);
+        return lookup(tx, from, to);
     }
 
     @Override
     public Optional<UnitConverterDb> lookup(DataTransaction tx, EngineeringUnit from, EngineeringUnit to)
-            throws OpenDcsDataException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'lookup'");
+            throws OpenDcsDataException
+    {
+        Optional<UnitConverterDb> ret = Optional.empty();
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        final String querySql = """
+                    select uc.id, uc.fromunitsabbr, uc.tounitsabbr, uc.algorithm, uc.a,uc.b,uc.c,uc.d,uc.e,uc.f,
+                        from_eu.unitabbr from_unitabbr, from_eu.name from_name, from_eu.family from_family, from_eu.measures from_measures,
+                        to_eu.unitabbr to_unitabbr, to_eu.name to_name, to_eu.family to_family, to_eu.measures to_measures
+                      from unitconverter uc 
+                       left join engineeringunit from_eu on from_eu.unitabbr = uc.fromunitsabbr
+                       left join engineeringunit to_eu on to_eu.unitabbr = uc.tounitsabbr
+                      where uc.fromunitsabbr = :from
+                        and uc.tounitsabbr = :to
+                """;
+        try (var query = handle.createQuery(querySql))
+        {
+            ret = query.bind("from", from.abbr)
+                        .bind("to", to.abbr)
+                        .registerRowMapper(UnitConverterDb.class, UnitConverterMapper.withPrefix(""))
+                        .mapTo(UnitConverterDb.class)
+                        .findFirst(); // there shouldn't be extras, but just in case, don't fail about it.
+        }
+
+        if (ret.isEmpty())
+        {
+            ret = buildComposite(tx, from, to);
+        }
+
+        return ret;
+        
     }
 
     @Override
     public List<UnitConverterDb> getUnitConverterDbs(DataTransaction tx, int limit, int offset)
-            throws OpenDcsDataException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getUnitConverterDbs'");
+            throws OpenDcsDataException
+    {
+        return getUnitConverterDbs(tx, null, limit, offset);
+    }
+
+    @Override
+    public List<UnitConverterDb> getUnitConverterDbs(DataTransaction tx, String family, int limit, int offset)
+            throws OpenDcsDataException
+    {
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var dbType = tx.getContext().getDatabase();
+        final String querySql = """
+                select uc.id, uc.fromunitsabbr, uc.tounitsabbr, uc.algorithm, uc.a,uc.b,uc.c,uc.d,uc.e,uc.f,
+                    from_eu.unitabbr from_unitabbr, from_eu.name from_name, from_eu.family from_family, from_eu.measures from_measures,
+                    to_eu.unitabbr to_unitabbr, to_eu.name to_name, to_eu.family to_family, to_eu.measures to_measures
+                    from unitconverter uc 
+                    left join engineeringunit from_eu on from_eu.unitabbr = uc.fromunitsabbr
+                    left join engineeringunit to_eu on to_eu.unitabbr = uc.tounitsabbr
+                    <if(family)> where upper(from_eu.family) = :familyInput or upper(to_eu.family) = :familyInput <endif>
+                    order by uc.fromunitsabbr <collate> asc, uc.toounitsabbr <collate> asc
+                    <limit>
+            """;
+        try (var query = handle.createQuery(querySql).setTemplateEngine(new StringTemplateEngine()))
+        {
+            return query.define("limit", addLimitOffset(limit, offset))
+                        .define("family", family)
+                        .bind("familyInput", family)
+                        .define("collate", dbType == DatabaseEngine.POSTGRES ? "COLLATE \"C\"" : "COLLATE BINARY" )
+                        .registerRowMapper(UnitConverterDb.class, UnitConverterMapper.withPrefix(""))
+                        .mapTo(UnitConverterDb.class)
+                        .list();
+        }
     }
     
+ 
+    /**
+     * No direct conversion was available so now it's grab them all (for a family) and and
+     * do some graph theory work.
+     * @param tx
+     * @param fromAbbr
+     * @param toAbbr
+     * @return
+     */
+    private Optional<UnitConverterDb> buildComposite(DataTransaction tx, EngineeringUnit from, EngineeringUnit to)
+        throws OpenDcsDataException
+    {
+        var converters = getUnitConverterDbs(tx, to.getFamily(), -1, -1);
+
+        return Optional.empty();
+    }
 }

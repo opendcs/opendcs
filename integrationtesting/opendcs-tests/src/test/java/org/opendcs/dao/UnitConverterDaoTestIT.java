@@ -31,6 +31,12 @@ class UnitConverterDaoTestIT extends AppTestBase
         {
             var uc = ucDao.getById(tx, DbKey.createDbKey(1));
             assertTrue(uc.isPresent());
+
+
+            var ucFtToM = ucDao.lookup(tx, "ft", "m").orElseThrow();
+            var meters = ucFtToM.execConverter.convert(3.28084);
+            assertEquals(1, meters, 0.0001);
+
         }
     }
 

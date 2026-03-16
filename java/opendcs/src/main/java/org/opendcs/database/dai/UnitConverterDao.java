@@ -65,4 +65,16 @@ public interface UnitConverterDao extends OpenDcsDao
      * @throws OpenDcsDataException
      */
 	List<UnitConverterDb> getUnitConverterDbs(DataTransaction tx, int limit, int offset) throws OpenDcsDataException;
+
+     /**
+     * Retreive all UnitConverterDbs constrained to a limit and office if desired. Limiting to a
+     * specific family of measurements, such as length.
+     * @param tx active transaction
+     * @param family which measurement to get conversions for. Null means all measures.
+     * @param limit -1 for all, otherwise maximum amount
+     * @param offset -1 for no offset, otherwise a valid office from the start of data
+     * @return
+     * @throws OpenDcsDataException
+     */
+	List<UnitConverterDb> getUnitConverterDbs(DataTransaction tx, String family, int limit, int offset) throws OpenDcsDataException;
 }
