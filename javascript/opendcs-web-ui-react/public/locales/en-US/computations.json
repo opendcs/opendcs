@@ -20,5 +20,19 @@
     "delete_for": "Delete computation {{id}}",
     "cancel_for": "Cancel editing computation {{id}}",
     "save_for": "Save computation {{id}}"
+  },
+  "parms": {
+    "title": "Parameters",
+    "roleName": "Role Name",
+    "parmType": "Type",
+    "input": "Input",
+    "output": "Output",
+    "add_parm": "Add Parameter",
+    "save_parm": "Save parameter",
+    "cancel_parm": "Cancel parameter edit",
+    "edit_for": "Edit parameter {{name}}",
+    "delete_for": "Delete parameter {{name}}",
+    "roleName_input": "Parameter role name",
+    "parmType_input": "Parameter type"
   }
 }

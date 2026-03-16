@@ -1,7 +1,7 @@
 import { Button, Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../../components/properties";
-import { use, useCallback, useMemo, useReducer } from "react";
-import type { ApiComputation } from "opendcs-api";
+import { use, useCallback, useMemo, useReducer, useState } from "react";
+import type { ApiCompParm, ApiComputation } from "opendcs-api";
 import { useTranslation } from "react-i18next";
 import type {
   CancelAction,
@@ -10,6 +10,7 @@ import type {
 } from "../../../util/Actions";
 import { Save, X } from "react-bootstrap-icons";
 import { ComputationReducer } from "./ComputationReducer";
+import { ComputationParamsTable } from "./ComputationParamsTable";
 
 export type UiComputation = Partial<ApiComputation>;
 
@@ -109,6 +110,9 @@ export const Computation: React.FC<ComputationProperties> = ({
     ComputationReducer,
     providedComputation,
   );
+  const [localParms, setLocalParms] = useState<ApiCompParm[]>(
+    providedComputation.parmList ?? [],
+  );
 
   const props = useMemo<Property[]>(() => {
     const saved = localComputation.props || {};
@@ -131,9 +135,12 @@ export const Computation: React.FC<ComputationProperties> = ({
 
   const saveComputation = useCallback(
     (comp: UiComputation) => {
-      actions.save?.(comp as ApiComputation);
+      actions.save?.({
+        ...(comp as ApiComputation),
+        parmList: localParms,
+      });
     },
-    [actions],
+    [actions, localParms],
   );
 
   const inputChange = useCallback(
@@ -155,99 +162,122 @@ export const Computation: React.FC<ComputationProperties> = ({
     <Card>
       <Card.Body>
         <Row>
+          <Row>
+            <Col>
+              <FormGroup as={Row} className="mb-3">
+                <Form.Label column sm={3} htmlFor="compName">
+                  {t("computations:editor.name")}
+                </Form.Label>
+                <Col sm={9}>
+                  <Form.Control
+                    type="text"
+                    id="compName"
+                    name="name"
+                    readOnly={!edit}
+                    defaultValue={localComputation.name}
+                    onChange={inputChange}
+                  />
+                </Col>
+              </FormGroup>
+              <FormGroup as={Row} className="mb-3">
+                <Form.Label column sm={3} htmlFor="algorithmName">
+                  {t("computations:editor.algorithmName")}
+                </Form.Label>
+                <Col sm={9}>
+                  <Form.Control
+                    type="text"
+                    id="algorithmName"
+                    name="algorithmName"
+                    readOnly={!edit}
+                    defaultValue={localComputation.algorithmName}
+                    onChange={inputChange}
+                  />
+                </Col>
+              </FormGroup>
+              <FormGroup as={Row} className="mb-3">
+                <Form.Label column sm={3} htmlFor="applicationName">
+                  {t("computations:editor.applicationName")}
+                </Form.Label>
+                <Col sm={9}>
+                  <Form.Control
+                    type="text"
+                    id="applicationName"
+                    name="applicationName"
+                    readOnly={!edit}
+                    defaultValue={localComputation.applicationName}
+                    onChange={inputChange}
+                  />
+                </Col>
+              </FormGroup>
+              <FormGroup as={Row} className="mb-3">
+                <Form.Label column sm={3} htmlFor="groupName">
+                  {t("computations:editor.groupName")}
+                </Form.Label>
+                <Col sm={9}>
+                  <Form.Control
+                    type="text"
+                    id="groupName"
+                    name="groupName"
+                    readOnly={!edit}
+                    defaultValue={localComputation.groupName}
+                    onChange={inputChange}
+                  />
+                </Col>
+              </FormGroup>
+              <FormGroup as={Row} className="mb-3">
+                <Form.Label column sm={3} htmlFor="enabled">
+                  {t("computations:editor.enabled")}
+                </Form.Label>
+                <Col sm={9}>
+                  <Form.Check
+                    id="enabled"
+                    name="enabled"
+                    disabled={!edit}
+                    defaultChecked={localComputation.enabled ?? false}
+                    onChange={enabledChange}
+                  />
+                </Col>
+              </FormGroup>
+            </Col>
+            <Col>
+              <FormGroup as={Row} className="mb-3">
+                <Form.Label column sm={3} htmlFor="comment">
+                  {t("computations:editor.description")}
+                </Form.Label>
+                <Col sm={9}>
+                  <Form.Control
+                    as="textarea"
+                    rows={4}
+                    id="comment"
+                    name="comment"
+                    readOnly={!edit}
+                    defaultValue={localComputation.comment}
+                    onChange={inputChange}
+                  />
+                </Col>
+              </FormGroup>
+            </Col>
+          </Row>
           <Col>
-            <FormGroup as={Row} className="mb-3">
-              <Form.Label column sm={3} htmlFor="compName">
-                {t("computations:editor.name")}
-              </Form.Label>
-              <Col sm={9}>
-                <Form.Control
-                  type="text"
-                  id="compName"
-                  name="name"
-                  readOnly={!edit}
-                  defaultValue={localComputation.name}
-                  onChange={inputChange}
-                />
-              </Col>
-            </FormGroup>
-            <FormGroup as={Row} className="mb-3">
-              <Form.Label column sm={3} htmlFor="algorithmName">
-                {t("computations:editor.algorithmName")}
-              </Form.Label>
-              <Col sm={9}>
-                <Form.Control
-                  type="text"
-                  id="algorithmName"
-                  name="algorithmName"
-                  readOnly={!edit}
-                  defaultValue={localComputation.algorithmName}
-                  onChange={inputChange}
-                />
-              </Col>
-            </FormGroup>
-            <FormGroup as={Row} className="mb-3">
-              <Form.Label column sm={3} htmlFor="applicationName">
-                {t("computations:editor.applicationName")}
-              </Form.Label>
-              <Col sm={9}>
-                <Form.Control
-                  type="text"
-                  id="applicationName"
-                  name="applicationName"
-                  readOnly={!edit}
-                  defaultValue={localComputation.applicationName}
-                  onChange={inputChange}
-                />
-              </Col>
-            </FormGroup>
-            <FormGroup as={Row} className="mb-3">
-              <Form.Label column sm={3} htmlFor="groupName">
-                {t("computations:editor.groupName")}
-              </Form.Label>
-              <Col sm={9}>
-                <Form.Control
-                  type="text"
-                  id="groupName"
-                  name="groupName"
-                  readOnly={!edit}
-                  defaultValue={localComputation.groupName}
-                  onChange={inputChange}
-                />
-              </Col>
-            </FormGroup>
-            <FormGroup as={Row} className="mb-3">
-              <Form.Label column sm={3} htmlFor="enabled">
-                {t("computations:editor.enabled")}
-              </Form.Label>
-              <Col sm={9}>
-                <Form.Check
-                  id="enabled"
-                  name="enabled"
-                  disabled={!edit}
-                  defaultChecked={localComputation.enabled ?? false}
-                  onChange={enabledChange}
-                />
-              </Col>
-            </FormGroup>
+            <ComputationParamsTable
+              parms={localParms}
+              edit={edit}
+              onAdd={(parm) => setLocalParms((prev) => [...prev, parm])}
+              onRemove={(roleName) =>
+                setLocalParms((prev) =>
+                  prev.filter((p) => (p.algoRoleName ?? "") !== roleName),
+                )
+              }
+              onUpdate={(oldRoleName, newParm) =>
+                setLocalParms((prev) =>
+                  prev.map((p) =>
+                    (p.algoRoleName ?? "") === oldRoleName ? newParm : p,
+                  ),
+                )
+              }
+            />
           </Col>
           <Col>
-            <FormGroup as={Row} className="mb-3">
-              <Form.Label column sm={3} htmlFor="comment">
-                {t("computations:editor.description")}
-              </Form.Label>
-              <Col sm={9}>
-                <Form.Control
-                  as="textarea"
-                  rows={4}
-                  id="comment"
-                  name="comment"
-                  readOnly={!edit}
-                  defaultValue={localComputation.comment}
-                  onChange={inputChange}
-                />
-              </Col>
-            </FormGroup>
             <PropertiesTable
               theProps={props}
               actions={propertyActions}
