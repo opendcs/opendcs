@@ -24,7 +24,6 @@ import decodes.db.DataTypeSet;
 import decodes.db.DatabaseException;
 import decodes.db.DatabaseIO;
 import decodes.db.EngineeringUnit;
-import decodes.db.EngineeringUnitList;
 import decodes.db.LinearConverter;
 import decodes.db.NullConverter;
 import decodes.db.Poly5Converter;
@@ -55,6 +54,9 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import opendcs.dai.DataTypeDAI;
+
+import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.dai.EngineeringUnitDao;
 import org.opendcs.odcsapi.beans.ApiDataType;
 import org.opendcs.odcsapi.beans.ApiUnit;
 import org.opendcs.odcsapi.beans.ApiUnitConverter;
@@ -71,6 +73,8 @@ import org.opendcs.odcsapi.util.ApiConstants;
 @Path("/")
 public final class DatatypeUnitResources extends OpenDcsResource
 {
+	private static final WebAppException UNABLE_TO_GET_EU_DAO = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "No engineering unit DAO available.");
+
 	@Context HttpHeaders httpHeaders;
 
 	@GET
@@ -168,41 +172,35 @@ public final class DatatypeUnitResources extends OpenDcsResource
 			},
 			tags = {"REST - Engineering Unit Methods"}
 	)
-	public Response getUnitList() throws DbException
+	public Response getUnitList() throws WebAppException
 	{
-		DatabaseIO dbIo = getLegacyDatabase();
-		try
+		final var db = createDb();
+		try (var tx = db.newTransaction())
 		{
-			EngineeringUnitList euList = new EngineeringUnitList();
-			dbIo.readEngineeringUnitList(euList);
-			return Response.ok().entity(map(euList)).build();
+			final var unitsDao = db.getDao(EngineeringUnitDao.class)
+					  	  		   .orElseThrow(() -> UNABLE_TO_GET_EU_DAO);
+			var units = unitsDao.getEngineeringUnits(tx, -1, -1)
+								.stream()
+								.map(DatatypeUnitResources::mapUnit)
+								.toList();
+			
+			return Response.ok().entity(units).build();
 		}
-		catch(DatabaseException ex)
+		catch (OpenDcsDataException ex)
 		{
-			throw new DbException("Unable to retrieve data type list", ex);
-		}
-		finally
-		{
-			dbIo.close();
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to retrieve engineering units", ex);
 		}
 	}
 
-	static ArrayList<ApiUnit> map(EngineeringUnitList unitList)
+	static ApiUnit mapUnit(EngineeringUnit eu)
 	{
-		ArrayList<ApiUnit> ret = new ArrayList<>();
-		Iterator<EngineeringUnit> it = unitList.iterator();
-		while(it.hasNext())
-		{
-			EngineeringUnit eu = it.next();
-			ApiUnit apiUnit = new ApiUnit();
-			apiUnit.setAbbr(eu.abbr);
-			apiUnit.setName(eu.getName());
-			apiUnit.setMeasures(eu.measures);
-			apiUnit.setFamily(eu.family);
-			ret.add(apiUnit);
-		}
-		return ret;
-
+		ApiUnit apiUnit = new ApiUnit();
+		apiUnit.setAbbr(eu.abbr);
+		apiUnit.setName(eu.getName());
+		apiUnit.setMeasures(eu.measures);
+		apiUnit.setFamily(eu.family);
+		
+		return apiUnit;
 	}
 
 	@POST
@@ -234,34 +232,21 @@ public final class DatatypeUnitResources extends OpenDcsResource
 	public Response postEU(@Parameter(description = "The abbreviation of the engineering unit to replace, if updating.")
 		@QueryParam("fromabbr") String fromabbr,
 			@Parameter(description = "Engineering unit details.") ApiUnit eu)
-		throws DbException
+		throws WebAppException
 	{
-		DatabaseIO dbIo = getLegacyDatabase();
-		try
+		final var db = createDb();
+		try (var tx = db.newTransaction())
 		{
+			final var unitsDao = db.getDao(EngineeringUnitDao.class)
+								   .orElseThrow(() -> UNABLE_TO_GET_EU_DAO);
 			EngineeringUnit unit = new EngineeringUnit(eu.getAbbr(), eu.getName(), eu.getFamily(), eu.getMeasures());
-			EngineeringUnitList euList = new EngineeringUnitList();
-			dbIo.readEngineeringUnitList(euList);
-			if(fromabbr != null && !fromabbr.isEmpty())
-			{
-				EngineeringUnit engineeringUnit = euList.get(fromabbr);
-				if(engineeringUnit != null)
-				{
-					euList.remove(engineeringUnit);
-				}
-			}
-			euList.add(unit);
-			dbIo.writeEngineeringUnitList(euList);
+			var unitOut = mapUnit(unitsDao.save(tx, unit));
 			return Response.status(Response.Status.CREATED)
-					.entity(map(euList)).build();
+					.entity(unitOut).build();
 		}
-		catch(DatabaseException ex)
+		catch(OpenDcsDataException ex)
 		{
-			throw new DbException("Unable to store Engineering Unit list", ex);
-		}
-		finally
-		{
-			dbIo.close();
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to store Engineering Unit", ex);
 		}
 	}
 
@@ -284,27 +269,25 @@ public final class DatatypeUnitResources extends OpenDcsResource
 	public Response deleteEU(@Parameter(description = "Engineering unit abbreviation", required = true,
 			example = "blob", schema = @Schema(implementation = String.class))
 		@QueryParam("abbr") String abbr)
-			throws DbException, WebAppException
+			throws WebAppException
 	{
 		if(abbr == null)
 		{
 			throw new MissingParameterException("Missing required abbr parameter");
 		}
 
-		DatabaseIO dbIo = getLegacyDatabase();
-		try
+		final var db = createDb();
+		try (var tx = db.newTransaction())
 		{
-			EngineeringUnit unit = new EngineeringUnit(abbr, "", "", "");
-			dbIo.deleteEngineeringUnit(unit);
+			var unitsDao = db.getDao(EngineeringUnitDao.class)
+							 .orElseThrow(() -> UNABLE_TO_GET_EU_DAO);
+			unitsDao.delete(tx, abbr);
+			
 			return Response.noContent().entity("EU with abbr " + abbr + " deleted").build();
 		}
-		catch(DatabaseException ex)
+		catch(OpenDcsDataException ex)
 		{
-			throw new DbException("Unable to store Engineering Unit list", ex);
-		}
-		finally
-		{
-			dbIo.close();
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to delete engineering unit", ex);
 		}
 	}
 
