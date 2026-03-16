@@ -45,7 +45,7 @@ public interface UnitConverterDao extends OpenDcsDao
      * @return
      * @throws OpenDcsDataException
      */
-	Optional<UnitConverterDb> lookup(DataTransaction tx, String fromAbbr, String toAbbr) throws OpenDcsDataException;
+	Optional<UnitConverterDb> findUnitConverterFor(DataTransaction tx, String fromAbbr, String toAbbr) throws OpenDcsDataException;
 
     /**
      * Given a UnitConverterDb Code attempt to find a matching Unit converter. {@see UnitConverterDb for more information}
@@ -54,7 +54,7 @@ public interface UnitConverterDao extends OpenDcsDao
      * @return
      * @throws OpenDcsDataException
      */
-	Optional<UnitConverterDb> lookup(DataTransaction tx, EngineeringUnit from, EngineeringUnit to) throws OpenDcsDataException;
+	Optional<UnitConverterDb> findUnitConverterFor(DataTransaction tx, EngineeringUnit from, EngineeringUnit to) throws OpenDcsDataException;
 
 	/**
      * Retreive all UnitConverterDbs constrained to a limit and office if desired.

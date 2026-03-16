@@ -118,17 +118,18 @@ public class UnitConverterDaoImpl implements UnitConverterDao
     }
 
     @Override
-    public Optional<UnitConverterDb> lookup(DataTransaction tx, String fromAbbr, String toAbbr)
+    public Optional<UnitConverterDb> findUnitConverterFor(DataTransaction tx, String fromAbbr, String toAbbr)
             throws OpenDcsDataException
     {
-        var euDao = tx.getDao(EngineeringUnitDao.class).orElseThrow();
-        var from = euDao.lookup(tx, fromAbbr).orElseThrow();
-        var to = euDao.lookup(tx, toAbbr).orElseThrow(0);
-        return lookup(tx, from, to);
+        // var euDao = tx.getDao(EngineeringUnitDao.class).orElseThrow();
+        // var from = euDao.lookup(tx, fromAbbr).orElseThrow();
+        // var to = euDao.lookup(tx, toAbbr).orElseThrow(0);
+        // return lookup(tx, from, to);
+        return Optional.empty();
     }
 
     @Override
-    public Optional<UnitConverterDb> lookup(DataTransaction tx, EngineeringUnit from, EngineeringUnit to)
+    public Optional<UnitConverterDb> findUnitConverterFor(DataTransaction tx, EngineeringUnit from, EngineeringUnit to)
             throws OpenDcsDataException
     {
         Optional<UnitConverterDb> ret = Optional.empty();

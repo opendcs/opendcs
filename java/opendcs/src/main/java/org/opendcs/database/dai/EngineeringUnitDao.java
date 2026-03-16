@@ -34,7 +34,7 @@ public interface EngineeringUnitDao extends OpenDcsDao
      * @return
      * @throws OpenDcsDataException
      */
-	Optional<EngineeringUnit> lookup(DataTransaction tx, String unit) throws OpenDcsDataException;
+	Optional<EngineeringUnit> getByName(DataTransaction tx, String unit) throws OpenDcsDataException;
 
 	/**
      * Retreive all EngineeringUnits constrained to a limit and office if desired.

@@ -47,7 +47,7 @@ public class EngineeringUnitDaoImp implements EngineeringUnitDao
                  .bind("family", unit.getFamily())
                  .bind("measures", unit.getMeasures())
                  .execute();
-            return lookup(tx, unit.abbr).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Engineering Unit we just saved."));
+            return getByName(tx, unit.abbr).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Engineering Unit we just saved."));
         }
     }
 
@@ -64,7 +64,7 @@ public class EngineeringUnitDaoImp implements EngineeringUnitDao
     }
 
     @Override
-    public Optional<EngineeringUnit> lookup(DataTransaction tx, String unit) throws OpenDcsDataException
+    public Optional<EngineeringUnit> getByName(DataTransaction tx, String unit) throws OpenDcsDataException
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
