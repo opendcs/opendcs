@@ -78,9 +78,7 @@ export const ChangeOrgMenu: React.FC<ChangeOrgMenuProperties> = ({
         <Modal.Header closeButton>
           <Modal.Title>{t("Authorization Error")}</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          {t("User does not have authorization for this organization.")}
-        </Modal.Body>
+        <Modal.Body>{t("User not authorized")}</Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowErrorModal(false)}>
             {t("Close")}

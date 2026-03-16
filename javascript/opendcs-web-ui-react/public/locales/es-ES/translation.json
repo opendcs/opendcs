@@ -28,9 +28,9 @@
   "organization": "Organización",
   "Change Organization": "Cambiar organización",
   "Authorization Error": "Error de autorización",
-  "User does not have authorization for this organization.": "El usuario no tiene autorización para esta organización.",
+  "User not authorized": "El usuario no tiene autorización para esta organización.",
   "Close": "Cerrar",
   "Organizations not defined": "Organizaciones no definidas",
-  "Username and/or password is incorrect, or user does not have access to the selected organization.": "El nombre de usuario y/o contraseña son incorrectos, o el usuario no tiene acceso a la organización seleccionada.",
+  "user pass incorrect": "El nombre de usuario y/o contraseña son incorrectos, o el usuario no tiene acceso a la organización seleccionada.",
   "Login Failed": "Login fallido"
 }

@@ -118,9 +118,7 @@ export default function Login() {
             <Modal.Title>{t("Login Failed")}</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            {t(
-              "Username and/or password is incorrect, or user does not have access to the selected organization.",
-            )}
+            {t("user pass incorrect")}
             <br />
             {errorMsg}
           </Modal.Body>

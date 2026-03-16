@@ -28,9 +28,9 @@
   "organization": "Organization",
   "Change Organization": "Change Organization",
   "Authorization Error": "Authorization Error",
-  "User does not have authorization for this organization.": "User does not have authorization for this organization.",
+  "User not authorized": "User does not have authorization for this organization.",
   "Close": "Close",
   "Organizations not defined": "Organizations not defined",
-  "Username and/or password is incorrect, or user does not have access to the selected organization.": "Username and/or password is incorrect, or user does not have access to the selected organization.",
+  "user pass incorrect": "Username and/or password is incorrect, or user does not have access to the selected organization.",
   "Login Failed": "Login Failed"
 }
