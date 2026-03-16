@@ -1,4 +1,4 @@
-import React, { type FormEvent, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { useAuth } from "../../../contexts/app/AuthContext";
 import { Button, Card, Container, Form, Modal } from "react-bootstrap";
 import { PersonCircle } from "react-bootstrap-icons";
