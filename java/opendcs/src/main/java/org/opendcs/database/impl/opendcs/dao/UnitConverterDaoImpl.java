@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.stringtemplate4.StringTemplateEngine;
+import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
@@ -27,6 +28,8 @@ import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 @ServiceProvider(service = UnitConverterDao.class)
 public class UnitConverterDaoImpl implements UnitConverterDao
 {
+    @InjectDao
+    EngineeringUnitDao euDao;
 
     @Override
     public Optional<UnitConverterDb> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException
@@ -121,11 +124,11 @@ public class UnitConverterDaoImpl implements UnitConverterDao
     public Optional<UnitConverterDb> findUnitConverterFor(DataTransaction tx, String fromAbbr, String toAbbr)
             throws OpenDcsDataException
     {
-        // var euDao = tx.getDao(EngineeringUnitDao.class).orElseThrow();
-        // var from = euDao.lookup(tx, fromAbbr).orElseThrow();
-        // var to = euDao.lookup(tx, toAbbr).orElseThrow(0);
-        // return lookup(tx, from, to);
-        return Optional.empty();
+        // yes this needs better error handling. getting it to work first
+        // don't approve until improved.
+        var from = euDao.getByName(tx, fromAbbr).orElseThrow();
+        var to = euDao.getByName(tx, toAbbr).orElseThrow();
+        return findUnitConverterFor(tx, from, to);
     }
 
     @Override
