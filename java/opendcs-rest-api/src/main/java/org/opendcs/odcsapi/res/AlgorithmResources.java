@@ -263,8 +263,7 @@ public final class AlgorithmResources extends OpenDcsResource
 			summary = "List algorithms available in the classpath and filesystem",
 			description = "Scans $DCSTOOL_HOME, $DCSTOOL_USERDIR, and the classpath 'algorithms/' folder for "
 					+ "algorithm XML definitions. Returns all discovered algorithms with a flag indicating "
-					+ "whether each is already imported into the database. This mirrors the 'Check for New' "
-					+ "button in the Computation Editor GUI.",
+					+ "whether each is already imported into the database.",
 			operationId = "getAlgorithmCatalog",
 			tags = {"REST - Algorithm Methods"},
 			responses = {
@@ -299,8 +298,7 @@ public final class AlgorithmResources extends OpenDcsResource
 	@Operation(
 			summary = "Import algorithms from the catalog into the database",
 			description = "Accepts a list of fully qualified execution class names. Scans the classpath and "
-					+ "filesystem for matching algorithm definitions and imports them into the database. "
-					+ "This mirrors the 'Load Selected' action in the Computation Editor 'Check for New' dialog.",
+					+ "filesystem for matching algorithm definitions and imports them into the database.",
 			operationId = "importAlgorithmsFromCatalog",
 			tags = {"REST - Algorithm Methods"},
 			requestBody = @RequestBody(
