@@ -19,8 +19,8 @@ import { useIdleTimer } from "../../hooks/useIdleTimer";
 import { SessionTimeoutModal } from "../../components/auth/SessionTimeoutModal";
 
 // Inactivity thresholds — adjust to match the server-side session timeout.
-const DEFAULT_WARN_AFTER_MS = 9 * 60 * 1000;
-const DEFAULT_LOGOUT_AFTER_MS = 10 * 60 * 1000;
+const DEFAULT_WARN_AFTER_MS = 13.5 * 60 * 1000;
+const DEFAULT_LOGOUT_AFTER_MS = 14.5 * 60 * 1000;
 
 interface ProviderProps {
   children: ReactNode;
@@ -136,7 +136,7 @@ export const AuthProvider = ({
 
   const resetIdleTimer = useIdleTimer(
     handleWarn,
-    forceLogout,
+    logout,
     warnAfterMs,
     logoutAfterMs,
     !!user && !showWarning,
@@ -156,14 +156,14 @@ export const AuthProvider = ({
   }, [showWarning]);
 
   // When the countdown reaches 0 the user has had their warning and done
-  // nothing — log them out. This is necessary because useIdleTimer is paused
-  // while the modal is visible (its logout timer was cancelled when the warning
-  // fired), so the countdown is the authoritative clock at this point.
+  // nothing — log them out. Uses the full logout() (not forceLogout()) so the
+  // server session is invalidated. Without this, the cookie remains valid and
+  // the login page may error or redirect back because the session is still alive.
   useEffect(() => {
     if (showWarning && countdown === 0) {
-      forceLogout();
+      logout();
     }
-  }, [showWarning, countdown, forceLogout]);
+  }, [showWarning, countdown, logout]);
 
   // "Stay Logged In" — verify the session is still alive on the server.
   // If it is, the response resets the idle timer via middleware automatically.
