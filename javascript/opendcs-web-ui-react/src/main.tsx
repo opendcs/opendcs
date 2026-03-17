@@ -7,6 +7,7 @@ import "datatables.net-buttons-bs5/css/buttons.bootstrap5.css";
 import { ThemeProvider } from "./contexts/app/ThemeProvider.tsx";
 import { AuthProvider } from "./contexts/app/AuthProvider.tsx";
 import { ApiProvider } from "./contexts/app/ApiProvider.tsx";
+import { OrganizationsProvider } from "./contexts/app/OrganizationsProvider.tsx";
 import { BrowserRouter } from "react-router-dom";
 
 import "./i18n";
@@ -19,9 +20,11 @@ createRoot(document.getElementById("root")!).render(
         <ThemeProvider>
           <ApiProvider>
             <AuthProvider>
-              <RefListProvider>
-                <App />
-              </RefListProvider>
+              <OrganizationsProvider>
+                <RefListProvider>
+                  <App />
+                </RefListProvider>
+              </OrganizationsProvider>
             </AuthProvider>
           </ApiProvider>
         </ThemeProvider>
