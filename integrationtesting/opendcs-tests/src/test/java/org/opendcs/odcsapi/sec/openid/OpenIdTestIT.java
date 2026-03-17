@@ -45,7 +45,7 @@ import org.opendcs.database.model.IdentityProviderMapping;
 import org.opendcs.database.model.UserBuilder;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
-import org.opendcs.fixtures.extensions.auth.KeyCloakExtension;
+import org.opendcs.fixtures.extensions.auth.KeyCloakTestExtension;
 import org.opendcs.fixtures.helpers.Constants;
 import org.opendcs.odcsapi.res.it.BaseApiIT;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -73,8 +73,8 @@ final class OpenIdTestIT extends BaseApiIT
 			try (var tx = db.newTransaction())
 			{
 				var config = new HashMap<String, Object>();
-				config.put("issuer", KeyCloakExtension.getIssuer());
-				config.put("wellKnown", KeyCloakExtension.getOidcWellKnown());
+				config.put("issuer", KeyCloakTestExtension.getIssuer());
+				config.put("wellKnown", KeyCloakTestExtension.getOidcWellKnown());
 				config.put("clientId", "opendcs");
 				config.put("clientSecret", "test-secret-value");
 				final String redirectUri = RestAssured.baseURI + ":" + RestAssured.port + "/" + RestAssured.basePath + "/oidc-callback";
@@ -266,7 +266,7 @@ final class OpenIdTestIT extends BaseApiIT
 		.when()		
 			.redirects().follow(true)
 			.redirects().max(6)
-			.post(URI.create(KeyCloakExtension.getCodeUrl()))
+			.post(URI.create(KeyCloakTestExtension.getCodeUrl()))
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.statusCode(is(Response.Status.OK.getStatusCode()))
@@ -349,7 +349,7 @@ final class OpenIdTestIT extends BaseApiIT
 			.queryParam("redirect_uri", redirectUri)
 			.queryParam("state", originalState)
 		.when()
-			.get(KeyCloakExtension.getCodeUrl())
+			.get(KeyCloakTestExtension.getCodeUrl())
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.assertThat()
@@ -394,7 +394,7 @@ final class OpenIdTestIT extends BaseApiIT
 			.formParam("response_mode", "fragment")
 			.formParam("response_type", "id_token token")
 		.when()
-			.post(KeyCloakExtension.getTokenUrl())
+			.post(KeyCloakTestExtension.getTokenUrl())
 		.then()
 			.assertThat()
 			.log().ifValidationFails(LogDetail.ALL, true)

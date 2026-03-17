@@ -38,13 +38,13 @@ public final class OpenIdConfiguration
             if (status == 200)
             {
                 ObjectMapper mapper = new ObjectMapper();
-                JsonNode node = mapper.readTree(http.getInputStream());
-                jwksUri = URI.create(node.get("jwks_uri").asText());
-                issuer = node.get("issuer").asText();
-                tokenUri = URI.create(node.get("token_endpoint").asText());
-                userInfoUri = URI.create(node.get("userinfo_endpoint").asText());
-                logoutUri = URI.create(node.get("end_session_endpoint").asText());
-                authUri = URI.create(node.get("authorization_endpoint").asText());
+                final JsonNode root = mapper.readTree(http.getInputStream());
+                jwksUri = URI.create(getTextField(root, "jwks_uri"));
+                issuer = getTextField(root, "issuer");
+                tokenUri = URI.create(getTextField(root, "token_endpoint"));
+                userInfoUri = URI.create(getTextField(root, "userinfo_endpoint"));
+                logoutUri = URI.create(getTextField(root, "end_session_endpoint"));
+                authUri = URI.create(getTextField(root, "authorization_endpoint"));
             }
             else
             {
@@ -59,5 +59,15 @@ public final class OpenIdConfiguration
                 http.disconnect();
             }
         }
+    }
+
+    private static String getTextField(JsonNode root, String field) throws IOException
+    {
+        var tmp = root.get(field);
+        if (tmp == null || tmp.isNull())
+        {
+            throw new IOException("OpenID Configuration does not contain a '" + field + "'' entry.");
+        }
+        return tmp.asText();
     }
 }

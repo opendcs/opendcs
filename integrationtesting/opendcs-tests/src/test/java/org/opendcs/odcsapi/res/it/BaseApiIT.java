@@ -58,7 +58,7 @@ import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.TomcatServer;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.EnableIfApiSupported;
-import org.opendcs.fixtures.extensions.auth.KeyCloakExtension;
+import org.opendcs.fixtures.extensions.auth.KeyCloakTestExtension;
 
 import static io.restassured.RestAssured.given;
 import static java.util.stream.Collectors.joining;
@@ -66,7 +66,7 @@ import static org.hamcrest.Matchers.is;
 import static org.opendcs.odcsapi.util.ApiConstants.ORGANIZATION_HEADER;
 
 @EnableIfApiSupported
-@ExtendWith(KeyCloakExtension.class)
+@ExtendWith(KeyCloakTestExtension.class)
 @Tag("rest_api")
 public class BaseApiIT extends AppTestBase
 {

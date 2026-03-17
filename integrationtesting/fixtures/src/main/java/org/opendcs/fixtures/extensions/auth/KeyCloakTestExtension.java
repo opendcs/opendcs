@@ -31,7 +31,7 @@ import io.restassured.http.ContentType;
 /**
  * Sets up a KeyCloak instance to use for testing.
  */
-public final class KeyCloakExtension implements BeforeEachCallback
+public final class KeyCloakTestExtension implements BeforeEachCallback
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static final String WELL_KNOWN = "realms/opendcs/.well-known/openid-configuration";
