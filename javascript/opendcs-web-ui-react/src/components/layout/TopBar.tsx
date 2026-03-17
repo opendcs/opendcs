@@ -2,6 +2,10 @@ import { useContext } from "react";
 import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 import { AuthContext } from "../../contexts/app/AuthContext";
+import { useApi } from "../../contexts/app/ApiContext.ts";
+import ChangeOrgMenu from "../menus/ChangeOrg/ChangeOrgMenu";
+import { useOrganizations } from "../../contexts/app/OrganizationsContext.ts";
+
 import { ColorModes } from "../";
 import LangPicker from "../menus/Language/LangPicker";
 import UserMenu from "../menus/User/UserMenu";
@@ -15,6 +19,9 @@ export interface TopBarProps {
 
 export function TopBar({ onToggleSidebar, sidebarOpen }: TopBarProps) {
   const { user, logout } = useContext(AuthContext);
+  const organizations = useOrganizations();
+  const api = useApi();
+  const orgList = organizations.organizations;
 
   return (
     <Navbar fixed="top" className="odcs-topbar">
@@ -38,6 +45,13 @@ export function TopBar({ onToggleSidebar, sidebarOpen }: TopBarProps) {
           <Nav.Item>
             <ColorModes />
           </Nav.Item>
+          {orgList.length > 0 && user ? (
+            <Nav.Item>
+              {api && <ChangeOrgMenu org={api.orgObj} orgs={orgList} />}
+            </Nav.Item>
+          ) : (
+            ""
+          )}
           {user && <UserMenu user={user} logout={logout} />}
         </Nav>
       </Container>

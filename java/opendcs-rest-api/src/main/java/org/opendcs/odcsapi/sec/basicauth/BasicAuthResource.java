@@ -147,25 +147,40 @@ public final class BasicAuthResource extends OpenDcsResource
 
 		String authorizationHeader = httpHeaders.getHeaderString(HttpHeaders.AUTHORIZATION);
 		credentials = getCredentials(credentials, authorizationHeader);
-		var user = validateDbCredentials(credentials);
-		if (user.isPresent())
+		try
 		{
-			var theUser = user.get();
-			var roles = new HashSet<OpenDcsApiRoles>();
-			for (var role: theUser.roles)
+			var user = validateDbCredentials(credentials);
+			if (user.isPresent())
 			{
-				roles.add(OpenDcsApiRoles.valueOf(role.name));
-			}
-			OpenDcsPrincipal principal = new OpenDcsPrincipal(theUser.email, roles);
-			HttpSession oldSession = httpServletRequest.getSession(false);
-			if(oldSession != null)
-			{
-				oldSession.invalidate();
-			}
-			HttpSession session = httpServletRequest.getSession(true);
+				var theUser = user.get();
+				var roles = new HashSet<OpenDcsApiRoles>();
+				for (var role: theUser.roles)
+				{
+					roles.add(OpenDcsApiRoles.valueOf(role.name));
+				}
+				OpenDcsPrincipal principal = new OpenDcsPrincipal(theUser.email, roles);
+				HttpSession oldSession = httpServletRequest.getSession(false);
+				if(oldSession != null)
+				{
+					oldSession.invalidate();
+				}
+				HttpSession session = httpServletRequest.getSession(true);
 
-			session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, principal);
-			return Response.ok().entity(user.get()).build();
+				session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, principal);
+				return Response.ok().entity(user.get()).build();
+			}
+		}
+		catch (IllegalStateException ex)
+		{
+			String msg = ex.getLocalizedMessage();
+			if (msg.startsWith("User does not have permissions for specified office"))
+			{
+				throw new WebAppException(Response.Status.FORBIDDEN.getStatusCode(), msg);
+			}
+			else
+			{
+				throw ex;
+			}
 		}
 		return Response.status(Status.UNAUTHORIZED).build();
 	}
@@ -238,13 +253,13 @@ public final class BasicAuthResource extends OpenDcsResource
 		var db = this.createDb();
 		// Use username and password to attempt to connect to the database
 
-		try (var tx = db.newTransaction())
+		try(var tx = db.newTransaction())
 		{
 			var userMgmt = db.getDao(UserManagementDao.class).orElseThrow();
 			var providers = userMgmt.getIdentityProvidersForSubject(tx, creds.getUsername());
-			for (var provider: providers)
+			for(var provider : providers)
 			{
-				if (provider instanceof BuiltInIdentityProvider idp)
+				if(provider instanceof BuiltInIdentityProvider idp)
 				{
 					return idp.login(db, tx, new BuiltInProviderCredentials(creds.getUsername(), creds.getPassword()));
 				}

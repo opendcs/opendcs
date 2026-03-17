@@ -8,7 +8,7 @@
   "value": "Wert",
   "Auto": "Auto",
   "Dark": "Dunkel",
-  "Light": "Licht",
+  "Light": "Hell",
   "Change language": "Sprache ändern zu {{lang}}",
   "Language Menu": "Öffnen Sie das Übersetzungsmenü",
   "country": "Land",
@@ -24,5 +24,13 @@
   "loading_reference_lists": "Referenzlistendaten werden geladen...",
   "user-settings": "Benutzereinstellungen",
   "date_time": "Datum/Uhrzeit",
-  "drag_order": "Verwenden Sie diese Zelle, um die Zeile zu ziehen und neu zu ordnen"
+  "drag_order": "Verwenden Sie diese Zelle, um die Zeile zu ziehen und neu zu ordnen",
+  "organization": "Organisation",
+  "Change Organization": "Organisation wechseln",
+  "Authorization Error": "Autorisierungsfehler",
+  "User not authorized": "Der Benutzer ist nicht für diese Organisation autorisiert.",
+  "Close": "Schließen",
+  "Organizations not defined": "Organisationen nicht definiert",
+  "user pass incorrect": "Benutzername und/oder Passwort sind falsch, oder der Benutzer hat keinen Zugriff auf die ausgewählte Organisation.",
+  "Login Failed": "Anmeldung fehlgeschlagen"
 }
