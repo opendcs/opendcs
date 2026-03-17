@@ -181,6 +181,9 @@ testEngines.each { engine ->
         }
 
 
+        sourceDirectories.from(project(":opendcs").sourceSets.main.java.srcDirs)
+        sourceDirectories.from(project(":opendcs-rest-api").sourceSets.main.java.srcDirs)
+        sourceDirectories.from(project(":opendcs-api").sourceSets.main.java.srcDirs)
 
         classDirectories.setFrom(files(classDirectories.files.collect {
             fileTree(dir: it, exclude: commonJacocoExcludes)

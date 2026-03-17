@@ -51,6 +51,8 @@ jacocoTestReport {
     reports {
         xml.required = true
     }
+    
+    sourceDirectories.setFrom(sourceSets.main.java.srcDirs)
 }
 
 checkstyle {
