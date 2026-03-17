@@ -212,6 +212,8 @@ export const DecodeData: Story = {
     });
     await userEvent.click(decodeButton);
 
-    waitFor(() => expect(canvas.queryByText("Battery")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(canvas.queryAllByText("Battery").length).toBeGreaterThan(0),
+    );
   },
 };

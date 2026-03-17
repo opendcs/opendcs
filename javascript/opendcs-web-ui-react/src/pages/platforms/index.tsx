@@ -27,7 +27,7 @@ export const Platforms = () => {
 
   useEffect(() => {
     const platformApi = new RESTDECODESPlatformRecordsApi(api.conf);
-    platformApi.getPlatformRefs("").then((refs) => {
+    platformApi.getPlatformRefs(api.org).then((refs) => {
       const data = Array.from(refs.values());
       setTableData(data);
     });
