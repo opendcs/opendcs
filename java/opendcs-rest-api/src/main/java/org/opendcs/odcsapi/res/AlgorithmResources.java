@@ -16,8 +16,10 @@
 package org.opendcs.odcsapi.res;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.DbAlgoParm;
@@ -26,6 +28,7 @@ import decodes.tsdb.DbCompAlgorithmScript;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.ScriptType;
+import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbException;
 import decodes.tsdb.compedit.AlgorithmInList;
 import io.swagger.v3.oas.annotations.Operation;
@@ -51,10 +54,12 @@ import org.opendcs.odcsapi.beans.ApiAlgoParm;
 import org.opendcs.odcsapi.beans.ApiAlgorithm;
 import org.opendcs.odcsapi.beans.ApiAlgorithmRef;
 import org.opendcs.odcsapi.beans.ApiAlgorithmScript;
+import org.opendcs.odcsapi.beans.ApiAvailableAlgorithm;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
+import org.opendcs.utils.AlgorithmCatalogScanner;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
@@ -248,6 +253,88 @@ public final class AlgorithmResources extends OpenDcsResource
 		DbCompAlgorithmScript retval = new DbCompAlgorithmScript(parent, scriptType);
 		retval.addToText(script.getText());
 		return retval;
+	}
+
+	@GET
+	@Path("algorithmcatalog")
+	@Produces(MediaType.APPLICATION_JSON)
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
+	@Operation(
+			summary = "List algorithms available in the classpath and filesystem",
+			description = "Scans $DCSTOOL_HOME, $DCSTOOL_USERDIR, and the classpath 'algorithms/' folder for "
+					+ "algorithm XML definitions. Returns all discovered algorithms with a flag indicating "
+					+ "whether each is already imported into the database. This mirrors the 'Check for New' "
+					+ "button in the Computation Editor GUI.",
+			operationId = "getAlgorithmCatalog",
+			tags = {"REST - Algorithm Methods"},
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Success",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									array = @ArraySchema(schema = @Schema(implementation = ApiAvailableAlgorithm.class)))),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
+	public Response getAlgorithmCatalog() throws DbIoException
+	{
+		TimeSeriesDb tsDb = getLegacyTimeseriesDB();
+		Set<String> importedExecClasses = AlgorithmCatalogScanner.getImportedExecClasses(tsDb);
+		List<ApiAvailableAlgorithm> catalog = new ArrayList<>();
+		for (DbCompAlgorithm algo : AlgorithmCatalogScanner.scanAvailableAlgorithms())
+		{
+			ApiAvailableAlgorithm available = new ApiAvailableAlgorithm();
+			available.setName(algo.getName());
+			available.setExecClass(algo.getExecClass());
+			available.setDescription(algo.getComment());
+			available.setAlreadyImported(importedExecClasses.contains(algo.getExecClass()));
+			catalog.add(available);
+		}
+		return Response.ok().entity(catalog).build();
+	}
+
+	@POST
+	@Path("algorithmcatalog")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
+	@Operation(
+			summary = "Import algorithms from the catalog into the database",
+			description = "Accepts a list of fully qualified execution class names. Scans the classpath and "
+					+ "filesystem for matching algorithm definitions and imports them into the database. "
+					+ "This mirrors the 'Load Selected' action in the Computation Editor 'Check for New' dialog.",
+			operationId = "importAlgorithmsFromCatalog",
+			tags = {"REST - Algorithm Methods"},
+			requestBody = @RequestBody(
+					description = "List of fully qualified execution class names to import",
+					required = true,
+					content = @Content(mediaType = MediaType.APPLICATION_JSON,
+							array = @ArraySchema(schema = @Schema(implementation = String.class)),
+							examples = @ExampleObject(name = "Basic",
+									value = "[\"decodes.tsdb.algo.AverageAlgorithm\", \"decodes.tsdb.algo.SumOverTimeAlgorithm\"]")
+					)
+			),
+			responses = {
+					@ApiResponse(responseCode = "201", description = "Successfully imported",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									array = @ArraySchema(schema = @Schema(implementation = ApiAlgorithm.class)))),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
+	public Response importAlgorithmsFromCatalog(List<String> execClassNames) throws DbIoException
+	{
+		Set<String> requested = new HashSet<>(execClassNames);
+		List<ApiAlgorithm> imported = new ArrayList<>();
+		try (AlgorithmDAI dai = getLegacyTimeseriesDB().makeAlgorithmDAO())
+		{
+			for (DbCompAlgorithm algo : AlgorithmCatalogScanner.scanAvailableAlgorithms())
+			{
+				if (requested.contains(algo.getExecClass()))
+				{
+					dai.writeAlgorithm(algo);
+					imported.add(map(algo));
+				}
+			}
+		}
+		return Response.status(Response.Status.CREATED).entity(imported).build();
 	}
 
 	@DELETE
