@@ -32,6 +32,8 @@ public final class OpenIdConfiguration
             http = (HttpURLConnection)wellKnownUri.toURL().openConnection();
             http.setRequestMethod("GET");
             http.setInstanceFollowRedirects(true);            
+            http.setConnectTimeout(5_000); 
+            http.setReadTimeout(5_000);   
             int status = http.getResponseCode();
             if (status == 200)
             {

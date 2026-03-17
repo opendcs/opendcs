@@ -139,7 +139,7 @@ public final class OidcIdentityProvider implements IdentityProvider
             if (response.statusCode() != 200)
             {
                 throw new IOException(String.format("""
-                    Requestion for client information was not excepted. Status Code: %d, Reason: %s
+                    Request for client information was not expected. Status Code: %d, Reason: %s
                             """, response.statusCode(), response.body()));
             }
             var json = jsonMapper.readTree(response.body());
