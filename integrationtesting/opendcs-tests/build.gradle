@@ -41,7 +41,6 @@ dependencies {
     testImplementation project(":testing:fixtures")
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)
-    testImplementation(libs.org.mock.server)
     testImplementation(libs.com.bucket4j.bucket4j)
     testRuntimeOnly(libs.bundles.junit.platform)
     
@@ -57,7 +56,6 @@ dependencies {
     testImplementation(libs.webcompere.system.stubs.jupiter)
     testImplementation(libs.rest.assured)
     testImplementation(libs.json.jackson)
-    testImplementation(libs.commons.lang)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.hamcrest)
@@ -68,6 +66,7 @@ dependencies {
     testImplementation(libs.selenium)
     testImplementation(libs.web.driver.manager)
     testRuntimeOnly(libs.byte.buddy)
+    runtimeOnly(libs.bundles.faster.xml)
     runtimeOnly(libs.com.faster.xml.jackson.databind) // for swagger compatibility
     runtimeOnly(libs.com.faster.xml.jackson.annotations) // for swagger compatibility
 
@@ -194,6 +193,11 @@ testEngines.each { engine ->
     }
 }
 
+tasks.register('runWeb') {
+    dependsOn 'runApi'
+    group "application"
+    description "Alias for runApi task"
+}
 
 tasks.register('runApi', JavaExec) {
     dependsOn build

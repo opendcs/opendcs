@@ -848,23 +848,15 @@ a routing spec named 'mySpec'.
 |rs -**e** mySpec              |(deprecated -- does nothing)                                     |
 +------------------------------+-----------------------------------------------------------------+
 
-Manual Routing Specs Common Options
------------------------------------
+**Manual Routing Spec Command Examples (Unix)**
 
-Troubleshooting - Use Debugger
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Run in background with nohup, debug level 3, log to lrgs.log, suppress all output::
 
-... more content coming soon ...
+    nohup rs -d3 -l lrgs.log NWO-LRGS > /dev/null 2>&1 &
 
-Backfilling - Use Since and Until
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Run in background, debug level 3, log to lrgs.log, suppress errors only::
 
-... more content coming soon ...
-
-Lockfile Significance
-~~~~~~~~~~~~~~~~~~~~~
-
-... more content coming soon ...
+    rs -d3 -l lrgs.log NWO-LRGS 2>/dev/null &
 
 9.Routing Scheduler
 ===================

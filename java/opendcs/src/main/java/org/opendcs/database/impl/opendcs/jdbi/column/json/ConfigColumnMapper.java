@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.HashMap;
 
+import org.jdbi.v3.core.generic.GenericType;
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 
@@ -14,6 +15,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ConfigColumnMapper implements ColumnMapper<Map<String, Object>>
 {
+    public static final GenericType<?> CONFIG_TYPE = new GenericType<Map<String, Object>>() {};
+
     private final ObjectMapper om = new ObjectMapper();
 
     @Override

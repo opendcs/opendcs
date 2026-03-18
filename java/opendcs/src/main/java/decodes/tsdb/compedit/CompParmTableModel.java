@@ -47,7 +47,7 @@ public class CompParmTableModel extends AbstractTableModel
                     "Model ID",
                     rb.getString("ComputationsEditPanel.TableColumnDeltaT")
                 };
-                columnWidths = new int[]{ 15, 15, 15, 15, 15, 15, 10 };
+                columnWidths = new int[]{ 15, 15, 15, 15, 15, 15, 15, 10 };
         }
         else
         {
@@ -63,7 +63,7 @@ public class CompParmTableModel extends AbstractTableModel
                     rb.getString("ComputationsEditPanel.TableColumnDuration"),
                     rb.getString("ComputationsEditPanel.TableColumnVersion")
                 };
-            columnWidths = new int[]{ 15, 15, 15, 15, 15, 15, 10 };
+            columnWidths = new int[]{ 15, 15, 15, 15, 15, 15, 15, 10 };
         }
     }
 

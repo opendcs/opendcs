@@ -14,6 +14,10 @@ dependencies {
     api(libs.bundles.testcontainers)
     api(libs.hec.testcontainers.cwms)
     api(libs.bundles.jdbi)
+    api(libs.rest.assured)
+    api(libs.hamcrest)
+    compileOnly(libs.jakarta.servlet)
+    compileOnly(libs.rs.api)
 
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)

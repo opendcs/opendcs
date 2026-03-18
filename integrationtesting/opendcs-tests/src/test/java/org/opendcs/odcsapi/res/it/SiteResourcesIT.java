@@ -27,6 +27,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiSite;
+import org.opendcs.odcsapi.res.ObjectMapperContextResolver;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -41,7 +42,7 @@ final class SiteResourcesIT extends BaseApiIT
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static Long siteId;
-	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapperContextResolver().getContext(ApiSite.class);
 
 	@BeforeEach
 	void setUp() throws Exception

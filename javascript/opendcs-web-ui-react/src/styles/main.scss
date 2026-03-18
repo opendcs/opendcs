@@ -1,0 +1,80 @@
+// =============================================================================
+// Main entry point — imports everything in order
+// =============================================================================
+
+// 1. Design tokens (SCSS vars + CSS custom properties)
+@import "tokens";
+
+// 2. Bootstrap variable overrides (must come before Bootstrap source)
+@import "bootstrap-overrides";
+
+// 3. Bootstrap source (replaces compiled bootstrap.min.css)
+@import "bootstrap/scss/bootstrap";
+
+// 4. Component partials
+@import "components/topbar";
+@import "components/sidebar";
+@import "components/datatables";
+@import "components/login";
+
+// =============================================================================
+// Base styles
+// =============================================================================
+
+#root {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0;
+}
+
+html {
+  overflow-y: scroll;
+  scrollbar-color: var(--odcs-text-muted) var(--odcs-border);
+  scrollbar-width: thin;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--odcs-border);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--odcs-text-muted);
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--odcs-text-secondary);
+  }
+}
+
+body {
+  background-color: var(--odcs-bg-page);
+  overflow-x: hidden;
+  padding-top: var(--odcs-topbar-height);
+}
+
+// =============================================================================
+// Layout
+// =============================================================================
+
+.odcs-layout {
+  min-height: calc(100vh - var(--odcs-topbar-height));
+  padding: 0;
+}
+
+// =============================================================================
+// Theme / mode icons
+// =============================================================================
+
+.theme-icon {
+  width: 1.5em;
+  height: 1.5em;
+}
+
+.mode-icon-active {
+  width: 1.5em;
+  height: 1.5em;
+}

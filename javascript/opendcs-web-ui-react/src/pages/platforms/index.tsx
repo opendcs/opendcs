@@ -3,7 +3,7 @@ import DT from "datatables.net-bs5";
 import { Card } from "react-bootstrap";
 import { useEffect, useState } from "react";
 import { ApiPlatformRef, RESTDECODESPlatformRecordsApi } from "opendcs-api";
-import { useApi } from "../../contexts/ApiContext";
+import { useApi } from "../../contexts/app/ApiContext";
 import { useTranslation } from "react-i18next";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -27,7 +27,7 @@ export const Platforms = () => {
 
   useEffect(() => {
     const platformApi = new RESTDECODESPlatformRecordsApi(api.conf);
-    platformApi.getPlatformRefs("").then((refs) => {
+    platformApi.getPlatformRefs(api.org).then((refs) => {
       const data = Array.from(refs.values());
       setTableData(data);
     });
@@ -35,7 +35,7 @@ export const Platforms = () => {
 
   return (
     <div className="content">
-      <Card border="primary" className="large-padding">
+      <Card border="primary" className="p-3">
         <DataTable
           id="platformTable"
           columns={columns}

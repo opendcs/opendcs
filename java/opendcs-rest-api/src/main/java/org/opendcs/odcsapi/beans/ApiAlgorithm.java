@@ -61,7 +61,7 @@ public final class ApiAlgorithm
 	/**
 	 * parameters to this algorithm
 	 */
-	@Schema(description = "List of parameters used by the algorithm.", implementation = ApiAlgoParm.class)
+	@Schema(description = "List of parameters used by the algorithm.")
 	private List<ApiAlgoParm> parms = new ArrayList<>();
 
 	/**
@@ -70,7 +70,7 @@ public final class ApiAlgorithm
 	@Schema(description = "Number of computations currently using this algorithm.", example = "1")
 	private int numCompsUsing = 0;
 
-	@Schema(description = "List of scripts associated with the algorithm.", implementation = ApiAlgorithmScript.class)
+	@Schema(description = "List of scripts associated with the algorithm.")
 	private List<ApiAlgorithmScript> algoScripts = new ArrayList<>();
 
 	public Long getAlgorithmId()

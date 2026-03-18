@@ -16,6 +16,9 @@
         <encoder class="PatternLayoutEncoder">
             <pattern>%date{ISO8601} %level [%thread] %logger %mdc %marker %kvp %msg %ex %n</pattern>
         </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
         <target>System.err</target>
     </appender>
     <appender name="FILE" class="RollingFileAppender">

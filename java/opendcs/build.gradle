@@ -43,10 +43,7 @@ dependencies {
     implementation(libs.jfree.jfreechart)
     implementation(libs.jython.standalone)
 
-    implementation(libs.scijava.jep) {
-        exclude group: "jama", module: "jama"
-    }
-    implementation(libs.jama)
+    implementation(libs.scijava.jep) 
     implementation(libs.dropwizard.metrics.core)
     implementation(libs.passay)
     implementation(libs.sun.mailapi)
@@ -74,6 +71,7 @@ dependencies {
     }
 
     implementation(libs.hec.monolith) {
+        exclude group: 'commons-lang', module: 'commons-lang'
         exclude group: "codebase"
         exclude group: "org.jdom"
         exclude group: "org.bouncycastle"
@@ -108,6 +106,10 @@ dependencies {
     implementation(libs.org.netbeans.lookup)
     implementation(libs.hec.lookup.compat)
 
+    implementation(libs.nimbus)
+    implementation(libs.jwt)
+
+
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)
     testRuntimeOnly (libs.bundles.junit.platform)
@@ -115,7 +117,6 @@ dependencies {
     testImplementation(libs.apache.derby)
     testImplementation(libs.webcompere.system.stubs.jupiter)
     testImplementation(libs.greenmail)
-    testImplementation(libs.org.mock.server)
     testRuntimeOnly(libs.ch.qos.logback)
     testImplementation(project(":opendcs-api"))
 

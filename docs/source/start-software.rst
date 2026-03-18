@@ -250,8 +250,38 @@ For more details about the decodes.properties see
 How do I launch the software?
 =============================
 
-Now that the software is installed.  On windows double click:
-**launcher_start.bat** (in the C:\\OPENDCS\bin directory). 
+OpenDCS is a collection of applications and utilities that can be launched with the corresponding script (bash or batch file).
+
+Each program is launched by executing the corresponding script in the `bin` directory.  In Windows, this can be done by double clicking batch files.
+
+
+When running form the command line, navigate to the `bin` directory and run the corresponding script.
+For example to launch the DECODES Database Editor, run the following command in a command prompt (windows) or terminal (linux).
+
+.. code-block:: batch
+
+   > cd C:\OPENDCS\bin
+   > dbedit.bat
+
+.. WARNING::
+
+   PowerShell may not behave the same as Command Prompt (cmd) when running batch files.
+   If you encounter issues running OpenDCS .bat files via PowerShell, try using Command Prompt instead.
+   One user found that using  --% to before arguments allowed using PowerShell. 
+
+
+Or on linux:   
+
+.. code-block:: bash
+
+   $ cd /opt/opendcs/bin
+   $ ./dbedit
+
+
+
+
+
+For example on windows double click: **launcher_start.bat** (in the C:\\OPENDCS\bin directory) to start the main menu.
 
 .. image:: ./media/start/software/im-08-launcher_start.JPG
    :alt: windows launcher_start.bat

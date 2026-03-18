@@ -1,47 +1,40 @@
-import { useEffect } from "react";
-import "./App.css";
-import { useAuth } from "./contexts/AuthContext";
+import { useState } from "react";
 import Login from "./pages/auth/login";
-import { TopBar, SideBar } from "./components/layout";
+import { TopBar, SideBar, ProtectedRoute, PublicOnlyRoute } from "./components/layout";
 import { ModeIcons } from "./components/ModeIcon";
 
-import { RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
-import { useApi } from "./contexts/ApiContext";
-import { Route, Routes, useNavigate } from "react-router-dom";
-import { Platforms } from "./pages/platforms";
-import { Sites } from "./pages/sites";
 import { Container } from "react-bootstrap";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { Platforms } from "./pages/platforms";
 import { Algorithms } from "./pages/computations/algorithms";
+import { SitesPage } from "./pages/sites";
 
 function App() {
-  const navigate = useNavigate();
-  const { setUser } = useAuth();
-  const api = useApi();
-
-  useEffect(() => {
-    const auth = new RESTAuthenticationAndAuthorizationApi(api.conf);
-    auth
-      .checkSessionAuthorization()
-      // The current API spec (in the generated api) shows string as the return still
-      // the endpoint *correctly* returns a user object. likely just an issue
-      // with the autocomplete cache on my system.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .then((value: any) => setUser(value))
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      .catch((_error: unknown) => navigate("/login"));
-  }, [api.conf, setUser, navigate]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <>
       <ModeIcons />
-      <TopBar />
-      <Container fluid className="page-content d-flex">
+      <TopBar
+        onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
+        sidebarOpen={sidebarOpen}
+      />
+      <Container fluid className="odcs-layout d-flex">
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route element={<SideBar />}>
-            <Route path="/platforms" element={<Platforms />} />
-            <Route path="/sites" element={<Sites />} />
-            <Route path="/algorithms" element={<Algorithms />} />
+          <Route element={<PublicOnlyRoute />}>
+            <Route path="/login" element={<Login />} />
+          </Route>
+          <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<Navigate to="/platforms" replace />} />
+            <Route
+              element={
+                <SideBar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+              }
+            >
+              <Route path="/platforms" element={<Platforms />} />
+              <Route path="/sites" element={<SitesPage />} />
+              <Route path="/algorithms" element={<Algorithms />} />
+            </Route>
           </Route>
         </Routes>
       </Container>

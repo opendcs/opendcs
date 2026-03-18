@@ -38,12 +38,14 @@ configurations {
 dependencies {
     compileOnly(libs.auto.service.annotations)
     annotationProcessor(libs.auto.service.processor)
+    annotationProcessor(libs.org.netbeans.lookup)
 
     implementation(project(":opendcs"))
 
     implementation(libs.bundles.jdbi)
     implementation(libs.microprofile.health) // use to get the HealthCheckResponse object
     implementation(libs.bundles.jersey)
+    implementation(libs.bundles.faster.xml)
     swaggerDeps(libs.jakarta.servlet)
     swaggerDeps(libs.rs.api)
     swaggerDeps(libs.swagger.jaxrs2)
@@ -62,6 +64,7 @@ dependencies {
     implementation(libs.org.slf4j.api)
     implementation(libs.com.faster.xml.jackson.databind)
     implementation(libs.jakarta.xml.bind.api)
+    implementation(libs.org.netbeans.lookup)
     runtimeOnly(libs.slf4j.jdk14)
     runtimeOnly(libs.org.glassfish.jaxb.runtime)
     runtimeOnly(libs.com.faster.xml.jackson.annotations) // updated for swagger compatibility

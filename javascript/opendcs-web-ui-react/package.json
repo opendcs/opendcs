@@ -16,17 +16,18 @@
     "test-storybook": "vitest --project=storybook",
     "build-storybook": "storybook build",
     "format:check": "prettier --check .",
-    "prepare": "husky",
+    "prepare": "node build_scripts/husky.js",
     "predev": "npm run api:generate && npm run lang:generate",
     "prebuild": "npm run api:generate && npm run lang:generate",
     "prestorybook": "npm run api:generate && npm run lang:generate",
-    "pretest-storybook": "npm run api:generate && npm run lang:generate"
+    "pretest-storybook": "npm run api:generate && npm run lang:generate",
+    "precommit": "lint-staged"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
       "prettier --write"
     ],
-    "*.{json,css,md,html}": [
+    "*.{json,css,scss,md,html}": [
       "prettier --write"
     ]
   },
@@ -38,6 +39,8 @@
     "datatables.net-react": "^1.0.1",
     "datatables.net-responsive": "^3.0.7",
     "datatables.net-responsive-bs5": "^3.0.7",
+    "datatables.net-rowreorder": "^1.5.1",
+    "highlight.js": "^11.11.1",
     "i18next": "^25.7.4",
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-http-backend": "^3.0.2",
@@ -66,20 +69,30 @@
     "@vitejs/plugin-react": "^5.1.1",
     "@vitest/browser-playwright": "^4.0.16",
     "@vitest/coverage-v8": "^4.0.16",
+    "datatables.net-plugins": "^2.3.6",
     "eslint": "9.39.2",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "0.4.26",
     "eslint-plugin-storybook": "^10.1.11",
+    "fast-xml-parser": "^5.3.6",
     "globals": "^16.5.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
+    "msw": "^2.12.9",
+    "msw-storybook-addon": "^2.0.6",
     "playwright": "^1.57.0",
     "prettier": "^3.7.4",
+    "sass": "^1.97.3",
     "storybook": "^10.1.11",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.3.0",
     "vite-plugin-svgr": "^4.5.0",
     "vitest": "^4.0.16"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

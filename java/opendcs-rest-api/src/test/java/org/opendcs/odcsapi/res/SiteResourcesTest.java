@@ -78,7 +78,7 @@ final class SiteResourcesTest
 		apiSite.setState("NM");
 		apiSite.setLatitude("35.0844");
 		apiSite.setLongitude("-106.6506");
-		apiSite.setLastModified(Date.from(Instant.now()));
+		apiSite.setLastModified(Instant.now());
 		apiSite.setPublicName("Albuquerque Pump Station");
 
 		Site result = map(apiSite);
@@ -116,7 +116,7 @@ final class SiteResourcesTest
 		assertEquals(site.isActive(), apiSite.isActive());
 		assertEquals(site.getId().getValue(), apiSite.getSiteId());
 		assertEquals(site.getLocationType(), apiSite.getLocationType());
-		assertEquals(site.getLastModifyTime(), apiSite.getLastModified());
+		assertEquals(site.getLastModifyTime(), Date.from(apiSite.getLastModified()));
 		assertEquals(site.country, apiSite.getCountry());
 		assertEquals(site.timeZoneAbbr, apiSite.getTimezone());
 		assertEquals(site.nearestCity, apiSite.getNearestCity());

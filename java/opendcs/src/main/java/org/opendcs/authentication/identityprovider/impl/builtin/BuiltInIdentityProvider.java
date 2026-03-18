@@ -26,6 +26,7 @@ import org.opendcs.authentication.InvalidCredentialsException;
 import org.opendcs.authentication.InvalidCredentialsTypeException;
 import org.opendcs.authentication.OpenDcsAuthException;
 import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.UserManagementDao;
@@ -174,15 +175,21 @@ public final class BuiltInIdentityProvider implements IdentityProvider
                             .orElseThrow(() -> new OpenDcsAuthException("Unable to retrieve database connection object."));
                 try (var pwUpdate = handle.createUpdate(
                         """
-                            insert into opendcs_user_password(user_id, password)
-                            values (:id, :password)
-                            on conflict (user_id) do update set password = :password
+                            merge into opendcs_user_password oup
+                            using (select :id as user_id, :password as password <dual>) input
+                            on (oup.user_id = input.user_id)
+                            when matched then
+                                update set password = input.password
+                            when not matched then
+                                insert (user_id, password)
+                                values (input.user_id, input.password)
                         """))
                 {
                     // We should allow some control of these settings.
                     // However, the defaults are sane, it's easy to do wrong, and this PR is already large enough
                     var hashed = Password.hash(creds.password.getBytes()).addPepper().addRandomSalt().withArgon2();
-                    pwUpdate.bind("id", user.id)
+                    pwUpdate.define("dual", tx.getContext().getDatabase() == DatabaseEngine.ORACLE ? "from dual" : "")
+                            .bind("id", user.id)
                             .bind("password", hashed.getResult())
                             .execute();
                 }

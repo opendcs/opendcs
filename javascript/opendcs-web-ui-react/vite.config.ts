@@ -19,7 +19,7 @@ export default defineConfig({
   plugins: [react(), svgr()],
   optimizeDeps: {
     exclude: ["opendcs-api", "whatwg-fetch"],
-    include: ["react-dom/client", "react-router-dom"]
+    include: ["react-dom/client", "react-router-dom"],
   },
   server: {
     fs: {
@@ -38,7 +38,7 @@ export default defineConfig({
       // Proxy requests starting with '/api'
       "/odcsapi": {
         target: "http://localhost:7000", // The address of your backend server
-        //changeOrigin: true, // Needed for virtual hosted sites
+        changeOrigin: true, // Needed for virtual hosted sites
       },
     },
   },
@@ -48,6 +48,18 @@ export default defineConfig({
         __dirname,
         "../../java/api-clients/api-client-typescript/build/generated/openApi",
       ),
+    },
+  },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        silenceDeprecations: [
+          "import",
+          "global-builtin",
+          "color-functions",
+          "if-function",
+        ],
+      },
     },
   },
   build: {
@@ -78,6 +90,13 @@ export default defineConfig({
             ],
           },
           setupFiles: [".storybook/vitest.setup.ts"],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "unit",
+          include: ["src/**/*.test.(ts|tsx|js|jsx)"],
         },
       },
     ],

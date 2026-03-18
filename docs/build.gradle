@@ -110,6 +110,8 @@ task buildDocs {
     dependsOn 'buildDocsHtml'
 }
 
+build.dependsOn buildDocs
+
 artifacts {
     docs(file("${buildDir}/html")) {
         builtBy(buildDocs)

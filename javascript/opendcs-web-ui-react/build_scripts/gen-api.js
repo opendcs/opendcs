@@ -1,6 +1,6 @@
 import { execSync } from "child_process";
 import path from "path";
-import os, { platform } from "os";
+import os from "os";
 
 const inGradle = process.env.IN_GRADLE ? true : false;
 const isShell = os.platform() !== "win32";

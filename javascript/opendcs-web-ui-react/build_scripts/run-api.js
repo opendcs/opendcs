@@ -1,13 +1,15 @@
 import { execSync } from "child_process";
 import path from "path";
+import os from "os";
 
 const workingDirectory = path.resolve(process.cwd(), "..", "..");
+const isShell = os.platform() !== "win32";
 
 console.log(
   "Starting instance of web api from gradle. Please note that this process runs in this shell. you will need to open another shell to\n execute additional tasks such as `npm run dev`",
 );
 try {
-  execSync("gradlew runWeb --info -Pno.docs=true", {
+  execSync(`${isShell ? "./" : ""}gradlew runApi --info -Pno.docs=true`, {
     cwd: workingDirectory,
     stdio: "inherit",
   });

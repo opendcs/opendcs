@@ -40,6 +40,7 @@ public final class RestServices extends ResourceConfig
 	{
 		log.debug("Initializing odcsapi RestServices.");
 		packages("org.opendcs.odcsapi");
+		register(ObjectMapperContextResolver.class);
 		setupSwagger(servletContext);
 	}
 

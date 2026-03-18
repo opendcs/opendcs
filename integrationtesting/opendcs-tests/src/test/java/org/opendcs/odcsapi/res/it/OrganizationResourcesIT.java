@@ -23,15 +23,17 @@ import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 
-@EnableIfTsDb({"CWMS-Oracle"})
+
 final class OrganizationResourcesIT extends BaseApiIT
 {
 
 	@Test
-	void getOrganizations()
+	@EnableIfTsDb({"CWMS-Oracle"})
+	void test_get_organizations_has_data()
 	{
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
@@ -45,6 +47,25 @@ final class OrganizationResourcesIT extends BaseApiIT
 		.assertThat()
 			.statusCode(is(Response.Status.OK.getStatusCode()))
 				.body("name", hasItem("SPK"))
+		;
+	}
+
+	@Test
+	@EnableIfTsDb({"OpenDCS-Postgres"})
+	void test_get_organizations_has_no_data()
+	{
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("organizations")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.OK.getStatusCode()))
+				.body("$", is(empty()))
 		;
 	}
 }

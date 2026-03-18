@@ -15,9 +15,14 @@
 
 package org.opendcs.odcsapi.sec;
 
+import java.util.HashSet;
+import java.util.Map;
+
+import org.opendcs.database.model.User;
+import org.opendcs.odcsapi.util.ApiConstants;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.annotation.security.RolesAllowed;
@@ -30,13 +35,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import org.opendcs.database.model.User;
-import org.opendcs.odcsapi.beans.Status;
-import org.opendcs.odcsapi.util.ApiConstants;
+import jakarta.ws.rs.core.Response.ResponseBuilder;
 
 @Path("/")
 public final class SessionResource
@@ -79,16 +78,13 @@ public final class SessionResource
 		Object sessionPrincipal = session.getAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE);
 		
 		OpenDcsPrincipal principal = (OpenDcsPrincipal) sessionPrincipal;
-		var user = principal.getName();
-		final HashMap<String,String> ret = new HashMap<>();
-		ret.put("email", user);
-		return Response.ok().entity(ret).build();
+		return Response.ok().entity(principal.getUser()).build();
 	}
 
 	@DELETE
 	@Path("logout")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Remove access tokens and clear the client's session.",
 			description = "Session variables for the client will be cleared. The auth token will be invalidated.",
@@ -105,5 +101,25 @@ public final class SessionResource
 			session.invalidate();
 		}
 		return Response.noContent().build();
+	}
+
+
+	public static ResponseBuilder updateSessionWithUser(User user, HttpServletRequest httpRequest)
+	{
+		var roles = new HashSet<OpenDcsApiRoles>();
+		for (var role: user.roles)
+		{
+			roles.add(OpenDcsApiRoles.valueOf(role.name));
+		}
+		OpenDcsPrincipal principal = new OpenDcsPrincipal(user, roles);
+		HttpSession oldSession = httpRequest.getSession(false);
+		if(oldSession != null)
+		{
+			oldSession.invalidate();
+		}
+		HttpSession session = httpRequest.getSession(true);
+
+		session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, principal);
+		return Response.ok().entity(user);
 	}
 }

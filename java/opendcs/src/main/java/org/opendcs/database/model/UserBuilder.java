@@ -33,6 +33,22 @@ public class UserBuilder
     ZonedDateTime updatedAt = null;
     HashMap<String, Object> preferences = new HashMap<>();
 
+
+    public UserBuilder()
+    {
+        /* everything fresh */
+    }
+
+    public UserBuilder(User original)
+    {
+        this.id = original.id;
+        this.email = original.email;
+        this.idpMap.addAll(original.identityProviders);
+        this.roles.addAll(original.roles);
+        this.preferences.putAll(original.preferences);
+        // we don't edit created at and updated at is automatic
+    }
+
     public User build()
     {
         return new User(this);
@@ -88,13 +104,17 @@ public class UserBuilder
 
     public UserBuilder withIdentityMappings(List<IdentityProviderMapping> mappings)
     {
-        this.idpMap.addAll(mappings);
+        // to avoid duplicates use the single mapping method to update the list.
+        mappings.forEach(this::withIdentityMapping);
         return this;
     }
 
     public UserBuilder withIdentityMapping(IdentityProviderMapping mapping)
     {
-        this.idpMap.add(mapping);
+        if (idpMap.stream().filter(idmp -> idmp.provider.getId().equals(mapping.provider.getId())).count() == 0)
+        {
+            this.idpMap.add(mapping);
+        }
         return this;
     }
 }

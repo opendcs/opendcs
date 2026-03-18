@@ -677,7 +677,7 @@ public class ScheduleEntryDAO extends DaoBase implements ScheduleEntryDAI
             + " where schedule_entry_id = ?)";
         try
         {
-            return  getSingleResultOr(q, rs ->
+            return  getFirstResultOr(q, rs ->
 			{
                 ScheduleEntryStatus ses = new ScheduleEntryStatus(DbKey.createDbKey(rs, 1));
                 rs2scheduleEntryStatus(rs, ses);
