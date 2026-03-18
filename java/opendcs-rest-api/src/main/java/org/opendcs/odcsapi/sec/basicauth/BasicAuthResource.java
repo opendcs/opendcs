@@ -15,11 +15,10 @@
 
 package org.opendcs.odcsapi.sec.basicauth;
 
+import static org.opendcs.odcsapi.sec.SessionResource.updateSessionWithUser;
+
 import java.util.Base64;
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
-import decodes.util.DecodesSettings;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.StringToClassMapItem;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -30,7 +29,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -45,17 +43,11 @@ import jakarta.ws.rs.core.Response.Status;
 import org.opendcs.authentication.OpenDcsAuthException;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityProvider;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInProviderCredentials;
-import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.model.User;
-import org.opendcs.odcsapi.dao.ApiAuthorizationDAI;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.res.OpenDcsResource;
-import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
-import org.opendcs.odcsapi.sec.OpenDcsPrincipal;
-import org.opendcs.odcsapi.sec.cwms.CwmsAuthorizationDAO;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -79,18 +71,8 @@ public final class BasicAuthResource extends OpenDcsResource
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
 	@Operation(
-			summary = "The ‘credentials’ POST method is used to obtain a new token",
-			description = """
-					The user name and password provided must be a valid login for the underlying database.
-					Also, that user must be assigned either of the roles OTSDB_ADMIN or OTSDB_MGR.
-					---
-					Starting in **API Version 0.0.3**, authentication credentials (username and password) \
-					may be passed as shown above in the POST body.
-					They may also be passed in a GET call to the 'credentials' method, \
-					(e.g. '*http://localhost:8080/odcsapi/credentials*') containing an HTTP Authentication Basic \
-					header in the form 'username:password'.
-
-					The returned data to the GET call will be empty.""",
+			summary = "The ‘credentials’ POST method is used to obtain a new authenticated session",
+			description = "Login method using standard username and password.",
 			requestBody = @RequestBody(
 					description = "Login Credentials",
 					required = true,
@@ -139,6 +121,9 @@ public final class BasicAuthResource extends OpenDcsResource
 	)
 	public Response postCredentials(Credentials credentials) throws WebAppException
 	{
+		var response = Response.status(Status.UNAUTHORIZED).entity("""
+				{"message": "Invalid credentials."}
+				""");
 		//If credentials are null, Authorization header will be checked.
 		if(credentials != null)
 		{
@@ -147,27 +132,28 @@ public final class BasicAuthResource extends OpenDcsResource
 
 		String authorizationHeader = httpHeaders.getHeaderString(HttpHeaders.AUTHORIZATION);
 		credentials = getCredentials(credentials, authorizationHeader);
-		var user = validateDbCredentials(credentials);
-		if (user.isPresent())
+		try
 		{
-			var theUser = user.get();
-			var roles = new HashSet<OpenDcsApiRoles>();
-			for (var role: theUser.roles)
+			var user = validateDbCredentials(credentials);
+			if (user.isPresent())
 			{
-				roles.add(OpenDcsApiRoles.valueOf(role.name));
+				var theUser = user.get();
+				response = updateSessionWithUser(theUser, httpServletRequest);
 			}
-			OpenDcsPrincipal principal = new OpenDcsPrincipal(theUser.email, roles);
-			HttpSession oldSession = httpServletRequest.getSession(false);
-			if(oldSession != null)
-			{
-				oldSession.invalidate();
-			}
-			HttpSession session = httpServletRequest.getSession(true);
-
-			session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, principal);
-			return Response.ok().entity(user.get()).build();
 		}
-		return Response.status(Status.UNAUTHORIZED).build();
+		catch (IllegalStateException ex)
+		{
+			String msg = ex.getLocalizedMessage();
+			if (msg.startsWith("User does not have permissions for specified office"))
+			{
+				throw new WebAppException(Response.Status.FORBIDDEN.getStatusCode(), msg);
+			}
+			else
+			{
+				throw ex;
+			}
+		}
+		return response.build();
 	}
 
 	private static void verifyCredentials(Credentials credentials)
@@ -238,13 +224,13 @@ public final class BasicAuthResource extends OpenDcsResource
 		var db = this.createDb();
 		// Use username and password to attempt to connect to the database
 
-		try (var tx = db.newTransaction())
+		try(var tx = db.newTransaction())
 		{
 			var userMgmt = db.getDao(UserManagementDao.class).orElseThrow();
 			var providers = userMgmt.getIdentityProvidersForSubject(tx, creds.getUsername());
-			for (var provider: providers)
+			for(var provider : providers)
 			{
-				if (provider instanceof BuiltInIdentityProvider idp)
+				if(provider instanceof BuiltInIdentityProvider idp)
 				{
 					return idp.login(db, tx, new BuiltInProviderCredentials(creds.getUsername(), creds.getPassword()));
 				}
@@ -255,39 +241,5 @@ public final class BasicAuthResource extends OpenDcsResource
 		{
 			throw new WebAppException(Response.Status.FORBIDDEN.getStatusCode(), "Unable to authorize user.", ex);
 		}
-	}
-
-	private Set<OpenDcsApiRoles> getUserRoles(String username, String organizationId)
-	{
-		OpenDcsDatabase db = createDb();
-		ApiAuthorizationDAI dao = getAuthDao(db);
-		if (dao == null)
-		{
-			return Set.of(OpenDcsApiRoles.ODCS_API_GUEST);
-		}
-		try(DataTransaction tx = db.newTransaction())
-		{
-			return dao.getRoles(tx, username, organizationId);
-		}
-		catch(Exception ex)
-		{
-			throw new IllegalStateException("Unable to query the database for user authorization", ex);
-		}
-	}
-
-	private ApiAuthorizationDAI getAuthDao(OpenDcsDatabase db)
-	{
-		String databaseType = db.getSettings(DecodesSettings.class).orElseThrow().editDatabaseType;
-		log.info("Getting Auth DAO for {}", databaseType);
-		// Username+Password login only supported by OpenTSDB
-		if("opendcs-postgres".equalsIgnoreCase(databaseType))
-		{
-			return new OpenTsdbAuthorizationDAO();
-		}
-		else if("cwms-oracle".equalsIgnoreCase(databaseType))
-		{
-			return new CwmsAuthorizationDAO();
-		}
-		return null;
 	}
 }
