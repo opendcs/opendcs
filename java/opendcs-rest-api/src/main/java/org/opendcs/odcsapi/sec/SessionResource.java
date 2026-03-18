@@ -15,7 +15,7 @@
 
 package org.opendcs.odcsapi.sec;
 
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import org.opendcs.database.model.User;
@@ -35,6 +35,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.ResponseBuilder;
 
 @Path("/")
 public final class SessionResource
@@ -77,10 +78,7 @@ public final class SessionResource
 		Object sessionPrincipal = session.getAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE);
 		
 		OpenDcsPrincipal principal = (OpenDcsPrincipal) sessionPrincipal;
-		var user = principal.getName();
-		final HashMap<String,String> ret = new HashMap<>();
-		ret.put("email", user);
-		return Response.ok().entity(ret).build();
+		return Response.ok().entity(principal.getUser()).build();
 	}
 
 	@DELETE
@@ -103,5 +101,25 @@ public final class SessionResource
 			session.invalidate();
 		}
 		return Response.noContent().build();
+	}
+
+
+	public static ResponseBuilder updateSessionWithUser(User user, HttpServletRequest httpRequest)
+	{
+		var roles = new HashSet<OpenDcsApiRoles>();
+		for (var role: user.roles)
+		{
+			roles.add(OpenDcsApiRoles.valueOf(role.name));
+		}
+		OpenDcsPrincipal principal = new OpenDcsPrincipal(user, roles);
+		HttpSession oldSession = httpRequest.getSession(false);
+		if(oldSession != null)
+		{
+			oldSession.invalidate();
+		}
+		HttpSession session = httpRequest.getSession(true);
+
+		session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, principal);
+		return Response.ok().entity(user);
 	}
 }
