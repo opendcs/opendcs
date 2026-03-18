@@ -36,6 +36,7 @@ import jakarta.ws.rs.ext.Provider;
 
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import org.slf4j.Logger;
+import org.opendcs.database.model.UserBuilder;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 @Provider
@@ -78,7 +79,7 @@ public final class SecurityFilter implements ContainerRequestFilter
 		{
 			log.trace("Public endpoint identified: {}", resourceInfo.getResourceMethod().toGenericString());
 		}
-		OpenDcsPrincipal principal = new OpenDcsPrincipal("guest", Collections.singleton(OpenDcsApiRoles.ODCS_API_GUEST));
+		OpenDcsPrincipal principal = new OpenDcsPrincipal(new UserBuilder().withEmail("guest").build(), Collections.singleton(OpenDcsApiRoles.ODCS_API_GUEST));
 		requestContext.setSecurityContext(new OpenDcsSecurityContext(principal,
 				httpServletRequest.isSecure(), ""));
 		
