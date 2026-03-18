@@ -13,7 +13,7 @@
  *  limitations under the License.
  */
 
-package org.opendcs.odcsapi.sec.openid;
+package org.opendcs.authentication.identityprovider.impl.oidc;
 
 import java.text.ParseException;
 import java.util.Arrays;
@@ -33,7 +33,6 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
-import org.opendcs.odcsapi.hydrojson.DbInterface;
 
 final class JwtVerifier
 {
@@ -50,13 +49,7 @@ final class JwtVerifier
 		return instance;
 	}
 
-	//Used for testing only. Can't access without mockito due to it being a final class
-	static void setInstance(JwtVerifier instance)
-	{
-		JwtVerifier.instance = instance;
-	}
-
-	JWTClaimsSet getClaimsSet(JWKSource<SecurityContext> keySource, String accessToken)
+	JWTClaimsSet getClaimsSet(JWKSource<SecurityContext> keySource, String accessToken, String issuer)
 			throws BadJOSEException, ParseException, JOSEException
 	{
 		// Nimbus API documentation taken from:
@@ -69,7 +62,6 @@ final class JwtVerifier
 		JWSAlgorithm expectedJWSAlg = JWSAlgorithm.RS256;
 		JWSKeySelector<SecurityContext> keySelector = new JWSVerificationKeySelector<>(expectedJWSAlg, keySource);
 		jwtProcessor.setJWSKeySelector(keySelector);
-		String issuer = DbInterface.decodesProperties.getProperty("opendcs.rest.api.authorization.jwt.issuer.url");
 		jwtProcessor.setJWTClaimsSetVerifier(new DefaultJWTClaimsVerifier<>(
 				new JWTClaimsSet.Builder().issuer(issuer).build(),
 				new HashSet<>(Arrays.asList(

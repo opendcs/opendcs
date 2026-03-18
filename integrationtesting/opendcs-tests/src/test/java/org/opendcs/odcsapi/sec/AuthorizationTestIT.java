@@ -83,6 +83,8 @@ final class AuthorizationTestIT extends BaseApiIT
 		Paths paths = api.getPaths();
 		return paths.entrySet().stream()
 				.filter(e -> !e.getKey().equals("/credentials"))
+				.filter(e -> !e.getKey().equals("/oidc-callback"))
+				.filter(e -> !e.getKey().equals("/login_jwt"))
 				.filter(e -> !e.getKey().equals("/logout"))
 				.filter(e -> !e.getKey().equals("/organizations"))
 				.filter(e -> !e.getKey().startsWith("/health"))

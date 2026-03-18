@@ -106,13 +106,22 @@ public interface UserManagementDao extends OpenDcsDao
     IdentityProvider addIdentityProvider(DataTransaction tx, IdentityProvider provider) throws OpenDcsDataException;
 
     /**
-     * Get information for a particular identity provider
+     * Get information for a particular identity provider by id.
      * @param tx
      * @param id
      * @return
      * @throws OpenDcsDataException
      */
     Optional<IdentityProvider> getIdentityProvider(DataTransaction tx, DbKey id) throws OpenDcsDataException;
+
+    /**
+     * Get information for a particular identity provider by name.
+     * @param tx
+     * @param name
+     * @return
+     * @throws OpenDcsDataException
+     */
+    Optional<IdentityProvider> getIdentityProvider(DataTransaction tx, String name) throws OpenDcsDataException;
 
     /**
      * Update settings of a particular identity provider
