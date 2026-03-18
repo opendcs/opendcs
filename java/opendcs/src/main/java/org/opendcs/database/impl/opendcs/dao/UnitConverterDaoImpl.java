@@ -44,13 +44,13 @@ public class UnitConverterDaoImpl implements UnitConverterDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         final String querySql = """
-                    select uc.id, uc.fromunitsabbr, uc.tounitsabbr, uc.algorithm, uc.a,uc.b,uc.c,uc.d,uc.e,uc.f,
+                    select uc.id, uc.fromunitsabbr, uc.tounitsabbr, uc.algorithm, uc.a, uc.b, uc.c, uc.d, uc.e, uc.f,
                         from_eu.unitabbr from_unitabbr, from_eu.name from_name, from_eu.family from_family, from_eu.measures from_measures,
                         to_eu.unitabbr to_unitabbr, to_eu.name to_name, to_eu.family to_family, to_eu.measures to_measures
                       from unitconverter uc
-                       join engineeringunit from_eu on from_eu.unitabbr = uc.fromunitsabbr
-                       join engineeringunit to_eu on to_eu.unitabbr = uc.tounitsabbr
-                      where id =:id
+                      left join engineeringunit from_eu on from_eu.unitabbr = uc.fromunitsabbr
+                      left join engineeringunit to_eu on to_eu.unitabbr = uc.tounitsabbr
+                     where uc.id = :id
                 """;
         try (var query = handle.createQuery(querySql))
         {

@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.database.dai.EngineeringUnitDao;
 import org.opendcs.database.dai.UnitConverterDao;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
@@ -15,7 +14,6 @@ import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.db.Constants;
 import decodes.db.UnitConverterDb;
-import decodes.sql.DbKey;
 
 @EnableIfTsDb
 class UnitConverterDaoTestIT extends AppTestBase
@@ -29,14 +27,13 @@ class UnitConverterDaoTestIT extends AppTestBase
         var ucDao = db.getDao(UnitConverterDao.class).orElseThrow();
         try (var tx = db.newTransaction())
         {
-            var uc = ucDao.getById(tx, DbKey.createDbKey(1));
-            assertTrue(uc.isPresent());
-
-
-            var ucFtToM = ucDao.findUnitConverterFor(tx, "ft", "m").orElseThrow();
+            final var ucFtToM = ucDao.findUnitConverterFor(tx, "ft", "m").orElseThrow();
             var meters = ucFtToM.execConverter.convert(3.28084);
             assertEquals(1, meters, 0.0001);
 
+            final var uc = ucDao.getById(tx, ucFtToM.getId());
+            assertTrue(uc.isPresent());
+            assertEquals(ucFtToM, uc.get());
         }
     }
 
