@@ -33,6 +33,10 @@ import com.nimbusds.jwt.JWTClaimsSet;
 
 import decodes.sql.DbKey;
 
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.security.SecurityScheme.In;
+import io.swagger.v3.oas.models.security.SecurityScheme.Type;
+
 public final class OidcIdentityProvider implements IdentityProvider
 {
     public static final String TYPE = "OpenIdConnect";
@@ -203,6 +207,11 @@ public final class OidcIdentityProvider implements IdentityProvider
         /* unable, and can update credentials will return false */
     }
     
+    @Override
+    public SecurityScheme getSecurityScheme()
+    {
+        return new SecurityScheme().openIdConnectUrl(this.oidcConfig.wellKnownUri.toString());
+    }
 
     @AutoService(IdentityProviderProvider.class)
     public static class OidcIdentityProviderProvider implements IdentityProviderProvider

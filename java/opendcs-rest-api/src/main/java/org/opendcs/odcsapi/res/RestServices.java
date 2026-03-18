@@ -81,11 +81,7 @@ public final class RestServices extends ResourceConfig
             var providers = umDao.getIdentityProviders(tx, -1, -1);
             for (var provider: providers)
             {
-                components.addSecuritySchemes(provider.getName(),
-                                              new SecurityScheme().type(Type.APIKEY)
-                                                                  .in(In.COOKIE)
-                                                                  .name("JSESSIONID")
-                                                                  .description("Default identity provider"));
+                components.addSecuritySchemes(provider.getName(), provider.getSecurityScheme());
             }
         }
         catch (OpenDcsDataException ex)
