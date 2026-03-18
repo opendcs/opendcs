@@ -56,6 +56,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
+import org.opendcs.fixtures.helpers.ImportResults;
 import org.opendcs.fixtures.helpers.ImporterHelper;
 import org.opendcs.odcsapi.beans.ApiAlgorithm;
 import org.opendcs.odcsapi.beans.ApiCompParm;
@@ -75,6 +76,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.opendcs.fixtures.helpers.ImporterHelper.buildFilePath;
 import static org.opendcs.odcsapi.util.DTOMappers.mapSite;
 
 final class ComputationResourcesIT extends BaseApiIT
@@ -389,12 +391,12 @@ final class ComputationResourcesIT extends BaseApiIT
 			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
 			.queryParam("site", siteId)
-			.queryParam("datatype", comp.getParmList().get(0).getDataTypeId())
+			.queryParam("datatype", comp.getParmList().getFirst().getDataTypeId())
 			.queryParam("group", comp.getGroupId())
 			.queryParam("algorithm", algId)
 			.queryParam("process", appId)
 			.queryParam("enabled", comp.isEnabled())
-			.queryParam("interval", comp.getParmList().get(0).getInterval())
+			.queryParam("interval", comp.getParmList().getFirst().getInterval())
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -408,7 +410,7 @@ final class ComputationResourcesIT extends BaseApiIT
 
 		List<Map<String, Object>> actualList = response.body().jsonPath().getList("");
 		assertFalse(actualList.isEmpty());
-		Map<String, Object> actualItem = actualList.get(0);
+		Map<String, Object> actualItem = actualList.getFirst();
 		assertEquals(expected.getString("name"), actualItem.get("name"));
 		assertEquals(expected.getString("description"), actualItem.get("description"));
 		assertEquals(expected.getBoolean("enabled"), actualItem.get("enabled"));
@@ -426,13 +428,13 @@ final class ComputationResourcesIT extends BaseApiIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
-			.queryParam("site", comp.getParmList().get(0).getSiteId())
-			.queryParam("datatype", comp.getParmList().get(0).getDataTypeId())
+			.queryParam("site", comp.getParmList().getFirst().getSiteId())
+			.queryParam("datatype", comp.getParmList().getFirst().getDataTypeId())
 			.queryParam("group", "test group")
 			.queryParam("algorithm", comp.getAlgorithmId())
 			.queryParam("process", comp.getAppId())
 			.queryParam("enabled", false)
-			.queryParam("interval", comp.getParmList().get(0).getInterval())
+			.queryParam("interval", comp.getParmList().getFirst().getInterval())
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -447,8 +449,8 @@ final class ComputationResourcesIT extends BaseApiIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
-			.queryParam("site", comp.getParmList().get(0).getSiteId())
-			.queryParam("datatype", comp.getParmList().get(0).getDataTypeId())
+			.queryParam("site", comp.getParmList().getFirst().getSiteId())
+			.queryParam("datatype", comp.getParmList().getFirst().getDataTypeId())
 			.queryParam("group", comp.getGroupId())
 			.queryParam("algorithm", comp.getAlgorithmId())
 			.queryParam("process", comp.getAppId())
@@ -469,13 +471,13 @@ final class ComputationResourcesIT extends BaseApiIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
 			.accept(MediaType.APPLICATION_JSON)
-			.queryParam("site", comp.getParmList().get(0).getSiteId())
-			.queryParam("datatype", comp.getParmList().get(0).getDataTypeId())
+			.queryParam("site", comp.getParmList().getFirst().getSiteId())
+			.queryParam("datatype", comp.getParmList().getFirst().getDataTypeId())
 			.queryParam("group", comp.getGroupId())
 			.queryParam("algorithm", "25")
 			.queryParam("process", comp.getAppId())
 			.queryParam("enabled", comp.isEnabled())
-			.queryParam("interval", comp.getParmList().get(0).getInterval())
+			.queryParam("interval", comp.getParmList().getFirst().getInterval())
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -823,9 +825,9 @@ final class ComputationResourcesIT extends BaseApiIT
 			try (TimeSeriesDAI tsDao = tsDb.makeTimeSeriesDAO();
 				SiteDAI siteDAO = tsDb.makeSiteDAO())
 			{
-				ImporterHelper helper = new ImporterHelper(tsDb, getConfig(), environment, exit, ImporterHelper.CONTEXT.REST_API);
+				ImporterHelper helper = new ImporterHelper(tsDb, getConfig(), environment, exit);
 				String workingDirectoryPath = Paths.get(Paths.get("").toAbsolutePath().getParent().toString(), "opendcs-tests").toString();
-				String currentDirectory = helper.buildFilePath(workingDirectoryPath, "src", "test", "resources", "data", "Comps");
+				String currentDirectory = buildFilePath(workingDirectoryPath, "src", "test", "resources", "data", "Comps");
 				File directory = new File(currentDirectory);
 				TsImporter importer = helper.buildTsImporter(tsDao, siteDAO);
 				if(directory.exists() && directory.isDirectory())
@@ -839,9 +841,9 @@ final class ComputationResourcesIT extends BaseApiIT
 							{
 								for (File comp_data : comp.listFiles())
 								{
-									if (comp_data.isDirectory() && (!endPath.isPresent() || comp_data.toPath().endsWith(endPath.get())))
+									if (comp_data.isDirectory() && (endPath.isEmpty() || comp_data.toPath().endsWith(endPath.get())))
 									{
-										ImporterHelper.ImportResults results = helper.doImport(comp_data, comp, importer);
+										ImportResults results = helper.doImport(comp_data, comp, importer);
 										expectedTsList = results.getImportedTsList();
 										tsCompId = results.getTsCompIds().getFirst();
 									}

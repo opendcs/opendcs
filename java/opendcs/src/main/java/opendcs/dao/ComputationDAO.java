@@ -197,12 +197,18 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 				// Make sure site IDs and datatype IDs are set in the parms
 				for(DbCompParm parm : comp.getParmList())
 					if (!parm.getSiteDataTypeId().isNull())
-						try { db.expandSDI(parm); }
-						catch (NoSuchObjectException e) {}
+						try
+						{
+							db.expandSDI(parm);
+						}
+						catch (NoSuchObjectException e)
+						{
+							log.atDebug().setCause(e).log("Error expanding SDI for parm {}.", parm);
+						}
 			}
 			log.debug("fillCache finished, {} computations cached.", compCache.size());
 		}
-		catch(Exception ex)
+		catch(SQLException | DbIoException ex)
 		{
 			log.atWarn()
 			   .setCause(ex)
@@ -228,7 +234,8 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 		)
 		{
 			getComp.setLong(1,compId.getValue());
-			try( ResultSet rs = getComp.executeQuery() ) {
+			try( ResultSet rs = getComp.executeQuery() )
+			{
 				if (rs.next())
 				{
 					DbComputation comp = rs2comp(rs);
@@ -313,7 +320,7 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 	 * @throws DbIoException
 	 */
 	protected void fillCompSubordinates(DbComputation comp)
-		throws SQLException, DbIoException
+		throws DbIoException
 	{
 		try
 		{
@@ -351,7 +358,10 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 							{
 								db.expandSDI(parm);
 							}
-							catch (NoSuchObjectException e) {}
+							catch (NoSuchObjectException e)
+							{
+								log.atDebug().setCause(e).log("Error expanding SDI for parm {}.", parm);
+							}
 						}
 					}
 				}
@@ -414,14 +424,13 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 	public boolean checkCachedObjectOK(CachableDbObject ob)
 	{
 		DbComputation comp = (DbComputation)ob;
-		String q = "select DATE_TIME_LOADED from CP_COMPUTATION "
-			+ " where COMPUTATION_ID = " + comp.getKey();
 		Connection conn = getConnection();
 		try(
 			PreparedStatement getTimeLoaded = conn.prepareStatement(
 				"select DATE_TIME_LOADED from CP_COMPUTATION where COMPUTATION_ID = ?"
 			)
-		) {
+		)
+		{
 			getTimeLoaded.setLong(1,comp.getId().getValue());
 			try(ResultSet rs = getTimeLoaded.executeQuery() )
 			{
@@ -455,7 +464,8 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 			PreparedStatement getAppId = conn.prepareStatement(
 				"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?"
 			)
-		){
+		)
+		{
 			getComp.setString(1,name);
 
 			try(ResultSet rs = getComp.executeQuery() )
@@ -588,7 +598,10 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 					}
 					comp.setId(id);
 				}
-				catch(NoSuchObjectException ex) { /* ignore */ }
+				catch(NoSuchObjectException ex)
+				{
+					/* ignore */
+				}
 			}
 			return tmpIsNew;
 		})).get();
@@ -633,6 +646,7 @@ public class ComputationDAO extends DaoBase implements ComputationDAI
 					}
 					catch(NoSuchObjectException ex)
 					{
+						log.atDebug().setCause(ex).log("Cannot find algorithm '{}'", algoName);
 						algo = null;
 					}
 					if (algo != null)

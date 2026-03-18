@@ -16,28 +16,18 @@
 package decodes.tsdb;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.net.InetAddress;
 import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
-
-import org.opendcs.utils.logging.MDCTimer;
-import org.opendcs.utils.logging.OpenDcsLoggerFactory;
-import org.slf4j.Logger;
-import org.slf4j.MDC;
-import org.slf4j.MDC.MDCCloseable;
-
-import java.net.InetAddress;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.alarm.AlarmLimitSet;
@@ -59,21 +49,11 @@ import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.dao.DbObjectCache;
 import opendcs.opentsdb.Interval;
-import lrgs.gui.DecodesInterface;
-import ilex.cmdline.BooleanToken;
-import ilex.cmdline.StringToken;
-import ilex.cmdline.TokenOptions;
-import ilex.util.TextUtil;
-import ilex.var.TimedVariable;
-import decodes.util.CmdLineArgs;
-import decodes.util.DecodesException;
-import decodes.util.DecodesSettings;
-import decodes.util.PropertySpec;
-import decodes.sql.DbKey;
-import decodes.tsdb.alarm.AlarmLimitSet;
-import decodes.tsdb.alarm.AlarmManager;
-import decodes.tsdb.alarm.AlarmScreening;
-import decodes.tsdb.alarm.AlarmScreeningAlgorithm;
+import org.opendcs.utils.logging.MDCTimer;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.MDC;
+import org.slf4j.MDC.MDCCloseable;
 
 
 /**

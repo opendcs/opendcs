@@ -128,7 +128,7 @@ public class AlgorithmTestsIT extends AppTestBase
             } 
             else 
             {
-                log.error("Invalid directory: " + current_Directory);
+                log.error(String.format("Invalid directory: %s", current_Directory));
             }
             return algoTests;
         }
@@ -136,7 +136,7 @@ public class AlgorithmTestsIT extends AppTestBase
 
     private DynamicTest getDynamicTest(File test, File comp, TsImporter importer, TimeSeriesDAI tsDao)
 	{
-		ImporterHelper helper = new ImporterHelper(tsDb, configuration, environment, exit, ImporterHelper.CONTEXT.TOOLKIT);
+		ImporterHelper helper = new ImporterHelper(tsDb, configuration, environment, exit);
 
         return DynamicTest.dynamicTest(comp.getName() +" "+test.getName(), () -> {
             for (File comp_data : test.listFiles()) 

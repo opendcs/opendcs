@@ -28,6 +28,7 @@ import org.slf4j.event.Level;
 
 public final class ComputationExecution
 {
+	private static final String COMPUTATION_KEY = "computation";
 	private final OpenDcsDatabase db;
 	private int numErrors = 0;
 	private int computesTried = 0;
@@ -68,7 +69,7 @@ public final class ComputationExecution
 		// Execute the computations
 		for(DbComputation comp : toRun)
 		{
-			try (var mdcComputation = MDC.putCloseable("computation", comp.getName());
+			try (var mdcComputation = MDC.putCloseable(COMPUTATION_KEY, comp.getName());
 				 var compTimer = MDCTimer.startTimer(comp.getName()))
 			{
 				listener.onProgress(String.format("Executing computation '%s' #trigs=%d",
@@ -136,7 +137,7 @@ public final class ComputationExecution
 			listener.onProgress("Unexpected error fetching input data.", Level.WARN, ex);
 		}
 		computesTried++;
-		try (var mdcComputation = MDC.putCloseable("computation", computation.getName()))
+		try (var mdcComputation = MDC.putCloseable(COMPUTATION_KEY, computation.getName()))
 		{
 			executeSingleComp(computation, start, end, theData, false, listener);
 		}
@@ -152,7 +153,7 @@ public final class ComputationExecution
 	private void executeSingleComp(DbComputation comp, Date start, Date end, DataCollection dataCollection, boolean ignoreTimeWindow, ProgressListener listener)
 			throws DbIoException
 	{
-		try(MDC.MDCCloseable mdc = MDC.putCloseable("computation", comp.getName());
+		try(MDC.MDCCloseable mdc = MDC.putCloseable(COMPUTATION_KEY, comp.getName());
 			var compTimer = MDCTimer.startTimer("executing single computation: " + comp.getName());
 			TimeSeriesDAI timeSeriesDAO = getTsDb().makeTimeSeriesDAO())
 		{
