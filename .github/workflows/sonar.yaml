@@ -44,9 +44,9 @@ jobs:
         uses: gradle/actions/setup-gradle@v5.0.1
       - name: Checkout base code (for build tasks)
         uses: actions/checkout@v6.0.2
-        with:
-          ref: ${{ steps.pr-context.outputs.target_branch }}
-          fetch-depth: 1
+        # with:
+        #   ref: ${{ steps.pr-context.outputs.target_branch }}
+        #   fetch-depth: 1
       - name: Checkout PR code
         uses: actions/checkout@v6.0.2
         with:
@@ -59,10 +59,11 @@ jobs:
       - name: Copy only source/gh
         run: |
           shopt -s globstar
-          mv .github .github.orig
-          mv source_branch_code/.github ./.github
-          cp -r source_branch_code/java/**/src ./
-
+          mv .git .git.orig
+          mv source_branch_code/.git ./
+          cd source_branch_code
+          cp -rf --parents java/**/src ../
+          cp -rf --parents integrationtesting/**/src ../
     # perform the analaysis now
       - name: Cache SonarCloud packages
         uses: actions/cache@v5.0.3
