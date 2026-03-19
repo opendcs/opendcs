@@ -38,8 +38,7 @@ public final class UnitConverterMapper extends PrefixRowMapper<UnitConverterDb>
     {
         ColumnMapper<DbKey> dbKeyMapper = ctx.findColumnMapperFor(DbKey.class)
                                              .orElseThrow(() -> new SQLException("No mapper registered for DbKey class."));
-        ColumnMapper<Double> doubleMapper = ctx.findColumnMapperFor(Double.class)
-                                               .orElseGet(() -> new NullableDouble());
+        ColumnMapper<Double> doubleMapper = new NullableDouble();
         var fromMapper = EngineeringUnitMapper.withPrefix("from");
         var toMapper = EngineeringUnitMapper.withPrefix("to");
         final DbKey id = dbKeyMapper.map(rs, prefix + GenericColumns.ID, ctx);
