@@ -1,5 +1,8 @@
 package org.opendcs.utils.sql;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 public final class SqlQueries
 {
     private SqlQueries()

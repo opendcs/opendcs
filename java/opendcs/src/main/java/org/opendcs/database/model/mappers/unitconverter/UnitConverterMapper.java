@@ -5,9 +5,11 @@ import java.sql.SQLException;
 
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
+import org.opendcs.database.impl.opendcs.jdbi.column.numeric.NullableDouble;
 import org.opendcs.database.model.mappers.PrefixRowMapper;
 import org.opendcs.database.model.mappers.engineeringunit.EngineeringUnitMapper;
 import org.opendcs.utils.sql.GenericColumns;
+import org.opendcs.utils.sql.SqlQueries;
 
 import decodes.db.Constants;
 import decodes.db.DatabaseException;
@@ -36,6 +38,8 @@ public final class UnitConverterMapper extends PrefixRowMapper<UnitConverterDb>
     {
         ColumnMapper<DbKey> dbKeyMapper = ctx.findColumnMapperFor(DbKey.class)
                                              .orElseThrow(() -> new SQLException("No mapper registered for DbKey class."));
+        ColumnMapper<Double> doubleMapper = ctx.findColumnMapperFor(Double.class)
+                                               .orElseGet(() -> new NullableDouble());
         var fromMapper = EngineeringUnitMapper.withPrefix("from");
         var toMapper = EngineeringUnitMapper.withPrefix("to");
         final DbKey id = dbKeyMapper.map(rs, prefix + GenericColumns.ID, ctx);
@@ -43,39 +47,13 @@ public final class UnitConverterMapper extends PrefixRowMapper<UnitConverterDb>
         String toUnits = rs.getString(prefix + "tounitsabbr");
         String algorithm = rs.getString(prefix + "algorithm");
 
-        // well, I can't think of a better way to do this.
-        double[] coefficients = new double[]{Constants.undefinedDouble, Constants.undefinedDouble, Constants.undefinedDouble,
-                                             Constants.undefinedDouble, Constants.undefinedDouble, Constants.undefinedDouble};
-        double tmp = rs.getDouble(prefix + "a");
-        if (!rs.wasNull())
-        {
-            coefficients[0] = tmp;
-        }
-        tmp = rs.getDouble(prefix + "b");
-        if (!rs.wasNull())
-        {
-            coefficients[1] = tmp;
-        }
-        tmp = rs.getDouble(prefix + "c");
-        if (!rs.wasNull())
-        {
-            coefficients[2] = tmp;
-        }
-        tmp = rs.getDouble(prefix + "d");
-        if (!rs.wasNull())
-        {
-            coefficients[3] = tmp;
-        }
-        tmp = rs.getDouble(prefix + "e");
-        if (!rs.wasNull())
-        {
-            coefficients[4] = tmp;
-        }
-        tmp = rs.getDouble(prefix + "f");
-        if (!rs.wasNull())
-        {
-            coefficients[5] = tmp;
-        }
+        double[] coefficients = new double[6];
+        coefficients[0] = doubleMapper.map(rs, prefix + "a", ctx);
+        coefficients[1] = doubleMapper.map(rs, prefix + "b", ctx);
+        coefficients[2] = doubleMapper.map(rs, prefix + "c", ctx);
+        coefficients[3] = doubleMapper.map(rs, prefix + "d", ctx);
+        coefficients[4] = doubleMapper.map(rs, prefix + "e", ctx);
+        coefficients[5] = doubleMapper.map(rs, prefix + "f", ctx);
 
         var converter = new UnitConverterDb(fromUnits, toUnits);
         try
