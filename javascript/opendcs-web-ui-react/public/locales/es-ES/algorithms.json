@@ -17,6 +17,14 @@
     "cancel_for": "Cancelar edición del algoritmo {{id}}",
     "save_for": "Guardar algoritmo {{id}}"
   },
+  "check_new": {
+    "button": "Buscar Nuevos",
+    "title": "Algoritmos Disponibles",
+    "none_found": "No se encontraron algoritmos nuevos.",
+    "select_all": "Seleccionar todos",
+    "close": "Cerrar",
+    "import_selected": "Importar Seleccionados ({{count}})"
+  },
   "parms": {
     "title": "Parámetros",
     "roleName": "Nombre de rol",

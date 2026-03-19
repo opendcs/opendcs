@@ -79,6 +79,7 @@ export const Algorithms: React.FC = () => {
         getAlgorithm={getAlgorithm}
         getPropSpecs={getPropSpecs}
         actions={{ save: saveAlgorithm, remove: deleteAlgorithm }}
+        onRefresh={() => setStale(true)}
       />
     </div>
   );

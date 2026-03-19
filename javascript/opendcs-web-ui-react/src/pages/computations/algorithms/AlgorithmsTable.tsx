@@ -9,6 +9,7 @@ import { dtLangs } from "../../../lang";
 import type { ApiAlgorithm, ApiAlgorithmRef, ApiPropSpec } from "opendcs-api";
 import Algorithm, { AlgorithmSkeleton, type UiAlgorithm } from "./Algorithm";
 import type { AlgoParm } from "./AlgorithmParamsTable";
+import { CheckForNewModal } from "./CheckForNewModal";
 import type { RemoveAction, SaveAction, UiState } from "../../../util/Actions";
 import { useContextWrapper } from "../../../util/ContextWrapper";
 import { Button } from "react-bootstrap";
@@ -25,6 +26,7 @@ export interface AlgorithmsTableProperties {
   getAlgorithm?: (algorithmId: number) => Promise<ApiAlgorithm>;
   getPropSpecs?: (execClass: string) => Promise<ApiPropSpec[]>;
   actions?: SaveAction<ApiAlgorithm> & RemoveAction<number>;
+  onRefresh?: () => void;
 }
 
 export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
@@ -32,6 +34,7 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
   getAlgorithm,
   getPropSpecs,
   actions = {},
+  onRefresh,
 }) => {
   const { toDom } = useContextWrapper();
   const table = useRef<DataTableRef>(null);
@@ -41,6 +44,7 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
   const rowStateRef = useRef(rowState);
   const prevRowStateRef = useRef<RowState<number>>({});
   const localAlgorithmsRef = useRef(localAlgorithms);
+  const [showCheckNew, setShowCheckNew] = useState(false);
 
   useEffect(() => {
     rowStateRef.current = rowState;
@@ -107,32 +111,46 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
   const options: DataTableProps["options"] = {
     paging: true,
     responsive: true,
-    scrollX: true,
     stateSave: true,
     language: dtLangs.get(i18n.language),
     createdRow: (_row, _data, dataIndex) => {
       table.current?.dt()?.row(dataIndex).node().classList.add("child-toggle");
     },
     layout: {
-      top1Start: {
-        buttons: [
-          {
-            text: "+",
-            action: () => {
-              updateLocalAlgorithms((prev) => {
-                const existing = prev.map((v) => v.algorithmId!).sort((a, b) => b - a);
-                const newId = existing.length > 0 ? existing[0] - 1 : -1;
-                updateRowState((prevRowState) => ({
-                  ...prevRowState,
-                  [newId]: "new",
-                }));
-                return [...prev, { algorithmId: newId }];
-              });
+      top1Start: [
+        {
+          buttons: [
+            {
+              text: "+",
+              action: () => {
+                updateLocalAlgorithms((prev) => {
+                  const existing = prev
+                    .map((v) => v.algorithmId!)
+                    .sort((a, b) => b - a);
+                  const newId = existing.length > 0 ? existing[0] - 1 : -1;
+                  updateRowState((prevRowState) => ({
+                    ...prevRowState,
+                    [newId]: "new",
+                  }));
+                  return [...prev, { algorithmId: newId }];
+                });
+              },
+              attr: { "aria-label": t("algorithms:add_algorithm") },
             },
-            attr: { "aria-label": t("algorithms:add_algorithm") },
-          },
-        ],
-      },
+          ],
+        },
+        {
+          buttons: [
+            {
+              text: t("algorithms:check_new.button"),
+              action: () => {
+                setShowCheckNew(true);
+              },
+              attr: { "aria-label": t("algorithms:check_new.button") },
+            },
+          ],
+        },
+      ],
     },
   };
 
@@ -233,16 +251,34 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
       });
   }, [i18n.language, getAlgorithm]);
 
+  // Safe wrapper around dt.draw() — DataTable's internal _fnScrollDraw can
+  // throw when row nodes have been removed but its internal index is stale
+  // (e.g. after deleting the last row).  Swallowing the error is safe
+  // because the table will redraw correctly on the next React render cycle.
+  const safeDraw = useCallback(
+    (dt: ReturnType<NonNullable<DataTableRef["dt"]>> | null) => {
+      if (!dt) return;
+      try {
+        dt.draw(true);
+      } catch {
+        // DataTable internal error during draw — ignore
+      }
+    },
+    [],
+  );
+
   // Redraw only when the underlying data changes, not on row open/close.
   // Separating this from the child-row effect prevents the action buttons
   // from flickering every time a row is expanded or collapsed.
   useEffect(() => {
-    if (table.current?.dt()) {
-      const dt = table.current.dt()!;
-      dt.rows({ page: "current", search: "applied" }).invalidate();
-      dt.draw(false);
+    const dt = table.current?.dt();
+    if (!dt) return;
+    const rows = dt.rows({ page: "current", search: "applied" });
+    if (rows.count() > 0) {
+      rows.invalidate();
     }
-  }, [algorithmData]);
+    safeDraw(dt);
+  }, [algorithmData, safeDraw]);
 
   useEffect(() => {
     if (table.current?.dt()) {
@@ -250,7 +286,9 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
       const visibleRows = dt.rows({ page: "current", search: "applied" });
       let rowClosed = false;
       visibleRows.every(function () {
-        const idx = (this.data() as TableAlgorithmRef).algorithmId!;
+        const rowData = this.data() as TableAlgorithmRef | undefined;
+        if (!rowData) return;
+        const idx = rowData.algorithmId!;
         const currentState = rowStateRef.current[idx];
         const prevState = prevRowStateRef.current[idx];
         if (currentState === prevState) return; // state unchanged — skip re-render
@@ -267,34 +305,41 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
         }
       });
       prevRowStateRef.current = { ...rowStateRef.current };
-      if (rowClosed) dt.draw(false);
+      if (rowClosed) safeDraw(dt);
     }
-  }, [rowState, rowStateRef, renderAlgorithm]);
+  }, [rowState, rowStateRef, renderAlgorithm, safeDraw]);
 
   return (
-    <DataTable
-      key={i18n.language}
-      id="algorithmTable"
-      columns={columns}
-      data={algorithmData}
-      options={options}
-      slots={slots}
-      ref={table}
-      className="table table-hover table-striped tablerow-cursor w-100 border"
-    >
-      <caption className="caption-title-center">
-        {t("algorithms:algorithmsTitle")}
-      </caption>
-      <thead>
-        <tr>
-          <th>{t("algorithms:header.Id")}</th>
-          <th>{t("algorithms:header.Name")}</th>
-          <th>{t("algorithms:header.ExecClass")}</th>
-          <th>{t("algorithms:header.NumCompsUsing")}</th>
-          <th>{t("algorithms:header.Description")}</th>
-          <th>{t("translation:actions")}</th>
-        </tr>
-      </thead>
-    </DataTable>
+    <>
+      <DataTable
+        key={i18n.language}
+        id="algorithmTable"
+        columns={columns}
+        data={algorithmData}
+        options={options}
+        slots={slots}
+        ref={table}
+        className="table table-hover table-striped tablerow-cursor w-100 border"
+      >
+        <caption className="caption-title-center">
+          {t("algorithms:algorithmsTitle")}
+        </caption>
+        <thead>
+          <tr>
+            <th>{t("algorithms:header.Id")}</th>
+            <th>{t("algorithms:header.Name")}</th>
+            <th>{t("algorithms:header.ExecClass")}</th>
+            <th>{t("algorithms:header.NumCompsUsing")}</th>
+            <th>{t("algorithms:header.Description")}</th>
+            <th>{t("translation:actions")}</th>
+          </tr>
+        </thead>
+      </DataTable>
+      <CheckForNewModal
+        show={showCheckNew}
+        onHide={() => setShowCheckNew(false)}
+        onImported={() => onRefresh?.()}
+      />
+    </>
   );
 };

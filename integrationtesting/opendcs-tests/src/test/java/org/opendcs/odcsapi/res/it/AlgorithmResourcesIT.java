@@ -23,9 +23,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiAlgorithm;
 
+import java.util.List;
+
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 final class AlgorithmResourcesIT extends BaseApiIT
 {
@@ -129,5 +133,90 @@ final class AlgorithmResourcesIT extends BaseApiIT
 		.assertThat()
 			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
 		;
+	}
+
+	@Test
+	void catalogImportRoundTrip()
+	{
+		String copyAlgoExecClass = "decodes.tsdb.algo.CopyAlgorithm";
+
+		// 1. GET catalog — CopyAlgorithm should be available and not yet imported
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("algorithmcatalog")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.OK.getStatusCode()))
+			.body("findAll { it.execClass == '" + copyAlgoExecClass + "' }.size()", is(1))
+			.body("findAll { it.execClass == '" + copyAlgoExecClass + "' }[0].alreadyImported", is(false))
+		;
+
+		// 2. POST catalog — import CopyAlgorithm
+		List<ApiAlgorithm> imported = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.contentType(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.body(List.of(copyAlgoExecClass))
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("algorithmcatalog")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
+			.body("execClass", hasItem(copyAlgoExecClass))
+			.extract()
+			.body()
+			.jsonPath()
+			.getList(".", ApiAlgorithm.class)
+		;
+
+		try
+		{
+			// 3. GET catalog — CopyAlgorithm should now be marked as already imported
+			given()
+				.log().ifValidationFails(LogDetail.ALL, true)
+				.accept(MediaType.APPLICATION_JSON)
+				.spec(authSpec)
+			.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.get("algorithmcatalog")
+			.then()
+				.log().ifValidationFails(LogDetail.ALL, true)
+			.assertThat()
+				.statusCode(is(Response.Status.OK.getStatusCode()))
+				.body("findAll { it.execClass == '" + copyAlgoExecClass + "' }[0].alreadyImported", is(true))
+			;
+		}
+		finally
+		{
+			// Clean up — delete the imported algorithm so the test is repeatable
+			for (ApiAlgorithm algo : imported)
+			{
+				given()
+					.log().ifValidationFails(LogDetail.ALL, true)
+					.accept(MediaType.APPLICATION_JSON)
+					.spec(authSpec)
+					.queryParam("algorithmid", algo.getAlgorithmId())
+				.when()
+					.redirects().follow(true)
+					.redirects().max(3)
+					.delete("algorithm")
+				.then()
+					.log().ifValidationFails(LogDetail.ALL, true)
+				.assertThat()
+					.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
+				;
+			}
+		}
 	}
 }
