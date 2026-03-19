@@ -9,7 +9,6 @@ import org.opendcs.database.impl.opendcs.jdbi.column.numeric.NullableDouble;
 import org.opendcs.database.model.mappers.PrefixRowMapper;
 import org.opendcs.database.model.mappers.engineeringunit.EngineeringUnitMapper;
 import org.opendcs.utils.sql.GenericColumns;
-import org.opendcs.utils.sql.SqlQueries;
 
 import decodes.db.Constants;
 import decodes.db.DatabaseException;

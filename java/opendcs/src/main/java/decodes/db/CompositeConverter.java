@@ -70,7 +70,7 @@ public class CompositeConverter extends UnitConverter
 		int n = conversions.size();
 		for(int i = 0; i<n; i++)
 		{
-			UnitConverter uc = (UnitConverter)conversions.elementAt(i);
+			UnitConverter uc = conversions.elementAt(i);
 			value = uc.convert(value);
 		}
 		return value;
@@ -117,7 +117,7 @@ public class CompositeConverter extends UnitConverter
 		double bestWeight = Double.MAX_VALUE;
 		for(int i = 0; i < solutions.size(); i++)
 		{
-			UnitConverter uc = (UnitConverter)solutions.elementAt(i);
+			UnitConverter uc = solutions.elementAt(i);
 			double w = uc.getWeight();
 			if (w < bestWeight)
 			{
@@ -136,7 +136,7 @@ public class CompositeConverter extends UnitConverter
 		// First look for direct conversion to target.
 		for (Iterator<UnitConverter> it = Database.getDb().unitConverterSet.iteratorExec(); it.hasNext(); )
 		{
-			UnitConverter uc = (UnitConverter)it.next();
+			UnitConverter uc = it.next();
 			if (!uc.getFrom().getAbbr().equalsIgnoreCase(from.getAbbr()))
 				continue;
 			if (uc.getTo().getAbbr().equalsIgnoreCase(to.getAbbr()))
@@ -153,7 +153,7 @@ public class CompositeConverter extends UnitConverter
 		// No direct conversion. Do recursive branching.
 		for (Iterator<UnitConverter> it = Database.getDb().unitConverterSet.iteratorExec(); it.hasNext(); )
 		{
-			UnitConverter uc = (UnitConverter)it.next();
+			UnitConverter uc = it.next();
 
 			// Skip if 'from' doesn't match or if I've already searched 'To'.
 			if (!uc.getFrom().getAbbr().equalsIgnoreCase(from.getAbbr()) || uc.getTo().cnvtSearched)

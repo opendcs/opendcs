@@ -43,7 +43,6 @@ import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.utils.AnnotationHelpers;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.openide.util.Lookup;
-import org.openide.util.Lookup.Template;
 import org.openide.util.lookup.Lookups;
 import org.slf4j.Logger;
 
@@ -238,7 +237,8 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
      * @throws OpenDcsDaoConfigurationException if unable to inject dependency for any reason. This is a runtime exception as
      * it should be rare and caught during testing.
      */
-    @SuppressWarnings("unchecked") // we check manually
+    @SuppressWarnings({"unchecked","java:S3011"}) // unchecked -> we check manually, java:S3001 -> Our current setup does not allow for constructor based injection and
+                                                  // we want to allow for private/protected fields.
     private void injectDaos(OpenDcsDao dao)
     {
         var fieldpairs = AnnotationHelpers.getFieldsWithAnnotation(dao.getClass(), InjectDao.class);

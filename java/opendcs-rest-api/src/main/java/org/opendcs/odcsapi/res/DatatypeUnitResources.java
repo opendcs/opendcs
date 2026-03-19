@@ -17,19 +17,15 @@ package org.opendcs.odcsapi.res;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
-
 import decodes.db.Constants;
 import decodes.db.DataTypeSet;
 import decodes.db.DatabaseException;
-import decodes.db.DatabaseIO;
 import decodes.db.EngineeringUnit;
 import decodes.db.LinearConverter;
 import decodes.db.NullConverter;
 import decodes.db.Poly5Converter;
 import decodes.db.UnitConverter;
 import decodes.db.UnitConverterDb;
-import decodes.db.UnitConverterSet;
 import decodes.db.UsgsStdConverter;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
