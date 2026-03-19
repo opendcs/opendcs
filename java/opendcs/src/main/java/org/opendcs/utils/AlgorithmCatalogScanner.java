@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import decodes.tsdb.CompMetaData;
@@ -100,26 +101,26 @@ public final class AlgorithmCatalogScanner
 
         List<DbCompAlgorithm> result = new ArrayList<>();
 
-        try
+        try (Stream<Path> toolHomeStream = Files.find(toolHome, 5, (path, attrs) -> matcher.matches(path));
+             Stream<Path> userDirStream = Files.find(userDir, 5, (path, attrs) -> matcher.matches(path)))
         {
-            Stream.concat(
-                    Files.find(toolHome, 5, (path, attrs) -> matcher.matches(path)),
-                    Files.find(userDir, 5, (path, attrs) -> matcher.matches(path))
-            )
-            .map(path ->
-            {
-                try
+            result.addAll(
+                Stream.concat(toolHomeStream, userDirStream)
+                .map(path ->
                 {
-                    return path.toUri().toURL();
-                }
-                catch (MalformedURLException ex)
-                {
-                    return null;
-                }
-            })
-            .flatMap(readAlgos)
-            .filter(distinctByExec)
-            .forEach(result::add);
+                    try
+                    {
+                        return path.toUri().toURL();
+                    }
+                    catch (MalformedURLException ex)
+                    {
+                        return null;
+                    }
+                })
+                .flatMap(readAlgos)
+                .filter(distinctByExec)
+                .collect(Collectors.toList())
+            );
         }
         catch (IOException ex)
         {
@@ -130,12 +131,14 @@ public final class AlgorithmCatalogScanner
 
         try
         {
-            ClasspathIO.getAllResourcesIn("algorithms", AlgorithmCatalogScanner.class.getClassLoader())
+            result.addAll(
+                ClasspathIO.getAllResourcesIn("algorithms", AlgorithmCatalogScanner.class.getClassLoader())
                     .stream()
                     .filter(u -> u.toExternalForm().endsWith(".xml"))
                     .flatMap(readAlgos)
                     .filter(distinctByExec)
-                    .forEach(result::add);
+                    .collect(Collectors.toList())
+            );
         }
         catch (IOException ex)
         {
