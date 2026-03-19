@@ -44,7 +44,7 @@ jobs:
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v5.0.1
+        uses: gradle/actions/setup-gradle@v5.0.2
       - name: Checkout base code (for build tasks)
         uses: actions/checkout@v6.0.2
         with:
@@ -69,19 +69,19 @@ jobs:
           cp -rf --parents integrationtesting/**/src ../
     # perform the analaysis now
       - name: Cache SonarCloud packages
-        uses: actions/cache@v5.0.3
+        uses: actions/cache@v5.0.4
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
       - name: Cache Gradle packages
-        uses: actions/cache@v5.0.3
+        uses: actions/cache@v5.0.4
         with:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
       - name: Download Coverage
-        uses: actions/download-artifact@v7.0.0
+        uses: actions/download-artifact@v8.0.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
