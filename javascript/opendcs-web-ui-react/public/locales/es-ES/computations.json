@@ -1,0 +1,38 @@
+{
+  "computationsTitle": "Cálculos",
+  "add_computation": "Agregar cálculo",
+  "header": {
+    "Id": "Id",
+    "Name": "Nombre",
+    "Algorithm": "Algoritmo",
+    "Process": "Proceso",
+    "Enabled": "Habilitado",
+    "Description": "Descripción"
+  },
+  "editor": {
+    "name": "Nombre",
+    "algorithmName": "Algoritmo",
+    "applicationName": "Proceso",
+    "groupName": "Grupo",
+    "enabled": "Habilitado",
+    "description": "Descripción",
+    "edit_for": "Editar cálculo {{id}}",
+    "delete_for": "Eliminar cálculo {{id}}",
+    "cancel_for": "Cancelar edición del cálculo {{id}}",
+    "save_for": "Guardar cálculo {{id}}"
+  },
+  "parms": {
+    "title": "Parámetros",
+    "roleName": "Nombre de rol",
+    "parmType": "Tipo",
+    "input": "Entrada",
+    "output": "Salida",
+    "add_parm": "Agregar parámetro",
+    "save_parm": "Guardar parámetro",
+    "cancel_parm": "Cancelar edición de parámetro",
+    "edit_for": "Editar parámetro {{name}}",
+    "delete_for": "Eliminar parámetro {{name}}",
+    "roleName_input": "Nombre de rol del parámetro",
+    "parmType_input": "Tipo de parámetro"
+  }
+}

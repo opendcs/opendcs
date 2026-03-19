@@ -1,0 +1,38 @@
+{
+  "computationsTitle": "Berechnungen",
+  "add_computation": "Berechnung hinzufügen",
+  "header": {
+    "Id": "Id",
+    "Name": "Name",
+    "Algorithm": "Algorithmus",
+    "Process": "Prozess",
+    "Enabled": "Aktiviert",
+    "Description": "Beschreibung"
+  },
+  "editor": {
+    "name": "Name",
+    "algorithmName": "Algorithmus",
+    "applicationName": "Prozess",
+    "groupName": "Gruppe",
+    "enabled": "Aktiviert",
+    "description": "Beschreibung",
+    "edit_for": "Berechnung {{id}} bearbeiten",
+    "delete_for": "Berechnung {{id}} löschen",
+    "cancel_for": "Bearbeitung von Berechnung {{id}} abbrechen",
+    "save_for": "Berechnung {{id}} speichern"
+  },
+  "parms": {
+    "title": "Parameter",
+    "roleName": "Rollenname",
+    "parmType": "Typ",
+    "input": "Eingabe",
+    "output": "Ausgabe",
+    "add_parm": "Parameter hinzufügen",
+    "save_parm": "Parameter speichern",
+    "cancel_parm": "Parameterbearbeitung abbrechen",
+    "edit_for": "Parameter {{name}} bearbeiten",
+    "delete_for": "Parameter {{name}} löschen",
+    "roleName_input": "Parameter-Rollenname",
+    "parmType_input": "Parametertyp"
+  }
+}

@@ -11,6 +11,7 @@ import { dtLangs } from "../../../lang";
 import { Button, Form } from "react-bootstrap";
 import { Pencil, Save, Trash, X } from "react-bootstrap-icons";
 import { renderToString } from "react-dom/server";
+import type { ApiCompParm } from "opendcs-api";
 import { PARM_TYPES, parmTypeLabel, type ParmTypeOption } from "../common/parmTypes";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -18,35 +19,34 @@ DataTable.use(DT);
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(dtButtons);
 
-export type AlgoParm = { roleName: string; parmType: string };
+export type CompParm = ApiCompParm;
 export { PARM_TYPES, parmTypeLabel };
 export type { ParmTypeOption };
 
 type ExistingRow = {
   kind: "existing";
-  roleName: string;
-  parmType: string;
+  parm: CompParm;
   editing: boolean;
 };
-type NewRow = { kind: "new"; idx: number; parmType: string };
+type NewRow = { kind: "new"; idx: number; algoParmType: string };
 type RowParm = ExistingRow | NewRow;
 
-export interface AlgorithmParamsTableProps {
-  parms: AlgoParm[];
+export interface ComputationParamsTableProps {
+  parms: CompParm[];
   edit?: boolean;
-  onAdd?: (parm: AlgoParm) => void;
-  onRemove?: (roleName: string) => void;
-  onUpdate?: (oldRoleName: string, newParm: AlgoParm) => void;
+  onAdd?: (parm: CompParm) => void;
+  onRemove?: (algoRoleName: string) => void;
+  onUpdate?: (oldRoleName: string, newParm: CompParm) => void;
 }
 
-export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
+export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
   parms,
   edit = false,
   onAdd,
   onRemove,
   onUpdate,
 }) => {
-  const [t, i18n] = useTranslation(["algorithms", "translation"]);
+  const [t, i18n] = useTranslation(["computations", "translation"]);
   const table = useRef<DataTableRef>(null);
   const [newParms, setNewParms] = useState<NewRow[]>([]);
   const [editingNames, setEditingNames] = useState<Set<string>>(new Set());
@@ -57,9 +57,8 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
       ...parms.map(
         (p): ExistingRow => ({
           kind: "existing",
-          roleName: p.roleName,
-          parmType: p.parmType,
-          editing: editingNames.has(p.roleName),
+          parm: p,
+          editing: editingNames.has(p.algoRoleName ?? ""),
         }),
       ),
       ...newParms,
@@ -67,7 +66,6 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
     [parms, newParms, editingNames],
   );
 
-  // Locate a row's TR node by matching against row data objects
   const findRowNode = useCallback(
     (predicate: (data: RowParm) => boolean): HTMLTableRowElement | null => {
       const dt = table.current?.dt();
@@ -84,11 +82,15 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
   );
 
   const readRowValues = (node: HTMLTableRowElement) => {
-    const roleInput = node.querySelector<HTMLInputElement>('input[name="roleName"]');
-    const typeSelect = node.querySelector<HTMLSelectElement>('select[name="parmType"]');
+    const roleInput = node.querySelector<HTMLInputElement>(
+      'input[name="algoRoleName"]',
+    );
+    const typeSelect = node.querySelector<HTMLSelectElement>(
+      'select[name="algoParmType"]',
+    );
     return {
-      roleName: roleInput?.value.trim() ?? "",
-      parmType: typeSelect?.value ?? "i",
+      algoRoleName: roleInput?.value.trim() ?? "",
+      algoParmType: typeSelect?.value ?? "i",
       roleInput,
     };
   };
@@ -96,7 +98,7 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
   const parmTypeSelectHtml = useCallback(
     (defaultValue: string) =>
       renderToString(
-        <Form.Select name="parmType" defaultValue={defaultValue} size="lg">
+        <Form.Select name="algoParmType" defaultValue={defaultValue} size="lg">
           {PARM_TYPES.map((pt) => (
             <option key={pt.value} value={pt.value}>
               {pt.label}
@@ -109,32 +111,46 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
 
   const renderRoleName = useCallback(
     (data: RowParm, type: string) => {
-      if (type !== "display") return data.kind === "existing" ? data.roleName : "";
+      if (type !== "display") {
+        return data.kind === "existing" ? (data.parm.algoRoleName ?? "") : "";
+      }
       const needsInput =
         data.kind === "new" || (data.kind === "existing" && data.editing);
       if (needsInput) {
         return renderToString(
           <Form.Control
             type="text"
-            name="roleName"
-            defaultValue={data.kind === "existing" ? data.roleName : ""}
+            name="algoRoleName"
+            defaultValue={
+              data.kind === "existing" ? (data.parm.algoRoleName ?? "") : ""
+            }
             size="lg"
-            aria-label={t("algorithms:parms.roleName_input")}
+            aria-label={t("computations:parms.roleName_input")}
           />,
         );
       }
-      return data.roleName;
+      return data.parm.algoRoleName ?? "";
     },
     [t],
   );
 
   const renderParmType = useCallback(
     (data: RowParm, type: string) => {
-      if (type !== "display") return parmTypeLabel(data.parmType ?? "");
+      if (type !== "display") {
+        return parmTypeLabel(
+          data.kind === "existing" ? (data.parm.algoParmType ?? "") : data.algoParmType,
+        );
+      }
       const needsSelect =
         data.kind === "new" || (data.kind === "existing" && data.editing);
-      if (needsSelect) return parmTypeSelectHtml(data.parmType ?? "i");
-      return parmTypeLabel(data.parmType ?? "");
+      if (needsSelect) {
+        const value =
+          data.kind === "existing"
+            ? (data.parm.algoParmType ?? "i")
+            : data.algoParmType;
+        return parmTypeSelectHtml(value);
+      }
+      return parmTypeLabel(data.parm.algoParmType ?? "");
     },
     [parmTypeSelectHtml],
   );
@@ -142,34 +158,40 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
   const handleSaveExisting = useCallback(
     (oldRoleName: string) => {
       const node = findRowNode(
-        (d) => d.kind === "existing" && d.roleName === oldRoleName,
+        (d) => d.kind === "existing" && (d.parm.algoRoleName ?? "") === oldRoleName,
       );
       if (!node) return;
-      const { roleName, parmType, roleInput } = readRowValues(node);
-      if (!roleName) {
+      const { algoRoleName, algoParmType, roleInput } = readRowValues(node);
+      if (!algoRoleName) {
         roleInput?.classList.add("border-warning");
         return;
       }
-      onUpdate?.(oldRoleName, { roleName, parmType });
+
+      const current = parms.find((p) => (p.algoRoleName ?? "") === oldRoleName) ?? {};
+      onUpdate?.(oldRoleName, {
+        ...current,
+        algoRoleName,
+        algoParmType,
+      });
       setEditingNames((prev) => {
         const s = new Set(prev);
         s.delete(oldRoleName);
         return s;
       });
     },
-    [findRowNode, onUpdate],
+    [findRowNode, onUpdate, parms],
   );
 
   const handleSaveNew = useCallback(
     (idx: number) => {
       const node = findRowNode((d) => d.kind === "new" && d.idx === idx);
       if (!node) return;
-      const { roleName, parmType, roleInput } = readRowValues(node);
-      if (!roleName) {
+      const { algoRoleName, algoParmType, roleInput } = readRowValues(node);
+      if (!algoRoleName) {
         roleInput?.classList.add("border-warning");
         return;
       }
-      onAdd?.({ roleName, parmType });
+      onAdd?.({ algoRoleName, algoParmType });
       setNewParms((prev) => prev.filter((p) => p.idx !== idx));
     },
     [findRowNode, onAdd],
@@ -185,7 +207,7 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
             <Button
               variant="primary"
               size="lg"
-              aria-label={t("algorithms:parms.save_parm")}
+              aria-label={t("computations:parms.save_parm")}
               onClick={() => handleSaveNew(data.idx)}
             >
               <Save />
@@ -193,7 +215,7 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
             <Button
               variant="secondary"
               size="lg"
-              aria-label={t("algorithms:parms.cancel_parm")}
+              aria-label={t("computations:parms.cancel_parm")}
               onClick={() =>
                 setNewParms((prev) => prev.filter((p) => p.idx !== data.idx))
               }
@@ -204,25 +226,26 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
         );
       }
 
+      const roleName = data.parm.algoRoleName ?? "";
       if (data.editing) {
         return (
           <>
             <Button
               variant="primary"
               size="lg"
-              aria-label={t("algorithms:parms.save_parm")}
-              onClick={() => handleSaveExisting(data.roleName)}
+              aria-label={t("computations:parms.save_parm")}
+              onClick={() => handleSaveExisting(roleName)}
             >
               <Save />
             </Button>
             <Button
               variant="secondary"
               size="lg"
-              aria-label={t("algorithms:parms.cancel_parm")}
+              aria-label={t("computations:parms.cancel_parm")}
               onClick={() =>
                 setEditingNames((prev) => {
                   const s = new Set(prev);
-                  s.delete(data.roleName);
+                  s.delete(roleName);
                   return s;
                 })
               }
@@ -238,16 +261,16 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
           <Button
             variant="warning"
             size="lg"
-            aria-label={t("algorithms:parms.edit_for", { name: data.roleName })}
-            onClick={() => setEditingNames((prev) => new Set([...prev, data.roleName]))}
+            aria-label={t("computations:parms.edit_for", { name: roleName })}
+            onClick={() => setEditingNames((prev) => new Set([...prev, roleName]))}
           >
             <Pencil />
           </Button>
           <Button
             variant="danger"
             size="lg"
-            aria-label={t("algorithms:parms.delete_for", { name: data.roleName })}
-            onClick={() => onRemove?.(data.roleName)}
+            aria-label={t("computations:parms.delete_for", { name: roleName })}
+            onClick={() => onRemove?.(roleName)}
           >
             <Trash />
           </Button>
@@ -290,10 +313,10 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
                     const idx = nextIdx.current++;
                     setNewParms((prev) => [
                       ...prev,
-                      { kind: "new", idx, parmType: "i" },
+                      { kind: "new", idx, algoParmType: "i" },
                     ]);
                   },
-                  attr: { "aria-label": t("algorithms:parms.add_parm") },
+                  attr: { "aria-label": t("computations:parms.add_parm") },
                 },
               ]
             : [],
@@ -317,11 +340,13 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
       ref={table}
       className="table table-hover table-striped w-100 border"
     >
-      <caption className="caption-title-center">{t("algorithms:parms.title")}</caption>
+      <caption className="caption-title-center">
+        {t("computations:parms.title")}
+      </caption>
       <thead>
         <tr>
-          <th>{t("algorithms:parms.roleName")}</th>
-          <th>{t("algorithms:parms.parmType")}</th>
+          <th>{t("computations:parms.roleName")}</th>
+          <th>{t("computations:parms.parmType")}</th>
           {edit && <th>{t("translation:actions")}</th>}
         </tr>
       </thead>
