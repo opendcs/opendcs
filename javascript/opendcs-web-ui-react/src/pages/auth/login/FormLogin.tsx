@@ -1,25 +1,14 @@
 import React, { type FormEvent } from "react";
 import { Form, Button } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import {
-  RESTAuthenticationAndAuthorizationApi,
-  Credentials,
-  User,
-  ApiOrganization,
-} from "opendcs-api";
-import { useApi } from "../../../contexts/app/ApiContext";
-import { useOrganizations } from "../../../contexts/app/OrganizationsContext";
+import { Credentials } from "opendcs-api";
 
 export interface FormLoginProperties {
-  success: (user: User, org: ApiOrganization) => void;
-  failure: (error: { toString: () => string }) => void;
+  login: (credentials: Credentials) => void;
 }
 
-export const FormLogin: React.FC<FormLoginProperties> = ({ success, failure }) => {
+export const FormLogin: React.FC<FormLoginProperties> = ({ login }) => {
   const { t } = useTranslation();
-  const { organizations } = useOrganizations();
-  const api = useApi();
-  const auth = new RESTAuthenticationAndAuthorizationApi(api.conf);
 
   function handleLogin(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
@@ -35,17 +24,7 @@ export const FormLogin: React.FC<FormLoginProperties> = ({ success, failure }) =
       password: dataObject.password.toString(),
     };
 
-    const org = JSON.parse(dataObject.organization.toString()) as ApiOrganization;
-
-    auth
-      .postCredentials(org.name || "", credentials)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .then((user_value: any) => {
-        success(user_value as User, org);
-      })
-      .catch((error_: { toString: () => string }) => {
-        failure(error_);
-      });
+    login(credentials);
   }
 
   return (
@@ -70,20 +49,6 @@ export const FormLogin: React.FC<FormLoginProperties> = ({ success, failure }) =
           placeholder={t("password")}
         />
       </Form.Group>
-      {organizations.length > 0 ? (
-        <Form.Group className="mb-3">
-          <Form.Label>{t("organization")}</Form.Label>
-          <Form.Select id="organization" name="organization" required>
-            {organizations.map((org) => (
-              <option key={org.name} value={JSON.stringify(org)}>
-                {org.name}
-              </option>
-            ))}
-          </Form.Select>
-        </Form.Group>
-      ) : (
-        <input type="hidden" name="organization" value="" />
-      )}
       <div className="d-grid fade-in third">
         <Button variant="primary" type="submit" className="py-2">
           {t("login")}

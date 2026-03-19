@@ -21,13 +21,8 @@ export default function Login() {
   const { setUser } = useAuth();
   const { organizations } = useOrganizations();
   const api = useApi();
+  const auth = new RESTAuthenticationAndAuthorizationApi(api.conf);
   let errorMsg = "";
-
-  // const orgString: string = dataObject.organization.toString();
-  // const orgObj: ApiOrganization = orgString
-  //   ? (JSON.parse(orgString) as ApiOrganization)
-  //   : {};
-  // const org: string = orgObj.name || "";
 
   const [showErrorModal, setShowErrorModal] = useState(false);
 
@@ -43,17 +38,43 @@ export default function Login() {
               <p className="text-muted small">{t("login")}</p>
             </div>
             <FormLogin
-              success={(user: User, org: ApiOrganization) => {
-                setUser(user);
-                api.setOrg(org);
-                const redirectPath = location.state?.from || "/platforms";
-                navigate(redirectPath, { replace: true });
-              }}
-              failure={(error_: { toString: () => string }) => {
-                setShowErrorModal(true);
-                errorMsg = error_.toString();
+              login={(credentials: Credentials) => {
+                auth
+                  .postCredentials(api.org, credentials)
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  .then((user_value: any) => {
+                    setUser(user_value);
+                    const redirectPath = location.state?.from || "/platforms";
+                    navigate(redirectPath, { replace: true });
+                  })
+                  .catch((error_: { toString: () => string }) => {
+                    errorMsg = error_.toString();
+                    setShowErrorModal(true);
+                  });
               }}
             />
+            {organizations.length > 0 ? (
+              <Form.Group className="mb-3">
+                <Form.Label>{t("organization")}</Form.Label>
+                <Form.Select
+                  id="organization"
+                  name="organization"
+                  required
+                  defaultValue={api.org}
+                  onChange={(e) => {
+                    api.setOrg(JSON.parse(e.currentTarget.value));
+                  }}
+                >
+                  {organizations.map((org) => (
+                    <option key={org.name} value={JSON.stringify(org)}>
+                      {org.name}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            ) : (
+              <input type="hidden" name="organization" value="" />
+            )}
           </Card.Body>
         </Card>
         <Modal show={showErrorModal} onHide={() => setShowErrorModal(false)} centered>
