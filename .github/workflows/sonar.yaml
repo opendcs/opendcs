@@ -21,16 +21,19 @@ jobs:
                 && format('{0}:{1}', github.event.workflow_run.head_repository.owner.login, github.event.workflow_run.head_branch)
                 || github.event.workflow_run.head_branch
             }}
+          IS_PR: ${{ (github.event.workflow_run.event == 'pull_request') && true || false }}
         # Query the PR number by repo + branch, then assign to step output:
         run: |
-          gh pr view --repo "${PR_TARGET_REPO}" "${PR_BRANCH}" --json 'number' --jq '"number=\(.number)"' >> "${GITHUB_OUTPUT}"
-          echo "source_branch=${PR_BRANCH}" >> ${GITHUB_OUTPUT}
-          base_ref=`gh pr view --repo "${PR_TARGET_REPO}" "${PR_BRANCH}" --json 'baseRefName' --jq '(.baseRefName)'`
-          if [[ "${base_ref}" =~ (main|7.0) ]]; then
-            echo "target_branch=${base_ref}" >> ${GITHUB_OUTPUT}
-          else
-            echo "PR is targetting an invalid branch"
-            exit 1
+          if [[ ${IS_PR} == "true" ]]; then
+            gh pr view --repo "${PR_TARGET_REPO}" "${PR_BRANCH}" --json 'number' --jq '"number=\(.number)"' >> "${GITHUB_OUTPUT}"
+            echo "source_branch=${PR_BRANCH}" >> ${GITHUB_OUTPUT}
+            base_ref=`gh pr view --repo "${PR_TARGET_REPO}" "${PR_BRANCH}" --json 'baseRefName' --jq '(.baseRefName)'`
+            if [[ "${base_ref}" =~ (main|7.0) ]]; then
+              echo "target_branch=${base_ref}" >> ${GITHUB_OUTPUT}
+            else
+              echo "PR is targetting an invalid branch"
+              exit 1
+            fi
           fi
       - name: Set up JDK
         uses: actions/setup-java@v5.2.0
@@ -44,9 +47,9 @@ jobs:
         uses: gradle/actions/setup-gradle@v5.0.1
       - name: Checkout base code (for build tasks)
         uses: actions/checkout@v6.0.2
-        # with:
-        #   ref: ${{ steps.pr-context.outputs.target_branch }}
-        #   fetch-depth: 1
+        with:
+          ref: ${{ steps.pr-context.outputs.target_branch }}
+          fetch-depth: 1
       - name: Checkout PR code
         uses: actions/checkout@v6.0.2
         with:
