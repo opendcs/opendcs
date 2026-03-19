@@ -15,6 +15,7 @@ import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.EngineeringUnitDao;
 import org.opendcs.database.dai.UnitConverterDao;
+import org.opendcs.database.impl.opendcs.jdbi.column.numeric.NullableDoubleArgumentFactory;
 import org.opendcs.database.model.mappers.unitconverter.UnitConverterMapper;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
@@ -100,12 +101,13 @@ public class UnitConverterDaoImpl implements UnitConverterDao
                  .bind("fromunitsabbr", unitConverter.fromAbbr)
                  .bind("tounitsabbr", unitConverter.toAbbr)
                  .bind("algorithm", unitConverter.algorithm)
-                 .bind("a", coefficients[0] != Constants.undefinedDouble ? coefficients[0] : null)
-                 .bind("b", coefficients[1] != Constants.undefinedDouble ? coefficients[1] : null)
-                 .bind("c", coefficients[2] != Constants.undefinedDouble ? coefficients[2] : null)
-                 .bind("d", coefficients[3] != Constants.undefinedDouble ? coefficients[3] : null)
-                 .bind("e", coefficients[4] != Constants.undefinedDouble ? coefficients[4] : null)
-                 .bind("f", coefficients[5] != Constants.undefinedDouble ? coefficients[5] : null)
+                 .registerArgument(new NullableDoubleArgumentFactory())
+                 .bind("a", coefficients[0])
+                 .bind("b", coefficients[1])
+                 .bind("c", coefficients[2])
+                 .bind("d", coefficients[3])
+                 .bind("e", coefficients[4])
+                 .bind("f", coefficients[5])
                  .execute();
             return getById(tx, id).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Unit Converter we just saved."));
         }
