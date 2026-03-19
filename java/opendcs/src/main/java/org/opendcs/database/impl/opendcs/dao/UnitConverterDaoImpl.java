@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.Stack;
 import java.util.Vector;
 
+import org.jdbi.v3.core.argument.Arguments;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.stringtemplate4.StringTemplateEngine;
 import org.opendcs.annotations.api.InjectDao;
@@ -80,7 +81,6 @@ public class UnitConverterDaoImpl implements UnitConverterDao
         var dbEngine = ctx.getDatabase();
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                 .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
-
         final String insertSql = """
                 merge into unitconverter uc
                 using (select :id id, :fromunitsabbr fromunitsabbr, :tounitsabbr tounitsabbr, :algorithm algorithm,
@@ -97,11 +97,11 @@ public class UnitConverterDaoImpl implements UnitConverterDao
                                .define("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : ""))
         {
             final DbKey id = unitConverter.idIsSet() ? unitConverter.getId() : keyGen.getKey("unitconverter", handle.getConnection());
-            query.bind(GenericColumns.ID, id)
+            query.registerArgument(new NullableDoubleArgumentFactory())
+                 .bind(GenericColumns.ID, id)
                  .bind("fromunitsabbr", unitConverter.fromAbbr)
                  .bind("tounitsabbr", unitConverter.toAbbr)
                  .bind("algorithm", unitConverter.algorithm)
-                 .registerArgument(new NullableDoubleArgumentFactory())
                  .bind("a", coefficients[0])
                  .bind("b", coefficients[1])
                  .bind("c", coefficients[2])

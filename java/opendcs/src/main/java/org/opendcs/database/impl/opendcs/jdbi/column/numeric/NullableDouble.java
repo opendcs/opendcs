@@ -15,7 +15,7 @@ import decodes.db.Constants;
 public class NullableDouble implements ColumnMapper<Double>
 {
     public static final double DEFAULT_NULL_REPLACEMENT = Constants.undefinedDouble;
-    
+
     private final double defaultValue;
 
     public NullableDouble()
