@@ -86,7 +86,7 @@ public class CompositeConverter extends UnitConverter
 		int n = conversions.size();
 		for(int i = 0; i<n; i++)
 		{
-			UnitConverter uc = (UnitConverter)conversions.elementAt(i);
+			UnitConverter uc = conversions.elementAt(i);
 			w += uc.getWeight();
 		}
 		return w;
