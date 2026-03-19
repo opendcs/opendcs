@@ -12,6 +12,7 @@ import { Button, Form } from "react-bootstrap";
 import { Pencil, Save, Trash, X } from "react-bootstrap-icons";
 import { renderToString } from "react-dom/server";
 import type { ApiCompParm } from "opendcs-api";
+import { PARM_TYPES, parmTypeLabel, type ParmTypeOption } from "../common/parmTypes";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -19,26 +20,8 @@ DataTable.use(DT);
 DataTable.use(dtButtons);
 
 export type CompParm = ApiCompParm;
-
-export const PARM_TYPES: { value: string; label: string }[] = [
-  { value: "i", label: "i: Simple Input" },
-  { value: "o", label: "o: Simple Output" },
-  { value: "id", label: "id: Delta with Implicit Period" },
-  { value: "idh", label: "idh: Hourly Delta" },
-  { value: "idd", label: "idd: Daily Delta" },
-  { value: "idld", label: "idld: Delta from end of last day" },
-  { value: "idlm", label: "idlm: Delta from end of last month" },
-  { value: "idly", label: "idly: Delta from end of last year" },
-  { value: "idlwy", label: "idlwy: Delta from end of last water-year" },
-  { value: "id5min", label: "id5min: Delta for last 5 minutes" },
-  { value: "id10min", label: "id10min: Delta for last 10 minutes" },
-  { value: "id15min", label: "id15min: Delta for last 15 minutes" },
-  { value: "id20min", label: "id20min: Delta for last 20 minutes" },
-  { value: "id30min", label: "id30min: Delta for last 30 minutes" },
-];
-
-export const parmTypeLabel = (type: string): string =>
-  PARM_TYPES.find((pt) => pt.value === type)?.label ?? type;
+export { PARM_TYPES, parmTypeLabel };
+export type { ParmTypeOption };
 
 type ExistingRow = {
   kind: "existing";
