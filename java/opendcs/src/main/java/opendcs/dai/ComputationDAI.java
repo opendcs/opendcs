@@ -18,7 +18,6 @@ import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.compedit.ComputationInList;
 
 /**
  * Defines public interface for reading/writing site (i.e. location) objects.

@@ -1,12 +1,12 @@
 {
   "computationId": 1,
-  "name": "Flow Computation",
+  "name": "PercentFilled_Forecast",
   "algorithmId": 11,
-  "algorithmName": "Test Algorithm",
+  "algorithmName": "Division",
   "processId": 8,
   "processName": "Computational App",
   "enabled": true,
-  "description": "Performs flow computations",
+  "description": "Percent of conservation storage filled.",
   "groupId": null,
   "groupName": null
 }
