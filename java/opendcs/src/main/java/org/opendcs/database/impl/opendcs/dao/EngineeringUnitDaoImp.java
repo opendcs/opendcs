@@ -32,7 +32,7 @@ public class EngineeringUnitDaoImp implements EngineeringUnitDao
         final String insertSql = """
                 merge into engineeringunit eu
                 using (select :unitabbr unitabbr, :name name, :family family, :measures measures <dual>) input
-                on (eu.unitabbr = input.unitabbr)
+                on (upper(eu.unitabbr) = upper(input.unitabbr))
                 when matched then
                     update set name = input.name, family = input.family, measures = input.measures
                 when not matched then
@@ -47,7 +47,7 @@ public class EngineeringUnitDaoImp implements EngineeringUnitDao
                  .bind("family", unit.getFamily())
                  .bind("measures", unit.getMeasures())
                  .execute();
-            return lookup(tx, unit.abbr).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Engineering Unit we just saved."));
+            return getByName(tx, unit.abbr).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Engineering Unit we just saved."));
         }
     }
 
@@ -64,14 +64,14 @@ public class EngineeringUnitDaoImp implements EngineeringUnitDao
     }
 
     @Override
-    public Optional<EngineeringUnit> lookup(DataTransaction tx, String unit) throws OpenDcsDataException
+    public Optional<EngineeringUnit> getByName(DataTransaction tx, String unit) throws OpenDcsDataException
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         final String querySql = """
                     select unitabbr, name, family, measures 
                       from engineeringunit 
-                     where unitabbr = :unit 
+                     where upper(unitabbr) = upper(:unit)
                         or name = :unit
                 """;
         try (var query = handle.createQuery(querySql))
