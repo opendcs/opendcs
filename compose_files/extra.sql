@@ -10,3 +10,23 @@ when matched then
 when not matched then
     insert (prop_name, prop_value) values (prop.name, 'OPENTSDB')
 ;
+
+insert into identity_provider(name,type,config) values
+ ('oidc-pkce', 'OpenIdConnect', '{"clientId": "opendcs-public", "wellKnown": "http://localhost:7100/auth/realms/opendcs/.well-known/openid-configuration", "redirectUri": "http://localhost:5173/oidc-callback"}'::json),
+ ('oidc-secret', 'OpenIdConnect', '{"clientId": "opendcs", "clientSecret": "test-secret-value","wellKnown": "http://localhost:7100/auth/realms/opendcs/.well-known/openid-configuration", "redirectUri": "http://localhost:5173/oidc-callback"}'::json)
+on conflict do nothing
+;
+
+insert into opendcs_user(email) values ('test_user@example.com') on conflict do nothing;
+insert into user_roles(user_id, role_id) values ((select id from opendcs_user where email = 'test_user@example.com'), 2) on conflict do nothing;
+insert into user_roles(user_id, role_id) values ((select id from opendcs_user where email = 'test_user@example.com'), 3) on conflict do nothing;
+
+insert into opendcs_user_password(user_id, password)
+     values ((select id from opendcs_user where email = 'test_user@example.com'), '$argon2id$v=19$m=15360,t=2,p=1$bThReUZrZ0xTcjZDbzJUMA$jX7w7uTol8RON0fw3SXqghIh48jam7it6gXkg7Ul3VU') on conflict do nothing;
+
+insert into user_identity_provider(user_id, subject, identity_provider_id) values
+
+((select id from opendcs_user where email = 'test_user@example.com'), 'test_user', (select id from identity_provider where type = 'BuiltIn')),
+((select id from opendcs_user where email = 'test_user@example.com'), '45ee99c4-3dc8-444d-81d8-2c669a148bff', (select id from identity_provider where name = 'oidc-pkce')),
+((select id from opendcs_user where email = 'test_user@example.com'), '45ee99c4-3dc8-444d-81d8-2c669a148bff', (select id from identity_provider where name = 'oidc-secret'))
+on conflict do nothing;
