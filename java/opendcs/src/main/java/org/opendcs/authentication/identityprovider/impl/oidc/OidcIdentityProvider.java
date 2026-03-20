@@ -210,7 +210,9 @@ public final class OidcIdentityProvider implements IdentityProvider
     @Override
     public SecurityScheme getSecurityScheme()
     {
-        return new SecurityScheme().openIdConnectUrl(this.oidcConfig.wellKnownUri.toString());
+        var scheme =  new SecurityScheme().openIdConnectUrl(this.oidcConfig.wellKnownUri.toString());
+        scheme.type(Type.OPENIDCONNECT).setDescription("OpenID Connect based Authorization");;
+        return scheme;
     }
 
     @AutoService(IdentityProviderProvider.class)

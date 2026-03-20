@@ -81,6 +81,7 @@ public final class RestServices extends ResourceConfig
             var providers = umDao.getIdentityProviders(tx, -1, -1);
             for (var provider: providers)
             {
+                log.info("Adding provider {} to API security schemes", provider.getName());
                 components.addSecuritySchemes(provider.getName(), provider.getSecurityScheme());
             }
         }
