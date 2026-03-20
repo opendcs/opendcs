@@ -10,6 +10,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.time.ZonedDateTime;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -32,7 +33,9 @@ import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jwt.JWTClaimsSet;
 
 import decodes.sql.DbKey;
-
+import io.swagger.v3.oas.models.security.OAuthFlow;
+import io.swagger.v3.oas.models.security.OAuthFlows;
+import io.swagger.v3.oas.models.security.Scopes;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.security.SecurityScheme.In;
 import io.swagger.v3.oas.models.security.SecurityScheme.Type;
@@ -211,7 +214,16 @@ public final class OidcIdentityProvider implements IdentityProvider
     public SecurityScheme getSecurityScheme()
     {
         var scheme =  new SecurityScheme().openIdConnectUrl(this.oidcConfig.wellKnownUri.toString());
-        scheme.type(Type.OPENIDCONNECT).setDescription("OpenID Connect based Authorization");;
+        scheme.type(Type.OPENIDCONNECT).setDescription("OpenID Connect based Authorization");
+
+        HashMap<String, Object> extension = new HashMap<>();
+
+        HashMap<String, Object> oidcData = new HashMap<>();
+        oidcData.put("redirectUri", this.redirectUri);
+        oidcData.put("clientId", clientId);
+
+        extension.put("oidc-config", oidcData);
+        scheme.addExtension("x-logincomponent-configuration", extension);
         return scheme;
     }
 

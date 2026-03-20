@@ -13,8 +13,8 @@ when not matched then
 
 insert into identity_provider(name,type,config) values
  ('oidc-pkce', 'OpenIdConnect', '{"clientId": "opendcs-public", "wellKnown": "http://localhost:7100/auth/realms/opendcs/.well-known/openid-configuration", "redirectUri": "http://localhost:5173/oidc-callback"}'::json),
- ('oidc-secret', 'OpenIdConnect', '{"clientId": "opendcs", "clientSecret": "test-secret-value","wellKnown": "http://localhost:7100/auth/realms/opendcs/.well-known/openid-configuration", "redirectUri": "http://localhost:5173/oidc-callback"}'::json)
-on conflict do nothing
+ ('oidc-secret', 'OpenIdConnect', '{"clientId": "opendcs", "clientSecret": "test-secret-value","wellKnown": "http://localhost:7100/auth/realms/opendcs/.well-known/openid-configuration", "redirectUri": "http://localhost:5173/odcsapi/oidc-callback"}'::json)
+on conflict(name) do update set type=excluded.type, config=excluded.config;
 ;
 
 insert into opendcs_user(email) values ('test_user@example.com') on conflict do nothing;

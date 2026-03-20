@@ -221,12 +221,11 @@ public final class BuiltInIdentityProvider implements IdentityProvider
     public SecurityScheme getSecurityScheme()
     {
         HashMap<String, Object> extensions = new HashMap<>();
-        extensions.put("login_method", "form");
-        extensions.put("user_input", "username");
-        extensions.put("password_input", "password");
-        extensions.put("login_target", "/credentials");
+        HashMap<String, Object> formData = new HashMap<>();
+        formData.put("user_input", "username");
+        formData.put("password_input", "password");
 
-
+        extensions.put("form-config", formData);
         var scheme = new SecurityScheme().type(Type.APIKEY)
                                          .in(In.COOKIE)
                                          .name("JSESSIONID")
