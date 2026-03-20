@@ -1,13 +1,14 @@
 import React, { type FormEvent } from "react";
 import { Form, Button } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import { Credentials } from "opendcs-api";
+import type { FormScheme } from "../../../util/login-providers/Scheme.types";
 
 export interface FormLoginProperties {
-  login: (credentials: Credentials) => void;
+  login: (credentials: Record<string, string>) => void;
+  loginOptions: FormScheme;
 }
 
-export const FormLogin: React.FC<FormLoginProperties> = ({ login }) => {
+export const FormLogin: React.FC<FormLoginProperties> = ({ login, loginOptions }) => {
   const { t } = useTranslation();
 
   function handleLogin(event: FormEvent<HTMLFormElement>): void {
@@ -18,13 +19,13 @@ export const FormLogin: React.FC<FormLoginProperties> = ({ login }) => {
     const formData = new FormData(form);
 
     const dataObject = Object.fromEntries(formData.entries());
-    // Convert FormData to a plain object for easier use
-    const credentials: Credentials = {
-      username: dataObject.username.toString(),
-      password: dataObject.password.toString(),
-    };
+    console.log(loginOptions);
+    const {
+      [loginOptions.formConfig.usernameInput]: username,
+      [loginOptions.formConfig.passwordInput]: password,
+    } = dataObject;
 
-    login(credentials);
+    login({ username: username.toString(), password: password.toString() });
   }
 
   return (

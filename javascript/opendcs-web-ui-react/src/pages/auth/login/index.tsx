@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
 import { useAuth } from "../../../contexts/app/AuthContext";
 import { Button, Card, Container, Form, Modal } from "react-bootstrap";
 import { PersonCircle } from "react-bootstrap-icons";
@@ -13,12 +13,13 @@ import { useOrganizations } from "../../../contexts/app/OrganizationsContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import FormLogin from "./FormLogin";
+import type { FormScheme } from "../../../util/login-providers/Scheme.types";
 
 export default function Login() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { setUser } = useAuth();
+  const { loginSchemes, setUser } = useAuth();
   const { organizations } = useOrganizations();
   const api = useApi();
   const auth = new RESTAuthenticationAndAuthorizationApi(api.conf);
@@ -37,22 +38,36 @@ export default function Login() {
               <h4 className="mt-3 fw-semibold">OpenDCS</h4>
               <p className="text-muted small">{t("login")}</p>
             </div>
-            <FormLogin
-              login={(credentials: Credentials) => {
-                auth
-                  .postCredentials(api.org, credentials)
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  .then((user_value: any) => {
-                    setUser(user_value);
-                    const redirectPath = location.state?.from || "/platforms";
-                    navigate(redirectPath, { replace: true });
-                  })
-                  .catch((error_: { toString: () => string }) => {
-                    errorMsg = error_.toString();
-                    setShowErrorModal(true);
-                  });
-              }}
-            />
+            {Object.entries(loginSchemes ?? {}).map(([key, scheme]) => {
+              if (scheme.formConfig as FormScheme) {
+                return (
+                  <FormLogin
+                    key={key}
+                    login={(credentials: Credentials) => {
+                      auth
+                        .postCredentials(api.org, credentials)
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        .then((user_value: any) => {
+                          setUser(user_value);
+                          const redirectPath = location.state?.from || "/platforms";
+                          navigate(redirectPath, { replace: true });
+                        })
+                        .catch((error_: { toString: () => string }) => {
+                          errorMsg = error_.toString();
+                          setShowErrorModal(true);
+                        });
+                    }}
+                    loginOptions={scheme as FormScheme}
+                  />
+                );
+              } else {
+                return (
+                  <Button key={key} variant="primary" className="py-2 w-100 mt-2">
+                    Login with {key}
+                  </Button>
+                );
+              }
+            })}
             {organizations.length > 0 ? (
               <Form.Group className="mb-3">
                 <Form.Label>{t("organization")}</Form.Label>

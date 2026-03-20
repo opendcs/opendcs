@@ -1,0 +1,46 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "OpenDCS - Swagger",
+    "description": "OpenDCS Rest API is web application that provides access to the OpenDCS database using JSON (Java Script Object Notation). Source and documentation may be found here: [Github Documentation](https://github.com/opendcs/rest_api)",
+    "version": "0.0.3"
+  },
+  "components": {
+    "securitySchemes": {
+      "builttin": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "JSESSIONID",
+        "description": "Default identity provider",
+        "x-logincomponent-configuration": {
+          "formConfig": {
+            "usernameInput": "username",
+            "passwordInput": "password"
+          }
+        }
+      },
+      "oidc-pkce": {
+        "type": "openIdConnect",
+        "description": "OpenID Connect based Authorization",
+        "openIdConnectUrl": "http://localhost:7100/auth/realms/opendcs/.well-known/openid-configuration",
+        "x-logincomponent-configuration": {
+          "oidcConfig": {
+            "redirectUri": "http://localhost:5173/oidc-callback",
+            "clientId": "opendcs-public"
+          }
+        }
+      },
+      "oidc-secret": {
+        "type": "openIdConnect",
+        "description": "OpenID Connect based Authorization",
+        "openIdConnectUrl": "http://localhost:7100/auth/realms/opendcs/.well-known/openid-configuration",
+        "x-logincomponent-configuration": {
+          "oidcConfig": {
+            "redirectUri": "http://localhost:5173/odcsapi/oidc-callback",
+            "clientId": "opendcs"
+          }
+        }
+      }
+    }
+  }
+}

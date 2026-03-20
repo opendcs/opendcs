@@ -222,10 +222,10 @@ public final class BuiltInIdentityProvider implements IdentityProvider
     {
         HashMap<String, Object> extensions = new HashMap<>();
         HashMap<String, Object> formData = new HashMap<>();
-        formData.put("user_input", "username");
-        formData.put("password_input", "password");
+        formData.put("usernameInput", "username");
+        formData.put("passwordInput", "password");
 
-        extensions.put("form-config", formData);
+        extensions.put("formConfig", formData);
         var scheme = new SecurityScheme().type(Type.APIKEY)
                                          .in(In.COOKIE)
                                          .name("JSESSIONID")

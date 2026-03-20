@@ -222,7 +222,7 @@ public final class OidcIdentityProvider implements IdentityProvider
         oidcData.put("redirectUri", this.redirectUri);
         oidcData.put("clientId", clientId);
 
-        extension.put("oidc-config", oidcData);
+        extension.put("oidcConfig", oidcData);
         scheme.addExtension("x-logincomponent-configuration", extension);
         return scheme;
     }

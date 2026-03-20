@@ -5,7 +5,7 @@
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable", "ES2023.Array"],
     "module": "ESNext",
-    "types": ["vite/client", "vite-plugin-svgr/client"],
+    "types": ["vite/client", "vite-plugin-svgr/client", "node"],
     "skipLibCheck": true,
 
     /* Bundler mode */
