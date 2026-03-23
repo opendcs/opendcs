@@ -1,10 +1,19 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, within, waitFor } from "storybook/test";
+import { expect, userEvent, within, waitFor, fn } from "storybook/test";
 import Login from "./index";
 import { http, HttpResponse } from "msw";
 import { WithOrganization } from "../../../../.storybook/mock/WithOrganization";
+import { AuthContext } from "../../../contexts/app/AuthContext";
+import {
+  ApiContext,
+  defaultValue as apiDefault,
+} from "../../../contexts/app/ApiContext";
+import apiAuthSpec from "../../../../.storybook/mock/openapi-security-schemes.json";
+import { fromOpenApiData } from "../../../util/login-providers";
 
 const ORG_HEADER = "x-organization-id";
+
+const authSchemes = await fromOpenApiData(apiAuthSpec);
 
 const meta: Meta<typeof Login & { organizations: string[] }> = {
   component: Login,
@@ -43,12 +52,30 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+const authDecorator = (Story: any) => (
+  <ApiContext value={apiDefault}>
+    <AuthContext
+      value={{
+        user: undefined,
+        isLoading: false,
+        loginSchemes: authSchemes,
+        setSchemes: fn(),
+        setUser: fn(),
+        logout: fn(),
+      }}
+    >
+      <Story />
+    </AuthContext>
+  </ApiContext>
+);
+
 export const SuccessfulLogin: Story = {
   args: {
     organization: { name: "SPK" },
   },
-  play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement);
+  decorators: [authDecorator],
+  play: async ({ args, mount }) => {
+    const canvas = await mount();
 
     await userEvent.type(await canvas.getByPlaceholderText(/username/i), "admin");
     await userEvent.type(await canvas.getByPlaceholderText(/password/i), "secret");
@@ -62,7 +89,7 @@ export const SuccessfulLogin: Story = {
     );
 
     // Submit the form
-    await userEvent.click(canvas.getByRole("button", { name: /login/i }));
+    await userEvent.click(canvas.getByRole("button", { name: /^login$/i }));
 
     // Verify the user was redirected to the platforms page
     await waitFor(() => {
@@ -75,6 +102,7 @@ export const FailedLogin_BadCredentials: Story = {
   args: {
     organization: { name: "SPK" },
   },
+  decorators: [authDecorator],
   parameters: {
     msw: {
       handlers: [
@@ -95,11 +123,11 @@ export const FailedLogin_BadCredentials: Story = {
       JSON.stringify(args.organization),
     );
 
-    await userEvent.click(canvas.getByRole("button", { name: /login/i }));
+    await userEvent.click(canvas.getByRole("button", { name: /^login$/i }));
 
     // The login page should still be visible (no redirect)
     await waitFor(() => {
-      expect(canvas.getByRole("button", { name: /login/i })).toBeInTheDocument();
+      expect(canvas.getByRole("button", { name: /^login$/i })).toBeInTheDocument();
     });
   },
 };
@@ -108,6 +136,7 @@ export const FailedLogin_BadOrg: Story = {
   args: {
     organization: { name: "LRL" },
   },
+  decorators: [authDecorator],
   parameters: {
     msw: {
       handlers: [
@@ -117,8 +146,8 @@ export const FailedLogin_BadOrg: Story = {
       ],
     },
   },
-  play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement);
+  play: async ({ args, mount }) => {
+    const canvas = await mount();
 
     await userEvent.type(canvas.getByPlaceholderText(/username/i), "admin");
     await userEvent.type(canvas.getByPlaceholderText(/password/i), "secret");
@@ -132,7 +161,7 @@ export const FailedLogin_BadOrg: Story = {
 
     // The login page should still be visible (no redirect)
     await waitFor(() => {
-      expect(canvas.getByRole("button", { name: /login/i })).toBeInTheDocument();
+      expect(canvas.getByRole("button", { name: /^login$/i })).toBeInTheDocument();
     });
   },
 };
@@ -141,8 +170,9 @@ export const SuccessfulLogin_HiddenOrganizations: Story = {
   args: {
     organizations: [],
   },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
+  decorators: [authDecorator],
+  play: async ({ mount }) => {
+    const canvas = await mount();
 
     await userEvent.type(canvas.getByPlaceholderText(/username/i), "admin");
     await userEvent.type(canvas.getByPlaceholderText(/password/i), "secret");
@@ -151,7 +181,7 @@ export const SuccessfulLogin_HiddenOrganizations: Story = {
       expect(canvas.queryByRole("combobox", { name: "" })).toBeNull();
     });
 
-    await userEvent.click(canvas.getByRole("button", { name: /login/i }));
+    await userEvent.click(canvas.getByRole("button", { name: /^login$/i }));
 
     // Successful login
     await waitFor(() => {
