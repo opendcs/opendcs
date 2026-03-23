@@ -26,6 +26,7 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
 
   useEffect(() => {
     if (!show) return;
+    let cancelled = false;
     setLoading(true);
     setSelected(new Set());
     fetch("/odcsapi/algorithmcatalog", {
@@ -33,10 +34,17 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
     })
       .then((res) => res.json())
       .then((data: AvailableAlgorithm[]) => {
-        setAvailable(data.filter((a) => !a.alreadyImported));
+        if (!cancelled) {
+          setAvailable(data.filter((a) => !a.alreadyImported));
+        }
       })
       .catch((e: unknown) => console.error("Failed to fetch algorithm catalog", e))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [show, api.org]);
 
   const toggleSelect = useCallback((execClass: string) => {
