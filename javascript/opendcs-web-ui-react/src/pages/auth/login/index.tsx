@@ -70,12 +70,13 @@ export default function Login() {
                         authority: "http://localhost:7100/auth/realms/opendcs",
                       });
                       const req = client.createSigninRequest({ state: "test" });
+
                       req.then((r) => {
+                        localStorage.setItem(r.state.id, client.settings.client_id);
                         console.log("request successful!");
                         console.log(r);
                         window.location.href = r.url;
                       });
-                      //client.processSigninResponse(window.location.href).then(r => console.log(r));
                     }}
                   >
                     Login with {key}

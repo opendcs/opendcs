@@ -6,14 +6,33 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 export const OidcCallback: React.FC = () => {
   const api = useApi();
-  const { setUser } = useAuth();
+  const { setUser, loginSchemes } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const client = new OidcClient({
-    redirect_uri: "http://localhost:5173/oidc-callback",
-    client_id: "opendcs-public",
-    authority: "http://localhost:7100/auth/realms/opendcs",
-  });
+
+  console.log(window.location.href);
+  const url = new URL(window.location.href);
+  const state = url.searchParams.get("state") as string;
+  console.log(state);
+  console.log(atob(state));
+  const clientId = localStorage.getItem(state);
+  console.log(clientId);
+
+  let client: OidcClient | null = null;
+  for (const schemeKey in loginSchemes) {
+    const scheme = loginSchemes[schemeKey];
+    if (scheme.oidcConfig?.clientId === clientId) {
+      client = new OidcClient({
+        redirect_uri: scheme.oidcConfig.redirectUri as string,
+        client_id: clientId,
+        authority: "http://localhost:7100/auth/realms/opendcs",
+      });
+    }
+  }
+
+  if (client === null) {
+    return <span>No valid configuration to handle request.</span>;
+  }
 
   client.processSigninResponse(window.location.href).then((r) => {
     console.log(r);
