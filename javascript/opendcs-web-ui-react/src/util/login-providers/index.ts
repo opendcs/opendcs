@@ -1,4 +1,5 @@
-import type { Scheme } from "./Scheme.types";
+import { OidcClient } from "oidc-client-ts";
+import type { OidcScheme, Scheme } from "./Scheme.types";
 
 export async function fromOpenApiUrl(url: URL): Promise<Record<string, Scheme>> {
   const res = await fetch(url);
@@ -17,7 +18,19 @@ export async function fromOpenApiData(
   if (spec.components != null) {
     const apiSchemes = spec.components.securitySchemes!;
     for (const scheme in apiSchemes) {
-      const option: Scheme = apiSchemes[scheme]["x-logincomponent-configuration"];
+      let option: Scheme = apiSchemes[scheme]["x-logincomponent-configuration"];
+      console.log(option);
+      console.log(apiSchemes[scheme]);
+      console.log(apiSchemes[scheme].openIdConnectUrl);
+      if (apiSchemes[scheme].openIdConnectUrl) {
+        option = {
+          oidcConfig: {
+            ...option.oidcConfig,
+            wellKnownUrl: apiSchemes[scheme].openIdConnectUrl,
+          },
+        };
+      }
+      console.log(option);
       schemes = {
         ...schemes,
         [scheme]: option,
@@ -26,3 +39,16 @@ export async function fromOpenApiData(
   }
   return schemes;
 }
+
+/**
+ * Helper to build Oidc TS clients from Scheme configurations
+ * @param scheme OidcScheme to map to a client.
+ * @returns
+ */
+export const oidcConfigToClient = (scheme: OidcScheme): OidcClient => {
+  return new OidcClient({
+    redirect_uri: scheme.oidcConfig.redirectUri,
+    client_id: scheme.oidcConfig.clientId,
+    authority: scheme.oidcConfig.wellKnownUrl.replace(/\/\.well-known.*$/, ""),
+  });
+};

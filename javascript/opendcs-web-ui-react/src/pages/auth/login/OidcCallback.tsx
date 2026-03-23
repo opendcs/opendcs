@@ -3,6 +3,8 @@ import { useApi } from "../../../contexts/app/ApiContext";
 import { RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
 import { useAuth } from "../../../contexts/app/AuthContext";
 import { useLocation, useNavigate } from "react-router-dom";
+import type { OidcScheme } from "../../../util/login-providers/Scheme.types";
+import { oidcConfigToClient } from "../../../util/login-providers";
 
 export const OidcCallback: React.FC = () => {
   const api = useApi();
@@ -10,23 +12,17 @@ export const OidcCallback: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  console.log(window.location.href);
+  // pull the saved state so we can match it to the right configuration.
   const url = new URL(window.location.href);
   const state = url.searchParams.get("state") as string;
-  console.log(state);
-  console.log(atob(state));
   const clientId = localStorage.getItem(state);
-  console.log(clientId);
 
   let client: OidcClient | null = null;
   for (const schemeKey in loginSchemes) {
     const scheme = loginSchemes[schemeKey];
     if (scheme.oidcConfig?.clientId === clientId) {
-      client = new OidcClient({
-        redirect_uri: scheme.oidcConfig.redirectUri as string,
-        client_id: clientId,
-        authority: "http://localhost:7100/auth/realms/opendcs",
-      });
+      const oidcScheme = scheme as OidcScheme;
+      client = oidcConfigToClient(oidcScheme);
     }
   }
 
@@ -38,6 +34,7 @@ export const OidcCallback: React.FC = () => {
     console.log(r);
     const login = new RESTAuthenticationAndAuthorizationApi(api.conf);
     login
+      // office doesn't matter for initial login
       .postJwt("", "Bearer " + r.access_token)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .then((user_value: any) => {

@@ -21,3 +21,11 @@ export interface Scheme {
 export interface FormScheme extends Scheme {
   formConfig: { usernameInput: string; passwordInput: string };
 }
+
+export interface OidcScheme extends Scheme {
+  oidcConfig: {
+    clientId: string;
+    redirectUri: string;
+    wellKnownUrl: string;
+  };
+}

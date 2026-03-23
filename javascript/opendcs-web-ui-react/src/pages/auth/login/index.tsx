@@ -2,14 +2,17 @@ import { useState } from "react";
 import { useAuth } from "../../../contexts/app/AuthContext";
 import { Button, Card, Container, Form, Modal } from "react-bootstrap";
 import { PersonCircle } from "react-bootstrap-icons";
-import { Credentials, RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
+import { RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
 import { useApi } from "../../../contexts/app/ApiContext";
 import { useOrganizations } from "../../../contexts/app/OrganizationsContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import FormLogin from "./FormLogin";
-import type { FormScheme } from "../../../util/login-providers/Scheme.types";
-import { OidcClient } from "oidc-client-ts";
+import type {
+  FormScheme,
+  OidcScheme,
+} from "../../../util/login-providers/Scheme.types";
+import { oidcConfigToClient } from "../../../util/login-providers";
 
 export default function Login() {
   const { t } = useTranslation();
@@ -64,17 +67,11 @@ export default function Login() {
                     className="py-2 w-100 mt-2"
                     onClick={(event) => {
                       event.preventDefault();
-                      const client = new OidcClient({
-                        redirect_uri: scheme.oidcConfig.redirectUri as string,
-                        client_id: scheme.oidcConfig.clientId as string,
-                        authority: "http://localhost:7100/auth/realms/opendcs",
-                      });
-                      const req = client.createSigninRequest({ state: "test" });
+                      const client = oidcConfigToClient(scheme as OidcScheme);
+                      const req = client.createSigninRequest({});
 
                       req.then((r) => {
                         localStorage.setItem(r.state.id, client.settings.client_id);
-                        console.log("request successful!");
-                        console.log(r);
                         window.location.href = r.url;
                       });
                     }}
