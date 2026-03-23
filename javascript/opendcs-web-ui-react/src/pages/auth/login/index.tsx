@@ -68,12 +68,23 @@ export default function Login() {
                     onClick={(event) => {
                       event.preventDefault();
                       const client = oidcConfigToClient(scheme as OidcScheme);
-                      const req = client.createSigninRequest({});
+                      const req = client.createSigninRequest({
+                        state: {
+                          redirect: "test can you see me?",
+                        },
+                      });
 
                       req.then((r) => {
                         localStorage.setItem(r.state.id, client.settings.client_id);
                         window.cookieStore.set("state", r.state.id);
                         window.cookieStore.set("provider", key);
+                        window.cookieStore.set(
+                          "redirectAfterAuth",
+                          new URL(
+                            location.state?.from || "/platforms",
+                            window.location.origin,
+                          ).toString(),
+                        );
                         window.location.href = r.url;
                       });
                     }}

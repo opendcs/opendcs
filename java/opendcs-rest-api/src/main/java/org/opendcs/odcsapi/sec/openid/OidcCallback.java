@@ -2,6 +2,7 @@ package org.opendcs.odcsapi.sec.openid;
 
 import static org.opendcs.odcsapi.util.ApiConstants.ODCS_API_GUEST;
 
+import java.net.URI;
 import java.text.ParseException;
 
 import org.opendcs.authentication.OpenDcsAuthException;
@@ -100,7 +101,8 @@ public final class OidcCallback extends OpenDcsResource
     public Response handle(@QueryParam("code") String code,
                            @QueryParam("state") String state,
                            @CookieParam("state") Cookie stateFromSession,
-                           @CookieParam("provider") Cookie oidcProvider) throws WebAppException
+                           @CookieParam("provider") Cookie oidcProvider,
+                           @CookieParam("redirectAfterAuth") Cookie redirectAfterAuth) throws WebAppException
     {
          var response = Response.status(Response.Status.UNAUTHORIZED)
 					           .entity("""
@@ -126,6 +128,8 @@ public final class OidcCallback extends OpenDcsResource
                     {
                         var user = userOpt.get();
                         response =  updateSessionWithUser(user, httpRequest);
+                        response.location(URI.create(redirectAfterAuth.getValue()));
+                        response.status(Response.Status.FOUND);
                     }
                 }
             }
