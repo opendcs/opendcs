@@ -99,7 +99,8 @@ public final class OidcCallback extends OpenDcsResource
 	)
     public Response handle(@QueryParam("code") String code,
                            @QueryParam("state") String state,
-                           @CookieParam("state") Cookie stateFromSession) throws WebAppException
+                           @CookieParam("state") Cookie stateFromSession,
+                           @CookieParam("provider") Cookie oidcProvider) throws WebAppException
     {
          var response = Response.status(Response.Status.UNAUTHORIZED)
 					           .entity("""
@@ -112,12 +113,13 @@ public final class OidcCallback extends OpenDcsResource
 
             try (var tx = db.newTransaction())
             {
-                var provider = db.getDao(UserManagementDao.class).orElseThrow().getIdentityProvider(tx, state.split("__")[0]);
+                var provider = db.getDao(UserManagementDao.class).orElseThrow()
+                                 .getIdentityProvider(tx, oidcProvider.getValue());
                 if (provider.isEmpty()) 
                 {
                     return Response.notAcceptable(null).build();
                 }
-                else 
+                else
                 {
                     var userOpt = provider.get().login(db, tx, new AuthCodeCredentials(code));
                     if (userOpt.isPresent())

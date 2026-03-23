@@ -50,5 +50,6 @@ export const oidcConfigToClient = (scheme: OidcScheme): OidcClient => {
     redirect_uri: scheme.oidcConfig.redirectUri,
     client_id: scheme.oidcConfig.clientId,
     authority: scheme.oidcConfig.wellKnownUrl.replace(/\/\.well-known.*$/, ""),
+    disablePKCE: !scheme.oidcConfig.usePkce,
   });
 };

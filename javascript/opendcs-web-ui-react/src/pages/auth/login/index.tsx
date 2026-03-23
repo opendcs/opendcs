@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../../../contexts/app/AuthContext";
 import { Button, Card, Container, Form, Modal } from "react-bootstrap";
 import { PersonCircle } from "react-bootstrap-icons";
-import { RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
+import { type Credentials, RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
 import { useApi } from "../../../contexts/app/ApiContext";
 import { useOrganizations } from "../../../contexts/app/OrganizationsContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -72,6 +72,8 @@ export default function Login() {
 
                       req.then((r) => {
                         localStorage.setItem(r.state.id, client.settings.client_id);
+                        window.cookieStore.set("state", r.state.id);
+                        window.cookieStore.set("provider", key);
                         window.location.href = r.url;
                       });
                     }}

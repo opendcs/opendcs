@@ -15,7 +15,7 @@
  */
 
 export interface Scheme {
-  [k: string]: Record<string, string | object>;
+  [k: string]: Record<string, string | object | boolean>;
 }
 
 export interface FormScheme extends Scheme {
@@ -27,5 +27,6 @@ export interface OidcScheme extends Scheme {
     clientId: string;
     redirectUri: string;
     wellKnownUrl: string;
+    usePkce: boolean;
   };
 }
