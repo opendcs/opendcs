@@ -69,6 +69,16 @@ const authDecorator = (Story: any) => (
   </ApiContext>
 );
 
+export const DefaultPageWithOrgs: Story = {
+  args: {
+    organization: undefined,
+  },
+  decorators: [authDecorator],
+  play: async ({ args, mount }) => {
+    const canvas = await mount();
+  },
+};
+
 export const SuccessfulLogin: Story = {
   args: {
     organization: { name: "SPK" },
@@ -157,7 +167,7 @@ export const FailedLogin_BadOrg: Story = {
       JSON.stringify(args.organization),
     );
 
-    await userEvent.click(canvas.getByRole("button", { name: /login/i }));
+    await userEvent.click(canvas.getByRole("button", { name: /^login$/i }));
 
     // The login page should still be visible (no redirect)
     await waitFor(() => {
