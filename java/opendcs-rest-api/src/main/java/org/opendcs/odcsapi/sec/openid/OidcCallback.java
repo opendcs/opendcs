@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.CookieParam;
@@ -52,6 +53,7 @@ public final class OidcCallback extends OpenDcsResource
 
     @GET()
     @Path("oidc-callback")
+    @Tag(name = "REST - Authentication and Authorization", description = "Endpoints for authentication and authorization.")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({ODCS_API_GUEST})
     @Operation(
@@ -144,6 +146,7 @@ public final class OidcCallback extends OpenDcsResource
 
     @POST
 	@Path("login_jwt")
+    @Tag(name = "REST - Authentication and Authorization", description = "Endpoints for authentication and authorization.")
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
 	@Operation(
