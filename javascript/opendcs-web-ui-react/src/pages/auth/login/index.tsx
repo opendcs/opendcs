@@ -2,18 +2,14 @@ import { useState } from "react";
 import { useAuth } from "../../../contexts/app/AuthContext";
 import { Button, Card, Container, Form, Modal } from "react-bootstrap";
 import { PersonCircle } from "react-bootstrap-icons";
-import {
-  ApiOrganization,
-  Credentials,
-  RESTAuthenticationAndAuthorizationApi,
-  User,
-} from "opendcs-api";
+import { Credentials, RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
 import { useApi } from "../../../contexts/app/ApiContext";
 import { useOrganizations } from "../../../contexts/app/OrganizationsContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import FormLogin from "./FormLogin";
 import type { FormScheme } from "../../../util/login-providers/Scheme.types";
+import { OidcClient } from "oidc-client-ts";
 
 export default function Login() {
   const { t } = useTranslation();
@@ -62,7 +58,26 @@ export default function Login() {
                 );
               } else {
                 return (
-                  <Button key={key} variant="primary" className="py-2 w-100 mt-2">
+                  <Button
+                    key={key}
+                    variant="primary"
+                    className="py-2 w-100 mt-2"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      const client = new OidcClient({
+                        redirect_uri: scheme.oidcConfig.redirectUri as string,
+                        client_id: scheme.oidcConfig.clientId as string,
+                        authority: "http://localhost:7100/auth/realms/opendcs",
+                      });
+                      const req = client.createSigninRequest({ state: "test" });
+                      req.then((r) => {
+                        console.log("request successful!");
+                        console.log(r);
+                        window.location.href = r.url;
+                      });
+                      //client.processSigninResponse(window.location.href).then(r => console.log(r));
+                    }}
+                  >
                     Login with {key}
                   </Button>
                 );
