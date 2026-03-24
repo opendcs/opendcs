@@ -6,7 +6,12 @@ import DT from "datatables.net-bs5";
 import { useTranslation } from "react-i18next";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { dtLangs } from "../../../lang";
-import type { ApiComputation, ApiComputationRef } from "opendcs-api";
+import type {
+  ApiAlgorithm,
+  ApiCompParm,
+  ApiComputation,
+  ApiComputationRef,
+} from "opendcs-api";
 import Computation, { ComputationSkeleton, type UiComputation } from "./Computation";
 import type { RemoveAction, SaveAction, UiState } from "../../../util/Actions";
 import { useContextWrapper } from "../../../util/ContextWrapper";
@@ -22,12 +27,14 @@ export type TableComputationRef = Partial<ApiComputationRef>;
 export interface ComputationsTableProperties {
   computations: TableComputationRef[];
   getComputation?: (computationId: number) => Promise<ApiComputation>;
+  getAlgorithm?: (algorithmId: number) => Promise<ApiAlgorithm>;
   actions?: SaveAction<ApiComputation> & RemoveAction<number>;
 }
 
 export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
   computations,
   getComputation,
+  getAlgorithm,
   actions = {},
 }) => {
   const { toDom } = useContextWrapper();
@@ -164,10 +171,34 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
           ? getComputation!(data.computationId)
           : Promise.resolve({ computationId: data.computationId! } as UiComputation);
 
+      const requiredParmsPromise: Promise<ApiCompParm[]> = computationPromise.then(
+        async (comp) => {
+          if (!getAlgorithm || !comp.algorithmId || comp.algorithmId <= 0) {
+            return [];
+          }
+          try {
+            const algorithm = await getAlgorithm(comp.algorithmId);
+            return (algorithm.parms ?? [])
+              .filter((parm) => (parm.roleName ?? "").trim().length > 0)
+              .map((parm) => ({
+                algoRoleName: parm.roleName,
+                algoParmType: parm.parmType,
+              }));
+          } catch (error) {
+            console.warn(
+              `Failed to load required algorithm parms for algorithmId=${comp.algorithmId}`,
+              error,
+            );
+            return [];
+          }
+        },
+      );
+
       const node = toDom(
         <Suspense fallback={<ComputationSkeleton edit={edit} />}>
           <Computation
             computation={computationPromise}
+            requiredParms={requiredParmsPromise}
             actions={{
               save: (comp: ApiComputation) => {
                 actions.save?.(comp);
@@ -210,7 +241,7 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
       );
       return node;
     },
-    [getComputation, toDom, actions],
+    [getComputation, getAlgorithm, toDom, actions],
   );
 
   useEffect(() => {

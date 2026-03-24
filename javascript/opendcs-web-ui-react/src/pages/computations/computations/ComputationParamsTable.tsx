@@ -6,13 +6,22 @@ import DataTable, {
 import DT from "datatables.net-bs5";
 import dtButtons from "datatables.net-buttons-bs5";
 import { useTranslation } from "react-i18next";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { dtLangs } from "../../../lang";
 import { Button, Form } from "react-bootstrap";
-import { Pencil, Save, Trash, X } from "react-bootstrap-icons";
+import { ChevronDown, ChevronUp, Pencil, Save, Trash, X } from "react-bootstrap-icons";
 import { renderToString } from "react-dom/server";
-import type { ApiCompParm } from "opendcs-api";
+import {
+  TimeSeriesMethodsIntervalMethodsApi,
+  type ApiCompParm,
+  type ApiInterval,
+} from "opendcs-api";
 import { PARM_TYPES, parmTypeLabel, type ParmTypeOption } from "../common/parmTypes";
+import { useApi } from "../../../contexts/app/ApiContext";
+import UnitSelect from "../../../components/controls/UnitSelector";
+import UnitsContext, {
+  defaultValue as defaultUnitsContext,
+} from "../../../contexts/data/UnitsContext";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -23,13 +32,57 @@ export type CompParm = ApiCompParm;
 export { PARM_TYPES, parmTypeLabel };
 export type { ParmTypeOption };
 
+const DELTA_T_UNITS = [
+  "Seconds",
+  "Minutes",
+  "Hours",
+  "Days",
+  "Weeks",
+  "Months",
+  "Years",
+];
+const IF_MISSING_ACTIONS = ["FAIL", "IGNORE", "PREV", "NEXT", "INTERP", "CLOSEST"];
+const DEFAULT_INTERVALS = [
+  "0",
+  "1Minute",
+  "5Minutes",
+  "10Minutes",
+  "15Minutes",
+  "30Minutes",
+  "1Hour",
+  "2Hours",
+  "3Hours",
+  "6Hours",
+  "12Hours",
+  "1Day",
+  "1Week",
+  "1Month",
+  "1Year",
+];
+
 type ExistingRow = {
   kind: "existing";
   parm: CompParm;
   editing: boolean;
 };
-type NewRow = { kind: "new"; idx: number; algoParmType: string };
+type NewRow = { kind: "new"; idx: number; parm: CompParm };
 type RowParm = ExistingRow | NewRow;
+
+type RowValues = {
+  algoRoleName: string;
+  algoParmType: string;
+  siteName?: string;
+  dataType?: string;
+  interval?: string;
+  paramType?: string;
+  duration?: string;
+  version?: string;
+  deltaT?: string;
+  deltaTUnits?: string;
+  unitsAbbr?: string;
+  ifMissing?: string;
+  roleInput: HTMLInputElement | null;
+};
 
 export interface ComputationParamsTableProps {
   parms: CompParm[];
@@ -47,10 +100,29 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
   onUpdate,
 }) => {
   const [t, i18n] = useTranslation(["computations", "translation"]);
+  const api = useApi();
+  const units = useContext(UnitsContext) ?? defaultUnitsContext;
   const table = useRef<DataTableRef>(null);
+  const intervalApi = useMemo(
+    () => new TimeSeriesMethodsIntervalMethodsApi(api.conf),
+    [api.conf],
+  );
+  const [intervalNames, setIntervalNames] = useState<string[]>([]);
   const [newParms, setNewParms] = useState<NewRow[]>([]);
   const [editingNames, setEditingNames] = useState<Set<string>>(new Set());
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const nextIdx = useRef(0);
+
+  const isEditing = useCallback(
+    (data: RowParm) =>
+      data.kind === "new" || (data.kind === "existing" && data.editing),
+    [],
+  );
+
+  const rowKey = useCallback((data: RowParm): string => {
+    if (data.kind === "new") return `new:${data.idx}`;
+    return `existing:${(data.parm.algoRoleName ?? "").trim().toLowerCase()}`;
+  }, []);
 
   const allRows = useMemo<RowParm[]>(
     () => [
@@ -65,6 +137,45 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
     ],
     [parms, newParms, editingNames],
   );
+
+  useEffect(() => {
+    if (!api.org) {
+      setIntervalNames([]);
+      return;
+    }
+    let cancelled = false;
+    intervalApi
+      .getIntervals(api.org)
+      .then((intervals: ApiInterval[]) => {
+        if (cancelled) return;
+        const names = intervals
+          .map((interval) => interval.name ?? "")
+          .filter((name) => name.length > 0);
+        setIntervalNames(names);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setIntervalNames([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [api.org, intervalApi]);
+
+  const intervalOptions = useMemo(() => {
+    const options = new Set<string>(DEFAULT_INTERVALS);
+    intervalNames.forEach((name) => options.add(name));
+    parms
+      .map((parm) => parm.interval ?? "")
+      .filter((interval) => interval.length > 0)
+      .forEach((interval) => options.add(interval));
+    return Array.from(options).sort((a, b) => a.localeCompare(b));
+  }, [intervalNames, parms]);
+
+  useEffect(() => {
+    const valid = new Set(allRows.map((row) => rowKey(row)));
+    setExpandedRows((prev) => new Set([...prev].filter((key) => valid.has(key))));
+  }, [allRows, rowKey]);
 
   const findRowNode = useCallback(
     (predicate: (data: RowParm) => boolean): HTMLTableRowElement | null => {
@@ -81,24 +192,107 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
     [],
   );
 
-  const readRowValues = (node: HTMLTableRowElement) => {
-    const roleInput = node.querySelector<HTMLInputElement>(
-      'input[name="algoRoleName"]',
-    );
-    const typeSelect = node.querySelector<HTMLSelectElement>(
-      'select[name="algoParmType"]',
-    );
+  const findChildNode = (rowNode: HTMLTableRowElement): HTMLElement | null => {
+    const sibling = rowNode.nextElementSibling as HTMLElement | null;
+    if (!sibling || !sibling.classList.contains("child")) return null;
+    return sibling;
+  };
+
+  const readRowValues = (rowNode: HTMLTableRowElement): RowValues => {
+    const childNode = findChildNode(rowNode);
+    const query = <T extends Element>(selector: string): T | null =>
+      (rowNode.querySelector(selector) as T | null) ??
+      (childNode?.querySelector(selector) as T | null) ??
+      null;
+
+    const readOptionalText = (selector: string): string | undefined => {
+      const input = query<HTMLInputElement>(selector);
+      if (!input) return undefined;
+      return input.value.trim();
+    };
+
+    const readOptionalSelect = (selector: string): string | undefined => {
+      const select = query<HTMLSelectElement>(selector);
+      if (!select) return undefined;
+      return select.value;
+    };
+
+    const roleInput = query<HTMLInputElement>('input[name="algoRoleName"]');
+
     return {
       algoRoleName: roleInput?.value.trim() ?? "",
-      algoParmType: typeSelect?.value ?? "i",
+      algoParmType:
+        query<HTMLSelectElement>('select[name="algoParmType"]')?.value ?? "i",
+      siteName: readOptionalText('input[name="siteName"]'),
+      dataType: readOptionalText('input[name="dataType"]'),
+      interval:
+        readOptionalSelect('select[name="interval"]') ??
+        readOptionalText('input[name="interval"]'),
+      paramType: readOptionalText('input[name="paramType"]'),
+      duration: readOptionalText('input[name="duration"]'),
+      version: readOptionalText('input[name="version"]'),
+      deltaT: readOptionalText('input[name="deltaT"]'),
+      deltaTUnits: readOptionalSelect('select[name="deltaTUnits"]'),
+      unitsAbbr:
+        readOptionalSelect('select[name="unitsAbbr"]') ??
+        readOptionalText('input[name="unitsAbbr"]'),
+      ifMissing: readOptionalSelect('select[name="ifMissing"]'),
       roleInput,
     };
   };
 
-  const parmTypeSelectHtml = useCallback(
-    (defaultValue: string) =>
+  const mergeString = (next: string | undefined, current: string | undefined) => {
+    if (next === undefined) return current;
+    return next.length > 0 ? next : undefined;
+  };
+
+  const buildParm = (values: RowValues, base: CompParm = {}): CompParm => {
+    const parsedDeltaT =
+      values.deltaT === undefined ? undefined : Number.parseInt(values.deltaT, 10);
+
+    return {
+      ...base,
+      algoRoleName: values.algoRoleName,
+      algoParmType: values.algoParmType,
+      siteName: mergeString(values.siteName, base.siteName),
+      dataType: mergeString(values.dataType, base.dataType),
+      interval: mergeString(values.interval, base.interval),
+      paramType: mergeString(values.paramType, base.paramType),
+      duration: mergeString(values.duration, base.duration),
+      version: mergeString(values.version, base.version),
+      deltaT:
+        parsedDeltaT === undefined || Number.isNaN(parsedDeltaT)
+          ? (base.deltaT ?? 0)
+          : parsedDeltaT,
+      deltaTUnits: mergeString(values.deltaTUnits, base.deltaTUnits),
+      unitsAbbr: mergeString(values.unitsAbbr, base.unitsAbbr),
+      ifMissing: mergeString(values.ifMissing, base.ifMissing),
+    };
+  };
+
+  const renderTextInput = useCallback(
+    (name: string, defaultValue: string, ariaLabel: string) =>
       renderToString(
-        <Form.Select name="algoParmType" defaultValue={defaultValue} size="lg">
+        <Form.Control
+          type="text"
+          name={name}
+          defaultValue={defaultValue}
+          size="sm"
+          aria-label={ariaLabel}
+        />,
+      ),
+    [],
+  );
+
+  const parmTypeSelectHtml = useCallback(
+    (defaultValue: string, ariaLabel: string) =>
+      renderToString(
+        <Form.Select
+          name="algoParmType"
+          defaultValue={defaultValue}
+          size="sm"
+          aria-label={ariaLabel}
+        >
           {PARM_TYPES.map((pt) => (
             <option key={pt.value} value={pt.value}>
               {pt.label}
@@ -109,51 +303,266 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
     [],
   );
 
+  const intervalSelectHtml = useCallback(
+    (defaultValue: string, ariaLabel: string) =>
+      renderToString(
+        <Form.Select
+          name="interval"
+          defaultValue={defaultValue}
+          size="sm"
+          aria-label={ariaLabel}
+        >
+          <option value="" />
+          {intervalOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </Form.Select>,
+      ),
+    [intervalOptions],
+  );
+
   const renderRoleName = useCallback(
     (data: RowParm, type: string) => {
-      if (type !== "display") {
-        return data.kind === "existing" ? (data.parm.algoRoleName ?? "") : "";
-      }
-      const needsInput =
-        data.kind === "new" || (data.kind === "existing" && data.editing);
-      if (needsInput) {
-        return renderToString(
-          <Form.Control
-            type="text"
-            name="algoRoleName"
-            defaultValue={
-              data.kind === "existing" ? (data.parm.algoRoleName ?? "") : ""
-            }
-            size="lg"
-            aria-label={t("computations:parms.roleName_input")}
-          />,
+      const parm = data.parm;
+      if (type !== "display") return parm.algoRoleName ?? "";
+      if (isEditing(data)) {
+        return renderTextInput(
+          "algoRoleName",
+          parm.algoRoleName ?? "",
+          t("computations:parms.roleName_input"),
         );
       }
-      return data.parm.algoRoleName ?? "";
+      return parm.algoRoleName ?? "";
     },
-    [t],
+    [isEditing, renderTextInput, t],
   );
 
   const renderParmType = useCallback(
     (data: RowParm, type: string) => {
-      if (type !== "display") {
-        return parmTypeLabel(
-          data.kind === "existing" ? (data.parm.algoParmType ?? "") : data.algoParmType,
+      const parm = data.parm;
+      if (type !== "display") return parmTypeLabel(parm.algoParmType ?? "");
+      if (isEditing(data)) {
+        return parmTypeSelectHtml(
+          parm.algoParmType ?? "i",
+          t("computations:parms.parmType_input"),
         );
       }
-      const needsSelect =
-        data.kind === "new" || (data.kind === "existing" && data.editing);
-      if (needsSelect) {
-        const value =
-          data.kind === "existing"
-            ? (data.parm.algoParmType ?? "i")
-            : data.algoParmType;
-        return parmTypeSelectHtml(value);
-      }
-      return parmTypeLabel(data.parm.algoParmType ?? "");
+      return parmTypeLabel(parm.algoParmType ?? "");
     },
-    [parmTypeSelectHtml],
+    [isEditing, parmTypeSelectHtml, t],
   );
+
+  const renderSiteName = useCallback(
+    (data: RowParm, type: string) => {
+      const parm = data.parm;
+      if (type !== "display") return parm.siteName ?? "";
+      if (isEditing(data)) {
+        return renderTextInput(
+          "siteName",
+          parm.siteName ?? "",
+          t("computations:parms.site_input"),
+        );
+      }
+      return parm.siteName ?? "";
+    },
+    [isEditing, renderTextInput, t],
+  );
+
+  const renderDataType = useCallback(
+    (data: RowParm, type: string) => {
+      const parm = data.parm;
+      if (type !== "display") return parm.dataType ?? "";
+      if (isEditing(data)) {
+        return renderTextInput(
+          "dataType",
+          parm.dataType ?? "",
+          t("computations:parms.dataType_input"),
+        );
+      }
+      return parm.dataType ?? "";
+    },
+    [isEditing, renderTextInput, t],
+  );
+
+  const renderInterval = useCallback(
+    (data: RowParm, type: string) => {
+      const parm = data.parm;
+      if (type !== "display") return parm.interval ?? "";
+      if (isEditing(data)) {
+        return intervalSelectHtml(
+          parm.interval ?? "",
+          t("computations:parms.interval_input"),
+        );
+      }
+      return parm.interval ?? "";
+    },
+    [intervalSelectHtml, isEditing, t],
+  );
+
+  const renderDetailContent = useCallback(
+    (data: RowParm): string => {
+      const parm = data.parm;
+      const editing = isEditing(data);
+
+      return renderToString(
+        <div className="p-2 border rounded bg-body-tertiary">
+          <div className="row g-2">
+            <div className="col-md-3">
+              <Form.Label className="small mb-1">
+                {t("computations:parms.paramType")}
+              </Form.Label>
+              {editing ? (
+                <Form.Control
+                  type="text"
+                  size="sm"
+                  name="paramType"
+                  defaultValue={parm.paramType ?? ""}
+                  aria-label={t("computations:parms.paramType_input")}
+                />
+              ) : (
+                <div>{parm.paramType ?? "-"}</div>
+              )}
+            </div>
+            <div className="col-md-2">
+              <Form.Label className="small mb-1">
+                {t("computations:parms.duration")}
+              </Form.Label>
+              {editing ? (
+                <Form.Control
+                  type="text"
+                  size="sm"
+                  name="duration"
+                  defaultValue={parm.duration ?? ""}
+                  aria-label={t("computations:parms.duration_input")}
+                />
+              ) : (
+                <div>{parm.duration ?? "-"}</div>
+              )}
+            </div>
+            <div className="col-md-2">
+              <Form.Label className="small mb-1">
+                {t("computations:parms.version")}
+              </Form.Label>
+              {editing ? (
+                <Form.Control
+                  type="text"
+                  size="sm"
+                  name="version"
+                  defaultValue={parm.version ?? ""}
+                  aria-label={t("computations:parms.version_input")}
+                />
+              ) : (
+                <div>{parm.version ?? "-"}</div>
+              )}
+            </div>
+            <div className="col-md-1">
+              <Form.Label className="small mb-1">
+                {t("computations:parms.deltaT")}
+              </Form.Label>
+              {editing ? (
+                <Form.Control
+                  type="number"
+                  size="sm"
+                  name="deltaT"
+                  defaultValue={parm.deltaT ?? 0}
+                  aria-label={t("computations:parms.deltaT_input")}
+                />
+              ) : (
+                <div>{parm.deltaT ?? 0}</div>
+              )}
+            </div>
+            <div className="col-md-2">
+              <Form.Label className="small mb-1">
+                {t("computations:parms.deltaTUnits")}
+              </Form.Label>
+              {editing ? (
+                <Form.Select
+                  size="sm"
+                  name="deltaTUnits"
+                  defaultValue={parm.deltaTUnits ?? "Seconds"}
+                  aria-label={t("computations:parms.deltaTUnits_input")}
+                >
+                  {DELTA_T_UNITS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </Form.Select>
+              ) : (
+                <div>{parm.deltaTUnits ?? "-"}</div>
+              )}
+            </div>
+            <div className="col-md-1">
+              <Form.Label className="small mb-1">
+                {t("computations:parms.units")}
+              </Form.Label>
+              {editing ? (
+                units.ready ? (
+                  <UnitsContext value={units}>
+                    <UnitSelect
+                      size="sm"
+                      name="unitsAbbr"
+                      current={parm.unitsAbbr ?? ""}
+                      aria-label={t("computations:parms.units_input")}
+                    />
+                  </UnitsContext>
+                ) : (
+                  <Form.Control
+                    type="text"
+                    size="sm"
+                    name="unitsAbbr"
+                    defaultValue={parm.unitsAbbr ?? ""}
+                    aria-label={t("computations:parms.units_input")}
+                  />
+                )
+              ) : (
+                <div>{parm.unitsAbbr ?? "-"}</div>
+              )}
+            </div>
+            <div className="col-md-1">
+              <Form.Label className="small mb-1">
+                {t("computations:parms.ifMissing")}
+              </Form.Label>
+              {editing ? (
+                <Form.Select
+                  size="sm"
+                  name="ifMissing"
+                  defaultValue={parm.ifMissing ?? "FAIL"}
+                  aria-label={t("computations:parms.ifMissing_input")}
+                >
+                  {IF_MISSING_ACTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </Form.Select>
+              ) : (
+                <div>{parm.ifMissing ?? "-"}</div>
+              )}
+            </div>
+          </div>
+        </div>,
+      );
+    },
+    [isEditing, t, units],
+  );
+
+  const syncDetailRows = useCallback(() => {
+    const dt = table.current?.dt();
+    if (!dt) return;
+
+    dt.rows().every(function () {
+      const data = this.data() as RowParm;
+      const key = rowKey(data);
+      if (expandedRows.has(key)) {
+        this.child(renderDetailContent(data), "comp-parm-details").show();
+      } else {
+        this.child(false);
+      }
+    });
+  }, [expandedRows, renderDetailContent, rowKey]);
 
   const handleSaveExisting = useCallback(
     (oldRoleName: string) => {
@@ -161,40 +570,69 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
         (d) => d.kind === "existing" && (d.parm.algoRoleName ?? "") === oldRoleName,
       );
       if (!node) return;
-      const { algoRoleName, algoParmType, roleInput } = readRowValues(node);
+      const values = readRowValues(node);
+      const { algoRoleName, roleInput } = values;
       if (!algoRoleName) {
         roleInput?.classList.add("border-warning");
         return;
       }
 
       const current = parms.find((p) => (p.algoRoleName ?? "") === oldRoleName) ?? {};
-      onUpdate?.(oldRoleName, {
-        ...current,
-        algoRoleName,
-        algoParmType,
-      });
+      onUpdate?.(oldRoleName, buildParm(values, current));
       setEditingNames((prev) => {
         const s = new Set(prev);
         s.delete(oldRoleName);
         return s;
       });
     },
-    [findRowNode, onUpdate, parms],
+    [buildParm, findRowNode, onUpdate, parms],
   );
 
   const handleSaveNew = useCallback(
     (idx: number) => {
       const node = findRowNode((d) => d.kind === "new" && d.idx === idx);
       if (!node) return;
-      const { algoRoleName, algoParmType, roleInput } = readRowValues(node);
+      const values = readRowValues(node);
+      const { algoRoleName, roleInput } = values;
       if (!algoRoleName) {
         roleInput?.classList.add("border-warning");
         return;
       }
-      onAdd?.({ algoRoleName, algoParmType });
+      onAdd?.(buildParm(values));
       setNewParms((prev) => prev.filter((p) => p.idx !== idx));
     },
-    [findRowNode, onAdd],
+    [buildParm, findRowNode, onAdd],
+  );
+
+  const renderDetailsButton = useCallback(
+    (data: RowParm) => {
+      const key = rowKey(data);
+      const expanded = expandedRows.has(key);
+      const roleName = data.parm.algoRoleName ?? "";
+      const label = expanded
+        ? t("computations:parms.hide_details_for", { name: roleName })
+        : t("computations:parms.show_details_for", { name: roleName });
+
+      return (
+        <Button
+          variant="outline-secondary"
+          size="sm"
+          aria-label={label}
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpandedRows((prev) => {
+              const next = new Set(prev);
+              if (next.has(key)) next.delete(key);
+              else next.add(key);
+              return next;
+            });
+          }}
+        >
+          {expanded ? <ChevronUp /> : <ChevronDown />}
+        </Button>
+      );
+    },
+    [expandedRows, rowKey, t],
   );
 
   const renderActions = useCallback(
@@ -206,7 +644,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
           <>
             <Button
               variant="primary"
-              size="lg"
+              size="sm"
               aria-label={t("computations:parms.save_parm")}
               onClick={() => handleSaveNew(data.idx)}
             >
@@ -214,7 +652,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
             </Button>
             <Button
               variant="secondary"
-              size="lg"
+              size="sm"
               aria-label={t("computations:parms.cancel_parm")}
               onClick={() =>
                 setNewParms((prev) => prev.filter((p) => p.idx !== data.idx))
@@ -232,7 +670,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
           <>
             <Button
               variant="primary"
-              size="lg"
+              size="sm"
               aria-label={t("computations:parms.save_parm")}
               onClick={() => handleSaveExisting(roleName)}
             >
@@ -240,7 +678,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
             </Button>
             <Button
               variant="secondary"
-              size="lg"
+              size="sm"
               aria-label={t("computations:parms.cancel_parm")}
               onClick={() =>
                 setEditingNames((prev) => {
@@ -260,7 +698,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
         <>
           <Button
             variant="warning"
-            size="lg"
+            size="sm"
             aria-label={t("computations:parms.edit_for", { name: roleName })}
             onClick={() => setEditingNames((prev) => new Set([...prev, roleName]))}
           >
@@ -268,7 +706,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
           </Button>
           <Button
             variant="danger"
-            size="lg"
+            size="sm"
             aria-label={t("computations:parms.delete_for", { name: roleName })}
             onClick={() => onRemove?.(roleName)}
           >
@@ -283,24 +721,34 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: any[] = useMemo(() => {
     const cols = [
+      { data: null, name: "details", className: "dt-center" },
       { data: null, render: renderRoleName },
       { data: null, render: renderParmType },
+      { data: null, render: renderSiteName },
+      { data: null, render: renderDataType },
+      { data: null, render: renderInterval },
     ];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (edit) cols.push({ data: null, name: "actions" } as any);
     return cols;
-  }, [edit, renderRoleName, renderParmType]);
+  }, [
+    edit,
+    renderRoleName,
+    renderParmType,
+    renderSiteName,
+    renderDataType,
+    renderInterval,
+  ]);
 
   const slots: DataTableSlots = useMemo(
-    () => ({ actions: renderActions }),
-    [renderActions],
+    () => ({ details: renderDetailsButton, actions: renderActions }),
+    [renderDetailsButton, renderActions],
   );
 
   const options: DataTableProps["options"] = useMemo(
     () => ({
-      paging: false,
-      scrollY: "calc(10 * 2rem)",
-      scrollCollapse: true,
+      paging: true,
+      pageLength: 10,
       responsive: true,
       language: dtLangs.get(i18n.language),
       layout: {
@@ -313,8 +761,18 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
                     const idx = nextIdx.current++;
                     setNewParms((prev) => [
                       ...prev,
-                      { kind: "new", idx, algoParmType: "i" },
+                      {
+                        kind: "new",
+                        idx,
+                        parm: {
+                          algoParmType: "i",
+                          deltaT: 0,
+                          deltaTUnits: "Seconds",
+                          ifMissing: "FAIL",
+                        },
+                      },
                     ]);
+                    setExpandedRows((prev) => new Set([...prev, `new:${idx}`]));
                   },
                   attr: { "aria-label": t("computations:parms.add_parm") },
                 },
@@ -327,8 +785,15 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
   );
 
   useEffect(() => {
-    table.current?.dt()?.rows().invalidate().draw(false);
-  }, [allRows]);
+    const dt = table.current?.dt();
+    if (!dt) return;
+    dt.rows().invalidate().draw(false);
+    syncDetailRows();
+  }, [allRows, syncDetailRows]);
+
+  useEffect(() => {
+    syncDetailRows();
+  }, [expandedRows, syncDetailRows]);
 
   return (
     <DataTable
@@ -336,7 +801,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
       columns={columns}
       data={allRows}
       options={options}
-      slots={edit ? slots : undefined}
+      slots={slots}
       ref={table}
       className="table table-hover table-striped w-100 border"
     >
@@ -345,8 +810,12 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
       </caption>
       <thead>
         <tr>
+          <th>{t("computations:parms.details")}</th>
           <th>{t("computations:parms.roleName")}</th>
           <th>{t("computations:parms.parmType")}</th>
+          <th>{t("computations:parms.site")}</th>
+          <th>{t("computations:parms.dataType")}</th>
+          <th>{t("computations:parms.interval")}</th>
           {edit && <th>{t("translation:actions")}</th>}
         </tr>
       </thead>

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Computations } from "./index";
 import { http, HttpResponse } from "msw";
-import type { ApiComputation, ApiComputationRef } from "opendcs-api";
+import type { ApiAlgorithm, ApiComputation, ApiComputationRef } from "opendcs-api";
 import { act } from "react";
 import { expect, waitFor } from "storybook/test";
 
@@ -70,6 +70,31 @@ const mockComputationRefs: ApiComputationRef[] = mockComputations.map(
   }),
 );
 
+const mockAlgorithms: ApiAlgorithm[] = [
+  {
+    algorithmId: 10,
+    name: "AverageAlgorithm",
+    execClass: "decodes.comp.AverageAlgorithm",
+    description: "Computes average values.",
+    props: {},
+    parms: [
+      { roleName: "input", parmType: "i" },
+      { roleName: "output", parmType: "o" },
+    ],
+  },
+  {
+    algorithmId: 11,
+    name: "MaxToDate",
+    execClass: "decodes.comp.MaxToDate",
+    description: "Computes max value to date.",
+    props: {},
+    parms: [
+      { roleName: "input", parmType: "i" },
+      { roleName: "output", parmType: "o" },
+    ],
+  },
+];
+
 const computationHandlers = {
   computationRefs: http.get("/odcsapi/computationrefs", () =>
     HttpResponse.json<ApiComputationRef[]>(mockComputationRefs),
@@ -87,6 +112,13 @@ const computationHandlers = {
   }),
   deleteComputation: http.delete("/odcsapi/computation", () => {
     return new HttpResponse(null, { status: 204 });
+  }),
+  algorithm: http.get("/odcsapi/algorithm", ({ request }) => {
+    const url = new URL(request.url);
+    const id = parseInt(url.searchParams.get("algorithmid") ?? "-1");
+    const algo = mockAlgorithms.find((a) => a.algorithmId === id);
+    if (!algo) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(algo);
   }),
 };
 

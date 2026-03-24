@@ -1,7 +1,7 @@
 import type { Meta, ReactRenderer, StoryObj } from "@storybook/react-vite";
 import { Computation, type ComputationProperties } from "./Computation";
 import { useCallback, useState } from "react";
-import type { ApiComputation } from "opendcs-api";
+import type { ApiCompParm, ApiComputation } from "opendcs-api";
 import type { ArgsStoryFn } from "storybook/internal/types";
 import { act } from "@testing-library/react";
 import { expect } from "storybook/test";
@@ -29,25 +29,42 @@ const sampleComputation: ApiComputation = {
   parmList: [],
 };
 
-const EditableComputation: React.FC<{ initialComp: ApiComputation }> = ({
-  initialComp,
-}) => {
+const requiredParms: ApiCompParm[] = [
+  { algoRoleName: "input", algoParmType: "i" },
+  { algoRoleName: "output", algoParmType: "o" },
+];
+
+const EditableComputation: React.FC<{
+  initialComp: ApiComputation;
+  requiredParms?: ApiCompParm[];
+}> = ({ initialComp, requiredParms }) => {
   const [comp, setComp] = useState<ApiComputation>(initialComp);
 
   const save = useCallback((updated: ApiComputation) => {
     setComp(updated);
   }, []);
 
-  return <Computation computation={comp} edit={true} actions={{ save }} />;
+  return (
+    <Computation
+      computation={comp}
+      requiredParms={requiredParms}
+      edit={true}
+      actions={{ save }}
+    />
+  );
 };
 
 const EditableRender: ArgsStoryFn<ReactRenderer, ComputationProperties> = (args) => (
-  <EditableComputation initialComp={args.computation as ApiComputation} />
+  <EditableComputation
+    initialComp={args.computation as ApiComputation}
+    requiredParms={args.requiredParms as ApiCompParm[]}
+  />
 );
 
 export const ViewMode: Story = {
   args: {
     computation: sampleComputation,
+    requiredParms,
     edit: false,
   },
   play: async ({ mount, parameters }) => {
@@ -59,12 +76,15 @@ export const ViewMode: Story = {
     });
     expect(nameInput).toHaveValue("DailyFlowAve");
     expect((nameInput as HTMLInputElement).readOnly).toBeTruthy();
+
+    expect(await canvas.findByText("input")).toBeInTheDocument();
   },
 };
 
 export const EditMode: Story = {
   args: {
     computation: sampleComputation,
+    requiredParms,
     edit: true,
   },
   render: EditableRender,

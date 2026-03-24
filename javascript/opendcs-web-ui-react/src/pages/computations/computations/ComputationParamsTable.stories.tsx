@@ -18,9 +18,35 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const sampleParms: CompParm[] = [
-  { algoRoleName: "input1", algoParmType: "i" },
-  { algoRoleName: "output1", algoParmType: "o" },
-  { algoRoleName: "delta", algoParmType: "id" },
+  {
+    algoRoleName: "input1",
+    algoParmType: "i",
+    siteName: "TESTSITE",
+    dataType: "Stage",
+    interval: "1Hour",
+    paramType: "Inst",
+    duration: "0",
+    version: "raw",
+    deltaT: 0,
+    deltaTUnits: "Seconds",
+    unitsAbbr: "ft",
+    ifMissing: "IGNORE",
+  },
+  {
+    algoRoleName: "output1",
+    algoParmType: "o",
+    siteName: "TESTSITE",
+    dataType: "Stage",
+    interval: "1Hour",
+    paramType: "Inst",
+    duration: "0",
+    version: "raw",
+    deltaT: 0,
+    deltaTUnits: "Seconds",
+    unitsAbbr: "ft",
+    ifMissing: "FAIL",
+  },
+  { algoRoleName: "delta", algoParmType: "id", deltaT: -1, deltaTUnits: "Hours" },
 ];
 
 const EditableParamsTable: React.FC<{ initialParms: CompParm[] }> = ({
@@ -75,6 +101,7 @@ export const ViewWithParms: Story = {
     const canvas = await mount();
     expect(await canvas.findByText("input1")).toBeInTheDocument();
     expect(await canvas.findByText("output1")).toBeInTheDocument();
+    expect((await canvas.findAllByText("TESTSITE")).length).toBeGreaterThan(0);
   },
 };
 

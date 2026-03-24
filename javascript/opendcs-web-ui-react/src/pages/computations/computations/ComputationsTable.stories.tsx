@@ -1,6 +1,6 @@
 import type { Meta, ReactRenderer, StoryObj } from "@storybook/react-vite";
 import { ComputationsTable, type TableComputationRef } from "./ComputationsTable";
-import type { ApiComputation, ApiComputationRef } from "opendcs-api";
+import type { ApiAlgorithm, ApiComputation, ApiComputationRef } from "opendcs-api";
 import { act } from "@testing-library/react";
 import { expect, waitFor } from "storybook/test";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -46,6 +46,31 @@ const sharedComputations: ApiComputation[] = [
   },
 ];
 
+const sharedAlgorithms: ApiAlgorithm[] = [
+  {
+    algorithmId: 10,
+    name: "AverageAlgorithm",
+    execClass: "decodes.comp.AverageAlgorithm",
+    description: "Computes average values.",
+    props: {},
+    parms: [
+      { roleName: "input", parmType: "i" },
+      { roleName: "output", parmType: "o" },
+    ],
+  },
+  {
+    algorithmId: 11,
+    name: "MaxToDate",
+    execClass: "decodes.comp.MaxToDate",
+    description: "Computes max value to date.",
+    props: {},
+    parms: [
+      { roleName: "input", parmType: "i" },
+      { roleName: "output", parmType: "o" },
+    ],
+  },
+];
+
 const toComputationRefs = (comps: ApiComputation[]): ApiComputationRef[] =>
   comps.map(
     ({
@@ -81,9 +106,18 @@ const getComputationFromList =
     return { ...comp };
   };
 
+const getAlgorithmFromList =
+  (list: ApiAlgorithm[]) =>
+  async (id: number): Promise<ApiAlgorithm> => {
+    const algo = list.find((a) => a.algorithmId === id);
+    if (!algo) return Promise.reject(`No algorithm with id ${id}`);
+    return { ...algo };
+  };
+
 type StoryArgs = {
   computations: TableComputationRef[];
   getComputation?: (computationId: number) => Promise<ApiComputation>;
+  getAlgorithm?: (algorithmId: number) => Promise<ApiAlgorithm>;
   actions?: SaveAction<ApiComputation> & RemoveAction<number>;
 };
 
@@ -101,6 +135,10 @@ const ComputationsTableWrapper: React.FC<{ initialComps: ApiComputation[] }> = (
 
   const localGetComputation = useCallback(
     (id: number) => getComputationFromList(localCompsRef.current)(id),
+    [],
+  );
+  const localGetAlgorithm = useCallback(
+    (id: number) => getAlgorithmFromList(sharedAlgorithms)(id),
     [],
   );
 
@@ -124,6 +162,7 @@ const ComputationsTableWrapper: React.FC<{ initialComps: ApiComputation[] }> = (
     <ComputationsTable
       computations={computationRefs}
       getComputation={localGetComputation}
+      getAlgorithm={localGetAlgorithm}
       actions={{ save: saveComputation, remove: removeComputation }}
     />
   );

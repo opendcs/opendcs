@@ -1,6 +1,8 @@
 import {
+  type ApiAlgorithm,
   type ApiComputation,
   type ApiComputationRef,
+  RESTAlgorithmMethodsApi,
   RESTComputationMethodsApi,
 } from "opendcs-api";
 import { ComputationsTable } from "./ComputationsTable";
@@ -15,6 +17,7 @@ export const Computations: React.FC = () => {
     () => new RESTComputationMethodsApi(api.conf),
     [api.conf],
   );
+  const algorithmApi = useMemo(() => new RESTAlgorithmMethodsApi(api.conf), [api.conf]);
 
   useEffect(() => {
     const fetchComputations = async () => {
@@ -30,6 +33,12 @@ export const Computations: React.FC = () => {
   const getComputation = useCallback(
     (computationId: number) => computationApi.getComputation(api.org, computationId),
     [api.org, computationApi],
+  );
+
+  const getAlgorithm = useCallback(
+    (algorithmId: number): Promise<ApiAlgorithm> =>
+      algorithmApi.getalgorithm(api.org, algorithmId),
+    [api.org, algorithmApi],
   );
 
   const saveComputation = useCallback(
@@ -61,6 +70,7 @@ export const Computations: React.FC = () => {
       <ComputationsTable
         computations={computations}
         getComputation={getComputation}
+        getAlgorithm={getAlgorithm}
         actions={{ save: saveComputation, remove: deleteComputation }}
       />
     </div>

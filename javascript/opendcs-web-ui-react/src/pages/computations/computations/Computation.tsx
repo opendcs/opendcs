@@ -94,24 +94,66 @@ export const ComputationSkeleton: React.FC<{ edit?: boolean }> = ({ edit = false
 
 export interface ComputationProperties {
   computation: Promise<UiComputation> | UiComputation;
+  requiredParms?: Promise<ApiCompParm[]> | ApiCompParm[];
   actions?: SaveAction<ApiComputation> & CancelAction<number>;
   edit?: boolean;
 }
 
+const roleKey = (roleName: string | undefined): string =>
+  (roleName ?? "").trim().toLowerCase();
+
+const mergeRequiredParms = (
+  existingParms: ApiCompParm[],
+  requiredParms: ApiCompParm[],
+): ApiCompParm[] => {
+  const existingByRole = new Map<string, ApiCompParm>();
+  existingParms.forEach((parm) => existingByRole.set(roleKey(parm.algoRoleName), parm));
+
+  const requiredMerged = requiredParms
+    .filter((parm) => roleKey(parm.algoRoleName) !== "")
+    .map((required) => {
+      const key = roleKey(required.algoRoleName);
+      const existing = existingByRole.get(key);
+      if (existing) {
+        return {
+          ...existing,
+          algoRoleName: existing.algoRoleName ?? required.algoRoleName,
+          algoParmType: existing.algoParmType ?? required.algoParmType,
+        };
+      }
+      return {
+        algoRoleName: required.algoRoleName,
+        algoParmType: required.algoParmType,
+      } as ApiCompParm;
+    });
+
+  const requiredKeys = new Set(
+    requiredMerged.map((parm) => roleKey(parm.algoRoleName)),
+  );
+  const extras = existingParms.filter(
+    (parm) => !requiredKeys.has(roleKey(parm.algoRoleName)),
+  );
+
+  return [...requiredMerged, ...extras];
+};
+
 export const Computation: React.FC<ComputationProperties> = ({
   computation,
+  requiredParms = [],
   actions = {},
   edit = false,
 }) => {
   const { t } = useTranslation(["computations", "translation"]);
   const providedComputation =
     computation instanceof Promise ? use(computation) : computation;
+  const resolvedRequiredParms =
+    requiredParms instanceof Promise ? use(requiredParms) : requiredParms;
   const [localComputation, dispatch] = useReducer(
     ComputationReducer,
     providedComputation,
   );
-  const [localParms, setLocalParms] = useState<ApiCompParm[]>(
-    providedComputation.parmList ?? [],
+  const [localParms, setLocalParms] = useState<ApiCompParm[]>(() =>
+    mergeRequiredParms(providedComputation.parmList ?? [], resolvedRequiredParms ?? []),
   );
 
   const props = useMemo<Property[]>(() => {
@@ -161,104 +203,106 @@ export const Computation: React.FC<ComputationProperties> = ({
   return (
     <Card>
       <Card.Body>
-        <Row>
-          <Row>
-            <Col>
-              <FormGroup as={Row} className="mb-3">
-                <Form.Label column sm={3} htmlFor="compName">
-                  {t("computations:editor.name")}
-                </Form.Label>
-                <Col sm={9}>
-                  <Form.Control
-                    type="text"
-                    id="compName"
-                    name="name"
-                    readOnly={!edit}
-                    defaultValue={localComputation.name}
-                    onChange={inputChange}
-                  />
-                </Col>
-              </FormGroup>
-              <FormGroup as={Row} className="mb-3">
-                <Form.Label column sm={3} htmlFor="algorithmName">
-                  {t("computations:editor.algorithmName")}
-                </Form.Label>
-                <Col sm={9}>
-                  <Form.Control
-                    type="text"
-                    id="algorithmName"
-                    name="algorithmName"
-                    readOnly={!edit}
-                    defaultValue={localComputation.algorithmName}
-                    onChange={inputChange}
-                  />
-                </Col>
-              </FormGroup>
-              <FormGroup as={Row} className="mb-3">
-                <Form.Label column sm={3} htmlFor="applicationName">
-                  {t("computations:editor.applicationName")}
-                </Form.Label>
-                <Col sm={9}>
-                  <Form.Control
-                    type="text"
-                    id="applicationName"
-                    name="applicationName"
-                    readOnly={!edit}
-                    defaultValue={localComputation.applicationName}
-                    onChange={inputChange}
-                  />
-                </Col>
-              </FormGroup>
-              <FormGroup as={Row} className="mb-3">
-                <Form.Label column sm={3} htmlFor="groupName">
-                  {t("computations:editor.groupName")}
-                </Form.Label>
-                <Col sm={9}>
-                  <Form.Control
-                    type="text"
-                    id="groupName"
-                    name="groupName"
-                    readOnly={!edit}
-                    defaultValue={localComputation.groupName}
-                    onChange={inputChange}
-                  />
-                </Col>
-              </FormGroup>
-              <FormGroup as={Row} className="mb-3">
-                <Form.Label column sm={3} htmlFor="enabled">
-                  {t("computations:editor.enabled")}
-                </Form.Label>
-                <Col sm={9}>
-                  <Form.Check
-                    id="enabled"
-                    name="enabled"
-                    disabled={!edit}
-                    defaultChecked={localComputation.enabled ?? false}
-                    onChange={enabledChange}
-                  />
-                </Col>
-              </FormGroup>
-            </Col>
-            <Col>
-              <FormGroup as={Row} className="mb-3">
-                <Form.Label column sm={3} htmlFor="comment">
-                  {t("computations:editor.description")}
-                </Form.Label>
-                <Col sm={9}>
-                  <Form.Control
-                    as="textarea"
-                    rows={4}
-                    id="comment"
-                    name="comment"
-                    readOnly={!edit}
-                    defaultValue={localComputation.comment}
-                    onChange={inputChange}
-                  />
-                </Col>
-              </FormGroup>
-            </Col>
-          </Row>
-          <Col>
+        <Row className="g-3">
+          <Col xs={12}>
+            <Row>
+              <Col>
+                <FormGroup as={Row} className="mb-3">
+                  <Form.Label column sm={3} htmlFor="compName">
+                    {t("computations:editor.name")}
+                  </Form.Label>
+                  <Col sm={9}>
+                    <Form.Control
+                      type="text"
+                      id="compName"
+                      name="name"
+                      readOnly={!edit}
+                      defaultValue={localComputation.name}
+                      onChange={inputChange}
+                    />
+                  </Col>
+                </FormGroup>
+                <FormGroup as={Row} className="mb-3">
+                  <Form.Label column sm={3} htmlFor="algorithmName">
+                    {t("computations:editor.algorithmName")}
+                  </Form.Label>
+                  <Col sm={9}>
+                    <Form.Control
+                      type="text"
+                      id="algorithmName"
+                      name="algorithmName"
+                      readOnly={!edit}
+                      defaultValue={localComputation.algorithmName}
+                      onChange={inputChange}
+                    />
+                  </Col>
+                </FormGroup>
+                <FormGroup as={Row} className="mb-3">
+                  <Form.Label column sm={3} htmlFor="applicationName">
+                    {t("computations:editor.applicationName")}
+                  </Form.Label>
+                  <Col sm={9}>
+                    <Form.Control
+                      type="text"
+                      id="applicationName"
+                      name="applicationName"
+                      readOnly={!edit}
+                      defaultValue={localComputation.applicationName}
+                      onChange={inputChange}
+                    />
+                  </Col>
+                </FormGroup>
+                <FormGroup as={Row} className="mb-3">
+                  <Form.Label column sm={3} htmlFor="groupName">
+                    {t("computations:editor.groupName")}
+                  </Form.Label>
+                  <Col sm={9}>
+                    <Form.Control
+                      type="text"
+                      id="groupName"
+                      name="groupName"
+                      readOnly={!edit}
+                      defaultValue={localComputation.groupName}
+                      onChange={inputChange}
+                    />
+                  </Col>
+                </FormGroup>
+                <FormGroup as={Row} className="mb-3">
+                  <Form.Label column sm={3} htmlFor="enabled">
+                    {t("computations:editor.enabled")}
+                  </Form.Label>
+                  <Col sm={9}>
+                    <Form.Check
+                      id="enabled"
+                      name="enabled"
+                      disabled={!edit}
+                      defaultChecked={localComputation.enabled ?? false}
+                      onChange={enabledChange}
+                    />
+                  </Col>
+                </FormGroup>
+              </Col>
+              <Col>
+                <FormGroup as={Row} className="mb-3">
+                  <Form.Label column sm={3} htmlFor="comment">
+                    {t("computations:editor.description")}
+                  </Form.Label>
+                  <Col sm={9}>
+                    <Form.Control
+                      as="textarea"
+                      rows={4}
+                      id="comment"
+                      name="comment"
+                      readOnly={!edit}
+                      defaultValue={localComputation.comment}
+                      onChange={inputChange}
+                    />
+                  </Col>
+                </FormGroup>
+              </Col>
+            </Row>
+          </Col>
+          <Col xs={12} xl={8}>
             <ComputationParamsTable
               parms={localParms}
               edit={edit}
@@ -277,7 +321,7 @@ export const Computation: React.FC<ComputationProperties> = ({
               }
             />
           </Col>
-          <Col>
+          <Col xs={12} xl={4}>
             <PropertiesTable
               theProps={props}
               actions={propertyActions}
