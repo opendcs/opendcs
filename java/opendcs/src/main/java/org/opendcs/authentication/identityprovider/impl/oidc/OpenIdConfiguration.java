@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import static org.opendcs.utils.json.Helpers.getTextField;
+
 public final class OpenIdConfiguration
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
@@ -61,13 +63,5 @@ public final class OpenIdConfiguration
         }
     }
 
-    private static String getTextField(JsonNode root, String field) throws IOException
-    {
-        var tmp = root.get(field);
-        if (tmp == null || tmp.isNull())
-        {
-            throw new IOException("OpenID Configuration does not contain a '" + field + "'' entry.");
-        }
-        return tmp.asText();
-    }
+    
 }

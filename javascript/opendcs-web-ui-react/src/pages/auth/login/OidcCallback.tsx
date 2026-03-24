@@ -13,8 +13,8 @@ export const OidcCallback: React.FC = () => {
   const location = useLocation();
 
   // pull the saved state so we can match it to the right configuration.
-  const url = new URL(window.location.href);
-  const state = url.searchParams.get("state") as string;
+  const url = new URL(globalThis.location.href);
+  const state: string = url.searchParams.get("state") || "";
   const clientId = localStorage.getItem(state);
 
   let client: OidcClient | null = null;
@@ -30,7 +30,7 @@ export const OidcCallback: React.FC = () => {
     return <span>No valid configuration to handle request.</span>;
   }
 
-  client.processSigninResponse(window.location.href).then((r) => {
+  client.processSigninResponse(globalThis.location.href).then((r) => {
     console.log(r);
     const login = new RESTAuthenticationAndAuthorizationApi(api.conf);
     login
@@ -49,7 +49,7 @@ export const OidcCallback: React.FC = () => {
       });
   });
 
-  return <span>Hello?</span>;
+  return <span>Signin Proceedure failed.</span>;
 };
 
 export default OidcCallback;

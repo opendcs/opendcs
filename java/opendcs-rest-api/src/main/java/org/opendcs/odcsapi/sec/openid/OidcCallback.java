@@ -2,6 +2,7 @@ package org.opendcs.odcsapi.sec.openid;
 
 import static org.opendcs.odcsapi.util.ApiConstants.ODCS_API_GUEST;
 
+import java.io.IOException;
 import java.net.URI;
 import java.text.ParseException;
 
@@ -16,7 +17,9 @@ import org.opendcs.odcsapi.res.OpenDcsResource;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
+import org.yaml.snakeyaml.util.UriEncoder;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,11 +44,14 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import static org.opendcs.odcsapi.sec.SessionResource.updateSessionWithUser;
+import static org.opendcs.utils.json.Helpers.getTextField;
 
 @Path("")
 public final class OidcCallback extends OpenDcsResource
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     @Context
 	HttpServletRequest httpRequest;
@@ -100,51 +106,64 @@ public final class OidcCallback extends OpenDcsResource
 	)
     public Response handle(@QueryParam("code") String code,
                            @QueryParam("state") String state,
-                           @CookieParam("state") Cookie stateFromSession,
-                           @CookieParam("provider") Cookie oidcProvider,
-                           @CookieParam("redirectAfterAuth") Cookie redirectAfterAuth) throws WebAppException
+                           @CookieParam("oidcInfo") Cookie oidcInfoCookie
+                           ) throws WebAppException
     {
          var response = Response.status(Response.Status.UNAUTHORIZED)
 					           .entity("""
                             {"message": "Invalid Credentials."}
                         """);
-        if (state != null && stateFromSession != null &&  state.equals(stateFromSession.getValue()))
+        try
         {
-            log.info("Starting login attempt.");
-            var db = createDb();
+            var oidcInfo = jsonMapper.readTree(UriEncoder.decode(oidcInfoCookie.getValue()));
+            var stateFromSession = getTextField(oidcInfo, "state");
+            var oidcProvider = getTextField(oidcInfo, "provider");
+            var redirectAfterAuth = getTextField(oidcInfo, "redirectAfterAuth");
 
-            try (var tx = db.newTransaction())
+            log.info("state from session: {}", stateFromSession);
+            log.info("state from query  : {}", state);
+            if (state != null && stateFromSession != null &&  state.equals(stateFromSession))
             {
-                var provider = db.getDao(UserManagementDao.class).orElseThrow()
-                                 .getIdentityProvider(tx, oidcProvider.getValue());
-                if (provider.isEmpty()) 
+                log.info("Starting login attempt.");
+                var db = createDb();
+
+                try (var tx = db.newTransaction())
                 {
-                    return Response.notAcceptable(null).build();
-                }
-                else
-                {
-                    var userOpt = provider.get().login(db, tx, new AuthCodeCredentials(code));
-                    if (userOpt.isPresent())
+                    var provider = db.getDao(UserManagementDao.class).orElseThrow()
+                                    .getIdentityProvider(tx, oidcProvider);
+                    if (provider.isEmpty()) 
                     {
-                        var user = userOpt.get();
-                        response =  updateSessionWithUser(user, httpRequest);
-                        response.location(URI.create(redirectAfterAuth.getValue()));
-                        response.status(Response.Status.FOUND);
+                        return Response.notAcceptable(null).build();
+                    }
+                    else
+                    {
+                        var userOpt = provider.get().login(db, tx, new AuthCodeCredentials(code));
+                        if (userOpt.isPresent())
+                        {
+                            var user = userOpt.get();
+                            response =  updateSessionWithUser(user, httpRequest);
+                            response.location(URI.create(redirectAfterAuth));
+                            response.status(Response.Status.FOUND);
+                        }
                     }
                 }
+                catch (OpenDcsAuthException ex)
+                {
+                    throw new WebAppException(Response.Status.UNAUTHORIZED.getStatusCode(), "Invalid credentials", ex);
+                }
+                catch (OpenDcsDataException ex)
+                {
+                    throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to perform credential verification", ex);
+                }
             }
-             catch (OpenDcsAuthException ex)
+            else
             {
-                throw new WebAppException(Response.Status.UNAUTHORIZED.getStatusCode(), "Invalid credentials", ex);
-            }
-            catch (OpenDcsDataException ex)
-            {
-                throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to perform credential verification", ex);
+                log.warn("Invalid login attempt.");
             }
         }
-        else
+        catch (IOException ex)
         {
-            log.warn("Invalid login attempt.");
+            throw new WebAppException(Response.Status.BAD_REQUEST.getStatusCode(), "Unable to process required information.", ex);   
         }
         return response.build();
     }

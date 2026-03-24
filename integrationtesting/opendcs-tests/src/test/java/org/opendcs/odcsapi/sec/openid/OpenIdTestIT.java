@@ -15,6 +15,7 @@
 
 package org.opendcs.odcsapi.sec.openid;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -50,6 +51,8 @@ import org.opendcs.fixtures.helpers.Constants;
 import org.opendcs.odcsapi.res.it.BaseApiIT;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
@@ -246,11 +249,19 @@ final class OpenIdTestIT extends BaseApiIT
 	}
 
 
-	private Cookie doAuthCodeLogin(Cookie initialSession)
+	private Cookie doAuthCodeLogin(Cookie initialSession) throws IOException
 	{
 		final String redirectUri = RestAssured.baseURI + ":" + RestAssured.port + "/" + RestAssured.basePath + "/oidc-callback";
 		
-		final Cookie stateCookie = new Cookie.Builder("state", "test-oidc-conf__" + UUID.randomUUID().toString())
+		HashMap<String,String> oidcInfo = new HashMap<>();
+		oidcInfo.put("state", UUID.randomUUID().toString());
+		oidcInfo.put("provider", "test-oidc-conf");
+		oidcInfo.put("redirectAfterAuth", "http://localhost/test");
+
+		var jsonMapper = new ObjectMapper();
+		var oidcInfoStr = jsonMapper.writeValueAsString(oidcInfo);
+
+		final Cookie stateCookie = new Cookie.Builder("state", URLEncoder.encode(oidcInfoStr, StandardCharsets.UTF_8))
 											.setHttpOnly(true)
 											.setSameSite("Strict")
 											.build();
@@ -305,7 +316,8 @@ final class OpenIdTestIT extends BaseApiIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.assertThat()
-			.statusCode(is(Response.Status.OK.getStatusCode()))
+			.statusCode(is(Response.Status.FOUND.getStatusCode()))
+			.header("Location", "http://localhost/test")
 			.cookie(Constants.JSESSIONID)
 			.extract()
 			.detailedCookie(Constants.JSESSIONID)

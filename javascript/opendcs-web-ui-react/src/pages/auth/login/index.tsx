@@ -73,19 +73,18 @@ export default function Login() {
                           redirect: "test can you see me?",
                         },
                       });
-
-                      req.then((r) => {
+                      req.then((r: any) => {
                         localStorage.setItem(r.state.id, client.settings.client_id);
-                        window.cookieStore.set("state", r.state.id);
-                        window.cookieStore.set("provider", key);
-                        window.cookieStore.set(
-                          "redirectAfterAuth",
-                          new URL(
+                        const oidcSessionInfo = {
+                          state: r.state.id,
+                          provider: key,
+                          redirectAfterAuth: new URL(
                             location.state?.from || "/platforms",
-                            window.location.origin,
+                            globalThis.location.origin,
                           ).toString(),
-                        );
-                        window.location.href = r.url;
+                        };
+                        document.cookie = `oidcInfo=${encodeURIComponent(JSON.stringify(oidcSessionInfo))}; path=/odcsapi; max-age: 300; SameSite: Lax`;
+                        globalThis.location.href = r.url;
                       });
                     }}
                   >
