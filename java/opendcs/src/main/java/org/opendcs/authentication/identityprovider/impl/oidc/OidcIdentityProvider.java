@@ -131,7 +131,7 @@ public final class OidcIdentityProvider implements IdentityProvider
           .append("code=").append(URLEncoder.encode(credentials.code(), StandardCharsets.UTF_8)).append("&")
           .append("redirect_uri=").append(URLEncoder.encode(redirectUri, StandardCharsets.UTF_8))
         ;
-        System.out.println("The request " + sb.toString());
+
         var request = HttpRequest.newBuilder(oidcConfig.tokenUri)
                                 .header("Content-Type", "application/x-www-form-urlencoded")
                                 .POST(HttpRequest.BodyPublishers.ofString(sb.toString()))
