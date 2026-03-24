@@ -4,6 +4,7 @@ import App from "./App.tsx";
 import "./styles/main.scss";
 import "datatables.net-bs5/css/dataTables.bootstrap5.css";
 import "datatables.net-buttons-bs5/css/buttons.bootstrap5.css";
+import "bootstrap-icons/font/bootstrap-icons.css";
 import { ThemeProvider } from "./contexts/app/ThemeProvider.tsx";
 import { AuthProvider } from "./contexts/app/AuthProvider.tsx";
 import { ApiProvider } from "./contexts/app/ApiProvider.tsx";

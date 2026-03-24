@@ -137,10 +137,14 @@ export const WithAlgorithms: Story = {
     const canvas = await mount();
     const { i18n } = parameters;
 
-    // Edit button for algorithm 1 is visible
-    const editBtn = await canvas.findByRole("button", {
-      name: i18n.t("algorithms:editor.edit_for", { id: 1 }),
-    });
+    // Edit button for algorithm 1 is visible (injected by drawCallback)
+    const editBtn = await waitFor(
+      () =>
+        canvas.getByRole("button", {
+          name: i18n.t("algorithms:editor.edit_for", { id: 1 }),
+        }),
+      { timeout: 5000 },
+    );
     expect(editBtn).toBeInTheDocument();
   },
 };
@@ -181,9 +185,13 @@ export const EditAlgorithmSave: Story = {
     const canvas = await mount();
     const { i18n } = parameters;
 
-    const editBtn = await canvas.findByRole("button", {
-      name: i18n.t("algorithms:editor.edit_for", { id: 1 }),
-    });
+    const editBtn = await waitFor(
+      () =>
+        canvas.getByRole("button", {
+          name: i18n.t("algorithms:editor.edit_for", { id: 1 }),
+        }),
+      { timeout: 5000 },
+    );
     await act(async () => userEvent.click(editBtn));
 
     // The algorithm editor opens; find the save button
@@ -196,13 +204,15 @@ export const EditAlgorithmSave: Story = {
 
     await act(async () => userEvent.click(saveBtn));
 
-    // After save the edit button re-appears
-    await waitFor(async () => {
-      const editBtnAfter = await canvas.findByRole("button", {
-        name: i18n.t("algorithms:editor.edit_for", { id: 1 }),
-      });
-      expect(editBtnAfter).toBeInTheDocument();
-    });
+    // After save the edit button re-appears (injected by drawCallback)
+    const editBtnAfter = await waitFor(
+      () =>
+        canvas.getByRole("button", {
+          name: i18n.t("algorithms:editor.edit_for", { id: 1 }),
+        }),
+      { timeout: 5000 },
+    );
+    expect(editBtnAfter).toBeInTheDocument();
   },
 };
 
@@ -213,9 +223,13 @@ export const DeleteAlgorithm: Story = {
     const canvas = await mount();
     const { i18n } = parameters;
 
-    const deleteBtn = await canvas.findByRole("button", {
-      name: i18n.t("algorithms:editor.delete_for", { id: 2 }),
-    });
+    const deleteBtn = await waitFor(
+      () =>
+        canvas.getByRole("button", {
+          name: i18n.t("algorithms:editor.delete_for", { id: 2 }),
+        }),
+      { timeout: 5000 },
+    );
     await act(async () => userEvent.click(deleteBtn));
 
     await waitFor(() => {
