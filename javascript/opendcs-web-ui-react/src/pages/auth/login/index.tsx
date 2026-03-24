@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../../contexts/app/AuthContext";
 import { Button, Card, Container, Form, Modal } from "react-bootstrap";
 import { PersonCircle } from "react-bootstrap-icons";
@@ -22,9 +22,16 @@ export default function Login() {
   const { organizations } = useOrganizations();
   const api = useApi();
   const auth = new RESTAuthenticationAndAuthorizationApi(api.conf);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+
   let errorMsg = "";
 
-  const [showErrorModal, setShowErrorModal] = useState(false);
+  useEffect(() => {
+    if (location.state?.errorMsg) {
+      errorMsg = location.state!.errorMsg;
+      setShowErrorModal(true);
+    }
+  }, [location.state]);
 
   return (
     <Container className="odcs-login">

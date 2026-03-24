@@ -27,29 +27,35 @@ export const OidcCallback: React.FC = () => {
   }
 
   if (client === null) {
-    return <span>No valid configuration to handle request.</span>;
+    navigate("/login", {
+      state: { errorMsg: "No valid configuration to handle request." },
+    });
+    return <></>;
   }
 
-  client.processSigninResponse(globalThis.location.href).then((r) => {
-    console.log(r);
-    const login = new RESTAuthenticationAndAuthorizationApi(api.conf);
-    login
-      // office doesn't matter for initial login
-      .postJwt("", "Bearer " + r.access_token)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .then((user_value: any) => {
-        setUser(user_value);
-        const redirectPath = location.state?.from || "/platforms";
-        navigate(redirectPath, { replace: true });
-      })
-      .catch((error_: { toString: () => string }) => {
-        // TODO: login error modal
-        console.log(error_.toString());
-        //setShowErrorModal(true);
-      });
-  });
+  client
+    .processSigninResponse(url.toString())
+    .then((r) => {
+      console.log(r);
+      const login = new RESTAuthenticationAndAuthorizationApi(api.conf);
+      login
+        // office doesn't matter for initial login
+        .postJwt("", "Bearer " + r.access_token)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .then((user_value: any) => {
+          setUser(user_value);
+          const redirectPath = location.state?.from || "/platforms";
+          navigate(redirectPath, { replace: true });
+        })
+        .catch((error_: { toString: () => string }) => {
+          navigate("/login", { state: { errorMsg: error_.toString() } });
+        });
+    })
+    .catch((error_: { toString: () => string }) => {
+      navigate("/login", { state: { errorMsg: error_.toString() } });
+    });
 
-  return <span>Signin Proceedure failed.</span>;
+  return <></>;
 };
 
 export default OidcCallback;
