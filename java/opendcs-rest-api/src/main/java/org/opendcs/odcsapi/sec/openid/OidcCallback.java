@@ -120,8 +120,6 @@ public final class OidcCallback extends OpenDcsResource
             var oidcProvider = getTextField(oidcInfo, "provider");
             var redirectAfterAuth = getTextField(oidcInfo, "redirectAfterAuth");
 
-            log.info("state from session: {}", stateFromSession);
-            log.info("state from query  : {}", state);
             if (state != null && stateFromSession != null &&  state.equals(stateFromSession))
             {
                 log.info("Starting login attempt.");
@@ -147,19 +145,19 @@ public final class OidcCallback extends OpenDcsResource
                         }
                     }
                 }
-                catch (OpenDcsAuthException ex)
-                {
-                    throw new WebAppException(Response.Status.UNAUTHORIZED.getStatusCode(), "Invalid credentials", ex);
-                }
-                catch (OpenDcsDataException ex)
-                {
-                    throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to perform credential verification", ex);
-                }
             }
             else
             {
                 log.warn("Invalid login attempt.");
             }
+        }
+        catch (OpenDcsAuthException ex)
+        {
+            throw new WebAppException(Response.Status.UNAUTHORIZED.getStatusCode(), "Invalid credentials", ex);
+        }
+        catch (OpenDcsDataException ex)
+        {
+            throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to perform credential verification", ex);
         }
         catch (IOException ex)
         {
