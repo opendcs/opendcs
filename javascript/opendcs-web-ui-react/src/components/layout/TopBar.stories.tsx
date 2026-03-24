@@ -26,6 +26,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  args: {
+    onToggleSidebar: fn(),
+    sidebarOpen: false,
+  },
   play: async ({ canvas, mount }) => {
     await mount();
     const text = await canvas.findByText("OpenDCS");
@@ -34,7 +38,10 @@ export const Default: Story = {
 };
 
 export const WithUser: Story = {
-  args: {},
+  args: {
+    onToggleSidebar: fn(),
+    sidebarOpen: false,
+  },
   decorators: [
     (Story) => {
       return (
@@ -42,6 +49,8 @@ export const WithUser: Story = {
           value={{
             logout: fn(),
             setUser: fn(),
+            loginSchemes: {},
+            setSchemes: fn(),
             user: { email: "testuser@example.com" },
             isLoading: false,
           }}
@@ -51,8 +60,8 @@ export const WithUser: Story = {
       );
     },
   ],
-  play: async ({ canvas, mount }) => {
-    await mount();
+  play: async ({ mount }) => {
+    const canvas = await mount();
     const text = await canvas.findByText("OpenDCS");
     expect(text).toBeInTheDocument();
   },
@@ -60,28 +69,31 @@ export const WithUser: Story = {
 
 export const WithChangeOrg: Story = {
   args: {
-    organizations: MOCK_ORGANIZATIONS,
+    onToggleSidebar: fn(),
+    sidebarOpen: false,
   },
   decorators: [
-    (Story, { args }) => {
+    (Story) => {
       return (
         <AuthContext
           value={{
             logout: fn(),
             setUser: fn(),
+            loginSchemes: {},
+            setSchemes: fn(),
             user: { email: "testuser@example.com" },
             isLoading: false,
           }}
         >
-          <OrganizationsContext value={{ organizations: args.organizations }}>
+          <OrganizationsContext value={{ organizations: MOCK_ORGANIZATIONS }}>
             <Story />
           </OrganizationsContext>
         </AuthContext>
       );
     },
   ],
-  play: async ({ canvas, mount }) => {
-    await mount();
+  play: async ({ mount }) => {
+    const canvas = await mount();
     const text = await canvas.findByText("Change Organization");
     expect(text).toBeInTheDocument();
     await userEvent.click(text);
@@ -92,7 +104,8 @@ export const WithChangeOrg: Story = {
 
 export const NoChangeOrgWhenNoOrgs: Story = {
   args: {
-    organizations: [],
+    onToggleSidebar: fn(),
+    sidebarOpen: false,
   },
   decorators: [
     (Story, { args }) => {
@@ -102,20 +115,22 @@ export const NoChangeOrgWhenNoOrgs: Story = {
             value={{
               logout: fn(),
               setUser: fn(),
+              loginSchemes: {},
+              setSchemes: fn(),
               user: { email: "testuser@example.com" },
               isLoading: false,
             }}
           >
-            <OrganizationsContext value={{ organizations: args.organizations }}>
-              <Story />
+            <OrganizationsContext value={{ organizations: [] }}>
+              <Story {...args} />
             </OrganizationsContext>
           </AuthContext>
         </ApiContext>
       );
     },
   ],
-  play: async ({ canvas, mount }) => {
-    await mount();
+  play: async ({ mount }) => {
+    const canvas = await mount();
     const text = await canvas.queryByText("Change Organization");
     expect(text).not.toBeInTheDocument();
   },
