@@ -106,7 +106,7 @@ final class OpenIdTestIT extends BaseApiIT
 	 * This requires a client secret to be setup.
 	 */
 	@Test
-	void test_opendcs_auth_code_flow()
+	void test_opendcs_auth_code_flow() throws Exception
 	{
 		//Initial session should be unauthorized
 		var initialSession = 
@@ -254,14 +254,15 @@ final class OpenIdTestIT extends BaseApiIT
 		final String redirectUri = RestAssured.baseURI + ":" + RestAssured.port + "/" + RestAssured.basePath + "/oidc-callback";
 		
 		HashMap<String,String> oidcInfo = new HashMap<>();
-		oidcInfo.put("state", UUID.randomUUID().toString());
+		final var state = UUID.randomUUID().toString();
+		oidcInfo.put("state", state);
 		oidcInfo.put("provider", "test-oidc-conf");
 		oidcInfo.put("redirectAfterAuth", "http://localhost/test");
 
 		var jsonMapper = new ObjectMapper();
 		var oidcInfoStr = jsonMapper.writeValueAsString(oidcInfo);
 
-		final Cookie stateCookie = new Cookie.Builder("state", URLEncoder.encode(oidcInfoStr, StandardCharsets.UTF_8))
+		final Cookie stateCookie = new Cookie.Builder("oidcInfo", URLEncoder.encode(oidcInfoStr, StandardCharsets.UTF_8))
 											.setHttpOnly(true)
 											.setSameSite("Strict")
 											.build();
@@ -272,7 +273,7 @@ final class OpenIdTestIT extends BaseApiIT
 				.formParam("scope","openid profile email")
 				.formParam("response_type","code")
 				.formParam("redirect_uri", redirectUri)
-				.formParam("state", stateCookie.getValue())
+				.formParam("state", state)
 			.cookie(initialSession)
 		.when()		
 			.redirects().follow(true)
@@ -306,12 +307,12 @@ final class OpenIdTestIT extends BaseApiIT
 			.extract()
 			.header("Location")
 			;
-
 		return given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.cookie(initialSession)
 			.cookie(stateCookie)
 		.when()
+			.redirects().follow(false) // we just want to see that it's present
 			.get(callbackUrl)
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
