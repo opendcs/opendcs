@@ -100,12 +100,16 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
         const actionsCell = node.querySelector("td:last-child");
         if (actionsCell && actionsCell.querySelector(".dt-action-edit") === null) {
           (actionsCell as HTMLElement).style.whiteSpace = "nowrap";
+          const editLabel = t("algorithms:editor.edit_for", { id: idx });
+          const deleteLabel = t("algorithms:editor.delete_for", { id: idx });
           const editBtn =
-            `<button class="btn btn-warning btn-sm dt-action-edit" data-id="${idx}">` +
+            `<button class="btn btn-warning btn-sm dt-action-edit" data-id="${idx}"` +
+            ` aria-label="${editLabel}">` +
             `<i class="bi bi-pencil"></i></button>`;
           const deleteBtn =
             idx > 0
-              ? ` <button class="btn btn-danger btn-sm dt-action-delete" data-id="${idx}">` +
+              ? ` <button class="btn btn-danger btn-sm dt-action-delete" data-id="${idx}"` +
+                ` aria-label="${deleteLabel}">` +
                 `<i class="bi bi-trash"></i></button>`
               : "";
           actionsCell.innerHTML = editBtn + deleteBtn;
