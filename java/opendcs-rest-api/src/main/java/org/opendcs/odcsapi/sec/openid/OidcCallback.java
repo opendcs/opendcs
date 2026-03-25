@@ -113,7 +113,7 @@ public final class OidcCallback extends OpenDcsResource
         var scheme = httpRequest.getScheme();
         var host = httpRequest.getServerName();
         var port = httpRequest.getServerPort();
-        var origin = (port == 80 || port == 443) ? host : host + ":" + port;
+        var origin = (port == 80 || port == 443) ? host : (host + ":" + port);
         final String defaultTarget = String.format("%s://%s/login?errorMsg=%%s", scheme,origin);
         // Location will either contain the redirect desired, or a redirect to the /login page with the error
         var location = URI.create(String.format(defaultTarget, URLEncoder.encode("Invalid login.", StandardCharsets.UTF_8)));
