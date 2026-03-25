@@ -6,17 +6,12 @@ import DT from "datatables.net-bs5";
 import { useTranslation } from "react-i18next";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { dtLangs } from "../../../lang";
-import type {
-  ApiAlgorithm,
-  ApiCompParm,
-  ApiComputation,
-  ApiComputationRef,
-} from "opendcs-api";
+import type { ApiAlgorithm, ApiComputation, ApiComputationRef } from "opendcs-api";
 import Computation, { ComputationSkeleton, type UiComputation } from "./Computation";
 import type { RemoveAction, SaveAction, UiState } from "../../../util/Actions";
 import { useContextWrapper } from "../../../util/ContextWrapper";
 import { Button } from "react-bootstrap";
-import { Pencil, Trash } from "react-bootstrap-icons";
+import { Files, Pencil, Trash } from "react-bootstrap-icons";
 import type { RowState } from "../../../util/DataTables";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -31,6 +26,12 @@ export interface ComputationsTableProperties {
   actions?: SaveAction<ApiComputation> & RemoveAction<number>;
 }
 
+const isOutputParm = (parm: { algoParmType?: string }): boolean =>
+  (parm.algoParmType ?? "").trim().toLowerCase().startsWith("o");
+
+const isOutputProp = (propName: string): boolean =>
+  propName.trim().toLowerCase().startsWith("output");
+
 export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
   computations,
   getComputation,
@@ -43,10 +44,12 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
   const [localComputations, updateLocalComputations] = useState<TableComputationRef[]>(
     [],
   );
+  const [localDrafts, setLocalDrafts] = useState<Record<number, UiComputation>>({});
   const [rowState, updateRowState] = useState<RowState<number>>({});
   const rowStateRef = useRef(rowState);
   const prevRowStateRef = useRef<RowState<number>>({});
   const localComputationsRef = useRef(localComputations);
+  const localDraftsRef = useRef(localDrafts);
 
   useEffect(() => {
     rowStateRef.current = rowState;
@@ -55,6 +58,52 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
   useEffect(() => {
     localComputationsRef.current = localComputations;
   }, [localComputations]);
+
+  useEffect(() => {
+    localDraftsRef.current = localDrafts;
+  }, [localDrafts]);
+
+  const nextLocalComputationId = useCallback((): number => {
+    const existingIds = localComputationsRef.current
+      .map((c) => c.computationId)
+      .filter((id): id is number => id !== undefined && id < 0);
+    if (existingIds.length === 0) return -1;
+    return Math.min(...existingIds) - 1;
+  }, []);
+
+  const toTableRef = useCallback((comp: UiComputation): TableComputationRef => {
+    return {
+      computationId: comp.computationId,
+      name: comp.name,
+      algorithmId: comp.algorithmId,
+      algorithmName: comp.algorithmName,
+      processId: comp.appId,
+      processName: comp.applicationName,
+      enabled: comp.enabled,
+      description: comp.comment,
+      groupId: comp.groupId,
+      groupName: comp.groupName,
+    };
+  }, []);
+
+  const copiedComputation = useCallback(
+    (source: ApiComputation, newId: number): UiComputation => {
+      const copiedProps = Object.fromEntries(
+        Object.entries(source.props ?? {}).filter(([key]) => !isOutputProp(key)),
+      );
+      const copiedParmList = (source.parmList ?? [])
+        .filter((parm) => !isOutputParm(parm))
+        .map((parm) => ({ ...parm }));
+      return {
+        ...source,
+        computationId: newId,
+        name: "",
+        props: copiedProps,
+        parmList: copiedParmList,
+      };
+    },
+    [],
+  );
 
   const computationData = useMemo(
     () => [...computations, ...localComputations],
@@ -111,6 +160,28 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
               <Pencil />
             </Button>
           )}
+          {!inEdit && id > 0 && getComputation && (
+            <Button
+              variant="info"
+              aria-label={t("computations:editor.copy_for", { id })}
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (!getComputation) return;
+                try {
+                  const source = await getComputation(id);
+                  const newId = nextLocalComputationId();
+                  const draft = copiedComputation(source, newId);
+                  updateLocalComputations((prev) => [...prev, toTableRef(draft)]);
+                  setLocalDrafts((prev) => ({ ...prev, [newId]: draft }));
+                  updateRowState((prev) => ({ ...prev, [newId]: "new" }));
+                } catch (error) {
+                  console.warn(`Failed to copy computation ${id}`, error);
+                }
+              }}
+            >
+              <Files />
+            </Button>
+          )}
           {!inEdit && id > 0 && (
             <Button
               variant="danger"
@@ -126,7 +197,7 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
         </>
       );
     },
-    [t, actions],
+    [t, getComputation, nextLocalComputationId, copiedComputation, toTableRef, actions],
   );
 
   const slots = { actions: renderActions };
@@ -146,10 +217,11 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
             text: "+",
             action: () => {
               updateLocalComputations((prev) => {
-                const existing = prev
-                  .map((v) => v.computationId!)
-                  .sort((a, b) => b - a);
-                const newId = existing.length > 0 ? existing[0] - 1 : -1;
+                const newId = nextLocalComputationId();
+                setLocalDrafts((drafts) => ({
+                  ...drafts,
+                  [newId]: { computationId: newId },
+                }));
                 updateRowState((prevRowState) => ({
                   ...prevRowState,
                   [newId]: "new",
@@ -166,39 +238,36 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
 
   const renderComputation = useCallback(
     (data: TableComputationRef, edit: boolean = false): Node => {
+      const computationId = data.computationId!;
       const computationPromise: Promise<UiComputation> =
-        data.computationId && data.computationId > 0
-          ? getComputation!(data.computationId)
-          : Promise.resolve({ computationId: data.computationId! } as UiComputation);
+        computationId > 0
+          ? getComputation!(computationId)
+          : Promise.resolve(
+              localDraftsRef.current[computationId] ??
+                ({ computationId } as UiComputation),
+            );
 
-      const requiredParmsPromise: Promise<ApiCompParm[]> = computationPromise.then(
-        async (comp) => {
+      const algorithmPromise: Promise<ApiAlgorithm | undefined> =
+        computationPromise.then(async (comp) => {
           if (!getAlgorithm || !comp.algorithmId || comp.algorithmId <= 0) {
-            return [];
+            return undefined;
           }
           try {
-            const algorithm = await getAlgorithm(comp.algorithmId);
-            return (algorithm.parms ?? [])
-              .filter((parm) => (parm.roleName ?? "").trim().length > 0)
-              .map((parm) => ({
-                algoRoleName: parm.roleName,
-                algoParmType: parm.parmType,
-              }));
+            return await getAlgorithm(comp.algorithmId);
           } catch (error) {
             console.warn(
-              `Failed to load required algorithm parms for algorithmId=${comp.algorithmId}`,
+              `Failed to load algorithm for algorithmId=${comp.algorithmId}`,
               error,
             );
-            return [];
+            return undefined;
           }
-        },
-      );
+        });
 
       const node = toDom(
         <Suspense fallback={<ComputationSkeleton edit={edit} />}>
           <Computation
             computation={computationPromise}
-            requiredParms={requiredParmsPromise}
+            algorithm={algorithmPromise}
             actions={{
               save: (comp: ApiComputation) => {
                 actions.save?.(comp);
@@ -208,6 +277,10 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
                 updateLocalComputations((prev) => [
                   ...prev.filter((pc) => pc.computationId !== comp.computationId),
                 ]);
+                setLocalDrafts((prev) => {
+                  const { [comp.computationId!]: _, ...rest } = prev;
+                  return rest;
+                });
                 updateRowState((prev) => {
                   const { [comp.computationId!]: _, ...states } = prev;
                   return { ...states, [comp.computationId!]: "show" };
@@ -222,6 +295,10 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
                     ...prev.filter((plc) => plc.computationId !== item),
                   ]);
                 }
+                setLocalDrafts((prev) => {
+                  const { [item]: _, ...rest } = prev;
+                  return rest;
+                });
                 updateRowState((prev) => {
                   const { [item]: _, ...states } = prev;
                   return { ...states };
@@ -248,6 +325,7 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
     updateRowState({});
     prevRowStateRef.current = {};
     updateLocalComputations([]);
+    setLocalDrafts({});
   }, [i18n.language]);
 
   useEffect(() => {

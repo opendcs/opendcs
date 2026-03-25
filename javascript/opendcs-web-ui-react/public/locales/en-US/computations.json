@@ -17,6 +17,7 @@
     "enabled": "Enabled",
     "description": "Description",
     "edit_for": "Edit computation {{id}}",
+    "copy_for": "Copy computation {{id}}",
     "delete_for": "Delete computation {{id}}",
     "cancel_for": "Cancel editing computation {{id}}",
     "save_for": "Save computation {{id}}"

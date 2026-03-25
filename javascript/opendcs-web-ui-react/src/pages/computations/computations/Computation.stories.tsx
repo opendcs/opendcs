@@ -1,7 +1,7 @@
 import type { Meta, ReactRenderer, StoryObj } from "@storybook/react-vite";
 import { Computation, type ComputationProperties } from "./Computation";
 import { useCallback, useState } from "react";
-import type { ApiCompParm, ApiComputation } from "opendcs-api";
+import type { ApiAlgorithm, ApiComputation } from "opendcs-api";
 import type { ArgsStoryFn } from "storybook/internal/types";
 import { act } from "@testing-library/react";
 import { expect } from "storybook/test";
@@ -29,15 +29,22 @@ const sampleComputation: ApiComputation = {
   parmList: [],
 };
 
-const requiredParms: ApiCompParm[] = [
-  { algoRoleName: "input", algoParmType: "i" },
-  { algoRoleName: "output", algoParmType: "o" },
-];
+const sampleAlgorithm: ApiAlgorithm = {
+  algorithmId: 10,
+  name: "AverageAlgorithm",
+  execClass: "decodes.comp.AverageAlgorithm",
+  description: "Computes average values.",
+  props: {},
+  parms: [
+    { roleName: "input", parmType: "i" },
+    { roleName: "output", parmType: "o" },
+  ],
+};
 
 const EditableComputation: React.FC<{
   initialComp: ApiComputation;
-  requiredParms?: ApiCompParm[];
-}> = ({ initialComp, requiredParms }) => {
+  algorithm?: ApiAlgorithm;
+}> = ({ initialComp, algorithm }) => {
   const [comp, setComp] = useState<ApiComputation>(initialComp);
 
   const save = useCallback((updated: ApiComputation) => {
@@ -47,7 +54,7 @@ const EditableComputation: React.FC<{
   return (
     <Computation
       computation={comp}
-      requiredParms={requiredParms}
+      algorithm={algorithm}
       edit={true}
       actions={{ save }}
     />
@@ -57,14 +64,14 @@ const EditableComputation: React.FC<{
 const EditableRender: ArgsStoryFn<ReactRenderer, ComputationProperties> = (args) => (
   <EditableComputation
     initialComp={args.computation as ApiComputation}
-    requiredParms={args.requiredParms as ApiCompParm[]}
+    algorithm={args.algorithm as ApiAlgorithm}
   />
 );
 
 export const ViewMode: Story = {
   args: {
     computation: sampleComputation,
-    requiredParms,
+    algorithm: sampleAlgorithm,
     edit: false,
   },
   play: async ({ mount, parameters }) => {
@@ -84,7 +91,7 @@ export const ViewMode: Story = {
 export const EditMode: Story = {
   args: {
     computation: sampleComputation,
-    requiredParms,
+    algorithm: sampleAlgorithm,
     edit: true,
   },
   render: EditableRender,

@@ -1,7 +1,7 @@
 import { Button, Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../../components/properties";
 import { use, useCallback, useMemo, useReducer, useState } from "react";
-import type { ApiCompParm, ApiComputation } from "opendcs-api";
+import type { ApiAlgorithm, ApiCompParm, ApiComputation } from "opendcs-api";
 import { useTranslation } from "react-i18next";
 import type {
   CancelAction,
@@ -94,7 +94,7 @@ export const ComputationSkeleton: React.FC<{ edit?: boolean }> = ({ edit = false
 
 export interface ComputationProperties {
   computation: Promise<UiComputation> | UiComputation;
-  requiredParms?: Promise<ApiCompParm[]> | ApiCompParm[];
+  algorithm?: Promise<ApiAlgorithm | undefined> | ApiAlgorithm | undefined;
   actions?: SaveAction<ApiComputation> & CancelAction<number>;
   edit?: boolean;
 }
@@ -137,23 +137,33 @@ const mergeRequiredParms = (
   return [...requiredMerged, ...extras];
 };
 
+const requiredParmsFromAlgorithm = (algorithm?: ApiAlgorithm): ApiCompParm[] =>
+  (algorithm?.parms ?? [])
+    .filter((parm) => (parm.roleName ?? "").trim().length > 0)
+    .map((parm) => ({
+      algoRoleName: parm.roleName,
+      algoParmType: parm.parmType,
+    }));
+
 export const Computation: React.FC<ComputationProperties> = ({
   computation,
-  requiredParms = [],
+  algorithm,
   actions = {},
   edit = false,
 }) => {
   const { t } = useTranslation(["computations", "translation"]);
   const providedComputation =
     computation instanceof Promise ? use(computation) : computation;
-  const resolvedRequiredParms =
-    requiredParms instanceof Promise ? use(requiredParms) : requiredParms;
+  const providedAlgorithm = algorithm instanceof Promise ? use(algorithm) : algorithm;
   const [localComputation, dispatch] = useReducer(
     ComputationReducer,
     providedComputation,
   );
   const [localParms, setLocalParms] = useState<ApiCompParm[]>(() =>
-    mergeRequiredParms(providedComputation.parmList ?? [], resolvedRequiredParms ?? []),
+    mergeRequiredParms(
+      providedComputation.parmList ?? [],
+      requiredParmsFromAlgorithm(providedAlgorithm),
+    ),
   );
 
   const props = useMemo<Property[]>(() => {

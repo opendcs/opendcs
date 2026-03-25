@@ -17,6 +17,7 @@
     "enabled": "Aktiviert",
     "description": "Beschreibung",
     "edit_for": "Berechnung {{id}} bearbeiten",
+    "copy_for": "Berechnung {{id}} kopieren",
     "delete_for": "Berechnung {{id}} löschen",
     "cancel_for": "Bearbeitung von Berechnung {{id}} abbrechen",
     "save_for": "Berechnung {{id}} speichern"

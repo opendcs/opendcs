@@ -28,7 +28,23 @@ const sharedComputations: ApiComputation[] = [
     groupId: 5,
     groupName: "Daily",
     props: { output_units: "cfs" },
-    parmList: [],
+    parmList: [
+      {
+        algoRoleName: "input",
+        algoParmType: "i",
+        siteName: "TESTSITE",
+        dataType: "Flow",
+        interval: "1Hour",
+      },
+      {
+        algoRoleName: "output",
+        algoParmType: "o",
+        siteName: "TESTSITE",
+        dataType: "Flow",
+        interval: "1Hour",
+        unitsAbbr: "cfs",
+      },
+    ],
   },
   {
     computationId: 2,
@@ -272,5 +288,32 @@ export const DeleteComputation: Story = {
     await waitFor(() => {
       expect(canvas.queryByText("DailyStageMax")).not.toBeInTheDocument();
     });
+  },
+};
+
+export const CopyComputation: Story = {
+  args: { computations: toComputationRefs(sharedComputations) },
+  render: StoryRender,
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const copyBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:editor.copy_for", { id: 1 }),
+    });
+    await act(async () => userEvent.click(copyBtn));
+
+    const cancelBtn = await canvas.findByRole(
+      "button",
+      { name: i18n.t("computations:editor.cancel_for", { id: -1 }) },
+      { timeout: 5000 },
+    );
+    expect(cancelBtn).toBeInTheDocument();
+
+    const nameInput = await canvas.findByRole("textbox", {
+      name: i18n.t("computations:editor.name"),
+    });
+    expect(nameInput).toHaveValue("");
+    expect(canvas.queryByText("output_units")).not.toBeInTheDocument();
   },
 };
