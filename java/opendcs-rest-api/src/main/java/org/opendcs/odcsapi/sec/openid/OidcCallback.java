@@ -4,6 +4,9 @@ import static org.opendcs.odcsapi.util.ApiConstants.ODCS_API_GUEST;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 
 import org.opendcs.authentication.OpenDcsAuthException;
@@ -17,7 +20,6 @@ import org.opendcs.odcsapi.res.OpenDcsResource;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.yaml.snakeyaml.util.UriEncoder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
@@ -106,19 +108,20 @@ public final class OidcCallback extends OpenDcsResource
     public Response handle(@QueryParam("code") String code,
                            @QueryParam("state") String state,
                            @CookieParam("oidcInfo") Cookie oidcInfoCookie
-                           ) throws WebAppException
+                           )
     {
         var scheme = httpRequest.getScheme();
         var host = httpRequest.getServerName();
         var port = httpRequest.getServerPort();
         var origin = (port == 80 || port == 443) ? host : host + ":" + port;
-        final String defaultTarget = String.format("%s://%s/login?%%s", scheme,origin);
-        var location = URI.create(String.format(defaultTarget, "Invalid login."));
+        final String defaultTarget = String.format("%s://%s/login?errorMsg=%%s", scheme,origin);
+        // Location will either contain the redirect desired, or a redirect to the /login page with the error
+        var location = URI.create(String.format(defaultTarget, URLEncoder.encode("Invalid login.", StandardCharsets.UTF_8)));
         var response = Response.status(Response.Status.FOUND);
 
         try
         {
-            var oidcInfo = jsonMapper.readTree(UriEncoder.decode(oidcInfoCookie.getValue()));
+            var oidcInfo = jsonMapper.readTree(URLDecoder.decode(oidcInfoCookie.getValue(), StandardCharsets.UTF_8));
             var stateFromSession = getTextField(oidcInfo, "state");
             var oidcProvider = getTextField(oidcInfo, "provider");
             var redirectAfterAuth = getTextField(oidcInfo, "redirectAfterAuth");
@@ -134,7 +137,7 @@ public final class OidcCallback extends OpenDcsResource
                                     .getIdentityProvider(tx, oidcProvider);
                     if (provider.isEmpty()) 
                     {
-                        return Response.notAcceptable(null).build();
+                        location = URI.create(String.format(defaultTarget, URLEncoder.encode("Unable to handle request.", StandardCharsets.UTF_8)));
                     }
                     else
                     {
@@ -156,20 +159,20 @@ public final class OidcCallback extends OpenDcsResource
         catch (OpenDcsAuthException ex)
         {
             log.atDebug().setCause(ex).log("Authentication failed with invalid credentials.");
-            location = URI.create(String.format(defaultTarget, "Invalid credentials", ex));
+            location = URI.create(String.format(defaultTarget, URLEncoder.encode("Invalid credentials", StandardCharsets.UTF_8)));
         }
         catch (OpenDcsDataException ex)
         {
             log.atDebug().setCause(ex).log("Authentication failed as we were unable to perform required steps.");
-            location = URI.create(String.format(defaultTarget, "Unable to perform credential verification"));
+            location = URI.create(String.format(defaultTarget, URLEncoder.encode("Unable to perform credential verification", StandardCharsets.UTF_8)));
         }
         catch (IOException ex)
         {
             log.atDebug().setCause(ex).log("Authentication failed as required information was available or incorrectly formatted.");
-            location = URI.create(String.format(defaultTarget, "Unable to process required information."));   
+            location = URI.create(String.format(defaultTarget, URLEncoder.encode("Unable to process required information.", StandardCharsets.UTF_8)));   
         }
         
-        return response.location(location).build();
+        return response.status(Response.Status.FOUND).location(location).build();
     }
 
 
