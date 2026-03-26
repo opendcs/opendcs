@@ -87,7 +87,7 @@ tasks.register("codeCoverageReport", JacocoReport) {
 subprojects {
     sonar {
         properties {
-            property "sonar.coverage.jacoco.xmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml, **/jacoco*.xml"
+            property "sonar.coverage.jacoco.xmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml"
         }
     }
 }
