@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { dtLangs } from "../../../lang";
 import { Button, Form } from "react-bootstrap";
-import { ChevronDown, ChevronUp, Pencil, Save, Trash, X } from "react-bootstrap-icons";
+import { ChevronRight, Pencil, Save, Trash, X } from "react-bootstrap-icons";
 import { renderToString } from "react-dom/server";
 import {
   TimeSeriesMethodsIntervalMethodsApi,
@@ -556,13 +556,28 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
     dt.rows().every(function () {
       const data = this.data() as RowParm;
       const key = rowKey(data);
-      if (expandedRows.has(key)) {
+      const expanded = expandedRows.has(key);
+      if (expanded) {
         this.child(renderDetailContent(data), "comp-parm-details").show();
       } else {
         this.child(false);
       }
     });
   }, [expandedRows, renderDetailContent, rowKey]);
+
+  const syncIcons = useCallback(() => {
+    const dt = table.current?.dt();
+    if (!dt) return;
+    dt.rows().every(function () {
+      const data = this.data() as RowParm;
+      const key = rowKey(data);
+      const expanded = expandedRows.has(key);
+      const icon = (
+        this.node() as HTMLTableRowElement | null
+      )?.querySelector<HTMLElement>(".details-toggle__icon");
+      if (icon) icon.style.transform = expanded ? "rotate(90deg)" : "";
+    });
+  }, [expandedRows, rowKey]);
 
   const handleSaveExisting = useCallback(
     (oldRoleName: string) => {
@@ -607,32 +622,38 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
   const renderDetailsButton = useCallback(
     (data: RowParm) => {
       const key = rowKey(data);
-      const expanded = expandedRows.has(key);
       const roleName = data.parm.algoRoleName ?? "";
-      const label = expanded
-        ? t("computations:parms.hide_details_for", { name: roleName })
-        : t("computations:parms.show_details_for", { name: roleName });
+      const label = t("computations:parms.show_details_for", { name: roleName });
 
       return (
         <Button
           variant="outline-secondary"
           size="sm"
+          className="details-toggle"
           aria-label={label}
           onClick={(e) => {
             e.stopPropagation();
+            const svg = (e.currentTarget as HTMLElement).querySelector<HTMLElement>(
+              "svg",
+            );
             setExpandedRows((prev) => {
               const next = new Set(prev);
-              if (next.has(key)) next.delete(key);
-              else next.add(key);
+              if (next.has(key)) {
+                next.delete(key);
+                if (svg) svg.style.transform = "";
+              } else {
+                next.add(key);
+                if (svg) svg.style.transform = "rotate(90deg)";
+              }
               return next;
             });
           }}
         >
-          {expanded ? <ChevronUp /> : <ChevronDown />}
+          <ChevronRight className="details-toggle__icon" />
         </Button>
       );
     },
-    [expandedRows, rowKey, t],
+    [rowKey, t],
   );
 
   const renderActions = useCallback(
@@ -789,7 +810,8 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
     if (!dt) return;
     dt.rows().invalidate().draw(false);
     syncDetailRows();
-  }, [allRows, syncDetailRows]);
+    setTimeout(syncIcons, 0);
+  }, [allRows, syncDetailRows, syncIcons]);
 
   useEffect(() => {
     syncDetailRows();
