@@ -30,18 +30,18 @@ public class DataSourceDaoImpl implements DataSourceDao
     private static final String SELECT_QUERY = """
             with primaryDs (id, name, datasourcetype, datasourcearg) as (
                 select id, name, datasourcetype, datasourcearg
-                from datasource 
+                from datasource
                 <where>
-                order by name <collate> asc 
+                order by name <collate> asc
                 <limit>
             )
             select ds.id as ds_id, ds.name ds_name, ds.datasourcetype ds_datasourcetype, ds.datasourcearg ds_datasourcearg,
-                           dsgm.sequencenum as dsm_sequencenum, 
+                           dsgm.sequencenum as dsm_sequencenum,
                            dsm.id as dsm_id, dsm.name dsm_name, dsm.datasourcetype dsm_datasourcetype, dsm.datasourcearg dsm_datasourcearg
                       from primaryDs ds
                       left outer join datasourcegroupmember dsgm on ds.id = dsgm.groupid
                       left outer join datasource dsm on dsm.id = dsgm.memberid
-                     order by ds.name <collate> asc, 
+                     order by ds.name <collate> asc,
                               dsm_sequencenum asc
             """;
 
@@ -115,12 +115,11 @@ public class DataSourceDaoImpl implements DataSourceDao
                      """)
              )
         {
-            
             final DbKey id = dataSource.idIsSet() ? dataSource.getId() : keyGen.getKey("datasource", handle.getConnection());
             mergeQuery.bind("id", id)
                  .bind(GenericColumns.NAME, dataSource.getName())
                  .bind("datasourcetype", dataSource.dataSourceType)
-                 .bind("datasourcearg", dataSource.getArguments())
+                 .bind("datasourcearg", dataSource.getDataSourceArg())
                  .execute();
 
             deleteGroupQuery.bind(GenericColumns.ID, id).execute();
@@ -130,13 +129,22 @@ public class DataSourceDaoImpl implements DataSourceDao
                 int sequence = 0;
                 for (final var member: dataSource.groupMembers)
                 {
+
                     if (member == null)
                     {
                         continue; // This logic is in DataSOurceListIO, keeping it for now.
                     }
+                    DbKey memberId = member.getId();
+                    if (DbKey.isNull(memberId))
+                    {
+                        memberId = this.getDataSource(tx, member.getName())
+                                       .orElseThrow(() -> new OpenDcsDataException("DataSource " + member.getName() + " does not exist"))
+                                       .getId();
+                    }
+
                     insertGroupQuery.bind("groupid", id)
                                     .bind("sequencenum", sequence)
-                                    .bind("memberid", member.getId())
+                                    .bind("memberid", memberId)
                                     .add();
                     sequence++;
                 }
@@ -185,12 +193,12 @@ public class DataSourceDaoImpl implements DataSourceDao
             {
                 query.bind(SqlKeywords.OFFSET, offset);
             }
-            
+
             return query.reduceResultSet(new LinkedHashMap<>(), DataSourceAccumulator.DATA_SOURCE_ACCUMULATOR)
                         .values()
                         .stream()
                         .toList();
         }
     }
-    
+
 }
