@@ -1,5 +1,7 @@
 package org.opendcs.database.impl.opendcs.dao;
 
+import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
@@ -10,9 +12,10 @@ import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.DataSourceDao;
 import org.opendcs.database.model.mappers.datasource.DataSourceAccumulator;
-import org.opendcs.database.model.mappers.datasource.DataSourceMapper;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
+import org.opendcs.utils.sql.SqlKeywords;
+import org.opendcs.utils.sql.SqlQueries;
 import org.openide.util.lookup.ServiceProvider;
 
 import decodes.db.DataSource;
@@ -24,6 +27,24 @@ import decodes.sql.KeyGenerator;
 public class DataSourceDaoImpl implements DataSourceDao
 {
 
+    private static final String SELECT_QUERY = """
+            with primaryDs (id, name, datasourcetype, datasourcearg) as (
+                select id, name, datasourcetype, datasourcearg
+                from datasource 
+                <where>
+                order by name <collate> asc 
+                <limit>
+            )
+            select ds.id as ds_id, ds.name ds_name, ds.datasourcetype ds_datasourcetype, ds.datasourcearg ds_datasourcearg,
+                           dsgm.sequencenum as dsm_sequencenum, 
+                           dsm.id as dsm_id, dsm.name dsm_name, dsm.datasourcetype dsm_datasourcetype, dsm.datasourcearg dsm_datasourcearg
+                      from primaryDs ds
+                      left outer join datasourcegroupmember dsgm on ds.id = dsgm.groupid
+                      left outer join datasource dsm on dsm.id = dsgm.memberid
+                     order by ds.name <collate> asc, 
+                              dsm_sequencenum asc
+            """;
+
     @Override
     public Optional<DataSource> getDataSource(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
@@ -31,20 +52,11 @@ public class DataSourceDaoImpl implements DataSourceDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabase();
-        final String querySql = """
-                    select ds.id as ds_id, ds.name ds_name, ds.datasourcetype ds_datasourcetype, ds.datasourcearg ds_datasourcearg,
-                           dsgm.sequencenum as dsm_sequencenum, 
-                           dsm.id as dsm_id, dsm.name dsm_name, dsm.datasourcetype dsm_datasourcetype, dsm.datasourcearg dsm_datasourcearg
-                      from datasource ds
-                      left outer join datasourcegroupmember dsgm on ds.id = dsgm.groupid
-                      left outer join datasource dsm on dsm.id = dsgm.memberid
-                     where ds.id = :id
-                     order by ds.name <collate> asc, 
-                              dsm_sequencenum asc
-                """;
-        try (var query = handle.createQuery(querySql))
+        try (var query = handle.createQuery(SELECT_QUERY))
         {
-            return query.define("collate", dbEngine == DatabaseEngine.POSTGRES ? "COLLATE \"C\"" : "COLLATE BINARY")
+            return query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
+                        .define(SqlQueries.WHERE_CLAUSE, "where id = :id")
+                        .define(SqlQueries.LIMIT_CLAUSE, "")
                         .bind(GenericColumns.ID, id)
                         .reduceResultSet(new LinkedHashMap<>(), DataSourceAccumulator.DATA_SOURCE_ACCUMULATOR)
                         .values()
@@ -60,21 +72,11 @@ public class DataSourceDaoImpl implements DataSourceDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabase();
-        final String querySql = """
-                    select ds.id as ds_id, ds.name ds_name, ds.datasourcetype ds_datasourcetype, ds.datasourcearg ds_datasourcearg,
-                           dsgm.sequencenum as dsm_sequencenum, 
-                           dsm.id as dsm_id, dsm.name dsm_name, dsm.datasourcetype dsm_datasourcetype, dsm.datasourcearg dsm_datasourcearg
-                      from datasource ds
-                      left outer join datasourcegroupmember dsgm on ds.id = dsgm.groupid
-                      left outer join datasource dsm on dsm.id = dsgm.memberid
-                      
-                     where ds.name = :name
-                     order by ds.name <collate> asc, 
-                              dsm_sequencenum asc
-                """;
-        try (var query = handle.createQuery(querySql))
+        try (var query = handle.createQuery(SELECT_QUERY))
         {
-            return query.define("collate", dbEngine == DatabaseEngine.POSTGRES ? "COLLATE \"C\"" : "COLLATE BINARY")
+            return query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
+                        .define(SqlQueries.WHERE_CLAUSE, "where name = :name")
+                        .define(SqlQueries.LIMIT_CLAUSE, "")
                         .bind(GenericColumns.NAME, name)
                         // .registerRowMapper(DataSource.class, DataSourceMapper.withPrefix("ds"))
                         // .registerRowMapper(DataSource.class, DataSourceMapper.withPrefix("dsm"))
@@ -136,6 +138,7 @@ public class DataSourceDaoImpl implements DataSourceDao
                                     .bind("sequencenum", sequence)
                                     .bind("memberid", member.getId())
                                     .add();
+                    sequence++;
                 }
             }
             insertGroupQuery.execute();
@@ -165,8 +168,29 @@ public class DataSourceDaoImpl implements DataSourceDao
     @Override
     public List<DataSource> getDataSources(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getDataSources'");
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var ctx = tx.getContext();
+        var dbEngine = ctx.getDatabase();
+        try (var query = handle.createQuery(SELECT_QUERY))
+        {
+            query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
+                 .define(SqlQueries.WHERE_CLAUSE, "")
+                 .define(SqlQueries.LIMIT_CLAUSE, addLimitOffset(limit, offset));
+            if (limit >= 0)
+            {
+                query.bind(SqlKeywords.LIMIT, limit);
+            }
+            if (offset >= 0)
+            {
+                query.bind(SqlKeywords.OFFSET, offset);
+            }
+            
+            return query.reduceResultSet(new LinkedHashMap<>(), DataSourceAccumulator.DATA_SOURCE_ACCUMULATOR)
+                        .values()
+                        .stream()
+                        .toList();
+        }
     }
     
 }
