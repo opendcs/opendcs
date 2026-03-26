@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -63,6 +64,7 @@ import org.opendcs.odcsapi.beans.ApiCompParm;
 import org.opendcs.odcsapi.beans.ApiComputation;
 import org.opendcs.odcsapi.beans.ApiLoadingApp;
 import org.opendcs.odcsapi.beans.ApiSite;
+import org.opendcs.odcsapi.filters.LoggingFilter;
 import org.opendcs.odcsapi.res.ComputationResources;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.slf4j.Logger;
@@ -637,10 +639,13 @@ final class ComputationResourcesIT extends BaseApiIT
 		importData(Optional.of(Path.of("ResEvap", "Test1")));
 		assertFalse(expectedTsList.isEmpty(), "No time series found imported");
 
+		final var traceId = UUID.randomUUID().toString();
+
 		ClientRequestFilter auth = ctx ->
 		{
 			ctx.getHeaders().putSingle(ApiConstants.ORGANIZATION_HEADER, organization);
 			ctx.getHeaders().putSingle("Cookie", getCookie());
+			ctx.getHeaders().putSingle(LoggingFilter.HEADER_TRACE_ID, traceId);
 		};
 
 		URI baseURI = URI.create(String.format("%s:%d/%s", RestAssured.baseURI, RestAssured.port, RestAssured.basePath));
@@ -731,10 +736,13 @@ final class ComputationResourcesIT extends BaseApiIT
 		importData(Optional.of(Path.of("CopyTest", "Test1")));
 		assertFalse(expectedTsList.isEmpty(), "No time series found imported");
 
+		final var traceId = UUID.randomUUID().toString();
+		log.info("Computation is being run with Trace ID '{}'", traceId);
 		ClientRequestFilter auth = ctx ->
 		{
 			ctx.getHeaders().putSingle(ApiConstants.ORGANIZATION_HEADER, organization);
 			ctx.getHeaders().putSingle("Cookie", getCookie());
+			ctx.getHeaders().putSingle(LoggingFilter.HEADER_TRACE_ID, traceId);
 		};
 
 		URI baseURI = URI.create(String.format("%s:%d/%s", RestAssured.baseURI, RestAssured.port, RestAssured.basePath));

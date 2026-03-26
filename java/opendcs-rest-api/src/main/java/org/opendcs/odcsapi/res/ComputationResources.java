@@ -79,6 +79,7 @@ import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.DTOMappers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
 @Path("/")
@@ -335,6 +336,7 @@ public final class ComputationResources extends OpenDcsResource
 
 			List<TimeSeriesIdentifier> outputList = processOutputTsIds(comp, tsDai, siteDai, computationId, taskID, sse, eventSink);
 
+			final var contextMap = MDC.getCopyOfContextMap();
 			CompletableFuture.runAsync(() ->
 			{
 				OutboundSseEvent event = sse.newEventBuilder()
@@ -347,6 +349,10 @@ public final class ComputationResources extends OpenDcsResource
 
 				try
 				{
+					if (contextMap != null)
+					{
+						MDC.setContextMap(contextMap);
+					}
 					ComputationExecution execution = new ComputationExecution(createDb());
 					SseProgressListener listener = new SseProgressListener(eventSink, sse, compStatus, taskID);
 					ComputationExecution.CompResults results = execution.execute(List.of(comp), new DataCollection(), startDate, endDate, listener);
@@ -371,6 +377,7 @@ public final class ComputationResources extends OpenDcsResource
 					{
 						log.error("Error closing SSE event sink", ex);
 					}
+					MDC.clear();
 				}
 			});
 		}
