@@ -109,14 +109,6 @@ war {
     from "${layout.buildDirectory.get().asFile}/generated/webapp"
 }
 
-sonarqube {
-    properties {
-        property 'sonar.coverage.jacoco.xmlReportPaths', "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/test/jacocoTestReport.xml," +
-                "../opendcs-integration-test/build/reports/jacoco/integrationTestReportCWMS/integrationTestReportCWMS.xml," +
-                "../opendcs-integration-test/build/reports/jacoco/integrationTestReportOpenTSDB/integrationTestReportOpenTSDB.xml"
-    }
-}
-
 def fileName = 'opendcs-openapi'
 def format = providers.gradleProperty('outputFormat').getOrElse('JSON').toLowerCase()
 

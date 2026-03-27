@@ -43,17 +43,18 @@ sonar {
         property "sonar.cpp.file.suffixes", "-"
         property "sonar.objc.file.suffixes", "-"
         property "sonar.coverage.jacoco.aggregateXmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml"
+        property "sonar.coverage.jacoco.xmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml"
     }
 }
 
 
-tasks.register("codeCoverageReport", JacocoReport) {
+tasks.register("codeCoverageReport", JacocoReport) { jr ->
     subprojects { subproject ->
         subproject.plugins.withType(JacocoPlugin).each {
             subproject.tasks.matching({t -> t.extensions.findByType(JacocoTaskExtension)}).each { testTask ->
                 if(testTask.extensions.getByType(JacocoTaskExtension).isEnabled()) {
-                    sourceSets subproject.sourceSets.main
-                    executionData(testTask)
+                    jr.sourceSets subproject.sourceSets.main
+                    jr.executionData(testTask)
                 }
             }
         }
@@ -78,7 +79,7 @@ tasks.register("codeCoverageReport", JacocoReport) {
             ]
 
 
-    classDirectories.setFrom(files(classDirectories.files.collect {
+    jr.classDirectories.setFrom(files(classDirectories.files.collect {
         fileTree(dir: it, exclude: excludes)
     }))
 
