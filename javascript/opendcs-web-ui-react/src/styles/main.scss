@@ -61,9 +61,8 @@ body {
 // =============================================================================
 
 .odcs-layout {
-  height: calc(100vh - var(--odcs-topbar-height));
+  min-height: calc(100vh - var(--odcs-topbar-height));
   padding: 0;
-  overflow: hidden;
 }
 
 // =============================================================================
