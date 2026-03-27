@@ -42,7 +42,7 @@ sonar {
         property "sonar.c.file.suffixes", "-"
         property "sonar.cpp.file.suffixes", "-"
         property "sonar.objc.file.suffixes", "-"
-        property "sonar.coverage.jacoco.aggregateXmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml"
+        //property "sonar.coverage.jacoco.aggregateXmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml"
         property "sonar.coverage.jacoco.xmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml"
     }
 }
@@ -53,6 +53,7 @@ tasks.register("codeCoverageReport", JacocoReport) { jr ->
         subproject.plugins.withType(JacocoPlugin).each {
             subproject.tasks.matching({t -> t.extensions.findByType(JacocoTaskExtension)}).each { testTask ->
                 if(testTask.extensions.getByType(JacocoTaskExtension).isEnabled()) {
+                    System.out.println("Setting execution data for ${testTask}")
                     jr.sourceSets subproject.sourceSets.main
                     jr.executionData(testTask)
                 }
