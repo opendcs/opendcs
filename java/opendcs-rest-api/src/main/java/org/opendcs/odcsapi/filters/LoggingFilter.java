@@ -2,6 +2,7 @@ package org.opendcs.odcsapi.filters;
 
 import java.io.IOException;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import org.slf4j.MDC;
 
@@ -18,6 +19,8 @@ public final class LoggingFilter implements ContainerRequestFilter, ContainerRes
 {
     public static final String CONTEXT_TRACE_ID = "traceID";
     public static final String HEADER_TRACE_ID = "X-Trace-ID";
+
+    public static final Pattern UUID_MATCHER = Pattern.compile("[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}");
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext)
@@ -44,7 +47,7 @@ public final class LoggingFilter implements ContainerRequestFilter, ContainerRes
 
     private static String validate(String id) throws IOException
     {
-        if (id.matches("[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}"))
+        if (UUID_MATCHER.matcher(id).matches())
         {
             return id;
         }

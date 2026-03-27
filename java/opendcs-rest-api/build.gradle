@@ -41,6 +41,7 @@ dependencies {
     annotationProcessor(libs.org.netbeans.lookup)
 
     implementation(project(":opendcs"))
+    implementation(project(":opendcs-api"))
 
     implementation(libs.bundles.jdbi)
     implementation(libs.microprofile.health) // use to get the HealthCheckResponse object
