@@ -130,7 +130,7 @@ jobs:
         with:
           name: coverage
           path: |
-            ./**/build/**/jacoco*.xml
+            ./**/build/**/jacoco/**/*.xml
             ./**/build/**/test-*.xml
             ./build/reports/jacoco/codeCoverageReport/**/
             ./**/build/**/*.class            
