@@ -131,8 +131,9 @@ jobs:
           name: coverage
           path: |
             ./**/build/**/jacoco*.xml
+            ./**/build/**/test-*.xml
             ./build/reports/jacoco/codeCoverageReport/**/
-            ./**/build/**/*.class
+            ./**/build/**/*.class            
             ./javascript/opendcs-web-ui-react/coverage/**
       - name: Upload Test Reports
         uses: actions/upload-artifact@v6.0.0
