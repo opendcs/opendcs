@@ -15,7 +15,7 @@ public interface DataSourceDao extends OpenDcsDao
     /**
      * Retrieve a DataSource by DbKey.
      * 
-     * Unlikely other DAOs at this time the DataSource will not have been "prepared for exec."
+     * Unlike other DAOs, at this time, the DataSource will not have been "prepared for exec."
      * 
      * @param tx active transaction to use
      * @param id Identifier of the DataSource desired
@@ -27,7 +27,7 @@ public interface DataSourceDao extends OpenDcsDao
     /**
      * Retrieve a DataSource by name.
      * 
-     * Unlikely other DAOs at this time the DataSource will not have been "prepared for exec."
+     * Unlike other DAOs, at this time, the DataSource will not have been "prepared for exec."
      * 
      * @param tx active transaction to use
      * @param name Name of the DataSource desired

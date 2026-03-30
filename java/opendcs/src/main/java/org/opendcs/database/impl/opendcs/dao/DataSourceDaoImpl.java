@@ -78,8 +78,6 @@ public class DataSourceDaoImpl implements DataSourceDao
                         .define(SqlQueries.WHERE_CLAUSE, "where name = :name")
                         .define(SqlQueries.LIMIT_CLAUSE, "")
                         .bind(GenericColumns.NAME, name)
-                        // .registerRowMapper(DataSource.class, DataSourceMapper.withPrefix("ds"))
-                        // .registerRowMapper(DataSource.class, DataSourceMapper.withPrefix("dsm"))
                         .reduceResultSet(new LinkedHashMap<>(), DataSourceAccumulator.DATA_SOURCE_ACCUMULATOR)
                         .values()
                         .stream()
