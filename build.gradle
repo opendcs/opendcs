@@ -55,6 +55,8 @@ tasks.register("codeCoverageReport", JacocoReport) { jr ->
                 if(testTask.extensions.getByType(JacocoTaskExtension).isEnabled()) {
                     System.out.println("Setting execution data for ${testTask}")
                     jr.sourceSets subproject.sourceSets.main
+                    jr.sourceDirectories.setFrom(subproject.sourceSets.main.allSource.srcDirs)
+                    jr.classDirectories.setFrom(subproject.sourceSets.main.output)
                     jr.executionData(testTask)
                 }
             }
@@ -79,10 +81,9 @@ tasks.register("codeCoverageReport", JacocoReport) { jr ->
                 "**/pkg_resources/**"
             ]
 
-
-    jr.classDirectories.setFrom(files(subproject.classDirectories.files.collect {
-        fileTree(dir: it, exclude: excludes)
-    }))
+    
+    jr.sourceDirectories.setFrom(fileTree(dir: "${rootDir}", include: "/**/src/**/main/java/**", exclude: "build/**/codeCoverageReport.xml"))
+    jr.classDirectories.setFrom(fileTree(dir: "${rootDir}", include: "/**/build/**/classes/**", excludes: excludes))
 
 }
 
