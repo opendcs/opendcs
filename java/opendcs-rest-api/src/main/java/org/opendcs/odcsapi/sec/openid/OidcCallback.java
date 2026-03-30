@@ -229,7 +229,7 @@ public final class OidcCallback extends OpenDcsResource
                             {"message": "Invalid Credentials."}
                         """);
         final String[] parts = authHeader.split(" ");
-        if (parts.length == 2)
+        if (parts != null && parts.length == 2)
         {
             log.info("Starting login attempt.");
             final String accessToken = parts[1];

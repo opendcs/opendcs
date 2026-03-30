@@ -1,4 +1,4 @@
-import React, { type FormEvent } from "react";
+import React, { type SubmitEvent } from "react";
 import { Form, Button } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import type { FormScheme } from "../../../util/login-providers/Scheme.types";
@@ -11,7 +11,7 @@ export interface FormLoginProperties {
 export const FormLogin: React.FC<FormLoginProperties> = ({ login, loginOptions }) => {
   const { t } = useTranslation();
 
-  function handleLogin(event: FormEvent<HTMLFormElement>): void {
+  function handleLogin(event: SubmitEvent<HTMLFormElement>): void {
     event.preventDefault();
     event.stopPropagation();
     const form = event.currentTarget;
@@ -19,7 +19,6 @@ export const FormLogin: React.FC<FormLoginProperties> = ({ login, loginOptions }
     const formData = new FormData(form);
 
     const dataObject = Object.fromEntries(formData.entries());
-    console.log(loginOptions);
     const {
       [loginOptions.formConfig.usernameInput]: username,
       [loginOptions.formConfig.passwordInput]: password,

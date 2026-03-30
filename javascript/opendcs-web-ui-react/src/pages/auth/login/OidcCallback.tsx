@@ -36,7 +36,6 @@ export const OidcCallback: React.FC = () => {
   client
     .processSigninResponse(url.toString())
     .then((r) => {
-      console.log(r);
       const login = new RESTAuthenticationAndAuthorizationApi(api.conf);
       login
         // office doesn't matter for initial login

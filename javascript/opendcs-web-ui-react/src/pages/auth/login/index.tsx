@@ -75,11 +75,7 @@ export default function Login() {
                     onClick={(event) => {
                       event.preventDefault();
                       const client = oidcConfigToClient(scheme as OidcScheme);
-                      const req = client.createSigninRequest({
-                        state: {
-                          redirect: "test can you see me?",
-                        },
-                      });
+                      const req = client.createSigninRequest({});
                       req.then((r: any) => {
                         localStorage.setItem(r.state.id, client.settings.client_id);
                         const oidcSessionInfo = {
