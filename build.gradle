@@ -43,7 +43,7 @@ sonar {
         property "sonar.cpp.file.suffixes", "-"
         property "sonar.objc.file.suffixes", "-"
         //property "sonar.coverage.jacoco.aggregateXmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml"
-        property "sonar.coverage.jacoco.xmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml,$rootDir/**/jacoco*.xml"
+        property "sonar.coverage.jacoco.xmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml,$rootDir/**/jacoco/**/*.xml"
     }
 }
 
@@ -81,19 +81,19 @@ tasks.register("codeCoverageReport", JacocoReport) { jr ->
                 "**/pkg_resources/**"
             ]
 
-    
-    jr.sourceDirectories.setFrom(fileTree(dir: "${rootDir}", include: "/**/src/**/main/java/**", exclude: "build/**/codeCoverageReport.xml"))
-    jr.classDirectories.setFrom(fileTree(dir: "${rootDir}", include: "/**/build/**/classes/**", excludes: excludes))
+    jr.additionalSourceDirs.from(fileTree(dir: "${rootDir}", include: "**/src/**/main/java/**", exclude: "build/**/codeCoverageReport.xml"))
+    jr.sourceDirectories.setFrom(fileTree(dir: "${rootDir}", include: "**/src/**/main/java/**", exclude: "build/**/codeCoverageReport.xml"))
+    jr.classDirectories.setFrom(fileTree(dir: "${rootDir}", include: "**/build/**/classes/**", excludes: excludes))
 
 }
 
-subprojects {
-    sonar {
-        properties {
-            property "sonar.coverage.jacoco.xmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml,$rootDir/**/jacoco*.xml"
-        }
-    }
-}
+// subprojects {
+//     sonar {
+//         properties {
+//             property "sonar.coverage.jacoco.xmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml,$rootDir/**/jacoco/**/*.xml"
+//         }
+//     }
+// }
 
 
 import javax.inject.Inject
