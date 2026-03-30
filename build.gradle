@@ -42,18 +42,22 @@ sonar {
         property "sonar.c.file.suffixes", "-"
         property "sonar.cpp.file.suffixes", "-"
         property "sonar.objc.file.suffixes", "-"
-        property "sonar.coverage.jacoco.aggregateXmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml"
+        //property "sonar.coverage.jacoco.aggregateXmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml"
+        property "sonar.coverage.jacoco.xmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml,$rootDir/**/jacoco/**/*.xml"
     }
 }
 
 
-tasks.register("codeCoverageReport", JacocoReport) {
+tasks.register("codeCoverageReport", JacocoReport) { jr ->
     subprojects { subproject ->
         subproject.plugins.withType(JacocoPlugin).each {
             subproject.tasks.matching({t -> t.extensions.findByType(JacocoTaskExtension)}).each { testTask ->
                 if(testTask.extensions.getByType(JacocoTaskExtension).isEnabled()) {
-                    sourceSets subproject.sourceSets.main
-                    executionData(testTask)
+                    System.out.println("Setting execution data for ${testTask}")
+                    jr.sourceSets subproject.sourceSets.main
+                    jr.sourceDirectories.setFrom(subproject.sourceSets.main.allSource.srcDirs)
+                    jr.classDirectories.setFrom(subproject.sourceSets.main.output)
+                    jr.executionData(testTask)
                 }
             }
         }
@@ -77,17 +81,15 @@ tasks.register("codeCoverageReport", JacocoReport) {
                 "**/pkg_resources/**"
             ]
 
-
-    classDirectories.setFrom(files(classDirectories.files.collect {
-        fileTree(dir: it, exclude: excludes)
-    }))
+    jr.sourceDirectories.setFrom(fileTree(dir: "${rootDir}", include: "**/src/**/main/java/**", exclude: "build/**/codeCoverageReport.xml"))
+    jr.classDirectories.setFrom(fileTree(dir: "${rootDir}", include: "**/build/**/classes/**", excludes: excludes))
 
 }
 
 subprojects {
     sonar {
         properties {
-            property "sonar.coverage.jacoco.xmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml, **/jacoco*.xml"
+            property "sonar.coverage.jacoco.xmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml,$rootDir/**/jacoco/**/*.xml"
         }
     }
 }

@@ -1,4 +1,4 @@
 
 sonar {
-    skipProject = (name == ":testing") || (name == ":docs") || (name == ":install")
+    skipProject = /*(name == ":testing") ||*/ (project.name == ":docs") || (project.name == ":install")
 }
