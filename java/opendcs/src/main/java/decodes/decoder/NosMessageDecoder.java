@@ -236,35 +236,32 @@ public final class NosMessageDecoder
         x = PseudoBinary.decodePB(new String(field, 31, 3), false); // Error code
         header.append(I6.format(x)).append(", ");
 
-        x = PseudoBinary.decodePB(new String(field, 34, 4), false); // Status code (hex reshape)
-        String y = Integer.toHexString(x);
-        String firstFour = y.length() >= 4 ? y.substring(0, 4) : String.format("%-4s", y).replace(' ', '0');
-        char lastChar = y.charAt(y.length() - 1);
-        y = (firstFour + "000" + lastChar).toUpperCase();
+        x = PseudoBinary.decodePB(new String(field, 34, 5), false); // Status code (hex reshape)
+        String y = String.format("%08X", x);
         header.append(y).append(", ");
 
         double d;
-        d = PseudoBinary.decodePB(new String(field, 38, 2), false) * .1;  // Battery Voltage
+        d = PseudoBinary.decodePB(new String(field, 39, 2), false) * .1;  // Battery Voltage
         header.append(TextUtil.setLengthRightJustify(DP1.format(d), 4)).append(", ");
-        d = PseudoBinary.decodePB(new String(field, 40, 3), false) * .1;   // Sound Speed
+        d = PseudoBinary.decodePB(new String(field, 41, 3), false) * .1;   // Sound Speed
         header.append(TextUtil.setLengthRightJustify(DP1.format(d), 6)).append(", ");
-        d = PseudoBinary.decodePB(new String(field, 43, 2), false) * .01;  // Heading Std Dev
+        d = PseudoBinary.decodePB(new String(field, 44, 2), false) * .01;  // Heading Std Dev
         header.append(TextUtil.setLengthRightJustify(DP2.format(d), 5)).append(", ");
-        d = PseudoBinary.decodePB(new String(field, 45, 2), false) * .1;   // Heading
+        d = PseudoBinary.decodePB(new String(field, 46, 2), false) * .1;   // Heading
         header.append(TextUtil.setLengthRightJustify(DP1.format(d), 5)).append(", ");
-        d = PseudoBinary.decodePB(new String(field, 47, 2), true) * .1;    // Pitch
+        d = PseudoBinary.decodePB(new String(field, 48, 2), true) * .1;    // Pitch
         header.append(TextUtil.setLengthRightJustify(DP1.format(d), 5)).append(", ");
-        d = PseudoBinary.decodePB(new String(field, 49, 2), false) * .01;  // Pitch Std Dev
+        d = PseudoBinary.decodePB(new String(field, 50, 2), false) * .01;  // Pitch Std Dev
         header.append(TextUtil.setLengthRightJustify(DP2.format(d), 5)).append(", ");
-        d = PseudoBinary.decodePB(new String(field, 51, 2), true) * .1;    // Roll
+        d = PseudoBinary.decodePB(new String(field, 52, 2), true) * .1;    // Roll
         header.append(TextUtil.setLengthRightJustify(DP1.format(d), 5)).append(", ");
-        d = PseudoBinary.decodePB(new String(field, 53, 2), false) * .01;  // Roll Std Dev
+        d = PseudoBinary.decodePB(new String(field, 54, 2), false) * .01;  // Roll Std Dev
         header.append(TextUtil.setLengthRightJustify(DP2.format(d), 5)).append(", ");
-        d = PseudoBinary.decodePB(new String(field, 55, 3), false) * .001; // Pressure
+        d = PseudoBinary.decodePB(new String(field, 56, 3), false) * .001; // Pressure
         header.append(TextUtil.setLengthRightJustify(DP3.format(d), 7)).append(", ");
-        d = PseudoBinary.decodePB(new String(field, 58, 2), false) * .01;  // Pressure Std Dev
+        d = PseudoBinary.decodePB(new String(field, 59, 2), false) * .01;  // Pressure Std Dev
         header.append(TextUtil.setLengthRightJustify(DP2.format(d), 5)).append(", ");
-        d = PseudoBinary.decodePB(new String(field, 60, 3), true) * .01;   // Temperature
+        d = PseudoBinary.decodePB(new String(field, 61, 3), true) * .01;   // Temperature
         header.append(TextUtil.setLengthRightJustify(DP2.format(d), 6)).append('\n');
         log.debug("Nortek Generation 2 header '" + header + "'");
         return header.toString();
@@ -273,25 +270,28 @@ public final class NosMessageDecoder
     /** Nortek Gen-2 (CN) Body. */
     public static String decodeGen2Body(byte[] field) throws FieldParseException
     {
+        // Index check
+        int indexCheck = 65;
+
         // Read beams
         int beamNo = PseudoBinary.decodePB(new String(field, 17, 1), false);
 
         // Check for profile presence
-        if (field.length < 64)
+        if (field.length < indexCheck)
         {
             throw new FieldParseException("No profile message in data");
         }
 
         // Find '+' marker and compute countProfile
         int plusAt = -1;
-        for (int i = 64; i < field.length; i++)
+        for (int i = indexCheck; i < field.length; i++)
         {
             if (field[i] == '+')
             {
                 plusAt = i; break;
             }
         }
-        int countProfile = (plusAt - 64) / beamNo;
+        int countProfile = (plusAt - indexCheck) / beamNo;
         if (countProfile != 5 && countProfile != 7)
         {
             throw new FieldParseException("Cannot identify message type");
@@ -302,17 +302,14 @@ public final class NosMessageDecoder
         double cellSize         = PseudoBinary.decodePB(new String(field, 22, 2), false) * .01;
 
         // Determine loopLimit from beamNo & countProfile
-        int loopLimit = 0;
-        if ((beamNo == 2 && countProfile == 7) || (beamNo == 3 && countProfile == 5))       loopLimit = 6;
-        else if (beamNo == 2 && countProfile == 5)                                          loopLimit = 4;
-        else if (beamNo == 3 && countProfile == 7)                                          loopLimit = 9;
+        int loopLimit = beamNo * (countProfile - 1) / 2;
 
         StringBuilder result = new StringBuilder();
         String strResult;
         int fieldIndex;
         int cellNumber = 1;
 
-        for (fieldIndex = 64; fieldIndex < field.length - 1; fieldIndex++)
+        for (fieldIndex = indexCheck; fieldIndex < field.length - 1; fieldIndex++)
         {
             result.append(String.format("%2d", cellNumber)).append(",");
             result.append(" ").append(TextUtil.setLengthRightJustify(
