@@ -25,7 +25,7 @@ public final class OpenIdConfiguration
     private URI jwksUri;
 
     /**
-     * Establish the required set of well known configuraiton data.
+     * Establish the required set of well known configuration data.
      * Data will not be retrieved from the URL until use is requested.
      * @param wellKnown
      */
@@ -101,7 +101,7 @@ public final class OpenIdConfiguration
     }
 
     /**
-     * Retrieve and processed the well-known configuration data
+     * Retrieve and process the well-known configuration data
      * @return
      * @throws OidcConfigurationException if the well known data could not be processed.
      */
