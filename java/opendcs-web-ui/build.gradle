@@ -99,13 +99,6 @@ tasks.named('war') {
     inputs.dir("$projectDir/src/main")
 }
 
-sonarqube {
-    properties {
-        property 'sonar.sources', 'src/main/java,src/main/webapp'
-        property 'sonar.exclusions', 'src/main/webapp/resources/css/icons/**'
-    }
-}
-
 if (shouldSign) {
     signing {
         sign war
