@@ -717,7 +717,8 @@
         "saml.authnstatement": "false",
         "display.on.consent.screen": "false",
         "token.response.type.bearer.lower-case": "false",
-        "saml.onetimeuse.condition": "false"
+        "saml.onetimeuse.condition": "false",
+        "pkce.code.challenge.method": ""
       },
       "authenticationFlowBindingOverrides": {},
       "fullScopeAllowed": true,

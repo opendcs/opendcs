@@ -3,6 +3,7 @@ import { Button, Dropdown, Modal } from "react-bootstrap";
 import { t } from "i18next";
 import { ApiOrganization, RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
 import { type ApiContextType, useApi } from "../../../contexts/app/ApiContext.ts";
+import { useTranslation } from "react-i18next";
 
 interface ToggleProperties {
   org: ApiOrganization;
@@ -31,6 +32,7 @@ export const ChangeOrgMenu: React.FC<ChangeOrgMenuProperties> = ({
   orgs,
   changeOrg,
 }) => {
+  const [t] = useTranslation();
   const api = useApi();
   const auth = new RESTAuthenticationAndAuthorizationApi(api.conf);
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -62,7 +64,7 @@ export const ChangeOrgMenu: React.FC<ChangeOrgMenuProperties> = ({
       <Dropdown drop="start">
         <Dropdown.Toggle
           as={OrgToggle}
-          aria-label={"organization-settings"}
+          aria-label={t("Change Organization")}
           org={org}
         />
         <Dropdown.Menu style={{ maxHeight: "300px", overflowY: "auto" }}>

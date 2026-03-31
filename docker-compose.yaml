@@ -52,6 +52,8 @@ services:
     build:
       context: .
       target: web-api
+    entrypoint: ["/api_entry.sh"]
+    command: ["/usr/local/tomcat/bin/catalina.sh", "run"]
     healthcheck:
       test: ["CMD-SHELL", "curl http://localhost:7000/odcsapi/health/live"]
       interval: 1m30s
@@ -60,6 +62,9 @@ services:
       start_period: 30s
     ports:
       - 7000:7000
+    volumes:
+      - ./compose_files/api_entry.sh:/api_entry.sh:ro
+      - ./compose_files/proxy_auth.sh:/proxy_auth.sh:ro
     environment:
       - DB_DRIVER_CLASS=org.postgresql.Driver
       - DB_USERNAME=app
@@ -87,5 +92,33 @@ services:
     restart: "unless-stopped"
     volumes:
       - ./compose_files/servers.json:/tmp/servers.json
+
+  auth:
+    image: quay.io/keycloak/keycloak:26.5
+    command: ["start-dev", "--import-realm"]
+    healthcheck:
+      test: "/healthcheck.sh"
+      interval: 5s
+      timeout: 1s
+      retries: 100
+      start_period: 2s
+    ports:
+      - 7100:7100
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_HEALTH_ENABLED=true
+      - KC_FEATURES=admin-fine-grained-authz
+      - KC_HTTP_PORT=7100
+      - KEYCLOAK_FRONTEND_URL=http://localhost:7100
+      - KC_HOSTNAME_STRICT=false
+      - KC_PROXY=none
+      - KC_HTTP_ENABLED=true
+      - KC_HTTP_RELATIVE_PATH=/auth
+    volumes:
+      - ./compose_files/keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro
+      - ./compose_files/keycloak/healthcheck.sh:/healthcheck.sh:ro
+
+
 volumes:
   db_data: # Define the named volume for data persistence
