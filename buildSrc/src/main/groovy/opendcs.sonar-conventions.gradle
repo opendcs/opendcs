@@ -1,4 +1,4 @@
 
 sonar {
-    skipProject = /*(name == ":testing") ||*/ (project.name == ":docs") || (project.name == ":install")
+    skipProject = /*(name == ":testing") ||*/ (project.name == ":docs") || (project.name == ":install") || project.findProperty("UI") ? true : false
 }

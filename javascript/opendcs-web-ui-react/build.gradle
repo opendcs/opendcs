@@ -81,6 +81,7 @@ node {
 }
 
 sonar {
+    skipProject project.findProperty("UI") ? false : true
     properties {
         property "sonar.projectKey", "opendcs_opendcs_ui"
         property "sonar.language", "typescript"

@@ -86,9 +86,11 @@ tasks.register("codeCoverageReport", JacocoReport) { jr ->
 }
 
 subprojects {
-    sonar {
-        properties {
-            property "sonar.coverage.jacoco.xmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml,$rootDir/**/jacoco/**/*.xml"
+    if (name != "opendcs-web-ui-react") {
+        sonar {
+            properties {
+                property "sonar.coverage.jacoco.xmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml,$rootDir/**/jacoco/**/*.xml"
+            }
         }
     }
 }
