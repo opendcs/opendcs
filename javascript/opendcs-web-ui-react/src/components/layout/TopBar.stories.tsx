@@ -92,9 +92,12 @@ export const WithChangeOrg: Story = {
       );
     },
   ],
-  play: async ({ mount }) => {
+  play: async ({ mount, parameters, userEvent }) => {
     const canvas = await mount();
-    const text = await canvas.findByText("Change Organization");
+    const { i18n } = parameters;
+    const text = await canvas.findByRole("button", {
+      name: i18n.t("Change Organization"),
+    });
     expect(text).toBeInTheDocument();
     await userEvent.click(text);
     const office = await canvas.findByText("SPK");
@@ -129,9 +132,10 @@ export const NoChangeOrgWhenNoOrgs: Story = {
       );
     },
   ],
-  play: async ({ mount }) => {
+  play: async ({ mount, parameters }) => {
     const canvas = await mount();
-    const text = await canvas.queryByText("Change Organization");
+    const { i18n } = parameters;
+    const text = await canvas.queryByText(i18n.t("Change Organization"));
     expect(text).not.toBeInTheDocument();
   },
 };
