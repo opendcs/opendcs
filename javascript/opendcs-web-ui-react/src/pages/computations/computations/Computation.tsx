@@ -1,7 +1,13 @@
 import { Button, Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../../components/properties";
 import { use, useCallback, useMemo, useReducer, useState } from "react";
-import type { ApiAlgorithm, ApiCompParm, ApiComputation } from "opendcs-api";
+import type {
+  ApiAlgorithm,
+  ApiAppRef,
+  ApiCompParm,
+  ApiComputation,
+  ApiTsGroupRef,
+} from "opendcs-api";
 import { useTranslation } from "react-i18next";
 import type {
   CancelAction,
@@ -97,6 +103,8 @@ export interface ComputationProperties {
   algorithm?: Promise<ApiAlgorithm | undefined> | ApiAlgorithm | undefined;
   actions?: SaveAction<ApiComputation> & CancelAction<number>;
   edit?: boolean;
+  processOptions?: ApiAppRef[];
+  groupOptions?: ApiTsGroupRef[];
 }
 
 const roleKey = (roleName: string | undefined): string =>
@@ -150,6 +158,8 @@ export const Computation: React.FC<ComputationProperties> = ({
   algorithm,
   actions = {},
   edit = false,
+  processOptions = [],
+  groupOptions = [],
 }) => {
   const { t } = useTranslation(["computations", "translation"]);
   const providedComputation =
@@ -197,6 +207,14 @@ export const Computation: React.FC<ComputationProperties> = ({
 
   const inputChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const { name, value } = event.target;
+      dispatch({ type: "save", payload: { [name]: value } });
+    },
+    [dispatch],
+  );
+
+  const selectChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
       const { name, value } = event.target;
       dispatch({ type: "save", payload: { [name]: value } });
     },
@@ -252,14 +270,20 @@ export const Computation: React.FC<ComputationProperties> = ({
                     {t("computations:editor.applicationName")}
                   </Form.Label>
                   <Col sm={9}>
-                    <Form.Control
-                      type="text"
+                    <Form.Select
                       id="applicationName"
                       name="applicationName"
-                      readOnly={!edit}
-                      defaultValue={localComputation.applicationName}
-                      onChange={inputChange}
-                    />
+                      disabled={!edit}
+                      defaultValue={localComputation.applicationName ?? ""}
+                      onChange={selectChange}
+                    >
+                      <option value="" />
+                      {processOptions.map((app) => (
+                        <option key={app.appId} value={app.appName ?? ""}>
+                          {app.appName}
+                        </option>
+                      ))}
+                    </Form.Select>
                   </Col>
                 </FormGroup>
                 <FormGroup as={Row} className="mb-3">
@@ -267,14 +291,20 @@ export const Computation: React.FC<ComputationProperties> = ({
                     {t("computations:editor.groupName")}
                   </Form.Label>
                   <Col sm={9}>
-                    <Form.Control
-                      type="text"
+                    <Form.Select
                       id="groupName"
                       name="groupName"
-                      readOnly={!edit}
-                      defaultValue={localComputation.groupName}
-                      onChange={inputChange}
-                    />
+                      disabled={!edit}
+                      defaultValue={localComputation.groupName ?? ""}
+                      onChange={selectChange}
+                    >
+                      <option value="" />
+                      {groupOptions.map((g) => (
+                        <option key={g.groupId} value={g.groupName ?? ""}>
+                          {g.groupName}
+                        </option>
+                      ))}
+                    </Form.Select>
                   </Col>
                 </FormGroup>
                 <FormGroup as={Row} className="mb-3">
@@ -312,7 +342,7 @@ export const Computation: React.FC<ComputationProperties> = ({
               </Col>
             </Row>
           </Col>
-          <Col xs={12} xl={8}>
+          <Col xs={12}>
             <ComputationParamsTable
               parms={localParms}
               edit={edit}
@@ -331,7 +361,7 @@ export const Computation: React.FC<ComputationProperties> = ({
               }
             />
           </Col>
-          <Col xs={12} xl={4}>
+          <Col xs={12} xl={5}>
             <PropertiesTable
               theProps={props}
               actions={propertyActions}

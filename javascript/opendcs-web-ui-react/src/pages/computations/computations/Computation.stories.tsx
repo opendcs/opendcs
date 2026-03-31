@@ -1,7 +1,12 @@
 import type { Meta, ReactRenderer, StoryObj } from "@storybook/react-vite";
 import { Computation, type ComputationProperties } from "./Computation";
 import { useCallback, useState } from "react";
-import type { ApiAlgorithm, ApiComputation } from "opendcs-api";
+import type {
+  ApiAlgorithm,
+  ApiAppRef,
+  ApiComputation,
+  ApiTsGroupRef,
+} from "opendcs-api";
 import type { ArgsStoryFn } from "storybook/internal/types";
 import { act } from "@testing-library/react";
 import { expect } from "storybook/test";
@@ -41,10 +46,22 @@ const sampleAlgorithm: ApiAlgorithm = {
   ],
 };
 
+const sampleProcessOptions: ApiAppRef[] = [
+  { appId: 200, appName: "compproc", appType: "ComputationProcess" },
+  { appId: 201, appName: "routingproc", appType: "RoutingProcess" },
+];
+
+const sampleGroupOptions: ApiTsGroupRef[] = [
+  { groupId: 5, groupName: "Daily", groupType: "Computation" },
+  { groupId: 6, groupName: "Hourly", groupType: "Computation" },
+];
+
 const EditableComputation: React.FC<{
   initialComp: ApiComputation;
   algorithm?: ApiAlgorithm;
-}> = ({ initialComp, algorithm }) => {
+  processOptions?: ApiAppRef[];
+  groupOptions?: ApiTsGroupRef[];
+}> = ({ initialComp, algorithm, processOptions, groupOptions }) => {
   const [comp, setComp] = useState<ApiComputation>(initialComp);
 
   const save = useCallback((updated: ApiComputation) => {
@@ -57,6 +74,8 @@ const EditableComputation: React.FC<{
       algorithm={algorithm}
       edit={true}
       actions={{ save }}
+      processOptions={processOptions}
+      groupOptions={groupOptions}
     />
   );
 };
@@ -65,6 +84,8 @@ const EditableRender: ArgsStoryFn<ReactRenderer, ComputationProperties> = (args)
   <EditableComputation
     initialComp={args.computation as ApiComputation}
     algorithm={args.algorithm as ApiAlgorithm}
+    processOptions={args.processOptions}
+    groupOptions={args.groupOptions}
   />
 );
 
@@ -73,6 +94,8 @@ export const ViewMode: Story = {
     computation: sampleComputation,
     algorithm: sampleAlgorithm,
     edit: false,
+    processOptions: sampleProcessOptions,
+    groupOptions: sampleGroupOptions,
   },
   play: async ({ mount, parameters }) => {
     const canvas = await mount();
@@ -93,6 +116,8 @@ export const EditMode: Story = {
     computation: sampleComputation,
     algorithm: sampleAlgorithm,
     edit: true,
+    processOptions: sampleProcessOptions,
+    groupOptions: sampleGroupOptions,
   },
   render: EditableRender,
   play: async ({ mount, parameters, userEvent }) => {

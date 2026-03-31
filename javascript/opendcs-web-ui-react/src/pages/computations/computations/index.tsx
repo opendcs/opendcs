@@ -1,9 +1,13 @@
 import {
   type ApiAlgorithm,
+  type ApiAppRef,
   type ApiComputation,
   type ApiComputationRef,
+  type ApiTsGroupRef,
   RESTAlgorithmMethodsApi,
   RESTComputationMethodsApi,
+  RESTLoadingApplicationRecordsApi,
+  TimeSeriesMethodsGroupsApi,
 } from "opendcs-api";
 import { ComputationsTable } from "./ComputationsTable";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -18,6 +22,45 @@ export const Computations: React.FC = () => {
     [api.conf],
   );
   const algorithmApi = useMemo(() => new RESTAlgorithmMethodsApi(api.conf), [api.conf]);
+  const appApi = useMemo(
+    () => new RESTLoadingApplicationRecordsApi(api.conf),
+    [api.conf],
+  );
+  const groupApi = useMemo(() => new TimeSeriesMethodsGroupsApi(api.conf), [api.conf]);
+  const [processOptions, setProcessOptions] = useState<ApiAppRef[]>([]);
+  const [groupOptions, setGroupOptions] = useState<ApiTsGroupRef[]>([]);
+
+  useEffect(() => {
+    if (!api.org) return;
+    let cancelled = false;
+    appApi
+      .getAppRefs(api.org)
+      .then((refs) => {
+        if (!cancelled) setProcessOptions(refs);
+      })
+      .catch(() => {
+        if (!cancelled) setProcessOptions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [api.org, appApi]);
+
+  useEffect(() => {
+    if (!api.org) return;
+    let cancelled = false;
+    groupApi
+      .getTsGroupRefs(api.org)
+      .then((refs) => {
+        if (!cancelled) setGroupOptions(refs);
+      })
+      .catch(() => {
+        if (!cancelled) setGroupOptions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [api.org, groupApi]);
 
   useEffect(() => {
     const fetchComputations = async () => {
@@ -72,6 +115,8 @@ export const Computations: React.FC = () => {
         getComputation={getComputation}
         getAlgorithm={getAlgorithm}
         actions={{ save: saveComputation, remove: deleteComputation }}
+        processOptions={processOptions}
+        groupOptions={groupOptions}
       />
     </div>
   );

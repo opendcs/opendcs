@@ -1,6 +1,12 @@
 import type { Meta, ReactRenderer, StoryObj } from "@storybook/react-vite";
 import { ComputationsTable, type TableComputationRef } from "./ComputationsTable";
-import type { ApiAlgorithm, ApiComputation, ApiComputationRef } from "opendcs-api";
+import type {
+  ApiAlgorithm,
+  ApiAppRef,
+  ApiComputation,
+  ApiComputationRef,
+  ApiTsGroupRef,
+} from "opendcs-api";
 import { act } from "@testing-library/react";
 import { expect, waitFor } from "storybook/test";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -130,6 +136,16 @@ const getAlgorithmFromList =
     return { ...algo };
   };
 
+const sampleProcessOptions: ApiAppRef[] = [
+  { appId: 200, appName: "compproc", appType: "ComputationProcess" },
+  { appId: 201, appName: "routingproc", appType: "RoutingProcess" },
+];
+
+const sampleGroupOptions: ApiTsGroupRef[] = [
+  { groupId: 5, groupName: "Daily", groupType: "Computation" },
+  { groupId: 6, groupName: "Hourly", groupType: "Computation" },
+];
+
 type StoryArgs = {
   computations: TableComputationRef[];
   getComputation?: (computationId: number) => Promise<ApiComputation>;
@@ -180,6 +196,8 @@ const ComputationsTableWrapper: React.FC<{ initialComps: ApiComputation[] }> = (
       getComputation={localGetComputation}
       getAlgorithm={localGetAlgorithm}
       actions={{ save: saveComputation, remove: removeComputation }}
+      processOptions={sampleProcessOptions}
+      groupOptions={sampleGroupOptions}
     />
   );
 };

@@ -1,7 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Computations } from "./index";
 import { http, HttpResponse } from "msw";
-import type { ApiAlgorithm, ApiComputation, ApiComputationRef } from "opendcs-api";
+import type {
+  ApiAlgorithm,
+  ApiAppRef,
+  ApiComputation,
+  ApiComputationRef,
+  ApiTsGroupRef,
+} from "opendcs-api";
 import { act } from "react";
 import { expect, waitFor } from "storybook/test";
 
@@ -95,6 +101,16 @@ const mockAlgorithms: ApiAlgorithm[] = [
   },
 ];
 
+const mockAppRefs: ApiAppRef[] = [
+  { appId: 200, appName: "compproc", appType: "ComputationProcess" },
+  { appId: 201, appName: "routingproc", appType: "RoutingProcess" },
+];
+
+const mockGroupRefs: ApiTsGroupRef[] = [
+  { groupId: 5, groupName: "Daily", groupType: "Computation" },
+  { groupId: 6, groupName: "Hourly", groupType: "Computation" },
+];
+
 const computationHandlers = {
   computationRefs: http.get("/odcsapi/computationrefs", () =>
     HttpResponse.json<ApiComputationRef[]>(mockComputationRefs),
@@ -120,6 +136,12 @@ const computationHandlers = {
     if (!algo) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json(algo);
   }),
+  appRefs: http.get("/odcsapi/apprefs", () =>
+    HttpResponse.json<ApiAppRef[]>(mockAppRefs),
+  ),
+  groupRefs: http.get("/odcsapi/tsgrouprefs", () =>
+    HttpResponse.json<ApiTsGroupRef[]>(mockGroupRefs),
+  ),
 };
 
 export const Default: Story = {

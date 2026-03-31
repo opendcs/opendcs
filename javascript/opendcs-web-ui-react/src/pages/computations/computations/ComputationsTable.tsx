@@ -6,7 +6,13 @@ import DT from "datatables.net-bs5";
 import { useTranslation } from "react-i18next";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { dtLangs } from "../../../lang";
-import type { ApiAlgorithm, ApiComputation, ApiComputationRef } from "opendcs-api";
+import type {
+  ApiAlgorithm,
+  ApiAppRef,
+  ApiComputation,
+  ApiComputationRef,
+  ApiTsGroupRef,
+} from "opendcs-api";
 import Computation, { ComputationSkeleton, type UiComputation } from "./Computation";
 import type { RemoveAction, SaveAction, UiState } from "../../../util/Actions";
 import { useContextWrapper } from "../../../util/ContextWrapper";
@@ -24,6 +30,8 @@ export interface ComputationsTableProperties {
   getComputation?: (computationId: number) => Promise<ApiComputation>;
   getAlgorithm?: (algorithmId: number) => Promise<ApiAlgorithm>;
   actions?: SaveAction<ApiComputation> & RemoveAction<number>;
+  processOptions?: ApiAppRef[];
+  groupOptions?: ApiTsGroupRef[];
 }
 
 const isOutputParm = (parm: { algoParmType?: string }): boolean =>
@@ -37,6 +45,8 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
   getComputation,
   getAlgorithm,
   actions = {},
+  processOptions = [],
+  groupOptions = [],
 }) => {
   const { toDom } = useContextWrapper();
   const table = useRef<DataTableRef>(null);
@@ -306,6 +316,8 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
               },
             }}
             edit={edit}
+            processOptions={processOptions}
+            groupOptions={groupOptions}
           />
         </Suspense>,
       );
@@ -318,7 +330,7 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
       );
       return node;
     },
-    [getComputation, getAlgorithm, toDom, actions],
+    [getComputation, getAlgorithm, toDom, actions, processOptions, groupOptions],
   );
 
   useEffect(() => {

@@ -62,3 +62,19 @@ textarea {
 .details-toggle__icon {
   transition: transform 0.2s ease;
 }
+
+// Computation params table — give breathing room to first columns
+.comp-parm-col-details {
+  width: 4rem !important;
+  min-width: 4rem;
+}
+
+.comp-parm-col-role {
+  width: 8rem !important;
+  min-width: 7rem;
+}
+
+.comp-parm-col-type {
+  width: 6rem !important;
+  min-width: 5rem;
+}

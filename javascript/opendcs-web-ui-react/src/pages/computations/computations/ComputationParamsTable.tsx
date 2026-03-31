@@ -225,9 +225,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
         query<HTMLSelectElement>('select[name="algoParmType"]')?.value ?? "i",
       siteName: readOptionalText('input[name="siteName"]'),
       dataType: readOptionalText('input[name="dataType"]'),
-      interval:
-        readOptionalSelect('select[name="interval"]') ??
-        readOptionalText('input[name="interval"]'),
+      interval: readOptionalText('input[name="interval"]'),
       paramType: readOptionalText('input[name="paramType"]'),
       duration: readOptionalText('input[name="duration"]'),
       version: readOptionalText('input[name="version"]'),
@@ -284,6 +282,31 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
     [],
   );
 
+  const renderCombobox = useCallback(
+    (name: string, defaultValue: string, ariaLabel: string, options?: string[]) => {
+      const listId = `${name}-options`;
+      return renderToString(
+        <>
+          <input
+            type="text"
+            name={name}
+            defaultValue={defaultValue}
+            list={listId}
+            className="form-control form-control-sm"
+            aria-label={ariaLabel}
+          />
+          <datalist id={listId}>
+            <option value="<var>" />
+            {(options ?? []).map((opt) => (
+              <option key={opt} value={opt} />
+            ))}
+          </datalist>
+        </>,
+      );
+    },
+    [],
+  );
+
   const parmTypeSelectHtml = useCallback(
     (defaultValue: string, ariaLabel: string) =>
       renderToString(
@@ -303,24 +326,10 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
     [],
   );
 
-  const intervalSelectHtml = useCallback(
+  const intervalComboboxHtml = useCallback(
     (defaultValue: string, ariaLabel: string) =>
-      renderToString(
-        <Form.Select
-          name="interval"
-          defaultValue={defaultValue}
-          size="sm"
-          aria-label={ariaLabel}
-        >
-          <option value="" />
-          {intervalOptions.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </Form.Select>,
-      ),
-    [intervalOptions],
+      renderCombobox("interval", defaultValue, ariaLabel, intervalOptions),
+    [intervalOptions, renderCombobox],
   );
 
   const renderRoleName = useCallback(
@@ -359,7 +368,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
       const parm = data.parm;
       if (type !== "display") return parm.siteName ?? "";
       if (isEditing(data)) {
-        return renderTextInput(
+        return renderCombobox(
           "siteName",
           parm.siteName ?? "",
           t("computations:parms.site_input"),
@@ -367,7 +376,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
       }
       return parm.siteName ?? "";
     },
-    [isEditing, renderTextInput, t],
+    [isEditing, renderCombobox, t],
   );
 
   const renderDataType = useCallback(
@@ -375,7 +384,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
       const parm = data.parm;
       if (type !== "display") return parm.dataType ?? "";
       if (isEditing(data)) {
-        return renderTextInput(
+        return renderCombobox(
           "dataType",
           parm.dataType ?? "",
           t("computations:parms.dataType_input"),
@@ -383,7 +392,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
       }
       return parm.dataType ?? "";
     },
-    [isEditing, renderTextInput, t],
+    [isEditing, renderCombobox, t],
   );
 
   const renderInterval = useCallback(
@@ -391,14 +400,62 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
       const parm = data.parm;
       if (type !== "display") return parm.interval ?? "";
       if (isEditing(data)) {
-        return intervalSelectHtml(
+        return intervalComboboxHtml(
           parm.interval ?? "",
           t("computations:parms.interval_input"),
         );
       }
       return parm.interval ?? "";
     },
-    [intervalSelectHtml, isEditing, t],
+    [intervalComboboxHtml, isEditing, t],
+  );
+
+  const renderParamType = useCallback(
+    (data: RowParm, type: string) => {
+      const parm = data.parm;
+      if (type !== "display") return parm.paramType ?? "";
+      if (isEditing(data)) {
+        return renderCombobox(
+          "paramType",
+          parm.paramType ?? "",
+          t("computations:parms.paramType_input"),
+        );
+      }
+      return parm.paramType ?? "";
+    },
+    [isEditing, renderCombobox, t],
+  );
+
+  const renderDuration = useCallback(
+    (data: RowParm, type: string) => {
+      const parm = data.parm;
+      if (type !== "display") return parm.duration ?? "";
+      if (isEditing(data)) {
+        return renderCombobox(
+          "duration",
+          parm.duration ?? "",
+          t("computations:parms.duration_input"),
+        );
+      }
+      return parm.duration ?? "";
+    },
+    [isEditing, renderCombobox, t],
+  );
+
+  const renderVersion = useCallback(
+    (data: RowParm, type: string) => {
+      const parm = data.parm;
+      if (type !== "display") return parm.version ?? "";
+      if (isEditing(data)) {
+        return renderCombobox(
+          "version",
+          parm.version ?? "",
+          t("computations:parms.version_input"),
+        );
+      }
+      return parm.version ?? "";
+    },
+    [isEditing, renderCombobox, t],
   );
 
   const renderDetailContent = useCallback(
@@ -409,55 +466,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
       return renderToString(
         <div className="p-2 border rounded bg-body-tertiary">
           <div className="row g-2">
-            <div className="col-md-3">
-              <Form.Label className="small mb-1">
-                {t("computations:parms.paramType")}
-              </Form.Label>
-              {editing ? (
-                <Form.Control
-                  type="text"
-                  size="sm"
-                  name="paramType"
-                  defaultValue={parm.paramType ?? ""}
-                  aria-label={t("computations:parms.paramType_input")}
-                />
-              ) : (
-                <div>{parm.paramType ?? "-"}</div>
-              )}
-            </div>
             <div className="col-md-2">
-              <Form.Label className="small mb-1">
-                {t("computations:parms.duration")}
-              </Form.Label>
-              {editing ? (
-                <Form.Control
-                  type="text"
-                  size="sm"
-                  name="duration"
-                  defaultValue={parm.duration ?? ""}
-                  aria-label={t("computations:parms.duration_input")}
-                />
-              ) : (
-                <div>{parm.duration ?? "-"}</div>
-              )}
-            </div>
-            <div className="col-md-2">
-              <Form.Label className="small mb-1">
-                {t("computations:parms.version")}
-              </Form.Label>
-              {editing ? (
-                <Form.Control
-                  type="text"
-                  size="sm"
-                  name="version"
-                  defaultValue={parm.version ?? ""}
-                  aria-label={t("computations:parms.version_input")}
-                />
-              ) : (
-                <div>{parm.version ?? "-"}</div>
-              )}
-            </div>
-            <div className="col-md-1">
               <Form.Label className="small mb-1">
                 {t("computations:parms.deltaT")}
               </Form.Label>
@@ -473,7 +482,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
                 <div>{parm.deltaT ?? 0}</div>
               )}
             </div>
-            <div className="col-md-2">
+            <div className="col-md-3">
               <Form.Label className="small mb-1">
                 {t("computations:parms.deltaTUnits")}
               </Form.Label>
@@ -494,7 +503,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
                 <div>{parm.deltaTUnits ?? "-"}</div>
               )}
             </div>
-            <div className="col-md-1">
+            <div className="col-md-3">
               <Form.Label className="small mb-1">
                 {t("computations:parms.units")}
               </Form.Label>
@@ -521,7 +530,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
                 <div>{parm.unitsAbbr ?? "-"}</div>
               )}
             </div>
-            <div className="col-md-1">
+            <div className="col-md-4">
               <Form.Label className="small mb-1">
                 {t("computations:parms.ifMissing")}
               </Form.Label>
@@ -742,12 +751,15 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: any[] = useMemo(() => {
     const cols = [
-      { data: null, name: "details", className: "dt-center" },
-      { data: null, render: renderRoleName },
-      { data: null, render: renderParmType },
+      { data: null, name: "details", className: "dt-center comp-parm-col-details" },
+      { data: null, render: renderRoleName, className: "comp-parm-col-role" },
+      { data: null, render: renderParmType, className: "comp-parm-col-type" },
       { data: null, render: renderSiteName },
       { data: null, render: renderDataType },
+      { data: null, render: renderParamType },
       { data: null, render: renderInterval },
+      { data: null, render: renderDuration },
+      { data: null, render: renderVersion },
     ];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (edit) cols.push({ data: null, name: "actions" } as any);
@@ -758,7 +770,10 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
     renderParmType,
     renderSiteName,
     renderDataType,
+    renderParamType,
     renderInterval,
+    renderDuration,
+    renderVersion,
   ]);
 
   const slots: DataTableSlots = useMemo(
@@ -837,7 +852,10 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
           <th>{t("computations:parms.parmType")}</th>
           <th>{t("computations:parms.site")}</th>
           <th>{t("computations:parms.dataType")}</th>
+          <th>{t("computations:parms.paramType")}</th>
           <th>{t("computations:parms.interval")}</th>
+          <th>{t("computations:parms.duration")}</th>
+          <th>{t("computations:parms.version")}</th>
           {edit && <th>{t("translation:actions")}</th>}
         </tr>
       </thead>
