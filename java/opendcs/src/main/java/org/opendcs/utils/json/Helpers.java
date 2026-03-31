@@ -8,7 +8,7 @@ public final class Helpers
 {
     private Helpers()
     {
-        /* utilitity class */
+        /* utility class */
     }
 
     public static String getTextField(JsonNode root, String field) throws IOException
