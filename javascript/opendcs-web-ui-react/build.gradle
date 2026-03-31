@@ -4,7 +4,7 @@ plugins {
     id 'opendcs.sonar-conventions'
     id 'opendcs.version-conventions'
     id 'com.github.node-gradle.node' version '7.1.0'
-    //id 'org.sonarqube'
+    id 'org.sonarqube'
 }
 
 configurations {
@@ -84,11 +84,13 @@ sonar {
     skipProject project.findProperty("UI") ? false : true
     properties {
         property "sonar.projectKey", "opendcs_opendcs_ui"
+        property "sonar.pullrequest.provider", "GitHub"
+        property "sonar.pullrequest.github.repository", "opendcs/opendcs"
         property "sonar.language", "typescript"
         property "sonar.sources", "src"
         property "sonar.tests", "src"
-        property "sonar.test.inclusions", "/**/*.(stories|tests).(js|jsx|ts|tsx)"
-        property "sonar.exclusions", "/**/*.(stories|tests).(js|jsx|ts|tsx)"
+        property "sonar.test.inclusions", "**/*.(stories|tests).(js|jsx|ts|tsx)"
+        property "sonar.exclusions", "**/*.(stories|tests).(js|jsx|ts|tsx)"
         property "sonar.javascript.lcov.reportPaths", "coverage/lcov.info"
         property "sonar.typescript.tsconfigPaths", "tsconfig.app.json"
         property "sonar.eslint.reportPaths", "build/eslint-report.json"

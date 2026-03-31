@@ -135,6 +135,7 @@ jobs:
             ./build/reports/jacoco/codeCoverageReport/**/
             ./**/build/**/*.class            
             ./javascript/opendcs-web-ui-react/coverage/**
+            ./javascript/opendcs-web-ui-react/build/eslint-report.json
       - name: Upload Test Reports
         uses: actions/upload-artifact@v6.0.0
         if: always()
