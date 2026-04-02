@@ -23,27 +23,12 @@ dependencies {
     testImplementation(libs.bundles.junit)
     testImplementation(libs.bundles.junit.platform)
 
-    implementation(libs.hec.monolith) {
-        exclude group: "codebase"
-        exclude group: "org.jdom"
-        exclude group: "org.bouncycastle"
-        exclude group: "org.eclipse.jetty.aggregate"
-        exclude group: "javax.servlet"
-        exclude group: "mil.army.usace.hec.swingx"
-        exclude group: "com.fifesoft"
-        exclude group: "org.python"
-        exclude group: "com.vividsolutions"
-        exclude group: "mil.army.usace.hec", module: "context-specific-help"
-        exclude group: "mil.army.usace.hec", module: "hec-geojson"
-        exclude group: "javax.mail"
-        exclude group: "org.apache.poi"
-        exclude group: "net.java.dev.jna"
-        exclude group: "org.apache-commons", module: "common-vfs2"
-        exclude group: "org.jfree"
-        exclude group: "com.mrsid"
-        exclude group: "javax.help"
-        exclude group: "org.jooq.pro"
-    }
+    implementation(libs.hec.monolith) { transitive = false }
+    // hec-monolith uses the following dependencies
+    implementation(platform(libs.hec.nucleus.bom))
+    implementation(libs.hec.nucleus.metadata)
+    implementation(libs.hec.nucleus.data)
+    implementation(libs.com.google.flogger)
 }
 
 configurations.all {
