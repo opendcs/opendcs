@@ -29,8 +29,7 @@ cwms-db-codegen = { strictly = "7.0.0-OpenDCS" }
 monolith = { strictly = "7.0.5" }
 cwms-ratings = "1.1.0"
 nucleus = "4.10.0"
-flogger = "0.7.4"
-hec-lookup = "2.0"
+flogger = "0.7.4"  # used by hec-monolith
 jdbi = "3.39.1"
 flywaydb = "11.20.1"
 sun-mailapi="2.0.2"
@@ -175,7 +174,6 @@ hec-nucleus-bom = { module = "mil.army.usace.hec:hec-nucleus-bom", version.ref =
 hec-nucleus-metadata = { module = "mil.army.usace.hec:hec-nucleus-metadata" }
 hec-nucleus-data = { module = "mil.army.usace.hec:hec-nucleus-data" }
 com-google-flogger = { module = "com.google.flogger:flogger", version.ref = "flogger" }
-hec-lookup = { module = "mil.army.usace.hec:lookup", version.ref = "hec-lookup" }
 
 # test deps
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }

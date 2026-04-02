@@ -24,11 +24,11 @@ dependencies {
     testImplementation(libs.bundles.junit.platform)
 
     implementation(libs.hec.monolith) { transitive = false }
+    // hec-monolith uses the following dependencies
     implementation(platform(libs.hec.nucleus.bom))
     implementation(libs.hec.nucleus.metadata)
     implementation(libs.hec.nucleus.data)
     implementation(libs.com.google.flogger)
-    implementation(libs.hec.lookup)
 }
 
 configurations.all {

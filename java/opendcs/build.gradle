@@ -75,11 +75,12 @@ dependencies {
         exclude group: "com.oracle.database.jdbc"
         exclude group: "mil.army.usace.hec", module: "hec-monolith"
     }
+    // hec-monolith uses the following dependencies
     implementation(platform(libs.hec.nucleus.bom))
     implementation(libs.hec.nucleus.metadata)
     implementation(libs.hec.nucleus.data)
     implementation(libs.com.google.flogger)
-    implementation(libs.hec.lookup)
+
     api(libs.org.slf4j.api)
     implementation(libs.bundles.jdbi)
     implementation(libs.bundles.flyway)
