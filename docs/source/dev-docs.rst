@@ -607,6 +607,81 @@ Algorithms
 ~~~~~~~~~~
 - **Purpose**: This section describes how to test algorithmic implementations for solving specific problems or performing computations.
 
+Algorithm Lifecycle
+~~~~~~~~~~~~~~~~~~~
+
+Custom algorithms extend ``AW_AlgorithmBase`` and override lifecycle methods that the
+computation framework calls in a specific order. Understanding this lifecycle is essential
+for correct resource management and error handling.
+
+.. code-block:: text
+
+   try {
+       beforeAllTimeSlices()          — one-time setup (open DAOs, load ratings)
+
+       For AGGREGATING algorithms, for each aggregate period:
+           beforeTimeSlices()         — per-period setup
+           for each time slice:
+               doAWTimeSlice()        — core computation (exceptions caught per-slice)
+           afterTimeSlices()          — per-period finalization
+
+       For TIME_SLICE algorithms:
+           beforeTimeSlices()         — called once
+           for each time slice:
+               doAWTimeSlice()        — core computation (exceptions caught per-slice)
+           afterTimeSlices()          — called once
+
+       afterAllTimeSlices()           — one-time finalization (save results)
+   } finally {
+       alwaysAfterTimeSlices()        — guaranteed cleanup (release resources)
+   }
+
+**Key methods:**
+
+- ``beforeAllTimeSlices()`` — Called once before any time slices are processed. Use this
+  to acquire resources such as database connections and DAOs.
+
+- ``beforeTimeSlices()`` — Called before each group of time slices. For aggregating
+  algorithms, this is called once per aggregate period. Use for per-period initialization.
+
+- ``doAWTimeSlice()`` — Called for each individual time slice. Exceptions thrown here
+  (``DbCompException``) are caught per-slice — a single failed slice does not abort the
+  entire period.
+
+- ``afterTimeSlices()`` — Called after each group of time slices. For aggregating
+  algorithms, this is called once per aggregate period. Use for per-period output
+  (e.g., daily totals). Exceptions here abort the computation.
+
+- ``afterAllTimeSlices()`` — Called once after all periods complete successfully. Use
+  for final output operations (e.g., saving accumulated profiles). Do **not** release
+  resources here — an exception earlier in the lifecycle will skip this method.
+
+- ``alwaysAfterTimeSlices()`` — Called in a ``finally`` block, guaranteed to run
+  regardless of whether an exception occurred. Use this to release all resources
+  acquired in ``beforeAllTimeSlices()`` (connections, DAOs, etc.). Always include
+  null checks since ``beforeAllTimeSlices()`` may have failed partway through.
+
+**Resource management example:**
+
+.. code-block:: java
+
+   public void beforeAllTimeSlices() throws DbCompException {
+       myDAO = tsdb.makeTimeSeriesDAO();
+       conn = tsdb.getConnection();
+       // ... load data ...
+   }
+
+   public void afterAllTimeSlices() throws DbCompException {
+       // Save results — only runs on success
+       myProfiles.save(myDAO);
+   }
+
+   public void alwaysAfterTimeSlices() {
+       // Release resources — always runs, even on failure
+       if (conn != null) tsdb.freeConnection(conn);
+       if (myDAO != null) myDAO.close();
+   }
+
 Adding Tests for Algorithms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 To add new tests for algorithms, developers need to create a new directory within `./opendcs/integrationtesting/opendcs-tests/src/test/resources/data/Comps`. This folder must be titled with the name of the algorithm you wish to test.
