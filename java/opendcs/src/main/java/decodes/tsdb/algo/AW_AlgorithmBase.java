@@ -16,6 +16,7 @@
 package decodes.tsdb.algo;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
@@ -1557,7 +1558,10 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive implements P
 									final org.opendcs.annotations.PropertySpec propSpec = p.second;
 									final String name = PropertySpec.getPropertyName(f, propSpec);
 									String specType = PropertySpec.getSpecTypeFromAnnotation(propSpec, f);
-									return new PropertySpec(name, specType, propSpec.description());
+									
+									// Create PropertySpec - required status is now handled through annotations
+									PropertySpec spec = new PropertySpec(name, specType, propSpec.description());
+									return spec;
 								})
 								.collect(Collectors.toList())
 								.toArray(new PropertySpec[0]);
