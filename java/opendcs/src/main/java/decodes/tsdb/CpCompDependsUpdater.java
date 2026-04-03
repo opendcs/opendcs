@@ -1040,11 +1040,11 @@ public class CpCompDependsUpdater extends TsdbAppTemplate
             compDepends.transaction(dao ->
             {
                 log.info("Clearing scratch pad.");
-                compDepends.clearScratchpad();
+                dao.clearScratchpad();
                 log.info("Adding records to scratch pad.");
-                compDepends.addRecordsToScratchPad(toAdd);
+                dao.addRecordsToScratchPad(toAdd);
                 log.info("Merging scratch pad to active.");
-                compDepends.mergeScratchPadToActive();
+                dao.mergeScratchPadToActive();
             });
             return true;
         }
