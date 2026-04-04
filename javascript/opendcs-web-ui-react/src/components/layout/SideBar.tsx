@@ -8,7 +8,7 @@ export interface SideBarProps {
 }
 
 export const SideBar = ({ open, onClose }: SideBarProps) => {
-  const [t] = useTranslation(["platforms", "sites", "algorithms"]);
+  const [t] = useTranslation(["platforms", "sites", "algorithms", "computations"]);
   const location = useLocation();
 
   return (
@@ -41,6 +41,14 @@ export const SideBar = ({ open, onClose }: SideBarProps) => {
 
         <div className="odcs-sidebar__section-title">Computation</div>
         <Nav className="flex-column">
+          <Nav.Link
+            as={Link}
+            to="/computations"
+            active={location.pathname === "/computations"}
+            onClick={onClose}
+          >
+            {t("computations:computationsTitle")}
+          </Nav.Link>
           <Nav.Link
             as={Link}
             to="/algorithms"

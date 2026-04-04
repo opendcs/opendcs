@@ -10,6 +10,7 @@ import { initialize, mswLoader } from "msw-storybook-addon";
 import { WithI18next } from "./mock/WithI18Next";
 import i18n from "../src/i18n";
 import { WithTheme } from "./mock/WithTheme";
+import { WithUnits } from "./mock/WithUnits";
 
 // MSW setup
 initialize(
@@ -48,7 +49,7 @@ const preview: Preview = {
     },
     i18n,
   },
-  decorators: [WithI18next, WithTheme, WithRefLists],
+  decorators: [WithI18next, WithTheme, WithRefLists, WithUnits],
   globalTypes: {
     locale: {
       name: "Locale",
