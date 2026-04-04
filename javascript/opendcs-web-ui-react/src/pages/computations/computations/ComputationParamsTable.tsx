@@ -22,6 +22,7 @@ import UnitSelect from "../../../components/controls/UnitSelector";
 import UnitsContext, {
   defaultValue as defaultUnitsContext,
 } from "../../../contexts/data/UnitsContext";
+import ComputationParamsOptionsContext from "../../../contexts/data/ComputationParamsOptionsContext";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -31,34 +32,6 @@ DataTable.use(dtButtons);
 export type CompParm = ApiCompParm;
 export { PARM_TYPES, parmTypeLabel };
 export type { ParmTypeOption };
-
-const DELTA_T_UNITS = [
-  "Seconds",
-  "Minutes",
-  "Hours",
-  "Days",
-  "Weeks",
-  "Months",
-  "Years",
-];
-const IF_MISSING_ACTIONS = ["FAIL", "IGNORE", "PREV", "NEXT", "INTERP", "CLOSEST"];
-const DEFAULT_INTERVALS = [
-  "0",
-  "1Minute",
-  "5Minutes",
-  "10Minutes",
-  "15Minutes",
-  "30Minutes",
-  "1Hour",
-  "2Hours",
-  "3Hours",
-  "6Hours",
-  "12Hours",
-  "1Day",
-  "1Week",
-  "1Month",
-  "1Year",
-];
 
 type ExistingRow = {
   kind: "existing";
@@ -102,6 +75,9 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
   const [t, i18n] = useTranslation(["computations", "translation"]);
   const api = useApi();
   const units = useContext(UnitsContext) ?? defaultUnitsContext;
+  const { deltaTUnits, ifMissingActions, defaultIntervals } = useContext(
+    ComputationParamsOptionsContext,
+  );
   const table = useRef<DataTableRef>(null);
   const intervalApi = useMemo(
     () => new TimeSeriesMethodsIntervalMethodsApi(api.conf),
@@ -163,14 +139,14 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
   }, [api.org, intervalApi]);
 
   const intervalOptions = useMemo(() => {
-    const options = new Set<string>(DEFAULT_INTERVALS);
+    const options = new Set<string>(defaultIntervals);
     intervalNames.forEach((name) => options.add(name));
     parms
       .map((parm) => parm.interval ?? "")
       .filter((interval) => interval.length > 0)
       .forEach((interval) => options.add(interval));
     return Array.from(options).sort((a, b) => a.localeCompare(b));
-  }, [intervalNames, parms]);
+  }, [defaultIntervals, intervalNames, parms]);
 
   useEffect(() => {
     const valid = new Set(allRows.map((row) => rowKey(row)));
@@ -493,7 +469,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
                   defaultValue={parm.deltaTUnits ?? "Seconds"}
                   aria-label={t("computations:parms.deltaTUnits_input")}
                 >
-                  {DELTA_T_UNITS.map((option) => (
+                  {deltaTUnits.map((option) => (
                     <option key={option} value={option}>
                       {option}
                     </option>
@@ -541,7 +517,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
                   defaultValue={parm.ifMissing ?? "FAIL"}
                   aria-label={t("computations:parms.ifMissing_input")}
                 >
-                  {IF_MISSING_ACTIONS.map((option) => (
+                  {ifMissingActions.map((option) => (
                     <option key={option} value={option}>
                       {option}
                     </option>
@@ -555,7 +531,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
         </div>,
       );
     },
-    [isEditing, t, units],
+    [deltaTUnits, ifMissingActions, isEditing, t, units],
   );
 
   const syncDetailRows = useCallback(() => {
@@ -674,7 +650,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
           <>
             <Button
               variant="primary"
-              size="sm"
+              size="lg"
               aria-label={t("computations:parms.save_parm")}
               onClick={() => handleSaveNew(data.idx)}
             >
@@ -682,7 +658,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
             </Button>
             <Button
               variant="secondary"
-              size="sm"
+              size="lg"
               aria-label={t("computations:parms.cancel_parm")}
               onClick={() =>
                 setNewParms((prev) => prev.filter((p) => p.idx !== data.idx))
@@ -700,7 +676,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
           <>
             <Button
               variant="primary"
-              size="sm"
+              size="lg"
               aria-label={t("computations:parms.save_parm")}
               onClick={() => handleSaveExisting(roleName)}
             >
@@ -708,7 +684,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
             </Button>
             <Button
               variant="secondary"
-              size="sm"
+              size="lg"
               aria-label={t("computations:parms.cancel_parm")}
               onClick={() =>
                 setEditingNames((prev) => {
@@ -728,7 +704,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
         <>
           <Button
             variant="warning"
-            size="sm"
+            size="lg"
             aria-label={t("computations:parms.edit_for", { name: roleName })}
             onClick={() => setEditingNames((prev) => new Set([...prev, roleName]))}
           >
@@ -736,7 +712,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
           </Button>
           <Button
             variant="danger"
-            size="sm"
+            size="lg"
             aria-label={t("computations:parms.delete_for", { name: roleName })}
             onClick={() => onRemove?.(roleName)}
           >
