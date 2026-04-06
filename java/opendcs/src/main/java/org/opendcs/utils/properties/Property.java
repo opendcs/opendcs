@@ -1,0 +1,197 @@
+package org.opendcs.utils.properties;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
+
+import org.opendcs.annotations.PropertySpec;
+
+import ilex.util.HasProperties;
+
+/**
+ * Establish a known Property value that is to be retrieved.
+ * 
+ * The get and find methods *always* lookup the value when called. So the created instances
+ * can be stored to retrieve at different times.
+ */
+public final class Property<T>
+{
+    final T defaultValue;
+    final Date expansionDate; // if not set use new Date at time of expansion
+    final Properties expansionSource;
+    final boolean mustExpand;
+    final PropertySpec propertySpec;
+    final String propertyName;
+    final Class<T> targetType;
+    final List<? extends HasProperties> sources;
+
+
+    private Property(Builder<T> builder)
+    {
+        this.propertyName = builder.propertyName;
+        this.targetType = builder.targetType;
+        this.expansionDate = builder.expansionDate;
+        this.defaultValue = builder.defaultValue;
+        this.expansionSource = builder.expansionSource;
+        this.mustExpand = builder.mustExpand;
+        this.propertySpec = builder.propertySpec;
+        this.sources = builder.sources;
+    }
+
+    // For both of the below, it may be better to allow the expansion sources to be
+    // provided here vs keeping it as the default, otherwise that data could become stale
+    // Alternatively perhaps those usages would just keep the builder around instead.
+
+
+    /**
+     * Retrieve expected property.
+     * @return The value expected
+     * @throws NoSuchPropertyException
+     */
+    T get() throws NoSuchPropertyException
+    {
+        return find().orElseThrow(() -> new NoSuchPropertyException("No property avaiabled named '" + propertyName + "' from any configured source"));
+    }
+
+    /**
+     * Return property that may not exist.
+     * @return
+     */
+    Optional<T> find()
+    {
+        return findValue();
+    }
+
+    private Optional<T> findValue()
+    {
+        T ret = this.defaultValue;
+
+        for (var source: sources)
+        {
+            String value = source.getProperty(propertyName);
+            if (value != null)
+            {
+                // conversion here
+                // ret = converted value
+            }
+        }
+
+        return Optional.ofNullable(ret);
+    }
+
+    @SuppressWarnings("java:S2972") // it doesn't really make sense to me to split this class out, while a bit long, it is simple.
+    public static final class Builder<T>
+    {
+        T defaultValue;
+        Date expansionDate = null; // if not set use new Date at time of expansion
+        Properties expansionSource = null;
+        boolean mustExpand = false;
+        PropertySpec propertySpec = null;
+        String propertyName;
+        Class<T> targetType;
+        final List<? extends HasProperties> sources = new ArrayList<>();
+    
+
+        private Builder(String propertyName, Class<T> targetType)
+        {
+            this.propertyName = propertyName;
+            this.targetType = targetType;
+        }
+
+        
+        /**
+         * Include System.getProperties and System.getenv in the possible sources.
+         * These will be first in the order of operations. If a different order is desired
+         * manually establish the order with {@see withSources} and the {@see PropertySource} and {@see EnvSource} instances
+         * @return
+         */
+        Builder<T> useSystemAndEnv()
+        {
+            return this;
+        }
+
+        /**
+         * Possible Sources in order of priority
+         * @param <U>
+         * @param sources
+         * @return
+         */
+        @SafeVarargs
+        @SuppressWarnings("java:S2333") // modifier required to satisfy @SafeVarargs validation
+        public final <U extends HasProperties> Builder<T> withSources(U... sources)
+        {
+            return withSources(Arrays.asList(sources));
+        }
+
+        public <U extends HasProperties> Builder<T> withSources(List<U> sources)
+        {
+            this.sources.addAll(sources);
+            return this;
+        }
+
+        /**
+         * Establish a default value. If not provided default is null, unless PropertySpec
+         * is set, in which case that default is used.
+         * @param value
+         * @return
+         */
+        public Builder<T> withDefaultValue(T value)
+        {
+            this.defaultValue = value;
+            return this;
+        }
+
+        /**
+         * Establish matching property spec to handle conversions.
+         * @param spec
+         * @return
+         */
+        public Builder<T> withPropertySpec(PropertySpec spec)
+        {
+            this.propertySpec = spec;
+            return this;
+        }
+
+        /**
+         * Returned value will use the EnvExpander
+         * @return
+         */
+        public Builder<T> expand()
+        {
+            this.mustExpand = true;
+            return this;
+        }
+
+        public Builder<T> expand(Properties source)
+        {
+            this.expansionSource = source;
+            return expand();
+        }
+
+        public Builder<T> expand(Properties source, Date date)
+        {
+            this.expansionDate = date;
+            return expand(source);
+        }
+        
+        public Property<T> build()
+        {
+            return new Property<>(this);
+        }
+    }
+
+
+    public static <T> Builder<T> property(String name, Class<T> type)
+    {
+        return new Builder<>(name, type);
+    }
+
+    public static <T> Builder<T> property(PropertySpec spec)
+    {
+        // should lookup the type from the spec
+        return new Builder<>(spec.name(), null);
+    }
+}
