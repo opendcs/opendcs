@@ -76,6 +76,7 @@ public final class Property<T>
             {
                 // conversion here
                 // ret = converted value
+                break; // break out of the loop, we found the value we want
             }
         }
 
