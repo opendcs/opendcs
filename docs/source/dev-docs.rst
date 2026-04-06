@@ -542,7 +542,7 @@ To add new tests for the Decoding language and functions, developers need to cre
     - Purpose: Defines the expected output for the test to validate the Decoding.
     - Example:  
 
-      .. code-block:: csv
+      .. code-block:: text
 
          #sensor number, time (ISO8601), expected value (double or string), precision, message
          1,2014-03-01T12:00:00Z,23.95,  0.0, Expected value not parsed (sensor 1)
@@ -587,7 +587,7 @@ To add new tests for the Decoding language and functions, developers need to cre
     - Purpose: Describes the sensors and their configurations used in the decoding process.  
     - Example:  
 
-      .. code-block:: csv
+      .. code-block:: text
 
          #sensor number, sensor name, units, description, typeStandard:typeCode, algorithm, coefA:coefB:..., recording mode, interval
          1, Stage, ft, none
@@ -865,7 +865,7 @@ if you think you have a superior organization for these data.
 
 
 Using OpenDCS Jars in your project
-=================================
+==================================
 
 Except for tests and the installer zip, project jars are available on maven central.
 You can add them to your project using the appropriate dependency management solution.
