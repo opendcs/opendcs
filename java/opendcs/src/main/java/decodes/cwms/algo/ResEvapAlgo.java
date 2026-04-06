@@ -472,11 +472,33 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
                 //If missing data overwrite with site info
                 if (longitude == 0)
                 {
-                    longitude = Double.parseDouble(site.longitude);
+                    if (site.longitude == null)
+                    {
+                        throw new DbCompException("Longitude property is 0 and site '" + reservoirId + "' has no longitude defined");
+                    }
+                    try
+                    {
+                        longitude = Double.parseDouble(site.longitude);
+                    }
+                    catch (NumberFormatException ex)
+                    {
+                        throw new DbCompException("Cannot parse longitude '" + site.longitude + "' for site '" + reservoirId + "'", ex);
+                    }
                 }
                 if (latitude == 0)
                 {
-                    latitude = Double.parseDouble(site.latitude);
+                    if (site.latitude == null)
+                    {
+                        throw new DbCompException("Latitude property is 0 and site '" + reservoirId + "' has no latitude defined");
+                    }
+                    try
+                    {
+                        latitude = Double.parseDouble(site.latitude);
+                    }
+                    catch (NumberFormatException ex)
+                    {
+                        throw new DbCompException("Cannot parse latitude '" + site.latitude + "' for site '" + reservoirId + "'", ex);
+                    }
                 }
 
                 //initialize output timeseries
@@ -627,7 +649,7 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
             {
                 successful = resEvap.compute(_timeSliceBaseTime, 0.0, conn);
             }
-            catch (ResEvapException ex)
+            catch (DbCompException ex)
             {
                 throw new DbCompException("ResEvap Compute Not Successful. Exiting Script.", ex);
             }
@@ -719,7 +741,14 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
             setOutput(dailyEvapDepth, dailyEvapMM, _timeSliceBaseTime);
             setOutput(dailyEvapAsFlow, dailyEvapFlowCms, _timeSliceBaseTime);
 
-            dailyWTP.append(hourlyWTP, _timeSliceBaseTime, timeSeriesDAO);
+            try
+            {
+                dailyWTP.append(hourlyWTP, _timeSliceBaseTime, timeSeriesDAO);
+            }
+            catch (RuntimeException ex)
+            {
+                throw new DbCompException("Failed to append hourly water temperature profiles", ex);
+            }
         }
         else
         {
@@ -740,11 +769,25 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
         {
             throw new DbCompException("Failed to save water temperature profiles", ex);
         }
-        finally
+    }
+
+    @Override
+    public void alwaysAfterTimeSlices()
+    {
+        if (conn != null)
         {
             tsdb.freeConnection(conn);
+        }
+        if (crd != null)
+        {
             crd.close();
+        }
+        if (siteDAO != null)
+        {
             siteDAO.close();
+        }
+        if (timeSeriesDAO != null)
+        {
             timeSeriesDAO.close();
         }
     }
