@@ -1022,9 +1022,9 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 		catch (DecodesException ex)
 		{
 			String msg = dbeditLabels.getString("DecodingScriptEditPanel.errorDecoding");
-			log.atError().setCause(ex).log(msg);
-			
-			TopFrame.instance().showError(msg + " " + ExceptionUtil.getCauseMessage(ex, ScriptFormatException.class));
+			String uIMessage  = msg + " " + ExceptionUtil.getCauseMessage(ex, ScriptFormatException.class);
+			log.atError().setCause(ex).log(uIMessage);
+			TopFrame.instance().showError(uIMessage);
 			return;
 		}
 	}
