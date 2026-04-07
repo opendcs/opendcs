@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.Properties;
 
 import org.opendcs.annotations.PropertySpec;
+import org.opendcs.utils.properties.conversion.IntegerPropertyConverter;
 
 import ilex.util.HasProperties;
 
@@ -51,7 +52,7 @@ public final class Property<T>
      * @return The value expected
      * @throws NoSuchPropertyException
      */
-    T get() throws NoSuchPropertyException
+    public T get() throws NoSuchPropertyException
     {
         return find().orElseThrow(() -> new NoSuchPropertyException("No property avaiabled named '" + propertyName + "' from any configured source"));
     }
@@ -60,7 +61,7 @@ public final class Property<T>
      * Return property that may not exist.
      * @return
      */
-    Optional<T> find()
+    public Optional<T> find()
     {
         return findValue();
     }
@@ -74,7 +75,12 @@ public final class Property<T>
             String value = source.getProperty(propertyName);
             if (value != null)
             {
-                // conversion here
+
+                // lookup proper conversion here
+                if (ret instanceof Integer)
+                {
+                    ret = (T)new IntegerPropertyConverter().fromString(value);
+                }
                 // ret = converted value
                 break; // break out of the loop, we found the value we want
             }
@@ -122,7 +128,7 @@ public final class Property<T>
          */
         @SafeVarargs
         @SuppressWarnings("java:S2333") // modifier required to satisfy @SafeVarargs validation
-        public final <U extends HasProperties> Builder<T> withSources(U... sources)
+        public final Builder<T> withSources(HasProperties... sources)
         {
             return withSources(Arrays.asList(sources));
         }
