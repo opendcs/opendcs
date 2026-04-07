@@ -99,7 +99,7 @@ public final class Property<T>
         PropertySpec propertySpec = null;
         String propertyName;
         Class<T> targetType;
-        final List<? extends HasProperties> sources = new ArrayList<>();
+        final List<HasProperties> sources = new ArrayList<>();
     
 
         private Builder(String propertyName, Class<T> targetType)
@@ -128,12 +128,12 @@ public final class Property<T>
          */
         @SafeVarargs
         @SuppressWarnings("java:S2333") // modifier required to satisfy @SafeVarargs validation
-        public final Builder<T> withSources(HasProperties... sources)
+        public final <U extends HasProperties> Builder<T> withSources(U... sources)
         {
             return withSources(Arrays.asList(sources));
         }
 
-        public <U extends HasProperties> Builder<T> withSources(List<U> sources)
+        public Builder<T> withSources(List<? extends HasProperties> sources)
         {
             this.sources.addAll(sources);
             return this;
