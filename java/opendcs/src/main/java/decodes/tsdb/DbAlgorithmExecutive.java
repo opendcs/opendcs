@@ -27,6 +27,7 @@ import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
 import org.opendcs.utils.AnnotationHelpers;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.opendcs.utils.properties.Property;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
 import org.slf4j.MDC.MDCCloseable;
@@ -151,39 +152,48 @@ public abstract class DbAlgorithmExecutive
 
 		DbCompAlgorithm algo = comp.getAlgorithm();
 
-		this.maxMissingValuesForFill = DecodesSettings.instance().maxMissingValuesForFill;
-		String s = comp.getProperty("maxMissingValuesForFill");
-		if (s == null)
-			s = algo.getProperty("maxMissingValuesForFill");
-		if (s != null)
-		{
-			try { maxMissingValuesForFill = Integer.parseInt(s.trim()); }
-			catch(NumberFormatException ex)
-			{
-				this.maxMissingValuesForFill = DecodesSettings.instance().maxMissingValuesForFill;
-				log.atError()
-				   .setCause(ex)
-				   .log("Bad maxMissingValuesForFill property '{}' will use default of {}",
-				   		s, maxMissingValuesForFill);
-			}
-		}
-
-		this.maxMissingTimeForFill = DecodesSettings.instance().maxMissingTimeForFill;
-		s = comp.getProperty("maxMissingTimeForFill");
-		if (s == null)
-			s = algo.getProperty("maxMissingTimeForFill");
-		if (s != null)
-		{
-			try { maxMissingTimeForFill = Integer.parseInt(s.trim()); }
-			catch(NumberFormatException ex)
-			{
-				this.maxMissingTimeForFill = DecodesSettings.instance().maxMissingTimeForFill;
-				log.atWarn()
-				   .setCause(ex)
-				   .log("Bad maxMissingTimeForFill property '{}' will use default of {}",
-				   		s, maxMissingTimeForFill);
-			}
-		}
+		this.maxMissingValuesForFill = Property.property("maxMissingValuesForFill", Integer.class)
+											   .withSources(comp, algo, DecodesSettings.instance())
+											   .build()
+											   .find()
+											   .orElse(0);
+		// this.maxMissingValuesForFill = DecodesSettings.instance().maxMissingValuesForFill;
+		// String s = comp.getProperty("maxMissingValuesForFill");
+		// if (s == null)
+		// 	s = algo.getProperty("maxMissingValuesForFill");
+		// if (s != null)
+		// {
+		// 	try { maxMissingValuesForFill = Integer.parseInt(s.trim()); }
+		// 	catch(NumberFormatException ex)
+		// 	{
+		// 		this.maxMissingValuesForFill = DecodesSettings.instance().maxMissingValuesForFill;
+		// 		log.atError()
+		// 		   .setCause(ex)
+		// 		   .log("Bad maxMissingValuesForFill property '{}' will use default of {}",
+		// 		   		s, maxMissingValuesForFill);
+		// 	}
+		// }
+		this.maxMissingTimeForFill = Property.property("maxMissingTimeForFill", Integer.class)
+											   .withSources(comp, algo, DecodesSettings.instance())
+											   .build()
+											   .find()
+											   .orElse(0);
+		// this.maxMissingTimeForFill = DecodesSettings.instance().maxMissingTimeForFill;
+		// s = comp.getProperty("maxMissingTimeForFill");
+		// if (s == null)
+		// 	s = algo.getProperty("maxMissingTimeForFill");
+		// if (s != null)
+		// {
+		// 	try { maxMissingTimeForFill = Integer.parseInt(s.trim()); }
+		// 	catch(NumberFormatException ex)
+		// 	{
+		// 		this.maxMissingTimeForFill = DecodesSettings.instance().maxMissingTimeForFill;
+		// 		log.atWarn()
+		// 		   .setCause(ex)
+		// 		   .log("Bad maxMissingTimeForFill property '{}' will use default of {}",
+		// 		   		s, maxMissingTimeForFill);
+		// 	}
+		// }
 
 		parseTimeRound();
 
