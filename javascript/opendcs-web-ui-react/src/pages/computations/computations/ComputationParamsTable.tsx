@@ -23,6 +23,7 @@ import UnitsContext, {
   defaultValue as defaultUnitsContext,
 } from "../../../contexts/data/UnitsContext";
 import ComputationParamsOptionsContext from "../../../contexts/data/ComputationParamsOptionsContext";
+import { queryDataTableRowNode } from "../../../util/DataTables";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -168,18 +169,9 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
     [],
   );
 
-  const findChildNode = (rowNode: HTMLTableRowElement): HTMLElement | null => {
-    const sibling = rowNode.nextElementSibling as HTMLElement | null;
-    if (!sibling || !sibling.classList.contains("child")) return null;
-    return sibling;
-  };
-
   const readRowValues = (rowNode: HTMLTableRowElement): RowValues => {
-    const childNode = findChildNode(rowNode);
     const query = <T extends Element>(selector: string): T | null =>
-      (rowNode.querySelector(selector) as T | null) ??
-      (childNode?.querySelector(selector) as T | null) ??
-      null;
+      queryDataTableRowNode<T>(rowNode, selector);
 
     const readOptionalText = (selector: string): string | undefined => {
       const input = query<HTMLInputElement>(selector);
