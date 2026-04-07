@@ -64,6 +64,7 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 
+import org.opendcs.utils.ExceptionUtil;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -95,6 +96,7 @@ import decodes.datasource.PMParser;
 import decodes.datasource.HeaderParseException;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.DecodedSample;
+import decodes.decoder.ScriptFormatException;
 import decodes.decoder.TimeSeries;
 import decodes.decoder.TokenPosition;
 
@@ -1020,8 +1022,9 @@ public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 		catch (DecodesException ex)
 		{
 			String msg = dbeditLabels.getString("DecodingScriptEditPanel.errorDecoding");
-			log.atError().setCause(ex).log(msg);
-			TopFrame.instance().showError(msg + ex);
+			String uIMessage  = msg + " " + ExceptionUtil.getCauseMessage(ex, ScriptFormatException.class);
+			log.atError().setCause(ex).log(uIMessage);
+			TopFrame.instance().showError(uIMessage);
 			return;
 		}
 	}
