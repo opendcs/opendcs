@@ -12,6 +12,7 @@ import { Button, Form } from "react-bootstrap";
 import { Pencil, Save, Trash, X } from "react-bootstrap-icons";
 import { renderToString } from "react-dom/server";
 import { PARM_TYPES, parmTypeLabel, type ParmTypeOption } from "../common/parmTypes";
+import { queryDataTableRowNode } from "../../../util/DataTables";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -84,8 +85,14 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
   );
 
   const readRowValues = (node: HTMLTableRowElement) => {
-    const roleInput = node.querySelector<HTMLInputElement>('input[name="roleName"]');
-    const typeSelect = node.querySelector<HTMLSelectElement>('select[name="parmType"]');
+    const roleInput = queryDataTableRowNode<HTMLInputElement>(
+      node,
+      'input[name="roleName"]',
+    );
+    const typeSelect = queryDataTableRowNode<HTMLSelectElement>(
+      node,
+      'select[name="parmType"]',
+    );
     return {
       roleName: roleInput?.value.trim() ?? "",
       parmType: typeSelect?.value ?? "i",
