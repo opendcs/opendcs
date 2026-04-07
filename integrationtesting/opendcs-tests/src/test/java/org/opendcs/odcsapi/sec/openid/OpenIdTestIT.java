@@ -15,6 +15,7 @@
 
 package org.opendcs.odcsapi.sec.openid;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -51,8 +52,11 @@ import org.opendcs.odcsapi.res.it.BaseApiIT;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 @EnableIfTsDb({"OpenDCS-Postgres"})
@@ -103,7 +107,7 @@ final class OpenIdTestIT extends BaseApiIT
 	 * This requires a client secret to be setup.
 	 */
 	@Test
-	void test_opendcs_auth_code_flow()
+	void test_opendcs_auth_code_flow() throws Exception
 	{
 		//Initial session should be unauthorized
 		var initialSession = 
@@ -170,6 +174,99 @@ final class OpenIdTestIT extends BaseApiIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(Response.Status.UNAUTHORIZED.getStatusCode()))
+		;
+	}
+
+	@Test
+	void test_auth_code_error() throws Exception
+	{
+		final String redirectUri = RestAssured.baseURI + ":" + RestAssured.port + "/" + RestAssured.basePath + "/oidc-callback";
+		
+		//Initial session should be unauthorized
+		var initialSession = 
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("check")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.UNAUTHORIZED.getStatusCode()))
+			.cookie(Constants.JSESSIONID)
+			.extract()
+			.detailedCookie(Constants.JSESSIONID);
+
+		HashMap<String,String> oidcInfo = new HashMap<>();
+		final var state = UUID.randomUUID().toString();
+		oidcInfo.put("state", state+"wrong");
+		oidcInfo.put("provider", "test-oidc-conf");
+		oidcInfo.put("redirectAfterAuth", "http://localhost/test");
+
+		var jsonMapper = new ObjectMapper();
+		var oidcInfoStr = jsonMapper.writeValueAsString(oidcInfo);
+
+		final Cookie stateCookie = new Cookie.Builder("oidcInfo", URLEncoder.encode(oidcInfoStr, StandardCharsets.UTF_8))
+											.setHttpOnly(true)
+											.setSameSite("Strict")
+											.build();
+		var loginSessionPage = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.contentType(ContentType.URLENC)
+				.formParam("client_id","opendcs")
+				.formParam("scope","openid profile email")
+				.formParam("response_type","code")
+				.formParam("redirect_uri", redirectUri)
+				.formParam("state", state)
+			.cookie(initialSession)
+		.when()		
+			.redirects().follow(true)
+			.redirects().max(6)
+			.post(URI.create(KeyCloakTestExtension.getCodeUrl()))
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.statusCode(is(Response.Status.OK.getStatusCode()))
+			.extract()
+		;
+		// yank the action URL out of the page 
+		var authUrl = loginSessionPage.body().htmlPath().getString("**.find { it.@id == 'kc-form-login'}.@action");
+
+		
+
+		// manually do the login POST. This *should* redirect us to our oidc-callback
+		var callbackUrl = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.contentType(ContentType.URLENC)
+			.formParam("username", "test_user")
+			.formParam("password", "test_password")
+			.cookie(initialSession)
+			.cookie(stateCookie)
+			.cookies(loginSessionPage.detailedCookies())
+		.when()
+			.redirects().follow(false)
+			.post(URI.create(authUrl))
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.statusCode(is(Response.Status.FOUND.getStatusCode()))
+			.extract()
+			.header("Location")
+			;
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.cookie(initialSession)
+			.cookie(stateCookie)
+		.when()
+			.redirects().follow(false) // we just want to see that it's present
+			.get(callbackUrl)
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.assertThat()
+			.statusCode(is(Response.Status.FOUND.getStatusCode()))
+			.header("Location", matchesPattern("https?://localhost(:\\d+)?/login\\?errorMsg=.*"))
+			
 		;
 	}
 
@@ -246,11 +343,20 @@ final class OpenIdTestIT extends BaseApiIT
 	}
 
 
-	private Cookie doAuthCodeLogin(Cookie initialSession)
+	private Cookie doAuthCodeLogin(Cookie initialSession) throws IOException
 	{
 		final String redirectUri = RestAssured.baseURI + ":" + RestAssured.port + "/" + RestAssured.basePath + "/oidc-callback";
 		
-		final Cookie stateCookie = new Cookie.Builder("state", "test-oidc-conf__" + UUID.randomUUID().toString())
+		HashMap<String,String> oidcInfo = new HashMap<>();
+		final var state = UUID.randomUUID().toString();
+		oidcInfo.put("state", state);
+		oidcInfo.put("provider", "test-oidc-conf");
+		oidcInfo.put("redirectAfterAuth", "http://localhost/test");
+
+		var jsonMapper = new ObjectMapper();
+		var oidcInfoStr = jsonMapper.writeValueAsString(oidcInfo);
+
+		final Cookie stateCookie = new Cookie.Builder("oidcInfo", URLEncoder.encode(oidcInfoStr, StandardCharsets.UTF_8))
 											.setHttpOnly(true)
 											.setSameSite("Strict")
 											.build();
@@ -261,7 +367,7 @@ final class OpenIdTestIT extends BaseApiIT
 				.formParam("scope","openid profile email")
 				.formParam("response_type","code")
 				.formParam("redirect_uri", redirectUri)
-				.formParam("state", stateCookie.getValue())
+				.formParam("state", state)
 			.cookie(initialSession)
 		.when()		
 			.redirects().follow(true)
@@ -295,17 +401,18 @@ final class OpenIdTestIT extends BaseApiIT
 			.extract()
 			.header("Location")
 			;
-
 		return given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.cookie(initialSession)
 			.cookie(stateCookie)
 		.when()
+			.redirects().follow(false) // we just want to see that it's present
 			.get(callbackUrl)
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.assertThat()
-			.statusCode(is(Response.Status.OK.getStatusCode()))
+			.statusCode(is(Response.Status.FOUND.getStatusCode()))
+			.header("Location", "http://localhost/test")
 			.cookie(Constants.JSESSIONID)
 			.extract()
 			.detailedCookie(Constants.JSESSIONID)

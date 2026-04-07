@@ -9,6 +9,7 @@ import { Platforms } from "./pages/platforms";
 import { Algorithms } from "./pages/computations/algorithms";
 import { Computations } from "./pages/computations/computations";
 import { SitesPage } from "./pages/sites";
+import OidcCallback from "./pages/auth/login/OidcCallback";
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -24,6 +25,7 @@ function App() {
         <Routes>
           <Route element={<PublicOnlyRoute />}>
             <Route path="/login" element={<Login />} />
+            <Route path="/oidc-callback" element={<OidcCallback />} />
           </Route>
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Navigate to="/platforms" replace />} />

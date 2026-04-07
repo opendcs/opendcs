@@ -17,6 +17,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useIdleTimer } from "../../hooks/useIdleTimer";
 import { SessionTimeoutModal } from "../../components/auth/SessionTimeoutModal";
+import type { Scheme } from "../../util/login-providers/Scheme.types";
+import { fromOpenApiUrl } from "../../util/login-providers";
 
 // Inactivity thresholds — adjust to match the server-side session timeout.
 const DEFAULT_WARN_AFTER_MS = 13.5 * 60 * 1000;
@@ -38,6 +40,7 @@ export const AuthProvider = ({
   const warningDurationS = Math.round((logoutAfterMs - warnAfterMs) / 1000);
   const navigate = useNavigate();
   const [user, setUser] = useState<User | undefined>(undefined);
+  const [schemes, setSchemes] = useState<Record<string, Scheme>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [showWarning, setShowWarning] = useState(false);
   const [countdown, setCountdown] = useState(warningDurationS);
@@ -127,6 +130,20 @@ export const AuthProvider = ({
       .finally(() => setIsLoading(false));
   }, [enhancedConf]);
 
+  // retrieve api schemes
+  useEffect(() => {
+    const fetchSchemes = async () => {
+      const apiUrl = new URL(
+        "./odcsapi/openapi.json",
+        globalThis.window.location.toString(),
+      );
+
+      setSchemes(await fromOpenApiUrl(apiUrl));
+    };
+    console.log("retrieving OpenAPI Schemes");
+    fetchSchemes();
+  }, [apiContext.conf]);
+
   // Idle timer — paused while the warning modal is visible so the countdown
   // (not a new API call) controls what happens next.
   const handleWarn = useCallback(() => {
@@ -186,7 +203,9 @@ export const AuthProvider = ({
   const authValue: AuthContextType = {
     user,
     isLoading,
+    loginSchemes: schemes,
     setUser,
+    setSchemes,
     logout,
   };
 

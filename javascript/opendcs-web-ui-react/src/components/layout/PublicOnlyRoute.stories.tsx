@@ -8,6 +8,10 @@ import { http, HttpResponse } from "msw";
 import Login from "../../pages/auth/login";
 import { Platforms } from "../../pages/platforms";
 import { ApiPlatformRef } from "opendcs-api";
+import apiAuthSpec from "../../../.storybook/mock/openapi-security-schemes.json";
+import { fromOpenApiData } from "../../util/login-providers";
+
+const authSchemes = await fromOpenApiData(apiAuthSpec);
 
 const platformMswHandlers = {
   platforms: http.get("/odcsapi/platformrefs", () => {
@@ -30,6 +34,9 @@ const platformMswHandlers = {
       },
     ]);
   }),
+  authInfo: http.get("/odcsapi/openapi.json", async () => {
+    return HttpResponse.json(apiAuthSpec);
+  }),
 };
 
 const meta = {
@@ -47,6 +54,8 @@ export const Loading: Story = {
         value={{
           user: undefined,
           isLoading: true,
+          loginSchemes: authSchemes,
+          setSchemes: fn(),
           setUser: fn(),
           logout: fn(),
         }}
@@ -61,8 +70,8 @@ export const Loading: Story = {
       </AuthContext>
     ),
   ],
-  play: async ({ canvas, mount }) => {
-    await mount();
+  play: async ({ mount }) => {
+    const canvas = await mount();
     const spinner = await canvas.findByRole("status");
     expect(spinner).toBeInTheDocument();
   },
@@ -76,6 +85,8 @@ export const NotAuthenticated: Story = {
           value={{
             user: undefined,
             isLoading: false,
+            loginSchemes: authSchemes,
+            setSchemes: fn(),
             setUser: fn(),
             logout: fn(),
           }}
@@ -91,8 +102,8 @@ export const NotAuthenticated: Story = {
       </ApiContext>
     ),
   ],
-  play: async ({ canvas, mount, parameters }) => {
-    await mount();
+  play: async ({ mount, parameters }) => {
+    const canvas = await mount();
     const { i18n } = parameters;
     const usernameLabel = await canvas.findByText(i18n.t("username"));
     expect(usernameLabel).toBeInTheDocument();
@@ -112,6 +123,8 @@ export const AlreadyAuthenticated: Story = {
           value={{
             user: { email: "testuser@example.com" },
             isLoading: false,
+            loginSchemes: {},
+            setSchemes: fn(),
             setUser: fn(),
             logout: fn(),
           }}
@@ -128,8 +141,8 @@ export const AlreadyAuthenticated: Story = {
       </ApiContext>
     ),
   ],
-  play: async ({ canvas, mount }) => {
-    await mount();
+  play: async ({ mount }) => {
+    const canvas = await mount();
     const platformsPage = await canvas.findByText("Test Platform");
     expect(platformsPage).toBeInTheDocument();
   },

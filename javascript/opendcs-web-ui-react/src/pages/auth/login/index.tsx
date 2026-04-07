@@ -1,63 +1,37 @@
-import { type FormEvent, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../../contexts/app/AuthContext";
 import { Button, Card, Container, Form, Modal } from "react-bootstrap";
 import { PersonCircle } from "react-bootstrap-icons";
-import {
-  ApiOrganization,
-  Credentials,
-  RESTAuthenticationAndAuthorizationApi,
-} from "opendcs-api";
+import { type Credentials, RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
 import { useApi } from "../../../contexts/app/ApiContext";
 import { useOrganizations } from "../../../contexts/app/OrganizationsContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import FormLogin from "./FormLogin";
+import type {
+  FormScheme,
+  OidcScheme,
+} from "../../../util/login-providers/Scheme.types";
+import { oidcConfigToClient } from "../../../util/login-providers";
 
 export default function Login() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { setUser } = useAuth();
+  const { loginSchemes, setUser } = useAuth();
   const { organizations } = useOrganizations();
   const api = useApi();
-  var errorMsg = "";
   const auth = new RESTAuthenticationAndAuthorizationApi(api.conf);
-
-  function handleLogin(event: FormEvent<HTMLFormElement>): void {
-    event.preventDefault();
-    event.stopPropagation();
-    const form = event.currentTarget;
-
-    const formData = new FormData(form);
-
-    const dataObject = Object.fromEntries(formData.entries());
-    // Convert FormData to a plain object for easier use
-    const credentials: Credentials = {
-      username: dataObject.username.toString(),
-      password: dataObject.password.toString(),
-    };
-
-    const orgString: string = dataObject.organization.toString();
-    const orgObj: ApiOrganization = orgString
-      ? (JSON.parse(orgString) as ApiOrganization)
-      : {};
-    const org: string = orgObj.name || "";
-
-    auth
-      .postCredentials(org, credentials)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .then((user_value: any) => {
-        setUser(user_value);
-        api.setOrg(orgObj);
-        const redirectPath = location.state?.from || "/platforms";
-        navigate(redirectPath, { replace: true });
-      })
-      .catch((error_: { toString: () => string }) => {
-        setShowErrorModal(true);
-        errorMsg = error_.toString();
-      });
-  }
-
   const [showErrorModal, setShowErrorModal] = useState(false);
+
+  let errorMsg = "";
+
+  useEffect(() => {
+    if (location.state?.errorMsg) {
+      errorMsg = location.state!.errorMsg;
+      setShowErrorModal(true);
+    }
+  }, [location.state]);
 
   return (
     <Container className="odcs-login">
@@ -70,47 +44,80 @@ export default function Login() {
               <h4 className="mt-3 fw-semibold">OpenDCS</h4>
               <p className="text-muted small">{t("login")}</p>
             </div>
-            <Form onSubmit={handleLogin} className="fade-in second">
+            {Object.entries(loginSchemes ?? {}).map(([key, scheme]) => {
+              if (scheme.formConfig as FormScheme) {
+                return (
+                  <FormLogin
+                    key={key}
+                    login={(credentials: Credentials) => {
+                      auth
+                        .postCredentials(api.org, credentials)
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        .then((user_value: any) => {
+                          setUser(user_value);
+                          const redirectPath = location.state?.from || "/platforms";
+                          navigate(redirectPath, { replace: true });
+                        })
+                        .catch((error_: { toString: () => string }) => {
+                          errorMsg = error_.toString();
+                          setShowErrorModal(true);
+                        });
+                    }}
+                    loginOptions={scheme as FormScheme}
+                  />
+                );
+              } else {
+                return (
+                  <Button
+                    key={key}
+                    variant="primary"
+                    className="py-2 w-100 mt-2"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      const client = oidcConfigToClient(scheme as OidcScheme);
+                      const req = client.createSigninRequest({});
+                      req.then((r: any) => {
+                        localStorage.setItem(r.state.id, client.settings.client_id);
+                        const oidcSessionInfo = {
+                          state: r.state.id,
+                          provider: key,
+                          redirectAfterAuth: new URL(
+                            location.state?.from || "/platforms",
+                            globalThis.location.origin,
+                          ).toString(),
+                        };
+                        document.cookie = `oidcInfo=${encodeURIComponent(JSON.stringify(oidcSessionInfo))}; path=/odcsapi; max-age=300; SameSite=Lax`;
+                        globalThis.location.href = r.url;
+                      });
+                    }}
+                  >
+                    Login with {key}
+                  </Button>
+                );
+              }
+            })}
+            {organizations.length > 0 ? (
               <Form.Group className="mb-3">
-                <Form.Label className="small fw-medium">{t("username")}</Form.Label>
-                <Form.Control
-                  type="text"
-                  id="username"
+                <Form.Label>{t("organization")}</Form.Label>
+                <Form.Select
+                  id="organization"
+                  name="organization"
                   required
-                  name="username"
-                  placeholder={t("username")}
-                />
+                  defaultValue={api.org}
+                  onChange={(e) => {
+                    api.setOrg(JSON.parse(e.currentTarget.value));
+                  }}
+                >
+                  {organizations.map((org) => (
+                    <option key={org.name} value={JSON.stringify(org)}>
+                      {org.name}
+                    </option>
+                  ))}
+                </Form.Select>
               </Form.Group>
-              <Form.Group className="mb-4">
-                <Form.Label className="small fw-medium">{t("password")}</Form.Label>
-                <Form.Control
-                  type="password"
-                  id="password"
-                  required
-                  name="password"
-                  placeholder={t("password")}
-                />
-              </Form.Group>
-              {organizations.length > 0 ? (
-                <Form.Group className="mb-3">
-                  <Form.Label>{t("organization")}</Form.Label>
-                  <Form.Select id="organization" name="organization" required>
-                    {organizations.map((org) => (
-                      <option key={org.name} value={JSON.stringify(org)}>
-                        {org.name}
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
-              ) : (
-                <input type="hidden" name="organization" value="" />
-              )}
-              <div className="d-grid fade-in third">
-                <Button variant="primary" type="submit" className="py-2">
-                  {t("login")}
-                </Button>
-              </div>
-            </Form>
+            ) : (
+              <input type="hidden" name="organization" value="" />
+            )}
           </Card.Body>
         </Card>
         <Modal show={showErrorModal} onHide={() => setShowErrorModal(false)} centered>

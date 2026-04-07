@@ -17,6 +17,14 @@
     "cancel_for": "Cancel editing algorithm {{id}}",
     "save_for": "Save algorithm {{id}}"
   },
+  "check_new": {
+    "button": "Check for New",
+    "title": "Available Algorithms",
+    "none_found": "No new algorithms found.",
+    "select_all": "Select all",
+    "close": "Close",
+    "import_selected": "Import Selected ({{count}})"
+  },
   "parms": {
     "title": "Parameters",
     "roleName": "Role Name",

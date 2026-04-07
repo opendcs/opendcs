@@ -1,15 +1,12 @@
 package org.opendcs.odcsapi.res;
 
 import java.util.ArrayList;
-import java.util.List;
-
 import decodes.db.DataType;
 import decodes.db.DataTypeSet;
 import decodes.db.EngineeringUnit;
 import decodes.db.EngineeringUnitList;
 import decodes.db.UnitConverter;
 import decodes.db.UnitConverterDb;
-import decodes.db.UnitConverterSet;
 import decodes.sql.DbKey;
 import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiDataType;
@@ -139,7 +136,7 @@ final class DatatypeUnitResourcesTest
 	@Test
 	void testUnitConvertMap()
 	{
-		UnitConverterSet unitSet = new UnitConverterSet();
+
 		UnitConverterDb unitDb = new UnitConverterDb("ft", "m");
 		unitDb.algorithm = "none";
 		unitDb.coefficients[0] = 1.0;
@@ -148,12 +145,10 @@ final class DatatypeUnitResourcesTest
 		unitDb.coefficients[3] = 4.0;
 		unitDb.coefficients[4] = 5.0;
 		unitDb.coefficients[5] = 6.0;
-		unitSet.addDbConverter(unitDb);
+
 		unitDb.forceSetId(DbKey.createDbKey(1234L));
-		List<ApiUnitConverter> unitConverterList = map(unitSet);
-		assertNotNull(unitConverterList);
-		assertEquals(1, unitConverterList.size());
-		ApiUnitConverter unitConverter = unitConverterList.get(0);
+		var unitConverter = map(unitDb);
+		assertNotNull(unitConverter);
 		assertNotNull(unitConverter);
 		assertEquals(unitDb.fromAbbr, unitConverter.getFromAbbr());
 		assertEquals(unitDb.toAbbr, unitConverter.getToAbbr());

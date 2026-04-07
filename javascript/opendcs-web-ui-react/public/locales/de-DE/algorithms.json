@@ -17,6 +17,14 @@
     "cancel_for": "Bearbeitung von Algorithmus {{id}} abbrechen",
     "save_for": "Algorithmus {{id}} speichern"
   },
+  "check_new": {
+    "button": "Neue suchen",
+    "title": "Verfügbare Algorithmen",
+    "none_found": "Keine neuen Algorithmen gefunden.",
+    "select_all": "Alle auswählen",
+    "close": "Schließen",
+    "import_selected": "Ausgewählte importieren ({{count}})"
+  },
   "parms": {
     "title": "Parameter",
     "roleName": "Rollenname",

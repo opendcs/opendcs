@@ -117,10 +117,14 @@ export const EditAndSave: Story = {
     const canvas = await mount();
     const { i18n } = parameters;
 
-    // Wait for list to load then click Edit on algorithm 1
-    const editBtn = await canvas.findByRole("button", {
-      name: i18n.t("algorithms:editor.edit_for", { id: 1 }),
-    });
+    // Wait for list to load then click Edit on algorithm 1 (injected by drawCallback)
+    const editBtn = await waitFor(
+      () =>
+        canvas.getByRole("button", {
+          name: i18n.t("algorithms:editor.edit_for", { id: 1 }),
+        }),
+      { timeout: 5000 },
+    );
     await act(async () => userEvent.click(editBtn));
 
     const saveBtn = await canvas.findByRole(
@@ -132,9 +136,9 @@ export const EditAndSave: Story = {
 
     await act(async () => userEvent.click(saveBtn));
 
-    // After save the edit button reappears
+    // After save the edit button reappears (injected by drawCallback)
     await waitFor(async () => {
-      const editBtnAfter = await canvas.findByRole("button", {
+      const editBtnAfter = canvas.getByRole("button", {
         name: i18n.t("algorithms:editor.edit_for", { id: 1 }),
       });
       expect(editBtnAfter).toBeInTheDocument();
