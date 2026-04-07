@@ -8,8 +8,10 @@ import java.util.Optional;
 import java.util.Properties;
 
 import org.opendcs.annotations.PropertySpec;
-import org.opendcs.utils.properties.conversion.IntegerPropertyConverter;
+import org.opendcs.utils.properties.conversion.NoPropertyConverterException;
+import org.opendcs.utils.properties.conversion.PropertyConverter;
 
+import ilex.util.EnvExpander;
 import ilex.util.HasProperties;
 
 /**
@@ -28,6 +30,7 @@ public final class Property<T>
     final String propertyName;
     final Class<T> targetType;
     final List<? extends HasProperties> sources;
+    final PropertyConverter<T> converter;
 
 
     private Property(Builder<T> builder)
@@ -40,6 +43,7 @@ public final class Property<T>
         this.mustExpand = builder.mustExpand;
         this.propertySpec = builder.propertySpec;
         this.sources = builder.sources;
+        this.converter = builder.converter;
     }
 
     // For both of the below, it may be better to allow the expansion sources to be
@@ -65,7 +69,7 @@ public final class Property<T>
     {
         return findValue();
     }
-
+    
     private Optional<T> findValue()
     {
         T ret = this.defaultValue;
@@ -75,18 +79,22 @@ public final class Property<T>
             String value = source.getProperty(propertyName);
             if (value != null)
             {
-
-                // lookup proper conversion here
-                if (ret instanceof Integer)
-                {
-                    ret = (T)new IntegerPropertyConverter().fromString(value);
-                }
-                // ret = converted value
+                ret = converter.fromString(expand(value));
                 break; // break out of the loop, we found the value we want
-            }
+            }   
         }
 
         return Optional.ofNullable(ret);
+    }
+
+    private String expand(String value)
+    {
+        String ret = value;
+        if (mustExpand)
+        {
+            ret = EnvExpander.expand(value, this.expansionSource, this.expansionDate);
+        }
+        return ret;
     }
 
     @SuppressWarnings("java:S2972") // it doesn't really make sense to me to split this class out, while a bit long, it is simple.
@@ -100,6 +108,7 @@ public final class Property<T>
         String propertyName;
         Class<T> targetType;
         final List<HasProperties> sources = new ArrayList<>();
+        PropertyConverter<T> converter;
     
 
         private Builder(String propertyName, Class<T> targetType)
@@ -176,17 +185,45 @@ public final class Property<T>
         {
             this.expansionSource = source;
             return expand();
-        }
+        }        
 
         public Builder<T> expand(Properties source, Date date)
         {
             this.expansionDate = date;
             return expand(source);
         }
+
+        /**
+         * For those occasions when you know what to String to T converter to use.
+         * If not specified an attempt will be made to look one up.
+         * @param converter
+         * @return
+         */
+        public Builder<T> withConverter(PropertyConverter<T> converter)
+        {
+            this.converter = converter;
+            return this;
+        }
         
         public Property<T> build()
         {
+            if (converter == null)
+            {
+                withConverter(lookupConverter());
+            }
+
             return new Property<>(this);
+        }
+
+
+        private PropertyConverter<T> lookupConverter()
+        {
+            PropertyConverter<T> ret = PropertyConverter.forType(targetType);
+            if (ret == null)
+            {
+                throw new NoPropertyConverterException("Unable to find property converter for type " + this.targetType.getName());
+            }
+            return ret;
         }
     }
 
