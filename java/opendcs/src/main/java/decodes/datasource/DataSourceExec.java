@@ -29,6 +29,8 @@ import java.util.concurrent.TimeUnit;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import org.opendcs.decodes.api.DataMessage;
+
 import decodes.db.DataSource;
 import decodes.db.Database;
 import decodes.db.Constants;
@@ -240,8 +242,20 @@ public abstract class DataSourceExec implements PropertiesOwner
 	}
 
 	/**
+	 * Returns the next message from this data source as a DataMessage.
+	 * Higher level DataSources may override this method to return a DecodedMessage, for example
+	 *
+	 * @return the next DataMessage, or null
+	 * @throws DataSourceException on error.
+	 */
+	public DataMessage getDataMessage() throws DataSourceException
+	{
+		return getRawMessage();
+	}
+
+	/**
 	  Reads the next raw message from the data source and returns it.
-	  This DataSource will fill in the message data and attempt to 
+	  This DataSource will fill in the message data and attempt to
 	  associate it with a TransportMedium object.
 
 	  @return the next RawMessage object from the data source, or null if none currently available.

@@ -43,6 +43,8 @@ import decodes.db.PresentationGroup;
 import decodes.db.ScriptSensor;
 import decodes.db.Site;
 import decodes.db.TransportMedium;
+import org.opendcs.decodes.api.DataMessage;
+
 import decodes.comp.IDataCollection;
 import decodes.comp.ITimeSeries;
 
@@ -56,7 +58,7 @@ import decodes.comp.ITimeSeries;
  * <li>time zone used by TimeSeries in this message</li>
  * </ul>
  */
-public class DecodedMessage implements IDataCollection
+public class DecodedMessage implements IDataCollection, DataMessage
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The raw data */

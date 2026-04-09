@@ -47,6 +47,8 @@ import decodes.tsdb.LockBusyException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.TsdbCompLock;
+import org.opendcs.decodes.api.DataMessage;
+
 import decodes.util.*;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.DecoderException;
@@ -425,10 +427,22 @@ public class RoutingSpecThread extends Thread
 			// Retrieve the next raw message from the data source.
 			//=====================================================
 			myExec.setSubsystem("acquire");
+			DataMessage dataMessage = null;
 			RawMessage rm = null;
 			try
 			{
-				rm = source.getRawMessage();
+				dataMessage = source.getDataMessage();
+				/* future note: support other types of DataMessage like the comment below.
+				if (dataMessage instanceof DecodedMessage)
+				{
+					// DataSource returned a pre-decoded message — skip decoding
+					myExec.setSubsystem("format-output");
+					formatAndOutputMessage((DecodedMessage) dataMessage, null);
+					currentStatus = "Running";
+					continue;
+				}
+				*/
+				rm = (RawMessage) dataMessage;
 				if (rm == null)
 				{
 					log.trace("Data source failed to return message, pausing for 1 seconds.");
