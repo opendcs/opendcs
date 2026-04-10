@@ -442,7 +442,13 @@ public class RoutingSpecThread extends Thread
 					continue;
 				}
 				*/
-				rm = (RawMessage) dataMessage;
+				if (dataMessage instanceof RawMessage) {
+					rm = (RawMessage) dataMessage;
+				}
+				else {
+					log.error("Unknown DataMessage type: {}", dataMessage.getClass().getName());
+				}
+
 				if (rm == null)
 				{
 					log.trace("Data source failed to return message, pausing for 1 seconds.");
@@ -650,7 +656,7 @@ public class RoutingSpecThread extends Thread
 	/**
 	 * Try to decode. Return decoded message if success, null if error.
 	 * @param rm raw message
-	 * @param platformStatus platform status in case of errors
+	 * @param platstat platform status in case of errors
 	 * @return decoded message if success, null if error
 	 */
 	private DecodedMessage attemptDecode(RawMessage rm, PlatformStatus platstat)
