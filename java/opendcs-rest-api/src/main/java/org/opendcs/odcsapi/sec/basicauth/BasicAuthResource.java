@@ -1,0 +1,245 @@
+/*
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License")
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.opendcs.odcsapi.sec.basicauth;
+
+import static org.opendcs.odcsapi.sec.SessionResource.updateSessionWithUser;
+
+import java.util.Base64;
+import java.util.Optional;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.StringToClassMapItem;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+
+import org.opendcs.authentication.OpenDcsAuthException;
+import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityProvider;
+import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInProviderCredentials;
+import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.model.User;
+import org.opendcs.odcsapi.errorhandling.WebAppException;
+import org.opendcs.odcsapi.res.OpenDcsResource;
+import org.opendcs.odcsapi.util.ApiConstants;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
+@Path("/")
+@Tag(name = "REST - Authentication and Authorization", description = "Endpoints for authentication and authorization.")
+public final class BasicAuthResource extends OpenDcsResource
+{
+
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static final String MODULE = "BasicAuthResource";
+
+	@Context
+	private HttpServletRequest httpServletRequest;
+	@Context
+	private HttpHeaders httpHeaders;
+
+	@POST
+	@Path("credentials")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@Operation(
+			summary = "The ‘credentials’ POST method is used to obtain a new authenticated session",
+			description = "Login method using standard username and password.",
+			requestBody = @RequestBody(
+					description = "Login Credentials",
+					required = true,
+					content = @Content(
+							mediaType = MediaType.APPLICATION_JSON,
+							schema = @Schema(implementation = Credentials.class)
+					)
+			),
+			responses = {
+					@ApiResponse(
+							responseCode = "200",
+							description = "Successful authentication.",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+								schema = @Schema(implementation = User.class)
+							)
+					),
+					@ApiResponse(
+							responseCode = "400",
+							description = "Bad request - null or otherwise invalid credentials.",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(type = "object", implementation = StringToClassMapItem.class),
+									examples = @ExampleObject(value = "{\"status\":400," +
+											"\"message\": \"Neither username nor password may be null.\"}"))
+					),
+					@ApiResponse(
+							responseCode = "403",
+							description = "Invalid credentials or insufficient role.",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(type = "object", implementation = StringToClassMapItem.class),
+									examples = @ExampleObject(value = "{\"status\":403," +
+											"\"message\":\"Failed to authorize user.\"}"))
+					),
+					@ApiResponse(
+							responseCode = "500",
+							description = "Internal Server Error"
+					),
+					@ApiResponse(
+							responseCode = "501",
+							description = "This authentication method is only supported by the OpenTSDB database.",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(type = "object", implementation = StringToClassMapItem.class),
+									examples = @ExampleObject(value = "{\"status\":501," +
+											"\"message\":\"Basic Auth is not supported.\"}"))
+					)
+			}
+	)
+	public Response postCredentials(Credentials credentials) throws WebAppException
+	{
+		var response = Response.status(Status.UNAUTHORIZED).entity("""
+				{"message": "Invalid credentials."}
+				""");
+		//If credentials are null, Authorization header will be checked.
+		if(credentials != null)
+		{
+			verifyCredentials(credentials);
+		}
+
+		String authorizationHeader = httpHeaders.getHeaderString(HttpHeaders.AUTHORIZATION);
+		credentials = getCredentials(credentials, authorizationHeader);
+		try
+		{
+			var user = validateDbCredentials(credentials);
+			if (user.isPresent())
+			{
+				var theUser = user.get();
+				response = updateSessionWithUser(theUser, httpServletRequest);
+			}
+		}
+		catch (IllegalStateException ex)
+		{
+			String msg = ex.getLocalizedMessage();
+			if (msg.startsWith("User does not have permissions for specified office"))
+			{
+				throw new WebAppException(Response.Status.FORBIDDEN.getStatusCode(), msg);
+			}
+			else
+			{
+				throw ex;
+			}
+		}
+		return response.build();
+	}
+
+	private static void verifyCredentials(Credentials credentials)
+	{
+		String u = credentials.getUsername();
+		String p = credentials.getPassword();
+		if(u == null || u.trim().isEmpty() || p == null || p.trim().isEmpty())
+		{
+			throw new BadRequestException("Neither username nor password may be null.");
+		}
+
+	}
+
+	private static Credentials getCredentials(Credentials postBody, String authorizationHeader)
+	{
+		if(postBody != null)
+		{
+			return postBody;
+		}
+		if(authorizationHeader == null || authorizationHeader.isEmpty())
+		{
+			throw newAuthException();
+		}
+		return parseAuthorizationHeader(authorizationHeader);
+	}
+
+	private static BadRequestException newAuthException()
+	{
+		return new BadRequestException("Credentials not provided.");
+	}
+
+	private static Credentials parseAuthorizationHeader(String authString)
+	{
+		String[] authHeaders = authString.split(",");
+		for(String header : authHeaders)
+		{
+			String trimmedHeader = header.trim();
+			log.debug(MODULE + ".makeToken authHdr = {}", trimmedHeader);
+			if(trimmedHeader.startsWith("Basic"))
+			{
+				return extractCredentials(trimmedHeader.substring(6).trim());
+			}
+		}
+		throw newAuthException();
+	}
+
+	private static Credentials extractCredentials(String base64Credentials)
+	{
+		String decodedCredentials = new String(Base64.getDecoder().decode(base64Credentials.getBytes()));
+		String[] parts = decodedCredentials.split(":", 2);
+
+		if(parts.length < 2 || parts[0] == null || parts[1] == null
+				|| parts[0].isEmpty() || parts[1].isEmpty())
+		{
+			throw newAuthException();
+		}
+
+		Credentials credentials = new Credentials();
+		credentials.setUsername(parts[0]);
+		credentials.setPassword(parts[1]);
+
+		log.info(MODULE + ".checkToken found tokstr in header.");
+		return credentials;
+	}
+
+	private Optional<User> validateDbCredentials(Credentials creds) throws WebAppException
+	{
+		var db = this.createDb();
+		// Use username and password to attempt to connect to the database
+
+		try(var tx = db.newTransaction())
+		{
+			var userMgmt = db.getDao(UserManagementDao.class).orElseThrow();
+			var providers = userMgmt.getIdentityProvidersForSubject(tx, creds.getUsername());
+			for(var provider : providers)
+			{
+				if(provider instanceof BuiltInIdentityProvider idp)
+				{
+					return idp.login(db, tx, new BuiltInProviderCredentials(creds.getUsername(), creds.getPassword()));
+				}
+			}
+			throw new WebAppException(Response.Status.FORBIDDEN.getStatusCode(), "Unable to authorize user.");
+		}
+		catch(OpenDcsDataException | OpenDcsAuthException ex)
+		{
+			throw new WebAppException(Response.Status.FORBIDDEN.getStatusCode(), "Unable to authorize user.", ex);
+		}
+	}
+}

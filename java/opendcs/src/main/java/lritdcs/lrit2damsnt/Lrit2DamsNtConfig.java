@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lritdcs.lrit2damsnt;
 
 import ilex.util.PropertiesUtil;
@@ -7,55 +22,58 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lritdcs.recv.LritDcsDirMonitor;
 
 public class Lrit2DamsNtConfig
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	 * One of the header-type constants defined in LritDcsDirMonitor.
 	 */
 	public char fileHeaderType = LritDcsDirMonitor.HEADER_TYPE_DOM6;
-	
+
 	/**
 	 * Directory to monitor for incoming LRIT files.
 	 * No default -- required config parameter.
 	 */
 	public String fileInputDir = null;
-	
+
 	/**
 	 * Optional directory to place files in after processing.
 	 * If not specified or blank, then files are discarded after processing.
 	 */
 	public String fileDoneDir = null;
-	
+
 	/** Prefix for DCS files, if set, all others will be ignored. */
 	public String filePrefix = null;
 
-	/** suffix for DCS files, if set, all others will be ignored. default=".dcs" */
-//	public String fileSuffix = ".dcs";
+	/** suffix for DCS files, if set, all others will be ignored. default=".lrit" */
 	public String fileSuffix = ".lrit"; // MJM 2018-12-18 Latest Dartcom XRIT names the files with .lrit
 
 	/** Port to listen on for DAMS-NT message connections (required) */
 	public int msgListenPort = -1;
-	
+
 	/** Port to listen on for DAMS-NT event connections (no event port if undefined) */
 	public int evtListenPort = -1;
-	
-	/** 
+
+	/**
 	 * For multi-headed systems, optionally specify an interface to listen on.
 	 * Default is to listen on any connection. Specify hostname or IP address.
 	 */
 	public String listenHost = null;
-	
+
 	/** Hex string containing 4-byte DAMS-NT start pattern (default = SM\r\n) */
 	public String damsNtStartPattern = "534D0D0A";
-	
+
 	/** Do not process files older than this # seconds (default = 900 = 15 min) */
 	public int fileAgeMaxSeconds = 600;
-	
+
 	/** Set to true to process only files for which CRC check is good. */
 	public boolean goodFilesOnly = false;
-	
+
 	// Last time configuration was loaded from disk file.
 	private long lastLoadTime = 0L;
 
@@ -64,7 +82,7 @@ public class Lrit2DamsNtConfig
 
 	// My properties file
 	private File propFile;
-	
+
 	public static Lrit2DamsNtConfig instance()
 	{
 		if (_instance == null)
@@ -88,23 +106,26 @@ public class Lrit2DamsNtConfig
 		if (propFile == null)
 			return;
 		Properties props = new Properties();
-		FileInputStream fis = new FileInputStream(propFile);
-		props.load(fis);
-		fis.close();
+		try (FileInputStream fis = new FileInputStream(propFile))
+		{
+			props.load(fis);
+		}
 		PropertiesUtil.loadFromProps(this, props);
-		
+
 		File f = new File(fileInputDir);
 		if (!f.isDirectory())
 			if (!f.mkdirs())
-				System.out.println("Directory '" + f.getPath() 
-					+ "' does not exist and cannot be made.");
+			{
+				log.error("Directory '{}' does not exist and cannot be made.", f.getPath());
+			}
 		if (fileDoneDir != null)
 		{
 			f = new File(fileDoneDir);
 			if (!f.isDirectory())
 				if (!f.mkdirs())
-					System.out.println("Directory '" + f.getPath() 
-						+ "' does not exist and cannot be made.");
+				{
+					log.error("Directory '{}' does not exist and cannot be made.", f.getPath());
+				}
 		}
 		lastLoadTime = System.currentTimeMillis();
 	}

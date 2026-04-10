@@ -1,28 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: tempest@sutron.com
-*  
-*  $Log$
-*  Revision 1.3  2016/03/24 19:13:17  mmaloney
-*  Added Script stuff used by Python.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.2  2016/01/27 22:02:52  mmaloney
-*  Implement CacheableHasProperties
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.2  2013/03/21 18:27:39  mmaloney
-*  DbKey Implementation
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.tsdb;
 
@@ -34,8 +23,6 @@ import java.util.Enumeration;
 import java.util.Iterator;
 
 import opendcs.dao.CachableHasProperties;
-import ilex.util.HasProperties;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import decodes.db.Constants;
@@ -45,8 +32,7 @@ import decodes.tsdb.xml.CompXioTags;
 /**
 This data structure class holds the meta-data for an algorithm.
 */
-public class DbCompAlgorithm
-	implements CompMetaData, CachableHasProperties
+public class DbCompAlgorithm implements CompMetaData, CachableHasProperties
 {
 	/** Surrogate key for this algorithm in the time series database.  */
 	private DbKey algorithmId;
@@ -62,25 +48,25 @@ public class DbCompAlgorithm
 
 	/** Properties associated with this algorithm. */
 	private Properties props;
-	
+
 	/** parameters to this algorithm */
 	private ArrayList<DbAlgoParm> parms;
 
 	/** For use in the editor -- the number of computations using this algo. */
 	private int numCompsUsing;
-	
-	private HashMap<ScriptType, DbCompAlgorithmScript> algoScripts = 
-		new HashMap<ScriptType, DbCompAlgorithmScript>();
-	
 
-	/** 
-	 * Constructor. 
+	private HashMap<ScriptType, DbCompAlgorithmScript> algoScripts =
+		new HashMap<ScriptType, DbCompAlgorithmScript>();
+
+
+	/**
+	 * Constructor.
 	 * @param id surrogate database key for this record.
 	 * @param name unique name for this algorithm (no embedded blanks).
 	 * @param execClass full Java class name
 	 * @param comment comment
 	 */
-	public DbCompAlgorithm(DbKey id, String name, String execClass, 
+	public DbCompAlgorithm(DbKey id, String name, String execClass,
 		String comment)
 	{
 		this.algorithmId = id;
@@ -118,7 +104,7 @@ public class DbCompAlgorithm
 	}
 
 	/**
-	 * Adds (or replaces) a parameter to this algorithm. 
+	 * Adds (or replaces) a parameter to this algorithm.
 	 * If the name already exists, the old parameter's contents are overwritten.
 	 * @param parm the parameter
 	 */
@@ -160,7 +146,7 @@ public class DbCompAlgorithm
 	/** Set the algorithm comment. */
 	public void setComment(String cm) { comment = cm; }
 
-	/** 
+	/**
 	 * Adds a property to this algorithm's meta-data.
 	 * @param name the property name.
 	 * @param value the property value.
@@ -229,13 +215,13 @@ public class DbCompAlgorithm
 	 */
 	public DbCompAlgorithm copyNoId()
 	{
-		DbCompAlgorithm dca = new DbCompAlgorithm(Constants.undefinedId, 
+		DbCompAlgorithm dca = new DbCompAlgorithm(Constants.undefinedId,
 			name, execClass, comment);
 
 		PropertiesUtil.copyProps(dca.props, this.props);
 		for(DbAlgoParm parm : this.parms)
 			dca.addParm(new DbAlgoParm(parm.getRoleName(), parm.getParmType()));
-		
+
 		for(DbCompAlgorithmScript script : getScripts())
 			dca.putScript(script.copy(dca));
 
@@ -252,25 +238,20 @@ public class DbCompAlgorithm
 		// messages when comment is empty and user hasn't changed anything.
 		if (rhs.comment != null && rhs.comment.length() == 0 && comment == null)
 			rhs.comment = null;
-			
+
 		if (!TextUtil.strEqual(name, rhs.name)
 		 || !TextUtil.strEqual(execClass, rhs.execClass)
 		 || !TextUtil.strEqual(comment, rhs.comment))
 		{
-//Logger.instance().debug1("Algorithm '" + name + "' equalsNoId 1"
-//+ "("+name +","+execClass+","+comment+") != ("+rhs.name+","+rhs.execClass+","+rhs.comment+")");
 			return false;
 		}
 		if (!PropertiesUtil.propertiesEqual(props, rhs.props))
 		{
-//Logger.instance().debug1("Algorithm '" + name + "' equalsNoId props: '"
-//+ PropertiesUtil.props2string(props) + "' != '" + PropertiesUtil.props2string(rhs.props) + "'");
 			return false;
 		}
 
 		if (parms.size() != rhs.parms.size())
 		{
-//Logger.instance().debug1("Algorithm '" + name + "' Different number of parms: "+parms.size() + "," + rhs.parms.size());
 			return false;
 		}
 		for(int i=0; i<parms.size(); i++)
@@ -280,15 +261,11 @@ public class DbCompAlgorithm
 			if (!TextUtil.strEqual(p1.getRoleName(), p2.getRoleName())
 			 || !TextUtil.strEqual(p1.getParmType(), p2.getParmType()))
 			{
-//Logger.instance().debug1("Algorithm '" + name + "' param[" + i + "] differs role("
-//+ p1.getRoleName() + ","+ p2.getRoleName() + ") type("
-//+ p1.getParmType() + ","+ p2.getParmType() + ")");
 				return false;
 			}
 		}
 		if (!this.algoScripts.equals(rhs.algoScripts))
 		{
-//Logger.instance().debug1("Algorithm '" + name + "' algo scripts differ.");
 			return false;
 		}
 		return true;
@@ -307,7 +284,7 @@ public class DbCompAlgorithm
 	{
 		return name;
 	}
-	
+
 	/**
 	 * @param scriptType
 	 * @return the script for the given type or null if none is defined.
@@ -316,25 +293,21 @@ public class DbCompAlgorithm
 	{
 		return algoScripts.get(scriptType);
 	}
-	
+
 	/**
 	 * Add or replace the script of a given type.
 	 * @param script
 	 */
 	public void putScript(DbCompAlgorithmScript script)
 	{
-//Logger.instance().debug1("DbCompAlgorithm " + name + ": Adding script " + script.getScriptType()
-//+ " with text '" + script.getText() + "'");
 		algoScripts.put(script.getScriptType(), script);
-//Logger.instance().debug1("DbCompAlgorithm after put, this algo has " + getScripts().size() + " scripts.");
 	}
-	
+
 	public void clearScripts()
 	{
-//Logger.instance().debug1("DbCompAlgorithm.clearScripts()");
 		algoScripts.clear();
 	}
-	
+
 	public Collection<DbCompAlgorithmScript> getScripts()
 	{
 		return algoScripts.values();

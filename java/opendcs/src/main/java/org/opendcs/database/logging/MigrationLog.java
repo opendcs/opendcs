@@ -1,64 +1,57 @@
 package org.opendcs.database.logging;
 
-import java.io.PrintStream;
-
 import org.flywaydb.core.api.logging.Log;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
-import ilex.util.Logger;
 
 public class MigrationLog implements Log
 {
-    private static final Logger logger = Logger.instance();
-    private final String prefix;
+    private final Logger logger;
 
     public MigrationLog(Class<?> loggerName)
     {
-        prefix = loggerName.getName();
+        logger = OpenDcsLoggerFactory.getLogger(loggerName);
     }
     @Override
     public void debug(String msg)
     {
-        logger.debug1(prefix + ": " + msg);
+        logger.debug(msg);
     }
 
     @Override
     public void error(String msg)
     {
-        logger.failure(msg);
+        logger.error(msg);
     }
 
     @Override
     public void error(String msg, Exception ex)
     {
-        logger.failure(prefix + ": " + msg);
-        PrintStream ps = logger.getLogOutput();
-        if(ps != null)
-        {
-            ex.printStackTrace(ps);
-        }
+        logger.atError().setCause(ex).log(msg);
     }
 
     @Override
     public void info(String msg)
     {
-        logger.info(prefix + ": " + msg);
+        logger.info(msg);
     }
 
     @Override
     public boolean isDebugEnabled()
     {
-        return logger.getMinLogPriority() < Logger.E_INFORMATION;
+        return logger.isDebugEnabled();
     }
 
     @Override
     public void notice(String msg)
     {
-        logger.info(prefix + ": " + msg);
+        logger.info(msg);
     }
 
     @Override
     public void warn(String msg)
     {
-        logger.warning(prefix + ": " + msg);
+        logger.warn(msg);
     }
 }

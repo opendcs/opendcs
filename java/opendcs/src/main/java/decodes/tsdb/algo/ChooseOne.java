@@ -28,9 +28,9 @@ import org.opendcs.annotations.algorithm.Output;
 public class ChooseOne extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 	@Input
-	public double input1;	//AW:TYPECODE=i
+	public double input1;
 	@Input
-	public double input2;	//AW:TYPECODE=i
+	public double input2;
 
 	@Output
 	public NamedVariable output = new NamedVariable("output", 0);

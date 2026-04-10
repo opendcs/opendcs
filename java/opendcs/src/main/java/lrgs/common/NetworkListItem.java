@@ -1,54 +1,18 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Source$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $State$
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  $Log$
-*  Revision 1.6  2008/09/26 20:49:02  mjmaloney
-*  Added <all> and <production> network lists
-*
-*  Revision 1.5  2008/09/26 14:57:31  mjmaloney
-*  Added <all> and <production> network lists
-*
-*  Revision 1.4  2008/09/25 15:02:11  mjmaloney
-*  Fixed parsing for string DCP address.
-*
-*  Revision 1.3  2008/08/19 16:38:15  mjmaloney
-*  DcpAddress stores internal value as String.
-*
-*  Revision 1.2  2008/08/06 19:40:58  mjmaloney
-*  dev
-*
-*  Revision 1.1  2008/04/04 18:21:12  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.7  2001/03/05 22:11:17  mike
-*  Improved parsing logic to handle more text variations.
-*
-*  Revision 1.6  2001/02/28 01:12:19  mike
-*  Working network list editor.
-*
-*  Revision 1.5  2001/01/12 15:39:28  mike
-*  Better error reporting when constructing a network list item. All
-*  parsing exceptions should be funnelled into IllegalArgumentException
-*
-*  Revision 1.4  2000/03/02 20:58:58  mike
-*  Added proper equals() and compareTo() methods.
-*
-*  Revision 1.3  1999/09/14 17:05:34  mike
-*  9/14/1999
-*
-*  Revision 1.2  1999/09/03 17:22:57  mike
-*  Put in new package hierarchy.
-*
-*  Revision 1.1  1999/09/03 15:34:52  mike
-*  Initial checkin.
-*
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
-
 package lrgs.common;
 
 import java.io.Serializable;
@@ -109,7 +73,7 @@ public class NetworkListItem implements Serializable, Cloneable, Comparable
     	type = nli.type;  // 'U' == unknown
     	addr = new DcpAddress(nli.addr);
 	}
-	
+
 	public NetworkListItem(DcpAddress addr, String name, String desc)
 	{
 		this();
@@ -201,10 +165,9 @@ public class NetworkListItem implements Serializable, Cloneable, Comparable
 			else
 				description = str;
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			throw new IllegalArgumentException(
-				"Bad format for network list item '" + str + "': " + e);
+			throw new IllegalArgumentException("Bad format for network list item '" + str + "'", ex);
 		}
     }
 

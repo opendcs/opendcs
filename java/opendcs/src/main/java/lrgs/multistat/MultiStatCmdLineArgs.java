@@ -1,16 +1,26 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.multistat;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 
 import ilex.cmdline.*;
-import ilex.util.Logger;
-import ilex.util.FileLogger;
-import ilex.util.EnvExpander;
 
-public class MultiStatCmdLineArgs
-	extends StdAppSettings
+public class MultiStatCmdLineArgs extends StdAppSettings
 {
 	private StringToken configFileArg = new StringToken(
 		"f", "config-file", "", TokenOptions.optSwitch, "$DCSTOOL_HOME/multistat.conf");
@@ -27,23 +37,13 @@ public class MultiStatCmdLineArgs
 	public void parseArgs(String args[])
 	{
 		try { super.parseArgs(args); }
-		catch (IllegalArgumentException ex) 
+		catch (IllegalArgumentException ex)
 		{
 			System.err.println("Illegal arguments ... program exiting.");
 			System.exit(1);
 		}
-		// Set debug level.
-		int dl = getDebugLevel();
-		if (dl > 0)
-			Logger.instance().setMinLogPriority(
-				dl == 1 ? Logger.E_DEBUG1 :
-				dl == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
-
-		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd/HH:mm:ss");
-		df.setTimeZone(TimeZone.getTimeZone("UTC"));
-		Logger.setDateFormat(df);
 	}
-	
+
 	public String getConfigFileName()
 	{
 		return configFileArg.getValue();

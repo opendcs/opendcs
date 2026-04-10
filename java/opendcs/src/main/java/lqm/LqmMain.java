@@ -1,40 +1,30 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:10  cvs
-*  Added legacy code to repository
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.6  2005/03/16 14:16:58  mjmaloney
-*  dev
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.5  2004/06/03 15:34:17  mjmaloney
-*  LRIT release prep
-*
-*  Revision 1.4  2004/05/24 20:34:49  mjmaloney
-*  Release Prep
-*
-*  Revision 1.3  2004/05/24 17:11:08  mjmaloney
-*  release prep
-*
-*  Revision 1.2  2004/05/19 14:03:44  mjmaloney
-*  dev.
-*
-*  Revision 1.1  2004/05/18 01:01:58  mjmaloney
-*  Created.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lqm;
 
 import java.util.*;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.*;
-
-import lritdcs.DcsCmdLineArgs;
-import ilex.util.Logger;
-
 
 public class LqmMain
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	LqmDirectoryMonitor myMonitor;
 	SenderThread senderThread;
 
@@ -44,7 +34,7 @@ public class LqmMain
 
 	public void run()
 	{
-		Logger.instance().info("Program Starting");
+		log.info("Program Starting");
 		LqmConfiguration cfg = LqmConfiguration.instance();
 
 		String cfgName = cmdLineArgs.getConfigFile();
@@ -52,13 +42,10 @@ public class LqmMain
 		try { cfg.loadConfig();}
 		catch(IOException ex)
 		{
-			String msg = 
-				"Cannot read config file '" + cfgName + "': " + ex;
-			Logger.instance().fatal(msg);
-			System.err.println(msg);
+			log.atError().setCause(ex).log("Cannot read config file '{}'", cfgName);
 			System.exit(1);
 		}
-	
+
 		myMonitor = new LqmDirectoryMonitor(cmdLineArgs.useFileHeaders());
 		senderThread = new SenderThread();
 		myMonitor.setSenderThread(senderThread);
@@ -81,7 +68,7 @@ public class LqmMain
 	private void checkDoneFileAges()
 	{
 		LqmConfiguration cfg = LqmConfiguration.instance();
-		long allowableFileAge = System.currentTimeMillis() 
+		long allowableFileAge = System.currentTimeMillis()
 			- (cfg.maxFileAge * 86400000L);
 
 		try
@@ -93,17 +80,17 @@ public class LqmMain
 			{
 				if(pathFiles[a].lastModified() < allowableFileAge)
 				{
-					Logger.instance().info(
- 						"Deleting Old File: " + pathFiles[a].getName());
+					log.info("Deleting Old File: {}", pathFiles[a].getName());
 					pathFiles[a].delete();
 				}
 			}
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Exception listing directory '" + cfg.dcsDoneDir.getPath()
-					+ "' -- will not delete any old files.");
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Exception listing directory '{}' -- will not delete any old files.",
+			   		cfg.dcsDoneDir.getPath());
 		}
 	}
 
@@ -113,7 +100,6 @@ public class LqmMain
 		throws IOException
 	{
 		cmdLineArgs.parseArgs(args);
-		Logger.instance().setTimeZone(TimeZone.getTimeZone("UTC"));
 		LqmMain lm = new LqmMain();
 		lm.run();
 	}

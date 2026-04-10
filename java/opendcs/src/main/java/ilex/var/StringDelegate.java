@@ -103,7 +103,7 @@ public class StringDelegate extends DelegateVariable
 	}
 
 	/**
-	* Attempts to parse string & return double value
+	* Attempts to parse string and return double value
 	* @throws NoConversionException if non-numeric string.
 	*/
 	public double getDoubleValue( ) throws NoConversionException

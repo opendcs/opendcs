@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package ilex.util;
 
@@ -8,15 +20,19 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.Properties;
 import java.util.StringTokenizer;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.NoSuchElementException;
 import java.io.*;
 
 /**
 Represent a single entry in a PasswordFile.
 */
-public class PasswordFileEntry 
-	implements HasProperties, Cloneable, Serializable
+public class PasswordFileEntry implements HasProperties, Cloneable, Serializable
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final long serialVersionUID = 1L;
 
 	/** the user name */
@@ -32,15 +48,15 @@ public class PasswordFileEntry
 	private Properties properties;
 
 	private PasswordFile owner = null;
-	
+
 	private boolean changed = false;
-	
+
 	private boolean local = false;
-	
+
 	private Date lastModified = null;
-	
+
 	public static final String digestAlgo = "SHA";
-	
+
 
 	//=================================================================
 	// Constructors & Parsers
@@ -48,14 +64,14 @@ public class PasswordFileEntry
 
 	/**
 	* Constructs a PasswordFileEntry given complete arguments.
-	* 
+	*
 	* @param username the user name
 	* @param roles the role names
 	* @param ShaPassword the SHA password
 	* @throws AuthException  if username is null or zero length.
 	*/
-	public PasswordFileEntry( String username, String[] roles, 
-		byte[] ShaPassword ) 
+	public PasswordFileEntry( String username, String[] roles,
+		byte[] ShaPassword )
 		throws AuthException
 	{
 		this(username);
@@ -65,7 +81,7 @@ public class PasswordFileEntry
 
 	/**
 	* Constructs a password file entry with just the username assigned.
-	* 
+	*
 	* @param username the user name
 	* @throws AuthException  if username is null or zero length.
 	*/
@@ -79,12 +95,12 @@ public class PasswordFileEntry
 
 	/**
 	* Constructs a password file entry with username and entered password.
-	* 
+	*
 	* @param username the user name
 	* @param password the password, the SHA hash will be stored.
 	* @throws AuthException  if username is null or zero length.
 	*/
-	public PasswordFileEntry( String username, String password ) 
+	public PasswordFileEntry( String username, String password )
 		throws AuthException
 	{
 		this(username);
@@ -110,11 +126,11 @@ public class PasswordFileEntry
 	* <pa>
 	* Username, and password must be non-blank. At least one role must
 	* be listed. The final field is a list of optional properties.
-	* 
+	*
 	* @param file_line the line from the file
 	* @throws AuthException  if the line is improperly formatted.
 	*/
-	public void parseLine( String file_line ) 
+	public void parseLine( String file_line )
 		throws AuthException
 	{
 
@@ -128,7 +144,7 @@ public class PasswordFileEntry
 			username = tokenizer.nextToken();
 			String roles_str = tokenizer.nextToken();
 			String passwd_str = tokenizer.nextToken();
-			
+
 			// prop str starts after the colon after password
 			String prop_str = null;
 			if (passwd_str != null && passwd_str.length() > 0)
@@ -162,9 +178,9 @@ public class PasswordFileEntry
 			if (prop_str != null)
 				properties = PropertiesUtil.string2props(prop_str);
 		}
-		catch(NoSuchElementException e)
+		catch(NoSuchElementException ex)
 		{
-			throw new AuthException(e.toString());
+			throw new AuthException("Unable to parse Auth file line.", ex);
 		}
 	}
 
@@ -198,16 +214,6 @@ public class PasswordFileEntry
 	public String getPropertiesString()
 	{
 		return PropertiesUtil.props2string(properties);
-//		StringBuilder sb = new StringBuilder();
-//		int n = 0;
-//		for(Enumeration en = properties.propertyNames(); en.hasMoreElements();)
-//		{
-//			String pname = (String)en.nextElement();
-//			if (n++ > 0)
-//				sb.append(',');
-//			sb.append(pname + "=" + properties.getProperty(pname));
-//		}
-//		return sb.toString();
 	}
 
 	/**
@@ -224,9 +230,13 @@ public class PasswordFileEntry
 				(byte[])ShaPassword.clone();
 			return pfe;
 		}
-		catch(AuthException e)
+		catch(AuthException ex)
 		{
-			throw new CloneNotSupportedException(e.toString());
+
+			CloneNotSupportedException toThrow =
+				new CloneNotSupportedException("Unable to close Password file entry.");
+			toThrow.addSuppressed(ex);
+			throw toThrow;
 		}
 	}
 
@@ -384,7 +394,7 @@ public class PasswordFileEntry
 	* @param password the password
 	* @return the SHA hash
 	*/
-	private static final byte[] 
+	private static final byte[]
 		buildShaPassword( String username, String password, String digestAlgo )
 	{
 		try
@@ -400,13 +410,14 @@ public class PasswordFileEntry
 
 			return dos.getMessageDigest().digest();
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
+			log.atTrace().setCause(ex).log("Unable to create password hash.");
 			return null;
 		}
 	}
 
-	/** 
+	/**
 	 * Adds a property to this object's meta-data.
 	 * @param name the property name.
 	 * @param value the property value.
@@ -499,7 +510,7 @@ public class PasswordFileEntry
 	{
 		this.lastModified = lastModified;
 	}
-	
+
 	public boolean isPasswordAssigned()
 	{
 		if (ShaPassword == null)

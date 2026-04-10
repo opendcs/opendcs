@@ -1,21 +1,18 @@
 /*
- *  $Id$
- *
- *  This is open-source software written by ILEX Engineering, Inc., under
- *  contract to the federal government. You are free to copy and use this
- *  source code for your own purposes, except that no part of the information
- *  contained in this file may be claimed to be proprietary.
- *
- *  Except for specific contractual terms between ILEX and the federal 
- *  government, this source code is provided completely without warranty.
- *  For more information contact: info@ilexeng.com
- *  
- *  $Log$
- *  Revision 1.6  2013/01/27 19:32:31  mmaloney
- *  Fix cosmetic problem in output parm area. Some refactoring.
- *  Got rid of dead code.
- *
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.algoedit;
 
 import ilex.util.LoadResourceBundle;
@@ -47,9 +44,11 @@ import decodes.tsdb.DbAlgoParm;
 import decodes.tsdb.xml.CompXio;
 import decodes.tsdb.TsdbAppTemplate;
 
-public class AlgorithmWizard
-	extends TsdbAppTemplate
-	implements AlgoData
+/**
+ * NOTE: New logging not added as we are most likely ditching this application in favor
+ * of various IDE plugins and documentation.
+ */
+public class AlgorithmWizard extends TsdbAppTemplate implements AlgoData
 {
 	//Variables for all labels
 	private static ResourceBundle labels = null;
@@ -191,7 +190,6 @@ public class AlgorithmWizard
 			}
 		});
 		algowizFrame.pack();
-//		algowizFrame.setSize(new java.awt.Dimension(880, 780));
 		algowizFrame.trackChanges("AlgoEditFrame");
 		return algowizFrame;
 	}
@@ -513,21 +511,6 @@ public class AlgorithmWizard
 			inputTableModel.fireTableDataChanged();
 		dlg.dispose();
 	}
-
-	/**
-	 * method returning the input time series class of the selected item in the
-	 * table.
-	 * 
-	 * @return time series
-	 */
-//	private InputTimeSeries getSelectedInputTimeSeries()
-//	{
-//		int idx = getInputParmTable().getSelectedRow();
-//		if (idx >= 0)
-//			return inputTableModel.getInputTimeSeries(idx);
-//		else
-//			return null;
-//	}
 
 	private JScrollPane getInputParmScrollPane()
 	{
@@ -906,7 +889,6 @@ public class AlgorithmWizard
 		getMyLabelDescriptions();
 
 		TopFrame algowizFrame = initTopFrame();
-//		algowizFrame.centerOnScreen();
 		algowizFrame.setVisible(true);
 	}
 
@@ -1248,42 +1230,6 @@ public class AlgorithmWizard
 			return;
 		}
 	}
-
-//	private String getTypeCode(String code)
-//	{
-//		if (code.equals("i"))
-//		{
-//			return "i: Simple Output";
-//		}
-//		else if (code.equals("id"))
-//		{
-//			return "id: Delta with implicit period";
-//		}
-//		else if (code.equals("idh"))
-//		{
-//			return "idh: Hourly Delta";
-//		}
-//		else if (code.equals("idd"))
-//		{
-//			return "idd: Daily Delta";
-//		}
-//		else if (code.equals("idld"))
-//		{
-//			return "idld: Delta from end of last day";
-//		}
-//		else if (code.equals("idlm"))
-//		{
-//			return "idlm: Delta from end of last month";
-//		}
-//		else if (code.equals("idly"))
-//		{
-//			return "idly: Delta from end of last year";
-//		}
-//		else
-//		{
-//			return "idlwy: Delta from end of last water-year";
-//		}
-//	}
 
 	/**
 	 * From AlgoData interface

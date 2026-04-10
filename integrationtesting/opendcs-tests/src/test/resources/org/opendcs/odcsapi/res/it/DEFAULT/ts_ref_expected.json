@@ -1,0 +1,7 @@
+{
+  "uniqueString": "TS test site.Area.Inst.5Minutes.0.Calc",
+  "key": 1,
+  "description": "Area at TS test site",
+  "storageUnits": "ft2",
+  "active": true
+}

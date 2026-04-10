@@ -1,30 +1,33 @@
-/**
- * $Id$
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract 
- * to the United States Government. No warranty is provided or implied 
- * other than specific contractual terms between COVE and the U.S. Government
- * 
- * Copyright 2017 U.S. Government.
- *
- * $Log$
- * Revision 1.1  2017/06/27 13:44:47  mmaloney
- * Added for 6.4
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.launcher;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.eventmon.EventMonitor;
 
-public class EventMonLauncherAction
-	extends LauncherAction
+public class EventMonLauncherAction	extends LauncherAction
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public EventMonLauncherAction()
 	{
 		super("Event Monitor", 
@@ -44,10 +47,7 @@ public class EventMonLauncherAction
 		}
 		catch (Exception ex)
 		{
-			String msg = "Cannot run Event Monitor: " + ex;
-			Logger.instance().warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			log.atError().setCause(ex).log("Cannot run Event Monitor.");
 		}
 		return null;
 	}

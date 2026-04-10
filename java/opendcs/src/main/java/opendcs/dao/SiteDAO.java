@@ -1,63 +1,20 @@
 /*
-* $Id$
-*
-* $Log$
-* Revision 1.14  2019/02/25 20:02:55  mmaloney
-* HDB 660 Allow Computation Parameter Site and Datatype to be set independently in group comps.
-*
-* Revision 1.13  2018/02/19 16:25:03  mmaloney
-* Do periodic cache maintenance every 2 hours.
-* Only pause for 1 sec in the main loop if the data collection was empty.
-* (otherwise read the next batch of data immediately).
-*
-* Revision 1.12  2017/08/22 19:58:40  mmaloney
-* Refactor
-*
-* Revision 1.11  2017/03/31 16:21:20  mmaloney
-* Fix for duplicate site names.
-*
-* Revision 1.10  2017/03/23 16:08:04  mmaloney
-* HDB has many orphan site names - so no warning on this.
-*
-* Revision 1.9  2016/11/29 01:17:42  mmaloney
-* Increase cache time to 1 hour. Add debugs.
-*
-* Revision 1.8  2016/08/05 14:49:26  mmaloney
-* No longer put HDB site name in the description field.
-*
-* Revision 1.7  2016/06/07 21:28:25  mmaloney
-* fillCache made public to allow it to be called from ts DAO.
-*
-* Revision 1.6  2015/07/17 13:19:23  mmaloney
-* Guard against null/blank site name.
-*
-* Revision 1.5  2015/04/14 18:22:20  mmaloney
-* Search the entire cache before going to the database in lookupSiteID(String)
-*
-* Revision 1.4  2015/01/22 19:51:49  mmaloney
-* log message improvements
-*
-* Revision 1.3  2014/07/03 12:47:57  mmaloney
-* debug improvements.
-*
-* Revision 1.2  2014/06/27 20:36:07  mmaloney
-* After deleting a site, remove it from the local cache.
-*
-* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-* OPENDCS 6.0 Initial Checkin
-*
-* This software was written by Cove Software, LLC ("COVE") under contract
-* to the United States Government.
-*
-* No warranty is provided or implied other than specific contractual terms
-* between COVE and the U.S. Government
-*
-* Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
-* All rights reserved.
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package opendcs.dao;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import java.sql.Connection;
@@ -85,10 +42,12 @@ import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 
-public class SiteDAO
-    extends DaoBase
-    implements SiteDAI
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
+public class SiteDAO extends DaoBase implements SiteDAI
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     // MJM Increased from 30 min to 3 hours for 6.4 RC08
     public static final long CACHE_MAX_AGE = 3 * 60 * 60 * 1000L;
     protected static DbObjectCache<Site> cache = new DbObjectCache<Site>(CACHE_MAX_AGE, false);
@@ -242,10 +201,8 @@ public class SiteDAO
         }
         catch(SQLException ex)
         {
-            String msg = "lookupSiteId(str) - Error in query '"
-                + q + "': " + ex;
-            warning(msg);
-            throw new DbIoException(msg);
+            String msg = "lookupSiteId(str) - Error in query " + q + "'";
+            throw new DbIoException(msg, ex);
         }
     }
 
@@ -284,9 +241,8 @@ public class SiteDAO
         }
         catch(SQLException ex)
         {
-            String msg = "lookupSiteId - Error in query '" + q + "': " + ex;
-            warning(msg);
-            throw new DbIoException(msg);
+            String msg = "lookupSiteId - Error in query '" + q + "'";
+            throw new DbIoException(msg, ex);
         }
     }
 
@@ -294,7 +250,7 @@ public class SiteDAO
     public void fillCache()
         throws DbIoException
     {
-        debug3("(Generic)SiteDAO.fillCache()");
+        log.trace("(Generic)SiteDAO.fillCache()");
 
         final HashMap<DbKey, Site> siteHash = new HashMap<DbKey, Site>();
         String q = "SELECT " + siteAttributes + " FROM " + siteTableName;
@@ -323,7 +279,7 @@ public class SiteDAO
                 if (site == null)
                 {
                     if (!db.isHdb()) // For some crazy reason, HDB has lots of orphan site names.
-                        warning("SiteName for id=" + key + ", but no matching site.");
+                        log.warn("SiteName for id={}, but no matching site.", key);
                     return;
                 }
 
@@ -333,9 +289,9 @@ public class SiteDAO
                 final String nameValue = rs.getString(3);
                 if (prevName.getNameType().equalsIgnoreCase(nameType) && prevName.getNameValue().equalsIgnoreCase(nameValue))
                 {
-                    warning("SiteName for id=" + key + " with nametype=" + nameType + " and nameValue="
-                        + nameValue + " is a duplicate to a name to a different site with id="
-                            + prevId[0] + ". Discarding the name for " + key);
+                    log.warn("SiteName for id={} with nametype={} and nameValue={} " +
+                             "is a duplicate to a name to a different site with id={}. Discarding the name for {}",
+                             key ,nameType, nameValue, prevId[0], key);
                 }
                 else
                 {
@@ -353,18 +309,16 @@ public class SiteDAO
         }
         catch(SQLException ex)
         {
-            String msg = "fillCache - Error in query '" + q + "': " + ex;
-            warning(msg);
-            throw new DbIoException(msg);
+            String msg = "fillCache - Error in query '" + q + "'";
+            throw new DbIoException(msg, ex);
         }
-//        for(Site site : siteList)
         for(Site site : siteHash.values())
             cache.put(site);
         int nProps = 0;
         if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
             nProps = propsDao.readPropertiesIntoCache("site_property", cache);
-        debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames[0]
-            + " names, " + nProps + " properties.");
+        log.debug("Site Cache Filled: {} sites, {} names, {} properties.",
+                  cache.size(), nNames[0], nProps);
         lastCacheFillMsec = System.currentTimeMillis();
     }
 
@@ -397,9 +351,8 @@ public class SiteDAO
         }
         catch(SQLException ex)
         {
-            String err = "Error in readSite(" + siteTableKeyColumn + "=" + id + "): " + ex;
-            failure(err);
-            throw new DbIoException(err);
+            String err = "Error in readSite(" + siteTableKeyColumn + "=" + id + ")";
+            throw new DbIoException(err, ex);
         }
     }
 
@@ -510,7 +463,7 @@ public class SiteDAO
             q.append(" ");
         }
         q.append( " WHERE " + siteTableKeyColumn + " = ?");
-        Logger.instance().info(q.toString());
+        log.trace("Running '{}'", q);
         try
         {
             List<Object> parameters =
@@ -715,7 +668,7 @@ public class SiteDAO
          .append(")");
         try
         {
-            Logger.instance().info(q.toString());
+            log.trace("Executing '{}'", q.toString());
             doModify(q.toString(),parameters.toArray(new Object[0]));
         }
         catch (SQLException ex)

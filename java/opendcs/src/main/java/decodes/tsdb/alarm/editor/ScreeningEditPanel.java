@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.alarm.editor;
 
 import java.awt.BorderLayout;
@@ -17,6 +32,9 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -65,9 +83,9 @@ import opendcs.dai.DataTypeDAI;
 import opendcs.dai.LoadingAppDAI;
 
 @SuppressWarnings("serial")
-public class ScreeningEditPanel 
-	extends JPanel
+public class ScreeningEditPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private AlarmEditFrame parentFrame = null;
 	private SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 	private AlarmScreening screening = null;
@@ -295,10 +313,10 @@ public class ScreeningEditPanel
 				appCombo.addItem("" + cai.getAppId() + ": " + cai.getAppName());
 			}
 		}
-		catch (DbIoException e1)
+		catch (DbIoException ex)
 		{
-			parentFrame.showError("Cannot list computation apps: " + e1);
-			e1.printStackTrace();
+			log.atError().setCause(ex).log("Unable to list computation apps.");
+			parentFrame.showError("Cannot list computation apps: " + ex);
 		}
 		north.add(new JLabel("Loading App:"),
 			new GridBagConstraints(3, 3, 1, 1, 0.0, 0.0,
@@ -430,7 +448,6 @@ public class ScreeningEditPanel
 	
 	protected void startTimeChecked()
 	{
-		// TODO Auto-generated method stub
 		startDateTimeCal.setEnabled(startTimeCheck.isSelected());
 			
 	}
@@ -451,13 +468,6 @@ public class ScreeningEditPanel
 		else
 			unitsField.setText(units);	
 	}
-
-
-//	protected void unitsPressed()
-//	{
-//		// TODO Auto-generated method stub
-//		
-//	}
 
 
 	protected void emailGroupPressed()
@@ -648,10 +658,7 @@ public class ScreeningEditPanel
 				}
 				catch (FieldParseException ex)
 				{
-					// Auto-generated catch block
-					System.err.println("Error setting season from enum value '" 
-						+ ev.getValue() + "': " + ex);
-					ex.printStackTrace(System.err);
+					log.atError().setCause(ex).log("Error setting season from enum value '{}'", ev.getValue());
 					seasonNames[idx] = "bad season";
 					continue;
 				}
@@ -748,6 +755,7 @@ public class ScreeningEditPanel
 		}
 		catch(BadScreeningException ex)
 		{
+			log.atError().setCause(ex).log("Bad screening, user was prompted to exist without save or stay.");
 			int r = JOptionPane.showConfirmDialog(parentFrame, 
 				"There are errors in the unsaved fields on this panel. Exit without save?", 
 				"Exit without save?", JOptionPane.YES_NO_CANCEL_OPTION);
@@ -791,7 +799,7 @@ public class ScreeningEditPanel
 		}
 		catch (Exception ex)
 		{
-			throw new BadScreeningException("Invalid data type '" + dtcode + "': " + ex);
+			throw new BadScreeningException("Invalid data type '" + dtcode + "'", ex);
 		}
 		finally
 		{
@@ -812,10 +820,9 @@ public class ScreeningEditPanel
 				scrn.setSiteId(parentFrame.parentTsdbApp.getTsdb().lookupSiteID(s));
 				
 			}
-			catch (DbIoException e)
+			catch (DbIoException ex)
 			{
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				log.atError().setCause(ex).log("Unable to lookup or set screening site id.");
 			}
 		}
 		
@@ -877,6 +884,7 @@ public class ScreeningEditPanel
 		}
 		catch(BadScreeningException ex)
 		{
+				log.atError().setCause(ex).log("Unable to update screening from form fields.");
 			parentFrame.showError(ex.toString());
 			return;
 		}
@@ -904,6 +912,7 @@ public class ScreeningEditPanel
 		}
 		catch(Exception ex)
 		{
+			log.atError().setCause(ex).log("Unable to save screening to database.");
 			parentFrame.showError("Error writing screening to database: " + ex);
 		}
 		finally
@@ -981,11 +990,6 @@ public class ScreeningEditPanel
 	{
 		return screening;
 	}
-//
-//	public JTabbedPane getSeasonsPane()
-//	{
-//		return seasonsPane;
-//	}
 
 
 	public void setSeasonTabLabel(SeasonPanel seasonPanel, String abbr)

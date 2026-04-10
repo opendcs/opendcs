@@ -88,7 +88,7 @@ final public class ResWaterTemperatureCompute
                                         MetComputation metComputation,
                                         double delT)
     {
-        double avgRhow, totalVol, sFreq, kzx, surfAreaX;
+        double sFreq, kzx, surfAreaX;
         double fi, fiCheck, sumEnergyIn, smlDelz, sumEnergyDiff;
         double sumEnergyMix, delRhow, origWt1, origWt2;
         double al, abar, au, smlVol, zMix, zSml, zNext;
@@ -158,8 +158,6 @@ final public class ResWaterTemperatureCompute
         int resjOld = reservoir.resjOld;
         int resj = reservoir.getResj();
 
-        avgRhow = 0.0;
-        totalVol = 0.0;
         sumEnergyIn = 0.0;
         TKE = 0.;
 
@@ -197,15 +195,13 @@ final public class ResWaterTemperatureCompute
 
             rhow[i] = EvapUtilities.calcDensityH2o(wt[i]);
             cp[i] = EvapUtilities.calcHeatCapacityH2o(wt[i]);
-            avgRhow = avgRhow + rhow[i] * zvol[i];
-            totalVol = totalVol + zvol[i];
             sumEnergyIn = sumEnergyIn + rhow[i] * cp[i] * zvol[i] * wt[i];
         }
 
-        avgRhow = avgRhow / totalVol;
+        double avgRhow = getAvgRhow(resj, rhow, delz);
 
-        // Calculate Stability Frequency and then Diffusion coefficient
 
+        // Calculate the stability frequency and then Diffusion Coefficient for each reservoir layer.
         for (int i = resj; i >= 1; i--)  //TODO check
         {
             if ((rhow[i] - rhow[i - 1]) != 0.)
@@ -233,7 +229,7 @@ final public class ResWaterTemperatureCompute
             kzx = .000817 * Math.pow(surfAreaX, 0.56) *
                     Math.pow((Math.abs(sFreq)), (-0.43)); // cm^2/s
             kzx = .0001 * kzx;                                // m^2/s
-            kz[i] = thermalDiffusivityCoefficient * kzx * cp[i] * rhow[i]; // j/(s m C) factor to arbitrarly reduce diffusion
+            kz[i] = thermalDiffusivityCoefficient * kzx * cp[i] * rhow[i]; // j/(s m C) factor to arbitrarily reduce diffusion
         }
 
         // Perform diffusion calculation
@@ -556,6 +552,27 @@ final public class ResWaterTemperatureCompute
 
 
         return true;
+    }
+
+    /**
+     * Calculates the average density of water in the reservoir
+     * @param resj the number of layers in the reservoir
+     * @param rhow the array of water densities at each layer
+     * @param delz the array of layer thicknesses/depths
+      */
+
+    static double getAvgRhow(int resj, double[] rhow, double[] delz)
+    {
+        double avgRhow = 0.0;
+        double totalDepth = 0.0;
+
+        for(int i = 0; i <= resj; i++)
+        {
+            avgRhow = avgRhow + rhow[i] * delz[i];
+            totalDepth = totalDepth + delz[i];
+        }
+        avgRhow = avgRhow / totalDepth;
+        return avgRhow;
     }
 
     private double zcom(int itop, int ibottom,

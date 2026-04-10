@@ -5,8 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.Properties;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledForJreRange;
-import org.junit.jupiter.api.condition.JRE;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.opendcs.spi.authentication.AuthSource;
 
@@ -17,7 +15,6 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
  * At this time the library required only supports Java <= 11 due to some
  * changes in java.
  */
-@EnabledForJreRange(max = JRE.JAVA_11)
 @ExtendWith(SystemStubsExtension.class)
 public class EnvironmentAuthSourceTest
 {

@@ -1,7 +1,7 @@
 repositories {
     maven
         {
-            url "https://www.hec.usace.army.mil/nexus/repository/maven-public"
+            url = "https://www.hec.usace.army.mil/nexus/repository/maven-public"
             content
             {
                 includeGroupByRegex "mil.army.usace.hec.*"

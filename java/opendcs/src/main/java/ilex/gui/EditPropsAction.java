@@ -1,52 +1,24 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Source$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $State$
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:08  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.11  2008/01/21 02:37:21  mmaloney
-*  modified files for internationalization
-*
-*  Revision 1.9  2004/08/30 14:50:18  mjmaloney
-*  Javadocs
-*
-*  Revision 1.8  2002/05/03 18:54:50  mjmaloney
-*  For ClientAppSettings, added constructor for NOT including the CORBA
-*  options. This is used by non-corba apps like the MessageBrowser.
-*  for gui/EditProperties, implemented register method that causes pull-
-*  down menus to be displayed rather than JTextField.
-*
-*  Revision 1.7  2002/04/30 22:12:58  mjmaloney
-*  Added registerEditor method so that various properties could use different
-*  kinds of editors rather than JTextField.
-*
-*  Revision 1.6  2001/03/03 03:15:29  mike
-*  GUI mods for 3.2
-*
-*  Revision 1.5  2000/10/09 16:43:21  mike
-*  dev
-*
-*  Revision 1.4  2000/06/07 13:49:09  mike
-*  Removed diagnostics
-*
-*  Revision 1.3  2000/05/31 16:00:21  mike
-*  Implemented Save button in properties dialog.
-*
-*  Revision 1.2  2000/03/28 00:43:18  mike
-*  dev
-*
-*  Revision 1.1  2000/03/25 22:03:25  mike
-*  dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package ilex.gui;
 
 import javax.swing.text.JTextComponent;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.ResourceBundle;
 import java.util.Vector;
@@ -75,10 +47,10 @@ public class EditPropsAction extends AbstractAction
 	String[] prefixes;
 	/** appears in the dialog */
 	String screenname;
-	static HashMap editors = new HashMap();
+	static HashMap<String, JComponent> editors = new HashMap<>();
 
 	/**
-	* Registers an editor for a particular property. 
+	* Registers an editor for a particular property.
 	* Example: if this is a boolean property, the editor might be a combo
 	* box with values "true" and "false".
 	* @param propName the property name
@@ -146,11 +118,11 @@ Non-public Dialog class to implement the properties editors.
 */
 class PropEditDialog extends JDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static ResourceBundle labels = MenuFrame.getLabels();
 	Vector propnames;
 	JButton okButton, cancelButton, saveButton;
 	JComponent[] editField;
-//	JTextField editField[];
 
 	/**
 	* Constructor
@@ -159,10 +131,10 @@ class PropEditDialog extends JDialog
 	* @param propnames property names to include in the dialog
 	* @param editors HashMap of GUI components
 	*/
-	PropEditDialog( JFrame parent, String screenname, 
-			Vector propnames, HashMap editors )
+	PropEditDialog( JFrame parent, String screenname,
+			Vector propnames, HashMap<String, JComponent> editors )
 	{
-		super(parent, 
+		super(parent,
 				labels.getString("EditPropsAction.editProperties"), true);
 		this.propnames = propnames;
 		setSize(550, 300);
@@ -205,7 +177,7 @@ class PropEditDialog extends JDialog
 		contpane.add(p, BorderLayout.SOUTH);
 
 		JPanel editpanel = new JPanel(new GridLayout(propnames.size(), 2, 2, 2));
-//		editField = new JTextField[propnames.size()];
+
 		editField = new JComponent[propnames.size()];
 		Properties properties = GuiApp.getProperties();
 		for(int i=0; i<propnames.size(); i++)
@@ -235,9 +207,7 @@ class PropEditDialog extends JDialog
 		}
 
 		contpane.add(new JScrollPane(editpanel), BorderLayout.CENTER);
-//		for(int i = 0; i<propnames.size(); i++)
-//			editField[i].setCaretPosition(0);
-//			editField[i].setScrollOffset(0);
+
 	}
 
 	/** Called when OK pressed */
@@ -286,12 +256,15 @@ class PropEditDialog extends JDialog
 	private void doSave( )
 	{
 		copyPropertyValuesBack();
-		try { GuiApp.saveProperties(); }
-		catch(IOException ioe)
+		try
+		{
+			GuiApp.saveProperties();
+		}
+		catch (IOException ioe)
 		{
 			String msg = labels.getString(
 				"EditPropsAction.cannotSaveProp") + ioe.toString();
-			System.err.println(msg);
+			log.atError().setCause(ioe).log(msg);
 			JOptionPane.showMessageDialog(this, msg,
 				"Error!", JOptionPane.ERROR_MESSAGE);
 		}

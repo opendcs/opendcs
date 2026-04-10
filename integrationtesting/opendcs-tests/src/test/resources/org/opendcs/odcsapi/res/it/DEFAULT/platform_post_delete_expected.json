@@ -1,0 +1,14 @@
+{
+  "platformId": 2,
+  "name": "Platform 20",
+  "siteId": null,
+  "agency": "USGS",
+  "configId": 816816,
+  "description": "Platform 20",
+  "designator": "Platform Designator",
+  "lastModified": 1625141800000,
+  "production": true,
+  "properties": {},
+  "platformSensors": [],
+  "transportMedia": []
+}

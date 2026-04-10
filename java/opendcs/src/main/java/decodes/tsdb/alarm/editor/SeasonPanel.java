@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.alarm.editor;
 
 import java.awt.Color;
@@ -10,7 +25,6 @@ import java.awt.event.ActionListener;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Iterator;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -18,6 +32,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.decoder.Season;
 import decodes.tsdb.BadScreeningException;
@@ -29,6 +46,7 @@ import opendcs.dai.IntervalDAI;
 @SuppressWarnings({ "serial", "rawtypes", "unchecked" })
 public class SeasonPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JTextField rejHiValue = new JTextField(7);
 	private JTextField critHiValue = new JTextField(7);
 	private JTextField warnHiValue = new JTextField(7);
@@ -97,10 +115,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(Exception ex)
 		{
-			String msg = "Error reading durations: " + ex;
-			parentFrame.showError(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+				String msg = "Error reading durations";
+			log.atError().setCause(ex).log(msg);
+			parentFrame.showError(msg + ":" + ex);
 		}
 		finally
 		{
@@ -357,19 +374,6 @@ public class SeasonPanel extends JPanel
 			+ " are considered constant.");
 		stuckMinField.setToolTipText("Values less than this amount are treated the same as missing values.");
 		
-//		String nmissTT = 
-//			"<html>If more than this many missing values are detected over the specified<br/>"
-//			+ "duration, then don't perform the check. For Irregular interval data,<br/>"
-//			+ "this is a fractional portion of the duration. Example: If Duration is<br/>"
-//			+ "'4Days' and # Missing is .25, then if there is more than a 1-day gap<br/>"
-//			+ "anywhere in the data, the check is not performed.</html>";
-//			
-//		stuckMaxNumField.setToolTipText(nmissTT);
-//		quesDurCombo.setToolTipText("Duration over which to check for constant value within tolerance.");
-//		quesConstTolerance.setToolTipText("Values changing less than this amount over the specified duration"
-//			+ " are considered constant.");
-//		quesMinConst.setToolTipText("Values less than this amount are treated the same as missing values.");
-//		quesNmissConst.setToolTipText(nmissTT);
 	}
 
 	protected void changeSeasonPressed()
@@ -518,7 +522,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Reject High Value '" + s + "' -- must be a number\n");
+			final String msg = "Bad Reject High Value '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 		
 		try
@@ -529,7 +535,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Critical High Value '" + s + "' -- must be a number\n");
+			final String msg = "Bad Critical High Value '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 
 		try
@@ -540,7 +548,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Warning High Value '" + s + "' -- must be a number\n");
+				final String msg = "Bad Warning High Value '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 
 		try
@@ -551,7 +561,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Warning Low Value '" + s + "' -- must be a number\n");
+			final String msg = "Bad Warning Low Value '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 
 		try
@@ -562,7 +574,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Critical Low Value '" + s + "' -- must be a number\n");
+			final String msg = "Bad Critical Low Value '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 
 		try
@@ -573,7 +587,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Reject Low Value '" + s + "' -- must be a number\n");
+			final String msg = "Bad Reject Low Value '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 		
 		// Rate Of Change Limits ========================
@@ -588,7 +604,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Reject High Rate of Change '" + s + "' -- must be a number\n");
+			final String msg = "Bad Reject High Rate of Change '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 		
 		try
@@ -599,7 +617,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Critical High Rate of Change '" + s + "' -- must be a number\n");
+			final String msg ="Bad Critical High Rate of Change '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 
 		try
@@ -610,7 +630,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Warning High Rate of Change '" + s + "' -- must be a number\n");
+			final String msg = "Bad Warning High Rate of Change '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 
 		try
@@ -621,7 +643,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Warning Low Rate of Change '" + s + "' -- must be a number\n");
+			final String msg = "Bad Warning Low Rate of Change '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 
 		try
@@ -632,7 +656,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Critical Low Rate of Change '" + s + "' -- must be a number\n");
+			final String msg = "Bad Critical Low Rate of Change '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 
 		try
@@ -643,7 +669,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Reject Low Rate of Change '" + s + "' -- must be a number\n");
+			final String msg = "Bad Reject Low Rate of Change '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 		
 		// Stuck Sensor Limits ========================
@@ -658,7 +686,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Stuck Sensor Tolerance '" + s + "' -- must be a number\n");
+			final String msg = "Bad Stuck Sensor Tolerance '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 
 		try
@@ -669,8 +699,10 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Stuck Sensor Min-to-Check '" + s 
-				+ "' -- must be blank (for no minimum) or a number\n");
+			final String msg = "Bad Stuck Sensor Min-to-Check '" + s +
+							   "' -- must be blank (for no minimum) or a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 		
 		s = stuckMaxMultField.getText().trim();
@@ -693,7 +725,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad # Max Missing Values '" + s + "' -- must be an integer\n");
+			final String msg = "Bad # Max Missing Values '" + s + "' -- must be an integer";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 
 		if (errors.length() > 0)

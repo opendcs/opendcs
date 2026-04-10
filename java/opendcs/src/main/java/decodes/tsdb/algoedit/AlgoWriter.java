@@ -1,17 +1,32 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.algoedit;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.File;
-import java.io.PrintWriter;
-import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.tsdb.algo.AWAlgoType;
 
 
@@ -20,6 +35,7 @@ Merges an algorithm's data with the template and writes the output file.
 */
 public class AlgoWriter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String templateFile;
 	public static String NL = System.getProperty("line.separator");
 	private int indent = 2;
@@ -136,8 +152,6 @@ public class AlgoWriter
 
 					ArrayList<String> outputs = 
 						algoData.getAllOutputTimeSeries();
-//					if (outputs.size() == 0)
-//						continue;
 
 					for(String name : outputs)
 						image.append("\tpublic NamedVariable " + name
@@ -235,10 +249,9 @@ public class AlgoWriter
 		}
 		catch (Exception ex)
 		{
-			String msg = "Error " + doingWhat + ": " + ex;
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
-			throw new AlgoIOException(msg);
+			String msg = "Error " + doingWhat;
+			log.atError().setCause(ex).log(msg);
+			throw new AlgoIOException(msg, ex);
 		}
 		finally
 		{

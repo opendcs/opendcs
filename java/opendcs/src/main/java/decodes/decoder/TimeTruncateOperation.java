@@ -1,17 +1,25 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.decoder;
 
-import java.util.Calendar;
 import java.util.Date;
-import java.util.StringTokenizer;
 
-import ilex.util.ArrayUtil;
-import ilex.util.Logger;
-import ilex.var.Variable;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
-import decodes.db.*;
 
 /**
 TimeTruncateOperation operation:
@@ -22,6 +30,7 @@ t(h) means to truncate to the previous hour.
 */
 class TimeTruncateOperation extends DecodesOperation
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private char truncArg = 'm';     // Truncate minutes by default.
 	private int count = 1;
 
@@ -54,7 +63,9 @@ class TimeTruncateOperation extends DecodesOperation
 				try { count = Integer.parseInt(args.substring(1)); }
 				catch(NumberFormatException ex)
 				{
-					Logger.instance().warning("Bad count in time-truncate operator arg '" + args + "' -- ignored.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Bad count in time-truncate operator arg '{}' -- ignored.", args);
 					count = 1;
 				}
 			}
@@ -76,9 +87,8 @@ class TimeTruncateOperation extends DecodesOperation
 	{
 		Date messageTime = msg.getMessageTime();
 		RecordedTimeStamp rts = msg.getTimer();
-		Logger.instance().debug3("Executing Time Trunc(" + truncArg +
-			(count==1?"":""+count) + ") messageTime=" + messageTime
-			+ ", dataTime=" + new Date(rts.getMsec()));
+		log.trace("Executing Time Trunc({}{}) messageTime={}, dataTime={}",
+				  truncArg, (count==1?"":""+count), messageTime, new Date(rts.getMsec()));
 		if (!msg.timeWasTruncated)
 		{
 			long mmsec = messageTime.getTime();
@@ -86,14 +96,14 @@ class TimeTruncateOperation extends DecodesOperation
 				? (mmsec % 3600000L) : (mmsec % (60000L*count));
 			mmsec -= sub;
 			msg.truncateTime(new Date(mmsec));
-			Logger.instance().debug3("   Message time truncated to " + messageTime);
+			log.trace("Message time truncated to {}", messageTime);
 		}
 		rts.setSecond(0);
 		if (truncArg == 'h')
 			rts.setMinute(0);
 		else if (count > 1)
 			rts.setMinute(rts.getMinute() - (rts.getMinute()%count));
-		Logger.instance().debug3("   Data Time Stamp truncated to " + new Date(rts.getMsec()));
+		log.trace("Data Time Stamp truncated to {}", new Date(rts.getMsec()));
 	}
 }
 

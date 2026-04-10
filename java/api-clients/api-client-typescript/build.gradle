@@ -1,0 +1,103 @@
+plugins {
+    id 'base'
+    id 'opendcs.deps-conventions'
+    id 'opendcs.sonar-conventions'
+    id 'opendcs.version-conventions'
+    id "org.openapi.generator" version "7.17.0"
+    id 'com.github.node-gradle.node' version '7.1.0'
+}
+// configured later
+def genTask = tasks.named("openApiGenerate")
+
+def buildLib = tasks.register("buildLib", NpxTask) {
+    dependsOn genTask
+    dependsOn npmInstall
+    command = "npm"
+    args = ['run', 'build']
+    outputs.dir(file("build/generated/openApi"))
+    workingDir
+}
+
+build.dependsOn buildLib
+/*
+def bundle = tasks.register("bundle", NpxTask) {
+    dependsOn buildLib
+    command = "npm"
+    args = ['run', 'bundle']
+    inputs.files file("build/dist")
+    outputs.dir(file("dist"))
+}
+*/
+
+configurations {
+    apiSpec
+    lib {
+        artifacts {
+            add("lib", tasks.named("buildLib"))
+        }
+    }
+}
+
+dependencies {
+    apiSpec(project(path: ":opendcs-rest-api", configuration: 'api_spec'))
+}
+
+
+sonar {
+    skipProject = true // all generated code
+}
+
+openApiGenerate {
+    inputSpec = configurations.apiSpec.asPath
+    outputDir = "$buildDir/generated/openApi"
+    generatorName = "typescript"
+    
+    // packageName = "org.opendcs"
+    // apiPackage = "org.opendcs"
+    // modelPackage = "org.opendcs"
+    // invokerPackage = "org.opendcs"
+    globalProperties.set([
+        modelDocs: "true",
+        modelTests: "false",
+        apiDocs: "true",
+        apiTests: "false",
+        enabledPostProcessFile: "false",
+        useErasableSyntax: "true",
+        useObjectParameters: "true",
+        npmName: "opendcs-api"
+    ])
+    ignoreFileOverride = "$projectDir/.openapi-generator-ignore"
+}
+
+openApiValidate {
+    inputSpec = configurations.apiSpec.asPath
+}
+
+
+genTask.configure {
+    dependsOn configurations.apiSpec
+}
+
+npmInstall.dependsOn genTask
+
+node {
+    // Version of Node.js to install. Required.
+    version = '20.10.0'
+    
+   
+    // Whether to download Node.js if it is not already installed. Defaults to true.
+    download = true
+    
+    // The working directory for Node.js. Defaults to the project directory.
+    
+    // Configure a proxy for the download. Optional.
+    // distBaseUrl = 'https://custom.node.dist.mirror'
+    nodeProjectDir = project.layout.buildDirectory.dir("generated/openApi")
+}
+
+//jar.dependsOn bundle
+
+// processResources {
+//     dependsOn bundle
+//     from(file("dist"))
+// }

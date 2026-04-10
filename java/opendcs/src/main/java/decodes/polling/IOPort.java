@@ -1,5 +1,4 @@
 /*
- * $Id$
  * 
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
@@ -7,6 +6,8 @@
  * between COVE and Alberta ESRD.
  *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
+ * 
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +27,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import decodes.db.TransportMedium;
 
 public class IOPort
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The PortPool object that owns this IOPort */
 	private PortPool portPool;
 	
@@ -70,9 +74,9 @@ public class IOPort
 		throws DialException
 	{
 		this.pollingThread = pollingThread;
-		pollingThread.debug2("IOPort.connect() -- calling portPool.configPort");
+		log.trace("IOPort.connect() -- calling portPool.configPort");
 		portPool.configPort(this, tm);
-		pollingThread.debug2("IOPort.connect() -- calling dialer.connect");
+		log.trace("IOPort.connect() -- calling dialer.connect");
 		if (dialer != null)
 			dialer.connect(this, tm, this.pollingThread);
 		dialerConnected = true;
@@ -86,8 +90,7 @@ public class IOPort
 	{
 		if (dialerConnected && dialer != null) // don't use dialer to disconnect if we never connected.
 			dialer.disconnect(this);
-		if (pollingThread != null)
-			pollingThread.debug2("IOPort.disconnect() complete.");		
+		log.trace("IOPort.disconnect() complete.");		
 	}
 	
 	public InputStream getIn()

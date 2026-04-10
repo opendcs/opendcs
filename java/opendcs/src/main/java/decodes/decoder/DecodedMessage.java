@@ -1,12 +1,26 @@
 /*
- *	$Id$
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.decoder;
 
 import java.util.*;
 import java.text.SimpleDateFormat;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import ilex.var.Variable;
@@ -44,6 +58,7 @@ import decodes.comp.ITimeSeries;
  */
 public class DecodedMessage implements IDataCollection
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The raw data */
 	private RawMessage rawMessage;
 	/** The Platform */
@@ -132,11 +147,11 @@ public class DecodedMessage implements IDataCollection
 			PlatformConfig pc = platform.getConfig();
 			if (pc == null)
 			{
-				String msg = "Decoding failed - no config for platform '"
-					+ platform.getDisplayName() + "' configName=" + platform.getConfigName()
-					+ ", dcpaddr=" + tm.getMediumId();
-				Logger.instance().warning(msg);
-				Logger.instance().warning("Header: '" + new String(rawMessage.getHeader() + "'"));
+				log.warn("Decoding failed - no config for platform '{}' configName={}, dcpaddr={}, Header: '{}'",
+					     platform.getDisplayName(),
+						 platform.getConfigName(),
+						 tm != null ? tm.getMediumId(): "unknown addr",
+						 new String(rawMessage.getHeader() + "'"));
 				throw new UnknownPlatformException("The config must be saved before decoding. "
 					+ "Please exit the 'Edit Decoding Script' dialog "
 					+ "and press Commit. Then re-enter "
@@ -230,13 +245,13 @@ public class DecodedMessage implements IDataCollection
 				}
 			}
 
-			int ta = tm.getTimeAdjustment();
+			int ta = tm != null ? tm.getTimeAdjustment() : 0;
 			if (ta != 0)
 				messageTime = new Date(messageTime.getTime() + (ta * 1000));
 		}
 
 		/*
-		 * Initialize time zone, preferrably to the value stored in the
+		 * Initialize time zone, preferably to the value stored in the
 		 * transport medium, else the one stored in the site record. Else,
 		 * defaults to UTC.
 		 */
@@ -399,8 +414,6 @@ public class DecodedMessage implements IDataCollection
 			int n = ts.size();
 			if (n == 0)
 			{
-				// Logger.instance().debug3("Skipping empty time-series "
-				// + ts.getDisplayName());
 				continue; // empty time series.
 			}
 
@@ -408,16 +421,11 @@ public class DecodedMessage implements IDataCollection
 			if (ts.timeStatus != RecordedTimeStamp.TIME_OF_DAY
 				&& ts.timeStatus != RecordedTimeStamp.TIME_OF_YEAR)
 			{
-//				Logger.instance().debug3(
-//					"Skipping time-series " + ts.getDisplayName() + " with time status="
-//						+ ts.timeStatus);
 				continue;
 			}
 
-			Logger.instance().debug3(
-				"Time Series '" + ts.getDisplayName() + "' has partial times (status="
-					+ ts.timeStatus + ", curDOY=" + curDOY + ", curYear=" + curYear + ", newstat="
-					+ newstat + ")");
+			log.trace("Time Series '{}' has partial times (status={}, curDOY={}, curYear={}, newstat={})",
+					  ts.getDisplayName(), ts.timeStatus, curDOY, curYear, newstat);
 
 			for (int i = 0; i < n; i++)
 			{
@@ -484,11 +492,10 @@ public class DecodedMessage implements IDataCollection
 					}
 				}
 				Date newTime = cal.getTime();
-				Logger.instance().debug3(
-					"Updating sample time '" + tv.getTime() + "' to '" + newTime + "'");
+				log.trace("Updating sample time '{}' to '{}'", tv.getTime(), newTime);
 				tv.setTime(newTime);
 			}
-			Logger.instance().debug3("New time status = " + newstat);
+			log.trace("New time status = {}", newstat);
 			ts.timeStatus = newstat;
 		}
 	}
@@ -497,9 +504,7 @@ public class DecodedMessage implements IDataCollection
 	public void finishMessage()
 	{
 		int curStat = currentTime.getStatus();
-		Logger.instance().debug2(
-			"Finishing Message: final time = '" + currentTime.getCalendar().getTime()
-				+ "', status=" + curStat + ", firstSample = " + firstSample);
+		log.trace("Finishing Message: final time = '{}', status={}, firstSample = {}", currentTime.getCalendar().getTime(), curStat, firstSample);
 
 		/*
 		 * If we didn't get complete date/time in message data, see if we can
@@ -530,7 +535,7 @@ public class DecodedMessage implements IDataCollection
 					catch (NoConversionException ex)
 					{
 						/* Shouldn't happen */
-						Logger.instance().warning("Internal decoder error: no end time.");
+						log.atWarn().setCause(ex).log("Internal decoder error: no end time.");
 						return;
 					}
 				}
@@ -544,7 +549,9 @@ public class DecodedMessage implements IDataCollection
 			upgradeStoredTimes();
 		}
 		else
-			Logger.instance().debug3("No need to fix dates.");
+		{
+			log.trace("No need to fix dates.");
+		}
 
 		if (currentTime.isTzManual() && firstSample != null)
 		{
@@ -639,10 +646,10 @@ public class DecodedMessage implements IDataCollection
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().warning("Sensor "
-					+ sensor.getNumber() + " " + sensor.getName()
-					+ " has bad TimeOffsetSec property '" + tos 
-					+ "' must be integer. Ingored.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Sensor {} {} has bad TimeOffsetSec property '{}' must be integer. Ingored.",
+				   		sensor.getNumber(), sensor.getName(), tos);
 			}
 		}
 	}
@@ -675,16 +682,15 @@ public class DecodedMessage implements IDataCollection
 	{
 		if (sensorNumber < 1)
 		{
-			Logger.instance().warning("addSample() Invalid sensor number " + sensorNumber);
+			log.warn("addSample() Invalid sensor number {}", sensorNumber);
 			return null;
 		}
 
 		TimeSeries ts = getTimeSeries(sensorNumber);
 		if (ts == null)
 		{
-			Logger.instance().warning(
-				"In platform " + platform.makeFileName()
-					+ " Cannot add sample -- no time series for sensor " + sensorNumber);
+			log.warn("In platform {} Cannot add sample -- no time series for sensor ",
+					 platform.makeFileName(), sensorNumber);
 			return null;
 		}
 
@@ -695,10 +701,8 @@ public class DecodedMessage implements IDataCollection
 		TimeZone tz = currentTime.getCalendar().getTimeZone();
 		GregorianCalendar cal1 = new GregorianCalendar(tz);
 		cal1.setTime(sampTime);
-		Logger.instance().debug3(
-			"addSample curTime=" + loggerDateFmt.format(sampTime) + ", status="
-				+ currentTime.getStatus());
-
+		log.trace("addSample curTime={}, status={}", sampTime, currentTime.getStatus());
+		
 		if (currentTime.getStatus() == RecordedTimeStamp.NOTHING)
 		{
 			// This is the usual case for DCPs -- no embedded time in message.
@@ -733,9 +737,8 @@ public class DecodedMessage implements IDataCollection
 			}
 			else if (fixedInterval)
 			{
-				Logger.instance().debug3(
-					"Adding fixed interval sensor, msec=" + msec + ", msecAtLastAdd="
-						+ ts.msecAtLastAdd + ", isAscending=" + ts.isAscending());
+				log.trace("Adding fixed interval sensor, msec={}, msecAtLastAdd={}, isAscending={}",
+						  msec, ts.msecAtLastAdd, ts.isAscending());
 
 				// Has time changed since last sample for this TS?
 				// AND we haven't just set time with a date/time Field operator.
@@ -756,10 +759,9 @@ public class DecodedMessage implements IDataCollection
 					else
 						// Descending, this time is last one minus interval.
 						sampTime = new Date(tls - sint * 1000L);
-					Logger.instance().debug3(
-						"Running Series: sint=" + sint + " lastSampleTime="
-							+ loggerDateFmt.format(lastSample) + ", thisSampleTime="
-							+ loggerDateFmt.format(sampTime));
+					
+					log.warn("Running Series: sint={} lastSampleTime={}, thisSampleTime={}",
+							 sint, lastSample,sampTime);
 				}
 				else if (!justGotFullDateTime)
 				// We got a new time value.
@@ -778,14 +780,14 @@ public class DecodedMessage implements IDataCollection
 						// If HHMMSS wrapped but day is same, increment day.
 						if (lastDay == cal1.get(Calendar.DAY_OF_YEAR))
 						{
-							Logger.instance().debug3("HHMMSS wrapped, incrementing day.");
+							log.trace("HHMMSS wrapped, incrementing day.");
 							cal1.add(Calendar.DAY_OF_MONTH, +1);
 							currentTime.getCalendar().add(Calendar.DAY_OF_MONTH, +1);
 						}
 						else
 						// Day must also have wrapped, increment year.
 						{
-							Logger.instance().debug3("Day wrapped, incrementing year.");
+							log.trace("Day wrapped, incrementing year.");
 							cal1.add(Calendar.YEAR, +1);
 							currentTime.incrementYear();
 						}
@@ -836,9 +838,7 @@ public class DecodedMessage implements IDataCollection
 		tv.setLineNumber(lineNum);
 		ts.addSample(tv);
 		ts.msecAtLastAdd = msec;
-		Logger.instance().debug3(
-			"Added sample for sensor " + sensorNumber + " at time "
-				+ loggerDateFmt.format(sampTime) + ", value=" + v.getStringValue());
+		log.trace("Added sample for sensor {} at time {}, value={}", sensorNumber, sampTime, v.getStringValue());
 		ts.timeStatus = currentTime.getStatus();
 		if (firstSample == null)
 			firstSample = tv;
@@ -861,9 +861,8 @@ public class DecodedMessage implements IDataCollection
 		TimeSeries ts = getTimeSeries(sensorNumber);
 		if (ts == null)
 		{
-			Logger.instance().warning(
-				"In platform " + platform.makeFileName()
-					+ " Cannot add sample -- no time series for sensor " + sensorNumber);
+			log.warn("In platform {} Cannot add sample -- no time series for sensor ",
+					 platform.makeFileName(), sensorNumber);
 			return;
 		}
 		TimedVariable tv = new TimedVariable(v, hardTime);
@@ -911,10 +910,9 @@ public class DecodedMessage implements IDataCollection
 	 */
 	public void formatSamples(PresentationGroup pg)
 	{
-		Logger.instance().debug3(
-			"Formatting Samples, pg=" + (pg == null ? "null" : pg.getDisplayName())
-			+ ", there are " + (timeSeriesArray==null ? "null" : 
-				(""+timeSeriesArray.size())) + " time series in the message.");
+		log.trace("Formatting Samples, pg={}, there are {} time series in the message.",
+	 			 (pg == null ? "null" : pg.getDisplayName()),
+				 (timeSeriesArray==null ? "null" : timeSeriesArray.size()));
 		if (timeSeriesArray == null)
 			return;
 		Vector<TimeSeries> omit = new Vector<TimeSeries>();
@@ -923,15 +921,14 @@ public class DecodedMessage implements IDataCollection
 			Sensor sensor = ts.getSensor();
 			if (ts.size() == 0)
 			{
-				Logger.instance().debug3("Skipping empty time series for sensor " 
-					+ (sensor==null ? "null" : sensor.getName()));
+				log.trace("Skipping empty time series for sensor {}",
+						 (sensor==null ? "null" : sensor.getName()));
 				continue;
 			}
 			String p = sensor.getProperty("omit");
 			if (p != null && TextUtil.str2boolean(p))
 			{
-				Logger.instance().debug3(" will omit sensor " + sensor.getName()
-					+ " due to omit property");
+				log.trace("Will omit sensor {} due to omit property", sensor.getName());
 				omit.add(ts);
 				continue;
 			}
@@ -942,11 +939,7 @@ public class DecodedMessage implements IDataCollection
 				{
 					if (dp.getUnitsAbbr() != null && dp.getUnitsAbbr().equalsIgnoreCase("omit"))
 					{
-						Logger.instance()
-							.log(
-								Logger.E_DEBUG2,
-								"Omitting sensor '" + sensor.getName()
-									+ "' as per Presentation Group.");
+						log.trace("Omitting sensor '{}' as per Presentation Group.", sensor.getName());
 						omit.add(ts);
 					}
 					else
@@ -955,8 +948,7 @@ public class DecodedMessage implements IDataCollection
 					}
 				}
 			}
-			else Logger.instance().debug3(" No pg element for sensor " 
-				+ sensor.getName() + " with dt=" + sensor.getDataType());
+			log.trace(" No pg element for sensor {} with dt={}", sensor.getName(), sensor.getDataType());
 			Season ignoreSeason = sensor.getIgnoreSeason();
 			if (ignoreSeason == null)
 				ignoreSeason = platform.getIgnoreSeason();
@@ -1002,11 +994,10 @@ public class DecodedMessage implements IDataCollection
 				}
 				catch (NumberFormatException ex)
 				{
-					Logger.instance().log(
-						Logger.E_WARNING,
-						"Platform " + rawMessage.getMediumId()
-							+ " Invalid preoffset property in sensor " + ts.getSensorNumber()
-							+ " '" + p + "' -- ignored.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Platform {} Invalid preoffset property in sensor {} '{}' -- ignored.",
+					   		rawMessage.getMediumId(), ts.getSensorNumber(), p);
 				}
 			}
 			p = sensor.getProperty("scale");
@@ -1019,11 +1010,10 @@ public class DecodedMessage implements IDataCollection
 				}
 				catch (NumberFormatException ex)
 				{
-					Logger.instance().log(
-						Logger.E_WARNING,
-						"Platform " + rawMessage.getMediumId()
-							+ " Invalid scale property in sensor " + ts.getSensorNumber() + " '"
-							+ p + "' -- ignored.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Platform {} Invalid scale property in sensor {} '{}' -- ignored.",
+					   		rawMessage.getMediumId(), ts.getSensorNumber(), p);
 				}
 			}
 			p = sensor.getProperty("offset");
@@ -1036,11 +1026,10 @@ public class DecodedMessage implements IDataCollection
 				}
 				catch (NumberFormatException ex)
 				{
-					Logger.instance().log(
-						Logger.E_WARNING,
-						"Platform " + rawMessage.getMediumId()
-							+ " Invalid offset property in sensor " + ts.getSensorNumber() + " '"
-							+ p + "' -- ignored.");
+					log.atWarn()
+					.setCause(ex)
+					.log("Platform {} Invalid offset property in sensor {} '{}' -- ignored.",
+						rawMessage.getMediumId(), ts.getSensorNumber(), p);
 				}
 			}
 		}

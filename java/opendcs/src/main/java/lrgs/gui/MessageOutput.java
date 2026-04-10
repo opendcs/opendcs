@@ -1,23 +1,36 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.gui;
 
 import java.io.*;
 import java.awt.*;
 import java.awt.event.*;
+
+import javax.net.SocketFactory;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
-import decodes.util.CmdLineArgs;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.ResourceBundle;
 
 import ilex.gui.*;
-import ilex.cmdline.*;
 import ilex.util.IDateFormat;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 
 import lrgs.common.*;
 import lrgs.ldds.*;
@@ -27,12 +40,12 @@ The MessageOutput frame is usually started from the MessageBrowser.
 The current connection parameters and search criteria are evaluated,
 a new connection opened, and the resulting data is saved to a file.
 */
-public class MessageOutput extends MenuFrame
-	implements DcpMsgOutputMonitor
+public class MessageOutput extends MenuFrame implements DcpMsgOutputMonitor
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static ResourceBundle labels = null;
 	private static ResourceBundle genericLabels = null;
-	
+
 	public static final int DEFAULT_PORT_NUM = LddsParams.DefaultPort;
 	public static final int StartHeight = 260;
 	public static final int StartWidth = 520;//440;
@@ -40,6 +53,7 @@ public class MessageOutput extends MenuFrame
 
 	private String hostName, userName;
 	private int portNum;
+	private SocketFactory socketFactory;
 	private SearchCriteria searchcrit;
 	private boolean sendNetworkLists;
 	private String prefix, suffix;
@@ -60,12 +74,8 @@ public class MessageOutput extends MenuFrame
 	private String beforeData, afterData;
 	private String passwd;
 	private static JFileChooser filechooser;
-//	static
-//	{
-//		filechooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
-//	}
 
-	/** 
+	/**
 	  Constructor.
 	  @param hostName the host
 	  @param portNum the port
@@ -79,8 +89,8 @@ public class MessageOutput extends MenuFrame
 	  @param beforeData printed before decoded data
 	  @param afterData printed after decoded data
 	*/
-	public MessageOutput(String hostName, int portNum, String userName,
-		SearchCriteria searchcrit, String prefix, String suffix, 
+	public MessageOutput(String hostName, int portNum, SocketFactory socketFactory, String userName,
+		SearchCriteria searchcrit, String prefix, String suffix,
 		boolean sendNetworkLists, boolean doDecode,
 		String beforeData, String afterData, boolean showRaw)
 	{
@@ -88,12 +98,13 @@ public class MessageOutput extends MenuFrame
 		labels = MessageBrowser.getLabels();
 		genericLabels = MessageBrowser.getGenericLabels();
 		setTitle(labels.getString("MessageOutput.frameTitle"));
-		
+
 		filechooser = new JFileChooser();
 		filechooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
-		 
+
 		this.hostName = hostName != null ? hostName : "localhost";
 		this.portNum = portNum == 0 ? DEFAULT_PORT_NUM : portNum;
+		this.socketFactory = socketFactory;
 		this.userName = userName != null ? userName :
 			System.getProperty("user.name");
 		this.searchcrit = searchcrit;
@@ -231,13 +242,13 @@ public class MessageOutput extends MenuFrame
 
 		String nm = "MessageOutput.FileExists";
 		GuiApp.getProperty(nm, "Fail");
-		EditPropsAction.registerEditor(nm, 
+		EditPropsAction.registerEditor(nm,
 			new JComboBox(new String[] { "Fail", "Append", "Overwrite" }));
 
 		GuiApp.getProperty("MessageOutput.Timeout", "60");
 		nm = "MessageOutput.CloseWhenDone";
 		GuiApp.getProperty(nm, "true");
-		EditPropsAction.registerEditor(nm, 
+		EditPropsAction.registerEditor(nm,
 			new JComboBox(new String[] { "true", "false" }));
 	}
 
@@ -366,6 +377,7 @@ public class MessageOutput extends MenuFrame
 		}
 		catch(IOException ioe)
 		{
+			log.atError().setCause(ioe).log("Unable to open output file '{}'", s);
 			showError(ioe.toString());
 		}
 		return true;
@@ -380,32 +392,32 @@ public class MessageOutput extends MenuFrame
 		try
 		{
 			what = labels.getString("MessageOutput.constructingClientI");
-			client = new LddsClient(hostName, portNum);
+			client = new LddsClient(hostName, portNum, socketFactory);
 
 			// MJM 20030223 added...
 			client.enableMultiMessageMode(true);
 
-			what = 
+			what =
 			labels.getString("MessageOutput.connectingToServer");
 			client.connect();
 			if (passwd != null && passwd.length() > 0)
 			{
-				what = 
+				what =
 					labels.getString("MessageOutput.authenticatingToServer");
 				client.sendAuthHello(userName, passwd);
 			}
 			else
 			{
-				what = 
+				what =
 				labels.getString("MessageOutput.loggingIntoServer");
 				client.sendHello(userName);
 			}
-			what = 
+			what =
 				labels.getString("MessageOutput.sendingNetworkLists");
 			if (searchcrit != null)
 			{
-				if (sendNetworkLists 
-				 && searchcrit.NetlistFiles != null 
+				if (sendNetworkLists
+				 && searchcrit.NetlistFiles != null
 				 && searchcrit.NetlistFiles.size() > 0)
 				{
 					for(String s : searchcrit.NetlistFiles)
@@ -415,15 +427,16 @@ public class MessageOutput extends MenuFrame
 							client.sendNetList(f, s);
 					}
 				}
-				what = 
+				what =
 					labels.getString("MessageOutput.sendingSearchCriteria");
 				client.sendSearchCrit(searchcrit);
 			}
 			return true;
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			String errmsg = "Error " + what + ":" + e;
+			String errmsg = "Error " + what + ":" + ex;
+			log.atError().setCause(ex).log("Error {}", what);
 			showError(errmsg);
 			return false;
 		}
@@ -520,9 +533,7 @@ public class MessageOutput extends MenuFrame
 		}
 		catch(NumberFormatException ex)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Cannot get DAPS Time Stamp from message '"
-				+ msg.getHeader() + ": " + ex);
+			log.atWarn().setCause(ex).log("Cannot get DAPS Time Stamp from message '{}'", msg.getHeader());
 		}
 	}
 
@@ -593,66 +604,4 @@ private static int idx2 = 0;
 		return IamPaused;
 	}
 
-	// Usage <SearchCriteriaEditor -f Filename.
-	static CmdLineArgs cmdLineArgs = new CmdLineArgs(true, "util.log");
-	static StringToken searchcrit_arg= new StringToken(
-		"f", "Search Crit File", "", TokenOptions.optSwitch, "");
-	static IntegerToken port_arg = new IntegerToken(
-		"p", "Port Number", "", TokenOptions.optSwitch, DEFAULT_PORT_NUM);
-	static StringToken user_arg = new StringToken(
-		"u", "User Name", "", TokenOptions.optSwitch|TokenOptions.optRequired, "");
-	static StringToken prefix_arg = new StringToken(
-		"b", "Prefix", "", TokenOptions.optSwitch, "\\n");
-	static StringToken suffix_arg = new StringToken(
-		"a", "After", "", TokenOptions.optSwitch, "\\n");
-	static BooleanToken netlist_arg = new BooleanToken(
-		"n", "Send Network Lists", "", TokenOptions.optSwitch, false);
-	static BooleanToken doDecode_arg = new BooleanToken(
-		"R", "Decode Data", "", TokenOptions.optSwitch, false);
-	static StringToken beforeData_arg = new StringToken(
-		"B", "Before Data", "", TokenOptions.optSwitch, "\\n----\\n");
-	static StringToken afterData_arg = new StringToken(
-		"A", "After Data", "", TokenOptions.optSwitch, "====\\n");
-	static
-	{
-		cmdLineArgs.addToken(searchcrit_arg);
-		cmdLineArgs.addToken(port_arg);
-		cmdLineArgs.addToken(user_arg);
-		cmdLineArgs.addToken(prefix_arg);
-		cmdLineArgs.addToken(suffix_arg);
-		cmdLineArgs.addToken(netlist_arg);
-		cmdLineArgs.addToken(doDecode_arg);
-		cmdLineArgs.addToken(beforeData_arg);
-		cmdLineArgs.addToken(afterData_arg);
-	}
-
-
-	/**
-	Test main so user can start this frame directly from command line.
-	*/
-	public static void main(String args[])
-		throws Exception
-	{
-		// Parse command line args & get argument values:
-		cmdLineArgs.parseArgs(args);
-
-		GuiApp.setAppName(LrgsApp.ShortID);
-		GeneralProperties.init();
-
-		String scf = searchcrit_arg.getValue();
-		SearchCriteria searchcrit = null;
-		if (scf != null && scf.length() > 0)
-			searchcrit = new SearchCriteria(new File(scf));
-
-		MessageOutput me = new MessageOutput(
-			cmdLineArgs.getHostName(), port_arg.getValue(), 
-			user_arg.getValue(),
-			searchcrit, prefix_arg.getValue(), suffix_arg.getValue(),
-			netlist_arg.getValue(),
-			doDecode_arg.getValue(),
-			beforeData_arg.getValue(), afterData_arg.getValue(), true);
-
-		GuiApp.setTopFrame(me);
-		me.startup(100, 100);
-	}
 }

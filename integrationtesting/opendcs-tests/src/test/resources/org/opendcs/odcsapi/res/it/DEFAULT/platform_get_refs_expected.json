@@ -1,0 +1,13 @@
+{
+  "platformId" : null,
+  "name" : "Platform 10",
+  "siteId" : "[SITE_ID]",
+  "agency" : "USGS",
+  "configId" : -1,
+  "config": null,
+  "description" : "Platform 10 description",
+  "designator" : "Platform Designator",
+  "transportMedia" : {
+    "goes" : "IDENT"
+  }
+}

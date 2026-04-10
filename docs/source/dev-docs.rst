@@ -40,7 +40,9 @@ The integration tests are only run if explicitly called out:
 
 .. code-block:: bash
 
-    ./gradlew :testing:opendcs-test:test --info -Popendcs.test.engine=OpenDCS-XML
+    ./gradlew :testing:opendcs-tests:test --info -Popendcs.test.engine=OpenDCS-XML
+    # OR
+    ./gradlew :testing:opendcs-tests:testOpenDCSXML
 
 .. WARNING::
 
@@ -441,16 +443,42 @@ Implementations should derive from :code:`org.opendcs.fixtures.spi.configuration
 and implement any required setup. All `Configurations` are given a temporary directory to create the `DCSTOOL_USERDIR` contents.
 Application logs are all written into this directory.
 
-Currently Implemented are OpenDCS-XML and OpenDCS-Postgres. OpenDCS-Postgres uses the (Testcontainers)[https://java.testcontainers.org] library
-which requires docker. OpenDCS-XML only depends on the file system.
+The Currently Implemented engines are demonstrated below.  OpenDCS-Postgres, CWMS-Oracle, and OpenDCS-Oracle use the (Testcontainers)[https://java.testcontainers.org] library which requires docker. OpenDCS-XML only depends on the file system.
 
-To run either use the following command:
+To run use the following commands:
 
 .. code-block:: bash
 
-    ./gradlew :testing:opendcs-test:test -Popendcs.test.engine=OpenDCS-XML
+    ./gradlew :testing:opendcs-tests:test -Popendcs.test.engine=OpenDCS-XML
     # or 
-    ./gradlew :testing:opendcs-test:test -Popendcs.test.engine=OpenDCS-Postgres
+    ./gradlew :testing:opendcs-tests:test -Popendcs.test.engine=OpenDCS-Postgres
+    # or 
+    ./gradlew :testing:opendcs-tests:test -Popendcs.test.engine=OpenDCS-Oracle
+    # or 
+    ./gradlew :testing:opendcs-tests:test -Popendcs.test.engine=CWMS-Oracle
+
+Algorithm tests
+---------------
+
+Algorithm tests are a suite of regression tests designed to ensure that all algorithms are functioning correctly across builds and updates. These tests validate the correctness and stability of algorithmic computations by comparing the actual outputs against expected results.
+
+To run the algorithm tests, execute the following command:
+
+.. code-block:: bash
+
+    ./gradlew :testing:opendcs-tests:test --tests org.opendcs.regression_tests.AlgorithmTestsIT.test_algorithm_operations
+
+This will run the full suite of algorithm tests.
+
+If you want to run a specific test, you can use the following command with the `-P` argument to filter the test by name:
+
+.. code-block:: bash
+
+    ./gradlew :testing:opendcs-tests:test --tests org.opendcs.regression_tests.AlgorithmTestsIT.test_algorithm_operations -P"opendcs.test.algorithm.filter=ResEvapTest1"
+
+Replace `ResEvapTest1` with the name of the specific test you want to run. This allows for targeted testing of individual algorithms, which is useful during development or debugging.
+
+Note: some tests may require -P"opendcs.test.engine=CWMS-Oracle"
 
 Adding tests
 ------------
@@ -497,6 +525,212 @@ At the Class and method level the following annotations are available.
 |                                            |Method level, or both in which  |
 |                                            |case the sets will be merged    |
 +--------------------------------------------+--------------------------------+
+
+Creating additional tests
+--------------------------
+
+The sections below describe how to add new decoding and algorithm tests by adding files to specific directories.
+
+Testing the Decodes Language
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Adding Decoding Tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To add new tests for the Decoding language and functions, developers need to create four files in the `./opendcs/java/opendcs/src/test/resources/decodes/db` directory:
+
+1. **`.assertions` file**:  
+    - Purpose: Defines the expected output for the test to validate the Decoding.
+    - Example:  
+
+      .. code-block:: text
+
+         #sensor number, time (ISO8601), expected value (double or string), precision, message
+         1,2014-03-01T12:00:00Z,23.95,  0.0, Expected value not parsed (sensor 1)
+         1,2014-03-01T13:00:00Z,23.96,  0.0, Expected value not parsed (sensor 1)
+         1,2014-03-01T14:00:00Z,23.97,  0.0, Expected value not parsed (sensor 1)
+         2,2014-03-01T12:00:00Z,17.2,  0.0, Expected value not parsed (sensor 2)
+         2,2014-03-01T13:00:00Z,16.9,  0.0, Expected value not parsed (sensor 2)
+         2,2014-03-01T14:00:00Z,15.2,  0.0, Expected value not parsed (sensor 2)
+         3,2014-03-01T12:00:00Z,98.1,  0.0, Expected value not parsed (sensor 3)
+         3,2014-03-01T13:00:00Z,98.1,  0.0, Expected value not parsed (sensor 3)
+         3,2014-03-01T14:00:00Z,98.2,  0.0, Expected value not parsed (sensor 3)
+         4,2014-03-01T12:00:00Z,8252,  0.0, Expected value not parsed (sensor 4)
+         4,2014-03-01T13:00:00Z,8252,  0.0, Expected value not parsed (sensor 4)
+         4,2014-03-01T14:00:00Z,8252,  0.0, Expected value not parsed (sensor 4)
+         5,2014-03-01T12:00:00Z,0.0,  0.0, Expected value not parsed (sensor 5)
+         5,2014-03-01T13:00:00Z,0.0,  0.0, Expected value not parsed (sensor 5)
+         5,2014-03-01T14:00:00Z,0.0,  0.0, Expected value not parsed (sensor 5)
+         6,2014-03-01T12:00:00Z,0.0,  0.0, Expected value not parsed (sensor 6)
+         6,2014-03-01T13:00:00Z,0.0,  0.0, Expected value not parsed (sensor 6)
+         6,2014-03-01T14:00:00Z,0.0,  0.0, Expected value not parsed (sensor 6)
+
+2. **`.decodescript` file**:  
+    - Purpose: Contains the Decodes script that defines how the input data should be processed.  
+    - Example:  
+
+      .. code-block:: text
+
+         csv: 3(/, F(D,A,10,4), x, F(T,A,8), csv(1, 2, 4, 5, 6, 3))
+
+3. **`.input` file**:  
+    - Purpose: Provides the raw input data to be decoded.  
+    - Example:  
+
+      .. code-block:: text
+
+         # Ignored header line
+         03/01/2014 12:00:00 23.95, 17.2, 8252, 0, 0, 98.1
+         03/01/2014 13:00:00 23.96, 16.9, 8252, 0, 0, 98.1
+         03/01/2014 14:00:00 23.97, 15.2, 8252, 0, 0, 98.2
+
+4. **`.sensors` file**:  
+    - Purpose: Describes the sensors and their configurations used in the decoding process.  
+    - Example:  
+
+      .. code-block:: text
+
+         #sensor number, sensor name, units, description, typeStandard:typeCode, algorithm, coefA:coefB:..., recording mode, interval
+         1, Stage, ft, none
+         2, Humidity, %, none
+         3, Temp, degF, none
+         4, Storage, acft, none
+         5, Precip, in, none
+         6, Zero, raw, none
+         7, Stage, ft, iridium-test, type1:code1, linear, 0.01:0.0, F , 900
+        8, Batt, volts, iridium-test,type2:code2, linear, 0.234:10.6, F , 900
+
+
+
+By adding these files, developers can create tests to ensure the correctness and reliability of the Decodes language including new or modified Decodes Functions.
+
+Algorithms
+~~~~~~~~~~
+- **Purpose**: This section describes how to test algorithmic implementations for solving specific problems or performing computations.
+
+Algorithm Lifecycle
+~~~~~~~~~~~~~~~~~~~
+
+Custom algorithms extend ``AW_AlgorithmBase`` and override lifecycle methods that the
+computation framework calls in a specific order. Understanding this lifecycle is essential
+for correct resource management and error handling.
+
+.. code-block:: text
+
+   try {
+       beforeAllTimeSlices()          — one-time setup (open DAOs, load ratings)
+
+       For AGGREGATING algorithms, for each aggregate period:
+           beforeTimeSlices()         — per-period setup
+           for each time slice:
+               doAWTimeSlice()        — core computation (exceptions caught per-slice)
+           afterTimeSlices()          — per-period finalization
+
+       For TIME_SLICE algorithms:
+           beforeTimeSlices()         — called once
+           for each time slice:
+               doAWTimeSlice()        — core computation (exceptions caught per-slice)
+           afterTimeSlices()          — called once
+
+       afterAllTimeSlices()           — one-time finalization (save results)
+   } finally {
+       alwaysAfterTimeSlices()        — guaranteed cleanup (release resources)
+   }
+
+**Key methods:**
+
+- ``beforeAllTimeSlices()`` — Called once before any time slices are processed. Use this
+  to acquire resources such as database connections and DAOs.
+
+- ``beforeTimeSlices()`` — Called before each group of time slices. For aggregating
+  algorithms, this is called once per aggregate period. Use for per-period initialization.
+
+- ``doAWTimeSlice()`` — Called for each individual time slice. Exceptions thrown here
+  (``DbCompException``) are caught per-slice — a single failed slice does not abort the
+  entire period.
+
+- ``afterTimeSlices()`` — Called after each group of time slices. For aggregating
+  algorithms, this is called once per aggregate period. Use for per-period output
+  (e.g., daily totals). Exceptions here abort the computation.
+
+- ``afterAllTimeSlices()`` — Called once after all periods complete successfully. Use
+  for final output operations (e.g., saving accumulated profiles). Do **not** release
+  resources here — an exception earlier in the lifecycle will skip this method.
+
+- ``alwaysAfterTimeSlices()`` — Called in a ``finally`` block, guaranteed to run
+  regardless of whether an exception occurred. Use this to release all resources
+  acquired in ``beforeAllTimeSlices()`` (connections, DAOs, etc.). Always include
+  null checks since ``beforeAllTimeSlices()`` may have failed partway through.
+
+**Resource management example:**
+
+.. code-block:: java
+
+   public void beforeAllTimeSlices() throws DbCompException {
+       myDAO = tsdb.makeTimeSeriesDAO();
+       conn = tsdb.getConnection();
+       // ... load data ...
+   }
+
+   public void afterAllTimeSlices() throws DbCompException {
+       // Save results — only runs on success
+       myProfiles.save(myDAO);
+   }
+
+   public void alwaysAfterTimeSlices() {
+       // Release resources — always runs, even on failure
+       if (conn != null) tsdb.freeConnection(conn);
+       if (myDAO != null) myDAO.close();
+   }
+
+Adding Tests for Algorithms
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To add new tests for algorithms, developers need to create a new directory within `./opendcs/integrationtesting/opendcs-tests/src/test/resources/data/Comps`. This folder must be titled with the name of the algorithm you wish to test.
+
+Within this directory, you can create subdirectories named `Test1`, `Test2`, etc., for each test case. Each test directory can contain the following resources required to run the test:
+
+1. **Rating Tables**:  
+    - Location: `rating` folder within the test directory.  
+    - Purpose: Contains rating tables required for the computation.  
+    - Format: Stored as `.xml` files.
+    - Note: You can create the `rating.xml` file using the `exportRating` command.
+
+2. **Time Series Data**:  
+    - Location: `timeseries` folder within the test directory.  
+    - Structure:  
+        - `input` directory: Contains `.tsimport` files defining the input time series for the computation.  
+          Example `.tsimport` file:  
+          .. code-block:: text
+
+             TSID:TESTSITE1.Speed-Wind.Inst.1Hour.0.Rev-AWC
+             SET:TZ=UTC
+             SET:UNITS=kph
+             2024/10/04-24:00:00,20.5200000000,0
+             2024/10/05-01:00:00,20.5200000000,0
+             2024/10/05-02:00:00,22.3199999999,0
+             2024/10/05-03:00:00,24.1200000001,0
+             2024/10/05-04:00:00,25.9200000000,0
+             2024/10/05-05:00:00,63.0000000001,0
+             2024/10/05-06:00:00,59.4000000000,0
+             2024/10/05-07:00:00,50.0400000001,0
+             2024/10/05-08:00:00,40.6800000000,0
+             2024/10/05-09:00:00,59.4000000000,0
+             2024/10/05-10:00:00,38.8800000000,0
+             2024/10/05-11:00:00,20.5200000000,0
+             2024/10/05-12:00:00,25.9200000000,0
+             2024/10/05-13:00:00,18.3600000000,0
+             2024/10/05-14:00:00,16.5600000001,0
+
+          You can create this file using the `outputts` command.
+
+        - `output` directory: Contains `.tsimport` files defining the output time series generated by the computation.  
+        - `expectedOutputs` directory: Contains `.tsimport` files defining the expected output time series for validation.
+
+3. **Computation Configuration**:  
+    - File: `comp.xml`  
+    - Purpose: This file defines the setup for the computation and the tests that need to be run. It specifies the algorithm configuration and links the input, output, and expected output time series.  
+    - Note: You can create the `comp.xml` file using the `compexport` command.
+
+By organizing the algorithm test resources in this structure, developers can easily manage algorithm tests.
 
 
 Extension and other Junit information
@@ -628,3 +862,29 @@ The following guidance *MUST* be observed:
 
 While the actual versioned migrations *MUST* stay the same, the other organization is not final; please open a pull-request
 if you think you have a superior organization for these data.
+
+
+Using OpenDCS Jars in your project
+==================================
+
+Except for tests and the installer zip, project jars are available on maven central.
+You can add them to your project using the appropriate dependency management solution.
+
+However, if you are doing development where upstream changes to OpenDcs may be required, such as in the RestAPI,
+and are using Gradle, you will benefit from the build extension system. Add the following to your projects settings.gradle
+and set the variable in the gradle.properties file.
+
+.. code-block:: groovy
+
+    if(hasProperty('opendcsLibrarySourcesDir')) {
+        def externalDir = new File("$opendcsLibrarySourcesDir")
+        if (externalDir.exists()) {
+            externalDir.eachDir() { directory ->
+                def opendcsBuildExtFile = new File(directory, "opendcs-build-ext.gradle")
+                if (opendcsBuildExtFile.exists()) {
+                    gradle.ext.externalLibDir = directory
+                    apply from: opendcsBuildExtFile
+                }
+            }
+        }
+    }

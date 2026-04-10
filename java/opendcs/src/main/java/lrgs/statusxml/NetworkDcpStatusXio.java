@@ -1,10 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1  2008/09/24 13:59:01  mjmaloney
-*  network DCPs
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.statusxml;
 
@@ -12,20 +19,22 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
+import ilex.util.TextUtil;
 import ilex.xml.*;
-import ilex.util.*;
 import lrgs.networkdcp.NetworkDcpStatus;
 
 
 /**
 This class maps the DECODES XML representation for Process elements.
 */
-public class NetworkDcpStatusXio
-	implements XmlObjectParser, TaggedLongOwner, TaggedStringOwner
+public class NetworkDcpStatusXio implements XmlObjectParser, TaggedLongOwner, TaggedStringOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/// Top of the parser hierarchy
 	private NetworkDcpStatus nds;
 
@@ -90,9 +99,7 @@ public class NetworkDcpStatusXio
 			hier.pushObjectParser(new TaggedLongSetter(this, nmTag));
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
@@ -163,18 +170,14 @@ public class NetworkDcpStatusXio
 			try { nds.setLastPollAttempt(sdf.parse(value)); }
             catch (ParseException ex)
             {
-            	Logger.instance().warning(
-            		"Bad last-poll-attempt date format '" + value + "': "
-            		+ ex + " -- ignored.");
+            	log.atWarn().setCause(ex).log("Bad last-poll-attempt date format '{}' -- ignored.", value);
             }
 			break;
 		case lcTag:
 			try { nds.setLastContact(sdf.parse(value)); }
 			catch (ParseException ex)
 			{
-            	Logger.instance().warning(
-            		"Bad last-contact date format '" + value + "': "
-            		+ ex + " -- ignored.");
+            	log.atWarn().setCause(ex).log("Bad last-contact date format '{}' -- ignored.", value);
 			}
 			break;
 		}

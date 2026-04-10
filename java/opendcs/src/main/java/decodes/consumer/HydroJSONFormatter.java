@@ -1,34 +1,37 @@
-/**
- * $Id$
- * 
- * Copyright 2017 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * 
- * $Log$
- * Revision 1.5  2018/03/19 19:24:33  mmaloney
- * Bugfix: wasn't honoring tz in the routing spec.
- *
- * Revision 1.4  2017/10/10 17:58:33  mmaloney
- * Added support for TsdbFormatter
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
+
 package decodes.consumer;
 
 import ilex.util.Location;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.Strftime;
-import ilex.util.TextUtil;
 import ilex.var.IFlags;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.cwms.CwmsConstants;
 import decodes.cwms.CwmsConsumer;
@@ -36,15 +39,11 @@ import decodes.cwms.CwmsDbConfig;
 import decodes.cwms.CwmsFlags;
 import decodes.cwms.CwmsSqlDatabaseIO;
 import decodes.cwms.CwmsTsId;
-import decodes.datasource.RawMessage;
-import decodes.datasource.UnknownPlatformException;
 import decodes.db.Constants;
 import decodes.db.Database;
-import decodes.db.Platform;
 import decodes.db.PresentationGroup;
 import decodes.db.Site;
 import decodes.db.SiteName;
-import decodes.db.TransportMedium;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.TimeSeries;
 import decodes.util.DecodesSensorCnvt;
@@ -58,12 +57,11 @@ import decodes.util.PropertySpec;
  */
 public class HydroJSONFormatter extends OutputFormatter
 {
-	private String module = "HydroJSONFormatter";
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String timeFormat = "%Y-%m-%dT%H:%M:%S%z";
 	private String indent = "  ";
 	private String siteNameTypePreference = Constants.snt_CWMS;
 	private String officeId = "";
-	private TimeZone tz = null;
 	private CwmsConsumer cwmsConsumer = null;
 	private Strftime strftime = null;
 
@@ -83,7 +81,6 @@ public class HydroJSONFormatter extends OutputFormatter
 	{
 		ofPropSpecs = propSpecs;
 
-		this.tz = tz;
 		String s = PropertiesUtil.getIgnoreCase(rsProps, "timeFormat");
 		if (s != null)
 			timeFormat = s;
@@ -113,8 +110,10 @@ public class HydroJSONFormatter extends OutputFormatter
 		}
 		catch (IOException ex)
 		{
-			Logger.instance().warning(module + " cannot load CWMS Config from '"
-				+ CwmsConstants.CONFIG_FILE_NAME + "': " + ex + " -- will proceed with defaults.");
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Cannot load CWMS Config from '{}' -- will proceed with defaults.",
+			   	    CwmsConstants.CONFIG_FILE_NAME);
 		}
 		cwmsConsumer.loadShefCwmsParamMapping(CwmsDbConfig.instance().getShefCwmsParamFile());
 	}
@@ -172,8 +171,10 @@ public class HydroJSONFormatter extends OutputFormatter
 				}
 				catch(NumberFormatException ex)
 				{
-					consumer.routingSpecThread.log(Logger.E_WARNING, "Site " + sn
-						+ " -- cannot parse latitude '" + lat + "' to double -- set latitude to empty.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Site {} -- cannot parse latitude '{}' to double -- set latitude to empty.",
+					   	    sn, lat);
 					lat = "";
 				}
 			}
@@ -189,9 +190,11 @@ public class HydroJSONFormatter extends OutputFormatter
 				}
 				catch(NumberFormatException ex)
 				{
-					consumer.routingSpecThread.log(Logger.E_WARNING, "Site " + sn
-						+ " -- cannot parse longitude '" + lon + "' to double -- set longitude to empty.");
-					lat = "";
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Site {} -- cannot parse longitude '{}' to double -- set longitude to empty.",
+					   	    sn, lon);
+					lon = "";
 				}
 
 			}
@@ -230,7 +233,6 @@ public class HydroJSONFormatter extends OutputFormatter
 			consumer.println(indent+indent + "\"responsibility\": \"" + officeId + "\",");
 			
 			consumer.println(indent+indent + "\"time_format\": \"" + timeFormat + "\",");
-//			consumer.println(indent+indent + "\"tz_offset\": " + (tz.getRawOffset()/3600000.));
 			
 			
 			consumer.println(indent+indent + "\"timeseries\": {");
@@ -248,9 +250,8 @@ public class HydroJSONFormatter extends OutputFormatter
 					tsid = cwmsConsumer.createTimeSeriesDesc(ts, site);
 				if (tsid == null)
 				{
-					consumer.routingSpecThread.log(Logger.E_WARNING, "Cannot make CWMS TSID for sensor["
-						+ ts.getSensorNumber() + "] '" + ts.getSensorName() + "' -- Make sure CWMS param is"
-						+ " defined.");
+					log.warn("Cannot make CWMS TSID for sensor[{}] '{}' -- Make sure CWMS param is defined.",
+							 ts.getSensorNumber(), ts.getSensorName());
 					continue;
 				}
 

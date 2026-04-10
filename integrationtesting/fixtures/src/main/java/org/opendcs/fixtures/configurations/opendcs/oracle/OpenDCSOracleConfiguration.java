@@ -39,7 +39,6 @@ import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesSettings;
-import ilex.util.FileLogger;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
 import opendcs.dao.LoadingAppDao;
@@ -114,6 +113,7 @@ public class OpenDCSOracleConfiguration implements Configuration
      * Actually setup the database
      * @throws Exception
     */
+    @SuppressWarnings("resource") // lives for life of tests, test containers cleans up for us
     private void installDb(SystemExit exit,EnvironmentVariables environment, SystemProperties properties, UserPropertiesBuilder configBuilder) throws Exception
     {
         // These should always be set.
@@ -128,6 +128,14 @@ public class OpenDCSOracleConfiguration implements Configuration
         if(db == null)
         {
             db = new OracleContainer("gvenzl/oracle-free:full-faststart")
+                    .withCreateContainerCmdModifier(cmd ->
+                    {
+                        cmd.getHostConfig()
+                            .withMemory(4L*1024*1024*1024)
+                            .withCpuPeriod(20000L)
+                            .withCpuQuota(25000L)
+                        ;
+                    })
                     .withUsername(SCHEMA_OWNING_USER)
                     .withPassword(SCHEMA_OWNING_USER_PASSWORD)
                     .withStartupTimeoutSeconds(300)
@@ -158,23 +166,7 @@ public class OpenDCSOracleConfiguration implements Configuration
         roles.add("OTSDB_COMP_EXEC");
         mp.createUser(jdbi, DCS_ADMIN_USER, DCS_ADMIN_USER_PASSWORD, roles);
         log.info("Setting authentication environment vars.");
-        ilex.util.Logger originalLog = ilex.util.Logger.instance();
-        ilex.util.FileLogger fl = null;
-        try
-        {
-            fl = new FileLogger("test", new File(userDir,"baseline-import.log").getAbsolutePath(), 200*1024*1024);
-            fl.setMinLogPriority(ilex.util.Logger.E_DEBUG3);
-            ilex.util.Logger.setLogger(fl);
-            mp.loadBaselineData(profile, DCS_ADMIN_USER, DCS_ADMIN_USER_PASSWORD);
-        }
-        finally
-        {
-            if (fl != null)
-            {
-                ilex.util.Logger.setLogger(originalLog);
-                fl.close();
-            }
-        }
+        mp.loadBaselineData(profile, DCS_ADMIN_USER, DCS_ADMIN_USER_PASSWORD);
         setStarted();
     }
 
@@ -258,7 +250,6 @@ public class OpenDCSOracleConfiguration implements Configuration
     /**
      * Returns true if this Database implementation supports a given dataset.
      * @param dao Class that extends from {@link opendcs.dao.DaoBase}
-     * @return
      */
     @Override
     public boolean supportsDao(Class<? extends DaoBase> dao)

@@ -1,16 +1,36 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.datasource;
 
 import java.util.Properties;
 import java.util.Vector;
+
+import javax.net.SocketFactory;
+
+import org.opendcs.tls.TlsMode;
+import org.opendcs.utils.WebUtility;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.io.File;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.NoConversionException;
 import ilex.util.PropertiesUtil;
@@ -28,6 +48,7 @@ import decodes.util.PropertySpec;
 
 import lrgs.ldds.LddsClient;
 import lrgs.ldds.ServerError;
+import lrgs.lrgsmain.LrgsConfig;
 import lrgs.common.DcpAddress;
 import lrgs.common.LrgsErrorCode;
 import lrgs.common.SearchCriteria;
@@ -41,6 +62,7 @@ import lrgs.common.DcpMsgFlag;
 */
 public class LrgsDataSource extends DataSourceExec
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     LddsClient lddsClient;
     String host;
     int port;
@@ -56,7 +78,7 @@ public class LrgsDataSource extends DataSourceExec
     private PMParser netdcpPMP;
     int retries;
     boolean singleModeOnly;    // Current connection forced to single mode.
-
+    TlsMode tls;
 
     /** For use under hot-backup-group: It will set the following to a
      *  positive number (180). Thus once a connection fails, it stays
@@ -89,6 +111,8 @@ public class LrgsDataSource extends DataSourceExec
         new PropertySpec("lrgs.maxConsecutiveBadmessages", PropertySpec.INT,
             "LRGS Data Source: How many bad messages in a row before it's decided this connection" +
             " is bad (default=-1 which means never assume bad messages should cause the connection to drop.)."),
+        new PropertySpec("lrgs.tls", PropertySpec.JAVA_ENUM+TlsMode.class.getName(),
+            "Use TLS connection for this LRGS.")
     };
 
 
@@ -103,7 +127,7 @@ public class LrgsDataSource extends DataSourceExec
         super(ds,db);
         lddsClient = null;
         host = null;
-        port = -1;
+        port = LrgsConfig.def_ddsListenPort;
         username = null;
         timeout = 60;
         consecutiveBadMessages = 0;
@@ -112,6 +136,7 @@ public class LrgsDataSource extends DataSourceExec
         retries = 0;
         singleModeOnly = false;
         abortFlag = false;
+        tls = TlsMode.NONE;
         try { goesPMP = PMParser.getPMParser(Constants.medium_Goes); }
         catch(HeaderParseException e) {} // shouldn't happen.
         iridiumPMP = new IridiumPMParser();
@@ -125,9 +150,8 @@ public class LrgsDataSource extends DataSourceExec
     public void processDataSource()
         throws InvalidDatabaseException
     {
-        log(Logger.E_DEBUG1,
-            "processDataSource for LrgsDataSource for '" + dbDataSource.getName()
-            + "', args='" +dbDataSource.getDataSourceArg()+"'");
+        log.debug("processDataSource for LrgsDataSource for '{}', args='{}'",
+                  dbDataSource.getName(), dbDataSource.getDataSourceArg());
 
         // host defaults to ds name, will probably be overridden by property.
         host = dbDataSource.getName();
@@ -148,9 +172,8 @@ public class LrgsDataSource extends DataSourceExec
         Vector<NetworkList> networkLists)
         throws DataSourceException
     {
-        log(Logger.E_DEBUG1,
-            "LrgsDataSource.init() for '" + dbDataSource.getName()
-            + "' since='" + since + "' until= '" + until + "'");
+        log.debug("LrgsDataSource.init() for '{}', since='{}', until='{}'",
+                  dbDataSource.getName(), since, until);
 
         if (timeoutSecOnError > 0)
         {
@@ -178,9 +201,7 @@ public class LrgsDataSource extends DataSourceExec
         {
             host = EnvExpander.expand(h);
         }
-        log(Logger.E_DEBUG3,
-            "LrgsDataSource '" + dbDataSource.getName() + "' host="
-            + host + ", host property = '" + h + "'");
+         log.trace("LrgsDataSource '{}' host=-{}, host property='{}'", dbDataSource.getName(), host, h);
 
         String ports = PropertiesUtil.getIgnoreCase(allProps, "port");
         if (ports != null)
@@ -189,17 +210,17 @@ public class LrgsDataSource extends DataSourceExec
             {
                 port = Integer.parseInt(EnvExpander.expand(ports));
             }
-            catch(NumberFormatException e)
+            catch(NumberFormatException ex)
             {
                 throw new DataSourceException("LRGS Data source '"
                     + host + "': invalid port '" + ports
-                    + "' - must be a number");
+                    + "' - must be a number", ex);
             }
         }
         else
         {
             // No port specified -- use default
-            port = -1;
+            port = LrgsConfig.def_ddsListenPort;
         }
         // Username and password, if stored in properties
         // will be expanded at time of use to reduce the time they are 
@@ -216,8 +237,7 @@ public class LrgsDataSource extends DataSourceExec
         }
         if (!(username.startsWith("${") && username.endsWith("}")))
         {
-            Logger.instance()
-                  .warning(
+            log.warn(
                     "It appears that your username is saved directly in the property. This is not secure. " +
                     "It recommended that you migrate to one of the properties providers such as environment or secrets files."
                 );
@@ -230,8 +250,7 @@ public class LrgsDataSource extends DataSourceExec
         }
         else if (password != null && !(password.startsWith("${") && password.endsWith("}")))
         {
-            Logger.instance()
-                  .warning(
+            log.warn(
                     "It appears that your password is saved directly in the property. This is not secure. " +
                     "It recommended that you migrate to one of the properties providers such as environment or secrets files."
                 );
@@ -267,9 +286,10 @@ public class LrgsDataSource extends DataSourceExec
             }
             catch(Exception ex)
             {
-                log(Logger.E_WARNING,
-                    "Data Source '" + dbDataSource.getName()
-                    + "' can't open searchcrit '" + scpath + "' -- ignored.");
+                log.atWarn()
+                   .setCause(ex)
+                   .log("Data Source '{}' can't open searchcrit '{}' -- ignored.",
+                        dbDataSource.getName(), scpath);
                 searchCrit = new SearchCriteria();
             }
         }
@@ -321,6 +341,12 @@ public class LrgsDataSource extends DataSourceExec
             }
         }
 
+        final String tlsStr = PropertiesUtil.getIgnoreCase(allProps, "lrgs.tls");
+        if (tlsStr != null)
+        {
+            tls = TlsMode.valueOf(tlsStr);
+        }
+
         openConnection();
 
         try
@@ -346,8 +372,7 @@ public class LrgsDataSource extends DataSourceExec
                 }
                 catch(NumberFormatException ex)
                 {
-                    log(Logger.E_WARNING,
-                        "Invalid DCP address '" + s + "' -- ignored.");
+                    log.atWarn().setCause(ex).log("Invalid DCP address '{}' -- ignored.", s);
                 }
             }
 
@@ -405,12 +430,12 @@ public class LrgsDataSource extends DataSourceExec
                             continue;
                         }
                     }
-                    catch(InvalidDatabaseException e)
+                    catch(InvalidDatabaseException ex)
                     {
-                        log(Logger.E_WARNING,
-                            "Network list '" + nm
-                            + "' cannot be converted to LRGS netlist format: "
-                            + e + " -- skipped.");
+                        log.atWarn()
+                           .setCause(ex)
+                           .log("Network list '{}' cannot be converted to LRGS netlist format:  -- skipped.",
+                                nm);
                     }
                 }
 
@@ -431,9 +456,7 @@ public class LrgsDataSource extends DataSourceExec
                 }
 
                 // Else list doesn't exist here. Hope it exists on server.
-                log(Logger.E_WARNING,
-                    "Network list '" + nm
-                    + "' does not exist locally, will try server-resident.");
+                log.warn("Network list '{}' does not exist locally, will try server-resident.", nm);
             }
             for(Iterator<String> it = namesToAdd.iterator(); it.hasNext(); )
             {
@@ -446,7 +469,7 @@ public class LrgsDataSource extends DataSourceExec
 
             // Now process network lists explicitely placed in the DECODES
             // routing spec.
-            log(Logger.E_DEBUG1, "LRGSDS: There are " + networkLists.size() + " netlists explicitly in the RS");
+            log.debug("LRGSDS: There are {} netlists explicitly in the RS", networkLists.size());
             for(Iterator<NetworkList> it = networkLists.iterator(); it.hasNext(); )
             {
                 NetworkList nl = (NetworkList)it.next();
@@ -470,18 +493,16 @@ public class LrgsDataSource extends DataSourceExec
                     }
                     lnl = nl.legacyNetworkList;
                 }
-                catch(InvalidDatabaseException e)
+                catch(InvalidDatabaseException ex)
                 {
-                    log(Logger.E_WARNING,
-                        "Network list '" + nl.name
-                        + "' cannot be converted to LRGS netlist format: "
-                        + e + " -- skipped.");
+                    log.atWarn()
+                       .setCause(ex)
+                       .log("Network list '{}' cannot be converted to LRGS netlist format: -- skipped.", nl.name);
                 }
 
                 if (lnl != null && sendnl)
                 {
-                    log(Logger.E_DEBUG1, "Sending network list '"
-                        + nl.name + "'");
+                    log.debug("Sending network list '{}'", nl.name);
                     lddsClient.sendNetList(lnl, null);
                 }
 
@@ -492,9 +513,6 @@ public class LrgsDataSource extends DataSourceExec
                     searchCrit.addNetworkList(lnl.makeFileName());
                     sendSc = true;
                 }
-                // Add reference to this netlist to my searchcrit.
-                //searchCrit.addNetworkList(lnl.makeFileName());
-                //sendSc = true;
             }
 
             s = PropertiesUtil.getIgnoreCase(allProps, "ascendingTimeOnly");
@@ -514,20 +532,14 @@ public class LrgsDataSource extends DataSourceExec
                 }
             }
         }
-        catch(Exception e)
+        catch(Exception ex)
         {
             close();
             lastError = System.currentTimeMillis();
             String msg =
                 "Error initializing search criteria for LRGS connection at '"
-                + host + '/' + port + ", username='" + username + "': "
-                + e.toString();
-            if (e instanceof RuntimeException)
-            {
-                System.err.println(msg);
-                e.printStackTrace(System.err);
-            }
-            throw new DataSourceException(msg);
+                + host + '/' + port + ", username='" + username + "'";
+            throw new DataSourceException(msg,ex);
         }
 
         String ts = PropertiesUtil.getIgnoreCase(allProps, "lrgs.timeout");
@@ -538,22 +550,24 @@ public class LrgsDataSource extends DataSourceExec
         if (ts != null)
         {
             try { timeout = Integer.parseInt(ts); }
-            catch(NumberFormatException e)
+            catch(NumberFormatException ex)
             {
-                log(Logger.E_FAILURE,
-                    "Improper timeout value '" + ts + "' in LrgsDataSource '"
-                    + dbDataSource.getName() + "' -- ignored");
+                log.atError()
+                   .setCause(ex)
+                   .log("Improper timeout value '{}' in LrgsDataSource '{}' -- ignored",
+                        ts, dbDataSource.getName());
             }
         }
         ts = PropertiesUtil.getIgnoreCase(allProps, "lrgs.retries");
         if (ts != null)
         {
             try { retries = Integer.parseInt(ts); }
-            catch(NumberFormatException e)
+            catch(NumberFormatException ex)
             {
-                log(Logger.E_FAILURE,
-                    "Improper retries value '" + ts + "' in LrgsDataSource '"
-                    + dbDataSource.getName() + "' -- ignored");
+                log.atError()
+                   .setCause(ex)
+                   .log("Improper retries value '{}' in LrgsDataSource '{}' -- ignored",
+                        ts, dbDataSource.getName());
             }
         }
 
@@ -561,8 +575,7 @@ public class LrgsDataSource extends DataSourceExec
         if (ts != null)
         {
             oldChannelRanges = ts.equalsIgnoreCase("true");
-            log(Logger.E_DEBUG1,
-                "Will use old channel ranges to determine Transport Medium");
+            log.debug("Will use old channel ranges to determine Transport Medium");
         }
 
         ts = PropertiesUtil.getIgnoreCase(allProps,"lrgs.maxConsecutiveBadMessages","-1");
@@ -572,9 +585,11 @@ public class LrgsDataSource extends DataSourceExec
         }
         catch (NumberFormatException ex)
         {
-            log(Logger.E_FAILURE,"MaxConsectiveBadMessage value (" + ts + ") is not a valid integer."
-                 + " System will use default value of -1."
-                 + ex.getLocalizedMessage());
+            log.atError()
+               .setCause(ex)
+               .log("MaxConsectiveBadMessage value ({}) is not a valid integer." +
+                    " System will use default value of -1.",
+                    ts);
         }
     }
 
@@ -616,7 +631,8 @@ public class LrgsDataSource extends DataSourceExec
 
       @throws DataSourceException if some other problem arises.
     */
-    public RawMessage getRawMessage()
+    @Override
+    protected RawMessage getSourceRawMessage()
         throws DataSourceException
     {
         if (lddsClient == null || !lddsClient.isConnected())
@@ -654,9 +670,7 @@ public class LrgsDataSource extends DataSourceExec
                     }
                     else
                     {
-                        log(Logger.E_DEBUG3,
-                            "Server returned DMSGTIMEOUT, "
-                             + (abortFlag ? "aborting." : "pausing."));
+                        log.trace("Server returned DMSGTIMEOUT, ", (abortFlag ? "aborting." : "pausing."));
                         if (abortFlag)
                         {
                             throw new DataSourceEndException("Aborted.");
@@ -683,7 +697,7 @@ public class LrgsDataSource extends DataSourceExec
                     lastError = System.currentTimeMillis();
                     throw new DataSourceException(
                         "Server Error on LRGS data source '"
-                        + dbDataSource.getName() + "': " + se);
+                        + dbDataSource.getName() + "'", se);
                 }
             }
             catch(DataSourceEndException ex)
@@ -694,9 +708,8 @@ public class LrgsDataSource extends DataSourceExec
             {
                 close();
                 lastError = System.currentTimeMillis();
-                String errmsg = "Error on LRGS data source '"
-                    + dbDataSource.getName() + "': " + ex;
-                throw new DataSourceException(errmsg);
+                String errmsg = "Error on LRGS data source '"+ dbDataSource.getName() + "'";
+                throw new DataSourceException(errmsg,ex);
             }
 
             // Null means that no response was received from server.
@@ -723,10 +736,8 @@ public class LrgsDataSource extends DataSourceExec
             }
             else
             {
-                log(Logger.E_DEBUG2,
-                    "Skipping DAPS Status Message with type '"
-                    + failureCode + "' isGoesMsg=" + dcpMsg.isGoesMessage()
-                    + ", flags=0x" + Integer.toHexString(dcpMsg.flagbits));
+                log.debug("Skipping DAPS Status Message with type '{}' isGoesMsg={}, flags=0x{}",
+                          failureCode, dcpMsg.isGoesMessage(), Integer.toHexString(dcpMsg.flagbits));
             }
         }
 
@@ -738,12 +749,12 @@ public class LrgsDataSource extends DataSourceExec
             ret.dataSourceName = getName();
             return ret;
         }
-        catch(HeaderParseException e)
+        catch(HeaderParseException ex)
         {
             consecutiveBadMessages++;
             if (MaxConsecutiveBadMessages < 0)
             {
-                log(Logger.E_DEBUG1, "Unable to parse header for station because: " + e.getLocalizedMessage());
+                log.atDebug().setCause(ex).log("Unable to parse header for station.");
                 if( dcpMsg != null)
                 {
                     RawMessage ret = new RawMessage(dcpMsg.getData());
@@ -762,11 +773,11 @@ public class LrgsDataSource extends DataSourceExec
                 lastError = System.currentTimeMillis();
                 throw new DataSourceException(
                     "Too many consecutive bad messages from '"
-                    + dbDataSource.getName() + "': closing.");
+                    + dbDataSource.getName() + "': closing.",ex);
             }
             else
             {
-                return getRawMessage();
+                return getSourceRawMessage();
             }
         }
         // Allow UnknownPlatformException to be propagated.
@@ -806,19 +817,18 @@ public class LrgsDataSource extends DataSourceExec
         {
             pmp.parsePerformanceMeasurements(ret);
         }
-        catch(HeaderParseException e)
+        catch(HeaderParseException ex)
         {
             // Kludge for Sutron NetDCPs that are being used by USACE NAE.
             // The DCPs are retrieved via DAMS-NT over the network. They may also
             // arrive via DDS from another LRGS.
             // Thus if we tried netDCP header and it failed, try GOES.
-            String em = e.toString();
+            String em = ex.toString();
             if (pmp == netdcpPMP)
             {
                 try
                 {
-                    log(Logger.E_INFORMATION, " Failed to parse NetDCP message with EDL Header parser."
-                        + " Will attempt with GOES.");
+                    log.info(" Failed to parse NetDCP message with EDL Header parser. Will attempt with GOES.");
                     (pmp = goesPMP).parsePerformanceMeasurements(ret);
                     em = null; // Success
                 }
@@ -829,11 +839,13 @@ public class LrgsDataSource extends DataSourceExec
             }
             if (em != null)
             {
-                log(Logger.E_FAILURE,
-                    "Could not parse message header for '"
-                    + new String(dcpMsg.getData(), 0, 20) + "' flags=0x"
-                    + Integer.toHexString(dcpMsg.getFlagbits()) + ": " + em);
-                throw e;
+                log.atError()
+                   .setCause(ex)
+                   .log("Could not parse message header for '{}' flags=0x{}: {}",
+                          new String(dcpMsg.getData(), 0, 20),
+                          Integer.toHexString(dcpMsg.getFlagbits()),
+                          em);
+                throw ex;
             }
         }
 
@@ -850,11 +862,10 @@ public class LrgsDataSource extends DataSourceExec
             v = ret.getPM(GoesPMParser.CHANNEL);
             chan = v == null ? Constants.undefinedIntKey : v.getIntValue();
         }
-        catch(NoConversionException e)
+        catch(NoConversionException ex)
         {
-            String s = "Non-numeric channel in DCP message header:" + e;
-            log(Logger.E_FAILURE, s);
-            throw new HeaderParseException(s);
+            String s = "Non-numeric channel in DCP message header";
+            throw new HeaderParseException(s,ex);
         }
 
         // If msg was retrieved from new extended msg type, it will have
@@ -895,13 +906,12 @@ public class LrgsDataSource extends DataSourceExec
                         pmp.getMediumType(), addrField, ret.getTimeStamp());
             }
         }
-        catch(DatabaseException e)
+        catch(DatabaseException ex)
         {
-            log(Logger.E_WARNING,
-                "Cannot read platform record for message '"
-                + new String(ret.getData(), 0,
-                    (ret.getData().length > 19 ? 19 : ret.getData().length))
-                + "': " + e);
+            log.atWarn()
+               .setCause(ex)
+               .log("Cannot read platform record for message '{}'",
+                    new String(ret.getData(), 0, (ret.getData().length > 19 ? 19 : ret.getData().length)));
             p = null;
         }
 
@@ -914,9 +924,7 @@ public class LrgsDataSource extends DataSourceExec
                 oldChannelRanges);
             if (tm == null)
             {
-                log(Logger.E_WARNING,
-                    "Cannot resolve platform for addr='"
-                    + addrField + "', chan=" + chan);
+                log.warn("Cannot resolve platform for addr='{}', chan={}", addrField, chan);
             }
             ret.setTransportMedium(tm);
         }
@@ -939,22 +947,19 @@ public class LrgsDataSource extends DataSourceExec
     private void openConnection()
         throws DataSourceException
     {
-        log(Logger.E_DEBUG2,
-            "LrgsDataSource.openConnection to host '" + host + "', port="
-            + port);
+        log.debug("LrgsDataSource.openConnection to host '{}', port={}, tls={}", host, port, tls.name());
         hangup();
         try
         {
+            final SocketFactory socketFactory = (tls != TlsMode.NONE) ?  WebUtility.socketFactory((cert) ->
+                {
+                    log.warn("Certificate for '{}' is not trusted.", cert.getHostname().orElse("<no hostname provided>"));
+                    return false;
+                })
+                : null;
             final String realUserName = EnvExpander.expand(username);
             final String realPassword = EnvExpander.expand(password);
-            if (port == -1)
-            {
-                lddsClient = new LddsClient(host);
-            }
-            else
-            {
-                lddsClient = new LddsClient(host, port);
-            }
+            lddsClient = new LddsClient(host, LrgsConfig.def_ddsListenPort, socketFactory, tls);
 
             lddsClient.setModule("lrgsds-" + (connum++));
 
@@ -971,18 +976,15 @@ public class LrgsDataSource extends DataSourceExec
             {
                 lddsClient.sendHello(realUserName);
             }
-
-            log(Logger.E_INFORMATION, "Connected to DDS server at "
-                + host + ':' + port + ", username='" + username + "'");
+            log.info("Connected to DDS server at {}:{}, username='{}'", host, port, username);
 
         }
-        catch(Exception e)
+        catch(Exception ex)
         {
             hangup();
             lastError = System.currentTimeMillis();
             throw new DataSourceException("Cannot connect to LRGS at '"
-                + host + ':' + port + ", username='" + username + "': "
-                + e.toString());
+                + host + ':' + port + ", username='" + username + "'", ex);
         }
     }
 
@@ -996,7 +998,7 @@ public class LrgsDataSource extends DataSourceExec
      */
     public void abortGetRawMessage()
     {
-        log(Logger.E_DEBUG1, "LRGS Data Source aborting.");
+        log.debug("LRGS Data Source aborting.");
         abortFlag = true;
     }
 

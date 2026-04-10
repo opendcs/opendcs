@@ -8,9 +8,13 @@ import java.io.FileWriter;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import ilex.util.FileLogger;
+import org.opendcs.logging.spi.LoggingEventProvider;
+import org.opendcs.tls.TlsMode;
+import org.opendcs.utils.logging.LoggingEventBuffer;
+
 import ilex.util.QueueLogger;
 import lrgs.archive.MsgArchive;
+import lrgs.lrgsmain.LrgsConfig;
 import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.lrgsmain.LrgsMain;
 
@@ -21,11 +25,15 @@ public class LrgsTestInstance
     private final LrgsMain lrgs;
     private final MsgArchive archive;
     private final QueueLogger queueLogger;
-    private final FileLogger fileLogger;
     private final File configFile;
     private final Thread lrgsThread;
 
     public LrgsTestInstance(File lrgsHome) throws Exception
+    {
+        this(lrgsHome, null, null, TlsMode.NONE);
+    }
+
+    public LrgsTestInstance(File lrgsHome, File keyStore, String keyStorePassword, TlsMode tlsMode) throws Exception
     {
         if (!lrgsHome.canRead())
         {
@@ -44,13 +52,28 @@ public class LrgsTestInstance
             fw.write("hritSourceCode=HR"+System.lineSeparator());
             fw.write("hritFileEnabled=true"+System.lineSeparator());
             fw.write("noTimeout=true"+System.lineSeparator());
+            fw.write("ddsListenPort=0"+System.lineSeparator());
+            fw.write("enableDdsRecv=true"+System.lineSeparator());
+            fw.write("ddsServerTlsMode="+tlsMode.name()+System.lineSeparator());
+
+            if (keyStore!=null) {
+                String fileName =keyStore.getAbsolutePath();
+                fileName = fileName.replace('\\','/');
+                fw.write("keyStoreFile="+fileName+System.lineSeparator());
+                fw.write("keyStorePassword="+keyStorePassword+System.lineSeparator());
+            }
             fw.flush();
         }
         new File(lrgsHome,"netlist").mkdirs();
-        queueLogger = new QueueLogger("");
-        fileLogger = new FileLogger("lrgs", new File(lrgsHome,"lrgslog").getAbsolutePath(), 200*1024*1024);
+        queueLogger = new QueueLogger(
+			new LoggingEventBuffer.Builder()
+								  .withProvider(LoggingEventProvider.getProvider())
+                                  .withDefaultSize(QueueLogger.MAX_MESSAGES)
+								  .withThreadName("PollGUI Log Thread")
+								  .build()
+								  .getPublisher());
         SystemExit exit = new SystemExit();
-        lrgs = new LrgsMain(queueLogger,"-", configFile.getAbsolutePath(), fileLogger);
+        lrgs = new LrgsMain("-", configFile.getAbsolutePath());
 
         lrgsThread = new Thread(lrgs);
         exit.execute(() -> lrgsThread.start());
@@ -74,6 +97,16 @@ public class LrgsTestInstance
     public MsgArchive getArchive()
     {
         return archive;
+    }
+
+    public int getDdsPort()
+    {
+        return lrgs.getDdsServer().getPort();
+    }
+
+    public LrgsConfig getConfig()
+    {
+        return LrgsConfig.instance();
     }
 
 

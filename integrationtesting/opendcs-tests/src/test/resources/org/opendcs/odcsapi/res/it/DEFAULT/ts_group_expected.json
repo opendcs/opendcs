@@ -1,0 +1,55 @@
+{
+  "groupId": 1,
+  "groupName": "Test TS Group",
+  "groupType": "Test TS Group Type",
+  "description": "Test TS Group",
+  "tsIds": [
+    {
+      "uniqueString" : "TS test site.Area.Inst.5Minutes.20Minutes.Calc",
+      "key" : 1,
+      "description" : "Area at TS test site",
+      "storageUnits" : "ft2",
+      "active" : true
+    },
+    {
+      "uniqueString" : "TS test site 2.Depth.Avg.15Minutes.1Hour.Final",
+      "key" : 2,
+      "description" : "Depth at TS test site 2",
+      "storageUnits" : "ft",
+      "active" : false
+    }
+  ],
+  "includeGroups": [
+
+  ],
+  "excludeGroups": [
+
+  ],
+  "intersectGroups": [
+
+  ],
+  "groupAttrs": [
+
+  ],
+  "groupSites": [
+    {
+      "siteId": 1,
+      "sitenames": {
+
+      },
+      "publicName": "TS test site",
+      "description": null
+    },
+    {
+      "siteId": 2,
+      "sitenames": {
+
+      },
+      "publicName": "TS test site 2",
+      "description": null
+    }
+  ],
+  "groupDataTypes": [
+
+  ]
+}

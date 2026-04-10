@@ -1,0 +1,8 @@
+{
+  "dataSourceId" : null,
+  "name" : "TestDataSource",
+  "type" : "TestDataSourceType",
+  "usedBy" : 0,
+  "props" : null,
+  "groupMembers" : [ ]
+}

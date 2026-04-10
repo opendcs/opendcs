@@ -1,0 +1,21 @@
+{
+  "siteId" : null,
+  "sitenames" : {
+    "locationtype" : "publicName"
+  },
+  "description" : null,
+  "latitude" : "38.6",
+  "longitude" : "-77.3",
+  "elevation" : 100.0,
+  "elevUnits" : "ft",
+  "nearestCity" : "nearestCity",
+  "timezone" : "PST",
+  "state" : "CA",
+  "country" : "US",
+  "region" : "West",
+  "active" : true,
+  "locationType" : "locationtype",
+  "publicName" : "publicName",
+  "properties" : { },
+  "lastModified" : null
+}

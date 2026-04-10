@@ -1,16 +1,17 @@
 /*
-*  $Id: EUSelectDialog.java,v 1.2 2020/01/31 19:36:48 mmaloney Exp $
-*  
-*  $Log: EUSelectDialog.java,v $
-*  Revision 1.2  2020/01/31 19:36:48  mmaloney
-*  Support double-click
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.1  2010/12/09 17:36:00  mmaloney
-*  Created
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.gui;
 
@@ -18,6 +19,10 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.*;
 import java.util.ResourceBundle;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -35,6 +40,7 @@ import decodes.rledit.EUTableModel;
 @SuppressWarnings("serial")
 public class EUSelectDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JButton selectButton = null;
 	private JTable euTable = null;
     private static String title = "Select Units";
@@ -73,7 +79,7 @@ public class EUSelectDialog extends GuiDialog
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
     }
 
@@ -81,7 +87,6 @@ public class EUSelectDialog extends GuiDialog
     void jbInit() throws Exception 
     {
     	ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
-    	ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
     	// Build button panel for the south
         FlowLayout buttonLayout = new FlowLayout();
@@ -180,12 +185,4 @@ public class EUSelectDialog extends GuiDialog
 		return selection;
 	}
 
-//	/** Sets current selection. */
-//	public void setSelection(String name)
-//	{
-//		if (name == null)
-//			configSelectPanel.clearSelection();
-//		else
-//			configSelectPanel.setSelection(name);
-//	}
 }

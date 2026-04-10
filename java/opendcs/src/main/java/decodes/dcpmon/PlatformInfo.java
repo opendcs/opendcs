@@ -1,9 +1,20 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.dcpmon;
 
-import ilex.util.Logger;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import decodes.db.*;
@@ -13,12 +24,17 @@ import decodes.util.PdtEntry;
 import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
 
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 /**
 This class holds platform information necessary for DCP mon. The info
 comes either from the PDT (preferred) or the DECODES Database.
 */
 public class PlatformInfo
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	char preamble;
 	int firstXmitSecOfDay;
 	int windowLength;
@@ -94,8 +110,7 @@ public class PlatformInfo
 		}
 		catch(DatabaseException ex)
 		{
-			Logger.instance().warning("PlatformInfo: Error looking up info "
-				+ "for '" + dcpAddress + "': " + ex);
+			log.atWarn().setCause(ex).log("PlatformInfo: Error looking up info for {}", dcpAddress);
 			plat = null;
 			tm = null;
 		}
@@ -120,26 +135,11 @@ public class PlatformInfo
 			}
 		}
 
-		//Code added for Dcp Monitor Ehancement Problem #2.
-		//Reset the description so that we use the same description
-		//in all dcp monitor web pages
-		
-//TODO Figure out if I even need PlatformInfo, and if so, how to get name
-//resolver instance without referencing the DcpResolver.
-//		String tempDesc = 
-//			DcpMonitor.instance().getDcpNameDescResolver().getBestDescription(
-//				dcpAddress, plat);
-//		if (tempDesc != null && tempDesc.trim().length() > 0)
-//		{
-//			if (ret != null)
-//				ret.platformDescription = tempDesc;
-//		}
 		
 		if (plat == null && pte == null)
 		{
-			Logger.instance().warning("No info about DCP Address '"
-				+ dcpAddress + "' in PDT or DECODES. -- "
-				+ "Assuming random 300baud Xmit");
+			log.warn("No info about DCP Address '{}' in PDT or DECODES. -- Assuming random 300baud Xmit",
+					 dcpAddress);
 			return ret;
 		}
 		return ret;

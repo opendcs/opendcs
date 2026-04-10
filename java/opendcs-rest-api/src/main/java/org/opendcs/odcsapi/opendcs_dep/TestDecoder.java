@@ -1,0 +1,448 @@
+/*
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License")
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.opendcs.odcsapi.opendcs_dep;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Date;
+import java.util.Iterator;
+import jakarta.ws.rs.WebApplicationException;
+
+import decodes.datasource.GoesPMParser;
+import decodes.datasource.HeaderParseException;
+import decodes.datasource.PMParser;
+import decodes.datasource.RawMessage;
+import decodes.db.ConfigSensor;
+import decodes.db.Constants;
+import decodes.db.DataType;
+import decodes.db.DecodesScript;
+import decodes.db.DecodesScriptException;
+import decodes.db.FormatStatement;
+import decodes.db.Platform;
+import decodes.db.PlatformConfig;
+import decodes.db.ScriptSensor;
+import decodes.db.Site;
+import decodes.db.SiteName;
+import decodes.db.TransportMedium;
+import decodes.db.UnitConverterDb;
+import decodes.decoder.DecodedMessage;
+import decodes.decoder.DecodedSample;
+import decodes.sql.DbKey;
+import decodes.tsdb.DbIoException;
+import decodes.tsdb.TimeSeriesDb;
+import ilex.var.NoConversionException;
+import ilex.var.TimedVariable;
+import jakarta.ws.rs.core.Response;
+import opendcs.dai.DataTypeDAI;
+import opendcs.dai.EnumDAI;
+import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.odcsapi.beans.ApiConfigScript;
+import org.opendcs.odcsapi.beans.ApiConfigScriptSensor;
+import org.opendcs.odcsapi.beans.ApiConfigSensor;
+import org.opendcs.odcsapi.beans.ApiDecodedMessage;
+import org.opendcs.odcsapi.beans.ApiDecodesTSValue;
+import org.opendcs.odcsapi.beans.ApiDecodesTimeSeries;
+import org.opendcs.odcsapi.beans.ApiPlatformConfig;
+import org.opendcs.odcsapi.beans.ApiRawMessage;
+import org.opendcs.odcsapi.beans.ApiScriptFormatStatement;
+import org.opendcs.odcsapi.beans.ApiTokenPosition;
+import org.opendcs.odcsapi.beans.ApiUnitConverter;
+import org.opendcs.odcsapi.dao.DbException;
+import org.opendcs.odcsapi.errorhandling.WebAppException;
+import org.opendcs.odcsapi.hydrojson.DbInterface;
+import org.opendcs.odcsapi.util.ApiPropertiesUtil;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.MDC;
+import org.slf4j.MDC.MDCCloseable;
+
+public final class TestDecoder
+{
+	private static final org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
+	private static long lastDecodesInitMsec = 0L;
+
+	private TestDecoder()
+	{
+		throw new AssertionError("Utility class, do not instantiate.");
+	}
+
+	/**
+	 * Do a test decode of the passed message data using the named script within the
+	 * passed configuration.
+	 * @param msgData
+	 * @param cfg
+	 * @param scriptName
+	 * @param db
+	 * @return
+	 */
+	public static ApiDecodedMessage decodeMessage(ApiRawMessage msgData, 
+		ApiPlatformConfig cfg, String scriptName, OpenDcsDatabase db)
+		throws DbException, WebAppException
+	{
+		try (MDCCloseable mdc = MDC.putCloseable("scriptName", scriptName))
+		{
+			final ApiDecodedMessage ret = new ApiDecodedMessage();
+
+			// Convert base64 back to plaintext & create DECODES RawMessage
+			byte[] rawdata = Base64.getDecoder().decode(msgData.getBase64());
+			RawMessage rawMessage = new RawMessage(rawdata, rawdata.length);
+
+			// Convert webapp bean to DECODES platform config
+			PlatformConfig platformConfig = apiConfig2decodesConfig(cfg);
+
+			// Setup dummy platform to do decoding.
+			Platform tmpPlatform = new Platform();
+			tmpPlatform.setSite(new Site());
+			tmpPlatform.getSite().addName(new SiteName(tmpPlatform.getSite(), "USGS", "dummy"));
+			tmpPlatform.setConfig(platformConfig);
+			tmpPlatform.setConfigName(platformConfig.configName);
+			
+			// If a script is specified, use it. Else take the first in the config.
+			DecodesScript script = null;
+			if (scriptName != null)
+				script = platformConfig.getScript(scriptName);
+			else if (platformConfig.getNumScripts() > 0)
+				script = platformConfig.decodesScripts.get(0);
+			if (script == null)
+				throw new WebAppException(Response.Status.PRECONDITION_FAILED.getStatusCode(),
+						"No such script '" + scriptName + "' within the passed configuration.");
+
+			String mediumType = script.getHeaderType();
+			log.debug("script.getHeaderType() returned '{}', scriptType='{}'", mediumType, script.scriptType);
+			if (mediumType == null)
+				mediumType = isGoes(rawdata) ? Constants.medium_Goes :
+					isIridium(rawdata) ? Constants.medium_IRIDIUM : Constants.medium_EDL;
+			log.debug("Determined mediumType '{}'", mediumType);
+			TransportMedium tmpMedium = new TransportMedium(tmpPlatform, mediumType, "11111111");
+
+			tmpMedium.scriptName = scriptName;
+			tmpMedium.setDecodesScript(script);
+			tmpPlatform.transportMedia.add(tmpMedium);
+
+			rawMessage.setPlatform(tmpPlatform);
+			rawMessage.setTransportMedium(tmpMedium);
+			
+			try
+			{
+				initDecodes(db);
+				PMParser pmParser = PMParser.getPMParser(mediumType);
+				if (pmParser == null)
+				{
+					throw new WebAppException(Response.Status.PRECONDITION_FAILED.getStatusCode(),
+						"Cannot get pmParser for mediumType '" + mediumType + "'");
+				}
+				pmParser.parsePerformanceMeasurements(rawMessage);
+				log.info("Header type '{}' length={}", mediumType, pmParser.getHeaderLength());
+				for(Iterator<String> pmnit = rawMessage.getPMNames(); pmnit.hasNext(); )
+				{
+					String pmn = pmnit.next();
+					log.info("PM:{}={}", pmn, rawMessage.getPM(pmn));
+				}
+			}
+			catch (HeaderParseException ex)
+			{
+				String tz = ApiPropertiesUtil.getIgnoreCase(DbInterface.decodesProperties, "editTimeZone");
+				if (tz == null) 
+					tz = "UTC";
+				tmpMedium.setTimeZone(tz);
+				tmpMedium.setMediumType(Constants.medium_EDL);
+				// Set dummy medium id -- rawMessage must have a medium id set
+				// to avoid
+				// an error in the parser. It doesn't actually need one because
+				// the platform and
+				// script id is known by context. (SED - 06/11/2008)
+				rawMessage.setMediumId("11111111");
+				try
+				{
+					PMParser edlPMParser = PMParser.getPMParser("edl");
+					edlPMParser.parsePerformanceMeasurements(rawMessage);
+					log.atInfo().setCause(ex).log("Error parsing header -- will process as EDL file with no header.");
+				}
+				catch (HeaderParseException ex2)
+				{
+					WebAppException toThrow = new WebAppException(Response.Status.BAD_REQUEST.getStatusCode(),
+						"Cannot parse message header as " + mediumType + " or edl: " + ex2);
+					toThrow.addSuppressed(ex);
+					throw toThrow;
+				}
+			}
+			Date timeStamp;
+			try
+			{
+				timeStamp = rawMessage.getPM(GoesPMParser.MESSAGE_TIME).getDateValue();
+			}
+			catch (RuntimeException | NoConversionException ex)
+			{
+				log.atDebug().setCause(ex).log("Cannot get message time from header. Defaulting to current time.");
+				timeStamp = new Date();
+			}
+			rawMessage.setTimeStamp(timeStamp);
+	
+			try
+			{
+				script.prepareForExec();
+				log.debug("After script.prepare, there are {} script sensors:", script.scriptSensors.size());
+				for(ScriptSensor ss : script.scriptSensors)
+				{
+					log.debug("sensor[{}] rawConverter={}, execConverter={}",
+								ss.sensorNumber, ss.rawConverter, ss.execConverter);
+				}
+				tmpMedium.prepareForExec();
+				DecodesScript.trackDecoding = true;
+				DecodedMessage dm = script.decodeMessage(rawMessage);
+				log.debug("After decoding there are {} decoded samples.", script.getDecodedSamples().size());
+				decodedMsg2api(ret, dm, script.getDecodedSamples());
+			}
+			catch (Exception ex)
+			{
+				throw new WebAppException(Response.Status.PRECONDITION_FAILED.getStatusCode(), "Decoding failed: " + ex);
+			}
+			return ret;
+		}
+	}
+	
+	private static boolean isGoes(byte[] msgData)
+	{
+		if (msgData.length < 37)
+			return false;
+		if (!isHexString(new String(msgData, 0, 8)))
+			return false;
+		for(int i=8; i<8+11; i++)
+			if (!Character.isDigit((char)msgData[i]))
+				return false;
+		return true;
+	}
+	
+	private static boolean isIridium(byte[] msgData)
+	{
+		return (new String(msgData,0,3)).startsWith("ID=");
+	}
+	
+	private static PlatformConfig apiConfig2decodesConfig(ApiPlatformConfig apiCfg)
+	{
+		PlatformConfig ret = new PlatformConfig();
+		ret.forceSetId(DbKey.createDbKey(apiCfg.getConfigId()));
+		ret.configName = apiCfg.getName();
+		ret.description = apiCfg.getDescription();
+		ret.numPlatformsUsing = apiCfg.getNumPlatforms();
+		
+		for(ApiConfigSensor acs : apiCfg.getConfigSensors())
+		{
+			ConfigSensor cs = new ConfigSensor(ret, acs.getSensorNumber());
+			cs.sensorName = acs.getSensorName();
+			cs.recordingMode = acs.getRecordingMode().getCode();
+			cs.recordingInterval = acs.getRecordingInterval();
+			cs.timeOfFirstSample = acs.getTimeOfFirstSample();
+			if (acs.getAbsoluteMax() != null)
+				cs.absoluteMax = acs.getAbsoluteMax();
+			if (acs.getAbsoluteMin() != null)
+				cs.absoluteMin = acs.getAbsoluteMin();
+			ApiPropertiesUtil.copyProps(cs.getProperties(), acs.getProperties());
+			for(String std : acs.getDataTypes().keySet())
+				cs.getDataTypeVec().add(DataType.getDataType(std, acs.getDataTypes().get(std)));
+			cs.setUsgsStatCode(acs.getUsgsStatCode());
+			ret.addSensor(cs);		
+		}
+
+		for(ApiConfigScript apiScript : apiCfg.getScripts())
+		{
+//			DecodesScript ds = new DecodesScript(ret, apiScript.getName());
+			// 7/18/2023 MJM modified for compatibility with latest opendcs.jar
+			DecodesScript ds = null;
+			try
+			{
+				ds = DecodesScript.empty()
+					.scriptName(apiScript.getName())
+					.platformConfig(ret)
+					.build();
+			}
+			catch (IOException | DecodesScriptException ex)
+			{
+				throw new WebApplicationException("Unable to process script", ex, 500);
+			}
+
+			ds.setDataOrder(apiScript.getDataOrder().getCode());
+			ds.scriptType = Constants.scriptTypeDecodes;
+			if (apiScript.getHeaderType() != null)
+				ds.scriptType = ds.scriptType + ":" + apiScript.getHeaderType();
+			for(ApiConfigScriptSensor apiScriptSensor : apiScript.getScriptSensors())
+			{
+				ScriptSensor ss = new ScriptSensor(ds, apiScriptSensor.getSensorNumber());
+				if (apiScriptSensor.getUnitConverter() != null)
+				{
+					ApiUnitConverter apiUC = apiScriptSensor.getUnitConverter();
+					ss.rawConverter = new UnitConverterDb("raw", apiUC.getToAbbr());
+					ss.rawConverter.algorithm = apiUC.getAlgorithm();
+					if (apiUC.getA() != null) ss.rawConverter.coefficients[0] = apiUC.getA();
+					if (apiUC.getB() != null) ss.rawConverter.coefficients[1] = apiUC.getB();
+					if (apiUC.getC() != null) ss.rawConverter.coefficients[2] = apiUC.getC();
+					if (apiUC.getD() != null) ss.rawConverter.coefficients[3] = apiUC.getD();
+					if (apiUC.getE() != null) ss.rawConverter.coefficients[4] = apiUC.getE();
+					if (apiUC.getF() != null) ss.rawConverter.coefficients[5] = apiUC.getF();
+				}
+				ds.addScriptSensor(ss);
+			}
+			
+			for(ApiScriptFormatStatement apiScriptFmt : apiScript.getFormatStatements())
+			{
+				FormatStatement fs = new FormatStatement(ds, apiScriptFmt.getSequenceNum());
+				fs.label = apiScriptFmt.getLabel();
+				fs.format = apiScriptFmt.getFormat();
+				ds.getFormatStatements().add(fs);
+			}
+			
+			ret.addScript(ds);
+		}
+
+		return ret;
+	}
+	
+	private static void decodedMsg2api(ApiDecodedMessage adm, DecodedMessage dm, ArrayList<DecodedSample> decodedSamples)
+	{
+		adm.setMessageTime(dm.getMessageTime());
+		for (decodes.decoder.TimeSeries ts : dm.getTimeSeriesArray())
+		{
+			ApiDecodesTimeSeries adts = new ApiDecodesTimeSeries();
+			adts.setSensorNum(ts.getSensorNumber());
+			adts.setSensorName(ts.getSensorName());
+			adts.setUnits(ts.getUnits());
+			for(int i=0; i<ts.size(); i++)
+			{
+				TimedVariable tv = ts.sampleAt(i);
+				ApiDecodesTSValue adtsv = new ApiDecodesTSValue();
+				adtsv.setTime(tv.getTime());
+				adtsv.setValue(tv.getStringValue());
+				adts.getValues().add(adtsv);
+				for(Iterator<DecodedSample> dsit = decodedSamples.iterator(); dsit.hasNext(); )
+				{
+					DecodedSample ds = dsit.next();
+					if (ds.getTimeSeries() == ts && ds.getSample() == tv)
+					{
+						adtsv.setRawDataPosition(
+							new ApiTokenPosition(ds.getRawDataPosition().getStart(), ds.getRawDataPosition().getEnd()));
+						dsit.remove();
+						break;
+					}
+				}
+			}
+			adm.getTimeSeries().add(adts);
+		}
+	}
+
+	/**
+	 * Synchronized to make sure multiple concurrent sessions don't init at the same time.
+	 * Also, only initialize once per minute.
+	 */
+	private static synchronized void initDecodes(OpenDcsDatabase db)
+			throws DbException
+	{
+		// Don't init more than once per minute.
+		long now = System.currentTimeMillis();
+		if (now - lastDecodesInitMsec < 60*1000L)
+			return;
+		lastDecodesInitMsec = now;
+
+		if (decodes.db.Database.getDb() == null)
+			decodes.db.Database.setDb(new decodes.db.Database());
+
+		try (DataTypeDAI dtDAO = db.getLegacyDatabase(TimeSeriesDb.class)
+				.orElseThrow(() -> new UnsupportedOperationException("TestDecodes is not supported")).makeDataTypeDAO();
+			 EnumDAI enumDAO = db.getLegacyDatabase(TimeSeriesDb.class).orElseThrow(() -> new UnsupportedOperationException("TestDecodes is not supported")).makeEnumDAO())
+		{
+			enumDAO.readEnumList(decodes.db.Database.getDb().enumList);
+			dtDAO.readDataTypeSet(decodes.db.Database.getDb().dataTypeSet);
+		}
+		catch (DbIoException ex)
+		{
+			throw new DbException("Error initializing decodes for test decoding", ex);
+		}
+	}
+
+	/**
+	 * @return true if passed string is a hex number.
+	 */
+	private static boolean isHexString(String s)
+	{
+		int len = s.length();
+		for(int i = 0; i < len; i++)
+		{
+			if(!isHexChar((byte) s.charAt(i)))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Converts hex char to in in the range 0...15
+	 *
+	 * @param c the hex char
+	 * @return the int
+	 */
+	private static int fromHexChar(char c)
+	{
+		int retval;
+		if(Character.isDigit(c))
+		{
+			retval = c - '0';
+		}
+		else
+		{
+			switch(c)
+			{
+				case 'a':
+				case 'A':
+					retval = 10;
+					break;
+				case 'b':
+				case 'B':
+					retval = 11;
+					break;
+				case 'c':
+				case 'C':
+					retval = 12;
+					break;
+				case 'd':
+				case 'D':
+					retval = 13;
+					break;
+				case 'e':
+				case 'E':
+					retval = 14;
+					break;
+				case 'f':
+				case 'F':
+					retval = 15;
+					break;
+				default:
+					retval = -1;
+					break;
+			}
+		}
+		return retval;
+	}
+
+	/**
+	 * @param c the char
+	 * @return true if the character is a hex char.
+	 */
+	private static boolean isHexChar(byte c)
+	{
+		int i = fromHexChar((char) c);
+		return i != -1;
+	}
+}

@@ -1,38 +1,17 @@
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.1  2011/09/27 01:23:08  mmaloney
-*  Enhancements to StreamDataSource for SHEF and NOS Decoding.
-*
-*  Revision 1.1  2008/04/04 18:21:00  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.8  2004/08/24 23:52:45  mjmaloney
-*  Added javadocs.
-*
-*  Revision 1.7  2003/12/07 20:36:48  mjmaloney
-*  First working implementation of EDL time stamping.
-*
-*  Revision 1.6  2003/06/17 00:34:00  mjmaloney
-*  StreamDataSource implemented.
-*  FileDataSource re-implemented as a subclass of StreamDataSource.
-*
-*  Revision 1.5  2002/10/25 19:49:04  mjmaloney
-*  Fixed problems in NOAAPORT PM Parser & Socket Stream
-*
-*  Revision 1.4  2002/10/11 18:12:27  mjmaloney
-*  Fixed NoaaportPMParser
-*
-*  Revision 1.3  2002/10/11 01:27:01  mjmaloney
-*  Added SocketStreamDataSource and NoaaportPMParser stuff.
-*
-*  Revision 1.2  2002/09/30 21:25:35  mjmaloney
-*  dev.
-*
-*  Revision 1.1  2002/09/30 19:08:55  mjmaloney
-*  Created.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.datasource;
 
@@ -40,7 +19,9 @@ import java.util.Date;
 import java.util.TimeZone;
 import java.text.SimpleDateFormat;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.var.Variable;
 
 import decodes.db.Constants;
@@ -51,6 +32,7 @@ import decodes.db.Constants;
 */
 public class ShefPMParser extends PMParser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final SimpleDateFormat mmdd = new SimpleDateFormat("MMdd");
 	private static final SimpleDateFormat yymmdd = new SimpleDateFormat("yyMMdd");
 	private static final SimpleDateFormat ccyymmdd = new SimpleDateFormat("yyyyMMdd");
@@ -83,16 +65,16 @@ public class ShefPMParser extends PMParser
 			idx++;
 			String messageType = getField(data);
 			msg.setPM(PM_MESSAGE_TYPE, new Variable(messageType));
-			Logger.instance().debug3("Message Type set to '" + messageType + "'");
+			log.trace("Message Type set to '{}'", messageType);
 		}
 
 		skipWhitespace(data);
 		String stationName = getField(data);
-		Logger.instance().debug3("SHEF Station name='" + stationName + "'");
+		log.trace("SHEF Station name='{}'", stationName);
 		
 		skipWhitespace(data);
 		String dateField = getField(data);
-		Logger.instance().debug3("SHEF Station Time='" + dateField + "'");
+		log.trace("SHEF Station Time='{}'", dateField);
 
 
 		// Optional third field for timezone.
@@ -107,17 +89,16 @@ public class ShefPMParser extends PMParser
 			tz = shefTZ2javaTZ(nextField);
 			if (tz == null)
 			{
-				Logger.instance().warning("Invalid time-zone '" + nextField
-					+ "' in SHEF message ignored, using UTC.");
+				log.warn("Invalid time-zone '{}' in SHEF message ignored, using UTC.", nextField);
 				tz = TimeZone.getTimeZone("UTC");
 			}
 		}
-		Logger.instance().debug3("SHEF Time Zone = " + tz.getID());
+		log.trace("SHEF Time Zone = {}", tz.getID());
 		
 		msg.setMediumId(stationName);
 		msg.setPM(GoesPMParser.DCP_ADDRESS, new Variable(stationName));
 		msg.setHeaderLength(headerEnd);
-		Logger.instance().debug3("SHEF Header Length set to " + headerEnd);
+		log.trace("SHEF Header Length set to {}" + headerEnd);
 		
 		Date msgTime;
 		try
@@ -131,7 +112,7 @@ public class ShefPMParser extends PMParser
 		}
 		msg.setTimeStamp(msgTime);
 		msg.setPM(GoesPMParser.MESSAGE_TIME, new Variable(msgTime));
-		Logger.instance().debug3("SHEF Message Date=" + ccyymmdd.format(msgTime));
+		log.trace("SHEF Message Date={}", msgTime);
 		msg.setPM(PM_TIMEZONE, new Variable(tz.getID()));
 		msg.setPM(GoesPMParser.MESSAGE_LENGTH, new Variable(data.length));
 		msg.setPM(GoesPMParser.FAILURE_CODE, new Variable('G'));
@@ -158,7 +139,7 @@ public class ShefPMParser extends PMParser
 			msgTime = ccyymmdd.parse(dateField);
 		}
 		else
-			throw new Exception();
+			throw new Exception("Date field length does not match with any known formats.");
 		return msgTime;
 	}
 

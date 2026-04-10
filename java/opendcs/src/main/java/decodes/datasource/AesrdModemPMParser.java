@@ -1,35 +1,29 @@
 /*
- * $Id$
- * 
- * $Log$
- * Revision 1.6  2014/03/05 15:56:00  mmaloney
- * Added alternate date/time format for h555.
- *
- * Revision 1.5  2014/01/22 20:57:03  mmaloney
- * dev
- *
- * Revision 1.4  2014/01/22 20:50:17  mmaloney
- * dev
- *
- * Revision 1.3  2014/01/22 20:31:53  mmaloney
- * dev
- *
- * Revision 1.2  2014/01/22 20:18:58  mmaloney
- * dev
- *
- * Revision 1.1  2014/01/22 18:04:02  mmaloney
- * created.
- *
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.datasource;
 
-import ilex.util.Logger;
 import ilex.var.Variable;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.Constants;
 
@@ -38,9 +32,9 @@ import decodes.db.Constants;
  * by Alberta ESRD
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
-public class AesrdModemPMParser 
-	extends PMParser
+public class AesrdModemPMParser extends PMParser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "AesrdModemPMParser";
 	private int headerLen = 0;
 	
@@ -96,9 +90,8 @@ public class AesrdModemPMParser
 					msg.setTimeStamp(msgTime);
 					msg.setPM(GoesPMParser.MESSAGE_TIME, new Variable(msgTime));
 				}
-				Logger.instance().debug2(module + " after parse, headerLen="
-					+ headerLen + ", msgLen=" + msg.getPM(GoesPMParser.MESSAGE_LENGTH)
-					+ " msgTime=" + msgTime);
+				log.debug("After parse, headerLen={}, msgLen={}, msgTime={}",
+				          headerLen, msg.getPM(GoesPMParser.MESSAGE_LENGTH), msgTime);
 				return;
 			}
 			else if ((idx = ucLine.indexOf("DACQ TIME STAMP:")) >= 0)
@@ -124,8 +117,7 @@ public class AesrdModemPMParser
 	 */
 	private String getNextLine(RawMessage msg)
 	{
-Logger.instance().debug3(module + " getNextLine() headerLen=" + headerLen 
-+ ", msgLen=" + msg.data.length);
+		log.trace(" getNextLine() headerLen={}, msgLen={}", headerLen, msg.data.length);
 		if (headerLen >= msg.data.length)
 			return null;
 		StringBuilder sb = new StringBuilder();
@@ -157,25 +149,21 @@ Logger.instance().debug3(module + " getNextLine() headerLen=" + headerLen
 		}
 		if (dateStart >= line.length())
 		{
-			Logger.instance().warning(module + " No date/time stamp on line '"
-				+ line + "'");
+			log.warn(module + " No date/time stamp on line '{}'",line);
 			return null;
 		}
 		
 		String dateStr = line.substring(dateStart);
-		Logger.instance().debug3(module + " parsing date/time from '" + dateStr
-				+ "' with '" + sdfs[0].toPattern() + "'");
+		log.trace("parsing date/time from '{}', with '{}'.", dateStr, sdfs[0].toPattern());
 		
 		try { return sdfs[0].parse(dateStr); }
 		catch(Exception ex)
 		{
-			Logger.instance().debug3(module + " parsing date/time from '" + dateStr
-				+ "' with '" + sdfs[1].toPattern() + "'");
+			log.atTrace().setCause(ex).log("parsing date/time from '{}' with '{}'.", dateStr, sdfs[1].toPattern());
 			try { return sdfs[1].parse(dateStr); }
 			catch(ParseException ex2)
 			{
-				Logger.instance().warning(module + " Bad date/time stamp on line '"
-					+ line + "'");
+				log.atWarn().setCause(ex2).log("Bad date/time stamp on line '{}'", line);
 			}
 		}
 		return null;

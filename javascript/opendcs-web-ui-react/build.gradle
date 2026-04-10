@@ -1,0 +1,112 @@
+plugins {
+    id 'base'
+    id 'opendcs.deps-conventions'
+    id 'opendcs.sonar-conventions'
+    id 'opendcs.version-conventions'
+    id 'com.github.node-gradle.node' version '7.1.0'
+    id 'org.sonarqube'
+}
+
+configurations {
+    api
+}
+
+dependencies {
+    api(project(path: ":api-client-typescript", configuration: "lib"))
+}
+
+//npmSetup.dependsOn configurations.api
+
+def buildUi = tasks.register("buildUi", NpxTask) {
+    dependsOn npmInstall
+    dependsOn configurations.api
+    command = "npm"
+    args = ['run', 'build']
+    environment = [
+        "IN_GRADLE": "1"
+    ]
+    outputs.dir(file("dist"))
+}
+
+def testUi = tasks.register("testStorybook", NpxTask) {
+    group "Verification"
+    dependsOn buildUi
+    dependsOn configurations.api
+    command = "npm"
+    environment = [
+        "IN_GRADLE": "1",
+        "CI": "true"
+    ]
+    args = ['run', 'test', '--', '--coverage.enabled',
+            '--reporter=default',
+            '--reporter=verbose',
+            '--reporter=junit',
+            '--outputFile', 'build/test-results/TEST-storybook.xml']
+}
+
+def lint = tasks.register("eslint", NpxTask) {
+    group "Verification"
+    dependsOn buildUi
+    dependsOn configurations.api
+    command = "npm"
+    ignoreExitValue = true // At this level we don't care if it's a good report, just that we have it.
+    environment = [
+        "IN_GRADLE": "1",
+        "CI": "true"
+    ]
+    doNotTrackState("Instrumentation needs to re-run every time")
+    outputs.file(project.layout.buildDir.file("eslint-report.json"))
+    args = ['run', 'lint', '--', '-f', 'json', '-o', 'build/eslint-report.json']
+}
+
+tasks.register("test") {
+    group "Verification"
+    dependsOn testUi
+    dependsOn configurations.api
+    dependsOn lint
+}
+
+node {
+    // Version of Node.js to install. Required.
+    version = '24.12.0'
+    
+   
+    // Whether to download Node.js if it is not already installed. Defaults to true.
+    download = true
+    
+    // The working directory for Node.js. Defaults to the project directory.
+    
+    // Configure a proxy for the download. Optional.
+    // distBaseUrl = 'https://custom.node.dist.mirror'
+}
+
+sonar {
+    skipProject project.findProperty("UI") ? false : true
+    properties {
+        property "sonar.projectKey", "opendcs_opendcs_ui"
+        property "sonar.pullrequest.provider", "GitHub"
+        property "sonar.pullrequest.github.repository", "opendcs/opendcs"
+        property "sonar.language", "typescript"
+        property "sonar.sources", "src"
+        property "sonar.tests", "src"
+        property "sonar.test.inclusions", "**/*.(stories|tests).(js|jsx|ts|tsx)"
+        property "sonar.exclusions", "**/*.(stories|tests).(js|jsx|ts|tsx)"
+        property "sonar.javascript.lcov.reportPaths", "coverage/lcov.info"
+        property "sonar.typescript.tsconfigPaths", "tsconfig.app.json"
+        property "sonar.eslint.reportPaths", "build/eslint-report.json"
+    }
+}
+
+build.dependsOn buildUi
+
+def runUiDev = tasks.register("runUiDev", NpxTask) {
+    group 'application'
+    description 'Runs npm run dev to begin UI development. Assumes an OpenDCS Api instances in available on localhost:7000/odcsapi'
+    dependsOn npmInstall
+    dependsOn configurations.api  
+    command = "npm"
+    args = ['run', 'dev']
+    environment = [
+        "IN_GRADLE": "1"
+    ]
+}

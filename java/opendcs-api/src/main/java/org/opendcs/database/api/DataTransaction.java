@@ -2,8 +2,6 @@ package org.opendcs.database.api;
 
 import java.util.Optional;
 
-import javax.management.openmbean.OpenDataException;
-
 /**
  * Instance of this class are used to hold appropriate connections
  * to external systems. Most commonly will be SQL connections for the OpenDCS information.
@@ -20,18 +18,20 @@ import javax.management.openmbean.OpenDataException;
  * For any additional connection types, transaction support is the responsibility of the implementation.
  *
  */
-public interface DataTransaction extends AutoCloseable {
+public interface DataTransaction extends AutoCloseable
+{
 
     /**
      * Retrieve a connection of a given type, such as java.sql.Connection or
      * an HTTP client.
      * @param <T> Requested connection type. Implementations should implement support
-     *            for the connections they use.
+     *            for the connections they use. It is expected that any requested "connection" type
+     *            would implement Closeable or AutoClosable as they deal with external resources
      * @param connectionType class of connection type
      * @return optional with the instance of the connection type, if available.
      * @throws OpenDcsDataException any issues with the connection, if implementations check validity.
      */
-    <T> Optional<T> connection(Class<T> connectionType) throws OpenDcsDataException;
+    <T extends AutoCloseable> Optional<T> connection(Class<T> connectionType) throws OpenDcsDataException;
 
     /**
      * Finalize transaction state across all connections.
@@ -45,8 +45,15 @@ public interface DataTransaction extends AutoCloseable {
     /**
      * Reset data sources to known state.
      * Transaction *MUST* return to the valid initial state.
+     * @throws OpenDcsDataException if a failure to rollback occurs
      */
     void rollback() throws OpenDcsDataException;
+
+    /**
+     * Contains information about the database, such as the database engine and settings.
+     * @return
+     */
+    TransactionContext getContext();
 
     /**
      * Remove because downstream things need to be responsible for closing any actually connections and such.

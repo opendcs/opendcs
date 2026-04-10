@@ -1,0 +1,6 @@
+{
+  "intervalId" : null,
+  "name" : "Regular 10Min",
+  "calConstant" : "MINUTE",
+  "calMultilier" : 10
+}

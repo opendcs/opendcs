@@ -7,7 +7,6 @@ package decodes.db;
 import ilex.util.TextUtil;
 import ilex.util.PropertiesUtil;
 import java.util.Properties;
-import java.util.Enumeration;
 
 /**
 * This class encapsulates information about a piece of equipment.
@@ -219,4 +218,3 @@ public class EquipmentModel extends IdDatabaseObject
 		return name;
 	}
 }
-

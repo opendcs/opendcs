@@ -1,0 +1,42 @@
+{
+  "algorithmsTitle": "Algorithmen",
+  "add_algorithm": "Algorithmus hinzufügen",
+  "header": {
+    "Id": "Id",
+    "Name": "Name",
+    "ExecClass": "Ausführungsklasse",
+    "NumCompsUsing": "# Berechnungen",
+    "Description": "Beschreibung"
+  },
+  "editor": {
+    "name": "Name",
+    "execClass": "Ausführungsklasse",
+    "description": "Beschreibung",
+    "edit_for": "Algorithmus {{id}} bearbeiten",
+    "delete_for": "Algorithmus {{id}} löschen",
+    "cancel_for": "Bearbeitung von Algorithmus {{id}} abbrechen",
+    "save_for": "Algorithmus {{id}} speichern"
+  },
+  "check_new": {
+    "button": "Neue suchen",
+    "title": "Verfügbare Algorithmen",
+    "none_found": "Keine neuen Algorithmen gefunden.",
+    "select_all": "Alle auswählen",
+    "close": "Schließen",
+    "import_selected": "Ausgewählte importieren ({{count}})"
+  },
+  "parms": {
+    "title": "Parameter",
+    "roleName": "Rollenname",
+    "parmType": "Typ",
+    "input": "Eingabe",
+    "output": "Ausgabe",
+    "add_parm": "Parameter hinzufügen",
+    "save_parm": "Parameter speichern",
+    "cancel_parm": "Parameterbearbeitung abbrechen",
+    "edit_for": "Parameter {{name}} bearbeiten",
+    "delete_for": "Parameter {{name}} löschen",
+    "roleName_input": "Parameter-Rollenname",
+    "parmType_input": "Parametertyp"
+  }
+}

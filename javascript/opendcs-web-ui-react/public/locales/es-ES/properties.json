@@ -1,0 +1,9 @@
+{
+  "PropertiesTitle": "Propiedades",
+  "add_prop": "Agregar nueva_propiedad",
+  "delete_prop": "Eliminar propiedad llamada {{name}}",
+  "edit_prop": "Editar propiedad llamada {{name}}",
+  "name_input": "entrada de nombre para la_propiedad llamada {{name}}",
+  "save_prop": "Guardar propiedad llamada {{name}}",
+  "value_input": "entrada de valor para la_propiedad llamada {{name}}"
+}

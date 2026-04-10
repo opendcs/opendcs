@@ -1,23 +1,28 @@
-/**
- * Copyright 2024 The OpenDCS Consortium and contributors
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.*;
 import javax.swing.*;
 import java.util.ResourceBundle;
+
+import org.apache.poi.hpsf.GUID;
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.util.LoadResourceBundle;
 import decodes.gui.TopFrame;
@@ -30,6 +35,7 @@ Presents a list of presentation groups in the database.
 */
 public class PresentationGroupListPanel extends JPanel implements ListOpsController
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -45,11 +51,13 @@ public class PresentationGroupListPanel extends JPanel implements ListOpsControl
 	/** Constructor. */
     public PresentationGroupListPanel() 
 	{
-        try {
+        try 
+		{
             jbInit();
         }
-        catch(Exception ex) {
-            ex.printStackTrace();
+        catch(Exception ex) 
+		{
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -63,7 +71,8 @@ public class PresentationGroupListPanel extends JPanel implements ListOpsControl
 	}
 
 	/** Initializes GUI components. */
-    private void jbInit() throws Exception {
+    private void jbInit() throws Exception 
+	{
         jLabel1.setHorizontalAlignment(SwingConstants.CENTER);
         jLabel1.setHorizontalTextPosition(SwingConstants.CENTER);
         jLabel1.setText(
@@ -151,6 +160,7 @@ public class PresentationGroupListPanel extends JPanel implements ListOpsControl
 		}
 		catch (DatabaseException ex)
 		{
+			log.atError().setCause(ex).log("Cannot read presentation group '{}'", pg.groupName);
 			DbEditorFrame.instance().showError("Cannot read presentation group '"
 				+ pg.groupName + "': " + ex);
 		}
@@ -202,7 +212,9 @@ public class PresentationGroupListPanel extends JPanel implements ListOpsControl
 		}
 		catch (DatabaseException ex)
 		{
-			parent.showError("Cannot refresh presentation group list: " + ex);
+			final String msg = "Cannot refresh presentation group list";
+			log.atError().setCause(ex).log(msg);
+			parent.showError(msg + ": " + ex);
 		}
 	}
 
@@ -220,10 +232,11 @@ public class PresentationGroupListPanel extends JPanel implements ListOpsControl
 			catch(DatabaseException ex)
 			{
 				if (!isNew)
-					DbEditorFrame.instance().showError(
-						"Cannot open presentation group '" 
-						+ pg.getDisplayName()
-						+ "'");
+				{
+					String msg = "Cannot open presentation group '" + pg.getDisplayName() + "'";
+					log.atError().setCause(ex).log();
+					DbEditorFrame.instance().showError(msg);
+				}
 			}
 		}
 		DbEditorTab tab = dbtp.findEditorFor(pg);

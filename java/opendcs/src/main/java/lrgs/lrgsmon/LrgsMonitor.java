@@ -1,28 +1,39 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.lrgsmon;
 
 import java.io.*;
 import java.util.*;
-import java.text.SimpleDateFormat;
 
-import decodes.util.DecodesSettings;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.util.DecodesVersion;
-import ilex.util.Logger;
 import ilex.util.EnvExpander;
 import ilex.util.ServerLock;
 import ilex.util.FileServerLock;
 import ilex.util.TextUtil;
-import ilex.cmdline.*;
 import lrgs.statusxml.LrgsStatusSnapshotExt;
 
 /**
 Main class for the Lrgs Monitor web application.
 */
-public class LrgsMonitor
-	extends ThreadBase
+public class LrgsMonitor extends ThreadBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Config param: period between LRGS scans */
 	private int scanSeconds;
 
@@ -46,12 +57,12 @@ public class LrgsMonitor
 
 	/** Prevents multiple simultaneous instances */
 	private ServerLock mylock;
-	
+
 	/** Script to run after generating summary */
 	private String afterSummaryScript = null;
 
 	/// Construct main Lrgs Monitor.
-	public LrgsMonitor(String conf, String outputDir, int scanSeconds, 
+	public LrgsMonitor(String conf, String outputDir, int scanSeconds,
 		String lockFileName, String iconFileName, String headerFileName,
 		String summaryHeaderFile)
 	{
@@ -71,23 +82,24 @@ public class LrgsMonitor
 			try { dRptGen.setHeader(fn); }
 			catch(Exception ex)
 			{
-				Logger.instance().warning("Cannot open specified header file '"
-					+ fn + "': " + ex + " -- will use default header.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Cannot open specified header file '{}' -- will use default header.", fn);
 				try { dRptGen.setHeader(null); }
 				catch(Exception ignore) {}
 			}
 		}
-		
+
 		if (summaryHeaderFile != null)
 		{
 			fn = EnvExpander.expand(summaryHeaderFile);
 			try { sRptGen.setHeader(fn); }
 			catch(Exception ex)
 			{
-				Logger.instance().warning("Cannot open specified Summary" +
-						" header file '"
-					+ fn + "': " + ex + " -- will use default Summary " +
-							"header.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Cannot open specified Summary header file '{}' -- will use default Summary header.",
+				   		fn);
 				try { sRptGen.setHeader(null); }
 				catch(Exception ignore) {}
 			}
@@ -109,9 +121,8 @@ public class LrgsMonitor
 		// This parses all args & sets up the logger & debug level.
 		LrgsMonCmdLineArgs cmdLineArgs = new LrgsMonCmdLineArgs();
 		cmdLineArgs.parseArgs(args);
-		
-		Logger.instance().info("LRGS Monitor Starting, OpenDCS Version "
-			+ DecodesVersion.startupTag());
+
+		log.info("LRGS Monitor Starting, OpenDCS Version {}", DecodesVersion.startupTag());
 
 		// Instantiate & run my monitor.
 		LrgsMonitor mymonitor=new LrgsMonitor(
@@ -126,7 +137,7 @@ public class LrgsMonitor
 		// Even though it's a Thread, run it in the main thread.
 		mymonitor.run();
 	}
-	
+
 	/**
 	  Called from static main, this is the main thread run method.
 	  The main thread handles setting up the environment, spawning
@@ -141,7 +152,7 @@ public class LrgsMonitor
 
 		if (mylock.obtainLock() == false)
 		{
-			fatal("API Server not started: lock file busy");
+			log.error("API Server not started: lock file busy");
 			System.exit(0);
 		}
 		mylock.releaseOnExit();
@@ -150,10 +161,8 @@ public class LrgsMonitor
 			{
 				public void run()
 				{
-					Logger.instance().log(Logger.E_INFORMATION,
-						"LRGS Monitor Server exiting " +
-						(mylock.wasShutdownViaLock() ? "(lock file removed)"
-						: ""));
+					log.info("LRGS Monitor Server exiting {}",
+							(mylock.wasShutdownViaLock() ? "(lock file removed)" : ""));
 				}
 			});
 
@@ -163,24 +172,14 @@ public class LrgsMonitor
 			outputDir.mkdirs();
 			if (!outputDir.isDirectory())
 			{
-				fatal("Cannot access or create output directory '"
-					+ outputDir.getPath() + "' -- aborting.");
+				log.error("Cannot access or create output directory '{}' -- aborting.", outputDir.getPath());
 				System.exit(1);
 			}
 		}
 
-
-//		summaryHtmlFile = new File(outputDir, "LrgsSummaryStatus.html");
-		//if (!summaryHtmlFile.canWrite())
-		//{
-		//	fatal("Cannot write to '" + summaryHtmlFile.getPath() + "'");
-		//	System.exit(1);
-		//}
-
-
 		if (!lrgsListFile.canRead())
 		{
-			warning("No list file, No monitoring will be done.");
+			log.warn("No list file, No monitoring will be done.");
 		}
 		else
 			loadList();
@@ -207,7 +206,6 @@ public class LrgsMonitor
 			{
 				lastReportGen = now;
 				generateSummary(scanSeconds);
-//				sRptGen.write(outfile, scanSeconds);
 			}
 		}
 	}
@@ -217,10 +215,10 @@ public class LrgsMonitor
 	  the remote server. Parse the XML message and save the status structure
 	  for this host.
 	*/
-	public synchronized void updateStatus(String host, 
+	public synchronized void updateStatus(String host,
 		LrgsStatusSnapshotExt status, String extHost)
 	{
-		debug1("Received updated status from " + host);
+		log.debug("Received updated status from {}", host);
 
 		// Generate a detail file for this host.
 		File outfile = new File(outputDir, host + ".html");
@@ -229,7 +227,7 @@ public class LrgsMonitor
 		// Generate a table-entry in the summary file for this host.
 		sRptGen.update(host, status, extHost);
 	}
-	
+
 	public synchronized void generateSummary(int scanSeconds)
 	{
 		sRptGen.write(new File(outputDir, "LrgsSummaryStatus.html"), scanSeconds);
@@ -241,7 +239,7 @@ public class LrgsMonitor
 			}
 			catch (IOException ex)
 			{
-				warning("Cannot execute '" + afterSummaryScript + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot execute '{}'", afterSummaryScript);
 			}
 		}
 	}
@@ -254,7 +252,7 @@ public class LrgsMonitor
 	*/
 	private void loadList()
 	{
-		info("Loading configuration.");
+		log.info("Loading configuration.");
 
 		// discard collection of LrgsMonThreads
 		while(lrgsList.size() > 0)
@@ -266,11 +264,11 @@ public class LrgsMonitor
 		sRptGen.clear();
 		afterSummaryScript = null;
 
-		LineNumberReader lnr = null;
-		try
+		try (FileReader fr= new FileReader(lrgsListFile);
+			 LineNumberReader lnr = new LineNumberReader(fr))
 		{
 			// Read file with BufferedInputStream
-			lnr = new LineNumberReader(new FileReader(lrgsListFile));
+			
 
 			// For each line create & start new LrgsMonThread
 			String line;
@@ -279,21 +277,20 @@ public class LrgsMonitor
 				line = line.trim();
 				if (line.length() == 0 || line.charAt(0) == '#')
 					continue;
-				
+
 				// Check for special named properties
 				if (TextUtil.startsWithIgnoreCase(line, "afterSummaryScript="))
 				{
 					afterSummaryScript = line.substring(line.indexOf('=')+1);
 					continue;
 				}
-				
+
 				StringTokenizer st = new StringTokenizer(line);
 				int n = st.countTokens();
 				if (n < 3 || n > 5)
 				{
-					warning(lrgsListFile.getPath()+"("+lnr.getLineNumber()+"): "
-						+ "Invalid line '" + line + "', expected "
-						+ "host port user passwd exthost");
+					log.warn("{}({}): Invalid line '{}', expected host port user passwd exthost",
+							 lrgsListFile.getPath(), lnr.getLineNumber(), line);
 					continue;
 				}
 				String host = st.nextToken();
@@ -304,9 +301,10 @@ public class LrgsMonitor
 					try { port = Integer.parseInt(s); }
 					catch(NumberFormatException ex)
 					{
-						warning(
-							lrgsListFile.getPath()+"("+lnr.getLineNumber()+"): "
-							+ "Bad port number -- defaulted to 16003.");
+						log.atWarn()
+						   .setCause(ex)
+						   .log("{}({}): Bad port number -- defaulted to 16003.",
+						   		lrgsListFile.getPath(), lnr.getLineNumber());
 						port = 16003;
 					}
 				}
@@ -322,23 +320,15 @@ public class LrgsMonitor
 				String extHost = null;
 				if (n > 4)
 					extHost = st.nextToken();
-	
+
 				addLRGS(
-					new LrgsMonThread(this, host, port, user, passwd, extHost), 
+					new LrgsMonThread(this, host, port, user, passwd, extHost),
 						host);
 			}
 		}
 		catch(IOException ex)
 		{
-			failure("IO Error reading '" + lrgsListFile.getPath() + "': " + ex);
-		}
-		finally
-		{
-			if (lnr != null)
-			{
-				try { lnr.close(); }
-				catch(IOException ex) {}
-			}
+			log.atError().setCause(ex).log("IO Error reading '{}'", lrgsListFile.getPath());
 		}
 	}
 

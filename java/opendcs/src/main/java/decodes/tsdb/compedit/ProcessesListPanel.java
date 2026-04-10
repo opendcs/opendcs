@@ -1,43 +1,22 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
-*  
-*  $Log$
-*  Revision 1.3  2017/10/03 12:33:42  mmaloney
-*  Handle constraint exceptions
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.2  2015/06/04 21:43:22  mmaloney
-*  Some refactoring to allow ProcessEditPanel under new Proc Monitor GUI
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.9  2013/04/18 19:03:39  mmaloney
-*  When copying a loading app, also copy the properties.
-*
-*  Revision 1.8  2013/04/18 19:01:13  mmaloney
-*  When copying a loading app, also copy the properties.
-*
-*  Revision 1.7  2013/03/21 18:27:39  mmaloney
-*  DbKey Implementation
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.tsdb.compedit;
 
-import ilex.util.Logger;
-
 import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.PrintStream;
@@ -49,6 +28,9 @@ import java.util.Enumeration;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.LoadingAppDAI;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
@@ -57,8 +39,9 @@ import decodes.tsdb.*;
 import decodes.util.DecodesSettings;
 
 
-public class ProcessesListPanel extends ListPanel 
+public class ProcessesListPanel extends ListPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JPanel jContentPane = null;
 
 	private JTable procTable = null;
@@ -72,7 +55,7 @@ public class ProcessesListPanel extends ListPanel
 
 	/**
 	 * This method initializes jContentPane
-	 * 
+	 *
 	 * @return javax.swing.JPanel
 	 */
 	protected JPanel getJContentPane() {
@@ -87,13 +70,13 @@ public class ProcessesListPanel extends ListPanel
 		return jContentPane;
 	}
 
-	protected JTable getProcTable() 
+	protected JTable getProcTable()
 	{
-		if (procTableModel == null) 
+		if (procTableModel == null)
 		{
 			procTableModel = new ProcessesListPanelTableModel();
 			procTableModel.fill();
-			procTable = new SortingListTable(procTableModel, 
+			procTable = new SortingListTable(procTableModel,
 				procTableModel.columnWidths);
 			procTable.addMouseListener(
 				new MouseAdapter()
@@ -122,12 +105,12 @@ public class ProcessesListPanel extends ListPanel
 		}
 		//Get the correct row from the table model
 		int modelrow = procTable.convertRowIndexToModel(r);
-		ProcessesListPanelTableModel tablemodel = (ProcessesListPanelTableModel)procTable.getModel();			
+		ProcessesListPanelTableModel tablemodel = (ProcessesListPanelTableModel)procTable.getModel();
 		CompAppInfo cai = (CompAppInfo)tablemodel.getRowObject(modelrow);
 		openEditTab(cai);
 	}
 
-	
+
 	protected void doNew()
 	{
 	    String newName = JOptionPane.showInputDialog(
@@ -184,7 +167,7 @@ public class ProcessesListPanel extends ListPanel
 
 	private void openEditTab(CompAppInfo cai)
 	{
-		JTabbedPane tabbedPane = 
+		JTabbedPane tabbedPane =
 			CAPEdit.instance().getProcessesTab();
 		int n = tabbedPane.getTabCount();
 		for(int idx = 1; idx<n; idx++)
@@ -227,12 +210,9 @@ public class ProcessesListPanel extends ListPanel
 		}
 		catch (Exception ex)
 		{
-			CAPEdit.instance().getFrame().showError(
-				"Error attempting to delete process: " + ex);
-			Logger.instance().warning("Error attempting to delete process: " + ex);
-			PrintStream ps = Logger.instance().getLogOutput();
-			if (ps != null)
-				ex.printStackTrace(ps);
+			final String msg = "Error attempting to delete process";
+			log.atWarn().setCause(ex).log(msg);
+			CAPEdit.instance().getFrame().showError(msg + ": " + ex);
 		}
 		finally
 		{
@@ -246,17 +226,17 @@ public class ProcessesListPanel extends ListPanel
 	}
 }
 
-class ProcessesListPanelTableModel extends AbstractTableModel implements
-		SortingListTableModel {
-
+class ProcessesListPanelTableModel extends AbstractTableModel implements SortingListTableModel
+{
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	ArrayList<CompAppInfo> myvector = new ArrayList<CompAppInfo>();
-	static String columnNames[] = { 
+	static String columnNames[] = {
 		CAPEdit.instance().compeditDescriptions
-		.getString("ProcessListPanel.TableColumn1"), 
+		.getString("ProcessListPanel.TableColumn1"),
 		CAPEdit.instance().compeditDescriptions
-		.getString("ProcessListPanel.TableColumn2"), 
+		.getString("ProcessListPanel.TableColumn2"),
 		CAPEdit.instance().compeditDescriptions
-		.getString("ProcessListPanel.TableColumn3"), 
+		.getString("ProcessListPanel.TableColumn3"),
 		CAPEdit.instance().compeditDescriptions
 		.getString("ProcessListPanel.TableColumn4") };
 	static int columnWidths[] = { 10, 25, 10, 55 };
@@ -264,7 +244,7 @@ class ProcessesListPanelTableModel extends AbstractTableModel implements
 	static Class[] sortType = {Integer.class, String.class, Integer.class, String.class};
 	int sortedBy = -1;
 	int minProcId = -1;
-	
+
 	public ProcessesListPanelTableModel()
 	{
 		super();
@@ -273,7 +253,7 @@ class ProcessesListPanelTableModel extends AbstractTableModel implements
 		//that will be displayed on the list
 		minProcId = DecodesSettings.instance().minProcId;
 	}
-	
+
 	public void sortByColumn(int c)
 	{
 		Collections.sort(myvector, new ProcessesListComparator(c, sortType[c]));
@@ -303,14 +283,16 @@ class ProcessesListPanelTableModel extends AbstractTableModel implements
 				if (cai.getAppId().getValue() >= minProcId)
 					myvector.add(cai);
 			}
-			
+
 			if (sortedBy != -1)
 				sortByColumn(sortedBy);
 		}
 		catch(DbIoException ex)
 		{
-			CAPEdit.instance().getFrame().showError(CAPEdit.instance().compeditDescriptions
-					.getString("ProcessListPanel.FillError")+ " " + ex);
+			String msg = CAPEdit.instance().compeditDescriptions
+					.getString("ProcessListPanel.FillError");
+			log.atError().setCause(ex).log(msg);
+			CAPEdit.instance().getFrame().showError(msg + " " + ex);
 		}
 		finally
 		{
@@ -331,7 +313,7 @@ class ProcessesListPanelTableModel extends AbstractTableModel implements
 	public int getColumnCount() {
 		return columnNames.length;
 	}
-	
+
 	public String getColumnName(int col)
 	{
 		return columnNames[col];
@@ -353,7 +335,7 @@ class ProcessesListPanelTableModel extends AbstractTableModel implements
 		}
 		return null;
 	}
-	
+
 	public String getNameById(DbKey appId)
 	{
 		for(CompAppInfo cai : myvector)
@@ -362,10 +344,10 @@ class ProcessesListPanelTableModel extends AbstractTableModel implements
 				return cai.getAppName();
 		}
 		return "";
-		
+
 	}
-	
-	
+
+
 	public static Object getNlColumn(CompAppInfo obj, int columnIndex) {
 		switch (columnIndex) {
 		case 0:
@@ -436,7 +418,10 @@ class ProcessesListComparator implements Comparator<CompAppInfo>
 				int i2 = (Integer)s2;
 				return i1 - i2;
 			}
-			catch(Exception ex) {}
+			catch(Exception ex)
+			{
+				/* fall through to string compare */
+			}
 		}
 
 		return ((String)s1).compareToIgnoreCase((String)s2);

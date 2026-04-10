@@ -22,14 +22,14 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 
 import org.opendcs.spi.properties.PropertyValueProvider;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.properties.PropertySettings;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class Property
 {
     private static ServiceLoader<PropertyValueProvider> loader = ServiceLoader.load(PropertyValueProvider.class);
-    private static final Logger log = LoggerFactory.getLogger(Property.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /**
      * Retrieve the real value of a property from a location that may be the value itself
      * or perhaps the environment as determined by a given provider.
@@ -70,7 +70,6 @@ public class Property
      * If the value cannot be retrieved null is returned.
      *
      * @param value value from a source such as the database or xml files
-     * @param defaultValue value returned if none founded
      * @param props Java Properties object to use for properties source
      * @param env env map to use for retrieving environment values.
      * @return expanded value

@@ -1,25 +1,39 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.excel;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
@@ -29,7 +43,6 @@ import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
-import org.apache.poi.ss.usermodel.CellType;
 
 import decodes.consumer.DataConsumer;
 import decodes.consumer.DataConsumerException;
@@ -59,13 +72,13 @@ import decodes.decoder.TimeSeries;
  */
 public class ExcelConsumer extends DataConsumer
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The Directory where the xls files will be stored */
 	private String xlsFilesDirectory;
 	/** The directory as a File object. */
 	private File directory;
 	/** Local copy of properties */
 	private Properties props;
-	private String module = "ExcelConsumer";
 	private HashMap<String, ExcelWorkBook> excelWorkBookList;
 	private boolean msgPerXlsFile;
 	private ArrayList<ExcelColumn> columns;
@@ -192,17 +205,13 @@ public class ExcelConsumer extends DataConsumer
 		}
 		catch(UnknownPlatformException ex)
 		{
-			Logger.instance().warning(module + 
-					" Skipping Excel ingest for data from "
-					+ "unknown platform: " + ex);
+			log.atWarn().setCause(ex).log("Skipping Excel ingest for data from unknown platform.");
 			return;
 		}
 		Site platformSite = platform.getSite();
 		if (platformSite == null)
 		{
-			Logger.instance().warning(module + 
-					" Skipping Excel ingest for data from "
-					+ "unknown site, DCP Address = " + tm.getMediumId());
+			log.warn("Skipping Excel ingest for data from unknown site, DCP Address = {}" + tm.getMediumId());
 			return;
 		}
 		//Get the site name used to identify the workbooks
@@ -210,9 +219,9 @@ public class ExcelConsumer extends DataConsumer
 		String nameOfSite = siteName.getDisplayName();
 		if (nameOfSite == null || nameOfSite.equals(""))
 		{	//Just in case - we should never get in here
-			Logger.instance().warning(module + 
-					" Skipping Excel ingest for data from "
-					+ "unknown site, DCP Address = " + tm.getMediumId());
+			log.error("Skipping Excel ingest for data from unknown site, DCP Address = {}." +
+					  " This was the last attempt to determine an address.",
+					  tm.getMediumId());
 			return;
 		}
 		//We need to create an ExcelWorkBook obj for every site that is
@@ -380,34 +389,6 @@ public class ExcelConsumer extends DataConsumer
 		cell.setCellStyle(cellStyle);
 	}
     
-	private void createDateCell(HSSFWorkbook wb, HSSFSheet sheet, 
-			short rowNum, short column, HorizontalAlignment align, Date value)
-	{
-		GregorianCalendar cal;
-		cal = new GregorianCalendar(timeZoneObj);
-		cal.setTime(value);
-		//Calendar cal = new Calendar();
-		//cal.setTimeZone(timeZoneObj);
-		
-		//It is important to create a new cell style from the 
-		//workbook otherwise you can end up
-	    //modifying the built in style and effecting not only this cell but 
-		//other cells.
-		HSSFRow row = sheet.createRow(rowNum);
-		HSSFCell cell = row.createCell(column);
-		//cell.setCellValue(value);
-//		cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
-		cell.setCellType(CellType.NUMERIC);
-		cell.setCellValue(cal);
-		HSSFDataFormat format = wb.createDataFormat();
-		//cell.setCellValue(new Date());
-	    HSSFCellStyle cellStyle = wb.createCellStyle();
-//	    cellStyle.setDataFormat(
-//	    		HSSFDataFormat.getBuiltinFormat("m/d/yy h:mm"));
-	    cellStyle.setDataFormat(format.getFormat("MM/dd/yy HH:mm"));
-	    cellStyle.setAlignment(align);
-	    cell.setCellStyle(cellStyle);
-	}
 	
 	private void createNumberCell(HSSFWorkbook wb, HSSFSheet sheet, 
 			short rowNum, short column, HorizontalAlignment align, double value)
@@ -453,27 +434,18 @@ public class ExcelConsumer extends DataConsumer
 			DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmssSS");
 			String xlsFileName = siteName + "-" + 
 						dateFormat.format(currentDate) + ".xls";
-			FileOutputStream fileOut;
-			try
+			try(FileOutputStream fileOut = new FileOutputStream(xlsFilesDirectory
+											+ File.separator + xlsFileName))
 			{
-				fileOut = new FileOutputStream(xlsFilesDirectory
-											+ File.separator + xlsFileName);
 				wb.write(fileOut);
-			    fileOut.close();
-			} catch (FileNotFoundException ex)
+			} 
+			catch (IOException ex)
 			{
-				String errMsg = module + " Can not create xls file for " +
-						" site " + siteName + " " + ex.toString();
-				Logger.instance().warning(errMsg);
-			} catch (IOException ex)
-			{
-				String errMsg = module + " Can not create xls file for " +
-				" site " + siteName + " " + ex.toString();
-				Logger.instance().warning(errMsg);
+				log.atError().setCause(ex).log("Can not create xls file for  site {}", siteName);
 			}
 		}
 		else
-			Logger.instance().warning(module + " Workbook is null");
+			log.warn("Workbook is null");
 	}
 	
 	/**
@@ -565,8 +537,6 @@ public class ExcelConsumer extends DataConsumer
 		while ((d = findNextDate()) != null)
 		{ // Index under type
 			sampleColumnNum = 0;
-//			createStringCell(wb, sheet, sampleRowNum, sampleColumnNum,
-//					HSSFCellStyle.ALIGN_RIGHT, "" + rowIndex);
 			createIndexCell(wb, sheet, sampleRowNum, sampleColumnNum,
 					HorizontalAlignment.RIGHT, rowIndex);
 			
@@ -574,8 +544,6 @@ public class ExcelConsumer extends DataConsumer
 
 			createStringCell(wb, sheet, sampleRowNum, sampleColumnNum,
 					HorizontalAlignment.RIGHT, dateFormat.format(d));
-//			createDateCell(wb, sheet, sampleRowNum, sampleColumnNum,
-//										HSSFCellStyle.ALIGN_RIGHT, d);
 			//dateFormat.
 			sampleColumnNum++;
 			for (ExcelColumn col : columns)
@@ -603,11 +571,6 @@ public class ExcelConsumer extends DataConsumer
 			sampleRowNum++;
 			rowIndex++;
 		}
-		// Ajust the width of the second columns
-		//sheet.autoSizeColumn((short) 0);
-		//sheet.autoSizeColumn((short) 1);
-		//System.out.println("column 1 = " + sheet.getColumnWidth((short)1));
-		//sheet.setColumnWidth((short)1,(short)12);
 	
 	}
 	/** @return next date in any time series */

@@ -1,0 +1,40 @@
+<%--
+  ~  Copyright 2023 OpenDCS Consortium
+  ~
+  ~  Licensed under the Apache License, Version 2.0 (the "License");
+  ~  you may not use this file except in compliance with the License.
+  ~  You may obtain a copy of the License at
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~  Unless required by applicable law or agreed to in writing, software
+  ~  distributed under the License is distributed on an "AS IS" BASIS,
+  ~  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~  See the License for the specific language governing permissions and
+  ~  limitations under the License.
+  --%>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="icon" type="image/png" href="../resources/img/odcs-favicon.png"/>
+  <%-- Global stylesheets --%>
+  <link id="theme-link" href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+
+  <link href="/webjars/datatables.net-bs5/css/dataTables.bootstrap5.min.css" rel="stylesheet" type="text/css"/>
+  <link href="/webjars/datatables.net-responsive-bs5/css/responsive.bootstrap5.min.css" rel="stylesheet" type="text/css"/>
+  <link href="/webjars/datatables.net-buttons-bs5/css/buttons.bootstrap5.min.css" rel="stylesheet" type="text/css"/>
+  <link href="/webjars/datatables.net-select-bs5/css/select.bootstrap5.min.css" rel="stylesheet" type="text/css"/>
+
+  <%-- Global stylesheets --%>
+
+  <link href="/webjars/bootstrap-daterangepicker/css/bootstrap-daterangepicker.css" rel="stylesheet" type="text/css"/>
+  <link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" type="text/css" href="/webjars/select2/css/select2.min.css">
+  <link rel="stylesheet" type="text/css" href="/webjars/select2-bootstrap-5-theme/dist/select2-bootstrap-5-theme.min.css">
+
+  <link href="/resources/css/main.css" rel="stylesheet" type="text/css"/>
+  <link href="/resources/css/opendcs-shim.css" rel="stylesheet" type="text/css"/>
+
+  <title>OpenDCS Web Client</title>
+</head>

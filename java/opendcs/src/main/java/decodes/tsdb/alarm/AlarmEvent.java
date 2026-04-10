@@ -1,30 +1,31 @@
 /*
- * $Id$
- * 
  * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log$
- * Revision 1.1  2019/03/05 14:53:00  mmaloney
- * Checked in partial implementation of Alarm classes.
- *
- * Revision 1.4  2017/05/17 20:36:25  mmaloney
- * First working version.
- *
- * Revision 1.3  2017/03/30 20:55:19  mmaloney
- * Alarm and Event monitoring capabilities for 6.4 added.
- *
- * Revision 1.2  2017/03/21 12:17:09  mmaloney
- * First working XML and SQL I/O.
- *
  */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.alarm;
 
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.polling.DacqEvent;
 import decodes.sql.DbKey;
-import ilex.util.Logger;
 
 /**
  * Holds a pattern to be matched that define alarms coming
@@ -36,10 +37,11 @@ import ilex.util.Logger;
  */
 public class AlarmEvent
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private DbKey alarmEventId = DbKey.NullKey;
 	
 	/** Note: -1 means match any priority */
-	private int priority = Logger.E_WARNING;
+	private int priority = -1;
 	
 	private String pattern = null;
 	
@@ -93,8 +95,8 @@ public class AlarmEvent
 	 */
 	public boolean matches(DacqEvent evt)
 	{
-Logger.instance().debug2("AlarmEvent.matches() myPriority=" + priority + ", evt priority=" 
-+ evt.getEventPriority() + ", pattern='" + pattern + "'");
+		log.trace("AlarmEvent.matches() myPriority={}, evt priority={}, pattern='{}'",
+				  priority, evt.getEventPriority(), pattern);
 
 		if (priority != evt.getEventPriority())
 			return false;
@@ -109,16 +111,19 @@ Logger.instance().debug2("AlarmEvent.matches() myPriority=" + priority + ", evt 
 			try { rxPattern = Pattern.compile(pattern); }
 			catch(PatternSyntaxException ex)
 			{
-				Logger.instance().warning("Invalid regular expression '"
-					+ pattern + "': " + ex + " -- this alarm event definition is invalid.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Invalid regular expression '{}' -- this alarm event definition is invalid.", pattern);
 				rxPattern = null;
 				return false;
 			}
 		}
 		if (rxPattern.matcher(evt.getEventText()).find())
 			return true;
-else Logger.instance().debug2("-- No match for pattern '" + pattern + "'");
-
+		else
+		{
+			log.trace("-- No match for pattern '{}'", pattern);
+		}
 		return false;
 	}
 

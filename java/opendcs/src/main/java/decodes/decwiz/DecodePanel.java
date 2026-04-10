@@ -1,5 +1,17 @@
 /*
-* $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.decwiz;
 
@@ -18,8 +30,10 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.StringTokenizer;
 
-import ilex.util.Logger;
-import ilex.util.TeeLogger;
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.var.TimedVariable;
 import decodes.db.*;
 import decodes.consumer.DataConsumerException;
@@ -32,13 +46,14 @@ import decodes.decoder.DecoderException;
 import decodes.decoder.SummaryReportGenerator;
 import decodes.decoder.TimeSeries;
 import decodes.dbeditor.TraceDialog;
-import decodes.dbeditor.TraceLogger;
 import decodes.gui.TopFrame;
 import decodes.util.DecodesSettings;
 
-public class DecodePanel 
-	extends DecWizPanel
+public class DecodePanel extends DecWizPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
+	private static final String SHIFT_ERROR = "Invalid shift. Enter 'HH:MM:SS' or '-HH:MM:SS'.";
 	private BorderLayout borderLayout1 = new BorderLayout();
 	private JPanel northPanel = new JPanel();
 	private JButton startDecodeButton = new JButton();
@@ -51,26 +66,19 @@ public class DecodePanel
 	private JLabel shiftLabel = new JLabel();
 	private JTextField shiftField = new JTextField();
 	private GridBagLayout gridBagLayout1 = new GridBagLayout();
-	private TitledBorder titledBorder1 = new TitledBorder("");
 	private Border border1 = BorderFactory.createEtchedBorder(Color.white,
 		new Color(165, 163, 151));
 	private Border border2 = new TitledBorder(border1, "Time Shift");
 	private JPanel centerPanel = new JPanel();
 	private JPanel decodedDataPanel = new JPanel();
-	private TitledBorder titledBorder2 = new TitledBorder("");
 	private Border border3 = BorderFactory.createEtchedBorder(Color.white,
 		new Color(165, 163, 151));
 	private Border border4 = new TitledBorder(border3, "Decoded Data");
 	private JScrollPane decodedDataScrollPane = new JScrollPane();
 	private BorderLayout borderLayout2 = new BorderLayout();
 	private JTextArea decodedDataArea = new JTextArea();
-	private TitledBorder titledBorder3 = new TitledBorder("");
-	private Border border5 = BorderFactory.createEtchedBorder(Color.white,
-		new Color(165, 163, 151));
-	private Border border6 = new TitledBorder(border5, "Decoding Log");
 	private JPanel summaryPanel = new JPanel();
 	private BorderLayout borderLayout4 = new BorderLayout();
-	private TitledBorder titledBorder4 = new TitledBorder("");
 	private Border border7 = BorderFactory.createEtchedBorder(Color.white,
 		new Color(165, 163, 151));
 	private Border border8 = new TitledBorder(border7, "Decoding Summary");
@@ -88,10 +96,10 @@ public class DecodePanel
 	private TraceDialog traceDialog = null;
 	private PresentationGroup presentationGroup = null;
 	private SummaryReportGenerator sumRepGen = null;
-	private String shiftDatePatterns[] = 
+	private String shiftDatePatterns[] =
 		{ "yyyy/MM/dd HH:mm", "MM/dd HH:mm", "HH:mm",
 		  "yyyy/MM/dd HH:mm:ss", "MM/dd HH:mm:ss", "HH:mm:ss" };
-	private SimpleDateFormat dateFormat = 
+	private SimpleDateFormat dateFormat =
 		new SimpleDateFormat("yyyy/MM/dd HH:mm");
 	private Date fromDate = null;
 	private Date toDate = null;
@@ -106,9 +114,9 @@ public class DecodePanel
 		{
 			jbInit();
 		}
-		catch (Exception exception)
+		catch (Exception ex)
 		{
-			exception.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 		sumRepGen = new SummaryReportGenerator();
 		String tzs = DecodesSettings.instance().decwizTimeZone;
@@ -176,21 +184,21 @@ public class DecodePanel
 		});
 		this.add(northPanel, java.awt.BorderLayout.NORTH);
 		northPanel.add(startDecodeButton,
-			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 10), 0, 0));
 
 		northPanel.add(traceLogButton,
-			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0, 
+			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 10), 0, 0));
 
 		northPanel.add(maxMissingLabel,
-			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 2), 0, 0));
 		northPanel.add(maxMissingField,
-			new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(5, 0, 5, 10), 0, 0));
 		maxMissingField.setPreferredSize(new Dimension(80, 23));
@@ -199,31 +207,31 @@ public class DecodePanel
 		this.add(timeShiftPanel, java.awt.BorderLayout.SOUTH);
 
 		timeShiftPanel.add(timeShiftCheck,
-			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 2), 0, 0));
 		timeShiftPanel.add(fromLabel,
-			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 2), 0, 0));
 		timeShiftPanel.add(fromField,
 			new GridBagConstraints(2, 0, 1, 1, 0.4, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 0, 5, 0), 0, 0));
-		timeShiftPanel.add(toLabel, 
-			new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0, 
+		timeShiftPanel.add(toLabel,
+			new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 5, 5, 2), 0, 0));
-		timeShiftPanel.add(toField, 
-			new GridBagConstraints(4, 0, 1, 1, 0.4, 0.0, 
+		timeShiftPanel.add(toField,
+			new GridBagConstraints(4, 0, 1, 1, 0.4, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 0, 5, 0), 0, 0));
 		timeShiftPanel.add(shiftLabel,
-			new GridBagConstraints(5, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(5, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 0, 5, 2), 0, 0));
 		timeShiftPanel.add(shiftField,
-			new GridBagConstraints(6, 0, 1, 1, 0.2, 0.0, 
+			new GridBagConstraints(6, 0, 1, 1, 0.2, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 0, 5, 10), 0, 0));
 
@@ -286,7 +294,8 @@ public class DecodePanel
 			}
 			catch(NumberFormatException ex)
 			{
-				showError("Invalid shift. Enter 'HH:MM:SS' or '-HH:MM:SS'.");
+				log.atError().setCause(ex).log(SHIFT_ERROR);
+						showError(SHIFT_ERROR);
 				return false;
 			}
 		}
@@ -300,7 +309,8 @@ public class DecodePanel
 			}
 			catch(NumberFormatException ex)
 			{
-				showError("Invalid shift. Enter 'HH:MM:SS' or '-HH:MM:SS'.");
+				log.atError().setCause(ex).log(SHIFT_ERROR);
+				showError(SHIFT_ERROR);
 				shiftValue = 0L;
 				return false;
 			}
@@ -315,7 +325,8 @@ public class DecodePanel
 			}
 			catch(NumberFormatException ex)
 			{
-				showError("Invalid shift. Enter 'HH:MM:SS' or '-HH:MM:SS'.");
+				log.atError().setCause(ex).log(SHIFT_ERROR);
+				showError(SHIFT_ERROR);
 				shiftValue = 0L;
 				return false;
 			}
@@ -332,10 +343,10 @@ public class DecodePanel
 			return true;
 		for(String pat : shiftDatePatterns)
 		{
-			try 
+			try
 			{
 				dateFormat.applyPattern(pat);
-				fromDate = dateFormat.parse(ds); 
+				fromDate = dateFormat.parse(ds);
 				return true;
 			}
 			catch(ParseException ex) { }
@@ -352,13 +363,16 @@ public class DecodePanel
 			return true;
 		for(String pat : shiftDatePatterns)
 		{
-			try 
+			try
 			{
 				dateFormat.applyPattern(pat);
-				toDate = dateFormat.parse(ds); 
+				toDate = dateFormat.parse(ds);
 				return true;
 			}
-			catch(ParseException ex) { }
+			catch(ParseException ex)
+			{
+				log.atError().setCause(ex).log("Error with Pattern {}", pat);
+			}
 		}
 		showError("Invalid 'to' time, Enter YYYY/MM/DD HH:MM.");
 		return false;
@@ -410,20 +424,10 @@ public class DecodePanel
 			traceLogButton.setEnabled(true);
 		}
 		traceDialog.clear();
-		Logger origLogger = Logger.instance();
-		TraceLogger traceLogger = new TraceLogger(origLogger.getProcName());
-		traceLogger.setDialog(traceDialog);
-		TeeLogger teeLogger = new TeeLogger(origLogger.getProcName(), 
-			origLogger, traceLogger);
-		traceLogger.setMinLogPriority(origLogger.getMinLogPriority());
-		Logger.setLogger(teeLogger);
-
-//System.out.println("Decoding with platform '" + platform.makeFileName() + "'");
 		Site origSite = platform.getSite();
 		Site newSite = fileIdPanel.getSelectedSite();
 		if (newSite != null && newSite != origSite)
 		{
-//System.out.println("Setting site to '" + newSite.getDisplayName() + "'");
 			platform.setSite(newSite);
 		}
 		TransportMedium tm = null;
@@ -437,13 +441,12 @@ public class DecodePanel
 					+ "make sure the setting for Medium Type is correct.");
 				return;
 			}
-			try 
+			try
 			{
 				tm = fileIdPanel.rawMessage.getTransportMedium();
 			}
 			catch(UnknownPlatformException ex)
 			{
-//System.out.println("No TM associated in message, searching for matching script.");
 				for(Iterator it = platform.transportMedia.iterator();
 					it.hasNext(); )
 				{
@@ -452,13 +455,12 @@ public class DecodePanel
 						decodesScript.scriptName))
 					{
 						fileIdPanel.rawMessage.setTransportMedium(tm);
-//System.out.println("Set TM to '" + tm.getTmKey() + "'");
 						break;
 					}
 				}
 			}
 			fileIdPanel.rawMessage.setPlatform(platform);
-			decodedMessage = 
+			decodedMessage =
 				decodesScript.decodeMessage(fileIdPanel.rawMessage);
 			decodedMessage.applyScaleAndOffset();
 			decodedMessage.applySensorLimits();
@@ -469,25 +471,26 @@ public class DecodePanel
 
 			StringBufferConsumer consumer =
 				new StringBufferConsumer(new StringBuffer());
-//			String tzs = DecodesSettings.instance().decwizTimeZone;
 			String tzs = tm.getTimeZone();
 			if (tzs == null || tzs.length() == 0)
 				tzs = "UTC";
-			else if ( tzs.matches("^GMT.*[MAYN]$") ) 
+			else if ( tzs.matches("^GMT.*[MAYN]$") )
 				tzs = tzs.substring(0,tzs.length()-1);
 			tzs = tzs.trim();
 			OutputFormatter formatter = OutputFormatter.makeOutputFormatter(
-				fileIdPanel.getSelectedFormat(), TimeZone.getTimeZone(tzs), 
+				fileIdPanel.getSelectedFormat(), TimeZone.getTimeZone(tzs),
 				null, new Properties(), null);
-			formatter.formatMessage(decodedMessage, consumer); 
+			formatter.formatMessage(decodedMessage, consumer);
 			decodedDataArea.setText(consumer.getBuffer().toString());
-			try 
+			try
 			{
 				maxMissing = Integer.parseInt(maxMissingField.getText().trim());
 			}
 			catch(NumberFormatException ex)
 			{
-				showError("Max Missing must be an integer, defaulting to 4.");
+				final String msg = "Max Missing must be an integer, defaulting to 4.";
+				log.atError().setCause(ex).log(msg);
+				showError(msg);
 				maxMissing = 4;
 				maxMissingField.setText("4");
 			}
@@ -498,32 +501,32 @@ public class DecodePanel
 		}
 		catch(DecoderException ex)
 		{
+			log.atError().setCause(ex).log("Error decoding.");
 			showError("Error decoding: " + ex);
 		}
 		catch(DatabaseException ex)
 		{
+			log.atError().setCause(ex).log("Error in Decodes Database.");
 			showError("Error in DECODES Database: " + ex);
 		}
 		catch(OutputFormatterException ex)
 		{
-			System.err.println(ex);
-			ex.printStackTrace();
+			log.atError().setCause(ex).log("Error in Output Formatter.");
 			showError("Error in Output Formatter: " + ex);
 		}
 		catch(DataConsumerException ex)
 		{
+			log.atError().setCause(ex).log("Error in String Buffer Consumer.");
 			showError("Error in String Buffer Consumer: " + ex);
 		}
 		catch(Exception ex)
 		{
-			String msg = "Unexpected exception: " + ex;
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
-			showError("Unexpected exception: " + ex);
+			String msg = "Unexpected exception";
+			log.atError().setCause(ex).log(msg);
+			showError(msg + ": " + ex);
 		}
 		finally
 		{
-			Logger.setLogger(origLogger);
 			if (newSite != null && newSite != origSite && platform != null)
 				platform.setSite(origSite);
 		}
@@ -570,7 +573,7 @@ public class DecodePanel
 	public Date getLastTimeOfDecodedData() {
 		Date lastDate = null;
 		if ( decodedMessage != null )
-		{ 
+		{
 			for(Iterator tsit = decodedMessage.getAllTimeSeries(); tsit.hasNext();)
 			{
 				TimeSeries ts = (TimeSeries)tsit.next();

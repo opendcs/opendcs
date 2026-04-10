@@ -1,0 +1,21 @@
+{
+  "siteId" : null,
+  "sitenames" : {
+    "Stream" : "Stream test site"
+  },
+  "description" : "A stream site",
+  "latitude" : "38.575764",
+  "longitude" : "-121.478851",
+  "elevation" : 150.0,
+  "elevUnits" : "ft",
+  "nearestCity" : "Sacramento",
+  "timezone" : "UTC",
+  "state" : "CA",
+  "country" : "USA",
+  "region" : "Test",
+  "active" : true,
+  "locationType" : "Stream",
+  "publicName" : "Stream test site",
+  "properties" : { },
+  "lastModified" : 1736361778000
+}

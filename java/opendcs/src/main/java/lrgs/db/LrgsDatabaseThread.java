@@ -1,14 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.db;
 
@@ -21,11 +24,12 @@ import java.util.List;
 import java.util.TreeSet;
 
 import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.Properties;
 
 import ilex.util.AuthException;
-import ilex.util.Logger;
 import lrgs.lrgsmain.LrgsConfig;
 
 /**
@@ -39,9 +43,9 @@ LRGS modules. It performs the following functions:
   <li>Provides queues and a separate thread to do all database I/O</li>
 </ul>
 */
-public class LrgsDatabaseThread
-	extends Thread
+public class LrgsDatabaseThread extends Thread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "LrgsDb";
 
 	/** Event num meaning Can't connect. */
@@ -74,7 +78,7 @@ public class LrgsDatabaseThread
 	}
 
 	/**
-	 * Constructor. 
+	 * Constructor.
 	 */
 	private LrgsDatabaseThread()
 	{
@@ -123,7 +127,7 @@ public class LrgsDatabaseThread
 			{
 				if (lrgsDb != null)
 				{
-					info("dbUrl set to null -- closing database connection.");
+					log.info("dbUrl set to null -- closing database connection.");
 					lrgsDb.closeConnection();
 				}
 				lrgsDb = null;
@@ -131,7 +135,7 @@ public class LrgsDatabaseThread
 			}
 
 			// Am I already connected to the correct database?
-			if (lrgsDb != null 
+			if (lrgsDb != null
 			 && cfg.dbUrl.equals(lrgsDb.getDbUrl())
 			 && lrgsDb.isConnected())
 			{
@@ -157,21 +161,21 @@ public class LrgsDatabaseThread
 		lastConnectAttempt = System.currentTimeMillis();
 
 		String authFileName = "$LRGSHOME/.lrgsdb.auth";
-		try 
+		try
 		{
 			Properties credentials = AuthSourceService.getFromString(authFileName)
 										   .getCredentials();
 
 			String username = credentials.getProperty("username");
-			info("Attempting connection to db at '"
-				+ LrgsConfig.instance().dbUrl + "' as user '" + username + "'");
+			log.info("Attempting connection to db at '{}' as user '{}'",
+					 LrgsConfig.instance().dbUrl, username);
 
 			lrgsDb.connect(credentials);
-			info("Successful database connection");
+			log.info("Successful database connection");
 
 			if (_firstConnect)
 			{
-				debug("Reading data sources and outages.");
+				log.debug("Reading data sources and outages.");
 				dataSources.clear();
 				for(DataSource ds : lrgsDb.getDataSources(true))
 					dataSources.add(ds);
@@ -208,11 +212,11 @@ public class LrgsDatabaseThread
 		{
 			String msg = module + " Cannot read DB auth from configuration '"
 				+ authFileName;
-			throw new RuntimeException(msg,ex);
+			throw new RuntimeException(msg, ex);
 		}
 		catch(LrgsDatabaseException ex)
 		{
-			alarm(EVT_CANT_CONNECT, " Cannot connect to database: " + ex);
+			alarm(EVT_CANT_CONNECT, " Cannot connect to database.", ex);
 		}
 	}
 
@@ -247,21 +251,19 @@ public class LrgsDatabaseThread
 		{
 			ds.setLrgsHost(InetAddress.getLocalHost().getHostName());
 		}
-		catch (UnknownHostException e)
+		catch (UnknownHostException ex)
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.atTrace().setCause(ex).log("Unable to set Lrgs Hostname.");
 		}
 		dataSources.add(ds);
-		info("Queuing data source " + ds.getDataSourceType()
-			+ ":" + ds.getDataSourceName());
+		log.info("Queuing data source {}:{}", ds.getDataSourceType(), ds.getDataSourceName());
 		doEnqueue(ds);
 		return ds.getDataSourceId();
 	}
 
 	public synchronized void delete(LrgsDatabaseObject ldo)
 	{
-debug("Adding object to dbDeleteQueue.");
+		log.debug("Adding object to dbDeleteQueue.");
 		dbDeleteQueue.add(ldo);
 	}
 
@@ -284,7 +286,7 @@ debug("Adding object to dbDeleteQueue.");
 			for(LrgsDatabaseObject qldo : dbWriteQueue)
 				if (qldo == ldo)
 					return;
-debug("Adding object to dbWriteQueue.");
+			log.debug("Adding object to dbWriteQueue.");
 			dbWriteQueue.add(ldo);
 		}
 	}
@@ -296,7 +298,6 @@ debug("Adding object to dbWriteQueue.");
 	{
 		if (lrgsDb == null)
 		{
-//info("Clearing DB Queues.");
 			dbWriteQueue.clear();
 			dbDeleteQueue.clear();
 			return;
@@ -309,27 +310,19 @@ debug("Adding object to dbWriteQueue.");
 				if (ldo instanceof DataSource)
 				{
 					DataSource ds = (DataSource)ldo;
-					debug("Writing data source " + ds.getDataSourceType()
-						+ ":" + ds.getDataSourceName());
+					log.debug("Writing data source {}:{}", ds.getDataSourceType(), ds.getDataSourceName());
 					lrgsDb.saveDataSource(ds);
 				}
-				//MJM OpenDCS 6.2 does not support Outage recovery
-//				else if (ldo instanceof Outage)
-//				{
-//					Outage og = (Outage)ldo;
-//					debug("Writing Outage: " + og);
-//					lrgsDb.saveOutage(og);
-//				}
 				else if (ldo instanceof DdsConnectionStats)
 				{
 					DdsConnectionStats dcs = (DdsConnectionStats)ldo;
-					debug("Writing DdsConnectionStats");
+					log.debug("Writing DdsConnectionStats");
 					lrgsDb.logDdsConn(dcs);
 				}
 				else if (ldo instanceof DdsPeriodStats)
 				{
 					DdsPeriodStats dps = (DdsPeriodStats)ldo;
-					debug("Writing DdsPeriodStats");
+					log.debug("Writing DdsPeriodStats");
 					lrgsDb.logDdsPeriodStats(dps);
 				}
 			}
@@ -338,14 +331,14 @@ debug("Adding object to dbWriteQueue.");
 				LrgsDatabaseObject ldo = dbDeleteQueue.removeFirst();
 				if (ldo instanceof Outage)
 				{
-					debug("Deleting Outage: " + (Outage)ldo);
+					log.debug("Deleting Outage: {}", (Outage)ldo);
 					lrgsDb.deleteOutage((Outage)ldo);
 				}
 			}
 		}
 		catch(LrgsDatabaseException ex)
 		{
-			alarm(EVT_DB_ERROR, " Database error: " + ex);
+			alarm(EVT_DB_ERROR, " Database error", ex);
 			lrgsDb.closeConnection();
 		}
 	}
@@ -359,7 +352,7 @@ debug("Adding object to dbWriteQueue.");
 		}
 		catch(LrgsDatabaseException ex)
 		{
-			alarm(EVT_DB_ERROR, " Database error: " + ex);
+			alarm(EVT_DB_ERROR, " Database error", ex);
 			lrgsDb.closeConnection();
 		}
 	}
@@ -369,37 +362,26 @@ debug("Adding object to dbWriteQueue.");
 	 * currently defined in the system. Outages are sorted
 	 * by priority and begin time.
 	 */
-	public synchronized ArrayList<Outage> getOutages() 
+	public synchronized ArrayList<Outage> getOutages()
 	{
 		//MJM OpenDCS 6.2 does not support Outage recovery
 
 		ArrayList<Outage> ret = new ArrayList<Outage>();
-//		for(Outage otg : outages)
-//		{
-//			if (otg.getOutageType() == LrgsConstants.damsntOutageType)
-//			{
-//				int id = otg.getSourceId();
-//				DataSource ds = getDataSource(id);
-//				if (ds != null)
-//					otg.setDataSourceName(ds.getDataSourceName());
-//			}
-//			ret.add(otg);
-//		}
-//		Collections.sort(ret);
+
 		return ret;
 	}
 
 	/**
 	 * Retrieve the outages within a time range.
-	 * 
+	 *
 	 * @param ret List of outages
 	 * @param startTime specifies the time to start reading Outage records
 	 * @param endTime specifies the time to stop reading Outage records
-	 * 
+	 *
 	 * @deprecated @since 6.2
 	 */
 	@Deprecated /*(forRemoval = true, since = "6.2")*/
-	public synchronized void 
+	public synchronized void
 		getOutages(ArrayList<Outage> ret, Date startTime, Date endTime)
 	{
 		//MJM OpenDCS 6.2 does not support Outage recovery
@@ -421,7 +403,7 @@ debug("Adding object to dbWriteQueue.");
 
 	/**
 	 * Asserts an outage.
-	 * @param newout the outage	 
+	 * @param newout the outage
 	 * @deprecated @since 6.2
 	 */
 	@Deprecated /*(forRemoval = true, since = "6.2")*/
@@ -476,15 +458,15 @@ debug("Adding object to dbWriteQueue.");
 		{
 			try
 			{
-				List<DdsPeriodStats> ldps = 
-					lrgsDb.getPeriodStats(perStart, null); 
+				List<DdsPeriodStats> ldps =
+					lrgsDb.getPeriodStats(perStart, null);
 				for(DdsPeriodStats dps : ldps)
 					if (dps.getStartTime().equals(perStart))
 						return dps;
 			}
 			catch(LrgsDatabaseException ex)
 			{
-				Logger.instance().warning("Cannot read period stats: " + ex);
+				log.atWarn().setCause(ex).log("Cannot read period stats.");
 				lrgsDb.closeConnection();
 			}
 		}
@@ -502,31 +484,15 @@ debug("Adding object to dbWriteQueue.");
 			try { lrgsDb.terminateConnection(new Date(lastRunTime)); }
 			catch(LrgsDatabaseException ex)
 			{
-				Logger.instance().warning("Cannot terminate connections: "
-					+ ex);
+				log.atWarn().setCause(ex).log("Cannot terminate connections");
 				lrgsDb.closeConnection();
 			}
 		}
 	}
 
-	private void info(String msg)
+	private void alarm(int code, String msg, Throwable cause)
 	{
-		Logger.instance().info(module + " " + msg);
-	}
-
-	private void debug(String msg)
-	{
-		Logger.instance().debug1(module + " " + msg);
-	}
-
-	private void alarm(int code, String msg)
-	{
-		Logger.instance().failure(module + ":" + code + " " + msg);
-	}
-
-	private void failure(String msg)
-	{
-		Logger.instance().failure(module + " " + msg);
+		log.atError().setCause(cause).log("{} {}", code, msg);
 	}
 
 	public LrgsDatabase getLrgsDb()

@@ -1,78 +1,57 @@
-/**
- * $Id$
- * 
- * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * 
- * $Log$
- * Revision 1.9  2019/05/13 15:06:39  mmaloney
- * Fixed time zones in screening season selection.
- *
- * Revision 1.8  2019/04/22 13:51:41  mmaloney
- * Added debug
- *
- * Revision 1.7  2017/08/22 19:33:02  mmaloney
- * Improve comments
- *
- * Revision 1.6  2016/02/29 22:14:07  mmaloney
- * Removed nuisance debugs.
- *
- * Revision 1.5  2015/11/12 15:17:12  mmaloney
- * Added HEC headers.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.cwms.validation;
 
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.SortedSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
 
 import opendcs.dai.TimeSeriesDAI;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
 import ilex.var.Variable;
-import decodes.tsdb.BadTimeSeriesException;
-import decodes.tsdb.CTimeSeries;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.VarFlags;
 import decodes.tsdb.algo.AWAlgoType;
 
-//AW:IMPORTS
 import ilex.var.TimedVariable;
 import decodes.tsdb.ParmRef;
 import decodes.tsdb.IntervalIncrement;
 import decodes.cwms.CwmsFlags;
-import decodes.cwms.validation.Screening;
 import decodes.db.Site;
 import decodes.tsdb.TimeSeriesIdentifier;
-//AW:IMPORTS_END
-import decodes.util.PropertySpec;
 import decodes.util.TSUtil;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:JAVADOC
-/**
-Base-class for screening algorithm.
-Implemented by DatchkScreeningAlgorithm and CwmsScreeningAlgorithm.
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
- */
-//AW:JAVADOC_END
-public class ScreeningAlgorithm
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+@Algorithm(description = "Base-class for screening algorithm.\n" +
+"Implemented by DatchkScreeningAlgorithm and CwmsScreeningAlgorithm.")
+public class ScreeningAlgorithm	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double input;	//AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	@Input
+	public double input;
 
-//AW:LOCALVARS
 	Screening screening = null;
 	/** Must be overloaded by concrete class to find the screening. */
 	protected Screening getScreening(TimeSeriesIdentifier tsid)
@@ -80,45 +59,23 @@ public class ScreeningAlgorithm
 	{
 		return null;
 	}
+	
 	boolean _inputIsOutput = false;
 	public boolean inputIsOutput() { return _inputIsOutput; }
 	
-	PropertySpec algoPropSpecs[] =
-	{
-		new PropertySpec("noOverwrite", PropertySpec.BOOLEAN, "(default=false) "
-			+ "Set to true to disable overwriting of output parameter."),
-		new PropertySpec("setInputFlags", PropertySpec.BOOLEAN, "(default=false) "
-			+ "Set to true to set quality flags on the input parameter."),
-		new PropertySpec("setRejectMissing", PropertySpec.BOOLEAN, "(default=false) "
-			+ "If true and the value is REJECTED, set the output flags to MISSING."),
-		new PropertySpec("noOutputOnReject", PropertySpec.BOOLEAN, "(default=false) "
-			+ "If true and the value is REJECTED, then do not write output param at all. "
-			+ "Warning: This may leave a previous value for the output param at that time slice "
-			+ "unchanged.")
-	};
-	
-	@Override
-	protected PropertySpec[] getAlgoPropertySpecs()
-	{
-		return algoPropSpecs;
-	}
 
-
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
-
-//AW:PROPERTIES
+	
+	@PropertySpec(value = "false", description="(default=false) Set to true to disable overwriting of output parameter.")
 	public boolean noOverwrite = false;
+	@PropertySpec(value = "false", description="(default=false) Set to true to set quality flags on the input parameter.")
 	public boolean setInputFlags = false;
+	@PropertySpec(value = "false", description="(default=false) If true and the value is REJECTED, set the output flags to MISSING.")
 	public boolean setRejectMissing = false;
+	@PropertySpec(value = "false", description="(default=false) If true and the value is REJECTED, then do not write output param at all.\n" +
+	"Warning: This may leave a previous value for the output param at that time slice unchanged.")
 	public boolean noOutputOnReject = false;
-	String _propertyNames[] = { "noOverwrite", "setInputFlags", "setRejectMissing",
-		"noOutputOnReject" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
@@ -128,12 +85,7 @@ public class ScreeningAlgorithm
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -142,7 +94,6 @@ public class ScreeningAlgorithm
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		// This code will be executed once before iterating through all the time-slices
 		
 		// Find the Screening record
@@ -164,7 +115,7 @@ public class ScreeningAlgorithm
 			}
 			catch (Exception ex)
 			{
-				throw new DbCompException("No output tsid and can't retrieve: " + ex);
+				throw new DbCompException("No output tsid and can't retrieve." , ex);
 			}
 			finally
 			{
@@ -181,7 +132,7 @@ public class ScreeningAlgorithm
 		screening = getScreening(inputTsid);
 		if (screening == null)
 		{
-			warning("No screening defined for " + inputTsid.getUniqueString());
+			log.warn("No screening defined for {} ", inputTsid.getUniqueString());
 			return;
 		}
 		
@@ -190,7 +141,7 @@ public class ScreeningAlgorithm
 		IntervalIncrement tsinc = IntervalCodes.getIntervalCalIncr(inputTsid.getInterval());
 		boolean inputIrregular = tsinc == null || tsinc.getCount() == 0;
 
-		debug3("Retrieving additional data needed for checks.");
+		log.trace("Retrieving additional data needed for checks.");
 		ScreeningCriteria prevcrit = null;
 		for(int idx = 0; idx<inputParm.timeSeries.size(); idx++)
 		{
@@ -210,7 +161,7 @@ public class ScreeningAlgorithm
 				prevcrit = crit;
 			}
 		}
-		debug3("additional data done, #times needed=" + needed.size());
+		log.trace("additional data done, #times needed={}",needed.size());
 		
 		if (needed.size() > 0)
 		{
@@ -231,7 +182,7 @@ public class ScreeningAlgorithm
 			}
 			catch (Exception ex)
 			{
-				throw new DbCompException(ex.toString());
+				throw new DbCompException("Unable to fill input time series with required data.",ex);
 			}
 			finally
 			{
@@ -250,21 +201,18 @@ public class ScreeningAlgorithm
 			setOutputUnitsAbbr("output", euAbbr);
 		}
 		
-		if (screening.getCriteriaSeasons() != null)
+		if (screening.getCriteriaSeasons() != null && log.isDebugEnabled())
 		{
-			debug1("There are " + screening.getCriteriaSeasons().size() + " seasons in the screening:");
+			log.debug("There are {} seasons in the screening:", screening.getCriteriaSeasons().size());
 			for(ScreeningCriteria sc : screening.getCriteriaSeasons())
 			{
-				debug1("    " + 
+				log.debug("    {}", 
 					(sc.getSeasonStart() == null ? "<all year>" : 
 						(sc.getSeasonStart().get(Calendar.MONTH) + "/" 
 						 + sc.getSeasonStart().get(Calendar.DAY_OF_MONTH) + " " 
 						 + sc.getSeasonStart().getTimeZone().getID())));
 			}
 		}
-			
-		
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -280,12 +228,11 @@ public class ScreeningAlgorithm
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		ScreeningCriteria crit = 
 			screening != null ? screening.findForDate(_timeSliceBaseTime, aggTZ) : null;
 		if (crit == null)
 		{
-			warning("No criteria for time=" + debugSdf.format(_timeSliceBaseTime));
+			log.warn("No criteria for time={}", _timeSliceBaseTime);
 			// Treat no criteria the same as a screening where everything passes.
 			if (inputIsOutput())
 			{
@@ -295,29 +242,28 @@ public class ScreeningAlgorithm
 					return;
 				flags &= (~(CwmsFlags.VALIDITY_MASK | CwmsFlags.TEST_MASK));
 				flags |= (CwmsFlags.SCREENED | CwmsFlags.VALIDITY_OKAY);
-				info("input=output, input flags=0x" 
-					+ Integer.toHexString(inputV.getFlags()) + ", result flags=0x"
-					+ Integer.toHexString(flags));
+				log.info("input=output, input flags=0x{}, result flags=0x{}", 
+						 Integer.toHexString(inputV.getFlags()),
+						 Integer.toHexString(flags));
 				if (flags == inputV.getFlags())
 					return; // No changes to flags. Do not write output.
 			}
 			output.setValue(input);
 			clearFlagBits(output, CwmsFlags.VALIDITY_MASK | CwmsFlags.TEST_MASK);
 			setFlagBits(output, CwmsFlags.SCREENED | CwmsFlags.VALIDITY_OKAY);
-			info("Writing output flags=0x" + Integer.toHexString(output.getFlags()));
+			log.info("Writing output flags=0x{}", Integer.toHexString(output.getFlags()));
 			return;
 		}
 		
-		debug1("Time Slice " + debugSdf.format(_timeSliceBaseTime) + " selected screening season start="
-			+ (crit.getSeasonStart() == null ? "<all year>" : (crit.getSeasonStart().get(Calendar.MONTH) + "/" 
+		log.debug("Time Slice {} selected screening season start={}",
+				_timeSliceBaseTime,
+			 (crit.getSeasonStart() == null ? "<all year>" : (crit.getSeasonStart().get(Calendar.MONTH) + "/" 
 			 + crit.getSeasonStart().get(Calendar.DAY_OF_MONTH) + " " 
 			 + crit.getSeasonStart().getTimeZone().getID())));
 		
 		ParmRef inputParm = getParmRef("input");
 
 		crit.executeChecks(dc, inputParm.timeSeries, _timeSliceBaseTime, output, this);
-		
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -326,36 +272,9 @@ public class ScreeningAlgorithm
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
 		// For Aggregating algorithms, this is done after each aggregate
 		// period.
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }

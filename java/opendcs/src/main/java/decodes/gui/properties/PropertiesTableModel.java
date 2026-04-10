@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.gui.properties;
 
 import java.awt.Color;
@@ -5,13 +20,15 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.TreeSet;
 
 import javax.swing.table.AbstractTableModel;
 
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.gui.PropertiesEditDialog;
 import decodes.gui.TopFrame;
@@ -19,11 +36,12 @@ import decodes.util.DynamicPropertiesOwner;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
 import ilex.util.StringPair;
+import org.opendcs.annotations.api.PropertySpecValidator;
 import ilex.util.TextUtil;
 
 public class PropertiesTableModel extends AbstractTableModel
  {
-     private static final org.slf4j.Logger log = LoggerFactory.getLogger(PropertiesTableModel.class);
+     private static final Logger log = OpenDcsLoggerFactory.getLogger();
      private static ResourceBundle genericLabels = PropertiesEditDialog.getGenericLabels();
      /** The properties as a list of StringPair object. */
      private ArrayList<StringPair> props = new ArrayList<StringPair>();
@@ -39,6 +57,12 @@ public class PropertiesTableModel extends AbstractTableModel
      private boolean changed;
 
      private HashMap<String, PropertySpec> propHash = null;
+     
+     /** The algorithm or component class for annotation-based validation */
+     public Class<?> annotatedClass = null;
+     
+     /** Validator for annotation-based requirement groups */
+     private PropertySpecValidator annotationValidator = null;
 
      /** Constructs a new table model for the passed Properties set. */
      public PropertiesTableModel(Properties properties)
@@ -51,6 +75,32 @@ public class PropertiesTableModel extends AbstractTableModel
 
      public HashMap<String,PropertySpec> getPropHash() {
         return propHash;
+     }
+     
+     /**
+      * Set the annotated class for requirement validation
+      * @param clazz The class with PropertySpec annotations
+      */
+     public void setAnnotatedClass(Class<?> clazz) {
+         this.annotatedClass = clazz;
+         if (clazz != null) {
+             this.annotationValidator = new PropertySpecValidator(clazz);
+         } else {
+             this.annotationValidator = null;
+         }
+     }
+     
+     
+     /**
+      * Get current properties as a Map for validation
+      * @return Map of property names to their values
+      */
+     public Map<String, String> getCurrentPropertiesMap() {
+         Map<String, String> propertiesMap = new HashMap<>();
+         for (StringPair sp : props) {
+             propertiesMap.put(sp.first, sp.second);
+         }
+         return propertiesMap;
      }
 
      /**
@@ -65,22 +115,26 @@ public class PropertiesTableModel extends AbstractTableModel
      public void setPropHash(HashMap<String, PropertySpec> propHash)
      {
          this.propHash = propHash;
-         for (String ucName : propHash.keySet())
+         
+         if (propHash != null)
          {
-             boolean found = false;
-             for (StringPair prop : props)
+             for (String ucName : propHash.keySet())
              {
-                 if (prop.first.equalsIgnoreCase(ucName))
+                 boolean found = false;
+                 for (StringPair prop : props)
                  {
-                     found = true;
-                     break;
+                     if (prop.first.equalsIgnoreCase(ucName))
+                     {
+                         found = true;
+                         break;
+                     }
                  }
-             }
-             if (!found)
-             {
-                 StringPair sp = new StringPair(propHash.get(ucName).getName(), "");
-                 props.add(sp);
-                 log.trace("Added spec'ed property '{}'", sp.first);
+                 if (!found)
+                 {
+                     StringPair sp = new StringPair(propHash.get(ucName).getName(), "");
+                     props.add(sp);
+                     log.trace("Added spec'ed property '{}'", sp.first);
+                 }
              }
          }
          // Now remove the unassigned props that are no longer spec'ed
@@ -226,7 +280,8 @@ public class PropertiesTableModel extends AbstractTableModel
              return;
          }
          props.set(row, prop);
-         fireTableRowsUpdated(row, row);
+         // Fire table data changed to update requirement validation highlighting
+         fireTableDataChanged();
          changed = true;
      }
 
@@ -388,5 +443,34 @@ public class PropertiesTableModel extends AbstractTableModel
     public PropertiesOwner getPropertiesOwner()
     {
         return this.propertiesOwner;
+    }
+    
+    /**
+     * Check if all required properties are satisfied
+     * @return true if all requirements are met
+     */
+    public boolean areAllRequirementsSatisfied()
+    {
+        if (annotationValidator != null) 
+        {
+            PropertySpecValidator.ValidationResult result = 
+                annotationValidator.validate(getCurrentPropertiesMap());
+            return result.isValid();
+        }
+        return true;
+    }
+    
+    /**
+     * Check if a missing property violates any requirement groups and should be highlighted
+     * @param propertyName The property name (case-insensitive)
+     * @return true if the property should be highlighted as violating requirements
+     */
+    public boolean isMissingPropertyViolatingRequirements(String propertyName)
+    {
+        if (annotationValidator != null) 
+        {
+            return annotationValidator.isMissingPropertyViolatingRequirements(propertyName, getCurrentPropertiesMap());
+        }
+        return false;
     }
  }

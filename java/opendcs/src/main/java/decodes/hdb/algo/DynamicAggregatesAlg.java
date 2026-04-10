@@ -1,71 +1,65 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.algo;
 
 import java.util.Date;
 
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 
-
-
-
-
-
-//AW:IMPORTS
-// Place an import statements you need here.
 import java.util.TimeZone;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
-import decodes.hdb.HdbFlags;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 
-import ilex.util.DatePair;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
 // this new import was added by M. Bogner March 2013 for the 5.3 CP upgrade project
 // new class handles surrogate keys as an object
-import decodes.sql.DbKey;
 import decodes.tsdb.ParmRef;
 import decodes.hdb.dbutils.DBAccess;
 import decodes.hdb.dbutils.DataObject;
-import decodes.tsdb.DbCompException;
 import decodes.util.DecodesSettings;
-import decodes.util.PropertySpec;
-//import decodes.tsdb.DbCompConfig;
+
 import decodes.hdb.dbutils.RBASEUtils;
-//AW:IMPORTS_END
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:JAVADOC
-/**
-This algorithm is for aggregations across HDB expected intervals. 
-Will do any ORACLE based aggregation that takes only the one value 
-as the function  ie MAX(value)  so this algorithm can presently do:
-
-min, max, avg, count, sum, median, stddev, and variance
-
-specify the aggregate they desire by stating the oracle 
-function in the aggregate_name property  ie aggregate_name=sum
-
-MIN_VALUES_REQUIRED: setting to zero means use max number observations for interval 
-NO_ROUNDING: determines if rounding to the 5th decimal point is desired, default FALSE
- */
-//AW:JAVADOC_END
-public class DynamicAggregatesAlg
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+@Algorithm(description = "This algorithm is for aggregations across HDB expected intervals.\n" +
+	"Will do any ORACLE based aggregation that takes only the one value\n" + 
+	"as the function  ie MAX(value)  so this algorithm can presently do:\n\n" +
+	"min, max, avg, count, sum, median, stddev, and variance\n\n" +
+	"specify the aggregate they desire by stating the oracle \n" +
+	"function in the aggregate_name property  ie aggregate_name=sum\n\n" +
+	"MIN_VALUES_REQUIRED: setting to zero means use max number observations for interval\n" +
+	"NO_ROUNDING: determines if rounding to the 5th decimal point is desired, default FALSE")
+public class DynamicAggregatesAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double input;	//AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	@Input
+	public double input;
 
-//AW:LOCALVARS
 	// Enter any local class variables needed by the algorithm.
         // version 12 change by M. Bogner 2/2013 to add NO_ROUNDING property
         // version 1.0.13 moded by M. Bogner March 2013 for CP 5.3 project
@@ -81,71 +75,51 @@ public class DynamicAggregatesAlg
 	long mvr_count;
 	long mvd_count;
 	
-	PropertySpec specs[] = 
-	{
-		new PropertySpec("aggregate_name", PropertySpec.STRING,
-			"(required) The name of the Oracle aggregate function."),
-		new PropertySpec("min_values_required", PropertySpec.INT, 
-			"(default=1) No output produced if fewer than this many inputs in the aggregate period."),
-		new PropertySpec("min_values_desired", PropertySpec.INT, 
-			"(default=0) If fewer than this many inputs in the period, output flagged as a partial calculation."),
-		new PropertySpec("partial_calculations", PropertySpec.BOOLEAN, 
-			"(default=false) If true, then partial calcs are accepted but flagged as 'T' (temporary)."),
-		new PropertySpec("no_rounding", PropertySpec.BOOLEAN, 
-			"(default=false) If true, then no rounding is done on the output value."),
-		new PropertySpec("validation_flag", PropertySpec.STRING,
-			"(empty) Always set this validation flag in the output."),
-		new PropertySpec("negativeReplacement", PropertySpec.NUMBER, 
-			"(no default) If set, and output would be negative, then replace with the number supplied.")
-	};
 
 
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(name = "no_rounding", value = "false", description = "(default=false) If true, no rounding on output.")
 	public boolean no_rounding = false;
+	@PropertySpec(name = "partial_calculations", value = "false", description = "(default=false) If true, partial calcs are accepted but flagged 'T'.")
 	public boolean partial_calculations = false;
+	 @PropertySpec(name = "min_values_required", value = "1", description = "(default=1) No output produced if fewer than this many inputs in the aggregate period.")
 	public long min_values_required = 1;
+	@PropertySpec(name = "min_values_desired", value = "0", description = "(default=0) Output flagged as partial if fewer than this many inputs.")
 	public long min_values_desired = 0;
+	@PropertySpec(name = "aggregate_name", value = "NONE", description = "(required) The name of the Oracle aggregate function.")
 	public String aggregate_name = "NONE";
+	@PropertySpec(name = "validation_flag", value = "", description = "Always set this validation flag in the output.")
     public String validation_flag = "";
+	@PropertySpec(name = "negativeReplacement", value = "Double.NEGATIVE_INFINITY", description = "If set and output is negative, replace with this number.")
 	public double negativeReplacement = Double.NEGATIVE_INFINITY;
 
-	String _propertyNames[] = { "partial_calculations", "min_values_required", "min_values_desired", "aggregate_name",
-	"validation_flag","no_rounding", "negativeReplacement" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.AGGREGATING;
 		_aggPeriodVarRoleName = "output";
-//AW:INIT_END
-
-//AW:USERINIT
 		// Code here will be run once, after the algorithm object is created.
 		noAggregateFill = true;
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		// This code will be executed once before each group of time slices.
 		// For TimeSlice algorithms this is done once before all slices.
 		// For Aggregating algorithms, this is done before each aggregate
@@ -155,7 +129,6 @@ public class DynamicAggregatesAlg
 		do_setoutput = true;
 		flags = "";
 		date_out = null;
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -168,12 +141,10 @@ public class DynamicAggregatesAlg
 	 * @throw DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
-		// Enter code to be executed at each time-slice.
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -182,13 +153,13 @@ public class DynamicAggregatesAlg
 	@Override
 	protected void afterTimeSlices() throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
 		// For Aggregating algorithms, this is done after each aggregate
 		// period.
 		// calculate number of days in the month in case the numbers are for month derivations
-		  debug1("DynamicAggregates-"+alg_ver+" BEGINNING OF AFTER TIMESLICES: for period: " + _aggregatePeriodBegin + " SDI: " + getSDI("input") + "  MVR: " + min_values_required );
+		  log.debug("DynamicAggregates-{} BEGINNING OF AFTER TIMESLICES: for period: {} SDI: {}  MVR: {}",
+				  alg_ver, _aggregatePeriodBegin, getSDI("input"), min_values_required );
 		do_setoutput = true;
 //
 		// get the input and output parameters and see if its model data
@@ -217,16 +188,16 @@ public class DynamicAggregatesAlg
 		   if (mvr_count < 0 || mvd_count < 0)
 		   {
 
-		     warning("DynamicAggregatesAlg-"+alg_ver+" Warning: Illegal negative setting of minimum values criteria for non-Month aggregates");
-		     warning("DynamicAggregatesAlg-"+alg_ver+" Warning: Minimum values criteria for non-Month aggregates set to 1");
+		     log.warn("DynamicAggregatesAlg-{} Warning: Illegal negative setting of minimum values criteria for non-Month aggregates", alg_ver);
+		     log.warn("DynamicAggregatesAlg-{} Warning: Minimum values criteria for non-Month aggregates set to 1", alg_ver);
 		     if (mvd_count < 0) mvd_count = 1;
 		     if (mvr_count < 0) mvr_count = 1;
 		   }
 		   if ((input_interval.equalsIgnoreCase("instant") || output_interval.equalsIgnoreCase("hour")) && mvr_count == 0) 
 		   {
 
-		     warning("DynamicAggregatesAlg-"+alg_ver+" Warning: Illegal zero setting of minimum values criteria for instant/hour aggregates");
-		     warning("DynamicAggregatesAlg-"+alg_ver+" Warning: Minimum values criteria for instant/hour aggregates set to 1");
+		     log.warn("DynamicAggregatesAlg-"+alg_ver+" Warning: Illegal zero setting of minimum values criteria for instant/hour aggregates", alg_ver);
+		     log.warn("DynamicAggregatesAlg-"+alg_ver+" Warning: Minimum values criteria for instant/hour aggregates set to 1", alg_ver);
 		     mvr_count = 1;
 		   }
 		}
@@ -250,7 +221,7 @@ public class DynamicAggregatesAlg
 		if ( output_interval.equalsIgnoreCase("month")) 
 		{
 		   int days = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
-		   debug3("-"+alg_ver+"We have calculated that there are " + days + " days in this month");
+		   log.trace("-{} We have calculated that there are {} days in this month", alg_ver, days);
 		   //  now if the required numbers are negative then calculate based on total days in month
 		   if (mvr_count <= 0 && input_interval.equalsIgnoreCase("day")) mvr_count = days + mvr_count;
 		   if (mvr_count <= 0 && input_interval.equalsIgnoreCase("hr")) mvr_count = days*24 + mvr_count;
@@ -267,9 +238,11 @@ public class DynamicAggregatesAlg
 		   }
 		   else if (mvr_count == 0)
 		   {
-		     warning("DynamicAggregatesAlg-"+alg_ver+" Warning: Illegal zero setting of minimum values criteria for " 
-		     + input_interval + " to daily aggregates");
-		     warning("DynamicAggregatesAlg-"+alg_ver+" Warning: Minimum values criteria for daily aggregates set to 1");
+		     log.warn("DynamicAggregatesAlg-{} Warning: Illegal zero setting of minimum values criteria " +
+			 		  "for {} to daily aggregates",
+					  alg_ver, input_interval);
+		     log.warn("DynamicAggregatesAlg-{} Warning: Minimum values criteria for daily aggregates set to 1",
+			 		  alg_ver);
 		     if (mvd_count == 0) mvd_count = 1;
 		     if (mvr_count == 0) mvr_count = 1;
 		   }
@@ -284,7 +257,6 @@ public class DynamicAggregatesAlg
 					sdf.setTimeZone(
 							TimeZone.getTimeZone(
 								DecodesSettings.instance().aggregateTimeZone));
-	//                        DbCompConfig.instance().getAggregateTimeZone()));
 			String status = null;
 			DataObject dbobj = new DataObject();
 			dbobj.put("ALG_VERSION",alg_ver);
@@ -303,11 +275,11 @@ public class DynamicAggregatesAlg
 			status = db.performQuery(query,dbobj);
 			if (status.startsWith("ERROR")) 
 			{
-			warning("DynamicAggregatesAlg-"+alg_ver+" Aborted: see following error message");
-			warning(status);
+			log.warn("DynamicAggregatesAlg-{} Aborted: see following error message", alg_ver);
+		  	log.warn(status);
 			return;
 			}
-			debug3(query);
+			log.trace(query);
 			// do the aggregate query to get the aggregate value and the total_count of the records
 			String lower_limit = " >= ";
 			if(!aggLowerBoundClosed)
@@ -316,6 +288,8 @@ public class DynamicAggregatesAlg
 			if(aggUpperBoundClosed)
 			upper_limit = " <= ";
 
+			// TODO: use bind varss. Will it suck, yes, but it avoids sql injection attacks and will likely boost performance
+			// as the Oracle query planner will be able to save the plan
 			query = "select round(" + aggregate_name + "(value),7) result, count(*) total_count  from " +
 				table_selector + input_interval.toLowerCase() +
 					" where " + if_model_data + "  site_datatype_id = " + getSDI("input") + 
@@ -334,12 +308,12 @@ public class DynamicAggregatesAlg
 					}
 
 			status = db.performQuery(query,dbobj);
-			debug3(" SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
+			log.trace(" SQL STRING:{}   DBOBJ: {} STATUS: {}", query, dbobj.toString(), status);
 			// now see if the aggregate query worked if not the abort!!!
 			if (status.startsWith("ERROR")) 
 			{
-			warning("DynamicAggregatesAlg-"+alg_ver+" Aborted: see following error message");
-			warning(status);
+			 log.warn("DynamicAggregatesAlg-{} Aborted: see following error message", alg_ver);
+		     log.warn(status);
 			return;
 			}
 			// now see how many records were found for this aggregate
@@ -349,7 +323,8 @@ public class DynamicAggregatesAlg
 			//  delete any existing resultant value if this no records exist 
 			if (total_count == 0)
 			{
-					debug3("DynamicAggregates-"+alg_ver+" Aborted: No records: " + _aggregatePeriodBegin + " SDI: " + getSDI("input"));
+				log.trace("DynamicAggregates-{} Aborted: No records: {} SDI: {}",
+					  alg_ver, _aggregatePeriodBegin, getSDI("input"));
 				deleteOutput(output);
 				return;
 			}
@@ -359,17 +334,21 @@ public class DynamicAggregatesAlg
 			is_current_period = ((String)dbobj.get("is_current_period")).equalsIgnoreCase("Y");
 			if (!is_current_period && total_count < mvr_count) 
 			{
-			debug1("DynamicAggregates-"+alg_ver+" Aborted: Minimum required records not met for historic period: " + _aggregatePeriodBegin + " SDI: " + getSDI("input") + "  MVR: " + mvr_count + " RecordCount: " + total_count);
+			log.debug("DynamicAggregates-{} Aborted: Minimum required records not met for historic period: {} SDI: " +
+		  	 		  "{}  MVR: {} RecordCount: {}",
+		  		      alg_ver, _aggregatePeriodBegin, getSDI("input"), mvr_count, total_count);
 			do_setoutput = false; 
 			}
 			if (is_current_period && !partial_calculations && total_count < mvr_count) 
 			{
-			debug1("DynamicAggregates-"+alg_ver+" Aborted: Minimum required records not met for current period: " + _aggregatePeriodBegin + " SDI: " + getSDI("input") + "  MVR: " + mvr_count + " RecordCount: " + total_count);
+			log.debug("DynamicAggregates-{} Aborted: Minimum required records not met for current period: {} " +
+					  "SDI: {}  MVR: {} RecordCount: {}",
+			 		  alg_ver, _aggregatePeriodBegin, getSDI("input"), mvr_count, total_count);
 			do_setoutput = false; 
 			}
 	//
-			debug3("  MVRI: " + mvr_count + "  MVD: " + mvd_count + " do_setoutput:" + do_setoutput);
-			debug3("  ICP: " + is_current_period + "TotalCount: " + total_count);
+			log.trace("MVRI: {}  MVD: {} do_setoutout: {}", mvr_count, mvd_count, do_setoutput);
+			log.trace("ICP: {} TotalCount: {}", is_current_period, total_count);
 
 			// set the output if all is successful and set the flags appropriately
 			if (do_setoutput)
@@ -397,7 +376,7 @@ public class DynamicAggregatesAlg
 						tsdb.getWriteModelRunId(), table_selector);
 				}
 				Double value_out = Double.valueOf(dbobj.get("result").toString());
-				debug3("FLAGS: " + flags);
+				log.trace("FLAGS: {}", flags);
 				if (flags != null)
 					setHdbDerivationFlag(output, flags);
 				//
@@ -408,17 +387,17 @@ public class DynamicAggregatesAlg
 				// Added for HDB issue 386
 				if (value_out < 0.0 && negativeReplacement != Double.NEGATIVE_INFINITY)
 				{
-					debug1("Computed aggregate=" + value_out + ", will use negativeReplacement="
-						+ negativeReplacement);
+					log.debug("Computed aggregate={}, will use negativeReplacement={}",
+						  value_out, negativeReplacement);
 					value_out = negativeReplacement;
 				}
-				info("Setting output for agg period starting " + debugSdf.format(this._aggregatePeriodBegin));
+				log.info("Setting output for agg period starting {}", this._aggregatePeriodBegin);
 				setOutput(output, value_out);
 			}
 			// delete any existing value if this calculation failed
 			if (!do_setoutput)
 			{
-				info("Deleting output for agg period starting " + debugSdf.format(this._aggregatePeriodBegin));
+				log.info("Deleting output for agg period starting {}", this._aggregatePeriodBegin);
 				deleteOutput(output);
 			}
 		}
@@ -427,39 +406,6 @@ public class DynamicAggregatesAlg
 			throw new DbCompException("Unable to get connection.", ex);
 		}
 
-
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
-	}
-	
-	@Override
-	protected PropertySpec[] getAlgoPropertySpecs()
-	{
-		return specs;
 	}
 
 }

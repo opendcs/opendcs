@@ -1,18 +1,18 @@
 # Depends on having buildx available for the --mount feature
-FROM openjdk:8-jdk-bullseye as builder
+FROM eclipse-temurin:25-jdk-jammy AS builder
 
 RUN --mount=type=cache,target=/var/cache/apt \ 
     apt-get update && apt-get -y upgrade && \
-    apt-get install -y python3-venv python3-pip
+    apt-get install -y python3-venv python3-pip git
 WORKDIR /app
 
 COPY . .
 
 RUN --mount=type=cache,target=/root \
-    ./gradlew installDist -Dno.docs=true
+    ./gradlew installDist war -Dno.docs=true
 # end initial build
 
-FROM eclipse-temurin:11-jre-alpine as opendcs_base
+FROM eclipse-temurin:21-jre-alpine AS opendcs_base
 
 RUN apk upgrade --no-cache
 RUN apk add --no-cache \
@@ -22,18 +22,21 @@ RUN addgroup opendcs && \
 WORKDIR /opt/opendcs
 COPY --from=builder /app/install/build/install/opendcs/ /opt/opendcs
 COPY docker_scripts/env.sh /opt/opendcs/
+COPY docker_scripts/logback.xml /opt/opendcs/
 WORKDIR /opt/opendcs/bin
 RUN rm *.bat && \
     chmod +x /opt/opendcs/bin/*
 
-ENV DCSTOOL_HOME=/opt/opendcs DECODES_INSTALL_DIR=${DCSTOOL_HOME}
+ENV DCSTOOL_HOME=/opt/opendcs
+ENV DECODES_INSTALL_DIR=${DCSTOOL_HOME}
 ENTRYPOINT ["/opt/opendcs/env.sh"]
+LABEL org.opencontainers.image.source=https://github.com/opendcs/opendcs
+LABEL org.opencontainers.image.source=https://github.com/opendcs/opendcs/README.docker.md
 # end baseline setup
 
-FROM opendcs_base as lrgs
+FROM opendcs_base AS lrgs
 COPY docker_scripts/lrgs.sh /
 USER opendcs:opendcs
-VOLUME lrgs_home
 WORKDIR /lrgs_home
 ENV LRGSHOME=/lrgs_home
 ENV LRGS_ADMIN_PASSWORD=""
@@ -42,11 +45,10 @@ EXPOSE 16003
 CMD ["/lrgs.sh"]
 
 
-FROM opendcs_base as tsdbapp
+FROM opendcs_base AS tsdbapp
 COPY docker_scripts/tsdb_config.sh /opt/opendcs
 COPY docker_scripts/decodes.properties /opt/opendcs/decodes.properties.template
 USER opendcs:opendcs
-VOLUME /dcs_user_dir
 WORKDIR /dcs_user_dir
 ENV DCSTOOL_USERDIR=/dcs_user_dir
 ENV DATABASE_TYPE=xml
@@ -60,20 +62,49 @@ ENV DATATYPE_STANDARD=""
 ENV KEYGENERATOR=""
 ENV APPLICATION_NAME="RoutingScheduler"
 
-FROM tsdbapp as routingscheduler
+FROM tsdbapp AS routingscheduler
 COPY docker_scripts/routingscheduler.sh /
 RUN mkdir routstat
 
 CMD ["/routingscheduler.sh"]
 
-FROM tsdbapp as compproc
+FROM tsdbapp AS compproc
 COPY docker_scripts/compproc.sh /
 ENV APPLICATION_NAME="compproc"
 
 CMD ["/compproc.sh"]
 
-FROM tsdbapp as compdepends
+FROM tsdbapp AS compdepends
 COPY docker_scripts/compdepends.sh /
 ENV APPLICATION_NAME="compdepends"
 
 CMD ["/compdepends.sh"]
+
+
+FROM alpine:3.21.5 AS tomcat_base
+RUN apk --no-cache upgrade && \
+    apk --no-cache add \
+        openjdk21-jre \
+        curl \
+        bash
+
+RUN mkdir /download && \
+    cd /download && \
+    wget https://archive.apache.org/dist/tomcat/tomcat-11/v11.0.21/bin/apache-tomcat-11.0.21.tar.gz && \
+    echo "8f490ca1af18b11e718859619e4bdd692a65bf40bc5f03401d991680405f9662488b4f11ce4b060ee6b069087435b099188b035ae74c011987ccbb60447811e4 *apache-tomcat-11.0.21.tar.gz" > checksum.txt && \
+    sha512sum -c checksum.txt && \
+    tar xzf apache-tomcat-*tar.gz && \
+    mv apache-tomcat-11.0.21 /usr/local/tomcat/ && \
+    cd / && \
+    rm -rf /download && \
+    rm -rf /usr/local/tomcat/webapps/*
+CMD ["/usr/local/tomcat/bin/catalina.sh","run"]
+
+FROM tomcat_base AS web-api
+
+COPY --from=builder /app/java/opendcs-rest-api/build/libs/*.war /usr/local/tomcat/webapps/odcsapi.war
+COPY --from=builder /app/java/opendcs-web-ui/build/libs/*.war /usr/local/tomcat/webapps/ROOT.war
+COPY /docker_files/tomcat/conf/context.xml /usr/local/tomcat/conf/Catalina/localhost/odcsapi.xml
+COPY /docker_files/tomcat/conf/tomcat-server.xml /usr/local/tomcat/conf/server.xml
+COPY /docker_files/tomcat/conf/setenv.sh /usr/local/tomcat/bin
+ENV DCSTOOL_HOME="/opt/opendcs"

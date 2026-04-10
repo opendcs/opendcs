@@ -1,75 +1,73 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.algo;
 
-import java.util.Date;
 
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
-// this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS
-//AW:IMPORTS_END
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
-//AW:JAVADOC
-/**
-Flaming Gorge Unregulated Inflow Computation
-Takes Fontenelle Delta Storage and Evap from t-1 and
-adds them to Flaming Gorge Inflow to get Unregulated Inflow
- */
-//AW:JAVADOC_END
+
+@Algorithm(description = "Flaming Gorge Unregulated Inflow Computation\n" +
+"Takes Fontenelle Delta Storage and Evap from t-1 and\n" +
+"adds them to Flaming Gorge Inflow to get Unregulated Inflow")
 public class FLGUUnreg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double FTRWDeltaStorage;	//AW:TYPECODE=i
-	public double FTRWEvap;			//AW:TYPECODE=i
-	public double FLGUInflow;			//AW:TYPECODE=i
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	@Input
+	public double FTRWDeltaStorage;
+	@Input
+	public double FTRWEvap;
+	@Input
+	public double FLGUInflow;
 	
-	String _inputNames[] = { "FTRWDeltaStorage", "FTRWEvap", "FLGUInflow" };
-//AW:INPUTS_END
-
-//AW:LOCALVARS
-
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable unreg = new NamedVariable("unreg", 0);
-	String _outputNames[] = { "unreg" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "fail")
 	public String FTRWDeltaStorage_missing = "fail";
+	@PropertySpec(value = "fail")
 	public String FTRWEvap_missing 		= "fail";
+	@PropertySpec(value = "fail")
 	public String FLGUInflow_missing		= "fail";
-
-	String _propertyNames[] = { "FTRWDeltaStorage_missing", "FTRWEvap_missing", "FLGUInflow_missing"};
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 	{
-//AW:BEFORE_TIMESLICES
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -82,50 +80,23 @@ public class FLGUUnreg extends decodes.tsdb.algo.AW_AlgorithmBase
 	 * @throws DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		double sum = 0.0;
 		sum = FTRWDeltaStorage + FTRWEvap;
 		
-debug3("doAWTimeSlice, sum=" + sum + " unreg =" + (FLGUInflow + sum));
+		log.trace("doAWTimeSlice, sum={}, unreg = {}", sum, (FLGUInflow + sum));
 
 		setOutput(unreg, FLGUInflow + sum);
-//AW:TIMESLICE_END
 	}
 
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }

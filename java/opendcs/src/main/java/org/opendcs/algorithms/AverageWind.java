@@ -18,39 +18,27 @@ package org.opendcs.algorithms;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.var.NamedVariable;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.util.PropertySpec;
 
-//AW:IMPORTS
 import java.util.ArrayList;
-//AW:IMPORTS_END
 
-//AW:JAVADOC
-/**
- * Vector average of wind data.
- *
- * See any calculus text section on trapezoidal integration for more detail.
- *
- * @author L2EDDMAN
- *
- */
-//AW:JAVADOC_END
 @Algorithm(description = " Vector average of wind data.\n"
                        + "\n"
                        + "See any calculus text section on trapezoidal integration for more detail.\n")
 public class AverageWind extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-    public static final org.slf4j.Logger log = LoggerFactory.getLogger(AverageWind.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     @Input
     public double speed;
     @Input
     public double dir;
-    String _inputNames[] = { "speed", "dir" };
 
 
     long start_t;
@@ -64,15 +52,12 @@ public class AverageWind extends decodes.tsdb.algo.AW_AlgorithmBase
     public NamedVariable average_speed = new NamedVariable("average_speed", 0);
     @Output(type = Double.class)
     public NamedVariable average_dir = new NamedVariable("average_dir", 0);
-    String _outputNames[] = { "average_speed", "average_dir" };
-
 
 
     @org.opendcs.annotations.PropertySpec(propertySpecType = PropertySpec.INT,
                                           value = "1",
                                           description = "Minimum number of sample if which present an output will be calculated.")
     public long minSamplesNeeded = 1;
-    String _propertyNames[] = { "minSamplesNeeded" };
 
 
     // Allow javac to generate a no-args constructor.
@@ -172,8 +157,7 @@ public class AverageWind extends decodes.tsdb.algo.AW_AlgorithmBase
         }
         else
         {
-            warning("Do not have minimum # samples (" + minSamplesNeeded
-                + ") -- not producing an average.");
+            log.warn("Do not have minimum # samples ({}) -- not producing an average.", minSamplesNeeded);
             if (_aggInputsDeleted)
             {
                 deleteOutput(average_speed);
@@ -185,30 +169,5 @@ public class AverageWind extends decodes.tsdb.algo.AW_AlgorithmBase
         double diff_ms = diff/1000000.0;
         log.info(" Elapsed Time (ns) {}", diff );
         log.info("              (ms) {}", diff_ms);
-    }
-
-    /**
-     * Required method returns a list of all input time series names.
-     */
-    public String[] getInputNames()
-    {
-        return _inputNames;
-    }
-
-    /**
-     * Required method returns a list of all output time series names.
-     */
-    public String[] getOutputNames()
-    {
-        return _outputNames;
-    }
-
-    /**
-     * Required method returns a list of properties that have meaning to
-     * this algorithm.
-     */
-    public String[] getPropertyNames()
-    {
-        return _propertyNames;
     }
 }

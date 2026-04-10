@@ -1,0 +1,10 @@
+{
+  "appId": 8,
+  "appName": "River Flow Calculation",
+  "appType": "Computation",
+  "hostname": "localhost",
+  "pid": 8,
+  "heartbeat": "2024-12-30T19:49:39.141Z[UTC]",
+  "eventPort": 12345,
+  "status": "Starting"
+}

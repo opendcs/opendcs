@@ -1,10 +1,26 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package opendcs.opentsdb;
-
-import ilex.util.Logger;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.IntervalDAI;
 
@@ -15,8 +31,9 @@ import decodes.util.DecodesSettings;
 
 public class OpenTsdbSqlDbIO extends SqlDatabaseIO
 {
-
-	public OpenTsdbSqlDbIO() throws DatabaseException
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	public OpenTsdbSqlDbIO()
+		throws DatabaseException
 	{
 		this(null, null);
 	}
@@ -24,7 +41,7 @@ public class OpenTsdbSqlDbIO extends SqlDatabaseIO
 	public OpenTsdbSqlDbIO(javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
 	{
 		super(dataSource, settings);
-		Logger.instance().info("Constructing OpenTsdbSqlDbIO");
+		log.info("Constructing OpenTsdbSqlDbIO");
 		postConnectInit();
 	}
 
@@ -37,7 +54,7 @@ public class OpenTsdbSqlDbIO extends SqlDatabaseIO
 		try { intervalDAO.loadAllIntervals(); }
 		catch (DbIoException ex)
 		{
-			Logger.instance().warning("Cannot read intervals: " + ex);
+			log.atWarn().setCause(ex).log("Cannot read intervals.");
 		}
 		finally
 		{
@@ -58,7 +75,7 @@ public class OpenTsdbSqlDbIO extends SqlDatabaseIO
 		}
 		catch (SQLException ex)
 		{
-			Logger.instance().warning("Cannot convert date!");
+			log.atWarn().setCause(ex).log("Cannot convert date!");
 			return null;
 		}
 	}
@@ -70,7 +87,7 @@ public class OpenTsdbSqlDbIO extends SqlDatabaseIO
 			return "NULL";
 		return "" + d.getTime();
 	}
-	
+
 	@Override
 	public String sqlBoolean(boolean b)
 	{

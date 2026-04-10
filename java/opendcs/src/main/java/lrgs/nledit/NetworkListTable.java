@@ -1,32 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Source$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $State$
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  $Log$
-*  Revision 1.2  2008/08/19 16:38:15  mjmaloney
-*  DcpAddress stores internal value as String.
-*
-*  Revision 1.1  2008/04/04 18:21:15  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.5  2008/01/25 14:44:10  mmaloney
-*  modified files for internationalization
-*
-*  Revision 1.4  2002/02/09 21:25:34  mike
-*  Fixed bug: close cell editors before exit so last change is saved.
-*
-*  Revision 1.3  2001/02/23 03:04:01  mike
-*  Working version.
-*
-*  Revision 1.2  2001/02/21 14:49:29  mike
-*  dev
-*
-*  Revision 1.1  2001/02/21 13:19:29  mike
-*  Created nleditor
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.nledit;
 
@@ -36,17 +21,21 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.*;
 import javax.swing.table.*;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.*;
 import java.util.ResourceBundle;
 
-import lrgs.common.DcpAddress;
 import lrgs.common.NetworkListItem;
 
 public class NetworkListTable extends JTable
 {
-	private static ResourceBundle labels = 
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static ResourceBundle labels =
 		NetlistEditor.getLabels();
-	private static ResourceBundle genericLabels = 
+	private static ResourceBundle genericLabels =
 		NetlistEditor.getGenericLabels();
 	NetworkListTableModel model = null;
 	TableColumnModel columns;
@@ -104,13 +93,13 @@ public class NetworkListTable extends JTable
 		}
 		catch(IOException ioe)
 		{
-			String err = 
+			String err =
 				LoadResourceBundle.sprintf(
 				labels.getString("NetworkListTable.cannotLoadErr"),
-				filename) + ioe.toString();
-			System.err.println(err);
+				filename);
+			log.atError().setCause(ioe).log(err);
 			JOptionPane.showMessageDialog(this,
-				ilex.util.AsciiUtil.wrapString(err, 60), "Error!",
+				ilex.util.AsciiUtil.wrapString(err + ": " + ioe, 60), "Error!",
 				JOptionPane.ERROR_MESSAGE);
 		}
 	}
@@ -127,10 +116,10 @@ public class NetworkListTable extends JTable
 		{
 			String err = LoadResourceBundle.sprintf(
 					labels.getString("NetworkListTable.cannotLoadErr"),
-					filename) + ioe.toString();
-			System.err.println(err);
+					filename);
+			log.atError().setCause(ioe).log(err);
 			JOptionPane.showMessageDialog(this,
-				ilex.util.AsciiUtil.wrapString(err, 60), "Error!",
+				ilex.util.AsciiUtil.wrapString(err + ": " + ioe, 60), "Error!",
 				JOptionPane.ERROR_MESSAGE);
 		}
 	}
@@ -156,13 +145,13 @@ public class NetworkListTable extends JTable
 		}
 	}
 
-	public boolean isModified() 
+	public boolean isModified()
 	{
 		TableCellEditor tce = getCellEditor();
 		if (tce != null)
 			tce.stopCellEditing();
 
-		return model.isModified(); 
+		return model.isModified();
 	}
 
 	public void clear()
@@ -275,9 +264,9 @@ class DcpAddressEditor extends DefaultCellEditor
 {
 	JTextField textField;
 	JTable table;
-	private static ResourceBundle labels = 
+	private static ResourceBundle labels =
 		NetlistEditor.getLabels();
-	
+
 	public DcpAddressEditor(JTextField textField, JTable table)
 	{
 		super(textField);
@@ -295,9 +284,10 @@ class DcpAddressEditor extends DefaultCellEditor
 
 class DcpNameEditor extends DefaultCellEditor
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	JTextField textField;
 	JTable table;
-	private static ResourceBundle labels = 
+	private static ResourceBundle labels =
 		NetlistEditor.getLabels();
 	public DcpNameEditor(JTextField textField, JTable table)
 	{
@@ -317,7 +307,7 @@ class DcpNameEditor extends DefaultCellEditor
 				String err = LoadResourceBundle.sprintf(
 						labels.getString("NetworkListTable.badDCPNameErr"),
 						v);
-				System.err.println(err);
+				log.error(err);
 	    		JOptionPane.showMessageDialog(table,
 	    			ilex.util.AsciiUtil.wrapString(err, 60), "Error!",
 	    			JOptionPane.ERROR_MESSAGE);

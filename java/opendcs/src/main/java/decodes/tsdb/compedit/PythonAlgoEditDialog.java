@@ -1,16 +1,18 @@
 /*
- * $Id$
- * 
- * $Log$
- * Revision 1.1  2015/10/26 12:46:05  mmaloney
- * Additions for PythonAlgorithm
- *
- *
- * Open Source Software written by Cove Software, LLC under contract to the
- * U.S. Government.
- * 
- * Copyright 2015 U.S. Army Corps of Engineers Hydrologic Engineering Center
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.compedit;
 
 import java.awt.BorderLayout;
@@ -23,24 +25,17 @@ import decodes.tsdb.DbCompAlgorithm;
 import decodes.gui.GuiDialog;
 
 @SuppressWarnings("serial")
-public class PythonAlgoEditDialog 
-	extends GuiDialog
+public class PythonAlgoEditDialog extends GuiDialog
 {
 	private PythonAlgoEditPanel pythonAlgoEditPanel = null;
 
 	public PythonAlgoEditDialog(JFrame frame)
 	{
 		super(frame, "Python Algorithm Scripts", true);
-		
-		try 
-		{
-			guiInit();
-			pack();
-		}
-		catch(Exception ex) 
-		{
-			ex.printStackTrace();
-		}
+
+		guiInit();
+		pack();
+
 		trackChanges("PythonAlgoDialog");
 	}
 
@@ -76,11 +71,11 @@ public class PythonAlgoEditDialog
 		pythonAlgoEditPanel = new PythonAlgoEditPanel(this);
 		dlgPanel.add(pythonAlgoEditPanel, BorderLayout.CENTER);
 	}
-	
-	
 
-	/** 
-	  Called when OK button is pressed. 
+
+
+	/**
+	  Called when OK button is pressed.
 	*/
 	void okPressed()
 	{
@@ -93,6 +88,3 @@ public class PythonAlgoEditDialog
 		pythonAlgoEditPanel.saveToObject(ob);
 	}
 }
-
-
-

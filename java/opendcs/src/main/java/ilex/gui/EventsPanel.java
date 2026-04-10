@@ -1,30 +1,23 @@
 /*
-*	$Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*	$Log$
-*	Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*	OPENDCS 6.0 Initial Checkin
-*	
-*	Revision 1.1  2008/04/04 18:21:08  cvs
-*	Added legacy code to repository
-*	
-*	Revision 1.3  2005/09/19 21:30:39  mmaloney
-*	dev
-*	
-*	Revision 1.2  2005/01/11 15:13:45  mjmaloney
-*	Added boolean option to ctor to get rid of snap-check.
-*	
-*	Revision 1.1  2004/11/16 21:01:59  mjmaloney
-*	Created.
-*	
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package ilex.gui;
 
 import java.awt.*;
 import javax.swing.*;
-import javax.swing.event.*;
 import java.util.Vector;
-import java.awt.event.*;
 
 /**
 This class displays a scrolling list of events. It is usually placed
@@ -60,20 +53,14 @@ public class EventsPanel extends JPanel
 	public EventsPanel(boolean includeSnapCheck)
 	{
 		this.includeSnapCheck = includeSnapCheck;
-		try 
-		{
-			jbInit();
-			eventsList.setCellRenderer(new EventsCellRenderer());
-			snapCheck.setSelected(true);
-		}
-		catch(Exception ex) 
-		{
-			ex.printStackTrace();
-		}
+
+		jbInit();
+		eventsList.setCellRenderer(new EventsCellRenderer());
+		snapCheck.setSelected(true);
 	}
 
 	/** Initialize GUI components */
-	void jbInit() throws Exception 
+	void jbInit()
 	{
 		this.setLayout(borderLayout1);
 		jPanel1.setLayout(flowLayout1);
@@ -139,13 +126,10 @@ public class EventsPanel extends JPanel
 			if (p.y > 0)
 			{
 				vp.setViewPosition(p);
-				//eventsList.scrollRectToVisible(
-				//	new Rectangle(p.x, p.y, p.x + vpdim.width,
-				//		p.y + vpdim.height));
 			}
 		}
 	}
-	
+
 	public void clear()
 	{
 		listModel.clear();
@@ -181,8 +165,8 @@ class EventsListModel extends AbstractListModel
 		lines = new myvec();
 	}
 
-	/** 
-	 * Adds a line to the vector, retiring a chunk if the buffer is full. 
+	/**
+	 * Adds a line to the vector, retiring a chunk if the buffer is full.
 	 * @param line the string to add.
 	 */
 	void addLine(String line)
@@ -220,7 +204,7 @@ class EventsListModel extends AbstractListModel
 	{
 		return lines.size();
 	}
-	
+
 	public void clear()
 	{
 		int n = lines.size();
@@ -267,7 +251,6 @@ class EventsCellRenderer extends JLabel implements ListCellRenderer
 			else
 				setForeground(normalColor);
 		}
-//System.out.println("Rendered '" + value + "'");
 
 		return this;
 	}

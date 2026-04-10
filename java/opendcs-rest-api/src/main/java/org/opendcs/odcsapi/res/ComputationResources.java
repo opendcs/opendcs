@@ -1,0 +1,522 @@
+/*
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License")
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.opendcs.odcsapi.res;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
+import decodes.cwms.CwmsTimeSeriesDAO;
+import decodes.cwms.CwmsTsId;
+import decodes.db.DataType;
+import decodes.db.DatabaseException;
+import decodes.db.Site;
+import decodes.hdb.HdbTsId;
+import decodes.sql.DbKey;
+import decodes.tsdb.CompFilter;
+import decodes.tsdb.ComputationExecution;
+import decodes.tsdb.ConstraintException;
+import decodes.tsdb.DataCollection;
+import decodes.tsdb.DbCompParm;
+import decodes.tsdb.DbComputation;
+import decodes.tsdb.DbIoException;
+import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.ProgressListener;
+import decodes.tsdb.TimeSeriesIdentifier;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.sse.OutboundSseEvent;
+import jakarta.ws.rs.sse.Sse;
+import jakarta.ws.rs.sse.SseEventSink;
+import opendcs.dai.ComputationDAI;
+import opendcs.dai.SiteDAI;
+import opendcs.dai.TimeSeriesDAI;
+import org.opendcs.odcsapi.beans.ApiCompResults;
+import org.opendcs.odcsapi.beans.ApiComputation;
+import org.opendcs.odcsapi.beans.ApiComputationRef;
+import org.opendcs.odcsapi.beans.ApiTimeSeriesIdentifier;
+import org.opendcs.odcsapi.dao.DbException;
+import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
+import org.opendcs.odcsapi.errorhandling.MissingParameterException;
+import org.opendcs.odcsapi.errorhandling.WebAppException;
+import org.opendcs.odcsapi.util.APIStreamMapper;
+import org.opendcs.odcsapi.util.ApiConstants;
+import org.opendcs.odcsapi.util.DTOMappers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.slf4j.event.Level;
+
+@Path("/")
+public final class ComputationResources extends OpenDcsResource
+{
+	private static final Logger log = LoggerFactory.getLogger(ComputationResources.class);
+
+	@Context HttpHeaders httpHeaders;
+
+	@GET
+	@Path("computationrefs")
+	@Produces(MediaType.APPLICATION_JSON)
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
+	@Operation(
+			summary = "Retrieve Computation References",
+			description = "Example:  \n\n    http://localhost:8080/odcsapi/computationrefs",
+			tags = {"REST - Computation Methods"},
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Success",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									array = @ArraySchema(schema = @Schema(implementation = ApiComputationRef.class)))),
+					@ApiResponse(responseCode = "404", description = "No computations found matching the filter criteria"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+		)
+	public Response getComputationRefs(
+			@Parameter(schema = @Schema(implementation = Long.class),
+					description = "Site ID to filter on") @QueryParam("site") Long siteId,
+			@Parameter(schema = @Schema(implementation = Long.class),
+					description = "Algorithm ID to filter on") @QueryParam("algorithm") Long algorithmId,
+			@Parameter(schema = @Schema(implementation = Long.class),
+					description = "Datatype ID to filter on") @QueryParam("datatype") Long dataTypeId,
+			@Parameter(schema = @Schema(implementation = Long.class),
+					description = "Group ID to filter on") @QueryParam("group") Long groupId,
+			@Parameter(schema = @Schema(implementation = Long.class),
+					description = "Process ID to filter on") @QueryParam("process") Long processId,
+			@Parameter(schema = @Schema(implementation = Boolean.class),
+					description = "Whether to filter only enabled computations") @QueryParam("enabled") Boolean enabled,
+			@Parameter(schema = @Schema(implementation = String.class),
+					description = "Interval code to filter on") @QueryParam("interval") String interval)
+			throws DbException
+	{
+		try (ComputationDAI dai = getLegacyTimeseriesDB().makeComputationDAO())
+		{
+			CompFilter compFilter = new CompFilter();
+			if (dataTypeId != null)
+			{
+				compFilter.setDataTypeId(DbKey.createDbKey(dataTypeId));
+			}
+			if (groupId != null)
+			{
+				compFilter.setGroupId(DbKey.createDbKey(groupId));
+			}
+			if (processId != null)
+			{
+				compFilter.setProcessId(DbKey.createDbKey(processId));
+			}
+			if (siteId != null)
+			{
+				compFilter.setSiteId(DbKey.createDbKey(siteId));
+			}
+			if (interval != null)
+			{
+				compFilter.setIntervalCode(interval);
+			}
+			List<ApiComputationRef> computationRefs = APIStreamMapper.mapList(dai.listComps(compFilter::passes),
+					ApiComputationRef.class);
+			return Response.ok().entity(computationRefs).build();
+		}
+		catch(DbIoException ex)
+		{
+			throw new DbException("Unable to retrieve computation references", ex);
+		}
+	}
+
+
+
+	@GET
+	@Path("computation")
+	@Produces(MediaType.APPLICATION_JSON)
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
+	@Operation(
+			summary = "Retrieve Computation by its ID",
+			description = "Example: \n\n    http://localhost:8080/odcsapi/computation?computationid=4",
+			tags = {"REST - Computation Methods"},
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Success",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = ApiComputation.class))),
+					@ApiResponse(responseCode = "400", description = "Missing required computationid parameter"),
+					@ApiResponse(responseCode = "404", description = "Computation with the specified ID not found"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
+	public Response getComputation(@Parameter(required = true, description = "Unique Computation ID",
+			schema = @Schema(implementation = Long.class, example = "4"))
+		@QueryParam("computationid") Long compId)
+			throws WebAppException, DbException
+	{
+		if (compId == null)
+		{
+			throw new MissingParameterException("Missing required computationid parameter.");
+		}
+
+		try (ComputationDAI dai = getLegacyTimeseriesDB().makeComputationDAO())
+		{
+			return Response.ok()
+					.entity(DTOMappers.map(dai.getComputationById(DbKey.createDbKey(compId)))).build();
+		}
+		catch(DbIoException ex)
+		{
+			throw new DbException(String.format("Unable to retrieve computation by ID: %s", compId), ex);
+		}
+		catch (NoSuchObjectException ex)
+		{
+			throw new DatabaseItemNotFoundException(String.format("Computation with ID %s not found", compId), ex);
+		}
+	}
+
+	@POST
+	@Path("computation")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
+	@Operation(
+			summary = "Create or Overwrite Existing OpenDCS Computation",
+			description = "The Computation POST method takes a single OpenDCS Computation Record in JSON format,"
+					+ " as described above for GET.  \n\n"
+					+ "For creating a new record, leave computationId out of the passed data structure.  \n\n"
+					+ "For overwriting an existing one, include the computationId that was previously returned. "
+					+ "The computation in the database is replaced with the one sent.",
+			tags = {"REST - Computation Methods"},
+			requestBody = @RequestBody(
+					description = "Computation",
+					required = true,
+					content = @Content(mediaType = MediaType.APPLICATION_JSON,
+							schema = @Schema(implementation = ApiComputation.class),
+						examples = {
+								@ExampleObject(name = "Basic", value = ResourceExamples.ComputationExamples.BASIC),
+								@ExampleObject(name = "New", value = ResourceExamples.ComputationExamples.NEW),
+								@ExampleObject(name = "Update", value = ResourceExamples.ComputationExamples.UPDATE)
+						}
+					)
+			),
+			responses = {
+					@ApiResponse(responseCode = "201", description = "Successfully stored computation",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = ApiComputation.class))),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
+	public Response postComputation(ApiComputation comp)
+			throws DbException
+	{
+		try (ComputationDAI dai = getLegacyTimeseriesDB().makeComputationDAO())
+		{
+			DbComputation dbComp = DTOMappers.map(comp);
+			dai.writeComputation(dbComp);
+			return Response.status(Response.Status.CREATED).entity(DTOMappers.map(dbComp)).build();
+		}
+		catch(DbIoException | DatabaseException ex)
+		{
+			throw new DbException("Unable to store computation", ex);
+		}
+	}
+
+	@DELETE
+	@Path("computation")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
+	@Operation(
+			summary = "Delete Existing OpenDCS Computation",
+			description = "Required argument computationid must be passed in the URL.",
+			tags = {"REST - Computation Methods"},
+			responses = {
+					@ApiResponse(responseCode = "204", description = "Successfully deleted computation"),
+					@ApiResponse(responseCode = "400", description = "Missing required computationid parameter"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
+	public Response deleteComputation(@Parameter(required = true, description = "Unique Computation ID",
+			schema = @Schema(implementation = Long.class, example = "4"))
+		@QueryParam("computationid") Long computationId)
+			throws DbException, WebAppException
+	{
+		if (computationId == null)
+		{
+			throw new MissingParameterException("Missing required computationid parameter.");
+		}
+
+		try (ComputationDAI dai = getLegacyTimeseriesDB().makeComputationDAO())
+		{
+			dai.deleteComputation(DbKey.createDbKey(computationId));
+			return Response.noContent()
+					.entity(String.format("Computation with ID: %d deleted", computationId)).build();
+		}
+		catch(DbIoException | ConstraintException ex)
+		{
+			throw new DbException(String.format("Unable to delete computation by ID: %s", computationId), ex);
+		}
+	}
+
+	@GET
+	@Path("runcomputation")
+	@Produces(MediaType.SERVER_SENT_EVENTS)
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
+	@Operation(
+			summary = "Execute an Existing OpenDCS Computation",
+			description = "Endpoint takes in a computation name and a list of timeseries IDs to execute a computation. "
+					+ "Optionally takes in a start and end date for a time window to use for the computation",
+			tags = {"REST - Computation Methods"},
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Successfully initiated execution of computation",
+							content = {@Content(mediaType = MediaType.SERVER_SENT_EVENTS)}),
+					@ApiResponse(responseCode = "400", description = "Missing required computationid parameter"),
+					@ApiResponse(responseCode = "404", description = "Computation with the specified ID not found"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
+	public void runComputation(
+			@Context Sse sse,
+			@Context SseEventSink eventSink,
+			@Parameter(required = true, description = "Unique Computation ID",
+					schema = @Schema(implementation = Long.class, example = "4"))
+			@QueryParam("computationid") Long computationId,
+			@Parameter(required = true, description = "Parameter to specify the beginning of the time range to execute the computation on.",
+					schema = @Schema(implementation = Instant.class, example = "2025-10-25T12:00:00Z"))
+			@QueryParam("start") String start,
+			@Parameter(required = true, description = "Parameter to specify the end of the time range to execute the computation on",
+					schema = @Schema(implementation = Instant.class, example = "2025-10-25T12:00:00Z"))
+			@QueryParam("end") String end)
+			throws DbException, WebAppException
+	{
+		final String compStatus = "computation-status";
+
+		if(computationId == null)
+		{
+			throw new MissingParameterException("Missing required computationid parameter.");
+		}
+
+		try(ComputationDAI dai = getLegacyTimeseriesDB().makeComputationDAO();
+			TimeSeriesDAI tsDai = getLegacyTimeseriesDB().makeTimeSeriesDAO();
+			SiteDAI siteDai = getLegacyTimeseriesDB().makeSiteDAO())
+		{
+			DbComputation comp = dai.getComputationById(DbKey.createDbKey(computationId));
+
+			String taskID = UUID.randomUUID().toString();
+
+			final Instant startTime = Instant.parse(start);
+			final Instant endTime = Instant.parse(end);
+			Date startDate = Date.from(startTime);
+			Date endDate = Date.from(endTime);
+
+			List<TimeSeriesIdentifier> outputList = processOutputTsIds(comp, tsDai, siteDai, computationId, taskID, sse, eventSink);
+
+			final var contextMap = MDC.getCopyOfContextMap();
+			CompletableFuture.runAsync(() ->
+			{
+				OutboundSseEvent event = sse.newEventBuilder()
+						.name(compStatus)
+						.id(taskID)
+						.mediaType(MediaType.TEXT_PLAIN_TYPE)
+						.data(String.format("Running computation with ID: %s", computationId))
+						.build();
+				eventSink.send(event);
+
+				try
+				{
+					if (contextMap != null)
+					{
+						MDC.setContextMap(contextMap);
+					}
+					ComputationExecution execution = new ComputationExecution(createDb());
+					SseProgressListener listener = new SseProgressListener(eventSink, sse, compStatus, taskID);
+					ComputationExecution.CompResults results = execution.execute(List.of(comp), new DataCollection(), startDate, endDate, listener);
+
+					event = sse.newEventBuilder()
+							.name(compStatus)
+							.id(taskID)
+							.mediaType(MediaType.TEXT_PLAIN_TYPE)
+							.data(String.format("Computation executed with %d errors", results.numErrors()))
+							.build();
+					eventSink.send(event);
+
+					processOutput(outputList, taskID, sse, eventSink, startTime, endTime);
+				}
+				finally
+				{
+					try
+					{
+						eventSink.close();
+					}
+					catch(IOException ex)
+					{
+						log.error("Error closing SSE event sink", ex);
+					}
+					MDC.clear();
+				}
+			});
+		}
+		catch(NoSuchObjectException ex)
+		{
+			throw new DatabaseItemNotFoundException(String.format("Computation with ID %s not found", computationId), ex);
+		}
+		catch(DbIoException ex)
+		{
+			throw new DbException(String.format("Error retrieving computation to execute by ID: %s", computationId), ex);
+		}
+	}
+
+	private List<TimeSeriesIdentifier> processOutputTsIds(DbComputation comp, TimeSeriesDAI tsDai, SiteDAI siteDai,
+				Long computationId, String taskID, Sse sse, SseEventSink eventSink) throws DbIoException
+	{
+		List<TimeSeriesIdentifier> outputList = new ArrayList<>();
+		DbKey dataTypeId = null;
+		DataType dataType = null;
+		for(DbCompParm parm : comp.getParmList())
+		{
+			if(parm.getAlgoParmType().contains("o"))
+			{
+				boolean isCwms = tsDai instanceof CwmsTimeSeriesDAO;
+				TimeSeriesIdentifier identifier;
+				if(isCwms)
+				{
+					identifier = new CwmsTsId();
+					((CwmsTsId) identifier).setUtcOffset(parm.getDeltaT());
+					((CwmsTsId) identifier).setDuration(parm.getDuration());
+					((CwmsTsId) identifier).setVersion(parm.getVersion());
+					identifier.setPart("paramtype", parm.getParamType());
+				}
+				else
+				{
+					identifier = new HdbTsId();
+					if(parm.getSiteDataTypeId() != null && dataTypeId == null)
+					{
+						dataTypeId = parm.getSiteDataTypeId();
+						((HdbTsId) identifier).setSdi(parm.getSiteDataTypeId());
+					}
+					else if(parm.getDataTypeId() == null && dataTypeId != null)
+					{
+						((HdbTsId) identifier).setSdi(dataTypeId);
+					}
+					((HdbTsId) identifier).setModelId(parm.getModelId());
+					identifier.setTableSelector(parm.getTableSelector());
+				}
+				if(parm.getDataType() != null)
+				{
+					dataType = parm.getDataType();
+				}
+				identifier.setDataType(dataType);
+				identifier.setStorageUnits(parm.getUnitsAbbr());
+				identifier.setInterval(parm.getInterval());
+
+				try
+				{
+					Site site = siteDai.getSiteById(parm.getSiteId());
+					if(site != null)
+					{
+						identifier.setSiteName(site.getDisplayName());
+						identifier.setSite(site);
+					}
+					else
+					{
+						String name = comp.getProperty("reservoirId");
+						if(name != null && !name.isEmpty())
+						{
+							identifier.setSiteName(name);
+						}
+					}
+				}
+				catch(NoSuchObjectException ex)
+				{
+					log.error(String.format("Unable to retrieve site name for site ID: %s", parm.getSiteId()), ex);
+					OutboundSseEvent event = sse.newEventBuilder()
+							.name("ERROR")
+							.id(taskID)
+							.mediaType(MediaType.TEXT_PLAIN_TYPE)
+							.data(String.format("No site found with ID: %s for computation with ID: %s", parm.getSiteId().getValue(), computationId))
+							.build();
+					eventSink.send(event);
+				}
+				finally
+				{
+					outputList.add(identifier);
+				}
+			}
+		}
+		return outputList;
+	}
+
+	private void processOutput(List<TimeSeriesIdentifier> outputList, String taskID, Sse sse,
+			SseEventSink eventSink, Instant startDate, Instant endDate)
+	{
+		OutboundSseEvent event;
+		List<ApiTimeSeriesIdentifier> ids = APIStreamMapper.mapList(outputList, ApiTimeSeriesIdentifier.class);
+		ApiCompResults results = new ApiCompResults();
+		results.setEndTime(endDate.toString());
+		results.setStartTime(startDate.toString());
+		results.setTsIds(ids);
+
+		event = sse.newEventBuilder()
+				.name("Results")
+				.id(taskID)
+				.mediaType(MediaType.APPLICATION_JSON_TYPE)
+				.data(ApiCompResults.class, results)
+				.build();
+		eventSink.send(event);
+	}
+
+	private static final class SseProgressListener extends ProgressListener
+	{
+		private final SseEventSink eventSink;
+		private final Sse sse;
+		private final String name;
+		private final String taskId;
+
+		public SseProgressListener(SseEventSink eventSink, Sse sse, String name, String taskId)
+		{
+			this.eventSink = eventSink;
+			this.sse = sse;
+			this.name = name;
+			this.taskId = taskId;
+		}
+
+		@Override
+		public void onProgress(String message, Level logLevel, Throwable cause)
+		{
+			logEvent(message, logLevel, cause);
+			OutboundSseEvent event = sse.newEventBuilder()
+					.name(name)
+					.id(taskId)
+					.reconnectDelay(3000L)
+					.data(message)
+					.mediaType(MediaType.TEXT_PLAIN_TYPE)
+					.build();
+			eventSink.send(event);
+		}
+	}
+}

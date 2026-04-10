@@ -1,11 +1,18 @@
 /*
- *  $Id$
- *  
- *  $Log$
- *  Revision 1.1  2015/10/26 12:46:05  mmaloney
- *  Additions for PythonAlgorithm
- *
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.compedit;
 
 import decodes.util.DecodesSettings;
@@ -44,20 +51,13 @@ public class PyFuncSelectDialog extends JDialog
 		super(theFrame, "Select " + funcList.getListName() + " Function", true);
 		_cancelled = false;
 		this.funcList = funcList;
-		try
-		{
-			DecodesSettings settings = DecodesSettings.instance();
-			labels = LoadResourceBundle.getLabelDescriptions(
-					"decodes/resources/compedit",
-					settings.language);
-			guiInit();
-			pack();
-			getRootPane().setDefaultButton(insertButton);
-		}
-		catch (Exception ex)
-		{
-			ex.printStackTrace();
-		}
+		DecodesSettings settings = DecodesSettings.instance();
+		labels = LoadResourceBundle.getLabelDescriptions(
+				"decodes/resources/compedit",
+				settings.language);
+		guiInit();
+		pack();
+		getRootPane().setDefaultButton(insertButton);
 	}
 
 	void guiInit() {
@@ -108,16 +108,16 @@ public class PyFuncSelectDialog extends JDialog
 		JPanel descPanel = new JPanel(new BorderLayout());
 		descPanel.add(descPane, BorderLayout.CENTER);
 		descPanel.setBorder(new TitledBorder("Description"));
-		
+
 		JSplitPane middlePane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		middlePane.add(scrollPane, JSplitPane.TOP);
 		middlePane.add(descPanel, JSplitPane.BOTTOM);
 		middlePane.setResizeWeight(.75);
-		
+
 		thePanel.add(middlePane, BorderLayout.CENTER);
 		thePanel.add(buttonPanel, BorderLayout.SOUTH);
 		getContentPane().add(thePanel);
-		
+
 		tab.getSelectionModel().addListSelectionListener(
 				e -> updateDescription());
 	}
@@ -144,7 +144,7 @@ public class PyFuncSelectDialog extends JDialog
 		}
 		return new PyFunction("","","");
 	}
-	
+
 	void insertPressed()
 	{
 		_cancelled = false;
@@ -179,5 +179,3 @@ public class PyFuncSelectDialog extends JDialog
 		return labels.getString(name);
 	}
 }
-
-

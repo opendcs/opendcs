@@ -1,54 +1,44 @@
 /*
-*	$Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.dbeditor;
 
 import java.awt.*;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.Properties;
-import java.util.Date;
 import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.event.*;
-import javax.swing.table.*;
 import java.util.ResourceBundle;
 
-import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.TextUtil;
 
-import decodes.util.DecodesSettings;
 import decodes.util.DecodesException;
 
 import decodes.gui.TopFrame;
 import decodes.gui.GuiDialog;
-import decodes.gui.TableColumnAdjuster;
-import decodes.gui.EnumCellEditor;
-import decodes.db.Database;
 import decodes.db.DecodesScript;
-import decodes.db.FormatStatement;
-import decodes.db.ScriptSensor;
-import decodes.db.UnitConverterDb;
-import decodes.db.Constants;
 import decodes.db.PlatformConfig;
-import decodes.db.PresentationGroup;
-import decodes.db.Platform;
-import decodes.db.TransportMedium;
-
-import decodes.datasource.RawMessage;
-import decodes.datasource.GoesPMParser;
-import decodes.decoder.DecodedMessage;
-import decodes.consumer.StringBufferConsumer;
-import decodes.consumer.OutputFormatter;
 
 /**
 Dialog for editing a decoding script within the database editor.
 */
-public class DecodingScriptEditDialog 
-	extends GuiDialog
+public class DecodingScriptEditDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -86,7 +76,7 @@ public class DecodingScriptEditDialog
 		}
 		catch(Exception ex) 
 		{
-			ex.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 		trackChanges("DecodingScriptDialog");
 	}
@@ -97,15 +87,11 @@ public class DecodingScriptEditDialog
 		addWindowListener(
 			new WindowAdapter()
 			{
-				boolean started=false;
 				public void windowActivated(WindowEvent e)
 				{
-//					if (!started)
-//						scriptNameField.requestFocus();
-					started = true;
 				}
 			});
-		decodingScriptEditPanel.setTraceDialog(new TraceDialog(this, true));
+		decodingScriptEditPanel.setTraceDialog(new TraceDialog(this, false));
 	}
 
 	/** Fills in values from the object */
@@ -174,8 +160,9 @@ public class DecodingScriptEditDialog
 		}
 		catch (DecodesException ex)
 		{
-			TopFrame.instance().showError(
-				dbeditLabels.getString("DecodingScriptEditPanel.errorDecoding") + ex.getLocalizedMessage());
+			String msg = dbeditLabels.getString("DecodingScriptEditPanel.errorDecoding");
+			log.atError().setCause(ex).log(msg);
+			TopFrame.instance().showError(msg + ex.getLocalizedMessage());
 		}
 	}
 

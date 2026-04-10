@@ -1,12 +1,11 @@
 /*
- * $Id$
- * 
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
  * No warranty is provided or implied other than specific contractual terms 
  * between COVE and Alberta ESRD.
  *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +20,6 @@
  * limitations under the License.
  */
 package decodes.polling;
-
-import ilex.util.Logger;
 
 /**
  * Class used for matching patterns in the POLL Script WAIT command.
@@ -52,13 +49,10 @@ public class PatternMatcher
 		int mbidx = 0;
 		while(processIdx + pattern.length <= sessionBufLen)
 		{
-//Logger.instance().debug2("PatMat: looking for '" + new String(pattern) + "', sessIdx=" + sessionBufLen + ", procIdx=" + processIdx
-//+ ", mbidx=" + mbidx + ", patlen=" + pattern.length + ", c='" + (char)sessionBuf[processIdx + mbidx] + "'");
 			if (sessionBuf[processIdx + mbidx] == pattern[mbidx])
 			{
 				if (++mbidx >= pattern.length)
 				{	
-//Logger.instance().debug2("PatMat: Match!");
 					processIdx += mbidx;
 					return true;
 				}
@@ -69,7 +63,6 @@ public class PatternMatcher
 				processIdx++;
 			}
 		}
-//Logger.instance().debug2("PatMat: No match yet.");
 		return false;
 	}
 	

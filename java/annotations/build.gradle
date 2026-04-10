@@ -9,12 +9,23 @@ plugins
 // NOTE: this project should not contain any runtime dependencies
 // Build dependencies, such as google autowire are acceptable.
 
+dependencies 
+{
+    testImplementation enforcedPlatform(libs.junit.bom)
+    testImplementation(libs.bundles.junit)
+}
+
 
 publishing {
     publications {
         maven(MavenPublication) {
             artifactId = 'opendcs-annotations'
             from components.java
+
+            pom {
+                name = 'OpenDCS Annotations'
+                description = 'Contains Annotations and Annotation Processors for OpenDCS configuration elements.'
+            }
         }
     }
 }

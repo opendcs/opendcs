@@ -35,7 +35,7 @@ public class LddsMessage
     public static final char IdInstConfig    = 'q';
     public static final char IdDcpBlockExt   = 'r';
     public static final char IdUnused_6      = 's';
-    public static final char IdUnused_7      = 't';
+    public static final char IdStartTls      = 't';
     public static final char IdUser          = 'u';
 
     // Instance data:

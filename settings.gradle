@@ -12,8 +12,20 @@ project(":opendcs-annotations").projectDir=file("java/annotations")
 include ":opendcs-api"
 project(":opendcs-api").projectDir=file("java/opendcs-api")
 
+include ":opendcs-logback-event-provider"
+project(":opendcs-logback-event-provider").projectDir=file("java/opendcs-logback-event-provider")
+
+include ":lrgs-web"
+project(":lrgs-web").projectDir=file("java/lrgs-web")
+
 include ":opendcs"
 project(":opendcs").projectDir=file("java/opendcs")
+
+include(":opendcs-schemas")
+project(":opendcs-schemas").projectDir=file("schema/opendcs-schemas")
+
+include(":opendcs-schemas-cwms-oracle")
+project(":opendcs-schemas-cwms-oracle").projectDir=file("schema/opendcs-schemas-cwms-oracle")
 
 include ":testing"
 project(":testing").projectDir=file("integrationtesting")
@@ -29,3 +41,21 @@ project(":testing:opendcs-tests").projectDir=file("integrationtesting/opendcs-te
 
 include ":testing:manual"
 project(":testing:manual").projectDir=file("integrationtesting/manual")
+
+include ":testing:gui"
+project(":testing:gui").projectDir=file("integrationtesting/test-gui-examples")
+
+include ":opendcs-rest-api"
+project(":opendcs-rest-api").projectDir=file("java/opendcs-rest-api")
+
+include ":opendcs-web-ui"
+project(":opendcs-web-ui").projectDir=file("java/opendcs-web-ui")
+
+include ":opendcs-web-ui-react"
+project(":opendcs-web-ui-react").projectDir=file("javascript/opendcs-web-ui-react")
+
+include ":api-client-typescript"
+project(":api-client-typescript").projectDir=file("java/api-clients/api-client-typescript")
+
+include ":api-client-java"
+project(":api-client-java").projectDir=file("java/api-clients/api-client-java")

@@ -12,7 +12,6 @@ import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -22,12 +21,6 @@ import fixtures.TestConnectionOwner;
 public class DaoBaseTest 
 {
     TestConnectionOwner dbOwner = new NonPoolingConnectionOwner();
-
-    @BeforeAll
-    public static void setup() throws Exception
-    {
-        Class.forName("org.apache.derby.jdbc.EmbeddedDriver").newInstance();
-    }
 
     @BeforeEach
     public void create_db() throws Exception

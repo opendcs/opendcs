@@ -22,7 +22,7 @@ import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 import ilex.var.NamedVariable;
 import decodes.cwms.CwmsTimeSeriesDb;
@@ -33,10 +33,9 @@ import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.ParmRef;
 
 
-//AW:IMPORTS
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
-import hec.lang.Const;
+import decodes.cwms.HecConstants;
 
 import java.util.ArrayList;
 
@@ -51,7 +50,7 @@ import decodes.util.TSUtil;
                   "be *any* duplicate outputs for an input in the table.")
 public class CwmsReverseRatingSingleIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-    private static Logger log = LoggerFactory.getLogger(CwmsReverseRatingSingleIndep.class);
+    private static Logger log = OpenDcsLoggerFactory.getLogger();
     @Input(description = "Value used to perform lookup in the rating table.")
     public double indep;
 
@@ -138,9 +137,10 @@ public class CwmsReverseRatingSingleIndep extends decodes.tsdb.algo.AW_Algorithm
              && indepParmRef.timeSeries.getUnitsAbbr() != null
              && !indepParmRef.timeSeries.getUnitsAbbr().equalsIgnoreCase(punits[0]))
             {
-                debug1(module + " Converting indep units for time series "
-                    + indepParmRef.timeSeries.getTimeSeriesIdentifier().getUniqueString() + " from "
-                    + indepParmRef.timeSeries.getUnitsAbbr() + " to " + punits[0]);
+                log.debug(" Converting indep units for time series {} from {} to {}",
+                          indepParmRef.timeSeries.getTimeSeriesIdentifier().getUniqueString(),
+                          indepParmRef.timeSeries.getUnitsAbbr(),
+                          punits[0]);
                 TSUtil.convertUnits(indepParmRef.timeSeries, punits[0]);
             }
             // Likewise for the dependent param:
@@ -155,7 +155,7 @@ public class CwmsReverseRatingSingleIndep extends decodes.tsdb.algo.AW_Algorithm
         }
         catch (RatingException ex)
         {
-            throw new DbCompException("Cannot read rating for '" + specId + "': " + ex, ex);
+            throw new DbCompException("Cannot read rating for '" + specId + "'", ex);
         }
 
         indepTimes.clear();
@@ -209,7 +209,7 @@ public class CwmsReverseRatingSingleIndep extends decodes.tsdb.algo.AW_Algorithm
         //    <out-range-high-method>ERROR</out-range-high-method>
         // Consequently, always use the array type rating method and let the database
         // determine what happens.
-        // If NULL is the method then the dep output wil be set to Const.UNDEFINED_DOUBLE
+        // If NULL is the method then the dep output wil be set to HecConstants.UNDEFINED_DOUBLE
 
         try (Connection conn = tsdb.getConnection())
         {
@@ -218,7 +218,7 @@ public class CwmsReverseRatingSingleIndep extends decodes.tsdb.algo.AW_Algorithm
 
             for(int i=0; i<times.length; i++)
             {
-                if (depVals[i] != Const.UNDEFINED_DOUBLE)
+                if (depVals[i] != HecConstants.UNDEFINED_DOUBLE)
                 {
                     setOutput(dep, depVals[i], new Date(times[i]));
                 }

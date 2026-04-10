@@ -1,11 +1,26 @@
 /*
-* $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.rtstat;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import javax.swing.SwingUtilities;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.xml.XmlOutputStream;
 import lrgs.lrgsmon.DetailReportGenerator;
@@ -19,6 +34,7 @@ the frames 'client' connection to poll for status and events.
 */
 public class RtStatFrameThread extends Thread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private RtStatFrame myFrame;
 	private boolean isShutdown;
 	private DetailReportGenerator repgen;
@@ -45,8 +61,7 @@ public class RtStatFrameThread extends Thread
 			try { repgen.setHeader(headerFile); }
 			catch(IOException ex)
 			{
-				System.err.println("Cannot open header file '" + headerFile
-					+ "': " + ex);
+				log.atError().setCause(ex).log("Cannot open header file '{}'", headerFile);
 				System.exit(1);
 			}
 		}
@@ -90,7 +105,7 @@ public class RtStatFrameThread extends Thread
 				}
 				catch(Exception ex)
 				{
-					System.err.println("Error parsing status: " + ex);
+					log.atError().setCause(ex).log("Error parsing status.");
 				}
 			}
 			String events[] = myFrame.getEvents();
@@ -123,7 +138,7 @@ public class RtStatFrameThread extends Thread
 	/**
 	 * Update the frame in the GUI thread.
 	 */
-	public void updateStatus(final String status, 
+	public void updateStatus(final String status,
 		final String networkDcpStatus)
 	{
 		SwingUtilities.invokeLater(

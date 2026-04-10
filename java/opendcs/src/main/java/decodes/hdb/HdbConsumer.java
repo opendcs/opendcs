@@ -1,90 +1,30 @@
 /*
- *  $Id$
- *
- *  This is open-source software written by ILEX Engineering, Inc., under
- *  contract to the federal government. You are free to copy and use this
- *  source code for your own purposes, except that no part of this source
- *  code may be claimed to be proprietary.
- *
- *  Except for specific contractual terms between ILEX and the federal 
- *  government, this source code is provided completely without warranty.
- *  For more information contact: info@ilexeng.com
- *
- *  $Log$
- *  Revision 1.4  2017/08/22 19:51:03  mmaloney
- *  Refactor
- *
- *  Revision 1.3  2014/05/30 13:15:35  mmaloney
- *  dev
- *
- *  Revision 1.2  2014/05/28 13:09:31  mmaloney
- *  dev
- *
- *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- *  OPENDCS 6.0 Initial Checkin
- *
- *  Revision 1.8  2013/03/21 18:27:40  mmaloney
- *  DbKey Implementation
- *
- *  Revision 1.7  2012/09/06 23:40:12  mmaloney
- *  Skip sensor cleanly if no time series and can't create.
- *
- *  Revision 1.6  2012/07/25 15:47:04  mmaloney
- *  Major rewrite. Use HdbTsDb methods rather than duplicating all the code
- *  here for writing to HDB. This follows the model of the Cwms Consumer.
- *
- *  Revision 1.5  2012/06/06 19:04:37  mmaloney
- *  dev
- *
- *  Revision 1.4  2012/06/06 18:54:19  mmaloney
- *  dev
- *
- *  Revision 1.3  2012/06/06 18:42:36  mmaloney
- *  Added autoCreateTs feature.
- *
- *  Revision 1.2  2008/11/29 21:07:57  mjmaloney
- *  merge with opensrc
- *
- *  Revision 1.1  2008/11/15 01:04:00  mmaloney
- *  Moved from separate trees to common parent
- *
- *  Revision 1.8  2007/12/11 01:05:18  mmaloney
- *  javadoc cleanup
- *
- *  Revision 1.7  2007/08/30 21:04:44  mmaloney
- *  dev
- *
- *  Revision 1.6  2006/05/24 19:05:04  mmaloney
- *  dev
- *
- *  Revision 1.5  2006/05/22 14:05:39  mmaloney
- *  dev
- *
- *  Revision 1.4  2006/05/11 13:32:33  mmaloney
- *  DataTypes are now immutable! Modified all references. Modified SQL IO code.
- *
- *  Revision 1.3  2006/04/04 13:09:52  mmaloney
- *  completed.
- *
- *  Revision 1.1  2005/06/22 15:44:47  mjmaloney
- *  created.
- *
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb;
 
 import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.Properties;
 
-import org.opendcs.authentication.AuthSourceService;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.spi.authentication.AuthSource;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.TimeSeriesDAI;
-import ilex.util.AuthException;
-import ilex.util.Logger;
-import ilex.util.Pair;
 import ilex.util.TextUtil;
 import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
@@ -122,6 +62,7 @@ import decodes.tsdb.TimeSeriesDb;
  */
 public class HdbConsumer extends DataConsumer
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String module = "HdbConsumer";
 	
 	/** Connection to the database */
@@ -157,14 +98,13 @@ public class HdbConsumer extends DataConsumer
 			OpenDcsDatabase databases = DatabaseService.getDatabaseFor("decodes", DecodesSettings.instance());
 			// We now in this context we can only have an HDB database
 			hdbTsDb = databases.getLegacyDatabase(HdbTimeSeriesDb.class).get();
-			info("Connected to HDB Time Series Database");
+			log.info("Connected to HDB Time Series Database");
 			autoCreateTs = TextUtil.str2boolean(hdbTsDb.getProperty("autoCreateTs"));
 			timeSeriesDAO = hdbTsDb.makeTimeSeriesDAO();
 		}
 		catch (DatabaseException ex)
 		{
 			String msg = "Cannot connect to HDB Time Series DB: " + ex;
-			failure(msg);
 			throw new DataConsumerException(msg ,ex);
 		}
 	}
@@ -204,17 +144,13 @@ public class HdbConsumer extends DataConsumer
 		}
 		catch (UnknownPlatformException ex)
 		{
-			Logger.instance().warning(
-				"Skipping HDB ingest for data from " + "unknown platform: "
-					+ ex);
+			log.atWarn().setCause(ex).log("Skipping HDB ingest for data from unknown platform");
 			return;
 		}
 		Site platformSite = platform.getSite();
 		if (platformSite == null)
 		{
-			warning(
-				"Skipping HDB ingest for data from "
-				+ "unknown site, DCP Address=" + mediumId);
+			log.warn("Skipping HDB ingest for data from unknown site, DCP Address={}", mediumId);
 			return;
 		}
 
@@ -236,8 +172,9 @@ public class HdbConsumer extends DataConsumer
 				try { hdbTsId = resolveTsId(sensor, platform); }
 				catch (NoSuchObjectException ex)
 				{
-					warning("Skipping sensor " + sensor.getNumber() + " '"
-						+ sensor.getName() + "': " + ex);
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Skipping sensor {} '{}'", sensor.getNumber(), sensor.getName());
 					continue;
 				}
 				
@@ -256,16 +193,16 @@ public class HdbConsumer extends DataConsumer
 				}
 				catch (BadTimeSeriesException ex)
 				{
-					Logger.instance().failure(module + " Cannot save time series for '"
-						+ hdbTsId.getUniqueString() + "': " + ex);
+					log.atError()
+					   .setCause(ex)
+					   .log("Cannot save time series for '{}'", hdbTsId.getUniqueString());
 				}
 			}
 		}
 		catch(DbIoException ex)
 		{
-			String emsg = "Error writing message: " + ex;
-			failure(emsg);
-			throw new DataConsumerException(emsg);
+			String emsg = "Error writing message.";
+			throw new DataConsumerException(emsg,ex);
 		}
 		finally
 		{
@@ -336,8 +273,7 @@ public class HdbConsumer extends DataConsumer
 			}
 		if (hdbDt == null)
 		{
-			warning("Sensor " + sensor.getName()
-				+ " Cannot find HDB datatype or equivalent -- skipping.");
+			log.warn("Sensor {} Cannot find HDB datatype or equivalent -- skipping.", sensor.getName());
 			throw new NoSuchObjectException("No Data Type");
 		}
 		tsid.setDataType(hdbDt);
@@ -368,7 +304,7 @@ public class HdbConsumer extends DataConsumer
 			tsid.setPart(HdbTsId.MODELID_PART, modelIdS.trim());
 		
 		String uniqueStr = tsid.getUniqueString();
-		info("Looking up TSID for '" + uniqueStr + "'");
+		log.info("Looking up TSID for '{}'", uniqueStr);
 		HdbTsId dbtsid = null;
 		try
 		{
@@ -381,46 +317,31 @@ public class HdbConsumer extends DataConsumer
 			try { timeSeriesDAO.createTimeSeries(tsid); }
 			catch(NoSuchObjectException ex2)
 			{
-				warning("Time Series for '" + uniqueStr 
-					+ "' does not exist and cannot be created: " + ex2);
+				log.atWarn()
+				   .setCause(ex2)
+				   .log("Time Series for '{}' does not exist and cannot be created.", uniqueStr);
 				throw ex2; 
 			}
 			catch(DbIoException ex2)
 			{
-				warning("Error creating Time Series for '" + uniqueStr 
-					+ "': " + ex2);
+				log.atWarn().setCause(ex2).log("Error creating Time Series for '{}'", uniqueStr);
 				throw ex2;
 			}
 			catch (BadTimeSeriesException ex2)
 			{
-				warning("Bad Time Series for '" + uniqueStr 
-					+ "' -- does not exist and cannot be created: " + ex2);
-				new NoSuchObjectException("Bad Time Series '" + uniqueStr + "'"); 
+				log.atWarn()
+				   .setCause(ex2)
+				   .log("Bad Time Series for '{}' -- does not exist and cannot be created: ", uniqueStr);
+				new NoSuchObjectException("Bad Time Series '" + uniqueStr + "'", ex2);
 			}
 			dbtsid = tsid;
 		}
 		catch(DbIoException ex)
 		{
-			warning("Error looking up Time Series for '" + uniqueStr 
-				+ "': " + ex);
+			log.atError().setCause(ex).log("Error looking up Time Series for '{}'", uniqueStr);
 			throw ex;
 		}
 		return dbtsid;
 	}
 
-	private void failure(String msg)
-	{
-		String s = module + " " + (mediumId == null ? "" : mediumId+" ") + msg;
-		Logger.instance().failure(s);
-	}
-	private void warning(String msg)
-	{
-		String s = module + " " + (mediumId == null ? "" : mediumId+" ") + msg;
-		Logger.instance().warning(s);
-	}
-	private void info(String msg)
-	{
-		String s = module + " " + (mediumId == null ? "" : mediumId+" ") + msg;
-		Logger.instance().info(s);
-	}
 }

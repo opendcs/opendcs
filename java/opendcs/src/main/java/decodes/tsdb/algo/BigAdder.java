@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.algo;
 
 import decodes.tsdb.DbCompException;
@@ -5,6 +20,8 @@ import ilex.var.NamedVariable;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
 This algorithm is a modification of Scaler adder
@@ -14,22 +31,23 @@ Created by M. Bogner   May 2009
 		description ="Takes up to 20 input values labeled input1 ... input20. Multiplies\n" +
 				"them by coefficients supplied in properties coeff1 ... coeff20.\n" +
 				"Adds them together and produces a single output labeled 'output'.\n" +
-				"The property input_constant is added to the ouput result.\n" +
+				"The property input_constant is added to the output result.\n" +
 				"input_constant defaults to 0 if not supplied\n" +
 				"Values not assigned by computation are ignored.\n" +
 				"All coefficients default to 1.0 if not supplied." )
 public class BigAdder extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double input1;
 	@Input
-	public double input2;	
+	public double input2;
 	@Input
-	public double input3;	
+	public double input3;
 	@Input
-	public double input4;	
+	public double input4;
 	@Input
-	public double input5;	
+	public double input5;
 	@Input
 	public double input6;
 	@Input
@@ -45,21 +63,21 @@ public class BigAdder extends decodes.tsdb.algo.AW_AlgorithmBase
 	@Input
 	public double input12;
 	@Input
-	public double input13;	
+	public double input13;
 	@Input
-	public double input14;	
+	public double input14;
 	@Input
-	public double input15;	
+	public double input15;
 	@Input
-	public double input16;	
+	public double input16;
 	@Input
-	public double input17;	
+	public double input17;
 	@Input
-	public double input18;	
+	public double input18;
 	@Input
-	public double input19;	
+	public double input19;
 	@Input
-	public double input20;	
+	public double input20;
 
 	String alg_ver = "1.0.2";
 
@@ -159,7 +177,7 @@ public class BigAdder extends decodes.tsdb.algo.AW_AlgorithmBase
 	{
 		_awAlgoType = AWAlgoType.TIME_SLICE;
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -221,20 +239,28 @@ public class BigAdder extends decodes.tsdb.algo.AW_AlgorithmBase
 			tally += (input19 * coeff19);
 		if (!isMissing(input20))
 			tally += (input20 * coeff20);
-debug3("BigAdder doAWTimeSlice- " + alg_ver + " input1=" + input1 + ", coeff1=" + coeff1
-+", input2=" + input2 + ", coeff2=" + coeff2 + " input3=" + input3 + ", coeff3=" + coeff3);
-debug3("BigAdder doAWTimeSlice- " + alg_ver + " input4=" + input4 + ", coeff4=" + coeff4
-+", input5=" + input5 + ", coeff5=" + coeff5 + " input6=" + input6 + ", coeff6=" + coeff6);
-debug3("BigAdder doAWTimeSlice- " + alg_ver + " input7=" + input7 + ", coeff7=" + coeff7
-+", input8=" + input8 + ", coeff8=" + coeff8 + " input9=" + input9 + ", coeff9=" + coeff9);
-debug3("BigAdder doAWTimeSlice- " + alg_ver + " input11=" + input11 + ", coeff11=" + coeff11
-+", input12=" + input12 + ", coeff12=" + coeff12 + " input13=" + input13 + ", coeff13=" + coeff13);
-debug3("BigAdder doAWTimeSlice- " + alg_ver + " input14=" + input14 + ", coeff14=" + coeff14
-+", input15=" + input15 + ", coeff15=" + coeff15 + " input16=" + input16 + ", coeff16=" + coeff16);
-debug3("BigAdder doAWTimeSlice- " + alg_ver + " input17=" + input17 + ", coeff17=" + coeff17
-+", input18=" + input18 + ", coeff18=" + coeff18 + " input19=" + input19 + ", coeff19=" + coeff19);
-debug3("BigAdder doAWTimeSlice- " + alg_ver + " input20=" + input20 + ", coeff20=" + coeff20
-+":: tally= " + tally);
+		log.atTrace()
+		   .addKeyValue("input1", input1).addKeyValue("coeff1", coeff1)
+		   .addKeyValue("input2", input2).addKeyValue("coeff2", coeff2)
+		   .addKeyValue("input3", input3).addKeyValue("coeff3", coeff3)
+		   .addKeyValue("input4", input4).addKeyValue("coeff4", coeff4)
+		   .addKeyValue("input5", input5).addKeyValue("coeff5", coeff5)
+		   .addKeyValue("input6", input6).addKeyValue("coeff6", coeff6)
+		   .addKeyValue("input7", input7).addKeyValue("coeff7", coeff7)
+		   .addKeyValue("input8", input8).addKeyValue("coeff8", coeff8)
+		   .addKeyValue("input9", input9).addKeyValue("coeff9", coeff9)
+		   .addKeyValue("input10", input10).addKeyValue("coeff10", coeff10)
+		   .addKeyValue("input11", input11).addKeyValue("coeff11", coeff11)
+		   .addKeyValue("input12", input12).addKeyValue("coeff12", coeff12)
+		   .addKeyValue("input13", input13).addKeyValue("coeff13", coeff13)
+		   .addKeyValue("input14", input14).addKeyValue("coeff14", coeff14)
+		   .addKeyValue("input15", input15).addKeyValue("coeff15", coeff15)
+		   .addKeyValue("input16", input16).addKeyValue("coeff16", coeff16)
+		   .addKeyValue("input17", input17).addKeyValue("coeff17", coeff17)
+		   .addKeyValue("input18", input18).addKeyValue("coeff18", coeff18)
+		   .addKeyValue("input19", input19).addKeyValue("coeff19", coeff19)
+		   .addKeyValue("input20", input20).addKeyValue("coeff20", coeff20)
+		   .log("BigAdder doAWTimeSlice-{}: tally={}", alg_ver, tally);
 
 		setOutput(output, tally);
 	}

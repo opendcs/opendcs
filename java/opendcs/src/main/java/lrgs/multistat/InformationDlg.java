@@ -1,10 +1,17 @@
 /*
-* $Id: InformationDlg.java,v 1.1 2016/02/04 20:46:50 mmaloney Exp $
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-* $Log: InformationDlg.java,v $
-* Revision 1.1  2016/02/04 20:46:50  mmaloney
-* 6.2 RC01
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.multistat;
 
@@ -15,8 +22,7 @@ import java.awt.event.*;
 import javax.swing.*;
 import java.io.FileWriter;
 
-public class InformationDlg
-	extends JDialog
+public class InformationDlg extends JDialog
 {
 	JPanel panel1 = new JPanel();
 	BorderLayout borderLayout1 = new BorderLayout();
@@ -29,15 +35,10 @@ public class InformationDlg
 	public InformationDlg(Frame frame, String title, boolean modal)
 	{
 		super(frame, title, modal);
-		try
-		{
-			jbInit();
-			pack();
-		}
-		catch (Exception ex)
-		{
-			ex.printStackTrace();
-		}
+
+		jbInit();
+		pack();
+
 		this.setSize(new Dimension(400, 800));
 
 	}
@@ -48,7 +49,6 @@ public class InformationDlg
 	}
 
 	private void jbInit()
-		throws Exception
 	{
 		panel1.setLayout(borderLayout1);
 		closeButton.setText("Close");

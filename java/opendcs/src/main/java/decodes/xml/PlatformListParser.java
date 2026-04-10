@@ -1,23 +1,22 @@
 /*
-*  $Id$
-*  
-*  Open Source Software
-*  
-*  $Log$
-*  Revision 1.2  2015/04/15 19:59:47  mmaloney
-*  Fixed synchronization bugs when the same data sets are being processed by multiple
-*  routing specs at the same time. Example is multiple real-time routing specs with same
-*  network lists. They will all receive and decode the same data together.
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.4  2013/03/21 18:27:40  mmaloney
-*  DbKey Implementation
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import java.util.Date;
@@ -25,7 +24,6 @@ import java.util.Iterator;
 import decodes.db.*;
 import decodes.sql.DbKey;
 import ilex.util.TextUtil;
-import ilex.util.Logger;
 import java.io.IOException;
 import ilex.xml.*;
 
@@ -33,15 +31,14 @@ import ilex.xml.*;
  * Parses the platform list cross reference file. Populates PlatformList
  * with partial PlatformObjects.
  */
-public class PlatformListParser 
-	implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner,
-		TaggedBooleanOwner
+public class PlatformListParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner, TaggedBooleanOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
   /**
 	 * This is the object being parsed or written
 	 */
 	private PlatformList plist;
-	
+
 	private Date fileLMT;
 
 
@@ -66,7 +63,7 @@ public class PlatformListParser
 		plist = pl;
 		fileLMT = new Date();
 	}
-	
+
 	public void setFileLMT(Date lmt) { fileLMT = lmt; }
 
 	/**
@@ -95,8 +92,8 @@ public class PlatformListParser
 	 * @param atts attributes for this element
 	 * @throws SAXException on parse error
 	 */
-	public void startElement(XmlHierarchyParser hier, String namespaceURI, 
-		String localName, String qname, Attributes atts ) 
+	public void startElement(XmlHierarchyParser hier, String namespaceURI,
+		String localName, String qname, Attributes atts )
 		throws SAXException
 	{
 		if (localName.equalsIgnoreCase(XmlDbTags.PlatformXref_el))
@@ -111,10 +108,10 @@ public class PlatformListParser
 					XmlDbTags.PlatformId_at + " attribute");
 			DbKey platformId;
 			try { platformId = DbKey.createDbKey(Long.parseLong(str)); }
-			catch (NumberFormatException e)
+			catch (NumberFormatException ex)
 			{
 				throw new SAXException("PlatformXref " +
-					XmlDbTags.PlatformId_at + " must be a number");
+					XmlDbTags.PlatformId_at + " must be a number", ex);
 			}
 
 			// MJM 20041027 Check to see if this platform already exists.
@@ -124,8 +121,7 @@ public class PlatformListParser
 			if (platform != null)
 			{
 				platform = null;
-				Logger.instance().log(Logger.E_DEBUG3,
-					"Ignoring previously read platform ID=" + platformId);
+				log.trace("Ignoring previously read platform ID={}", platformId);
 				hier.pushObjectParser(new ElementIgnorer());
 			}
 			else
@@ -197,16 +193,14 @@ public class PlatformListParser
 
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
@@ -267,10 +261,10 @@ public class PlatformListParser
 			{
 				platform.expiration = Constants.defaultDateFormat.parse(str);
 			}
-			catch(Exception e)
+			catch(Exception ex)
 			{
 				throw new SAXException("Improper date format '" + str
-					+ "' (should be " + Constants.defaultDateFormat + ")");
+					+ "' (should be " + Constants.defaultDateFormat + ")", ex);
 			}
 			break;
 		case agencyTag:
@@ -290,10 +284,10 @@ public class PlatformListParser
 			{
 				platform.lastModifyTime = Constants.defaultDateFormat.parse(str);
 			}
-			catch(Exception e)
+			catch(Exception ex)
 			{
 				throw new SAXException("Improper last-modify date/time format '" + str
-					+ "' (should be " + Constants.defaultDateFormat + ")");
+					+ "' (should be " + Constants.defaultDateFormat + ")", ex);
 			}
 			break;
 		}

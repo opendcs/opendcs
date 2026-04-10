@@ -1,45 +1,17 @@
 /*
-*  $Id$
-*
-*  $State$
-*
-*  $Log$
-*  Revision 1.2  2015/07/17 13:24:22  mmaloney
-*  When building composite converter, use equals() method when comparing EU abbrevs.
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.1  2008/04/04 18:21:00  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.8  2004/08/25 19:31:12  mjmaloney
-*  Added javadocs & deprecated unused code.
-*
-*  Revision 1.7  2003/12/07 20:36:49  mjmaloney
-*  First working implementation of EDL time stamping.
-*
-*  Revision 1.6  2001/09/27 18:18:55  mike
-*  Finished rounding rules & eu conversions.
-*
-*  Revision 1.5  2001/09/27 00:57:23  mike
-*  Work on presentation elements.
-*
-*  Revision 1.4  2001/08/12 17:36:54  mike
-*  Slight architecture change for unit converters. The UnitConverterDb objects
-*  are now full-fledged DatabaseObjects and not derived from UnitConverter.
-*  This necessitated changes to DB parsing code and prepareForExec code.
-*
-*  Revision 1.3  2001/06/30 13:37:21  mike
-*  dev
-*
-*  Revision 1.2  2001/03/23 20:22:53  mike
-*  Collection classes are no longer static monostate. Access them through
-*  the current database (Database.getDb().collectionName)
-*
-*  Revision 1.1  2001/01/13 14:59:33  mike
-*  Implemented EU Conversions
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.db;
 
@@ -47,7 +19,8 @@ import java.util.Vector;
 import java.util.Iterator;
 import java.util.Stack;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.util.DecodesException;
 
@@ -60,7 +33,8 @@ inches -&gt; feet -&gt; meters -&gt; millimeters
 */
 public class CompositeConverter extends UnitConverter
 {
-	private Vector conversions;
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private Vector<UnitConverter> conversions;
 
 	/**
 	  Called from UnitConverterSet.findConversion.
@@ -68,15 +42,15 @@ public class CompositeConverter extends UnitConverter
 	  @param to EU we're converting to.
 	  @param conversions chain of UnitConverter objects to execute.
 	*/
-	private CompositeConverter(EngineeringUnit from, EngineeringUnit to,
-		Vector conversions)
+	public CompositeConverter(EngineeringUnit from, EngineeringUnit to,
+		Vector<UnitConverter> conversions)
 	{
 		super(from, to);
 		this.conversions = conversions;
 	}
 
 	/**
-	  This method will not be called because composits are built explicitly
+	  This method will not be called because composites are built explicitly
 	  from other conversions.
 	  @param coeff ignored
 	*/
@@ -96,7 +70,7 @@ public class CompositeConverter extends UnitConverter
 		int n = conversions.size();
 		for(int i = 0; i<n; i++)
 		{
-			UnitConverter uc = (UnitConverter)conversions.elementAt(i);
+			UnitConverter uc = conversions.elementAt(i);
 			value = uc.convert(value);
 		}
 		return value;
@@ -112,7 +86,7 @@ public class CompositeConverter extends UnitConverter
 		int n = conversions.size();
 		for(int i = 0; i<n; i++)
 		{
-			UnitConverter uc = (UnitConverter)conversions.elementAt(i);
+			UnitConverter uc = conversions.elementAt(i);
 			w += uc.getWeight();
 		}
 		return w;
@@ -133,23 +107,17 @@ public class CompositeConverter extends UnitConverter
 		 * assume that no direct conversion exists. Try to get there step
 		 * by step.
 		 */
-//		UnitConverter ret = Database.getDb().unitConverterSet.get(from, to);
-//		if (ret != null)
-//			return ret;
-
-		Logger.instance().log(Logger.E_DEBUG3, 
-			"Attempting to build composite converter from " + from + " to "
-			+ to);
+		log.trace("Attempting to build composite converter from {}, to {}.", from, to);
 
 		resetSearchedFlags();
 		Stack<UnitConverter> callStack = new Stack<UnitConverter>();
-		Vector solutions = new Vector();
+		Vector<UnitConverter> solutions = new Vector<>();
 		recursiveSearch(from, to, callStack, solutions);
 		UnitConverter best = null;
 		double bestWeight = Double.MAX_VALUE;
 		for(int i = 0; i < solutions.size(); i++)
 		{
-			UnitConverter uc = (UnitConverter)solutions.elementAt(i);
+			UnitConverter uc = solutions.elementAt(i);
 			double w = uc.getWeight();
 			if (w < bestWeight)
 			{
@@ -161,21 +129,21 @@ public class CompositeConverter extends UnitConverter
 	}
 
 	private static void recursiveSearch(EngineeringUnit from, 
-		EngineeringUnit to, Stack<UnitConverter> callStack, Vector solutions)
+		EngineeringUnit to, Stack<UnitConverter> callStack, Vector<UnitConverter> solutions)
 	{
 		from.cnvtSearched = true;
 
 		// First look for direct conversion to target.
-		for (Iterator it = Database.getDb().unitConverterSet.iteratorExec(); it.hasNext(); )
+		for (Iterator<UnitConverter> it = Database.getDb().unitConverterSet.iteratorExec(); it.hasNext(); )
 		{
-			UnitConverter uc = (UnitConverter)it.next();
+			UnitConverter uc = it.next();
 			if (!uc.getFrom().getAbbr().equalsIgnoreCase(from.getAbbr()))
 				continue;
 			if (uc.getTo().getAbbr().equalsIgnoreCase(to.getAbbr()))
 			{
 				callStack.push(uc);
 				CompositeConverter cc = new CompositeConverter(
-					(callStack.elementAt(0)).getFrom(), to, new Vector(callStack));
+					(callStack.elementAt(0)).getFrom(), to, new Vector<>(callStack));
 				solutions.add(cc);
 				callStack.pop();
 				return;
@@ -183,9 +151,9 @@ public class CompositeConverter extends UnitConverter
 		}
 
 		// No direct conversion. Do recursive branching.
-		for (Iterator it = Database.getDb().unitConverterSet.iteratorExec(); it.hasNext(); )
+		for (Iterator<UnitConverter> it = Database.getDb().unitConverterSet.iteratorExec(); it.hasNext(); )
 		{
-			UnitConverter uc = (UnitConverter)it.next();
+			UnitConverter uc = it.next();
 
 			// Skip if 'from' doesn't match or if I've already searched 'To'.
 			if (!uc.getFrom().getAbbr().equalsIgnoreCase(from.getAbbr()) || uc.getTo().cnvtSearched)

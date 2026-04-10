@@ -1,14 +1,17 @@
 /*
-*  $Id$
-*
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
-*
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.util;
 
@@ -16,6 +19,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Collection;
 import java.util.Random;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -23,7 +30,6 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import lrgs.common.DcpAddress;
 
 /**
@@ -31,6 +37,7 @@ This class holds the Platform Description Table.
 */
 public class Pdt
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Map of DCP Address to PDT Entry */
 	private HashMap<DcpAddress, PdtEntry> pdtMap;
 	private static Pdt _instance = null;
@@ -64,14 +71,14 @@ public class Pdt
 	 */
 	public synchronized boolean load(File file)
 	{
-		Logger.instance().debug1("Loading PDT from file '" + file.getPath() + "'");
+		log.debug("Loading PDT from file '{}'", file.getPath());
 
 		HashMap<DcpAddress, PdtEntry> tmpPdtMap = new HashMap<DcpAddress, PdtEntry>();
 
 		int badLines = 0;
-		try
+		try (FileReader reader = new FileReader(file))
 		{
-			LineNumberReader lnr = new LineNumberReader(new FileReader(file));
+			LineNumberReader lnr = new LineNumberReader(reader);
 			String line;
 			while( (line = lnr.readLine() ) != null)
 			{
@@ -84,8 +91,7 @@ public class Pdt
 				}
 				catch(BadPdtEntryException ex)
 				{
-					Logger.instance().warning(
-						"Bad PDT line " + lnr.getLineNumber() + ": " + ex);
+					log.atWarn().setCause(ex).log("Bad PDT line {}", lnr.getLineNumber());
 					badLines++;
 				}
 			}
@@ -93,14 +99,12 @@ public class Pdt
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("IO Error reading PDT File '" 
-				+ file.getPath() + "': " + ex + " -- Old PDT restored.");
+			log.atWarn().setCause(ex).log("IO Error reading PDT File '{}' -- Old PDT restored.", file.getPath());
 			return false;
 		}
 		pdtMap = tmpPdtMap;
-		Logger.instance().debug1(
-			"Parsed PDT File '" + file.getPath() + "' - " + pdtMap.size()
-			+ " entries, " + badLines + " unparsable lines.");
+		log.debug("Parsed PDT File '{}' - {} entries, {} unparsable lines.",
+				  file.getPath(), pdtMap.size(), badLines);
 		_isLoaded = true;
 		return true;
 	}
@@ -151,7 +155,7 @@ public class Pdt
 	 */
 	public void stopMaintenanceThread()
 	{
-		Logger.instance().debug3("Pdt.stopMaintenanceThread()");
+		log.trace("Pdt.stopMaintenanceThread()");
 		if (mthread != null)
 		{
 			mthread.shutdown = true;
@@ -186,10 +190,9 @@ public class Pdt
 			if (pdtfile.canRead())
 				lastDownload = pdtfile.lastModified();
 
-			Logger.instance().debug1("Starting PDT Maintenance Thread, url='"
-				+ url + "', localfile='" + localfn + "'"
-				+ ", localpath=" + pdtfile.getPath() + ", lastDownload=" 
-				+ new Date(lastDownload) + ", shutdown="+shutdown);
+			log.debug("Starting PDT Maintenance Thread, url='{}', localfile='{}', " +
+					  "localpath={}, lastDownload={}, shutdown={}",
+					  url, localfn, pdtfile.getPath(), new Date(lastDownload), shutdown);
 			
 			while(!shutdown)
 			{
@@ -202,8 +205,9 @@ public class Pdt
 				if (url != null && url.length() > 0 && !url.equals("-")
 				 && now - lastDownload > downloadIntervalMsec)
 				{
-Logger.instance().debug1("Starting download. lastDownload=" + lastDownload
-+ ", now=" + now + ", intv=" + downloadIntervalMsec + ", dT=" + (now - lastDownload));
+					log.debug("Starting download. lastDownload={}, now={}, intv={}, dT={}",
+							  new Date(lastDownload), new Date(now),
+							  downloadIntervalMsec, (now - lastDownload));
 					lastDownload = System.currentTimeMillis();
 					DownloadPdtThread lpt = 
 						new DownloadPdtThread(url, localfn, pdt);
@@ -232,9 +236,9 @@ Logger.instance().debug1("Starting download. lastDownload=" + lastDownload
 	
 	public synchronized void save(File myfile)
 	{
-		try
+		try (FileWriter mywriter = new FileWriter(myfile))
 		{
-			FileWriter mywriter = new FileWriter(myfile);
+			
 			int nlines = 0;
 			for(PdtEntry pdtEntry : pdtMap.values())
 			{
@@ -243,16 +247,11 @@ Logger.instance().debug1("Starting download. lastDownload=" + lastDownload
 				nlines++;
 			}
 			mywriter.close();
-			Logger.instance().info(
-			    "Pdt saved to '" + myfile.getPath() + "' -- " + nlines
-			        + " entries.");
+			log.info("Pdt saved to '{}' -- { entries.", myfile.getPath(), nlines);
 		}
 		catch (Exception ex)
 		{
-			String msg = "Pdt.save failed: " + ex;
-			Logger.instance().failure(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			log.atError().setCause(ex).log("Pdt.save failed.");
 		}
 	}
 	
@@ -273,7 +272,6 @@ Logger.instance().debug1("Starting download. lastDownload=" + lastDownload
 	public static void main(String args[])
 		throws Exception
 	{
-		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
 		Pdt pdt = instance();
 		pdt.startMaintenanceThread(args[0], args[1]);
 		while(!pdt._isLoaded)

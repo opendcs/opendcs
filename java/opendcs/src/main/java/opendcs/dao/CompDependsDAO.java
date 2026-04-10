@@ -1,50 +1,32 @@
-/**
- * $Id: CompDependsDAO.java,v 1.7 2020/05/07 13:50:16 mmaloney Exp $
- *
- * $Log: CompDependsDAO.java,v $
- * Revision 1.7  2020/05/07 13:50:16  mmaloney
- * Also delete from scratchpad when deleting dependencies.
- *
- * Revision 1.6  2017/08/22 19:58:40  mmaloney
- * Refactor
- *
- * Revision 1.5  2017/07/06 19:06:54  mmaloney
- * New method to support comp exec command.
- *
- * Revision 1.4  2016/12/16 14:31:30  mmaloney
- * Added getTriggersFor method.
- *
- * Revision 1.3  2014/12/19 19:26:57  mmaloney
- * Handle version change for column name tsdb_group_member_ts data_id vs. ts_id.
- *
- * Revision 1.2  2014/07/03 12:53:41  mmaloney
- * debug improvements.
- *
- *
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to the United States Government.
- *
- * No warranty is provided or implied other than specific contractual terms
- * between COVE and the U.S. Government
- *
- * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package opendcs.dao;
-
-import ilex.util.Logger;
 
 import java.io.PrintStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.function.Consumer;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
@@ -69,6 +51,8 @@ import decodes.tsdb.TsdbDatabaseVersion;
 
 public class CompDependsDAO extends DaoBase implements CompDependsDAI
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	private String cpCompDepends_col1 = null;
 	protected AlgorithmDAI algorithmDAO = null;
 	protected TsGroupDAI tsGroupDAO = null;
@@ -97,7 +81,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 		}
 		return new WrappedConnection(myCon, c -> {});
 	}
-	
+
 	@Override
 	public void removeTsDependencies(TimeSeriesIdentifier tsid)
 		throws DbIoException
@@ -137,7 +121,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 		try
 		{
 			DbKey compId = comp.getId();
-			debug3("writeCompDepends(" + comp.getName() + ", id=" + compId);
+			log.trace("writeCompDepends({}), id={}", comp.getName(), compId);
 
 			deleteCompDependsForCompId(compId);
 			if (!comp.isEnabled())
@@ -180,8 +164,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 				// If it has an SDI, it means it is fully defined.
 				if (sdi != null && !sdi.isNull())
 				{
-					debug3("writeCompDepends: explicit sdi=" + sdi
-						+ " for role " + dcp.getRoleName());
+					log.trace("writeCompDepends: explicit sdi={} for role {}", sdi, dcp.getRoleName());
 					dataIds.add(sdi);
 				}
 				// Otherwise it is a partial definition, expand by group
@@ -202,6 +185,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 						}
 						catch(BadTimeSeriesException ex)
 						{
+							log.atTrace().setCause(ex).log("bad time series");
 							// Invalid tsid. Skip it.
 						}
 					}
@@ -209,14 +193,14 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 				// Otherwise incomplete definition and no group - skip it.
 			}
 
-			debug3("Total dds for dependencies=" + dataIds.size());
-			Connection conn = getConnection();
-			try(
+			log.trace("Total dds for dependencies={}", dataIds.size());
+
+			try (Connection conn = getConnection();
 				PreparedStatement insertDepends = conn.prepareStatement(
 				"INSERT INTO CP_COMP_DEPENDS(" + cpCompDepends_col1 + ",COMPUTATION_ID) "
 					+ "VALUES(?,?)"
-				);
-			){ //NOTE: this may need some tuning for batch size,
+				);)
+			{ //NOTE: this may need some tuning for batch size,
 				// fairly simple to do with an on modulus size = 0 executeBatch statement
 				for(DbKey dataId : dataIds)
 				{
@@ -229,9 +213,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 		}
 		catch(Exception ex)
 		{
-			String msg = "Exception populating CP_COMP_DEPENDS table: " + ex;
-			warning(msg);
-			ex.printStackTrace(Logger.instance().getLogOutput());
+			String msg = "Exception populating CP_COMP_DEPENDS table.";
 			throw new DbIoException(msg, ex);
 		}
 	}
@@ -251,7 +233,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 		}
 		catch (Exception ex)
 		{
-			throw new DbIoException("Unable to remove entries for time series.",ex);
+			throw new DbIoException("Unable to remove entries for time series.", ex);
 		}
 	}
 
@@ -302,19 +284,23 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 						}
 						catch (NoSuchObjectException ex)
 						{
-							warning("Bogus Time Series Key " + tsKey + " in CP_COMP_DEPENDS "
-								+ "for computation " + compID);
+							log.atWarn()
+							   .setCause(ex)
+							   .log("Bogus Time Series Key {} in CP_COMP_DEPENDS for computation {}",
+							   		tsKey, compID);
 						}
 						catch (DbIoException ex)
 						{
-							failure("Database error retrieving identifier: " + ex.getLocalizedMessage());
+							log.atError()
+							   .setCause(ex)
+							   .log("Database error retrieving identifier.");
 						}
 						return null;
 					}, compID);
 		}
 		catch (SQLException ex)
 		{
-			throw new DbIoException("Error executing trigger comp retrieval: " + ex);
+			throw new DbIoException("Error executing trigger comp retrieval.", ex);
 		}
 	}
 
@@ -363,11 +349,13 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 		}
 		catch(Exception ex)
 		{
-			warning("getCompIdsFor() error in query '" + q + "': " + ex);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("getCompIdsFor() error in query '{}'", q );
 		}
 		return ret;
 	}
-	
+
 	@Override
 	public CpDependsNotify getCpCompDependsNotify()
 	{
@@ -377,12 +365,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 		}
 		catch(DbIoException ex)
 		{
-			warning("Unable to get next record. " + ex.getLocalizedMessage());
-			PrintStream ps = Logger.instance().getLogOutput();
-			if (ps != null)
-			{
-				ex.printStackTrace(ps);
-			}
+			log.atWarn().setCause(ex).log("Unable to get next record.");
 		}
 		return null;
 	}
@@ -397,7 +380,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 		}
 		catch (SQLException ex)
 		{
-			throw new DbIoException("Unable to clear scratch pad.");
+			throw new DbIoException("Unable to clear scratch pad.", ex);
 		}
 	}
 

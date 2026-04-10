@@ -1,43 +1,37 @@
 /*
-*	$Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*	$Log$
-*	Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*	OPENDCS 6.0 Initial Checkin
-*	
-*	Revision 1.1  2008/04/04 18:21:10  cvs
-*	Added legacy code to repository
-*	
-*	Revision 1.5  2005/09/28 21:54:54  mmaloney
-*	LRGS 5.3 prep
-*	
-*	Revision 1.4  2005/04/06 12:21:18  mjmaloney
-*	dev
-*	
-*	Revision 1.3  2004/08/30 15:35:16  mjmaloney
-*	Renamed BadIndexException to IndexRangeException because of class with ilex.
-*	var class.
-*	
-*	Revision 1.2  2004/08/30 14:50:30  mjmaloney
-*	Javadocs
-*	
-*	Revision 1.1  2004/05/06 20:57:10  mjmaloney
-*	Implemented QueueLogger to be used by servers that export events.
-*	
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package ilex.util;
 
 import java.util.Vector;
+import java.util.concurrent.Flow.Publisher;
+import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.Flow.Subscription;
+import java.util.concurrent.SubmissionPublisher;
+
+import org.opendcs.logging.LoggingEvent;
 
 /**
-* Concrete subclass of Logger that stores messages in a queue of fixed
-* size. When size is reached the oldest messages are deleted. Messages
-* can be retrieved by index.
+* Fixed length queue with mechanisms for tracking current and next position.
+* Uses new RingBuffer and Logging Event mechanisms to populate.
+*
 */
-public class QueueLogger extends Logger
+public class QueueLogger
 {
 	/** Messages stored internally in a vector */
-	private PublicRRVector messages;
+	private final PublicRRVector<String> messages;
 
 	/**
 	* This is the index of the first element in the vector. Initially this
@@ -57,29 +51,50 @@ public class QueueLogger extends Logger
 	* empty string (i.e. "").
 	* @param procName the process name
 	*/
-	public QueueLogger( String procName )
+	public QueueLogger(Publisher<LoggingEvent> logBuffer)
 	{
-		super(procName);
-		messages = new PublicRRVector(MAX_MESSAGES, QUEUE_INCREMENT);
+		messages = new PublicRRVector<>(MAX_MESSAGES, QUEUE_INCREMENT);
 		startIndex = 0;
-	}
+		logBuffer.subscribe(new Subscriber<LoggingEvent>()
+		{
+			Subscription subscription = null;
 
-	/**
-	* Discards the queue.
-	*/
-	public void close( ) 
-	{
-		messages = null;
+			@Override
+			public void onSubscribe(Subscription subscription)
+			{
+				this.subscription = subscription;
+				// an arbitrary number, may need to adjust later but for now start somewhere.
+				subscription.request(1);
+			}
+
+			@Override
+			public void onNext(LoggingEvent item)
+			{
+				doLog(item);
+				subscription.request(1);
+			}
+
+			@Override
+			public void onError(Throwable throwable)
+			{
+				doLog(LoggingEvent.of("Error retrieving next log event", throwable));
+			}
+
+			@Override
+			public void onComplete()
+			{
+				doLog(LoggingEvent.of("no more messages."));
+			}
+		});
 	}
 
 	/**
 	* Logs a message into the queue.
-	* @param priority the priority.
-	* @param text the formatted message.
+	* @param event The raw event from the log.
 	*/
-	public void doLog( int priority, String text )
+	public void doLog(LoggingEvent event)
 	{
-		String msg = standardMessage(priority, text);
+		String msg = event.toString();
 		addToQueue(msg);
 	}
 
@@ -123,32 +138,32 @@ public class QueueLogger extends Logger
 		idx -= startIndex;
 		int n = messages.size();
 		if (idx < n)
-			return (String)messages.get(idx);
+			return messages.get(idx);
 		else if (idx == n)
 			return null;
 		else
 			throw new IndexRangeException("too high");
 	}
-}
 
-class PublicRRVector extends Vector
-{
-	/**
-	* @param max
-	* @param inc
-	*/
-	PublicRRVector( int max, int inc )
+	private static class PublicRRVector<T> extends Vector<T>
 	{
-		super(max, inc);
-	}
+		/**
+		* @param max
+		* @param inc
+		*/
+		PublicRRVector( int max, int inc )
+		{
+			super(max, inc);
+		}
 
-	// Have to overload this to make it public.
-	/**
-	* @param from
-	* @param to
-	*/
-	public void removeRange( int from, int to )
-	{
-		super.removeRange(from, to);
+		// Have to overload this to make it public.
+		/**
+		* @param from
+		* @param to
+		*/
+		public void removeRange( int from, int to )
+		{
+			super.removeRange(from, to);
+		}
 	}
 }

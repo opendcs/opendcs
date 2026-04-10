@@ -1,0 +1,15 @@
+{
+  "dataSourceId" : null,
+  "name" : "Satellite Data",
+  "type" : "Satellite",
+  "usedBy" : 0,
+  "props" : {
+    "location" : "low Earth orbit"
+  },
+  "groupMembers" : [
+    {
+      "dataSourceId" : null,
+      "dataSourceName" : "Satellite Data Value"
+    }
+  ]
+}

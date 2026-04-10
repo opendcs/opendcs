@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.cwms.algo;
 
 import decodes.cwms.CwmsConstants;
@@ -9,43 +24,32 @@ import ilex.var.NamedVariable;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 import opendcs.opentsdb.Interval;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
 import java.util.Date;
 
-//AW:IMPORTS
-// Place an import statements you need here.
-//AW:IMPORTS_END
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
-//AW:JAVADOC
-
-/**
-Interpolate input data to fit Irregular time series pattern.
- */
-//AW:JAVADOC_END
-public class ToIrregularUsingPattern
-	extends AW_AlgorithmBase
+@Algorithm(description = "Interpolate input data to fit Irregular time series pattern.") 
+public class ToIrregularUsingPattern extends AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double input;	//AW:TYPECODE=i
-	public double pattern;	//AW:TYPECODE=i
-	String _inputNames[] = { "input", "pattern" };
-//AW:INPUTS_END
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	@Input
+	public double input;	
+	@Input
+	public double pattern;	
 
-//AW:LOCALVARS
 	// Enter any local class variables needed by the algorithm.
 	private CTimeSeries inputTS = null;
 	private CTimeSeries patternTS = null;
 	private String inUnits = null;
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
-	String _propertyNames[] = {};
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
@@ -55,13 +59,7 @@ public class ToIrregularUsingPattern
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-		// Code here will be run once, after the algorithm object is created.
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -70,7 +68,6 @@ public class ToIrregularUsingPattern
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		
 		// Validation
 		String outputIntvs = getParmRef("output").compParm.getInterval();
@@ -108,11 +105,10 @@ public class ToIrregularUsingPattern
 		}
 		catch(Exception ex)
 		{
-			warning("Error accessing input/output time series: " + ex);
+			log.atWarn().setCause(ex).log("Error accessing input/output time series.");
 		}
 
 		
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**Interpolation helper function
@@ -134,7 +130,7 @@ public class ToIrregularUsingPattern
 			}
 			catch (NoConversionException ex)
 			{
-				warning("Interpolation resulted in invalid var: " + ex);
+				log.atWarn().setCause(ex).log("Interpolation resulted in invalid var.");
 			}
 		}
 		//check if input data is Average. copies the average value of the previous input variable.
@@ -144,7 +140,7 @@ public class ToIrregularUsingPattern
 			}
 			catch (NoConversionException ex)
 			{
-				warning("Interpolation resulted in invalid var: " + ex);
+				log.atWarn().setCause(ex).log("Interpolation resulted in invalid var.");
 			}
 		}
 		//check if input data is Total. linear interpolation between zero at time of previous value and next value.
@@ -158,7 +154,7 @@ public class ToIrregularUsingPattern
 			}
 			catch (NoConversionException ex)
 			{
-				warning("Interpolation resulted in invalid var: " + ex);
+				log.atWarn().setCause(ex).log("Interpolation resulted in invalid var.");
 			}
 		}
 	}
@@ -176,7 +172,6 @@ public class ToIrregularUsingPattern
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		//if no pattern not interpolation needed
 		if(isMissing(pattern)){
 			return;
@@ -198,7 +193,7 @@ public class ToIrregularUsingPattern
 			}
 			catch(Exception ex)
 			{
-				warning("Error accessing input/output time series: " + ex);
+				log.atWarn().setCause(ex).log("Error accessing input/output time series.");
 				return;
 			}
 		}
@@ -208,9 +203,6 @@ public class ToIrregularUsingPattern
 		interpolate(_timeSliceBaseTime, prevInput, nextInput);
 
 
-
-		
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -219,32 +211,5 @@ public class ToIrregularUsingPattern
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }

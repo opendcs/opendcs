@@ -1,11 +1,27 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
+
 package decodes.comp;
 
-import java.util.TimeZone;
-
-import ilex.util.ArrayUtil;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.RoutingSpec;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
@@ -23,11 +39,10 @@ import decodes.util.PropertySpec;
  *   <li>MaxAgeHours - (default=48) discard data older than this</li>
  * </ul>
  */
-public class TimeRangeFilterCompResolver 
-	extends CompResolver
-	implements PropertiesOwner
+public class TimeRangeFilterCompResolver extends CompResolver
 {
-	private String module = "TimeRangeFilterCompResolver";
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	private boolean isEnabled = false;
 	private TimeRangeFilter timeRangeFilter = null;
 	
@@ -77,8 +92,9 @@ public class TimeRangeFilterCompResolver
 				try { maxFutureMinutes = Integer.parseInt(s.trim()); }
 				catch(Exception ex)
 				{
-					Logger.instance().warning(module + " bad MaxFutureMinutes "
-						+ "property '" + s + "' -- using default of 6.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Bad MaxFutureMinutes property '{}' -- using default of 6.", s);
 					maxFutureMinutes = 6;
 				}
 			}
@@ -89,8 +105,9 @@ public class TimeRangeFilterCompResolver
 				try { maxAgeHours = Integer.parseInt(s.trim()); }
 				catch(Exception ex)
 				{
-					Logger.instance().warning(module + " bad MaxAgeHours "
-						+ "property '" + s + "' -- using default of 48.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Bad MaxAgeHours property '{}' -- using default of 48.", s);
 					maxFutureMinutes = 48;
 				}
 			}

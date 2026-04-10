@@ -3,6 +3,7 @@ package org.opendcs.authentication;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 
+import org.opendcs.authentication.impl.NoOpAuthSourceProvider;
 import org.opendcs.spi.authentication.AuthSource;
 import org.opendcs.spi.authentication.AuthSourceProvider;
 
@@ -32,6 +33,10 @@ public class AuthSourceService
      */
     public static AuthSource getFromString(String configString) throws AuthException
     {
+        if( configString == null || configString.isEmpty() )
+        {
+            return new NoOpAuthSourceProvider().process("noop");
+        }
         int colon = configString.indexOf(":");
         String type = "UserAuthFile";
         String actualConfig = configString;

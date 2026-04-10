@@ -1,8 +1,23 @@
-// The DBAccess class will be contained in the some package
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.dbutils;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -12,6 +27,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Properties;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
  * Public class DBAccess is used to provide ORACLE database connectivity close
@@ -24,11 +42,10 @@ import java.util.Properties;
  */
 public class DBAccess
 {
-
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	// conn instance variable is used to store the current connection object to
 	// the database
 	private Connection conn = null;
-	private Logger log = Logger.getInstance();
 
 	public DBAccess(Connection _conn)
 	{
@@ -84,26 +101,26 @@ public class DBAccess
 				password = (String) do1.get("PASSWORD");
 			}
 
-			log.debug("Attempting Connection: " + url);
+			log.debug("Attempting Connection: {}", url);
 			// load the driver class
 			Class.forName(driver).newInstance();
 			// now make the connection
 
 			conn = DriverManager.getConnection(url, uid, password);
 			if (((String) do1.get("DEBUG")).equals("Y"))
-				log.debug(url + " connection successful");
+				log.debug("{} connection successful", url);
 
 		}
-		catch (SQLException e)
+		catch (SQLException ex)
 		{
-			log.debug(" ERROR making connection: ");
-			// log.debug(e.printStackTrace());
+			log.atDebug().setCause(ex).log(" ERROR making connection: ");
 		}
-		finally
-		// in all case return the connection
+		catch (IOException | InstantiationException | IllegalAccessException | ClassNotFoundException ex)
 		{
+			throw new RuntimeException("Unable to create connection. Insufficient parameters.", ex);
+		}
+		// TODO: A null connection should really never be returned.
 			return conn;
-		}
 	}
 
 	/**
@@ -119,29 +136,18 @@ public class DBAccess
 	 */
 	public String performDML(String query, DataObject do1)
 	{
-		Statement stmt = null;
-		try
+		
+		try(Statement stmt = getConnection(do1).createStatement())
 		{
-			stmt = getConnection(do1).createStatement();
 			int rows = stmt.executeUpdate(query);
 			return "SUCCESS: " + rows;
 		}
-		catch (SQLException e)
+		catch (SQLException ex)
 		{
-			return "ERROR: " + e.getMessage();
+			log.atError().setCause(ex).log("Unable to perform query.");
+			return "ERROR: " + ex.getMessage();
 		}
-		finally
-		{
-			try
-			{
-				stmt.close();
-			}
-			catch (SQLException e)
-			{
-			}
-
-		}
-
+		
 	} // end of performDML method
 
 	/**
@@ -163,9 +169,8 @@ public class DBAccess
 	public String performQuery(String query, DataObject do1)
 	{
 
-		Statement stmt = null;
-		ResultSet rset = null;
-		try
+		try(Statement stmt = getConnection(do1).createStatement();
+			ResultSet rset = stmt.executeQuery(query))
 		{
 			/*
 			 * performQuery --------------------------- Execute query Get Meta
@@ -176,8 +181,6 @@ public class DBAccess
 			 * 
 			 * ---------------------------
 			 */
-			stmt = getConnection(do1).createStatement();
-			rset = stmt.executeQuery(query);
 
 			ResultSetMetaData rsmd = rset.getMetaData();
 			int cols = rsmd.getColumnCount();
@@ -188,8 +191,6 @@ public class DBAccess
 				String temp = rsmd.getColumnName(i + 1);
 				if (temp == null)
 					temp = "";
-//ilex.util.Logger.instance().debug3(
-//	"Column " + (i + 1) + " name=" + temp + ", classname=" + rsmd.getColumnClassName(i + 1));
 				columns.add(i, temp);
 			}
 
@@ -205,17 +206,8 @@ public class DBAccess
 				for (int i = 0; i < cols; i++)
 				{
 					String temp = rset.getString(i + 1);
-//ilex.util.Logger.instance().debug3(
-//	"resultset.getString(" + (i + 1) + ") returned '" + temp + "'");
-//try { double d = rset.getDouble(i+1); ilex.util.Logger.instance().debug3("....as double=" + d); }
-//catch(Exception ex) { ilex.util.Logger.instance().debug3("....getDouble() threw exception: " + ex); }
-//try { double d = ((java.math.BigDecimal)rset.getObject(i+1)).doubleValue(); 
-//ilex.util.Logger.instance().debug3("....from big decimal, double=" + d); }
-//catch(Exception ex) { ilex.util.Logger.instance().debug3("....Big Decimal.doubleValue threw exception: " + ex); }
-
 					if (temp == null)
 						temp = "";
-					// if (temp == null) temp = "<<NULL>>";
 					row.add(i, temp);
 				}
 				// now add that row to the arrayList of records and increment
@@ -225,11 +217,7 @@ public class DBAccess
 				rowCount++;
 			}
 			// we are done with the query and the result set so close both
-			rset.close();
-			stmt.close();
 
-//ilex.util.Logger.instance().debug3(
-//	"After query '" + query + "', row count = " + rowCount + ", cols=" + cols);
 			// if no rows came back from the query then store each column
 			// in the dataObject as a String, empty String pair
 			if (rowCount == 0)
@@ -257,8 +245,6 @@ public class DBAccess
 					// entries
 					// to the dataObject hastable
 					String v = records.get(0).get(i);
-//ilex.util.Logger.instance().debug3(
-//	"Single row result, col[" + i + "] (" + columns.get(i) + ")='" + v + "'");
 					do1.put(columns.get(i), v);
 				}
 			}
@@ -283,30 +269,11 @@ public class DBAccess
 
 			return "SUCCESS:";
 		}
-		catch (SQLException e)
+		catch (SQLException ex)
 		{
-			return "ERROR executing query: " + e.getMessage();
-			// e.printStackTrace();
+			log.atError().setCause(ex).log("Unable to execute query {}", query);
+			return "ERROR executing query: " + ex.getMessage();
 		}
-		finally
-		{
-			try
-			{
-				if (rset != null)
-				{
-					rset.close();
-				}
-				if (stmt != null)
-				{
-					stmt.close();
-				}
-			}
-			catch (SQLException e)
-			{
-			}
-
-		} // end of finally
-
 	} // end of performQuery method
 
 	/**
@@ -328,11 +295,11 @@ public class DBAccess
 	public ArrayList get_arraylist_query(String query, DataObject do1)
 	{
 
-		Statement stmt = null;
-		ResultSet rset = null;
 		ArrayList records = new ArrayList();
 
-		try
+		try(Statement stmt = getConnection(do1).createStatement();
+			ResultSet rset = stmt.executeQuery(query);)
+
 		{
 			/*
 			 * performQuery --------------------------- Execute query Get Meta
@@ -342,8 +309,6 @@ public class DBAccess
 			 * 
 			 * ---------------------------
 			 */
-			stmt = getConnection(do1).createStatement();
-			rset = stmt.executeQuery(query);
 
 			ResultSetMetaData rsmd = rset.getMetaData();
 			int cols = rsmd.getColumnCount();
@@ -380,28 +345,12 @@ public class DBAccess
 				rowCount++;
 			}
 			// we are done with the query and the result set so close both
-			rset.close();
-			stmt.close();
 
 		}
-		catch (SQLException e)
+		catch (SQLException ex)
 		{
-			System.out.println("ERROR executing: " + query + "  Message: " + e.getMessage());
+			log.atError().setCause(ex).log("ERROR executing: {}", query);
 		}
-		finally
-		{
-			try
-			{
-				if (rset != null)
-					rset.close();
-				if (stmt != null)
-					stmt.close();
-			}
-			catch (SQLException e)
-			{
-			}
-
-		} // end of finally
 
 		return records;
 	} // end of get_arraylist_query method
@@ -422,7 +371,7 @@ public class DBAccess
 		if (result.startsWith("ERROR"))
 		{
 			error_message = "GET Columns Method FAILED" + result;
-			log.debug(this, "  " + query + "  :" + error_message);
+			log.debug("{}: {}", query, error_message);
 		}
 
 	} // end of get_col method
@@ -443,7 +392,7 @@ public class DBAccess
 		if (result.startsWith("ERROR"))
 		{
 			error_message = "TBL_INSERT Method FAILED" + result;
-			log.debug(this, "  " + dml + "  :" + error_message);
+			log.debug("{}: {}", dml, error_message);
 			return false;
 		}
 
@@ -468,10 +417,9 @@ public class DBAccess
 			{
 				conn.close();
 			}
-			catch (SQLException e)
+			catch (SQLException ex)
 			{
-				log.debug("ERROR closing connection");
-				// log.debug(e.printStackTrace());
+				log.atDebug().setCause(ex).log("ERROR closing connection");
 			}
 		} // End of if the conn is not null block
 	} // End of closeConnection method
@@ -489,23 +437,15 @@ public class DBAccess
 	 */
 	public void callProc(String _procname, DataObject do1)
 	{
-		try
+		String proc = "{ call  " + _procname + " }";
+		try(CallableStatement stmt = getConnection(do1).prepareCall(proc))
 		{
-			// initialize the procedure call, set the parameters , etc..
-			String proc = "{ call  " + _procname + " }";
-			CallableStatement stmt = getConnection(do1).prepareCall(proc);
-
 			// now execute the procedure call and go get the return string value
 			stmt.execute();
-
-			// we are done with the procedure
-			stmt.close();
-
 		}
-		catch (SQLException e)
+		catch (SQLException ex)
 		{
-			log.debug(e.toString());
-			// e.printStackTrace();
+			log.atDebug().setCause(ex).log("Error calling procedure {}", proc);
 		}
 	} // end of callProc method
 
@@ -526,11 +466,9 @@ public class DBAccess
 	 */
 	public void performCall(String _field, DataObject do1)
 	{
-		try
+		String proc = "{ call merge_fields_pkg_functions.common_proc(?,?) }";
+		try(CallableStatement stmt = getConnection(do1).prepareCall(proc))
 		{
-			// initialize the procedure call, set the parameters , etc..
-			String proc = "{ call merge_fields_pkg_functions.common_proc(?,?) }";
-			CallableStatement stmt = getConnection(do1).prepareCall(proc);
 			stmt.setString(1, _field.toUpperCase());
 			stmt.registerOutParameter(2, java.sql.Types.VARCHAR);
 
@@ -538,21 +476,18 @@ public class DBAccess
 			stmt.execute();
 			String result = stmt.getString(2);
 
-			// we are done with the query and the result set so close both
-			stmt.close();
 
 			// if the procedure returned nothing then set it to an empty string
 			// and then insert the pair into the data object
 			if (result == null)
 				result = "";
 			do1.put(_field, result);
-			log.debug("MergeField: " + _field + " Result: " + result);
+			log.debug("MergeField: {} result: {}", _field, result);
 
 		}
-		catch (SQLException e)
+		catch (SQLException ex)
 		{
-			log.debug(e.toString());
-			// e.printStackTrace();
+			log.atDebug().setCause(ex).log("Unable to call procedure {}", proc);
 		}
 	} // end of performCall method
 
@@ -572,13 +507,12 @@ public class DBAccess
 	 */
 	public void initialCall(DataObject do1)
 	{
-		try
-		{
 			// initialize the procedure call, create a statement
 			// String proc =
 			// "{ call merge_fields_pkg.proc_input_parameters(?,?,?,?,?) }";
 			String proc = "{ call merge_fields_pkg.proc_input_parameters(?,?,?,?,?,?) }";
-			CallableStatement stmt = getConnection(do1).prepareCall(proc);
+		try(CallableStatement stmt = getConnection(do1).prepareCall(proc))
+		{
 			// set all the called procedures input variables from the passed in
 			// DataObject
 			stmt.setString(1, (String) do1.get("contract__t"));
@@ -591,14 +525,12 @@ public class DBAccess
 			stmt.execute();
 
 			// we are done with the procedure call so close the statement
-			stmt.close();
-			log.debug("Initiated proc call: " + do1.get("contract__t"));
+			log.debug("Initiated proc call: {}", do1.get("contract__t"));
 
 		}
-		catch (SQLException e)
+		catch (SQLException ex)
 		{
-			log.debug(e.toString());
-			// e.printStackTrace();
+			log.atDebug().setCause(ex).log("Unable to call procedure {}", proc);
 		}
 	} // end of initialCall method
 

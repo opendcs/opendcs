@@ -1,50 +1,49 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
-//AW:IMPORTS
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-/**
-Blue Mesa Unregulated Inflow Computation
-Takes Taylor Park Delta Storage from t-1 and
-adds it to Blue Mesa Inflow to get Unregulated Inflow
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Blue Mesa Unregulated Inflow Computation\n" +
+"Takes Taylor Park Delta Storage from t-1 and\n" +
+"adds it to Blue Mesa Inflow to get Unregulated Inflow")
 public class BMDCUnreg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double TPRCDeltaStorage;	//AW:TYPECODE=i
-	public double BMDCInflow;			//AW:TYPECODE=i
-	
-	String _inputNames[] = { "TPRCDeltaStorage", "BMDCInflow" };
-//AW:INPUTS_END
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	@Input
+	public double TPRCDeltaStorage;
+	@Input
+	public double BMDCInflow;
 
-//AW:LOCALVARS
-
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable unreg = new NamedVariable("unreg", 0);
-	String _outputNames[] = { "unreg" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "fail") 
 	public String TPRCDeltaStorage_missing = "fail";
+	@PropertySpec(value = "fail") 
 	public String BMDCInflow_missing		= "fail";
-
-	String _propertyNames[] = { "TPRCDeltaStorage_missing", "BMDCInflow_missing"};
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
@@ -53,12 +52,7 @@ public class BMDCUnreg extends decodes.tsdb.algo.AW_AlgorithmBase
 	 */
 	protected void initAWAlgorithm( )
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -66,8 +60,6 @@ public class BMDCUnreg extends decodes.tsdb.algo.AW_AlgorithmBase
 	 */
 	protected void beforeTimeSlices()
 	{
-//AW:BEFORE_TIMESLICES
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -83,15 +75,13 @@ public class BMDCUnreg extends decodes.tsdb.algo.AW_AlgorithmBase
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		double sum = 0.0;
 		sum = TPRCDeltaStorage;
 		
-debug3("doAWTimeSlice, TPRCDeltaStorage="+TPRCDeltaStorage+
-		" BMDCInflow="+BMDCInflow+" sum="+sum);
+		log.trace("doAWTimeSlice, TPRCDeltaStorage={} BMDCInflow={} sum={}",
+				  TPRCDeltaStorage, BMDCInflow, sum);
 
 		setOutput(unreg, BMDCInflow + sum);
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -99,32 +89,5 @@ debug3("doAWTimeSlice, TPRCDeltaStorage="+TPRCDeltaStorage+
 	 */
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }

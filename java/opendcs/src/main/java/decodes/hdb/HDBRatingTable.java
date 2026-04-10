@@ -1,16 +1,19 @@
-/**
- * $Id$
- * 
- * Open Source Software
- * 
- * $Log$
- * Revision 1.3  2013/03/21 18:27:40  mmaloney
- * DbKey Implementation
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb;
-
-import ilex.util.Logger;
 
 import java.sql.CallableStatement;
 import java.sql.ResultSet;
@@ -28,7 +31,12 @@ import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
 import decodes.db.Constants;
 
-public class HDBRatingTable {
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
+public class HDBRatingTable 
+{
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String ratingType = "Shift Adjusted Stage Flow"; //Default to expanded USGS type
 	private DbKey ratingId=Constants.undefinedId;
 	private DbKey sdi=Constants.undefinedId;
@@ -83,11 +91,10 @@ public class HDBRatingTable {
 	{
 		String q = "select ratings.find_site_rating(?,?," +
 		"to_date(?,'DD.MM.YYYY HH24:MI:SS')) from dual";
-		CallableStatement cstmt =  null;
+		
 
-		try
+		try(CallableStatement cstmt = conn.prepareCall(q))
 		{
-			cstmt = conn.prepareCall(q);
 			cstmt.setString(1, ratingType);
 			cstmt.setLong  (2, sdi.getValue());
 			String timestr = "";
@@ -109,31 +116,20 @@ public class HDBRatingTable {
 		{
 			String msg = 
 				"Cannot find rating id for type " + ratingType + " sdi " +
-				sdi +": "+ex;
-			throw new DbCompException(msg);	
+				sdi;
+			throw new DbCompException(msg,ex);	
 		}
-		finally  //close callable statement always
-		{
-			try
-			{
-				if (cstmt != null) cstmt.close();
-			}
-			catch ( SQLException ex )
-			{
-				Logger.instance().warning(ex.toString());
-			}
-		}
+		
 
 		if (ratingId == Constants.undefinedId) {
 
 			throw new DbCompException("Unable to find rating id for type: " +
 					ratingType + " sdi: "+ sdi + " date: " + valueDate);					
 		}
-		else try 
+		else try(CallableStatement cstmt = conn.prepareCall(q))
 		{
 			q="select effective_start_date_time,effective_end_date_time from ref_site_rating " +
 			"where rating_id = ? and rating_type_common_name = ? and indep_site_datatype_id = ? ";
-			cstmt = conn.prepareCall(q);
 			cstmt.setLong  (1, ratingId.getValue());
 			cstmt.setString(2, ratingType);
 			cstmt.setLong  (3, sdi.getValue());
@@ -142,29 +138,20 @@ public class HDBRatingTable {
 			if (!result) {
 				throw new DbCompException("query failed in findRating: " + q);
 			}
-			ResultSet rs = cstmt.getResultSet();
-			if (rs.next())
+			try(ResultSet rs = cstmt.getResultSet())
 			{
-				effStartDate = rs.getDate(1); /* not an error to be null */
-				effEndDate = rs.getDate(2); /* not an error to be null */
+				if (rs.next())
+				{
+					effStartDate = rs.getDate(1); /* not an error to be null */
+					effEndDate = rs.getDate(2); /* not an error to be null */
+				}
 			}
 		}
 		catch(SQLException ex) 
 		{
 			String msg = 
-				"Cannot find effective dates for rating id " + ratingId + ": " + ex;
-			throw new DbCompException(msg);	
-		}
-		finally  //close callable statement always
-		{
-			try
-			{
-				if (cstmt != null) cstmt.close();
-			}
-			catch ( SQLException ex )
-			{
-				Logger.instance().warning(ex.toString());
-			}
+				"Cannot find effective dates for rating id " + ratingId;
+			throw new DbCompException(msg,ex);	
 		}
 	}
 
@@ -175,16 +162,16 @@ public class HDBRatingTable {
 	 * @return true if valueDate falls within our range
 	 */
 	private Boolean inEffRange(Date valueDate) {
-		Logger.instance().debug3("Doing effRange: "+valueDate+ " effStart: " + effStartDate + " effEnd: " +effEndDate);
+		log.trace("Doing effRange: {} effStart: {} effEnd: {}", valueDate, effEndDate, effEndDate);
 		
 		if (valueDate !=null) {
 			if (effStartDate !=null && valueDate.before(effStartDate)) {
-				Logger.instance().debug3("Doing effRange start: "+valueDate.before(effStartDate));
+				log.trace("Doing effRange start: {}", valueDate.before(effStartDate));
 				return false;
 			}
 			if (effEndDate !=null && 
 				(valueDate.equals(effEndDate) || valueDate.after(effEndDate))) { 
-				Logger.instance().debug3("Doing effRange end "+(valueDate.equals(effEndDate) || valueDate.after(effEndDate)));
+				log.trace("Doing effRange end {}", (valueDate.equals(effEndDate) || valueDate.after(effEndDate)));
 				return false;
 			}
 		}
@@ -207,26 +194,13 @@ public class HDBRatingTable {
 		RatingStatus rs = new RatingStatus(indepValue,0);
 
 		String q = "{ call ratings.do_rating(?,?,to_date(?,'DD.MM.YYYY HH24:MI:SS'),?,?,?)}";
-		CallableStatement cstmt =  null;
+		
 
 		String idString = " ratingId=" + ratingId
 		+ ", indepValue=" + indepValue;
-		Logger.instance().debug3("Performing rating: '" + idString + "'");
+		log.debug("Performing rating: '{}'", idString);
 
-		try 
-		{
-			cstmt = conn.prepareCall(q);
-		}
-		catch(SQLException ex)
-		{
-			String msg = "Cannot prepare statement '" + q + "' " 
-			+ " for " + idString + ": " + ex;
-			Logger.instance().warning(msg);
-			try { cstmt.close(); } catch(Exception ignore) {}
-			throw new DbCompException(msg);
-		}
-
-		try
+		try (CallableStatement cstmt = conn.prepareCall(q))
 		{
 			// Populate & execute the stored procedure call.
 			cstmt.setLong(1, ratingId.getValue());
@@ -243,23 +217,10 @@ public class HDBRatingTable {
 		}
 		catch(SQLException ex)
 		{
-			String msg = "SQL Error perfoming rating for rating " + 
-			idString + " " + ex;
-			Logger.instance().warning(msg);
-			try { cstmt.close(); } catch(Exception ignore) {}
-			throw new DbCompException(msg);
+			String msg = "SQL Error performing rating for rating " + 
+			idString;
+			throw new DbCompException(msg,ex);
 		}		
-		finally  //close callable statement always
-		{
-			try
-			{
-				if (cstmt != null) cstmt.close();
-			}
-			catch ( SQLException ex )
-			{
-				Logger.instance().warning(ex.toString());
-			}
-		}
 
 		if ("A".equals(rs.status) && !exceedUpperBound) {
 			throw new DbCompException ("Upper Table Bound Exceeded for ratingId "+ ratingId +

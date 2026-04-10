@@ -1,9 +1,26 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.dupdcpgui;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -13,7 +30,6 @@ import org.xml.sax.SAXException;
 
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
-import ilex.util.Logger;
 import decodes.db.NetworkList;
 import decodes.db.NetworkListEntry;
 import decodes.util.CmdLineArgs;
@@ -33,16 +49,15 @@ import decodes.xml.TopLevelParser;
  */
 public class GenerateToimportNL
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String xmlFileStr;
 	private String module = "GenerateToimportNL";
-	private String propFile;
 	private DuplicateIo dupIo;
 	
 	/** Constructor */
 	public GenerateToimportNL(String propFile, String xmlFileStr)
 	{
 		this.xmlFileStr = xmlFileStr;
-		this.propFile = propFile;
 		dupIo = new DuplicateIo("$DCSTOOL_USERDIR/dcptoimport",
 			"controlling-districts.txt");
 		createToImportNl(this.xmlFileStr);
@@ -100,16 +115,11 @@ public class GenerateToimportNL
 				//Create the TOIMPORT.nl file with the nlBuffer
 				dupIo.writeToImportNlFile(nlBuffer.toString(), districtName);
 			}
-		} catch (IOException e)
-		{
-			Logger.instance().failure(module + " " + e.getMessage());
-		} catch (SAXException e)
-		{
-			Logger.instance().failure(module + " " + e.getMessage());
-		} catch (ParserConfigurationException e)
-		{
-			Logger.instance().failure(module + " " + e.getMessage());
 		}
+		catch (IOException | SAXException | ParserConfigurationException ex)
+		{
+			log.atError().setCause(ex).log("Unable to create Import NetList file.");
+		} 
 	}
 	
 	/** Main method */
@@ -138,7 +148,8 @@ public class GenerateToimportNL
 		}
 		catch(IllegalArgumentException ex)
 		{
-			Logger.instance().failure(ex.getMessage());
+			log.atError().setCause(ex).log("Invalid arguments provided.");
+			System.exit(1);
 		}
 	}
 }

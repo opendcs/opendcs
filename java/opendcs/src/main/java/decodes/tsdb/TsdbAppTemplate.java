@@ -1,26 +1,33 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb;
 
-import java.io.IOException;
-import java.util.Properties;
-
-import org.opendcs.authentication.AuthSourceService;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.LoadingAppDAI;
 import ilex.cmdline.*;
-import ilex.util.AuthException;
-import ilex.util.Logger;
-import ilex.util.Pair;
 import ilex.util.PropertiesUtil;
-import ilex.util.StderrLogger;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
 import decodes.util.DecodesVersion;
 import decodes.util.PropertySpec;
 import decodes.db.Database;
-import decodes.db.DatabaseException;
 import decodes.launcher.Profile;
 import decodes.sql.DbKey;
 import decodes.util.DecodesException;
@@ -45,10 +52,9 @@ execute method. Then consider overriding the following methods:
 </ul>
 <p>
 */
-public abstract class TsdbAppTemplate
-	implements PropertiesOwner
+public abstract class TsdbAppTemplate implements PropertiesOwner
 {
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(TsdbAppTemplate.class.getName());
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	// Static command line arguments and initialization for main method.
 	protected CmdLineArgs cmdLineArgs;
 
@@ -98,7 +104,11 @@ public abstract class TsdbAppTemplate
 	 */
 	private int pid = -1;
 
-	protected int appDebugMinPriority = Logger.E_INFORMATION;
+	/**
+	 * @deprecated previous logging system is getting repalced.
+	 */
+	@Deprecated
+	protected int appDebugMinPriority = -1;
 
 	protected static TsdbAppTemplate appInstance = null;
 
@@ -183,6 +193,12 @@ public abstract class TsdbAppTemplate
 				databaseFailed = !ex.toString().contains("Cannot determine app ID");
 				continue;
 			}
+			catch (RuntimeException ex)
+			{
+				log.atError().setCause(ex).log("Error setting up database connection.");
+				throw ex; // make sure it logs, but we can't do much. Just want to make sure full
+						  // error is in the log.
+			}
 			// Note: App must handle its own exceptions, detect database failure
 			// and set databaseFailed if it wants a restart. Any exception thrown
 			// from runApp will terminate the program.
@@ -240,18 +256,13 @@ public abstract class TsdbAppTemplate
 	protected void parseArgs(String args[])
 		throws Exception
 	{
-		if (!cmdLineArgs.isNoInit())
-		{
-			// eventually remove
-			Logger.setLogger(new StderrLogger(appNameArg.getValue()));
-		}
 		try
 		{
 			cmdLineArgs.parseArgs(args);
 		}
 		catch(IllegalArgumentException ex)
 		{
-			log.error("Error parsing command line arguments",ex);
+			log.atError().setCause(ex).log("Error parsing command line arguments.");
 			System.exit(1);
 		}
 	}
@@ -276,6 +287,7 @@ public abstract class TsdbAppTemplate
 			db = DatabaseService.getDatabaseFor(appName, settings);
 			decodesDb = db.getLegacyDatabase(Database.class).get();
 			decodesDb.initializeForDecoding();
+			Database.setDb(decodesDb);
 			theDb = db.getLegacyDatabase(TimeSeriesDb.class).get();
 		}
 		catch (DecodesException ex)
@@ -354,7 +366,6 @@ public abstract class TsdbAppTemplate
 
 	public void shutdownDecodes()
 	{
-	//	DecodesInterface.shutdownDecodes();
 	}
 
 	public void closeDb()
@@ -376,7 +387,9 @@ public abstract class TsdbAppTemplate
 	/**
 	 * Convenience method to log warning with app name prefix.
 	 * @param msg the message
+	 * @deprecated use class level logger
 	 */
+	@Deprecated
 	public void info(String msg)
 	{
 		log.info("{} {}",appNameArg.getValue() , msg);
@@ -385,7 +398,9 @@ public abstract class TsdbAppTemplate
 	/**
 	 * Convenience method to log warning with app name prefix.
 	 * @param msg the message
+	 * @deprecated use class level logger
 	 */
+	@Deprecated
 	public void warning(String msg)
 	{
 		log.warn("{} {}",appNameArg.getValue(), msg);
@@ -394,7 +409,9 @@ public abstract class TsdbAppTemplate
 	/**
 	 * Convenience method to log warning with app name prefix.
 	 * @param msg the message
+	 * @deprecated use class level logger
 	 */
+	@Deprecated
 	public void failure(String msg)
 	{
 		log.error("{} {}",appNameArg.getValue(), msg);

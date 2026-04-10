@@ -1,29 +1,26 @@
-/**
- *  $Id$
- *  
- *  $Log$
- *  Revision 1.6  2011/02/04 21:30:16  mmaloney
- *  Intersect groups
- *
- *  Revision 1.5  2011/01/28 20:07:02  gchen
- *  *** empty log message ***
- *
- *  Revision 1.4  2011/01/18 18:04:50  gchen
- *  *** empty log message ***
- *
- *  Revision 1.3  2011/01/16 22:10:50  gchen
- *  Modify the sortTsGroupList method to make sure to load the subgroups first and to handle the subgroup recursion.
- *
- *  In addition, the application can export a certain group type TS groups from the DB according to the command line switch -Dgrptypes=value.
- *
- *  Revision 1.2  2011/01/11 19:29:42  mmaloney
- *  dev
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb;
 
 import java.util.ArrayList;
 import java.util.StringTokenizer;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.spi.LoggingEventBuilder;
 
 import decodes.tsdb.xml.CompXio;
 import decodes.util.AppMessages;
@@ -31,30 +28,30 @@ import decodes.util.CmdLineArgs;
 
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
-import ilex.util.Logger;
 import opendcs.dai.TsGroupDAI;
 
 /**
  * Create on Dec 22, 2010
- * 
+ *
  * @author gchen
- * 
+ *
  * This is the utility to export TS groups from the DB to XML file.
- * 
+ *
  * User can export TS groups with using the following options
  * (1) no switch				Export all TS groups;
  * (2) -T grpTypes			Export those TS groups under GROUP TYPE grpTypes,
  *                      where grpTypes is <grp type1>[|<grp type2>[|...]];
  * (3) -N grpNames			Export those TS groups under GROUP NAME grpNames,
  *                      where grpNames is <grp name1>[|<grp name2>[|...]];
- *  
+ *
  */
 public class ExportGroup extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private StringToken xmlFileArg;					//Exported XML file argument
 	private StringToken tsGrpTypesArg;			//Group types switch argument -T grpTypes
 	private StringToken tsGrpNamesArg;			//Group names switch argument -N grpNames
-	
+
 	private String appModule = "ExpTSGrp";
 
 	/**
@@ -68,7 +65,7 @@ public class ExportGroup extends TsdbAppTemplate
 	public void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
 		xmlFileArg = new StringToken("", "xml-file", "",
-				TokenOptions.optArgument | TokenOptions.optRequired, ""); 
+				TokenOptions.optArgument | TokenOptions.optRequired, "");
 		tsGrpTypesArg = new StringToken("T", "TS Group Type(s)", "",
 				TokenOptions.optSwitch, "");
 		tsGrpNamesArg = new StringToken("N", "TS Group Name(s)", "",
@@ -79,25 +76,25 @@ public class ExportGroup extends TsdbAppTemplate
 	}
 
 	/**
-	 * Sort the TS Group List with searching subgroups for each TS group and 
+	 * Sort the TS Group List with searching subgroups for each TS group and
 	 * putting them in the front of each referring TS group.
-	 * 
+	 *
 	 * @param theTsGrpList: a TsGroup array list for sorting
-	 * @return ArrayList<TsGroup>: sorted TsGroup array list 
+	 * @return ArrayList<TsGroup>: sorted TsGroup array list
 	 */
 	protected ArrayList<TsGroup> sortTsGroupList(ArrayList<TsGroup> theTsGrpList)
 	{
 		if ((theTsGrpList == null) || (theTsGrpList.size() == 0))
 			return null;
-		
+
 		ArrayList<TsGroup> retTsGrpList = new ArrayList<TsGroup>();
 		ArrayList<TsGroup> searchTsGrpList = new ArrayList<TsGroup>();
-		
+
 		for (TsGroup tsGrp: theTsGrpList) {
 			searchTsGrpList.clear();
 			addTheTSGroup(tsGrp, theTsGrpList, retTsGrpList, searchTsGrpList);
 		}
-		
+
 		theTsGrpList.clear();
 		searchTsGrpList.clear();
 		return retTsGrpList;
@@ -105,7 +102,7 @@ public class ExportGroup extends TsdbAppTemplate
 
 	 /**
 	  * Add a TS group object with its subgroups into retTsGrpList
-	  * 
+	  *
 	  * @param tsGrp
 	  * @param theTsGrpList
 	  * @param retTsGrpList
@@ -117,7 +114,7 @@ public class ExportGroup extends TsdbAppTemplate
 		//tsGrp is null
 		if (tsGrp == null)
 			return;
-		
+
 		//tsGrp is found in retTsGrpList, so no need to add this object.
 		if (findTsGroup(tsGrp, retTsGrpList) != null)
 			return;
@@ -126,7 +123,7 @@ public class ExportGroup extends TsdbAppTemplate
 		//tsGrp is not found in theTsGrpList
 		if (theFoundTsGrp == null)
 			return;
-		
+
 		//If tsGrp appears in the searchTsGrpList, stop recursion
 		if (searchTsGrpList != null) {
 			if (findTsGroup(theFoundTsGrp, searchTsGrpList) != null)
@@ -134,7 +131,7 @@ public class ExportGroup extends TsdbAppTemplate
 			else
 				searchTsGrpList.add(theFoundTsGrp);
 		}
-		
+
 		//tsGrp is found in theTsGrpList, so do the following
 		//Add theFoundTsGrp with its included subgroups into retTsGrpList
 		for (TsGroup g: theFoundTsGrp.getIncludedSubGroups())
@@ -143,7 +140,7 @@ public class ExportGroup extends TsdbAppTemplate
 			addTheTSGroup(g, theTsGrpList, retTsGrpList, searchTsGrpList);
 		for (TsGroup g: theFoundTsGrp.getIntersectedGroups())
 			addTheTSGroup(g, theTsGrpList, retTsGrpList, searchTsGrpList);
-		
+
 		retTsGrpList.add(theFoundTsGrp);
 	}
 
@@ -151,7 +148,7 @@ public class ExportGroup extends TsdbAppTemplate
 	{
 		if ((tsGrp == null) || (theTsGrpList == null) || (theTsGrpList.size() == 0))
 			return null;
-		
+
 		for (TsGroup g: theTsGrpList)
 			if (g.getGroupName().equals(tsGrp.getGroupName()))
 				return g;
@@ -161,42 +158,41 @@ public class ExportGroup extends TsdbAppTemplate
 
 	/**
 	 * Display the exception message from Exception object
-	 * 
+	 *
 	 * @param exMsg
 	 */
-	protected void displayException(String exMsg)
+	protected void displayException(String exMsg, Throwable cause, Object... args)
 	{
-		displayMessage(AppMessages.sys_ExceptionMessage, 
-				AppMessages.ShowMode._exception, exMsg, this.appModule);
+		displayMessage(AppMessages.sys_ExceptionMessage, AppMessages.ShowMode._exception, exMsg, cause, args);
 	}
-	
+
 	/**
 	 * Display the application message from a certain app
-	 * 
+	 *
 	 * @param msgItem
 	 */
 	protected void displayMessage(AppMessages msgItem)
 	{
-		displayMessage(msgItem, null, null, this.appModule);
+		displayMessage(msgItem, null, null);
 	}
 
 	protected void displayMessage(AppMessages msgItem, String otherMsg)
 	{
-		displayMessage(msgItem, null, otherMsg, this.appModule);
+		displayMessage(msgItem, null, otherMsg, null);
 	}
 
 	protected void displayMessage(AppMessages msgItem, AppMessages.ShowMode showMode)
 	{
-		displayMessage(msgItem, showMode, null, this.appModule);
+		displayMessage(msgItem, showMode, null, null);
 	}
-	
+
 	protected void displayMessage(AppMessages msgItem, String otherMsg, AppMessages.ShowMode showMode)
 	{
-		displayMessage(msgItem, showMode, otherMsg, this.appModule);
+		displayMessage(msgItem, showMode, otherMsg, null);
 	}
 
 	protected void displayMessage(AppMessages msg, AppMessages.ShowMode showMode,
-			String otherMsg, String appModule)
+			String otherMsg, Throwable cause, Object... args)
 	{
 		if (msg == null)
 			msg = AppMessages.sys_Unknown;
@@ -206,33 +202,40 @@ public class ExportGroup extends TsdbAppTemplate
 			otherMsg = "";
 		if (appModule == null)
 			appModule = "";
-		
-		String msgStr = String.format(appModule+": "+msg.showMessage(showMode), otherMsg);
-		System.out.printf(msgStr + "%n");
-		switch (showMode) {
-			case _displaying: {
-				Logger.instance().info(msgStr);
+
+		String msgStr = msg.showMessage(showMode) + otherMsg;
+		LoggingEventBuilder le = null;
+		switch (showMode)
+		{
+			case _displaying:
+			{
+				le = log.atInfo();
 				break;
 			}
-			case _warning   : {
-				Logger.instance().warning(msgStr);
+			case _warning:
+			{
+				le = log.atWarn();
 				break;
 			}
-			case _error     : {
-				Logger.instance().failure(msgStr);
+			case _error:
+			{
+				le = log.atError();
 				break;
 			}
-			case _exception : {
-				Logger.instance().warning(msgStr);
+			case _exception:
+			{
+				le = log.atWarn();
 				break;
 			}
-			default         : {
-				Logger.instance().info(msgStr);
+			default:
+			{
+				le = log.atInfo();
 				break;
 			}
 		}
+		le.setCause(cause).log(msgStr, args);
 	}
-		
+
 	/* (non-Javadoc)
 	 * @see decodes.tsdb.TsdbAppTemplate#runApp()
 	 */
@@ -240,10 +243,10 @@ public class ExportGroup extends TsdbAppTemplate
 	protected void runApp() throws Exception
 	{
 		TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
-		try 
+		try
 		{
 			ArrayList<CompMetaData> metadata = new ArrayList<CompMetaData>();
-	
+
 			//Get the TS groups
 			ArrayList<TsGroup> tmpTsGrpsList = new ArrayList<TsGroup>();
 			//Get those TS groups within the specified group types
@@ -251,7 +254,7 @@ public class ExportGroup extends TsdbAppTemplate
 			if (grpTypes != null && grpTypes.length() != 0)
 			{
 				displayMessage(AppMessages.util_CreateLimitTSGroupList);
-				StringTokenizer st = new StringTokenizer(grpTypes, "|"); 
+				StringTokenizer st = new StringTokenizer(grpTypes, "|");
 				String aGrpType = null;
 				while (st.hasMoreTokens())
 				{
@@ -259,14 +262,14 @@ public class ExportGroup extends TsdbAppTemplate
 					aGrpType = st.nextToken();
 					try
 					{
- 						if (aGrpType == null || aGrpType.length() == 0) continue; 
+ 						if (aGrpType == null || aGrpType.length() == 0) continue;
  						aTsGrpsList = groupDAO.getTsGroupList(aGrpType);
  						if (aTsGrpsList == null) continue;
  						for(TsGroup g: aTsGrpsList) tmpTsGrpsList.add(g);
 					}
-					catch (Exception E)
+					catch (Exception ex)
 					{
-						displayException(E.toString());
+						displayException("Unable to process group", ex);
 					}
 				}
 			}
@@ -275,7 +278,7 @@ public class ExportGroup extends TsdbAppTemplate
 			if (grpNames != null && grpNames.length() != 0)
 			{
 				displayMessage(AppMessages.util_CreateLimitTSGroupList);
-				StringTokenizer st = new StringTokenizer(grpNames, "|"); 
+				StringTokenizer st = new StringTokenizer(grpNames, "|");
 				String aGrpName = null;
 				while (st.hasMoreTokens())
 				{
@@ -288,9 +291,9 @@ public class ExportGroup extends TsdbAppTemplate
  						if (aTsGrp == null) continue;
  						tmpTsGrpsList.add(aTsGrp);
 					}
-					catch (Exception E)
+					catch (Exception ex)
 					{
-						displayException(E.toString());
+						displayException("Unable to process group", ex);
 					}
 				}
 			}
@@ -303,19 +306,19 @@ public class ExportGroup extends TsdbAppTemplate
 				{
 					tmpTsGrpsList = groupDAO.getTsGroupList(null);
 				}
-				catch (Exception E)
+				catch (Exception ex)
 				{
-					displayException(E.toString());
+					displayException("Unable to retrieve group.", ex);
 				}
 			}
-			
+
 			//Return if the tmpTsGrpsList is empty
 			if (tmpTsGrpsList == null || tmpTsGrpsList.size() == 0)
 			{
 				displayMessage(AppMessages.util_EmptyTSGroupList, AppMessages.ShowMode._warning);
 				return;
 			}
-			
+
 			//Expand all TS groups with their subgroups
 			for(TsGroup tsGrp: tmpTsGrpsList) {
 				if (tsGrp != null) {
@@ -332,7 +335,7 @@ public class ExportGroup extends TsdbAppTemplate
 			//put all subgroups of a TS group in front of it without duplication
 			displayMessage(AppMessages.util_SortTSGroupList);
 			ArrayList<TsGroup> tsGrpsList = sortTsGroupList(tmpTsGrpsList);
-			
+
 			//Return if the tsGrpsList is empty
 			if (tsGrpsList == null || tsGrpsList.size() == 0)
 			{
@@ -344,7 +347,7 @@ public class ExportGroup extends TsdbAppTemplate
 			displayMessage(AppMessages.util_LoadTSGroupList);
 			for(TsGroup tsGrp: tsGrpsList)
 			  metadata.add(tsGrp);
-	
+
 			//Write the metadata into the XML file
 			displayMessage(AppMessages.util_MakeCompXioObj);
 			CompXio cx = new CompXio("ExportGroup", theDb);
@@ -353,10 +356,9 @@ public class ExportGroup extends TsdbAppTemplate
 			cx.writeFile(metadata, fn);
 			displayMessage(AppMessages.util_SuccessWriteMetadataToXML, fn);
 		}
-		catch(Exception ex) {
-			displayMessage(AppMessages.util_FailExpTSGroup, AppMessages.ShowMode._error);
-			displayException(ex.toString());
-			ex.printStackTrace();
+		catch (Exception ex)
+		{
+			displayMessage(AppMessages.util_FailExpTSGroup, AppMessages.ShowMode._error, "Unable to export group.", ex);
 		}
 		finally
 		{

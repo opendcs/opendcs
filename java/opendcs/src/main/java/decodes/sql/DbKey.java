@@ -1,23 +1,22 @@
-/**
- * $Id$
- * 
- * Open source software
- * @author - Mike Maloney, Cove Software, LLC
- * 
- * $Log$
- * Revision 1.2  2014/12/11 20:28:45  mmaloney
- * Implement serializable for webapp.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.1  2013/03/21 18:27:39  mmaloney
- * DbKey Implementation
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.sql;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.io.Serializable;
 import java.sql.ResultSet;
@@ -50,9 +49,9 @@ import java.util.Map.Entry;
  * Recommendation: In new code, always compare keys with key1.equals(key2);
  */
 @SuppressWarnings("serial")
-public class DbKey
-	implements Comparable<DbKey>, Serializable
+public class DbKey implements Comparable<DbKey>, Serializable
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Immutable internal long integer key value */
 	private long value;
 	
@@ -173,8 +172,7 @@ public class DbKey
 	 */
 	private static void trimHash()
 	{
-		Logger.instance().warning("TRIMMING THE DBKEY HASH size="
-			+ createdKeys.size() + ", createCounter=" + createCounter);
+		log.warn("TRIMMING THE DBKEY HASH size={}, createCounter={}", createdKeys.size(), createCounter);
 		long removeBefore = createCounter - (MaxHashSize/2);
 		for(Iterator<Entry<Long, DbKey>> ckit = createdKeys.entrySet().iterator(); 
 			ckit.hasNext(); )

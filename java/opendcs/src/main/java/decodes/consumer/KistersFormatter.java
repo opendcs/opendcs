@@ -1,27 +1,4 @@
 /**
- * $Id$
- * 
- * $Log$
- * Revision 1.6  2015/03/19 13:18:29  mmaloney
- * Added bufferTimeSec to allow buffering before outputting. This aggregates more
- * samples under the same REXCHANGE header, and allows the Kisters importer to
- * operate more efficiently.
- *
- * Revision 1.5  2014/09/15 13:55:32  mmaloney
- * Updates for AESRD
- *
- * Revision 1.4  2014/08/22 17:23:10  mmaloney
- * 6.1 Schema Mods and Initial DCP Monitor Implementation
- *
- * Revision 1.3  2014/05/30 13:15:33  mmaloney
- * dev
- *
- * Revision 1.2  2014/05/28 13:09:29  mmaloney
- * dev
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
  * Copyright 2014 Cove Software, LLC
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +28,9 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.EngineeringUnit;
@@ -68,9 +48,9 @@ import decodes.util.PropertySpec;
  *
  * @author Michael Maloney, Cove Software, LLC
  */
-public class KistersFormatter 
-	extends OutputFormatter
+public class KistersFormatter extends OutputFormatter
 {
+	private static Logger log = OpenDcsLoggerFactory.getLogger();
 	private SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
 	
 	/** Can be set by "includeTZ" property */
@@ -214,7 +194,9 @@ public class KistersFormatter
 			try { bufferTimeSec = Integer.parseInt(s.trim()); }
 			catch(Exception ex)
 			{
-				logger.warning("Invalid bufferTimeSec property '" + s + "' ignored. Buffering disabled.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Invalid bufferTimeSec property '{}' ignored. Buffering disabled.", s);
 				bufferTimeSec = 0;
 			}
 		}
@@ -233,7 +215,7 @@ public class KistersFormatter
 		}
 		catch (DataConsumerException ex)
 		{
-			logger.warning("Error shutting down formatter: " + ex);
+			log.atWarn().setCause(ex).log("Error shutting down formatter: ",ex);
 		}
 	}
 
@@ -245,8 +227,6 @@ public class KistersFormatter
 		
 		//MJM 20150227 If a message is nothing but missing, don't output anything.
 		boolean hasData = false;
-//		logger.debug3("KistersFormatter msg from " + msg.getPlatform().makeFileName() + " with time " + 
-//			sdf.format(msg.getMessageTime()));
 	  ts_loop:
 		for(Iterator<TimeSeries> tsit = msg.getAllTimeSeries(); tsit.hasNext(); )
 		{
@@ -258,8 +238,6 @@ public class KistersFormatter
 				TimedVariable tv = ts.sampleAt(idx);
 				if ((tv.getFlags() & (IFlags.IS_ERROR | IFlags.IS_MISSING)) == 0)
 				{
-//					logger.debug1("Found first data: " + ts.getSensorName() + " " 
-//						+ sdf.format(tv.getTime()) + " " + tv.getStringValue());
 					hasData = true;
 					break ts_loop;
 				}
@@ -267,7 +245,7 @@ public class KistersFormatter
 		}
 		if (!hasData)
 		{
-			logger.debug1("Skipping message with no non-missing data");
+			log.debug("Skipping message with no non-missing data");
 			return;
 		}
 		
@@ -278,12 +256,11 @@ public class KistersFormatter
 		{
 			platformSite = msg.getRawMessage().getPlatform().getSite();
 			if (platformSite == null)
-				logger.warning("No site associated with platform.");
+				log.warn("No site associated with platform.");
 		}
 		catch(Exception ex)
 		{
-			throw new OutputFormatterException(
-				"Cannot determine platform site: " + ex.toString());
+			throw new OutputFormatterException("Cannot determine platform site: ", ex);
 		}
 
 		if (bufferTimeSec <= 0)
@@ -305,8 +282,7 @@ public class KistersFormatter
 
 			if (site == null)
 			{
-				logger.warning("No platform site and no site associated with " +
-					"sensor " + sensor.getName() + " -- skipped.");
+				log.warn("No platform site and no site associated with sensor {} -- skipped.", sensor.getName());
 				continue;
 			}
 			

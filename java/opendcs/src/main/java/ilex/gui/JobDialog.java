@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package ilex.gui;
 
 import ilex.util.LoadResourceBundle;
@@ -26,8 +41,7 @@ import javax.swing.border.TitledBorder;
  * @author mjmaloney
  *
  */
-public class JobDialog
-    extends JDialog
+public class JobDialog extends JDialog
 {
     private static ResourceBundle labels = null;
     private JPanel panel1 = new JPanel();
@@ -62,7 +76,7 @@ public class JobDialog
         super(parent, title, modal);
         doInit(title);
     }
-    
+
     /**
      * when called the cancel button will change its text to
      * "Done"
@@ -72,7 +86,7 @@ public class JobDialog
     {
         cancelButton.setText("Done");
     }
-    
+
     public void setNorthPanel(JPanel newNorth)
     {
         panel1.remove(jPanel1);
@@ -83,24 +97,19 @@ public class JobDialog
     public void doInit(String title)
     {
         getLabels();
-        try
-        {
-            jbInit();
-            pack();
-            progressArea.setEditable(false);
-        }
-        catch (Exception ex)
-        {
-            ex.printStackTrace();
-        }
+
+        jbInit();
+        pack();
+        progressArea.setEditable(false);
+
         cancelled = false;
         addToProgress(title);
-        
+
         this.setSize(600,280);
         WindowUtility.center(this);
     }
-    
-    public static ResourceBundle getLabels() 
+
+    public static ResourceBundle getLabels()
     {
         if (labels == null)
             //Load the labels properties file
@@ -108,18 +117,12 @@ public class JobDialog
                     "ilex/resources/gui", null);
         return labels;
     }
-    /** no-args constructor for JBuilder. */
-//    public JobDialog()
-//    {
-//        this(null, "", false);
-//    }
 
     /**
      * GUI component initialization
      * @throws Exception
      */
     private void jbInit()
-        throws Exception
     {
         titledBorder1 = new TitledBorder(BorderFactory.createEtchedBorder(Color.
             white, new Color(165, 163, 151)), labels.getString(
@@ -187,7 +190,7 @@ public class JobDialog
                 }
               });
     }
-    
+
     /**
      * adds a string to the end of the progress area without
      * adding a line feed to the end.

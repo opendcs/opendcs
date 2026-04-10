@@ -5,18 +5,17 @@ import java.util.Properties;
 import javax.sql.DataSource;
 
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.impl.opendcs.OpenDcsOracleProvider;
+import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.database.SimpleOpenDcsDatabaseWrapper;
-import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.spi.database.DatabaseProvider;
 
 import decodes.db.Database;
 import decodes.db.DatabaseException;
-import decodes.tsdb.TimeSeriesDb;
+import decodes.sql.SqlDatabaseIO;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
-import ilex.util.Pair;
-import opendcs.dai.DaiBase;
 
 public class OpenTsdbProvider implements DatabaseProvider
 {
@@ -25,7 +24,10 @@ public class OpenTsdbProvider implements DatabaseProvider
     @Override
     public boolean canCreate(DecodesSettings settings)
     {
-        return settings.editDatabaseTypeCode == DecodesSettings.DB_OPENTSDB;
+        return settings.editDatabaseTypeCode == DecodesSettings.DB_OPENTSDB 
+            || OpenDcsPgProvider.NAME.equals(settings.editDatabaseType)
+            || OpenDcsOracleProvider.NAME.equals(settings.editDatabaseType)
+        ;
     }
 
     @Override
@@ -46,15 +48,6 @@ public class OpenTsdbProvider implements DatabaseProvider
     {
         Database db = new Database(true);            
         db.setDbIo(new OpenTsdbSqlDbIO(dataSource, settings));
-        Database.setDb(db);
-        try
-        {
-            db.init(settings);
-        }
-        catch(DecodesException ex)
-        {
-            throw new DatabaseException("Unable to initialize decodes.", ex);
-        }
         return db;
     }
 
@@ -63,6 +56,18 @@ public class OpenTsdbProvider implements DatabaseProvider
     {
         Database decodesDb = getDecodesDatabase(dataSource, settings);
         OpenTsdb tsDb = new OpenTsdb(appName, dataSource, settings);
-        return new SimpleOpenDcsDatabaseWrapper(settings, decodesDb, tsDb, dataSource);
+        var db = new SimpleOpenDcsDatabaseWrapper(settings, decodesDb, tsDb, dataSource);
+        tsDb.setDcsDatabase(db);
+        Database.setDb(decodesDb);
+        try
+        {
+            ((SqlDatabaseIO)decodesDb.getDbIo()).setDcsDatabase(db);
+            decodesDb.init(settings);
+        }
+        catch(DecodesException ex)
+        {
+            throw new DatabaseException("Unable to initialize decodes.", ex);
+        }
+        return db;
     }
 }

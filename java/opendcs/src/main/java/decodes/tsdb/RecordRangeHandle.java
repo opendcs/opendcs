@@ -41,7 +41,7 @@ public class RecordRangeHandle
 
 	/**
 	 * Adds a record number.
-	 * @param recnum the record number
+	 * @param recordNumber the record number
 	 */
 	public void addRecNum(int recordNumber)
 	{

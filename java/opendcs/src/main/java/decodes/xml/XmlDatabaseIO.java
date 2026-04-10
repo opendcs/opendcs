@@ -13,39 +13,6 @@
  *
  */
 
-/*
-*  $Id$
-*  
-*  Open Source Software
-*  
-*  $Log$
-*  Revision 1.6  2016/02/04 18:51:01  mmaloney
-*  Improved debugs.
-*
-*  Revision 1.5  2015/04/15 19:59:47  mmaloney
-*  Fixed synchronization bugs when the same data sets are being processed by multiple
-*  routing specs at the same time. Example is multiple real-time routing specs with same
-*  network lists. They will all receive and decode the same data together.
-*
-*  Revision 1.4  2014/08/29 18:20:00  mmaloney
-*  remove updateTransportId method
-*
-*  Revision 1.3  2014/08/22 17:23:04  mmaloney
-*  6.1 Schema Mods and Initial DCP Monitor Implementation
-*
-*  Revision 1.2  2014/05/30 13:00:28  mmaloney
-*  dev
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.17  2013/05/06 18:17:20  mmaloney
-*  Bug in Platform File Name creation. DbKey is now not a number.
-*
-*  Revision 1.16  2013/03/21 18:27:40  mmaloney
-*  DbKey Implementation
-*
-*/
 package decodes.xml;
 
 import decodes.db.EngineeringUnit;
@@ -54,7 +21,6 @@ import decodes.db.RoutingExecStatus;
 import decodes.db.RoutingStatus;
 import ilex.util.Counter;
 import ilex.util.FileCounter;
-import ilex.util.Logger;
 import ilex.xml.LoggerErrorHandler;
 import ilex.xml.XmlObjectWriter;
 import ilex.xml.XmlOutputStream;
@@ -79,8 +45,8 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 
-import org.apache.commons.lang.NotImplementedException;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.SAXException;
 
 import decodes.db.Constants;
@@ -121,7 +87,7 @@ import decodes.xml.jdbc.XmlConnection;
  */
 public class XmlDatabaseIO extends DatabaseIO
 {
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(XmlDatabaseIO.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "XmlDatabaseIO";
 	// Directory Structure for the XML Files:
 	public static final String PlatformDir = "platform";
@@ -138,8 +104,6 @@ public class XmlDatabaseIO extends DatabaseIO
 	public static final String DataTypeEquivFile = "DataTypeEquivalenceList.xml";
 	public static final String PlatformListFile = "PlatformList.xml";
 	public static final String PMConfigDir = "pm";
-	//public static final String TimeZoneDir = "tz";
-	//public static final String TimeZoneFile = "TimeZoneList.xml";
 	public static final String EquipmentDir = "equipment";
 	public static final String DataSourceDir = "datasource";
 	public static final String ScheduleEntryDir = "schedule";
@@ -176,7 +140,8 @@ public class XmlDatabaseIO extends DatabaseIO
 
 	/**
 	 * Construct with a database directory location.
-	 * @param xmldir top of hierarchy of XML database
+	 * @param dataSource of XML database
+	 * @param settings DecodesSettings
 	 * @throws SAXException if can't initialize XML parsers
 	 * @throws ParserConfigurationException if can't configure XML parsers
 	 */
@@ -196,7 +161,7 @@ public class XmlDatabaseIO extends DatabaseIO
 		{
 			myParser = new TopLevelParser();
 
-			errorHandler = new LoggerErrorHandler();
+			errorHandler = new LoggerErrorHandler(log);
 			errorHandler.stopOnWarnings(false);
 			errorHandler.stopOnErrors(false);
 			myParser.setErrorHandler(errorHandler);
@@ -289,7 +254,7 @@ public class XmlDatabaseIO extends DatabaseIO
 	protected InputStream getInputStream( String dir, String name ) throws IOException
 	{
 		String fn = makePath(dir, name);
-		Logger.instance().debug3("XmlDatabaseIO: Opening '" + fn + "'");
+		log.info("XmlDatabaseIO: Opening '" + fn + "'");
 		return new FileInputStream(fn);
 	}
 
@@ -379,10 +344,8 @@ public class XmlDatabaseIO extends DatabaseIO
 
 			for(int i=0; i<ls.length; i++)
 			{
-				InputStream is = null;
-				try
+				try (InputStream is = getInputStream(PlatformConfigDir, ls[i]))
 				{
-					is = getInputStream(PlatformConfigDir, ls[i]);
 					PlatformConfig pc = (PlatformConfig)myParser.parse(is);
 					pcl.add(pc);
 				}
@@ -390,19 +353,16 @@ public class XmlDatabaseIO extends DatabaseIO
 				catch(Exception e)
 				{
 					String msg = "Error parsing platform config '" 
-						+ ls[i] + "' " + e;
-					Logger.instance().log(Logger.E_FAILURE, msg);
-				}
-				finally
-				{
-					if (is != null)
-						try { is.close(); } catch(Exception e) {}
+						+ ls[i] + "' ";
+					log.atError()
+					.setCause(e)
+					.log(msg);
 				}
 			}
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("Unable to read config list.", ex);
 		}
 	}
 
@@ -428,20 +388,21 @@ public class XmlDatabaseIO extends DatabaseIO
 								pc.configName = newName;
 							try {
 								writeConfig( pc );
-							} catch (DatabaseException ex1) {
-									throw new DatabaseException ("Could not save new platform configuration - "+newName);
+							} catch (DatabaseException ex) 
+							{
+								throw new DatabaseException ("Could not save new platform configuration - "+newName, ex);
 							}
 						} else {
 							seqNumber = -1;
 						}
  					} catch ( Exception ex2 ) {
-						throw new DatabaseException ("Could not obtain sequence number for configuration starting with "+ prefix);
+						throw new DatabaseException ("Could not obtain sequence number for configuration starting with "+ prefix, ex2);
 					}
 				} else {
 					throw new DatabaseException ("Could not obtain sequence number for configuration starting with "+ prefix);
 				}
-			} catch ( DatabaseException e ) {
-					throw new DatabaseException (e.toString());
+			} catch ( DatabaseException ex ) {
+				throw new DatabaseException("Unable to create new platform config", ex);
 			}
 		}
 		return(pc);
@@ -459,10 +420,8 @@ public class XmlDatabaseIO extends DatabaseIO
 		    return (0);
 		  for(int i=0; i<ls.length; i++)
 		  {
-		    InputStream is = null;
-		    try
+		    try (InputStream is =  getInputStream(PlatformConfigDir, ls[i]))
 		    {
-		      is = getInputStream(PlatformConfigDir, ls[i]);
 		      pc = (PlatformConfig)myParser.parse(is);
 					String name = pc.getName();
 					if ( name.substring(0,prefix.length()).equals(prefix) ) {
@@ -476,13 +435,10 @@ public class XmlDatabaseIO extends DatabaseIO
 		    catch(Exception e)
 		    {
 		      String msg = "Error parsing platform config '"
-		        + ls[i] + "' " + e;
-		      Logger.instance().log(Logger.E_FAILURE, msg);
-		    }
-		    finally
-		    {
-		      if (is != null)
-		        try { is.close(); } catch(Exception e) {}
+		        + ls[i] + "' ";
+		      log.atError()
+			  .setCause(e)
+			  .log(msg);
 		    }
 		  }
 			maxSeq++;
@@ -491,10 +447,8 @@ public class XmlDatabaseIO extends DatabaseIO
 				sequenceNumber[l] = 0;
 		  for(int i=0; i<ls.length; i++)
 		  {
-		    InputStream is = null;
-		    try
+		    try (InputStream is =  getInputStream(PlatformConfigDir, ls[i]))
 		    {
-		      is = getInputStream(PlatformConfigDir, ls[i]);
 		      pc = (PlatformConfig)myParser.parse(is);
 					String name = pc.getName();
 					if ( name.substring(0,prefix.length()).equals(prefix) ) {
@@ -507,13 +461,10 @@ public class XmlDatabaseIO extends DatabaseIO
 		    catch(Exception e)
 		    {
 		      String msg = "Error parsing platform config '"
-		        + ls[i] + "' " + e;
-		      Logger.instance().log(Logger.E_FAILURE, msg);
-		    }
-		    finally
-		    {
-		      if (is != null)
-		        try { is.close(); } catch(Exception e) {}
+		        + ls[i] + "' ";
+		      log.atError()
+			  .setCause(e)
+			  .log(msg);
 		    }
 		  }
 			nextSeq = maxSeq;
@@ -545,30 +496,24 @@ public class XmlDatabaseIO extends DatabaseIO
 				return;
 			for(int i=0; i<ls.length; i++)
 			{
-				InputStream is = null;
-				try
+				
+				try (InputStream is = getInputStream(DataSourceDir, ls[i]))
 				{
-					is = getInputStream(DataSourceDir, ls[i]);
 					DataSource ob = (DataSource)myParser.parse(is);
 					// Don't need to explicitly add, parser will do it.
-					//dsl.add(ob);
 				}
 				// Catch other type (IO or bad cast) exceptions
 				catch(Exception e)
 				{
-					Logger.instance().log(Logger.E_FAILURE,
-						"Error parsing data source '" + ls[i] + "' " + e);
-				}
-				finally
-				{
-					if (is != null)
-						try { is.close(); } catch(Exception e) {}
+					log.atError()
+					.setCause(e)
+					.log("Error parsing data source '" + ls[i] + "' ");
 				}
 			}
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("Unable to read data sources.", ex);
 		}
 	}
 
@@ -584,25 +529,24 @@ public class XmlDatabaseIO extends DatabaseIO
 		Database oldDb = Database.getDb();
 		// Make sure correct database is in effect.
 		Database.setDb(dts.getDatabase());
-		InputStream is = null;
 		try
 		{
 			long lmt = getLastModifyTime(DataTypeDir, DataTypeEquivFile);
 			if (dts.getTimeLastRead() < lmt)
 			{
-				is = getInputStream(DataTypeDir, DataTypeEquivFile);
-				myParser.parse(is, dts);
-				dts.setTimeLastRead();
+				try (InputStream is = getInputStream(DataTypeDir, DataTypeEquivFile))
+				{
+					myParser.parse(is, dts);
+					dts.setTimeLastRead();
+				}
 			}
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("Unable to read DataType set.", ex);
 		}
 		finally
 		{
-			if (is != null)
-				try { is.close(); } catch(Exception e) {}
 			Database.setDb(oldDb);
 		}
 	}
@@ -625,9 +569,9 @@ public class XmlDatabaseIO extends DatabaseIO
 			XmlObjectWriter xow = new DataTypeEquivalenceListParser();
 			writeDatabaseObject(fn, xow);
 		}
-		catch (DatabaseException e)
+		catch (DatabaseException ex)
 		{
-			throw e;
+			throw new DatabaseException("Unable to write DataType set.", ex);
 		}
 		finally
 		{
@@ -646,26 +590,28 @@ public class XmlDatabaseIO extends DatabaseIO
 		Database oldDb = Database.getDb();
 		// Make sure correct database is in effect.
 		Database.setDb(eul.getDatabase());
-		InputStream is = null;
+		
 		try
 		{
 			long lmt = getLastModifyTime(EUDir, EUListFile);
 			if (eul.getTimeLastRead() < lmt)
 			{
-				is = getInputStream(EUDir, EUListFile);
-				myParser.parse(is, eul);
-				eul.setTimeLastRead();
+				try (InputStream is = getInputStream(EUDir, EUListFile))
+				{
+					myParser.parse(is, eul);
+					eul.setTimeLastRead();
+				}
 			}
 		}
 		catch(Exception e)
 		{
-			e.printStackTrace(System.out);
+			log.atError()
+			.setCause(e)
+			.log("Error reading readEngineeringUnitList. "+e);
 			throw new DatabaseException(e.toString());
 		}
 		finally
 		{
-			if (is != null)
-				try { is.close(); } catch(Exception e) {}
 			Database.setDb(oldDb);
 		}
 	}
@@ -683,25 +629,24 @@ public class XmlDatabaseIO extends DatabaseIO
 		Database oldDb = Database.getDb();
 		// Make sure correct database is in effect.
 		Database.setDb(top.getDatabase());
-		InputStream is = null;
 		try
 		{
 			long lmt = getLastModifyTime(EnumDir, EnumListFile);
 			if (top.getTimeLastRead() < lmt)
 			{
-				is = getInputStream(EnumDir, EnumListFile);
-				myParser.parse(is, top);
-				top.setTimeLastRead();
+				try (InputStream is = getInputStream(EnumDir, EnumListFile))
+				{
+					myParser.parse(is, top);
+					top.setTimeLastRead();
+				}				
 			}
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("Unable to read Enum List.", ex);
 		}
 		finally
 		{
-			if (is != null)
-				try { is.close(); } catch(Exception e) {}
 			Database.setDb(oldDb);
 		}
 
@@ -713,7 +658,7 @@ public class XmlDatabaseIO extends DatabaseIO
 	 * Objects in this collection are complete.
 	 * @param eml object in which to store data
 	 */
-	public void readEquipmentModelList( EquipmentModelList eml ) throws DatabaseException
+		public void readEquipmentModelList( EquipmentModelList eml ) throws DatabaseException
 	{
 		try
 		{
@@ -722,32 +667,25 @@ public class XmlDatabaseIO extends DatabaseIO
 				return;
 			for(int i=0; i<ls.length; i++)
 			{
-				InputStream is = null;
-				try
+
+				try (InputStream is  = getInputStream(EquipmentDir, ls[i]))
 				{
-					is = getInputStream(EquipmentDir, ls[i]);
 					EquipmentModel ob = (EquipmentModel)myParser.parse(is);
 					eml.add(ob);
 				}
 				// Catch other type (IO or bad cast) exceptions
-				catch(Exception e)
+				catch (Exception ex)
 				{
-					Logger.instance().log(Logger.E_FAILURE,
-						"Error parsing equipment model '" + ls[i] + "' " + e);
+					log.atError().setCause(ex).log("Error parsing equipment model '{}'", ls[i]);
 				}
-				finally
-				{
-					if (is != null)
-						try { is.close(); } catch(Exception e) {}
-				}
+
 			}
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("Unable to read equipment model list.", ex);
 		}
 	}
-
 
 	/**
 	 * Returns the list of NetworkList objects defined in this database.
@@ -755,7 +693,7 @@ public class XmlDatabaseIO extends DatabaseIO
 	 * and primary display attributes only).
 	 * @param nll object in which to store data
 	 */
-	public void readNetworkListList( NetworkListList nll ) 
+		public void readNetworkListList( NetworkListList nll )
 		throws DatabaseException
 	{
 		try
@@ -765,35 +703,32 @@ public class XmlDatabaseIO extends DatabaseIO
 				return;
 			for(int i=0; i<ls.length; i++)
 			{
-				InputStream is = null;
-				try
+
+				try (InputStream is = getInputStream(NetworkListDir, ls[i]))
 				{
-					is = getInputStream(NetworkListDir, ls[i]);
 					NetworkList ob = (NetworkList)myParser.parse(is);
 					nll.add(ob);
 				}
 				// Catch other type (IO or bad cast) exceptions
-				catch(Exception e)
+				catch (Exception ex)
 				{
-					Logger.instance().log(Logger.E_FAILURE,
-						"Error parsing network list '" + ls[i] + "' " + e);
-				}
-				finally
-				{
-					if (is != null)
-						try { is.close(); } catch(Exception e) {}
+					log.atError().setCause(ex).log("Error parsing network list '{}'", ls[i]);
 				}
 			}
 		}
-		catch(java.io.IOException e) { }
+		catch (java.io.IOException ex)
+		{
+			throw new DatabaseException("Unable to read network list directory.", ex);
+		}
 	}
+
 
 	/**
 	 * Not implemented for XML.
 	 */
 	public void readNetworkListList( NetworkListList nll, String tmType)
 	{
-		throw new NotImplementedException("XmlDatabaseIO.readNetworkListList with filter not implemented for XML.");
+		throw new UnsupportedOperationException("XmlDatabaseIO.readNetworkListList with filter not implemented for XML.");
 	}
 	
 	/**
@@ -822,35 +757,35 @@ public class XmlDatabaseIO extends DatabaseIO
 	 * PlatformList object.
 	 * @param top object in which to store data
 	 */
-	public void readPlatformList( PlatformList top ) 
+	public void readPlatformList( PlatformList top )
 		throws DatabaseException
 	{
 		Database oldDb = Database.getDb();
 		// Make sure correct database is in effect.
 		Database.setDb(top.getDatabase());
-		InputStream is = null;
+
 		try
 		{
 			long lmt = getLastModifyTime(PlatformDir, PlatformListFile);
 			if (top.getTimeLastRead() < lmt)
 			{
-				is = getInputStream(PlatformDir, PlatformListFile);
-				myParser.parse(is, top);
-				top.setTimeLastRead();
+				try (InputStream is = getInputStream(PlatformDir, PlatformListFile))
+				{
+					myParser.parse(is, top);
+					top.setTimeLastRead();
+				}
 			}
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			e.printStackTrace(System.err);
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("Unable to read platform list.", ex);
 		}
 		finally
 		{
-			if (is != null)
-				try { is.close(); } catch(Exception e) {}
 			Database.setDb(oldDb);
 		}
 	}
+
 
 	public Date getPlatformListLMT()
 	{
@@ -878,10 +813,12 @@ public class XmlDatabaseIO extends DatabaseIO
         Platform p = platList.findPlatform(mediumType, mediumId, timeStamp);
        	if (p == null)
        	{
-Logger.instance().debug3("XmlDatabaseIO: lookup - No platform matching " + mediumType + ":" + mediumId);
+		 log.atWarn()
+		 .log("XmlDatabaseIO: lookup - No platform matching " + mediumType + ":" + mediumId);
        		return Constants.undefinedId;
        	}
-Logger.instance().debug3("XmlDatabaseIO: lookup - platformID = " + p.getId());
+		log.atWarn()
+		.log("XmlDatabaseIO: lookup - platformID = " + p.getId());
        	return p.getId();
 	}
 	
@@ -913,15 +850,14 @@ Logger.instance().debug3("XmlDatabaseIO: lookup - platformID = " + p.getId());
 	{
 		try
 		{
-			String[] ls = listDirectory(PlatformDir);
+			String ls[] = listDirectory(PlatformDir);
 			if (ls == null)
 				return;
-			for (int i=0; i<ls.length; i++)
+			for(int i=0; i<ls.length; i++)
 			{
-				InputStream is = null;
-				try
+
+				try (InputStream is = getInputStream(PlatformDir, ls[i]))
 				{
-					is = getInputStream(PlatformDir, ls[i]);
 					Platform ob = (Platform)myParser.parse(is);
 					if (ob.lastModifyTime == null)
 						ob.lastModifyTime = new Date(
@@ -929,68 +865,17 @@ Logger.instance().debug3("XmlDatabaseIO: lookup - platformID = " + p.getId());
 					pl.add(ob);
 				}
 				// Catch other type (IO or bad cast) exceptions
-				catch(Exception e)
+				catch(Exception ex)
 				{
-					e.printStackTrace(System.out);
-					Logger.instance().log(Logger.E_FAILURE,
-						"Error parsing platform '" + ls[i] + "' " + e);
-				}
-				finally
-				{
-					if (is != null)
-						try { is.close(); } catch(Exception e) {}
+					log.atError().setCause(ex).log("Error parsing platform '{}'", ls[i]);
 				}
 			}
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			e.printStackTrace(System.err);
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("Unable to read All Platforms.", ex);
 		}
 	}
-
-
-//	/**
-//	  Returns the list of PMConfig objects defined in this database.
-//	  Objects in this list may be only partially populated (key values
-//	  and primary display attributes only).
-//	*/
-//	public void readPMConfigList(PMConfigList pmcl)
-//		throws DatabaseException
-//	{
-//		try
-//		{
-//			String ls[] = listDirectory(PMConfigDir);
-//			if (ls == null)
-//				return;
-//			for(int i=0; i<ls.length; i++)
-//			{
-//				InputStream is = null;
-//				try
-//				{
-//					is = getInputStream(PMConfigDir, ls[i]);
-//					PMConfig ob = (PMConfig)myParser.parse(is);
-//					// No need to add -- PMConfig ctor will do it.
-//					//pmcl.add(ob);
-//				}
-//				// Catch other type (IO or bad cast) exceptions
-//				catch(Exception e)
-//				{
-//					Logger.instance().log(Logger.E_FAILURE,
-//						"Error parsing perf measurements '" + ls[i] + "' " + e);
-//				}
-//				finally
-//				{
-//					if (is != null)
-//						try { is.close(); } catch(Exception e) {}
-//				}
-//			}
-//		}
-//		catch(Exception e)
-//		{
-//			throw new DatabaseException(e.toString());
-//		}
-//	}
 
 
 	/**
@@ -1008,35 +893,27 @@ Logger.instance().debug3("XmlDatabaseIO: lookup - platformID = " + p.getId());
 				return;
 			for(int i=0; i<ls.length; i++)
 			{
-				InputStream is = null;
-				try
+
+				try (InputStream is = getInputStream(PresentationGroupDir, ls[i]))
 				{
-					is = getInputStream(PresentationGroupDir, ls[i]);
 					PresentationGroup ob = (PresentationGroup)
 						myParser.parse(is);
 					pgl.add(ob);
 				}
 				// Catch other type (IO or bad cast) exceptions
-				catch(Exception e)
+				catch(Exception ex)
 				{
-					String msg = "Error parsing presentation group '" 
-						+ ls[i] + "' " +e;
-					Logger.instance().log(Logger.E_FAILURE, msg);
-System.err.println(msg);
-e.printStackTrace();
+					log.atError().setCause(ex).log("Error parsing presentation group '{}'", ls[i]);
 				}
-				finally
-				{
-					if (is != null)
-						try { is.close(); } catch(Exception e) {}
-				}
+
 			}
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("Unable to read presentation group list.", ex);
 		}
 	}
+
 
 	/**
 	 * Returns the list of RoutingSpec statuses for the routing specs
@@ -1076,31 +953,25 @@ e.printStackTrace();
 				return;
 			for(int i=0; i<ls.length; i++)
 			{
-				InputStream is = null;
-				try
+
+				try (InputStream is = getInputStream(RoutingSpecDir, ls[i]))
 				{
-					is = getInputStream(RoutingSpecDir, ls[i]);
 					RoutingSpec ob = (RoutingSpec)myParser.parse(is);
 					rsl.add(ob);
 				}
 				// Catch other type (IO or bad cast) exceptions
-				catch(Exception e)
+				catch(Exception ex)
 				{
-					Logger.instance().log(Logger.E_FAILURE,
-						"Error parsing routing spec '" + ls[i] + "' " + e);
-				}
-				finally
-				{
-					if (is != null)
-						try { is.close(); } catch(Exception e) {}
+					log.atError().setCause(ex).log("Error parsing routing spec '{}'", ls[i]);
 				}
 			}
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("Unable to read routing specs.", ex);
 		}
 	}
+
 
 	/**
 	 * Not implemented for XML.
@@ -1111,7 +982,7 @@ e.printStackTrace();
 	public synchronized List<RoutingSpec> routeSpecsUsing(long groupId)
 			throws DatabaseException
 	{
-		throw new NotImplementedException("routeSpecsUsing not implemented for XML.");
+		throw new UnsupportedOperationException("routeSpecsUsing not implemented for XML.");
 	}
 
 
@@ -1124,9 +995,6 @@ e.printStackTrace();
 	 */
 	public void readSiteList( SiteList sl ) throws DatabaseException
 	{
-//System.out.println("Reading Site List");
-//try { throw new Exception("x"); }
-//catch(Exception ex) { ex.printStackTrace(); }
 		try
 		{
 			String ls[] = listDirectory(SiteDir);
@@ -1134,30 +1002,23 @@ e.printStackTrace();
 				return;
 			for(int i=0; i<ls.length; i++)
 			{
-				InputStream is = null;
-				try
+
+				try (InputStream is  = getInputStream(SiteDir, ls[i]))
 				{
-					is = getInputStream(SiteDir, ls[i]);
 					Site ob = (Site)myParser.parse(is);
 					sl.addSite(ob);
 					ob.filename = makePath(SiteDir, ls[i]);
 				}
 				// Catch other type (IO or bad cast) exceptions
-				catch(Exception e)
+				catch(Exception ex)
 				{
-					Logger.instance().log(Logger.E_FAILURE,
-						"Error parsing site '" + ls[i] + "' " + e);
-				}
-				finally
-				{
-					if (is != null)
-						try { is.close(); } catch(Exception e) {}
+					log.atError().setCause(ex).log("Error parsing site '{}'", ls[i]);
 				}
 			}
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("Unable to read sites.", ex);
 		}
 	}
 
@@ -1288,8 +1149,8 @@ e.printStackTrace();
 		*/
 		if (site.filename != null && !fn.equals(site.filename))
 		{
-			Logger.instance().log(Logger.E_DEBUG1,
-				"XmlDatabaseIO.writeSite: Deleting old site file '"
+			log.atInfo()
+			.log("XmlDatabaseIO.writeSite: Deleting old site file '"
 				+ site.filename + "'");
 			try
 			{
@@ -1298,8 +1159,9 @@ e.printStackTrace();
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().log(Logger.E_WARNING,
-					"XmlDatabaseIO.writeSite: Cannot remove old site file '" 
+				log.atError()
+				.setCause(ex)
+				.log("XmlDatabaseIO.writeSite: Cannot remove old site file '" 
 					+ site.filename + "'");
 			}
 		}
@@ -1394,8 +1256,7 @@ e.printStackTrace();
 		String fn = makePath(PlatformDir,
 			"p" + platIdFormat.format(p.getId().getValue()));
 
-		Logger.instance().log(Logger.E_DEBUG1,
-			"XmlDatabaseIO: Reading '" + fn + "'");
+		log.atInfo().log("XmlDatabaseIO: Reading '" + fn + "'");
 
 		File file = new File(fn);
 		if (file.canRead())
@@ -1404,14 +1265,15 @@ e.printStackTrace();
 			try { myParser.parse(file, p); }
 			catch(Exception ex)
 			{
-				String msg = "Error reading '" + fn + "': " + ex;
-				System.err.println(msg);
-				ex.printStackTrace();
+				String msg = "Error reading '" + fn + "': ";
+				log.atError()
+				.setCause(ex)
+				.log(msg);
 				throw new DatabaseException(msg);
 			}
-			Logger.instance().debug1("XML readPlatform, fileLMT="
+			log.atInfo()
+			.log("XML readPlatform, fileLMT="
 				+ myParser.getFileLMT() + ", platformLMT=" + p.lastModifyTime);
-
 			return;
 		}
 		throw new DatabaseException(
@@ -1468,7 +1330,7 @@ e.printStackTrace();
 		{
 			String msg = "Platform '" + p.makeFileName() + "' with file name '"
 				+ fn + "' has been deleted.";
-			Logger.instance().log(Logger.E_WARNING, msg);
+			log.atWarn().log(msg);
 			return null;
 		}
 		return new Date(f.lastModified());
@@ -1493,13 +1355,19 @@ e.printStackTrace();
 	 * media. It's configuration is not deleted.
 	 * @param p the platform to delete
 	 */
-	public void deletePlatform( Platform p ) throws DatabaseException
+		public void deletePlatform( Platform p ) throws DatabaseException
 	{
 		String fn = makePath(PlatformDir,
 			"p" + platIdFormat.format(p.getId().getValue()));
 
-		try { tryDelete(fn); }
-		catch(Exception e) {}
+		try
+		{
+			tryDelete(fn);
+		}
+		catch(Exception ex)
+		{
+			log.atError().setCause(ex).log("Unable to delete platform file '" + fn + "'", ex);
+		}
 	}
 
 	/**
@@ -1602,37 +1470,6 @@ e.printStackTrace();
 		tryDelete(fn);
 	}
 
-//	public void readEquationSpec( EquationSpec ob )
-//		throws DatabaseException
-//	{
-//		String fn = "";
-//		try
-//		{
-//			fn = makePath(EquationDir, ob.makeFileName());
-//			myParser.parse(new File(fn), ob);
-//		}
-//		catch(Exception e)
-//		{
-//			throw new DatabaseException("Error reading '" + fn + "': " + e);
-//		}
-//	}
-//
-//
-//	public void writeEquationSpec( EquationSpec ob )
-//		throws DatabaseException
-//	{
-//		String fn = xmldir + File.separator + EquationDir
-//					+ File.separator + ob.makeFileName();
-//		writeDatabaseObject(fn, new EquationSpecParser(ob));
-//	}
-//
-//	public void deleteEquationSpec( EquationSpec ob )
-//		throws DatabaseException
-//	{
-//		String fn = xmldir + File.separator + EquationDir
-//					+ File.separator + ob.makeFileName();
-//		tryDelete(fn);
-//	}
 
 	/**
 	 * This reads the PresentationGroup object from the XML database,
@@ -1688,8 +1525,7 @@ e.printStackTrace();
 		File f = new File(fn);
 		if (!f.exists())
 		{
-			String msg = "Presentation Group '" + fn + "' has been deleted.";
-			Logger.instance().log(Logger.E_WARNING, msg);
+			log.atWarn().log("Presentation Group '" + fn + "' has been deleted.");
 			return null;
 		}
 		return new Date(f.lastModified());
@@ -1708,9 +1544,9 @@ e.printStackTrace();
 			fn = makePath(RoutingSpecDir, ob.makeFileName());
 			myParser.parse(new File(fn), ob);
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			throw new DatabaseException("Error reading '" + fn + "': " + e);
+			throw new DatabaseException("Error reading '" + fn + "'", ex);
 		}
 	}
 
@@ -1749,8 +1585,7 @@ e.printStackTrace();
 		File f = new File(fn);
 		if (!f.exists())
 		{
-			String msg = "Routing Spec '" + fn + "' has been deleted.";
-			Logger.instance().log(Logger.E_WARNING, msg);
+			log.atWarn().log("Routing Spec '" + fn + "' has been deleted.");
 			return null;
 		}
 		return new Date(f.lastModified());
@@ -1768,13 +1603,12 @@ e.printStackTrace();
 		try
 		{
 			fn = makePath(DataSourceDir, ob.makeFileName());
-			Logger.instance().log(Logger.E_DEBUG1,
-				"XmlDatabaseIO: Reading DataSource '" + fn + "'");
+			log.atDebug().log("XmlDatabaseIO: Reading DataSource '" + fn + "'");
 			myParser.parse(new File(fn), ob);
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			throw new DatabaseException("Error reading '" + fn + "': " + e);
+			throw new DatabaseException("Error reading '" + fn + "'", ex);
 		}
 	}
 
@@ -1827,9 +1661,9 @@ e.printStackTrace();
 			fn = makePath(NetworkListDir, ob.makeFileName());
 			myParser.parse(new File(fn), ob);
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			throw new DatabaseException("Error reading '" + fn + "': " + e);
+			throw new DatabaseException("Error reading '{}'", ex);
 		}
 	}
 
@@ -1873,8 +1707,7 @@ e.printStackTrace();
 		File f = new File(fn);
 		if (!f.exists())
 		{
-			String msg = "Network List '" + fn + "' has been deleted.";
-			Logger.instance().log(Logger.E_WARNING, msg);
+			log.atWarn().log("Network List '{}' has been deleted.", fn);
 			return null;
 		}
 		return new Date(f.lastModified());
@@ -1888,7 +1721,7 @@ e.printStackTrace();
 	{
 		String fn = xmldir + File.separator + EnumDir
 					+ File.separator + EnumListFile;
-		writeDatabaseObject(fn, new EnumListParser(ob.getDatabase()));
+		writeDatabaseObject(fn, new EnumListParser(ob));
 	}
 
 
@@ -1899,14 +1732,11 @@ e.printStackTrace();
 	 */
 	private void writeDatabaseObject( String fn, XmlObjectWriter xow ) throws DatabaseException
 	{
-		FileOutputStream os = null;
 		if (!fn.endsWith(".xml"))
 			fn = fn + ".xml";
-		try
+		log.atDebug().log("Writing '{}'", fn);
+		try (FileOutputStream os = new FileOutputStream(new File(fn)))
 		{
-			Logger.instance().log(Logger.E_DEBUG1,
-				"XmlDatabaseIO: Writing '" + fn + "'");
-			os = new FileOutputStream(new File(fn));
 			XmlOutputStream xos = new XmlOutputStream(os, xow.myName());
 			xos.xmlDtdUri = dtdUri;
 			xos.writeXmlHeader();
@@ -1914,13 +1744,10 @@ e.printStackTrace();
 		}
 		catch(Exception e)
 		{
-e.printStackTrace();
+			log.atError()
+			.setCause(e)
+			.log("Error writing XML database.");
 			throw new DatabaseException("Error writing '" + fn + "': " + e);
-		}
-		finally
-		{
-			if (os != null)
-				try { os.close(); } catch(Exception e){}
 		}
 	}
 
@@ -1929,7 +1756,7 @@ e.printStackTrace();
 	 * @param fn the file name.
 	 * @throws DatabaseException if file cannot be deleted.
 	 */
-	private void tryDelete( String fn ) throws DatabaseException
+		private void tryDelete( String fn ) throws DatabaseException
 	{
 		if (!fn.endsWith(".xml"))
 			fn = fn + ".xml";
@@ -1938,29 +1765,26 @@ e.printStackTrace();
 		{
 			try
 			{
-				Logger.instance().log(Logger.E_DEBUG1,
-					"Deleting '" + fn + "' ");
+				log.debug("Deleting '{}'", fn);
 				file.delete();
 			}
-			catch (Exception e)
+			catch (Exception ex)
 			{
-				String err = "Cannot delete '" + fn + "': " + e;
-				Logger.instance().log(Logger.E_FAILURE, err);
-				throw new DatabaseException(err);
+				throw new DatabaseException("Cannot delete '" + fn + "'", ex);
 			}
 		}
 		else
 		{
-			Logger.instance().debug1(
-				"Could not delete " + fn + ": file doesn't exist!");
+			log.debug("Could not delete {}: file doesn't exist!", fn);
 		}
 	}
+
 
 	/**
 	 * Returns counter to use to generate new Platform IDs.
 	 * @return Counter object
 	 */
-	public Counter getPlatformIdCounter( )
+		public Counter getPlatformIdCounter( )
 	{
 		if (platformIdCounter == null)
 		{
@@ -1968,10 +1792,9 @@ e.printStackTrace();
 					+ File.separator + "PlatformIdCounter";
 
 			try { platformIdCounter = new FileCounter(fn); }
-			catch(IOException e)
+			catch(IOException ex)
 			{
-				Logger.instance().log(Logger.E_FAILURE,
-					"Cannot get platform ID file counter at '" + fn + "': "+e);
+				log.atError().setCause(ex).log("Cannot get platform ID file counter at '{}'", fn);
 			}
 		}
 		return platformIdCounter;

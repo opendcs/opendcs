@@ -1,11 +1,24 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.ldds;
 
 import java.io.*;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.common.*;
 
@@ -14,6 +27,7 @@ import lrgs.common.*;
 */
 public class CmdRecvSearchCrit extends LddsCommand
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	byte scdata[];
 
 	/** No arguments constructor - empties search criteria - all msgs pass */
@@ -59,14 +73,11 @@ public class CmdRecvSearchCrit extends LddsCommand
 			ldds.crit = new SearchCriteria();
 			if (scdata != null)
 			{
-				Reader reader = 
+				Reader reader =
 					new InputStreamReader(new ByteArrayInputStream(scdata));
 				ldds.crit.parseFile(reader);
 			}
 			ldds.msgretriever.setSearchCriteria(ldds.crit);
-//Logger.instance().info("CmdRecvSearchCrit: num sources = " + 
-//ldds.crit.numSources + ", src[0]=" 
-//+ (ldds.crit.numSources == 0 ? -1 : ldds.crit.sources[0]));
 
 			if (ldds.user.dcpLimit > 0)
 			{
@@ -89,16 +100,13 @@ public class CmdRecvSearchCrit extends LddsCommand
 		}
 		catch (IOException ex)
 		{
-			throw new NoSuchFileException("Cannot save searchcrit: "
-				+ex.toString());
+			throw new NoSuchFileException("Cannot save searchcrit: ", ex);
 		}
 
 		LddsMessage msg = new LddsMessage(LddsMessage.IdCriteria,"Success\0");
 		ldds.send(msg);
 
-		Logger.instance().log(Logger.E_DEBUG2,
-			"Successfully saved search criteria in " +
-			scfile.getPath());
+		log.trace("Successfully saved search criteria in {}", scfile.getPath());
 		return 0;
 	}
 
@@ -114,11 +122,11 @@ public class CmdRecvSearchCrit extends LddsCommand
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_DEBUG3,
-				"Saving " + scdata.length + " bytes of data to " + f.getName());
-			FileOutputStream fos = new FileOutputStream(f);
-			fos.write(scdata);
-			fos.close();
+			log.trace("Saving {} bytes of data to '{}'", scdata.length,  f.getName());
+			try (FileOutputStream fos = new FileOutputStream(f))
+			{
+				fos.write(scdata);
+			}
 		}
 	}
 

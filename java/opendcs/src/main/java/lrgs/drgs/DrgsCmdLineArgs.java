@@ -1,40 +1,29 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:13  cvs
-*  Added legacy code to repository
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.4  2004/09/02 13:09:03  mjmaloney
-*  javadoc
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.3  2003/04/22 23:59:32  mjmaloney
-*  1st working DRGS implementation.
-*
-*  Revision 1.2  2003/03/27 21:17:43  mjmaloney
-*  drgs dev
-*
-*  Revision 1.1  2003/03/27 16:58:50  mjmaloney
-*  drgs development.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.drgs;
 
 import java.io.IOException;
-import java.util.Properties;
-
 import ilex.cmdline.*;
-import ilex.gui.GuiApp;
 import ilex.cmdline.StdAppSettings;
-import ilex.util.Logger;
-import ilex.util.FileLogger;
 import ilex.util.ShellExpander;
 
 /**
   This object parses command line arguments to the DRGS daemon.
 */
-public class DrgsCmdLineArgs
-	extends StdAppSettings
+public class DrgsCmdLineArgs extends StdAppSettings
 {
 	private StringToken log_arg;
 	private StringToken cfg_arg;
@@ -112,26 +101,5 @@ public class DrgsCmdLineArgs
 	public void parseArgs(String args[])
 	{
 		super.parseArgs(args);
-
-		// If log-file specified, open it.
-		String fn = getLogFile();
-		if (fn != null && fn.length() > 0)
-		{
-			String procname = Logger.instance().getProcName();
-			try { Logger.setLogger(new FileLogger(procname, fn)); }
-			catch(IOException e)
-			{
-				System.err.println("Cannot open log file '" + fn + "': " + e);
-				System.exit(1);
-			}
-		}
-
-		// Set debug level.
-		int dl = getDebugLevel();
-		if (dl > 0)
-			Logger.instance().setMinLogPriority(
-				dl == 1 ? Logger.E_DEBUG1 :
-				dl == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
-
 	}
 }

@@ -1,13 +1,14 @@
 /**
  * $Id$
- * 
+ *
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
- * No warranty is provided or implied other than specific contractual terms 
+ * No warranty is provided or implied other than specific contractual terms
  * between COVE and Alberta ESRD.
  *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
- * 
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,13 +23,15 @@
  */
 package lrgs.rtstat;
 
-import ilex.util.Logger;
 
 import java.awt.GridBagLayout;
 
 import javax.swing.JPanel;
 import javax.swing.BorderFactory;
 import javax.swing.border.TitledBorder;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.awt.Font;
 import java.awt.Color;
@@ -47,10 +50,9 @@ import decodes.gui.GuiDialog;
 import decodes.gui.TopFrame;
 import lrgs.lrgsmain.LrgsConfig;
 
-public class EdlConfigPanel 
-	extends JPanel
-	implements LrgsConfigPanel
+public class EdlConfigPanel  extends JPanel implements LrgsConfigPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final long serialVersionUID = 1L;
 	private JCheckBox enableCheckBox = new JCheckBox();
 	private JTextField ingestDirText = new JTextField();
@@ -67,28 +69,28 @@ public class EdlConfigPanel
 	{
 		return rtstatLabels.getString("LrgsConfigDialog.edlTab");
 	}
-	
+
 	public EdlConfigPanel(GuiDialog parent)
 	{
 		super();
 		this.parent = parent;
 		initialize();
 	}
-	
+
 	private void initialize()
 	{
 		setLayout(new GridBagLayout());
 		setBorder(BorderFactory.createTitledBorder(null,
 			"EDL " + genericLabels.getString("parameters"),
-			TitledBorder.CENTER, TitledBorder.BELOW_TOP, 
+			TitledBorder.CENTER, TitledBorder.BELOW_TOP,
 			new Font("Dialog", Font.BOLD, 14), new Color(51, 51, 51)));
-		
+
 		enableCheckBox.setText(genericLabels.getString("enable"));
-		add(enableCheckBox, 
+		add(enableCheckBox,
 			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.5,
 				GridBagConstraints.SOUTHWEST, GridBagConstraints.NONE,
 				new Insets(5, 0, 5, 5), 0, 0));
-		
+
 		add(new JLabel(rtstatLabels.getString("EdlPanel.ingestDir")),
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
@@ -99,7 +101,7 @@ public class EdlConfigPanel
 				new Insets(5, 0, 5, 15), 20, 0));
 
 		recursiveCheckBox.setText(genericLabels.getString("recursive") + "?");
-		add(recursiveCheckBox, 
+		add(recursiveCheckBox,
 			new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(5, 0, 5, 5), 0, 0));
@@ -121,7 +123,7 @@ public class EdlConfigPanel
 			new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 0, 5, 15), 20, 0));
-		
+
 		add(new JLabel(rtstatLabels.getString("minHourly")),
 			new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
@@ -151,11 +153,11 @@ public class EdlConfigPanel
 			tmp.edlDoneDirectory != null ? tmp.edlDoneDirectory : "");
 		minHourlyField.setText(
 			tmp.edlMinHourly > 0 ? ("" + tmp.edlMinHourly) : "");
-		
+
 		lrgsConfig = tmp;
-		
+
 	}
-	
+
 	private int getMinHourly()
 	{
 		String s = minHourlyField.getText().trim();
@@ -167,11 +169,11 @@ public class EdlConfigPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			Logger.instance().warning("EDL Minimum Hourly field must be an integer.");
+			log.atWarn().setCause(ex).log("EDL Minimum Hourly field must be an integer.");
 			return 0;
 		}
 	}
-	
+
 	public boolean hasChanged()
 	{
 		if (lrgsConfig == null)
@@ -187,7 +189,7 @@ public class EdlConfigPanel
 			return true;
 		return false;
 	}
-	
+
 	/**
 	 * Compare 2 string fields. Consider empty strings the same as null.
 	 * @param s1
@@ -203,12 +205,12 @@ public class EdlConfigPanel
 		else
 			return s1.trim().equals(s2.trim());
 	}
-	
+
 	public void saveChanges()
 	{
 		if(lrgsConfig == null)
 			return;
-		
+
 		lrgsConfig.edlMinHourly = getMinHourly();
 		lrgsConfig.edlIngestEnable = enableCheckBox.isSelected();
 		lrgsConfig.edlIngestRecursive = recursiveCheckBox.isSelected();

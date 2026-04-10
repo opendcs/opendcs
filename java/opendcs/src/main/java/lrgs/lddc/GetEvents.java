@@ -1,22 +1,26 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.lddc;
 
-import java.io.*;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.TimeZone;
-import java.text.SimpleDateFormat;
-import java.text.DecimalFormat;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
-import ilex.util.*;
 import ilex.cmdline.*;
-import lrgs.common.*;
 import lrgs.ldds.LddsClient;
 import lrgs.ldds.LddsParams;
-import lrgs.ldds.ProtocolError;
-import lrgs.ldds.ServerError;
 
 /**
 This was originally written as a test client program but it has since found
@@ -26,6 +30,7 @@ criteria, and various formatting options.
 */
 public class GetEvents extends Thread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String user;
 	private LddsClient lddsClient;
 
@@ -51,15 +56,15 @@ public class GetEvents extends Thread
 			lddsClient.connect();
 			lddsClient.sendHello(user);
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			Logger.instance().log(Logger.E_FATAL, "Cannot initialize: " + e);
+			log.atError().setCause(ex).log("Cannot initialize.");
 			//e.printStackTrace(System.err);
 			return;
 		}
 
 		// Continue to receive events
-		while( true )
+		while (true)
 		{
 			try
 			{
@@ -71,15 +76,14 @@ public class GetEvents extends Thread
 				for(int i=0; events != null && i<events.length; i++)
 					System.out.println(events[i]);
 			}
-			catch(Exception e)
+			catch(Exception ex)
 			{
-				Logger.instance().log(Logger.E_FATAL, e.toString());
-				e.printStackTrace(System.err);
+				log.atError().setCause(ex).log("Error retrieving events.");
 			}
 		}
 	}
 
-	
+
 	// ========================= main ====================================
 	static ApplicationSettings settings = new ApplicationSettings();
 	static StringToken hostArg = new StringToken(
@@ -105,31 +109,20 @@ public class GetEvents extends Thread
 	/**
 	  Main method.
 	*/
-	public static void main(String args[]) 
+	public static void main(String args[])
 	{
 		try
 		{
 			settings.parseArgs(args);
-			
-			String lf = logArg.getValue();
-			if (lf != null && lf.length() > 0)
-				Logger.setLogger(new FileLogger("GetDcpMessages", lf));
-			int dba = debugArg.getValue();
-			if (dba > 0)
-				Logger.instance().setMinLogPriority(
-					dba == 1 ? Logger.E_DEBUG1 :
-					dba == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
 
 			GetEvents gdm = new GetEvents(
 				hostArg.getValue(), portArg.getValue(), userArg.getValue());
-			
+
 			gdm.start();
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			System.out.println("Exception while attempting to start gdm: " 
-				+ e);
+			log.atError().setCause(ex).log("Unable to retrieve events.");
 		}
 	}
 }
-

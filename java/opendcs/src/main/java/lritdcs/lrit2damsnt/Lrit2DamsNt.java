@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lritdcs.lrit2damsnt;
 
 import java.io.File;
@@ -9,12 +24,14 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
 import lritdcs.HritDcsFileReader;
 import lritdcs.HritException;
-import lritdcs.LritDcsFileReader;
 import lritdcs.recv.LritDcsDirMonitor;
 
 import ilex.cmdline.StringToken;
@@ -24,7 +41,6 @@ import ilex.util.DirectoryMonitorThread;
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
 import ilex.util.ServerLock;
-import ilex.util.Logger;
 import ilex.util.FileServerLock;
 import ilex.util.ServerLockable;
 import decodes.tsdb.CompEventSvr;
@@ -35,10 +51,9 @@ import decodes.util.CmdLineArgs;
  * @author mmaloney
  *
  */
-public class Lrit2DamsNt
-	extends DirectoryMonitorThread
-	implements ServerLockable, FilenameFilter
+public class Lrit2DamsNt extends DirectoryMonitorThread implements ServerLockable, FilenameFilter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "Lrit2DamsNt";
 	// Static command line arguments and initialization for main method.
 	protected CmdLineArgs cmdLineArgs = new CmdLineArgs();
@@ -50,7 +65,7 @@ public class Lrit2DamsNt
 	private DamsNtMsgSvr damsNtMsgSvr = null;
 	private SimpleDateFormat sdf = new SimpleDateFormat("yyDDDHHmmssSSS");
 	private CompEventSvr compEventSvr = null;
-	
+
 	public Lrit2DamsNt()
 	{
 		cmdLineArgs.setDefaultLogFile("lrit2damsnt.log");
@@ -62,7 +77,7 @@ public class Lrit2DamsNt
 		cmdLineArgs.addToken(lockFileArg);
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
-	
+
 	/**
 	 * Called after constructor and before starting the thread.
 	 */
@@ -71,16 +86,16 @@ public class Lrit2DamsNt
 		// Process the arguments
 		cmdLineArgs.parseArgs(args);
 		config.setPropFile(EnvExpander.expand(cfgFileArg.getValue()));
-		
+
 		// Read config file for first time.
 		checkConfig();
-		
+
 		// Get the lock file, exit if busy.
 		String lockpath = EnvExpander.expand(lockFileArg.getValue());
 		mylock = new FileServerLock(lockpath);
 		if (mylock.obtainLock(this) == false)
 		{
-			fatal("Cannot start: lock file busy");
+			log.error("Cannot start: lock file busy");
 			System.exit(0);
 		}
 		mylock.releaseOnExit();
@@ -88,28 +103,28 @@ public class Lrit2DamsNt
 		// Establish the queue logger.
 		if (config.evtListenPort > 0)
 		{
-			try 
+			try
 			{
 				compEventSvr = new CompEventSvr(config.evtListenPort);
 				compEventSvr.startup();
 			}
 			catch(IOException ex)
 			{
-				failure(
-					"Cannot create Event server on port " + config.evtListenPort
-					+ ": " + ex
-					+ " -- no events available to external clients.");
+				log.atError()
+				   .setCause(ex)
+				   .log("Cannot create Event server on port {} -- no events available to external clients.",
+				   		config.evtListenPort);
 			}
 		}
-		
+
 		// Create & Start the Msg Server
 		try
 		{
-			InetAddress ia = 
+			InetAddress ia =
 				(config.listenHost != null && config.listenHost.length() > 0) ?
 				InetAddress.getByName(config.listenHost) : null;
 			damsNtMsgSvr = new DamsNtMsgSvr(config.msgListenPort, ia, this);
-			Thread listenThread = 
+			Thread listenThread =
 				new Thread()
 				{
 					public void run()
@@ -117,7 +132,7 @@ public class Lrit2DamsNt
 						try { damsNtMsgSvr.listen(); }
 						catch(IOException ex)
 						{
-							failure("Listen failed: " + ex);
+							log.atError().setCause(ex).log("Listen failed.");
 						}
 					}
 				};
@@ -125,16 +140,17 @@ public class Lrit2DamsNt
 		}
 		catch(UnknownHostException ex)
 		{
-			fatal("Invalid config listenHost '" + config.listenHost + "': " + ex);
+			log.atError().setCause(ex).log("Invalid config listenHost '{}'", config.listenHost);
 			System.exit(1);
 		}
 		catch (IOException ex)
 		{
-			fatal("Cannot listen on port " + config.msgListenPort
-				+ "(listenHost=" + config.listenHost + "): " + ex);
+			log.atError()
+			   .setCause(ex)
+			   .log("Cannot listen on port {} (listenHost={})", config.msgListenPort, config.listenHost);
 			System.exit(1);
 		}
-		
+
 		// Configure the base class Dir Monitor
 		addDirectory(new File(EnvExpander.expand(config.fileInputDir)));
 		setFilenameFilter(this);
@@ -150,20 +166,19 @@ public class Lrit2DamsNt
 	@Override
 	protected void processFile(File file)
 	{
-		debug("processFile(" + file.getPath() + ")");
-		
+		log.debug("processFile({})", file.getPath());
+
 		long ageMsec = System.currentTimeMillis() - file.lastModified();
 		if (ageMsec/1000L > config.fileAgeMaxSeconds)
 		{
-			info("Ignoring " + file.getPath() + " because age is " 
-				+ (ageMsec/1000L) + " seconds.");
+			log.info("Ignoring {} because age is {} seconds.", file.getPath(), (ageMsec/1000L));
 			doneFile(file);
 			return;
 		}
-		
-		HritDcsFileReader ldfr = new HritDcsFileReader(file.getPath(), 
+
+		HritDcsFileReader ldfr = new HritDcsFileReader(file.getPath(),
 			config.fileHeaderType == LritDcsDirMonitor.HEADER_TYPE_DOM6);
-	
+
 		try
 		{
 			ldfr.load();
@@ -171,7 +186,7 @@ public class Lrit2DamsNt
 		}
 		catch(HritException ex)
 		{
-			warning("Error reading HRIT file '" + file.getName() + "': " + ex);
+			log.atWarn().setCause(ex).log("Error reading HRIT file '{}'", file.getName());
 			return;
 		}
 		catch(Exception ex)
@@ -191,22 +206,18 @@ public class Lrit2DamsNt
 		{
 			while( (msg = ldfr.getNextMsg()) != null)
 			{
-				debug("got message for '" + msg.getDcpAddress() + "'");
+				log.debug("got message for '{}'", msg.getDcpAddress());
 				processMsg(msg);
 			}
 		}
 		catch(Exception ex)
 		{
-			warning("Error reading file '" + file.getPath() + "': " + ex);
-			if (Logger.instance().getLogOutput() != null)
-			{
-				ex.printStackTrace(Logger.instance().getLogOutput());
-			}
+			log.atWarn().setCause(ex).log("Error reading file '{}'", file.getPath());
 		}
-		
+
 		doneFile(file);
 	}
-	
+
 	private void doneFile(File file)
 	{
 		if (config.fileDoneDir != null && config.fileDoneDir.length() > 0)
@@ -219,14 +230,17 @@ public class Lrit2DamsNt
 			}
 			catch(IOException ex)
 			{
-				warning("Cannot move file '" + file.getPath()
-					+ "' to directory '" + toDir + "': " + ex + " -- will delete.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Cannot move file '{}' to directory '{}' -- will delete.", file.getPath(), toDir);
 			}
 		}
 		if (!file.delete())
-			warning("Cannot delete file '" + file.getPath() + "'");
+		{
+			log.warn("Cannot delete file '{}'", file.getPath());
+		}
 	}
-	
+
 	private void processMsg(DcpMsg msg)
 	{
 		Date cstart = msg.getCarrierStart();
@@ -234,23 +248,23 @@ public class Lrit2DamsNt
 
 		// Format message with DAMS-NT header
 		byte msgData[] = msg.getData();
-		byte damsNtData[] = 
+		byte damsNtData[] =
 			new byte[
 			    msgData.length - 37      // subtract GOES header len
 		      + 55                       // Add DAMS-NT Header Len
 		      + 2                        // Terminating CRLF after msg data
 		      + 14 + 1 + 14 + 2          // carrier-start sp carrier-drop CRLF
 		      ];
-		
+
 		// Start Pattern
 		byte[] startPattern = ByteUtil.fromHexString(config.damsNtStartPattern);
 		for(int i=0; i<4; i++)
 			damsNtData[i] = startPattern[i];
-		
+
 		// Slot Num. For LRIT we will use channel num.
 		for(int i=0; i<3; i++)
 			damsNtData[4+i] = msgData[DcpMsg.IDX_GOESCHANNEL+i];
-		
+
 		// Channel Num and Spacecraft
 		for(int i=0; i<3; i++)
 			damsNtData[7+i] = msgData[DcpMsg.IDX_GOESCHANNEL+i];
@@ -268,22 +282,22 @@ public class Lrit2DamsNt
 		// Start time from GOES header
 		for(int i=0; i<11; i++)
 			damsNtData[15+i] = msgData[DcpMsg.IDX_YEAR + i];
-		
+
 		// Signal Strength
 		for(int i=0; i<2; i++)
 			damsNtData[26+i] = msgData[DcpMsg.IDX_SIGSTRENGTH + i];
-		
+
 		// Freq Offset
 		for(int i=0; i<2; i++)
 			damsNtData[28+i] = msgData[DcpMsg.IDX_FREQOFFSET + i];
-	
+
 		damsNtData[30] = msgData[DcpMsg.IDX_MODINDEX];
 		damsNtData[31] = msgData[DcpMsg.IDX_DATAQUALITY];
-		
+
 		// For error flag, first digit is 1 if we have extended
-		// message times. Second digit is 0=good, 1=parity err, 2=binary msg, 
+		// message times. Second digit is 0=good, 1=parity err, 2=binary msg,
 		// or 4=binary msg with detected bit errors
-		damsNtData[32] = 
+		damsNtData[32] =
 			(cstart != null && cstop != null) ? (byte)'1' : (byte)'0';
 		if (msgData[DcpMsg.IDX_FAILCODE] == (byte)'?')
 			damsNtData[33] = (byte)'1';
@@ -292,7 +306,7 @@ public class Lrit2DamsNt
 				? (byte)'2' : (byte)'0';
 		else // ASCII Good Message
 			damsNtData[33] = (byte)'0';
-		
+
 		// Original (uncorrected) address
 		DcpAddress addr = msg.getOrigAddress();
 		if (addr == null)
@@ -300,25 +314,25 @@ public class Lrit2DamsNt
 		String strAddr = addr.toString();
 		for(int i=0; i<8 && i<strAddr.length(); i++)
 			damsNtData[34+i] = (byte)strAddr.charAt(i);
-		
+
 		// Corrected actual address
 		addr = msg.getDcpAddress();
 		strAddr = addr.toString();
 		for(int i=0; i<8 && i<strAddr.length(); i++)
 			damsNtData[42+i] = (byte)strAddr.charAt(i);
-	
+
 		// Message length as 5 digits
 		for(int i=0; i<5; i++)
 			damsNtData[50+i] = msgData[DcpMsg.IDX_DATALENGTH+i];
-		
+
 		// Message data
 		for(int i=0; i<msgData.length-37; i++)
 			damsNtData[55 + i] = msgData[37+i];
-		
+
 		int suffix = 55 + msgData.length-37;
 		damsNtData[suffix++] = (byte)'\r';
 		damsNtData[suffix++] = (byte)'\n';
-		
+
 		// Extended message times
 		if (cstart != null && cstop != null)
 		{
@@ -332,7 +346,7 @@ public class Lrit2DamsNt
 			damsNtData[suffix++] = (byte)'\r';
 			damsNtData[suffix++] = (byte)'\n';
 		}
-		
+
 		// Forward to all currently connected clients.
 		damsNtMsgSvr.distribute(damsNtData);
 	}
@@ -347,13 +361,13 @@ public class Lrit2DamsNt
 			lastMsgTime = System.currentTimeMillis();
 		}
 	}
-	
+
 	private void checkConfig()
 	{
 		try { config.checkConfig(); }
 		catch (IOException ex)
 		{
-			fatal("Cannot read config file: " + ex);
+			log.atError().setCause(ex).log("Cannot read config file -- will shutdown.");
 			shutdown();
 		}
 	}
@@ -361,44 +375,24 @@ public class Lrit2DamsNt
 	@Override
 	protected void cleanup()
 	{
-		info("Shutting down.");
-		
+		log.info("Shutting down.");
+
 		// Shutdown the msg and evt servers and hangup on all clients.
 		damsNtMsgSvr.shutdown();
-		
+
 		if (compEventSvr != null)
 			compEventSvr.shutdown();
-		
+
 		// Remove lock file if one is present. We are probably exiting
 		// because the lock file was removed, so no error if it doesn't exist.
 		mylock.deleteLockFile();
 	}
-	
-	public void fatal(String msg)
-	{
-		Logger.instance().fatal(module + " " + msg + " -- will shutdown.");
-	}
-	public void failure(String msg)
-	{
-		Logger.instance().failure(module + " " + msg);
-	}
-	public void warning(String msg)
-	{
-		Logger.instance().warning(module + " " + msg);
-	}
-	public void info(String msg)
-	{
-		Logger.instance().info(module + " " + msg);
-	}
-	public void debug(String msg)
-	{
-		Logger.instance().debug1(module + " " + msg);
-	}
+
 
 	@Override
 	public void lockFileRemoved()
 	{
-		fatal("Lock file removed.");
+		log.error("Lock file removed.");
 		shutdown();
 	}
 
@@ -408,17 +402,13 @@ public class Lrit2DamsNt
 		if (config.filePrefix != null && config.filePrefix.length() > 0
 		 && !name.startsWith(config.filePrefix))
 		{
-			debug("Will ignore '" + name 
-				+ "' because it does not have required prefix '"
-				+ config.filePrefix + "'");
+			log.debug("Will ignore '{}' because it does not have required prefix '{}'", name, config.filePrefix);
 			return false;
 		}
 		if (config.fileSuffix != null && config.fileSuffix.length() > 0
 		 && !name.endsWith(config.fileSuffix))
 		{
-			debug("Will ignore '" + name 
-				+ "' because it does not have required suffix '"
-				+ config.filePrefix + "'");
+			log.debug("Will ignore '{}' because it does not have required suffix '{}'", name, config.fileSuffix);
 			return false;
 		}
 

@@ -1,28 +1,23 @@
 /*
- * $Id$
- * 
  * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log$
- * Revision 1.6  2018/03/23 20:12:20  mmaloney
- * Added 'Enabled' flag for process and file monitors.
- *
- * Revision 1.5  2017/10/04 17:25:07  mmaloney
- * Fix AEP Bugs
- *
- * Revision 1.4  2017/05/17 20:36:26  mmaloney
- * First working version.
- *
- * Revision 1.3  2017/03/30 20:55:20  mmaloney
- * Alarm and Event monitoring capabilities for 6.4 added.
- *
- * Revision 1.2  2017/03/21 12:17:10  mmaloney
- * First working XML and SQL I/O.
- *
  */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.alarm;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 /**
@@ -33,7 +28,7 @@ public class FileMonitor
 	private String path = null;
 
 	/** Will generate a DACQ_EVENT with this priority level */
-	private int priority = Logger.E_WARNING;
+	private int priority =  -1; // TODO: determine replacement
 
 	/** For directories, generate alarm if # of files in the directory exceed this. */
 	private int maxFiles = 0;

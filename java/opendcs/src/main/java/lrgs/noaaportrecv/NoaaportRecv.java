@@ -1,21 +1,25 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.noaaportrecv;
 
 import java.io.IOException;
 import java.util.Date;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.archive.MsgArchive;
 import lrgs.common.DcpMsg;
@@ -26,6 +30,7 @@ import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.lrgsmain.LrgsMain;
 
 /**
+ * <pre>{@code
 Reads data from a Marta Systems or Unisys NOAAPORT Receiver.
 Format is as follows:
 
@@ -56,20 +61,21 @@ Parsing strategy:
    process. Default to "KWAL".
 2. Property for port number on which to listen to connectsion from the noaaport.
 3. State Machine with the following States:
-	HUNT: Look for SOH, when found --&gt; PROPHEAD
+	HUNT: Look for SOH, when found --> PROPHEAD
 	PROPHEAD: buffer until I hit \0x1E, When I do ...
 		WMO header must begin with an 'S' and office ID must be on my list.
-		if not, --&gt; HUNT, else --&gt; DCPMSG
+		if not, --> HUNT, else --> DCPMSG
 	DCPMSG: buffer until ETX, when found:
-		Get DCP Address and date/time from header
-			Assume current year but if (doy &lt; currentDOY &amp;&amp; currentDOY&gt;=364) ++
+		Get DCP Address & date/time from header
+			Assume current year but if (doy < currentDOY && currentDOY>=364) ++
 		Backup from end and parse trailer: SS, FF, NN, CCCs
-		Construct DcpMsg object and call archive
-		--&gt; HUNT
+		Construct DcpMsg object & call archive
+		--> HUNT
+* }</pre>
 */
-public class NoaaportRecv
-	implements LrgsInputInterface
+public class NoaaportRecv implements LrgsInputInterface
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private int mySlot = -1;
 	private String currentStatus = "Initializing";
 	private int dataSourceId = lrgs.db.LrgsConstants.undefinedId;
@@ -127,8 +133,7 @@ public class NoaaportRecv
 	{
 		dataSourceId =
 			lrgsMain.getDbThread().getDataSourceId(DL_NOAAPORT_TYPESTR, "");
-		Logger.instance().info("Initialized NOAAPORT interface with ID="
-			+ dataSourceId);
+		log.info("Initialized NOAAPORT interface with ID={}",  dataSourceId);
 	}
 
 	public void shutdownLrgsInput()
@@ -137,7 +142,7 @@ public class NoaaportRecv
 	}
 
 	/**
-	 * Enable or Disable the interface. 
+	 * Enable or Disable the interface.
 	 * The interface should only attempt to archive messages when enabled.
 	 * @param enabled true if the interface is to be enabled, false if disabled.
 	 */
@@ -169,8 +174,7 @@ public class NoaaportRecv
 			}
 			catch(IOException ex)
 			{
-				Logger.instance().failure(module + ":" + EVT_BAD_CONFIG
-                    + " Cannot listen on port " + cfg.noaaportPort + ": " + ex);
+				log.atError().setCause(ex).log("{} Cannot listen on port {}", EVT_BAD_CONFIG, cfg.noaaportPort);
 				listener = null;
 			}
 		}
@@ -219,9 +223,9 @@ public class NoaaportRecv
 
 	public void archive(DcpMsg msg)
 	{
-		msg.flagbits = 
+		msg.flagbits =
 			  DcpMsgFlag.MSG_PRESENT
-			| DcpMsgFlag.SRC_NOAAPORT 
+			| DcpMsgFlag.SRC_NOAAPORT
 			| DcpMsgFlag.MSG_NO_SEQNUM;
 		msg.setLocalReceiveTime(new Date());
 		msg.setSeqFileName(null);
@@ -241,7 +245,7 @@ public class NoaaportRecv
 		if (!currentStatus.equalsIgnoreCase("shutdown"))
 			currentStatus = status;
 	}
-	
+
 	/** @return false because NOAAPORT never receives APR messages */
 	public boolean getsAPRMessages() { return false; }
 

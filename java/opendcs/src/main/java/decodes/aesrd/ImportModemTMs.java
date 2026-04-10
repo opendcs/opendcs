@@ -1,8 +1,25 @@
+ /*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
+
 package decodes.aesrd;
 
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -22,6 +39,7 @@ import decodes.util.DecodesException;
 
 public class ImportModemTMs extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "ImportModemTMs";
 	
 	private StringToken topDirArg = new StringToken("",
@@ -69,7 +87,7 @@ public class ImportModemTMs extends TsdbAppTemplate
 		File inFile = new File(topdir.getPath() + "/lstfiles/" + stationName + ".in");
 		if (!inFile.canRead())
 		{
-			System.err.println("Can't read '" + inFile.getPath() + "' -- skipping station " + stationName);
+			log.error("Can't read '{}' -- skipping station {}", inFile.getPath(), stationName);
 			return;
 		}
 		
@@ -83,7 +101,7 @@ public class ImportModemTMs extends TsdbAppTemplate
 			String line1 = br.readLine();
 			if (line1 == null)
 			{
-				System.err.println("File '" + inFile.getPath() + "' is empty. Skipping " + stationName);
+				log.error("File '{}' is empty. Skipping {}", inFile.getPath(), stationName);
 				return;
 			}
 			// First field is username (only used for campbells)
@@ -91,21 +109,22 @@ public class ImportModemTMs extends TsdbAppTemplate
 			String fields[] = line1.split("\\s+");
 			if (fields.length < 2)
 			{
-				System.err.println("File '" + inFile.getPath() + "' not enough fields. Skipping " + stationName);
+				log.error("File '{}' not enough fields. Skipping {}", inFile.getPath(), stationName);
 				return;
 			}
 			username = fields[0];
 			loggerType = code2loggerType(fields[1]);
 			if (loggerType == null)
 			{
-				System.err.println("File '" + inFile.getPath() + "' unrecognized logger type '"
-					+ fields[1] + "'. Skipping " + stationName);
+				log.error("File '{}' unrecognized logger type '{}'. Skipping {}",
+          				inFile.getPath(), fields[1], stationName);
 				return;
 			}
 		}
 		catch (IOException ex)
 		{
-			System.err.println("Error reading '" + inFile.getPath() + "' Skipping " + stationName + ": " + ex);
+			log.atError().setCause(ex)
+    		.log("Error reading '{}' Skipping {}", inFile.getPath(), stationName);
 			return;
 		}
 		finally { if (br != null) try { br.close(); } catch(Exception ex) {} }
@@ -140,7 +159,7 @@ public class ImportModemTMs extends TsdbAppTemplate
 				String words[] = line.split("\\s+");
 				if (words.length < 2)
 					continue;
-System.out.println(conFile.getName() + ": '" + words[0] + "' '" + words[1] + "'");
+				log.info("{}: '{}' '{}'", conFile.getName(), words[0], words[1]);
 				if (words[0].equalsIgnoreCase("call"))
 					pmtm.setMediumId(words[1]);
 				else if (words[0].equalsIgnoreCase("baud"))
@@ -148,7 +167,7 @@ System.out.println(conFile.getName() + ": '" + words[0] + "' '" + words[1] + "'"
 					try { pmtm.setBaud(Integer.parseInt(words[1])); }
 					catch(NumberFormatException ex)
 					{
-						System.err.println("Bad baud in " + conFile.getPath() + " -- default to 1200");
+						log.error("Bad baud in {} -- default to 1200", conFile.getPath());
 						pmtm.setBaud(1200);
 					}
 				}
@@ -161,8 +180,9 @@ System.out.println(conFile.getName() + ": '" + words[0] + "' '" + words[1] + "'"
 					{
 						pmtm.setDataBits(pmtm.getParity() == Parity.None.getCode()
 							|| pmtm.getParity() == Parity.Unknown.getCode() ? 8 : 7);
-						System.err.println("Bad wordlen in " + conFile.getPath()
-							+ " -- default to " + pmtm.getDataBits() + " with parity " + pmtm.getParity());
+						 log.atWarn().setCause(ex)
+						.log("Bad wordlen in {} -- default to {} with parity {}",
+							conFile.getPath(), pmtm.getDataBits(), pmtm.getParity());
 					}
 				}
 				else if (words[0].equalsIgnoreCase("stopbits"))
@@ -171,17 +191,16 @@ System.out.println(conFile.getName() + ": '" + words[0] + "' '" + words[1] + "'"
 					catch(NumberFormatException ex)
 					{
 						pmtm.setStopBits(1);
-						System.err.println("Bad stopbits in " + conFile.getPath()
-							+ " -- default to 1");
+						log.error("Bad stopbits in {} -- default to 1", conFile.getPath());
 					}
 				}
 			}
 			if (pmtm.getMediumId() == null || pmtm.getMediumId().length() == 0)
 			{
-				System.err.println("No 'call' statement found. Required for TMID. Skipping " + stationName);
+				log.error("No 'call' statement found. Required for TMID. Skipping {}" , stationName);
 				return;
 			}
-			Logger.instance().info("New TM: type=" + pmtm.getMediumType() + ", id=" + pmtm.getMediumId());
+			log.atInfo().log("New TM: type={} , id={}" ,  pmtm.getMediumType(),pmtm.getMediumId());
 			pmtm.setLoggerType(loggerType);
 			if (loggerType.equalsIgnoreCase("campbell"))
 				pmtm.setUsername(username);
@@ -192,13 +211,15 @@ System.out.println(conFile.getName() + ": '" + words[0] + "' '" + words[1] + "'"
 		}
 		catch (IOException ex)
 		{
-			System.err.println("Error reading '" + conFile.getPath() + "' Skipping " + stationName + ": " + ex);
+			log.atError().setCause(ex)
+			.log("Error reading '{}' Skipping : {} " ,conFile.getPath(),stationName);
 			return;
+
 		}
 		catch (DatabaseException ex)
 		{
-			System.err.println("Error saving platform to database. Station=" + stationName + ": " + ex);
-			ex.printStackTrace(System.err);
+			log.atError().setCause(ex)
+			.log("Error saving platform to database. Station='{}': " ,stationName);
 			return;
 		}
 		finally { if (br != null) try { br.close(); } catch(Exception ex) {} }

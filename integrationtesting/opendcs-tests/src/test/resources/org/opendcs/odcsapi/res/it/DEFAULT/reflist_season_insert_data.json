@@ -1,0 +1,10 @@
+
+{
+  "abbr" : "sprinter",
+  "fromabbr" : null,
+  "name" : "Season.sprinter",
+  "start" : "2021-06-01T00:00:00Z",
+  "end" : "2021-09-01T00:00:00Z",
+  "tz" : "UTC",
+  "sortNumber" : 1
+}

@@ -1,52 +1,43 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.2  2008/09/05 13:14:14  mjmaloney
-*  LRGS 7 dev
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.1  2008/04/04 18:21:14  cvs
-*  Added legacy code to repository
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.5  2008/04/03 20:13:24  mmaloney
-*  dev
-*
-*  Revision 1.4  2007/12/19 18:08:56  mmaloney
-*  If LRGS ingest fails, exit the server.
-*
-*  Revision 1.3  2005/03/21 13:15:15  mjmaloney
-*  Updated for new LDDS client exception handling.
-*
-*  Revision 1.2  2002/11/22 16:14:10  mjmaloney
-*  Handle DDS errors gracefully -- attempt reconnect with since last.
-*
-*  Revision 1.1  2002/11/20 22:28:44  mjmaloney
-*  Added.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.lddc;
 
 import java.io.*;
 import java.net.*;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.Vector;
 
-import ilex.util.*;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.cmdline.*;
 import ilex.net.*;
-
+import ilex.util.AsciiUtil;
+import ilex.util.FileServerLock;
+import ilex.util.ServerLock;
+import ilex.util.ServerLockable;
 import lrgs.common.*;
 import lrgs.ldds.LddsClient;
 import lrgs.ldds.LddsParams;
 import lrgs.ldds.ProtocolError;
 import lrgs.ldds.ServerError;
 
-public class RtSocketStream extends Thread
-	implements ServerLockable
+public class RtSocketStream extends Thread implements ServerLockable
 {
-	//private int port;
-	//private String host;
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String user;
 	private String crit;
 	private LddsClient client;
@@ -67,13 +58,11 @@ public class RtSocketStream extends Thread
 	RtSocketStreamServer mySvr;
 	private boolean done = false;
 
-	RtSocketStream(String host, int port, String user, String crit, 
-		boolean verbose, String beforeAscii, String afterAscii, 
+	RtSocketStream(String host, int port, String user, String crit,
+		boolean verbose, String beforeAscii, String afterAscii,
 		boolean newline, int svrPort, String lockFileName)
 		throws Exception
 	{
-		//this.host = host;
-		//this.port = port;
 		this.user = user;
 		this.crit = crit;
 		this.verbose = verbose;
@@ -116,9 +105,8 @@ public class RtSocketStream extends Thread
 			myServerLock = new FileServerLock(lockFileName);
 			if (!myServerLock.obtainLock(this))
 			{
-				Logger.instance().failure(
-					"Lock file '" + lockFileName + "' already taken. "
-					+ " Another instance of this process already running?");
+				log.error("Lock file '{}' already taken. Another instance of this process already running?",
+						  lockFileName);
 				return;
 			}
 		}
@@ -131,26 +119,24 @@ public class RtSocketStream extends Thread
 			else
 			{
 				try { mysc = new SearchCriteria(new File(crit)); }
-				catch(Exception ex) 
+				catch(Exception ex)
 				{
-					Logger.instance().log(Logger.E_FAILURE,
-						"Cannot make searchcrit from file '" + crit + "': "+ex);
+					log.atError().setCause(ex).log("Cannot make searchcrit from file '{}'", crit);
 					mysc = new SearchCriteria();
 				}
 			}
 			mysc.setLrgsSince("last");
 		}
 
-		Thread listenThread = 
+		Thread listenThread =
 			new Thread()
 			{
-				public void run() 
+				public void run()
 				{
 					try { mySvr.listen(); }
 					catch(IOException ex)
 					{
-						Logger.instance().log(Logger.E_FATAL,
-							"Cannot listen at port " + mySvr.getPort());
+						log.atError().setCause(ex).log("Cannot listen at port {}", mySvr.getPort());
 						System.exit(1);
 					}
 				}
@@ -206,16 +192,12 @@ public class RtSocketStream extends Thread
 				{
 					if (System.currentTimeMillis() > endTime)
 					{
-						String s = "No message received in " + timeout 
-							+ " seconds, exiting.";
-						System.err.println(s);
-						Logger.instance().log(Logger.E_FATAL, s);
+						log.atError().setCause(se).log("No message received in {} seconds, exiting.", timeout);
 						done = true;
 					}
 					else
 					{
-						Logger.instance().log(Logger.E_DEBUG1,
-							"Server caught up to present, pausing...");
+						log.atDebug().setCause(se).log("Server caught up to present, pausing...");
 						try { Thread.sleep(1000L); }
 						catch(InterruptedException ie) {}
 						continue;
@@ -223,22 +205,19 @@ public class RtSocketStream extends Thread
 				}
 				if (se.Derrno == LrgsErrorCode.DUNTIL
 				 || se.Derrno == LrgsErrorCode.DUNTILDRS)
-					System.err.println(
-						"Until time reached. Normal termination");
+					log.info("Until time reached. Normal termination");
 				else
-					System.err.println(se.toString());
+					log.atError().setCause(se).log("Abnormal Server error.");
 				done = true;
 			}
 			catch(ProtocolError ex)
 			{
-				Logger.instance().log(Logger.E_FAILURE, 
-					"Protocol Error (will reconnect to DDS): " + ex);
+				log.atError().setCause(ex).log("Protocol Error (will reconnect to DDS).");
 				client.disconnect();
 			}
-			catch(Exception e)
+			catch(Exception ex)
 			{
-				Logger.instance().log(Logger.E_FATAL, e.toString());
-				e.printStackTrace(System.err);
+				log.atError().setCause(ex).log("Unexpected error.");
 				goodbye = false;
 				done = true;
 			}
@@ -279,12 +258,12 @@ public class RtSocketStream extends Thread
 				client.sendAuthHello(user, passwd);
 			else
 				client.sendHello(user);
-	
+
 			// MsgBlock retrieval only supported in protoversion 4 and higher
 			if (client.getServerProtoVersion() < 4)
 				singleMode = true;
 
-			// Send search crit 
+			// Send search crit
 			if (mysc != null)
 				client.sendSearchCrit(mysc);
 			else if (crit != null)
@@ -292,28 +271,14 @@ public class RtSocketStream extends Thread
 
 			return true;
 		}
-		catch(ServerError ex)
+		catch(ServerError | ProtocolError | IOException ex)
 		{
-			Logger.instance().log(Logger.E_FAILURE, 
-				"Cannot connect to '" + client.getName() + "': " + ex);
+			log.atError().setCause(ex).log("Cannot connect to '{}'", client.getName());
 			return false;
 		}
-		catch(ProtocolError ex)
+		catch(Exception ex)
 		{
-			Logger.instance().log(Logger.E_FAILURE, 
-				"Cannot connect to '" + client.getName() + "': " + ex);
-			return false;
-		}
-		catch(IOException ex)
-		{
-			Logger.instance().log(Logger.E_FAILURE, 
-				"Cannot connect to '" + client.getName() + "': " + ex);
-			return false;
-		}
-		catch(Exception e)
-		{
-			Logger.instance().log(Logger.E_FATAL, "Cannot initialize: " + e);
-			e.printStackTrace(System.err);
+			log.atError().setCause(ex).log("Cannot initialize: exiting");
 			System.exit(1);
 		}
 		return true;
@@ -368,7 +333,7 @@ public class RtSocketStream extends Thread
 		"P", "Password for auth connect", "", TokenOptions.optSwitch, "");
 	static BooleanToken singleArg = new BooleanToken(
 		"s", "single", "", TokenOptions.optSwitch,false);
-	
+
 	static IntegerToken serverPortArg= new IntegerToken(
 		"N", "Server Port Number", "", TokenOptions.optSwitch, 10000);
 	static StringToken lockFileArg = new StringToken("k",
@@ -393,20 +358,12 @@ public class RtSocketStream extends Thread
 		settings.addToken(lockFileArg);
 	}
 
-	public static void main(String args[]) 
+	public static void main(String args[])
 	{
 		try
 		{
 			settings.parseArgs(args);
-			
-			String lf = logArg.getValue();
-			if (lf != null && lf.length() > 0)
-				Logger.setLogger(new FileLogger("RtSocketStream", lf));
-			int dba = debugArg.getValue();
-			if (dba > 0)
-				Logger.instance().setMinLogPriority(
-					dba == 1 ? Logger.E_DEBUG1 :
-					dba == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
+
 
 			String crit = searchcritArg.getValue();
 			if (crit != null && crit.length() == 0)
@@ -414,7 +371,7 @@ public class RtSocketStream extends Thread
 
 			RtSocketStream client = new RtSocketStream(
 				hostArg.getValue(), portArg.getValue(), userArg.getValue(),
-				crit, verboseArg.getValue(), beforeArg.getValue(), 
+				crit, verboseArg.getValue(), beforeArg.getValue(),
 				afterArg.getValue(), newlineArg.getValue(),
 				serverPortArg.getValue(), lockFileArg.getValue());
 			client.timeout = timeoutArg.getValue();
@@ -426,10 +383,9 @@ public class RtSocketStream extends Thread
 
 			client.start();
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			System.out.println("Exception while attempting to start client: " 
-				+ e);
+			log.atError().setCause(ex).log("Exception while attempting to start client.");
 		}
 	}
 
@@ -437,7 +393,7 @@ public class RtSocketStream extends Thread
 	{
 		if (done)
 			return;
-		Logger.instance().info("Exiting -- Lock File Removed.");
+		log.info("Exiting -- Lock File Removed.");
 		done = true;
 	}
 }
@@ -459,21 +415,18 @@ class RtSocketStreamServer extends BasicServer
 		{
 			RtSocketStreamSvrThread thr = (RtSocketStreamSvrThread)it.next();
 			try { thr.write(data); }
-			catch(Exception e)
+			catch(Exception ex)
 			{
-				Logger.instance().log(Logger.E_WARNING,
-					"Error writing to thread at '" + thr.getClientName() 
-					+ "': " + e);
+				log.atWarn().setCause(ex).log("Error writing to thread at '{}'", thr.getClientName());
 				thr.disconnect();
 			}
 		}
 	}
-	protected BasicSvrThread newSvrThread(Socket sock) 
+	protected BasicSvrThread newSvrThread(Socket sock)
 		throws IOException
 	{
 		BasicSvrThread ret = new RtSocketStreamSvrThread(this, sock);
-		Logger.instance().log(Logger.E_DEBUG1,
-			"New RtSocketStream client at host " + ret.getClientName());
+		log.debug("New RtSocketStream client at host {}", ret.getClientName());
 		return ret;
 	}
 
@@ -482,6 +435,7 @@ class RtSocketStreamServer extends BasicServer
 
 class RtSocketStreamSvrThread extends BasicSvrThread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private OutputStream os;
 
 	public RtSocketStreamSvrThread(BasicServer parent, Socket socket)
@@ -490,9 +444,7 @@ class RtSocketStreamSvrThread extends BasicSvrThread
 		try { os = socket.getOutputStream(); }
 		catch(IOException ex)
 		{
-			Logger.instance().log(Logger.E_FAILURE,
-				"Cannot get output stream for new client socket (will hangup): "
-				+ ex);
+			log.atError().setCause(ex).log("Cannot get output stream for new client socket (will hangup).");
 			os = null;
 		}
 	}
@@ -502,8 +454,7 @@ class RtSocketStreamSvrThread extends BasicSvrThread
 		try { os.write(data); }
 		catch(IOException ex)
 		{
-			Logger.instance().log(Logger.E_FAILURE,
-				"IOException writing to client socket: " + ex);
+			log.atError().setCause(ex).log("IOException writing to client socket.");
 			disconnect();
 		}
 	}
@@ -522,9 +473,9 @@ class RtSocketStreamSvrThread extends BasicSvrThread
 		}
 		catch (Exception ex)
 		{
+			log.atError().setCause(ex).log("Unable to service client request.");
 			disconnect();
-			System.err.println(ex.toString());
-			ex.printStackTrace(System.err);
+
 		}
 	}
 
@@ -536,8 +487,7 @@ class RtSocketStreamSvrThread extends BasicSvrThread
 
 	public void disconnect()
 	{
-		Logger.instance().log(Logger.E_DEBUG1,
-			"Client at host '" + getClientName() + "' disconnecting.");
+		log.debug("Client at host '{}' disconnecting", getClientName());
 		super.disconnect();
 	}
 }

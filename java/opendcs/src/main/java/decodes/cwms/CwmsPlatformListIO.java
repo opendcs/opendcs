@@ -1,24 +1,26 @@
 /*
- * $Id$
- * 
- * $Log$
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract 
- * to the United States Government. 
- * 
- * No warranty is provided or implied other than specific contractual terms
- * between COVE and the U.S. Government
- * 
- * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.cwms;
-
-import ilex.util.Logger;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.DatabaseException;
 import decodes.db.Platform;
@@ -32,7 +34,7 @@ import decodes.sql.PlatformListIO;
 
 public class CwmsPlatformListIO extends PlatformListIO
 {
-
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public CwmsPlatformListIO(CwmsSqlDatabaseIO dbio, ConfigListIO configListIO,
 		EquipmentModelListIO emlIO)
 	{
@@ -52,7 +54,7 @@ public class CwmsPlatformListIO extends PlatformListIO
 	public void read(PlatformList platformList)
 		throws SQLException, DatabaseException
 	{
-		debug1("Reading CWMS PlatformList...");
+		log.debug("Reading CWMS PlatformList...");
 
 		_pList = platformList;
 		
@@ -60,15 +62,15 @@ public class CwmsPlatformListIO extends PlatformListIO
 
 		Statement stmt = createStatement();
 		
-		// When we read platform list, have to joine it with config so that
-		// we implicitely get the predicate to filter on db_office_code.
+		// When we read platform list, have to join it with config so that
+		// we implicitly get the predicate to filter on db_office_code.
 		String q = "SELECT a.ID, a.Agency, a.IsProduction, " +
 			 "a.SiteId, a.ConfigId, a.Description, a.LastModifyTime, " +
 			 "a.Expiration, a.platformDesignator " +
 			 "FROM Platform a, PlatformConfig b " +
 			 "WHERE a.ConfigId = b.id";
 
-		debug3(q);
+		log.trace("Executing '{}'", q);
 		ResultSet rs = stmt.executeQuery(q);
 
 		if (rs != null) {
@@ -103,14 +105,13 @@ public class CwmsPlatformListIO extends PlatformListIO
 							configId);
 					if (pc == null)
 					{
-						Logger.instance().warning("Platform(" + platformId 
-							+ ") references config(" + configId + ")" +
-							", which is not in list, will attempt read...");
+						log.warn("Platform({}) references config({})," +
+								 " which is not in list, will attempt read...",
+								 platformId, configId);
 						try { pc = _configListIO.getConfig(configId); }
 						catch(Exception ex)
 						{
-							Logger.instance().warning("Error reading config("
-								+ configId + "): " + ex);
+							log.atWarn().setCause(ex).log("Error reading config({})", configId);
 						}
 					}
 					if (pc != null)
@@ -129,9 +130,8 @@ public class CwmsPlatformListIO extends PlatformListIO
 				if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
 					p.setPlatformDesignator(rs.getString(9));
 
-				// Now get the TransportMediums for this platform
-//				readTransportMediaPartial(p);
 			}
+			rs.close();
 		}
 		stmt.close();
 		readAllTransportMedia(platformList);

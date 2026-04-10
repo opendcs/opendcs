@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package opendcs.dao;
 
 import ilex.util.TextUtil;
@@ -10,7 +25,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.ConstraintException;
@@ -33,7 +49,7 @@ import opendcs.util.functional.ThrowingSupplier;
  */
 public class AlgorithmDAO extends DaoBase implements AlgorithmDAI
 {
-    public static final org.slf4j.Logger log = LoggerFactory.getLogger(AlgorithmDAO.class);
+    public static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     private static final Integer COMMENT_LENGTH_DEFAULT = 1000;
     // While it *is* possible for this to change during runtime. The cost of
@@ -63,7 +79,8 @@ public class AlgorithmDAO extends DaoBase implements AlgorithmDAI
                 COMMENT_LENGTH=1000;
                 log.atError()
                    .setCause(ex)
-                   .log("Unable to query for column meta data. Setting length to default value of {}", COMMENT_LENGTH_DEFAULT);
+                   .log("Unable to query for column meta data. Setting length to default value of {}",
+                        COMMENT_LENGTH_DEFAULT);
             }
         }
     }

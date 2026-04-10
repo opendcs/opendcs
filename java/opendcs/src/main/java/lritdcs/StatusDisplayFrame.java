@@ -1,20 +1,18 @@
 /*
- *	$Id$
- *
- *  $Log$
- *  Revision 1.9  2013/06/12 13:00:53  mmaloney
- *  dev
- *
- *  Revision 1.8  2012/12/12 18:44:24  mmaloney
- *  Fix UI Thread problem on config requests.
- *
- *  Revision 1.7  2012/12/12 16:08:52  mmaloney
- *  Mods for 5.2
- *
- *  Revision 1.6  2012/12/12 16:01:31  mmaloney
- *  Several updates for 5.2
- *
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lritdcs;
 
 import ilex.cmdline.IntegerToken;
@@ -23,7 +21,6 @@ import ilex.cmdline.TokenOptions;
 import ilex.gui.EventsPanel;
 import ilex.net.BasicClient;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.xml.XmlOutputStream;
 
@@ -61,13 +58,18 @@ import javax.swing.WindowConstants;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.common.SearchCriteria;
 import lrgs.common.SearchSyntaxException;
 import lrgs.nledit.NetlistEditFrame;
 import lrgs.rtstat.RtStatPanel;
 
 
-public class StatusDisplayFrame extends JFrame {
+public class StatusDisplayFrame extends JFrame
+{
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	boolean shutdownFlag = false;
 
 	JMenuBar jMenuBar1 = new JMenuBar();
@@ -80,7 +82,7 @@ public class StatusDisplayFrame extends JFrame {
 	JMenu jMenu3 = new JMenu();
 	JMenuItem helpAbout = new JMenuItem();
 	TitledBorder titledBorder1;
-	
+
 	TitledBorder titledBorder2;
 	TitledBorder titledBorder3;
 	BorderLayout borderLayout1 = new BorderLayout();  //  @jve:decl-index=0:
@@ -89,7 +91,7 @@ public class StatusDisplayFrame extends JFrame {
 	GridBagLayout gridBagLayout2 = new GridBagLayout();
 	BorderLayout borderLayout3 = new BorderLayout();
 	GridBagLayout gridBagLayout4 = new GridBagLayout();
-	
+
 	EventsPanel eventsPanel = new ilex.gui.EventsPanel();
 	GridBagLayout gridBagLayout3 = new GridBagLayout();
 	GridBagLayout gridBagLayout5 = new GridBagLayout();
@@ -112,7 +114,7 @@ public class StatusDisplayFrame extends JFrame {
 
 	LritDcsStatus myStatus;
 	SimpleDateFormat myDateFormat;
-	
+
 	SearchCriteria scHigh = new SearchCriteria();
 	SearchCriteria scMedium = new SearchCriteria();
 	SearchCriteria scLow = new SearchCriteria();
@@ -131,16 +133,12 @@ public class StatusDisplayFrame extends JFrame {
 		statusPath = home + File.separator + "remote_lritdcs.stat";
 		myStatus = new LritDcsStatus(statusPath);
 		myDateFormat = new SimpleDateFormat("yyyy/DDD HH:mm:ss");
-		myDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));	
-		try {
-			jbInit();
-			
-//			lritPanel.setPreferredSize(new Dimension(500, 700));
-			eventsPanel.setPreferredSize(new Dimension(500, 240));
+		myDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		jbInit();
+
+		eventsPanel.setPreferredSize(new Dimension(500, 240));
+
 
 	}
 
@@ -191,17 +189,16 @@ public class StatusDisplayFrame extends JFrame {
 
 	public void updateScreen() {
 		setTitle("LRIT File Sender Status");
-		
+
 	}
 
-	private void jbInit() 
-		throws Exception 
+	private void jbInit()
 	{
 		lritPanel.setPreferredSize(new Dimension(500, 800));
-	
+
 		titledBorder3 = new TitledBorder(BorderFactory.createEtchedBorder(
 				Color.white, new Color(148, 145, 140)), "Events");
-		
+
 		jMenu1.setText("File");
 		fileExit.setText("Exit");
 		fileExit.addActionListener(new java.awt.event.ActionListener() {
@@ -241,12 +238,11 @@ public class StatusDisplayFrame extends JFrame {
 		});
 		this.getContentPane().setLayout(borderLayout2);
 
-//		this.getContentPane().setSize(600, 1200); // shweta
 
 		eventsPanel.setBorder(titledBorder3);
-		eventsPanel.setMinimumSize(new Dimension(10, 150));	
+		eventsPanel.setMinimumSize(new Dimension(10, 150));
 		eventsPanel.setBorder(BorderFactory.createLoweredBevelBorder());
-//		eventsPanel.setPreferredSize(new Dimension(10, 150));
+
 
 		jMenu5.setText("Queues");
 		miQueueFlushManual.setText("Flush Manual Retrans Q");
@@ -285,8 +281,8 @@ public class StatusDisplayFrame extends JFrame {
 		jMenu2.add(miEditMediumCriteria);
 		jMenu2.add(miEditLowCriteria);
 		jMenu3.add(helpAbout);
-		this.setJMenuBar(jMenuBar1);		
-		this.getContentPane().add(lritPanel, BorderLayout.CENTER); // shweta		
+		this.setJMenuBar(jMenuBar1);
+		this.getContentPane().add(lritPanel, BorderLayout.CENTER); // shweta
 		this.getContentPane().add(eventsPanel, BorderLayout.SOUTH); // shweta
 
 		jMenu5.add(miQueueManRetrans);
@@ -330,7 +326,7 @@ public class StatusDisplayFrame extends JFrame {
 		System.exit(0);
 	}
 
-	void miEditHighCriteria_actionPerformed(ActionEvent e) 
+	void miEditHighCriteria_actionPerformed(ActionEvent e)
 	{
 		scDlgUp = true;
 		SearchCritDialog scDlg = new SearchCritDialog(this,
@@ -340,46 +336,6 @@ public class StatusDisplayFrame extends JFrame {
 			myPollThread.scHigh2Send = scHigh;
 		scDlgUp = false;
 		scDlg = null;
-
-		//
-		// String home = LritDcsConfig.instance().getLritDcsHome();
-		// if (home == null)
-		// {
-		// showError(
-		// "This function is only available on the LRIT sender machine!");
-		// return;
-		// }
-		//
-		// String fn = home + File.separator + "searchcrit." +
-		// Constants.HighPri;
-		// try
-		// {
-		// JOptionPane.showMessageDialog(this,
-		// "Remember -- Do NOT enter LRGS or DAPS time \n"
-		// + "ranges in LRIT search criteria files!.",
-		// "No Time Ranges!",
-		// JOptionPane.INFORMATION_MESSAGE);
-		//
-		// File file = new File(fn);
-		// if (!file.exists())
-		// file.createNewFile();
-		// scEditorHigh = new SearchCriteriaEditor(file);
-		// final StatusDisplayFrame frame = this;
-		// scEditorHigh.setParent(
-		// new SearchCritEditorParent()
-		// {
-		// public void closingSearchCritEditor()
-		// {
-		// frame.scEditorHigh = null;
-		// }
-		// });
-		// scEditorHigh.startup(100,100);
-		// }
-		// catch(IOException ex)
-		// {
-		// showError("Cannot edit '" + fn + "': " + ex);
-		// scEditorHigh = null;
-		// }
 	}
 
 	void miEditMediumCriteria_actionPerformed(ActionEvent e) {
@@ -392,50 +348,6 @@ public class StatusDisplayFrame extends JFrame {
 		scDlgUp = false;
 		scDlg = null;
 
-		// if (scEditorMedium != null)
-		// {
-		// scEditorMedium.toFront();
-		// return;
-		// }
-		//
-		// String home = LritDcsConfig.instance().getLritDcsHome();
-		// if (home == null)
-		// {
-		// showError(
-		// "This function is only available on the LRIT sender machine!");
-		// return;
-		// }
-		//
-		// String fn = home + File.separator + "searchcrit." +
-		// Constants.MediumPri;
-		// try
-		// {
-		// JOptionPane.showMessageDialog(this,
-		// "Remember -- Do NOT enter LRGS or DAPS time \n"
-		// + "ranges in LRIT search criteria files!.",
-		// "No Time Ranges!",
-		// JOptionPane.INFORMATION_MESSAGE);
-		//
-		// File file = new File(fn);
-		// if (!file.exists())
-		// file.createNewFile();
-		// scEditorMedium = new SearchCriteriaEditor(file);
-		// final StatusDisplayFrame frame = this;
-		// scEditorMedium.setParent(
-		// new SearchCritEditorParent()
-		// {
-		// public void closingSearchCritEditor()
-		// {
-		// frame.scEditorMedium = null;
-		// }
-		// });
-		// scEditorMedium.startup(100,100);
-		// }
-		// catch(IOException ex)
-		// {
-		// showError("Cannot edit '" + fn + "': " + ex);
-		// scEditorMedium = null;
-		// }
 	}
 
 	void miEditLowCriteria_actionPerformed(ActionEvent e) {
@@ -447,50 +359,6 @@ public class StatusDisplayFrame extends JFrame {
 			myPollThread.scLow2Send = scLow;
 		scDlg = null;
 		scDlgUp = false;
-
-		// if (scEditorLow != null)
-		// {
-		// scEditorLow.toFront();
-		// return;
-		// }
-		//
-		// String home = LritDcsConfig.instance().getLritDcsHome();
-		// if (home == null)
-		// {
-		// showError(
-		// "This function is only available on the LRIT sender machine!");
-		// return;
-		// }
-		//
-		// String fn = home + File.separator + "searchcrit." + Constants.LowPri;
-		// try
-		// {
-		// JOptionPane.showMessageDialog(this,
-		// "Remember -- Do NOT enter LRGS or DAPS time \n"
-		// + "ranges in LRIT search criteria files!.",
-		// "No Time Ranges!",
-		// JOptionPane.INFORMATION_MESSAGE);
-		//
-		// File file = new File(fn);
-		// if (!file.exists())
-		// file.createNewFile();
-		// scEditorLow = new SearchCriteriaEditor(file);
-		// final StatusDisplayFrame frame = this;
-		// scEditorLow.setParent(
-		// new SearchCritEditorParent()
-		// {
-		// public void closingSearchCritEditor()
-		// {
-		// frame.scEditorLow = null;
-		// }
-		// });
-		// scEditorLow.startup(100,100);
-		// }
-		// catch(IOException ex)
-		// {
-		// showError("Cannot edit '" + fn + "': " + ex);
-		// scEditorLow = null;
-		// }
 	}
 
 	void miEditNetworkLists_actionPerformed(ActionEvent e) {
@@ -537,7 +405,7 @@ public class StatusDisplayFrame extends JFrame {
 		LritDcsConfigDialog dlg = new LritDcsConfigDialog();
 		dlg.fillValues();
 		//dlg.txtLritHost.setText(this.lritHost);
-		launchDialog(dlg);		
+		launchDialog(dlg);
 		if (dlg.okPressed())
 			configChanged = true;
 	}
@@ -546,7 +414,7 @@ public class StatusDisplayFrame extends JFrame {
 		scDlgUp = true;
 		SearchCritTimeDialog scDlg = new SearchCritTimeDialog(this,
 				"Manual Retransmit Request", scManual);
-		launchDialog(scDlg);		
+		launchDialog(scDlg);
 		if (scDlg.okPressed && !scDlg.isDialogEmpty())
 			myPollThread.scManual2Send = scManual;
 		scDlg = null;
@@ -618,7 +486,7 @@ public class StatusDisplayFrame extends JFrame {
 
 	}
 
-	class LritPollThread extends Thread 
+	class LritPollThread extends Thread
 	{
 		StatusDisplayFrame parent;
 		boolean shutdown;
@@ -644,24 +512,19 @@ public class StatusDisplayFrame extends JFrame {
 		private ByteArrayOutputStream htmlOS;
 		public LritDcsStatus currentStatus;
 		public String lritHostName;
-		// public boolean configChanged = false;
 
-		//SearchCriteria scHigh;
-		//SearchCriteria scMedium;
-		//SearchCriteria scLow;
-		//SearchCriteria scManual;
 		boolean sendHigh = false;
 		boolean sendMedium = false;
 		boolean sendLow = false;
 		boolean sendManual = false;
 
-		public LritPollThread(StatusDisplayFrame parent) 
+		public LritPollThread(StatusDisplayFrame parent)
 		{
 			super("LritPollThread");
 			this.parent = parent;
 		}
 
-		public LritPollThread(StatusDisplayFrame parent, RtStatPanel rtStatPanel) 
+		public LritPollThread(StatusDisplayFrame parent, RtStatPanel rtStatPanel)
 		{
 			super("LritPollThread");
 			this.parent = parent;
@@ -674,36 +537,7 @@ public class StatusDisplayFrame extends JFrame {
 			configChanged = false;
 		}
 
-		/*
-		 * public void run() { shutdown = false; lritcon = new
-		 * BasicClient(parent.lritHost, parent.lritPort); long lastConfigPoll =
-		 * 0L; while(!shutdown) { if (!lritcon.isConnected() && !tryConnect()) {
-		 * emptyStatus(); try {
-		 * 
-		 * sleep(5000L); } catch(InterruptedException ex2) {} continue; }
-		 * 
-		 * try { long now = System.currentTimeMillis(); if (now - lastConfigPoll
-		 * > 60000L) { lastConfigPoll = now; getConfig(); if (!parent.scDlgUp) {
-		 * getCrit("high", parent.scHigh); getCrit("medium", parent.scMedium);
-		 * getCrit("low", parent.scLow); } } if (parent.configChanged)
-		 * sendConfig(); if (scHigh2Send != null) { putCrit("high",
-		 * scHigh2Send); scHigh2Send = null; } if (scMedium2Send != null) {
-		 * putCrit("medium", scMedium2Send); scMedium2Send = null; } if
-		 * (scLow2Send != null) { putCrit("low", scLow2Send); scLow2Send = null;
-		 * } if (scManual2Send != null) { putCrit("manual", scManual2Send);
-		 * scManual2Send = null; } if (cmd != null) sendCommand();
-		 * pollForStatus(); pollForEvents();
-		 * 
-		 * try { sleep(1000L); } catch(InterruptedException ex2) {} }
-		 * catch(IOException ex) {
-		 * System.err.println("Error on UI LRIT connection to '" +
-		 * lritcon.getName() + "': " + ex); try { reader.close();
-		 * writer.close(); } catch(Exception ex3) {} lritcon.disconnect();
-		 * parent.myStatus.status = "Connect Error"; try { sleep(5000L); }
-		 * catch(InterruptedException ex2) {} } } }
-		 */
-
-		public void run() 
+		public void run()
 		{
 			shutdown = false;
 
@@ -712,12 +546,12 @@ public class StatusDisplayFrame extends JFrame {
 			long lastConfigPoll = 0L;
 
 			// long now = System.currentTimeMillis();
-			while (!shutdown) 
+			while (!shutdown)
 			{
-				if (!lritcon.isConnected() && !tryConnect()) 
+				if (!lritcon.isConnected() && !tryConnect())
 				{
 					emptyStatus();
-					try 
+					try
 					{
 						sleep(5000L);
 					}
@@ -728,7 +562,7 @@ public class StatusDisplayFrame extends JFrame {
 					continue;
 				}
 
-				try 
+				try
 				{
 					long now = System.currentTimeMillis();
 					if (now - lastConfigPoll > 60000L)
@@ -749,7 +583,7 @@ public class StatusDisplayFrame extends JFrame {
 						sendConfig();
 						configChanged = false;
 					}
-					
+
 					if (scHigh2Send != null)
 					{
 						putCrit("high", scHigh2Send);
@@ -770,7 +604,7 @@ public class StatusDisplayFrame extends JFrame {
 						putCrit("manual", scManual2Send);
 						scManual2Send = null;
 					}
-					
+
 					if (cmd != null)
 						sendCommand();
 
@@ -783,14 +617,12 @@ public class StatusDisplayFrame extends JFrame {
 					}
 					catch (InterruptedException ex2)
 					{
-						ex2.printStackTrace();
+						log.atTrace().setCause(ex2).log("Polling loop wait interrupted.");
 					}
 				}
 				catch (IOException ex)
 				{
-					String msg = "Error on UI LRIT connection to '"
-						+ lritcon.getName() + "': " + ex;
-					Logger.instance().failure("GUI:4 " + msg);
+					log.atError().setCause(ex).log("Error on UI LRIT connection to '{}'", lritcon.getName());
 					try
 					{
 						reader.close();
@@ -816,15 +648,13 @@ public class StatusDisplayFrame extends JFrame {
 		private void emptyStatus()
 		{
 			currentStatus.clear();
-			// currentStatus.loadFromProps(props);
-			// System.out.println("Loaded status: " + currentStatus.toString());
 			SwingUtilities.invokeLater(
-				new Runnable() 
+				new Runnable()
 				{
-					public void run() 
+					public void run()
 					{
 						lritHostName = parent.lritHost;
-						try 
+						try
 						{
 							htmlOS.reset();
 							repgen.writeReport(xos, lritHostName, currentStatus, 0);
@@ -833,9 +663,7 @@ public class StatusDisplayFrame extends JFrame {
 						}
 						catch (IOException ex)
 						{
-							Logger.instance().warning(
-								"Unexpected IO exception writing LRIT report: "
-								+ ex);
+							log.atWarn().setCause(ex).log("Unexpected IO exception writing LRIT report.");
 						}
 					}
 				});
@@ -853,9 +681,9 @@ public class StatusDisplayFrame extends JFrame {
 			}
 			catch (IOException ex)
 			{
-				System.err
-					.println("Error connecting to UI LRIT connection at '"
-						+ lritcon.getName() + "': " + ex);
+				log.atError()
+				   .setCause(ex)
+				   .log("Error connecting to UI LRIT connection at '{}'", lritcon.getName());
 				parent.myStatus.status = "Connect Error";
 				return false;
 			}
@@ -863,9 +691,7 @@ public class StatusDisplayFrame extends JFrame {
 
 		private void pollForStatus() throws IOException
 		{
-			// System.out.println("Polling for LRIT status...");
 			writer.println(statusPoll);
-//Logger.instance().info("send '" + statusPoll + "'");
 
 			ByteArrayOutputStream statusBufOS = new ByteArrayOutputStream();
 			byte nl[] = new byte[]{ (byte) '\n' };
@@ -882,7 +708,6 @@ public class StatusDisplayFrame extends JFrame {
 				statusBufOS.write(nl);
 			}
 			statusBufOS.close();
-//Logger.instance().info("pollForStatus read " + n + " lines.");
 
 			Properties props = new Properties();
 			ByteArrayInputStream bais = new ByteArrayInputStream(
@@ -893,8 +718,6 @@ public class StatusDisplayFrame extends JFrame {
 			try
 			{
 				currentStatus.loadFromProps(props);
-				// System.out.println("Loaded status: " +
-				// currentStatus.toString());
 				SwingUtilities.invokeLater(new Runnable()
 				{
 					public void run()
@@ -911,16 +734,14 @@ public class StatusDisplayFrame extends JFrame {
 						}
 						catch (IOException ex)
 						{
-							Logger.instance().warning(
-								"Unexpected IO exception writing LRIT report: "
-									+ ex);
+							log.atError().setCause(ex).log("Unexpected IO exception writing LRIT report.");
 						}
 					}
 				});
 			}
 			catch (StatusInvalidException ex)
 			{
-				System.err.println("Invalid LRIT status received & ignored.");
+				log.atError().setCause(ex).log("Invalid LRIT status received & ignored.");
 
 			}
 		}
@@ -936,25 +757,12 @@ public class StatusDisplayFrame extends JFrame {
 				line = line.trim();
 				if (line.length() == 0)
 					break;
-				// System.out.println("line is : "+line);
 				parent.eventsPanel.addLine(line);
 			}
 		}
 
-		/*
-		 * private void pollForEvents() throws IOException {
-		 * writer.println(eventsPoll); final Vector events = new Vector();
-		 * while(true) { String line = reader.readLine(); if (line == null)
-		 * break; line = line.trim(); if (line.length() == 0) break;
-		 * events.add(line); } SwingUtilities.invokeLater( new Runnable() {
-		 * public void run() { for(int i=0; i<events.size(); i++)
-		 * parent.addEvent((String)events.get(i), "LRIT"); } });
-		 * 
-		 * }
-		 */
+		private void sendConfig() throws IOException {
 
-		private void sendConfig() throws IOException {		
-			
 			parent.configChanged = false;
 			writer.println(putConfigReq);
 			LritDcsConfig.instance().save(writer);
@@ -964,11 +772,11 @@ public class StatusDisplayFrame extends JFrame {
 		/*
 		 * private void getConfig() throws IOException {
 		 * writer.println(getConfigReq);
-		 * 
+		 *
 		 * byte cfgbuf[] = captureToBlankLine(); Properties props = new
 		 * Properties(); ByteArrayInputStream bais = new
 		 * ByteArrayInputStream(cfgbuf); props.load(bais);
-		 * 
+		 *
 		 * PropertiesUtil.loadFromProps(LritDcsConfig.instance(), props); }
 		 */
 
@@ -976,7 +784,6 @@ public class StatusDisplayFrame extends JFrame {
 		{
 			if (writer != null)
 			{
-//Logger.instance().info("Sending '" + getConfigReq + "'");
 				writer.println(getConfigReq);
 
 				byte cfgbuf[] = captureToBlankLine();
@@ -992,7 +799,6 @@ public class StatusDisplayFrame extends JFrame {
 
 		private void getCrit(String what, SearchCriteria sc) throws IOException
 		{
-//Logger.instance().info("Sending '" + getCritReq + " " + what + "'");
 			writer.println(getCritReq + " " + what);
 			byte buf[] = captureTo("ENDSC");
 			ByteArrayInputStream bais = new ByteArrayInputStream(buf);
@@ -1004,9 +810,7 @@ public class StatusDisplayFrame extends JFrame {
 			}
 			catch (SearchSyntaxException ssex)
 			{
-				Logger.instance().warning(
-					"Server returned invalid '" + what + "' search criteria: "
-						+ ssex);
+				log.atWarn().setCause(ssex).log("Server returned invalid '{}' search criteria: ", what);
 			}
 			bais.close();
 		}
@@ -1019,7 +823,7 @@ public class StatusDisplayFrame extends JFrame {
 		}
 
 		// / Sends a simple command and expects no response.
-		private void sendCommand() throws IOException {			
+		private void sendCommand() throws IOException {
 			if (cmd != null)
 				writer.println(cmd);
 			cmd = null;
@@ -1043,16 +847,11 @@ public class StatusDisplayFrame extends JFrame {
 				configBufOS.write(nl);
 			}
 			configBufOS.close();
-//Logger.instance().info("capturetoBlankLine read " + n + " lines.");
 			return configBufOS.toByteArray();
 		}
 
 		private byte[] captureTo(String endTag) throws IOException
 		{
-//if (endTag.equals("ENDSC"))
-//{
-//Logger.instance().info("reading to ENDSC");
-//}
 			ByteArrayOutputStream configBufOS = new ByteArrayOutputStream();
 			byte nl[] = new byte[]{ (byte) '\n' };
 			int n = 0;
@@ -1063,16 +862,12 @@ public class StatusDisplayFrame extends JFrame {
 					throw new IOException("Socket closed by LRIT Sender");
 				n++;
 				line = line.trim();
-//if (endTag.equals("ENDSC"))
-//Logger.instance().info("Read '" + line + "'");
 				if (line.equals(endTag))
 					break;
 				configBufOS.write(line.getBytes());
 				configBufOS.write(nl);
 			}
 			configBufOS.close();
-//if (endTag.equals("ENDSC"))
-//Logger.instance().info("Found ENDSC " + n + " lines read.");
 
 			return configBufOS.toByteArray();
 		}

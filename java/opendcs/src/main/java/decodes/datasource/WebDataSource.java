@@ -1,28 +1,42 @@
 /*
- * Open source software by Cove Software, LLC.
- */
+* Open source software by Cove Software, LLC.
+*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
+
 package decodes.datasource;
 
 import java.io.BufferedInputStream;
-import java.net.URL;
-import java.net.URLConnection;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.DataSource;
 import decodes.db.Database;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
+import org.opendcs.utils.WebUtility;
 
 /**
  * Extends StreamDataSource to read data from an URL opened on the internet.
  * @author mmaloney
  */
-public class WebDataSource 
-	extends StreamDataSource
-	implements PropertiesOwner
+public class WebDataSource extends StreamDataSource
 {
-	private String module = "WebDataSource";
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String activeAddr = null;
 	
 	/**
@@ -85,17 +99,13 @@ public class WebDataSource
 	{
 		try
 		{
-			log(Logger.E_INFORMATION, module + " Opening '" + activeAddr + "'");
-			URL url = new URL(activeAddr);
-			URLConnection con = url.openConnection();
-			con.setConnectTimeout(5000);
-			return new BufferedInputStream(con.getInputStream());
+			log.info("Opening '{}'", activeAddr);
+			return new BufferedInputStream(WebUtility.openUrl(activeAddr, 5000));
 		}
-		catch(Exception ex)
+		catch (Exception ex)
 		{
-			String msg = module + " Open failed on '" + activeAddr + "': " + ex;
-			log(Logger.E_WARNING, msg);
-			throw new DataSourceException(msg);
+			String msg = "Open failed on '" + activeAddr;
+			throw new DataSourceException(msg, ex);
 		}
 	}
 
@@ -105,6 +115,7 @@ public class WebDataSource
 		// silently close
 		try 
 		{
+			log.info("Closing '{}'", activeAddr);
 			str.close();
 		}
 		catch(Exception ex)

@@ -1,65 +1,19 @@
 /*
-* $Id: ComputationDAO.java,v 1.15 2020/05/07 13:41:54 mmaloney Exp $
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-* $Log: ComputationDAO.java,v $
-* Revision 1.15  2020/05/07 13:41:54  mmaloney
-* When deleting a computation, first delete it's dependencies using CompDependsDAO.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-* Revision 1.14  2020/02/14 15:18:25  mmaloney
-* Updates for OpenTSDB
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-* Revision 1.13  2019/08/26 20:51:47  mmaloney
-* Added checks for enabled and executable class.
-*
-* Revision 1.12  2019/02/26 17:16:44  mmaloney
-* HDB 660
-*
-* Revision 1.11  2017/08/22 19:58:40  mmaloney
-* Refactor
-*
-* Revision 1.10  2017/07/13 20:57:47  mmaloney
-* HDB-397, when listing for GUI, only add a single copy of each computation.
-*
-* Revision 1.9  2017/03/03 19:21:33  mmaloney
-* Bugfix - it was trying to delete CP_COMPUTATION record before CP_COMP_DEPENDS
-* record, which in pre DB 14 version is defined as a foreign key.
-*
-* Revision 1.8  2016/11/29 01:19:07  mmaloney
-* Refactoring.
-*
-* Revision 1.7  2016/11/19 15:55:51  mmaloney
-* Join PARM records with parent records to bring in implicit VPD filter in CWMS.
-*
-* Revision 1.6  2016/07/20 15:47:30  mmaloney
-* Optimizations.
-*
-* Revision 1.5  2016/01/27 22:11:22  mmaloney
-* Added compEditList method.
-*
-* Revision 1.4  2014/09/30 13:32:15  mmaloney
-* removed season_id
-*
-* Revision 1.3  2014/07/03 12:53:42  mmaloney
-* debug improvements.
-*
-* Revision 1.2  2014/05/20 14:41:06  mmaloney
-* If comment read was null, change it to empty string. This makes it compatible
-* with PG and it prevents compedit from falsely detecting changes.
-*
-* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-* OPENDCS 6.0 Initial Checkin
-*
-* This software was written by Cove Software, LLC ("COVE") under contract
-* to the United States Government. No warranty is provided or implied other
-* than specific contractual terms between COVE and the U.S. Government.
-*
-* Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
-* All rights reserved.
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package opendcs.dao;
-
-import ilex.util.Logger;
-import ilex.util.TextUtil;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -72,19 +26,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Predicate;
 
-import org.slf4j.LoggerFactory;
-
-import opendcs.dai.AlgorithmDAI;
-import opendcs.dai.CompDependsDAI;
-import opendcs.dai.CompDependsNotifyDAI;
-import opendcs.dai.ComputationDAI;
-import opendcs.dai.DataTypeDAI;
-import opendcs.dai.LoadingAppDAI;
-import opendcs.dai.PropertiesDAI;
-import opendcs.dai.TimeSeriesDAI;
-import opendcs.dai.TsGroupDAI;
-import opendcs.dao.DbObjectCache.CacheIterator;
-import opendcs.util.sql.WrappedConnection;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.sql.DbKey;
@@ -95,28 +36,35 @@ import decodes.tsdb.CpDependsNotify;
 import decodes.tsdb.DbAlgoParm;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbCompParm;
-import decodes.tsdb.DbCompResolver;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.TimeSeriesDb;
-import decodes.tsdb.TimeSeriesIdentifier;
-import decodes.tsdb.TsGroup;
 import decodes.tsdb.TsdbDatabaseVersion;
-import decodes.tsdb.compedit.ComputationInList;
-
+import ilex.util.TextUtil;
+import opendcs.dai.AlgorithmDAI;
+import opendcs.dai.CompDependsDAI;
+import opendcs.dai.CompDependsNotifyDAI;
+import opendcs.dai.ComputationDAI;
+import opendcs.dai.DataTypeDAI;
+import opendcs.dai.LoadingAppDAI;
+import opendcs.dai.PropertiesDAI;
+import opendcs.dai.TsGroupDAI;
+import opendcs.dao.DbObjectCache.CacheIterator;
 import opendcs.util.functional.ThrowingSupplier;
+import opendcs.util.sql.WrappedConnection;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.event.Level;
 
 /**
 Data Access Object for reading/writing computations.
 */
-public class ComputationDAO
-	extends DaoBase
-	implements ComputationDAI
+public class ComputationDAO extends DaoBase implements ComputationDAI
 {
-	private static org.slf4j.Logger log = LoggerFactory.getLogger(ComputationDAO.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	protected static DbObjectCache<DbComputation> compCache =
-		new DbObjectCache<DbComputation>(60 * 60 * 1000L, false);
+		new DbObjectCache<>(60 * 60 * 1000L, false);
 	private static long lastCacheFill = 0L;
 	public static final long CACHE_TIME_LIMIT = 20 * 60 * 1000L;
 
@@ -152,7 +100,7 @@ public class ComputationDAO
 			compTableColumnsNoTabName = compTableColumnsNoTabName + ", group_id";
 		}
 	}
-	
+
 	@Override
 	public Connection getConnection()
 	{
@@ -177,8 +125,7 @@ public class ComputationDAO
 		{
 			return;
 		}
-
-		debug1("ComputationDAO.fillCache()");
+		log.debug("ComputationDAO.fillCache()");
 
 		String q = "select " + compTableColumns + " from CP_COMPUTATION ";
 
@@ -205,18 +152,18 @@ public class ComputationDAO
 			// Associate comps with groups, apps & algorithms.
 			for(CacheIterator it = compCache.iterator(); it.hasNext(); )
 			{
-				DbComputation comp = (DbComputation) it.next();
-				if(!DbKey.isNull(comp.getGroupId()))
+				DbComputation comp = (DbComputation)it.next();
+				if (!DbKey.isNull(comp.getGroupId()))
 					comp.setGroup(tsGroupDAO.getTsGroupById(comp.getGroupId()));
 
-				if(!DbKey.isNull(comp.getAppId()))
+				if (!DbKey.isNull(comp.getAppId()))
 					for(CompAppInfo cai : apps)
-						if(comp.getAppId().equals(cai.getAppId()))
+						if (comp.getAppId().equals(cai.getAppId()))
 							comp.setApplicationName(cai.getAppName());
 
-				if(!DbKey.isNull(comp.getAlgorithmId()))
+				if (!DbKey.isNull(comp.getAlgorithmId()))
 					for(DbCompAlgorithm algo : algos)
-						if(comp.getAlgorithmId().equals(algo.getId()))
+						if (comp.getAlgorithmId().equals(algo.getId()))
 						{
 							comp.setAlgorithm(algo);
 							comp.setAlgorithmName(algo.getName());
@@ -225,13 +172,13 @@ public class ComputationDAO
 
 			// Note the parms rely on the algorithms being in place. So get them now.
 			q = "select a.* from CP_COMP_TS_PARM a, CP_COMPUTATION b "
-					+ "where a.COMPUTATION_ID = b.COMPUTATION_ID";
+				+ "where a.COMPUTATION_ID = b.COMPUTATION_ID";
 			n[0] = 0;
 			doQuery(q, rs ->
 			{
 				DbKey compId = DbKey.createDbKey(rs, 1);
 				DbComputation comp = compCache.getByKey(compId);
-				if(comp == null)
+				if (comp == null)
 				{
 					log.warn("CP_COMP_TS_PARM with comp id={} with no matching computation.", compId);
 				}
@@ -245,29 +192,28 @@ public class ComputationDAO
 
 			for(CacheIterator it = compCache.iterator(); it.hasNext(); )
 			{
-				DbComputation comp = (DbComputation) it.next();
+				DbComputation comp = (DbComputation)it.next();
 
 				// Make sure site IDs and datatype IDs are set in the parms
 				for(DbCompParm parm : comp.getParmList())
-					if(!parm.getSiteDataTypeId().isNull())
+					if (!parm.getSiteDataTypeId().isNull())
 						try
 						{
 							db.expandSDI(parm);
 						}
-						catch(NoSuchObjectException e)
+						catch (NoSuchObjectException e)
 						{
+							log.atDebug().setCause(e).log("Error expanding SDI for parm {}.", parm);
 						}
 			}
 			log.debug("fillCache finished, {} computations cached.", compCache.size());
 		}
-		catch(Exception ex)
+		catch(SQLException | DbIoException ex)
 		{
 			log.atWarn()
-					.setCause(ex)
-					.log("Exception filling computation hash.");
+			   .setCause(ex)
+			   .log("Exception filling computation hash.");
 		}
-
-		lastCacheFill = System.currentTimeMillis();
 	}
 
 	@Override
@@ -284,11 +230,12 @@ public class ComputationDAO
 			);
 			PreparedStatement getAppId = c.prepareStatement(
 				"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?"
-			);
+			)
 		)
 		{
 			getComp.setLong(1,compId.getValue());
-			try( ResultSet rs = getComp.executeQuery(); ) {
+			try( ResultSet rs = getComp.executeQuery() )
+			{
 				if (rs.next())
 				{
 					DbComputation comp = rs2comp(rs);
@@ -300,8 +247,10 @@ public class ComputationDAO
 						}
 						catch(NoSuchObjectException ex)
 						{
-							log.warn("Computation ID={} with algo ID={} -- cannot find matching algorithm.",
-							         compId, comp.getAlgorithmId());
+							log.atWarn()
+							   .setCause(ex)
+							   .log("Computation ID={} with algo ID={} -- cannot find matching algorithm.",
+							        compId, comp.getAlgorithmId());
 						}
 					}
 					fillCompSubordinates(comp);
@@ -310,12 +259,13 @@ public class ComputationDAO
 					if (!appId.isNull())
 					{
 						getAppId.setLong(1,appId.getValue());
-						try( ResultSet rs2 = getAppId.executeQuery(); ){
-							if (rs.next())
-							comp.setApplicationName(rs.getString(1));
+						try (ResultSet rs2 = getAppId.executeQuery())
+						{
+							if (rs2.next())
+							{
+								comp.setApplicationName(rs2.getString(1));
+							}
 						}
-
-
 					}
 					compCache.put(comp);
 					return comp;
@@ -370,7 +320,7 @@ public class ComputationDAO
 	 * @throws DbIoException
 	 */
 	protected void fillCompSubordinates(DbComputation comp)
-		throws SQLException, DbIoException
+		throws DbIoException
 	{
 		try
 		{
@@ -408,7 +358,10 @@ public class ComputationDAO
 							{
 								db.expandSDI(parm);
 							}
-							catch (NoSuchObjectException e) {}
+							catch (NoSuchObjectException e)
+							{
+								log.atDebug().setCause(e).log("Error expanding SDI for parm {}.", parm);
+							}
 						}
 					}
 				}
@@ -471,23 +424,20 @@ public class ComputationDAO
 	public boolean checkCachedObjectOK(CachableDbObject ob)
 	{
 		DbComputation comp = (DbComputation)ob;
-		String q = "select DATE_TIME_LOADED from CP_COMPUTATION "
-			+ " where COMPUTATION_ID = " + comp.getKey();
 		Connection conn = getConnection();
 		try(
 			PreparedStatement getTimeLoaded = conn.prepareStatement(
 				"select DATE_TIME_LOADED from CP_COMPUTATION where COMPUTATION_ID = ?"
-			);
-		) {
+			)
+		)
+		{
 			getTimeLoaded.setLong(1,comp.getId().getValue());
-			try(ResultSet rs = getTimeLoaded.executeQuery(); )
+			try(ResultSet rs = getTimeLoaded.executeQuery() )
 			{
 				if (!rs.next())
 				{
-					String msg
-						= "No match finding DATE_TIME_LOADED for computation "
-						+ "id=" + comp.getKey() + ", name=" + comp.getUniqueName();
-					debug1(msg);
+					log.debug("No match finding DATE_TIME_LOADED for computation id={}, name={}",
+							  comp.getKey(), comp.getUniqueName());
 					return false;
 				}
 				Date lmt = db.getFullDate(rs, 1);
@@ -513,11 +463,12 @@ public class ComputationDAO
 			);
 			PreparedStatement getAppId = conn.prepareStatement(
 				"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?"
-			);
-		){
+			)
+		)
+		{
 			getComp.setString(1,name);
 
-			try(ResultSet rs = getComp.executeQuery(); )
+			try(ResultSet rs = getComp.executeQuery() )
 			{
 				if (rs.next())
 				{
@@ -530,9 +481,10 @@ public class ComputationDAO
 						}
 						catch(NoSuchObjectException ex)
 						{
-							warning("Computation '" +name + "' with algo ID="
-								+ comp.getAlgorithmId() + " -- cannot find matching "
-								+ "algorithm.");
+							log.atWarn()
+							   .setCause(ex)
+							   .log("Computation '{}' with algo ID={} -- cannot find matching algorithm.",
+							   		name, comp.getAlgorithmName());
 						}
 					}
 					fillCompSubordinates(comp);
@@ -558,9 +510,8 @@ public class ComputationDAO
 		}
 		catch(SQLException ex)
 		{
-			String msg = "Error reading computation '" + name + "': " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			String msg = "Error reading computation '" + name + "'";
+			throw new DbIoException(msg, ex);
 		}
 	}
 
@@ -571,13 +522,15 @@ public class ComputationDAO
 	 * @return List of computations
 	 */
 	public ArrayList<DbComputation> listCompsForGUI(CompFilter filter)
+		throws DbIoException
 	{
-		debug1("listCompsForGUI " + filter);
+		log.debug("listCompsForGUI {}", filter);
 
-		fillCache();
+		if (compCache.size() == 0)
+			fillCache();
 
 		ArrayList<DbComputation> ret = new ArrayList<>();
-		for (CacheIterator it = compCache.iterator(); it.hasNext(); )
+		for(CacheIterator it = compCache.iterator(); it.hasNext(); )
 		{
 			DbComputation comp = (DbComputation)it.next();
 			DbKey procId = filter.getProcessId();
@@ -606,11 +559,9 @@ public class ComputationDAO
 	 * @param filter the computation filter containing site, algorithm, datatype, interval, process, and group names
 	 * @return List of computations
 	 */
-	@Override
-	public List<DbComputation> listComps(Predicate<DbComputation> filter)
-			throws DbIoException
+	public List<DbComputation> listComps(Predicate<DbComputation> filter) throws DbIoException
 	{
-		debug1("listComps " + filter);
+		log.debug("listComps {}", filter);
 
 		fillCache();
 
@@ -626,307 +577,11 @@ public class ComputationDAO
 		return ret;
 	}
 
-	/**
-	 * New 6.2 method for listing computations for the CompEdit GUI.
-	 * @param filter
-	 * @return
-	 */
-	@Override
-	public ArrayList<ComputationInList> compEditList(CompFilter filter)
-			throws DbIoException
-	{
-		debug3("compEditList()");
-		ArrayList<ComputationInList> ret = new ArrayList<ComputationInList>();
-
-		String columns = "cmp.computation_id, cmp.computation_name, "
-			+ "cmp.algorithm_id, cmp.cmmnt, cmp.loading_application_id, cmp.enabled";
-		String tables = "cp_computation cmp";
-		StringBuilder where = new StringBuilder();
-
-		// Build the where clause.
-		if (!DbKey.isNull(filter.getAlgoId()))
-		{
-			if (where.length() > 0)
-				where.append(" and ");
-			where.append("algorithm_id = " + filter.getAlgoId());
-		}
-		if (!DbKey.isNull(filter.getProcessId()))
-		{
-			if (where.length() > 0)
-				where.append(" and ");
-			where.append("loading_application_id = " + filter.getProcessId());
-		}
-		if (filter.isEnabledOnly())
-		{
-			if (where.length() > 0)
-				where.append(" and ");
-			where.append("ENABLED = " + sqlBoolean(true));
-		}
-		// Group comp query does not include param fields.
-		String groupWhere = where.toString();
-
-		// Build the query for NON group comps.
-		if (where.length() > 0)
-			where.append(" and ");
-
-		where.append("(cmp.group_id is null or cmp.group_id = -1)");
-		if (!DbKey.isNull(filter.getSiteId())
-		 || !DbKey.isNull(filter.getDataTypeId())
-		 || filter.getIntervalCode() != null)
-		{
-			tables = tables + ", cp_comp_ts_parm prm";
-			where.append(" and cmp.computation_id = prm.computation_id");
-
-			if (db.isCwms() || db.isOpenTSDB())
-			{
-				// CWMS already has site_id and datatype_id in the fully-defined parms.
-				if (!DbKey.isNull(filter.getSiteId()))
-					where.append(" and prm.site_id = " + filter.getSiteId());
-				if (!DbKey.isNull(filter.getDataTypeId()))
-					where.append(" and prm.datatype_id = " + filter.getDataTypeId());
-			}
-			else if (db.isHdb())
-			{
-				tables = tables + ", HDB_SITE_DATATYPE sdt";
-				where.append(" and prm.site_datatype_id = sdt.site_datatype_id");
-				if (!DbKey.isNull(filter.getSiteId()))
-					where.append(" and sdt.site_id = " + filter.getSiteId());
-				if (!DbKey.isNull(filter.getDataTypeId()))
-					where.append(" and sdt.datatype_id = " + filter.getDataTypeId());
-			}
-
-			if (filter.getIntervalCode() != null)
-				where.append(" and lower(prm.INTERVAL"
-					+ (db.isHdb()?"":"_ABBR") +") = '" + filter.getIntervalCode().toLowerCase() + "'");
-		}
-
-		// Get all non-group computations via where clause using all filter
-		if (DbKey.isNull(filter.getGroupId()))
-		{
-			String q = "select " + columns + " from " + tables;
-			if (where.length() > 0)
-				q = q + " where " + where.toString();
-			q = q + " order by cmp.computation_id";
-			try
-			{
-				debug3("Getting NON-group comps with query '" + q + "'");
-				ResultSet rs = doQuery(q);
-				int n = 0;
-				DbKey lastCompId = DbKey.NullKey;
-				while(rs.next())
-				{
-					// A computation may have multiple params that pass the filter.
-					// Only add a given computation to the list once.
-					DbKey compId = DbKey.createDbKey(rs, 1);
-					if (compId.equals(lastCompId))
-						continue;
-
-					ret.add(
-						new ComputationInList(compId, rs.getString(2),
-							DbKey.createDbKey(rs, 3), DbKey.createDbKey(rs, 5),
-							TextUtil.str2boolean(rs.getString(6)), rs.getString(4)));
-					n++;
-					lastCompId = compId;
-				}
-				debug3("" + n + " non-group computations retrieved.");
-			}
-			catch(Exception ex)
-			{
-				throw new DbIoException("CompuationDao.compEditList(): Error in query '" + q + "': " + ex);
-			}
-		}
-
-
-		// Now get all group comps completely. The number should be small.
-		String q = "select " + compTableColumns + " from CP_COMPUTATION "
-			+ "where ";
-		if (DbKey.isNull(filter.getGroupId())) // accept any comp with a group
-			q = q + " (GROUP_ID is not null and GROUP_ID != -1) ";
-		else // specific group is requested
-			q = q + " GROUP_ID = " + filter.getGroupId() + " ";
-
-		if (groupWhere.length() > 0)
-			q = q + " and " + groupWhere.toString();
-
-		ArrayList<CompAppInfo> apps = loadingAppDAO.listComputationApps(true);
-		ArrayList<DbCompAlgorithm> algos = algorithmDAO.listAlgorithms();
-
-		debug3("Expanding group comps and checking filter");
-		try (TimeSeriesDAI tsDAO = this.db.makeTimeSeriesDAO())
-		{
-			ArrayList<DbKey> groupCompIds = new ArrayList<DbKey>();
-
-			ResultSet rs = doQuery(q);
-			int n = 0;
-			while(rs != null && rs.next())
-			{
-				DbComputation comp = rs2comp(rs);
-				compCache.put(comp);
-				groupCompIds.add(comp.getKey());
-				n++;
-			}
-			Logger.instance().debug1("" + n + " cp_computation group comp recs read.");
-
-			q = "select prop.computation_id, prop.prop_name, prop.prop_value "
-				+ "from cp_comp_property prop, cp_computation cmp "
-				+ "where prop.computation_id = cmp.computation_id and "
-				+ "(cmp.GROUP_ID is not null and cmp.GROUP_ID != -1)";
-			if (groupWhere.length() > 0)
-				q = q + " and " + groupWhere.toString();
-			rs = doQuery(q);
-			n = 0;
-			while(rs != null && rs.next())
-			{
-				DbComputation comp = compCache.getByKey(DbKey.createDbKey(rs, 1));
-				if (comp != null)
-					comp.setProperty(rs.getString(2), rs.getString(3));
-				n++;
-			}
-			Logger.instance().debug1("" + n + " cp_comp_property recs read.");
-
-			// Associate comps with groups, apps & algorithms.
-			for(CacheIterator it = compCache.iterator(); it.hasNext(); )
-			{
-				DbComputation comp = (DbComputation)it.next();
-				if (!DbKey.isNull(comp.getGroupId()))
-					comp.setGroup(tsGroupDAO.getTsGroupById(comp.getGroupId()));
-
-				if (!DbKey.isNull(comp.getAppId()))
-					for(CompAppInfo cai : apps)
-						if (comp.getAppId().equals(cai.getAppId()))
-						{
-							comp.setApplicationName(cai.getAppName());
-							break;
-						}
-
-				if (!DbKey.isNull(comp.getAlgorithmId()))
-					for(DbCompAlgorithm algo : algos)
-						if (comp.getAlgorithmId().equals(algo.getId()))
-						{
-							comp.setAlgorithm(algo);
-							comp.setAlgorithmName(algo.getName());
-							break;
-						}
-			}
-
-			// Note the parms rely on the algorithms being in place. So get them now.
-			q = "select prm.* "
-				+ "from CP_COMP_TS_PARM prm, CP_COMPUTATION cmp "
-				+ "where prm.COMPUTATION_ID = cmp.COMPUTATION_ID "
-				+ "and (cmp.GROUP_ID is not null and cmp.GROUP_ID != -1)";
-			if (groupWhere.length() > 0)
-				q = q + " and " + groupWhere.toString();
-
-			rs = doQuery(q);
-			n = 0;
-			while(rs.next())
-			{
-				DbKey compId = DbKey.createDbKey(rs, 1);
-				DbComputation comp = compCache.getByKey(compId);
-				if (comp != null)
-					rs2compParm(comp, rs);
-				n++;
-			}
-			Logger.instance().debug1("" + n + " cp_comp_ts_parm recs read.");
-
-			for(CacheIterator it = compCache.iterator(); it.hasNext(); )
-			{
-				DbComputation comp = (DbComputation)it.next();
-
-				// Make sure site IDs and datatype IDs are set in the parms
-				for(DbCompParm parm : comp.getParmList())
-					if (!parm.getSiteDataTypeId().isNull())
-						try { db.expandSDI(parm); }
-						catch (NoSuchObjectException e) {}
-			}
-
-			// Now the cache has all my group comps and groupCompIds is a list of the IDs
-			// that are for this query.
-			// Expand the groups, evaluate the comps, check the expanded params.
-			for(DbKey compId : groupCompIds)
-			{
-				DbComputation groupComp = compCache.getByKey(compId);
-				TsGroup group = groupComp.getGroup();
-
-				if (group == null) // Means comp had an invalid group ID
-				{
-					Logger.instance().warning("Computation ID=" + compId + " has invalid group ID="
-						+ groupComp.getGroupId() + " -- skipped.");
-					continue;
-				}
-
-				// If no TS-specific filtering is done, there's no need to expand.
-				if (DbKey.isNull(filter.getSiteId()) && DbKey.isNull(filter.getDataTypeId())
-				 && filter.getIntervalCode() == null)
-				{
-					if (filter.passes(groupComp))
-						ret.add(
-							new ComputationInList(groupComp.getKey(), groupComp.getName(),
-								groupComp.getAlgorithmId(), groupComp.getAppId(),
-								groupComp.isEnabled(), groupComp.getComment()));
-					continue;
-				}
-
-				// Group object may be shared by multiple comps. Only expand it once.
-				if (!group.getIsExpanded())
-					db.expandTsGroup(group);
-
-				for(TimeSeriesIdentifier tsid : group.getExpandedList())
-					try
-					{
-						if (filter.passes(DbCompResolver.makeConcrete((TimeSeriesDb)db, tsDAO, tsid, groupComp, false)))
-						{
-							ret.add(
-								new ComputationInList(groupComp.getKey(), groupComp.getName(),
-									groupComp.getAlgorithmId(), groupComp.getAppId(),
-									groupComp.isEnabled(), groupComp.getComment()));
-							break;
-						}
-					}
-					catch(NoSuchObjectException ex)
-					{
-						Logger.instance().debug1("Cannot expand comp(" + groupComp.getId()
-							+ ") " + groupComp.getName() + ": " + ex);
-					}
-			}
-
-		}
-		catch(Exception ex)
-		{
-			log.atWarn()
-			   .setCause(ex)
-			   .log("Exception listing computations for GUI.");
-		}
-
-		// Fill in algo name & process name, or leave that for app?
-		for(ComputationInList cil : ret)
-		{
-			DbKey appId = cil.getProcessId();
-			if (!DbKey.isNull(appId))
-				for(CompAppInfo cai : apps)
-					if (appId.equals(cai.getKey()))
-					{
-						cil.setProcessName(cai.getAppName());
-						break;
-					}
-			DbKey algoId = cil.getAlgorithmId();
-			if (!DbKey.isNull(algoId))
-				for(DbCompAlgorithm algo : algos)
-					if (algoId.equals(algo.getKey()))
-					{
-						cil.setAlgorithmName(algo.getName());
-						break;
-					}
-		}
-
-		return ret;
-	}
-
 	@Override
 	public void writeComputation( DbComputation comp )
 		throws DbIoException
 	{
-		log.trace("writeComputation name= {}", comp.getName());
+		log.trace("writeComputation name={}", comp.getName());
 		final boolean isNew = ((ThrowingSupplier<Boolean,DbIoException>) (() -> {
 			boolean tmpIsNew = comp.getId().isNull();
 			if (tmpIsNew)
@@ -939,12 +594,14 @@ public class ComputationDAO
 					tmpIsNew = id.isNull();
 					if (!tmpIsNew)
 					{
-						info("Determined comp id=" + id
-							+ " from comp name '" + comp.getName() + "'");
+						log.info("Determined comp id={} from comp name '{}'", id, comp.getName());
 					}
 					comp.setId(id);
 				}
-				catch(NoSuchObjectException ex) { /* ignore */ }
+				catch(NoSuchObjectException ex)
+				{
+					/* ignore */
+				}
 			}
 			return tmpIsNew;
 		})).get();
@@ -956,7 +613,7 @@ public class ComputationDAO
 				if (tmpAppId.isNull())
 				{
 					String appName = comp.getApplicationName();
-					if (appName != null && appName.length() > 0)
+					if (appName != null && !appName.isEmpty())
 					{
 						String q = "select LOADING_APPLICATION_ID from "
 						+ "hdb_loading_application "
@@ -967,7 +624,7 @@ public class ComputationDAO
 						}
 						catch(SQLException ex)
 						{
-							warning("Query '" + q + "': " + ex);
+							log.atWarn().setCause(ex).log("Query '{}'", q);
 							tmpAppId = Constants.undefinedId;
 						}
 					}
@@ -979,10 +636,8 @@ public class ComputationDAO
 			if (algoId.isNull())
 			{
 				String algoName = comp.getAlgorithmName();
-				Logger.instance().debug2(
-					"Computation has undefined algo ID, will lookup name '"
-					+ algoName + "'");
-				if (algoName != null && algoName.trim().length() > 0)
+				log.trace("Computation has undefined algo ID, will lookup name '{}'", algoName);
+				if (algoName != null && !algoName.trim().isEmpty())
 				{
 					DbCompAlgorithm algo = null;
 					try
@@ -991,6 +646,7 @@ public class ComputationDAO
 					}
 					catch(NoSuchObjectException ex)
 					{
+						log.atDebug().setCause(ex).log("Cannot find algorithm '{}'", algoName);
 						algo = null;
 					}
 					if (algo != null)
@@ -999,7 +655,7 @@ public class ComputationDAO
 					}
 					else
 					{
-						Logger.instance().debug2("Algorithm still null!");
+						log.trace("Algorithm still null!");
 					}
 				}
 			}
@@ -1008,7 +664,7 @@ public class ComputationDAO
 			inTransaction(dao ->
 			{
 				try (CompDependsDAI compDependsDAO = db.makeCompDependsDAO();
-					 DataTypeDAI dataTypeDao = db.makeDataTypeDAO();)
+					 DataTypeDAI dataTypeDao = db.makeDataTypeDAO())
 				{
 					dataTypeDao.inTransactionOf(dao);
 					compDependsDAO.inTransactionOf(dao);
@@ -1109,7 +765,17 @@ public class ComputationDAO
 							// parm uses previously unknown ID? Must write it too.
 							if (dt != null && dt.getId() == Constants.undefinedId)
 							{
-								dataTypeDao.writeDataType(dt);
+								try
+								{
+									DataType tempDt = dataTypeDao.lookupDataType(dt.getCode());
+									dt.setId(tempDt.getId());
+								}
+								catch (NoSuchObjectException ex)
+								{
+									log.atLevel(Level.DEBUG).setCause(ex)
+											.log("Unable to find DataType, writing a new record");
+									dataTypeDao.writeDataType(dt);
+								}
 								dcp.setDataTypeId(dt.getId());
 							}
 							query.append(", ?");
@@ -1206,9 +872,7 @@ public class ComputationDAO
 		}
 		catch(SQLException ex)
 		{
-			String msg = "Error getting computation ID for name '"
-				+ name + "': " + ex;
-			failure(msg);
+			String msg = "Error getting computation ID for name '" + name + "'";
 			throw new DbIoException(msg, ex);
 		}
 
@@ -1253,5 +917,4 @@ public class ComputationDAO
 		algorithmDAO.close();
 		propsDao.close();
 	}
-
 }

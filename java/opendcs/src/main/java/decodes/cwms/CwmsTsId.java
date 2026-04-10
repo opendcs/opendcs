@@ -1,81 +1,35 @@
-/**
- * $Id: CwmsTsId.java,v 1.7 2020/01/31 19:32:13 mmaloney Exp $
- * 
- * $Log: CwmsTsId.java,v $
- * Revision 1.7  2020/01/31 19:32:13  mmaloney
- * Store Duration object
- *
- * Revision 1.6  2019/01/10 16:01:17  mmaloney
- * Added toString() and hashCode().
- *
- * Revision 1.5  2018/05/01 17:35:01  mmaloney
- * init offsetErrorAction to IGNORE.
- *
- * Revision 1.4  2016/10/17 17:49:38  mmaloney
- * Add sub/base accessors for OpenDCS 6.3 CWMS Naming Standards
- *
- * Revision 1.3  2016/09/29 18:54:36  mmaloney
- * CWMS-8979 Allow Database Process Record to override decodes.properties and
- * user.properties setting. Command line arg -Dsettings=appName, where appName is the
- * name of a process record. Properties assigned to the app will override the file(s).
- *
- * Revision 1.2  2015/10/26 12:49:24  mmaloney
- * compareTo method must compare TSID not public name.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.18  2013/03/21 18:27:40  mmaloney
- * DbKey Implementation
- *
- * Revision 1.17  2012/09/11 12:48:02  mmaloney
- * dev
- *
- * Revision 1.16  2012/08/01 14:24:10  mmaloney
- * Implement equals(Object) to allow storage in HashSet.
- *
- * Revision 1.15  2012/07/23 15:20:44  mmaloney
- * Refactor group evaluation for HDB.
- *
- * Revision 1.14  2012/07/05 18:24:02  mmaloney
- * CWMS location names may contain spaces and multiple hyphens.
- * ts key is stored as a long.
- *
- * Revision 1.13  2012/06/18 13:20:43  mmaloney
- * minRecNum in cp_comp_tasklist must be defined as long
- *
- * Revision 1.12  2012/06/13 14:38:50  mmaloney
- * Added get/set tabsel methods
- *
- * Revision 1.11  2012/05/15 14:08:11  mmaloney
- * Added checkValid method.
- *
- * Revision 1.10  2011/03/22 14:13:25  mmaloney
- * Added caching for DbComputations and CWMS Time Series Identifiers.
- *
- * Revision 1.9  2011/02/02 20:42:28  mmaloney
- * bug fixes
- *
- * This software was written by Cove Software, LLC ("COVE") under contract 
- * to the United States Government. 
- * 
- * No warranty is provided or implied other than specific contractual terms
- * between COVE and the U.S. Government
- * 
- * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*
+* This software was written by Cove Software, LLC ("COVE") under contract 
+* to the United States Government. 
+*/
 package decodes.cwms;
 
 import java.util.Date;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.opentsdb.Interval;
 import opendcs.opentsdb.OffsetErrorAction;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Site;
+import decodes.db.SiteName;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.DbCompParm;
@@ -86,9 +40,9 @@ import decodes.tsdb.TimeSeriesIdentifier;
  * Implements TimeSeriesIdentifier for CWMS database.
  * Uniquely identifies a CWMS Time Series.
  */
-public class CwmsTsId 
-	implements TimeSeriesIdentifier
+public class CwmsTsId implements TimeSeriesIdentifier
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private DbKey tsCode = Constants.undefinedId;
 	private String siteName = null; 
 	private DataType dataType = null;
@@ -170,7 +124,6 @@ public class CwmsTsId
 			utcOffset, storageUnits);
 		ret.setSite(site);
 		ret.setSiteDisplayName(siteDisplayName);
-//Logger.instance().debug3("CwmsTsId.copyNoKey new path=" + ret.getUniqueString());
 		
 		return ret;
 	}
@@ -190,8 +143,6 @@ public class CwmsTsId
 	public void setUniqueString(String uniqueId)
 	{
 		String parts[] = uniqueId.split("\\.");
-//Logger.instance().debug3("CwmsTsId.setUniqueString str='" + uniqueId+ "': #parts=" + parts.length);
-//for(int i=0; i<parts.length; i++)Logger.instance().debug3("part[" + i + "]='" + parts[i] + "'");
 		if (parts.length > 0)
 			setLocation(parts[0]);
 		if (parts.length > 1)
@@ -278,8 +229,7 @@ public class CwmsTsId
 		else if (part.equalsIgnoreCase("version"))
 			setVersion(value);
 		else
-			Logger.instance().warning("CwmsTsId setPart " + part 
-				+ ": invalid part");
+			log.warn("CwmsTsId setPart {}: invalid part", part);
 	}
 
 	/* (non-Javadoc)
@@ -415,6 +365,13 @@ public class CwmsTsId
 			baseLoc = v.substring(0, hyphen);
 			subLoc = v.length() > hyphen+1 ? v.substring(hyphen+1) : null;
 		}
+		if (site == null) {
+			site = new Site();
+		}
+		site.clearNames();
+		SiteName sn = new SiteName(site, Constants.snt_CWMS, v);
+		site.addName(sn);
+
 
 	}
 	
@@ -506,14 +463,9 @@ public class CwmsTsId
 		
 		int idx = siteName.indexOf('-');
 		String baseLoc = idx < 0 ? siteName : siteName.substring(0, idx);
-		String subLoc = idx < 0 ? null : siteName.substring(idx+1);
 		
 		if (baseLoc.length() < 1)
 			throw new BadTimeSeriesException("Empty base location");
-		if (baseLoc.length() > 16)
-			throw new BadTimeSeriesException("Base location longer than 16 chars.");
-		if (subLoc != null && subLoc.length() > 32)
-			throw new BadTimeSeriesException("Sub-location longer than 32 chars.");
 		
 		String param = dataType == null ? "" : dataType.getCode();
 		if (param == null || param.length() == 0)
@@ -521,31 +473,21 @@ public class CwmsTsId
 		
 		idx = param.indexOf('-');
 		String baseParam = idx < 0 ? param : param.substring(0, idx);
-		String subParam = idx < 0 ? null : param.substring(idx+1);
-		if (baseParam.length() > 16)
-			throw new BadTimeSeriesException("Base parameter longer than 16 chars.");
-		if (subParam != null && subParam.length() > 32)
-			throw new BadTimeSeriesException("Sub-parameter longer than 32 chars.");
+
+		if (baseParam.length() < 1)
+			throw new BadTimeSeriesException("Base parameter empty while using sub parameter.");
 
 		if (paramType == null || paramType.length() == 0)
 			throw new BadTimeSeriesException("No ParamType specified");
-		if (paramType.length() > 16)
-			throw new BadTimeSeriesException("ParamType longer than 16 chars.");
 		
 		if (interval == null || interval.length() == 0)
 			throw new BadTimeSeriesException("No interval specified");
-		if (interval.length() > 16)
-			throw new BadTimeSeriesException("interval longer than 16 chars.");
 		
 		if (duration == null || duration.length() == 0)
 			throw new BadTimeSeriesException("No duration specified");
-		if (duration.length() > 16)
-			throw new BadTimeSeriesException("duration longer than 16 chars.");
 
 		if (version == null || version.length() == 0)
 			throw new BadTimeSeriesException("No version specified");
-		if (version.length() > 32)
-			throw new BadTimeSeriesException("version longer than 32 chars.");
 	}
 
 	@Override

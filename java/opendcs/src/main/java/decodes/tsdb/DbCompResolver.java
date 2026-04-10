@@ -1,40 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
-*  
-*  $Log$
-*  Revision 1.7  2018/11/14 15:51:39  mmaloney
-*  Remove unneeded imports.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.6  2017/08/22 19:56:38  mmaloney
-*  Refactor
-*
-*  Revision 1.5  2017/03/23 16:06:54  mmaloney
-*  downgrade debug
-*
-*  Revision 1.4  2016/12/16 14:35:45  mmaloney
-*  Enhanced resolver to allow triggering from a time series with unrelated location.
-*
-*  Revision 1.3  2016/04/22 14:41:09  mmaloney
-*  in pythonWrote, only allow a single unique (tsid,compid) tupple.
-*
-*  Revision 1.2  2016/03/24 19:13:37  mmaloney
-*  Added history stuff needed for Python.
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.21  2013/03/21 18:27:39  mmaloney
-*  DbKey Implementation
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.tsdb;
 
@@ -42,14 +19,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
-import java.util.Vector;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Iterator;
 
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.TimeSeriesDAI;
-import ilex.util.Logger;
-import decodes.db.Constants;
 import decodes.sql.DbKey;
 
 /**
@@ -58,11 +36,12 @@ and determine which computations to attempt.
 */
 public class DbCompResolver
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The time series database we're using. */
 	private TimeSeriesDb theDb;
 	private LinkedList<PythonWritten> pythonWrittenQueue = new LinkedList<PythonWritten>();
 	private static String module = "Resolver: ";
-	
+
 	/**
 	 * Constructor, saves reference to tsdb for later use.
 	 * @param theDb the time series database.
@@ -71,7 +50,7 @@ public class DbCompResolver
 	{
 		this.theDb = theDb;
 	}
-	
+
 	/**
 	 * Check data in collection against my list of computations and
 	 * return all computations to be attempted.
@@ -97,15 +76,15 @@ public class DbCompResolver
 					{
 						if (trigger.hasAddedOrDeleted())
 						{
-							Logger.instance().debug3(module + "ts id=" + trigger.getTimeSeriesIdentifier().getUniqueString() 
-								+ "#comps = " + trigger.getDependentCompIds().size());
+							log.trace("ts id={} #comps={}",
+									  trigger.getTimeSeriesIdentifier().getUniqueString(),
+									  trigger.getDependentCompIds().size());
 							for(DbKey compId : trigger.getDependentCompIds())
 							{
-								Logger.instance().debug3(module + "\t\tdependent compId=" + compId);
+								log.trace("dependent compId={}", compId);
 								if (isInPythonWrittenQueue(compId, trigger.getTimeSeriesIdentifier().getKey()))
 								{
-									Logger.instance().debug3(module + 
-										"\t\t\t--Resolver Skipping because recently written by python.");
+									log.trace("--Resolver Skipping because recently written by python.");
 									continue;
 								}
 								DbComputation origComp = null;
@@ -115,9 +94,10 @@ public class DbCompResolver
 								}
 								catch (NoSuchObjectException ex)
 								{
-									Logger.instance().warning(module + "Time Series " 
-										+ trigger.getDisplayName() + " uses compId " + compId
-										+ " which no longer exists in database.");
+									log.atWarn()
+									   .setCause(ex)
+									   .log("Time Series {} uses compId {} which no longer exists in database.",
+									   		trigger.getDisplayName(), compId);
 									continue;
 								}
 								if (!origComp.hasGroupInput())
@@ -130,7 +110,7 @@ public class DbCompResolver
 								// Use the triggering time series to make the computation concrete.
 								try
 								{
-									DbComputation comp = 
+									DbComputation comp =
 										makeConcrete(theDb, tsDAI, trigger.getTimeSeriesIdentifier(), origComp, true);
 									addToResults(results, comp, trigger);
 								}
@@ -138,21 +118,23 @@ public class DbCompResolver
 								{
 									if (!theDb.isCwms())
 									{
-										Logger.instance().warning(module + "Failed to make clone for computation "
-											+ compId + ": " + origComp.getName() + " for time series " 
-											+ trigger.getTimeSeriesIdentifier().getUniqueString());
+										log.atWarn()
+										   .setCause(ex)
+										   .log("Failed to make clone for computation {}:{} for time series {}",
+										   		compId, origComp.getName(),
+												trigger.getTimeSeriesIdentifier().getUniqueString());
 										continue;
 									}
 									// The following handles the wildcards in CWMS sub-parts.
-									
+
 									// This means we failed to create a clone from the triggering TSID because one or
 									// more of its input parms did not exist.
 									// We have to try all of the other TSIDs that can trigger this computation
 									// to see if the result contains THIS trigger.
-									
+
 									// Use Case: Rating with 2 indeps: a common Elev and several Gate Openings.
 									// When triggered by Elev, the clone won't be able to create clones for
-									// the gate openings because each has a sublocation. 
+									// the gate openings because each has a sublocation.
 									// E.G:
 									//    indep1=BaseLoc.Elev.Inst.15Minutes.0.rev
 									//    indep2=BaseLoc-*.Opening.Inst.15Minutes.0.rev
@@ -161,13 +143,13 @@ public class DbCompResolver
 									//    BaseLoc-Spillway1-Gate1.Opening.Inst.15Minutes.0.rev
 									//    BaseLoc-Spillway1-Gate2.Opening.Inst.15Minutes.0.rev
 									//    BaseLoc-Spillway2-Gate1.Opening.Inst.15Minutes.0.rev
-									
+
 									ArrayList<TimeSeriesIdentifier> triggers = compDependsDAO.getTriggersFor(origComp.getId());
-									Logger.instance().debug3(module + triggers.size() + " total triggers found:");
+									log.trace("{} total triggers found:", triggers.size());
 									int nAdded = 0, nFailed = 0, nInapplicable = 0;
 									for(TimeSeriesIdentifier otherTrig : triggers)
 									{
-										Logger.instance().debug3(module + otherTrig.getUniqueString());
+										log.trace("Other trigger '{}'", otherTrig.getUniqueString());
 										if (otherTrig.equals(trigger.getTimeSeriesIdentifier()))
 											continue;
 										try
@@ -187,11 +169,11 @@ public class DbCompResolver
 											nFailed++;
 										}
 									}
-									Logger.instance().debug1(module + "for extended group resolution: "
-										+ nAdded + " added from other triggers, " 
-										+ nInapplicable + " inapplicable from other triggers, "
-										+ nFailed + " failed from other triggers.");
-								
+									log.debug("For extended group resolution: {} added from other triggers, " +
+											  "{} inapplicable from other triggers, " +
+											  "{} failed from other triggers.",
+											  nAdded, nInapplicable, nFailed);
+
 								}
 							}
 						}
@@ -232,7 +214,7 @@ public class DbCompResolver
 	 * This also modifies the output parms to be at the same site as the
 	 * input, and if unspecified in the DB, sets the interval and tabsel
 	 * to be the same as the input.
-	 * 
+	 *
 	 * @param theDb the time series database.
 	 * @param tsid The triggering time series identifier
 	 * @param incomp the group-based computation
@@ -249,24 +231,24 @@ public class DbCompResolver
 		throws NoSuchObjectException, DbIoException
 	{
 		DbComputation comp = incomp.copyNoId();
-		
+
 		// Has to have ID from original comp so we can detect duplicates.
 		comp.setId(incomp.getId());
-		Logger.instance().debug3(module + "makeConcrete of computation " + comp.getName()
-			+ " for key=" + tsid.getKey() + ", '" + tsid.getUniqueString() + "', compid = " + comp.getId());
+		log.trace("makeConcrete of computation {} for key={}, '{}', compId={}",
+				  comp.getName(), tsid.getKey(), tsid.getUniqueString(), comp.getId());
 		String parmName = "";
 		try
 		{
 			comp.setUnPrepared(); // will delete the executive
-	
+
 			for(Iterator<DbCompParm> parmit = comp.getParms(); parmit.hasNext(); )
 			{
 				DbCompParm dcp = parmit.next();
 				parmName = dcp.getRoleName();
 				String nm = comp.getProperty(dcp.getRoleName() + "_tsname");
 				String missing = comp.getProperty(parmName + "_MISSING");
-				TimeSeriesIdentifier parmTsid = 
-					theDb.transformTsidByCompParm(tsDai, tsid, dcp, 
+				TimeSeriesIdentifier parmTsid =
+					theDb.transformTsidByCompParm(tsDai, tsid, dcp,
 						createOutput && dcp.isOutput(),    // Yes create TS if this is an output
 						true,                              // Yes update the DbCompParm object
 						nm);
@@ -279,30 +261,19 @@ public class DbCompResolver
 			}
 			return comp;
 		}
-		catch(NoSuchObjectException ex)
+		catch(NoSuchObjectException | BadTimeSeriesException ex)
 		{
-			Logger.instance().info(module + 
-				"Cannot create resolve computation '" + comp.getName()
-				+ "' for role '" + parmName + "' ts=" + 
-				tsid.getDisplayName() + ": " + ex);
-			throw ex;
-		}
-		catch(BadTimeSeriesException ex)
-		{
-			Logger.instance().info(module + 
-				"Cannot create resolve computation '" + comp.getName()
-				+ "' for role '" + parmName + "' ts=" + 
-				tsid.getDisplayName() + ": " + ex);
-			throw new NoSuchObjectException(ex.getMessage());
+			throw new NoSuchObjectException("Cannot create resolve computation '" + comp.getName()
+				+ "' for role '" + parmName + "' ts=" +
+				tsid.getDisplayName(), ex);
 		}
 		catch(DbIoException ex)
 		{
-			Logger.instance().info(module + "Cannot resolve computation '" + comp.getName()
-				+ "' for input " + tsid.getDisplayName() + ": " + ex);
-			throw ex;
+			throw new DbIoException("Cannot resolve computation '" + comp.getName()
+				+ "' for input " + tsid.getDisplayName(), ex);
 		}
 	}
-	
+
 	/**
 	 * Ensure that only one copy of a given cloned computation is executed
 	 * in the cycle. Example: Adding A and B; both A and B are present in the
@@ -320,38 +291,10 @@ public class DbCompResolver
 		{
 			if (isTheSameClone(comp, tc))
 				return tc;
-			
-//			if (tc.getId() != comp.getId())
-//				continue;
-//			
-//			DbCompParm tc_in = getFirstInput(tc);
-//			if (tc_in == null)
-//				continue;
-//			DbCompParm comp_in = comp.getParm(tc_in.getRoleName());
-//			if (comp_in == null)
-//				// This could happen if they change an algorithm?
-//				continue;
-//			if (tc_in.getSiteDataTypeId().equals(comp_in.getSiteDataTypeId()))
-//			{
-//				if (theDb.isHdb())
-//				{
-//					// For HDB, comparing the SDI is not sufficient.
-//					// Also have to check interval, tabsel, and modelId
-//					if (!TextUtil.strEqualIgnoreCase(tc_in.getInterval(), 
-//						comp_in.getInterval())
-//					 || !TextUtil.strEqualIgnoreCase(tc_in.getTableSelector(), 
-//						comp_in.getTableSelector())
-//					 || tc_in.getModelId() != comp_in.getModelId())
-//						continue;
-//				}
-//				Logger.instance().info("Resolver: Duplicate comp in cycle: "
-//					+ comp.getName() + ", 1st input: " + tc_in.getSiteDataTypeId());
-//				return tc;
-//			}
 		}
 		return null;
 	}
-	
+
 	public void addToResults(Collection<DbComputation> results, DbComputation comp, CTimeSeries trigger)
 	{
 		DbComputation already = searchResults(results, comp);
@@ -368,18 +311,6 @@ public class DbCompResolver
 		}
 	}
 
-//	private DbCompParm getFirstInput(DbComputation comp)
-//	{
-//		for(Iterator<DbCompParm> parmit = comp.getParms(); parmit.hasNext();)
-//		{
-//			DbCompParm dcp = parmit.next();
-//			if (dcp.isInput() && !dcp.getSiteDataTypeId().isNull())
-//				return dcp;
-//		}
-//		// Shouldn't happen, the parm will have at least one input defined.
-//		return null;
-//	}
-	
 	/**
 	 * Returns true if the two comps represent the same clone. Used in the above
 	 * to make sure only one copy of a given clone is returned.
@@ -391,12 +322,12 @@ public class DbCompResolver
 	{
 		if (!comp1.getId().equals(comp2.getId()))
 			return false;
-		
+
 		// Special case for GroupAdder algorithm. It expands a single param be the
 		// entire group in the algorithm. So all instances of the same compid are the same.
 		if (comp1.getAlgorithm().getExecClass().contains("GroupAdder"))
 			return true;
-		
+
 		// make sure all the input parms are the same.
 		for(Iterator<DbCompParm> parmit = comp1.getParms(); parmit.hasNext();)
 		{
@@ -406,12 +337,12 @@ public class DbCompResolver
 				DbCompParm in2 = comp2.getParm(in1.getRoleName());
 				if (in2 == null)
 					return false;
-				
+
 				if (DbKey.isNull(in1.getSiteDataTypeId()) != DbKey.isNull(in2.getSiteDataTypeId()))
 					return false;
 				if (DbKey.isNull(in1.getSiteDataTypeId()))
 					continue;
-				
+
 				if (!in1.getSiteDataTypeId().equals(in2.getSiteDataTypeId()))
 					return false;
 			}
@@ -419,7 +350,7 @@ public class DbCompResolver
 		return true;
 	}
 
-	
+
 	private void trimPythonWrittenQueue()
 	{
 		PythonWritten pw = null;
@@ -430,10 +361,8 @@ public class DbCompResolver
 			pythonWrittenQueue.remove();
 			n++;
 		}
-//		Logger.instance().debug3("resolver.trimPythonWrittenQueue: trimmed to: " + cutoff +
-//			", removed " + n + " PythonWritten objects. Q size is now " + pythonWrittenQueue.size());
 	}
-	
+
 	private boolean isInPythonWrittenQueue(DbKey compId, DbKey tsCode)
 	{
 		for (PythonWritten pw : pythonWrittenQueue)
@@ -442,7 +371,7 @@ public class DbCompResolver
 				return true;
 		return false;
 	}
-	
+
 	public void pythonWrote(DbKey compId, DbKey tsCode)
 	{
 		// I only need a single instance for a given compId/tsCode pair.
@@ -454,7 +383,5 @@ public class DbCompResolver
 				break;
 			}
 		pythonWrittenQueue.addLast(new PythonWritten(compId, tsCode));
-//		Logger.instance().debug3("resolver.pythonWrote(compId=" + compId.getValue() + ", tsCode=" 
-//			+ tsCode.getValue() + "). Q size is now " + pythonWrittenQueue.size());
 	}
 }

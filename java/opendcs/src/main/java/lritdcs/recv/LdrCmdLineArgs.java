@@ -1,26 +1,30 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:16  cvs
-*  Added legacy code to repository
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.1  2005/03/02 22:21:36  mjmaloney
-*  Created.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lritdcs.recv;
 
 import java.io.IOException;
-import java.io.File;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.cmdline.*;
-import ilex.util.FileLogger;
-import ilex.util.Logger;
-import ilex.util.StderrLogger;
 
 public class LdrCmdLineArgs extends ApplicationSettings
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
     // Public strings set by command line options:
 	private IntegerToken debuglevel_arg;
 	private StringToken log_arg;
@@ -48,7 +52,7 @@ public class LdrCmdLineArgs extends ApplicationSettings
 		addToken(configFile_arg);
 
 		noFileHeaders_arg = new BooleanToken(
-			"h", "(TEST ONLY) Don't Use LRIT File Headers", "", 
+			"h", "(TEST ONLY) Don't Use LRIT File Headers", "",
 			TokenOptions.optSwitch, false);
 		addToken(noFileHeaders_arg);
 
@@ -74,28 +78,7 @@ public class LdrCmdLineArgs extends ApplicationSettings
 	public void parseArgs(String args[])
 	{
 		super.parseArgs(args);
-
-		// If log-file specified, open it.
-		String fn = getLogFile();
-		try 
-		{
-			Logger.setLogger(new FileLogger(progname, fn)); 
-		}
-		catch(IOException e)
-		{
-			System.err.println("Cannot open log file '" + fn + "': " + e);
-			System.exit(1);
-		}
-
-		// Set debug level.
-		int dl = getDebugLevel();
-		if (dl > 0)
-			Logger.instance().setMinLogPriority(
-				dl == 1 ? Logger.E_DEBUG1 :
-				dl == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
-
-		Logger.instance().log(Logger.E_INFORMATION, "Process '"
-			+ progname + "' Starting.....");
+		log.info("Process '{}' Starting.....", progname);
 	}
 
 	public String getConfigFile()

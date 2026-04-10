@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package ilex.gui;
 
 import java.awt.*;
@@ -15,8 +30,7 @@ import ilex.util.ZipMonitor;
 This class opens a model dialog and starts a thread to download an URL
 to a local file.
 */
-public class FileDownloadDialog extends JDialog
-	implements ZipMonitor
+public class FileDownloadDialog extends JDialog implements ZipMonitor
 {
 	private JPanel panel1 = new JPanel();
 	private BorderLayout borderLayout1 = new BorderLayout();
@@ -50,13 +64,10 @@ public class FileDownloadDialog extends JDialog
 	public FileDownloadDialog(Frame frame, String title, boolean modal)
 	{
 		super(frame, title, modal);
-		try {
-			jbInit();
-			pack();
-		}
-		catch(Exception ex) {
-			ex.printStackTrace();
-		}
+
+		jbInit();
+		pack();
+
 		cancelledFlag = false;
 		downloadThread = null;
 		progressBar.setMinimum(0);
@@ -129,7 +140,7 @@ public class FileDownloadDialog extends JDialog
 	  Downloads and unzips the file (assuming it is a zip file) into the
 	  specified target.
 	*/
-	public boolean downloadAndUnzip(String urlstr, final String localname, 
+	public boolean downloadAndUnzip(String urlstr, final String localname,
 		final String targetDir)
 	{
     	doingWhatLabel.setText("Downloading");
@@ -164,7 +175,7 @@ public class FileDownloadDialog extends JDialog
 	}
 
 	/** JBuilder component initialization */
-	private void jbInit() throws Exception
+	private void jbInit()
 	{
 		panel1.setLayout(borderLayout1);
 		cancelButton.setText("Cancel");
@@ -340,7 +351,7 @@ public class FileDownloadDialog extends JDialog
 	}
 
 	/**
-	  From ZipMonitor, 
+	  From ZipMonitor,
 	  Sets the current progress, that is, the number of entries thus far
 	  unzipped.
 	  @param num current progress.
@@ -362,7 +373,7 @@ public class FileDownloadDialog extends JDialog
 	}
 
 	/**
-	  From ZipMonitor, 
+	  From ZipMonitor,
 	  Called if the zipping or unzipping was aborted due to some error.
 	  @param ex the Exception which caused the abort.
 	*/

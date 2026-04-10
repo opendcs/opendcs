@@ -1,0 +1,14 @@
+{
+  "platformId" : null,
+  "name" : "Platform 121",
+  "siteId" : "[SITE_ID]",
+  "agency" : "USGS",
+  "configId" : "[CONFIG_ID]",
+  "description" : "Test platform in Davis, CA",
+  "designator" : "Platform",
+  "lastModified" : 1738363604754,
+  "production" : false,
+  "properties" : { },
+  "platformSensors" : [ ],
+  "transportMedia" : [ ]
+}

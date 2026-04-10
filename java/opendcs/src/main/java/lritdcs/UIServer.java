@@ -1,34 +1,33 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:16  cvs
-*  Added legacy code to repository
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.4  2005/12/30 19:41:00  mmaloney
-*  dev
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.3  2004/05/18 22:52:41  mjmaloney
-*  dev
-*
-*  Revision 1.2  2004/05/05 19:52:46  mjmaloney
-*  Integrated UIServer & UISvrThread to LritDcsMain
-*
-*  Revision 1.1  2004/05/05 18:48:18  mjmaloney
-*  Added UIServer & UISvrThread
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lritdcs;
 
 import java.util.StringTokenizer;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.net.*;
 import java.io.IOException;
 
 import ilex.net.*;
-import ilex.util.Logger;
 
 public class UIServer extends BasicServer
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public UIServer(int port)
 		throws IOException
 	{
@@ -44,13 +43,14 @@ public class UIServer extends BasicServer
 			try { return new UISvrThread(this, sock); }
 			catch(IOException ex)
 			{
-				Logger.instance().warning("LRIT:" + Constants.EVT_UI_LISTEN_ERR
-					+ "- Error accepting connection from " + sockaddr.toString()
-					+ " (disconnecting): " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("LRIT:{}- Error accepting connection from {} (disconnecting)",
+				   		Constants.EVT_UI_LISTEN_ERR, sockaddr.toString());
 			}
 		}
-		Logger.instance().warning("LRIT:" + Constants.EVT_UI_INVALID_HOST
-			+ "- Rejecting UI connection from " + sockaddr.toString());
+		log.warn("LRIT:{}- Rejecting UI connection from {}",
+				 Constants.EVT_UI_INVALID_HOST, sockaddr.toString());
 		try { sock.close(); }
 		catch(IOException ex) {}
 		return null;
@@ -58,8 +58,7 @@ public class UIServer extends BasicServer
 
 	private boolean isOK(InetAddress sockaddr)
 	{
-		Logger.instance().log(Logger.E_INFORMATION,
-			"User Interface Socket connection from " + sockaddr.toString());
+		log.info("User Interface Socket connection from {}", sockaddr.toString());
 		// Localhost is always OK.
 		InetAddress testaddr=null;
 		try
@@ -70,8 +69,7 @@ public class UIServer extends BasicServer
 		}
 		catch(UnknownHostException ex)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Cannot resolve localhost: " + ex);
+			log.atWarn().setCause(ex).log("Cannot resolve localhost.");
 		}
 
 		// Check each addr/name in the configuration.

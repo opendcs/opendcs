@@ -1,25 +1,17 @@
 /*
-* $Id$
-*
-* $Log$
-* Revision 1.2  2014/05/28 13:09:26  mmaloney
-* dev
-*
-* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-* OPENDCS 6.0 Initial Checkin
-*
-* Revision 1.2  2012/05/24 15:47:15  mmaloney
-* Fixed date/time processing for DH, etc.
-*
-* Revision 1.1  2011/09/27 01:24:48  mmaloney
-* Enhancements for SHEF and NOS Decoding.
-*
-* Revision 1.2  2011/09/21 18:27:08  mmaloney
-* Updates to NOS decoding.
-*
-* Revision 1.1  2011/08/26 19:49:34  mmaloney
-* Implemented the NOS decoders.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.decoder;
 
@@ -27,10 +19,11 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
-import java.util.StringTokenizer;
 import java.util.TimeZone;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.var.IFlags;
 import ilex.var.TimedVariable;
 import ilex.var.Variable;
@@ -50,14 +43,13 @@ import decodes.tsdb.IntervalIncrement;
 import decodes.tsdb.VarFlags;
 
 /** Handles SHEF. */
-public class ShefProcess
-	extends DecodesFunction 
+public class ShefProcess extends DecodesFunction 
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "ShefProcess";
 	private boolean matchShefPE = false;
 	private SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 	private Calendar cal = null;
-	private char unitsFamily = 'E';
 	private RawMessage rawmsg = null;
 	private String tzID = "UTC";
 	private int qualityFlags = 0;
@@ -73,14 +65,6 @@ public class ShefProcess
 	{
 		StartOfLine, FormatType, FormatExt, IgnoreLine, InComment, Process
 	};
-	// Where we are in the SHEF message, which may span several lines
-//	enum ParseState 
-//	{
-//		ObsTime, CreateDate,
-//		Units, DataQual, Duration, 
-//		EParmCode, ETimeInterval, EValue, // Used only for .E format lines
-//		AParmCode, AValue,                // Used only for .A format lines
-//	};
 	
 	public ShefProcess()
 	{
@@ -108,7 +92,6 @@ public class ShefProcess
 	{
 		this.decmsg = msg;
 		LineContext lineContext = LineContext.Process;
-//		ParseState parseState = ParseState.LocId;
 
 		platform = msg.getPlatform();
 		if (platform == null)
@@ -131,8 +114,6 @@ public class ShefProcess
 		if (v != null)
 			tzID = v.toString();
 		
-		// Default is english units
-		unitsFamily = 'E';
 		duration = null;
 		sensorNumber = -1;
 
@@ -148,7 +129,6 @@ public class ShefProcess
 		
 		String msgData = new String(rawmsg.getData());
 		String shefdata = msgData.substring(rawmsg.getHeaderLength());
-		Logger.instance().debug3("SHEF Message = '" + shefdata + "'");
 
 		boolean error = false;
 		StringBuilder field = new StringBuilder();
@@ -162,13 +142,15 @@ public class ShefProcess
 			case StartOfLine:
 				lineContext = (c == '.' ? LineContext.FormatType : LineContext.IgnoreLine);
 				if (lineContext == LineContext.IgnoreLine)
-					debug(idx, "Line start without period, will ignore line.");
+				{
+					log.trace("position={} Line start without period, will ignore line.", idx);
+				}
 				continue;
 			case IgnoreLine:
 				if (c == '\n')
 				{
 					lineContext = LineContext.StartOfLine;
-					debug(idx, "End of line reached.");
+					log.trace("position={} End of line reached.", idx);
 				}
 				continue;
 			case FormatType:
@@ -176,17 +158,17 @@ public class ShefProcess
 				{
 					if (formatType != 'x' && c != formatType)
 					{
-						warning(idx, "Continuation of format '" + formatType + "' with type '"
-							+ "' -- invalid.");
+						log.warn("position={} Continuation of format '{}' with type '{}' -- invalid.",
+								 idx, formatType, c);
 						error = true;
 					}
 					formatType = c;
 					lineContext = LineContext.FormatExt;
-					debug(idx, "Got type = '" + c + "' expecting extension");
+					log.warn("position={} Got type = '{}' expecting extension", idx, c);
 				}
 				else
 				{
-					warning(idx, "Unexpected format type '" + c + "' -- ignoring line.");
+					log.warn("position={} Unexpected format type '{}' -- ignoring line.", idx, c);
 					lineContext = LineContext.IgnoreLine;
 				}
 				continue;
@@ -199,33 +181,33 @@ public class ShefProcess
 					field.setLength(0);
 				}
 				else if (!Character.isDigit(c))
-					warning(idx, "Unexpexted continuation character '" + c + "' -- ignored.");
+					log.warn("position={} Unexpected continuation character '{}' -- ignored.", idx, c);
 				continue;
 			case InComment:
 				if (c == ':')
 				{
 					lineContext = LineContext.Process;
 					field.setLength(0);
-					debug(idx, "end of comment");
+					log.trace("[{}]:end of comment",idx);
 				}
 				else if (c == '\n')
 				{
 					lineContext = LineContext.StartOfLine;
-					debug(idx, "end of line -- comment closed");
+					log.trace("[{}]:end of line -- comment closed",idx);
 				}
 				continue;
 			case Process:
 				if (c == ':')
 				{
 					lineContext = LineContext.InComment;
-					debug(idx, "start of comment");
+					log.trace("[{}]:start of comment",idx);
 				}
 				else if (Character.isWhitespace(c) || c == '/')
 				{
 					if(c == '\n')
 					{
 					lineContext = LineContext.StartOfLine;
-					debug(idx, "end of line");
+					log.trace("[{}]:end of line",idx);
 					}
 
 				 	if (field.length() > 0)
@@ -254,7 +236,7 @@ public class ShefProcess
 	private void processField(int fieldStart, int fieldEnd, 
 		String field, char delim)
 	{
-		debug(fieldStart, "processField '" + field + "' delim='" + delim + "'");
+		log.trace("position={} processField '{}' delim='{}'", fieldStart, field, delim);
 		field = field.toUpperCase();
 		if (field.startsWith("DS"))
 		{
@@ -324,7 +306,7 @@ public class ShefProcess
 			if (drinc != null)
 				cal.add(drinc.getCalConstant(), drinc.getCount());
 			else
-				Logger.instance().warning("Invalid Date Relative '" + field + "'");
+				log.warn("Invalid Date Relative '{}'", field);
 		}
 		else if (field.startsWith("DC"))
 		{
@@ -334,7 +316,9 @@ public class ShefProcess
 			rawmsg.setPM("CREATION_TIME", new Variable(creationCal.getTime()));
 		}
 		else if (field.startsWith("DU") && field.length() > 2)
-			unitsFamily = field.charAt(2);
+		{
+			log.warn("At This time the Units family is not used for anything.");
+		}
 		else if (field.startsWith("DQ") && field.length() > 2)
 			qualityFlags = shefQuality2Flags(field.charAt(2));
 		else if (field.startsWith("DV"))
@@ -348,7 +332,9 @@ public class ShefProcess
 		{
 			intinc = shefInc2IntInc(field.substring(2));
 			if (intinc == null)
-				Logger.instance().warning("Invalid Interval '" + field + "'");
+			{
+				log.warn("Invalid Interval '{}'", field);
+			}
 		}
 		else if (Character.isLetter(field.charAt(0)))
 		{
@@ -382,14 +368,16 @@ public class ShefProcess
 			catch(NumberFormatException ex)
 			{
 				if (!field.equals("M"))
-					Logger.instance().warning("Invalid data value '" + field + "'");
+				{
+					log.atWarn().setCause(ex).log("Invalid data value '{}'", field);
+				}
 				v = new Variable(0.0);
 				v.setFlags(IFlags.IS_MISSING);
 			}
 				
 			if (sensorNumber == -1)
 			{
-				Logger.instance().warning("Value '" + field + "' discarded - no sensor found.");
+				log.warn("Value '{}' discarded - no sensor found.", field);
 			}
 			else // Assign it to the sensor's time-series
 			{
@@ -410,16 +398,6 @@ public class ShefProcess
 		}
 	}
 
-
-	private void warning(int pos, String msg)
-	{
-		Logger.instance().warning(module + " postion=" + pos + " " + msg);
-	}
-	
-	private void debug(int pos, String msg)
-	{
-		Logger.instance().debug3(module + " position=" + pos + " " + msg);
-	}
 
 	private void setTime(Calendar cal, String obsTime)
 	{
@@ -484,11 +462,11 @@ public class ShefProcess
 		}
 		catch(NumberFormatException ex)
 		{
-			Logger.instance().warning("Invalid observation time '" + obsTime
-				+ "' -- ignored.");
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Invalid observation time '{}' -- ignored.", obsTime);
 		}
-		Logger.instance().debug3("observation time set to "
-			+ debugSdf.format(cal.getTime()));
+		log.trace("observation time set to {}", cal.getTime());
 	}
 	
 	private int shefQuality2Flags(char q)
@@ -552,8 +530,7 @@ public class ShefProcess
 		for(int idx = rawmsg.getHeaderLength(); idx < data.length; idx++, prevChar = c)
 		{
 			c = (char)data[idx];
-Logger.instance().debug3("   shefProcess  prevChar=" + (int)prevChar + ", c=" + (int)c
-+ ", ignoreLine=" + ignoreLine + ", c=" + c);
+			log.trace("shefProcess  prevChar={}, c={}, ignoreLine={}, c={}", (int)prevChar, (int)c, ignoreLine, c);
 			if (prevChar == '\n' && c != '.')
 				ignoreLine = true;
 			if (ignoreLine)
@@ -640,7 +617,9 @@ Logger.instance().debug3("   shefProcess  prevChar=" + (int)prevChar + ", c=" + 
 		}
 		catch(NumberFormatException ex)
 		{
-			Logger.instance().warning("Invalid duration '" + dur + "' -- ignored.");
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Invalid duration '{}' -- ignored.", dur);
 			return null;
 		}
 		
@@ -686,7 +665,9 @@ Logger.instance().debug3("   shefProcess  prevChar=" + (int)prevChar + ", c=" + 
 		}
 		catch(NumberFormatException ex)
 		{
-			Logger.instance().warning("Invalid interval '" + incr + "' -- ignored.");
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Invalid interval '{}' -- ignored.", incr);
 			return null;
 		}
 		

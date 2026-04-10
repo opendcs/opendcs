@@ -1,37 +1,17 @@
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.2  2013/03/28 17:29:09  mmaloney
-*  Refactoring for user-customizable decodes properties.
-*
-*  Revision 1.1  2008/04/04 18:21:04  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.7  2005/02/09 20:15:26  mjmaloney
-*  dev
-*
-*  Revision 1.6  2005/02/09 20:10:15  mjmaloney
-*  Added lock mechanism.
-*
-*  Revision 1.5  2005/01/03 18:51:33  mjmaloney
-*  Added javadocs.
-*
-*  Revision 1.4  2004/05/10 21:30:50  mjmaloney
-*  Reduce wasted space in report header.
-*
-*  Revision 1.3  2004/05/06 15:29:40  mjmaloney
-*  Bug fixes in beta 6.1
-*
-*  Revision 1.2  2004/04/29 19:14:49  mjmaloney
-*  6.1 release prep
-*
-*  Revision 1.1  2004/04/29 01:10:21  mjmaloney
-*  Created.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.routmon;
 
@@ -41,7 +21,9 @@ import java.text.SimpleDateFormat;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.PropertiesUtil;
 import ilex.util.EnvExpander;
 import ilex.util.ServerLock;
@@ -52,9 +34,9 @@ import decodes.util.*;
 /**
 Main class for the Routing Spec Monitor web application.
 */
-public class RoutingMonitor
-	implements Runnable
+public class RoutingMonitor	implements Runnable
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Config param: period between directory scans */
 	private long scanPeriod;
 
@@ -131,8 +113,7 @@ public class RoutingMonitor
 		// This parses all args & sets up the logger & debug level.
 		cmdLineArgs.parseArgs(args);
 		
-Logger.instance().info("Just parsed args, minPriority=" + Logger.instance().getMinLogPriority());
-Logger.instance().debug1("starting");
+		log.debug("starting");
 
 		// Instantiate my monitor.
 		RoutingMonitor mymonitor=new RoutingMonitor();
@@ -151,8 +132,7 @@ Logger.instance().debug1("starting");
 			}
 			catch(UnknownHostException ex)
 			{
-				Logger.instance().log(Logger.E_WARNING, 
-					"Cannot determine host name -- using 'unknown'");
+				log.atWarn().setCause(ex).log("Cannot determine host name -- using 'unknown'");
 				mymonitor.hostname = "unknown";
 			}
 		}
@@ -173,9 +153,8 @@ Logger.instance().debug1("starting");
 
 		if (mylock.obtainLock() == false)
 		{
-			Logger.instance().log(Logger.E_FATAL,
-				"Routing Monitor not started: lock file busy");
-			System.exit(0);
+			log.error("Routing Monitor not started: lock file busy");
+			System.exit(1);
 		}
 
 		mylock.releaseOnExit();
@@ -184,10 +163,8 @@ Logger.instance().debug1("starting");
 			{
 				public void run()
 				{
-					Logger.instance().log(Logger.E_INFORMATION,
-						"Routing Monitor Server exiting " +
-						(mylock.wasShutdownViaLock() ? "(lock file removed)"
-						: ""));
+					log.info("Routing Monitor Server exiting {}",
+							(mylock.wasShutdownViaLock() ? "(lock file removed)" : ""));
 				}
 			});
 
@@ -203,9 +180,7 @@ Logger.instance().debug1("starting");
 			outputDir.mkdirs();
 			if (!outputDir.isDirectory())
 			{
-				Logger.instance().log(Logger.E_FATAL,
-					"Cannot access or create output directory '"
-					+ outputDir.getPath() + "' -- aborting.");
+				log.error("Cannot access or create output directory '{}' -- aborting.", outputDir.getPath());
 				System.exit(1);
 			}
 		}
@@ -221,9 +196,7 @@ Logger.instance().debug1("starting");
 			inputDir.mkdirs();
 			if (!inputDir.isDirectory())
 			{
-				Logger.instance().log(Logger.E_FATAL,
-					"Cannot access or create input directory '"
-					+ inputDir.getPath() + "' -- aborting.");
+				log.error("Cannot access or create input directory '{}' -- aborting.", inputDir.getPath());
 				System.exit(1);
 			}
 		}
@@ -285,8 +258,7 @@ Logger.instance().debug1("starting");
 		// Not found? Must be new -- Add it to the vector.
 		if(myspec==null)
 		{
-			Logger.instance().log(Logger.E_INFORMATION,
-				"New routing spec status '" + specName + "' found.");
+			log.info("New routing spec status '{}'", specName);
 			myspec = new RoutingSpecStatus(specName);
 			routingSpecStats.add(myspec);
 		}
@@ -310,8 +282,7 @@ Logger.instance().debug1("starting");
 			try { myspec.lastMsgRecieveTime = new Date(Long.parseLong(s)); }
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().log(Logger.E_INFORMATION,
-					"Invalid LastRecvTime long integer '"+s + "' -- skipped.");
+				log.atWarn().setCause(ex).log("Invalid LastRecvTime long integer '{}' -- skipped.", s);
 			}
 		}
 
@@ -321,8 +292,7 @@ Logger.instance().debug1("starting");
 			try { myspec.startTime = new Date(Long.parseLong(s)); }
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().log(Logger.E_INFORMATION,
-					"Invalid RunStartTime long integer '"+s + "' -- skipped.");
+				log.atWarn().setCause(ex).log("Invalid RunStartTime long integer '{}' -- skipped.", s);
 			}
 		}
 
@@ -455,9 +425,7 @@ Logger.instance().debug1("starting");
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().log(Logger.E_FAILURE,
-				"Failed Writing HTML File '" + htmlFile.getPath()
-				+ "': " + ex);
+			log.atError().setCause(ex).log("Failed Writing HTML File '{}'", htmlFile.getPath());
 		}
 	}
 	

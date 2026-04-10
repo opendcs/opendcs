@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.drgsinfogui;
 
 import java.awt.GridBagConstraints;
@@ -17,8 +32,10 @@ import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.WindowConstants;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.AsciiUtil;
-import ilex.util.Logger;
 
 import decodes.gui.SortingListTable;
 import decodes.gui.TopFrame;
@@ -31,6 +48,7 @@ import decodes.gui.TopFrame;
  */
 public class DrgsReceiversListFrame extends TopFrame
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public String module = "DrgsReceiversListFrame";
 	private DrgsReceiversListTableModel drgsTableModel;
 	private SortingListTable drgsListTable;
@@ -176,8 +194,7 @@ public class DrgsReceiversListFrame extends TopFrame
 		}
 		else
 		{
-			Logger.instance().failure(module 
-					+ " The select DRGS Receiver rec is null.");
+			log.error("The select DRGS Receiver rec is null.");
 		}
 	}
 	
@@ -242,6 +259,7 @@ public class DrgsReceiversListFrame extends TopFrame
 		}
 		catch(IOException ex)
 		{
+			log.atError().setCause(ex).log("Cannot write '{}'", DrgsReceiverIo.drgsRecvXmlFname);
 			//Error - display error msg
 			showError("Can not write '" + DrgsReceiverIo.drgsRecvXmlFname
 				+ " (and HTML): " + ex);
@@ -252,7 +270,6 @@ public class DrgsReceiversListFrame extends TopFrame
 	
 	private void doClose()
 	{
-		//if (needToSave)
 		if (DrgsReceiverDialog.MODIFIED)//if user changed something
 		{
 			int r = JOptionPane.showConfirmDialog(this, "Save changes?");
@@ -267,8 +284,7 @@ public class DrgsReceiversListFrame extends TopFrame
 			}
 		}
 		dispose();
-		//if (exitOnClose)
-			System.exit(0);
+		System.exit(0);
 	}
 
 	/**

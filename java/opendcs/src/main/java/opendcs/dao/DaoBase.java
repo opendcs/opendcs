@@ -1,29 +1,20 @@
-/**
- * $Id$
- *
- * $Log$
- * Revision 1.4  2017/01/24 15:38:08  mmaloney
- * CWMS-10060 added support for DecodesSettings.tsidFetchSize
- *
- * Revision 1.3  2014/07/03 12:53:41  mmaloney
- * debug improvements.
- *
- * Revision 1.2  2014/07/03 12:46:41  mmaloney
- * Make 'module' protected so that subclasses can change it.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to the United States Government. No warranty is provided or implied other
- * than specific contractual terms between COVE and the U.S. Government.
- *
- * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package opendcs.dao;
 
-import ilex.util.Logger;
 import opendcs.dai.DaiBase;
 import opendcs.util.functional.ConnectionConsumer;
 import opendcs.util.functional.DaoConsumer;
@@ -45,7 +36,9 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.SqlSettings;
+import org.slf4j.Logger;
 
 import decodes.db.Constants;
 import decodes.sql.DbKey;
@@ -59,9 +52,9 @@ import decodes.util.DecodesException;
  * @author mmaloney Mike Maloney, Cove Software LLC
  *
  */
-public class DaoBase
-    implements DaiBase
+public class DaoBase implements DaiBase
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     protected DatabaseConnectionOwner db = null;
     private Statement queryStmt1 = null;
     private ResultSet queryResults1 = null;
@@ -235,19 +228,18 @@ public class DaoBase
                 queryStmt1 = getConnection().createStatement();
             if (fetchSize > 0)
                 queryStmt1.setFetchSize(fetchSize);
-            debug3("Query1 '" + q + "'");
-
-//if (this instanceof decodes.cwms.CwmsTimeSeriesDAO
-// || this instanceof decodes.cwms.CwmsSiteDAO)
-//debug1("Fetch size=" + queryStmt1.getFetchSize());
+            log.trace("Query1 '{}'", q);
 
             return queryResults1 = queryStmt1.executeQuery(q);
         }
         catch(SQLException ex)
         {
-            String msg = "SQL Error in query '" + q + "': " + ex;
-            warning(msg);
-            throw new DbIoException(msg);
+            String msg = "SQL Error in query '" + q + "'";
+            if (log.isTraceEnabled())
+            {
+                log.atWarn().setCause(ex).log(msg);
+            }
+            throw new DbIoException(msg, ex);
         }
     }
 
@@ -269,14 +261,17 @@ public class DaoBase
         {
             if (queryStmt2 == null|| statementInvalid(queryStmt2))
                 queryStmt2 = getConnection().createStatement();
-            debug3("Query2 '" + q + "'");
+            log.trace("Query2 '{}'", q);
             return queryResults2 = queryStmt2.executeQuery(q);
         }
         catch(SQLException ex)
         {
-            String msg = "SQL Error in query '" + q + "': " + ex;
-            warning(msg);
-            throw new DbIoException(msg);
+            String msg = "SQL Error in query '" + q + "'";
+            if (log.isTraceEnabled())
+            {
+                log.atWarn().setCause(ex).log(msg);
+            }
+            throw new DbIoException(msg, ex);
         }
     }
 
@@ -297,43 +292,55 @@ public class DaoBase
         try(Connection conn = getConnection();
             Statement modStmt = conn.createStatement();)
         {
-            debug3("Executing statement '" + q + "'");
+            log.trace("Executing statement '{}'", q);
             return modStmt.executeUpdate(q);
         }
         catch(SQLException ex)
         {
-            String msg = "SQL Error in modify query '" + q + "': " + ex;
-            throw new DbIoException(msg);
+            String msg = "SQL Error in query '" + q + "'";
+            if (log.isTraceEnabled())
+            {
+                log.atWarn().setCause(ex).log(msg);
+            }
+            throw new DbIoException(msg, ex);
         }
     }
 
+    // TODO: remove once all classes have their own logger instance.
+    @Deprecated
     public void debug1(String msg)
     {
-        Logger.instance().debug1(module + " " + msg);
+        log.debug("{} {}" , module, msg);
     }
+    @Deprecated
     public void debug2(String msg)
     {
-        Logger.instance().debug2(module + " " + msg);
+        log.debug("{} {}" , module, msg);
     }
+    @Deprecated
     public void debug3(String msg)
     {
-        Logger.instance().debug3(module + " " + msg);
+        log.trace("{} {}" , module, msg);
     }
+    @Deprecated
     public void info(String msg)
     {
-        Logger.instance().info(module + " " + msg);
+        log.info("{} {}" , module, msg);
     }
+    @Deprecated
     public void warning(String msg)
     {
-        Logger.instance().warning(module + " " + msg);
+        log.warn("{} {}" , module, msg);
     }
+    @Deprecated
     public void failure(String msg)
     {
-        Logger.instance().failure(module + " " + msg);
+        log.error("{} {}" , module, msg);
     }
+    @Deprecated
     public void fatal(String msg)
     {
-        Logger.instance().fatal(module + " " + msg);
+        log.error("{} {}" , module, msg);
     }
 
     /**
@@ -358,13 +365,15 @@ public class DaoBase
         return "'" + a + "'";
     }
 
-    public DbKey getKey(String tableName)
-        throws DbIoException
+    public DbKey getKey(String tableName) throws DbIoException
     {
-        try { return db.getKeyGenerator().getKey(tableName, getConnection()); }
-        catch(DecodesException ex)
+        try (Connection conn = getConnection())
         {
-            throw new DbIoException(ex.getMessage());
+            return db.getKeyGenerator().getKey(tableName, conn);
+        }
+        catch(SQLException | DecodesException ex)
+        {
+            throw new DbIoException("error retrieving key", ex);
         }
     }
 

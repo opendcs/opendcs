@@ -1,31 +1,38 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.compedit;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.TimeZone;
-import java.util.Properties;
-import java.util.ResourceBundle;
+import java.util.*;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
+import decodes.gui.properties.PropertiesTableModel;
+import org.opendcs.annotations.api.PropertySpecValidator;
 import opendcs.dai.ComputationDAI;
 import ilex.gui.DateTimeCalendar;
 import ilex.util.AsciiUtil;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.util.PropertiesUtil;
 import ilex.util.LoadResourceBundle;
 import decodes.db.Constants;
 import decodes.dbeditor.SiteSelectPanel;
 import decodes.gui.PropertiesEditPanel;
-import decodes.gui.SortingListTable;
-import decodes.gui.properties.PropertiesEditPanelController;
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbAlgorithmExecutive;
@@ -43,20 +50,22 @@ import decodes.tsdb.comprungui.CompRunGuiFrame;
 import decodes.tsdb.groupedit.TsGroupSelectDialog;
 import decodes.util.DecodesSettings;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
  * Edit Panel for a computation
  */
-public class ComputationsEditPanel
-    extends EditPanel
+public class ComputationsEditPanel extends EditPanel
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static final long serialVersionUID = 1L;
     private JTextField nameField = new JTextField();
     private JTextField algorithmField = new JTextField();
     private JCheckBox enabledCheck = new JCheckBox();
     private JTextField idField = new JTextField();
     private JTextField modifiedField = new JTextField();
-    private JComboBox processCombo = new JComboBox();
+    private JComboBox<String> processCombo = new JComboBox<>();
     private JTextField groupField = new JTextField();
 
     private JScrollPane tablePane = null;
@@ -82,24 +91,23 @@ public class ComputationsEditPanel
     private TimeZone guiTimeZone = null;
     private TsdbDateFormat tsdbDateFormat = null;
 
-    private JComboBox sinceMethodCombo = new JComboBox(
+    private JComboBox<String> sinceMethodCombo = new JComboBox<>(
         new String[] {"No limit", "Now -", "Calendar" });
     private JPanel sinceContentPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
     private DateTimeCalendar sinceDateTimeCal = null;
     private JPanel sinceNowMinusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-    private JComboBox sinceNowMinusCombo = new JComboBox(
+    private JComboBox<String> sinceNowMinusCombo = new JComboBox<>(
         new String[] { "4 hour", "8 hours", "1 day" });
 
-    private JComboBox untilMethodCombo = new JComboBox(
+    private JComboBox<String> untilMethodCombo = new JComboBox<>(
         new String[] {"No limit", "Now", "Now +", "Calendar", "Now -" });
     private JPanel untilContentPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
     private DateTimeCalendar untilDateTimeCal = null;
-    private JPanel untilNowPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
     private JPanel untilNowPlusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-    private JComboBox untilNowPlusCombo = new JComboBox(
+    private JComboBox<String> untilNowPlusCombo = new JComboBox<>(
         new String[] { "4 hour", "8 hours", "1 day" });
     private JPanel untilNowMinusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-    private JComboBox untilNowMinusCombo = new JComboBox(
+    private JComboBox<String> untilNowMinusCombo = new JComboBox<>(
         new String[] { "4 hour", "8 hours", "1 day" });
 
     private JLabel untilNowExpl = new JLabel();
@@ -115,8 +123,7 @@ public class ComputationsEditPanel
         }
         catch(Exception ex)
         {
-            Logger.instance().warning("Invalid guiTimeZone setting '"
-                + guiTimeZone + "' -- defaulting to UTC");
+            log.atWarn().setCause(ex).log("Invalid guiTimeZone setting '{}' -- defaulting to UTC", guiTimeZone);
             guiTimeZone = TimeZone.getTimeZone("UTC");
         }
         tsdbDateFormat = new TsdbDateFormat(guiTimeZone);
@@ -354,27 +361,26 @@ public class ComputationsEditPanel
             DbCompParm dcp = dcpi.next();
             DbAlgoParm dap = currentAlgorithm.getParm(dcp.getRoleName());
             if (dap != null)
+            {
                 dcp.setAlgoParmType(dap.getParmType());
+            }
 
-//MJM I need to expand even if no SDI so that siteId --> Site and datatypeId -->DataType
-// objects get set in the parm.
-//            if (!dcp.getSiteDataTypeId().isNull())
-//            {
-Logger.instance().debug1("before expand " + dcp.getRoleName() + " dcp.sdi=" + dcp.getSiteDataTypeId() + ", siteId=" + dcp.getSiteId() + ", dtId=" + dcp.getDataTypeId());
-                try
-                {
-                    CAPEdit.instance().theDb.expandSDI(dcp);
-Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ", siteId=" + dcp.getSiteId() + ", dtId=" + dcp.getDataTypeId());
-                }
-                catch(Exception ex)
-                {
-                    showError(CAPEdit.instance().compeditDescriptions
-                            .getString("ComputationsEditPanel.ExpandError") + ex);
-                    System.err.println(CAPEdit.instance().compeditDescriptions
-                            .getString("ComputationsEditPanel.ExpandError") + ex);
-                    ex.printStackTrace(System.err);
-                }
-//            }
+  log.debug("before expand {} dcp.sdi={}, siteId={}, dtId={}",
+                        dcp.getRoleName(), dcp.getSiteDataTypeId(), dcp.getSiteId(), dcp.getDataTypeId());
+            try
+            {
+                CAPEdit.instance().theDb.expandSDI(dcp);
+                log.debug("after expand, dcp.sdi={}, siteId={}, dtId={}",
+                          dcp.getSiteDataTypeId(), dcp.getSiteId(), dcp.getDataTypeId());
+            }
+            catch(Exception ex)
+            {
+                log.atError()
+                   .setCause(ex)
+                   .log(CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.ExpandError"));
+                showError(
+                    CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.ExpandError") + ex);
+            }
         }
 
         compParmTableModel.fill(editedObject);
@@ -673,8 +679,9 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
         if (compParmTableModel == null)
         {
             compParmTableModel = new CompParmTableModel(this);
-            compParmTable = new SortingListTable(compParmTableModel,
-                compParmTableModel.columnWidths);
+            compParmTable = new JTable(compParmTableModel);
+            compParmTable.setAutoCreateRowSorter(true);
+            compParmTable.getRowSorter().toggleSortOrder(0);
             compParmTable.addMouseListener(
                 new MouseAdapter()
                 {
@@ -758,7 +765,34 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
             if (ok != JOptionPane.YES_OPTION)
                 return;
         }
-
+        // Validate properties using annotation-based system
+        PropertiesTableModel model = propertiesPanel.getModel();
+        if (!model.areAllRequirementsSatisfied()) 
+        {
+            PropertySpecValidator.ValidationResult result = PropertySpecValidator.validateClass(
+                model.annotatedClass != null ? model.annotatedClass : Object.class,
+                model.getCurrentPropertiesMap()
+            );
+            
+            if (!result.isValid()) 
+            {
+                StringBuilder errorMsg = new StringBuilder();
+                errorMsg.append(CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.validationFailed"))
+                        .append("\n\n")
+                        .append(result.getErrorMessage())
+                        .append("\n\n")
+                        .append(CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.fixRequirements"));
+                
+                int r = JOptionPane.showConfirmDialog(this,
+                    errorMsg.toString(),
+                    CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.validationError"),
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+                
+                if (r != JOptionPane.OK_OPTION)
+                    return;
+            }
+        }
         saveToObject(editedObject);
 
         ComputationDAI computationDAO = CAPEdit.instance().theDb.makeComputationDAO();
@@ -772,8 +806,12 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
         }
         catch(DbIoException ex)
         {
-            showError(CAPEdit.instance().compeditDescriptions
-                    .getString("ComputationsEditPanel.CommentsError5") + ex);
+            String msg = CAPEdit.instance().compeditDescriptions
+                    .getString("ComputationsEditPanel.CommentsError5");
+            log.atError()
+               .setCause(ex)
+               .log(msg);
+            showError(msg + ex);
         }
         finally
         {
@@ -1048,22 +1086,24 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
     {
         if (currentAlgorithm == null)
             return;
+        String clsName = currentAlgorithm.getExecClass();
         try
         {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
-            String clsName = currentAlgorithm.getExecClass();
-            Logger.instance().debug3("Instantiating new algo exec '" + clsName + "'");
+            log.trace("Instantiating new algo exec '{}'", clsName);
             Class<?> cls = cl.loadClass(clsName);
             DbAlgorithmExecutive executive = (DbAlgorithmExecutive)cls.newInstance();
             if (executive instanceof AW_AlgorithmBase)
             {
                 ((AW_AlgorithmBase)executive).initForGUI();
                 propertiesPanel.getModel().setPropertiesOwner((AW_AlgorithmBase)executive);
+                // Set the algorithm class for annotation-based validation
+                propertiesPanel.getModel().setAnnotatedClass(cls);
             }
         }
         catch (Exception ex)
         {
-            ex.printStackTrace();
+            log.atError().setCause(ex).log("Unable to establish properties for algorithm class '{}'.", clsName);
         }
     }
 
@@ -1094,7 +1134,8 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
                     .getString("ComputationsEditPanel.DeleteError1"));
             return;
         }
-        DbCompParm dcp = (DbCompParm)compParmTableModel.getRowObject(r);
+        int modelRow = compParmTable.convertRowIndexToModel(r);
+        DbCompParm dcp = (DbCompParm)compParmTableModel.getRowObject(modelRow);
         int ok = JOptionPane.showConfirmDialog(this,
                 LoadResourceBundle.sprintf(CAPEdit.instance().compeditDescriptions
                 .getString("ComputationsEditPanel.DeleteError2")
@@ -1112,14 +1153,14 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
                     .getString("ComputationsEditPanel.EditError"));
             return;
         }
-        DbCompParm dcp = (DbCompParm)compParmTableModel.getRowObject(r);
+        int modelRow = compParmTable.convertRowIndexToModel(r);
+
+        DbCompParm dcp = (DbCompParm)compParmTableModel.getRowObject(modelRow);
 
         CompParmDialog compParmDialog =
             new CompParmDialog(dcp.isInput(), siteSelectPanel);
         compParmDialog.setInfo(this, r, nameField.getText().trim(), dcp);
         CAPEdit.instance().getFrame().launchDialog(compParmDialog);
-//System.out.println("after dlg close, tabsel='" + dcp.getTableSelector() + "', locspec='"
-//+dcp.getLocSpec() + "', paramspec='" + dcp.getParamSpec() + "', ver='" + dcp.getVersion() + "'");
         if (compParmDialog.okPressed)
         {
             if (!DbKey.isNull(dcp.getSiteDataTypeId()))

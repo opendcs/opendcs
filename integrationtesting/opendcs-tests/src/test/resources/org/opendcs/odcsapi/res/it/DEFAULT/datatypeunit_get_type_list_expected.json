@@ -1,0 +1,1844 @@
+[
+  {
+    "id": 1,
+    "standard": "CWMS",
+    "code": "Height",
+    "displayName": "CWMS:Height"
+  },
+  {
+    "id": 2,
+    "standard": "CWMS",
+    "code": "Opening-Tainters",
+    "displayName": "CWMS:Opening-Tainters"
+  },
+  {
+    "id": 3,
+    "standard": "NRCS",
+    "code": "WDMV",
+    "displayName": "WIND MOVEMENT OBSERVED"
+  },
+  {
+    "id": 4,
+    "standard": "SHEF-PE",
+    "code": "QY",
+    "displayName": "SHEF-PE:QY"
+  },
+  {
+    "id": 5,
+    "standard": "NRCS",
+    "code": "COND",
+    "displayName": "CONDUCTIVITY"
+  },
+  {
+    "id": 6,
+    "standard": "SHEF-PE",
+    "code": "QV",
+    "displayName": "SHEF-PE:QV"
+  },
+  {
+    "id": 7,
+    "standard": "SHEF-PE",
+    "code": "QU",
+    "displayName": "SHEF-PE:QU"
+  },
+  {
+    "id": 8,
+    "standard": "SHEF-PE",
+    "code": "QT",
+    "displayName": "SHEF-PE:QT"
+  },
+  {
+    "id": 9,
+    "standard": "CWMS",
+    "code": "Power",
+    "displayName": "CWMS:Power"
+  },
+  {
+    "id": 10,
+    "standard": "SHEF-PE",
+    "code": "QS",
+    "displayName": "SHEF-PE:QS"
+  },
+  {
+    "id": 11,
+    "standard": "EPA-CODE",
+    "code": "00076",
+    "displayName": "EPA-CODE:00076"
+  },
+  {
+    "id": 12,
+    "standard": "SHEF-PE",
+    "code": "QR",
+    "displayName": "SHEF-PE:QR"
+  },
+  {
+    "id": 13,
+    "standard": "NRCS",
+    "code": "SRADN",
+    "displayName": "SOLAR RADIATION MINIMUM"
+  },
+  {
+    "id": 14,
+    "standard": "NRCS",
+    "code": "SRADT",
+    "displayName": "SOLAR RADIATION TOTAL"
+  },
+  {
+    "id": 15,
+    "standard": "SHEF-PE",
+    "code": "BA",
+    "displayName": "SHEF-PE:BA"
+  },
+  {
+    "id": 16,
+    "standard": "CWMS",
+    "code": "Speed-Wind",
+    "displayName": "CWMS:Speed-Wind"
+  },
+  {
+    "id": 17,
+    "standard": "NRCS",
+    "code": "SRADX",
+    "displayName": "SOLAR RADIATION MAXIMUM"
+  },
+  {
+    "id": 18,
+    "standard": "NRCS",
+    "code": "WDMVV",
+    "displayName": "WIND MOVEMENT AVERAGE"
+  },
+  {
+    "id": 19,
+    "standard": "NRCS",
+    "code": "SRADV",
+    "displayName": "SOLAR RADIATION AVERAGE"
+  },
+  {
+    "id": 20,
+    "standard": "NRCS",
+    "code": "WDMVX",
+    "displayName": "WIND MOVEMENT MAXIMUM"
+  },
+  {
+    "id": 21,
+    "standard": "SHEF-PE",
+    "code": "RF",
+    "displayName": "SHEF-PE:RF"
+  },
+  {
+    "id": 22,
+    "standard": "CWMS",
+    "code": "Opening-East",
+    "displayName": "CWMS:Opening-East"
+  },
+  {
+    "id": 23,
+    "standard": "SHEF-PE",
+    "code": "RE",
+    "displayName": "SHEF-PE:RE"
+  },
+  {
+    "id": 24,
+    "standard": "EPA-CODE",
+    "code": "70969",
+    "displayName": "EPA-CODE:70969"
+  },
+  {
+    "id": 25,
+    "standard": "NRCS",
+    "code": "LRADT",
+    "displayName": "SOLAR RADIATION/LANGLEY TOTAL"
+  },
+  {
+    "id": 26,
+    "standard": "NRCS",
+    "code": "WDMVT",
+    "displayName": "WIND MOVEMENT TOTAL"
+  },
+  {
+    "id": 27,
+    "standard": "NRCS",
+    "code": "WDMVN",
+    "displayName": "WIND MOVEMENT MINIMUM"
+  },
+  {
+    "id": 28,
+    "standard": "SHEF-PE",
+    "code": "PR",
+    "displayName": "SHEF-PE:PR"
+  },
+  {
+    "id": 29,
+    "standard": "NRCS",
+    "code": "LRADX",
+    "displayName": "SOLAR RADIATION/LANGLEY MAXIMUM"
+  },
+  {
+    "id": 30,
+    "standard": "SHEF-PE",
+    "code": "PP",
+    "displayName": "SHEF-PE:PP"
+  },
+  {
+    "id": 31,
+    "standard": "NRCS",
+    "code": "SMV",
+    "displayName": "SOIL MOISTURE BARS AVERAGE"
+  },
+  {
+    "id": 32,
+    "standard": "SHEF-PE",
+    "code": "QP",
+    "displayName": "SHEF-PE:QP"
+  },
+  {
+    "id": 33,
+    "standard": "CWMS",
+    "code": "Turb",
+    "displayName": "CWMS:Turb"
+  },
+  {
+    "id": 34,
+    "standard": "NRCS",
+    "code": "SMX",
+    "displayName": "SOIL MOISTURE BARS MAXIMUM"
+  },
+  {
+    "id": 35,
+    "standard": "SHEF-PE",
+    "code": "QN",
+    "displayName": "SHEF-PE:QN"
+  },
+  {
+    "id": 36,
+    "standard": "SHEF-PE",
+    "code": "QM",
+    "displayName": "SHEF-PE:QM"
+  },
+  {
+    "id": 37,
+    "standard": "SHEF-PE",
+    "code": "QL",
+    "displayName": "SHEF-PE:QL"
+  },
+  {
+    "id": 38,
+    "standard": "EPA-CODE",
+    "code": "00400",
+    "displayName": "EPA-CODE:00400"
+  },
+  {
+    "id": 39,
+    "standard": "NRCS",
+    "code": "SMS",
+    "displayName": "SOIL MOISTURE PERCENT"
+  },
+  {
+    "id": 40,
+    "standard": "SHEF-PE",
+    "code": "QI",
+    "displayName": "SHEF-PE:QI"
+  },
+  {
+    "id": 41,
+    "standard": "NRCS",
+    "code": "SMN",
+    "displayName": "SOIL MOISTURE BARS MINIMUM"
+  },
+  {
+    "id": 42,
+    "standard": "CWMS",
+    "code": "Flow-Out",
+    "displayName": "CWMS:Flow-Out"
+  },
+  {
+    "id": 43,
+    "standard": "NRCS",
+    "code": "SMO",
+    "displayName": "SOIL MOISTURE BARS OBSERVED"
+  },
+  {
+    "id": 44,
+    "standard": "SHEF-PE",
+    "code": "QG",
+    "displayName": "SHEF-PE:QG"
+  },
+  {
+    "id": 45,
+    "standard": "SHEF-PE",
+    "code": "QF",
+    "displayName": "SHEF-PE:QF"
+  },
+  {
+    "id": 46,
+    "standard": "SHEF-PE",
+    "code": "QE",
+    "displayName": "SHEF-PE:QE"
+  },
+  {
+    "id": 47,
+    "standard": "SHEF-PE",
+    "code": "QD",
+    "displayName": "SHEF-PE:QD"
+  },
+  {
+    "id": 48,
+    "standard": "SHEF-PE",
+    "code": "QC",
+    "displayName": "SHEF-PE:QC"
+  },
+  {
+    "id": 49,
+    "standard": "SHEF-PE",
+    "code": "QB",
+    "displayName": "SHEF-PE:QB"
+  },
+  {
+    "id": 50,
+    "standard": "SHEF-PE",
+    "code": "QA",
+    "displayName": "SHEF-PE:QA"
+  },
+  {
+    "id": 51,
+    "standard": "NRCS",
+    "code": "SRVOX",
+    "displayName": "STREAM VOLUME ADJUSTED EXTERNALLY"
+  },
+  {
+    "id": 52,
+    "standard": "NRCS",
+    "code": "WTMIN",
+    "displayName": "WATER TEMPERATURE MINIMUM"
+  },
+  {
+    "id": 53,
+    "standard": "CWMS",
+    "code": "Thick-Ice",
+    "displayName": "CWMS:Thick-Ice"
+  },
+  {
+    "id": 54,
+    "standard": "SHEF-PE",
+    "code": "PL",
+    "displayName": "SHEF-PE:PL"
+  },
+  {
+    "id": 55,
+    "standard": "NRCS",
+    "code": "FMTMP",
+    "displayName": "FUEL TEMPERATURE INTERNAL"
+  },
+  {
+    "id": 56,
+    "standard": "SHEF-PE",
+    "code": "PF",
+    "displayName": "SHEF-PE:PF"
+  },
+  {
+    "id": 57,
+    "standard": "SHEF-PE",
+    "code": "PE",
+    "displayName": "SHEF-PE:PE"
+  },
+  {
+    "id": 58,
+    "standard": "SHEF-PE",
+    "code": "PD",
+    "displayName": "SHEF-PE:PD"
+  },
+  {
+    "id": 59,
+    "standard": "SHEF-PE",
+    "code": "PC",
+    "displayName": "SHEF-PE:PC"
+  },
+  {
+    "id": 60,
+    "standard": "SHEF-PE",
+    "code": "PA",
+    "displayName": "SHEF-PE:PA"
+  },
+  {
+    "id": 61,
+    "standard": "NRCS",
+    "code": "JDAY",
+    "displayName": "JULIAN DATE"
+  },
+  {
+    "id": 62,
+    "standard": "CWMS",
+    "code": "pH",
+    "displayName": "CWMS:pH"
+  },
+  {
+    "id": 63,
+    "standard": "CWMS",
+    "code": "Elev-Pool",
+    "displayName": "CWMS:Elev-Pool"
+  },
+  {
+    "id": 64,
+    "standard": "CWMS",
+    "code": "Rad",
+    "displayName": "CWMS:Rad"
+  },
+  {
+    "id": 65,
+    "standard": "EPA-CODE",
+    "code": "00061",
+    "displayName": "EPA-CODE:00061"
+  },
+  {
+    "id": 66,
+    "standard": "EPA-CODE",
+    "code": "00065",
+    "displayName": "EPA-CODE:00065"
+  },
+  {
+    "id": 67,
+    "standard": "NRCS",
+    "code": "SRAD",
+    "displayName": "SOLAR RADIATION"
+  },
+  {
+    "id": 68,
+    "standard": "HYDSTRA-CODE",
+    "code": "100",
+    "displayName": "HYDSTRA-CODE:100"
+  },
+  {
+    "id": 69,
+    "standard": "NRCS",
+    "code": "WELL",
+    "displayName": "WELL DEPTH"
+  },
+  {
+    "id": 70,
+    "standard": "NRCS",
+    "code": "WSPDN",
+    "displayName": "WIND SPEED MINIMUM"
+  },
+  {
+    "id": 71,
+    "standard": "SHEF-PE",
+    "code": "MW",
+    "displayName": "SHEF-PE:MW"
+  },
+  {
+    "id": 72,
+    "standard": "SHEF-PE",
+    "code": "MU",
+    "displayName": "SHEF-PE:MU"
+  },
+  {
+    "id": 73,
+    "standard": "SHEF-PE",
+    "code": "MT",
+    "displayName": "SHEF-PE:MT"
+  },
+  {
+    "id": 74,
+    "standard": "NRCS",
+    "code": "DISP",
+    "displayName": "DISSOLVED OXYGEN - PERCENT SATURATION"
+  },
+  {
+    "id": 75,
+    "standard": "SHEF-PE",
+    "code": "MS",
+    "displayName": "SHEF-PE:MS"
+  },
+  {
+    "id": 76,
+    "standard": "NRCS",
+    "code": "DISO",
+    "displayName": "DISSOLVED OXYGEN"
+  },
+  {
+    "id": 77,
+    "standard": "SHEF-PE",
+    "code": "MM",
+    "displayName": "SHEF-PE:MM"
+  },
+  {
+    "id": 78,
+    "standard": "NRCS",
+    "code": "WDIRV",
+    "displayName": "WIND DIRECTION AVERAGE"
+  },
+  {
+    "id": 79,
+    "standard": "CWMS",
+    "code": "Timing",
+    "displayName": "CWMS:Timing"
+  },
+  {
+    "id": 80,
+    "standard": "SHEF-PE",
+    "code": "NG",
+    "displayName": "SHEF-PE:NG"
+  },
+  {
+    "id": 81,
+    "standard": "NRCS",
+    "code": "FUEL",
+    "displayName": "FUEL MOISTURE"
+  },
+  {
+    "id": 82,
+    "standard": "NRCS",
+    "code": "SVPV",
+    "displayName": "VAPOR PRESSURE - SATURATED"
+  },
+  {
+    "id": 83,
+    "standard": "HYDSTRA-CODE",
+    "code": "10",
+    "displayName": "HYDSTRA-CODE:10"
+  },
+  {
+    "id": 84,
+    "standard": "NRCS",
+    "code": "NTRDX",
+    "displayName": "NET SOLAR RADIATION MAXIMUM"
+  },
+  {
+    "id": 85,
+    "standard": "CWMS",
+    "code": "Temp-Air",
+    "displayName": "CWMS:Temp-Air"
+  },
+  {
+    "id": 86,
+    "standard": "NRCS",
+    "code": "NTRDV",
+    "displayName": "NET SOLAR RADIATION AVERAGE"
+  },
+  {
+    "id": 87,
+    "standard": "NRCS",
+    "code": "SRDOO",
+    "displayName": "RIVER DISCHARGE OBSERVED MEAN"
+  },
+  {
+    "id": 88,
+    "standard": "SHEF-PE",
+    "code": "LS",
+    "displayName": "SHEF-PE:LS"
+  },
+  {
+    "id": 89,
+    "standard": "NRCS",
+    "code": "NTRDN",
+    "displayName": "NET SOLAR RADIATION MINIMUM"
+  },
+  {
+    "id": 90,
+    "standard": "NRCS",
+    "code": "SRDOX",
+    "displayName": "DISCHARGE MANUAL/EXTERNAL ADJUSTED MEAN"
+  },
+  {
+    "id": 91,
+    "standard": "SHEF-PE",
+    "code": "ML",
+    "displayName": "SHEF-PE:ML"
+  },
+  {
+    "id": 92,
+    "standard": "NRCS",
+    "code": "SAL",
+    "displayName": "SALINITY"
+  },
+  {
+    "id": 93,
+    "standard": "NRCS",
+    "code": "SNOW",
+    "displayName": "SNOW FALL"
+  },
+  {
+    "id": 94,
+    "standard": "SHEF-PE",
+    "code": "MI",
+    "displayName": "SHEF-PE:MI"
+  },
+  {
+    "id": 95,
+    "standard": "NRCS",
+    "code": "NTRDC",
+    "displayName": "NET SOLAR RADIATION OBSERVED"
+  },
+  {
+    "id": 96,
+    "standard": "NRCS",
+    "code": "DIAG",
+    "displayName": "DIAGNOSTICS"
+  },
+  {
+    "id": 97,
+    "standard": "NRCS",
+    "code": "H2OPH",
+    "displayName": "PH"
+  },
+  {
+    "id": 98,
+    "standard": "NRCS",
+    "code": "WTAVG",
+    "displayName": "WATER TEMPERATURE AVERAGE"
+  },
+  {
+    "id": 99,
+    "standard": "CWMS",
+    "code": "Stage",
+    "displayName": "CWMS:Stage"
+  },
+  {
+    "id": 100,
+    "standard": "EPA-CODE",
+    "code": "00096",
+    "displayName": "EPA-CODE:00096"
+  },
+  {
+    "id": 101,
+    "standard": "NRCS",
+    "code": "PRCPSA",
+    "displayName": "PRECIPITATION INCREMENT â€“ SNOW-ADJUSTED"
+  },
+  {
+    "id": 102,
+    "standard": "EPA-CODE",
+    "code": "00095",
+    "displayName": "EPA-CODE:00095"
+  },
+  {
+    "id": 103,
+    "standard": "CWMS",
+    "code": "Opening-Rollers",
+    "displayName": "CWMS:Opening-Rollers"
+  },
+  {
+    "id": 104,
+    "standard": "CWMS",
+    "code": "Flow",
+    "displayName": "CWMS:Flow"
+  },
+  {
+    "id": 105,
+    "standard": "NRCS",
+    "code": "WTEMP",
+    "displayName": "WATER TEMPERATURE"
+  },
+  {
+    "id": 106,
+    "standard": "SHEF-PE",
+    "code": "LC",
+    "displayName": "SHEF-PE:LC"
+  },
+  {
+    "id": 107,
+    "standard": "SHEF-PE",
+    "code": "LA",
+    "displayName": "SHEF-PE:LA"
+  },
+  {
+    "id": 108,
+    "standard": "CWMS",
+    "code": "Flow-In",
+    "displayName": "CWMS:Flow-In"
+  },
+  {
+    "id": 109,
+    "standard": "NRCS",
+    "code": "SRVO",
+    "displayName": "STREAM VOLUME OBSERVED"
+  },
+  {
+    "id": 110,
+    "standard": "NRCS",
+    "code": "TMIN",
+    "displayName": "AIR TEMPERATURE MINIMUM"
+  },
+  {
+    "id": 111,
+    "standard": "NRCS",
+    "code": "RHUMN",
+    "displayName": "RELATIVE HUMIDITY MINIMUM"
+  },
+  {
+    "id": 112,
+    "standard": "EPA-CODE",
+    "code": "00300",
+    "displayName": "EPA-CODE:00300"
+  },
+  {
+    "id": 113,
+    "standard": "CWMS",
+    "code": "Depth-Snowwater",
+    "displayName": "CWMS:Depth-Snowwater"
+  },
+  {
+    "id": 114,
+    "standard": "NRCS",
+    "code": "WSPDX",
+    "displayName": "WIND SPEED MAXIMUM"
+  },
+  {
+    "id": 115,
+    "standard": "NRCS",
+    "code": "RHENC",
+    "displayName": "RELATIVE HUMIDITY ENCLOSURE"
+  },
+  {
+    "id": 116,
+    "standard": "NRCS",
+    "code": "SRVA",
+    "displayName": "STREAM VOLUME ADJUSTED"
+  },
+  {
+    "id": 117,
+    "standard": "NRCS",
+    "code": "RHUMV",
+    "displayName": "RELATIVE HUMIDITY AVERAGE"
+  },
+  {
+    "id": 118,
+    "standard": "NRCS",
+    "code": "RHUMX",
+    "displayName": "RELATIVE HUMIDITY MAXIMUM"
+  },
+  {
+    "id": 119,
+    "standard": "NRCS",
+    "code": "WSPDV",
+    "displayName": "WIND SPEED AVERAGE"
+  },
+  {
+    "id": 120,
+    "standard": "NRCS",
+    "code": "RHUM",
+    "displayName": "RELATIVE HUMIDITY"
+  },
+  {
+    "id": 121,
+    "standard": "NRCS",
+    "code": "PRES",
+    "displayName": "BAROMETRIC PRESSURE"
+  },
+  {
+    "id": 122,
+    "standard": "NRCS",
+    "code": "STN",
+    "displayName": "SOIL TEMPERATURE MINIMUM"
+  },
+  {
+    "id": 123,
+    "standard": "NRCS",
+    "code": "STO",
+    "displayName": "SOIL TEMPERATURE OBSERVED"
+  },
+  {
+    "id": 124,
+    "standard": "SHEF-PE",
+    "code": "IT",
+    "displayName": "SHEF-PE:IT"
+  },
+  {
+    "id": 125,
+    "standard": "NRCS",
+    "code": "LRAD",
+    "displayName": "SOLAR RADIATION/LANGLEY"
+  },
+  {
+    "id": 126,
+    "standard": "NRCS",
+    "code": "PREC",
+    "displayName": "PRECIPITATION ACCUMULATION"
+  },
+  {
+    "id": 127,
+    "standard": "CWMS",
+    "code": "Ratio",
+    "displayName": "CWMS:Ratio"
+  },
+  {
+    "id": 128,
+    "standard": "NRCS",
+    "code": "STV",
+    "displayName": "SOIL TEMPERATURE AVERAGE"
+  },
+  {
+    "id": 129,
+    "standard": "NRCS",
+    "code": "STX",
+    "displayName": "SOIL TEMPERATURE MAXIMUM"
+  },
+  {
+    "id": 130,
+    "standard": "SHEF-PE",
+    "code": "HW",
+    "displayName": "SHEF-PE:HW"
+  },
+  {
+    "id": 131,
+    "standard": "SHEF-PE",
+    "code": "HU",
+    "displayName": "SHEF-PE:HU"
+  },
+  {
+    "id": 132,
+    "standard": "SHEF-PE",
+    "code": "HT",
+    "displayName": "SHEF-PE:HT"
+  },
+  {
+    "id": 133,
+    "standard": "NRCS",
+    "code": "ETIB",
+    "displayName": "BATTERY-ETI PRECIP GAGE"
+  },
+  {
+    "id": 134,
+    "standard": "NRCS",
+    "code": "DPTP",
+    "displayName": "DEW POINT TEMPERATURE"
+  },
+  {
+    "id": 135,
+    "standard": "NRCS",
+    "code": "TGSV",
+    "displayName": "GROUND SURFACE INTERFACE TEMPERATURE AVERAGE"
+  },
+  {
+    "id": 136,
+    "standard": "SHEF-PE",
+    "code": "HS",
+    "displayName": "SHEF-PE:HS"
+  },
+  {
+    "id": 137,
+    "standard": "SHEF-PE",
+    "code": "HR",
+    "displayName": "SHEF-PE:HR"
+  },
+  {
+    "id": 138,
+    "standard": "CWMS",
+    "code": "Rotation",
+    "displayName": "CWMS:Rotation"
+  },
+  {
+    "id": 139,
+    "standard": "SHEF-PE",
+    "code": "HQ",
+    "displayName": "SHEF-PE:HQ"
+  },
+  {
+    "id": 140,
+    "standard": "SHEF-PE",
+    "code": "HP",
+    "displayName": "SHEF-PE:HP"
+  },
+  {
+    "id": 141,
+    "standard": "NRCS",
+    "code": "SNWDN",
+    "displayName": "SNOW DEPTH MINIMUM"
+  },
+  {
+    "id": 142,
+    "standard": "NRCS",
+    "code": "WLEVV",
+    "displayName": "WATER LEVEL AVERAGE"
+  },
+  {
+    "id": 143,
+    "standard": "SHEF-PE",
+    "code": "HO",
+    "displayName": "SHEF-PE:HO"
+  },
+  {
+    "id": 144,
+    "standard": "SHEF-PE",
+    "code": "HN",
+    "displayName": "SHEF-PE:HN"
+  },
+  {
+    "id": 145,
+    "standard": "NRCS",
+    "code": "TGSX",
+    "displayName": "GROUND SURFACE INTERFACE TEMPERATURE MAXIMUM"
+  },
+  {
+    "id": 146,
+    "standard": "NRCS",
+    "code": "WLEVX",
+    "displayName": "WATER LEVEL MAXIMUM"
+  },
+  {
+    "id": 147,
+    "standard": "SHEF-PE",
+    "code": "HM",
+    "displayName": "SHEF-PE:HM"
+  },
+  {
+    "id": 148,
+    "standard": "SHEF-PE",
+    "code": "HL",
+    "displayName": "SHEF-PE:HL"
+  },
+  {
+    "id": 149,
+    "standard": "NRCS",
+    "code": "HFTV",
+    "displayName": "ENERGY GAIN OR LOSS FROM GROUND"
+  },
+  {
+    "id": 150,
+    "standard": "SHEF-PE",
+    "code": "HK",
+    "displayName": "SHEF-PE:HK"
+  },
+  {
+    "id": 151,
+    "standard": "SHEF-PE",
+    "code": "HJ",
+    "displayName": "SHEF-PE:HJ"
+  },
+  {
+    "id": 152,
+    "standard": "SHEF-PE",
+    "code": "HH",
+    "displayName": "SHEF-PE:HH"
+  },
+  {
+    "id": 153,
+    "standard": "NRCS",
+    "code": "SNWDV",
+    "displayName": "SNOW DEPTH AVERAGE"
+  },
+  {
+    "id": 154,
+    "standard": "NRCS",
+    "code": "WLEVN",
+    "displayName": "WATER LEVEL MINIMUM"
+  },
+  {
+    "id": 155,
+    "standard": "CWMS",
+    "code": "SpinRate",
+    "displayName": "CWMS:SpinRate"
+  },
+  {
+    "id": 156,
+    "standard": "NRCS",
+    "code": "SNWDX",
+    "displayName": "SNOW DEPTH MAXIMUM"
+  },
+  {
+    "id": 157,
+    "standard": "SHEF-PE",
+    "code": "IC",
+    "displayName": "SHEF-PE:IC"
+  },
+  {
+    "id": 158,
+    "standard": "NRCS",
+    "code": "ETIL",
+    "displayName": "PULSE LINE MONITOR-ETI GUAGE"
+  },
+  {
+    "id": 159,
+    "standard": "NRCS",
+    "code": "TGSI",
+    "displayName": "GROUND SURFACE INTERFACE TEMPERATURE OBSERVED"
+  },
+  {
+    "id": 160,
+    "standard": "NRCS",
+    "code": "TGSN",
+    "displayName": "GROUND SURFACE INTERFACE TEMPERATURE MINIMUM"
+  },
+  {
+    "id": 161,
+    "standard": "SHEF-PE",
+    "code": "HZ",
+    "displayName": "SHEF-PE:HZ"
+  },
+  {
+    "id": 162,
+    "standard": "NRCS",
+    "code": "TOBS",
+    "displayName": "AIR TEMPERATURE OBSERVED"
+  },
+  {
+    "id": 163,
+    "standard": "SHEF-PE",
+    "code": "HY",
+    "displayName": "SHEF-PE:HY"
+  },
+  {
+    "id": 164,
+    "standard": "SHEF-PE",
+    "code": "HX",
+    "displayName": "SHEF-PE:HX"
+  },
+  {
+    "id": 165,
+    "standard": "NRCS",
+    "code": "PARV",
+    "displayName": "PHOTOSYNTHETICALLY ACTIVE RADIATION (PAR) AVERAGE"
+  },
+  {
+    "id": 166,
+    "standard": "CWMS",
+    "code": "Travel",
+    "displayName": "CWMS:Travel"
+  },
+  {
+    "id": 167,
+    "standard": "SHEF-PE",
+    "code": "HG",
+    "displayName": "SHEF-PE:HG"
+  },
+  {
+    "id": 168,
+    "standard": "NRCS",
+    "code": "OI",
+    "displayName": "TELECONNECTION INDEX (also known as OSCILLATION INDEX)"
+  },
+  {
+    "id": 169,
+    "standard": "NRCS",
+    "code": "WTEQV",
+    "displayName": "SNOW WATER EQUIVALENT AVERAGE"
+  },
+  {
+    "id": 170,
+    "standard": "SHEF-PE",
+    "code": "HF",
+    "displayName": "SHEF-PE:HF"
+  },
+  {
+    "id": 171,
+    "standard": "SHEF-PE",
+    "code": "HE",
+    "displayName": "SHEF-PE:HE"
+  },
+  {
+    "id": 172,
+    "standard": "NRCS",
+    "code": "WTEQX",
+    "displayName": "SNOW WATER EQUIVALENT MAXIMUM"
+  },
+  {
+    "id": 173,
+    "standard": "SHEF-PE",
+    "code": "HD",
+    "displayName": "SHEF-PE:HD"
+  },
+  {
+    "id": 174,
+    "standard": "SHEF-PE",
+    "code": "HC",
+    "displayName": "SHEF-PE:HC"
+  },
+  {
+    "id": 175,
+    "standard": "SHEF-PE",
+    "code": "HB",
+    "displayName": "SHEF-PE:HB"
+  },
+  {
+    "id": 176,
+    "standard": "CWMS",
+    "code": "TurbF",
+    "displayName": "CWMS:TurbF"
+  },
+  {
+    "id": 177,
+    "standard": "SHEF-PE",
+    "code": "HA",
+    "displayName": "SHEF-PE:HA"
+  },
+  {
+    "id": 178,
+    "standard": "CWMS",
+    "code": "Temp",
+    "displayName": "CWMS:Temp"
+  },
+  {
+    "id": 179,
+    "standard": "NRCS",
+    "code": "DIVD",
+    "displayName": "DIVERSION DISCHARGE OBSERVED MEAN"
+  },
+  {
+    "id": 180,
+    "standard": "NRCS",
+    "code": "WTEQN",
+    "displayName": "SNOW WATER EQUIVALENT min"
+  },
+  {
+    "id": 181,
+    "standard": "CWMS",
+    "code": "TurbJ",
+    "displayName": "CWMS:TurbJ"
+  },
+  {
+    "id": 182,
+    "standard": "CWMS",
+    "code": "Depth-Snow",
+    "displayName": "CWMS:Depth-Snow"
+  },
+  {
+    "id": 183,
+    "standard": "CWMS",
+    "code": "TurbN",
+    "displayName": "CWMS:TurbN"
+  },
+  {
+    "id": 184,
+    "standard": "NRCS",
+    "code": "PRCP",
+    "displayName": "PRECIPITATION INCREMENT"
+  },
+  {
+    "id": 185,
+    "standard": "CWMS",
+    "code": "Speed-Water",
+    "displayName": "CWMS:Speed-Water"
+  },
+  {
+    "id": 186,
+    "standard": "SHEF-PE",
+    "code": "WC",
+    "displayName": "SHEF-PE:WC"
+  },
+  {
+    "id": 187,
+    "standard": "NRCS",
+    "code": "WSPD",
+    "displayName": "WIND SPEED OBSERVED"
+  },
+  {
+    "id": 188,
+    "standard": "NRCS",
+    "code": "REST",
+    "displayName": "RESERVOIR STAGE"
+  },
+  {
+    "id": 189,
+    "standard": "SHEF-PE",
+    "code": "WA",
+    "displayName": "SHEF-PE:WA"
+  },
+  {
+    "id": 190,
+    "standard": "NRCS",
+    "code": "TAVG",
+    "displayName": "AIR TEMPERATURE AVERAGE"
+  },
+  {
+    "id": 191,
+    "standard": "NRCS",
+    "code": "RESA",
+    "displayName": "USABLE LAKE STORAGE VOLUME"
+  },
+  {
+    "id": 192,
+    "standard": "SHEF-PE",
+    "code": "WV",
+    "displayName": "SHEF-PE:WV"
+  },
+  {
+    "id": 193,
+    "standard": "NRCS",
+    "code": "RESC",
+    "displayName": "RESERVOIR STORAGE VOLUME"
+  },
+  {
+    "id": 194,
+    "standard": "SHEF-PE",
+    "code": "GD",
+    "displayName": "SHEF-PE:GD"
+  },
+  {
+    "id": 195,
+    "standard": "SHEF-PE",
+    "code": "WT",
+    "displayName": "SHEF-PE:WT"
+  },
+  {
+    "id": 196,
+    "standard": "CWMS",
+    "code": "Speed",
+    "displayName": "CWMS:Speed"
+  },
+  {
+    "id": 197,
+    "standard": "SHEF-PE",
+    "code": "WP",
+    "displayName": "SHEF-PE:WP"
+  },
+  {
+    "id": 198,
+    "standard": "SHEF-PE",
+    "code": "WO",
+    "displayName": "SHEF-PE:WO"
+  },
+  {
+    "id": 199,
+    "standard": "SHEF-PE",
+    "code": "WL",
+    "displayName": "SHEF-PE:WL"
+  },
+  {
+    "id": 200,
+    "standard": "SHEF-PE",
+    "code": "WH",
+    "displayName": "SHEF-PE:WH"
+  },
+  {
+    "id": 201,
+    "standard": "SHEF-PE",
+    "code": "WG",
+    "displayName": "SHEF-PE:WG"
+  },
+  {
+    "id": 202,
+    "standard": "CWMS",
+    "code": "Volume",
+    "displayName": "CWMS:Volume"
+  },
+  {
+    "id": 203,
+    "standard": "SHEF-PE",
+    "code": "ER",
+    "displayName": "SHEF-PE:ER"
+  },
+  {
+    "id": 204,
+    "standard": "SHEF-PE",
+    "code": "VB",
+    "displayName": "SHEF-PE:VB"
+  },
+  {
+    "id": 205,
+    "standard": "CWMS",
+    "code": "Volt",
+    "displayName": "CWMS:Volt"
+  },
+  {
+    "id": 206,
+    "standard": "NRCS",
+    "code": "WDIR",
+    "displayName": "WIND DIRECTION OBSERVED"
+  },
+  {
+    "id": 207,
+    "standard": "CWMS",
+    "code": "Stor",
+    "displayName": "CWMS:Stor"
+  },
+  {
+    "id": 208,
+    "standard": "SHEF-PE",
+    "code": "UY",
+    "displayName": "SHEF-PE:UY"
+  },
+  {
+    "id": 209,
+    "standard": "NRCS",
+    "code": "EVAP",
+    "displayName": "EVAPORATION"
+  },
+  {
+    "id": 210,
+    "standard": "SHEF-PE",
+    "code": "UX",
+    "displayName": "SHEF-PE:UX"
+  },
+  {
+    "id": 211,
+    "standard": "EPA-CODE",
+    "code": "00036",
+    "displayName": "EPA-CODE:00036"
+  },
+  {
+    "id": 212,
+    "standard": "EPA-CODE",
+    "code": "00035",
+    "displayName": "EPA-CODE:00035"
+  },
+  {
+    "id": 213,
+    "standard": "SHEF-PE",
+    "code": "VP",
+    "displayName": "SHEF-PE:VP"
+  },
+  {
+    "id": 214,
+    "standard": "SHEF-PE",
+    "code": "UD",
+    "displayName": "SHEF-PE:UD"
+  },
+  {
+    "id": 215,
+    "standard": "CWMS",
+    "code": "Thick",
+    "displayName": "CWMS:Thick"
+  },
+  {
+    "id": 216,
+    "standard": "SHEF-PE",
+    "code": "UC",
+    "displayName": "SHEF-PE:UC"
+  },
+  {
+    "id": 217,
+    "standard": "CWMS",
+    "code": "Opening",
+    "displayName": "CWMS:Opening"
+  },
+  {
+    "id": 218,
+    "standard": "CWMS",
+    "code": "Opening-Wickets",
+    "displayName": "CWMS:Opening-Wickets"
+  },
+  {
+    "id": 219,
+    "standard": "SHEF-PE",
+    "code": "TX",
+    "displayName": "SHEF-PE:TX"
+  },
+  {
+    "id": 220,
+    "standard": "SHEF-PE",
+    "code": "TW",
+    "displayName": "SHEF-PE:TW"
+  },
+  {
+    "id": 221,
+    "standard": "EPA-CODE",
+    "code": "00045",
+    "displayName": "EPA-CODE:00045"
+  },
+  {
+    "id": 222,
+    "standard": "SHEF-PE",
+    "code": "US",
+    "displayName": "SHEF-PE:US"
+  },
+  {
+    "id": 223,
+    "standard": "EPA-CODE",
+    "code": "00047",
+    "displayName": "EPA-CODE:00047"
+  },
+  {
+    "id": 224,
+    "standard": "CWMS",
+    "code": "Elev-Tail",
+    "displayName": "CWMS:Elev-Tail"
+  },
+  {
+    "id": 225,
+    "standard": "SHEF-PE",
+    "code": "UR",
+    "displayName": "SHEF-PE:UR"
+  },
+  {
+    "id": 226,
+    "standard": "SHEF-PE",
+    "code": "EA",
+    "displayName": "SHEF-PE:EA"
+  },
+  {
+    "id": 227,
+    "standard": "EPA-CODE",
+    "code": "99772",
+    "displayName": "EPA-CODE:99772"
+  },
+  {
+    "id": 228,
+    "standard": "SHEF-PE",
+    "code": "UL",
+    "displayName": "SHEF-PE:UL"
+  },
+  {
+    "id": 229,
+    "standard": "CWMS",
+    "code": "Temp-Water",
+    "displayName": "CWMS:Temp-Water"
+  },
+  {
+    "id": 230,
+    "standard": "NRCS",
+    "code": "WTMAX",
+    "displayName": "WATER TEMPERATURE MAXIMUM"
+  },
+  {
+    "id": 231,
+    "standard": "NRCS",
+    "code": "PVPV",
+    "displayName": "VAPOR PRESSURE - PARTIAL"
+  },
+  {
+    "id": 232,
+    "standard": "SHEF-PE",
+    "code": "UG",
+    "displayName": "SHEF-PE:UG"
+  },
+  {
+    "id": 233,
+    "standard": "SHEF-PE",
+    "code": "UF",
+    "displayName": "SHEF-PE:UF"
+  },
+  {
+    "id": 234,
+    "standard": "SHEF-PE",
+    "code": "TC",
+    "displayName": "SHEF-PE:TC"
+  },
+  {
+    "id": 235,
+    "standard": "SHEF-PE",
+    "code": "CR",
+    "displayName": "SHEF-PE:CR"
+  },
+  {
+    "id": 236,
+    "standard": "SHEF-PE",
+    "code": "CQ",
+    "displayName": "SHEF-PE:CQ"
+  },
+  {
+    "id": 237,
+    "standard": "SHEF-PE",
+    "code": "TA",
+    "displayName": "SHEF-PE:TA"
+  },
+  {
+    "id": 238,
+    "standard": "NRCS",
+    "code": "TMAX",
+    "displayName": "AIR TEMPERATURE MAXIMUM"
+  },
+  {
+    "id": 239,
+    "standard": "SHEF-PE",
+    "code": "CP",
+    "displayName": "SHEF-PE:CP"
+  },
+  {
+    "id": 240,
+    "standard": "NRCS",
+    "code": "TURB",
+    "displayName": "TURBIDITY"
+  },
+  {
+    "id": 241,
+    "standard": "CWMS",
+    "code": "Precip",
+    "displayName": "CWMS:Precip"
+  },
+  {
+    "id": 242,
+    "standard": "SHEF-PE",
+    "code": "CN",
+    "displayName": "SHEF-PE:CN"
+  },
+  {
+    "id": 243,
+    "standard": "SHEF-PE",
+    "code": "CM",
+    "displayName": "SHEF-PE:CM"
+  },
+  {
+    "id": 244,
+    "standard": "SHEF-PE",
+    "code": "CL",
+    "displayName": "SHEF-PE:CL"
+  },
+  {
+    "id": 245,
+    "standard": "SHEF-PE",
+    "code": "CK",
+    "displayName": "SHEF-PE:CK"
+  },
+  {
+    "id": 246,
+    "standard": "SHEF-PE",
+    "code": "CJ",
+    "displayName": "SHEF-PE:CJ"
+  },
+  {
+    "id": 247,
+    "standard": "SHEF-PE",
+    "code": "CI",
+    "displayName": "SHEF-PE:CI"
+  },
+  {
+    "id": 248,
+    "standard": "SHEF-PE",
+    "code": "CH",
+    "displayName": "SHEF-PE:CH"
+  },
+  {
+    "id": 249,
+    "standard": "EPA-CODE",
+    "code": "99065",
+    "displayName": "EPA-CODE:99065"
+  },
+  {
+    "id": 250,
+    "standard": "SHEF-PE",
+    "code": "CG",
+    "displayName": "SHEF-PE:CG"
+  },
+  {
+    "id": 251,
+    "standard": "SHEF-PE",
+    "code": "CF",
+    "displayName": "SHEF-PE:CF"
+  },
+  {
+    "id": 252,
+    "standard": "SHEF-PE",
+    "code": "CE",
+    "displayName": "SHEF-PE:CE"
+  },
+  {
+    "id": 253,
+    "standard": "EPA-CODE",
+    "code": "00010",
+    "displayName": "EPA-CODE:00010"
+  },
+  {
+    "id": 254,
+    "standard": "SHEF-PE",
+    "code": "CD",
+    "displayName": "SHEF-PE:CD"
+  },
+  {
+    "id": 255,
+    "standard": "SHEF-PE",
+    "code": "CC",
+    "displayName": "SHEF-PE:CC"
+  },
+  {
+    "id": 256,
+    "standard": "SHEF-PE",
+    "code": "TS",
+    "displayName": "SHEF-PE:TS"
+  },
+  {
+    "id": 257,
+    "standard": "SHEF-PE",
+    "code": "TP",
+    "displayName": "SHEF-PE:TP"
+  },
+  {
+    "id": 258,
+    "standard": "SHEF-PE",
+    "code": "TN",
+    "displayName": "SHEF-PE:TN"
+  },
+  {
+    "id": 259,
+    "standard": "CWMS",
+    "code": "Opening-West",
+    "displayName": "CWMS:Opening-West"
+  },
+  {
+    "id": 260,
+    "standard": "SHEF-PE",
+    "code": "TM",
+    "displayName": "SHEF-PE:TM"
+  },
+  {
+    "id": 261,
+    "standard": "NRCS",
+    "code": "STRV",
+    "displayName": "STRM FLOW AVERAGE"
+  },
+  {
+    "id": 262,
+    "standard": "CWMS",
+    "code": "Stage-Tail",
+    "displayName": "CWMS:Stage-Tail"
+  },
+  {
+    "id": 263,
+    "standard": "NRCS",
+    "code": "SNWD",
+    "displayName": "SNOW DEPTH"
+  },
+  {
+    "id": 264,
+    "standard": "SHEF-PE",
+    "code": "TI",
+    "displayName": "SHEF-PE:TI"
+  },
+  {
+    "id": 265,
+    "standard": "SHEF-PE",
+    "code": "CW",
+    "displayName": "SHEF-PE:CW"
+  },
+  {
+    "id": 266,
+    "standard": "SHEF-PE",
+    "code": "TH",
+    "displayName": "SHEF-PE:TH"
+  },
+  {
+    "id": 267,
+    "standard": "SHEF-PE",
+    "code": "CV",
+    "displayName": "SHEF-PE:CV"
+  },
+  {
+    "id": 268,
+    "standard": "NRCS",
+    "code": "RDC",
+    "displayName": "REAL DIELECTRIC CONSTANT"
+  },
+  {
+    "id": 269,
+    "standard": "SHEF-PE",
+    "code": "CU",
+    "displayName": "SHEF-PE:CU"
+  },
+  {
+    "id": 270,
+    "standard": "SHEF-PE",
+    "code": "TF",
+    "displayName": "SHEF-PE:TF"
+  },
+  {
+    "id": 271,
+    "standard": "SHEF-PE",
+    "code": "CS",
+    "displayName": "SHEF-PE:CS"
+  },
+  {
+    "id": 272,
+    "standard": "SHEF-PE",
+    "code": "TD",
+    "displayName": "SHEF-PE:TD"
+  },
+  {
+    "id": 273,
+    "standard": "SHEF-PE",
+    "code": "BQ",
+    "displayName": "SHEF-PE:BQ"
+  },
+  {
+    "id": 274,
+    "standard": "SHEF-PE",
+    "code": "BP",
+    "displayName": "SHEF-PE:BP"
+  },
+  {
+    "id": 275,
+    "standard": "SHEF-PE",
+    "code": "BO",
+    "displayName": "SHEF-PE:BO"
+  },
+  {
+    "id": 276,
+    "standard": "SHEF-PE",
+    "code": "BN",
+    "displayName": "SHEF-PE:BN"
+  },
+  {
+    "id": 277,
+    "standard": "SHEF-PE",
+    "code": "BM",
+    "displayName": "SHEF-PE:BM"
+  },
+  {
+    "id": 278,
+    "standard": "SHEF-PE",
+    "code": "BL",
+    "displayName": "SHEF-PE:BL"
+  },
+  {
+    "id": 279,
+    "standard": "SHEF-PE",
+    "code": "BK",
+    "displayName": "SHEF-PE:BK"
+  },
+  {
+    "id": 280,
+    "standard": "SHEF-PE",
+    "code": "BJ",
+    "displayName": "SHEF-PE:BJ"
+  },
+  {
+    "id": 281,
+    "standard": "SHEF-PE",
+    "code": "BI",
+    "displayName": "SHEF-PE:BI"
+  },
+  {
+    "id": 282,
+    "standard": "SHEF-PE",
+    "code": "BH",
+    "displayName": "SHEF-PE:BH"
+  },
+  {
+    "id": 283,
+    "standard": "SHEF-PE",
+    "code": "BG",
+    "displayName": "SHEF-PE:BG"
+  },
+  {
+    "id": 284,
+    "standard": "CWMS",
+    "code": "Irrad",
+    "displayName": "CWMS:Irrad"
+  },
+  {
+    "id": 285,
+    "standard": "SHEF-PE",
+    "code": "BF",
+    "displayName": "SHEF-PE:BF"
+  },
+  {
+    "id": 286,
+    "standard": "SHEF-PE",
+    "code": "BE",
+    "displayName": "SHEF-PE:BE"
+  },
+  {
+    "id": 287,
+    "standard": "SHEF-PE",
+    "code": "BD",
+    "displayName": "SHEF-PE:BD"
+  },
+  {
+    "id": 288,
+    "standard": "CWMS",
+    "code": "Stage-Pool",
+    "displayName": "CWMS:Stage-Pool"
+  },
+  {
+    "id": 289,
+    "standard": "SHEF-PE",
+    "code": "BC",
+    "displayName": "SHEF-PE:BC"
+  },
+  {
+    "id": 290,
+    "standard": "EPA-CODE",
+    "code": "00020",
+    "displayName": "EPA-CODE:00020"
+  },
+  {
+    "id": 291,
+    "standard": "SHEF-PE",
+    "code": "BB",
+    "displayName": "SHEF-PE:BB"
+  },
+  {
+    "id": 292,
+    "standard": "HYDSTRA-CODE",
+    "code": "300",
+    "displayName": "HYDSTRA-CODE:300"
+  },
+  {
+    "id": 293,
+    "standard": "SHEF-PE",
+    "code": "CB",
+    "displayName": "SHEF-PE:CB"
+  },
+  {
+    "id": 294,
+    "standard": "CWMS",
+    "code": "Pres",
+    "displayName": "CWMS:Pres"
+  },
+  {
+    "id": 295,
+    "standard": "SHEF-PE",
+    "code": "CA",
+    "displayName": "SHEF-PE:CA"
+  },
+  {
+    "id": 296,
+    "standard": "SHEF-PE",
+    "code": "SP",
+    "displayName": "SHEF-PE:SP"
+  },
+  {
+    "id": 297,
+    "standard": "NRCS",
+    "code": "SRMN",
+    "displayName": "STREAM STAGE (GAUGE HEIGHT) MINIMUM"
+  },
+  {
+    "id": 298,
+    "standard": "NRCS",
+    "code": "SRMO",
+    "displayName": "STREAM STAGE (GAUGE HEIGHT) OBSERVED"
+  },
+  {
+    "id": 299,
+    "standard": "SHEF-PE",
+    "code": "SN",
+    "displayName": "SHEF-PE:SN"
+  },
+  {
+    "id": 300,
+    "standard": "NRCS",
+    "code": "WLEV",
+    "displayName": "WATER LEVEL OBSERVED"
+  },
+  {
+    "id": 301,
+    "standard": "SHEF-PE",
+    "code": "SL",
+    "displayName": "SHEF-PE:SL"
+  },
+  {
+    "id": 302,
+    "standard": "NRCS",
+    "code": "SRMX",
+    "displayName": "STREAM STAGE (GAUGE HEIGHT) MAXIMUM"
+  },
+  {
+    "id": 303,
+    "standard": "NRCS",
+    "code": "WTEQ",
+    "displayName": "SNOW WATER EQUIVALENT"
+  },
+  {
+    "id": 304,
+    "standard": "NRCS",
+    "code": "SRMV",
+    "displayName": "STREAM STAGE (GAUGE HEIGHT) AVERAGE"
+  },
+  {
+    "id": 305,
+    "standard": "SHEF-PE",
+    "code": "BV",
+    "displayName": "SHEF-PE:BV"
+  },
+  {
+    "id": 306,
+    "standard": "EPA-CODE",
+    "code": "99999",
+    "displayName": "EPA-CODE:99999"
+  },
+  {
+    "id": 307,
+    "standard": "NRCS",
+    "code": "DIV",
+    "displayName": "DIVERSION FLOW VOLUME OBSERVED"
+  }
+]

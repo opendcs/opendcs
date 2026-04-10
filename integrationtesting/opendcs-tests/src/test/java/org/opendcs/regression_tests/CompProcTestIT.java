@@ -186,7 +186,7 @@ public class CompProcTestIT extends AppTestBase
             dao.doModify("insert into cp_comp_tasklist(record_num, loading_application_id, ts_id, num_value, date_time_loaded, sample_time, flags) "
                        + "values (?,?,?,?,?,?,?)",keyGen.getKey("cp_comp_tasklist", c), appKey, inputKey, 1.0,new Date(), new Date(),0);
 
-            DataCollection data = tsDAI.getNewData(appKey);
+            DataCollection data = tsDAI.getNewData(appKey, 20000); // arbitrary number, previously the default.
             assertTrue(data.isEmpty());
             assertEquals(0,
                          dao.getSingleResultOr("select count(ts_id) from cp_comp_tasklist where ts_id=?",

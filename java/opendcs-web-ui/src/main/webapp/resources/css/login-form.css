@@ -1,0 +1,280 @@
+/*
+ *  Login form styling tuned for Bootstrap 5 themes
+ *  - Uses Bootstrap CSS variables when possible
+ *  - Keeps original layout + animations
+ */
+
+/* LINKS & HEADINGS INSIDE THE LOGIN FORM */
+
+#formContent a {
+  color: var(--bs-link-color, #0d6efd);
+  text-decoration: none;
+  font-weight: 400;
+}
+
+#formContent a:hover {
+  color: var(--bs-link-hover-color, #0a58ca);
+  text-decoration: underline;
+}
+
+#formContent h2 {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  display: inline-block;
+  margin: 2.5rem 0 .75rem;
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+/* “Tab” style headings */
+#formContent h2.inactive {
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+#formContent h2.active {
+  color: var(--bs-body-color, #212529);
+  border-bottom: 2px solid var(--bs-primary, #0d6efd);
+}
+
+/* LAYOUT / STRUCTURE */
+
+.wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100vh;
+  padding: 1.5rem;
+  background-color: transparent;
+}
+
+#formContent {
+  background-color: var(--bs-body-bg, #fff);
+  border-radius: var(--bs-border-radius-lg, 0.5rem);
+  box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15);
+  width: 100%;
+  max-width: 450px;
+  position: relative;
+  padding: 2rem 2rem 1rem;
+  text-align: center;
+  margin: 0 auto;
+}
+
+#formFooter {
+  background-color: var(--bs-secondary-bg, #f8f9fa);
+  border-top: 1px solid var(--bs-border-color, #dee2e6);
+  padding: 1rem;
+  text-align: center;
+  border-radius: 0 0 var(--bs-border-radius-lg, 0.5rem) var(--bs-border-radius-lg, 0.5rem);
+  font-size: .875rem;
+}
+
+/* FORM FIELDS
+ * Assumes your inputs/selects either:
+ *  - have class="form-control" / "form-select"
+ *  - or just rely on these type-based rules
+ */
+
+/* Shared style: username, password, and raw organization <select> */
+input[type="text"],
+input[type="password"],
+select#id_organization {
+  display: block;
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: .375rem .75rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--bs-body-color, #212529);
+  background-color: var(--bs-form-control-bg, #fff);
+  background-clip: padding-box;
+  border: 1px solid var(--bs-border-color, #ced4da);
+  border-radius: var(--bs-border-radius, .375rem);
+  transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out, background-color .15s ease-in-out;
+  text-align: center;
+}
+
+/* Keep placeholders subtle */
+input[type="text"]::placeholder,
+input[type="password"]::placeholder {
+  color: var(--bs-secondary-color, #6c757d);
+  opacity: 1;
+}
+
+/* Focus state to match .form-control:focus */
+input[type="text"]:focus,
+input[type="password"]:focus,
+select#id_organization:focus {
+  color: var(--bs-body-color, #212529);
+  background-color: var(--bs-form-control-bg, #fff);
+  border-color: var(--bs-primary, #0d6efd);
+  outline: 0;
+  box-shadow: 0 0 0 .25rem rgba(var(--bs-primary-rgb, 13, 110, 253), .25);
+}
+
+/* BUTTONS
+ * For best results, also add class="btn btn-primary w-100" in the JSP,
+ * but these rules will make plain <input type=submit> look close to Bootstrap.
+ */
+
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  display: inline-block;
+  width: 100%;
+  margin: 1rem 0 1.5rem;
+  padding: .6rem 1.5rem;
+  font-size: .875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  text-align: center;
+  border-radius: var(--bs-border-radius-pill, var(--bs-border-radius, .375rem));
+  border: 1px solid var(--bs-primary, #0d6efd);
+  color: #fff;
+  background-color: var(--bs-primary, #0d6efd);
+  box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15);
+  cursor: pointer;
+  transition: background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out, transform .1s ease-in-out;
+}
+
+input[type="button"]:hover,
+input[type="submit"]:hover,
+input[type="reset"]:hover {
+  background-color: var(--bs-primary, #0d6efd);
+  border-color: var(--bs-primary, #0d6efd);
+  box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .25);
+  filter: brightness(0.95);
+}
+
+input[type="button"]:active,
+input[type="submit"]:active,
+input[type="reset"]:active {
+  transform: scale(0.97);
+  box-shadow: 0 .25rem .5rem rgba(0, 0, 0, .2);
+}
+
+/* SELECT2 INTEGRATION (organization dropdown) */
+
+#id_organization + .select2-container {
+  width: 100% !important;
+  margin-bottom: 1rem;
+}
+
+.select2-container--default .select2-selection--single {
+  background-color: var(--bs-form-control-bg, #fff);
+  border: 1px solid var(--bs-border-color, #ced4da);
+  border-radius: var(--bs-border-radius, .375rem);
+  min-height: calc(2.25rem + 2px);
+  display: flex;
+  align-items: center;
+  padding: .375rem .75rem;
+  box-shadow: none;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: var(--bs-body-color, #212529);
+  padding: 0;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 100%;
+  right: .75rem;
+}
+
+/* Focus state for Select2 to match Bootstrap */
+.select2-container--default.select2-container--focus .select2-selection--single {
+  border-color: var(--bs-primary, #0d6efd);
+  outline: 0;
+  box-shadow: 0 0 0 .25rem rgba(var(--bs-primary-rgb, 13, 110, 253), .25);
+}
+
+/* ANIMATIONS */
+
+.fadeInDown {
+  -webkit-animation-name: fadeInDown;
+  animation-name: fadeInDown;
+  -webkit-animation-duration: 1s;
+  animation-duration: 1s;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
+}
+
+@-webkit-keyframes fadeInDown {
+  0% {
+    opacity: 0;
+    -webkit-transform: translate3d(0, -100%, 0);
+    transform: translate3d(0, -100%, 0);
+  }
+  100% {
+    opacity: 1;
+    -webkit-transform: none;
+    transform: none;
+  }
+}
+
+@keyframes fadeInDown {
+  0% {
+    opacity: 0;
+    -webkit-transform: translate3d(0, -100%, 0);
+    transform: translate3d(0, -100%, 0);
+  }
+  100% {
+    opacity: 1;
+    -webkit-transform: none;
+    transform: none;
+  }
+}
+
+/* Simple fade-in */
+
+@-webkit-keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+@-moz-keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+.fadeIn {
+  opacity: 0;
+  -webkit-animation: fadeIn ease-in 1;
+  -moz-animation: fadeIn ease-in 1;
+  animation: fadeIn ease-in 1;
+  -webkit-animation-fill-mode: forwards;
+  -moz-animation-fill-mode: forwards;
+  animation-fill-mode: forwards;
+  -webkit-animation-duration: 1s;
+  -moz-animation-duration: 1s;
+  animation-duration: 1s;
+}
+
+.fadeIn.first   { -webkit-animation-delay: 0.4s; -moz-animation-delay: 0.4s; animation-delay: 0.4s; }
+.fadeIn.second  { -webkit-animation-delay: 0.6s; -moz-animation-delay: 0.6s; animation-delay: 0.6s; }
+.fadeIn.third   { -webkit-animation-delay: 0.8s; -moz-animation-delay: 0.8s; animation-delay: 0.8s; }
+.fadeIn.fourth  { -webkit-animation-delay: 1s;   -moz-animation-delay: 1s;   animation-delay: 1s; }
+
+/* Underline hover effect for links inside form */
+
+.underlineHover:after {
+  display: block;
+  left: 0;
+  bottom: -0.625rem;
+  width: 0;
+  height: 2px;
+  background-color: var(--bs-primary, #0d6efd);
+  content: "";
+  transition: width 0.2s;
+}
+
+.underlineHover:hover {
+  color: var(--bs-body-color, #212529);
+}
+
+.underlineHover:hover:after {
+  width: 100%;
+}
+
+/* ICON */
+
+#icon {
+  width: 60%;
+}

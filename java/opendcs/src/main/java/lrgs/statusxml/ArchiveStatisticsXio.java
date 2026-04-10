@@ -1,36 +1,37 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:16  cvs
-*  Added legacy code to repository
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.2  2004/09/02 13:09:05  mjmaloney
-*  javadoc
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1  2004/05/04 18:03:55  mjmaloney
-*  Moved from statusgui package to here.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.statusxml;
 
-import java.io.IOException;
-import java.util.Iterator;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
+import ilex.util.TextUtil;
 import ilex.xml.*;
-import ilex.util.*;
-
 
 /**
 This class maps the DECODES XML representation for ArchiveStatistics elements.
 
 @author Michael Maloney, Ilex Engineering, Inc.
 */
-public class ArchiveStatisticsXio
-	implements XmlObjectParser, TaggedLongOwner
+public class ArchiveStatisticsXio implements XmlObjectParser, TaggedLongOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/// Top of the parser hierarchy
 	private LrgsStatusSnapshotExt lsse;
 
@@ -98,9 +99,7 @@ public class ArchiveStatisticsXio
 			hier.pushObjectParser(new TaggedLongSetter(this, dsTag));
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}

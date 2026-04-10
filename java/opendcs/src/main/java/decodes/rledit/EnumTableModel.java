@@ -1,53 +1,28 @@
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.3  2009/01/22 00:31:33  mjmaloney
-*  DB Caching improvements to make msgaccess start quicker.
-*  Remove the need to cache the entire database.
-*
-*  Revision 1.2  2008/12/29 21:55:42  dlittle
-*  Enum value sort number fixed
-*
-*  Revision 1.1  2008/04/04 18:21:04  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.7  2008/02/10 20:17:33  mmaloney
-*  dev
-*
-*  Revision 1.2  2008/02/01 15:20:40  cvs
-*  modified files for internationalization
-*
-*  Revision 1.6  2005/03/15 16:52:01  mjmaloney
-*  Rename Enum to DbEnum for Java 5 compatibility
-*
-*  Revision 1.5  2005/03/15 16:11:28  mjmaloney
-*  Modify 'Enum' for Java 5 compat.
-*
-*  Revision 1.4  2004/12/21 14:46:05  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.3  2004/04/01 22:37:23  mjmaloney
-*  Implemented controls for enumerations.
-*
-*  Revision 1.2  2004/03/31 17:02:56  mjmaloney
-*  Implemented decodes db interface and enum list table.
-*
-*  Revision 1.1  2004/02/02 22:12:57  mjmaloney
-*  dev.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.rledit;
 
 import javax.swing.table.*;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.*;
 
 import decodes.db.*;
-import decodes.gui.*;
 
 /**
 Table Model for a DECODES Enumeration. The table will show all of the
@@ -55,8 +30,8 @@ values defined in the database for a specific Enum.
 */
 @SuppressWarnings("serial")
 public class EnumTableModel extends AbstractTableModel
-	implements SortingListTableModel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static ResourceBundle labels = RefListEditor.getLabels();
 	
 	/** The Enum currently being shown. */
@@ -98,7 +73,6 @@ public class EnumTableModel extends AbstractTableModel
 			EnumValue myvalue = getEnumValueAt(pos-1);
 			if(myvalue!=null)
 			{
-				//System.out.println("Enum sort value changed: "+myvalue.getSortNumber()+" "+pos);
 				myvalue.setSortNumber(pos);
 			}
 		}
@@ -154,7 +128,7 @@ public class EnumTableModel extends AbstractTableModel
 	/**
 	 * Sets the enum being shown in the table. This will totally change the
 	 * contents of the table.
-	 * @param enumName name of the DECODES enumeration to display
+	 * @param en DECODES enumeration to display
 	 */
 	public void setEnum(DbEnum en)
 	{

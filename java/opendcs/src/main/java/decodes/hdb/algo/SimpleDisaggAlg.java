@@ -1,18 +1,28 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.algo;
 
 import java.util.Date;
 
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.algo.AW_AlgorithmBase;
 
 
-//AW:IMPORTS
 import java.util.TimeZone;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -21,35 +31,33 @@ import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.ParmRef;
 import ilex.var.TimedVariable;
 import ilex.var.NoConversionException;
-//AW:IMPORTS_END
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
-//AW:JAVADOC
-/**
-Dis-aggregates by spreading out the input values to the outputs in various
-ways (fill, interpolate, split).
-The interval of the input should always be equal to, or longer than, the output.
-Example: Input is daily, output is hour. 24 output values are written covering
-the period of each input.
-The 'method' property determines how each output period is determined:
-<ul>
-  <li>fill (default) - Each output is the same as the input covering the period.
-      </li>
-  <li>interp - Determine the output by interpolating between input values</li>
-  <li>split - Divide the input equally between the outputs for the period.</li>
-</ul>
-This disagg algorithm is a simple disaggregation Process, it only works from one 
-interval to the next one down the interval chain.  Hourly to instantaneous will not work
- */
-//AW:JAVADOC_END
-public class SimpleDisaggAlg
-	extends AW_AlgorithmBase
+@Algorithm(description = "Dis-aggregates by spreading out the input values to the outputs in various\n" +
+"ways (fill, interpolate, split).\n" +
+"The interval of the input should always be equal to, or longer than, the output.\n" +
+"Example: Input is daily, output is hour. 24 output values are written covering\n" +
+"the period of each input.\n" +
+"The 'method' property determines how each output period is determined:\n" +
+"<ul>\n" +
+"  <li>fill (default) - Each output is the same as the input covering the period.\n" +
+"      </li>\n" +
+"  <li>interp - Determine the output by interpolating between input values</li>\n" +
+"  <li>split - Divide the input equally between the outputs for the period.</li>\n" +
+"</ul>\n" +
+"This disagg algorithm is a simple disaggregation Process, it only works from one\n" + 
+"interval to the next one down the interval chain.  Hourly to instantaneous will not work") 
+public class SimpleDisaggAlg extends AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double input;	//AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	@Input
+	public double input;
 
-//AW:LOCALVARS
 	ParmRef iref = null;
 	String iintv = null;
 	int isec = 0;
@@ -58,41 +66,32 @@ public class SimpleDisaggAlg
 	int osec = 0;
 	double prevInputV = 0.0;
 	long prevInputT = 0;
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "fill") 
 	public String method = "fill";
-	String _propertyNames[] = { "method" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 
 		// Get interval of input
 		iref = getParmRef("input");
@@ -115,8 +114,8 @@ public class SimpleDisaggAlg
 			throw new DbCompException(
 			  "Cannot DisAggregate from 'output' with instantaneous interval.");
 
-info("DisAgg, input interval=" + iintv + ", isec=" + isec
-+ ", ointv=" + ointv + ", osec=" + osec + ", method=" + method);
+		log.info("DisAgg, input interval={}, isec={}, ointv={}, osec={}, method={}",
+				 iintv, isec, ointv, osec, method); 
 		if (method.equalsIgnoreCase("interp"))
 		{
 			// For interplation of 1st input, we will need the prev value from
@@ -126,18 +125,20 @@ info("DisAgg, input interval=" + iintv + ", isec=" + isec
 			try { tv = tsdb.getPreviousValue(iref.timeSeries, firstTime); }
 			catch(Exception ex)
 			{
-				throw new DbCompException("DisAgg: " + ex);
+				throw new DbCompException("DisAgg: Unable to retrieve previous value", ex);
 			}
 			prevInputV = 0.0;
 			prevInputT = 0;
 			if (tv != null)
 			{
 				try { prevInputV = tv.getDoubleValue(); }
-				catch(NoConversionException ex) {}
+				catch(NoConversionException ex) 
+				{
+					log.atTrace().setCause(ex).log("Unable to convert previous value to double", tv.toString());
+				}
 				long prevInputT = tv.getTime().getTime();
 			}
 		}
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -150,10 +151,10 @@ info("DisAgg, input interval=" + iintv + ", isec=" + isec
 	 * @throw DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 
 		// if interval of output > interval of input then output a single 
 		// value at the input time.
@@ -166,7 +167,7 @@ info("DisAgg, input interval=" + iintv + ", isec=" + isec
 		
 
 		long bmsec = _timeSliceBaseTime.getTime();
-                debug2("!!!!!  Basetime=  " + _timeSliceBaseTime );
+        log.trace("!!!!!  Basetime=  {}", _timeSliceBaseTime);
 
 		Date startT = new Date(bmsec);
 		Date endT = new Date(bmsec + isec*1000L);
@@ -205,14 +206,15 @@ info("DisAgg, input interval=" + iintv + ", isec=" + isec
 		if (method.equalsIgnoreCase("split")) value = num_of_intervals == 0 ? input : input/(double)num_of_intervals;
 
 		Date t =  null;
-        	debug2("interval=" + interval + "   timestep  =  " + timestep);
+        log.trace("interval={} timestep={}", interval, timestep);
  		for ( int k = 0; k < num_of_intervals; k++)
 		{
 		   cal1.set(calendar.get(Calendar.YEAR),calendar.get(Calendar.MONTH),calendar.get(Calendar.DAY_OF_MONTH),calendar.get(Calendar.HOUR),0);
           	   t = cal1.getTime();
-		   info(method + " input=" + input + ", n=" + num_of_intervals + ", v=" + value + ", t=" + t);
-debug2("GMT CAL VALUES: " + calendar.get(Calendar.YEAR)+"."+calendar.get(Calendar.MONTH)+"."+calendar.get(Calendar.DAY_OF_MONTH)+"."+
-calendar.get(Calendar.HOUR)+"."+calendar.get(Calendar.MINUTE)+"."+calendar.get(Calendar.DST_OFFSET));
+		   log.info("input={}, n={}, v={}, t={}", input, num_of_intervals, value, t);
+		   log.trace("GMT CAL VALUES: {}.{}.{}.{}.{}.{}",
+					  calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH),
+					  calendar.get(Calendar.HOUR), calendar.get(Calendar.MINUTE), calendar.get(Calendar.DST_OFFSET));
 		   if (!method.equalsIgnoreCase("interp")) setOutput(output, value, t);
                         
 		   if (method.equalsIgnoreCase("interp"))
@@ -226,49 +228,24 @@ calendar.get(Calendar.HOUR)+"."+calendar.get(Calendar.MINUTE)+"."+calendar.get(C
 			{
 				if (tv != null)
 				{
-				     info("interping: " + tv);
+				     log.info("interping: {}", tv);
 				     setOutput(output, tv.getDoubleValue(), t);
 				}
 			}
-		  	  catch(NoConversionException ex) {}
+		  	  catch(NoConversionException ex) 
+			  {
+				log.atTrace().setCause(ex).log("Unable to convert value to double.");
+			  }
 		    }
 		    calendar.add(interval,timestep);
 		  }
-
-//AW:TIMESLICE_END
 	}
 
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }

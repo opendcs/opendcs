@@ -1,0 +1,13 @@
+{
+  "schedEntryId" : null,
+  "name" : "Test Schedule Entry",
+  "appId" : null,
+  "appName" : null,
+  "routingSpecId" : "[ROUTING_SPEC_ID]",
+  "routingSpecName" : "TestRoutingSpec",
+  "enabled" : true,
+  "lastModified" : null,
+  "startTime" : null,
+  "timeZone" : "UTC",
+  "runInterval" : null
+}

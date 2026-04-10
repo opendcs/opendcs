@@ -1,0 +1,3 @@
+# sensor number, sensor name, units, description, type:code, alogrithm, A:B:C:D:E:F, recording mode, interval
+1, Stage, ft, iridium-test, type1:code1, linear, 0.01:0.0, F , 900
+2, Batt, volts, iridium-test,type2:code2, linear, 0.234:10.6, F , 900

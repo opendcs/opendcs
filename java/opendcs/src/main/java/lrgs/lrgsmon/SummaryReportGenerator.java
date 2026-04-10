@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.lrgsmon;
 
@@ -15,11 +27,13 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
-import java.util.Vector;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Iterator;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
 import ilex.xml.XmlOutputStream;
@@ -36,9 +50,10 @@ This class writes the detail report for a single LRGS.
 */
 public class SummaryReportGenerator
 {
-	private static ResourceBundle labels = 
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static ResourceBundle labels =
 		RtStat.getLabels();
-	private static ResourceBundle genericLabels = 
+	private static ResourceBundle genericLabels =
 		RtStat.getGenericLabels();
 	/// Used to format dates in the HTML report header.
 	private SimpleDateFormat headerDF;
@@ -83,19 +98,19 @@ public class SummaryReportGenerator
 		          "<td style=\"vertical-align: top; \">\n" +
 		          	"<img src=\"" + imageFile +"\" alt=\"SatDish\"></td>\n" +
 		          "<td style=\"vertical-align: top; text-align: center;\">\n" +
-		            "<h2>" + 
+		            "<h2>" +
 		            	labels.getString("SummaryReportGenerator.title")+
 		            "</h2>\n" +
 		            "<div style=\"text-align: center;\">\n" +
 		              "UTC: $DATE(MMMM dd, yyyy HH:mm:ss) (Day $DATE(DDD))\n"+
-		            "</div>\n" + 
+		            "</div>\n" +
 		          "</td>\n" +
-		        "</tr>\n" + 
+		        "</tr>\n" +
 		      "</tbody>\n" +
 		    "</table>\n";
 		return defaultHeader;
 	}
-	
+
 	/**
 	  Updates this host's summary info in internal tables, does not write report.
 	*/
@@ -143,29 +158,26 @@ public class SummaryReportGenerator
 			return;
 		}
 		File f = new File(filename);
-		FileReader fr = new FileReader(f);
-		BufferedReader br = new BufferedReader(fr);
 		StringBuffer sb = new StringBuffer((int)f.length());
-		String line;
-		while( (line = br.readLine()) != null)
-			sb.append(line + "\n");
-		br.close();
-		fr.close();
+		try (FileReader fr = new FileReader(f);
+			 BufferedReader br = new BufferedReader(fr);)
+		{
+			String line;
+			while( (line = br.readLine()) != null)
+				sb.append(line + "\n");
+		}
 		header = sb.toString();
 	}
-	
+
 	/** Writes the detail report containing accumulated summary info */
 	public synchronized void write(File output, int scanSeconds)
 	{
-		Logger.instance().debug1("Generating summary report.");
-		FileOutputStream fos = null;
-		try
+		log.debug("Generating summary report.");
+		File tmp = new File(output.getPath() + ".tmp");
+		try (FileOutputStream fos = new FileOutputStream(tmp);)
 		{
-			File tmp = new File(output.getPath() + ".tmp");
-			fos = new FileOutputStream(tmp);
 			XmlOutputStream xos = new XmlOutputStream(fos, "html");
 			writeReport(xos, scanSeconds);
-			fos.close();
 			if (!tmp.renameTo(output))
 			{
 				// on windows, have to delete before rename
@@ -175,16 +187,7 @@ public class SummaryReportGenerator
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("Cannot write " + output.getPath()
-				+ ": " + ex);
-		}
-		finally
-		{
-			if (fos != null)
-			{
-				try { fos.close(); }
-				catch(IOException ex){}
-			}
+			log.atWarn().setCause(ex).log("Cannot write {}", output.getPath());
 		}
 	}
 
@@ -194,7 +197,6 @@ public class SummaryReportGenerator
 		this.xos = xos;
 		xos.xmlDtdUri = "-//W3C//DTD HTML 4.01 Transitional//EN";
 		xos.xmlDtdScope = "PUBLIC";
-//		xos.writeXmlHeader();
 xos.startElement("html");
 
 // HTML Header
@@ -204,11 +206,7 @@ xos.startElement("html");
     xos.writeElement("meta", "http-equiv", "refresh", "CONTENT", "" + scanSeconds, null);
     xos.writeElement("title", labels.getString(
     						"SummaryReportGenerator.reportTitle"));
-    StringPair sp3[] = new StringPair[3];
-//    sp3[0] = new StringPair("rel", "stylesheet");
-//    sp3[1] = new StringPair("type", "text/css");
-//    sp3[2] = new StringPair("href", "lrgsmon.css");
-//    xos.writeElement("link", sp3, null);
+
 	xos.writeLiteral(
 		"<link rel=\"stylesheet\" type=\"text/css\" href=\"lrgsmon.css\">");
 
@@ -224,26 +222,7 @@ xos.startElement("html");
 
     //First part of body is the report header, formatted in a table.
 	writeReportHeader(xos);
-// replace from here
-//    xos.startElement("table", sp4);
-//      xos.startElement("tbody");
-//        xos.startElement("tr");
-//		if (imageFile.length() > 0 && !imageFile.equals("-"))
-//		{
-//          xos.startElement("td", "style", vTop);
-//			xos.writeLiteral("<img src=\"" + imageFile + "\" alt=\"SatDish\">");
-//          xos.endElement("td");
-//		}
-//
-//          xos.startElement("td", "style", vTop + "text-align: center;");
-//            xos.writeElement("h2", "LRGS Summary Status");
-//            xos.writeElement("div", "style", "text-align: center;", 
-//              "UTC: " + headerDF.format(new Date()));
-//          xos.endElement("td");
-//        xos.endElement("tr");
-//      xos.endElement("tbody");
-//    xos.endElement("table");
-// ... to here
+
     br();
 
     sp4[0] = new StringPair("style", "text-align: left; width: 100%;");
@@ -344,17 +323,17 @@ xos.startElement("html");
               xos.writeElement("a", "href", linkTarget, si.host);
             xos.endElement("td");
 
-            xos.writeElement("td", "class", tdclass, "style", "width: 14%; ", 
- 			  si.statusTime != 0L ? 
+            xos.writeElement("td", "class", tdclass, "style", "width: 14%; ",
+ 			  si.statusTime != 0L ?
 				columnDF.format(new Date(si.statusTime*1000L)) : "N/A");
             xos.writeElement("td", "class", tdclass, "style", "width: 10%; ", stat);
-            xos.writeElement("td", "class", tdclass, "style", "width: 15%; ", 
+            xos.writeElement("td", "class", tdclass, "style", "width: 15%; ",
 				si.primaryDLName + ":" + si.primaryDLStat);
             xos.writeElement("td", "class", tdclass, "style", "width: 8%; ", si.primaryQual);
             xos.writeElement("td", "class", tdclass, "style", "width: 8%; ", si.totalQual);
 
             xos.writeElement("td", "class", tdclass, "style", "width: 8%; ", "" + si.msgsThisHour);
-			
+
             xos.writeElement("td", "class", tdclass, "style", "width: 8%; ", "" + si.numDDSClients);
             xos.writeElement("td", "class", tdclass, "style", "width: 8%; ", si.lrgsVersion);
           xos.endElement("tr");
@@ -370,7 +349,7 @@ xos.endElement("html");
 	{
     	xos.writeLiteral("<br>");
 	}
-	
+
 	private void writeReportHeader(XmlOutputStream xos) throws IOException
 	{
 		Properties props = System.getProperties();
@@ -392,8 +371,6 @@ class SummaryInfo
 	String totalQual;
 	int msgsThisHour;
 	int numDDSClients;
-//	boolean netbackAvail;
-//	int numNetbackClients;
 	String lrgsVersion;
 	String extHost;
 
@@ -413,8 +390,6 @@ class SummaryInfo
 		totalQual = "0%";
 		msgsThisHour = 0;
 		numDDSClients = 0;
-//		netbackAvail = false;
-//		numNetbackClients = 0;
 		extHost = null;
 		lrgsVersion = "?";
 	}
@@ -439,7 +414,6 @@ class SummaryInfo
 		msgsThisHour = qm.numGood + qm.numRecovered;
 
 		numDDSClients = 0;
-//		numNetbackClients = 0;
 		lrgsVersion = "" + status.majorVersion + "." + status.minorVersion;
 
 //		netbackAvail = false;
@@ -450,10 +424,6 @@ class SummaryInfo
 				continue;
 			if (TextUtil.startsWithIgnoreCase(ap.type, "DDS-Cli"))
 				numDDSClients++;
-//			else if (ap.type.startsWith("Net"))
-//				numNetbackClients++;
-//			else if (ap.type.startsWith("NB-Server"))
-//				netbackAvail = true;
 		}
 	}
 	private void getPrimary(LrgsStatusSnapshotExt status)

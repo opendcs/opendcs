@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.algo;
 
 import decodes.tsdb.DbCompException;
@@ -5,6 +20,8 @@ import ilex.var.NamedVariable;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 @Algorithm(description = "Calculates reservoir input with the equation\n" +
 		"  inflow = Storage + Outflow\n" +
 		"\n" +
@@ -18,9 +35,10 @@ import org.opendcs.annotations.algorithm.Output;
 		"intervals: 15minutes, 1hour, 1day.\n" +
 		" NOTE: there are ac-ft to cfs conversions build into this comp, do NOT use metric input, the comp\n" +
 		"       will provide bogus results.\n")
-public class FlowResIn
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+public class FlowResIn extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	@Input
 	public double ResOut;
 	@Input
@@ -36,9 +54,9 @@ public class FlowResIn
 	@org.opendcs.annotations.PropertySpec(value="1")
 	public long averageSamples = 1;
 
- 
+
 	// Allow javac to generate a no-args constructor.
- 
+
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
@@ -50,7 +68,7 @@ public class FlowResIn
 		inCount=0;
         inTotal=0;
 	}
- 
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -64,7 +82,7 @@ public class FlowResIn
 		inCount=0;
 		inTotal=0;
 	}
- 
+
 	/**
 	 * Do the algorithm for a single time slice.
 	 * AW will fill in user-supplied code here.
@@ -81,7 +99,7 @@ public class FlowResIn
 		double in = 0;
 		double conversion = 1.0;
 		String interval = this.getInterval("ResOut").toLowerCase();
-		debug3("Finding conversion for internval: " + interval);
+		log.trace("Finding conversion for internval: {}", interval);
 		if (interval.equals("15minutes"))
 		{
 			// y ac-ft = x cfs * 900 sec * 2.29568411*10^-5 ac-ft/ft^3
@@ -97,14 +115,14 @@ public class FlowResIn
 		{
 			conversion = 0.50417;
 		}
-		debug3("Conversion factor = " + conversion);
-		debug3("Dstor = " + Dstor + ", Outflow = " + ResOut);
-		debug3(" Dstor  in cfs = " + (Dstor * conversion));
+		log.trace("Conversion factor = {}", conversion);
+		log.trace("Dstor = {}, OutFlow = {}", Dstor, ResOut);
+		log.trace("Dstor  in cfs = ", (Dstor * conversion));
 		// The 15 minute and hourly calculation do not use evap
 		in = Dstor * conversion + ResOut;
 		if (in < 0)
 		{
-			warning("Inflow set to 0 because the calculation came out to less than 0");
+			log.warn("Inflow set to 0 because the calculation came out to less than 0");
 			in = 0;
 		}
 		else
@@ -112,7 +130,7 @@ public class FlowResIn
 			inCount++;
 			inTotal += in;
 		}
-		debug3("In = " + in + "Total = " + inTotal + "Count = " + inCount + "ave " + averageSamples);
+		log.trace("In = {} Total = {} Count = {} ave {}", in, inTotal, inCount, averageSamples);
 		if (inCount > 0)
 			in = inTotal / inCount;
 		setOutput(ResIn, in);
@@ -122,7 +140,7 @@ public class FlowResIn
 			inTotal = 0;
 		}
 	}
- 
+
 	/**
 	 * This method is called once after iterating all time slices.
 	 */

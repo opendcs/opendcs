@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.algo;
 
 import decodes.tsdb.DbCompException;
@@ -6,6 +21,8 @@ import ilex.var.NamedVariable;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.Date;
 
@@ -13,9 +30,9 @@ import java.util.Date;
 		"Estimated Inflow = delta(Storage) + AverageOutflow over period.\n" +
 		"Inputs are: Storage (in cubic meters), and outflow (in cubic meters per second)\n" +
 		"Output is estimated inflow (in cubic meters per second)")
-public class EstimatedInflow
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+public class EstimatedInflow extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double storage;
 	@Input
@@ -50,7 +67,7 @@ public class EstimatedInflow
 		_awAlgoType = AWAlgoType.AGGREGATING;
 		_aggPeriodVarRoleName = "inflow";
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -101,25 +118,21 @@ public class EstimatedInflow
 		if (numSlices >= 2)
 		{
 			// Determine # of seconds in the aggregate period
-			long seconds = (last.getTime() - first.getTime())
-				/ 1000L;
-debug3("Period Start=" + first
-+ ", Period End=" + last
-+ ", elapsed seconds = " + seconds);
-debug3("First Sample at " + first + ", storage=" + store_t0 + ", outflow=" + out_t0);
-debug3(" Last Sample at " + last  + ", storage=" + store_t1 + ", outflow=" + out_t1);
+			long seconds = (last.getTime() - first.getTime()) / 1000L;
+			log.trace("Period Start={}, Period End={}, elapsed seconds = {}", first, last, seconds);
+			log.trace("First Sample at {}, storage={}, outflow={}", first, store_t0, out_t0);
+			log.trace(" Last Sample at {}, storage={}, outflow={}", last, store_t1, out_t1);
 			// Get delta-storage (cubic meters):
 			double dStore = (store_t1 - store_t0);
 			// Convert output discharge Q to volume over period
 			// (cubic meters / sec ===> cubic meters)
 			// Then take the average from the start to end of period.
 			double ave_out = .5 * (out_t0*seconds + out_t1*seconds);
-debug3("change in storage is " + dStore
-+ ", average outflow over period is " + ave_out);
+			log.trace("change in storage is {}, average outflow over period is {}", dStore, ave_out);
 			// Add in the storage, and convert to meters per second.
 			double volume = dStore + ave_out;
 			double discharge = volume / seconds;
-			
+
 			// Output the estimated inflow in cubic meters.
 			setOutput(inflow, discharge);
 		}

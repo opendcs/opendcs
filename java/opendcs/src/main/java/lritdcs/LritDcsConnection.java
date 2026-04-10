@@ -1,18 +1,33 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lritdcs;
-
-import ilex.util.Logger;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Observable;
 import java.util.Observer;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ch.ethz.ssh2.Connection;
 
 public class LritDcsConnection implements Observer
-
 {
-
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static LritDcsConnection _instance = null;
 
 	private Connection connDom2A = null;
@@ -32,13 +47,13 @@ public class LritDcsConnection implements Observer
 	public long lastDom2AConnAttempt = 0L;
 	public long lastDom2BConnAttempt = 0L;
 	public long lastDom2CConnAttempt = 0L;
-	
+
 
 	/**
 	 * Singleton class LritDcsConnection is used to maintain connections and
 	 * sessions with Domain 2(A,B,C) servers.
 	 */
-	private LritDcsConnection() 
+	private LritDcsConnection()
 	{
 		cfg = LritDcsConfig.instance();
 
@@ -67,7 +82,7 @@ public class LritDcsConnection implements Observer
 	/**
 	 * This method makes connection with Domain 2A
 	 */
-	public void connectSessionDom2A() 
+	public void connectSessionDom2A()
 	{
 		dom2AHostName = cfg.getDom2AHostName();
 		dom2AUserName = cfg.getDom2AUser();
@@ -78,38 +93,37 @@ public class LritDcsConnection implements Observer
 			setConnDom2A(null);
 			return;
 		}
-		
+
 		File keyfile = new File(LritDcsMain.instance().getRsaKeyFile());
 		if (!keyfile.canRead())
 		{
-			Logger.instance().failure("RSA Key File '" + keyfile.getPath()
-				+ "' not readable. Edit lritdcs.conf and check permissions.");
+			log.error("RSA Key File '{}' not readable. Edit lritdcs.conf and check permissions.",
+					  keyfile.getPath());
 			connAStatus = "Cannot read RSA Key File";
 			return;
 		}
 
 		String keyfilePass = "";
-		try 
+		try
 		{
 			/* Create a connection instance */
 			connDom2A = new Connection(dom2AHostName);
 			connDom2A.connect();
 		}
-		catch (Exception e)
+		catch (Exception ex)
 		{
 			setConnDom2A(null);
-			connAStatus = dom2AHostName + " Connection Failed " + e.getMessage()+". "+e.getCause();
-			Logger.instance().failure("Domain2A " + connAStatus);
-			
+			connAStatus = dom2AHostName + " Connection Failed " + ex.getMessage()+". "+ex.getCause();
+			log.atError().setCause(ex).log("Domain2A {}", connAStatus);
+
 			return;
 		}
-		
+
 		try
 		{
 			/* Authenticate */
-			Logger.instance().info("Authenticating with Domain 2A host="
-				+ dom2AHostName + ", user=" + dom2AUserName
-				+ ", keyfile='" + keyfile.getPath()+ "'");
+			log.info("Authenticating with Domain 2A host={}, user={}, keyfile='{}'",
+					 dom2AHostName, dom2AUserName, keyfile.getPath());
 			boolean isAuthenticated = connDom2A.authenticateWithPublicKey(
 					dom2AUserName, keyfile, keyfilePass);
 
@@ -118,11 +132,11 @@ public class LritDcsConnection implements Observer
 			}
 			setConnDom2A(connDom2A);
 		}
-		catch (IOException e)
+		catch (IOException ex)
 		{
 			setConnDom2A(null);
-			connAStatus = dom2AHostName + " Authentication Failed " + e.getMessage()+". "+e.getCause();
-			Logger.instance().failure("Domain2A " + connAStatus);
+			connAStatus = dom2AHostName + " Authentication Failed " + ex.getMessage()+". "+ex.getCause();
+			log.atError().setCause(ex).log("Domain2A {}", connAStatus);
 		}
 
 	}
@@ -144,32 +158,31 @@ public class LritDcsConnection implements Observer
 		File keyfile = new File(LritDcsMain.instance().getRsaKeyFile());
 		if (!keyfile.canRead())
 		{
-			Logger.instance().failure("RSA Key File '" + keyfile.getPath()
-				+ "' not readable. Edit lritdcs.conf and check permissions.");
+			log.error("RSA Key File '{}' not readable. Edit lritdcs.conf and check permissions.",
+					  keyfile.getPath());
 			connBStatus = "Cannot read RSA Key File";
 			return;
 		}
 
 		String keyfilePass = "";
-		try 
+		try
 		{
 			/* Create a connection instance */
 			connDom2B = new Connection(dom2BHostName);
 			connDom2B.connect();
 		}
-		catch (Exception e)
+		catch (Exception ex)
 		{
 			setConnDom2B(null);
-			connBStatus = dom2BHostName + " Connection Failed " + e.getMessage()+". "+e.getCause();
-			Logger.instance().failure("Domain2B " + connBStatus);
+			connBStatus = dom2BHostName + " Connection Failed " + ex.getMessage()+". "+ex.getCause();
+			log.atError().setCause(ex).log("Domain2B {}", connBStatus);
 			return;
 		}
 		try {
 
 			/* Authenticate */
-			Logger.instance().info("Authenticating with Domain 2B host="
-				+ dom2BHostName + ", user=" + dom2BUserName
-				+ ", keyfile='" + keyfile.getPath()+ "'");
+			log.info("Authenticating with Domain 2B host={}, user={}, keyfile='",
+					 dom2BHostName, dom2BUserName, keyfile.getPath()+ "'");
 			boolean isAuthenticated = connDom2B.authenticateWithPublicKey(
 					dom2BUserName, keyfile, keyfilePass);
 
@@ -181,11 +194,11 @@ public class LritDcsConnection implements Observer
 			setConnDom2B(connDom2B);
 
 		}
-		catch (IOException e)
+		catch (IOException ex)
 		{
 			setConnDom2B(null);
-			connBStatus = dom2BHostName + " Authentication Failed " + e.getMessage()+". "+e.getCause();
-			Logger.instance().failure("Domain2B " + connBStatus);
+			connBStatus = dom2BHostName + " Authentication Failed " + ex.getMessage()+". "+ex.getCause();
+			log.atError().setCause(ex).log("Domain2B {}", connBStatus);
 		}
 
 	}
@@ -193,7 +206,7 @@ public class LritDcsConnection implements Observer
 	/**
 	 * This method makes connection with Domain 2C
 	 */
-	public void connectSessionDom2C() 
+	public void connectSessionDom2C()
 	{
 		dom2CHostName = cfg.getDom2CHostName();
 		dom2CUserName = cfg.getDom2CUser();
@@ -203,35 +216,33 @@ public class LritDcsConnection implements Observer
 			setConnDom2C(null);
 			return;
 		}
-		
+
 		File keyfile = new File(LritDcsMain.instance().getRsaKeyFile());
 		if (!keyfile.canRead())
 		{
-			Logger.instance().failure("RSA Key File '" + keyfile.getPath()
-				+ "' not readable. Edit lritdcs.conf and check permissions.");
+			log.error("RSA Key File '{}' not readable. Edit lritdcs.conf and check permissions.", keyfile.getPath());
 			connCStatus = "Cannot read RSA Key File";
 			return;
 		}
 
 		String keyfilePass = "";
-		try 
+		try
 		{
 			/* Create a connection instance */
 			connDom2C = new Connection(dom2CHostName);
 			connDom2C.connect();
 		}
-		catch (Exception e)
+		catch (Exception ex)
 		{
 			setConnDom2C(null);
-			connCStatus = dom2CHostName + " Connection Failed " + e.getMessage()+". "+e.getCause();
-			Logger.instance().failure("Domain2C " + connCStatus);
+			connCStatus = dom2CHostName + " Connection Failed " + ex.getMessage()+". "+ex.getCause();
+			log.atError().setCause(ex).log("Domain2C {}", connCStatus);
 			return;
 		}
 		try {
 			/* Authenticate */
-			Logger.instance().info("Authenticating with Domain 2C host="
-				+ dom2CHostName + ", user=" + dom2CUserName
-				+ ", keyfile='" + keyfile.getPath()+ "'");
+			log.info("Authenticating with Domain 2C host={}, user={}, keyfile='{}",
+					 dom2CHostName, dom2CUserName, keyfile.getPath());
 
 			boolean isAuthenticated = connDom2C.authenticateWithPublicKey(
 					dom2CUserName, keyfile, keyfilePass);
@@ -242,17 +253,17 @@ public class LritDcsConnection implements Observer
 			}
 			setConnDom2C(connDom2C);
 
-		} catch (Exception e) {			
+		} catch (Exception ex) {
 			setConnDom2C(null);
-			connCStatus = dom2CHostName + " Authentication Failed " + e.getMessage()+". "+e.getCause();
-			Logger.instance().failure("Domain2C " + connCStatus);
+			connCStatus = dom2CHostName + " Authentication Failed " + ex.getMessage()+". "+ex.getCause();
+			log.atError().setCause(ex).log("Domain2C {}", connCStatus);
 		}
 
 	}
 
 	/**
 	 * Returns Connection with Domain 2A
-	 * 
+	 *
 	 * @return the connDom2A
 	 */
 	public Connection getConnDom2A() {
@@ -261,7 +272,7 @@ public class LritDcsConnection implements Observer
 
 	/**
 	 * Sets value for Connection with Domain 2A
-	 * 
+	 *
 	 * @param connDom2A
 	 *            the connDom2A to set
 	 */
@@ -271,7 +282,7 @@ public class LritDcsConnection implements Observer
 
 	/**
 	 * Returns Connection with Domain 2B
-	 * 
+	 *
 	 * @return the connDom2B
 	 */
 	public Connection getConnDom2B() {
@@ -280,7 +291,7 @@ public class LritDcsConnection implements Observer
 
 	/**
 	 * Sets value for Connection with Domain 2B
-	 * 
+	 *
 	 * @param connDom2B
 	 *            the connDom2B to set
 	 */
@@ -290,7 +301,7 @@ public class LritDcsConnection implements Observer
 
 	/**
 	 * Returns Connection with Domain 2C
-	 * 
+	 *
 	 * @return the connDom2C
 	 */
 	public Connection getConnDom2C() {
@@ -299,7 +310,7 @@ public class LritDcsConnection implements Observer
 
 	/**
 	 * Sets value for Connection with Domain 2C
-	 * 
+	 *
 	 * @param connDom2C
 	 *            the connDom2C to set
 	 */
@@ -317,7 +328,7 @@ public class LritDcsConnection implements Observer
 
 	}
 
-	protected synchronized void getConfigValues(LritDcsConfig cfg) 
+	protected synchronized void getConfigValues(LritDcsConfig cfg)
 	{
 
 		String strDomAName = cfg.getDom2AHostName();
@@ -330,7 +341,7 @@ public class LritDcsConnection implements Observer
 		String strDomCUserName = cfg.getDom2CUser();
 
 		if (!dom2AHostName.equals(strDomAName)
-				|| !dom2AUserName.equals(strDomAUserName)) 
+				|| !dom2AUserName.equals(strDomAUserName))
 		{
 			dom2AHostName = cfg.getDom2AHostName();
 			dom2AUserName = cfg.getDom2AUser();
@@ -378,7 +389,7 @@ public class LritDcsConnection implements Observer
 	/**
 	 * Opens connections with Domain 2 (A,B,C) servers.
 	 */
-	public void openConnections() 
+	public void openConnections()
 	{
 		if (connDom2A != null)
 			connDom2A.close();

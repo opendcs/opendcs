@@ -1,12 +1,11 @@
 /*
- * $Id$
- * 
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
  * No warranty is provided or implied other than specific contractual terms 
  * between COVE and Alberta ESRD.
  *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +28,6 @@ import java.util.Properties;
 
 import lrgs.common.DcpMsg;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import decodes.datasource.RawMessage;
 import decodes.db.Database;
 import decodes.db.DbEnum;
@@ -39,12 +37,15 @@ import decodes.db.PlatformStatus;
 import decodes.db.TransportMedium;
 import decodes.routing.DacqEventLogger;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.spi.LoggingEventBuilder;
 /**
  * This class manages a single polling session.
  */
-public class PollingThread 
-	implements Runnable
+public class PollingThread implements Runnable
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String module = "PollingThread";
 	
 	/** The controller that owns this thread */
@@ -102,11 +103,11 @@ public class PollingThread
 				try 
 				{
 					pollPriority = Integer.parseInt(pps.trim());
-					info("pollPriority set to " + pollPriority);
+					log.info("pollPriority set to {}", pollPriority);
 				}
 				catch(NumberFormatException ex)
 				{
-					warning("Invalid pollPriority property '" + pps + "' -- ignored.");
+					log.atWarn().setCause(ex).log("Invalid pollPriority property '{}' -- ignored.", pps);
 				}
 			}
 		}
@@ -116,17 +117,14 @@ public class PollingThread
 	@Override
 	public void run()
 	{
-		debug1("PollingThread starting.");
+		log.debug("PollingThread starting.");
 		threadStart = new Date();
 		numTries++;
 		terminatingException = null;
 		makeSessionLogger();
-		String s = module + " " + 
-			transportMedium.getMediumType() + ":" + transportMedium.getMediumId()
-			+ " type=" + transportMedium.getLoggerType()
-			+ " attempt #" + numTries;
-		info(s);
-		annotate(s);
+		log.info("{}:{} type={} attempt #{}",
+				 transportMedium.getMediumType() + ":" + transportMedium.getMediumId(),
+				 transportMedium.getLoggerType(), numTries);
 		PollingThreadState exitState = state;
 		try
 		{
@@ -150,8 +148,7 @@ public class PollingThread
 			if (System.currentTimeMillis() - since.getTime() < parent.getMinBacklogHours() * 3600000L)
 				since = new Date(System.currentTimeMillis() - parent.getMinBacklogHours() * 3600000L);
 			
-			debug1("Since time set to " + since);
-			annotate("Since time set to " + since);
+			log.debug("Since time set to {}", since);
 
 			if (!_shutdown)
 				ioPort.connect(transportMedium, this);
@@ -185,7 +182,7 @@ public class PollingThread
 			
 			if (protocol.getAbnormalShutdown() != null)
 			{
-				warning("Abnormal protocol shutdown: " + protocol.getAbnormalShutdown());
+				log.warn("Abnormal protocol shutdown: {}",protocol.getAbnormalShutdown());
 				exitState = PollingThreadState.Failed;
 			}
 			else
@@ -196,11 +193,10 @@ public class PollingThread
 		}
 		catch (DialException ex)
 		{
-			String msg = "Cannot connect IOPort: " + ex;
-			if (numTries < parent.getPollNumTries())
-				info(msg);
-			else
-				failure(msg);
+			String msg = "Cannot connect IOPort.";
+			LoggingEventBuilder le = numTries < parent.getPollNumTries()
+								   ? log.atInfo() : log.atError();
+			le.setCause(ex).log(msg);
 			exitState = PollingThreadState.Failed;
 			platformStatus.setLastErrorTime(new Date());
 			platformStatus.setAnnotation(msg);
@@ -209,7 +205,7 @@ public class PollingThread
 		catch (ConfigException ex)
 		{
 			String msg = "Configuration error: " + ex;
-			failure(msg);
+			log.atError().setCause(ex).log(msg);
 			exitState = PollingThreadState.Failed;
 			platformStatus.setLastErrorTime(new Date());
 			platformStatus.setAnnotation(msg);
@@ -217,20 +213,20 @@ public class PollingThread
 		}
 		catch (LoginException ex)
 		{
-			String msg = "Error logging into the station: " + ex;
-			failure(msg);
+			String msg = "Error logging into the station.";
+			log.atError().setCause(ex).log(msg);
 			exitState = PollingThreadState.Failed;
 			platformStatus.setLastErrorTime(new Date());
-			platformStatus.setAnnotation(msg);
+			platformStatus.setAnnotation(msg + ": " + ex);
 			terminatingException = ex;
 		}
 		catch (ProtocolException ex)
 		{
-			String msg = "Error communicating with station: " + ex;
-			failure(msg);
+			String msg = "Error communicating with station.";
+			log.atError().setCause(ex).log(msg);
 			exitState = PollingThreadState.Failed;
 			platformStatus.setLastErrorTime(new Date());
-			platformStatus.setAnnotation(msg);
+			platformStatus.setAnnotation(msg + ": " + ex);
 			terminatingException = ex;
 		}
 		finally
@@ -250,8 +246,9 @@ public class PollingThread
 			DcpMsg dcpMsg = protocol.getPartialData();
 			if (dcpMsg != null)
 			{
-				warning("Protocol failed after " + maxTries + " attempts, but there is a partial "
-					+ "message of length " + dcpMsg.getData().length + ".");
+				log.warn("Protocol failed after {} attempts, but there is a partial " +
+						 "message of length {}.",
+						 maxTries, dcpMsg.getData().length);
 				RawMessage ret = new RawMessage(dcpMsg.getData());
 				ret.setOrigDcpMsg(dcpMsg);
 				ret.setPlatform(transportMedium.platform);
@@ -263,7 +260,7 @@ public class PollingThread
 			}
 		}
 		
-		debug2("Writing platform status for " + transportMedium);		
+		log.trace("Writing platform status for {}", transportMedium);
 		dataSource.writePlatformStatus(platformStatus, transportMedium);
 		
 		// Parent will be calling getState(). Make sure the RS doesn't prematurely
@@ -289,12 +286,14 @@ public class PollingThread
 			}
 			catch (IOException ex)
 			{
-				warning("Cannot open session log file: " + fn + ": " + ex);
+				log.atWarn().setCause(ex).log("Cannot open session log file: {}", fn);
 				pollSessionLogger = null;
 			}
 		}
 		else
-			debug1("Not saving session file.");
+		{
+			log.debug("Not saving session file.");
+		}
 	}
 	
 	private void makeProtocol()
@@ -325,12 +324,12 @@ public class PollingThread
 		{
 			throw new ConfigException("LoggerType enumeration specifies exec class '"
 				+ ev.getExecClassName() + "', which cannot be loaded. Check that the appropriate"
-				+ " jar file is accessible, or correct the name with the rledit command: " + ex);
+				+ " jar file is accessible, or correct the name with the rledit command.", ex);
 		}
 		catch(Exception ex)
 		{
 			throw new ConfigException("LoggerType enumeration specifies exec class '"
-				+ ev.getExecClassName() + "', which cannot be instantiated: " + ex);
+				+ ev.getExecClassName() + "', which cannot be instantiated.", ex);
 		}
 	}
 	
@@ -384,7 +383,7 @@ public class PollingThread
 	public void setSaveSessionFile(String saveSessionFile)
 	{
 		this.saveSessionFile = saveSessionFile;
-Logger.instance().debug3("setSaveSessionFile(" + saveSessionFile + ")");
+		log.trace("setSaveSessionFile({})", saveSessionFile);
 	}
 
 	public void setState(PollingThreadState state)
@@ -392,56 +391,6 @@ Logger.instance().debug3("setSaveSessionFile(" + saveSessionFile + ")");
 		this.state = state;
 	}
 	
-	public void info(String msg)
-	{
-		dataSource.log(Logger.E_INFORMATION, module + " " + msg);
-		if (dacqEventLogger != null)
-		{
-			DacqEvent evt = new DacqEvent();
-			evt.setPlatformId(transportMedium.platform.getId());
-			evt.setSubsystem("Polling");
-			evt.setEventPriority(Logger.E_INFORMATION);
-			evt.setEventText(msg);
-			dacqEventLogger.writeDacqEvent(evt);
-		}
-	}
-	public void warning(String msg)
-	{
-		dataSource.log(Logger.E_WARNING, module + " " + msg);
-		if (dacqEventLogger != null)
-		{
-			DacqEvent evt = new DacqEvent();
-			evt.setPlatformId(transportMedium.platform.getId());
-			evt.setSubsystem("Polling");
-			evt.setEventPriority(Logger.E_WARNING);
-			evt.setEventText(msg);
-			dacqEventLogger.writeDacqEvent(evt);
-		}
-	}
-	public void failure(String msg)
-	{
-		dataSource.log(Logger.E_FAILURE, module + " " + msg);
-		if (dacqEventLogger != null)
-		{
-			DacqEvent evt = new DacqEvent();
-			evt.setPlatformId(transportMedium.platform.getId());
-			evt.setSubsystem("Polling");
-			evt.setEventPriority(Logger.E_FAILURE);
-			evt.setEventText(module + " " + msg);
-			dacqEventLogger.writeDacqEvent(evt);
-		}
-	}
-	public void debug1(String msg) { dataSource.log(Logger.E_DEBUG1, module + " " + msg); }
-	public void debug2(String msg) { dataSource.log(Logger.E_DEBUG2, module + " " + msg); }
-	public void debug3(String msg) { dataSource.log(Logger.E_DEBUG3, module + " " + msg); }
-	
-	public void annotate(String msg)
-	{
-		if (pollSessionLogger != null)
-			pollSessionLogger.annotate(msg);
-		else debug3("annotate(" + msg + ") pollSessionLogger is null.");
-	}
-
 	public String getModule()
 	{
 		return module;

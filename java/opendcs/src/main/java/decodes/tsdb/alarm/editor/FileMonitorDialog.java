@@ -1,27 +1,22 @@
-/**
- * $Id$
- * 
- * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log$
- * Revision 1.4  2018/03/23 20:12:20  mmaloney
- * Added 'Enabled' flag for process and file monitors.
- *
- * Revision 1.3  2017/10/04 17:25:26  mmaloney
- * Fix AEP Bugs
- *
- * Revision 1.2  2017/05/18 12:29:00  mmaloney
- * Code cleanup. Remove System.out debugs.
- *
- * Revision 1.1  2017/05/17 20:36:56  mmaloney
- * First working version.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.alarm.editor;
 
 import ilex.util.TextUtil;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
@@ -34,6 +29,9 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.Calendar;
 import java.util.ResourceBundle;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -50,13 +48,12 @@ import decodes.tsdb.alarm.FileMonitor;
 @SuppressWarnings("serial")
 public class FileMonitorDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JTextField pathField = new JTextField(25);
 	@SuppressWarnings("rawtypes")
-	private JComboBox priorityCombo = null;
+	private JComboBox<String> priorityCombo = null;
 	AlarmEditPanel parentPanel = null;
-	private String priorities[] = { Logger.priorityName[Logger.E_INFORMATION],
-		Logger.priorityName[Logger.E_WARNING], Logger.priorityName[Logger.E_FAILURE],
-		Logger.priorityName[Logger.E_FATAL] };
+	private String priorities[] = { "The logger is getting replaced." };
 	private JTextField maxFilesField = new JTextField();
 	private JTextField maxFilesHintField = new JTextField();
 	private JTextField maxSizeField = new JTextField();
@@ -64,7 +61,7 @@ public class FileMonitorDialog extends GuiDialog
 	private JTextField maxAgeField = new JTextField();
 	private JTextField maxAgeHintField = new JTextField();
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private JComboBox maxAgeUnitsCombo = new JComboBox(
+	private JComboBox<String> maxAgeUnitsCombo = new JComboBox<>(
 		new String[] { "Seconds", "Minutes", "Hours", "Days" });
 	private JCheckBox alarmOnDeleteCheck = new JCheckBox();
 	private JTextField alarmOnDeleteHintField = new JTextField();
@@ -279,8 +276,11 @@ public class FileMonitorDialog extends GuiDialog
 			try { maxFiles = Integer.parseInt(s); }
 			catch(NumberFormatException ex)
 			{
-				parentPanel.parentFrame.showError(
-					parentPanel.parentFrame.eventmonLabels.getString("nonNumericMaxFiles"));
+				String msg = parentPanel.parentFrame.eventmonLabels.getString("nonNumericMaxFiles");
+				log.atError()
+				   .setCause(ex)
+				   .log(msg);
+				parentPanel.parentFrame.showError(msg);
 				return;
 			}
 		}
@@ -292,8 +292,12 @@ public class FileMonitorDialog extends GuiDialog
 			try { maxSize = Long.parseLong(s); }
 			catch(NumberFormatException ex)
 			{
-				parentPanel.parentFrame.showError(
-					parentPanel.parentFrame.eventmonLabels.getString("nonNumericMaxSize"));
+				String msg = parentPanel.parentFrame.eventmonLabels.getString("nonNumericMaxSize");
+				log.atError()
+				   .setCause(ex)
+				   .log(msg);
+
+				parentPanel.parentFrame.showError(msg);
 				return;
 			}
 		}
@@ -312,8 +316,11 @@ public class FileMonitorDialog extends GuiDialog
 			}
 			catch(NumberFormatException ex)
 			{
-				parentPanel.parentFrame.showError(
-					parentPanel.parentFrame.eventmonLabels.getString("nonNumericMaxAge"));
+				String msg = parentPanel.parentFrame.eventmonLabels.getString("nonNumericMaxAge");
+				log.atError()
+				   .setCause(ex)
+				   .log(msg);
+				parentPanel.parentFrame.showError(msg);
 				return;
 			}
 		}
@@ -325,9 +332,10 @@ public class FileMonitorDialog extends GuiDialog
 			theFM.setPath(s);
 			changed = true;
 		}
-		if (theFM.getPriority() != priorityCombo.getSelectedIndex() + Logger.E_INFORMATION)
+		if (theFM.getPriority() != priorityCombo.getSelectedIndex())
 		{
-			theFM.setPriority(priorityCombo.getSelectedIndex() + Logger.E_INFORMATION);
+			// TODO: determine appropriate replacement.
+			theFM.setPriority(-1);
 			changed = true;
 		}
 		if (maxFiles != theFM.getMaxFiles())
@@ -421,7 +429,8 @@ public class FileMonitorDialog extends GuiDialog
 	{
 		theFM = fm;
 		pathField.setText(null2blank(fm.getPath()));
-		priorityCombo.setSelectedIndex(fm.getPriority() - Logger.E_INFORMATION);
+		// TODO: determine appropriate replacements, currently forcing single informative entry.
+		priorityCombo.setSelectedIndex(0);
 		maxFilesField.setText(fm.getMaxFiles() == 0 ? "" : ("" + fm.getMaxFiles()));
 		maxFilesHintField.setText(null2blank(fm.getMaxFilesHint()));
 		maxSizeField.setText(fm.getMaxSize() == 0L ? "" : ("" + fm.getMaxSize()));

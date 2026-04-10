@@ -1,66 +1,59 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.algo;
 
 import java.util.Date;
 
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
-// this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
-// this new import was added by M. Bogner Martch 2013 for the 5.3 CP upgrade project
-// where the surrogate keys (like SDI) were changed form a long to a DbKey class
-import decodes.sql.DbKey;
 
-
-
-//AW:IMPORTS
-// Place an import statements you need here.
 import java.util.TimeZone;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-
-import decodes.hdb.HdbFlags;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.text.DecimalFormat;
 
-import ilex.util.DatePair;
 import decodes.tsdb.ParmRef;
 import decodes.hdb.dbutils.DBAccess;
 import decodes.hdb.dbutils.DataObject;
 import decodes.hdb.dbutils.RBASEUtils;
-import decodes.tsdb.DbCompException;
 import decodes.util.DecodesSettings;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-/**
-This algorithm does a time weighted average over the interval period
-
-Parameters:
-
-partial_calculations: boolean: default false: if current period partial calculations will be performed
-min_values_required: number: default 1: the minimum number of observations required to perform computation
-min_values_desired: number: default 0: the minimum number of observations desired to perform computation
-validation_flag: string: default empty: the validation flag value to be sent to the database
-
- */
-//AW:JAVADOC_END
-public class TimeWeightedAverageAlg
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+@Algorithm(description = "This algorithm does a time weighted average over the interval period\n\n" +
+"Parameters:\n\n" +
+"partial_calculations: boolean: default false: if current period partial calculations will be performed\n" +
+"min_values_required: number: default 1: the minimum number of observations required to perform computation\n" +
+"min_values_desired: number: default 0: the minimum number of observations desired to perform computation\n" +
+"validation_flag: string: default empty: the validation flag value to be sent to the database")
+public class TimeWeightedAverageAlg	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double input;	//AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	@Input
+	public double input;
 
-//AW:LOCALVARS
 	// Enter any local class variables needed by the algorithm.
 // version 1.0.05 modification to fix date math for previous and next data window
 // version 1.0.06 modification to fix CP 3.0 Upgrade issues, by M. Bogner Aug 2012
@@ -81,48 +74,38 @@ public class TimeWeightedAverageAlg
         long mvr_count;
         long mvd_count;
 
-
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "false") 
 	public boolean partial_calculations = false;
+	@PropertySpec(value = "1") 
 	public long min_values_required = 1;
+	@PropertySpec(value = "0") 
 	public long min_values_desired = 0;
+	@PropertySpec(value = "") 
         public String validation_flag = "";
-	String _propertyNames[] = { "partial_calculations", "min_values_required", "min_values_desired",
-	"validation_flag" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.AGGREGATING;
 		_aggPeriodVarRoleName = "output";
-//AW:INIT_END
-
-//AW:USERINIT
-		// Code here will be run once, after the algorithm object is created.
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		// This code will be executed once before each group of time slices.
 		// For TimeSlice algorithms this is done once before all slices.
 		// For Aggregating algorithms, this is done before each aggregate
@@ -134,7 +117,6 @@ public class TimeWeightedAverageAlg
 		tally = 0.0;
 		have_beginning_record = false;
 		index = 0;
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -147,31 +129,28 @@ public class TimeWeightedAverageAlg
 	 * @throw DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		// Enter code to be executed at each time-slice.
-                if ((total_count == 0) && (!isMissing(input)))
-                {
+        if ((total_count == 0) && (!isMissing(input)))
+        {
 		  if (_timeSliceBaseTime.equals(_aggregatePeriodBegin))
  		  {
-                    debug3("FOUND First begin date"+ _timeSliceBaseTime);
+            log.trace("FOUND First begin date {}", _timeSliceBaseTime);
 		    have_beginning_record = true;
 		    index = -1;
-                  }
+          }
  		}
-                if (!isMissing(input))
-		{
-                  index++;
-                  total_count++;
-                  value_out[index] = input;
-                  date_out [index] = _timeSliceBaseTime;
-		  debug3( "Index:  " + index + "  Value:  " + input + "  DATE: " + _timeSliceBaseTime);
-		}
- 
-
-//AW:TIMESLICE_END
+          if (!isMissing(input))
+		  {
+            index++;
+            total_count++;
+            value_out[index] = input;
+            date_out [index] = _timeSliceBaseTime;
+		  	log.trace( "Index:  {}  Value:  {}  DATE: {}", index, input, _timeSliceBaseTime);
+		  }
 	}
 
 	/**
@@ -180,7 +159,6 @@ public class TimeWeightedAverageAlg
 	@Override
 	protected void afterTimeSlices() throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
 		// For Aggregating algorithms, this is done after each aggregate
@@ -196,7 +174,7 @@ public class TimeWeightedAverageAlg
 		ParmRef parmRef = getParmRef("input");
 		if (parmRef == null) 
 		{
-		   warning("Unknown aggregate control output variable 'INPUT'");
+		   log.warn("Unknown aggregate control output variable 'INPUT'");
 		   return;
 		}
 		String input_interval = parmRef.compParm.getInterval();
@@ -205,7 +183,7 @@ public class TimeWeightedAverageAlg
 		parmRef = getParmRef("output");
 		if (parmRef == null) 
 		{
-		   warning("Unknown aggregate control output variable 'OUTPUT'");
+		   log.warn("Unknown aggregate control output variable 'OUTPUT'");
 		   return;
 		}
 		String output_interval = parmRef.compParm.getInterval();
@@ -225,16 +203,22 @@ public class TimeWeightedAverageAlg
 		   if (mvr_count < 0 || mvd_count < 0)
 		   {
 
-		     warning("TWAINTERPALG-"+alg_ver+" Warning: Illegal negative setting of minimum values criteria for non-Month aggregates");
-		     warning("TWAINTERPALG-"+alg_ver+" Warning: Minimum values criteria for non-Month aggregates set to 1");
+		     log.warn("TWAINTERPALG-{} Warning: Illegal negative setting of minimum values criteria " +
+			 		  "for non-Month aggregates",
+					  alg_ver);
+		     log.warn("TWAINTERPALG-{} Warning: Minimum values criteria for non-Month aggregates set to 1",
+			 		  alg_ver);
 		     if (mvd_count < 0) mvd_count = 1;
 		     if (mvr_count < 0) mvr_count = 1;
 		   }
 		   if ((input_interval.equalsIgnoreCase("instant") || output_interval.equalsIgnoreCase("hour")) && mvr_count == 0) 
 		   {
 
-		     warning("TWAINTERPALG-"+alg_ver+" Warning: Illegal zero setting of minimum values criteria for instant/hour aggregates");
-		     warning("TWAINTERPALG-"+alg_ver+" Warning: Minimum values criteria for instant/hour aggregates set to 1");
+		    	log.warn("TWAINTERPALG-{} Warning: Illegal zero setting of minimum values criteria " +
+			 		  "for instant/hour aggregates",
+					  alg_ver);
+		     	log.warn("TWAINTERPALG-{} Warning: Minimum values criteria for instant/hour aggregates set to 1",
+			 		  alg_ver);
 		     mvr_count = 1;
 		   }
 		}
@@ -270,9 +254,10 @@ public class TimeWeightedAverageAlg
 		   }
 		   else if (mvr_count == 0)
 		   {
-		     warning("TWAINTERPALG-"+alg_ver+" Warning: Illegal zero setting of minimum values criteria for " 
-		     + input_interval + " to daily aggregates");
-		     warning("TWAINTERPALG-"+alg_ver+" Warning: Minimum values criteria for daily aggregates set to 1");
+		     log.warn("TWAINTERPALG-{} Warning: Illegal zero setting of minimum values criteria for " +
+		     		  "{} to daily aggregates",
+					  alg_ver, input_interval);
+		     log.warn("TWAINTERPALG-{} Warning: Minimum values criteria for daily aggregates set to 1", alg_ver);
 		     if (mvd_count == 0) mvd_count = 1;
 		     if (mvr_count == 0) mvr_count = 1;
 		   }
@@ -314,29 +299,35 @@ public class TimeWeightedAverageAlg
 			// see if there was an error
 			if (status.startsWith("ERROR"))
 			{
-			warning(status);
+			log.warn(status);
 			return;
 			}
-					debug3(" ICPQ SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
-			//
-			debug3("TWAINTERP- " + alg_ver + " : " +  getSDI("input") + " " + _aggregatePeriodBegin  + "  MVR: " + mvr_count + " RecordCount: " + total_count);
+			log.trace(" ICPQ SQL STRING:{}   DBOBJ: {} STATUS:  {}", query, dbobj.toString(), status);
+		//
+			log.trace("TWAINTERP- {} : {} {}  MVR: {} RecordCount: {}",
+				  alg_ver, getSDI("input"), _aggregatePeriodBegin, mvr_count, total_count);
 			//
 			// now see how many records were found for this aggregate
 			//  and see if this calc is in current period and if partial calc is set
 			if (total_count == 0) 
 			{
-			debug2("TWAINTERP- " + alg_ver + " : Cannot do Computation due to 0 records: " + getSDI("input") + " " + _aggregatePeriodBegin );
+			log.trace("TWAINTERP- {} : Cannot do Computation due to 0 records: {} {}",
+		   			 alg_ver, getSDI("input"), _aggregatePeriodBegin );
 			do_setoutput = false;
 			}
 			is_current_period = ((String)dbobj.get("is_current_period")).equalsIgnoreCase("Y");
 			if (!is_current_period && total_count < mvr_count)
 			{
-			debug2("TWAINTERP- " + alg_ver + " : Minimum required records not met for historic period: " + getSDI("input") + " " + _aggregatePeriodBegin  + "  MVR: " + mvr_count + " RecordCount: " + total_count);
+			log.trace("TWAINTERP- {} : Minimum required records not met for historic period: {} {} " +
+		   			 "MVR: {} RecordCount: {}",
+		   		 	 alg_ver, getSDI("input"), _aggregatePeriodBegin, mvr_count, total_count);
 			do_setoutput = false;
 			}
 			if (is_current_period && !partial_calculations && total_count < mvr_count)
 			{
-			debug2("TWAINTERP- " + alg_ver + " : Minimum required records not met for current period: " + getSDI("input") + " " + _aggregatePeriodBegin  + "  MVR: " + mvr_count + " RecordCount: " + total_count);
+			log.trace("TWAINTERP- {} : Minimum required records not met for current period: {} {} " +
+		   			 "MVR: {} RecordCount: {}",
+		   			 alg_ver, getSDI("input"), _aggregatePeriodBegin, mvr_count, total_count);
 			do_setoutput = false;
 			}
 			//
@@ -354,18 +345,15 @@ public class TimeWeightedAverageAlg
 					double interpolated_value;
 	//
 			//  if we don't have a begininning period record go get the record before and interpoplate
-					if (!have_beginning_record)
+ 			if (!have_beginning_record)
 			{
 					// now go get the last record of the previous interval
-	//                   Date previousWindowSDT = new Date( _aggregatePeriodBegin.getTime() - MS_PER_HOUR);
-			cal2.setTime(_aggregatePeriodBegin);
-					//debug3("previous window calendar before rollback: " + cal2.toString());
-			cal2.add(calIntervalRoll,-1);
+					cal2.setTime(_aggregatePeriodBegin);
+					cal2.add(calIntervalRoll,-1);
 
-					//debug3("previous window calendar: " + cal2.toString());
 					Date previousWindowSDT = cal2.getTime();
 					Date previousWindowEDT = previousWindowSDT;
-					debug3("Interval: " + output_interval + " PWSDT: " + previousWindowSDT);
+					log.trace("Interval: {} PWSDT: {}", output_interval, previousWindowSDT);
 					rbu.getStandardDates(sdi,output_interval,previousWindowSDT,previousWindowEDT,dt_fmt);
 					// do the first record in next interval query to get the start_date_time and value
 					query = "select to_char(start_date_time,'dd-mon-yyyy HH24:MI') pwsdt, value pwdv from " +
@@ -377,11 +365,11 @@ public class TimeWeightedAverageAlg
 							" and start_date_time < " +  "to_date('" + (String) dbobj.get("SD_EDT")  +
 							"','dd-mon-yyyy HH24:MI')) where rn = 1";
 					status = db.performQuery(query,dbobj);
-					debug3(" BBOP SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
+					log.trace(" BBOP SQL STRING:{}   DBOBJ: {} STATUS:  {}", query, dbobj.toString(), status);
 					//
 					if (status.startsWith("ERROR"))
 					{
-						warning(status);
+						log.warn(status);
 						return;
 					}
 
@@ -397,7 +385,7 @@ public class TimeWeightedAverageAlg
 					val_diff = value_out[1] - new_window_value;
 					percent_diff =  (float) milly_diff_end / (float) milly_diff_total;
 					interpolated_value = value_out[1] + (val_diff * percent_diff);
-					debug3(" NWSDT: " + new_window_sdt + " NWVal: " + new_window_value  + " Val_diff: " + val_diff);
+					log.trace(" NWSDT: {} NWVal: {} Val_diff: {}", new_window_sdt, new_window_value, val_diff);
 					//
 
 	
@@ -408,7 +396,8 @@ public class TimeWeightedAverageAlg
 
 			else 
 			{
-				debug2("TWAINTERP- " + alg_ver + " : Cannot do Computation due to lack of EOP record: " + getSDI("input") + " " + _aggregatePeriodEnd );
+				log.trace("TWAINTERP- {} : Cannot do Computation due to lack of EOP record: {} {}",
+							  alg_ver, getSDI("input"), _aggregatePeriodEnd );
 				do_setoutput = false;
 			}
 
@@ -421,13 +410,12 @@ public class TimeWeightedAverageAlg
 					if (do_setoutput)  // value in the interval passed the test so continue with next step
 					{ // block for getting BOP next period
 					// now go get the first record of the next interval
-	//                   Date nextWindowSDT = new Date( _aggregatePeriodEnd.getTime() + MS_PER_HOUR);
 			cal2.setTime(_aggregatePeriodBegin);
 			cal2.add(calIntervalRoll,1);
 
 					Date nextWindowSDT = cal2.getTime();
 					Date nextWindowEDT = nextWindowSDT;
-					debug3("Interval: " + output_interval + " NWSDT: " + nextWindowSDT);
+					log.trace("Interval: {} NWSDT: {}", output_interval, nextWindowSDT);
 					rbu.getStandardDates(sdi,output_interval,nextWindowSDT,nextWindowEDT,dt_fmt);
 					// do the first record in next interval query to get the start_date_time and value
 					query = "select to_char(start_date_time,'dd-mon-yyyy HH24:MI') nwsdt, value nwdv from " +
@@ -439,12 +427,12 @@ public class TimeWeightedAverageAlg
 							" and start_date_time < " +  "to_date('" + (String) dbobj.get("SD_EDT")  +
 							"','dd-mon-yyyy HH24:MI')) where rn = 1";
 					status = db.performQuery(query,dbobj);
-					debug3(" NBOP SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
+					log.trace(" NBOP SQL STRING:{}   DBOBJ: {} STATUS:  {}", query, dbobj.toString(), status);
 			//
 					// now see if this next interval query worked if not then we can't continue!!!
 					if (status.startsWith("ERROR")) 
 			{
-				warning(status);
+				log.warn(status);
 				return;
 			}
 					// now see if this next interval query returned a record if not then we can't continue!!!
@@ -460,9 +448,10 @@ public class TimeWeightedAverageAlg
 					val_diff = new_window_value - value_out[index];
 					percent_diff =  (float) milly_diff_end / (float) milly_diff_total;
 					interpolated_value = value_out[index] + (val_diff * percent_diff);
-					debug3(" Millydiff_T:  " + milly_diff_total  + " Millydiff_End: " + milly_diff_end  + " PERCENT_diff: " + percent_diff);
-					debug3(" NWSDT: " + new_window_sdt + " NWVal: " + new_window_value  + " Val_diff: " + val_diff);
-					debug3(" Interpolated Value: " + interpolated_value );
+					log.trace("Millydiff_T:  " + milly_diff_total  + " Millydiff_End: " + milly_diff_end  + " PERCENT_diff: ",
+							  milly_diff_total, milly_diff_end, percent_diff);
+					log.trace("NWSDT: {} NWVal: {} Val_diff: {}", new_window_sdt, new_window_value, val_diff);
+					log.trace("Interpolated Value: {}", interpolated_value );
 					//
 	
 			// now set the last value in the array to the interpolated value as well as eop date
@@ -473,7 +462,8 @@ public class TimeWeightedAverageAlg
 
 			else 
 			{
-				debug2("TWAINTERP-"+alg_ver+": Cannot do Computation due to lack of EOP record: " + getSDI("input") + " " + _aggregatePeriodEnd );
+				log.trace("TWAINTERP-{}: Cannot do Computation due to lack of EOP record: {} {}",
+							  alg_ver, getSDI("input"), _aggregatePeriodEnd);
 				do_setoutput = false;
 			}
 
@@ -496,18 +486,20 @@ public class TimeWeightedAverageAlg
 					// data points (mipoint * time) and all divided by the total time 
 					for (int i =0; i < index ; i++)
 			{
-				debug3("Index: " + i + value_out[i] + "  " + value_out[i+1] + "  " + date_out[i+1].getTime() + "  " + date_out[i].getTime());
+				log.trace("Index: {}:{} {} {} {}",
+						  i, value_out[i], value_out[i+1], date_out[i+1].getTime(), date_out[i].getTime());
 				midpoint =   (value_out[i+1] + value_out[i]) / 2 ;
 				time_diff =  date_out[i+1].getTime() - date_out[i].getTime(); 
 				total_area = total_area + (midpoint * time_diff)/MS_PER_DAY;
-				debug3("Index: " + i + "  MidPt: " + midpoint + "  timediff: " + time_diff + "  T.A.: " + total_area);
+				log.trace("Index: {}  MidPt: {}  timediff: {}  T.A.: {}", i, midpoint, time_diff, total_area);
 
 			}
 			time_diff = ((double) _aggregatePeriodEnd.getTime() - (double) _aggregatePeriodBegin.getTime())/(double)MS_PER_DAY;
 			weighted_average = total_area / time_diff;
-			debug3("TWAINTERP-"+alg_ver+": ENDTIME : " +  _aggregatePeriodEnd + "  BEGIN_TIME: " + _aggregatePeriodBegin);
-			debug3("TWAINTERP-"+alg_ver+": TOTAL TIME: " + time_diff);
-			debug2("TWAINTERP-"+alg_ver+": WEIGHTED_AVERAGE: " + weighted_average + " TOTALAREA: " + total_area  );
+			log.trace("TWAINTERP-{}: ENDTIME : {}  BEGIN_TIME: {}",
+					  alg_ver, _aggregatePeriodEnd, _aggregatePeriodBegin);
+			log.trace("TWAINTERP-{}: TOTAL TIME: {}", alg_ver, time_diff);
+			log.trace("TWAINTERP-{}: WEIGHTED_AVERAGE: {} TOTALAREA: {}", alg_ver, weighted_average, total_area);
 			//  set the dataflags appropriately	
 			if (total_count < mvd_count) flags = flags + "n";
 					if (is_current_period && total_count < mvr_count)
@@ -523,7 +515,7 @@ public class TimeWeightedAverageAlg
 
 					}
 
-			debug3("FLAGS: " + flags);
+			log.debug("FLAGS: {}", flags);
 			if (flags != null) setHdbDerivationFlag(output,flags);
 			//
 					/* added to allow users to automatically set the Validation column  */
@@ -544,31 +536,5 @@ public class TimeWeightedAverageAlg
 		{
 		   deleteOutput(output);
 		}
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }

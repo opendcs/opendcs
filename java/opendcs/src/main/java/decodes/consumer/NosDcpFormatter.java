@@ -1,15 +1,31 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
+
 package decodes.consumer;
 
-import ilex.util.Logger;
 import ilex.var.NoConversionException;
 import ilex.var.Variable;
 
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.common.DcpMsg;
 
@@ -25,6 +41,7 @@ import decodes.decoder.NosDecoder;
  */
 public class NosDcpFormatter extends OutputFormatter
 {
+     private static final Logger log = OpenDcsLoggerFactory.getLogger();
      private SimpleDateFormat sdf = new SimpleDateFormat("MMM dd yyyy HH:mm:ss");
      public static final String module = "NosDcpFormatter";
 
@@ -51,7 +68,7 @@ public class NosDcpFormatter extends OutputFormatter
           RawMessage rawmsg = msg.getRawMessage();
           if (rawmsg == null)
           {
-               Logger.instance().warning(module + " no raw message!");
+               log.warn(" no raw message!");
                return;
           }
           try
@@ -60,9 +77,9 @@ public class NosDcpFormatter extends OutputFormatter
                if (fc != 'G' && fc != '?')
                     return;
           }
-          catch (NoConversionException e2)
+          catch (NoConversionException ex)
           {
-               Logger.instance().warning("Unknown message type skipped!");
+               log.atWarn().setCause(ex).log("Unknown message type skipped!");
                return;
           }
           
@@ -73,7 +90,7 @@ public class NosDcpFormatter extends OutputFormatter
           }
           catch(Exception ex)
           {
-               Logger.instance().warning(module + " Missing DCP Address!");
+               log.atWarn().setCause(ex).log("Missing DCP Address!");
                sb.append("        ");
           }
           try
@@ -81,9 +98,9 @@ public class NosDcpFormatter extends OutputFormatter
                sb.append(sdf.format(
                     rawmsg.getPM(GoesPMParser.MESSAGE_TIME).getDateValue()).toUpperCase());
           }
-          catch (NoConversionException e1)
+          catch (NoConversionException ex)
           {
-               Logger.instance().warning(module + " Missing Time Stamp!");
+               log.atWarn().setCause(ex).log("Missing Time Stamp!");
                sb.append("MMM dd yyyy HH:mm:ss");
           }
           sb.append(rawmsg.getPM(GoesPMParser.FAILURE_CODE));
@@ -102,7 +119,7 @@ public class NosDcpFormatter extends OutputFormatter
           }
           catch(Exception ex)
           {
-               Logger.instance().warning(module + " Missing or freq offset!");
+               log.atWarn().setCause(ex).log("Missing or freq offset!");
                sb.append("-0"); // Note: -0 means couldn't parse from message.
           }
           sb.append(rawmsg.getPM(GoesPMParser.MOD_INDEX));
@@ -117,7 +134,7 @@ public class NosDcpFormatter extends OutputFormatter
           }
           catch(Exception ex)
           {
-               Logger.instance().warning(module + " Missing or GOES Channel!");
+               log.atWarn().setCause(ex).log("Missing or GOES Channel!");
                sb.append("   ");
           }
 
@@ -136,7 +153,7 @@ public class NosDcpFormatter extends OutputFormatter
           }
           catch(Exception ex)
           {
-               Logger.instance().warning(module + " Missing or message length!");
+               log.atWarn().setCause(ex).log("Missing or message length!");
                sb.append("     ");
           }
           
@@ -150,7 +167,7 @@ public class NosDcpFormatter extends OutputFormatter
           }
           catch(Exception ex)
           {
-               Logger.instance().warning(module + " Missing or bad Datum Offset!");
+               log.atWarn().setCause(ex).log("Missing or bad Datum Offset!");
                sb.append("       ");
           }
           try
@@ -160,7 +177,7 @@ public class NosDcpFormatter extends OutputFormatter
           }
           catch(Exception ex)
           {
-               Logger.instance().warning(module + " Missing or bad Sensor Offset!");
+               log.atWarn().setCause(ex).log("Missing or bad Sensor Offset!");
                sb.append("      ");
           }
           
@@ -177,8 +194,7 @@ public class NosDcpFormatter extends OutputFormatter
                     d = v.getDateValue();
                else
                {
-                    Logger.instance().warning("No " + NosDecoder.PM_STATION_TIME + " in message.");
-                    //return;
+                    log.warn("No {} in message.", NosDecoder.PM_STATION_TIME);
                }
                // lop of the seconds ":ss"
                String s = sdf.format(d);
@@ -186,9 +202,9 @@ public class NosDcpFormatter extends OutputFormatter
                s = s.substring(0, s.length()-3);
                sb.append(s);
           }
-          catch (NoConversionException e)
+          catch (NoConversionException ex)
           {
-               Logger.instance().warning(module + " Missing or bad station time!");
+               log.atWarn().setCause(ex).log("Missing or bad station time!");
           }
           
           // # of bytes - awaiting guidance from Sudha, right now constant 125
@@ -202,7 +218,7 @@ public class NosDcpFormatter extends OutputFormatter
         }
           catch(Exception ex)
           {
-               Logger.instance().warning(module + " Message length not available!");
+               log.atWarn().setCause(ex).log("Message length not available!");
                sb.append("   ");
           }
 

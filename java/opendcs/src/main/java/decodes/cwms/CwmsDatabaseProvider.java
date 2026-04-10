@@ -10,6 +10,7 @@ import org.opendcs.spi.database.DatabaseProvider;
 
 import decodes.db.Database;
 import decodes.db.DatabaseException;
+import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.BadConnectException;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
@@ -21,7 +22,8 @@ public class CwmsDatabaseProvider implements DatabaseProvider
     @Override
     public boolean canCreate(DecodesSettings settings)
     {
-        return "CWMS".equals(settings.editDatabaseType);
+        return "CWMS".equals(settings.editDatabaseType)
+            || "CWMS-Oracle".equals(settings.editDatabaseType);
     }
 
     @Override
@@ -51,13 +53,15 @@ public class CwmsDatabaseProvider implements DatabaseProvider
     {
         try
         {
-            Database db = new Database(true);
-            Database.setDb(db); // the CwmsSqlDatabaseIO constructor calls into the Database instance to verify things.
-            db.setDbIo(new CwmsSqlDatabaseIO(dataSource, settings));
-            db.init(settings);
+            Database decodesDb = new Database(true);
+            Database.setDb(decodesDb); // the CwmsSqlDatabaseIO constructor calls into the Database instance to verify things.
+            decodesDb.setDbIo(new CwmsSqlDatabaseIO(dataSource, settings));
             CwmsTimeSeriesDb tsdb = new CwmsTimeSeriesDb(null, dataSource, settings);
-
-            return new SimpleOpenDcsDatabaseWrapper(settings, db, tsdb, dataSource);
+            var db = new SimpleOpenDcsDatabaseWrapper(settings, decodesDb, tsdb, dataSource);
+            ((SqlDatabaseIO)decodesDb.getDbIo()).setDcsDatabase(db);
+            decodesDb.init(settings);
+            tsdb.setDcsDatabase(db);
+            return db;
         }
         catch (DecodesException ex)
         {

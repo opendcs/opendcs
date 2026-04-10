@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.platwiz;
 
 import ilex.util.LoadResourceBundle;
@@ -16,13 +31,17 @@ import decodes.db.PlatformConfig;
 import decodes.db.EquipmentModel;
 import decodes.gui.TopFrame;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 /**
 This panel allows the user to select and edit the equipment model.
 This is a thin layer around decodes.dbeditor.EquipmentEditPanel.
 */
-public class SelectDevicePanel extends JPanel
-	implements WizardPanel
+public class SelectDevicePanel extends JPanel implements WizardPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static ResourceBundle genericLabels = 
 		PlatformWizard.getGenericLabels();
 	private static ResourceBundle platwizLabels = 
@@ -41,11 +60,13 @@ public class SelectDevicePanel extends JPanel
 	/** Constructs new SiteDevicePanel */
 	public SelectDevicePanel()
 	{
-		try {
+		try 
+		{
 			jbInit();
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch(Exception ex) 
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -60,7 +81,6 @@ public class SelectDevicePanel extends JPanel
 		equipmentNameField.setPreferredSize(new Dimension(150, 20));
 		equipmentNameField.setEditable(false);
 		equipmentNameField.setText("");
-//		equipmentSelectButton.setPreferredSize(new Dimension(85, 23));
 		equipmentSelectButton.setText(genericLabels.getString("select"));
 		equipmentSelectButton.addActionListener(new SelectDevicePanel_equipmentSelectButton_actionAdapter(this));
 		newButton.setPreferredSize(new Dimension(85, 23));
@@ -164,6 +184,7 @@ public class SelectDevicePanel extends JPanel
 			try { activate(); }
 			catch(PanelException ex)
 			{
+				log.atError().setCause(ex).log("Unable to show equipment selection.");
 				TopFrame.instance().showError(ex.toString());
 			}
 		}
@@ -195,6 +216,7 @@ public class SelectDevicePanel extends JPanel
 			try { activate(); }
 			catch(PanelException ex)
 			{
+				log.atError().setCause(ex).log("Unable to create equipment model.");
 				TopFrame.instance().showError(ex.toString());
 			}
 		}

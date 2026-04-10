@@ -1,0 +1,16 @@
+{
+  "routingExecId": 1,
+  "scheduleEntryId": 1,
+  "routingSpecId": null,
+  "runStart": "2025-01-29T00:00:00.000Z[UTC]",
+  "runStop": "2025-01-30T00:00:00.000Z[UTC]",
+  "numMessages": 10,
+  "numErrors": 1,
+  "numPlatforms": 1,
+  "lastMsgTime": "2025-01-31T00:00:00.000Z[UTC]",
+  "lastActivity": "2025-01-31T19:05:06.354Z[UTC]",
+  "runStatus": "Running",
+  "hostname": "localhost",
+  "lastInput": null,
+  "lastOutput": null
+}

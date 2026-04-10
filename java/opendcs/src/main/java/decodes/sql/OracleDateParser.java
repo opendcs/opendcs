@@ -1,6 +1,19 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.sql;
-
-import ilex.util.Logger;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -11,6 +24,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
  * Oracle DATE objects are commonly used to store timestamp info.
@@ -39,6 +54,7 @@ import java.util.TimeZone;
  */
 public class OracleDateParser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	protected static String module = "OracleDateParser";
 	protected Calendar cal;
 	protected SimpleDateFormat oracleTimestampZFmt = new SimpleDateFormat("yyyy-MM-dd HH.mm.ss.0 z");
@@ -94,34 +110,29 @@ public class OracleDateParser
 			metaData = rs.getMetaData();
 			s = rs.getString(column);
 			columnName = metaData.getColumnName(column);
-//Logger.instance().debug3(module + " column " + columnName + " sqlType='" + sqlDataType
-//+ "' string value='" + s + "'");
 			if (s == null || rs.wasNull())
 				return null;
 		}
 		catch (SQLException ex)
 		{
-			Logger.instance().warning(module + " Error getting date as string: " + ex);
+			log.atWarn().setCause(ex).log("Error getting date as string.");
 			return null;
 		}
 		try 
 		{
 			Date d = oracleTimestampZFmt.parse(s);
-//			Logger.instance().debug3(module + " Parsed Oracle Timestamp. String='" + s + "', date=" + d);
 			return d;
 		}
 		catch(Exception ex)
 		{
-//			Logger.instance().debug3(module + " Cannot parse oracle date/time with Z format.");
 			try
 			{
 				Date d = parseNoZ(s);
-//				Logger.instance().debug3(module + " Parsed Oracle Timestamp NoZ. String='" + s + "', date=" + d);
 				return d;
 			}
 			catch(ParseException ex2)
 			{
-//				Logger.instance().debug3(module + " Still can't parse with NoZ format.");
+				/* fall through to next attempt */
 			}
 		}
 		try
@@ -132,16 +143,14 @@ public class OracleDateParser
 			else
 			{
 				Date d = new Date(ts.getTime());
-//Logger.instance().debug3(module + " read as sql.Timestamp: ts='" + ts + "', msec=" + 
-//ts.getTime() + ", date=" + d);
 				return d;
 			}
 		}
 		catch(SQLException ex)
 		{
-			Logger.instance().warning(module + 
-				" Cannot parse " + columnName 
-				+ " string '" + s + "' and cannot get as Timestamp: " + ex);
+			log.atWarn()
+			   .setCause(ex)
+			   .log(" Cannot parse {} string '{}' and cannot get as Timestamp: ", columnName, s);
 			return null;
 		}
 	}

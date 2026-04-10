@@ -3,6 +3,8 @@ package org.opendcs.fixtures.configurations.cwms;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -10,12 +12,13 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.jdbi.v3.core.Jdbi;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.MigrationManager;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.fixtures.UserPropertiesBuilder;
-import org.opendcs.fixtures.configurations.opendcs.pg.OpenDCSPGConfiguration;
 import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.spi.database.MigrationProvider;
 import org.testcontainers.containers.output.OutputFrame;
@@ -41,9 +44,10 @@ public class CwmsOracleConfiguration implements Configuration
 {
     private static Logger log = Logger.getLogger(CwmsOracleConfiguration.class.getName());
 
-    private static final String CWMS_ORACLE_IMAGE = System.getProperty("opendcs.cwms.oracle.image","registry-public.hecdev.net/cwms/database-ready-ora-23.5:latest-dev");
+    private static final String CWMS_ORACLE_IMAGE = System.getProperty("opendcs.cwms.oracle.image","ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25-07-01-RC06");
     private static final String CWMS_ORACLE_VOLUME = System.getProperty("opendcs.cwms.oracle.volume","cwms_opendcs_volume");
-    private static final String CWMS_SCHEMA_IMAGE = System.getProperty("opendcs.cwms.schema.image","registry-public.hecdev.net/cwms/schema_installer:latest-dev");
+    private static final String CWMS_SCHEMA_IMAGE = System.getProperty("opendcs.cwms.schema.image","ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25-07-01-RC06");
+    private static final String CWMS_BUILDUSER_PASSWORD = System.getProperty("opendcs.cwms.build.user.password","antbuildpassword");
 
     public static final String NAME = "CWMS-Oracle";
 
@@ -74,6 +78,15 @@ public class CwmsOracleConfiguration implements Configuration
                             .withVolumeName(CWMS_ORACLE_VOLUME)
                             .withOfficeId("SPK")
                             .withOfficeEroc("l2")
+                            .withEnv("BUILDUSER_PASSWORD", CWMS_BUILDUSER_PASSWORD)
+                            .withCreateContainerCmdModifier(cmd ->
+                            {
+                                cmd.getHostConfig()
+                                   .withMemory(4L*1024*1024*1024)
+                                   .withCpuPeriod(20000L)
+                                   .withCpuQuota(25000L)
+                                ;
+                            })
                             .withLogConsumer(line -> {
                                 log.info(((OutputFrame)line).getUtf8String());
                             });
@@ -81,62 +94,12 @@ public class CwmsOracleConfiguration implements Configuration
             cwmsDb.start();
             log.info("CWMS Database started.");
             cwmsDb.executeSQL("create tablespace CCP_DATA DATAFILE 'ccp_data.dbf' SIZE 100M REUSE AUTOEXTEND ON NEXT 1M MAXSIZE 2000M","sys");
-            cwmsDb.executeSQL("create user CCP no authentication default tablespace ccp_data QUOTA UNLIMITED ON ccp_data", "sys");
-            cwmsDb.executeSQL("alter user CCP GRANT CONNECT through " + cwmsDb.getUsername(), "sys");
-            cwmsDb.executeSQL("GRANT CWMS_USER TO CCP","sys");
-            cwmsDb.executeSQL("create role ccp_users","sys");
-            cwmsDb.executeSQL("grant create session,resource,connect to ccp_users","sys");
-            cwmsDb.executeSQL("grant ccp_users to cwms_user", "sys");
-            cwmsDb.executeSQL("GRANT ALTER ANY TABLE,CREATE ANY TABLE,CREATE ANY INDEX,CREATE ANY SEQUENCE,"
-                            + "CREATE ANY VIEW,CREATE ANY PROCEDURE,CREATE ANY TRIGGER,CREATE ANY JOB,"
-                            + "CREATE ANY SYNONYM,DROP ANY SYNONYM,CREATE PUBLIC SYNONYM,DROP PUBLIC SYNONYM"
-                            + " TO CCP","sys");
-            cwmsDb.executeSQL("GRANT CREATE ANY CONTEXT,ADMINISTER DATABASE TRIGGER TO CCP","sys");
-            cwmsDb.executeSQL("begin\n" + //
-                                "  execute immediate 'GRANT SELECT ON dba_scheduler_jobs to CCP';\n" + //
-                                "  execute immediate 'GRANT SELECT ON dba_queue_subscribers to CCP';\n" + //
-                                "  execute immediate 'GRANT SELECT ON dba_subscr_registrations to CCP';\n" + //
-                                "  execute immediate 'GRANT SELECT ON dba_queues to CCP';\n" + //
-                                "  execute immediate 'GRANT EXECUTE ON dbms_aq TO CCP';\n" + //
-                                "  execute immediate 'GRANT EXECUTE ON dbms_aqadm TO CCP';\n" + //
-                                "  execute immediate 'GRANT EXECUTE ON DBMS_SESSION to CCP';\n" + //
-                                "  execute immediate 'GRANT EXECUTE ON DBMS_RLS to CCP';\n" + //
-                                "" + //
-                                "    sys.dbms_aqadm.grant_system_privilege (" + //
-                                "      privilege    => 'enqueue_any'," + //
-                                "      grantee      => 'CCP'," + //
-                                "      admin_option => false);\n" + //
-                                "    sys.dbms_aqadm.grant_system_privilege (" + //
-                                "      privilege    => 'dequeue_any'," + //
-                                "      grantee      => 'CCP'," + //
-                                "      admin_option => false);\n" + //
-                                "    sys.dbms_aqadm.grant_system_privilege (" + //
-                                "      privilege    => 'manage_any'," + //
-                                "      grantee      => 'CCP'," + //
-                                "      admin_option => false);\n" + //
-                                "  execute immediate 'GRANT SELECT ON cwms_v_loc TO CCP WITH GRANT OPTION';\n" + //
-                                "  execute immediate 'GRANT SELECT ON cwms_v_ts_id TO CCP WITH GRANT OPTION';\n" + //
-                                "  execute immediate 'GRANT SELECT ON cwms_v_tsv TO CCP';\n" + //
-                                "  execute immediate 'GRANT SELECT ON cwms_20.cwms_seq TO CCP';\n" + //
-                                "  execute immediate 'GRANT SELECT ON cwms_20.cwms_seq TO CCP_USERS';\n" + //
-                                "" + //
-                                "  execute immediate 'GRANT EXECUTE ON cwms_t_date_table TO CCP';\n" + //
-                                "  execute immediate 'GRANT EXECUTE ON cwms_t_jms_map_msg_tab TO CCP';\n" + //
-                                "" + //
-                                "  execute immediate 'GRANT EXECUTE ON CWMS_20.cwms_ts TO CCP';\n" + //
-                                "  execute immediate 'GRANT EXECUTE ON CWMS_20.cwms_msg TO CCP';\n" + //
-                                "  execute immediate 'GRANT EXECUTE ON CWMS_20.cwms_util TO CCP';\n" + //
-                                "  execute immediate 'GRANT EXECUTE ON CWMS_20.cwms_sec TO CCP';\n" + //
-                                "" + //
-                                "  execute immediate 'GRANT EXECUTE ON CWMS_20.cwms_env TO CCP';\n" + //
-                                "  execute immediate 'GRANT EXECUTE ON CWMS_20.cwms_env TO CCP_USERS';\n" + //
-                                "" + //
-                                "  execute immediate 'ALTER USER CCP DEFAULT ROLE ALL';\n" + //
-                                "END;","sys");
+            //cwmsDb.executeSQL("create user CCP no authentication default tablespace ccp_data QUOTA UNLIMITED ON ccp_data", "sys");
+            
+            String createBuildUser = IOUtils.resourceToString("/database/admin_user.sql", StandardCharsets.UTF_8);
+            cwmsDb.executeSQL(createBuildUser, "sys");
+            SimpleDataSource ds = new SimpleDataSource(cwmsDb.getJdbcUrl(), "builduser", CWMS_BUILDUSER_PASSWORD);
 
-            SimpleDataSource ds = new SimpleDataSource(cwmsDb.getJdbcUrl(),
-                                                       cwmsDb.getUsername()+"[CCP]",
-                                                       cwmsDb.getPassword());
             MigrationManager mm = new MigrationManager(ds, NAME);
             MigrationProvider mp = mm.getMigrationProvider();
             mp.setPlaceholderValue("CWMS_SCHEMA", "CWMS_20");
@@ -145,19 +108,34 @@ public class CwmsOracleConfiguration implements Configuration
             mp.setPlaceholderValue("DEFAULT_OFFICE", "SPK");
             mp.setPlaceholderValue("TABLE_SPACE_SPEC", "tablespace CCP_DATA");
             mm.migrate();
-            cwmsDb.executeSQL("begin cwms_sec.add_user_to_group('" + cwmsDb.getUsername() + "', 'CCP Mgr','SPK') ; end;", "cwms_20");
-            cwmsDb.executeSQL("begin cwms_sec.add_user_to_group('" + cwmsDb.getUsername() + "', 'CCP Proc','SPK') ; end;", "cwms_20");
+            ArrayList<String> roles = new ArrayList<>();
+            roles.add("CCP Mgr");
+            roles.add("CCP Proc");
+            roles.add("CWMS Users");
+            this.dcsUser = "dcs_user";
+            this.dcsUserPassword = "dcs_user";
+            mm.createUser(dcsUser, dcsUserPassword, roles);
             this.dbUrl = cwmsDb.getJdbcUrl();
-            this.dcsUser = cwmsDb.getUsername();
-            this.dcsUserPassword = cwmsDb.getPassword();
             createPropertiesFile(configBuilder, this.propertiesFile);
             profile = Profile.getProfile(this.propertiesFile);
             mp.loadBaselineData(profile, dcsUser, dcsUserPassword);
+            Jdbi jdbi = mm.getJdbiHandle();
+            try (var handle = jdbi.open();
+                 var insertDbType = handle.createUpdate("insert into tsdb_property(prop_name, prop_value) values(:name, :value)"))
+            {
+                insertDbType.bind("name", "editDatabaseType")
+                            .bind("value", getName())
+                            .execute();
+                insertDbType.bind("name", "sqlKeyGenerator")
+                            .bind("value", OracleSequenceKeyGenerator.class.getName())
+                            .execute();
+            }
         }
 
 
         environment.set("DB_USERNAME",dcsUser);
         environment.set("DB_PASSWORD",dcsUserPassword);
+        environment.set("DB_URL", cwmsDb.getJdbcUrl());
         environmentVars.put("DB_USERNAME",dcsUser);
         environmentVars.put("DB_PASSWORD",dcsUserPassword);
         environmentVars.put("DB_OFFICE", cwmsDb.getOfficeId());
@@ -183,10 +161,10 @@ public class CwmsOracleConfiguration implements Configuration
             out.write("org.jooq".getBytes());
         }
     }
-
+    
     private void createPropertiesFile(UserPropertiesBuilder configBuilder, File propertiesFile) throws Exception
     {
-        configBuilder.withEditDatabaseType("CWMS");
+        configBuilder.withEditDatabaseType(NAME);
         configBuilder.withDatabaseDriver("oracle.jdbc.driver.OracleDriver");
         configBuilder.withSiteNameTypePreference("CWMS");
         configBuilder.withDecodesAuth("env-auth-source:username=DB_USERNAME,password=DB_PASSWORD");
@@ -293,7 +271,6 @@ public class CwmsOracleConfiguration implements Configuration
     /**
      * Returns true if this Database implementation supports a given dataset.
      * @param dao Class that extends from {@link opendcs.dao.DaoBase}
-     * @return
      */
     @Override
     public boolean supportsDao(Class<? extends DaoBase> dao)
@@ -314,8 +291,13 @@ public class CwmsOracleConfiguration implements Configuration
         {
             return true;
         }
+        else if(dao.equals(decodes.cwms.CwmsLocationLevelDAO.class))
+        {
+            return true;
+        }
         return false;
     }
+
     @Override
     public OpenDcsDatabase getOpenDcsDatabase() throws Throwable
     {
@@ -327,5 +309,11 @@ public class CwmsOracleConfiguration implements Configuration
             }
             return databases;
         }
+    }
+
+    @Override
+    public boolean supportsRestApi()
+    {
+        return true;
     }
 }

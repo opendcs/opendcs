@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.groupedit;
 
 import java.awt.BorderLayout;
@@ -10,6 +25,9 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.TsGroupDAI;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TsdbAppTemplate;
@@ -18,15 +36,13 @@ import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsGroup;
 import decodes.util.DecodesSettings;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 
 /**
  * Displays a sorting-list of TS Group objects in the database.
  */
-public class TsDbGrpListPanel 
-	extends JPanel
-	implements TsListControllers, GroupSelector
+public class TsDbGrpListPanel extends JPanel implements TsListControllers, GroupSelector
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	//Panel
 	private String module = "TsDbGrpListPanel";
 	//Panel Owner
@@ -90,24 +106,17 @@ public class TsDbGrpListPanel
 				.getString("TsGroupDefinitionPanel.groupNameErrorMsg");
 		}
 
-		try
-		{
-			jbInit();
-			timeSeriesSelectDialog = new TimeSeriesSelectDialog(
-				TsdbAppTemplate.theDb, true, parent);
-			timeSeriesSelectDialog.setMultipleSelection(true);
-
-		} catch (Exception ex)
-		{
-			ex.printStackTrace();
-		}
+		jbInit();
+		timeSeriesSelectDialog = new TimeSeriesSelectDialog(
+			TsdbAppTemplate.theDb, true, parent);
+		timeSeriesSelectDialog.setMultipleSelection(true);
 	}
 
 	/**
 	 * Sets the parent frame object. Each list panel needs to know this.
-	 * 
+	 *
 	 * @param parent
-	 *            the TsDbGrpEditorFrame, the TsDbEditorFrame 
+	 *            the TsDbGrpEditorFrame, the TsDbEditorFrame
 	 */
 	public void setParent(TopFrame parent)
 	{
@@ -115,7 +124,7 @@ public class TsDbGrpListPanel
 	}
 
 	/** Initialize GUI components. */
-	private void jbInit() throws Exception
+	private void jbInit()
 	{
 		//Initiate components for listLabel, controlsPanel, and tsGroupsListSelectPanel
 		listLabel = new JLabel(listTitle, SwingConstants.CENTER);
@@ -123,7 +132,7 @@ public class TsDbGrpListPanel
 		tsGroupsListSelectPanel = new TsGroupListPanel(
 			TsdbAppTemplate.theDb, TopFrame.instance(), this);
 		tsGroupsListSelectPanel.setTsGroupListFromDb();
-		
+
 		//Setup the layout
 		setLayout(new BorderLayout());
 		add(listLabel, BorderLayout.NORTH);
@@ -141,7 +150,7 @@ public class TsDbGrpListPanel
 	{
 		openPressed();
 	}
-	
+
 	/** Called when the 'Open' button is pressed. */
 	public void openPressed()
 	{
@@ -154,9 +163,11 @@ public class TsDbGrpListPanel
 			try
 			{
 				doOpen(tsGroup);
-			} catch (Exception ex)
+			}
+			catch (Exception ex)
 			{
 				String groupName = tsGroup.getGroupName();
+				log.atError().setCause(ex).log(openErrorMsgEx + "'{}'", groupName);
 				TopFrame.instance().showError(
 						openErrorMsgEx + " '" + groupName + "' : "
 								+ ex.toString());
@@ -220,8 +231,7 @@ public class TsDbGrpListPanel
 		try { numComps = tsDb.countCompsUsingGroup(tsGroup.getGroupId()); }
 		catch(Exception ex)
 		{
-			System.err.println(ex);
-			ex.printStackTrace(System.err);
+			log.atError().setCause(ex).log("Unable to determine count of computations for group.");
 			return;
 		}
 		String msg = deleteConfirmMsg;
@@ -231,7 +241,7 @@ public class TsDbGrpListPanel
 				+ "selected group. If you continue, these computations will be "
 				+ "disabled. Confirm Deletion of Group?";
 		}
-		
+
 		int ok = JOptionPane.showConfirmDialog(this, msg,
 			deleteConfirmMsg2, JOptionPane.YES_NO_OPTION);
 
@@ -242,12 +252,10 @@ public class TsDbGrpListPanel
 			try
 			{
 				tsGroupDAO.deleteTsGroup(tsGroup.getGroupId());
-			} 
+			}
 			catch (DbIoException ex)
 			{
-				Logger.instance().failure(
-						module + " Can not delete Ts Group from "
-								+ "the Database " + ex.getMessage());
+				log.atError().setCause(ex).log("Can not delete Ts Group from the Database.");
 				TopFrame.instance().showError(ex.toString());
 			}
 			finally
@@ -274,7 +282,7 @@ public class TsDbGrpListPanel
 
 	/**
 	 * Opens a TsGroupDefinitionPanel for the passed Ts Group.
-	 * 
+	 *
 	 * @param tsGroup - the object to be edited.
 	 * @return the TsGroupDefinitionPanel opened.
 	 */
@@ -315,9 +323,9 @@ public class TsDbGrpListPanel
 	}
 
 	/**
-	 * After saving, and edit panel will need to replace the old object 
+	 * After saving, and edit panel will need to replace the old object
 	 * with the newly modified one. It calls this method to do this.
-	 * 
+	 *
 	 * @param gold
 	 *            the old object
 	 * @param gnew
@@ -330,7 +338,7 @@ public class TsDbGrpListPanel
 
 	/**
 	 * Verify is the given ts group name exists in the current list or not
-	 * 
+	 *
 	 * @param groupName
 	 * @return true if the group name exitst in the list, false otherwise
 	 */

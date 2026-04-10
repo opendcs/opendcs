@@ -1,16 +1,27 @@
-/**
- * $Id$
- * 
- * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * 
- * $Log$
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.cwms.validation;
 
 import java.io.ByteArrayOutputStream;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.TimeSeriesDAI;
 import ilex.cmdline.BooleanToken;
@@ -21,8 +32,6 @@ import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.CwmsTsId;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.cwms.validation.dao.TsidScreeningAssignment;
-import decodes.sql.DbKey;
-import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbAppTemplate;
@@ -30,6 +39,7 @@ import decodes.util.CmdLineArgs;
 
 public class DatchkImport extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public final static String module = "DatchkImport";
 	
 	private StringToken configFile = new StringToken("", "DATCHK Config File",
@@ -66,7 +76,7 @@ public class DatchkImport extends TsdbAppTemplate
 			Screening screening = reader.findScreening(tsidStr);
 			if (screening == null)
 			{
-				warning("After loading, cannot find screening for '" + tsidStr + "'");
+				log.warn("After loading, cannot find screening for '{}'", tsidStr);
 				continue;
 			}
 			

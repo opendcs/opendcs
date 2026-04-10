@@ -22,13 +22,13 @@ public class WeightedWaterTemperature
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 	@Input
-	public double input1;	//AW:TYPECODE=i
+	public double input1;
 	@Input
-	public double input2;	//AW:TYPECODE=i
+	public double input2;
 	@Input
-	public double input3;	//AW:TYPECODE=i
+	public double input3;
 	@Input
-	public double input4;	//AW:TYPECODE=i
+	public double input4;
 
 	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);

@@ -1,74 +1,75 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
-// this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
-
-//AW:IMPORTS
-import decodes.hdb.HdbFlags;
-
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-/**
-This algorithm is an Side Inflow mass balance calculation for inflow as:  
-Delta Storage - Total Release Above + Total Release Below + evaporation 
-
-If inputs Delta Storage or Total Release Above or Total Release Below
-or  ithe Evap do not exist or have been deleted and the 
-Delta_STORAGE_MISSING or the TOTAL_REL_ABOVE_MISSING or EVAP_MISSING,
-or TOTAL_REL_BELOW_MISSING properties are set to "fail" then the 
-inflow will not be calculated and/or the inflow will be deleted.
-
-If all of the inputs do not exist because of a delete the inflow will 
-be deleted if the output exists regardless of the property settings.
-
-This algorithm written by M. Bogner, August 2008
-Modified by M. Bogner May 2009 to add additional delete logic and version control
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 
- */
-//AW:JAVADOC_END
+@Algorithm(description = "This algorithm is an Side Inflow mass balance calculation for inflow as:\n" +  
+"Delta Storage - Total Release Above + Total Release Below + evaporation\n\n" + 
+
+"If inputs Delta Storage or Total Release Above or Total Release Below\n" + 
+"or  the Evap do not exist or have been deleted and the\n" + 
+"Delta_STORAGE_MISSING or the TOTAL_REL_ABOVE_MISSING or EVAP_MISSING,\n" + 
+"or TOTAL_REL_BELOW_MISSING properties are set to \"fail\" then the\n" +  
+"inflow will not be calculated and/or the inflow will be deleted.\n\n" + 
+
+"If all of the inputs do not exist because of a delete the inflow will\n" +  
+"be deleted if the output exists regardless of the property settings.")
+
+// This algorithm written by M. Bogner, August 2008
+// Modified by M. Bogner May 2009 to add additional delete logic and version control
 public class SideInflowAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double total_rel_above;	//AW:TYPECODE=i
-	public double total_rel_below;	//AW:TYPECODE=i
-	public double delta_storage;	//AW:TYPECODE=i
-	public double evap;		//AW:TYPECODE=i
-	String _inputNames[] = {"total_rel_above","delta_storage","total_rel_below","evap"};
-//AW:INPUTS_END
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	@Input
+	public double total_rel_above;
+	@Input
+	public double total_rel_below;
+	@Input
+	public double delta_storage;
+	@Input
+	public double evap;
 
-//AW:LOCALVARS
 // Version 1.0.03 was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 	String alg_ver = "1.0.03";
         boolean do_setoutput = true;
 	double inflow_calculation = 0.0;
 
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable side_inflow = new NamedVariable("side_inflow", 0);
-	String _outputNames[] = { "side_inflow" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "ignore") 
 	public String total_rel_above_missing = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String total_rel_below_missing = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String delta_storage_missing = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String evap_missing = "ignore";
-        public String validation_flag = "";
- 
-	String _propertyNames[] = { "total_rel_above_missing", "delta_storage_missing",
-	 "validation_flag", "evap_missing","total_rel_below_missing"};
-//AW:PROPERTIES_END
+	@PropertySpec(value = "") 
+	public String validation_flag = "";
 
 	// Allow javac to generate a no-args constructor.
 
@@ -77,12 +78,7 @@ public class SideInflowAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	 */
 	protected void initAWAlgorithm( )
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -90,8 +86,6 @@ public class SideInflowAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	 */
 	protected void beforeTimeSlices()
 	{
-//AW:BEFORE_TIMESLICES
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -107,7 +101,6 @@ public class SideInflowAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 	inflow_calculation = 0.0;
 	do_setoutput = true;
 	if (!isMissing(total_rel_above))
@@ -128,18 +121,17 @@ public class SideInflowAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 
 	if (do_setoutput)
 	{
-		debug3("SideInflowAlg-" + alg_ver + ": total_releaseabove=" + total_rel_above +", delta_storage=" + delta_storage);
+		log.trace("SideInflowAlg-{}: total_releaseabove={}, delta_storage={}",
+				  alg_ver, total_rel_above, delta_storage);
 		/* added to allow users to automatically set the Validation column  */
 		if (validation_flag.length() > 0) setHdbValidationFlag(side_inflow,validation_flag.charAt(1));
 		setOutput(side_inflow,inflow_calculation);
 	}
 	else
 	{
-		debug3("SideInflowAlg-" + alg_ver + ": Deleting side_inflow output");
+		log.trace("SideInflowAlg-{}: Deleting side_inflow output", alg_ver);
 		deleteOutput(side_inflow);
 	}
-
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -147,32 +139,5 @@ public class SideInflowAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	 */
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }

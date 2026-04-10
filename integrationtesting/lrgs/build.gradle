@@ -1,23 +1,34 @@
 plugins {
     id 'opendcs.java-conventions'
     id 'opendcs.deps-conventions'
+    id 'opendcs.sonar-conventions'
 }
 
 
 dependencies {
     implementation project(":opendcs")
     implementation project(":testing:fixtures")
+    implementation (libs.bundles.junit.platform)
+    implementation(libs.bundles.junit)
+    
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)
+    testRuntimeOnly (libs.bundles.junit.platform)
+    testImplementation(libs.ch.qos.logback)
+    testImplementation(project(":opendcs-logback-event-provider"))
     testImplementation(libs.commons.io)
     testImplementation(libs.apache.derby)
+    testImplementation(libs.io.github.hakky54)
     testImplementation(libs.webcompere.system.stubs.jupiter)
 }
 
+test {
+    jvmArgs += "-Djava.security.manager=allow"
+}
 
 jacocoTestReport {
     dependsOn test
-    //additionalSourceDirs files(project(":opendcs").sourceSets.main.java.srcDirs)
+    additionalSourceDirs files(project(":opendcs").sourceSets.main.java.srcDirs)
     //additionalClassDirs files(project(":opendcs").sourceSets.main.output)
     sourceSets project(":opendcs").sourceSets.main
     def excludes = [

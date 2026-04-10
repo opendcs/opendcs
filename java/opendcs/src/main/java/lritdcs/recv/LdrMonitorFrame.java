@@ -6,12 +6,14 @@ import java.io.IOException;
 import java.io.EOFException;
 import java.io.File;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import javax.swing.*;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.common.DcpMsg;
 
-public class LdrMonitorFrame extends JFrame 
+public class LdrMonitorFrame extends JFrame
 {
 	JPanel contentPane;
 	BorderLayout borderLayout1 = new BorderLayout();
@@ -29,26 +31,21 @@ public class LdrMonitorFrame extends JFrame
 	static final int DEL_INC    =  25000;
 
 	//Construct the frame
-	public LdrMonitorFrame() 
+	public LdrMonitorFrame()
 	{
 		enableEvents(AWTEvent.WINDOW_EVENT_MASK);
-		try {
-			jbInit();
-			msgArea.setEditable(false);
-			Font oldfont = msgArea.getFont();
-			msgArea.setFont(
-				new Font("Monospaced", Font.PLAIN, oldfont.getSize()));
-			snapCheck.setSelected(true);
-			wrapCheck.setSelected(true);
-			msgArea.setLineWrap(true);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-		}
+		jbInit();
+		msgArea.setEditable(false);
+		Font oldfont = msgArea.getFont();
+		msgArea.setFont(
+			new Font("Monospaced", Font.PLAIN, oldfont.getSize()));
+		snapCheck.setSelected(true);
+		wrapCheck.setSelected(true);
+		msgArea.setLineWrap(true);
 	}
 
 	//Component initialization
-	private void jbInit() throws Exception	
+	private void jbInit()
 	{
 		contentPane = (JPanel) this.getContentPane();
 		contentPane.setLayout(borderLayout1);
@@ -75,21 +72,21 @@ public class LdrMonitorFrame extends JFrame
 	}
 
 	//Overridden so we can exit when window is closed
-	protected void processWindowEvent(WindowEvent e) 
+	protected void processWindowEvent(WindowEvent e)
 	{
 		super.processWindowEvent(e);
-		if (e.getID() == WindowEvent.WINDOW_CLOSING) 
+		if (e.getID() == WindowEvent.WINDOW_CLOSING)
 		{
 			System.exit(0);
 		}
 	}
 
-	void snapCheck_actionPerformed(ActionEvent e) 
+	void snapCheck_actionPerformed(ActionEvent e)
 	{
 
 	}
 
-	void wrapCheck_actionPerformed(ActionEvent e) 
+	void wrapCheck_actionPerformed(ActionEvent e)
 	{
 		msgArea.setLineWrap(wrapCheck.isSelected());
 	}
@@ -104,7 +101,7 @@ public class LdrMonitorFrame extends JFrame
 	{
 		int caret = msgArea.getCaretPosition();
 		msgArea.append("---\n"
-			+ "RecvTime=" 
+			+ "RecvTime="
 			+ sdf.format(dcpMsg.getLocalReceiveTime()) + "\n"
 			+ (new String(dcpMsg.getData()))
 			+ "\n");
@@ -145,9 +142,9 @@ class LdrMonitorFrame_wrapCheck_actionAdapter implements java.awt.event.ActionLi
 	}
 }
 
-class LdrMonitorUpdater
-	extends Thread
+class LdrMonitorUpdater extends Thread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	LdrMonitorFrame mon;
 	LritDcsRecvConfig cfg;
 	MsgFile msgFile;
@@ -169,7 +166,7 @@ class LdrMonitorUpdater
 		{
 			if (msgFile != null)
 			{
-				try 
+				try
 				{
 					final DcpMsg dcpMsg = msgFile.readMsg(loc);
 					loc = msgFile.getLocation();
@@ -190,14 +187,14 @@ class LdrMonitorUpdater
 				}
 				catch(IOException ioex)
 				{
-					System.err.println("IO Error on msg file: " + ioex);
+					log.atError().setCause(ioex).log("IO Error on msg file.");
 					msgFile.close();
 					msgFile = null;
 				}
 			}
 			else
 			{
-				System.out.println("No File - waiting");
+				log.info("No File - waiting");
 				checkMsgFile();
 				try { sleep(1000L); }
 				catch(InterruptedException iex) {}
@@ -210,7 +207,7 @@ class LdrMonitorUpdater
 		long now = System.currentTimeMillis();
 		if (msgFile != null && now - start > 3600000L)
 		{
-			System.out.println("Closing old message file.");
+			log.info("Closing old message file.");
 			msgFile.close();
 			msgFile = null;
 		}
@@ -219,19 +216,19 @@ class LdrMonitorUpdater
 		{
 			start = (now / 3600000L) * 3600000L;
 			String fn = MsgPerArch.getFileName((int)(start/1000L));
-			System.out.println("Opening '" + fn + "'");
-			try 
+			log.info("Opening '{}'", fn);
+			try
 			{
 				File f = new File(fn);
 				long len = f.length();
-				msgFile = new MsgFile(f, false); 
+				msgFile = new MsgFile(f, false);
 				loc = 0L;
 				if (len > (long)mon.MAX_LENGTH)
 					loc = len - mon.MAX_LENGTH;
 			}
 			catch(IOException ioex)
 			{
-				System.out.println("Cannot open '" + fn + "': " + ioex);
+				log.atError().setCause(ioex).log("Cannot open '{}'", fn);
 				msgFile = null;
 			}
 		}

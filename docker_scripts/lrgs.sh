@@ -2,11 +2,11 @@
 
 if [ ! -d $LRGSHOME/netlist ]; then
     echo "Generating initial LRGS HOME Directory."
-    cp -r $DCSTOOL_HOME/users .
-    cp $DCSTOOL_HOME/*.conf .
-    cp $DCSTOOL_HOME/*.xml .
-    cp $DCSTOOL_HOME/lrgs.conf .
-    cp -r $DCSTOOL_HOME/netlist .
+    cp -r $DCSTOOL_HOME/lrgs/users .
+    cp $DCSTOOL_HOME/lrgs/*.conf .
+    cp $DCSTOOL_HOME/lrgs/*.xml .
+    cp $DCSTOOL_HOME/lrgs/lrgs.conf .
+    cp -r $DCSTOOL_HOME/lrgs/netlist .
 
     if [ "$LRGS_ADMIN_PASSWORD" == "" ]; then
         LRGS_ADMIN_PASSWORD=`tr -cd '[:alnum:]' < /dev/urandom | fold -w30 | head -n1`
@@ -47,4 +47,6 @@ done
 exec java -Xms120m $DECJ_MAXHEAP -cp $CP \
      -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH \
      -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR -DLRGSHOME=$LRGSHOME \
-     lrgs.lrgsmain.LrgsMain -d3 -l /dev/stdout -F -k -
+     -Dlogback.configurationFile=$DCSTOOL_HOME/logback.xml \
+     -DAPP_NAME=$APP_NAME \
+     lrgs.lrgsmain.LrgsMain -F -k -

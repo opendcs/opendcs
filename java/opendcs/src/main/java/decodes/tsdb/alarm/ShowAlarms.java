@@ -1,18 +1,17 @@
 /*
- * $Id$
- * 
- * $Log$
- * Revision 1.2  2019/08/26 20:49:52  mmaloney
- * Alarm Implementations.
- *
- * Revision 1.1  2019/08/07 14:18:58  mmaloney
- * 6.6 RC04
- *
- * Revision 1.1  2017/08/22 19:49:55  mmaloney
- * Refactor
- *
- * 
- * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.tsdb.alarm;
 
@@ -25,11 +24,13 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
 import ilex.cmdline.*;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import lrgs.gui.DecodesInterface;
 import decodes.db.Database;
@@ -45,9 +46,9 @@ import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
 
-public class ShowAlarms
-	extends TsdbAppTemplate
+public class ShowAlarms	extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private StringToken timezoneArg = new StringToken("Z", "Time Zone", "", TokenOptions.optSwitch, "UTC");
 	private StringToken outArg = new StringToken("", "time-series-IDs", "", 
 		TokenOptions.optArgument |TokenOptions.optMultiple, "");
@@ -100,7 +101,7 @@ public class ShowAlarms
 			}
 			catch(NoSuchObjectException ex)
 			{
-				Logger.instance().warning("No time series for '" + outTS + "': " + ex + " -- skipped.");
+				log.atWarn().setCause(ex).log("No time series for '{}' -- skipped.", outTS);
 			}
 			finally
 			{
@@ -129,8 +130,6 @@ public class ShowAlarms
 		LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
 		try
 		{
-//			HashMap<DbKey, Alarm> alarmMap = new HashMap<DbKey, Alarm>();
-//			alarmDAO.refreshCurrentAlarms(alarmMap, null);
 			
 			ArrayList<Alarm> curAlarms = alarmDAO.getAllCurrentAlarms();
 			ArrayList<Alarm> alarmHistory = alarmDAO.readAlarmHistory(tsids);
@@ -201,7 +200,7 @@ public class ShowAlarms
 							}
 						if (!found)
 						{
-							warning("Alarm for tsid key=" + al.getTsidKey() + ", but not TSID in database -- skipped.");
+							log.warn("Alarm for tsid key={}, but not TSID in database -- skipped.", al.getTsidKey());
 							continue;
 						}
 					}

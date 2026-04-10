@@ -1,10 +1,11 @@
 package decodes.gui;
 
-import ilex.util.Logger;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import javax.swing.JComboBox;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.EnumValue;
 import decodes.db.DbEnum;
@@ -14,8 +15,9 @@ import decodes.db.Database;
 Extends JComboBox to display the choice of values for a DECODES enumeration.
 */
 @SuppressWarnings("serial")
-public class EnumComboBox extends JComboBox
+public class EnumComboBox extends JComboBox<String>
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String enumName;
 	private DbEnum dbEnum;
 
@@ -46,7 +48,7 @@ public class EnumComboBox extends JComboBox
 		dbEnum = Database.getDb().getDbEnum(enumName);
 		if (dbEnum == null)
 		{
-			Logger.instance().warning("EnumComboBox with invalid enumName '" + enumName + "'");
+			log.warn("EnumComboBox with invalid enumName '{}'", enumName);
 			return;
 		}
 

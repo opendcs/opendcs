@@ -1,5 +1,23 @@
 ![current build](https://github.com/opendcs/opendcs/actions/workflows/build.yml/badge.svg)
 
+Core Project:
+
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=opendcs_opendcs&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=opendcs_opendcs)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=opendcs_opendcs&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=opendcs_opendcs)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=opendcs_opendcs&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=opendcs_opendcs)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=opendcs_opendcs&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=opendcs_opendcs)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=opendcs_opendcs&metric=coverage)](https://sonarcloud.io/summary/new_code?id=opendcs_opendcs)
+
+UI:
+
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=opendcs_opendcs_ui&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=opendcs_opendcs_ui)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=opendcs_opendcs_ui&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=opendcs_opendcs_ui)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=opendcs_opendcs_ui&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=opendcs_opendcs_ui)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=opendcs_opendcs_ui&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=opendcs_opendcs_ui)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=opendcs_opendcs_ui&metric=coverage)](https://sonarcloud.io/summary/new_code?id=opendcs_opendcs_ui)
+
+[Docker documentation](README.docker.md)
+
 # OpenDCS 
 
 OpenDCS is a tool for doing the following:
@@ -51,8 +69,9 @@ can be scary we would like to encourage you to join us anyways.
 # Compiling
 
 - OpenDCS is compiled using the gradle wrapper 'gradlew'
+- OpenDCS latest/8.x requires Java 21 for compiling and runtime 
 - OpenDCS 7.x targets Java 8. A JDK 8 is recommended for build though 11 and 17 will work
-- Our runtime target is Java 8, however we will support 11 and 17 at runtime
+
 
 in the following examples replace `./gradlew` with `gradlew` if you are using windows.
 
@@ -84,6 +103,24 @@ To get a simple baseline environment going:
 This will start the "launcher_start" application and do an initial setup of an XML database suitable for DECODES operations
 going that you can use for manual and exploratory testing.
 
+The table below lists features of the runApp task.
+
+| Option | Default Value | Description |
+| --- | --- | --- |
+| `opendcs.app` | `launcher_start` | Application to run |
+| `opendcs.profile` | `default` | Profile to use |
+| `opendcs.lang` | - | Language to use |
+| `opendcs.arg` | - | Additional application arguments |
+| `opendcs.jfr` | `false` | Enable Java Flight Recorder |
+| `opendcs.debug` | `0` | Debug port number |
+
+Here is an example:
+
+```bat
+gradlew runApp -Popendcs.app=rs -Popendcs.profile="%appdata%\.opendcs\xml.profile" -Popendcs.arg=issue877 -Popendcs.debug=5005
+```
+
+
 # General Development
 
 To verify everything can work on your system run the following:
@@ -102,9 +139,11 @@ a report of tests is stored here: opendcs/java/opendcs/build/reports/tests/test
 ./gradlew test -Pno.docs=true
 
 # Tests of a "live" system.
-./gradlew testing:opendcs-tests:test -Pno.docs=true -Popendcs.test.engine=OpenDCS-XML
+./gradlew :testing:opendcs-tests:test -Pno.docs=true -Popendcs.test.engine=OpenDCS-XML
 # and if you have docker
-./gradlew testing:opendcs-tests:test -Pno.docs=true -Popendcs.test.engine=OpenDCS-Postgres
+./gradlew :testing:opendcs-tests:test -Pno.docs=true -Popendcs.test.engine=OpenDCS-Postgres
+# CWMS-Oracle (more memory hungry)
+./gradlew :testing:opendcs-tests:test -Pno.docs=true -Popendcs.test.engine=CWMS-Oracle
 
 #To test the LRGS
 gradlew testing:lrgs:test -Pno.docs=true
@@ -112,24 +151,24 @@ gradlew testing:lrgs:test -Pno.docs=true
 
 This will run all of the various tests and let you know you have everything setup such that you can start development.
 
-For all test tasks you can add `-DdebugPort=<a port number>` and the JVMs started will wait for a debug connection.
-Beware that gui-test and integration-test depend on test running, so you will have to attach the remote debugger twice.
-This is a current limitation of the ant build.
+For all test tasks you can add `--debug-jvm` and the JVMs started will wait for a debug connection on port 5005.
 
 To run a specific test only use:
 
 ```
 ./gradlew <test target> --tests # See [gradle documentation ](https://docs.gradle.org/current/userguide/java_testing.html#simple_name_pattern) for more detail
 
-example:
+example with debugging:
 
-gradlew test --tests AlarmMailerTest
+gradlew clean :testing:opendcs-tests:test -Pno.docs=true  -Popendcs.test.engine=OpenDCS-XML  --tests org.opendcs.regression_tests.ImportXmlNetworkListTestIT --debug-jvm
+
 
 ```
 
 It is possible a file glob will work in the tests parameter above but we have not tested this.
 
 See https://opendcs-env.readthedocs.io/en/latest/dev-docs.html for guidance on some of the newer components.
+
 
 # IDE integration
 
@@ -154,3 +193,52 @@ Intellij detects the gradle project and has a Gradle tool window.
 Some gradle tasks require a python environment.  Here is an example that launches inteliJ from a conda environment to have python enabled.
 (base) C:\>conda activate karl
 (karl) C:\project\opendcs>C:\Programs\ideaIC-2022.1.win\bin\idea64.exe
+
+
+# rest_api
+OpenDCS Rest API is web application that provides access to the OpenDCS database using JSON (Java Script Object Notation).
+OpenDCS Rest API is intended to run as a stand-alone Java program. It uses embedded JETTY to implement the web services.
+
+## Structure
+./java/opendcs-rest-api - contains source files for the OpenDCS REST API
+./java/opendcs-web-ui - contains source files for the OpenDCS Web Application Client
+./opendcs-integration-test - contains scripts for running embedded tomcat to deploy the REST API and Web Client wars for testing.
+
+
+## Building
+
+JDK 21 and Node 22 or higher are required to build the project.
+
+### OPENDCS API
+The gradle task `./gradlew :opendcs-rest-api:war` will create a war file in the `build/libs` directory.
+
+The SwaggerUI location can be found at the relative url path of /<context>/swaggerui.
+Assuming the context is 'odcsapi', an example of the SwaggerUI location is http://localhost:8080/odcsapi/swaggerui.
+These files are being served up from the resource file 'SwaggerResources.java' file located at 
+'src/main/java/org/opendcs/odcsapi/res/SwaggerResources.java'.
+
+#### web.xml configurations
+The bundled [web.xml](opendcs-rest-api/src/main/webapp/WEB-INF/web.xml) contains the following
+properties that should be configured for your system.
+- `opendcs.rest.api.authorization.type` - supports a comma separated list of authorization types. These can include basic,sso,openid. See section on authorization for details.
+- `opendcs.rest.api.authorization.expiration.duration` - denotes the duration that an authorization attempt is valid for. Defaults to 15 minutes.
+- `opendcs.rest.api.cwms.office` - office id specific to CWMS systems. This is the office the authorizing user will check privileges for.
+- `opendcs.rest.api.authorization.jwt.jwkset.url` - for openid authorization this is the JWK Set URL
+- `opendcs.rest.api.authorization.jwt.issuer.url`  - for openid authorization this is the Issuer URL
+
+### OPENDCS Web Client
+The gradle task `./gradlew :opendcs-web-ui:war` will create a war file in the `build/libs` directory.
+
+
+### Testing
+
+If you are on a platform with Docker, or establish the appropriate database configuration override properties you can run the api and web ui with the following:
+
+```
+./gradlew runApi --info
+# The appropriate link will be provided in the terminal output, by default it will be http://localhost:7000.
+
+
+```
+
+The default user name and password are `test_user` and `test_password`

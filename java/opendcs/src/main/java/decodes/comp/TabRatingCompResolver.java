@@ -1,40 +1,33 @@
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.2  2008/08/09 21:50:56  mjmaloney
-*  dev
-*
-*  Revision 1.1  2008/04/04 18:20:59  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.3  2004/08/11 21:40:59  mjmaloney
-*  Improved javadocs
-*
-*  Revision 1.2  2004/07/01 14:23:59  mjmaloney
-*  RDB & Tab working with generic interfaces
-*
-*  Revision 1.1  2004/06/30 20:01:52  mjmaloney
-*  Isolated DECODES interface behind IDataCollection and ITimeSeries interfaces.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
+
 package decodes.comp;
 
 import java.io.File;
 import java.util.Iterator;
 import java.util.Vector;
 
-import decodes.comp.CompResolver;
-import decodes.comp.Computation;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.RoutingSpec;
 import decodes.util.PropertySpec;
 import decodes.util.SensorPropertiesOwner;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
@@ -42,10 +35,9 @@ import ilex.util.TextUtil;
 * Tries to find Simple Table Files for computations to be applied to the 
 * passed message.
 */
-public class TabRatingCompResolver 
-	extends CompResolver
-	implements SensorPropertiesOwner
+public class TabRatingCompResolver extends CompResolver implements SensorPropertiesOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	* The directory containing TABLE files. PlatformSensor properties need
 	* not contain the entire path.
@@ -138,9 +130,11 @@ public class TabRatingCompResolver
 					catch(NumberFormatException ex)
 					{
 						String mediumId = this.getPlatformContext(msg);
-						Logger.instance().warning("Platform " + mediumId + " RDB Rating computation for sensor "
-							+ ts.getSensorId() + " has invalid 'depSensorNumber' property '" + sh 
-							+ "' -- ignoring computation.");
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Platform {} RDB Rating computation for sensor "
+							  + "{} has invalid 'depSensorNumber' property '{}'"
+							  + " -- ignoring computation.", mediumId, ts.getSensorId(), sh);
 						return null;
 					}
 				}
@@ -155,8 +149,9 @@ public class TabRatingCompResolver
 				}
 				catch(ComputationParseException ex)
 				{
-					Logger.instance().warning("Cannot read '" + fn
-						+ "': " + ex);
+					log.atWarn()
+						.setCause(ex)
+						.log("Cannot read '{}'",fn);
 				}
 			}
 		}

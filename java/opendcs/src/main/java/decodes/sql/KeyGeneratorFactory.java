@@ -1,42 +1,23 @@
 /*
-*  $Id$
-*
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
-*
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
-*
-*  $Log$
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.4  2013/03/21 18:27:39  mmaloney
-*  DbKey Implementation
-*
-*  Revision 1.3  2010/12/21 19:20:52  mmaloney
-*  group computations
-*
-*  Revision 1.2  2009/01/03 20:31:23  mjmaloney
-*  Added Routing Spec thread-specific database connections for synchronization.
-*
-*  Revision 1.1  2008/04/04 18:21:04  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.2  2007/06/27 20:57:37  mmaloney
-*  dev
-*
-*  Revision 1.1  2006/03/20 20:21:45  mmaloney
-*  Segregate key generator creation to separate factory class.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.sql;
 
-import java.sql.Connection;
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.DatabaseException;
 
 /**
@@ -45,6 +26,7 @@ given a class name.
 */
 public class KeyGeneratorFactory
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	 * Makes and returns a key generator, given a class name.
 	 * Also calls the generator's init method with the passed connection object.
@@ -54,10 +36,9 @@ public class KeyGeneratorFactory
 	public static KeyGenerator makeKeyGenerator(String clsname)
 		throws DatabaseException
 	{
-		Logger.instance().debug3("Making KeyGenerator for class '" + clsname + "'");
+		log.trace("Making KeyGenerator for class '{}'", clsname);
 		try
 		{
-//			Class cls = ClassLoader.getSystemClassLoader().loadClass(clsname);
 			Class cls = 
 			  Thread.currentThread().getContextClassLoader().loadClass(clsname);
 			KeyGenerator keyGenerator = (KeyGenerator)cls.newInstance();
@@ -66,23 +47,20 @@ public class KeyGeneratorFactory
 		catch(ClassNotFoundException ex)
 		{
 			String err = "Cannot load KeyGenerator from class name '"
-			  + clsname + "' (Check configuration and CLASSPATH setting) " + ex;
-			Logger.instance().failure(err);
-			throw new DatabaseException(err);
+			  + clsname + "' (Check configuration and CLASSPATH setting)";
+			throw new DatabaseException(err,ex);
 		}
 		catch(InstantiationException ex)
 		{
 			String err = "Cannot instantiate KeyGenerator of type '"
-			  + clsname + "': (Check configuration and CLASSPATH setting) ex" + ex;
-			Logger.instance().failure(err);
-			throw new DatabaseException(err);
+			  + clsname + "': (Check configuration and CLASSPATH setting)";
+			throw new DatabaseException(err,ex);
 		}
 		catch(IllegalAccessException ex)
 		{
 			String err = "Cannot instantiate KeyGenerator of type '"
-			  + clsname + "': (Does class have public no-arg constructor?)" + ex; 
-			Logger.instance().failure(err);
-			throw new DatabaseException(err);
+			  + clsname + "': (Does class have public no-arg constructor?)"; 
+			throw new DatabaseException(err,ex);
 		}
 	}
 }

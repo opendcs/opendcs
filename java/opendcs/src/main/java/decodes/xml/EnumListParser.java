@@ -1,15 +1,27 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import java.util.Collection;
 import java.util.Iterator;
 import decodes.db.*;
 import ilex.util.TextUtil;
-import ilex.util.Logger;
 import java.io.IOException;
 import ilex.xml.*;
 
@@ -18,19 +30,23 @@ import ilex.xml.*;
  */
 public class EnumListParser implements XmlObjectParser, XmlObjectWriter
 {
-	/** The database to read & write */
-	Database theDb;
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	final EnumList enums;
+	DbEnum currDbEnum;
 
 	/**
 	  Note: Normally we would store a reference to the Java object that
 	  we're building, but since EnumList is a singleton with only static
 	  members, we don't need to do this.
-	  @param db The database to read & write.
+
+	  NOTE2: as we move towards new daos we're to first pretend the above isn't true... 
+	         add then make it so.
+	  @param enums The enums to read and write.
 	*/
-	public EnumListParser(Database db)
+	public EnumListParser(EnumList enums)
 	{
 		super();
-		theDb = db;
+		this.enums = enums;
 	}
 
 	/**
@@ -66,22 +82,21 @@ public class EnumListParser implements XmlObjectParser, XmlObjectWriter
 			if (enumName == null)
 				throw new SAXException("Enum without " +
 					XmlDbTags.name_at + " attribute");
-
-			decodes.db.DbEnum dbenum = new decodes.db.DbEnum(enumName);
-			hier.pushObjectParser(new EnumParser(dbenum));
+			
+			currDbEnum = new decodes.db.DbEnum(enumName);
+			enums.addEnum(currDbEnum);
+			hier.pushObjectParser(new EnumParser(currDbEnum));
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
@@ -94,6 +109,7 @@ public class EnumListParser implements XmlObjectParser, XmlObjectWriter
 				"Parse stack corrupted: got end tag for " + localName
 				+ ", expected " + myName());
 		hier.popObjectParser();
+		
 	}
 
 	/**
@@ -115,10 +131,10 @@ public class EnumListParser implements XmlObjectParser, XmlObjectWriter
 	{
 		xos.startElement(XmlDbTags.EnumList_el);
 
-		Collection enums = theDb.enumList.getEnumList();
-		for(Iterator it = enums.iterator(); it.hasNext(); )
+		
+		for(Iterator<DbEnum> it = enums.iterator(); it.hasNext(); )
 		{
-			decodes.db.DbEnum dbenum = (decodes.db.DbEnum)it.next();
+			decodes.db.DbEnum dbenum = it.next();
 			EnumParser p = new EnumParser(dbenum);
 			p.writeXml(xos);
 		}

@@ -1,6 +1,18 @@
-/**
- * 
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.networkdcp;
 
 import java.io.IOException;
@@ -12,11 +24,12 @@ import java.util.Iterator;
 import java.util.TimeZone;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.w3c.dom.Element;
 
 
 import ilex.xml.XmlOutputStream;
-import ilex.util.Logger;
 import lrgs.drgs.DrgsConnectCfg;
 import lrgs.statusxml.StatusXmlTags;
 import ilex.xml.DomHelper;
@@ -28,10 +41,11 @@ import ilex.xml.DomHelper;
  */
 public class NetworkDcpStatusList
 {
-	private ArrayList<NetworkDcpStatus> statusList = 
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private ArrayList<NetworkDcpStatus> statusList =
 		new ArrayList<NetworkDcpStatus>();
 	private SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
-	
+
 	public NetworkDcpStatusList()
 	{
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -40,7 +54,7 @@ public class NetworkDcpStatusList
 	{
 		return statusList;
 	}
-	
+
 	public NetworkDcpStatus getStatus(String host, int port)
 	{
 		for(NetworkDcpStatus nds : statusList)
@@ -49,11 +63,10 @@ public class NetworkDcpStatusList
 				return nds;
 		NetworkDcpStatus nds = new NetworkDcpStatus(host, port);
 		statusList.add(nds);
-//Logger.instance().info("Created new NetworkDcpStatus for host=" + host
-//+ ", port=" + port);
+
 		return nds;
 	}
-	
+
 	public void remove(String host, int port)
 	{
 		for(int i=0; i<statusList.size(); i++)
@@ -67,8 +80,8 @@ public class NetworkDcpStatusList
 			}
 		}
 	}
-	
-	public synchronized void pollAttempt(DrgsConnectCfg cfg, 
+
+	public synchronized void pollAttempt(DrgsConnectCfg cfg,
 		boolean success, int numMessages)
 	{
 		NetworkDcpStatus nds = getStatus(cfg.host, cfg.msgPort);
@@ -76,23 +89,23 @@ public class NetworkDcpStatusList
 		nds.setDisplayName(cfg.name);
 		nds.pollAttempt(success, numMessages);
 	}
-	
+
 	/** Called at init time to populate list from XML file. */
 	public synchronized void add(NetworkDcpStatus nds)
 	{
 		statusList.add(nds);
 	}
-	
-	/** 
+
+	/**
 	 * Called periodically to checkpoint a copy of the list to an XML file.
 	 * Passing the XmlOutputStream allows this method to be used to send to
 	 * a network as part of a status message, or to save to a file for
-	 * check-pointed status.  
+	 * check-pointed status.
 	 */
 	public synchronized void saveToXml(XmlOutputStream xos)
 	{
 		// Delete statuses that have never been polled, or in last 30 days.
-		for(Iterator<NetworkDcpStatus> it = statusList.iterator(); 
+		for(Iterator<NetworkDcpStatus> it = statusList.iterator();
 			it.hasNext(); )
 		{
 			NetworkDcpStatus nds = it.next();
@@ -108,7 +121,7 @@ public class NetworkDcpStatusList
 			for(NetworkDcpStatus nds : statusList)
 			{
 				xos.startElement(StatusXmlTags.networkDcp,
-					StatusXmlTags.host, nds.getHost(), 
+					StatusXmlTags.host, nds.getHost(),
 					StatusXmlTags.port, ""+nds.getPort());
 				xos.writeElement(StatusXmlTags.displayName,
 					nds.getDisplayName());
@@ -120,7 +133,7 @@ public class NetworkDcpStatusList
 				if (nds.getLastContact() != null)
 					xos.writeElement(StatusXmlTags.lastContact,
 						sdf.format(nds.getLastContact()));
-				
+
 				xos.writeElement(StatusXmlTags.numGoodPolls,
 					""+nds.getNumGoodPolls());
 				xos.writeElement(StatusXmlTags.numFailedPolls,
@@ -131,13 +144,12 @@ public class NetworkDcpStatusList
 			}
 			xos.endElement(StatusXmlTags.networkDcpList);
 		}
-		catch(IOException iox)
+		catch(IOException ex)
 		{
-			Logger.instance().warning("Cannot save NetworkDcpList to XML: "
-				+ iox);
+			log.atWarn().setCause(ex).log("Cannot save NetworkDcpList to XML");
 		}
 	}
-	
+
 	public synchronized void initFromXml(Element networkDcpListElem)
 	{
 		NodeList networkDcpNodeList = networkDcpListElem.getChildNodes();
@@ -154,16 +166,16 @@ public class NetworkDcpStatusList
 					try { port = Integer.parseInt(elem.getAttribute("port")); }
 					catch(NumberFormatException ex)
 					{
-						Logger.instance().warning(
-							"Reading NetworkDcp, bad port attribute for host '"
-							+ host + "' -- skipped.");
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Reading NetworkDcp, bad port attribute for host '{}'", host);
 						continue;
 					}
 					setNetworkDcpStatus(host, port, elem);
 				}
 			}
 	}
-	
+
 	private void setNetworkDcpStatus(String host, int port, Element elem)
 	{
 		NetworkDcpStatus nds = getStatus(host, port);
@@ -187,8 +199,7 @@ public class NetworkDcpStatusList
 				}
 				catch(ParseException ex)
 				{
-					Logger.instance().warning(
-						"LastPollAttempt bad date format '" + dt + "'");
+					log.atWarn().setCause(ex).log("LastPollAttempt bad date format '{}'", dt);
 				}
 			}
 			else if (x.getNodeName().equalsIgnoreCase("LastContact"))
@@ -201,8 +212,7 @@ public class NetworkDcpStatusList
 				}
 				catch(ParseException ex)
 				{
-					Logger.instance().warning(
-						"LastContact bad date format '" + dt + "'");
+					log.atWarn().setCause(ex).log("LastContact bad date format '{}'", dt);
 				}
 			}
 			else if (x.getNodeName().equalsIgnoreCase("NumGoodPolls"))

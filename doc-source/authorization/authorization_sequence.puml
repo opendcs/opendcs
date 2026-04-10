@@ -1,0 +1,65 @@
+@startuml
+actor ClientRequest
+participant "Servlet" as Servlet
+control "ContainerRequestFilter" as Filter
+participant "AuthorizationCheck" as AuthCheck
+participant "JWT Validator" as JWT
+database "Database" as Database
+participant "Endpoint" as Endpoint
+
+ClientRequest -> Servlet: Request (endpoint)
+Servlet -> Filter: Pre-process request
+
+alt Endpoint guest role only
+    Filter -> Servlet: Allow access
+    Servlet -> Endpoint: proceed with request
+    Endpoint -> Endpoint: perform endpoint operations
+    Endpoint -> Servlet: response
+    Servlet -> ClientRequest: response
+else Endpoint requires authorized role
+    alt Servlet session Principal is valid for role and authorization is not expired
+        Filter -> Servlet: Allow access
+        Servlet -> Endpoint
+        Endpoint -> Endpoint: perform endpoint operations
+        Endpoint -> Servlet: response
+        Servlet -> ClientRequest: response
+
+    else No session or authorization expired
+        Filter -> AuthCheck: Authorization check
+        alt #PowderBlue Container Single Sign-On Check (CWMS AAA)
+            AuthCheck -> AuthCheck: check for JSESSIONIDSSO cookie
+            AuthCheck -> Database: request db specific roles for SSO principal
+            Database -> AuthCheck: database specific roles
+        else #Wheat Check user roles in Database (use-case Username/Password authentication endpoint)
+            AuthCheck -> Database: Request user roles based on session\nPrincipal set from authentication endpoint
+            Database -> AuthCheck: database specific roles
+        else #Plum Check JWT in Authorization header (use-case OpenID Connect)
+            AuthCheck -> AuthCheck: Validate JWT
+            alt JWT is valid
+                AuthCheck -> AuthCheck: Extract subject
+                AuthCheck -> Database: Request user roles based on JWT subject
+                Database -> AuthCheck: database specific roles
+            else JWT is invalid
+                AuthCheck -> Filter: ClientRequest not authorized
+                Filter -> Servlet: Reject access
+                Servlet -> ClientRequest: Error response: 401 Status
+            end
+        end
+    end
+end
+AuthCheck -> Filter: SecurityContext with Principal\nand normalized OpenDCS Roles
+Filter -> Filter: check SecurityContext against endpoint roles
+alt Roles are valid
+    Filter -> Servlet: Roles valid
+    Servlet -> Endpoint: ClientRequest authorized
+    Endpoint -> Endpoint: perform endpoint operations
+    Endpoint -> Servlet: response
+    Servlet -> ClientRequest: response
+else Roles are invalid
+    Filter -> Servlet: Reject access
+    Servlet -> ClientRequest: Error response: 403 Status
+end
+
+footer All processes except for the internal database exist with the REST API web app
+
+@enduml

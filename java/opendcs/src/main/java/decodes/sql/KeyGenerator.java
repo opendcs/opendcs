@@ -27,6 +27,9 @@
 package decodes.sql;
 
 import java.sql.Connection;
+
+import org.opendcs.database.api.Generator;
+
 import decodes.db.DatabaseException;
 
 /**
@@ -45,7 +48,7 @@ In addition to the methods defined here, the instantiating class must
 also implement a no-arguments constructor. This will be used to dynamically
 create the object.
 */
-public interface KeyGenerator
+public interface KeyGenerator extends Generator
 {
 	/**
 	  Generates a database-unique key suitable for adding a new entry

@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.algo;
 
 import ilex.var.NamedVariable;
@@ -6,6 +21,8 @@ import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(
 		description = "AverageAlgorithm averages single 'input' parameter to a single 'average' \n" +
@@ -15,6 +32,7 @@ import org.opendcs.annotations.algorithm.Output;
 
 public class AverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final String AVERAGESTRING = "average";
 	@Input
 	double input;
@@ -72,7 +90,6 @@ public class AverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//		debug2("AverageAlgorithm:doAWTimeSlice, input=" + input);
 		if (!isMissing(input))
 		{
 			tally += input;
@@ -86,9 +103,6 @@ public class AverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	@Override
 	protected void afterTimeSlices()
 	{
-//		debug2("AverageAlgorithm:afterTimeSlices, count=" + count);
-//debug1("AverageAlgorithm:afterTimeSlices, per begin="
-//+ debugSdf.format(_aggregatePeriodBegin) + ", end=" + debugSdf.format(_aggregatePeriodEnd));
 		if (count >= minSamplesNeeded && count > 0)
 		{
 			double ave = tally / (double)count;
@@ -96,16 +110,14 @@ public class AverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 			// Added for HDB issue 386
 			if (ave < 0.0 && negativeReplacement != Double.NEGATIVE_INFINITY)
 			{
-				debug1("Computed average=" + ave + ", will use negativeReplacement="
-					+ negativeReplacement);
+				log.debug("Computed average={}, will use negativeReplacement={}", ave, negativeReplacement);
 				ave = negativeReplacement;
 			}
 			setOutput(average, ave);
 		}
 		else 
 		{
-			warning("Do not have minimum # samples (" + minSamplesNeeded
-				+ ") -- not producing an average.");
+			log.warn("Do not have minimum # samples ({}) -- not producing an average.", minSamplesNeeded);
 			if (_aggInputsDeleted)
 				deleteOutput(average);
 		}

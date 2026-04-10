@@ -26,6 +26,7 @@ public @interface Output
 {
     /**
      * Leaving the name blank will use the name of the field.
+     * @return the name
      */
     String name() default "";
     Class<?> type() default Double.class;

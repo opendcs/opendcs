@@ -1,17 +1,17 @@
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.6  2013/07/12 11:50:15  mmaloney
-*  Dev
-*
-*  Revision 1.5  2013/05/20 19:24:20  shweta
-*  fixed bug-- http://jirasvr:8080/browse/TPD-104
-*
-*  Revision 1.4  2013/01/08 20:48:27  mmaloney
-*  Relax 100 sensor limit.
-*  Get rid of 'setPreferredSize' calls.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.dbeditor;
 
@@ -25,21 +25,20 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.ResourceBundle;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.gui.Help;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import decodes.gui.*;
 import decodes.db.PlatformConfig;
-import decodes.datasource.GoesPMParser;
-import decodes.datasource.IridiumPMParser;
 import decodes.db.ConfigSensor;
-import decodes.db.ScriptSensor;
 import decodes.db.EquipmentModel;
 import decodes.db.Constants;
 import decodes.db.DecodesScript;
 import decodes.db.DecodesScriptException;
-import decodes.db.UnitConverterDb;
 import decodes.util.TimeOfDay;
 import decodes.xml.XmlDatabaseIO;
 import decodes.db.Database;
@@ -52,9 +51,9 @@ import decodes.util.DecodesSettings;
 Editor panel for Platform Configurations.
 This panel is opened from the ConfigListPanel when the user selects 'Open'.
 */
-public class ConfigEditPanel extends DbEditorTab
-       implements ChangeTracker, EntityOpsController
+public class ConfigEditPanel extends DbEditorTab implements ChangeTracker, EntityOpsController
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
     static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -159,7 +158,7 @@ public class ConfigEditPanel extends DbEditorTab
         }
         catch(Exception ex)
         {
-            ex.printStackTrace();
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -199,7 +198,7 @@ public class ConfigEditPanel extends DbEditorTab
         }
         catch(Exception ex)
         {
-            ex.printStackTrace();
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -529,17 +528,10 @@ public class ConfigEditPanel extends DbEditorTab
             DecodesScript ds = DecodesScript.empty()
                                             .scriptName("")
                                             .platformConfig(theConfig)
+                                            .scriptType(Constants.scriptTypeDecodes)
+                                            .addDefaultSensors()
                                             .build();
-            ds.scriptType = Constants.scriptTypeDecodes;
-            for(Iterator<ConfigSensor> it = theConfig.getSensors(); it.hasNext(); )
-            {
-                ConfigSensor cs = it.next();
-                ScriptSensor ss = new ScriptSensor(ds, cs.sensorNumber);
-                ss.rawConverter = new UnitConverterDb("raw", "raw");
-                ss.rawConverter.algorithm = Constants.eucvt_none;
-                ds.addScriptSensor(ss);
-            }
-
+            
             if (dsEditDlg == null)
             {
                 dsEditDlg = new DecodingScriptEditDialog(ds, this);
@@ -646,7 +638,7 @@ public class ConfigEditPanel extends DbEditorTab
         // Write the changes out to the database.
         try
         {
-            Logger.instance().debug1("ConfigEditPanel.saveChanges - writing config.");
+            log.debug("ConfigEditPanel.saveChanges - writing config.");
             theConfig.write();
         }
         catch(DatabaseException e)
@@ -671,36 +663,38 @@ public class ConfigEditPanel extends DbEditorTab
                     {
                         if (!p.isComplete())
                         {
-                            Logger.instance().debug1("ConfigEditPanel.saveChanges - reading platform.");
+                            log.debug("ConfigEditPanel.saveChanges - reading platform.");
                             p.read();
                         }
                         p.setConfig(theConfig);
                         {
-                            Logger.instance().debug1("ConfigEditPanel.saveChanges - writing platform.");
+                            log.debug("ConfigEditPanel.saveChanges - writing platform.");
                             p.write();
                         }
                     }
-                    catch(DatabaseException e)
+                    catch(DatabaseException ex)
                     {
+                        log.atError().setCause(ex).log("Unable to write platform.");
                         TopFrame.instance().showError(
                             LoadResourceBundle.sprintf(
                                 dbeditLabels.getString(
                                     "ConfigEditPanel.cannotWritePlatform"),
-                                p.makeFileName(), e.toString()));
+                                p.makeFileName(), ex.toString()));
                     }
                 }
             }
-            Logger.instance().debug1("ConfigEditPanel.saveChanges - writing platform list.");
+            log.debug("ConfigEditPanel.saveChanges - writing platform list.");
 
             try
             {
                 db.platformList.write();
             }
-            catch(DatabaseException e)
+            catch(DatabaseException ex)
             {
+                log.atError().setCause(ex).log("Unable to write platform list.");
                 TopFrame.instance().showError(
                     dbeditLabels.getString("ConfigEditPanel.cannotWriteList")
-                    + e.toString());
+                    + ex.toString());
             }
 
         }
@@ -778,73 +772,10 @@ public class ConfigEditPanel extends DbEditorTab
     */
     public void validateDecodingScriptSensors()
     {
-        int nsensors = theConfig.getNumSensors();
-        int sensnums[] = new int[nsensors];
-
-        for(Iterator dsit = theConfig.decodesScripts.iterator(); dsit.hasNext(); )
-        {
-            DecodesScript ds = (DecodesScript)dsit.next();
-
-            // build an array of all valid sensor numbers.
-            int i = 0;
-            for(Iterator csit = theConfig.getSensors(); csit.hasNext(); )
-            {
-                ConfigSensor cs = (ConfigSensor)csit.next();
-                sensnums[i++] = cs.sensorNumber;
-            }
-
-            for(Iterator ssit = ds.scriptSensors.iterator(); ssit.hasNext(); )
-            {
-                // Make sure each script sensor still refers to a config sensor.
-                ScriptSensor ss = (ScriptSensor)ssit.next();
-                for(i=0; i<nsensors; i++)
-                    if (ss.sensorNumber == sensnums[i])
-                    {
-                        sensnums[i] = -1;
-                        break;
-                    }
-                if (i == nsensors) // fell through - invalid sensor number.
-                    ssit.remove();
-            }
-
-            // Add script sensors for each unrepresented config sensor.
-            for(i=0; i < nsensors; i++)
-                if (sensnums[i] != -1)
-                {
-                    ScriptSensor ss = new ScriptSensor(ds, sensnums[i]);
-                    ss.rawConverter = new UnitConverterDb("raw", "raw");
-                    ss.rawConverter.algorithm = Constants.eucvt_none;
-                    ds.addScriptSensor(ss);
-                }
-        }
+        theConfig.validateDecodingScriptSensors();
     }
 
-    private ConfigSensor findSensorByCode(String codeValue)
-    {
-        for(Iterator<ConfigSensor> csit = theConfig.getSensors(); csit.hasNext();)
-        {
-            ConfigSensor cs = csit.next();
-            for(Iterator<DataType> dtit = cs.getDataTypes(); dtit.hasNext(); )
-            {
-                DataType dt = dtit.next();
-                if (dt.getCode().equalsIgnoreCase(codeValue))
-                    return cs;
-            }
-        }
-        return null;
-    }
-
-    private ConfigSensor findSensorByName(String sensorName)
-    {
-        for(Iterator<ConfigSensor> csit = theConfig.getSensors(); csit.hasNext();)
-        {
-            ConfigSensor cs = csit.next();
-            if (cs.sensorName.equalsIgnoreCase(sensorName))
-                return cs;
-        }
-        return null;
-    }
-
+   
     /**
       Called when the Add Performance Measurements button is pressed.
       Adds the canned GOES DCP parameters used by USGS.
@@ -858,200 +789,8 @@ public class ConfigEditPanel extends DbEditorTab
             return;
         ArrayList<String> pmNames = dlg.getResults();
         int sensorNum = configSensorTableModel.highestSensorNumber() + 1;
-        for(String n : pmNames)
-        {
-            ConfigSensor cs = this.findSensorByName(n);
-            if (cs != null)
-            {
-                parent.showError("There is already a sensor named '" + n + "' -- cannot add.");
-                continue;
-            }
+        theConfig.AddGoesParameters(pmNames,sensorNum);
 
-            cs = new ConfigSensor(theConfig, sensorNum++);
-            cs.sensorName = n;
-            cs.recordingMode = Constants.recordingModeVariable;
-            if (n.equalsIgnoreCase(GoesPMParser.DCP_ADDRESS))
-            {
-                cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Code-DCPAddress"));
-                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YA"));
-            }
-            else if (n.equalsIgnoreCase(GoesPMParser.MESSAGE_LENGTH))
-            {
-                   cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Langth-Message"));
-                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YL"));
-            }
-            else if (n.equalsIgnoreCase(GoesPMParser.SIGNAL_STRENGTH))
-            {
-                   cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Power-Signal"));
-                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YS"));
-            }
-            else if (n.equalsIgnoreCase(GoesPMParser.FAILURE_CODE))
-            {
-                   cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Code-Failure"));
-                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YF"));
-            }
-            else if (n.equalsIgnoreCase(GoesPMParser.FREQ_OFFSET))
-            {
-                   cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Freq-Offset"));
-                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YO"));
-            }
-            else if (n.equalsIgnoreCase(GoesPMParser.MOD_INDEX))
-            {
-                   cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Ratio-ModIndex"));
-                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YI"));
-            }
-            else if (n.equalsIgnoreCase(GoesPMParser.CHANNEL))
-            {
-                cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Code-Channel"));
-                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YC"));
-            }
-            else if (n.equalsIgnoreCase(GoesPMParser.SPACECRAFT))
-            {
-                cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Code-Spacecraft"));
-                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YP"));
-            }
-            else if (n.equalsIgnoreCase(GoesPMParser.BAUD))
-            {
-                   cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Freq-Baud"));
-                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YB"));
-            }
-            else if (n.equalsIgnoreCase(GoesPMParser.DCP_MSG_FLAGS))
-            {
-                cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Binary-Flags"));
-                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YG"));
-            }
-            else if (n.equalsIgnoreCase(IridiumPMParser.LATITUDE))
-            {
-                cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Rotation-Latitude"));
-                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YA"));
-            }
-            else if (n.equalsIgnoreCase(IridiumPMParser.LONGITUDE))
-            {
-                cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Rotation-Longitude"));
-                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YO"));
-            }
-            else if (n.equalsIgnoreCase(IridiumPMParser.CEP_RADIUS))
-            {
-                cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Rotation-CEPRadius"));
-                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YR"));
-            }
-            theConfig.addSensor(cs);
-        }
-
-//        int sensorNum = configSensorTableModel.highestSensorNumber() + 1;
-//        if (sensorNum < 101)
-//            sensorNum = 101;
-//        ConfigSensor cs = findSensorByCode("72114");
-//        if (cs == null)
-//        {
-//            cs = new ConfigSensor(theConfig, sensorNum++);
-//            cs.addDataType(
-//                DataType.getDataType(Constants.datatype_EPA, "72114"));
-//            cs.addDataType(
-//                DataType.getDataType(Constants.datatype_USGS, "72114"));
-//            cs.sensorName = "EIRP(DBM)";
-//            cs.recordingMode = Constants.recordingModeVariable;
-//            cs.getProperties().setProperty("StatisticsCode", "00011");
-//            theConfig.addSensor(cs);
-//        }
-//
-//        cs = findSensorByCode("72113");
-//        if (cs == null)
-//        {
-//            cs = new ConfigSensor(theConfig, sensorNum++);
-//            cs.addDataType(
-//                DataType.getDataType(Constants.datatype_EPA, "72113"));
-//            cs.addDataType(
-//                DataType.getDataType(Constants.datatype_USGS, "72113"));
-//            cs.sensorName = "MOD(db)";
-//            cs.recordingMode = Constants.recordingModeVariable;
-//            cs.getProperties().setProperty("StatisticsCode", "00011");
-//            theConfig.addSensor(cs);
-//        }
-//
-//        cs = findSensorByCode("72115");
-//        if (cs == null)
-//        {
-//            cs = new ConfigSensor(theConfig, sensorNum++);
-//            cs.addDataType(
-//                DataType.getDataType(Constants.datatype_EPA, "72115"));
-//            cs.addDataType(
-//                DataType.getDataType(Constants.datatype_USGS, "72115"));
-//            cs.sensorName = "FREQ(hz)";
-//            cs.recordingMode = Constants.recordingModeVariable;
-//            cs.getProperties().setProperty("StatisticsCode", "00011");
-//            theConfig.addSensor(cs);
-//        }
-//
-//        cs = findSensorByCode("72112");
-//        if (cs == null)
-//        {
-//            cs = new ConfigSensor(theConfig, sensorNum++);
-//            cs.addDataType(
-//                DataType.getDataType(Constants.datatype_EPA, "72112"));
-//            cs.addDataType(
-//                DataType.getDataType(Constants.datatype_USGS, "72112"));
-//            cs.sensorName = "(S+N)/N";
-//            cs.recordingMode = Constants.recordingModeVariable;
-//            cs.getProperties().setProperty("StatisticsCode", "00011");
-//            theConfig.addSensor(cs);
-//        }
-//
-//        cs = findSensorByCode("72111");
-//        if (cs == null)
-//        {
-//            cs = new ConfigSensor(theConfig, sensorNum++);
-//            cs.addDataType(
-//                DataType.getDataType(Constants.datatype_EPA, "72111"));
-//            cs.addDataType(
-//                DataType.getDataType(Constants.datatype_USGS, "72111"));
-//            cs.sensorName = "ER #";
-//            cs.recordingMode = Constants.recordingModeVariable;
-//            cs.getProperties().setProperty("StatisticsCode", "00011");
-//            theConfig.addSensor(cs);
-//        }
-//
-//        cs = findSensorByCode("68229");
-//        if (cs == null)
-//        {
-//            cs = new ConfigSensor(theConfig, sensorNum++);
-//            cs.addDataType(
-//                DataType.getDataType(Constants.datatype_EPA, "68229"));
-//            cs.addDataType(
-//                DataType.getDataType(Constants.datatype_USGS, "68229"));
-//            cs.sensorName = "SOURCE";
-//            cs.recordingMode = Constants.recordingModeVariable;
-//            cs.getProperties().setProperty("StatisticsCode", "00011");
-//            theConfig.addSensor(cs);
-//        }
-//
-//        cs = findSensorByCode("72117");
-//        if (cs == null)
-//        {
-//            cs = new ConfigSensor(theConfig, sensorNum++);
-//            cs.addDataType(
-//                DataType.getDataType(Constants.datatype_EPA, "72117"));
-//            cs.addDataType(
-//                DataType.getDataType(Constants.datatype_USGS, "72117"));
-//            cs.sensorName = "TIME OFF";
-//            cs.recordingMode = Constants.recordingModeVariable;
-//            cs.getProperties().setProperty("StatisticsCode", "00011");
-//            theConfig.addSensor(cs);
-//        }
-//
-//        cs = findSensorByCode("72116");
-//        if (cs == null)
-//        {
-//            cs = new ConfigSensor(theConfig, sensorNum++);
-//            cs.addDataType(
-//                DataType.getDataType(Constants.datatype_EPA, "72116"));
-//            cs.addDataType(
-//                DataType.getDataType(Constants.datatype_USGS, "72116"));
-//            cs.sensorName = "BAD CHRS";
-//            cs.recordingMode = Constants.recordingModeVariable;
-//            cs.getProperties().setProperty("StatisticsCode", "00011");
-//            theConfig.addSensor(cs);
-//        }
         validateDecodingScriptSensors();
         configSensorTableModel.fireTableDataChanged();
     }

@@ -1,25 +1,32 @@
 /*
-* $Id$
-* 
-* $Log$
-* Revision 1.8  2012/12/12 18:44:24  mmaloney
-* Fix UI Thread problem on config requests.
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-* Revision 1.7  2012/12/12 16:01:31  mmaloney
-* Several updates for 5.2
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lritdcs;
 
 import java.util.*;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.*;
 
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 
-public class LritDcsConfig
-	extends Observable
+public class LritDcsConfig extends Observable
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/// Global instance returned by instance() method.
 	private static LritDcsConfig _instance = null;
 
@@ -62,8 +69,8 @@ public class LritDcsConfig
 	public int maxSecondsHigh;
 
 	public int scrubHours;
-	public String webBrowser;	
-	
+	public String webBrowser;
+
 	public String dom2AHostName;
 	public String dom2ADirLow;
 	public String dom2ADirMedium;
@@ -82,7 +89,7 @@ public class LritDcsConfig
 	public String dom2CDirMedium;
 	public String dom2CDirHigh;
 	public String dom2CUser;
-	
+
 	public int lqmPort;
 	public String lqmIPAddress;
 	public int lritUIPort;
@@ -97,9 +104,6 @@ public class LritDcsConfig
 
 	public String fileSenderHost;
 	public String fileSenderState;
-	
-//	public boolean ptpEnabled = false;
-//	public String ptpDir = "ptp";
 
 	public static boolean exitOnLoadError = true;
 
@@ -115,7 +119,7 @@ public class LritDcsConfig
 	}
 
 	/**
-	  Called by the user interface GUI at start-up to construct the 
+	  Called by the user interface GUI at start-up to construct the
 	  instance but without loading it from a file. Rather, the GUI
 	  populates the config from messages it receives over the UI socket.
 	*/
@@ -163,19 +167,19 @@ public class LritDcsConfig
 		dom2ADirMedium = "Medium";
 		dom2ADirHigh = "High";
 		dom2AUser = "dcsadmin";
-		
+
 		dom2BHostName = "sofa.nesdis.noaa.gov";
 		dom2BDirLow = "Low";
 		dom2BDirMedium = "Medium";
 		dom2BDirHigh = "High";
 		dom2BUser = "dcsadmin";
-		
+
 		dom2CHostName = "";
 		dom2CDirLow = "Low";
 		dom2CDirMedium = "Medium";
 		dom2CDirHigh = "High";
 		dom2CUser = "dcsadmin";
-		
+
 		scrubHours = 48;
 		webBrowser = "mozilla";
 		lqmPort = 17004;
@@ -187,14 +191,10 @@ public class LritDcsConfig
 		maxTotalFiles = -1;
 		enableLqm = true;
 		lqmPendingTimeout = 300;
-//		rsaPrivateKey = EnvExpander.expand("$HOME/.ssh/id_rsa");
 		fileSenderHost="localhost";
 		fileSenderState="dormant";
-		
-//		ptpEnabled = false;
-//		ptpDir = "ptp";
 
-		
+
 	}
 
 	public void findConfigFile()
@@ -203,13 +203,12 @@ public class LritDcsConfig
 			return;
 		lritDcsHome = System.getProperty("LRITDCS_HOME");
 		//lritDcsHome = "C:/LRITDCS";
-		//lritDcsHome = System.getenv("LRITDCS_HOME");		
+		//lritDcsHome = System.getenv("LRITDCS_HOME");
 		System.setProperty("user.dir", lritDcsHome);
-		Logger.instance().info("CWD set to '" + System.getProperty("user.dir") + "'");
+		log.info("CWD set to '{}'", System.getProperty("user.dir"));
 		if (lritDcsHome == null)
 		{
-			System.err.println(
-	"Cannot load configuration. LRITDCS_HOME must be defined in java command.");
+			log.error("Cannot load configuration. LRITDCS_HOME must be defined in java command.");
 			System.exit(1);
 		}
 		configFile = new File(lritDcsHome + File.separator + "lritdcs.conf");
@@ -224,34 +223,21 @@ public class LritDcsConfig
 	{
 		lastLoadTime = System.currentTimeMillis();
 		findConfigFile();
-		Logger.instance().info("Loading configuration from '" + configFile
-			+ "'");
-		try
+		log.info("Loading configuration from '{}'", configFile);
+		try (FileInputStream fis = new FileInputStream(configFile))
 		{
-			FileInputStream fis = new FileInputStream(configFile);
 			Properties configData = new Properties();
 			configData.load(fis);
-			fis.close();
 			PropertiesUtil.loadFromProps(this, configData);
-			
-//			LritDcsMain theMain = LritDcsMain.instance();
-//			if (theMain != null)
-//			{
-//				LritDcsStatus status = theMain.getStatus();
-//				if (status != null)
-//				{
-//					status.ptpDir = this.ptpDir;
-//					status.ptpEnabled = this.ptpEnabled;
-//				}
-//			}
 		}
 		catch(IOException ex)
 		{
 			if (exitOnLoadError)
 			{
-				Logger.instance().fatal("LRIT:" + Constants.EVT_BAD_CONFIG
-					+"- Cannot read LRIT DCS Config File '"+configFile.getPath()
-					+ "' (Check LRITDCS_HOME in environment): " + ex);
+				log.atError()
+				   .setCause(ex)
+				   .log("LRIT:{}- Cannot read LRIT DCS Config File '{}' (Check LRITDCS_HOME in environment): ",
+				   		Constants.EVT_BAD_CONFIG, configFile.getPath());
 				System.exit(1);
 			}
 		}
@@ -261,90 +247,80 @@ public class LritDcsConfig
 	public void save()
 	{
 		findConfigFile();
-		FileOutputStream fos = null;
-		try
+
+		try (FileOutputStream fos = new FileOutputStream(configFile))
 		{
-			fos = new FileOutputStream(configFile);
 			save(fos);
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().log(Logger.E_FAILURE,
-				"Cannot save LRIT DCS Config File '"+configFile.getPath()
-				+ "' (Check LRITDCS_HOME in environment): " + ex);
-		}
-		finally
-		{
-			if (fos != null)
-			{
-				try { fos.close(); }
-				catch(IOException ex) {}
-			}
+			log.atError()
+			   .setCause(ex)
+			   .log("Cannot save LRIT DCS Config File '{}' (Check LRITDCS_HOME in environment): ",
+			   		configFile.getPath());
 		}
 	}
 
 	public  void saveConfig(PrintWriter pw,Properties propConfig)
 	{
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		
+
 		StringBuffer sbf = new StringBuffer(propConfig.toString());
 		sbf.deleteCharAt(0);
 		sbf.deleteCharAt(sbf.length()-1);
 		Properties props = PropertiesUtil.string2props(sbf.toString());
-		
-		try { 
+
+		try
+		{
 			props.store(baos, "LRIT File-Generator Configuration");
-	
-			
 		}
 		catch(Exception ex)
 		{
-			ex.printStackTrace();
-			Logger.instance().warning("Cannot write to string!!!");
+			log.atWarn().setCause(ex).log("Cannot write to string!!!");
 			return;
 		}
 		pw.println(baos.toString());
 	}
-	
+
 	public void saveState(PrintWriter pw,String lritState)
 	{
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		try {
-					
+		try
+		{
 			Properties props = new Properties();
 			PropertiesUtil.storeInProps(this, props, null);
 			props.put("fileSenderState",lritState );
-			props.store(baos, "LRIT File-Generator Configuration");		
+			props.store(baos, "LRIT File-Generator Configuration");
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("Cannot write to string!!!");
+			log.atWarn().setCause(ex).log("Cannot write to string!!!");
 			return;
 		}
 		pw.println(baos.toString());
 	}
-	
+
 	public void save(OutputStream os)
 		throws IOException
 	{
-		Properties props = new Properties();		
+		Properties props = new Properties();
 		PropertiesUtil.storeInProps(this, props, null);
-		props.store(os, "LRIT File-Generator Configuration");		
+		props.store(os, "LRIT File-Generator Configuration");
 	}
 
 	public void save(PrintWriter pw)
 	{
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		try 
+		try
 		{
 			save(baos);
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("Cannot write to string!!!");
+			log.atWarn().setCause(ex).log("Cannot write to string!!!");
 			return;
 		}
-		
+
 		StringBuilder sb = new StringBuilder(baos.toString());
 		pw.println(sb.toString());
 	}
@@ -553,7 +529,7 @@ public class LritDcsConfig
 		maxSecondsHigh = v;
 	}
 
-	
+
 
 	public int getScrubHours()
 	{
@@ -890,8 +866,7 @@ public class LritDcsConfig
 		if (lmt > lastLoadTime)
 		{
 			//System.out.println("Configuration has changed and is being reloaded.");
-			Logger.instance().log(Logger.E_INFORMATION,
-				"Configuration has changed and is being reloaded.");
+			log.info("Configuration has changed and is being reloaded.");
 			load();
 			return true;
 		}
@@ -940,24 +915,4 @@ public class LritDcsConfig
 			return null;
 		return s;
 	}
-
-//	public boolean isPtpEnabled()
-//	{
-//		return ptpEnabled;
-//	}
-//
-//	public void setPtpEnabled(boolean ptpEnabled)
-//	{
-//		this.ptpEnabled = ptpEnabled;
-//	}
-//
-//	public String getPtpDir()
-//	{
-//		return ptpDir;
-//	}
-//
-//	public void setPtpDir(String ptpDir)
-//	{
-//		this.ptpDir = ptpDir;
-//	}
 }

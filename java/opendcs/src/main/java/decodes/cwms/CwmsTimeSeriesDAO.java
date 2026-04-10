@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.cwms;
 
 import ilex.util.TextUtil;
@@ -20,7 +35,10 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 import org.opendcs.database.ExceptionHelpers;
+import org.opendcs.database.OracleSqlExceptionHelper;
 import org.opendcs.utils.FailableResult;
+import org.opendcs.utils.logging.MDCTimer;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,11 +76,9 @@ import opendcs.util.sql.WrappedConnection;
 import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 
-public class CwmsTimeSeriesDAO
-    extends DaoBase
-    implements TimeSeriesDAI
+public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 {
-    private final Logger log = LoggerFactory.getLogger(CwmsTimeSeriesDAO.class);
+    private final Logger log = OpenDcsLoggerFactory.getLogger();
     protected static final  DbObjectCache<TimeSeriesIdentifier> cache =
         new DbObjectCache<TimeSeriesIdentifier>(60 * 60 * 1000L, false);
     protected SiteDAI siteDAO = null;
@@ -155,14 +171,9 @@ public class CwmsTimeSeriesDAO
     private CwmsTsId rs2TsId(ResultSet rs, boolean createDataType)
         throws SQLException, DbIoException, NoSuchObjectException
     {
-//        private String cwmsTsidQueryBase = "SELECT a.CWMS_TS_ID, a.VERSION_FLAG, a.INTERVAL_UTC_OFFSET, "
-//            + "a.UNIT_ID, a.PARAMETER_ID, '', a.TS_CODE, a.LOCATION_CODE, "
-//            + "a.LOCATION_ID, a.TS_ACTIVE_FLAG FROM CWMS_V_TS_ID a, CWMS_V_LOC c";
-
         DbKey key = DbKey.createDbKey(rs, 7);
         String desc = rs.getString(1);
         String param = rs.getString(5);
-//        String publicSiteName = rs.getString(6);
         DataType dt =
             DataType.getDataType(Constants.datatype_CWMS, param);
 
@@ -759,9 +770,12 @@ public class CwmsTimeSeriesDAO
                     values[idx] = valueArray.get(idx);
                     qualities[idx] = qualArray.get(idx);
 
-                    log.trace("sample[{}] time={}, value={}, qual=0x{}",
-                              idx, db.getLogDateFormat().format(new Date(times[idx])),
-                              values[idx], Integer.toHexString(qualities[idx]));
+                    if (log.isTraceEnabled())
+                    {
+                        log.trace("sample[{}] time={}, value={}, qual=0x{}",
+                                idx, new Date(times[idx]),
+                                values[idx], Integer.toHexString(qualities[idx]));
+                    }
                 }
                 // The "Replace All" store-rule means:
                 //  -- Values at same time stamp I provide will replace existing values
@@ -769,11 +783,8 @@ public class CwmsTimeSeriesDAO
                 //  -- Existing values at different time stamps will be left alone.
                 log.debug(" Calling store for ts_id='{}', office='{}' with {} values, units='{}'",
                           path, dbOfficeId, num2write, ts.getUnitsAbbr());
-                cwmsDbTs.store(
-                    conn,
-                    dbOfficeId, path, ts.getUnitsAbbr(), times, values,
-                    qualities, num2write, CwmsConstants.REPLACE_ALL,
-                    overrideProtection, versionDate,false);
+                timedStore(ts, path, versionDate, overrideProtection, CwmsConstants.REPLACE_ALL,
+                          conn, cwmsDbTs, num2write, times, values,qualities);
             }
 
             // Handle the special values with No OVERWRITE flag:
@@ -789,19 +800,19 @@ public class CwmsTimeSeriesDAO
                     times[idx] = msecArray.get(idx);
                     values[idx] = valueArray.get(idx);
                     qualities[idx] = qualArray.get(idx);
-
-                    log.trace("sample[{}] time={}, value={}, qual=0x{}",
-                              idx, db.getLogDateFormat().format(new Date(times[idx])),
-                              values[idx], Integer.toHexString(qualities[idx]));
+                    if (log.isTraceEnabled())
+                    {
+                        log.trace("sample[{}] time={}, value={}, qual=0x{}",
+                                idx, db.getLogDateFormat().format(new Date(times[idx])),
+                                values[idx], Integer.toHexString(qualities[idx]));
+                    }
                 }
                 // The "REPLACE_MISSING_VALUES_ONLY" store-rule means:
                 //  -- Do not overwrite if a value exists at that time-slice.
                 log.debug(" Calling store (no overwrite) for ts_id='{}' with {} values, units='{}'",
                        path, num2write, ts.getUnitsAbbr());
-
-                cwmsDbTs.store(conn, dbOfficeId, path, ts.getUnitsAbbr(), times, values,
-                    qualities, num2write, CwmsConstants.REPLACE_MISSING_VALUES_ONLY,
-                    overrideProtection, versionDate, false);
+                timedStore(ts, path, versionDate, overrideProtection, CwmsConstants.REPLACE_MISSING_VALUES_ONLY,
+                           conn, cwmsDbTs, num2write, times, values, qualities);
             }
 
             TimeSeriesIdentifier tsIdCached = cache.getByUniqueName(tsId.getUniqueString());
@@ -816,18 +827,57 @@ public class CwmsTimeSeriesDAO
         }
         catch(SQLException ex)
         {
-            String msg = "Error in cwmsTsJdbc.store for '{}'";
+            String msg = "Error in cwmsTsJdbc.store for '" + path + "'";
             log.atError()
                .setCause(ex)
-               .log(msg, path);
+               .log(msg);
 
-            if (msg.contains("read from socket") || msg.contains("connection is closed"))
+            if (OracleSqlExceptionHelper.isConnectionError(ex))
             {
+                // Connection errors indicate the DB connection may be compromised
                 throw new DbIoException(msg, ex);
             }
-            // Note: There are so many business rules in CWMS which can
-            // cause the store to fail, so don't throw DBIO.
-            //            throw new DbIoException(msg);
+            if (OracleSqlExceptionHelper.isUserDefinedError(ex))
+            {
+                // User-defined errors (ORA >= 20000) are CWMS business rule violations
+                // (e.g., ORA-20998, ORA-20101 for UTC_OFFSET mismatch).
+                // The connection is still valid but the data was NOT stored.
+                throw new BadTimeSeriesException(msg, ex);
+            }
+            throw new DbIoException(msg, ex);
+        }
+    }
+
+    /**
+     * Wrap the call in a timer for diagnostics
+     * @param ts
+     * @param path
+     * @param versionDate
+     * @param overrideProtection
+     * @param method
+     * @param conn
+     * @param cwmsDbTs
+     * @param num2write
+     * @param times
+     * @param values
+     * @param qualities
+     * @throws SQLException if the store operation fails
+     */
+    private void timedStore(CTimeSeries ts, String path, java.sql.Timestamp versionDate, boolean overrideProtection,
+                            String method, Connection conn, CwmsDbTs cwmsDbTs, int num2write,
+                            long[] times, double[] values, int[] qualities) throws SQLException {
+        try (var tsStoreTimer = MDCTimer.startTimer("storeTs"))
+        {
+            cwmsDbTs.store(
+                conn,
+                dbOfficeId, path, ts.getUnitsAbbr(), times, values,
+                qualities, num2write, method,
+                overrideProtection, versionDate,false);
+        }
+        catch (Exception ex)
+        {
+            log.atError().setCause(ex).log("Unable to close timer. This should not be able to happen.");
+            throw new SQLException(ex);
         }
     }
 
@@ -895,8 +945,6 @@ public class CwmsTimeSeriesDAO
                    .setCause(ex)
                    .log("Cannot prepare value for save '{}' - not a number.", tv.getStringValue());
             }
-            VarFlags.clearToDelete(tv);
-            VarFlags.clearToWrite(tv);
         }
     }
 
@@ -942,27 +990,6 @@ public class CwmsTimeSeriesDAO
                        tsid, sdf.format(from), sdf.format(until));
         }
 
-//        // For CWMS Comps, there are no physical deletes, so first we read, then
-//        // we set the MISSING flag, then we store.
-//        int n = fillTimeSeries(cts, from, until, true, true, true);
-//        if (n == 0)
-//            return;
-//
-//        int sz = cts.size();
-//        int num2delete = 0;
-//        for(int i=0; i<sz; i++)
-//        {
-//            TimedVariable tv = cts.sampleAt(i);
-//            Date d = tv.getTime();
-//            if (d.compareTo(from) >= 0 && d.compareTo(until) <= 0)
-//            {
-//                VarFlags.setToDelete(tv);
-//                num2delete++;
-//            }
-//        }
-//
-//        if (num2delete > 0)
-//            saveTimeSeries(cts);
     }
 
     @Override
@@ -989,7 +1016,13 @@ public class CwmsTimeSeriesDAO
             String existingUnits = ts.getUnitsAbbr();
             if (existingUnits == null || existingUnits.isEmpty() || existingUnits.equalsIgnoreCase("unknown"))
             {
-                ts.setUnitsAbbr(tsid.getStorageUnits());
+                String storageUnits = tsid.getStorageUnits();
+                if (storageUnits == null && db instanceof TimeSeriesDb)
+                {
+                    storageUnits = ((TimeSeriesDb) db).getStorageUnitsForDataType(tsid.getDataType());
+                    tsid.setStorageUnits(storageUnits);
+                }
+                ts.setUnitsAbbr(storageUnits);
             }
         }
         catch(NoSuchObjectException ex)
@@ -1121,7 +1154,6 @@ public class CwmsTimeSeriesDAO
 
         // Each TSID will need a site, so prefill the site cache to prevent
         // it from doing individual reads for each site.
-//        siteDAO.fillCache();
 
         String q = cwmsTsidQueryBase + " WHERE upper(a.DB_OFFICE_ID) = upper(?)";
         int origFetchSize = getFetchSize();
@@ -1230,36 +1262,16 @@ public class CwmsTimeSeriesDAO
         }
         catch(SQLException ex)
         {
+            String msg = "Error creating time series for '" + path + "' with officeId '" + dbOfficeId + "'";
             // CWMS-5773 If the create error is due to some kind of user-level constraint,
             // then throw NoSuchObject, meaning that the tsid is bad but the connection is still
-            // Ok. Prasad says ORA numbers > 20000 mean user-defined. Probably some kind of
-            // constraint violation.
-            String exs = ex.toString();
-            int oraidx = exs.indexOf("ORA-");
-            if (oraidx >= 0)
+            // Ok. ORA numbers >= 20000 are user-defined, probably some kind of constraint violation.
+            if (OracleSqlExceptionHelper.isUserDefinedError(ex))
             {
-                exs = exs.substring(oraidx+4);
-                int intlen = 0;
-                for(; intlen < exs.length() && Character.isDigit(exs.charAt(intlen)); intlen++);
-                if (intlen > 0)
-                {
-                    try
-                    {
-                        int oraerr = Integer.parseInt(exs.substring(0, intlen));
-                        if (oraerr >= 20000)
-                        {
-                            throw new NoSuchObjectException(
-                                "Error creating time series for '" + path + "' with officeId '"
-                                + dbOfficeId + "': " + ex, ex);
-                        }
-                    }
-                    catch(NumberFormatException ex2) { /* fall through & throw DbIoException */ }
-                }
+                throw new NoSuchObjectException(msg + ": " + ex, ex);
             }
             // This must be more serious. Assume db connection is now hosed.
-            throw new DbIoException(
-                "Error creating time series for '" + path + "' with officeId '"
-                + dbOfficeId, ex);
+            throw new DbIoException(msg, ex);
         }
     }
 
@@ -1304,7 +1316,7 @@ public class CwmsTimeSeriesDAO
     }
 
     @Override
-    public DataCollection getNewData(DbKey applicationId)
+    public DataCollection getNewData(DbKey applicationId, int maxTake)
         throws DbIoException
     {
         DataCollection dataCollection = new DataCollection();
@@ -1319,7 +1331,7 @@ public class CwmsTimeSeriesDAO
             + "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
             + "from CP_COMP_TASKLIST a "
             + "where a.LOADING_APPLICATION_ID = ?"
-            + " and ROWNUM < 20000"
+            + " and ROWNUM < " + maxTake
             + failTimeClause
             + " ORDER BY a.site_datatype_id, a.start_date_time";
 

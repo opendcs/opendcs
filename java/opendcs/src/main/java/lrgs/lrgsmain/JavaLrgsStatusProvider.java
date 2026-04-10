@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.lrgsmain;
 
@@ -8,7 +20,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.apistatus.AttachedProcess;
 import lrgs.apistatus.DownLink;
@@ -28,9 +41,9 @@ import lrgs.dqm.DqmInterface;
   Class JavaLrgsStatusProvider implements the LrgsStatusProvide interface
   by accessing java-only methods in the archive and downlinks.
 */
-public class JavaLrgsStatusProvider
-    implements LrgsStatusProvider
+public class JavaLrgsStatusProvider implements LrgsStatusProvider
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /** Reference back to parent. */
     private LrgsMain lrgsMain;
 
@@ -198,18 +211,14 @@ public class JavaLrgsStatusProvider
             if (lsse.isUsable)
             {
                 lsse.isUsable = false;
-                Logger.instance().failure(
-                    LrgsMain.module + ":" + LrgsMain.EVT_TIMEOUT
-                    + " LRGS Timeout: No data in "
-                    + cfg.timeoutSeconds + " seconds.");
+                log.error("{}:{} LRGS Timeout: No data in {} seconds.",
+                          LrgsMain.module, LrgsMain.EVT_TIMEOUT, cfg.timeoutSeconds);
             }
             lsse.systemStatus = "Timeout";
         }
         else if (!lsse.isUsable)
         {
-            Logger.instance().info(
-                LrgsMain.module + ":" + (-LrgsMain.EVT_TIMEOUT)
-                + " LRGS Recovery: Receiving Data Again!");
+            log.info("{}:{} LRGS Recovery: Receiving Data Again!", LrgsMain.module, (-LrgsMain.EVT_TIMEOUT));
             lsse.isUsable = true;
             lsse.systemStatus = "Running";
         }
@@ -368,9 +377,7 @@ public class JavaLrgsStatusProvider
 
         if (!lsse.isUsable)
         {
-            Logger.instance().info(
-                LrgsMain.module + ":" + (-LrgsMain.EVT_TIMEOUT)
-                + " LRGS Recovery: Receiving Data Again!");
+            log.info("{}:{} LRGS Recovery: Receiving Data Again!", LrgsMain.module, (-LrgsMain.EVT_TIMEOUT));
             lsse.isUsable = true;
             lsse.systemStatus = "Running";
         }
@@ -568,15 +575,14 @@ public class JavaLrgsStatusProvider
     {
         if (ddsRecvMainSlotNum == -1)
         {
-            Logger.instance().debug1("StatusProvider.getLastDdsReceiveTime no " +
-                "ddsRecvMainSlotNum, returning now - 1 hour");
+            log.debug("StatusProvider.getLastDdsReceiveTime no " +
+                      "ddsRecvMainSlotNum, returning now - 1 hour");
             return System.currentTimeMillis() - 3600000L;
         }
         else
         {
             DownLink dl = lsse.lss.downLinks[ddsRecvMainSlotNum];
-            Logger.instance().debug1("StatusProvider.getLastDdsReceiveTime "
-                + "returning " + new Date(dl.lastMsgRecvTime * 1000L));
+            log.debug("StatusProvider.getLastDdsReceiveTime returning {}", new Date(dl.lastMsgRecvTime * 1000L));
             return dl.lastMsgRecvTime * 1000L;
         }
     }
@@ -618,8 +624,7 @@ public class JavaLrgsStatusProvider
                 }
             }
         }
-        Logger.instance().info("At LRGS Startup, last msg was received at "
-            + new Date(latest) + " on downlink " + latestName);
+        log.info("At LRGS Startup, last msg was received at {} on downlink {}", new Date(latest), latestName);
         return latest;
     }
 

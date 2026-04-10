@@ -1,42 +1,48 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.drgsrecv;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.text.NumberFormat;
 import java.util.Date;
-import java.util.Iterator;
-import java.util.StringTokenizer;
 import java.util.TimeZone;
-import java.util.Vector;
 import java.util.zip.GZIPOutputStream;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.net.BasicClient;
 import ilex.util.AsciiUtil;
 import ilex.util.ByteUtil;
-import ilex.util.EnvExpander;
 import ilex.util.IDateFormat;
-import ilex.util.Logger;
 
-import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
 import lrgs.drgs.DrgsConnectCfg;
-import lrgs.drgsrecv.DrgsRecv;
-import lrgs.drgsrecv.DamsNt;
-
-import decodes.util.ChannelMap;
 
 /**
 Stand alone program to generate DRGS connection statistics.
 */
-public class DrgsStats
-	extends BasicClient
+public class DrgsStats extends BasicClient
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private byte[] startPattern;
 	static byte[] nonePattern = { (byte)'N', (byte)'O', (byte)'N', (byte)'E' };
 	private boolean enabled;
@@ -150,8 +156,8 @@ public class DrgsStats
 			}
 			else
 			{
-				try 
-				{ 
+				try
+				{
 					DcpMsg msg = getMsg();
 					if (msg != null)
 						collectStats(msg);
@@ -159,8 +165,7 @@ public class DrgsStats
 					{
 						// too many seconds since either msg or NONE.
 						status = "Timeout";
-						log(Logger.E_WARNING, DrgsRecv.EVT_TIMEOUT,
-						  "Timeout on DAMS-NT Messge Socket -- disconnecting.");
+						log.warn("{}: Timeout on DAMS-NT Messge Socket -- disconnecting.", DrgsRecv.EVT_TIMEOUT);
 						disconnect();
 					}
 					else
@@ -171,8 +176,7 @@ public class DrgsStats
 				}
 				catch(IOException ex)
 				{
-					log(Logger.E_WARNING, DrgsRecv.EVT_SOCKIO,
-						"Error on DAMS-NT Messge Socket: " + ex);
+					log.atWarn().setCause(ex).log("{}: Error on DAMS-NT Messge Socket: ", DrgsRecv.EVT_SOCKIO);
 					disconnect();
 				}
 			}
@@ -205,17 +209,16 @@ public class DrgsStats
 
 	private void tryConnect()
 	{
-		log(Logger.E_DEBUG1, 0, "Attempting connection.");
+		log.debug("Attempting connection.");
 		status = "Connecting";
 		try { connect(); }
 		catch(IOException ex)
 		{
-			log(Logger.E_WARNING, DrgsRecv.EVT_CANNOT_CONNECT,
-				"Connection failed: " + ex);
+			log.atWarn().setCause(ex).log("{}: Connection failed",DrgsRecv.EVT_CANNOT_CONNECT);
 			status = "Bad-Connect";
 			return;
 		}
-		log(Logger.E_INFORMATION, DrgsRecv.EVT_CONNECTED, "Connected.");
+		log.info("{}: Connected.",  DrgsRecv.EVT_CONNECTED);
 		status = "Connected";
 
 		// Start with clean slate:
@@ -237,9 +240,9 @@ public class DrgsStats
 		boolean stateComplete = true;
 		while(stateComplete)
 		{
-			/* In all states, true return means that the state 
+			/* In all states, true return means that the state
 			   was completed and a transition was made.
-			   False means available input was exhausted and 
+			   False means available input was exhausted and
 			   to try again later.
 			*/
 			if (state == HUNT_STATE)
@@ -271,7 +274,7 @@ public class DrgsStats
 
 	/**
 	  Seek for the 4-byte sync pattern, change states when it is found.
-	  Return true if pattern found, false if available input exhausted without 
+	  Return true if pattern found, false if available input exhausted without
 	  success, which means that caller should pause before trying again.
 	*/
 	private boolean huntState()
@@ -285,8 +288,9 @@ public class DrgsStats
 
 			// Alert user if we read excessive amounts of data with no sync.
 			if ((++totalReadBeforeSync % 100) == 0)
-				log(Logger.E_DEBUG1, 0, "Skipped "
-					+ totalReadBeforeSync + " bytes looking for sync.");
+			{
+				log.debug("Skipped {} bytes looking for sync.", totalReadBeforeSync);
+			}
 
 			spr[startIndex++] = c;
 			if (c == startPattern[startIndex-1])
@@ -296,10 +300,13 @@ public class DrgsStats
 					// Success! found complete start pattern.
 					startIndex = 0;
 					if (totalReadBeforeSync > 4)
-						log(Logger.E_DEBUG2, 0, "Skipped "
-							+ (totalReadBeforeSync-4) + " bytes before sync.");
+					{
+						log.trace("Skipped {} bytes before sync.", (totalReadBeforeSync-4));
+					}
 					else
-						log(Logger.E_DEBUG3, 0, "Acquired sync.");
+					{
+						log.trace("Acquired sync.");
+					}
 					totalReadBeforeSync = 0;
 					state = HEADER_STATE;
 					return true;
@@ -317,10 +324,10 @@ public class DrgsStats
 					// Found complete NONE pattern.
 					noneIndex = 0;
 					if (totalReadBeforeSync > 4)
-						log(Logger.E_DEBUG1, 0, "Skipped "
-							+ (totalReadBeforeSync-4) + " bytes before NONE.");
+					{
+						log.debug("Skipped {} bytes before NONE.", (totalReadBeforeSync-4));
+					}
 					totalReadBeforeSync = 0;
-//					log(Logger.E_DEBUG1, 0, "NONE pattern received.");
 					state = TERMCRLF_STATE;
 					return true;
 				}
@@ -331,12 +338,12 @@ public class DrgsStats
 		return false;
 	}
 
-	/** 
+	/**
 	  Called on start-pattern mismatch. We may have already read part of the
 	  good sync pattern so shift my scratch-pad spr buffer.
 	  Example: startPattern:   0 B 0 A
 	           data on stream: 0 B 0 B 0 A
-	  The match fails on the 4th char, but we can't just discard all 4, 
+	  The match fails on the 4th char, but we can't just discard all 4,
 	  instead we shift by 2 chars and keep going.
 	*/
 	private void shiftStartPattern()
@@ -398,17 +405,15 @@ public class DrgsStats
 		if (n != 51)
 		{
 			// This should not happen, we checked above for 51 bytes avail.
-			log(Logger.E_WARNING, DrgsRecv.EVT_BAD_HEADER,
-				"Socket error, 51 available but failed to read 51 -- skipped");
+			log.warn("{}: Socket error, 51 available but failed to read 51 -- skipped", DrgsRecv.EVT_BAD_HEADER);
 			state = HUNT_STATE;
 			return false;
 		}
-//log(Logger.E_DEBUG3, 0, "headerState: header='"
-//+ new String(headerBuf, 4, 51) + "'");
+
 		try { workingMsg = parseHeader(headerBuf); }
 		catch(xBadHeader ex)
 		{
-			log(Logger.E_WARNING, 0, ex.toString());
+			log.atWarn().setCause(ex).log("Unable to parse header.");
 			state = HUNT_STATE;
 			return false;
 		}
@@ -425,8 +430,6 @@ public class DrgsStats
 	private DcpMsg parseHeader(byte[] buf)
 		throws xBadHeader
 	{
-//log(Logger.E_DEBUG3, 0, "parseHeader: header='"
-//+ new String(buf, 4, 51) + "'");
 		// Get length from DAMS-NT header & validate
 		dataLength = 0;
 		for(int i=0; i<5; i++)
@@ -437,7 +440,7 @@ public class DrgsStats
 				digit = (byte)'0';
 
 			if (!Character.isDigit((char)digit))
-				throw new xBadHeader("Non-digit '" + (char)digit 
+				throw new xBadHeader("Non-digit '" + (char)digit
 					+ "' in msg length field -- message skipped.");
 			dataLength = (dataLength*10) + ((int)digit - (int)'0');
 		}
@@ -445,7 +448,6 @@ public class DrgsStats
 			throw new xBadHeader("Invalid message length (" + dataLength
 				+ ") -- message skipped.");
 
-//log(Logger.E_DEBUG3, 0, "parseHeader, dataLength=" + dataLength);
 		byte[] domsatData = new byte[37 + dataLength];
 
 		// DCP address
@@ -462,7 +464,7 @@ public class DrgsStats
 		{
 			byte digit = buf[15+i];
 			if (!Character.isDigit((char)digit))
-				throw new xBadHeader("Non-digit '" + (char)digit 
+				throw new xBadHeader("Non-digit '" + (char)digit
 					+ "' in msg start-time field -- message skipped.");
 			domsatData[8+i] = digit;
 		}
@@ -513,13 +515,11 @@ public class DrgsStats
 		for(int i=0; i<5; i++)
 			domsatData[32+i] = buf[50+i];
 
-//log(Logger.E_DEBUG1, 0, 
-//"parseHeader domsatheader='" + new String(domsatData, 0, 37) + "'");
 		// Make DcpMsg for return
 		DcpMsg ret = new DcpMsg();
-		ret.flagbits = 
+		ret.flagbits =
 			  DcpMsgFlag.MSG_PRESENT
-			| DcpMsgFlag.SRC_DRGS 
+			| DcpMsgFlag.SRC_DRGS
 			| DcpMsgFlag.MSG_NO_SEQNUM;
 		ret.setData(domsatData);
 		if (isBinaryMsg)
@@ -534,7 +534,6 @@ public class DrgsStats
 
 		ret.setLocalReceiveTime(new Date());
 		ret.setSeqFileName(null);
-//log(Logger.E_INFORMATION,0,"dataSourceId = " + dataSourceId);
 
 		// baud
 		String bs = new String(buf, 11, 4);
@@ -542,16 +541,7 @@ public class DrgsStats
 		try { ret.setBaud(Integer.parseInt(bs)); }
 		catch(NumberFormatException ex)
 		{
-//			Logger.instance().warning(getInputName() 
-//				+ " Invalid baud rate '" +bs+ "': Attempting channel lookup.");
-//			String cs = new String(buf, 7, 3);
-//			try { ret.setBaud(channelMap.getBaud(Integer.parseInt(cs))); }
-//			catch(NumberFormatException ex2)
-//			{
-//				Logger.instance().warning(getInputName() 
-//					+ " Invalid channel '" + cs + "': Setting baud to 300.");
-//				ret.setBaud(300);
-//			}
+			log.atWarn().setCause(ex).log("Unable to set baud rate.");
 		}
 
 		if (!msgHasCarrierTimes)
@@ -608,28 +598,26 @@ public class DrgsStats
 		if (n != 31)
 		{
 			// This should not happen, we checked above for 31 bytes avail.
-			log(Logger.E_WARNING, DrgsRecv.EVT_CARRIER_TIMES,
-				"Socket error, 31 available but failed to read 31 -- skipped");
+			log.warn("{}: Socket error, 31 available but failed to read 31 -- skipped",
+					 DrgsRecv.EVT_CARRIER_TIMES);
 			state = HUNT_STATE;
 			computeCarrierTimes(workingMsg);
 			return false;
 		}
-		
+
 		try
 		{
 			Date sd = carrierDateFmt.parse(new String(carrierBuf, 0, 14));
 			workingMsg.setCarrierStart(sd);
 			Date ed = carrierDateFmt.parse(new String(carrierBuf, 15, 14));
 			workingMsg.setCarrierStop(ed);
-//log(Logger.E_INFORMATION, 0, "carrierTimes='" + (new String(carrierBuf))
-//+ "' start='" + carrierDateFmt.format(sd)
-//+ "' end='" + carrierDateFmt.format(ed) + "'");
 		}
 		catch(ParseException ex)
 		{
-			log(Logger.E_WARNING, DrgsRecv.EVT_CARRIER_TIMES,
-				"Bad date format on carrier times '" + 
-				(new String(carrierBuf)) + "': " + ex);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("{}: Bad date format on carrier times '{}'",
+			   		DrgsRecv.EVT_CARRIER_TIMES, (new String(carrierBuf)));
 			computeCarrierTimes(workingMsg);
 		}
 		state = HUNT_STATE;
@@ -654,27 +642,20 @@ public class DrgsStats
 			byte lf = (byte)input.read();
 			if (cr != (byte)'\r' || lf != (byte)'\n')
 			{
-				log(Logger.E_DEBUG2, 0,
-					"Improper terminating sequence, expected 0x0D0A, got 0x"
-					+ ByteUtil.toHexChar(cr) + ByteUtil.toHexChar(lf));
+				log.trace("Improper terminating sequence, expected 0x0D0A, got 0x{}",
+						  ByteUtil.toHexChar(cr) + ByteUtil.toHexChar(lf));
 				state = HUNT_STATE;
 			}
 			else
 				state = msgHasCarrierTimes ?  CARRIERTIMES_STATE : HUNT_STATE;
-if (state == CARRIERTIMES_STATE)
-log(Logger.E_DEBUG2, 0, "Got term CRLF, entering CARRIERTIMES_STATE");
+			if (state == CARRIERTIMES_STATE)
+			{
+				log.trace("Got term CRLF, entering CARRIERTIMES_STATE");
+			}
 
 			return true;
 		}
 		return false;
-	}
-
-	/** Prints a log message with a host/port prefix. */
-	private void log(int level, int evtNum, String text)
-	{
-		Logger.instance().log(level, DrgsRecv.module
-			+ (evtNum == 0 ? "" : (":" + evtNum + "-"))
-			+ " " + getName() + ": " + text);
 	}
 
 	/**
@@ -684,11 +665,11 @@ log(Logger.E_DEBUG2, 0, "Got term CRLF, entering CARRIERTIMES_STATE");
 	 */
 	private void computeCarrierTimes(DcpMsg msg)
 	{
-		long durationMsec = 
+		long durationMsec =
 			(msg.getDcpDataLength() * 8 * 1000L) / msg.getBaud();
 
 		// Figure the overhead.
-		long overheadMsec = (msg.getBaud() == 100) ? 1750 : 
+		long overheadMsec = (msg.getBaud() == 100) ? 1750 :
 			(msg.getBaud() == 1200) ? 550 : 950;
 
 		Date d = msg.getDapsTime();
@@ -743,10 +724,10 @@ log(Logger.E_DEBUG2, 0, "Got term CRLF, entering CARRIERTIMES_STATE");
 		cfg.startPattern = ByteUtil.fromHexString(args[3]);
 		drgsStats.configure(cfg);
 		System.out.println(
-			"Addr" + sep + "Timestamp" + sep + "Length" + sep + "Type" + sep 
+			"Addr" + sep + "Timestamp" + sep + "Length" + sep + "Type" + sep
 			+ "FailCode" + sep + "NormalTerm" + sep + "Chan" + sep
-			+ "Baud" + sep + "SigStr" + sep + "FreqOff" 
-			+ sep + "ModIdx" + sep + "1sParPos" + sep + "MaxPbRun" + sep 
+			+ "Baud" + sep + "SigStr" + sep + "FreqOff"
+			+ sep + "ModIdx" + sep + "1sParPos" + sep + "MaxPbRun" + sep
 			+ "NumAsc" + sep + "TruncMsg");
 		drgsStats.run();
 	}
@@ -767,7 +748,7 @@ log(Logger.E_DEBUG2, 0, "Got term CRLF, entering CARRIERTIMES_STATE");
 						break;
 				}
 			String asciiMsg = AsciiUtil.bin2ascii(msgData);
-			String truncMsg = (asciiMsg.length() < 50) ? asciiMsg 
+			String truncMsg = (asciiMsg.length() < 50) ? asciiMsg
 				: asciiMsg.substring(0,50);
 
 			sb.append(msg.getDcpAddress().toString() + sep);
@@ -789,7 +770,7 @@ log(Logger.E_DEBUG2, 0, "Got term CRLF, entering CARRIERTIMES_STATE");
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Error processing msg: " + ex);
+			log.atWarn().setCause(ex).log("Error processing msg.");
 		}
 	}
 
@@ -811,7 +792,7 @@ log(Logger.E_DEBUG2, 0, "Got term CRLF, entering CARRIERTIMES_STATE");
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("Error compressing: " + ex);
+			log.atWarn().setCause(ex).log("Error compressing.");
 			return 0.0;
 		}
 	}
@@ -830,7 +811,7 @@ log(Logger.E_DEBUG2, 0, "Got term CRLF, entering CARRIERTIMES_STATE");
 		byte[] data = msg.getDcpData();
 		if (data.length == 0)
 			return 'U';
-		
+
 		maxPbRun = 0;
 		numAscii = 0;
 		int pbRun = 0;

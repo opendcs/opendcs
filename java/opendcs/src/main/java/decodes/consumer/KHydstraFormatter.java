@@ -1,16 +1,19 @@
 /*
-*  $Id$
-*
-*  Author: Michael Maloney
-*  
-*  $Log$
-*  Revision 1.6  2017/03/20 18:14:28  mmaloney
-*  Added new selfIdent property.
-*
-*  Revision 1.5  2017/02/09 17:22:42  mmaloney
-*  Added CVS Header.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
+
 
 package decodes.consumer;
 
@@ -25,6 +28,9 @@ import java.util.Calendar;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Properties;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
@@ -48,6 +54,7 @@ import decodes.util.PropertySpec;
  */
 public class KHydstraFormatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String delimiter;
 	private SimpleDateFormat KHydstraDateFormat;
 	private boolean selfIdent = false;
@@ -99,7 +106,7 @@ public class KHydstraFormatter extends OutputFormatter
 			try { qualcode = Integer.parseInt(s.trim()); }
 			catch(NumberFormatException ex)
 			{
-				logger.warning("Invalid qualcode propertyp '" + s + "' -- ignored. Usinge default=1");
+				log.atWarn().setCause(ex).log("Invalid qualcode property '{}' -- ignored. Using default=1", s);
 				qualcode = 1;
 			}
 		}
@@ -131,7 +138,6 @@ public class KHydstraFormatter extends OutputFormatter
 
 		TransportMedium tm;
 		Platform platform;
-		String hydstraTranslationCode;
 
 		try
 		{
@@ -210,9 +216,9 @@ public class KHydstraFormatter extends OutputFormatter
 				{
 					s = nf.format(tv.getDoubleValue());
 				}
-				catch (Exception e)
+				catch (Exception ex)
 				{
-					throw new OutputFormatterException(e.toString());
+					throw new OutputFormatterException("Unable to convert time series value", ex);
 				}
 				sb.append(TextUtil.setLengthRightJustify(s, 10) + delimiter);
 				

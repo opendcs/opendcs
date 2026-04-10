@@ -1,30 +1,22 @@
 /*
-*  $Id: OpenTsdbConsumer.java,v 1.5 2020/02/20 15:32:16 mmaloney Exp $
-*  
-*  $Log: OpenTsdbConsumer.java,v $
-*  Revision 1.5  2020/02/20 15:32:16  mmaloney
-*  Use sensor properties, which if this is in ExportTimeSeries, will be delegated to
-*  the TSID, to build the TSID parts.
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  Revision 1.4  2020/01/31 19:43:18  mmaloney
-*  Several enhancements to complete OpenTSDB.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.3  2019/12/11 14:44:20  mmaloney
-*  Partial implementation of OpenTSDB computations
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.2  2018/05/31 14:14:41  mmaloney
-*  Set storage units when creating new TSID.
-*
-*  Revision 1.1  2018/05/01 17:49:45  mmaloney
-*  First working OpenTSDB Consumer
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package opendcs.opentsdb;
 
 import ilex.util.AuthException;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
-import ilex.util.Pair;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
@@ -39,7 +31,8 @@ import java.util.Properties;
 import org.opendcs.authentication.AuthSourceService;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.TimeSeriesDAI;
 import decodes.consumer.DataConsumer;
@@ -50,7 +43,6 @@ import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
 import decodes.db.Constants;
 import decodes.db.DataType;
-import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.Platform;
 import decodes.db.Site;
@@ -65,7 +57,6 @@ import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.util.DecodesSettings;
 import decodes.util.PropertySpec;
@@ -73,80 +64,80 @@ import decodes.util.TSUtil;
 
 /**
  OpenTsdbConsumer writes data to the OpenTSDB Database.
- 
- <p>Properties from shefCwmsParam.prop file 
+
+ <p>Properties from shefCwmsParam.prop file
  								(located on $DECODES_INSTALL_DIR):</p>
- <ul>  
+ <ul>
   <li>All the SHEF code to CWMS code mapping, Example: PC=Precip</li>
  </ul>
  <p>Properties from routing spec dialog window (optional):</p>
- <ul>  
-   <li>storerule	(valid values: Delete Insert, Replace All, 
+ <ul>
+   <li>storerule	(valid values: Delete Insert, Replace All,
   Replace With Non Missing, Replace Missing Values Only, Do Not Replace -
   This value will override the hardcoded value for store
   rule field)</li>
-  <li>overrideprot	(This is the Data protection checking rule flag rule. 
-	Indicates if data will be override or not. Refer to CWMS manual for 
+  <li>overrideprot	(This is the Data protection checking rule flag rule.
+	Indicates if data will be override or not. Refer to CWMS manual for
 	more information. 1 means rule not enforced, 0 means rule is enforced)</li>
  </ul>
  <p>Properties from sensor dialog window (optional):</p>
- <ul>  
-  <li>CwmsDuration (This value will override the CwmsDuration 
+ <ul>
+  <li>CwmsDuration (This value will override the CwmsDuration
   												value set by the code)</li>
-  <li>CwmsParamType (This value will override the CwmsParamType 
+  <li>CwmsParamType (This value will override the CwmsParamType
   												value set by the code)</li>
  </ul>
  <p>To create DB username/password authentication file:</p>
- <ul>  
+ <ul>
   <li>Use setCwmsUser script (on linux system)</li>
   <li>Use setCwmsUser.bat (on windows system)</li>
- </ul> 
+ </ul>
 */
 public class OpenTsdbConsumer extends DataConsumer
 {
-	public static final org.slf4j.Logger log = LoggerFactory.getLogger(OpenTsdbConsumer.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String module = "OpenTsdbConsumer";
-	
+
 	private String dbAuthFile = null;
 	private String appName = "decodes";
 	private DbKey appId = DbKey.NullKey;
 	private String shefParamMapping = null;
 	private String dataTypeStandard = Constants.datatype_CWMS;
 	private boolean canCreateTs = true;
-	
+
 	/** Store the properties of the shefCwmsParam.prop file */
 	private Properties shefCwmsProps;
-	
+
 	/** The Cwms version used for the time series descriptor */
 	private String cwmsVersion = "raw";
 
 	private OpenTsdb openTsdb = null;
-	
+
 	private PropertySpec propSpecs[] =
 	{
-		new PropertySpec("databaseLocation", PropertySpec.STRING, 
+		new PropertySpec("databaseLocation", PropertySpec.STRING,
 			"(default=null, meaning use the same database as DECODES) This property allows"
 			+ " you to write to a different database from the one hosting DECODES metadata."),
 		new PropertySpec("dbAuthFile", PropertySpec.FILENAME,
 			"(deafult=null) If the database is different from the DECODES database, this file "
 			+ "can be used to specify the encrypted file containing database username and password."),
-		new PropertySpec("jdbcOracleDriver", PropertySpec.STRING, 
+		new PropertySpec("jdbcOracleDriver", PropertySpec.STRING,
 			"(default=null) If the database is different from the DECODES database, this specifies"
 			+ " the JDBC driver to use."),
-		new PropertySpec("appName", PropertySpec.STRING, 
+		new PropertySpec("appName", PropertySpec.STRING,
 			"(default=null) The application name to connect to the database as. If not supplied,"
 			+ " use the application name assigned to the running routing spec. If none, use 'decodes'."),
-		new PropertySpec("dataTypeStandard", PropertySpec.DECODES_ENUM + "DataTypeStandard", 
+		new PropertySpec("dataTypeStandard", PropertySpec.DECODES_ENUM + "DataTypeStandard",
 			"(default=CWMS) Specifies which data type is used from the sensor to build the TSID."),
 		new PropertySpec("shefParamMapping", PropertySpec.FILENAME,
 			"If mapping from SHEF to the Param part of the TSID is required, supply a mapping file."),
-		new PropertySpec("canCreateTS", PropertySpec.BOOLEAN, 
+		new PropertySpec("canCreateTS", PropertySpec.BOOLEAN,
 			"(default=true) Allows the consumer to create new time series if one doesn't exist."),
-		new PropertySpec("tsidDuration", PropertySpec.STRING, 
+		new PropertySpec("tsidDuration", PropertySpec.STRING,
 			"(default=0, meaning instantaneous reading) The default duration part of the time series ID. "
 			+ "For compatibility, this can also be specified as 'cwmsDuration'. Sensor properties with "
 			+ "the same name will override the default set here."),
-		new PropertySpec("tsidVersion", PropertySpec.STRING, 
+		new PropertySpec("tsidVersion", PropertySpec.STRING,
 			"(default='raw') The default version part of the time series ID. For compatibility,"
 			+ " this can also be specified as 'cwmsVersion'. Sensor properties with the same name"
 			+ " will override the default set here."),
@@ -161,36 +152,36 @@ public class OpenTsdbConsumer extends DataConsumer
 	/**
 	  Opens and initializes the consumer.
 	  This method is called once, at the start of the routing spec. It will
-	  read the configuration file and establish the connection to the 
+	  read the configuration file and establish the connection to the
 	  CWMS Oracle Database. In addition, it will set all the required
 	  properties.
-	  
+
 	  @param consumerArg file name template.
 	  @param props routing spec properties.
 	  @throws DataConsumerException if the consumer could not be initialized.
 	*/
 	public void open(String consumerArg, Properties props)
 		throws DataConsumerException
-	{		
-		Logger.instance().info(module + " initializing.");
+	{
+		log.info("initializing.");
 		// Get username & password from Auth file
 		Properties credentials = null;
 		dbAuthFile = PropertiesUtil.getIgnoreCase(props, "dbAuthFile");
 		if (dbAuthFile == null)
 			dbAuthFile = DecodesSettings.instance().DbAuthFile;
 		String authPath = dbAuthFile;
-		try 
+		try
 		{
 			credentials = AuthSourceService.getFromString(authPath)
 										   .getCredentials();
 		}
 		catch(AuthException ex)
 		{
-			String msg = module + " Cannot read DB auth from configuration '" 
+			String msg = module + " Cannot read DB auth from configuration '"
 				+ authPath;
-			throw new DataConsumerException(msg,ex);
+			throw new DataConsumerException(msg, ex);
 		}
-		
+
 		// Get the Oracle Data Source & open a connection.
 		try
 		{
@@ -200,11 +191,11 @@ public class OpenTsdbConsumer extends DataConsumer
 			{
 				settings.editDatabaseLocation = s;
 			}
-			
+
 			s = PropertiesUtil.getIgnoreCase(props, "appName");
 			if (s != null)
 			{
-				appName = s; 
+				appName = s;
 			}
 			OpenDcsDatabase databases = DatabaseService.getDatabaseFor(s, settings, credentials);
 			// We are always settings this type before calling get database.
@@ -213,28 +204,26 @@ public class OpenTsdbConsumer extends DataConsumer
 		}
 		catch (DatabaseException ex)
 		{
-			String msg = module + " " + ex;
-			Logger.instance().fatal(msg);
-			throw new DataConsumerException(msg, ex);
+			throw new DataConsumerException("Unable to connect to consumer.", ex);
 		}
 
 		// Open and load the SHEF to CWMS Param properties file. This file
-		// contains all the mapping needed to convert from Shef codes to 
+		// contains all the mapping needed to convert from Shef codes to
 		// Cwms values. If we can not open this properties file, we'll use
 		// the hard coded Property Hash Map.
 		shefParamMapping = PropertiesUtil.getIgnoreCase(props, "shefParamMapping");
 		if (shefParamMapping != null)
 			loadShefCwmsParamMapping(shefParamMapping);
-		
+
 		String s = PropertiesUtil.getIgnoreCase(props, "dataTypeStandard");
 		if (s != null && s.trim().length() > 0)
 			dataTypeStandard = s;
-		
+
 		// Get the "cwmsVersion" property, which overrides the config file.
 		s = PropertiesUtil.getIgnoreCase(props, CwmsConstants.CWMS_VERSION);
 		if (s != null && s.trim().length() > 0)
 			cwmsVersion = s;
-		
+
 		s = PropertiesUtil.getIgnoreCase(props, "canCreateTS");
 		if (s != null && s.trim().length() > 0)
 			canCreateTs = TextUtil.str2boolean(s);
@@ -246,7 +235,7 @@ public class OpenTsdbConsumer extends DataConsumer
 	*/
 	public void close()
 	{
-		Logger.instance().info(module + " closing database connection with appID=" + appId);
+		log.info("closing database connection with appID={}", appId);
 		openTsdb = null;
 	}
 
@@ -272,17 +261,13 @@ public class OpenTsdbConsumer extends DataConsumer
 		}
 		catch(UnknownPlatformException ex)
 		{
-			Logger.instance().warning(module + 
-				" Skipping CWMS ingest for data from "
-				+ "unknown platform: " + ex);
+			log.atWarn().setCause(ex).log("Skipping CWMS ingest for data from unknown platform.");
 			return;
 		}
 		Site platformSite = platform.getSite();
 		if (platformSite == null)
 		{
-			Logger.instance().warning(module + 
-					" Skipping CWMS ingest for data from "
-					+ "unknown site, DCP Address = " + tm.getMediumId());
+			log.warn("Skipping CWMS ingest for data from unknown site, DCP Address = {}", tm.getMediumId());
 			return;
 		}
 
@@ -296,46 +281,42 @@ public class OpenTsdbConsumer extends DataConsumer
 				if (ts.size() == 0)
 					continue;
 				// Need to fill out the following fields for the store_ts
-				// procedure: p_office_id, p_timeseries_desc, p_units, 
+				// procedure: p_office_id, p_timeseries_desc, p_units,
 				// (array with timestamp, value, quality), p_store_rule
 				// p_override_prot, p_versiondate
 				Sensor sensor = ts.getSensor();
 				if (sensor == null)
 				{
-					Logger.instance().warning(module 
-						+ " Platform DCP " + tm.getMediumId() 
-						+ " has no sensor configured -- skipping.");
+					log.warn(" Platform DCP {} has no sensor configured -- skipping.", tm.getMediumId());
 					continue;
 				}
 				// Office ID from routing spec properties or config value.
 				String tsid = buildTSID(ts, platformSite);
 				if (tsid == null)
-				{	// Could not create the right time descriptor, skipping this 
+				{	// Could not create the right time descriptor, skipping this
 					// msg.
-					Logger.instance().warning(module  
-							+ " Platform Site Name " + platform.getSiteName()
-							+ ", Platform Agency " + platform.getAgency()
-							+ ", DCP Address " + tm.getMediumId() 
-							+ ", sensor " + sensor.getName()
-							+ " Cannot determine " + dataTypeStandard + " datatype -- skipping.");
+					log.warn("Platform Site Name {}, Platform Agency {}, DCP Address {}, sensor " +
+							 "{} Cannot determine {} datatype -- skipping.",
+							 platform.getSiteName(), platform.getAgency(), tm.getMediumId(),
+							 sensor.getName(), dataTypeStandard);
 					continue;
 				}
-				String units = ts.getEU().abbr;			
+				String units = ts.getEU().abbr;
 				processAndStoreData(ts, tsid, units, platform, tm.getMediumId());
 			}
 		}
 		catch(Exception ex)
 		{
-			log.atError()
-			   .setCause(ex)
-			   .log("Error storing TS data");
+			log.atWarn().setCause(ex).log("Error storing TS data");
+			// It might be a business rule exception, like improper units.
+			// So don't kill the whole routing spec, just go on.
 		}
 	}
-	
+
 	/**
 	 * This method gets all sensor values (timestamp and actual readings),
 	 * and call the insertInStoreTs to insert the data in the CWMS Database.
-	 * 
+	 *
 	 * @param ts the time series object containing current data
 	 * @param timeseriesDesc CWMS time series descriptor
 	 * @param unit the units of the data set
@@ -343,9 +324,9 @@ public class OpenTsdbConsumer extends DataConsumer
 	 * @param DCPAddress current DCP in process
 	 * @throws DataConsumerException if it fails to insert data
 	 */
-	private void processAndStoreData(TimeSeries ts, 
-		String tsidStr, String units, 
-		Platform platform, String DCPAddress) 
+	private void processAndStoreData(TimeSeries ts,
+		String tsidStr, String units,
+		Platform platform, String DCPAddress)
 		throws DbIoException
 	{
 		TimeSeriesIdentifier tsid = null;
@@ -354,7 +335,7 @@ public class OpenTsdbConsumer extends DataConsumer
 		timeSeriesDAO.setAppModule(routingSpecThread.getRoutingSpec().getName());
 		TsDataSource ds = ((OpenTimeSeriesDAO)timeSeriesDAO).getTsDataSource();
 		DbKey sourceId = ds.getSourceId();
-		
+
 		try
 		{
 			try
@@ -365,14 +346,12 @@ public class OpenTsdbConsumer extends DataConsumer
 			{
 				if (!canCreateTs)
 				{
-					Logger.instance().info(module + " Cannot create time series for path '"
-							+ tsidStr + "' -- canCreateTS is false.");
+					log.info("Cannot create time series for path '{}' -- canCreateTS is false.", tsidStr);
 					return;
 				}
-				Logger.instance().info(module + " No time series for '" + tsidStr
-					+ "' -- will attempt to create.");
+				log.info("No time series for '{}' -- will attempt to create.", tsidStr);
 				tsid = new CwmsTsId();
-				try 
+				try
 				{
 					tsid.setUniqueString(tsidStr);
 					tsid.setStorageUnits(ts.getUnits());
@@ -380,52 +359,40 @@ public class OpenTsdbConsumer extends DataConsumer
 				}
 				catch(BadTimeSeriesException ex2)
 				{
-					Logger.instance().warning(module + " Cannot create time series -- bad path '"
-						+ tsidStr + ": " + ex2);
+					ex2.addSuppressed(ex);
+					log.atWarn().setCause(ex2).log("Cannot create time series -- bad path '{}'", tsidStr);
 					return;
 				}
 				try { timeSeriesDAO.createTimeSeries(tsid); }
-				catch(NoSuchObjectException ex2)
+				catch(BadTimeSeriesException | NoSuchObjectException ex2)
 				{
-					Logger.instance().warning(module + " Cannot create time series for path '"
-						+ tsidStr + ": " + ex2);
-					return;
-				}
-				catch(BadTimeSeriesException ex3)
-				{
-					Logger.instance().warning(module + " Cannot create time series for invalid path '"
-						+ tsidStr + ": " + ex3);
+					ex2.addSuppressed(ex);
+					log.atWarn().setCause(ex2).log("Cannot create time series for path '{}'", tsidStr);
 					return;
 				}
 			}
-			
+
 			String tabSel = tsid.getPart("ParamType") + "."
 				+ tsid.getPart("Duration") + "."
 				+ tsid.getPart("Version");
-	
-	
+
+
 			CTimeSeries cts = TSUtil.convert2CTimeSeries(
 				ts,                    // the DECODES Time Series
 				tsid.getKey(),         // ts_code
 				tabSel,                // CWMS tabse is paramtype.duration.version
-				tsid.getInterval(), 
+				tsid.getInterval(),
 				true,                  // mustWrite flag (we want to write all values in the TS
 				sourceId);             // sourceId required for OpenTSDB
 			cts.setTimeSeriesIdentifier(tsid);
-	
+
 			try
 			{
 				timeSeriesDAO.saveTimeSeries(cts);
 			}
 			catch (BadTimeSeriesException ex)
 			{
-				Logger.instance().failure(module + " Cannot save time series for '"
-					+ tsidStr + "': " + ex);
-				PrintStream ps = Logger.instance().getLogOutput();
-				if (ps != null)
-					ex.printStackTrace(ps);
-				else
-					ex.printStackTrace(System.err);
+				log.atError().setCause(ex).log("Cannot save time series for '{}'", tsidStr);
 			}
 		}
 		finally
@@ -433,7 +400,7 @@ public class OpenTsdbConsumer extends DataConsumer
 			timeSeriesDAO.close();
 		}
 	}
-	
+
 	/*
 	  Does nothing.
 	  @param line the line to be written.
@@ -449,7 +416,7 @@ public class OpenTsdbConsumer extends DataConsumer
 	{
 	}
 
-	/** 
+	/**
 	  For status gathering, this method returns some symbolic name about the
 	  consumer. For a file consumer this is the file name.
 
@@ -472,7 +439,7 @@ public class OpenTsdbConsumer extends DataConsumer
 	/**
 	 * This method builds the Cwms Time Series ID descriptor. It
 	 * has  six parts: location.param.paramtype.interval.duration.version
-	 * 
+	 *
 	 * @param ts the time series object containing current data
 	 * @param platformSite the site
 	 * @return String timeseries descriptor or null if can not build the
@@ -481,20 +448,20 @@ public class OpenTsdbConsumer extends DataConsumer
 	public String buildTSID(TimeSeries ts, Site platformSite)
 	{
 		StringBuffer timeSeriesDescriptor = new StringBuffer("");
-		
+
 		Site site = ts.getSensor().getSite();
 		if (site == null)
 			site = platformSite;
-		
+
 		// Find the location. Use the CWMS site name or default site name type
 		SiteName sn = site.getName(Constants.snt_CWMS);
 		if (sn == null)
 			sn = site.getPreferredName();
 		String location = sn.getNameValue();
-		
+
 		timeSeriesDescriptor.append(location);
 		timeSeriesDescriptor.append(".");
-		
+
 		// Find the Param value.
 		String param = getParamValue(ts);
 		if (param == null)
@@ -504,8 +471,8 @@ public class OpenTsdbConsumer extends DataConsumer
 		}
 		timeSeriesDescriptor.append(param);
 		timeSeriesDescriptor.append(".");
-		
-		// Find the Param Type value, if user assigned sensor property 
+
+		// Find the Param Type value, if user assigned sensor property
 		// CwmsParamType use this value else set ParamType to Inst.
 		String paramType = ts.getSensor().getProperty("statcode");
 		if (paramType == null)
@@ -518,8 +485,8 @@ public class OpenTsdbConsumer extends DataConsumer
 			paramType = CwmsConstants.PARAM_TYPE_INST; // Inst
 		timeSeriesDescriptor.append(paramType);
 		timeSeriesDescriptor.append(".");
-		
-		// Find Interval, if recording mode is Fixed: 
+
+		// Find Interval, if recording mode is Fixed:
 		// convert them from seconds to minutes or
 		// hours or 1day or week or 1month or 1year or 1decade
 		String intervalStr = ts.getSensor().getProperty("cwmsInterval");
@@ -540,7 +507,7 @@ public class OpenTsdbConsumer extends DataConsumer
 		}
 		timeSeriesDescriptor.append(intervalStr);
 		timeSeriesDescriptor.append(".");
-		
+
 		// Find Duration. If it is setup in the sensor property use it.
 		String duration = ts.getSensor().getProperty(CwmsConstants.CWMS_DURATION);
 		if (duration == null)
@@ -560,7 +527,7 @@ public class OpenTsdbConsumer extends DataConsumer
 		}
 		timeSeriesDescriptor.append(duration);
 		timeSeriesDescriptor.append(".");
-		
+
 		// Find Version. "raw" is the default value
 		String tempVersion = ts.getSensor().getProperty(CwmsConstants.CWMS_VERSION);
 		if (tempVersion == null)
@@ -570,12 +537,12 @@ public class OpenTsdbConsumer extends DataConsumer
 				tempVersion = cwmsVersion;
 		}
 		timeSeriesDescriptor.append(tempVersion);
-		
+
 		return timeSeriesDescriptor.toString();
 	}
-	
+
 	/**
-	 * This method fills out the Param "Parameter Element" value 
+	 * This method fills out the Param "Parameter Element" value
 	 * of the timeseries ID.
 	 * @param TimeSeries the time series obj containing current data
 	 * @return the cwms data type code or null if no cwms neither shef
@@ -598,7 +565,7 @@ public class OpenTsdbConsumer extends DataConsumer
 		}
 		return param;
 	}
-	
+
 	/**
 	 * This method will convert from seconds to:
 	 * 1Minute, 2Minutes, (3,4,5,6,10,12,15,20,30) Minutes
@@ -607,11 +574,11 @@ public class OpenTsdbConsumer extends DataConsumer
 	 * Week
 	 * 1Month
 	 * 1Year
-	 * 1Decade 
+	 * 1Decade
 	 * It gets the closes value to the second passed in. For example
 	 * if intervalInSeconds passed in was 122, the return value will be
 	 * 2Minutes.
-	 * 
+	 *
 	 * @param intervalInSeconds the recording interval from timeseries obj
 	 * @return the formatted string according to seconds given
 	 */
@@ -619,7 +586,7 @@ public class OpenTsdbConsumer extends DataConsumer
 	{	// All seconds for the names listed on intervalNames array.
 		// The numbers of the int intervals array matches the names
 		// on the intervalNames, ex. 60=1Minute, 604800=Week, etc.
-		int intervals[] = 
+		int intervals[] =
 						{60,120,180,240,300,360,600,720,900,1200,1800,
 						3600,7200,10800,14400,21600,28800,43200,
 						86400,
@@ -627,7 +594,7 @@ public class OpenTsdbConsumer extends DataConsumer
 						2592000,
 						31556926,
 						315569260};
-		String intervalNames[] = 
+		String intervalNames[] =
 				{"1Minute","2Minutes","3Minutes","4Minutes","5Minutes",
 				"6Minutes","10Minutes","12Minutes","15Minutes","20Minutes",
 				"30Minutes",
@@ -636,25 +603,25 @@ public class OpenTsdbConsumer extends DataConsumer
 		int closestValue = -1;
 		for (int i = 0;i<intervals.length;i++)
 		{
-			if (closestValue == -1 || 
-					(Math.abs(intervalInSeconds - intervals[i]) < 
+			if (closestValue == -1 ||
+					(Math.abs(intervalInSeconds - intervals[i]) <
 						Math.abs(intervalInSeconds - intervals[closestValue])))
 			{
 				closestValue = i;
 			}
-		}		
+		}
 		return intervalNames[closestValue];
 	}
 
 	/**
 	 * This method reads all the Shef/Cwms codes mapping found
-	 * on the DECODES_INSTALL_DIR/shefCwmsParam.prop file. It 
-	 * stores all the properties on the shefCwmsProps Properties 
-	 * object class. These properties will be used when creating 
+	 * on the DECODES_INSTALL_DIR/shefCwmsParam.prop file. It
+	 * stores all the properties on the shefCwmsProps Properties
+	 * object class. These properties will be used when creating
 	 * the Cwms Param part timeseries descriptor. If it cannot read
 	 * this properties file, this method will fill out the shefCwmsProps
 	 * Properties object with some hard coded shef-cwms mapping values.
-	 * 
+	 *
 	 * @param shefCwmsFilePath the file of the shefCwmsParam.prop file
 	 */
 	public void loadShefCwmsParamMapping(String shefCwmsFilePath)
@@ -662,22 +629,19 @@ public class OpenTsdbConsumer extends DataConsumer
 		//CwmsConstants.SHEF_CWMS_PARAM_FILEPATH
 		shefCwmsProps = new Properties();
 		fillInShefCwmsProps();
-		String shefCwmsMap = "";
-		try 
-		{ 
-			shefCwmsMap = EnvExpander.expand(shefCwmsFilePath);
-			FileInputStream is = new FileInputStream(new File(shefCwmsMap));
+		String shefCwmsMap = EnvExpander.expand(shefCwmsFilePath);
+		try (	FileInputStream is = new FileInputStream(new File(shefCwmsMap)))
+		{
 			shefCwmsProps.load(is);
-			is.close();	
 		}
 		catch(IOException ex)
 		{
-			String msg = module + " Cannot read properties file '" + 
-					shefCwmsMap + "': " + ex + " -- will use defaults only.";
-			Logger.instance().info(msg);
+			log.atInfo()
+			   .setCause(ex)
+			   .log(" Cannot read properties file '{}' -- will use defaults only.", shefCwmsMap);
 		}
 	}
-	
+
 	/**
 	 * Fill out the shefCwmsProps Properties Object with hard coded values.
 	 */
@@ -699,13 +663,13 @@ public class OpenTsdbConsumer extends DataConsumer
 		shefCwmsProps.setProperty(CwmsConstants.UP, CwmsConstants.SPEED_WIND);
 		shefCwmsProps.setProperty(CwmsConstants.UD, CwmsConstants.DIR_WIND);
 	}
-	
+
 	@Override
 	public PropertySpec[] getSupportedProps()
 	{
 		return propSpecs;
 	}
-	
+
 	@Override
 	public String getArgLabel()
 	{

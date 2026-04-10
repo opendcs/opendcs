@@ -1,64 +1,51 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.3  2019/08/19 14:55:33  mmaloney
- * Permit undefined output param. Move mail server props to ComputationApp
- *
- * Revision 1.2  2019/08/07 14:18:58  mmaloney
- * 6.6 RC04
- *
- * Revision 1.1  2019/07/02 13:48:03  mmaloney
- * 6.6RC04 First working Alarm Implementation
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.alarm;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
-import ilex.var.NamedVariableList;
-import ilex.util.Logger;
-import ilex.util.PropertiesUtil;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalIncrement;
 import decodes.tsdb.VarFlags;
-import decodes.tsdb.alarm.mail.MailerException;
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.util.PropertySpec;
 import decodes.hdb.HdbFlags;
 import decodes.sql.DbKey;
-import decodes.tsdb.BadTimeSeriesException;
-import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.ParmRef;
 import ilex.var.TimedVariable;
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.TimeSeriesDAI;
 import decodes.tsdb.TimeSeriesIdentifier;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS
-// Place an import statements you need here.
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-/**
-Look for alarm screening records in the database and apply to input parameter.
- */
-//AW:JAVADOC_END
-public class AlarmScreeningAlgorithm
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+@Algorithm(description = "Look for alarm screening records in the database and apply to input parameter.")
+public class AlarmScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double input;	//AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	@Input
+	public double input;
 
-//AW:LOCALVARS
 	// Will be set to true if input and output refer to the same time series.
 	boolean _inputIsOutput = false;
 	boolean _noOutput = false;
@@ -99,8 +86,8 @@ public class AlarmScreeningAlgorithm
 		if (earliestTrigger == null)
 			earliestTrigger = new Date();
 
-		debug2("getAlarmScreenings inputTsid=" + inputTsid.getUniqueString() 
-			+ " earliestTrigger=" + debugSdf.format(earliestTrigger));
+		log.trace("getAlarmScreenings inputTsid={} earliestTrigger={}",
+				  inputTsid.getUniqueString(),earliestTrigger);
 		try
 		{
 			DbKey siteId = inputTsid.getSite().getId();
@@ -108,15 +95,19 @@ public class AlarmScreeningAlgorithm
 			screenings = alarmDAO.getScreenings(siteId, dtId, comp.getAppId());
 			if (screenings == null)
 				throw new DbCompException("Invalid TSID for screening '" + inputTsid.getUniqueString() + "'");
-debug3("\tAlarmDAO returned " + screenings.size() + 
-	" matches for siteID=" +  siteId + ", dtId=" + dtId + ", appId=" + comp.getAppId());
+			log.trace("AlarmDAO returned {} matches for siteID={}, dtId={}, appId={}",
+					  screenings.size(), siteId, dtId, comp.getAppId());
 
-for(int idx=0; idx<screenings.size(); idx++)
-{
-	AlarmScreening als = screenings.get(idx);
-	debug3("\t\t" + idx + ": " + als.getScreeningName() + " siteid=" + als.getSiteId() + ", dtid=" + als.getDatatypeId() 
-	+ ", start=" + (als.getStartDateTime() == null ? "null" : debugSdf.format(als.getStartDateTime())) );
-}
+			if (log.isTraceEnabled())
+			{
+				for(int idx=0; idx<screenings.size(); idx++)
+				{
+					AlarmScreening als = screenings.get(idx);
+					log.trace("{}: {} siteid={}, dtid={}, start={}",
+							  idx, als.getScreeningName(), als.getSiteId(),
+							  als.getDatatypeId(), als.getStartDateTime());
+				}
+			}
 			
 			// If there are no site-specific screenings, OR if the earliest input is before the 
 			// site specific screenings, look for a generic one with siteId==nullkey.
@@ -124,13 +115,13 @@ for(int idx=0; idx<screenings.size(); idx++)
 			 || (screenings.get(0).getStartDateTime() != null 
 			       && earliestTrigger.before(screenings.get(0).getStartDateTime())))
 			{
-debug3("Looking for generic screenings");
+				log.trace("Looking for generic screenings");
 				boolean noSiteScreenings = screenings.size() == 0;
 				
 				// Need to look for generic screening
 				ArrayList<AlarmScreening> genScr = 
 					alarmDAO.getScreenings(DbKey.NullKey, inputTsid.getDataTypeId(), comp.getAppId());
-debug3("DAO returned " + genScr.size() + " generic screenings");
+				log.trace("DAO returned {} generic screenings.", genScr.size());
 				if (genScr != null && genScr.size() > 0)
 				{
 					for(int idx = 0; 
@@ -145,17 +136,19 @@ debug3("DAO returned " + genScr.size() + " generic screenings");
 					}
 				}
 			}
-debug1("There are " + screenings.size() + " screenings: ");
-for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime());
+			log.debug("There are {} screenings{}", screenings.size(), log.isDebugEnabled() ? ": ": "");
+			if (log.isDebugEnabled())
+			{
+				for(AlarmScreening as : screenings)
+				{
+					log.debug("{} start = {}", as.getScreeningName(), as.getStartDateTime());
+				}
+			}
 		}
 		catch (Exception ex)
 		{
-			String msg = "Error reading alarm screenings: " + ex;
-			warning(msg);
-			PrintStream logout = Logger.instance().getLogOutput();
-			if (logout != null)
-				ex.printStackTrace(logout);
-			throw new DbCompException(msg);
+			String msg = "Error reading alarm screenings.";
+			throw new DbCompException(msg, ex);
 		}
 		finally
 		{
@@ -187,8 +180,7 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 		
 		if (tScreening == null)
 		{
-			info("No applicable screening for '" + inputParm.tsid.getUniqueString() 
-				+ "' at time " + debugSdf.format(t));
+			log.info("No applicable screening for '{}' at time {}", inputParm.tsid.getUniqueString(), t);
 			return false;
 		}
 		
@@ -211,8 +203,8 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 		}
 		if (tLimitSet == null)
 		{
-			info("Screening '" + tScreening.getScreeningName() + "' with id=" + tScreening.getScreeningId()
-				+ " does not have a limit set for date/time=" + debugSdf.format(t));
+			log.info("Screening '{}' with id={} does not have a limit set for date/time={}",
+					 tScreening.getScreeningName(), tScreening.getScreeningId(), t);
 			return false;
 		}
 		
@@ -221,47 +213,33 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 
 
 
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
 	public boolean noOutputOnReject = false;
 	public boolean noOverwrite = false;
 	public boolean setInputFlags = false;
 	public boolean setDataFlags = true;
-	String _propertyNames[] = { "noOutputOnReject", "noOverwrite", "setInputFlags", "setDataFlags" };
-//AW:PROPERTIES_END
-
-	// Allow javac to generate a no-args constructor.
-	
 	
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-		// Code here will be run once, after the algorithm object is created.
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		inputParm = getParmRef("input");
 		TimeSeriesIdentifier inputTsid = getParmTsId("input");
 		if (inputTsid == null)
@@ -282,7 +260,7 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 				}
 				catch (Exception ex)
 				{
-					throw new DbCompException("No output tsid and can't retrieve: " + ex);
+					throw new DbCompException("No output tsid and can't retrieve.", ex);
 				}
 				finally
 				{
@@ -293,8 +271,8 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 				{
 					// Allow no output
 					_noOutput = true;
-					info("No output time-series -- will generate alarms "
-						+ (setInputFlags ? "and set input flags." : "only."));
+					log.info("No output time-series -- will generate alarms {}",
+							(setInputFlags ? "and set input flags." : "only."));
 				}
 			}
 		}
@@ -302,7 +280,7 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 			_noOutput = true;
 
 		_inputIsOutput = _noOutput || inputTsid.getKey() == outputTsid.getKey();
-		info("_inputIsOutput=" + _inputIsOutput);
+		log.info("_inputIsOutput={}", _inputIsOutput);
 
 		// Find the first and last values in the time series that are triggers.
 		earliestTrigger = null;
@@ -327,11 +305,11 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 			throw new DbCompException("no applicable screenings for tsid '" + inputTsid.getUniqueString()
 				+ " between triggers " + debugSdf.format(earliestTrigger) + " and " + debugSdf.format(latestTrigger));
 		
-		debug1("Triggers: earliest=" + debugSdf.format(earliestTrigger) + ", latest=" + debugSdf.format(latestTrigger)
-			+ ", retrieved " + screenings.size() + " screenings.");
+		log.debug("Triggers: earliest={}, latest={}, retrieved {} screenings.",
+				  earliestTrigger, latestTrigger, screenings.size());
 		
 		// Prefetch data needed for ROC and stuck sensor alarms.
-debug3("beforeTimeSlices, expanding for ROC & Stuck Pre-Fetch...");
+		log.trace("beforeTimeSlices, expanding for ROC & Stuck Pre-Fetch...");
 		Date fetchFrom = null;
 		for(int idx = 0; idx < inputParm.timeSeries.size(); idx++)
 		{
@@ -341,8 +319,8 @@ debug3("beforeTimeSlices, expanding for ROC & Stuck Pre-Fetch...");
 			
 			if (!initScreeningAndLimitSet(tv.getTime()))
 				continue;
-debug3("\tFor t=" + debugSdf.format(tv.getTime()) + " getStuckDuration='" + tLimitSet.getStuckDuration()
-+ "' hasRocLimits=" + tLimitSet.hasRocLimits());			
+			log.trace("For t={} getStuckDuration='{}' hasRocLimits={}",
+					  tv.getTime(), tLimitSet.getStuckDuration(), tLimitSet.hasRocLimits());		
 			if (tLimitSet.getStuckDuration() != null)
 			{
 				IntervalIncrement stuckDurII = IntervalIncrement.parse(tLimitSet.getStuckDuration());
@@ -374,8 +352,10 @@ debug3("\tFor t=" + debugSdf.format(tv.getTime()) + " getStuckDuration='" + tLim
 						fetchFrom = t;
 				}
 				else
-					warning("Unparsable ROC Interval '" + tLimitSet.getRocInterval() 
-						+ "' -- no ROC limits can be checked.");
+				{
+					log.warn("Unparsable ROC Interval '{}' -- no ROC limits can be checked.",
+							 tLimitSet.getRocInterval());
+				}
 			}
 		}
 		
@@ -385,19 +365,19 @@ debug3("\tFor t=" + debugSdf.format(tv.getTime()) + " getStuckDuration='" + tLim
 			try
 			{
 				int n = tsdb.fillTimeSeries(inputParm.timeSeries, fetchFrom, latestTrigger, true, false, false);
-				debug3("beforeTimeSlices: " + n + " values prefetched for ROC and stuck sensor checks.");
+				log.trace("beforeTimeSlices: {} values prefetched for ROC and stuck sensor checks.", n);
 			}
 			catch (Exception ex)
 			{
-				warning("Error filling time series '" + inputParm.tsid.getUniqueString()
-					+ "' for time range " + debugSdf.format(fetchFrom) + " ... " 
-					+ debugSdf.format(latestTrigger) + ": " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Error filling time series '{}' for time range {} ... {}",
+				   		inputParm.tsid.getUniqueString(), fetchFrom, latestTrigger);
 			}
 		}
 		
 		// Note: It is up to the user to make sure input and output are in the correct units.
 		
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	
@@ -411,19 +391,19 @@ debug3("\tFor t=" + debugSdf.format(tv.getTime()) + " getStuckDuration='" + tLim
 	 * @throws DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		Date t = this._timeSliceBaseTime;
 		
 		if (!initScreeningAndLimitSet(t))
 			return;
 		
-		debug1("Executing screening ' " + tScreening.getScreeningName() + "' with id=" 
-			+ tScreening.getScreeningId() + " with limit set season="
-			+ (tLimitSet.getSeason() == null ? "(default)" : tLimitSet.getSeason().getAbbr())
-			+ " at time " + debugSdf.format(t) + " with value " + input);
+		log.debug("Executing screening '{}' with id={} with limit set season={} at time {} with value {}",
+				  tScreening.getScreeningName(), tScreening.getScreeningId(),
+				  (tLimitSet.getSeason() == null ? "(default)" : tLimitSet.getSeason().getAbbr()),
+				  t, input);
 		
 		// NOTE: Alarm flag definitions are the same for HDB and OpenTSDB, so we use the HdbFlags
 		// definitions here. After accumulating flag values, convert them to CWMS if necessary.
@@ -452,8 +432,9 @@ debug3("\tFor t=" + debugSdf.format(tv.getTime()) + " getStuckDuration='" + tLim
 			// data if necessary and compute a delta.
 			IntervalIncrement rocII = IntervalIncrement.parse(tLimitSet.getRocInterval());
 			TimedVariable startOfPeriod = null;
-debug1("ROC interval=" + tLimitSet.getRocInterval() + " parsed to "
-+ (rocII==null ? "ERROR" : (""+rocII.getCount() + " const=" + rocII.getCalConstant())));
+			log.debug("ROC interval={} parsed to {}",
+					  tLimitSet.getRocInterval(),
+					  (rocII==null ? "ERROR" : (""+rocII.getCount() + " const=" + rocII.getCalConstant())));
 
 			if (rocII != null)
 			{
@@ -470,14 +451,20 @@ debug1("ROC interval=" + tLimitSet.getRocInterval() + " parsed to "
 					try { delta = input - (prev=startOfPeriod.getDoubleValue()); }
 					catch(Exception ex)
 					{
-						warning("Cannot do ROC check because startOfPeriod had non-numeric value: " 
-							+ startOfPeriod + " - " + ex);
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Cannot do ROC check because startOfPeriod had non-numeric value: {}",
+						   		startOfPeriod);
 						startOfPeriod = null;
 					}
 				}
-else debug1("\tvalue at start of period not found.");
-debug1("ROC check prev=" + debugSdf.format(from) + " " + prev + ", delta=" + delta + ", high limits r/c/w="
-+ tLimitSet.getRejectRocHigh() + "/" + tLimitSet.getCriticalRocHigh() + "/" + tLimitSet.getWarningRocHigh());
+				else
+				{
+					log.debug("value at start of period not found.");	
+				} 
+				log.debug("ROC check prev={}, delta={}, high limits r/c/w={}/{}/{}",
+						  from, prev, delta, tLimitSet.getRejectRocHigh(),
+						  tLimitSet.getCriticalRocHigh(), tLimitSet.getWarningRocHigh());
 				if (startOfPeriod != null)
 				{
 					// Check the ROC limits
@@ -530,7 +517,10 @@ debug1("ROC check prev=" + debugSdf.format(from) + " " + prev + ", delta=" + del
 								highv = v;
 						}
 					}
-					catch(Exception ex) {}
+					catch(Exception ex) 
+					{
+						log.atTrace().setCause(ex).log("Unable to get value for time slice.");
+					}
 				}
 				if (n > 1 && (variance = (highv - lowv)) <= tLimitSet.getStuckTolerance())
 				{
@@ -555,9 +545,8 @@ debug1("ROC check prev=" + debugSdf.format(from) + " " + prev + ", delta=" + del
 		// If there is an output that is different from the input
 		if (!_noOutput && !_inputIsOutput)
 		{
-Logger.instance().info("output different from input, noOutputOnReject=" + noOutputOnReject 
-+ ", flags=0x" + Integer.toHexString(flags) + ", isRejected=" + HdbFlags.isRejected(flags)
-+ ", noOverwrite=" + noOverwrite);
+			log.info("output different from input, noOutputOnReject={}, flags=0x{}, isRejected={}, noOverwrite-{}",
+					 noOutputOnReject, Integer.toHexString(flags), HdbFlags.isRejected(flags), noOverwrite);
 			if (!(noOutputOnReject && HdbFlags.isRejected(flags)))
 			{
 				if (noOverwrite)
@@ -568,7 +557,6 @@ Logger.instance().info("output different from input, noOutputOnReject=" + noOutp
 			}
 		}
 		
-//AW:TIMESLICE_END
 	}
 
 	private void checkAlarms(Date t, double value, double delta, double variance, int flags)
@@ -582,40 +570,14 @@ Logger.instance().info("output different from input, noOutputOnReject=" + noOutp
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
 		// For Aggregating algorithms, this is done after each aggregate
 		// period.
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 
 	public AlarmLimitSet gettLimitSet()

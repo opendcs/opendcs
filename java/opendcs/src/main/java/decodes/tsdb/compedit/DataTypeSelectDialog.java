@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.tsdb.compedit;
 
@@ -30,10 +42,10 @@ public class DataTypeSelectDialog extends GuiDialog
 	ArrayList<String[]> dataTypes;
 	private String siteName;
 
-	/** 
+	/**
 	  Construct new dialog.
 	*/
-    public DataTypeSelectDialog(JDialog parent, String siteName, 
+    public DataTypeSelectDialog(JDialog parent, String siteName,
 		ArrayList<String[]> dts)
 	{
         super(parent, CAPEdit.instance().compeditDescriptions
@@ -46,7 +58,7 @@ public class DataTypeSelectDialog extends GuiDialog
 		allInit();
 	}
 
-    public DataTypeSelectDialog(JFrame parent, String siteName, 
+    public DataTypeSelectDialog(JFrame parent, String siteName,
     		ArrayList<String[]> dts)
 	{
 		super(parent, CAPEdit.instance().compeditDescriptions
@@ -61,55 +73,47 @@ public class DataTypeSelectDialog extends GuiDialog
 
 	private void allInit()
 	{
-        try 
-		{
-            jbInit();
-            pack();
-			
-			dtSelectPanel.setLayout(new BorderLayout());
-//			jScrollPane1.setMinimumSize(new Dimension(453, 300));
-        	dtSelectPanel.add(jScrollPane1, BorderLayout.CENTER);
+		jbInit();
+		pack();
 
-			SortingListTableModel tabmod = 
-				new DTListTableModel(header, dataTypes, isHdb);
-			int widths[] = new int[header.length];
-			for(int i=0; i< header.length; i++)
-				widths[i] = 100 / header.length;
-			dtListTable = new SortingListTable(tabmod, widths);
+		dtSelectPanel.setLayout(new BorderLayout());
+		dtSelectPanel.add(jScrollPane1, BorderLayout.CENTER);
 
-			jScrollPane1.getViewport().add(dtListTable, null);
-			getRootPane().setDefaultButton(selectButton);
-            pack();
-        }
-        catch(Exception ex) 
-		{
-            ex.printStackTrace();
-        }
+		SortingListTableModel tabmod =
+			new DTListTableModel(header, dataTypes, isHdb);
+		int widths[] = new int[header.length];
+		for(int i=0; i< header.length; i++)
+			widths[i] = 100 / header.length;
+		dtListTable = new SortingListTable(tabmod, widths);
+
+		jScrollPane1.getViewport().add(dtListTable, null);
+		getRootPane().setDefaultButton(selectButton);
+		pack();
     }
 
 	/** Initializes GUI components */
-    void jbInit() throws Exception 
+    void jbInit()
 	{
         JPanel overallPanel = new JPanel(new BorderLayout());
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 35, 10));
         selectButton.setText(CAPEdit.instance().genericDescriptions
         		.getString("select"));
         selectButton.addActionListener(
-			new java.awt.event.ActionListener() 
+			new java.awt.event.ActionListener()
 			{
-            	public void actionPerformed(ActionEvent e) 
+            	public void actionPerformed(ActionEvent e)
 				{
-					selectButtonPressed(); 
+					selectButtonPressed();
 				}
         	});
         cancelButton.setText(CAPEdit.instance().genericDescriptions
         		.getString("cancel"));
         cancelButton.addActionListener(
-			new java.awt.event.ActionListener() 
+			new java.awt.event.ActionListener()
 			{
-            	public void actionPerformed(ActionEvent e) 
+            	public void actionPerformed(ActionEvent e)
 				{
-					cancelButtonPressed(); 
+					cancelButtonPressed();
 				}
         	});
         buttonPanel.add(selectButton, null);
@@ -160,7 +164,7 @@ public class DataTypeSelectDialog extends GuiDialog
 			return null;
 		return dataTypes.get(selectedIndex);
 	}
-	
+
 	public void allowMultipleSelection(boolean tf)
 	{
 		dtListTable.setSelectionMode(
@@ -169,9 +173,9 @@ public class DataTypeSelectDialog extends GuiDialog
 	}
 }
 
-class DTListTableModel 
-	extends AbstractTableModel 
-	implements SortingListTableModel 
+class DTListTableModel
+	extends AbstractTableModel
+	implements SortingListTableModel
 {
 	ArrayList<String[]> dataTypes;
 	String header[];
@@ -195,33 +199,33 @@ class DTListTableModel
 		sortedBy = c;
 		fireTableDataChanged();
 	}
-	
-	public Object getRowObject(int arg0) 
+
+	public Object getRowObject(int arg0)
 	{
 		return dataTypes.get(arg0);
 	}
 
-	public int getRowCount() 
+	public int getRowCount()
 	{
 		return rows;
 	}
 
-	public int getColumnCount() 
+	public int getColumnCount()
 	{
 		return columns;
 	}
-	
+
 	public String getColumnName(int col)
 	{
 		return header[col];
 	}
 
-	public Object getValueAt(int rowIndex, int columnIndex) 
+	public Object getValueAt(int rowIndex, int columnIndex)
 	{
 		return dataTypes.get(rowIndex)[columnIndex];
 	}
-	
-	public static String getObjectColumn(Object obj, int columnIndex) 
+
+	public static String getObjectColumn(Object obj, int columnIndex)
 	{
 		String[] row = (String[])obj;
 		return row[columnIndex];
@@ -237,7 +241,6 @@ class DTListComparator implements Comparator
 	{
 		this.column = column;
 		this.isHdb = isHdb;
-//System.out.println("DTListComparator column=" + column + ", isHdb=" + isHdb);
 	}
 
 	public int compare(Object ob1, Object ob2)
@@ -254,8 +257,8 @@ class DTListComparator implements Comparator
 			}
 			catch(Exception ex)
 			{
-//System.out.println("numeric compare failed ob1='" + r1[0] + "', ob2='" + r2[0] + "'");
-			} // Fall through and compare strings
+				/* Fall through and compare strings */
+			}
 		}
 
 		return r1[column].compareTo(r2[column]);

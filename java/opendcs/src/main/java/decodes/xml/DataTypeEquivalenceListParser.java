@@ -1,15 +1,27 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import java.util.Iterator;
 import decodes.db.*;
 import ilex.util.TextUtil;
-import ilex.util.IDateFormat;
-import ilex.util.Logger;
 import ilex.util.StringPair;
 
 import java.io.IOException;
@@ -20,6 +32,7 @@ import ilex.xml.*;
  */
 public class DataTypeEquivalenceListParser implements XmlObjectParser, XmlObjectWriter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private int state;
 	private static final int Top = 0;
 	private static final int InDTE = 1;
@@ -85,7 +98,7 @@ public class DataTypeEquivalenceListParser implements XmlObjectParser, XmlObject
 				throw new SAXException(XmlDbTags.DataType_el + " without "
 					+ XmlDbTags.DataType_code_at +" attribute");
 			DataType dt = DataType.getDataType(st, cd);
-			
+
 			String nm = atts.getValue(XmlDbTags.name_at);
 			if (nm != null)
 				dt.setDisplayName(nm);
@@ -97,16 +110,14 @@ public class DataTypeEquivalenceListParser implements XmlObjectParser, XmlObject
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
@@ -159,7 +170,7 @@ public class DataTypeEquivalenceListParser implements XmlObjectParser, XmlObject
 		// Reset all saved flags, we will set them as we save.
 		Database.getDb().dataTypeSet.resetSaved();
 
-		for(Iterator it = Database.getDb().dataTypeSet.values().iterator(); 
+		for(Iterator it = Database.getDb().dataTypeSet.values().iterator();
 			it.hasNext(); )
 		{
 			DataType dt = (DataType)it.next();
@@ -168,14 +179,14 @@ public class DataTypeEquivalenceListParser implements XmlObjectParser, XmlObject
 			 && dt.equivRing != dt)
 			{
 				xos.startElement(XmlDbTags.DataTypeEquivalence_el);
-				
-				
+
+
 				String std = dt.getStandard();
 				String cod = dt.getCode();
 				String nm = dt.getDisplayName();
 
 				if (nm == null)
-					xos.startElement(XmlDbTags.DataType_el, 
+					xos.startElement(XmlDbTags.DataType_el,
 						XmlDbTags.DataType_standard_at, std,
 						XmlDbTags.DataType_code_at, cod);
 				else
@@ -189,16 +200,16 @@ public class DataTypeEquivalenceListParser implements XmlObjectParser, XmlObject
 				xos.endElement(XmlDbTags.DataType_el);
 
 				dt.saved = true;
-				for(DataType dti = dt.equivRing; 
+				for(DataType dti = dt.equivRing;
 					dti != null && dti != dt; dti = dti.equivRing)
 				{
-					
+
 					std = dti.getStandard();
 					cod = dti.getCode();
 					nm = dti.getDisplayName();
 
 					if (nm == null)
-						xos.startElement(XmlDbTags.DataType_el, 
+						xos.startElement(XmlDbTags.DataType_el,
 							XmlDbTags.DataType_standard_at, std,
 							XmlDbTags.DataType_code_at, cod);
 					else

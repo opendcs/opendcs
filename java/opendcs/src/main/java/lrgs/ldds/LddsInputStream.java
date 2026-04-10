@@ -73,7 +73,7 @@ public class LddsInputStream
 		 || hdr[3] != validSync[3])
 		{
 			throw new ProtocolError("Could not read valid sync pattern ("
-				+ n + " bytes read)");
+				+ n + " bytes read)"+new String(hdr,"UTF8"));
 		}
 
 		// Now have sync, block for rest of header.

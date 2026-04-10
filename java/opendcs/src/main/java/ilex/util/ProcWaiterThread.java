@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package ilex.util;
 
 import java.io.BufferedReader;
@@ -6,7 +21,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Map;
 
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.MDC;
 
 /**
 You have to be careful when spawning processes from within Java to process
@@ -19,7 +35,7 @@ Any output from the process is converted to log messages.
 */
 public class ProcWaiterThread extends Thread
 {
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(ProcWaiterThread.class);
+    private static final org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
     /**
     * The Process I'm waiting for
     */
@@ -125,10 +141,13 @@ public class ProcWaiterThread extends Thread
     {
         // Start a separate thread to read the input stream.
         final InputStream is = proc.getInputStream();
-        final org.slf4j.Logger processLogger = LoggerFactory.getLogger(ProcWaiterThread.class.getName()+"::cmd." + name);
+        // NOTE: MDC won't work here, it's per thread and we have two.
+        final org.slf4j.Logger processLogger = OpenDcsLoggerFactory.getLogger(ProcWaiterThread.class.getName()+"::cmd." + name);
         Thread isr =
                 new Thread(() ->
                 {
+                    MDC.put("LauncherChild", this.name);
+                    MDC.put("IOStream", "Standard Out");
                     try (BufferedReader reader = new BufferedReader(new InputStreamReader(is)))
                     {
                         String line = null;
@@ -142,7 +161,7 @@ public class ProcWaiterThread extends Thread
                     {
                         processLogger.atError()
                                      .setCause(ex)
-                                     .log("{} error on output stream.", name);
+                                     .log("Error on output stream.");
                     }
                 });
         isr.setDaemon(true);
@@ -155,6 +174,8 @@ public class ProcWaiterThread extends Thread
         Thread esr =
                 new Thread(() ->
                 {
+                    MDC.put("LauncherChild", this.name);
+                    MDC.put("IOStream", "Standard Error");
                     try (BufferedReader reader = new BufferedReader(new InputStreamReader(es)))
                     {
                         String line = null;

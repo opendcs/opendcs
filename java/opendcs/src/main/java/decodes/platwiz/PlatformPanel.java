@@ -1,28 +1,17 @@
 /*
-*	$Id$
-*
-*	$Log$
-*	Revision 1.1  2008/04/04 18:21:03  cvs
-*	Added legacy code to repository
-*	
-*	Revision 1.6  2008/01/25 18:56:10  mmaloney
-*	modified files for internationalization
-*	
-*	Revision 1.5  2008/01/25 16:16:29  mmaloney
-*	modified files for internationalization
-*	
-*	Revision 1.4  2007/09/11 13:25:04  mmaloney
-*	Fixed bug
-*	
-*	Revision 1.3  2004/09/08 12:24:21  mjmaloney
-*	javadoc
-*	
-*	Revision 1.2  2004/08/27 18:40:58  mjmaloney
-*	Platwiz work
-*	
-*	Revision 1.1  2004/08/25 19:29:20  mjmaloney
-*	Added
-*	
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.platwiz;
 
@@ -38,11 +27,8 @@ import decodes.dbeditor.PlatformEditPanel;
 Platform Wizard panel for platform info. 
 This is a thin layer around the decodes.dbedit.PlatformEditPanel.
 */
-public class PlatformPanel extends JPanel 
-	implements WizardPanel
+public class PlatformPanel extends JPanel implements WizardPanel
 {
-	private static ResourceBundle genericLabels = 
-							PlatformWizard.getGenericLabels();
 	private static ResourceBundle platwizLabels = 
 							PlatformWizard.getPlatwizLabels();
 	BorderLayout borderLayout1 = new BorderLayout();
@@ -52,16 +38,12 @@ public class PlatformPanel extends JPanel
 	public PlatformPanel() 
 	{
 		platformEditPanel = new PlatformEditPanel(false);
-		try {
-			jbInit();
-		}
-		catch(Exception ex) {
-			ex.printStackTrace();
-		}
+		jbInit();
 	}
 
 	/** Initializes GUI components. */
-	void jbInit() throws Exception {
+	void jbInit() 
+	{
 		this.setLayout(borderLayout1);
 		this.add(platformEditPanel, BorderLayout.CENTER);
 	}

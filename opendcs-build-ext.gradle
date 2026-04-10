@@ -1,0 +1,12 @@
+
+includeBuild("$gradle.ext.externalLibDir") {
+    dependencySubstitution {
+        substitute(module("org.opendcs:opendcs-api")).using(project(":opendcs-api"))
+        substitute(module("org.opendcs:opendcs-annotations")).using(project(":opendcs-annotations"))
+        substitute(module("org.opendcs:opendcs")).using(project(":opendcs"))
+        substitute(module("org.opendcs:opendcs-logback-event-provider")).using(project(":opendcs-logback-event-provider"))
+        substitute(module("org.opendcs:opendcs-schemas")).using(project(":opendcs-schemas"))
+        substitute(module("org.opendcs:opendcs-schemas-cwms-oracle")).using(project(":opendcs-schemas-cwms-oracle"))
+        substitute(module("org.opendcs:opendcs-integrationtesting-fixtures")).using(project(":testing:fixtures"))
+    }
+}

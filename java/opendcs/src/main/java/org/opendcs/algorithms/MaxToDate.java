@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 The OpenDCS Consortium and contributors
+ * Copyright 2024-2025 The OpenDCS Consortium and contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,33 +20,22 @@ import java.util.Date;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ilex.var.NamedVariable;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.algo.AWAlgoType;
 
-//AW:IMPORTS
-//AW:IMPORTS_END
 
-//AW:JAVADOC
-/**
- * Over the desired interval, pick the current maximum.
- * previous maximum within the interval should be deleted
- *
- * @author L2EDDMAN
- */
-//AW:JAVADOC_END
 @Algorithm(name = "Max To Date", description = "Over the desired interval, pick the current maximum.\n"
                                              + "Previous maximum within the interval should be deleted")
 public class MaxToDate extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-    private static final Logger log = LoggerFactory.getLogger(MaxToDate.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     @Input
     public double input;
-    String _inputNames[] = { "input" };
 
 
     private Date   max_date;
@@ -55,12 +44,10 @@ public class MaxToDate extends decodes.tsdb.algo.AW_AlgorithmBase
 
     @Output(type = Double.class)
     public NamedVariable max = new NamedVariable("max", 0);
-    String _outputNames[] = { "max" };
 
     @org.opendcs.annotations.PropertySpec(value="0.0", description = "Minimum number of samples required before we consider this result valid.")
     public double minSamples = 0.0;
 
-    String _propertyNames[] = { "minSamples"  };
 
     // Allow javac to generate a no-args constructor.
 
@@ -139,30 +126,5 @@ public class MaxToDate extends decodes.tsdb.algo.AW_AlgorithmBase
             log.trace("Only {} samples found, minium number specified is {}", numSamples, minSamples );
             log.trace("selected min/max will not be saved");
         }
-    }
-
-    /**
-     * Required method returns a list of all input time series names.
-     */
-    public String[] getInputNames()
-    {
-        return _inputNames;
-    }
-
-    /**
-     * Required method returns a list of all output time series names.
-     */
-    public String[] getOutputNames()
-    {
-        return _outputNames;
-    }
-
-    /**
-     * Required method returns a list of properties that have meaning to
-     * this algorithm.
-     */
-    public String[] getPropertyNames()
-    {
-        return _propertyNames;
     }
 }

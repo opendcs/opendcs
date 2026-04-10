@@ -1,42 +1,39 @@
-/**
- * $Id: PlatformTableModel.java,v 1.2 2016/08/05 14:50:18 mmaloney Exp $
- * 
- * Open Source Software
- * 
- * $Log: PlatformTableModel.java,v $
- * Revision 1.2  2016/08/05 14:50:18  mmaloney
- * Station and Routing Status GUI updates.
- *
- * Revision 1.1  2016/07/20 15:40:12  mmaloney
- * First platstat impl GUI.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.platstat;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.TimeZone;
 
-import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 
 import decodes.db.Database;
 import decodes.db.Platform;
 import decodes.db.PlatformStatus;
-import decodes.db.ScheduleEntry;
 import decodes.gui.SortingListTableModel;
 import decodes.sql.DbKey;
 
 @SuppressWarnings("serial")
-class PlatformTableModel extends AbstractTableModel
-	implements SortingListTableModel
+class PlatformTableModel extends AbstractTableModel implements SortingListTableModel
 {
 	String[] colnames = null;
 	int [] widths = { 8, 20, 15, 12, 15, 15, 15 };
@@ -44,26 +41,26 @@ class PlatformTableModel extends AbstractTableModel
 	private ArrayList<PlatformStatus> beans = new ArrayList<PlatformStatus>();
 	private PSColumnizer columnizer = new PSColumnizer();
 	private PlatformMonitorFrame frame = null;
-	
+
 	public PlatformTableModel(PlatformMonitorFrame frame)
 	{
 		this.frame = frame;
-		colnames = new String[]{ 
-			PlatformMonitorFrame.procmonLabels.getString("platmon.site"), 
-			PlatformMonitorFrame.procmonLabels.getString("platmon.designator"), 
-			PlatformMonitorFrame.procmonLabels.getString("platmon.lastcontact"), 
+		colnames = new String[]{
+			PlatformMonitorFrame.procmonLabels.getString("platmon.site"),
+			PlatformMonitorFrame.procmonLabels.getString("platmon.designator"),
+			PlatformMonitorFrame.procmonLabels.getString("platmon.lastcontact"),
 			PlatformMonitorFrame.procmonLabels.getString("platmon.lastmsg"),
 			PlatformMonitorFrame.procmonLabels.getString("platmon.lastqual"),
 			PlatformMonitorFrame.procmonLabels.getString("platmon.lasterr"),
 			PlatformMonitorFrame.procmonLabels.getString("platmon.routingspec") };
 	}
-	
+
 	@Override
 	public int getColumnCount()
 	{
 		return colnames.length;
 	}
-	
+
 	public String getColumnName(int col)
 	{
 		return colnames[col];
@@ -74,7 +71,7 @@ class PlatformTableModel extends AbstractTableModel
 		return col == 6;
 	}
 
-	
+
 	@Override
 	public int getRowCount()
 	{
@@ -100,7 +97,7 @@ class PlatformTableModel extends AbstractTableModel
 	{
 		return beans.get(row);
 	}
-	
+
 	/**
 	 * Called periodically from Db Update Thread with a new schedule entry list.
 	 * Merge the list into the list being displayed, and if any changes are made,
@@ -124,18 +121,18 @@ class PlatformTableModel extends AbstractTableModel
 				else
 					bean.setSiteName("null");
 			}
-			
+
 			if (!DbKey.isNull(bean.getLastScheduleEntryStatusId()))
 			{
-				
+
 			}
 		}
-		
+
 	  nextBean:
 		for(int psIdx = 0; psIdx < list.size(); psIdx++)
 		{
 			PlatformStatus ps = list.get(psIdx);
-			
+
 			for(PlatformStatus bean : beans)
 				if (bean.getPlatformId().equals(ps.getPlatformId()))
 				{
@@ -150,7 +147,7 @@ class PlatformTableModel extends AbstractTableModel
 			// Fell through means this is a new Sched Entry that I don't yet have.
 			ps.setChecked(true);
 			beans.add(ps);
-			
+
 			numChanges++;
 		}
 		// Any beans not checked are no longer in the database. Remove from list.
@@ -165,7 +162,7 @@ class PlatformTableModel extends AbstractTableModel
 		}
 		return numChanges;
 	}
-	
+
 	/**
 	 * Call from swing thread
 	 */
@@ -187,7 +184,7 @@ class PlatformTableModel extends AbstractTableModel
 			if (beans.get(idx) == bean)
 				return idx;
 		return -1;
-	}	
+	}
 }
 
 class PSColumnizer
@@ -197,7 +194,7 @@ class PSColumnizer
 	{
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
-	
+
 	public String getColumn(PlatformStatus rsb, int col)
 	{
 		switch(col)
@@ -218,7 +215,7 @@ class PSComparator implements Comparator<PlatformStatus>
 {
 	private int sortColumn = 0;
 	PSColumnizer columnizer = null;
-	
+
 	PSComparator(int sortColumn, PSColumnizer columnizer)
 	{
 		this.sortColumn = sortColumn;
@@ -237,7 +234,7 @@ class PSComparator implements Comparator<PlatformStatus>
 			return r;
 		return strcmp(columnizer.getColumn(rs1, 1), columnizer.getColumn(rs2, 1));
 	}
-	
+
 	/**
 	 * Do a case INsensitive compare, but always sort blanks to the end.
 	 * @param s1

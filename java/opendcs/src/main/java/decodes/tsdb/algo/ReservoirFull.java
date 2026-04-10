@@ -20,7 +20,7 @@ public class ReservoirFull
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 	@Input 
-	public double storage;	//AW:TYPECODE=i
+	public double storage;
 
 	@Output(type = Double.class)
 	public NamedVariable percentFull = new NamedVariable("percentFull", 0);

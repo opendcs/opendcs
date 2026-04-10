@@ -1,0 +1,14 @@
+{
+  "netlistId" : null,
+  "name" : "Platform Network List",
+  "transportMediumType" : "GOES",
+  "siteNameTypePref" : "Stream",
+  "lastModifyTime" : 1736356812200,
+  "items" : {
+    "6698952" : {
+      "transportId" : "6698952",
+      "platformName" : "Stream test site",
+      "description" : "platform associated with stream"
+    }
+  }
+}

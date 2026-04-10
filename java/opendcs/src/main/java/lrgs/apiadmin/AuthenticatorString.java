@@ -1,44 +1,27 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Source$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $State$
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  $Log$
-*  Revision 1.2  2016/02/23 19:45:03  mmaloney
-*  Support for SHA-256, as required by NOAA.
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.1  2008/04/04 18:21:11  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.4  2005/07/08 20:03:29  mjmaloney
-*  dev
-*
-*  Revision 1.3  2004/08/30 17:10:13  mjmaloney
-*  Javadoc
-*
-*  Revision 1.2  2002/05/18 20:01:22  mjmaloney
-*  Added capability to add/remove secure DDS users. This involved the
-*  implementation of a session key, unique to each admin session.
-*
-*  Revision 1.1  2000/03/13 16:46:57  mike
-*  dev
-*
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.apiadmin;
 
 import ilex.util.ByteUtil;
-import ilex.util.Logger;
 import ilex.util.PasswordFileEntry;
-import ilex.util.AuthException;
-
 import java.io.*;
 import java.security.*;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
  * This class is used for building authenticator-strings used by the LRGS
@@ -46,8 +29,9 @@ import java.security.*;
  */
 public class AuthenticatorString
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String astr;
-	
+
 	public static final String ALGO_SHA = "SHA";
 	public static final String ALGO_SHA256 = "SHA-256";
 	private String algorithm = ALGO_SHA;
@@ -65,17 +49,16 @@ public class AuthenticatorString
 		throws NoSuchAlgorithmException
 	{
 		astr = ByteUtil.toHexString(
-			makeAuthenticator(pfe.getUsername().getBytes(), 
+			makeAuthenticator(pfe.getUsername().getBytes(),
 			pfe.getShaPassword(), timet));
 	}
-	
+
 	public AuthenticatorString(int timet, PasswordFileEntry pfe, String algorithm)
 		throws NoSuchAlgorithmException
 	{
 		this.algorithm = algorithm;
-//System.out.println("Building authenticator with " + algorithm);
 		astr = ByteUtil.toHexString(
-			makeAuthenticator(pfe.getUsername().getBytes(), 
+			makeAuthenticator(pfe.getUsername().getBytes(),
 			pfe.getShaPassword(), timet, algorithm));
 	}
 
@@ -93,7 +76,7 @@ public class AuthenticatorString
 	{
 		return makeAuthenticator(b1, b2, t, ALGO_SHA);
 	}
-		
+
 	/**
 	 * Makes authenticator. Pass one of the constants ALGO_SHA or ALGO_SHA256
 	 * @param b1 username as byte array
@@ -123,8 +106,9 @@ public class AuthenticatorString
 			dos.write(b2);
 			dos.write(timeb);
 		}
-		catch(IOException e) // shouldn't happen
+		catch(IOException ex) // shouldn't happen
 		{
+			log.atError().setCause(ex).log("Unable to create authenticator byte array.");
 		}
 
 		return dos.getMessageDigest().digest();

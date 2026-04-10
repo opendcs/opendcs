@@ -1,14 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.ldds;
 
@@ -21,6 +24,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -28,7 +34,6 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import ilex.util.Base64;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.xml.DomHelper;
 import ilex.xml.XmlOutputStream;
@@ -44,13 +49,14 @@ DcpMsg objects.
 */
 public class ExtBlockXmlParser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static final String module = "LddsClient";
 	private DocumentBuilderFactory factory = null;
 	private DocumentBuilder builder = null;
 	private SimpleDateFormat sdf;
 	private int assumedSrc = 0;
 	private int ddsVersion = DdsVersion.DdsVersionNum;
-	
+
 	public static final String MsgBlockElem = "MsgBlock";
 	public static final String DcpMsgElem = "DcpMsg";
 	public static final String AsciiMsgElem = "AsciiMsg";
@@ -72,9 +78,9 @@ public class ExtBlockXmlParser
 	public static final String goesFreqOffset = "FreqOffset";
 	public static final String goesGoodPhasePct = "GoodPhasePct";
 	public static final String goesPhaseNoise = "PhaseNoise";
-	
+
 	private boolean writeLocalTime = true;
-	
+
 	/** Default constructor. */
 	public ExtBlockXmlParser(int assumedSrc)
 	{
@@ -82,7 +88,7 @@ public class ExtBlockXmlParser
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 		this.assumedSrc = assumedSrc;
 	}
-	
+
 	private void initFactory()
 		throws ProtocolError
 	{
@@ -93,8 +99,7 @@ public class ExtBlockXmlParser
 		}
 		catch(Exception ex)
 		{
-			throw new ProtocolError(
-				"Could not initialize ExtBlockXmlParser: " + ex);
+			throw new ProtocolError("Could not initialize ExtBlockXmlParser: ", ex);
 		}
 	}
 
@@ -105,7 +110,7 @@ public class ExtBlockXmlParser
 	  @throws ProtocolError if parsing fails.
 	*/
 	public DcpMsg[] parseMsgBlock(byte[] data)
-		throws ProtocolError, IOException 
+		throws ProtocolError, IOException
 	{
 		if (factory == null)
 			initFactory();
@@ -138,8 +143,7 @@ public class ExtBlockXmlParser
 		}
 		catch(SAXException ex)
 		{
-			throw new ProtocolError("Could not parse XML Block Response: "
-				+ ex);
+			throw new ProtocolError("Could not parse XML Block Response", ex);
 		}
 		DcpMsg ret[] = new DcpMsg[msgList.size()];
 		int i = 0;
@@ -154,7 +158,7 @@ public class ExtBlockXmlParser
 	  @throws ProtocolError if parsing fails.
 	*/
 	public synchronized DcpMsg parseDcpMsg(byte[] data)
-		throws ProtocolError, IOException 
+		throws ProtocolError, IOException
 	{
 		if (factory == null)
 			initFactory();
@@ -175,8 +179,7 @@ public class ExtBlockXmlParser
 		}
 		catch(SAXException ex)
 		{
-			throw new ProtocolError("Could not parse XML Block Response: "
-				+ ex);
+			throw new ProtocolError("Could not parse XML Block Response", ex);
 		}
 	}
 
@@ -194,13 +197,12 @@ public class ExtBlockXmlParser
 			try { msg.setFlagbits(Integer.parseInt(ns.trim(), 16)); }
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().warning(module + 
-				" Can't parse flags from '" + ns + "': " + ex);
+				log.atWarn().setCause(ex).log("Can't parse flags from '{}'", ns );
 			}
 		}
 		if (assumedSrc != 0)
 			msg.flagbits = (msg.flagbits & (~DcpMsgFlag.SRC_MASK)) | assumedSrc;
-		
+
 		ns = DomHelper.findAttr(elem, platformIdAttr);
 		if (ns != null)
 			msg.setDcpAddress(new DcpAddress(ns));
@@ -209,7 +211,7 @@ public class ExtBlockXmlParser
 		NodeList children = elem.getChildNodes();
 		if (children == null)
 		{
-			Logger.instance().warning("DcpMsg element with no children!");
+			log.warn("DcpMsg element with no children!");
 			return null;
 		}
 		for(int i=0; i<children.getLength(); i++)
@@ -221,7 +223,7 @@ public class ExtBlockXmlParser
 			String nn = child.getNodeName();
 			if (nn.equalsIgnoreCase(BinaryMsgElem))
 			{
-				String b64data = 
+				String b64data =
 					TextUtil.removeAllSpace(DomHelper.getTextContent(child));
 				msg.setData(Base64.decodeBase64(b64data.getBytes()));
 			}
@@ -234,15 +236,12 @@ public class ExtBlockXmlParser
 					{
 						Date d = sdf.parse(ds);
 						msg.setCarrierStart(d);
-//Logger.instance().info("Carrier start string = '" + ds + "' date=" + d);
 						msg.flagbits |= DcpMsgFlag.HAS_CARRIER_TIMES;
 					}
 				}
 				catch(Exception ex)
 				{
-					Logger.instance().warning(module + " Bad date format '"
-						+ ds + "' in " + CarrierStartElem
-						+ ": " + ex);
+					log.atWarn().setCause(ex).log("Bad date format '{}' in {}", ds, CarrierStartElem);
 				}
 			}
 			else if (nn.equalsIgnoreCase(CarrierStopElem))
@@ -257,9 +256,7 @@ public class ExtBlockXmlParser
 				}
 				catch(Exception ex)
 				{
-					Logger.instance().warning(module + " Bad date format '"
-						+ ds + "' in " + CarrierStopElem
-						+ ": " + ex);
+					log.atWarn().setCause(ex).log("Bad date format '{}' in {}", ds, CarrierStopElem);
 				}
 			}
 			else if (nn.equalsIgnoreCase(DomsatTimeElem))
@@ -275,9 +272,7 @@ public class ExtBlockXmlParser
 				}
 				catch(Exception ex)
 				{
-					Logger.instance().warning(module + " Bad date format '"
-						+ ds + "' in " + DomsatTimeElem
-						+ ": " + ex);
+					log.atWarn().setCause(ex).log("Bad date format '{}' in {}", ds, DomsatTimeElem);
 				}
 			}
 			else if (nn.equalsIgnoreCase(BaudElem))
@@ -307,8 +302,7 @@ public class ExtBlockXmlParser
 				}
 				catch(Exception ex)
 				{
-					Logger.instance().warning(module + " Bad date format '"
-						+ ds + "' in " + xmitTimeElem + ": " + ex);
+					log.atWarn().setCause(ex).log("Bad date format '{}' in {}", ds, xmitTimeElem);
 				}
 			}
 			else if (nn.equalsIgnoreCase(localRecvTimeElem))
@@ -323,8 +317,7 @@ public class ExtBlockXmlParser
 				}
 				catch(Exception ex)
 				{
-					Logger.instance().warning(module + " Bad date format '"
-						+ ds + "' in " + localRecvTimeElem + ": " + ex);
+					log.atWarn().setCause(ex).log("Bad date format '{}' in {}", ds, localRecvTimeElem);
 				}
 			}
 			else if (nn.equalsIgnoreCase(momsmElem))
@@ -343,8 +336,7 @@ public class ExtBlockXmlParser
 				try { msg.setCdrReference(Long.parseLong(s)); }
 				catch(NumberFormatException ex)
 				{
-					Logger.instance().warning(module + " Bad number format for "
-						+ cdrRefElem + " '" + s + "'");
+					log.atWarn().setCause(ex).log("Bad number format for {} '{}'", cdrRefElem, s);
 				}
 			}
 			else if (nn.equalsIgnoreCase(sessionStatusElem))
@@ -373,33 +365,24 @@ public class ExtBlockXmlParser
 				msg.setGoesPhaseNoise(d);
 			}
 			else
-				Logger.instance().debug1(module + " Unexpected node '" 
-					+ nn + "' in DcpMsg element with value '"
-					+ DomHelper.getTextContent(child)+ "' -- ignored.");
+			{
+				log.debug("Unexpected node '{}' in DcpMsg element with value '{}' -- ignored.",
+						  nn, DomHelper.getTextContent(child));
+			}
 		}
 		if (seqnum < 0 || domsatTime == null)
 			msg.flagbits |= DcpMsgFlag.MSG_NO_SEQNUM;
 
 		byte msgdata[] = msg.getData();
-//		if (msgdata == null || msgdata.length < DcpMsg.IDX_DATA)
 		if (msgdata == null)
 		{
-			String errmsg = module 
-			+ " Received empty message with seqnum=" + seqnum
-			+ " in ext-xml block -- ignored.";
-			try { throw new Exception(errmsg); }
-			catch(Exception ex)
-			{
-				System.err.println(ex);
-				ex.printStackTrace(System.err);
-			}
-			Logger.instance().warning(errmsg);
+			log.warn("Received empty message with seqnum={} in ext-xml block -- ignored.", seqnum);
 			return null;
 		}
 
 		return msg;
 	}
-	
+
 	/**
 	 * Adds a DCP Message to the XML Output Stream.
 	 * @param xos XML Output Stream
@@ -408,12 +391,12 @@ public class ExtBlockXmlParser
 	 * @throws IOException
 	 * @return true if message added, false if error encountered.
 	 */
-	public synchronized boolean addMsg(XmlOutputStream xos, DcpMsg msg, 
+	public synchronized boolean addMsg(XmlOutputStream xos, DcpMsg msg,
 		String module)
 		throws IOException
 	{
 		int len = -1;
-		try 
+		try
 		{
 			if ((len = msg.getDcpDataLength()) <= 0)
 				len = -1;
@@ -421,19 +404,18 @@ public class ExtBlockXmlParser
 		catch(Exception ex) { len = -1; }
 		if (len == -1)
 		{
-			debug(module, "Bad length field in message '" 
-				+ msg.getHeader() + "' -- skipped.");
+			log.debug("Bad length field in message '{}' -- skipped.", msg.getHeader());
 			return false;
 		}
 
-		xos.startElement(DcpMsgElem, 
+		xos.startElement(DcpMsgElem,
 			flagsAttr, formatFlagsValue(msg.flagbits),
 			platformIdAttr, msg.getDcpAddress().toString());
 
 
 		if (DcpMsgFlag.isGOES(msg.flagbits))
 		{
-			// For GOES, always write Domsat seq & time, even if not 
+			// For GOES, always write Domsat seq & time, even if not
 			// supplied. This is for the V7 MessageFile, which might need
 			// to add these after the fact, and will need a place-holder.
 			xos.writeElement(DomsatSeqElem, formatDomsatSeq(msg.getSequenceNum()));
@@ -482,14 +464,14 @@ public class ExtBlockXmlParser
 			if (t != null && t != DcpMsgIndex.zeroDate)
 				xos.writeElement(xmitTimeElem, formatDate(t));
 		}
-		
+
 		if (ddsVersion >= DdsVersion.version_11)
 		{
 			Date t = msg.getLocalReceiveTime();
 			if (t != null && t != DcpMsgIndex.zeroDate && writeLocalTime)
 				xos.writeElement(localRecvTimeElem, formatDate(t));
 		}
-		
+
 		// We always need to Base64 encode. Even ASCII message may have
 		// non-printing chars like form-feed, CR/LF combinations, which must be
 		// preserved EXACTLY.
@@ -500,7 +482,7 @@ public class ExtBlockXmlParser
 		xos.endElement(DcpMsgElem);
 		return true;
 	}
-	
+
 	/**
 	 * Formats the flags as an 8-hex-digit string preceeded by "0x".
 	 * @param flags the flag values as a 32-bit int.
@@ -536,11 +518,6 @@ public class ExtBlockXmlParser
 		{
 			return sdf.format(t);
 		}
-	}
-	
-	private void debug(String module, String msg)
-	{
-		Logger.instance().debug3(module + ": " + msg);
 	}
 
 	public boolean isWriteLocalTime()

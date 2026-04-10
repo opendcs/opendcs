@@ -11,18 +11,60 @@ dependencies {
     api(libs.commons.io)
     api(libs.apache.derby)
     api(libs.webcompere.system.stubs.jupiter)
-    api(libs.testcontainers.core)
-    api(libs.testcontainers.postgresql)
-    api(libs.testcontainers.oracle.free)
+    api(libs.bundles.testcontainers)
     api(libs.hec.testcontainers.cwms)
     api(libs.bundles.jdbi)
+    api(libs.rest.assured)
+    api(libs.hamcrest)
+    compileOnly(libs.jakarta.servlet)
+    compileOnly(libs.rs.api)
+
+    testImplementation enforcedPlatform(libs.junit.bom)
+    testImplementation(libs.bundles.junit)
+    testImplementation(libs.bundles.junit.platform)
+
+    implementation(libs.hec.monolith) { transitive = false }
+    // hec-monolith uses the following dependencies
+    implementation(platform(libs.hec.nucleus.bom))
+    implementation(libs.hec.nucleus.metadata)
+    implementation(libs.hec.nucleus.data)
+    implementation(libs.com.google.flogger)
+}
+
+configurations.all {
+    exclude group: 'org.eclipse.jetty', module: 'jetty-jsp'
+    exclude group: "com.oracle.database.jdbc", module: "jmscommon"
+    exclude group: "org.jooq.pro", module: "jooq-meta"
+    exclude group: "org.jooq.pro", module: "jooq-codegen"
+    exclude group: "javax.media"
+    exclude group: "com.sun.media"
+    exclude group: "org.eclipse.jetty"
+    exclude group: "javax.xml.bind", module: "jaxb-api"
+    exclude group: "javax.transaction", module: "jta"
+    exclude group: "javax.xml.stream", module: "stax-api"
+}
+
+// Force archive names to match publishing name.
+// Otherwise maven central validation fails.
+base {
+    archivesName = "opendcs-integrationtesting-fixtures"
+}
+
+test
+{
+    jvmArgs += "-Dopendcs.test.engine=OpenDCS-Enabled"
 }
 
 publishing {
     publications {
-        mavenJava(MavenPublication) {
+        maven(MavenPublication) {
             artifactId = 'opendcs-integrationtesting-fixtures'
             from components.java
+
+            pom {
+                name = 'OpenDCS Test Fixtures'
+                description = 'Database Framework, assertions, and other utilities required to implement integration tests against OpenDCS implementations.'
+            }
         }
     }
 }

@@ -36,5 +36,9 @@ public class NoConversionException extends VariableException
 	{
 		super(msg);
 	}
-}
 
+	public NoConversionException(String msg, Throwable cause)
+	{
+		super(msg, cause);
+	}
+}

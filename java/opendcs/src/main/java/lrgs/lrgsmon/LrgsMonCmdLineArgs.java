@@ -1,58 +1,35 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:15  cvs
-*  Added legacy code to repository
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.9  2008/02/10 20:17:36  mmaloney
-*  dev
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.2  2008/01/31 21:24:19  cvs
-*  files modified for internationalization
-*
-*  Revision 1.8  2007/10/26 17:05:01  mmaloney
-*  added new argument that allows the user to change the header of the status summary page
-*
-*  Revision 1.7  2007/10/26 13:54:59  mmaloney
-*  dev
-*
-*  Revision 1.6  2007/02/19 23:01:47  mmaloney
-*  Summary Status Implementation
-*
-*  Revision 1.5  2005/08/09 18:20:02  mjmaloney
-*  dev
-*
-*  Revision 1.4  2005/08/07 19:28:59  mjmaloney
-*  Improvements to detailed report.
-*
-*  Revision 1.3  2004/06/08 19:31:35  mjmaloney
-*  Final cosmetic mods
-*
-*  Revision 1.2  2004/06/08 18:03:34  mjmaloney
-*  Added arguments to set image icon and lock file name.
-*
-*  Revision 1.1  2004/06/01 15:26:35  mjmaloney
-*  Created.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.lrgsmon;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.util.DecodesSettings;
 
 import ilex.cmdline.*;
-import ilex.util.Logger;
-import ilex.util.FileLogger;
 import ilex.util.EnvExpander;
 
-public class LrgsMonCmdLineArgs
-	extends StdAppSettings
+public class LrgsMonCmdLineArgs extends StdAppSettings
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	// Add DECODES-specific setting declarations here...
 	private StringToken log_arg;
 	private IntegerToken scan_arg;
@@ -89,12 +66,12 @@ public class LrgsMonCmdLineArgs
 		addToken(iconFileArg);
 
 		headerFileArg = new StringToken(
-			"h", "Header for detailed web report", "", TokenOptions.optSwitch, 
+			"h", "Header for detailed web report", "", TokenOptions.optSwitch,
 			null);
 		addToken(headerFileArg);
 
 		summaryHeaderFileArg = new StringToken(
-			"r", "Header for summary web report", "", TokenOptions.optSwitch, 
+			"r", "Header for summary web report", "", TokenOptions.optSwitch,
 			null);
 		addToken(summaryHeaderFileArg);
     }
@@ -114,7 +91,7 @@ public class LrgsMonCmdLineArgs
 	public void parseArgs(String args[])
 	{
 		super.parseArgs(args);
-		
+
 		// MJM 20210213 new location for prop file
 		String propFile = super.getPropertiesFile(); // -P cmd line arg
 		FileInputStream fis = null;
@@ -123,8 +100,7 @@ public class LrgsMonCmdLineArgs
 			try { fis = new FileInputStream(propFile); }
 			catch(Exception ex)
 			{
-				Logger.instance().warning("Cannot find specified DECODES properties file '"
-					+ propFile + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot find specified DECODES properties file '{}'", propFile);
 				fis = null;
 			}
 		}
@@ -134,8 +110,7 @@ public class LrgsMonCmdLineArgs
 			try { fis = new FileInputStream(propFile); }
 			catch(Exception ex)
 			{
-				Logger.instance().warning("Cannot find user DECODES properties file '"
-					+ propFile + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot find user DECODES properties file '{}'", propFile);
 				fis = null;
 			}
 		}
@@ -145,14 +120,13 @@ public class LrgsMonCmdLineArgs
 			try { fis = new FileInputStream(propFile); }
 			catch(Exception ex)
 			{
-				Logger.instance().warning("Cannot find default DECODES properties file '"
-					+ propFile + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot find default DECODES properties file '{}'", propFile);
 				fis = null;
 			}
 		}
 		if (fis != null)
 		{
-			Logger.instance().info("Loading DECODES properties from '" + propFile + "'");
+			log.info("Loading DECODES properties from '{}'", propFile);
 			DecodesSettings settings = DecodesSettings.instance();
 			if (!settings.isLoaded())
 			{
@@ -161,11 +135,9 @@ public class LrgsMonCmdLineArgs
 				{
 					props.load(fis);
 				}
-				catch(IOException e)
+				catch(IOException ex)
 				{
-					Logger.instance().warning(
-						"LrgsMonCmdLineArgs:parseArgs " +
-						"Cannot open DECODES Properties File '"+propFile+"': "+e);
+					log.atWarn().setCause(ex).log("LrgsMonCmdLineArgs:parseArgs Cannot open DECODES Properties File '{}'", propFile);
 				}
 				finally
 				{
@@ -174,26 +146,7 @@ public class LrgsMonCmdLineArgs
 				settings.loadFromProperties(props);
 			}
 		}
-		
-		// If log-file specified, open it.
-		String fn = getLogFile();
-		if (fn != null && fn.length() > 0)
-		{
-			String procname = Logger.instance().getProcName();
-			try { Logger.setLogger(new FileLogger(procname, fn)); }
-			catch(IOException e)
-			{
-				System.err.println("Cannot open log file '" + fn + "': " + e);
-				System.exit(1);
-			}
-		}
 
-		// Set debug level.
-		int dl = getDebugLevel();
-		if (dl > 0)
-			Logger.instance().setMinLogPriority(
-				dl == 1 ? Logger.E_DEBUG1 :
-				dl == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
 	}
 
 	/** @return scan period in seconds. */

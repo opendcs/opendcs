@@ -318,8 +318,7 @@ final public class ResEvap
                 latentHeatTsc = metComputation.evapWater.hl;
                 sensibleHeatTsc = metComputation.evapWater.hs;
                 surfaceTempTsc = surfaceTemp;  // BOP surface temp
-                // evap is in mm/day.  Divide by 24 to get instantaneous
-                // hourly value
+                // evap is set in mm/day.  Divide by 24 to get instantaneous hourly value
                 evapRateHourlyTsc = metComputation.evapWater.evap / 24.;
 
                 // store wt profile

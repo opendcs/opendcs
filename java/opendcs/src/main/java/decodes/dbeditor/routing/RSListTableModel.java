@@ -1,26 +1,26 @@
-/**
- * Copyright 2024 The OpenDCS Consortium and contributors
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.dbeditor.routing;
 
 import java.util.ResourceBundle;
 
 import javax.swing.table.AbstractTableModel;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import decodes.db.Database;
 import decodes.db.DatabaseException;
@@ -30,7 +30,7 @@ import decodes.dbeditor.DbEditorFrame;
 
 public class RSListTableModel extends AbstractTableModel
 {
-    private static final Logger log = LoggerFactory.getLogger(RSListTableModel.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static ResourceBundle generic = ResourceBundle.getBundle("decodes/resources/generic");
     private static ResourceBundle dbedit = ResourceBundle.getBundle("decodes/resources/dbedit");
     static String columnNames[] =
@@ -134,13 +134,13 @@ public class RSListTableModel extends AbstractTableModel
             theList.remove(ob);
             fireTableDataChanged();
         }
-        catch (DatabaseException e)
+        catch (DatabaseException ex)
         {
             final String msg = dbedit.getString("RoutingSpecListPanel.errorDelete");
             log.atError()
-               .setCause(e)
+               .setCause(ex)
                .log();
-            DbEditorFrame.instance().showError(msg + e.toString());
+            DbEditorFrame.instance().showError(msg + ex.toString());
         }
     }
 

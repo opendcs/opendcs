@@ -1,17 +1,17 @@
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.2  2014/09/25 18:08:34  mmaloney
-*  Enum fields encapsulated.
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.5  2013/01/08 20:48:27  mmaloney
-*  Relax 100 sensor limit.
-*  Get rid of 'setPreferredSize' calls.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.dbeditor;
 
@@ -22,6 +22,11 @@ import javax.swing.border.*;
 import java.util.Properties;
 import java.util.Iterator;
 import java.util.ResourceBundle;
+
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.util.TextUtil;
 import ilex.util.PropertiesUtil;
@@ -34,7 +39,6 @@ import decodes.db.EnumValue;
 import decodes.db.Database;
 import decodes.util.TimeOfDay;
 import decodes.db.Constants;
-import decodes.gui.GuiDialog;
 
 /**
 Dialog for editing a configuration sensor.
@@ -42,6 +46,7 @@ Dialog for editing a configuration sensor.
 @SuppressWarnings("serial")
 public class ConfigSensorEditDialog extends GuiDialog
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
     static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -168,7 +173,7 @@ public class ConfigSensorEditDialog extends GuiDialog
         }
         catch(Exception ex)
         {
-            ex.printStackTrace();
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
         addWindowListener(
             new WindowAdapter()
@@ -287,18 +292,22 @@ public class ConfigSensorEditDialog extends GuiDialog
         {
             firstSampleTime = TimeOfDay.hhmmss2seconds(firstSampleTimeField.getText());
         }
-        catch(NumberFormatException e)
+        catch(NumberFormatException ex)
         {
-            showError(dbeditLabels.getString("ConfigSensorEditDialog.badTOD"));
+            String msg = dbeditLabels.getString("ConfigSensorEditDialog.badTOD");
+            log.atError().setCause(ex).log(msg);
+            showError(msg);
             return false;
         }
         try
         {
             recordingInterval = TimeOfDay.hhmmss2seconds((String)samplingIntervalCombo.getSelectedItem());
         }
-        catch(NumberFormatException e)
+        catch(NumberFormatException ex)
         {
-            showError(dbeditLabels.getString("ConfigSensorEditDialog.badInterval"));
+            String msg = dbeditLabels.getString("ConfigSensorEditDialog.badInterval");
+            log.atError().setCause(ex).log(msg);
+            showError(msg);
             return false;
         }
 
@@ -309,9 +318,11 @@ public class ConfigSensorEditDialog extends GuiDialog
             {
                 theSensor.absoluteMin = Double.parseDouble(s);
             }
-            catch(NumberFormatException e)
+            catch(NumberFormatException ex)
             {
-                showError(dbeditLabels.getString("ConfigSensorEditDialog.badMin"));
+                String msg = dbeditLabels.getString("ConfigSensorEditDialog.badMin");
+                log.atError().setCause(ex).log(dbeditLabels.getString("ConfigSensorEditDialog.badMin"));
+                showError(msg);
                 return false;
             }
         }
@@ -327,9 +338,11 @@ public class ConfigSensorEditDialog extends GuiDialog
             {
                 theSensor.absoluteMax = Double.parseDouble(s);
             }
-            catch(NumberFormatException e)
+            catch(NumberFormatException ex)
             {
-                showError(dbeditLabels.getString("ConfigSensorEditDialog.badMax"));
+                String msg = dbeditLabels.getString("ConfigSensorEditDialog.badMax");
+                log.atError().setCause(ex).log(dbeditLabels.getString("ConfigSensorEditDialog.badMax"));   
+                showError(msg);
                 return false;
             }
         }

@@ -35,7 +35,6 @@ import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesSettings;
-import ilex.util.FileLogger;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
 import opendcs.dao.LoadingAppDao;
@@ -117,6 +116,10 @@ public class OpenDCSPGConfiguration implements Configuration
         environmentVars.put("DB_PASSWORD",DCS_ADMIN_USER_PASSWORD);
         environment.set("DB_USERNAME",DCS_ADMIN_USER);
         environment.set("DB_PASSWORD",DCS_ADMIN_USER_PASSWORD);
+        String validationQuery = "SELECT 1";
+		environment.set("DB_DRIVER_CLASS", "org.postgresql.Driver");
+		environment.set("DB_DATASOURCE_CLASS", "org.apache.tomcat.jdbc.pool.DataSourceFactory");
+		environment.set("DB_VALIDATION_QUERY", validationQuery);
         if (isRunning())
         {
             return;
@@ -148,22 +151,13 @@ public class OpenDCSPGConfiguration implements Configuration
         roles.add("OTSDB_MGR");
         mp.createUser(jdbi, DCS_ADMIN_USER, DCS_ADMIN_USER_PASSWORD, roles);
         log.info("Setting authentication environment vars.");
-        ilex.util.Logger originalLog = ilex.util.Logger.instance();
-        ilex.util.FileLogger fl = null;
-        try
+        mp.loadBaselineData(profile, DCS_ADMIN_USER, DCS_ADMIN_USER_PASSWORD);
+        try (var handle = jdbi.open();
+             var insertDbType = handle.createUpdate("insert into tsdb_property(prop_name, prop_value) values(:name, :value)"))
         {
-            fl = new FileLogger("test", new File(userDir,"baseline-import.log").getAbsolutePath(), 200*1024*1024);
-            fl.setMinLogPriority(ilex.util.Logger.E_DEBUG3);
-            ilex.util.Logger.setLogger(fl);
-            mp.loadBaselineData(profile, DCS_ADMIN_USER, DCS_ADMIN_USER_PASSWORD);
-        }
-        finally
-        {
-            if (fl != null)
-            {
-                ilex.util.Logger.setLogger(originalLog);
-                fl.close();
-            }
+            insertDbType.bind("name", "editDatabaseType")
+                        .bind("value", getName())
+                        .execute();
         }
         setStarted();
     }
@@ -246,9 +240,9 @@ public class OpenDCSPGConfiguration implements Configuration
     }
 
     /**
-     * Returns true if this Database implementation supports a given dataset.
+     * 
      * @param dao Class that extends from {@link opendcs.dao.DaoBase}
-     * @return
+     * @return true if this Database implementation supports a given dataset.
      */
     @Override
     public boolean supportsDao(Class<? extends DaoBase> dao)
@@ -289,5 +283,11 @@ public class OpenDCSPGConfiguration implements Configuration
             }
             return databases;
         }
+    }
+
+    @Override
+    public boolean supportsRestApi()
+    {
+        return true;
     }
 }

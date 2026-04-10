@@ -1,22 +1,26 @@
 /*
-*  $Id$
-*
-*  $Log$
-*
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to the United States Government. No warranty is provided or implied other
- * than specific contractual terms between COVE and the U.S. Government.
- *
- * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.rledit;
-
-import ilex.util.Logger;
 
 import javax.swing.table.*;
 
 import java.util.*;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.*;
 import decodes.decoder.FieldParseException;
@@ -28,9 +32,9 @@ Table Model for a DECODES Enumeration. The table will show all of the
 values defined in the database for a specific Enum.
 */
 @SuppressWarnings("serial")
-public class SeasonListTableModel extends AbstractTableModel
-	implements SortingListTableModel
+public class SeasonListTableModel extends AbstractTableModel implements SortingListTableModel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static ResourceBundle labels = RefListEditor.getLabels();
 	
 	private ArrayList<Season> seasons = new ArrayList<Season>();
@@ -51,7 +55,7 @@ public class SeasonListTableModel extends AbstractTableModel
 		DbEnum seasonEnum = Database.getDb().enumList.getEnum(Constants.enum_Season);
 		if (seasonEnum == null)
 		{
-			Logger.instance().info("Season enum missing, will create.");
+			log.info("Season enum missing, will create.");
 			seasonEnum = new DbEnum(Constants.enum_Season);
 		}
 		seasonEnum.sort();
@@ -66,8 +70,7 @@ public class SeasonListTableModel extends AbstractTableModel
 			}
 			catch(FieldParseException ex)
 			{
-				Logger.instance().warning("Bad enum value '" + ev.getValue() 
-					+ "' in Season enum: " + ex + " -- skipped.");
+				log.atWarn().setCause(ex).log("Bad enum value '{}' in Season enum -- skipped.", ev.getValue());
 			}
 		}
 	}

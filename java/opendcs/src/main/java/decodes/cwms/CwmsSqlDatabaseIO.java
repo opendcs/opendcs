@@ -1,47 +1,33 @@
 /*
- * $Id$
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract 
- * to the United States Government. 
- * 
- * No warranty is provided or implied other than specific contractual terms
- * between COVE and the U.S. Government
- * 
- * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.cwms;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.text.SimpleDateFormat;
-import java.util.Properties;
 import java.util.TimeZone;
 
-import org.opendcs.authentication.AuthSourceService;
-import org.opendcs.spi.authentication.AuthSource;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.IntervalDAI;
-import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.SiteDAI;
-import opendcs.dao.DatabaseConnectionOwner;
-import usace.cwms.db.dao.util.connection.ConnectionLoginInfo;
-import usace.cwms.db.dao.util.connection.ConnectionLoginInfoImpl;
-import lrgs.gui.DecodesInterface;
-import ilex.util.AuthException;
-import ilex.util.Logger;
-import ilex.util.PropertiesUtil;
 import decodes.db.*;
-import decodes.sql.DecodesDatabaseVersion;
-import decodes.sql.OracleSequenceKeyGenerator;
 import decodes.sql.SqlDatabaseIO;
 import decodes.sql.SqlDbObjIo;
-import decodes.tsdb.BadConnectException;
-import decodes.tsdb.CompAppInfo;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
 
 /**
@@ -51,8 +37,9 @@ import decodes.util.DecodesSettings;
  */
 public class CwmsSqlDatabaseIO extends SqlDatabaseIO
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public final static String module = "CwmsSqlDatabaseIO";
-	/** The office ID associated with this connection. This implicitely
+	/** The office ID associated with this connection. This implicitly
 	 * filters the records that are visible.
 	 */
 	private final String dbOfficeId;
@@ -154,7 +141,7 @@ public class CwmsSqlDatabaseIO extends SqlDatabaseIO
 		}
 		catch(SQLException ex)
 		{
-			Logger.instance().warning("Unable to close returned connection: " + ex.getLocalizedMessage());
+			log.atWarn().setCause(ex).log("Unable to close returned connection", ex);
 		}
 	}
 	

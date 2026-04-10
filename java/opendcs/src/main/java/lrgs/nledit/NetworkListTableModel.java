@@ -1,40 +1,34 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Source$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $State$
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:15  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.4  2001/02/28 01:53:46  mike
-*  Track changes better.
-*
-*  Revision 1.3  2001/02/23 03:04:01  mike
-*  Working version.
-*
-*  Revision 1.2  2001/02/21 14:49:29  mike
-*  dev
-*
-*  Revision 1.1  2001/02/21 13:19:29  mike
-*  Created nleditor
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.nledit;
 
 import java.io.IOException;
 import java.io.File;
 import java.util.Vector;
-import javax.swing.*;
 import javax.swing.table.*;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.common.NetworkList;
 import lrgs.common.NetworkListItem;
-import lrgs.common.DcpAddress;
 
 public class NetworkListTableModel extends AbstractTableModel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private NetworkList networkList;
 	boolean modified;
 
@@ -80,7 +74,7 @@ public class NetworkListTableModel extends AbstractTableModel
 			try { nli.addr.fromString((String)value); }
 			catch (NumberFormatException nfe)
 			{
-System.out.println("Improperly formatted DCP address '"+value+"' - Enter 8 hex digits.");
+				log.atError().setCause(nfe).log("Improperly formatted DCP address '{}' - Enter 8 hex digits.", value);
 				return;
 			}
 			modified = true;
@@ -203,4 +197,3 @@ System.out.println("Improperly formatted DCP address '"+value+"' - Enter 8 hex d
 		modified = true;
 	}
 }
-

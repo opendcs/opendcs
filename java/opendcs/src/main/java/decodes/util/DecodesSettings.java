@@ -1,8 +1,26 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.util;
 
 import java.util.Properties;
 
+import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.settings.api.OpenDcsSettings;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -13,7 +31,6 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.Objects;
 
-import ilex.util.Logger;
 import ilex.util.EnvExpander;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
@@ -29,6 +46,7 @@ import decodes.launcher.Profile;
  */
 public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static DecodesSettings _instance = null;
 
     public enum DbTypes { XML, DECODES_SQL, NWIS, CWMS, HDB, OPENTSDB };
@@ -73,7 +91,7 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
     /** Timezone for date/time stamps in the SQL database. */
     public String sqlTimeZone = "UTC";
 
-    /** Name of file containing encrypted username & password
+    /** Name of file containing encrypted username and password
      * defaults to null as it is not used in certain implementations, such as XML.
     */
     public String DbAuthFile = null;
@@ -123,7 +141,7 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
     /** Default dir to store routing spec status properties file: */
     public String routingStatusDir = "$DCSTOOL_USERDIR/routstat";
 
-    /** Default data type standard, used in DB-editor & some formatters. */
+    /** Default data type standard, used in DB-editor and some formatters. */
     public String dataTypeStdPreference = Constants.datatype_SHEF;
 
     /** Timezone used in Decoding Wizard */
@@ -343,11 +361,6 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
 
     private static PropertySpec propSpecs[] =
     {
-//        new PropertySpec("editDatabaseType",
-//            PropertySpec.JAVA_ENUM + "decodes.util.DecodesSettings.DbTypes",
-//            "Database types supported by OPENDCS"),
-//        new PropertySpec("editDatabaseLocation", PropertySpec.STRING,
-//            "Editable database location. (directory for XML, URL for SQL)"),
         new PropertySpec("jdbcDriverClass", PropertySpec.STRING,
             "Name of the JDBC Driver Class to use"),
         new PropertySpec("sqlKeyGenerator", PropertySpec.STRING,
@@ -622,7 +635,7 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
     */
     public void loadFromProperties(Properties props)
     {
-        Logger.instance().debug1("Loading properties...");
+        log.debug("Loading properties...");
         PropertiesUtil.loadFromProps(this, props);
 
         setDbTypeCode();
@@ -663,7 +676,7 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
             editDatabaseTypeCode = DB_SQL;
         else if (editDatabaseType.equalsIgnoreCase("nwis"))
             editDatabaseTypeCode = DB_NWIS;
-        else if (editDatabaseType.equalsIgnoreCase("cwms"))
+        else if (editDatabaseType.toLowerCase().startsWith("cwms"))
             editDatabaseTypeCode = DB_CWMS;
         else if (editDatabaseType.equalsIgnoreCase("opentsdb"))
             editDatabaseTypeCode = DB_OPENTSDB;
@@ -678,7 +691,7 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
     */
     public void loadFromUserProperties(Properties props)
     {
-        Logger.instance().log(Logger.E_DEBUG1, "Loading user-custom properties...");
+        log.debug("Loading user-custom properties...");
         Properties props2load = new Properties();
         for(Enumeration<?> nme = props.propertyNames(); nme.hasMoreElements(); )
         {
@@ -708,11 +721,12 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
         else if (editDatabaseTypeCode ==  DB_NWIS)
             editDatabaseType = "NWIS";
         else if (editDatabaseTypeCode ==  DB_CWMS)
-            editDatabaseType = "CWMS";
+            editDatabaseType = "CWMS-Oracle";
         else if (editDatabaseTypeCode ==  DB_OPENTSDB)
             editDatabaseType = "OPENTSDB";
         else if (editDatabaseTypeCode == DB_HDB)
             editDatabaseType = "HDB";
+        
 
         PropertiesUtil.storeInProps(this, props, null);
         props.remove("databaseTypeCode");
@@ -731,7 +745,7 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
         File propFile = p.getFile();
         try (FileOutputStream fos = new FileOutputStream(propFile))
         {
-            Logger.instance().info("Saving DECODES Settings to '" + propFile.getAbsolutePath() + "'");
+            log.info("Saving DECODES Settings to '" + propFile.getAbsolutePath() + "'");
             props.store(fos, "OPENDCS Toolkit Settings");
         }
     }
@@ -784,7 +798,6 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
 
     public void setSourceFile(File sourceFile)
     {
-        Logger.instance().info("Set DecodesSettings source=" + sourceFile.getPath());
         this.sourceFile = sourceFile;
     }
 
@@ -823,7 +836,7 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
         settings.setSourceFile(propFile);
         return settings;
     }
-
+    
     public DecodesSettings asCopy()
     {
         Properties props = new Properties();

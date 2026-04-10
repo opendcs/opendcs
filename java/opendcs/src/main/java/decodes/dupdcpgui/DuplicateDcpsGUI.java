@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.dupdcpgui;
 
 import ilex.cmdline.StringToken;
@@ -7,6 +22,9 @@ import ilex.util.EnvExpander;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.LoadingAppDAI;
 import decodes.db.Database;
@@ -47,10 +65,9 @@ import decodes.util.CmdLineArgs;
  * This code goes along with the combine-from-hub.sh script.
  * If this script changes we need to verify this code.
  */
-public class DuplicateDcpsGUI 
-    extends TsdbAppTemplate
+public class DuplicateDcpsGUI extends TsdbAppTemplate
 {
-    private String module = "DuplicateDcpsList";
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private DuplicateDcpsFrame dupDcpsFrame;
     private String dcpMonConf;
     private ArrayList<NetworkList> groups = new ArrayList<NetworkList>();
@@ -104,17 +121,16 @@ public class DuplicateDcpsGUI
                     NetworkList netlist = Database.getDb().networkListList.find(listName);
                     if (netlist == null)
                     {
-                        System.err.println("AppInfo specifies non-existent network list '" + nm + "'");
+                        log.error("AppInfo specifies non-existent network list '{}'", nm);
                         continue;
                     }
                     groups.add(netlist);
                 }
             }
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            System.err.println("Error in init: " + e);
-            e.printStackTrace();
+            log.atError().setCause(ex).log("Error in init.");
         }
         finally
         {

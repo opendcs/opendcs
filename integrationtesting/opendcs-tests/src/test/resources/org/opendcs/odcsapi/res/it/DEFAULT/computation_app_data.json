@@ -1,0 +1,12 @@
+
+{
+  "appId" : null,
+  "appName" : "Computational App",
+  "appType" : "Computation",
+  "comment" : "Performs computations",
+  "lastModified" : null,
+  "manualEditingApp" : false,
+  "properties" : {
+    "compproc_util": "True"
+  }
+}

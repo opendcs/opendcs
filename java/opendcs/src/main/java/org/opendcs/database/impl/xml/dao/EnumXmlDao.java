@@ -120,7 +120,7 @@ public class EnumXmlDao implements EnumDAI
     }
 
     @Override
-    public Collection<DbEnum> getEnums(DataTransaction tx) throws OpenDcsDataException
+    public Collection<DbEnum> getEnums(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
         try
         {
@@ -223,7 +223,7 @@ public class EnumXmlDao implements EnumDAI
         ret = cache.getByUniqueName(enumName);
         if (ret == null)
         {
-            Collection<DbEnum> enums = getEnums(tx);
+            Collection<DbEnum> enums = getEnums(tx, -1, -1);
             for (DbEnum dbEnum: enums)
             {
                 if (dbEnum.getUniqueName().equals(enumName))
@@ -252,7 +252,7 @@ public class EnumXmlDao implements EnumDAI
             /**
              * NOTE: at this time we're intentionally not worrying about the need to read this list back first.
              */
-            Collection<DbEnum> existing = getEnums(tx);
+            Collection<DbEnum> existing = getEnums(tx, -1, -1);
             for (DbEnum curEnum: existing)
             {
                 if (curEnum.enumName.equalsIgnoreCase(dbEnum.enumName))
@@ -265,7 +265,7 @@ public class EnumXmlDao implements EnumDAI
             File xmlFile = new File(conn.getDirectory(), "enum/EnumList.xml");
             try (OutputStream outStream = new FileOutputStream(xmlFile))
             {
-                XMLStreamWriter writer = f.createXMLStreamWriter(outStream);
+                XMLStreamWriter writer = f.createXMLStreamWriter(outStream,"UTF-8");
                 writer.writeStartDocument("UTF-8", "1.0");
                 writer.writeStartElement("EnumList");
                     for (DbEnum curDbEnum: existing)
@@ -357,5 +357,11 @@ public class EnumXmlDao implements EnumDAI
     public DbEnum getEnumById(DbKey enumId) throws DbIoException {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'getEnumById'");
+    }
+
+
+    @Override
+    public void deleteEnum(DataTransaction tx, DbKey dbEnumId) throws OpenDcsDataException {
+        /* intentionally empty */
     }
 }

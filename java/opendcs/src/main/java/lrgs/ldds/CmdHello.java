@@ -1,11 +1,25 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.ldds;
 
 import java.io.IOException;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.PasswordFileEntry;
 import ilex.util.TextUtil;
 import lrgs.common.*;
@@ -18,17 +32,18 @@ This command implements the unauthenticated hello message.
 */
 public class CmdHello extends LddsCommand
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String username;
 	private String ddsVersion = null;
 
-	/** 
+	/**
 	  Create a new 'Hello' request with the specified user name.
 	  @param data the message body containing the user name
 	*/
 	public CmdHello(byte data[])
 	{
 		int i;
-		for(i = 0; i < data.length && data[i] != (byte)0 
+		for(i = 0; i < data.length && data[i] != (byte)0
 			&& data[i] != (byte)' '; i++);
 		username = new String(data, 0, i);
 		username = username.trim();
@@ -43,9 +58,8 @@ public class CmdHello extends LddsCommand
 			ddsVersion = new String(data, i, j-i);
 		}
 
-		Logger.instance().debug1(DdsServer.module + " Received " 
-			+ toString() + ", data.length=" + data.length
-			+ (ddsVersion==null ? "" : (" dds="+ddsVersion)));
+		log.debug("Received {}, data.length={}{}",
+				  toString(), data.length, (ddsVersion==null ? "" : (" dds="+ddsVersion)));
 	}
 
 	/** @return "CmdHello"; */
@@ -58,19 +72,17 @@ public class CmdHello extends LddsCommand
 	  Executes the command.
 	  Attach to LRGS as the specified user.
 	  @param ldds the server thread object holding connection to client.
-	  @throws AuthFailedException is user is unknown, or is attempting to 
+	  @throws AuthFailedException is user is unknown, or is attempting to
 	          connect from an invalid IP address.
 	*/
 	public int execute(LddsThread ldds)
 		throws IOException, ArchiveException
 	{
-		Logger.instance().debug1(DdsServer.module
-			+ " executing HELLO username='" + username 
-			+ "' for " + ldds.getClientName());
+		log.debug("executing HELLO username='{}' for {}", username , ldds.getClientName());
 
 		if (ldds.isAuthRequired())
 		{
-			String s = "Attempted unauthenticated connection by user '" 
+			String s = "Attempted unauthenticated connection by user '"
 				+ username + "' rejected. This server requires authentication.";
 			// AuthFailedException will always hangup on user.
 			throw new AuthFailedException(s);
@@ -83,36 +95,31 @@ public class CmdHello extends LddsCommand
 			// AuthFailedException will always hangup on user.
 			throw new AuthFailedException("Empty user name");
 		}
-		
+
 		ldds.myStats.setUserName(username);
 
 		// Check to see if user is connecting from a valid IP address.
 		PasswordFileEntry pfe = null;
 		try
 		{
-			Logger.instance().debug1(DdsServer.module 
-				+ " reading PFE for user " + username + " " + ldds.getClientName());
+			log.debug("reading PFE for user {}@{}", username, ldds.getClientName());
 			pfe = CmdAuthHello.getPasswordFileEntry(username);
 			CmdAuthHello.checkValidIpAddress(pfe, ldds, username);
-			Logger.instance().debug1(DdsServer.module
-				+ " got password file entry "
-				+ "for user " + username + " " + ldds.getClientName());
+			log.debug("got password file entry for user {}@{}", username, ldds.getClientName());
 		}
 		catch(UnknownUserException ex)
 		{
 			// No PW file or no entry for this user -- means unrestricted.
-			Logger.instance().debug1(DdsServer.module
-				+ " no password file entry " + "for user " + username 
-				+ " " + ldds.getClientName());
+			log.atDebug()
+			   .setCause(ex)
+			   .log("no password file entry for user {}@{}", username, ldds.getClientName());
 			pfe = null;
 		}
 
 		// Creating LddsUser might throw UnknownUserException, if so, it will
 		// be done with the hangup flag=true, causing disconnection.
-		Logger.instance().debug1(DdsServer.module
-			+ " creating user data structure for user " + username 
-			+ " " + ldds.getClientName());
-		
+		log.debug("Creating user data structure for user {}@{}", username, ldds.getClientName());
+
 		String userRoot = LrgsConfig.instance().ddsUserRootDirLocal;
 		LddsUser user = null;
 		try
@@ -121,13 +128,14 @@ public class CmdHello extends LddsCommand
 		}
 		catch(UnknownUserException ex)
 		{
-			Logger.instance().debug1("No shared user dir for " + username);
+			log.atDebug().setCause(ex).log("No shared user dir for {}", username);
 			userRoot = LrgsConfig.instance().ddsUserRootDir;
 			try { user = new LddsUser(username, userRoot); }
 			catch(UnknownUserException ex2)
 			{
 				ldds.myStats.setSuccessCode(DdsConnectionStats.SC_BAD_USERNAME);
-				// If this throws, allow it to propegate.
+				// If this throws, allow it to propagate.
+				ex2.addSuppressed(ex);
 				throw ex2;
 			}
 		}
@@ -144,13 +152,11 @@ public class CmdHello extends LddsCommand
 			if (x != null)
 				user.setGoodOnly(TextUtil.str2boolean(x));
 		}
-		
+
 		// Callback to thread to attach to LRGS as this user.
-		Logger.instance().debug1(DdsServer.module
-			+ " Attaching slot for " + username + " " 
-			+ ldds.getClientName());
+		log.debug("Attaching slot for {}@{}", username, ldds.getClientName());
 		ldds.attachLrgs(user);
-		
+
 		if (user.isSuspended())
 		{
 			ldds.myStats.setSuccessCode(DdsConnectionStats.SC_ACCOUNT_SUSPENDED);
@@ -161,17 +167,13 @@ public class CmdHello extends LddsCommand
 		{
 			CmdAuthHello.getDcpLimit(pfe, ldds);
 		}
-		Logger.instance().debug1(DdsServer.module
-			+ " attached for user " + username
-			+ " " + ldds.getClientName());
+		log.debug("Attached for user {}@{}", username, ldds.getClientName());
 
 		// Echo HELLO with username and proto version as an acknowledgement.
-		LddsMessage msg = new LddsMessage(LddsMessage.IdHello, 
+		LddsMessage msg = new LddsMessage(LddsMessage.IdHello,
 			username + " " + DdsVersion.DdsVersionNum);
 		ldds.send(msg);
-		Logger.instance().debug1(DdsServer.module
-			+ " Sent HELLO Acceptance to " + ldds.getClientName()
-			+ " " + ldds.getClientName());
+		log.debug("Sent HELLO Acceptance to {}", ldds.getClientName());
 
 		return 0;
 	}

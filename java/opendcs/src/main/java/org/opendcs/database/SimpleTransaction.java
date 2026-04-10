@@ -6,18 +6,21 @@ import java.util.Optional;
 
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.TransactionContext;
 
 public final class SimpleTransaction implements DataTransaction
 {
     private final Connection conn;
+    private final TransactionContext context;
 
-    public SimpleTransaction(Connection conn)
+    public SimpleTransaction(Connection conn, TransactionContext context)
     {
         this.conn = conn;
+        this.context = context;
     }
 
     @Override
-    public <T> Optional<T> connection(Class<T> connectionType) throws OpenDcsDataException {
+    public <T extends AutoCloseable> Optional<T> connection(Class<T> connectionType) throws OpenDcsDataException {
         if (Connection.class.equals(connectionType))
         {
             return Optional.of((T)conn);
@@ -63,5 +66,11 @@ public final class SimpleTransaction implements DataTransaction
         {
             throw new OpenDcsDataException("Closing connection failed.", ex);
         }
+    }
+
+    @Override
+    public TransactionContext getContext()
+    {
+        return context;
     }
 }

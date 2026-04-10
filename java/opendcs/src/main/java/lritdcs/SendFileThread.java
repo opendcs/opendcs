@@ -1,40 +1,41 @@
 /*
- *  $Id$
- *  
- *  $Log$
- *  Revision 1.12  2012/12/12 16:01:31  mmaloney
- *  Several updates for 5.2
- *
- *  Revision 1.11  2011/07/26 18:47:32  shweta
- *  added code to reconnect if any of domain 2 servers goes down.
- *
- *  Revision 1.10  2011/06/27 17:11:20  mmaloney
- *  Added info-level debugs to track how long it takes for SCP transfer and renaming on domain2.
- *:
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lritdcs;
-
-import ilex.util.FileUtil;
-import ilex.util.Logger;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ch.ethz.ssh2.Connection;
 import ch.ethz.ssh2.SCPClient;
 import ch.ethz.ssh2.Session;
 import ch.ethz.ssh2.StreamGobbler;
 
-public class SendFileThread extends LritDcsThread 
+public class SendFileThread extends LritDcsThread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "SendFileThread";
 	// Local copies of config vars.
 
@@ -73,13 +74,13 @@ public class SendFileThread extends LritDcsThread
 	boolean flgErr;
 	FileStatsFile fileStatsFile = new FileStatsFile();
 
-	public SendFileThread() 
+	public SendFileThread()
 	{
 		super("SendFileThread");
 	}
 
-	public void init() 
-		throws InitFailedException 
+	public void init()
+		throws InitFailedException
 	{
 		LritDcsMain theMain = LritDcsMain.instance();
 		highQ = theMain.getFileQueueHigh();
@@ -100,7 +101,7 @@ public class SendFileThread extends LritDcsThread
 				highSentDir.mkdirs();
 		} catch (Exception ex) {
 			throw new InitFailedException("Cannot create '"
-					+ highSentDir.getPath() + "': " + ex);
+					+ highSentDir.getPath() + "'", ex);
 		}
 
 		try {
@@ -110,7 +111,7 @@ public class SendFileThread extends LritDcsThread
 				mediumSentDir.mkdirs();
 		} catch (Exception ex) {
 			throw new InitFailedException("Cannot create '"
-					+ mediumSentDir.getPath() + "': " + ex);
+					+ mediumSentDir.getPath() + "'", ex);
 		}
 
 		try {
@@ -120,7 +121,7 @@ public class SendFileThread extends LritDcsThread
 				lowSentDir.mkdirs();
 		} catch (Exception ex) {
 			throw new InitFailedException("Cannot create '"
-					+ lowSentDir.getPath() + "': " + ex);
+					+ lowSentDir.getPath() + "'", ex);
 		}
 
 		putOldMessagesInQueues();
@@ -131,9 +132,9 @@ public class SendFileThread extends LritDcsThread
 		flgErr = false;
 	}
 
-	public void run() 
+	public void run()
 	{
-		while (!shutdownFlag) 
+		while (!shutdownFlag)
 		{
 			// Get highest-priority filename off of the queue.
 			LritDcsFileStats fs = highQ.dequeue();
@@ -143,17 +144,17 @@ public class SendFileThread extends LritDcsThread
 				transferFile(fs, Constants.MediumPri, true);
 			else if ((fs = lowQ.dequeue()) != null)
 				transferFile(fs, Constants.LowPri, true);
-			else 
+			else
 			{
 				checkPending();
-				if ((fs = autoRetransQ.dequeue()) != null) 
+				if ((fs = autoRetransQ.dequeue()) != null)
 				{
 					String fn = fs.getFile().getName();
 					if (fn.length() >= 2 && validPri.indexOf(fn.charAt(1)) != -1)
 						transferFile(fs, fn.charAt(1), false);
 				}
-				else if ((fs = manualRetransQ.dequeue()) != null) 
-				{					
+				else if ((fs = manualRetransQ.dequeue()) != null)
+				{
 					transferFile(fs, Constants.LowPri, true);
 				}
 				else // Nothing to do, pause 500ms.
@@ -194,13 +195,12 @@ public class SendFileThread extends LritDcsThread
 	}
 
 	private synchronized void transferFile(LritDcsFileStats fileStats,
-		char priority, boolean trackPending) 
+		char priority, boolean trackPending)
 	{
 		File localFile = fileStats.getFile();
 
-		debug2("Transferring priority " + priority + " file '"
-				+ localFile.getPath() + "'");
-		
+		log.trace("Transferring priority {} file '{}'", priority, localFile.getPath());
+
 		String localDir = priority == Constants.HighPri ? cfg.getLritDcsHome()+"/high"
 			: priority == Constants.MediumPri ? cfg.getLritDcsHome()+"/medium"
 			: cfg.getLritDcsHome()+"/low";
@@ -216,7 +216,7 @@ public class SendFileThread extends LritDcsThread
 		String targetDirC = priority == Constants.HighPri ? dom2CDirHigh
 			: priority == Constants.MediumPri ? dom2CDirMedium
 			: dom2CDirLow;
-		
+
 		// MJM 20070305: If !trackPending, then we've already sent this
 		// once.
 		// So we will be reading the file from the 'sent' folder.
@@ -224,11 +224,11 @@ public class SendFileThread extends LritDcsThread
 			localDir = localDir + ".sent";
 
 		// Use SCP to transfer file with no extension
-		
+
 		transferToDomain2(localFile, 'a', localDir, targetDirA, fileStats);
 		transferToDomain2(localFile, 'b', localDir, targetDirB, fileStats);
 		transferToDomain2(localFile, 'c', localDir, targetDirC, fileStats);
-		
+
 		fileStats.setAllTransfersCompleteTime(new Date());
 		if (fileStats.getNumMessages() > 0)
 		{
@@ -236,44 +236,27 @@ public class SendFileThread extends LritDcsThread
 			// files from the incoming message stream. It will be
 			// 0 for files read (or re-read) out of the h/m/l dirs.
 			fileStatsFile.append(fileStats);
-			
+
 		}
 
 		LritDcsConfig cfg = LritDcsConfig.instance();
-//		if (cfg.ptpEnabled)
-//		{
-//			File tmpFile = new File(cfg.ptpDir, localFile.getName() + ".tmp");
-//			try
-//			{
-//				FileUtil.copyFile(localFile, tmpFile);
-//				File dcsFile = new File(cfg.ptpDir, localFile.getName());
-//				if (!tmpFile.renameTo(dcsFile))
-//					Logger.instance().warning("SendFileThread Cannot rename '"
-//						+ tmpFile.getPath() + "' to '" + dcsFile.getPath() + "'");
-//				myStatus.ptpLastSave = System.currentTimeMillis();
-//			}
-//			catch (IOException ex)
-//			{
-//				Logger.instance().warning("SendFileThread Cannot create file for PTP '"
-//					+ tmpFile.getPath() + "': " + ex);
-//			}
-//		}
+
 		myStatus.lastFileName = localFile.getName();
-		
+
 		// Move the file into the 'sent' directory.
-		if (priority == Constants.HighPri) 
+		if (priority == Constants.HighPri)
 		{
 			if (trackPending)
 				move(localFile, highSentDir);
 			myStatus.incrementFileHigh();
-		} 
-		else if (priority == Constants.MediumPri) 
+		}
+		else if (priority == Constants.MediumPri)
 		{
 			if (trackPending)
 				move(localFile, mediumSentDir);
 			myStatus.incrementFileMedium();
-		} 
-		else 
+		}
+		else
 		{
 			if (trackPending)
 				move(localFile, lowSentDir);
@@ -281,7 +264,7 @@ public class SendFileThread extends LritDcsThread
 		}
 
 		if (trackPending && cfg.getEnableLqm()
-		 && LritDcsMain.instance().isLqmConnected()) 
+		 && LritDcsMain.instance().isLqmConnected())
 		{
 			long t = System.currentTimeMillis();
 			int on = onStartSecOfHour;
@@ -303,8 +286,7 @@ public class SendFileThread extends LritDcsThread
 			}
 			t += (cfg.getLqmPendingTimeout() * 1000L);
 
-			debug1("Placing '" + localFile.getName() + "' on the pending list."
-					+ " Will expire at " + new Date(t));
+			log.debug("Placing '{}' on the pending list. Will expire at {}", localFile.getName(), new Date(t));
 			synchronized (pendingList) {
 				pendingList.addLast(new SentFile(localFile.getName(), t));
 				if (pendingList.size() > 200)
@@ -313,8 +295,8 @@ public class SendFileThread extends LritDcsThread
 		}
 	}
 
-	
-	
+
+
 	/**
 	 * Transfers files from LRIT client to Domain2 servers
 	 * @param localFile
@@ -325,8 +307,7 @@ public class SendFileThread extends LritDcsThread
 	private void transferToDomain2(File localFile, char domain,
 	    String localDir, String targetDir, LritDcsFileStats fileStats)
 	{
-		Logger.instance().debug1(module + " File=" + localFile.getPath()
-			+ ", size=" + localFile.length() + ", domain=" + domain);
+		log.debug("File={}, size={}, domain={}", localFile.getPath(), localFile.length(), domain);
 
 		String dom2HostName = "";
 		String domain2 = "";
@@ -337,7 +318,6 @@ public class SendFileThread extends LritDcsThread
 			SCPClient scp;
 			Session sess =null;
 			// Get local directory name and local file name.
-//			File parentFile = localFile.getParentFile();
 			String fname = localFile.getName();
 			String connStatus = "";
 
@@ -367,7 +347,7 @@ public class SendFileThread extends LritDcsThread
 				connStatus = lritconn.connBStatus;
 				break;
 			default:
-				Logger.instance().failure("Invalid domain :" + domain);
+				log.error("Invalid domain :{}", domain);
 				break;
 			}
 
@@ -375,17 +355,17 @@ public class SendFileThread extends LritDcsThread
 			{
 				try
 				{
-				Logger.instance().debug1(module + " Making client connect to " + dom2HostName);
-				scp = new SCPClient(connDom2);
-				Logger.instance().debug1(module + " Connection established to " + dom2HostName);
-				sess = connDom2.openSession();
-				Logger.instance().debug1(module + " Started session to " + dom2HostName);
-				
-					Logger.instance().debug1(module + " sending " + localFile.getName());
+					log.debug("Making client connect to {}", dom2HostName);
+					scp = new SCPClient(connDom2);
+					log.debug("Connection established to {}", dom2HostName);
+					sess = connDom2.openSession();
+					log.debug("Started session to {}", dom2HostName);
+
+					log.debug("sending {}", localFile.getName());
 					scp.put(localDir + "/" + localFile.getName(), fname,
 					    targetDir, "0600");
-					Logger.instance().debug1(module + " send complete for " + localFile.getName());
-					
+					log.debug("send complete for {}", localFile.getName());
+
 					Date now = new Date();
 					if (domain == 'a')
 					{
@@ -402,27 +382,27 @@ public class SendFileThread extends LritDcsThread
 						myStatus.lastFileSendC = now.getTime();
 						fileStats.setDom2CXferCompleteTime(now);
 					}
-					
+
 					flgErr = false;
 				}
-				catch (Exception e)
+				catch (Exception ex)
 				{
-					Logger.instance().failure(
-					    "File Transfer failed to " + domain2 + " :"
-					        + dom2HostName + " . " + e.getMessage() + "."
-					        + e.getCause() + ", constat=" + connStatus);
+					log.atError()
+					   .setCause(ex)
+					   .log("File Transfer failed to {}: {}, contstat={}",
+					   		domain2, dom2HostName, connStatus);
 					LritDcsMain.instance()
 					    .setDomain2Status("Error", domain);
 					flgErr = true;
 					if (domain == 'a')
 						lritconn.setConnDom2A(null);
-					
+
 					if (domain == 'b')
 						lritconn.setConnDom2B(null);
-					
+
 					if (domain == 'c')
 						lritconn.setConnDom2C(null);
-					
+
 
 				}
 				if (!flgErr)
@@ -431,60 +411,51 @@ public class SendFileThread extends LritDcsThread
 				    + " " + targetDir + "/" + fname + extension;
 					if (sess != null)
 					{
-						
-						Logger.instance().debug1(module + " executing remote command '" +
-							cmd + "' on " + dom2HostName);
+
+						log.debug("executing remote command '{}' on {}", cmd, dom2HostName);
 						sess.execCommand(cmd);
-						Logger.instance().debug1(module + " remote command complete '" +
-							cmd + "' on " + dom2HostName);
+						log.debug("remote command complete '{}' on {}",cmd, dom2HostName);
 
-						InputStream stderr = new StreamGobbler(sess
-						    .getStderr());
-
-						BufferedReader brerr = new BufferedReader(
-						    new InputStreamReader(stderr));
-
-						while (true)
+						try (InputStream stderr = new StreamGobbler(sess.getStderr());
+							 BufferedReader brerr = new BufferedReader(new InputStreamReader(stderr));)
 						{
-							String line = brerr.readLine();
-							if (line == null)
-								break;
-							Logger.instance().failure(
-							    "Command Failed ( "+cmd +" ) on " + domain2
-							        + " :" + dom2HostName
-							        + " . Exit Status : "
-							        + sess.getExitStatus());
-							Logger.instance().failure("ERROR !!! " + line);
-							flgErr = true;
-						}
+							while (true)
+							{
+								String line = brerr.readLine();
+								if (line == null)
+									break;
+								log.error("Command Failed ({}) on {} :{} . Exit Status : {}",
+										  cmd, domain2, dom2HostName, sess.getExitStatus());
+								log.error("ERROR !!! {}", line);
+								flgErr = true;
+							}
 
-						if (!flgErr)
+							if (!flgErr)
+							{
+								LritDcsMain.instance().setDomain2Status(
+									"Active", domain);
+								Date now = new Date();
+								if (domain == 'a')
+									fileStats.setDom2ARenameCompleteTime(now);
+								else if (domain == 'b')
+									fileStats.setDom2BRenameCompleteTime(now);
+								else if (domain == 'c')
+									fileStats.setDom2CRenameCompleteTime(now);
+							}
+							else
+								LritDcsMain.instance().setDomain2Status(
+									"Error", domain);
+						}
+						finally
 						{
-							LritDcsMain.instance().setDomain2Status(
-							    "Active", domain);
-							Date now = new Date();
-							if (domain == 'a')
-								fileStats.setDom2ARenameCompleteTime(now);
-							else if (domain == 'b')
-								fileStats.setDom2BRenameCompleteTime(now);
-							else if (domain == 'c')
-								fileStats.setDom2CRenameCompleteTime(now);
+							sess.close();
 						}
-						else
-							LritDcsMain.instance().setDomain2Status(
-							    "Error", domain);
-
-						/* Close this session */
-						stderr.close();
-						brerr.close();						
-						sess.close();
 					}
 					else
 					{
-						Logger.instance().failure(
-						    "ERROR !!! No Session available to execute command ("+cmd+") on "
-						        + domain2 + " :" + dom2HostName );
-						       
+						log.error("ERROR !!! No Session available to execute command ({}) on {} :{}",
+								  cmd, domain2, dom2HostName);
+
 						LritDcsMain.instance().setDomain2Status("Error",
 						    domain);
 						flgErr = true;
@@ -492,7 +463,7 @@ public class SendFileThread extends LritDcsThread
 					}
 				}
 				else
-				{						
+				{
 					LritDcsMain.instance()
 					    .setDomain2Status("Error", domain);
 					if (sess != null)
@@ -501,7 +472,7 @@ public class SendFileThread extends LritDcsThread
 			}
 			else
 			{
-				
+
 				long now = System.currentTimeMillis();
 				LritDcsConnection ldc = LritDcsConnection.instance();
 				if (domain == 'a')
@@ -512,16 +483,13 @@ public class SendFileThread extends LritDcsThread
 						ldc.connectSessionDom2A();
 						if (ldc.getConnDom2A() == null)
 						{
-							Logger.instance().warning("No connection to "
-								+ dom2HostName + ": " + connStatus);
+							log.warn("No connection to {}:{}", dom2HostName, connStatus);
 							LritDcsMain.instance().setDomain2Status("Error", domain);
 							flgErr = true;
 						}
 					}
 					else
 					{
-//						Logger.instance().warning("No connection to "
-//									+ dom2HostName + ": " + connStatus);
 						LritDcsMain.instance().setDomain2Status("Error", domain);
 						flgErr = true;
 					}
@@ -533,16 +501,13 @@ public class SendFileThread extends LritDcsThread
 					{
 						ldc.connectSessionDom2B();
 						{
-							Logger.instance().warning("No connection to "
-								+ dom2HostName + ": " + connStatus);
+							log.warn("No connection to {}: {}", dom2HostName, connStatus);
 							LritDcsMain.instance().setDomain2Status("Error", domain);
 							flgErr = true;
 						}
 					}
 					else
 					{
-//						Logger.instance().warning("No connection to "
-//									+ dom2HostName + ": " + connStatus);
 						LritDcsMain.instance().setDomain2Status("Error", domain);
 						flgErr = true;
 					}
@@ -555,16 +520,13 @@ public class SendFileThread extends LritDcsThread
 						ldc.connectSessionDom2C();
 						if (ldc.getConnDom2C() == null)
 						{
-							Logger.instance().warning("No connection to "
-								+ dom2HostName + ": " + connStatus);
+							log.warn("No connection to {}: {}", dom2HostName, connStatus);
 							LritDcsMain.instance().setDomain2Status("Error", domain);
 							flgErr = true;
 						}
 					}
 					else
 					{
-//						Logger.instance().warning("No connection to "
-//									+ dom2HostName + ": " + connStatus);
 						LritDcsMain.instance().setDomain2Status("Error", domain);
 						flgErr = true;
 					}
@@ -572,14 +534,14 @@ public class SendFileThread extends LritDcsThread
 			}
 		}
 
-		catch (Exception e)
+		catch (Exception ex)
 		{
 
 			if (!cfg.getFileSenderState().equalsIgnoreCase("dormant"))
 			{
-				Logger.instance().failure(
-					"ERROR !!! FILE TRANSFER TO " + domain2 + " :" + dom2HostName
-			        + " . " + e.getMessage() + "." + e.getCause());
+				log.atError()
+				   .setCause(ex)
+				   .log("ERROR !!! FILE TRANSFER TO {}: {}", domain2, dom2HostName);
 				LritDcsMain.instance().setDomain2Status("Error", domain);
 				flgErr = true;
 			}
@@ -593,92 +555,29 @@ public class SendFileThread extends LritDcsThread
 			return;
 
 		File target = new File(targetDir, orig.getName());
-		debug2("Moving '" + orig.getPath() + "' to '" + target.getPath() + "'");
-		try
+		log.trace("Moving '{}' to '{}'", orig.getPath(), target.getPath());
+		try (FileOutputStream fos = new FileOutputStream(target);
+			 FileInputStream fis = new FileInputStream(orig);)
 		{
-			FileOutputStream fos = new FileOutputStream(target);
-			FileInputStream fis = new FileInputStream(orig);
 			byte buf[] = new byte[4096];
 			int len;
 			while ((len = fis.read(buf)) > 0)
+			{
 				fos.write(buf, 0, len);
-			fos.close();
-			fis.close();
+			}
 			orig.delete();
 		}
 		catch (Exception ex)
 		{
 			if (!cfg.getFileSenderState().equalsIgnoreCase("dormant"))
-				failure(Constants.EVT_FILE_MOVE_ERR, "- Error moving '"
-				    + orig.getPath() + "' to '" + target.getPath() + "': " + ex);
+			{
+				log.atError()
+				   .setCause(ex)
+				   .log("{}- Error moving '{}' to '{}'",
+				   		Constants.EVT_FILE_MOVE_ERR, orig.getPath(), target.getPath());
+			}
 		}
 	}
-
-//	private void requeue(File f, char priority) {
-//		if (priority == Constants.HighPri)
-//			highQ.enqueue(f);
-//		else if (priority == Constants.MediumPri)
-//			mediumQ.enqueue(f);
-//		else
-//			lowQ.enqueue(f);
-//	}
-//
-//	private boolean execAndWait(String cmd) {
-//		debug2("Executing '" + cmd + "'");
-//		int exitStatus;
-//		try {
-//			Process proc = Runtime.getRuntime().exec(cmd);
-//			final InputStream is = proc.getInputStream();
-//			final InputStream es = proc.getErrorStream();
-//			Thread isr = new Thread() {
-//				public void run() {
-//					try {
-//						byte buf[] = new byte[1024];
-//						int n = is.read(buf);
-//						if (n > 0)
-//							warning(0, "stdout returned(" + n + ") '"
-//									+ new String(buf, 0, n) + "'");
-//					} catch (IOException ex) {
-//					}
-//				}
-//			};
-//			isr.start();
-//			Thread esr = new Thread() {
-//				public void run() {
-//					try {
-//						byte buf[] = new byte[1024];
-//						int n = es.read(buf);
-//						if (n > 0)
-//							warning(0, "stderr returned(" + n + ") '"
-//									+ new String(buf, 0, n) + "'");
-//					} catch (IOException ex) {
-//					}
-//				}
-//			};
-//			esr.start();
-//
-//			exitStatus = proc.waitFor();
-//		} catch (IOException ex) {
-//			warning(Constants.EVT_SSH_EXEC_ERR, "- Error executing '" + cmd
-//					+ "': " + ex);
-//			return false;
-//		} catch (InterruptedException ex) {
-//			warning(Constants.EVT_SSH_EXEC_ERR,
-//					"- Wait interrupted, aborting transfer.");
-//			return false;
-//		}
-//
-//		// If bad exit code, issue warning.
-//		if (exitStatus == 0) {
-//			debug2("Execution of '" + cmd + "' SUCCESS.");
-//			return true;
-//		} else {
-//			warning(Constants.EVT_SSH_EXEC_ERR, "- Execution of '" + cmd
-//					+ "' failed with exit status " + exitStatus);
-//			return false;
-//		}
-//	}
-
 	/**
 	 * Called once at start-up, this method puts any existing files in the
 	 * queues so that they will be transfered.
@@ -690,7 +589,7 @@ public class SendFileThread extends LritDcsThread
 		File list[] = f.listFiles();
 		for (int i = 0; list != null && i < list.length; i++)
 			if (list[i].getName().startsWith("p" + Constants.HighPri)) {
-				debug2("Queuing existing file '" + list[i].getPath() + "'");
+				log.trace("Queuing existing file '{}'", list[i].getPath());
 				highQ.enqueue(list[i]);
 			}
 
@@ -698,7 +597,7 @@ public class SendFileThread extends LritDcsThread
 		list = f.listFiles();
 		for (int i = 0; list != null && i < list.length; i++)
 			if (list[i].getName().startsWith("p" + Constants.MediumPri)) {
-				debug2("Queuing existing file '" + list[i].getPath() + "'");
+				log.trace("Queuing existing file '{}'", list[i].getPath());
 				mediumQ.enqueue(list[i]);
 			}
 
@@ -706,7 +605,7 @@ public class SendFileThread extends LritDcsThread
 		list = f.listFiles();
 		for (int i = 0; list != null && i < list.length; i++)
 			if (list[i].getName().startsWith("p" + Constants.LowPri)) {
-				debug2("Queuing existing file '" + list[i].getPath() + "'");
+				log.trace("Queuing existing file '{}'", list[i].getPath());
 				lowQ.enqueue(list[i]);
 			}
 	}
@@ -719,12 +618,8 @@ public class SendFileThread extends LritDcsThread
 			// If LQM not connected, flush Pending queue & warn user.
 			if (!LritDcsMain.instance().isLqmConnected()) {
 				if (pendingList.size() > 0) {
-					warning(
-							Constants.EVT_LQM_CON_LOST,
-							"- "
-									+ pendingList.size()
-									+ " files removed from "
-									+ "Pending Queue because LQM connection has been lost.");
+					log.warn("{}- {} files removed from Pending Queue because LQM connection has been lost.",
+							 Constants.EVT_LQM_CON_LOST, pendingList.size());
 					pendingList.clear();
 				}
 				return;
@@ -743,9 +638,8 @@ public class SendFileThread extends LritDcsThread
 											: pri == Constants.MediumPri ? mediumSentDir
 													: lowSentDir, sf.filename);
 							autoRetransQ.enqueue(f);
-							info(Constants.EVT_PENDING_TIMEOUT,
-									"- Pending Timeout on file '" + f.getName()
-											+ "'");
+							log.info("{}- Pending Timeout on file '{}'",
+									 Constants.EVT_PENDING_TIMEOUT, f.getName());
 						}
 					}
 				}

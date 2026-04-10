@@ -105,7 +105,8 @@ public class InputDirectory
 	  when init was called) has expired.
 	  @throws DataSourceException if some other problem arises.
 	*/
-	public RawMessage getRawMessage()
+	@Override
+	protected RawMessage getSourceRawMessage()
 		throws DataSourceException
 	{
 		throw new DataSourceException("InputDirectory not implemented");

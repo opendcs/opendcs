@@ -1,6 +1,23 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
+
 package decodes.comp;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -13,7 +30,7 @@ import java.util.StringTokenizer;
  */
 public class AreaRatingReader implements RatingTableReader
 {
-
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	 * The name of the file being read.
 	 */
@@ -71,15 +88,12 @@ public class AreaRatingReader implements RatingTableReader
 							if (preCount < 10)
 							{
 								samples[preCount] = Double.parseDouble(s);
-								//System.out.println("prec = " + 
-								//samples[preCount]);	
 							}
 						}
 						catch(NumberFormatException ex)
 						{
-							parseWarning("AreaRatingReader " +
-									"Not a parseable precision line '" + line 
-									+ "' -- ignored.");
+							log.atWarn().setCause(ex)
+							        .log("file: '{}':{} AreaRatingReader - Not a parsable precision line. -- ignored",filename ,lineNumber());
 						}
 						preCount++;
 					}
@@ -114,9 +128,8 @@ public class AreaRatingReader implements RatingTableReader
 							dataPoints = false;
 							if (numItems != 2)
 							{	//we have a lot of lines with 2 items
-								parseWarning("AreaRatingReader " +
-								"Not a parseable line '" + line 
-								+ "' -- ignored.");
+								log.atWarn().setCause(ex)
+							        .log("file: '{}':{} AreaRatingReader - Not a parsable line. -- ignored",filename ,lineNumber());
 							}
 							break;
 						}
@@ -153,7 +166,8 @@ public class AreaRatingReader implements RatingTableReader
 		}
 		catch(IOException ex)
 		{
-			parseWarning("IO Error: " + ex + " -- aborting.");
+			log.atWarn().setCause(ex)
+			.log("file: '{}':{} IO Error: -- aborting.",filename ,lineNumber());
 		}
 		finally
 		{
@@ -166,15 +180,9 @@ public class AreaRatingReader implements RatingTableReader
 		}
 	}
 	
-	/**
-	* Logs a warning message about parsing this file.
-	* @param msg the message
-	*/
-	private void parseWarning( String msg )
+	private int lineNumber()
 	{
-		Logger.instance().warning("Table File '" + filename + ":"
-			+ (rdr != null ? rdr.getLineNumber() : -1)
-			+ " " + msg);
+		return (rdr != null ? rdr.getLineNumber() : -1);
 	}
 
 }

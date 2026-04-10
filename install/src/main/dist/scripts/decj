@@ -1,7 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 
 #
-# Some commands have arguments with embedded spaces. 
+# Some commands have arguments with embedded spaces.
 # Need to preserve the # grouping, so enclose every argument in quotes.
 #
 
@@ -54,20 +54,131 @@ CP=$DH/bin/opendcs.jar
 # add all the jars therein to the classpath.
 if [ "$CP_SHARED_JAR_DIR" != "" ]; then
   CP=$CP:$CP_SHARED_JAR_DIR/*
-  echo "The need of the CP_SHARED_JAR_DIR is variable superseded by using a " 1>&2 
+  echo "The need of the CP_SHARED_JAR_DIR is variable superseded by using a " 1>&2
   echo "DCSTOOL_USERDIR for configuration. Support for this variable will" 1>&2
   echo "be moved in a future release. Please update your configuration." 1>&2
 fi
 
 if [ -d "$DCSTOOL_USERDIR/dep" ]; then
-  CP=$CP:$DCSTOOL_USERDIR/dep/*
+  CP=$CP:$DCSTOOL_USERDIR/dep/*:$DCSTOOL_USERDIR/dep
 fi
 CP=$CP:$DH/dep/*
 
-cmd="java -Xms120m $DECJ_MAXHEAP $DECJ_OPTS -cp $CP -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR"
+if [ -z "$DCSTOOL_USERDIR/logback.xml" ]; then
+  LOGBACK="$LOGBACK -Dlogback.configurationFile=$DCSTOOL_USERDIR/logback.xml"
+else
+  LOGBACK="$LOGBACK -Dlogback.configurationFile=$DCSTOOL_HOME/logback.xml"
+fi
 
-for a
-do
-     cmd=`echo $cmd \"$a\"`
+APP_NAME=$1
+LOG_FILE=""
+LOG_LEVEL="-DLOG_LEVEL=info"
+APP_ARGS=""
+
+# https://stackoverflow.com/a/36475789
+_ARGS=("$@")
+
+
+shift_globally () {
+  shift
+  _ARGS=("$@")
+}
+# end https://stackoverflow.com/a/36475789
+
+function handle_arg {
+  arg=$1
+  if [[ "${arg:0:2}" == "-a" ]]; then
+    handle_app $arg "${@:2}"
+  elif [[ "${arg:0:2}" == "-d" ]]; then
+    handle_debug $arg "${@:2}"
+  elif [[ "${arg:0:2}" == "-D" ]]; then
+    handle_jvm_prop $arg "${@:2}"
+  elif [[ "${arg:0:2}" == "-l" ]]; then
+    handle_log $arg "${@:2}"
+  else
+    APP_ARGS="$APP_ARGS $arg" # pass through
+  fi
+}
+
+function handle_jvm_prop {
+  arg=$1
+  prop=$2
+  
+  if [[ "$arg" == "-D" ]]; then
+    shift_globally "${@:2}"
+  else
+    prop=${arg:2}
+  fi
+  APP_ARGS="-D$prop $APP_ARGS" # these come before the class name so that the jvm sets them for us.
+}
+
+
+function handle_debug {
+    arg=$1
+    level=$2
+    if [[ "$arg" == "-d" ]]; then # value is in next argument
+      shift_globally "${@:2}"
+    else
+      level=${arg:2}
+    fi
+    levelStr="info"
+    case $level in
+      "-2") levelStr="ERROR" ;;
+      "-1") levelStr="WARN" ;;
+      "0") levelStr="INFO" ;;
+      "1") levelStr="DEBUG" ;;
+      "2") levelStr="TRACE" ;;
+      "3") levelStr="TRACE" ;;
+    esac    
+    LOG_LEVEL="-DLOG_LEVEL=${levelStr}" 
+}
+
+function handle_log {
+  arg=$1
+  log_file=$2
+  if [[ "$arg" == "-l" ]]; then
+    shift_globally "${@:2}"
+  else
+    log_file=${arg:2}
+  fi
+  LOG_FILE="-DLOG_FILE=${log_file}"
+}
+
+function handle_app {
+  arg=$1
+  APP_NAME=$2
+  if [[ "$arg" == "-a" ]]; then
+    shift_globally "${@:2}"
+  else
+    APP_NAME=${arg:2}
+  fi
+  APP_ARGS="$APP_ARGS -a $APP_NAME" # this one gets used *and* passed through
+}
+
+while [[ ${#_ARGS[@]} -gt 0 ]]; do
+  arg=${_ARGS[0]}
+  shift_globally ${_ARGS[@]}
+  if [[ "$arg" == "--" ]]; then # stop trying to special process anything
+    break
+  elif [[ ${arg:0:1} == "-" ]]; then
+    handle_arg $arg "${_ARGS[@]}" # extract our desired elements
+  else
+    APP_ARGS="$APP_ARGS $arg" # pass through
+  fi
 done
-eval $cmd
+# remaining args are assumed correct as is and the application will deal
+while [[ ${#_ARGS[@]} -gt 0 ]]; do
+  APP_ARGS="$APP_ARGS ${_ARGS[0]}"
+  shift_globally "${_ARGS[@]}"
+done
+
+
+if [ "${LOGBACK_OVERRIDE+x}" ]; then
+  LOGBACK="$LOGBACK_OVERRIDE"
+else
+  LOGBACK="$LOGBACK -DAPP_NAME=${APP_NAME} $LOG_FILE $LOG_LEVEL"
+fi
+
+cmd="java -Xms120m $DECJ_MAXHEAP $DECJ_OPTS -cp $CP -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR $LOGBACK $APP_ARGS"
+echo "cli: $cmd"
+exec $cmd

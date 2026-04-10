@@ -1,22 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.2  2009/11/11 17:15:29  shweta
-*  LRIT update
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.1  2008/04/04 18:21:16  cvs
-*  Added legacy code to repository
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.3  2006/02/20 22:01:04  mmaloney
-*  dev
-*
-*  Revision 1.2  2004/05/18 22:52:41  mjmaloney
-*  dev
-*
-*  Revision 1.1  2004/05/18 18:11:51  mjmaloney
-*  dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lritdcs;
 
@@ -30,7 +25,8 @@ import lrgs.common.SearchCriteria;
 import lrgs.common.DcpAddress;
 import ilex.util.AsciiUtil;
 
-public class SearchCritTimeDialog extends JDialog {
+public class SearchCritTimeDialog extends JDialog
+{
 	JPanel panel1 = new JPanel();
 	BorderLayout borderLayout1 = new BorderLayout();
 	JPanel jPanel1 = new JPanel();
@@ -60,13 +56,10 @@ public class SearchCritTimeDialog extends JDialog {
 
 	public SearchCritTimeDialog(Frame frame, String title, boolean modal) {
 		super(frame, title, modal);
-		try {
-			jbInit();
-			pack();
-		}
-		catch(Exception ex) {
-			ex.printStackTrace();
-		}
+
+		jbInit();
+		pack();
+
 		origSC = null;
 		okPressed = false;
 	}
@@ -163,7 +156,8 @@ public class SearchCritTimeDialog extends JDialog {
 		}
 	}
 
-	private void jbInit() throws Exception {
+	private void jbInit()
+	{
 		panel1.setLayout(borderLayout1);
 		okButton.setPreferredSize(new Dimension(100, 23));
 		okButton.setText("OK");
@@ -195,9 +189,9 @@ public class SearchCritTimeDialog extends JDialog {
 		flowLayout2.setVgap(10);
 		this.setTitle("Search Criteria Dialog");
 		jLabel5.setText("Until:");
-    jLabel6.setText("Since:");
-    untilField.setText("");
-    getContentPane().add(panel1);
+		jLabel6.setText("Since:");
+		untilField.setText("");
+		getContentPane().add(panel1);
 		jPanel1.add(okButton, null);
 		jPanel1.add(cancelButton, null);
 		panel1.add(jPanel2, BorderLayout.NORTH);
@@ -246,7 +240,6 @@ public class SearchCritTimeDialog extends JDialog {
 
 	private void showError(String msg)
 	{
-		System.err.println(msg);
 		JOptionPane.showMessageDialog(this,
 			AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
 	}
@@ -261,7 +254,7 @@ public class SearchCritTimeDialog extends JDialog {
 	{
 		return okPressed;
 	}
-	
+
 	public boolean isDialogEmpty()
 	{
 		if(sinceField.getText().trim().length()== 0 &
@@ -271,7 +264,7 @@ public class SearchCritTimeDialog extends JDialog {
 		channelField.getText().trim().length()== 0 )
 			return true;
 		else return false;
-		
+
 	}
 }
 

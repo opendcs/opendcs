@@ -1,98 +1,22 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 *
-*  Open Source Software
-*
-*  $Log$
-*  Revision 1.9  2016/10/14 19:02:18  mmaloney
-*  dev
-*
-*  Revision 1.8  2016/10/14 18:50:03  mmaloney
-*  dev
-*
-*  Revision 1.7  2016/10/07 14:49:24  mmaloney
-*  Updates for Web Report for Gail Monds, LRD.
-*
-*  Revision 1.6  2015/02/06 19:05:29  mmaloney
-*  added getRoutingSpecThread() method.
-*
-*  Revision 1.5  2015/01/06 16:09:31  mmaloney
-*  First cut of Polling Modules
-*
-*  Revision 1.4  2014/10/02 18:21:42  mmaloney
-*  FTP Data Source to handle multiple file names.
-*
-*  Revision 1.3  2014/05/30 13:15:34  mmaloney
-*  dev
-*
-*  Revision 1.2  2014/05/28 13:09:29  mmaloney
-*  dev
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.5  2013/03/21 18:27:40  mmaloney
-*  DbKey Implementation
-*
-*  Revision 1.4  2012/07/05 13:26:57  mmaloney
-*  RoutingSpecThread log method made public so that constituent classes can use it to log a message with the RS name in it.
-*  DataSourceExec.log method created.
-*  LrgsDataSource modified to use the RS Thread log method.
-*
-*  Revision 1.3  2009/02/27 00:15:17  mjmaloney
-*  Iridium SBD Support
-*
-*  Revision 1.2  2008/09/26 14:56:53  mjmaloney
-*  Added <all> and <production> network lists
-*
-*  Revision 1.1  2008/04/04 18:21:00  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.14  2007/12/11 01:05:15  mmaloney
-*  javadoc cleanup
-*
-*  Revision 1.13  2006/12/04 17:35:04  mmaloney
-*  dev
-*
-*  Revision 1.12  2006/07/24 21:39:20  mmaloney
-*  dev
-*
-*  Revision 1.11  2005/06/21 14:00:51  mjmaloney
-*  Better responsiveness on DDS links for timeout & hangup conditions.
-*
-*  Revision 1.10  2005/06/04 16:49:27  mjmaloney
-*  dev
-*
-*  Revision 1.9  2004/08/24 23:52:43  mjmaloney
-*  Added javadocs.
-*
-*  Revision 1.8  2004/04/15 19:48:20  mjmaloney
-*  Added status methods to support routing status monitor web app.
-*
-*  Revision 1.7  2003/11/15 20:16:32  mjmaloney
-*  Use accessor methods for TransportMedium type.
-*  For GOES, don't need to explicitely look for GOES, RD, and ST. The tmKey
-*  in the Platform set will be the same for all three.
-*
-*  Revision 1.6  2003/08/12 19:19:56  mjmaloney
-*  dev
-*
-*  Revision 1.5  2003/06/06 18:35:12  mjmaloney
-*  Added allowDapsStatusMessages for status monitor routing specs, etc.
-*
-*  Revision 1.4  2003/06/06 14:03:41  mjmaloney
-*  Added code to allow null platform linkage in special circumstances.
-*
-*  Revision 1.3  2003/06/06 13:50:35  mjmaloney
-*  Added boolean, set, & get methods to allow unknown platform.
-*
-*  Revision 1.2  2003/03/05 18:13:34  mjmaloney
-*  Fix DR 122 - Base class method in DataSourceExec now makes association to TM.
-*
-*  Revision 1.1  2001/07/08 21:16:35  mike
-*  Replaced DataSourceInterface with abstract base class DataSourceExec.
-*  The base class contains a link back to the Database DataSource object.
-*
+* The rate limiting (in getRawMessage and RequestDelay) is derived from:
+* https://stackoverflow.com/a/1407228 
+* and 
+* https://krishnaprasadas.blogspot.com/2012/05/throttling-algorithm.html
 */
 package decodes.datasource;
 
@@ -104,8 +28,13 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.opendcs.utils.FailableResult;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.TimeUnit;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.DataSource;
 import decodes.db.Database;
 import decodes.db.Constants;
@@ -124,9 +53,9 @@ import decodes.util.PropertySpec;
   to a real data source to read files, LRGS connections, directories,
   etc.
 */
-public abstract class DataSourceExec
-	implements PropertiesOwner
+public abstract class DataSourceExec implements PropertiesOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The data source record from the DECODES database. */
 	protected DataSource dbDataSource;
 
@@ -148,6 +77,11 @@ public abstract class DataSourceExec
 	protected RoutingSpecThread routingSpecThread = null;
 
 	protected Database db = null;
+
+
+	protected int requestRateLimit = -1; // Rate limit of requests per minute
+
+	private final DelayQueue<RequestDelay> rateQueue = new DelayQueue<>();
 
 	/**
 	 * Required constructor for any data source.
@@ -180,12 +114,10 @@ public abstract class DataSourceExec
 		routingSpecThread = rst;
 	}
 	
+	@Deprecated
 	public void log(int priority, String msg)
 	{
-		if (routingSpecThread == null)
-			Logger.instance().log(priority, msg);
-		else
-			routingSpecThread.log(priority, msg);
+		log.atInfo().addKeyValue("originalPriority", priority).log(msg);
 	}
 
 	
@@ -262,6 +194,58 @@ public abstract class DataSourceExec
 	public abstract void close();
 
 	/**
+	 * Retrieve raw message from the source, apply rate limiting if configured to do so.
+	 * Aggregating DataSources should call this over getSourceRawMessage so that rate limiting applies to the correct target.
+	 * 
+	 * @return the next RawMessage object from the data source, or null if none currently available.
+	 * @throws DataSourceTimeoutException if the data source is still
+	 * waiting for a message and the timeout (as defined in the properties
+	 * when init was called) has expired.
+	 * @throws DataSourceException if some other problem arises.
+	 */
+	public RawMessage getRawMessage() throws DataSourceException
+	{
+		if (requestRateLimit > 0 && rateQueue.size() == 0)
+		{
+			for (int i = 0; i < requestRateLimit; i++)
+			{
+				rateQueue.add(new RequestDelay(0, TimeUnit.SECONDS));
+			}
+		}
+
+		if (requestRateLimit == -1) // no limiting just return
+		{
+			return getSourceRawMessage();
+		}
+
+		try
+		{
+			RequestDelay take = rateQueue.take();
+			if (log.isTraceEnabled())
+			{
+				log.trace("Delay was {}, inserted was {}, current time millis is {}, getDelay {}",
+						  take.delay, take.inserted, System.currentTimeMillis(), take.getDelay(TimeUnit.MILLISECONDS));
+			}
+			RequestDelay newDelay = new RequestDelay(1, TimeUnit.MINUTES);
+			rateQueue.add(newDelay);
+			if (log.isTraceEnabled())
+			{
+				log.trace("Delay was {}, inserted was {}, current time millis is {}, getDelay {}, " +
+						  "rateQueue size = {}",
+						  newDelay.delay, newDelay.inserted, System.currentTimeMillis(),
+						  newDelay.getDelay(TimeUnit.MILLISECONDS), rateQueue.size());
+			}
+
+		}
+		catch (InterruptedException ex)
+		{
+			log.atWarn().setCause(ex).log("Interrupted waiting for delay value.");
+		}
+
+		return getSourceRawMessage();
+	}
+
+	/**
 	  Reads the next raw message from the data source and returns it.
 	  This DataSource will fill in the message data and attempt to 
 	  associate it with a TransportMedium object.
@@ -273,7 +257,7 @@ public abstract class DataSourceExec
 	  when init was called) has expired.
 	  @throws DataSourceException if some other problem arises.
 	*/
-	public abstract RawMessage getRawMessage()
+	protected abstract RawMessage getSourceRawMessage()
 		throws DataSourceException;
 
 	public Stream<FailableResult<RawMessage,DataSourceException>> getRawMessages() throws DataSourceException
@@ -383,9 +367,7 @@ public abstract class DataSourceExec
 	public void setAllowNullPlatform(boolean tf) 
 	{
 		allowNullPlatform = tf;
-		Logger.instance().debug1(
-			"DataSource '" + getName() + "' "
-			+ " allowNullPlatform set to " + tf);
+		log.debug("DataSource '{}' allowNullPlatform set to {}", getName(), tf);
 	}
 
 	public boolean getAllowNullPlatform() { return allowNullPlatform; }
@@ -397,9 +379,7 @@ public abstract class DataSourceExec
 	public void setAllowDapsStatusMessages(boolean tf)
 	{
 		allowDapsStatusMessages = tf;
-		Logger.instance().debug1(
-			"DataSource '" + getName() + "' "
-			+ (tf ? "" : "NOT ") + "Allowing DAPS Status Messages.");
+		log.debug("DataSource '{}' {} Allowing DAPS Status Messages.", getName(), (tf ? "" : "NOT "));
 	}
 
 	/**
@@ -451,5 +431,36 @@ public abstract class DataSourceExec
 	public boolean supportsTimeRanges()
 	{
 		return false;
+	}
+
+	/**
+	 * Logic taken from https://krishnaprasadas.blogspot.com/2012/05/throttling-algorithm.html
+	 */
+	private static class RequestDelay implements Delayed
+	{
+
+		private final long delay;
+		private final long inserted;
+		private final TimeUnit delayUnit; // always MILLISECONDS
+
+		public RequestDelay(long providedDelay, TimeUnit providedDelayUnit)
+		{
+			this.delayUnit = TimeUnit.MILLISECONDS;
+			this.delay = this.delayUnit.convert(providedDelay, providedDelayUnit);
+			this.inserted = System.currentTimeMillis();
+		}
+
+		@Override
+		public int compareTo(Delayed o)
+		{
+			return Long.compare(getDelay(delayUnit), o.getDelay(delayUnit));
+		}
+
+		@Override
+		public long getDelay(TimeUnit unit)
+		{
+			return unit.convert((inserted - System.currentTimeMillis()) + delay, delayUnit);
+		}
+		
 	}
 }

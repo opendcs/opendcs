@@ -1,80 +1,34 @@
 /*
-*  $Id$
-*
-*  $State$
-*
-*  $Log$
-*  Revision 1.5  2013/03/21 18:27:39  mmaloney
-*  DbKey Implementation
-*
-*  Revision 1.4  2012/09/27 03:07:21  mmaloney
-*  Fixed duplicate entries in GUI problem.
-*
-*  Revision 1.3  2008/09/29 00:22:08  mjmaloney
-*  Network List Maintenance GUI Improvements
-*
-*  Revision 1.2  2008/09/26 20:49:02  mjmaloney
-*  Added <all> and <production> network lists
-*
-*  Revision 1.1  2008/04/04 18:21:00  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.14  2004/11/01 14:43:22  mjmaloney
-*  Reload platforms on change
-*
-*  Revision 1.13  2004/08/26 13:29:25  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.12  2002/09/30 18:54:33  mjmaloney
-*  SQL dev.
-*
-*  Revision 1.11  2002/09/20 12:59:07  mjmaloney
-*  SQL Dev.
-*
-*  Revision 1.10  2002/08/26 04:53:45  chris
-*  Major SQL Database I/O development.
-*
-*  Revision 1.9  2001/11/10 14:55:16  mike
-*  Implementing sources & network list editors.
-*
-*  Revision 1.8  2001/07/23 14:56:13  mike
-*  dev
-*
-*  Revision 1.7  2001/06/12 14:14:27  mike
-*  dev
-*
-*  Revision 1.6  2001/04/21 20:19:23  mike
-*  Added read & write methods to all DatabaseObjects
-*
-*  Revision 1.5  2001/04/13 16:46:38  mike
-*  dev
-*
-*  Revision 1.4  2001/04/12 12:30:31  mike
-*  dev
-*
-*  Revision 1.3  2001/04/02 00:42:33  mike
-*  DatabaseObject is now an abstract base-class.
-*
-*  Revision 1.2  2001/03/23 20:09:25  mike
-*  Collection classes are no longer monostate static collections.
-*
-*  Revision 1.1  2001/03/20 03:43:24  mike
-*  Implement final parsers
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.db;
 
 import java.util.Vector;
 import java.util.Iterator;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.sql.DbKey;
-import ilex.util.Logger;
 
 /**
  * NetworkListList is a collection of all known NetworkList objects.
  */
 public class NetworkListList extends DatabaseObject
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Vector of all known network lists. */
 	private Vector<NetworkList> networkListVec;
 
@@ -153,8 +107,7 @@ public class NetworkListList extends DatabaseObject
 		}
 		catch(DatabaseException ex)
 		{
-			Logger.instance().warning("Attempt to retrieve non-existant "
-				+ "network list '" + name + "': " + ex);
+			log.atWarn().setCause(ex).log("Attempt to retrieve non-existent network list '{}'", name);
 			return null;
 		}
 	}

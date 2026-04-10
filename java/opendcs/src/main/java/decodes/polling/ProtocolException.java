@@ -7,6 +7,7 @@
  * between COVE and Alberta ESRD.
  *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +28,11 @@ public class ProtocolException extends PollException
 	public ProtocolException(String msg)
 	{
 		super(msg);
+	}
+	
+	public ProtocolException(String msg, Throwable cause)
+	{
+		super(msg, cause);
 	}
 
 }

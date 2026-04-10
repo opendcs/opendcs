@@ -1,56 +1,26 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $State$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $Log$
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.2  2011/08/01 00:58:22  mmaloney
-*  Don't XML write if from or to is null.
-*
-*  Revision 1.1  2008/04/04 18:21:08  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.8  2007/12/11 01:05:22  mmaloney
-*  javadoc cleanup
-*
-*  Revision 1.7  2004/08/30 14:49:34  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.6  2003/11/15 20:08:28  mjmaloney
-*  Updates for new structures in DECODES Database Version 6.
-*  Parsers now ignore unrecognized elements with a warning. They used to
-*  abort. The new behavior allows easier future enhancements.
-*
-*  Revision 1.5  2001/08/12 17:36:57  mike
-*  Slight architecture change for unit converters. The UnitConverterDb objects
-*  are now full-fledged DatabaseObjects and not derived from UnitConverter.
-*  This necessitated changes to DB parsing code and prepareForExec code.
-*
-*  Revision 1.4  2001/01/13 17:22:48  mike
-*  Added parsers for EngineeringUnits
-*
-*  Revision 1.3  2001/01/13 01:50:28  mike
-*  dev
-*
-*  Revision 1.2  2001/01/03 02:54:59  mike
-*  dev
-*
-*  Revision 1.1  2000/12/31 23:13:03  mike
-*  created
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import java.util.Enumeration;
 import decodes.db.*;
 import ilex.util.TextUtil;
-import ilex.util.IDateFormat;
-import ilex.util.Logger;
 import java.io.IOException;
 import ilex.xml.*;
 
@@ -59,6 +29,7 @@ import ilex.xml.*;
  */
 public class UnitConverterParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner, TaggedDoubleOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private UnitConverterDb dbConverter; // object that we will build.
 
 	private static final int algorithmTag = 0;
@@ -68,7 +39,7 @@ public class UnitConverterParser implements XmlObjectParser, XmlObjectWriter, Ta
 	private static final int dTag = 4;
 	private static final int eTag = 5;
 	private static final int fTag = 6;
-	
+
 	// Used by dbimport to detect if any unit converters were parsed.
 	public static boolean unitConvertersParsed = false;
 
@@ -85,7 +56,7 @@ public class UnitConverterParser implements XmlObjectParser, XmlObjectWriter, Ta
 	 * @return name of element parsed by this parser
 	 */
 	public String myName( ) { return XmlDbTags.UnitConverter_el; }
-		
+
 	/**
 	 * @param ch Characters from file
 	 * @param start start of characters
@@ -140,16 +111,14 @@ public class UnitConverterParser implements XmlObjectParser, XmlObjectWriter, Ta
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
@@ -217,7 +186,7 @@ public class UnitConverterParser implements XmlObjectParser, XmlObjectWriter, Ta
 		if (dbConverter.fromAbbr == null
 		 || dbConverter.toAbbr == null)
 			return;
-		xos.startElement(myName(), 
+		xos.startElement(myName(),
 			XmlDbTags.UnitConverter_fromUnitsAbbr_at, dbConverter.fromAbbr,
 			XmlDbTags.UnitConverter_toUnitsAbbr_at, dbConverter.toAbbr);
 

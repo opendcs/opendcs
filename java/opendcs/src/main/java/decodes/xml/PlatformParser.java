@@ -1,27 +1,38 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.xml;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Enumeration;
 import decodes.db.*;
 import ilex.util.TextUtil;
 import ilex.util.AsciiUtil;
-import ilex.util.Logger;
 import java.io.IOException;
 import ilex.xml.*;
 
 /**
  * This class maps the DECODES XML representation for Platform elements.
  */
-public class PlatformParser 
-	implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner, 
-		TaggedBooleanOwner
+public class PlatformParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner, TaggedBooleanOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private Platform platform; // object that we will build.
 	private String propName;     // Tmp storage while waiting for value parse.
 
@@ -156,10 +167,9 @@ public class PlatformParser
 			{
 				snum = Integer.parseInt(ns);
 			}
-			catch(NumberFormatException e)
+			catch (NumberFormatException ex)
 			{
-				throw new SAXException(
-					"Sensor number must be an integer ("+ns+")");
+				throw new SAXException("Sensor number must be an integer ("+ns+")", ex);
 			}
 			PlatformSensor ps = new PlatformSensor(platform, snum);
 			platform.addPlatformSensor(ps);
@@ -169,7 +179,7 @@ public class PlatformParser
 		{
 			propName = atts.getValue(XmlDbTags.propertyName_at);
 			if (propName == null)
-				throw new SAXException(XmlDbTags.PlatformProperty_el 
+				throw new SAXException(XmlDbTags.PlatformProperty_el
 					+ " without " + XmlDbTags.propertyName_at +" attribute");
 			hier.pushObjectParser(new TaggedStringSetter(this, propertyTag));
 		}
@@ -180,16 +190,14 @@ public class PlatformParser
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
@@ -238,22 +246,21 @@ public class PlatformParser
 			{
 				platform.expiration = Constants.defaultDateFormat.parse(str);
 			}
-			catch(Exception e)
+			catch (Exception ex)
 			{
 				throw new SAXException("Improper date format '" + str
-					+ "' (should be " + Constants.defaultDateFormat + ")");
+					+ "' (should be " + Constants.defaultDateFormat + ")", ex);
 			}
 			break;
 		case lastModifyTimeTag:
 			try
 			{
 				platform.lastModifyTime = Constants.defaultDateFormat.parse(str);
-//Logger.instance().debug3("PlatformParser set LMT to " + platform.lastModifyTime);
 			}
-			catch(Exception e)
+			catch(Exception ex)
 			{
 				throw new SAXException("Improper date format '" + str
-					+ "' (should be " + Constants.defaultDateFormat + ")");
+					+ "' (should be " + Constants.defaultDateFormat + ")", ex);
 			}
 			break;
 		case propertyTag:
@@ -346,8 +353,8 @@ public class PlatformParser
 		{
 			String nm = (String)e.nextElement();
 			String v = (String)platform.getProperty(nm);
-			
-			xos.writeElement(XmlDbTags.PlatformProperty_el, 
+
+			xos.writeElement(XmlDbTags.PlatformProperty_el,
 				XmlDbTags.propertyName_at, nm, v);
 		}
 		xos.endElement(myName());

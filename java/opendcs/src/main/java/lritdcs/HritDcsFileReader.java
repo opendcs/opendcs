@@ -1,34 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.3  2019/05/15 22:24:25  mmaloney
-*  cleanup
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.2  2019/03/28 19:53:49  mmaloney
-*  Mods to support the new HRIT file format.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1  2019/03/28 13:24:42  mmaloney
-*  Mods to support the new HRIT file format.
-*  
-*  Revision 1.1  2008/04/04 18:21:16  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.5  2005/03/02 22:21:54  mjmaloney
-*  update
-*
-*  Revision 1.4  2004/05/19 14:03:45  mjmaloney
-*  dev.
-*
-*  Revision 1.3  2004/04/29 16:11:07  mjmaloney
-*  Implemented new header fields.
-*
-*  Revision 1.2  2003/08/15 13:48:12  mjmaloney
-*  Handle LRIT File header.
-*
-*  Revision 1.1  2003/08/11 23:38:11  mjmaloney
-*  dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lritdcs;
 
@@ -40,14 +23,19 @@ import java.util.Date;
 import java.util.TimeZone;
 import java.util.zip.CRC32;
 
-import ilex.util.*;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.cmdline.*;
+import ilex.util.ByteUtil;
+import ilex.util.CRC16;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
 
 public class HritDcsFileReader
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static String module = "HritFileReader";
 	byte image[];
 	File file;
@@ -72,16 +60,17 @@ public class HritDcsFileReader
 	public void load()
 		throws IOException, HritException
 	{
-		FileInputStream fis = new FileInputStream(file);
-		int len = (int)file.length();
-		if (len < 64)
-			throw new HritException("Incomplete File Header, length=" + len, 
-				HritException.ErrorCode.INCOMPLETE_FILE);
-		
-		image = new byte[len];
-		fis.read(image);
-		fis.close();
-		
+		try (FileInputStream fis = new FileInputStream(file))
+		{
+			int len = (int)file.length();
+			if (len < 64)
+				throw new HritException("Incomplete File Header, length=" + len,
+					HritException.ErrorCode.INCOMPLETE_FILE);
+
+			image = new byte[len];
+			fis.read(image);
+		}
+
 		if (ccsdsHeader)
 		{
 			int htype = (int)image[0];
@@ -90,7 +79,7 @@ public class HritDcsFileReader
 			if (htype != PRIMARY_TYPE || hlen != PRIMARY_LENGTH)
 			{
 				throw new HritException(
-					"Invalid LRIT File Header: headerType=" + htype 
+					"Invalid LRIT File Header: headerType=" + htype
 					+ ", headerLen=" + hlen, HritException.ErrorCode.WRONG_FILE_TYPE);
 			}
 			else if (ftype != DCS_FILE_TYPE)
@@ -101,8 +90,7 @@ public class HritDcsFileReader
 					HritException.ErrorCode.WRONG_FILE_TYPE);
 			}
 			fileStartOffset = ByteUtil.getInt4_BigEndian(image, 4);
-			Logger.instance().debug1(module + " Read valid CCSDS Header, total header length = "
-					+ fileStartOffset);
+			log.debug("Read valid CCSDS Header, total header length = {}", fileStartOffset);
 		}
 		else
 			fileStartOffset = 0;
@@ -110,7 +98,7 @@ public class HritDcsFileReader
 
 	/**
 	 * Check the various header lengths and CRCs
-	 * 
+	 *
 	 * @throws HritException with error code if header does not pass the checks.
 	 */
 	public void checkHeader()
@@ -118,9 +106,9 @@ public class HritDcsFileReader
 	{
 		if (image.length-fileStartOffset < 64)
 			throw new HritException("Incomplete HRIT-DCS File Header, length="
-				+ (image.length-fileStartOffset), 
+				+ (image.length-fileStartOffset),
 				HritException.ErrorCode.INCOMPLETE_FILE);
-		
+
 		// Check the CRC at the end of the file header.
 		CRC32 crc32 = new CRC32();
 		crc32.reset();
@@ -136,22 +124,22 @@ public class HritDcsFileReader
 			throw new HritException("Unrecognized type in LRIT DCP Header '" + t + "'",
 				HritException.ErrorCode.WRONG_FILE_TYPE);
 		hritFileType = t.equals("DCSH");
-		
+
 		// Check the length field inside the HRIT DCS Header
 		String s = new String(image, fileStartOffset+32, 8).trim();
-		try 
+		try
 		{
 			long expectedFileLen = Long.parseLong(s);
 			if (expectedFileLen > (image.length - fileStartOffset))
 				throw new HritException("Invalid length in HRIT DCS Header, Expected Length="
 					+ expectedFileLen + ", actual len=" + (image.length - fileStartOffset),
 					HritException.ErrorCode.INCOMPLETE_FILE);
-			
+
 		}
 		catch (NumberFormatException ex)
 		{
 			throw new HritException("Invalid file length in HRIT DCS Header '" + s + "'",
-				HritException.ErrorCode.BAD_HEADER);
+				HritException.ErrorCode.BAD_HEADER, ex);
 		}
 
 		crc32.reset();
@@ -161,7 +149,7 @@ public class HritDcsFileReader
 		if (fileCRC != computedCRC)
 			throw new HritException("File CRC Failed, computed=" + computedCRC
 			+ ", in file=" + headerCRC, HritException.ErrorCode.BAD_FILE_CRC);
-		
+
 		currentOffset = fileStartOffset + 64;
 	}
 
@@ -171,7 +159,7 @@ public class HritDcsFileReader
 		for(i=0; i<32 && image[i + fileStartOffset] != (byte)' '; i++);
 		return new String(image, fileStartOffset, i);
 	}
-	
+
 	/// Returns the source identifier in the file.
 	public String getSource()
 	{
@@ -191,25 +179,26 @@ public class HritDcsFileReader
 		DcpMsg msg;
 		try
 		{
-			System.out.println("\n------");
+			out.println("\n------");
 			while((msg = getNextMsg()) != null)
 			{
-				System.out.println("FLAGS=0x" + Integer.toHexString(msg.flagbits)
+				out.println("FLAGS=0x" + Integer.toHexString(msg.flagbits)
 					+ ", seq=" + msg.getSequenceNum()
 					+ ", baud=" + msg.getBaud());
 				if ((msg.flagbits & DcpMsgFlag.HAS_CARRIER_TIMES) != 0)
-					System.out.println("Carrier: "
+				{
+					out.println("Carrier: "
 						+ ctimeFmt.format(msg.getCarrierStart()) + " "
 						+ ctimeFmt.format(msg.getCarrierStop()));
-				
-				System.out.println(msg.toString());
-				System.out.println("\n------");
+				}
+
+				out.println(msg.toString());
+				out.println("\n------");
 			}
 		}
 		catch(IOException ex)
 		{
-			System.err.println(ex);
-			ex.printStackTrace(System.err);
+			log.atError().setCause(ex).log("error listing messages.");
 		}
 	}
 
@@ -228,7 +217,7 @@ public class HritDcsFileReader
 		int skipped = 0;
 		if (currentOffset >= image.length - 4)
 			return null;
-		
+
 		while(currentOffset < image.length - 2)
 		{
 			if (image[currentOffset] == (byte)2
@@ -242,9 +231,9 @@ public class HritDcsFileReader
 		}
 		if (skipped > 0)
 		{
-			Logger.instance().debug1("LritReader " + skipped + " characters skipped.");
+			log.debug("LritReader {} characters skipped.", skipped);
 		}
-		
+
 		// There has to be at least 39 bytes: 2 flag bytes+37 byte DOMSAT header.
 		if (currentOffset >= image.length-39)
 			return null;
@@ -252,18 +241,19 @@ public class HritDcsFileReader
 		// 16-bit flags word.
 		int flags = ((image[currentOffset++]&0xff) << 8)
 			+ (image[currentOffset++]&0xff);
-		
+
 		int msgDataLength = -1;
-		try 
+		try
 		{
-			msgDataLength = 
+			msgDataLength =
 			   ByteUtil.parseInt(image, currentOffset+DcpMsg.IDX_DATALENGTH, 5);
 		}
 		catch(NumberFormatException ex)
 		{
-			Logger.instance().info("Invalid message length field '"
-				+ (new String(image, currentOffset+DcpMsg.IDX_DATALENGTH, 5))
-				+ "' -- skipping to next message start.");
+			log.atInfo()
+			   .setCause(ex)
+			   .log("Invalid message length field '{}' -- skipping to next message start.",
+			       (new String(image, currentOffset+DcpMsg.IDX_DATALENGTH, 5)));
 			return getNextMsg();
 		}
 		DcpMsg ret = new DcpMsg(image, 37 + msgDataLength, currentOffset);
@@ -282,17 +272,18 @@ public class HritDcsFileReader
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().warning("Bad carrier times at offset "
-					+ (currentOffset-29) + " "
-					+ new String(image, currentOffset-29, 29));
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Bad carrier times at offset {} {}",
+				       (currentOffset-29), new String(image, currentOffset-29, 29));
 			}
 		}
 		return ret;
 	}
-	
+
 	/**
 	 * Get next messge in HRIT-Format file, as defined by UCOM HRIT DCS File Format doc.
-	 * 
+	 *
 	 * @return null if EOF, dummyMsg to ignore, good message if success
 	 */
 	public DcpMsg getNextMsgHrit()
@@ -300,34 +291,32 @@ public class HritDcsFileReader
 		// Smallest possible block is length 8 with sequence num.
 		if (currentOffset >= image.length - 8)
 			return null;
-		
+
 		DcpMsg ret = dummyMsg;
 		int blkId = image[currentOffset];
 		int blkLen = ByteUtil.getInt2_LittleEndian(image, currentOffset+1);
 		if (blkLen < 8)
 		{
-			Logger.instance().warning(module + " File '" + file.getName() 
-				+ "' has invalid block with too-short length=" + blkLen
-				+ " at file offset " + currentOffset + " -- aborting file.");
+			log.warn("File '{}' has invalid block with too-short length={} at file offset {} -- aborting file.",
+					 file.getName(), blkLen, currentOffset);
 			return null;
 		}
 		if (currentOffset + blkLen > file.length() - 2)
 		{
-			Logger.instance().warning(module + " File '" + file.getName() 
-				+ "' has invalid block with too-long length=" + blkLen
-				+ " at file offset " + currentOffset + ", with file size=" + file.length()
-				+ " -- aborting file.");
+			log.warn(" File '{}' has invalid block with too-long length={} at file " +
+					 "offset {}, with file size={} -- aborting file",
+					 file.getName(), blkLen, currentOffset, file.length());
 			return null;
 		}
-	
-		
+
+
 		CRC16 crc16 = new CRC16();
 		crc16.reset();
 		crc16.update(image, currentOffset, blkLen-2);
-		
+
 		int crcInFile = ByteUtil.getInt2_LittleEndian(image, currentOffset + blkLen-2);
 		int crcComputed = crc16.getCRC();
-		
+
 		int seqNum =
 				 ((int)image[currentOffset+3] & 0xff)
 			  + (((int)image[currentOffset+4] & 0xff) << 8)
@@ -335,7 +324,7 @@ public class HritDcsFileReader
 
 		int blkStart = currentOffset;
 		currentOffset += blkLen;
-		
+
 		if (blkId == 1) // DCP Message Block
 		{
 			// 33 byte header starts at offset 6 after seqnum
@@ -344,20 +333,20 @@ public class HritDcsFileReader
 			long dcpAddr = ByteUtil.getInt4_LittleEndian(image, blkStart+8);
 			// 7 byte BCD carrier start - little endian
 			Date carrierStart = bcd7littleEndian(image, blkStart + 12);
-			
+
 			// 7 byte BCD msg end - little endian
 			Date msgEnd = bcd7littleEndian(image, blkStart + 19);
-			
+
 			// 2 byte binary sig strength x 10, mask low 10 bits
 			int sigx10 = ByteUtil.getInt2_LittleEndian(image, blkStart + 26) & 0x3ff;
-			
+
 			// 2 byte binary freq offset x 10, high 2 bits not used, do sign extension
 			int freqOffx10 = ByteUtil.getInt2_LittleEndian(image, blkStart + 28);
 			freqOffx10 &= 0x3FFF;
 			if ((freqOffx10 & 0x2000) != 0) // sign bit set?
 				freqOffx10 |= 0xFFFFC000;   // sign extend
-			
-			
+
+
 			// 2 byte binary phase noise x 100, and mod index
 			int noisex100 = ByteUtil.getInt2_LittleEndian(image, blkStart + 30);
 			char modIndex = 'N';
@@ -370,10 +359,10 @@ public class HritDcsFileReader
 			case 3: modIndex = 'L'; break;
 			}
 			noisex100 &= 0xFFF;
-			
+
 			// 1 byte binary good phase x 2
 			double goodPhasePct = (image[blkStart + 32] & 0xff) / 2.0;
-			
+
 			// 2 byte binary chan/sc
 			int chan = ByteUtil.getInt2_LittleEndian(image, blkStart + 33);
 			char sc = 'U';
@@ -390,11 +379,11 @@ public class HritDcsFileReader
 			byte sourceCode[] = new byte[2];
 			sourceCode[0] = image[blkStart + 35];
 			sourceCode[1] = image[blkStart + 36];
-			
+
 			// Ignore bytes 37 & 38 = secondary source code
 			// 2 char secondary source (TBD)
-			
-			// Now build a standard 38-byte GOES header				
+
+			// Now build a standard 38-byte GOES header
 			SimpleDateFormat sdf = new SimpleDateFormat("yyDDDHHmmss");
 			sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 			NumberFormat numfmt = NumberFormat.getIntegerInstance();
@@ -407,12 +396,12 @@ public class HritDcsFileReader
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				DcpAddress addr = new DcpAddress(dcpAddr);
 				baos.write(addr.toString().getBytes());
-				
-				
+
+
 				baos.write(sdf.format(carrierStart).getBytes());
 				baos.write((msgFlags & 0x10) != 0 ? (byte)'?' : (byte)'G');
 				baos.write(numfmt.format(sigx10/10).getBytes());
-				
+
 				char sign = freqOffx10 < 0 ? '-' : '+';
 				baos.write((byte)sign);
 				int n = freqOffx10 / 500;
@@ -434,7 +423,7 @@ public class HritDcsFileReader
 				numfmt.setMaximumIntegerDigits(5);
 				int msglen = blkLen - 41;
 				baos.write(numfmt.format(msglen).getBytes());
-				
+
 				// Copy message data and strip parity.
 				for(int idx = 0; idx < msglen; idx++)
 				{
@@ -447,11 +436,11 @@ public class HritDcsFileReader
 				ret.setCarrierStart(carrierStart);
 				ret.setXmitTime(carrierStart);
 				ret.setCarrierStop(msgEnd);
-				int flags = DcpMsgFlag.MSG_PRESENT | DcpMsgFlag.SRC_LRIT 
+				int flags = DcpMsgFlag.MSG_PRESENT | DcpMsgFlag.SRC_LRIT
 					| DcpMsgFlag.MSG_TYPE_GOES | DcpMsgFlag.HAS_CARRIER_TIMES;
-				
+
 				int x = msgFlags & 0x7;
-				flags |= (x == 1 ? DcpMsgFlag.BAUD_100 
+				flags |= (x == 1 ? DcpMsgFlag.BAUD_100
 						: x == 2 ? DcpMsgFlag.BAUD_300
 						: x == 3 ? DcpMsgFlag.BAUD_1200 : DcpMsgFlag.BAUD_UNKNOWN);
 				if ((msgFlags & 8) != 0)
@@ -483,25 +472,23 @@ public class HritDcsFileReader
 			}
 			catch (IOException ex)
 			{
-				Logger.instance().warning("Error writing to byte array: " + ex);
+				log.atWarn().setCause(ex).log("Error writing to byte array.");
 			}
-			
+
 		}
 		else if (blkId == 2) // Missing Message Block
 		{
-			Logger.instance().debug2("Skipping MISSING MESSAGE block.");
+			log.trace("Skipping MISSING MESSAGE block.");
 			//TODO Future: Handle missing message blocks.
 		}
 		else
 		{
-			Logger.instance().warning("Invalid block type " + blkId);
-			Logger.instance().warning("Invalid block type " + blkId 
-				+ ", should be 1 for msg or 2 for MM.");
+			log.warn("Invalid block type {}, should be 1 for msg or 2 for MM.", blkId);
 		}
-		
+
 		return ret;
 	}
-	
+
 	private Date bcd7littleEndian(byte img[], int off)
 	{
 		int yy = ((img[off+6] & 0xf0)>>4) * 10
@@ -527,8 +514,8 @@ public class HritDcsFileReader
 		cal.set(Calendar.MILLISECOND, ms);
 		return cal.getTime();
 	}
-	
-	
+
+
 
 	private static ApplicationSettings cmdLineArgs = new ApplicationSettings();
 	static BooleanToken lritHeaderArg = new BooleanToken(
@@ -551,11 +538,11 @@ public class HritDcsFileReader
 		{
 			String fname = filesArg.getValue(i);
 
-			HritDcsFileReader hdfr = 
+			HritDcsFileReader hdfr =
 				new HritDcsFileReader(fname, lritHeaderArg.getValue());
 			hdfr.load();
 			hdfr.checkHeader();
-			
+
 			System.out.println("Original File Name: '" + hdfr.origFileName() + "'");
 			System.out.println("\tSource = '" + hdfr.getSource() + "'");
 			System.out.println("\tType = '" + hdfr.getType() + "'");

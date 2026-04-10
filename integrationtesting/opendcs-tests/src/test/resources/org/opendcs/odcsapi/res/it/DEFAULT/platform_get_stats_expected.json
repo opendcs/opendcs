@@ -1,0 +1,14 @@
+[
+  {
+    "platformId": 1,
+    "platformName": "Platform 10",
+    "siteId": 1,
+    "lastContact": "2021-01-01T00:00:00.000Z[UTC]",
+    "lastMessage": "2021-01-02T00:00:00.000Z[UTC]",
+    "lastError": "2021-01-03T00:00:00.000Z[UTC]",
+    "lastMsgQuality": null,
+    "annotation": "Test Annotation",
+    "lastRoutingExecId": 1,
+    "routingSpecName": "TestRoutingSpec"
+  }
+]

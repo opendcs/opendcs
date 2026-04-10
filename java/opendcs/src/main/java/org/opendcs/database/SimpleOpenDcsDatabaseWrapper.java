@@ -1,36 +1,69 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package org.opendcs.database;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
+import decodes.cwms.CwmsLocationLevelDAO;
+
+import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.JdbiException;
+import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDao;
+import org.opendcs.database.api.OpenDcsDaoConfigurationException;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
+import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
 import org.opendcs.settings.api.OpenDcsSettings;
+import org.opendcs.utils.AnnotationHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.openide.util.Lookup;
+import org.openide.util.lookup.Lookups;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import decodes.db.Database;
+import decodes.db.DatabaseException;
 import decodes.db.DatabaseIO;
+import decodes.sql.KeyGenerator;
+import decodes.sql.KeyGeneratorFactory;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
 
 public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
 {
-    private static final Logger log = LoggerFactory.getLogger(SimpleOpenDcsDatabaseWrapper.class);
-    private final DecodesSettings settings;
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
+    protected final DecodesSettings settings;
     private final Database decodesDb;
     private final TimeSeriesDb timeSeriesDb;
-    private final DataSource dataSource;
+    protected final DataSource dataSource;
+    protected final Jdbi jdbi;
+    protected final DatabaseEngine dbEngine;
+    protected final KeyGenerator keyGenerator;
     private final Map<Class<? extends OpenDcsDao>, DaoWrapper<? extends OpenDcsDao>> daoMap = new HashMap<>();
 
     public SimpleOpenDcsDatabaseWrapper(DecodesSettings settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource)
@@ -39,6 +72,33 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         this.decodesDb = decodesDb;
         this.timeSeriesDb = timeSeriesDb;
         this.dataSource = dataSource;
+        this.jdbi = Jdbi.create(dataSource);
+        jdbi.registerArgument(new DatabaseKeyArgumentFactory())
+            .registerColumnMapper(new DatabaseKeyColumnMapper());
+        if (this.timeSeriesDb != null)
+        {
+            this.timeSeriesDb.setDcsDatabase(this);
+        }
+
+        try (var tx = newTransaction();
+             var conn = tx.connection(Connection.class)
+                          .orElseThrow(() -> new IllegalStateException("Unable to retrieve connection object.")))
+        {
+            dbEngine = DatabaseEngine.from(conn.getMetaData().getDatabaseProductName());
+        }
+        catch (SQLException | OpenDcsDataException ex)
+        {
+            throw new IllegalStateException("Unable to determine database type", ex);
+        }
+
+        try
+        {
+            keyGenerator = KeyGeneratorFactory.makeKeyGenerator(settings.sqlKeyGenerator);
+        }
+        catch (DatabaseException ex)
+        {
+            throw new IllegalStateException("Unable to create key generator of type '" + settings.sqlKeyGenerator + "'", ex);
+        }
     }
 
     @SuppressWarnings("unchecked") // class is checked before casting
@@ -60,13 +120,29 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         }
     }
 
+    public DataSource getDataSource()
+    {
+        return dataSource;
+    }
+
+    @SuppressWarnings("unchecked")
     @Override
     public <T extends OpenDcsDao> Optional<T> getDao(Class<T> dao)
     {
-        @SuppressWarnings("unchecked")
         DaoWrapper<?> wrapper =
             daoMap.computeIfAbsent(dao, daoDesired ->
             {
+                Optional<DaoWrapper<T>> tmp = fromLookup(dao);
+
+                if (tmp.isPresent())
+                {
+                    return tmp.get();
+                }
+                if (dao.isAssignableFrom(CwmsLocationLevelDAO.class))
+                {
+                    return new DaoWrapper<>(() -> new CwmsLocationLevelDAO(this.timeSeriesDb));
+                }
+
                 Optional<Method> daoMakeMethod;
                 if (timeSeriesDb != null)
                 {
@@ -125,14 +201,94 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         return Optional.ofNullable((T)wrapper.create());
     }
 
+    /**
+     * Does lookup for the current implementation first, and then attempts to retrieve a 
+     * generic implementation.
+     * @param <T>
+     * @param dao
+     * @return
+     */
+    private <T extends OpenDcsDao> Optional<DaoWrapper<T>> fromLookup(Class<T> dao)
+    {
+        final String impl = this.settings.editDatabaseType;
+        final var implLookup = Lookups.forPath("dao/"+impl);
+        var instance = implLookup.lookup(dao);
+        if (instance == null)
+        {
+            instance = Lookup.getDefault().lookup(dao);
+        }
+        
+        if (instance != null)
+        {
+            final var tmp = instance;
+            injectDaos(tmp);
+            return Optional.of(new DaoWrapper<>(() -> tmp));
+        }
+        else
+        {
+            log.trace("No DAO instance of '{}' found for implementation '{}' or as default", dao.getName(), impl);
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Wait, but can't recursion happen?
+     * @param dao
+     * @throws OpenDcsDaoConfigurationException if unable to inject dependency for any reason. This is a runtime exception as
+     * it should be rare and caught during testing.
+     */
+    @SuppressWarnings({"unchecked","java:S3011"}) // unchecked -> we check manually, java:S3001 -> Our current setup does not allow for constructor based injection and
+                                                  // we want to allow for private/protected fields.
+    private void injectDaos(OpenDcsDao dao)
+    {
+        var fieldpairs = AnnotationHelpers.getFieldsWithAnnotation(dao.getClass(), InjectDao.class);
+        for (var pair: fieldpairs)
+        {
+            var anno = pair.second;
+            var field = pair.first;
+
+            var fieldClass = field.getType();
+            if (!OpenDcsDao.class.isAssignableFrom(fieldClass))
+            {
+                throw new OpenDcsDaoConfigurationException("Field " + field.getName() +
+                                               " in class" + fieldClass.getName() +
+                                               " is not a type of " + OpenDcsDao.class.getName());
+            }            
+            final var daoClass = (Class<? extends OpenDcsDao>)fieldClass;
+            var instance = fromLookup(daoClass);
+            if (instance.isPresent())
+            {
+                field.setAccessible(true);
+                try
+                {
+                    field.set(dao, instance.get().create());
+                }
+                catch (IllegalArgumentException | IllegalAccessException ex)
+                {
+                    throw new OpenDcsDaoConfigurationException("Unable to assign DAO to this instance", ex);
+                }
+            }
+            else if (!anno.optional())
+            {
+                throw new OpenDcsDaoConfigurationException("An instance Required DAO " + daoClass.getName() + " is not available.");
+            }
+
+
+        }
+
+
+    }
+
     @Override
     public DataTransaction newTransaction() throws OpenDcsDataException
     {
         try
         {
-            return new SimpleTransaction(this.dataSource.getConnection());
+            // This DataTransaction is auto closable and handles the closing of the
+            // Jdbi Handle instance.
+            return new JdbiTransaction(jdbi.open().begin(), new TransactionContextImpl(keyGenerator, settings, dbEngine)); // NOSONAR
         }
-        catch (SQLException ex)
+        catch (JdbiException ex)
         {
             throw new OpenDcsDataException("Unable to get JDBC Connection.", ex);
         }
@@ -178,4 +334,11 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
             return Optional.empty();
         }
     }
+
+    @Override
+    public DatabaseEngine getDatabase()
+    {
+        return this.dbEngine;
+    }
+
 }

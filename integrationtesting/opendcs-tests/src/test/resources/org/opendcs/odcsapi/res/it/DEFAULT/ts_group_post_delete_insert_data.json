@@ -1,0 +1,13 @@
+{
+  "groupId" : null,
+  "groupName" : "TS Computation Group",
+  "groupType" : "Computation",
+  "description" : "Computational TS Group",
+  "tsIds" : [ ],
+  "includeGroups" : [ ],
+  "excludeGroups" : [ ],
+  "intersectGroups" : [ ],
+  "groupAttrs" : [ ],
+  "groupSites" : [ ],
+  "groupDataTypes" : [ ]
+}

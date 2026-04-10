@@ -1,22 +1,38 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package lritdcs;
 
-import java.util.Date;
 import java.util.StringTokenizer;
 import java.io.*;
 import java.net.Socket;
 import java.util.Vector;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.net.*;
-import ilex.util.*;
+import ilex.util.FileUtil;
+import ilex.util.IndexRangeException;
+import ilex.util.QueueLogger;
 import lrgs.common.SearchCriteria;
 import lrgs.common.SearchSyntaxException;
 
-public class UISvrThread
-	extends BasicSvrThread
+public class UISvrThread extends BasicSvrThread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	BufferedReader input;
 	PrintWriter output;
 	SearchCriteria highCriteria;
@@ -48,9 +64,7 @@ public class UISvrThread
 			line = input.readLine(); 
 			if (line == null)
 			{
-				Logger.instance().info(
-					"User Interface Socket from " + getClientName() 
-					+ " has disconnected.");
+				log.info("User Interface Socket from {} has disconnected.", getClientName());
 				disconnect();
 				return;
 			}
@@ -58,9 +72,9 @@ public class UISvrThread
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().info(
-				"IO Error on User Interface Socket from " + getClientName() 
-				+ " -- disconnecting");
+			log.atInfo()
+			   .setCause(ex)
+			   .log("IO Error on User Interface Socket from {} -- disconnecting", getClientName());
 			disconnect();
 			return;
 		}
@@ -97,14 +111,16 @@ public class UISvrThread
 		else if (keyword.equalsIgnoreCase("fileretrans"))
 		{
 			if (!st.hasMoreTokens())
-				Logger.instance().warning(
-					"fileretrans not implemented");
+			{
+				log.warn("fileretrans not implemented");
+			}
 		}
 		else if (keyword.equalsIgnoreCase("getcrit"))
 		{
 			if (!st.hasMoreTokens())
-				Logger.instance().warning(
-					"Error: missing argument to getcrit request");
+			{
+				log.warn("Error: missing argument to getcrit request");
+			}
 			else
 			{
 				String t = st.nextToken();
@@ -144,16 +160,15 @@ public class UISvrThread
 					}
 					catch(SearchSyntaxException ssex)
 					{
-						Logger.instance().warning("LRIT:"
-							+ Constants.EVT_SEARCHCRIT
-							+ "- Invalid Searchcrit '"
-							+ f.getPath() + "': " + ssex);
+						log.atWarn()
+						   .setCause(ssex)
+						   .log("LRIT:{}- Invalid Searchcrit '{}'", Constants.EVT_SEARCHCRIT, f.getPath());
 					}
 					catch(IOException ioex)
 					{
-						Logger.instance().warning("LRIT:"
-							+ Constants.EVT_SEARCHCRIT
-							+ "- " + f.getPath() + "': " + ioex);
+						log.atWarn()
+						   .setCause(ioex)
+						   .log("LRIT:{}- {}", Constants.EVT_SEARCHCRIT, f.getPath());
 					}
 				}
 			}
@@ -163,8 +178,7 @@ public class UISvrThread
 		{
 			if (!st.hasMoreTokens())
 			{
-				Logger.instance().warning(
-					"Error: missing argument to set request");
+				log.warn("Error: missing argument to set request");
 				captureToBlankLine();   // discard sent criteria.
 			}
 			else
@@ -212,8 +226,9 @@ public class UISvrThread
 					}
 					catch(IOException ex)
 					{
-						Logger.instance().warning("Error saving " + pri
-							+ " priority search critiera: " + ex);
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Error saving {} priority search critiera: ", pri);
 					}
 				}
 			}
@@ -248,8 +263,7 @@ public class UISvrThread
 					flushPending();
 				else
 				{
-					Logger.instance().warning("Unrecognized queue '" + t 
-						+ "' -- command ignored.");
+					log.warn("Unrecognized queue '{}' -- command ignored.", t);
 				}
 			}
 		}
@@ -270,8 +284,7 @@ public class UISvrThread
 		}
 		else
 		{
-			Logger.instance().warning("Unrecognized keyword '" + keyword 
-				+ "' -- command ignored.");
+			log.warn("Unrecognized keyword '{}' -- command ignored.", keyword);
 		}
 		output.flush();
 	}
@@ -280,46 +293,43 @@ public class UISvrThread
 	{
 		LritDcsMain ldm = LritDcsMain.instance();
 		int sz = ldm.getFileQueueHigh().size();
-		info("Flushing " + sz + " files from High-priority file queue.");
+		log.info("Flushing {} files from High-priority file queue.", sz);
 		LritDcsFileStats stats = null;
 		while((stats = ldm.getFileQueueHigh().dequeue()) != null)
 		{
 			stats.getFile().delete();
 		}
-		//ldm.getFileQueueHigh().clear();
 	}
 
 	private void flushMedium()
 	{
 		LritDcsMain ldm = LritDcsMain.instance();
 		int sz = ldm.getFileQueueMedium().size();
-		info("Flushing " + sz + " files from medium-priority file queue.");
+		log.info("Flushing {} files from medium-priority file queue.", sz);
 		LritDcsFileStats stats = null;
 		while((stats = ldm.getFileQueueMedium().dequeue()) != null)
 		{
 			stats.getFile().delete();
 		}
-		//ldm.getFileQueueMedium().clear();
 	}
 
 	private void flushLow()
 	{
 		LritDcsMain ldm = LritDcsMain.instance();
 		int sz = ldm.getFileQueueLow().size();
-		info("Flushing " + sz + " files from Low-priority file queue.");
+		log.info("Flushing {} files from Low-priority file queue.", sz);
 		LritDcsFileStats stats = null;
 		while((stats = ldm.getFileQueueLow().dequeue()) != null)
 		{
 			stats.getFile().delete();
 		}
-		//ldm.getFileQueueLow().clear();
 	}
 
 	private void flushAuto()
 	{
 		LritDcsMain ldm = LritDcsMain.instance();
 		int sz = ldm.getFileQueueAutoRetrans().size();
-		info("Flushing " + sz + " files from auto-retransmit file queue.");
+		log.info("Flushing {} files from auto-retransmit file queue.", sz);
 		ldm.getFileQueueAutoRetrans().clear();
 	}
 
@@ -328,20 +338,19 @@ public class UISvrThread
 		LritDcsMain ldm = LritDcsMain.instance();
 		ldm.getManualRetransThread().cancelled = true;
 		int sz = ldm.getFileQueueManualRetrans().size();
-		info("Flushing " + sz + " files from Manual-Retransmit file queue.");
+		log.info("Flushing {} files from Manual-Retransmit file queue.", sz);
 		LritDcsFileStats stats = null;
 		while((stats = ldm.getFileQueueManualRetrans().dequeue()) != null)
 		{
 			stats.getFile().delete();
 		}
-		//ldm.getFileQueueManualRetrans().clear();
 	}
 
 	private void flushPending()
 	{
 		LritDcsMain ldm = LritDcsMain.instance();
 		int sz = ldm.getFileNamesPending().size();
-		info("Flushing " + sz + " files from pending-queue.");
+		log.info("Flushing {} files from pending-queue.", sz);
 		ldm.getFileNamesPending().clear();
 	}
 
@@ -377,8 +386,7 @@ public class UISvrThread
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning(
-				"IOException reading config from UI: " + ex);
+			log.atWarn().setCause(ex).log("IOException reading config from UI.");
 			return;
 		}
 
@@ -394,12 +402,11 @@ public class UISvrThread
 				tw.println((String)v.get(i));
 			tw.close();
 			FileUtil.moveFile(tf, cfgFile);
-			Logger.instance().info("Saved new configuration to "
-				+ cfgFile.getPath());
+			log.info("Saved new configuration to {}", cfgFile.getPath());
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Error saving config: " + ex);
+			log.atWarn().setCause(ex).log("Error saving config.");
 			return;
 		}
 	}
@@ -418,17 +425,15 @@ public class UISvrThread
 			String ps = pri == 'H' ? "High Priority" 
 					  : pri == 'M' ? "Medium Priority"
 					  : pri == 'L' ? "Low Priority" : "Manual Retrans";
-			Logger.instance().info("Saved " + ps + " criteria.");
+			log.info("Saved {} criteria.", ps);
 		}
 		catch(SearchSyntaxException ssex)
 		{
-			Logger.instance().warning("Error parsing " + pri
-				+ " priority search critiera: " + ssex);
+			log.atWarn().setCause(ssex).log("Error parsing {} priority search critiera: ", pri);
 		}
 		catch(IOException ioex)
 		{
-			Logger.instance().warning("Error reading " + pri
-				+ " priority search critiera: " + ioex);
+			log.atWarn().setCause(ioex).log("Error reading {} priority search critiera: ", pri);
 		}
 	}
 
@@ -454,23 +459,17 @@ public class UISvrThread
 	}
 
 	
-	private String captureStringToBlankLine()
-	throws IOException
-{
+	private String captureStringToBlankLine() throws IOException
+	{
 		String line = input.readLine();		
 		if (line == null)
 			throw new IOException("Socket closed by UI Client.");
 		line = line.trim();
 			
-	return line;
-}
-	
-	
-	
-	private void info(String msg)
-	{
-		Logger.instance().info(msg);
+		return line;
 	}
+	
+
 	
 	/**
 	 * 	 

@@ -1,6 +1,19 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.compedit;
-
-import ilex.util.Logger;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -23,6 +36,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.table.AbstractTableModel;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.TimeSeriesDAI;
 import decodes.gui.GuiDialog;
 import decodes.gui.SortingListTable;
@@ -39,12 +55,13 @@ import decodes.tsdb.groupedit.TimeSeriesSelectDialog;
 @SuppressWarnings("serial")
 public class PyParamSetDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger(); 
 	SortingListTable paramTable = null;
 	PyParamTableModel model = new PyParamTableModel();
 	private static TimeSeriesSelectDialog timeSeriesSelectDialog = null;
 	private GuiDialog parent = null;
 	private Properties initProps = null;
-	
+
 	public PyParamSetDialog(GuiDialog parent)
 	{
 		super(parent, "Set Time Series Parameters", true);
@@ -53,17 +70,17 @@ public class PyParamSetDialog extends GuiDialog
 		this.setPreferredSize(new Dimension(600, 250));
 		pack();
 	}
-	
+
 	public void fillControls(DbCompAlgorithm algo, Properties initProps)
 	{
 		model.setParms(algo, this.initProps = initProps);
 	}
-	
+
 	private void guiInit()
 	{
 		JPanel mainPanel = new JPanel(new BorderLayout());
 		getContentPane().add(mainPanel);
-		
+
 		JPanel southButtonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 3, 10));
 		JButton okButton = new JButton("OK");
 		okButton.addActionListener(
@@ -77,12 +94,12 @@ public class PyParamSetDialog extends GuiDialog
 			});
 		southButtonPanel.add(okButton);
 		mainPanel.add(southButtonPanel, BorderLayout.SOUTH);
-		
+
 		JScrollPane sp = new JScrollPane();
 		paramTable = new SortingListTable(model, new int[]{20, 60, 20});
 		sp.getViewport().add(paramTable);
 		mainPanel.add(sp, BorderLayout.CENTER);
-		
+
 		JPanel eastButtonPanel = new JPanel(new GridBagLayout());
 		mainPanel.add(eastButtonPanel, BorderLayout.EAST);
 		JButton selectTsButton = new JButton("Select Time Series");
@@ -155,7 +172,9 @@ public class PyParamSetDialog extends GuiDialog
 			}
 			catch(NumberFormatException ex)
 			{
-				showError("Invalid floating point number '" + vs.trim() + "'.");
+				final String msg = "Invalid floating point number '" + vs.trim() + "'.";
+				log.atError().setCause(ex).log(msg);
+				showError(msg);
 				return;
 			}
 	}
@@ -174,7 +193,7 @@ public class PyParamSetDialog extends GuiDialog
 		if (tsidStr == null)
 			return;
 		tsidStr = tsidStr.trim();
-			
+
 		TimeSeriesDAI tsd = TsdbAppTemplate.theDb.makeTimeSeriesDAO();
 		TimeSeriesIdentifier tsid = null;
 		if (tsd != null && tsidStr.length() > 0)
@@ -185,13 +204,15 @@ public class PyParamSetDialog extends GuiDialog
 			}
 			catch (DbIoException ex)
 			{
-				showError("Cannot access time series database: " + ex);
+				final String msg = "Cannot access time series database";
+				log.atError().setCause(ex).log(msg);
+				showError(msg + ": " + ex);
 				tsid = null;
 			}
 			catch (NoSuchObjectException ex)
 			{
-				int r = JOptionPane.showConfirmDialog(null, 
-					"Time Series '" + tsidStr + "' is not found in your database. Proceed?", 
+				int r = JOptionPane.showConfirmDialog(null,
+					"Time Series '" + tsidStr + "' is not found in your database. Proceed?",
 					"No such time series", JOptionPane.OK_CANCEL_OPTION);
 				if (r == JOptionPane.OK_OPTION)
 				{
@@ -200,10 +221,12 @@ public class PyParamSetDialog extends GuiDialog
 					{
 						tsid.setUniqueString(tsidStr);
 					}
-					catch (BadTimeSeriesException e)
+					catch (BadTimeSeriesException btse)
 					{
-						showError("The string '" + tsidStr + "' is not a valid time series "
-							+ "identifier in this database.");
+						final String msg = "The string '" + tsidStr + "' is not a valid time series "
+							+ "identifier in this database.";
+						log.atError().setCause(btse).log(msg);
+						showError(msg);
 						tsid = null;
 					}
 				}
@@ -216,8 +239,14 @@ public class PyParamSetDialog extends GuiDialog
 		else
 		{
 			tsid = TsdbAppTemplate.theDb.makeEmptyTsId();
-			try { tsid.setUniqueString(tsidStr); }
-			catch (BadTimeSeriesException ex){}
+			try
+			{
+				tsid.setUniqueString(tsidStr);
+			}
+			catch (BadTimeSeriesException ex)
+			{
+				log.atError().setCause(ex).log("Unable to create new time series.");
+			}
 		}
 		model.setTsidAt(row, tsid);
 	}
@@ -233,7 +262,7 @@ public class PyParamSetDialog extends GuiDialog
 			return;
 		}
 		PyParamSpec pps = (PyParamSpec)model.getRowObject(row);
-		
+
 		if (timeSeriesSelectDialog == null)
 		{
 			timeSeriesSelectDialog = new TimeSeriesSelectDialog(
@@ -244,8 +273,7 @@ public class PyParamSetDialog extends GuiDialog
 			timeSeriesSelectDialog.setSelectedTS(pps.tsid);
 		parent.launchDialog(timeSeriesSelectDialog);
 		TimeSeriesIdentifier ts[] = timeSeriesSelectDialog.getSelectedDataDescriptors();
-System.out.println("Selected " + ts.length + " time series:");
-if (ts.length == 1) System.out.println("\t" + ts[0].getUniqueString());
+
 		// Should be either zero or 1 in the return value
 		model.setTsidAt(row, ts.length > 0 ? ts[0] : null);
 	}
@@ -255,7 +283,7 @@ if (ts.length == 1) System.out.println("\t" + ts[0].getUniqueString());
 		model.back2props(initProps);
 		this.setVisible(false);
 	}
-	
+
 	public ArrayList<PyParamSpec> getParamSpecs()
 	{
 		return model.getParamSpecs();
@@ -264,9 +292,9 @@ if (ts.length == 1) System.out.println("\t" + ts[0].getUniqueString());
 }
 
 @SuppressWarnings("serial")
-class PyParamTableModel extends AbstractTableModel
-	implements SortingListTableModel
+class PyParamTableModel extends AbstractTableModel implements SortingListTableModel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	String colNames[] = { "Role", "Time Series ID", "Value" };
 
 	ArrayList<PyParamSpec> params = new ArrayList<PyParamSpec>();
@@ -278,7 +306,7 @@ class PyParamTableModel extends AbstractTableModel
 		numFmt.setMaximumFractionDigits(4);
 		numFmt.setGroupingUsed(false);
 	}
-	
+
 	public ArrayList<PyParamSpec> getParamSpecs()
 	{
 		return params;
@@ -296,12 +324,12 @@ class PyParamTableModel extends AbstractTableModel
 		TimeSeriesDAI tsd = TsdbAppTemplate.theDb.makeTimeSeriesDAO();
 		try
 		{
-			ArrayList<String> badProps = new ArrayList<String>(); 
+			ArrayList<String> badProps = new ArrayList<String>();
 			for(Object key : initProps.keySet())
 			{
 				String propName = (String)key;
 				String propValue = initProps.getProperty(propName);
-	
+
 				int idx = propName.indexOf('.');
 				if (idx > 0 && propName.length() > idx+1)
 				{
@@ -324,11 +352,13 @@ class PyParamTableModel extends AbstractTableModel
 								{
 									pps.tsid = TsdbAppTemplate.theDb.makeEmptyTsId();
 									try { pps.tsid.setUniqueString(propValue); }
-									catch (BadTimeSeriesException e)
+									catch (BadTimeSeriesException ex)
 									{
-										Logger.instance().warning("PyParamTableModle.setParms: The string '" 
-											+ propValue + "' is not a valid time series "
-											+ "identifier in this database.");
+										log.atWarn()
+										   .setCause(ex)
+										   .log("PyParamTableModle.setParms: The string '{}' is  " +
+										   	    "not a valid time series identifier in this database.",
+												propValue);
 										pps.tsid = null;
 										badProps.add(propName);
 									}
@@ -339,16 +369,17 @@ class PyParamTableModel extends AbstractTableModel
 								try { pps.value = Double.parseDouble(propValue.trim()); }
 								catch(NumberFormatException ex)
 								{
-									Logger.instance().warning("PyParamTableModle.setParms: invalid value '"
-										+ propValue + "' -- must be a number.");
+									log.atWarn()
+									   .setCause(ex)
+									   .log("PyParamTableModle.setParms: invalid value '{}' " +
+									   		"-- must be a number.",
+											propValue);
 									badProps.add(propName);
 								}
 							}
 							else
 							{
-								Logger.instance().warning(
-									"PyParamTableModle.setParms: unrecognized prop name '"
-									+ propName + " -- removed.");
+								log.warn("PyParamTableModle.setParms: unrecognized prop name '{}' -- removed.", propName);
 								badProps.add(propName);
 							}
 						}
@@ -356,23 +387,22 @@ class PyParamTableModel extends AbstractTableModel
 			}
 			for(String n : badProps)
 				initProps.remove(n);
-		
+
 		}
 		catch (DbIoException ex)
 		{
-			Logger.instance().warning("PyParamTableModle.setParms: " + ex);
+			log.atWarn().setCause(ex).log("Error in PyParamTableModel.setParms.");
 		}
 		finally
 		{
 			if (tsd != null)
 				tsd.close();
 		}
-		
+
 		sortByColumn(sortColumn);
-System.out.println("after setParms, params.size()=" + params.size());
 		this.fireTableDataChanged();
 	}
-	
+
 	void back2props(Properties props)
 	{
 		for(PyParamSpec pps : params)
@@ -387,7 +417,7 @@ System.out.println("after setParms, params.size()=" + params.size());
 				props.remove(pps.role + ".value");
 		}
 	}
-	
+
 	private void addParm(DbAlgoParm parm)
 	{
 		for(PyParamSpec pps : params)
@@ -409,7 +439,7 @@ System.out.println("after setParms, params.size()=" + params.size());
 	{
 		return colNames.length;
 	}
-	
+
 	@Override
 	public String getColumnName(int c)
 	{
@@ -426,8 +456,8 @@ System.out.println("after setParms, params.size()=" + params.size());
 		return
 			columnIndex == 0 ? pps.role :
 			columnIndex == 1 ? (pps.tsid == null ? "" : pps.tsid.getUniqueString()) :
-			columnIndex == 2 ? (pps.value == null ? "" : numFmt.format(pps.value)) : 
-			""; 
+			columnIndex == 2 ? (pps.value == null ? "" : numFmt.format(pps.value)) :
+			"";
 	}
 
 	@Override
@@ -442,7 +472,7 @@ System.out.println("after setParms, params.size()=" + params.size());
 						return o1.isInput ? -1 : 1;
 					else return o1.role.compareTo(o2.role);
 				}
-				
+
 				@Override
 				public int compare(PyParamSpec o1, PyParamSpec o2)
 				{
@@ -478,13 +508,13 @@ System.out.println("after setParms, params.size()=" + params.size());
 	{
 		return params.get(row);
 	}
-	
+
 	public void setTsidAt(int row, TimeSeriesIdentifier tsid)
 	{
 		params.get(row).tsid = tsid;
 		this.fireTableRowsUpdated(row, row);
 	}
-	
+
 	public void setTsValueAt(int row, Double value)
 	{
 		params.get(row).value = value;

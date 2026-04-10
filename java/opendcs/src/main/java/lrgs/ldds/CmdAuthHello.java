@@ -1,5 +1,17 @@
 /*
-*  $Id: CmdAuthHello.java,v 1.10 2020/03/10 16:30:58 mmaloney Exp $
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package lrgs.ldds;
 
@@ -7,12 +19,15 @@ import java.io.File;
 import java.io.IOException;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Date;
 import java.util.NoSuchElementException;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 
-import ilex.util.Logger;
 import ilex.util.EnvExpander;
 import ilex.util.PasswordFile;
 import ilex.util.PasswordFileEntry;
@@ -31,6 +46,7 @@ This class handles the authenticated hello message on the server side.
 */
 public class CmdAuthHello extends LddsCommand
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The user name */
 	String username;
 
@@ -85,14 +101,11 @@ public class CmdAuthHello extends LddsCommand
 			if (st.hasMoreTokens())
 				ddsVersion = st.nextToken();
 
-			Logger.instance().debug1(DdsServer.module+" Received "
-				+ toString()
-				+ (ddsVersion==null ? "" : (" dds="+ddsVersion)));
+			log.debug("Received {} {}", toString(), (ddsVersion==null ? "" : (" dds="+ddsVersion)));
 		}
-		catch(NoSuchElementException e)
+		catch(NoSuchElementException ex)
 		{
-			Logger.instance().warning(
-				"Invalid arguments in AuthHello message '" + args + "'");
+			log.atWarn().setCause(ex).log("Invalid arguments in AuthHello message '{}'", args);
 		}
 	}
 
@@ -113,16 +126,12 @@ public class CmdAuthHello extends LddsCommand
 	public int execute(LddsThread ldds)
 		throws ArchiveException, IOException
 	{
-		Logger.instance().debug1(DdsServer.module +
-			" AuthHello execute for client " + ldds.getClientName());
+		log.debug("AuthHello execute for client {}", ldds.getClientName());
 
 		if (username == null || timestr == null || authenticator == null)
 		{
-			Logger.instance().warning(DdsServer.module +
-				" Received AuthHello missing required args from client " 
-				+ ldds.getClientName());
-			throw new UnknownUserException(
-				"AuthHello missing required arguments", true);
+			log.warn("Received AuthHello missing required args from client {}", ldds.getClientName());
+			throw new UnknownUserException("AuthHello missing required arguments", true);
 		}
 
 		long mt = 0;
@@ -133,13 +142,13 @@ public class CmdAuthHello extends LddsCommand
 		}
 		catch(ParseException pe)
 		{
-			Logger.instance().warning(DdsServer.module +
-				" Received AuthHello with invalid time format from user "
-				+ username + " at " + ldds.getHostName());
+			log.atWarn()
+			   .setCause(pe)
+			   .log("Received AuthHello with invalid time format from user {} at {}", username, ldds.getHostName());
 			throw new LddsRequestException(toString()
 				+ ", invalid time format '" + timestr 
 				+ "', must be YYDDDHHMMSS", 
-				LrgsErrorCode.DDDSAUTHFAILED, true);
+				LrgsErrorCode.DDDSAUTHFAILED, true, pe);
 		}
 
 		// Verify that time is within 20 minutes.
@@ -148,9 +157,8 @@ public class CmdAuthHello extends LddsCommand
 			diff = -diff;
 		if (diff > MAX_CLOCK_DIFF)
 		{
-			Logger.instance().warning(DdsServer.module +
-				" Received AuthHello with clockdiff = " + (diff/1000L)
-				+ " seconds from client " + username + "@" + ldds.getHostName());
+			log.warn("Received AuthHello with clockdiff = {} seconds from client {}@{}",
+					 (diff/1000L), username, ldds.getHostName());
 			throw new LddsRequestException(toString()
 				+ ", time stamp difference too large ("
 				+ (diff/1000L) + " seconds)",
@@ -161,9 +169,9 @@ public class CmdAuthHello extends LddsCommand
 		try { pfe = getPasswordFileEntry(username); }
 		catch(UnknownUserException ex)
 		{
-			Logger.instance().warning(DdsServer.module +
-				" Received AuthHello with bad username '" + username
-				+ "' from host " + ldds.getHostName());
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Received AuthHello with bad username '{}' from host {}", username, ldds.getHostName());
 			ldds.myStats.setSuccessCode(ldds.myStats.SC_BAD_USERNAME);
 			ldds.statLogger.incrBadUsernames();
 			ex.setHangup(true);
@@ -176,7 +184,6 @@ public class CmdAuthHello extends LddsCommand
 			ldds.myStats.setSuccessCode(DdsConnectionStats.SC_NO_DDS_PERM);
 			String msg = "Rejecting connection from user '" + username 
 				+ "' -- does not have permission to use DDS";
-			Logger.instance().warning(DdsServer.module + " " + msg);
 			throw new AuthFailedException(msg);
 		}
 		
@@ -208,7 +215,7 @@ public class CmdAuthHello extends LddsCommand
 		catch (java.security.NoSuchAlgorithmException nsae)
 		{
 			throw new LddsRequestException(algo + " not supported in JVE",
-				LrgsErrorCode.DDDSINTERNAL, true);
+				LrgsErrorCode.DDDSINTERNAL, true, nsae);
 		}
 
 		if (!constructed.equals(authenticator))
@@ -217,10 +224,8 @@ public class CmdAuthHello extends LddsCommand
 			ldds.myStats.setSuccessCode(DdsConnectionStats.SC_BAD_PASSWORD);
 			ldds.myStats.setUserName(username);
 			ldds.statLogger.incrBadPasswords();
-			String msg = DdsServer.module + 
-				" Rejecting connection from user '" + username 
-				+ "' -- bad password used from client " + ldds.getClientName();
-			Logger.instance().warning(msg);
+			log.warn(" Rejecting connection from user '{}' -- bad password used from client {}",
+					 username, ldds.getClientName());
 			
 			// If this is the 3rd consecutive bad password, suspend account for 30 sec.
 			if (LrgsConfig.instance().getPasswordChecker() != null)
@@ -233,9 +238,8 @@ public class CmdAuthHello extends LddsCommand
 					{
 						if (lrgsDb.getNumConsecutiveBadPasswords(username) == 4)
 						{
-							Logger.instance().warning(
-								"User '" + username + "' -- 5 consecutive bad passwords. "
-								+ "Account will be suspended for 5 minutes.");
+							log.warn("User '{}' -- 5 consecutive bad passwords. " +
+									 "Account will be suspended for 5 minutes.", username);
 							user.suspendUntil(new Date(System.currentTimeMillis() + 5*60000L));
 						}
 					}
@@ -253,18 +257,14 @@ public class CmdAuthHello extends LddsCommand
 				ldds.myStats.setSuccessCode(DdsConnectionStats.SC_BAD_PASSWORD);
 				ldds.myStats.setUserName(username);
 				ldds.statLogger.incrBadPasswords();
-				String msg = DdsServer.module + 
-					" Rejecting connection from user '" + username 
-					+ "' -- bad password used from client " + ldds.getClientName();
-				Logger.instance().warning(msg);
+				log.warn("Rejecting connection from user '{}' -- bad password used from client {}",
+						 username, ldds.getClientName());
 				throw new LddsRequestException("Server requires SHA-256.", LrgsErrorCode.DDDSAUTHFAILED, true);
 			}
 			else // Allow them to try again with SHA-256
 			{
-				String msg = DdsServer.module + 
-					" Received SHA auth from user '" + username 
-					+ "' -- but this server requires SHA-256. " + ldds.getClientName();
-				Logger.instance().debug1(msg);
+				log.warn("Received SHA auth from user '{}' -- but this server requires SHA-256. {}",
+						 username, ldds.getClientName());
 				ldds.secondAuthAttempt = true;
 				throw new LddsRequestException("Server requires SHA-256.", LrgsErrorCode.DSTRONGREQUIRED, false);
 			}
@@ -286,7 +286,7 @@ public class CmdAuthHello extends LddsCommand
 			catch(NumberFormatException ex)
 			{
 				throw new LddsRequestException("Protocol Error",
-					LrgsErrorCode.DDDSAUTHFAILED, true);
+					LrgsErrorCode.DDDSAUTHFAILED, true, ex);
 			}
 		}
 		
@@ -307,6 +307,7 @@ public class CmdAuthHello extends LddsCommand
 		catch (java.security.NoSuchAlgorithmException nsae)
 		{
 			// Can't happen if we got this far!
+			log.atError().setCause(nsae).log("Error that should not happen has.");
 		}
 		
 		String x = pfe.getProperty("disableBackLinkSearch");
@@ -315,7 +316,6 @@ public class CmdAuthHello extends LddsCommand
 		if (x != null)
 			user.setDisableBackLinkSearch(TextUtil.str2boolean(x));
 		x = pfe.getProperty("goodOnly");
-//Logger.instance().info("User '" + ldds.getClientName() + "' goodOnly=" + x);
 		if (x != null)
 			user.setGoodOnly(TextUtil.str2boolean(x));
 
@@ -338,11 +338,13 @@ public class CmdAuthHello extends LddsCommand
 		ldds.send(msg);
 
 		if (user.isAdmin)
-			Logger.instance().info(DdsServer.module + " ADMIN authenticated connection from "
-				+ ldds.getClientName() + " (algo=" + algo + ")");
+		{
+			log.info("ADMIN authenticated connection from {} (algo={})", ldds.getClientName(), algo);
+		}
 		else
-			Logger.instance().debug1(DdsServer.module + " " + ldds.getClientName() 
-				+ " - Successfully authenticated (algo=" + algo + ")!");
+		{
+			log.debug("{} - Successfully authenticated (algo={})!", ldds.getClientName(), algo);
+		}
 		return 0;
 	}
 
@@ -385,8 +387,7 @@ public class CmdAuthHello extends LddsCommand
 			{
 				pf = new PasswordFile(new File(pfname));
 				pf.read();
-				Logger.instance().debug1(DdsServer.module 
-					+ " Read main password file at " + pfname);
+				log.debug("Read main password file at {}", pfname);
 				PasswordFileEntry pfe = pf.getEntryByName(user);
 				if (pfe != null)
 				{
@@ -397,14 +398,11 @@ public class CmdAuthHello extends LddsCommand
 					}
 					return pfe;
 				}
-				Logger.instance().debug1(DdsServer.module
-					+ " No such user '" + user + "' in file '" + pfname
-					+ "'");
+				log.debug(" No such user '{}' in file '{}'", user, pfname);
 			}
 			catch(IOException ioe)
 			{
-				Logger.instance().debug1("Cannot read password file '" 
-					+ pfname + "'");
+				log.atError().setCause(ioe).log("Cannot read password file '{}'", pfname);
 			}
 		}
 		throw new UnknownUserException("No such user '" + user + "'");
@@ -449,7 +447,7 @@ public class CmdAuthHello extends LddsCommand
 			String msg = DdsServer.module + " User '" + username +
 				"' Attempt to connect from disallowed IP Address ("
 				+ sockIpAddr + ")";
-			Logger.instance().warning(msg);
+			log.warn(msg);
 			throw new AuthFailedException(msg);
 		}
 	}
@@ -463,9 +461,10 @@ public class CmdAuthHello extends LddsCommand
 			try { ldds.user.dcpLimit = Integer.parseInt(dcpLimitStr); }
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().warning("User '" + ldds.getUserName()
-					+ "' has invalid maxdcps property in the password file."
-					+ " -- no limit will be imposed.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("User '{}' has invalid maxdcps property in the password file. -- no limit will be imposed.",
+				   		ldds.getUserName());
 				ldds.user.dcpLimit = -1;
 			}
 		}

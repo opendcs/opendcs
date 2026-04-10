@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.compedit.algotab;
 
 import javax.swing.JDialog;
@@ -6,7 +21,6 @@ import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesDb;
-import ilex.util.Pair;
 import opendcs.dai.AlgorithmDAI;
 
 import javax.swing.JButton;
@@ -17,19 +31,16 @@ import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 
-import org.python.icu.impl.Row;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SpringLayout;
 import javax.swing.SwingWorker;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableRowSorter;
 
-import java.awt.FlowLayout;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
@@ -38,19 +49,14 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.ExecutionException;
 
-import javax.swing.BoxLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 
-import javax.swing.Box;
-import javax.swing.JSplitPane;
 import javax.swing.ScrollPaneConstants;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 
 public class LoadNewDialog extends JDialog
 {
-    private static final Logger log = LoggerFactory.getLogger(LoadNewDialog.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     final TimeSeriesDb tsDb;
     final ExecClassTableModel execClasses;
     private JTable table;

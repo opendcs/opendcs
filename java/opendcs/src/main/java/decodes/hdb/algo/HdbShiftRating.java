@@ -1,92 +1,77 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
-// this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
-// this new import was added by M. Bogner March 2013 for the 5.3 CP upgrade project
-// where surrogate keys in the CP were changed to a DbKey object
 import decodes.sql.DbKey;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
-//AW:IMPORTS
 import decodes.tsdb.RatingStatus;
-import decodes.util.PropertySpec;
 import decodes.hdb.HDBRatingTable;
-//AW:IMPORTS_END
 
-//AW:JAVADOC
-/**
-Implements the Shift and Rating Table Lookups from the database.
-Independent value is called "indep".
-Dependent values are "shift" and "dep".
-Shift may or may not be stored in the database
+@Algorithm(description = "Implements the Shift and Rating Table Lookups from the database. \n" +
+"Independent value is called \"indep\". \n" +
+"Dependent values are \"shift\" and \"dep\". \n" +
+"Shift may or may not be stored in the database \n\n" +
 
-By default, uses a shift input in the "singleShift" property.
-If variableShift is defined as true, then uses a rating algorithm
-from the database to find the shift.
+"By default, uses a shift input in the \"singleShift\" property. \n" +
+"If variableShift is defined as true, then uses a rating algorithm \n" +
+"from the database to find the shift. \n\n" +
 
-Default value for shiftTableType is "Stage Shift" which
-will linearly interpolate shifts from a single shift table.
-Other options are:
-Time Interpolated Shift: lookup shifts separated in time, do
-   linear interpolations in time.
-Time Interpolated Variable Shift: linear interpolate shifts from stage,
-   do linear interpolations in time from the resulting shifts
+"Default value for shiftTableType is \"Stage Shift\" which \n" +
+"will linearly interpolate shifts from a single shift table. \n" +
+"Other options are: \n" +
+"Time Interpolated Shift: lookup shifts separated in time, do \n" +
+"linear interpolations in time. \n" +
+"Time Interpolated Variable Shift: linear interpolate shifts from stage, \n" +
+"do linear interpolations in time from the resulting shifts \n\n" +
    
-The shift, if any, is added to the indep value, and then the dep value is found via 
-a "Stage Flow" rating table type.
- */
-//AW:JAVADOC_END
-public class HdbShiftRating
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+"The shift, if any, is added to the indep value, and then the dep value is found via \n" +
+"a \"Stage Flow\" rating table type.")
+public class HdbShiftRating	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double indep;	//AW:TYPECODE=i
-	String _inputNames[] = { "indep" };
-//AW:INPUTS_END
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	@Input
+	public double indep;
 
-//AW:LOCALVARS
 	HDBRatingTable ShiftTable = null;
 	HDBRatingTable RatingTable = null;
 	private boolean firstCall = true;
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+	@Output
 	public NamedVariable dep = new NamedVariable("dep", 0);
+	@Output
 	public NamedVariable shift = new NamedVariable("shift", 0);
-	String _outputNames[] = { "dep", "shift" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
-	public double singleShift = 0;
-	public boolean variableShift = false;
-	public String shiftTableType = "Stage Shift";
-	public String lookupTableType = "Stage Flow";
-	String _propertyNames[] = { "variableShift", "singleShift", "shiftTableType", "lookupTableType" };
-//AW:PROPERTIES_END
 	
-	private PropertySpec shiftRatingPropertySpecs[] = 
-	{
-		new PropertySpec("singleShift", PropertySpec.NUMBER,
-			"(default=0) If variableShift==false, then this number provides a constant shift for all lookups."),
-		new PropertySpec("variableShift", PropertySpec.BOOLEAN,
-			"(default=false) Set to true to use a separate shift table rather than the constant."),
-		new PropertySpec("shiftTableType", PropertySpec.STRING,
-			"(default=\"StageShift\") This is used as the HDB_TABLE type for the variable shifts."),
-		new PropertySpec("lookupTableType", PropertySpec.STRING,
-			"(default=\"Stage Flow\") This is used as the HDB_TABLE type for the actual rating.")
-	};
-	@Override
-	protected PropertySpec[] getAlgoPropertySpecs()
-	{
-		return shiftRatingPropertySpecs;
-	}
+	@PropertySpec(description = "(default=0) If variableShift==false, then this number provides a constant shift for all lookups.", value = "0")
+	public double singleShift = 0;
+	@PropertySpec(description = "(default=false) Set to true to use a separate shift table rather than the constant.", value = "false")
+	public boolean variableShift = false;
+	@PropertySpec(description = "(default=\"StageShift\") This is used as the HDB_TABLE type for the variable shifts.", value = "Stage Shift")
+	public String shiftTableType = "Stage Shift";
+	@PropertySpec(description = "(default=\"Stage Flow\") This is used as the HDB_TABLE type for the actual rating.", value = "Stage Flow")
+	public String lookupTableType = "Stage Flow";
 
 
 	// Allow javac to generate a no-args constructor.
@@ -94,24 +79,20 @@ public class HdbShiftRating
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		if (firstCall)
 		{
 			// Find the name for the input parameter.
@@ -120,7 +101,7 @@ public class HdbShiftRating
 			// this line was moded by M. Bogner March 2013 for the 5.3 CP upgrade project
 			// because the surrogate keys in the CP were changed to an object
 			DbKey indep_sdi = getSDI("indep");
-			debug3("Constructing Shift and Rating tables for sdi " + indep_sdi);
+			log.trace("Constructing Shift and Rating tables for sdi {}", indep_sdi);
 			//default non extrapolation of lookups is fine here.
 			ShiftTable = new HDBRatingTable(tsdb,shiftTableType,indep_sdi);
 			RatingTable = new HDBRatingTable(tsdb,lookupTableType,indep_sdi);
@@ -134,7 +115,6 @@ public class HdbShiftRating
 		// at every group of time slices
 		ShiftTable.resetRatingId();
 		RatingTable.resetRatingId();
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -147,10 +127,10 @@ public class HdbShiftRating
 	 * @throws DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		if (isMissing(indep)) {
 			deleteAllOutputs();
 		}
@@ -160,23 +140,20 @@ public class HdbShiftRating
 				RatingStatus shiftRS = ShiftTable.doRating(indep,_timeSliceBaseTime);
 				indep = indep + shiftRS.dep;
 				
-				debug3("Lookup Shift result: " +
-						shiftRS.dep + " resulting indep: "+ indep);
+				log.trace("Lookup Shift result: {} resulting indep: {}", shiftRS.dep, indep);
 				setOutput(shift, shiftRS.dep);
 			} else
 			{
 				//user input shift, default 0
 				indep = indep + singleShift;
-				debug3("Constant shift result:" +
-						singleShift + " resulting indep: "+ indep);
+				log.trace("Constant shift result: {} resulting indep: {}", singleShift, indep);
 				setOutput(shift, singleShift);
 			}
 			RatingStatus rs = RatingTable.doRating(indep,_timeSliceBaseTime);
 
-			debug3("Flow result:" +	rs.dep);
+			log.trace("Flow result: {}", rs.dep);
 			setOutput(dep, rs.dep);
 		}
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -184,34 +161,7 @@ public class HdbShiftRating
 	 */
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }

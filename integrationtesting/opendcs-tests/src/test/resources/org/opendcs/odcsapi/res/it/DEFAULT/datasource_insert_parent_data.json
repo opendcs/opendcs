@@ -1,0 +1,10 @@
+{
+  "dataSourceId" : null,
+  "name" : "Sensor Data Value",
+  "type" : "Sensor",
+  "usedBy" : 0,
+  "props" : {
+    "country" : "USA"
+  },
+  "groupMembers" : [ ]
+}

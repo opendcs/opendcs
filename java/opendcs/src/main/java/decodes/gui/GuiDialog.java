@@ -1,34 +1,17 @@
 /*
-*  $Id$
-*
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
-*
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
-*
-*  $Log$
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.3  2013/01/30 20:40:54  mmaloney
-*  added showConfirm method.
-*
-*  Revision 1.2  2008/06/26 15:01:20  cvs
-*  Updates for HDB, and misc other improvements.
-*
-*  Revision 1.1  2008/04/04 18:21:03  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.2  2007/02/16 22:25:56  mmaloney
-*  Additions to support LRGS Config Dialog
-*
-*  Revision 1.1  2006/02/17 19:49:27  mmaloney
-*  Created.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.gui;
 
@@ -41,11 +24,13 @@ import java.io.FileOutputStream;
 import java.text.ParseException;
 import java.util.Properties;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import javax.swing.*;
 
 import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import decodes.dbeditor.DbEditorFrame;
 import decodes.platwiz.PlatformWizard;
 import decodes.util.DecodesSettings;
@@ -54,6 +39,7 @@ import decodes.util.ResourceFactory;
 @SuppressWarnings("serial")
 public class GuiDialog extends JDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private File changeTrackFile = null;
 	private boolean trackingChanges = false;
 	private Properties locSizeProps = null;
@@ -80,7 +66,6 @@ public class GuiDialog extends JDialog
 	 */
 	public void showError(String msg)
 	{
-		Logger.instance().log(Logger.E_FAILURE, msg);
 		JOptionPane.showMessageDialog(this,
 			AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
 	}
@@ -156,9 +141,8 @@ public class GuiDialog extends JDialog
 		if (!tmpDir.isDirectory())
 			if (!tmpDir.mkdirs())
 			{
-				Logger.instance().warning(
-					"Cannot track GUI size & location changes because '"
-					+ tmpDir.getPath() + "' does not exist and cannot be created.");
+				log.warn("Cannot track GUI size & location changes because '{}' " +
+						 "does not exist and cannot be created.", tmpDir.getPath());
 			}
 		changeTrackFile = new File(
 			EnvExpander.expand("$DCSTOOL_USERDIR/" + frameTitle));
@@ -169,12 +153,10 @@ public class GuiDialog extends JDialog
 		Dimension curSize = getSize();
 		if (changeTrackFile.canRead())
 		{
-			FileInputStream fis;
-			try
+			
+			try(FileInputStream fis =new FileInputStream(changeTrackFile))
 			{
-				fis = new FileInputStream(changeTrackFile);
 				locSizeProps.load(fis);
-				fis.close();
 				String s = locSizeProps.getProperty("x");
 				int x = s != null ? Integer.parseInt(s) : curLoc.x;
 				s = locSizeProps.getProperty("y");
@@ -185,10 +167,9 @@ public class GuiDialog extends JDialog
 				int w = s != null ? Integer.parseInt(s) : curSize.width;
 				setBounds(x,y,w,h);
 			}
-			catch (Exception e1)
+			catch (Exception ex)
 			{
-				Logger.instance().warning("Cannot read size & loc file '"
-					+ changeTrackFile.getPath() + "': " + e1);
+				log.atWarn().setCause(ex).log("Cannot read size & loc file '{}'", changeTrackFile.getPath());
 			}
 		}
 		else
@@ -237,8 +218,7 @@ public class GuiDialog extends JDialog
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Cannot write to '" + changeTrackFile.getPath()
-				+ "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot write to '{}'", changeTrackFile.getPath());
 			changeTrackFile = null;
 		}
 	}

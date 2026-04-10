@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.platwiz;
 
 import ilex.util.LoadResourceBundle;
@@ -22,14 +37,16 @@ import decodes.gui.TopFrame;
 import decodes.util.DecodesException;
 import decodes.xml.TopLevelParser;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 /**
 This class implements the final 'save' panel in the platform wizard.
 */
-public class SavePanel extends JPanel
-	implements WizardPanel
+public class SavePanel extends JPanel implements WizardPanel
 {
-	private static ResourceBundle genericLabels = 
-		PlatformWizard.getGenericLabels();
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static ResourceBundle platwizLabels = 
 		PlatformWizard.getPlatwizLabels();
 	JPanel jPanel1 = new JPanel();
@@ -56,8 +73,9 @@ public class SavePanel extends JPanel
 			jFileChooser.setCurrentDirectory(
 				new File(System.getProperty("user.dir")));
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch(Exception ex) 
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -73,15 +91,12 @@ public class SavePanel extends JPanel
 		jPanel1.setLayout(borderLayout1);
 		jPanel2.setBorder(titledBorder2);
 		jPanel2.setLayout(gridBagLayout1);
-//		writeToDbButton.setPreferredSize(new Dimension(250, 23));
 		writeToDbButton.setText(platwizLabels.getString("SavePanel.writeToDB"));
 		writeToDbButton.addActionListener(new SavePanel_writeToDbButton_actionAdapter(this));
-//		writeToXmlFileButton.setPreferredSize(new Dimension(250, 23));
 		writeToXmlFileButton.setText(platwizLabels.getString("SavePanel.writeToXML"));
 		writeToXmlFileButton.addActionListener(new SavePanel_writeToXmlFileButton_actionAdapter(this));
 		summaryArea.setEditable(false);
 		summaryArea.setText("");
-//		validateButton.setPreferredSize(new Dimension(250, 23));
 		validateButton.setText(
 				platwizLabels.getString("SavePanel.validatePlatform"));
     validateButton.addActionListener(new SavePanel_validateButton_actionAdapter(this));
@@ -124,8 +139,9 @@ public class SavePanel extends JPanel
 		}
 		catch(DecodesException ex)
 		{
-			TopFrame.instance().showError(
-			platwizLabels.getString("SavePanel.couldNotWriteDB") + ex);
+			String msg = platwizLabels.getString("SavePanel.couldNotWriteDB");
+			log.atError().setCause(ex).log(msg);
+			TopFrame.instance().showError(msg + ex);
 		}
 	}
 
@@ -155,11 +171,9 @@ public class SavePanel extends JPanel
 		}
 		catch(Exception ex)
 		{
-			TopFrame.instance().showError(
-					LoadResourceBundle.sprintf(
-					platwizLabels.getString
-					("SavePanel.cannotWriteErr"),
-					output.getPath()) + ex);
+			String msg = platwizLabels.getString("SavePanel.cannotWriteErr");
+			log.atError().setCause(ex).log(LoadResourceBundle.sprintf(msg, output.getPath()));
+			TopFrame.instance().showError(LoadResourceBundle.sprintf(msg, output.getPath()) + ex);
 		}
 		finally
 		{

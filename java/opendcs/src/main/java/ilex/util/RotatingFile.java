@@ -5,15 +5,19 @@ package ilex.util;
 
 import java.io.*;
 import java.nio.channels.FileLock;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+
 import java.nio.channels.FileChannel;
 
 /**
-* This class used for log file & summary files. It allows a file to grow to a fixed
+* This class used for log file and summary files. It allows a file to grow to a fixed
 * size. Upon reaching the limit, the file is renamed with a ".old" extension and a
 * new file is created. File locking is used to allow output from multiple JVMs.
 */
 public class RotatingFile
 {
+	private static final org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
 	private long sizeLimit;
 	private File file;
 	private FileOutputStream stream = null;
@@ -64,9 +68,7 @@ public class RotatingFile
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("IO Error writing to '" + file.getPath()
-				+ "': " + ex);
-			throw ex;
+			throw new IOException("IO error writing to '" + file.getPath() + "'", ex);
 		}
 		finally
 		{

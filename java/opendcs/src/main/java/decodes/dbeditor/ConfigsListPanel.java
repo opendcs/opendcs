@@ -1,16 +1,27 @@
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.3  2008/11/20 18:49:21  mjmaloney
-*  merge from usgs mods
-*
-*/
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy
+ * of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
 package decodes.dbeditor;
 
 import java.awt.*;
 import javax.swing.*;
 import java.util.ResourceBundle;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.util.TextUtil;
 import ilex.util.LoadResourceBundle;
@@ -26,10 +37,9 @@ import decodes.util.DecodesSettings;
 Panel containing a sortable list of Platform Configurations.
 */
 @SuppressWarnings("serial")
-public class ConfigsListPanel extends JPanel
-	implements ListOpsController
+public class ConfigsListPanel extends JPanel implements ListOpsController
 {
-	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
+	private static final org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
     BorderLayout borderLayout1 = new BorderLayout();
@@ -41,14 +51,15 @@ public class ConfigsListPanel extends JPanel
 	/** Constructor. */
     public ConfigsListPanel()
 	{
-        try {
-			configSelectPanel = new ConfigSelectPanel();
+        try 
+		{
+			configSelectPanel = new ConfigSelectPanel(this::openPressed);
 		    listOpsPanel = new ListOpsPanel(this);
             jbInit();
         }
         catch(Exception ex) 
 		{
-            ex.printStackTrace();
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -62,7 +73,7 @@ public class ConfigsListPanel extends JPanel
 	}
 
 	/** Initializes GUI components. */
-    private void jbInit() throws Exception {
+    private void jbInit()  {
         this.setLayout(borderLayout1);
         jLabel1.setHorizontalAlignment(SwingConstants.CENTER);
         jLabel1.setText(dbeditLabels.getString("ConfigsListPanel.title"));
@@ -132,11 +143,13 @@ public class ConfigsListPanel extends JPanel
 				String modelName = em.getName();
 				if ( modelName != null ) {
 					modelName = modelName.trim();
-					try {
-						ob = 
-						Database.getDb().getDbIo().newPlatformConfig(ob, modelName, originator);
-					} catch(DatabaseException ex)
+					try 
 					{
+						ob = Database.getDb().getDbIo().newPlatformConfig(ob, modelName, originator);
+					} 
+					catch(DatabaseException ex)
+					{
+						log.atTrace().setCause(ex).log("Unable to create new PlatformConfig with DatabaseIO.");
 						ob = new PlatformConfig("Unknown");
 					}
 					ob.equipmentModel = em;
@@ -167,8 +180,9 @@ public class ConfigsListPanel extends JPanel
 		try { pc.read(); }
 		catch(DatabaseException ex)
 		{
-			DbEditorFrame.instance().showError(
-				dbeditLabels.getString("ConfigsListPanel.cannotRead") + ex);
+			String msg = LoadResourceBundle.sprintf(dbeditLabels.getString("ConfigsListPanel.cannotRead"), pc.configName);
+			log.atError().setCause(ex).log(msg);	
+			DbEditorFrame.instance().showError(msg + ex);
 		}
 
 		String newName = null;
@@ -211,6 +225,7 @@ public class ConfigsListPanel extends JPanel
 						newName = ob.getName();
 					} catch(DatabaseException ex)
 					{
+						log.atTrace().setCause(ex).log("Unable to create new PlatformConfig using DatabaseIO.");
 						newName = "Unknown";
 						ob.configName = newName;
 					}
@@ -290,11 +305,11 @@ public class ConfigsListPanel extends JPanel
 			catch(DatabaseException ex)
 			{
 				if (pc.lastReadTime.getTime() != 0L)
-					parent.showError(
-						LoadResourceBundle.sprintf(
-							dbeditLabels.getString("ConfigsListPanel.readError"),
-							pc.configName)
-						+ ex);
+				{
+					String msg = LoadResourceBundle.sprintf(dbeditLabels.getString("ConfigsListPanel.readError"),pc.configName);
+					log.atError().setCause(ex).log(msg);
+					parent.showError(msg + ex);
+				}
 			}
 			ConfigEditPanel newTab = new ConfigEditPanel(pc);
 			newTab.setParent(parent);

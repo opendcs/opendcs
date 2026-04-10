@@ -1,45 +1,31 @@
 buildscript {
     repositories {
         gradlePluginPortal()
+        mavenCentral()
     }
     dependencies {
-        if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
-            classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:4.4.1.3373"
-        }
+        classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:7.2.3.7755"
     }
 }
 
 plugins {
-    id "com.palantir.git-version" version "3.1.0"
+    id 'eclipse'
+    id 'jacoco'
 }
 
-if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
-    apply plugin: "org.sonarqube"
-}
 
+apply plugin: "org.sonarqube"
+
+
+repositories {
+    mavenCentral()
+}
 
 import org.apache.tools.ant.taskdefs.condition.Os
 
-def gitDetails = versionDetails()
-
 ext.osWin = Os.isFamily(Os.FAMILY_WINDOWS)
-ext.gitCommit = gitDetails.gitHashFull ?: "Not build from git";
-
-def static versionLabel(gitInfo) {
-    def branch = gitInfo.branchName // all branches are snapshots, only tags get released
-    def tag = gitInfo.lastTag
-    // tag is returned as is. Branch may need cleanup
-    return branch == null ? tag : "main.99." + branch.replace("/", "-") + "-SNAPSHOT"
-}
-
-allprojects {
-    group = 'org.opendcs'
-    version = project.findProperty("versionOverride") ?: versionLabel(versionDetails())
-}
 
 
-
-if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
     sonar {
         properties {
             property "sonar.projectKey", "opendcs_opendcs"
@@ -47,74 +33,80 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
             property "sonar.host.url", "https://sonarcloud.io"
             property "sonar.pullrequest.provider", "GitHub"
             property "sonar.pullrequest.github.repository", "opendcs/opendcs"
-            property "sonar.coverage.jacoco.xmlReportPaths", "./**/jacoco*.xml"
-            property "sonar.projectVersion", sonarVersion()
-            // TODO: just remove the C files that are no longer used. However, they are still
-            // called in some of the java
-            property "sonar.c.file.suffixes", "-"
-            property "sonar.cpp.file.suffixes", "-"
-            property "sonar.objc.file.suffixes", "-"
+
+
+        property "sonar.projectVersion", sonarVersion()
+        // TODO: just remove the C files that are no longer used. However, they are still
+        // called in some of the java
+        property "sonar.c.file.suffixes", "-"
+        property "sonar.cpp.file.suffixes", "-"
+        property "sonar.objc.file.suffixes", "-"
+        //property "sonar.coverage.jacoco.aggregateXmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml"
+        property "sonar.coverage.jacoco.xmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml,$rootDir/**/jacoco/**/*.xml"
+    }
+}
+
+
+tasks.register("codeCoverageReport", JacocoReport) { jr ->
+    subprojects { subproject ->
+        subproject.plugins.withType(JacocoPlugin).each {
+            subproject.tasks.matching({t -> t.extensions.findByType(JacocoTaskExtension)}).each { testTask ->
+                if(testTask.extensions.getByType(JacocoTaskExtension).isEnabled()) {
+                    System.out.println("Setting execution data for ${testTask}")
+                    jr.sourceSets subproject.sourceSets.main
+                    jr.sourceDirectories.setFrom(subproject.sourceSets.main.allSource.srcDirs)
+                    jr.classDirectories.setFrom(subproject.sourceSets.main.output)
+                    jr.executionData(testTask)
+                }
+            }
+        }
+    }
+
+    // enable the different report types (html, xml, csv)
+    reports {
+        xml.required = true
+        html.required = true
+    }
+    def excludes = [
+                "**/easy_install/**",
+                "**/python_packages",
+                "**/certifi/**",
+                "**/chardet/**",
+                "**/urllib3/**",
+                "**/requests/**",
+                "**/chardet/**",
+                "**/urllib3/**",
+                "**/idna/**",
+                "**/pkg_resources/**"
+            ]
+
+    jr.sourceDirectories.setFrom(fileTree(dir: "${rootDir}", include: "**/src/**/main/java/**", exclude: "build/**/codeCoverageReport.xml"))
+    jr.classDirectories.setFrom(fileTree(dir: "${rootDir}", include: "**/build/**/classes/**", excludes: excludes))
+
+}
+
+subprojects {
+    if (name != "opendcs-web-ui-react") {
+        sonar {
+            properties {
+                property "sonar.coverage.jacoco.xmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml,$rootDir/**/jacoco/**/*.xml"
+            }
         }
     }
 }
 
-ext.sonarVersion = {
-    def stdout = new ByteArrayOutputStream()
-    exec {
-        commandLine 'git', 'describe', '--tags', '--abbrev=0', "--always"
-        standardOutput = stdout
-    }
-    return stdout.toString().trim() + "+"
-}
 
+import javax.inject.Inject
 
-
-if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
-    sonar {
-        properties {
-            property "sonar.projectKey", "opendcs_opendcs"
-            property "sonar.organization", "opendcs"
-            property "sonar.host.url", "https://sonarcloud.io"
-            property "sonar.pullrequest.provider", "GitHub"
-            property "sonar.pullrequest.github.repository", "opendcs/opendcs"
-            property "sonar.projectVersion", sonarVersion()
-        }
-    }
+interface InjectedExecOps {
+    @Inject //@javax.inject.Inject
+    ExecOperations getExecOps()
 }
 
 ext.sonarVersion = {
     def stdout = new ByteArrayOutputStream()
-    exec {
-        commandLine 'git', 'describe', '--tags', '--abbrev=0', "--always"
-        standardOutput = stdout
-    }
-    return stdout.toString().trim() + "+"
-}
-
-
-
-if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
-    sonar {
-        properties {
-            property "sonar.projectKey", "opendcs_opendcs"
-            property "sonar.organization", "opendcs"
-            property "sonar.host.url", "https://sonarcloud.io"
-            property "sonar.pullrequest.provider", "GitHub"
-            property "sonar.pullrequest.github.repository", "opendcs/rest_api"
-            property "sonar.projectVersion", sonarVersion()
-            // TODO: just remove the C files that are no longer used. However, they are still
-            // called in some of the java
-            property "sonar.c.file.suffixes", "-"
-            property "sonar.cpp.file.suffixes", "-"
-            property "sonar.objc.file.suffixes", "-"
-    
-        }
-    }
-}
-
-ext.sonarVersion = {
-    def stdout = new ByteArrayOutputStream()
-    exec {
+    def execOps = project.objects.newInstance(InjectedExecOps)
+    execOps.execOps.exec {
         commandLine 'git', 'describe', '--tags', '--abbrev=0', "--always"
         standardOutput = stdout
     }

@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.multistat;
 
 import ilex.gui.EventsPanel;
@@ -98,31 +113,26 @@ public class MultiStatFrame extends TopFrame
 	public MultiStatFrame()
 	{
 		enableEvents(AWTEvent.WINDOW_EVENT_MASK);
-		try
+
+		alarmList = new AlarmList();
+		alarmHistDlg = null;
+		alarmSpinner = new JSpinner(alarmList);
+		JSpinner.DefaultEditor df = (JSpinner.DefaultEditor) alarmSpinner.getEditor();
+		alarmSpinner.addChangeListener(new ChangeListener()
 		{
-			alarmList = new AlarmList();
-			alarmHistDlg = null;
-			alarmSpinner = new JSpinner(alarmList);
-			JSpinner.DefaultEditor df = (JSpinner.DefaultEditor) alarmSpinner.getEditor();
-			alarmSpinner.addChangeListener(new ChangeListener()
+			public void stateChanged(ChangeEvent e)
 			{
-				public void stateChanged(ChangeEvent e)
-				{
-					alarmSpinnerChanged();
-				}
-			});
-			df.getTextField().setBackground(Color.black);
-			df.getTextField().setEditable(false);
-			df.getTextField().setFont(new java.awt.Font("Dialog", 0, 18));
-			jbInit();
-			alarmInfoButton.setEnabled(false);
-			cancelButton.setEnabled(false);
-			ackUserField.setText(MultiStatConfig.instance().operator);
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
+				alarmSpinnerChanged();
+			}
+		});
+		df.getTextField().setBackground(Color.black);
+		df.getTextField().setEditable(false);
+		df.getTextField().setFont(new java.awt.Font("Dialog", 0, 18));
+		jbInit();
+		alarmInfoButton.setEnabled(false);
+		cancelButton.setEnabled(false);
+		ackUserField.setText(MultiStatConfig.instance().operator);
+
 		alarmSpinner.setModel(alarmList);
 		initSummaries();
 		muteCheck.setSelected(cfg.mute);
@@ -147,7 +157,7 @@ public class MultiStatFrame extends TopFrame
 		lrgs4Thread = new MSLrgsConThread(4, lrgs4Summary, tabbedPane, lrgs4Detail, this);
 		lrgs4Thread.start();
 	}
-	
+
 	public void restart()
 	{
 		SwingUtilities.invokeLater(
@@ -155,18 +165,17 @@ public class MultiStatFrame extends TopFrame
 			{
 				public void run()
 				{
-//System.out.println("MultiStatFrame.restart()");
 					// Remove summary panels and then re-add the ones configured.
 					summaryPanel.remove(lrgs1Summary);
 					summaryPanel.remove(lrgs2Summary);
 					summaryPanel.remove(lrgs3Summary);
 					summaryPanel.remove(lrgs4Summary);
-					
+
 					tabbedPane.remove(lrgs1Detail);
 					tabbedPane.remove(lrgs2Detail);
 					tabbedPane.remove(lrgs3Detail);
 					tabbedPane.remove(lrgs4Detail);
-			
+
 					if (cfg.Lrgs1HostName != null)
 					{
 						summaryPanel.add(lrgs1Summary, null);
@@ -192,7 +201,7 @@ public class MultiStatFrame extends TopFrame
 	}
 
 	// Component initialization
-	private void jbInit() throws Exception
+	private void jbInit()
 	{
 		contentPane = (JPanel) this.getContentPane();
 		contentPane.setLayout(borderLayout1);
@@ -277,11 +286,9 @@ public class MultiStatFrame extends TopFrame
 		numAlarmsField.setPreferredSize(new Dimension(50, 30));
 		numAlarmsField.setText("0");
 		numAlarmsField.setEditable(false);
-		
+
 		contentPane.add(alarmPanel, BorderLayout.NORTH);
-		
-//		JSplitPane centerPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, tabbedPane, eventsPanel);
-//		contentPane.add(centerPane, BorderLayout.CENTER);
+
 		contentPane.add(eventsPanel, BorderLayout.SOUTH);
 		contentPane.add(tabbedPane, BorderLayout.CENTER);
 

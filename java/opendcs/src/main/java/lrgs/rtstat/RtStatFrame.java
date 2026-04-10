@@ -1,8 +1,24 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package lrgs.rtstat;
 
 import java.awt.*;
 import java.awt.event.*;
 
+import javax.net.SocketFactory;
 import javax.swing.*;
 import javax.swing.event.*;
 
@@ -19,6 +35,10 @@ import java.util.Properties;
 
 import org.opendcs.gui.GuiConstants;
 import org.opendcs.gui.PasswordWithShow;
+import org.opendcs.gui.x509.X509CertificateVerifierDialog;
+import org.opendcs.tls.TlsMode;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 
@@ -27,10 +47,8 @@ import decodes.gui.TopFrame;
 import ilex.gui.EventsPanel;
 import ilex.gui.JobDialog;
 import ilex.gui.LoginDialog;
-import ilex.gui.WindowUtility;
 import ilex.util.AsciiUtil;
 import ilex.util.AuthException;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import ilex.xml.DomHelper;
@@ -51,11 +69,9 @@ import ilex.util.LoadResourceBundle;
 /**
 Main frame for the LRGS Real-Time Status Application.
 */
-public class RtStatFrame
-    extends TopFrame
-    implements DdsClientIf, HyperlinkListener
+public class RtStatFrame extends TopFrame implements DdsClientIf, HyperlinkListener
 {
-    private final static org.slf4j.Logger log = LoggerFactory.getLogger(RtStatFrame.class);
+    private final static Logger log = OpenDcsLoggerFactory.getLogger();
     private static ResourceBundle labels =
         RtStat.getLabels();
     private static ResourceBundle genericLabels =
@@ -71,7 +87,6 @@ public class RtStatFrame
     private JMenu jMenuHelp = new JMenu();
     private JMenuItem jMenuHelpAbout = new JMenuItem();
     private BorderLayout borderLayout1 = new BorderLayout();
-    private JPanel topPanel = new JPanel();
     private JLabel hostLabel = new JLabel();
     private JComboBox<LrgsConnection> hostCombo = new JComboBox<>();
     private PasswordWithShow passwordField = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
@@ -96,11 +111,12 @@ public class RtStatFrame
     private int dividerLoc;
     private int splitPaneHeight;
 
-    /** the currently connected host -- null if not connected. */
-    String host;
-    int port;
-    String user;
-    String passwd;
+	/** the currently connected host -- null if not connected. */
+	String host;
+	int port;
+	String user;
+	String passwd;
+	SocketFactory socketFactory;
 
     /** Dialog for editing users. */
     private UserListDialog userListDialog = null;
@@ -117,14 +133,8 @@ public class RtStatFrame
     public RtStatFrame(int scanPeriod, String iconFile, String headerFile)
     {
         exitOnClose = true;
-        try
-        {
-            jbInit();
-        }
-        catch (Exception e)
-        {
-            log.error("RtStatFrame: ",e);
-        }
+
+        jbInit();
         isPaused = false;
         client = null;
         passwordCheck.setSelected(false);
@@ -134,7 +144,7 @@ public class RtStatFrame
         Dimension d = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
         d.width = 800;
         d.height -= 60;
-        setSize(d);
+
         dividerLoc = d.height - 80 - 160;
         splitPaneHeight = 0;
         jSplitPane1.setDividerLocation(dividerLoc);
@@ -166,7 +176,6 @@ public class RtStatFrame
                 }
             });
 
-        //loadConnectionsField(hostCombo, connectionList, connectedHostName);
         netlistDlg = null;
         rtStatPanel.htmlPanel.addHyperlinkListener(this);
 
@@ -186,7 +195,6 @@ public class RtStatFrame
 
     /** Initializes GUI components. */
     private void jbInit()
-        throws Exception
     {
         boolean canConfig = true;
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -197,7 +205,7 @@ public class RtStatFrame
 
         contentPane = (JPanel)this.getContentPane();
         contentPane.setLayout(borderLayout1);
-        this.setSize(new Dimension(793, 716));
+        //this.setSize(new Dimension(793, 716));
         this.setTitle(
                 labels.getString("RtStatFrame.frameTitle"));
         jMenuFile.setText(genericLabels.getString("file"));
@@ -272,7 +280,6 @@ public class RtStatFrame
 
         hostLabel.setText(
                 labels.getString("RtStatFrame.host"));
-        topPanel.setLayout(new BorderLayout());
 
         connectionPanel.onPause(c -> pauseButton_actionPerformed(c));
 
@@ -292,13 +299,13 @@ public class RtStatFrame
         jMenuHelp.add(jMenuHelpAbout);
         jMenuBar1.add(jMenuFile);
         jMenuBar1.add(jMenuHelp);
-        contentPane.add(topPanel, BorderLayout.NORTH);
-        topPanel.add(connectionPanel);
+        contentPane.add(connectionPanel, BorderLayout.PAGE_START);
         connectionPanel.onConnect(c -> connectButton_actionPerformed(c));
         contentPane.add(jSplitPane1, BorderLayout.CENTER);
         jSplitPane1.add(rtStatPanel, JSplitPane.TOP);
         jSplitPane1.add(eventsPanel, JSplitPane.BOTTOM);
         this.setJMenuBar(jMenuBar1);
+        pack();
     }
 
     //File | Exit action performed
@@ -365,7 +372,9 @@ public class RtStatFrame
     {
         closeConnection();
         client = null;
-        final LddsClient tclient = new LddsClient(host, port);
+        SocketFactory socketFactory = c.getSocketFactory(cert -> X509CertificateVerifierDialog.acceptCertificate(cert.getChain(), this));
+
+		final LddsClient tclient = new LddsClient(host, port,socketFactory, c.getTls());
         final JobDialog connectionJobDialog = new JobDialog(
             this,
             labels.getString("RtStatFrame.connectingToInfo") + host+":"+port,
@@ -416,6 +425,7 @@ public class RtStatFrame
                         }
                         catch(ServerError ex)
                         {
+							ex.printStackTrace(System.out);
                             connectionJobDialog.addToProgress(labels.getString(
                                     "RtStatFrame.connectionRejectedErr")
                                     + ex);
@@ -423,12 +433,14 @@ public class RtStatFrame
                         }
                         catch(ProtocolError ex)
                         {
+							ex.printStackTrace(System.out);
                             connectionJobDialog.addToProgress(
                             labels.getString("RtStatFrame.protocolErr") + ex);
                             tclient.disconnect();
                         }
                         catch(Exception ex)
                         {
+							ex.printStackTrace(System.out);
                             connectionJobDialog.addToProgress(labels.getString(
                               "RtStatFrame.authenticationErr") + ex);
                             tclient.disconnect();
@@ -446,7 +458,7 @@ public class RtStatFrame
         {
             setTitle(labels.getString("RtStatFrame.frameTitle")+": " + host);
             client = tclient;
-            displayEvent("Connected to " + host + ":" + port + " as user '" + user + "'");
+            displayEvent("Connected to " + host + ":" + port + " as user '" + user + "'" + "with TLS" + c.getTls());
             return true;
         }
         else
@@ -459,9 +471,10 @@ public class RtStatFrame
         try
         {
             Thread.sleep(millis);
-        } catch(InterruptedException ex)
+        }
+        catch(InterruptedException ex)
         {
-            log.error("Error during pause({})",millis,ex);
+            log.atError().setCause(ex).log("Error during pause({} ms)", millis);
         }
     }
     private void closeConnection()
@@ -471,9 +484,10 @@ public class RtStatFrame
             try
             {
               client.sendGoodbye();
-            } catch(Exception ex)
+            }
+            catch(Exception ex)
             {
-                log.error("Error closing connection",ex);
+                log.atError().setCause(ex).log("Error closing connection");
             }
             client.disconnect();
         }
@@ -497,11 +511,10 @@ public class RtStatFrame
         }
         catch(final Exception ex)
         {
-            log.error("Error getting status",ex);
+            log.atError().setCause(ex).log("Error getting status");
             client.disconnect();
             client = null;
             String msg = "An error occurred in client.getStatus(). ";
-            log.error(msg);
             rtStatPanel.updateStatus("<h1>"+msg+" "+ex.getMessage()+"</h1>");
             rtStatPanel.invalidate();
             return null;
@@ -580,12 +593,13 @@ public class RtStatFrame
         Properties props = new Properties();
         PropertiesUtil.storeInProps(lrgsConfig, props, null);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try{
-            props.store(baos, "LRGS Configuration Modified on "+new Date());
-        }
-        catch(IOException ex)
+        try
         {
-            throw new AuthException(labels.getString("RtStatFrame.constructConfigArrayErr" +ex));
+            props.store(baos, "LRGS Configuration Modified on " + new Date());
+        }
+        catch (IOException ex)
+        {
+            throw new AuthException(labels.getString("RtStatFrame.constructConfigArrayErr"), ex);
         }
         byte cfgData[] = baos.toByteArray();
         client.installConfig("lrgs", cfgData);
@@ -602,7 +616,7 @@ public class RtStatFrame
         {
             settings.storeToXml(baos);
         }
-        catch(IOException ex)
+        catch (IOException ex)
         {
             throw new AuthException(
                 labels.getString("RtStatFrame.constructddsConfigArrayErr") + ex.getLocalizedMessage(),
@@ -624,7 +638,7 @@ public class RtStatFrame
         {
             settings.storeToXml(baos);
         }
-        catch(IOException ex)
+        catch (IOException ex)
         {
             throw new AuthException(
                 labels.getString("RtStatFrame.constructdrgsConfigArrayErr")    + ex.getLocalizedMessage(),
@@ -647,7 +661,7 @@ public class RtStatFrame
         {
             settings.storeToXml(baos);
         }
-        catch(IOException ex)
+        catch (IOException ex)
         {
             throw new AuthException(
                 labels.getString("RtStatFrame.constructdrgsConfigArrayErr")    + ex.getLocalizedMessage(),
@@ -681,9 +695,9 @@ public class RtStatFrame
         {
             String msg = LoadResourceBundle.sprintf(
                 labels.getString("RtStatFrame.cannotReadLrgsConfErr"),
-                host) + ex;
-            showError(msg);
-            throw new AuthException(msg);
+                host);
+            showError(msg + ex);
+            throw new AuthException(msg, ex);
         }
 
         try
@@ -699,6 +713,7 @@ public class RtStatFrame
             String msg = LoadResourceBundle.sprintf(
                     labels.getString("RtStatFrame.cannotReadDdsConfErr"),
                     host, ex);
+            log.atError().setCause(ex).log(msg);
             showError(msg);
         }
 
@@ -729,7 +744,7 @@ public class RtStatFrame
             String msg = LoadResourceBundle.sprintf(
                     labels.getString("RtStatFrame.cannotReadNetworkDcpConfErr"),
                     host, ex);
-            Logger.instance().warning(msg);
+            log.atWarn().setCause(ex).log(msg);
         }
     }
 
@@ -754,9 +769,9 @@ public class RtStatFrame
         {
             String msg = LoadResourceBundle.sprintf(
                 labels.getString("RtStatFrame.cannotGetNlListErr"),
-                host) + ex;
-            showError(msg);
-            throw new AuthException(msg);
+                host);
+            showError(msg + ex);
+            throw new AuthException(msg, ex);
         }
     }
     /** from DdsClientIf interface */
@@ -776,13 +791,13 @@ public class RtStatFrame
         {
             return client.getConfig("netlist:" + listname);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             String msg = LoadResourceBundle.sprintf(
                     labels.getString("RtStatFrame.cannotGetNlErr"),
-                    host) + ex;
-            showError(msg);
-            throw new AuthException(msg);
+                    host);
+            showError(msg + ex);
+            throw new AuthException(msg, ex);
         }
     }
 
@@ -814,10 +829,10 @@ public class RtStatFrame
         {
             return client.getOutages(null, null);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             throw new AuthException(labels.getString(
-                    "RtStatFrame.cannotReadOutagesErr") + ex);
+                    "RtStatFrame.cannotReadOutagesErr"), ex);
         }
     }
 
@@ -856,7 +871,6 @@ public class RtStatFrame
     */
     public void showError( String msg )
     {
-        System.err.println(msg);
         JOptionPane.showMessageDialog(this,
             AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
     }
@@ -900,7 +914,7 @@ public class RtStatFrame
                 return;
             }
         }
-        hostCombo.addItem(new LrgsConnection(hostname, 16003, null, null, null));
+        hostCombo.addItem(new LrgsConnection(hostname, 16003, null, null, null, TlsMode.NONE));
         hostCombo.setSelectedIndex(n);
     }
 

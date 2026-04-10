@@ -16,4 +16,9 @@ public class BadPasswordException
 	{
 		super(reason, LrgsErrorCode.DBADPASSWORD, false);
 	}
+
+	public BadPasswordException(String msg, Throwable cause)
+	{
+		super(msg, LrgsErrorCode.DBADPASSWORD, false, cause);
+	}
 }

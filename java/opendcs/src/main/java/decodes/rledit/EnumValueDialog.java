@@ -1,38 +1,20 @@
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.2  2014/09/25 18:10:00  mmaloney
-*  Added Seasons Enum with Editor.
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.1  2008/04/04 18:21:04  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.6  2008/02/10 20:17:33  mmaloney
-*  dev
-*
-*  Revision 1.2  2008/02/01 15:20:40  cvs
-*  modified files for internationalization
-*
-*  Revision 1.5  2007/12/04 18:26:55  mmaloney
-*  dev
-*
-*  Revision 1.4  2005/03/15 16:11:28  mjmaloney
-*  Modify 'Enum' for Java 5 compat.
-*
-*  Revision 1.3  2004/12/21 14:46:06  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.2  2004/04/01 22:37:23  mjmaloney
-*  Implemented controls for enumerations.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.rledit;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import javax.swing.*;
@@ -44,6 +26,10 @@ import javax.swing.border.*;
 import java.awt.event.*;
 import java.util.ResourceBundle;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.*;
 
 /**
@@ -51,6 +37,7 @@ This dialog edits a single enum value.
 */
 public class EnumValueDialog extends JDialog 
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static ResourceBundle genericLabels = 
 		RefListEditor.getGenericLabels();
 	private static ResourceBundle labels = RefListEditor.getLabels();
@@ -81,11 +68,13 @@ public class EnumValueDialog extends JDialog
 	 */
 	public EnumValueDialog() throws HeadlessException 
 	{
-		try {
+		try 
+		{
 			jbInit();
 		}
-		catch(Exception e) {
-			e.printStackTrace();
+		catch(Exception ex) 
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 		myEV = null;
 

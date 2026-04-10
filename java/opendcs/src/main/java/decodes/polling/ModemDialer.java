@@ -1,12 +1,12 @@
 /*
- * $Id$
- * 
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
  * No warranty is provided or implied other than specific contractual terms 
  * between COVE and Alberta ESRD.
  *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
+ * 
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,13 @@
 package decodes.polling;
 
 import ilex.util.AsciiUtil;
-import ilex.util.Logger;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Date;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.TransportMedium;
 
@@ -42,10 +44,9 @@ import decodes.db.TransportMedium;
  * Wait 2 sec.
  * Send "ATZ".
  */
-public class ModemDialer 
-	extends Dialer
-	implements StreamReaderOwner
+public class ModemDialer extends Dialer	implements StreamReaderOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public String module = "ModemDialer";
 	public static String EOL = "\r";
 	private String AT = "AT" + EOL;
@@ -77,7 +78,7 @@ public class ModemDialer
 		throws DialException
 	{
 		this.pollingThread = pollingThread;
-		pollingThread.debug2(module + ".connect() - Spawning StreamReader to read responses from modem.");
+		log.trace("connect() - Spawning StreamReader to read responses from modem.");
 		// Spawn a separate thread to read and buffer responses from the device
 		readError = null;
 		_inputClosed = false;
@@ -103,17 +104,15 @@ public class ModemDialer
 			String init = modemInitString+EOL;
 			String msg = module + " sending '" + AsciiUtil.bin2ascii(init.getBytes()) + "' to modem on port "
 				+ ioPort.getPortNum();
-			pollingThread.debug2(msg);
-			pollingThread.annotate(msg);
+			log.trace(msg);
 			what = msg;
 			outs.write(init.getBytes());
 			outs.flush();
 			if (!streamReader.wait(AtWaitSec, OK))
 			{
 				what = "waiting for response to init string from modem";
-				pollingThread.warning(module + " port=" + ioPort.getPortName()
-					+ " response to AT failed, session buf: "
-					+ AsciiUtil.bin2ascii(streamReader.getSessionBuf()));
+				log.warn("port={} response to AT failed, session buf: {}",
+						 ioPort.getPortName(), AsciiUtil.bin2ascii(streamReader.getSessionBuf()));
 			}
 			else // success OK response to AT
 			{
@@ -124,29 +123,28 @@ public class ModemDialer
 				what = module + " sending '" + AsciiUtil.bin2ascii(dialstr.getBytes()) + "' to modem on port "
 					+ ioPort.getPortNum();
 				msg = what + ", will wait " + ConnectWaitSec + " sec for CONNECT.";
-				pollingThread.debug1(msg);
-				pollingThread.annotate(msg);
+				log.debug(msg);
 				outs.write(dialstr.getBytes());
 				if (!streamReader.wait(ConnectWaitSec, CONNECT))
 				{
 					msg = module + " No answer from station at " + tm.getMediumId();
-					pollingThread.annotate(msg);
+					log.trace(msg);
 					what = "waiting for answer from station at " + tm.getMediumId();
 				}
 				else
 				{
-					pollingThread.annotate(module + " dialing success on port" + ioPort.getPortNum() + "!");
+					log.info("dialing success on port {}!", ioPort.getPortNum());
 					return; // Success!
 				}
 			}
-			pollingThread.annotate("Dialing failed -- " + what);
+			log.error("Dialing failed -- " + what);
 			disconnect(ioPort);
 			throw new DialException(module + " port=" + ioPort.getPortName()
 				+ " failed while " + what, portError);
 		}
 		catch (IOException ex)
 		{
-			throw new DialException("IOException while " + what + ": " + ex, portError);
+			throw new DialException("IOException while " + what, ex, portError);
 		}
 		catch(DialException ex)
 		{
@@ -154,10 +152,8 @@ public class ModemDialer
 		}
 		catch(Exception ex)
 		{
-			String msg = " Unexpected Exception while " + what + ": " + ex;
-			System.err.println((new Date()).toString() + msg);
-			ex.printStackTrace(System.err);
-			throw new DialException(msg, portError);
+			String msg = " Unexpected Exception while " + what;
+			throw new DialException(msg, ex, portError);
 		}
 		finally
 		{
@@ -170,41 +166,20 @@ public class ModemDialer
 	{
 		if (ioPort == null || ioPort.getOut() == null)
 			return; // must already be in the process of shutting down.
-// The +++ ATZ sequence is not necessary. Modem will hangup when we drop DTR.
-//		try
-//		{
-////			String msg = module + " sending '" + Break + "' to modem on port " + ioPort.getPortNum();
-//			pollingThread.debug2(msg);
-//			pollingThread.annotate(msg);
-//			ioPort.getOut().write(Break.getBytes());
-//			try { Thread.sleep(2000L); } catch(InterruptedException ex) {}
-//			msg = module + " sending '" + AsciiUtil.bin2ascii(Hangup.getBytes()) + "' to modem on port "
-//				+ ioPort.getPortNum();
-//			pollingThread.debug1(msg);
-//			pollingThread.annotate(msg);
-//			if (ioPort.getOut() != null)
-//				try { ioPort.getOut().write(Hangup.getBytes()); }
-//				catch(Exception ex) {}
-//			try { Thread.sleep(2000L); } catch(InterruptedException ex) {}
-//		}
-//		catch(IOException ex)
-//		{
-//			Logger.instance().warning(module + " Error while disconnecting: " + ex);
-//		}
-//		Logger.instance().debug2(module + " disconnect complete.");	
+
 	}
 
 	@Override
 	public void inputError(Exception ex)
 	{
 		readError = ex;
-		pollingThread.annotate(module + " Input Error: " + ex);
+		log.atError().setCause(ex).log("Input Error.");
 	}
 
 	@Override
 	public void inputClosed()
 	{
-		pollingThread.annotate(module + " Input closed.");
+		log.trace("Input closed.");
 		_inputClosed = true;
 	}
 	

@@ -1,15 +1,4 @@
 /*
- * $Id$
- * 
- * $Log$
- * Revision 1.2  2014/08/22 17:23:10  mmaloney
- * 6.1 Schema Mods and Initial DCP Monitor Implementation
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.1  2012/10/30 01:59:27  mmaloney
- * First cut of rating GUI.
  * 
  * This software was written by Cove Software, LLC ("COVE") under contract 
  * to the United States Government. 
@@ -17,14 +6,17 @@
  * No warranty is provided or implied other than specific contractual terms
  * between COVE and the U.S. Government
  * 
- * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
+ * U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  */
 package decodes.cwms.rating;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import javax.swing.ImageIcon;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.gui.DecodesInterface;
 
 import ilex.util.EnvExpander;
@@ -41,8 +33,7 @@ import decodes.util.DecodesException;
  */
 public class CwmsRatingGuiMain extends TsdbAppTemplate
 {
-	private static String module = "CwmsRatingGui";
-
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private CwmsRatingGuiFrame theFrame;
 	private boolean packFrame = false;
 	private static String logfile = "cwmsrating.log";
@@ -84,7 +75,6 @@ public class CwmsRatingGuiMain extends TsdbAppTemplate
 		ImageIcon titleIcon = new ImageIcon(
 				EnvExpander.expand("$DECODES_INSTALL_DIR/icons/toolkit24x24.gif"));
 		theFrame.setIconImage(titleIcon.getImage());
-//		theFrame.centerOnScreen();
 		theFrame.setVisible(true);
 		
 		theFrame.addWindowListener(new WindowAdapter()
@@ -130,9 +120,7 @@ public class CwmsRatingGuiMain extends TsdbAppTemplate
 		} 
 		catch (Exception ex)
 		{
-			System.err.println(
-				module + " Can not initialize. "
-				+ ex.getMessage());
+			log.atError().setCause(ex).log("Unable to execute application.");
 		}
 	}
 }

@@ -1,30 +1,28 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:16  cvs
-*  Added legacy code to repository
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.4  2005/12/30 19:41:00  mmaloney
-*  dev
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.3  2003/12/20 01:45:15  mjmaloney
-*  dev
-*
-*  Revision 1.2  2003/08/11 15:59:19  mjmaloney
-*  dev
-*
-*  Revision 1.1  2003/08/11 01:33:58  mjmaloney
-*  dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lritdcs;
 
 import java.io.*;
 
-public class ScrubberThread
-	extends LritDcsThread
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
+public class ScrubberThread extends LritDcsThread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	File directories[];
 	File mediumDir, mediumSentDir;
 	File lowDir, lowSentDir;
@@ -38,7 +36,7 @@ public class ScrubberThread
 
 	public void run()
 	{
-		debug1("Starting");
+		log.debug("Starting");
 		while(!shutdownFlag)
 		{
 			try { sleep(60000L); }
@@ -53,13 +51,14 @@ public class ScrubberThread
 					long lmt = file[j].lastModified();
 					if ((now - lmt) > (scrubHours * 60L * 60L * 1000L))
 					{
-						debug1("Deleting file '" + file[j].getPath() + "'");
+						log.debug("Deleting file '{}'", file[j].getPath());
 						try { file[j].delete(); }
 						catch(Exception ex)
 						{
-							warning(Constants.EVT_FILE_DELETE_ERR, 
-								"- Unable to delete file '" 
-								+ file[j].getPath() + "': " + ex);
+							log.atWarn()
+							   .setCause(ex)
+							   .log("{}- Unable to delete file '{}'",
+							   		Constants.EVT_FILE_DELETE_ERR, file[j].getPath());
 						}
 					}
 				}
@@ -92,9 +91,7 @@ public class ScrubberThread
 		}
 		catch(Exception ex)
 		{
-			throw new InitFailedException(
-				"Can't create directory '" + directories[i].getPath() + "': "
-				+ ex);
+			throw new InitFailedException("Can't create directory '" + directories[i].getPath() + "'", ex);
 		}
 
 		getConfigValues(LritDcsConfig.instance());
@@ -106,4 +103,3 @@ public class ScrubberThread
 		scrubHours = cfg.getScrubHours();
 	}
 }
-

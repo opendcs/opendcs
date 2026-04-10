@@ -1,10 +1,4 @@
 /**
- * $Id: TsImportFormatter.java,v 1.1 2020/02/20 15:32:38 mmaloney Exp $
- * 
- * $Log: TsImportFormatter.java,v $
- * Revision 1.1  2020/02/20 15:32:38  mmaloney
- * Final fixes.
- *
  *
  * Copyright 2014 Cove Software, LLC
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,6 +28,9 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.cwms.CwmsDbConfig;
 import decodes.datasource.UnknownPlatformException;
 import decodes.db.Constants;
@@ -54,9 +51,9 @@ import decodes.util.PropertySpec;
  *
  * @author Michael Maloney, Cove Software, LLC
  */
-public class TsImportFormatter 
-	extends OutputFormatter
+public class TsImportFormatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "OpenTsdbFormatter";
 	private SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 	
@@ -160,7 +157,7 @@ public class TsImportFormatter
 			TimeZone tz2 = TimeZone.getTimeZone(s);
 			if (tz2 == null)
 			{
-				logger.warning(module + " Invalid tzName propertye '" + s + "': will use " + tzName);
+				log.warn(" Invalid tzName property '{}': will use {}", s, tzName);
 			}
 			else
 				tzName = s;
@@ -171,8 +168,7 @@ public class TsImportFormatter
 			try { bufferTimeSec = Integer.parseInt(s.trim()); }
 			catch(Exception ex)
 			{
-				logger.warning(module + " Invalid bufferTimeSec property '" + s 
-					+ "' ignored. Buffering disabled.");
+				log.warn("Invalid bufferTimeSec property '{}' ignored. Buffering disabled.", s);
 				bufferTimeSec = 0;
 			}
 		}
@@ -192,7 +188,7 @@ public class TsImportFormatter
 		}
 		catch (DataConsumerException ex)
 		{
-			logger.warning("Error shutting down formatter: " + ex);
+			log.atWarn().setCause(ex).log("Error shutting down formatter.");
 		}
 	}
 
@@ -214,7 +210,7 @@ public class TsImportFormatter
 		}
 		if (!hasData)
 		{
-			logger.debug1(module + " Skipping message with no non-missing data");
+			log.debug("Skipping message with no non-missing data");
 			return;
 		}
 		
@@ -225,11 +221,11 @@ public class TsImportFormatter
 		{
 			platformSite = msg.getRawMessage().getPlatform().getSite();
 			if (platformSite == null)
-				logger.warning(module + " No site associated with platform.");
+				log.warn("No site associated with platform.");
 		}
 		catch(UnknownPlatformException ex)
 		{
-			logger.warning(module + " Cannot determine platform.");
+			log.warn(" Cannot determine platform.");
 		}
 
 		if (bufferTimeSec <= 0)
@@ -250,8 +246,7 @@ public class TsImportFormatter
 
 			if (site == null)
 			{
-				logger.warning(module + " No platform site and no site associated with " +
-					"sensor " + sensor.getName() + " -- skipped.");
+				log.warn("No platform site and no site associated with sensor {} -- skipped.", sensor.getName());
 				continue;
 			}
 			

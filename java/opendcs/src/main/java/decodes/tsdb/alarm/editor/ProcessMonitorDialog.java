@@ -1,25 +1,20 @@
-/**
- * $Id$
- * 
- * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log$
- * Revision 1.1  2019/03/05 14:52:59  mmaloney
- * Checked in partial implementation of Alarm classes.
- *
- * Revision 1.3  2018/03/23 20:12:20  mmaloney
- * Added 'Enabled' flag for process and file monitors.
- *
- * Revision 1.2  2017/05/18 12:29:00  mmaloney
- * Code cleanup. Remove System.out debugs.
- *
- * Revision 1.1  2017/05/17 20:36:56  mmaloney
- * First working version.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.alarm.editor;
 
-import ilex.util.Logger;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
 
@@ -37,6 +32,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.ResourceBundle;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -59,9 +57,9 @@ import decodes.tsdb.alarm.ProcessMonitor;
 
 
 @SuppressWarnings("serial")
-public class ProcessMonitorDialog 
-	extends GuiDialog
+public class ProcessMonitorDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private AlarmEditPanel parentPanel;
 	@SuppressWarnings("rawtypes")
 	private JComboBox processCombo = new JComboBox();
@@ -102,6 +100,7 @@ public class ProcessMonitorDialog
 		}
 		catch (DbIoException ex)
 		{
+			log.atError().setCause(ex).log("Unable to list Routing Scheduler apps.");
 			parentPanel.parentFrame.showError("Cannot list Routing Scheduler apps: " + ex);
 		}
 		finally
@@ -268,7 +267,7 @@ public class ProcessMonitorDialog
 
 	protected void addAlarmDefPressed()
 	{
-		StringPair sp = new StringPair(Logger.priorityName[Logger.E_WARNING], "");
+		StringPair sp = new StringPair("WARNING", "");
 		AlarmDefDialog dlg = new AlarmDefDialog(parentPanel);
 		dlg.setData(sp);
 		parentPanel.parentFrame.launchDialog(dlg);
@@ -354,12 +353,9 @@ public class ProcessMonitorDialog
 	
 	private int str2pri(String s)
 	{
-		s = s.trim();
-		if (s.equalsIgnoreCase("INFO")) return Logger.E_INFORMATION;
-		else if (s.equalsIgnoreCase("WARNING")) return Logger.E_WARNING;
-		else if (s.equalsIgnoreCase("FAILURE")) return Logger.E_FAILURE;
-		else if (s.equalsIgnoreCase("FATAL")) return Logger.E_FATAL;
-		return Logger.E_WARNING;
+		// replacing logger, return arbitrary value until alarm system can
+		// be fully review in light of final logger changes.
+		return 0;
 	}
 	
 	/** Closes the dialog */
@@ -381,8 +377,7 @@ public class ProcessMonitorDialog
 
 //========================
 @SuppressWarnings("serial")
-class AlarmDefTableModel extends AbstractTableModel
-implements SortingListTableModel
+class AlarmDefTableModel extends AbstractTableModel implements SortingListTableModel
 {
 	String[] colnames = new String[2];
 	int [] widths = { 30, 70 };
@@ -400,8 +395,7 @@ implements SortingListTableModel
 		for(AlarmEvent def : pm.getDefs())
 		{
 			int p = def.getPriority();
-			String priority = (p >= 0 && p < Logger.priorityName.length) ? 
-				Logger.priorityName[p] : "";
+			String priority = "PLACEHOLDER";
 			String pattern = def.getPattern();
 			if (pattern == null)
 				pattern = "";

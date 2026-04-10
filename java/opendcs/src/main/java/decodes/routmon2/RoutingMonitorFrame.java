@@ -1,85 +1,40 @@
-/**
- * $Id$
- * 
- * Open Source Software
- * 
- * $Log$
- * Revision 1.4  2017/11/20 19:26:52  mmaloney
- * Fix 2 bugs: Selecting RS Run was messing up the panel header. RS Runs in the middle panel were not sorted in descending last-modify-time order like they should have been.
- *
- * Revision 1.3  2016/08/05 14:53:36  mmaloney
- * Station and Routing Status GUI updates.
- *
- * Revision 1.2  2016/07/20 15:40:54  mmaloney
- * First routmon impl.
- *
- * Revision 1.1  2016/06/27 15:15:41  mmaloney
- * Initial checkin.
- *
- * Revision 1.3  2016/02/04 18:50:07  mmaloney
- * In start(), account for backslash in windows filenames.
- *
- * Revision 1.2  2015/06/04 21:37:39  mmaloney
- * Added control buttons to process monitor GUI.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.8  2013/03/25 17:50:54  mmaloney
- * dev
- *
- * Revision 1.7  2013/03/25 17:13:11  mmaloney
- * dev
- *
- * Revision 1.6  2013/03/25 16:58:38  mmaloney
- * dev
- *
- * Revision 1.5  2013/03/25 15:02:20  mmaloney
- * dev
- *
- * Revision 1.4  2013/03/23 18:20:04  mmaloney
- * dev
- *
- * Revision 1.3  2013/03/23 18:01:03  mmaloney
- * dev
- *
- * Revision 1.2  2013/03/23 15:33:55  mmaloney
- * dev
- *
- * Revision 1.1  2013/03/21 18:27:40  mmaloney
- * DbKey Implementation
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.routmon2;
 
 import ilex.gui.EventsPanel;
-import ilex.util.EnvExpander;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
-import ilex.util.ProcWaiterThread;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import javax.swing.JButton;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
@@ -89,13 +44,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 
-import opendcs.dai.ComputationDAI;
 import opendcs.dai.DacqEventDAI;
-import opendcs.dai.LoadingAppDAI;
-import opendcs.dai.ScheduleEntryDAI;
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
 import decodes.db.ScheduleEntry;
@@ -104,11 +54,7 @@ import decodes.gui.SortingListTable;
 import decodes.gui.TopFrame;
 import decodes.polling.DacqEvent;
 import decodes.sql.SqlDatabaseIO;
-import decodes.tsdb.CompAppInfo;
-import decodes.tsdb.CompFilter;
 import decodes.tsdb.DbIoException;
-import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
 
 
@@ -117,10 +63,9 @@ import decodes.util.DecodesSettings;
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
 @SuppressWarnings("serial")
-public class RoutingMonitorFrame 
-	extends TopFrame 
-	//implements TableModelListener, ListSelectionListener
+public class RoutingMonitorFrame extends TopFrame 
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private RoutingTableModel routingModel = null;
 	private EventsPanel eventsPanel = new EventsPanel();
 	private JSplitPane outerPane = null, innerPane = null;
@@ -131,8 +76,6 @@ public class RoutingMonitorFrame
 	private RsRunModel rsRunModel = null;
 	private JTable rsRunTable = null;
 	private RSBean selectedRS = null;
-//	private TimeSeriesDb tsdb = null;
-//	private DbPollThread dbPollThread = null;
 	private ArrayList<DacqEvent> evtList = new ArrayList<DacqEvent>();
 	private ScheduleEntryStatus selectedRun = null;
 	private SimpleDateFormat evtTimeSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
@@ -350,7 +293,7 @@ public class RoutingMonitorFrame
 			}
 			catch (DbIoException ex)
 			{
-				Logger.instance().warning("Error reading events: " + ex);
+				log.atError().setCause(ex).log("Error reading events.");
 			}
 			finally
 			{
@@ -362,16 +305,12 @@ public class RoutingMonitorFrame
 	private String formatEvt(DacqEvent evt)
 	{
 		StringBuilder sb = new StringBuilder();
-		sb.append(Logger.priorityName[evt.getEventPriority()] + " ");
+		sb.append("[EVENT] ");
 		sb.append(evtTimeSdf.format(evt.getEventTime()) + " ");
 		if (evt.getSubsystem() != null)
 			sb.append("(" + evt.getSubsystem() + ") ");
 		sb.append(evt.getEventText());
 		
-//			+ ", schedEntryStatId=" + scheduleEntryStatusId
-//			+ ", platformId=" + platformId
-//			+ ", msgTime=" + msgRecvTime
-
 		return sb.toString();
 	}
 
@@ -438,10 +377,8 @@ public class RoutingMonitorFrame
 	public synchronized void updateRunHistory()
 	{
 		
-//System.out.println("RMF.updateRunHistory()");
 		if (selectedRS == null)
 		{
-//System.out.println("    selectedRS is null");
 			return;
 		}
 

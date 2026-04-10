@@ -1,12 +1,11 @@
 /*
- * $Id$
- * 
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
  * No warranty is provided or implied other than specific contractual terms 
  * between COVE and Alberta ESRD.
  *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +22,13 @@
 package decodes.polling;
 
 import ilex.util.ArrayUtil;
-import ilex.util.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
  * Used by Protocol to continually read the InputStream coming from
@@ -36,9 +37,9 @@ import java.io.InputStream;
  * the entire stream for subsequent logging. It can 'capture' a portion of
  * the stream for inclusion in a DCP Message.
  */
-public class StreamReader
-	extends Thread
+public class StreamReader extends Thread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String module = "StreamReader";
 	private InputStream in = null;
 	private ByteArrayOutputStream captured = new ByteArrayOutputStream();
@@ -62,7 +63,7 @@ public class StreamReader
 	@Override
 	public void run()
 	{
-		Logger.instance().debug1(module + " starting.");
+		log.debug("starting.");
 		try
 		{
 			int c=-1;
@@ -73,15 +74,14 @@ public class StreamReader
 					c = in.read();
 					if (c == -1)
 					{
-						Logger.instance().debug1(module + " input stream closed.");
+						log.debug("input stream closed.");
 						_shutdown = true;
 					}
 					else
 					{
 						if (sessionIdx >= sessionBuf.length)
 						{
-							Logger.instance().info(module + "Message too long. Size=" 
-								+ sessionIdx + ", truncating message at this point.");
+							log.info("Message too long. Size={}, truncating message at this point.", sessionIdx);
 							_shutdown = true;
 							break;
 						}
@@ -100,41 +100,30 @@ public class StreamReader
 		}
 		catch (IOException ex)
 		{
-			Logger.instance().debug1(module + " " + ex);
+			log.atDebug().setCause(ex).log("Error reading stream.");
 			if (owner != null)
 				owner.inputError(ex);
 			_shutdown = true;
 		}
 		catch(Exception ex)
 		{
-			String msg = module + " Unexpected exception: " + ex;
-			Logger.instance().warning(msg);
-			System.err.println(msg);
+			log.atWarn().setCause(ex).log("Unexpected exception.");
 			ex.printStackTrace(System.err);
 			if (owner != null)
 				owner.inputError(ex);
 			_shutdown = true;
 
 		}
-		Logger.instance().debug1(module + " exiting.");
+		log.debug("exiting.");
 	}
 	
 	public void shutdown()
 	{
-		Logger.instance().debug3(module + " shutdown() called.");
+		log.trace("shutdown() called.");
 		_shutdown = true;
 		// Note: mustn't close the InputStream, Multiple StreamReaders
 		// may be used at various phases of a session on the same ioPort.
-		// try { in.close(); } catch(IOException ex) {}
 	}
-	
-//	private synchronized void growBuffer()
-//	{
-//		byte newbuf[] = new byte[sessionBuf.length + 8192];
-//		for(int i=0; i<sessionIdx; i++)
-//			newbuf[i] = sessionBuf[i];
-//		sessionBuf = newbuf;
-//	}
 	
 	/**
 	 * From the current processing point forward, wait for the match string
@@ -148,13 +137,15 @@ public class StreamReader
 		throws IOException
 	{
 		if (patternMatcher.length == 0)
-			Logger.instance().debug1(module + " Waiting " + sec + " seconds.");
+		{
+			log.debug("Waiting {} seconds.", sec);
+		}
 		else
 		{
 			StringBuilder sb = new StringBuilder(module + " Waiting " + sec + " seconds for ");
 			for(PatternMatcher pm : patternMatcher)
 				sb.append("'" + new String(pm.getPattern()) + "' ");
-			Logger.instance().debug1(sb.toString());
+			log.debug(sb.toString());
 		}
 		for(PatternMatcher pm : patternMatcher)
 			pm.setProcessIdx(processIdx);
@@ -171,8 +162,6 @@ public class StreamReader
 						return true;
 					}
 			}
-//			if (_shutdown)
-//				throw new IOException("Input stream was shut down.");
 			try { sleep(50L); } catch(InterruptedException ex) {}
 		}
 		if (patternMatcher.length > 0)
@@ -188,7 +177,7 @@ public class StreamReader
 	{
 		this.capture = capture;
 		this.processIdx = sessionIdx;
-		Logger.instance().debug3(module + " capture=" + capture + ", processIdx=" + processIdx);
+		log.trace("capture={}, porcessIdx={}", capture, processIdx);
 	}
 	
 	/**
@@ -197,7 +186,7 @@ public class StreamReader
 	 */
 	public void flushBacklog()
 	{
-		Logger.instance().debug3(module + " flushing backlog at sessionIdx=" + sessionIdx);
+		log.trace("flushing backlog at sessionIdx={}", sessionIdx);
 		this.processIdx = sessionIdx;
 		captured.reset();
 	}
@@ -210,18 +199,6 @@ public class StreamReader
 		return captured.toByteArray();
 	}
 	
-//	/**
-//	 * @return a byte array containing all data received during entire session.
-//	 */
-//	public byte[] getEntireSession()
-//	{
-//		byte [] ret = new byte[sessionIdx];
-//		for(int i = 0; i<ret.length; i++)
-//			ret[i] = sessionBuf[i];
-//		Logger.instance().debug1(module + " Returning session buf of length " + ret.length);
-//		return ret;
-//	}
-
 	public void setPollSessionLogger(PollSessionLogger psLog)
 	{
 		this.psLog = psLog;

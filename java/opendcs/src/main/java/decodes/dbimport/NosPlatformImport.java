@@ -1,10 +1,5 @@
 /**
- * $Id$
- * 
- * $Log$
- * Revision 1.1  2012/04/27 14:29:24  mmaloney
- * Created new import utility for NOS.
- *
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
  * 
  * Copyright 2012 Sutron Corporation
  * 
@@ -27,11 +22,12 @@ import java.io.LineNumberReader;
 import java.io.FileReader;
 import java.util.StringTokenizer;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.gui.DecodesInterface;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
-import ilex.util.Logger;
-import ilex.util.StderrLogger;
 import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
@@ -65,9 +61,9 @@ import decodes.util.DecodesException;
  *   
  * @author mmaloney
  */
-public class NosPlatformImport
-	implements Runnable
+public class NosPlatformImport implements Runnable
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private CmdLineArgs cmdLineArgs = new CmdLineArgs(false, "util.log");
 	private StringToken agencyArg = new StringToken("A", "default agency code", 
 		"", TokenOptions.optSwitch, "nos");
@@ -88,8 +84,6 @@ public class NosPlatformImport
 	
 	public static void main(String args[])
 	{
-		Logger.setLogger(new StderrLogger("DbImport"));
-		
 		NosPlatformImport npi = new NosPlatformImport();
 		npi.parseArgs(args);
 		npi.run();
@@ -117,8 +111,7 @@ public class NosPlatformImport
 			}
 			catch (DatabaseException ex)
 			{
-				Logger.instance().failure("Cannot write platform list file: "
-					+ ex);
+				log.atError().setCause(ex).log("Cannot write platform list file.");
 			}
 	}
 	
@@ -135,10 +128,7 @@ public class NosPlatformImport
 		}
 		catch (DecodesException ex)
 		{
-			String msg = "Cannot initialize DECODES Database: " + ex;
-			Logger.instance().fatal(msg);
-			System.err.println(msg);
-			ex.printStackTrace();
+			log.atError().setCause(ex).log("Cannot initialize DECODES Database.");
 			return false;
 		}
 	}
@@ -149,10 +139,9 @@ public class NosPlatformImport
 	 */
 	private void processFile(String filename)
 	{
-		try
+		try(FileReader fr = new FileReader(filename);
+		    LineNumberReader lnr = new LineNumberReader(fr);)
 		{
-			LineNumberReader lnr = new LineNumberReader(
-				new FileReader(filename));
 			String line;
 			while((line = lnr.readLine()) != null)
 			{
@@ -163,9 +152,8 @@ public class NosPlatformImport
 				StringTokenizer st = new StringTokenizer(line);
 				if (st.countTokens() != 4)
 				{
-					Logger.instance().warning(filename + "(" + lnr.getLineNumber()
-						+ ") Incorrect number of tokens (" + st.countTokens() + 
-						") -- line skipped.");
+					log.warn("{}({}) Incorrect number of tokens ({}) -- line skipped.",
+							 filename, lnr.getLineNumber(), st.countTokens());
 					continue;
 				}
 				String siteNum = st.nextToken();
@@ -180,17 +168,17 @@ public class NosPlatformImport
 				}
 				catch(NumberFormatException ex)
 				{
-					Logger.instance().warning(filename + "(" + lnr.getLineNumber()
-							+ ") Non-numeric channel (" + chans + 
-							") -- line skipped.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("{}({}) Non-numeric channel ({}) -- line skipped.",
+					   		filename, lnr.getLineNumber(), chans);
 						continue;
 				}
 			}
-			lnr.close();
 		} 
 		catch (IOException ex)
 		{
-			Logger.instance().failure("Cannot open '" + filename + "': " + ex);
+			log.atError().setCause(ex).log("Cannot open '{}'", filename);
 		}
 	}
 	
@@ -205,9 +193,7 @@ public class NosPlatformImport
 		// If no matching config, fail with an error message.
 		if (config == null)
 		{
-			Logger.instance().warning(filename + "(" + linenum
-				+ ") No matching config (" + format + 
-				") -- line skipped.");
+			log.warn("{}({}) No matching config ({}) -- line skipped.", filename, linenum, format);
 			return;
 		}
 		
@@ -224,9 +210,9 @@ public class NosPlatformImport
 			}
 			catch (DatabaseException ex)
 			{
-				Logger.instance().warning(filename + "(" + linenum
-					+ ") cannot create site (" + siteNum + 
-					"): " + ex + " -- line skipped.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("{}({}) cannot create site ({}) -- line skipped.", filename, linenum, siteNum);
 				return;
 			}
 		}
@@ -238,21 +224,19 @@ public class NosPlatformImport
 		boolean newPlatform = false;
 		if (platform == null)
 		{
-			Logger.instance().debug1(filename + "(" + linenum
-					+ ") Creating new platform for " + siteNum 
-					+ " - " + goesId);
+			log.debug("{}({}) Creating new platform for {} - {}", filename, linenum, siteNum, goesId);
 			platform = new Platform();
 			platform.agency = agencyArg.getValue();
 			newPlatform = true;
 		}
 		else
-			Logger.instance().debug1(filename + "(" + linenum
-				+ ") Found existing platform for " + siteNum);
+		{
+			log.debug("{}({}) Found existing platform for {}", filename, linenum, siteNum);
+		}
 			
 		// In the platform record, associate with the given site, and config record.
 		platform.setSite(site);
-		Logger.instance().debug1(filename + "(" + linenum
-				+ ") setting config to " + config.getName());
+		log.debug("{}({}) setting config to {}", filename, linenum, config.getName());
 		platform.setConfig(config);
 		platform.setConfigName(config.getName());
 		
@@ -261,15 +245,15 @@ public class NosPlatformImport
 		TransportMedium tm = platform.getTransportMedium(Constants.medium_GoesST);
 		if (tm == null)
 		{
-			Logger.instance().debug1(filename + "(" + linenum
-					+ ") Creating new GOES ST transport medium ");
+			log.debug("{}({}) Creating new GOES ST transport medium ", filename, linenum);
 			tm = new TransportMedium(platform, Constants.medium_GoesST,
 				goesId);
 			platform.transportMedia.add(tm);
 		}
 		else
-			Logger.instance().debug1(filename + "(" + linenum
-					+ ") Found existing GOES ST transport medium");
+		{
+			log.debug("{}({}) Found existing GOES ST transport medium", filename, linenum);
+		}
 
 		tm.scriptName = "st";
 		tm.channelNum = chan;
@@ -278,9 +262,8 @@ public class NosPlatformImport
 		// If ANOTHER platform has a matching GOES ID and channel, disable it by removing the TM.
 		if (oldTmPlatform != null && oldTmPlatform != platform)
 		{
-			Logger.instance().info(filename + "(" + linenum
-				+ ") Disabling old platform with matching ID " + goesId
-				+ " for site " + siteNum);
+			log.info("{}({}) Disabling old platform with matching ID {} for site {}",
+					 filename, linenum, goesId, siteNum);
 			tm = oldTmPlatform.getTransportMedium(Constants.medium_GoesST);
 			oldTmPlatform.transportMedia.remove(tm);
 			try
@@ -289,9 +272,9 @@ public class NosPlatformImport
 			}
 			catch (DatabaseException ex)
 			{
-				Logger.instance().warning(filename + "(" + linenum
-					+ ") cannot write old Platform (" + goesId + 
-					"): " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("{}({}) cannot write old Platform ({})", filename, linenum, goesId);
 			}
 		}
 
@@ -305,9 +288,9 @@ public class NosPlatformImport
 		}
 		catch (DatabaseException ex)
 		{
-			Logger.instance().warning(filename + "(" + linenum
-				+ ") cannot write platform (" + goesId + 
-				"): " + ex);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("{}({}) cannot write platform ({}", filename, linenum, goesId);
 		}
 	}
 	

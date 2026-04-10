@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.common;
 
@@ -8,19 +20,23 @@ import ilex.util.EnvExpander;
 import java.io.IOException;
 import java.io.File;
 import java.util.Date;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Arrays;
 
 import lrgs.lrgsmain.LrgsConfig;
-import ilex.util.Logger;
 
 /**
-Provides a portable mechanism to retrieve DCP messages. 
+Provides a portable mechanism to retrieve DCP messages.
 The actual IO is delegated to an abstract DcpMsgSource that must be supplied.
 The intent was to allow this class to be able to read DCP messages from a
 variety of places.
 */
 public class DcpMsgRetriever
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The search criteria to use to filter messages */
 	protected SearchCriteria crit;
 
@@ -97,7 +113,7 @@ public class DcpMsgRetriever
 		this.username = username;
 	}
 
-	/** 
+	/**
 	  User sandbox directors are sub-directories under this.
 	  @param sandboxDir the parent of user directories
 	*/
@@ -135,7 +151,7 @@ public class DcpMsgRetriever
 	  @throws SearchSyntaxException if bad date format in Since/Until.
 	  @throws ArchiveUnavailableException if not connected.
 	*/
-	public void init() 
+	public void init()
 		throws IOException, SearchSyntaxException, ArchiveUnavailableException
 	{
 		// Clear out any previously-set criteria.
@@ -206,7 +222,7 @@ public class DcpMsgRetriever
 	   match.
 	*/
 	public int getNextPassingIndex(DcpMsgIndex idx, long stopSearchMsec)
-		throws ArchiveUnavailableException, UntilReachedException, 
+		throws ArchiveUnavailableException, UntilReachedException,
 			SearchTimeoutException, EndOfArchiveException
 	{
 		throw new ArchiveUnavailableException(
@@ -273,13 +289,12 @@ public class DcpMsgRetriever
 			addrpass = false;
 		else
 			addrpass = true;
-//Logger.instance().info("testCriteria: addrpass =" + addrpass + " address=" + testaddr);
-	
+
 		if (crit.channels == null || crit.channels.length <= 0)
 		{
 			if (!addrpass)
 				return false;  /* addr fails & no channels specified. */
-	
+
 			/* else skip channel check in next block of code... */
 		}
 		else
@@ -294,7 +309,7 @@ public class DcpMsgRetriever
 
 				if ((chan & SearchCriteria.CHANNEL_AND) != 0)
 					no_ands = false;
-	
+
 			    if ((chan & (~SearchCriteria.CHANNEL_AND)) == msgidx.getChannel())
 			    {
 					if ((chan & SearchCriteria.CHANNEL_AND) != 0)
@@ -320,36 +335,30 @@ public class DcpMsgRetriever
 			else
 				return false;
 		}
-//Logger.instance().info("testCriteria: DapsSince='" + DapsSince 
-//+ "', DapsUntil='" + DapsUntil + "'");
-	
+
 	    /* DAPS time range: */
 		Date dapstime = msgidx.getXmitTime();
 		if (DapsSince != null && dapstime.compareTo(DapsSince) < 0)
 			return false;
 		if (DapsUntil != null && dapstime.compareTo(DapsUntil) > 0)
 			return false;
-	
+
 	    /* Retransmitted messages only: */
 		boolean isRetrans = (msgidx.getFlagbits() & DcpMsgFlag.DUP_MSG) != 0;
-		if (isRetrans && (crit.Retrans == SearchCriteria.REJECT 
+		if (isRetrans && (crit.Retrans == SearchCriteria.REJECT
 		               || crit.Retrans == SearchCriteria.NO))
 			return false;
 		else if (!isRetrans && crit.Retrans == SearchCriteria.EXCLUSIVE)
 			return false;
-//Logger.instance().info("testCriteria: Checking daps status indicators");
 
 	    // DAPS Status messages: (anything with failure code != 'G' or '?')
-		boolean isDapsStat = 
+		boolean isDapsStat =
 			msgidx.getFailureCode() != 'G' && msgidx.getFailureCode() != '?';
-		if (isDapsStat && (crit.DapsStatus == SearchCriteria.REJECT 
+		if (isDapsStat && (crit.DapsStatus == SearchCriteria.REJECT
 		                || crit.DapsStatus == SearchCriteria.NO))
 			return false;
 		else if (!isDapsStat && crit.DapsStatus == SearchCriteria.EXCLUSIVE)
 			return false;
-
-//Logger.instance().info("testCriteria: crit.spacecraft='"
-//+crit.spacecraft + "', chan=" + msgidx.getChannel());
 
 		// Particular spacecraft
 		if (crit.spacecraft == SearchCriteria.SC_EAST
@@ -358,16 +367,13 @@ public class DcpMsgRetriever
 		else if (crit.spacecraft == SearchCriteria.SC_WEST
 		 && (msgidx.getChannel() % 2) == 1)
 			return false;
-			
+
 		// This part may seem counter-intuitive, but if a sequence range
-		// is set, then we only want to pass messages that have NO 
+		// is set, then we only want to pass messages that have NO
 		// sequence number. The reason is that CmdGetMsgBlockExt will
 		// first use the separate sequence-data-structures to look for
 		// messages matching the sequence range. Now we want to add messages
 		// in the time range with NO sequence number.
-//Logger.instance().info("crit.seqStart=" + crit.seqStart 
-//+ ", crit.seqEnd=" + crit.seqEnd
-//+ ", msgidx.SequenceNum=" + msgidx.getSequenceNum());
 		if (crit.seqStart != -1 && crit.seqEnd != -1
 		 && msgidx.getSequenceNum() >= 0)
 			return false;
@@ -379,7 +385,7 @@ public class DcpMsgRetriever
 			return false;
 		if (br == DcpMsgFlag.BAUD_1200 && !incl1200)
 			return false;
-		
+
 		if (crit.parityErrors == SearchCriteria.REJECT
 		 && msgidx.getFailureCode() == '?')
 			return false;
@@ -387,10 +393,9 @@ public class DcpMsgRetriever
 		 && msgidx.getFailureCode() == 'G')
 			return false;
 
-//Logger.instance().info("crit Passed all criteria tests");
 		return true;  /* passed all tests. */
 	}
-	
+
 	private void loadNetworkListFile(File f) throws IOException
 	{
 		NetworkList nl = new NetworkList(f); // Might throw IOException
@@ -412,18 +417,14 @@ public class DcpMsgRetriever
 		int n = nl.size();
 		for(int j=0; j<n; ++j)
 			aggregateList[i++] = ((NetworkListItem)nl.elementAt(j)).addr;
-//System.out.println("After loadNetworkListFile(" + f.getPath()
-//+ "' size=" + n);
-//for(int j=0; j<n; ++j)
-// System.out.println("" + j + ": " + aggregateList[j]);
 	}
 
-	private void loadDcpAddresses() 
+	private void loadDcpAddresses()
 		throws SearchSyntaxException
 	{
 		if (crit.DcpNames.size() > 0 && mapper == null)
 			throw new SearchSyntaxException(
-				"No mapper to convert DCP names to addresses.", 
+				"No mapper to convert DCP names to addresses.",
 				LrgsErrorCode.DNONAMELIST);
 
 		// temporary array big enough to store all possible addresses.
@@ -446,9 +447,7 @@ public class DcpMsgRetriever
 		for(int i = 0; i < crit.DcpNames.size(); i++)
 		{
 			String t = crit.DcpNames.get(i).toString();
-//System.out.println("Attempting to map addr for " + t);
 			DcpAddress addr = mapper.dcpNameToAddress(t);
-//System.out.println("Mapped name '" + t + "' to address " + addr);
 			if (addr == null)
 				throw new SearchSyntaxException("Unrecognized DCP name '"
 					+ t + "'", LrgsErrorCode.DBADDCPNAME);
@@ -489,7 +488,7 @@ public class DcpMsgRetriever
 	 */
 	File findNetworkListFile(String name)
 	{
-		Logger.instance().debug3("Looking for list '" + name + "'");
+		log.trace("Looking for list '{}'", name);
 		if (name == null || name.length() == 0)
 			return null;
 
@@ -501,7 +500,7 @@ public class DcpMsgRetriever
 		 || name.indexOf('/') != -1 || name.indexOf('\\') != -1)
 		{
 			exp = EnvExpander.expand(name);
-			Logger.instance().debug3("Looking at Explicit list '" + exp + "'");
+			log.trace("Looking at Explicit list '{}'", exp);
 			f = new File(exp);
 			if (f.isFile())
 				return f;
@@ -522,20 +521,18 @@ public class DcpMsgRetriever
 			}
 		}
 
-		// Look in user' directory under the Root for LDDS users 
+		// Look in user' directory under the Root for LDDS users
 		// specified in the config file:
 		if (userSandbox != null)
 		{
 			f = new File(userSandbox, name);
-			Logger.instance().debug3("Looking for user list '" 
-				+ f.getPath() + "'");
+			log.trace("Looking for user list '{}'", f.getPath());
 			if (f.isFile())
 				return f;
 
 			// Try with the '.nl' extension
 			f = new File(userSandbox, name + ".nl");
-			Logger.instance().debug3("Looking for user list '" 
-				+ f.getPath() + "'");
+			log.trace("Looking for user list '{}'", f.getPath());
 			if (f.isFile())
 				return f;
 		}
@@ -543,21 +540,21 @@ public class DcpMsgRetriever
 		// Look in shared netlist directory
 		path = LrgsConfig.instance().ddsNetlistDir + "/" + name;
 		exp = EnvExpander.expand(path);
-		Logger.instance().debug3("Looking for shared list '" + exp + "'");
+		log.trace("Looking for shared list '{}'", exp);
 		f = new File(exp);
 		if (f.isFile())
 			return f;
 		// Try with the '.nl' extension
 		exp = exp + ".nl";
 		f = new File(exp);
-		Logger.instance().debug3("Looking for shared list '" + exp + "'");
+		log.trace("Looking for shared list '{}'", exp);
 		if (f.isFile())
 			return f;
 
 		// Look in ~lrgs/netlist
 		path = "~" + File.separatorChar + "netlist" + File.separatorChar + name;
 		exp = EnvExpander.expand(path);
-		Logger.instance().debug3("Looking for shared list '" + exp + "'");
+		log.trace("Looking for shared list '{}'", exp);
 		f = new File(exp);
 		if (f.isFile())
 			return f;
@@ -566,7 +563,7 @@ public class DcpMsgRetriever
 		path = "~" + File.separatorChar + "netlist" + File.separatorChar +
 			"remote" + File.separatorChar + name;
 		exp = EnvExpander.expand(path);
-		Logger.instance().debug3("Looking for home list '" + exp + "'");
+		log.trace("Looking for home list '{}'", exp);
 		f = new File(exp);
 		if (f.isFile())
 			return f;
@@ -581,6 +578,6 @@ public class DcpMsgRetriever
 		else
 			return aggregateList.length;
 	}
-	
+
 	public SearchCriteria getCrit() { return crit; }
 }

@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.ldds;
 
@@ -7,9 +19,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.ArrayUtil;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import lrgs.common.ArchiveException;
@@ -33,15 +47,16 @@ After the 64-byte field, the remainder of the message is the file contents.
 This file just saves the file data. The LRGS modules know to check for
 config changes and load them synchronously with their other operations.
 <p>
-The response message (sent back to the client) contains the same 64-byte 
+The response message (sent back to the client) contains the same 64-byte
 field without the file-contents body.
 <p>
 If an error occurs, the 64-byte field will contain a question mark
-followed by two comma-separated integer fields corresponding to 
+followed by two comma-separated integer fields corresponding to
 'derrno' and 'errno'.
 */
 public class CmdInstallConfig extends CmdAdminCmd
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String cfgType;
 	private byte[] filedata;
 
@@ -102,11 +117,10 @@ public class CmdInstallConfig extends CmdAdminCmd
 				EnvExpander.expand(cfg.ddsNetlistDir + "/" + listname));
 			if (f.exists())
 				f.delete();
-			LddsMessage msg = 
+			LddsMessage msg =
 				new LddsMessage(LddsMessage.IdInstConfig, cfgType);
 			ldds.send(msg);
-			Logger.instance().info("Client " + ldds.getName() 
-				+ " deleted network list '" + listname + "'");
+			log.info("Client {} deleted network list '{}'", ldds.getName(), listname);
 			return 0;
 		}
 		else if (TextUtil.startsWithIgnoreCase(cfgType, "netlist:"))
@@ -125,17 +139,15 @@ public class CmdInstallConfig extends CmdAdminCmd
 			fos.write(filedata);
 			fos.close();
 
-			LddsMessage msg = 
+			LddsMessage msg =
 				new LddsMessage(LddsMessage.IdInstConfig, cfgType);
 			ldds.send(msg);
 
-			Logger.instance().info("Client " + ldds.getName() 
-				+ " installed config " + cfgType + ", file=" + f.getPath());
+			log.info("Client {} installed config {}, file={}", ldds.getName(), cfgType, f.getPath());
 		}
 		catch(IOException ioe)
 		{
-			throw new NoSuchFileException("Cannot save config '"
-				+ cfgType + "', file=" + f.getPath() + ": " + ioe.toString());
+			throw new NoSuchFileException("Cannot save config '" + cfgType + "', file=" + f.getPath(), ioe);
 		}
 		return 0;
 	}

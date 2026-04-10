@@ -1,35 +1,26 @@
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.2  2017/04/07 19:27:11  mmaloney
-*  Add debugs.
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.1  2008/04/04 18:21:04  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.4  2005/01/03 18:51:33  mjmaloney
-*  Added javadocs.
-*
-*  Revision 1.3  2004/05/06 15:29:40  mjmaloney
-*  Bug fixes in beta 6.1
-*
-*  Revision 1.2  2004/04/29 19:14:49  mjmaloney
-*  6.1 release prep
-*
-*  Revision 1.1  2004/04/29 01:10:21  mjmaloney
-*  Created.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.routmon;
 
 import java.io.*;
 import java.util.*;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.DirectoryMonitorThread;
 
 /**
@@ -39,6 +30,7 @@ the current status of all routing specs on this machine.
 */
 public class RoutingDirMonitor extends DirectoryMonitorThread
 {	
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Link back to application main */
 	private RoutingMonitor parent;
 
@@ -70,27 +62,16 @@ public class RoutingDirMonitor extends DirectoryMonitorThread
 	 */ 
 	private Properties load(File myfile)
 	{
-		FileInputStream mystream = null;
-		
-		try
+		try(FileInputStream mystream = new FileInputStream(myfile))
 		{
-			mystream = new FileInputStream(myfile);
 			Properties myproperties = new Properties();
 			myproperties.load(mystream);
 			return myproperties;
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Cannot read properties file '" + myfile.getPath()
-				+ "': " + ex + ", -- ignoring");
+			log.atWarn().setCause(ex).log("Cannot read properties file '{}' -- ignoring", myfile.getPath());
 			return null;
-		}
-		finally
-		{
-			if (mystream != null)
-				try { mystream.close(); } catch(Exception ex) {}
-
 		}
 	}
 	
@@ -102,19 +83,17 @@ public class RoutingDirMonitor extends DirectoryMonitorThread
 	 */
 	public void processFile(File myfile)
 	{
-		Logger.instance().debug3("Processing '" + myfile.getPath() + "'");
+		log.trace("Processing '{}'", myfile.getPath());
 		try { parent.setStatus(load(myfile), myfile.lastModified()); }
 		catch(BadStatusFile ex)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Error in routing status file '" + myfile.getPath()
-				+ "': " + ex);
+			log.atWarn().setCause(ex).log("Error in routing status file '{}'", myfile.getPath());
 		}
 	}
 	
 	/** 
 	 * Called by the DirectoryMonitorThread class when it completes a scan
-	 * of the intput directory. Tell the parent to generate the HTML report.
+	 * of the input directory. Tell the parent to generate the HTML report.
 	*/
 	public void finishedScan()
 	{

@@ -1,78 +1,24 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Source$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $State$
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  $Log$
-*  Revision 1.3  2013/03/28 17:29:09  mmaloney
-*  Refactoring for user-customizable decodes properties.
-*
-*  Revision 1.2  2008/11/21 16:19:51  mjmaloney
-*  Sync with OS Repository.
-*
-*  Revision 1.1  2008/04/04 18:21:13  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.16  2004/08/31 21:08:37  mjmaloney
-*  javadoc
-*
-*  Revision 1.15  2004/01/02 17:37:41  mjmaloney
-*  Release Prep
-*
-*  Revision 1.14  2003/12/14 22:25:58  mjmaloney
-*  Initial working editor with file IO but no CORBA.
-*
-*  Revision 1.13  2002/06/19 19:25:17  mjmaloney
-*  Release preparation.
-*
-*  Revision 1.12  2002/05/03 18:53:18  mjmaloney
-*  All DECODES operations are now encapsulated in the DecodesInterface class.
-*  This allows the MessageBrowser to fail gracefully if the user attempts to
-*  decode data and DECODES is not installed on this machine.
-*  Also, Modified several properties to support pull-down menus in the dialog.
-*
-*  Revision 1.11  2001/02/28 21:09:39  mike
-*  GUI DR fixe.
-*
-*  Revision 1.10  2001/02/17 18:41:56  mike
-*  Modified to use Directory rather than Naming Service.
-*
-*  Revision 1.9  2000/10/23 13:16:43  mike
-*  New scheme for help URL properties. Just specify the root. Each screen
-*  adds the unique name to the root URL.
-*
-*  Revision 1.8  2000/05/24 19:40:02  mike
-*  Default for unix text editor is now 'emacs'
-*
-*  Revision 1.7  2000/05/04 19:51:27  mike
-*  Added isWindows method.
-*
-*  Revision 1.6  2000/05/03 15:31:47  mike
-*  Initialize browser differently under Windows than Unix.
-*
-*  Revision 1.5  2000/04/06 20:33:49  mike
-*  Update help URLs to be the same as the screen class with ".html" extension.
-*
-*  Revision 1.4  2000/04/05 20:35:05  mike
-*  dev
-*
-*  Revision 1.3  2000/04/01 02:16:28  mike
-*  dev
-*
-*  Revision 1.2  2000/03/30 22:53:31  mike
-*  dev
-*
-*  Revision 1.1  2000/03/27 22:17:52  mike
-*  Created
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.gui;
 
 import java.io.FileNotFoundException;
 
-import decodes.util.DecodesVersion;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.gui.*;
 import ilex.util.EnvExpander;
@@ -83,6 +29,7 @@ properties.
 */
 public class GeneralProperties
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String prefix = "General.";
 
 	/**
@@ -94,11 +41,13 @@ public class GeneralProperties
 	{
 		String propfile = EnvExpander.expand("$HOME/" + LrgsApp.PropFile);
 
-		try { GuiApp.loadProperties(propfile); }
+		try
+		{
+			GuiApp.loadProperties(propfile);
+		}
 		catch(FileNotFoundException fnfe)
 		{
-			System.err.println(fnfe);
-			System.err.println("Default property values will be used.");
+			log.atWarn().setCause(fnfe).log("Default property values will be used.");
 		}
 
 		// Remove the deprecated Help URL properties.
@@ -114,5 +63,3 @@ public class GeneralProperties
 
 	}
 }
-
-

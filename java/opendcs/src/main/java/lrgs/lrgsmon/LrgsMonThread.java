@@ -1,36 +1,26 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.2  2008/09/05 13:17:23  mjmaloney
-*  LRGS 7 dev
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1  2008/04/04 18:21:15  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.4  2007/02/15 01:22:34  mmaloney
-*  Added ?arg feature to support new real-time status GUI.
-*
-*  Revision 1.3  2004/06/04 17:32:16  mjmaloney
-*  Completed LRGSmon application.
-*
-*  Revision 1.2  2004/06/02 21:31:51  mjmaloney
-*  dev
-*
-*  Revision 1.1  2004/06/01 15:26:36  mjmaloney
-*  Created.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.lrgsmon;
 
 import java.io.*;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.SAXException;
 
-import ilex.util.Logger;
 import lrgs.ldds.DdsVersion;
 import lrgs.ldds.LddsClient;
 import lrgs.ldds.ServerError;
@@ -40,9 +30,9 @@ import lrgs.statusxml.*;
 /**
 This thread handles a connection to a single DDS server.
 */
-public class LrgsMonThread
-	extends ThreadBase
+public class LrgsMonThread extends ThreadBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** controlling main object */
 	private LrgsMonitor parent;
 
@@ -70,7 +60,7 @@ public class LrgsMonThread
 	/** XML parser to parse incoming status messages from the DDS servers. */
 	lrgs.statusxml.TopLevelXio statusXio;
 
-	public LrgsMonThread(LrgsMonitor lm, String host, int port, 
+	public LrgsMonThread(LrgsMonitor lm, String host, int port,
 		String user, String passwd, String extHost)
 	{
 		super("LrgsMon(" + host + ")");
@@ -83,9 +73,7 @@ public class LrgsMonThread
 		try { statusXio = new lrgs.statusxml.TopLevelXio(); }
 		catch(Exception ex)
 		{
-			String msg = "Internal Error: " + ex;
-			fatal(msg);
-			System.err.println(msg);
+			log.atError().setCause(ex).log("Internal Error.");
 			System.exit(1);
 		}
 	}
@@ -128,12 +116,12 @@ public class LrgsMonThread
 		}
 		catch(Exception ex)
 		{
-			warning("Cannot connect to " + lddsClient.getName() + ": " + ex);
+			log.atWarn().setCause(ex).log("Cannot connect to {}", lddsClient.getName());
 			return;
 		}
 
-		info("Connected to " + lddsClient.getName() + ", my client protocol version="
-			+ DdsVersion.DdsVersionNum);
+		log.info("Connected to {}, my client protocol version={}",
+				 lddsClient.getName(), DdsVersion.DdsVersionNum);
 
 		try
 		{
@@ -144,32 +132,28 @@ public class LrgsMonThread
 		}
 		catch(ServerError ex)
 		{
-			warning("ServerError logging in to " + lddsClient.getName()
-				+ ": " + ex);
+			log.atWarn().setCause(ex).log("ServerError logging in to {}", lddsClient.getName());
 			lddsClient.disconnect();
 			return;
 		}
 		catch(ProtocolError ex)
 		{
-			warning("Unexpected response to login from " + lddsClient.getName()
-				+ ": " + ex);
+			log.atWarn().setCause(ex).log("Unexpected response to login from {}", lddsClient.getName());
 			lddsClient.disconnect();
 			return;
 		}
 		catch(IOException ex)
 		{
-			warning("IOException logging in to " + lddsClient.getName() 
-				+ ": " + ex);
+			log.atWarn().setCause(ex).log("IOException logging in to {}", lddsClient.getName());
 			lddsClient.disconnect();
 			return;
 		}
 
 		if (lddsClient.getServerProtoVersion() < 6)
 		{
-			warning("DDS Server at " + lddsClient.getName()
-				+ " is DDS protocol version " + lddsClient.getServerProtoVersion()
-				+ ". This application requires version 6 or later!");
-			warning("Please upgrade the LRGS at " + lddsClient.getHost() + ".");
+			log.warn("DDS Server at {} is DDS protocol version {}. This application " +
+					 "requires version 6 or later! Please upgrade the LRGS at {}.",
+					 lddsClient.getName(), lddsClient.getServerProtoVersion(), lddsClient.getHost());
 			lastStatusPoll = System.currentTimeMillis() + 60 * 60000L;
 			lddsClient.disconnect();
 			return;
@@ -182,46 +166,40 @@ public class LrgsMonThread
 	*/
 	private void pollStatus()
 	{
-		debug1("Polling " + host);
+		log.debug("Polling {}", host);
 		try
 		{
 			byte[] statmsg = lddsClient.getStatus();
-			if (Logger.instance().getMinLogPriority() <= Logger.E_DEBUG2)
+			if (log.isTraceEnabled())
 			{
-				try
+				try (FileOutputStream fos = new FileOutputStream("LastStatusSnap.xml"))
 				{
-					FileOutputStream fos = new FileOutputStream("LastStatusSnap.xml");
 					fos.write(statmsg);
-					fos.close();
 				}
 				catch(IOException ex){}
 			}
-			LrgsStatusSnapshotExt status = 
+			LrgsStatusSnapshotExt status =
 				statusXio.parse(statmsg, 0, statmsg.length, host);
 			parent.updateStatus(host, status, extHost);
 		}
 		catch(ServerError ex)
 		{
-			warning("ServerError on getStatus from " + lddsClient.getName()
-				+ ": " + ex);
+			log.atWarn().setCause(ex).log("ServerError on getStatus from {}", lddsClient.getName());
 			lddsClient.disconnect();
 		}
 		catch(ProtocolError ex)
 		{
-			warning("Unexpected response to getStatus " + lddsClient.getName()
-				+ ": " + ex);
+			log.atWarn().setCause(ex).log("Unexpected response to getStatus {}", lddsClient.getName());
 			lddsClient.disconnect();
 		}
 		catch(IOException ex)
 		{
-			warning("IOException on getStatus from " + lddsClient.getName()
-				+ ": " + ex);
+			log.atWarn().setCause(ex).log("IOException on getStatus from {}", lddsClient.getName());
 			lddsClient.disconnect();
 		}
 		catch(SAXException ex)
 		{
-			warning("Error parsing status from " + lddsClient.getName()
-				+ ": " + ex);
+			log.atWarn().setCause(ex).log("Error parsing status from {}", lddsClient.getName());
 			lddsClient.disconnect();
 		}
 	}

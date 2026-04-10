@@ -1,22 +1,18 @@
-/**
- * $Id$
- * 
- * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log$
- * Revision 1.1  2019/03/05 14:52:59  mmaloney
- * Checked in partial implementation of Alarm classes.
- *
- * Revision 1.3  2018/03/23 20:12:20  mmaloney
- * Added 'Enabled' flag for process and file monitors.
- *
- * Revision 1.2  2017/05/18 12:29:00  mmaloney
- * Code cleanup. Remove System.out debugs.
- *
- * Revision 1.1  2017/05/17 20:36:57  mmaloney
- * First working version.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.alarm.editor;
 
 import java.awt.*;
@@ -39,9 +35,11 @@ import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.AbstractTableModel;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.AlarmDAI;
 import opendcs.dao.AlarmDAO;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
@@ -56,9 +54,10 @@ import decodes.util.DecodesSettings;
 import decodes.db.Database;
 
 @SuppressWarnings("serial")
-public class AlarmEditPanel 
-	extends JPanel
+public class AlarmEditPanel	extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	private JTextField nameField = new JTextField();
 	private JTextField lastModifiedField = new JTextField();
 	AlarmEditFrame parentFrame = null;
@@ -574,8 +573,8 @@ public class AlarmEditPanel
 		}
 		catch (DbIoException ex)
 		{
-			parentFrame.showError(parentFrame.eventmonLabels.getString("dbWriteError")
-				+ ": " + ex);
+			log.atError().setCause(ex).log(parentFrame.eventmonLabels.getString("dbWriteError"));
+			parentFrame.showError(parentFrame.eventmonLabels.getString("dbWriteError") + ": " + ex)	;
 		}
 		finally
 		{
@@ -663,7 +662,7 @@ implements SortingListTableModel
 		switch(col)
 		{
 		case 0: return fm.getPath();
-		case 1: return Logger.priorityName[fm.getPriority()];
+		case 1: return "TODO?";
 		case 2: return "" + fm.isEnabled();
 		case 3: return fm.getDescription();
 		default: return "";

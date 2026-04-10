@@ -1,55 +1,23 @@
 /*
-* $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-* $Log$
-* Revision 1.5  2012/12/12 16:01:31  mmaloney
-* Several updates for 5.2
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-* Revision 1.4  2009/08/24 18:04:30  shweta
-* *** empty log message ***
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-* Revision 1.3  2009/08/24 13:46:22  shweta
-* fillConfigValues and saveConfigValues methods added to populate config dialog from properties passed as argument.
-*
-* Revision 1.2  2009/08/14 14:06:46  shweta
-* Changes done to incorporate all 3  Domain 2 servers configuration.
-*
-* Revision 1.1  2008/04/04 18:21:16  cvs
-* Added legacy code to repository
-*
-* Revision 1.9  2004/05/10 15:30:36  mjmaloney
-* Distributed UI implemented.
-*
-* Revision 1.8  2004/05/10 14:15:29  mjmaloney
-* Added checkbox for LRIT enable schedule
-*
-* Revision 1.7  2004/05/05 18:48:18  mjmaloney
-* Added UIServer & UISvrThread
-*
-* Revision 1.6  2004/05/05 15:46:18  mjmaloney
-* GUI Adjustments
-*
-* Revision 1.5  2004/05/05 15:24:11  mjmaloney
-* Controls, save, & restore for config dialog working.
-*
-* Revision 1.4  2004/05/05 12:44:50  mjmaloney
-* dev
-*
-* Revision 1.3  2004/05/04 20:28:19  mjmaloney
-* Initialize controls from data structure.
-*
-* Revision 1.2	2004/05/04 19:43:10	mjmaloney
-* Updated with new fields
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lritdcs;
-
-import ilex.util.TextUtil;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Frame;
@@ -57,8 +25,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -154,36 +120,25 @@ public class LritDcsConfigDialog extends JDialog
 	public JTextField txtLritHost = new JTextField();
 	private JLabel lblLritState = null;
 	public JComboBox comboSate = null;
-	
-//	private JCheckBox ptpEnabledCheck = new JCheckBox("Save in Share Dir for PTP: ");
-//	private JTextField ptpDirField = new JTextField();
-
 
 	public java.util.Properties configProps;  //  @jve:decl-index=0:
 	public LritDcsConfigDialog(Frame frame, String title, boolean modal)
 	{
 		super(frame, title, modal);
 		isOK = false;
-		try {
-			jbInit();
-			pack();
-		}
-		catch(Exception ex) {
-			ex.printStackTrace();
-		}
+
+		jbInit();
+		pack();
+
 	}
 
 	public LritDcsConfigDialog(Frame frame, String title, boolean modal,String mode)
 	{
 		super(frame, title, modal);
 		isOK = false;
-		try {
-			jbInit();
-			pack();
-		}
-		catch(Exception ex) {
-			ex.printStackTrace();
-		}
+
+		jbInit();
+		pack();
 	}
 	public LritDcsConfigDialog()
 	{
@@ -197,20 +152,20 @@ public class LritDcsConfigDialog extends JDialog
 
 		dds1HostCombo.setSelectedItem("" + prop.getProperty("dds1HostName"));
 		dds2HostCombo.setSelectedItem("" + prop.getProperty("dds2HostName"));
-		dds3HostCombo.setSelectedItem("" + prop.getProperty("dds3HostName"));  
+		dds3HostCombo.setSelectedItem("" + prop.getProperty("dds3HostName"));
 		dds1PortCombo.setSelectedItem("" + prop.getProperty("dds1Port"));
 		dds2PortCombo.setSelectedItem("" + prop.getProperty("dds2Port"));
-		dds3PortCombo.setSelectedItem("" + prop.getProperty("dds3Port"));  
+		dds3PortCombo.setSelectedItem("" + prop.getProperty("dds3Port"));
 		dds1UserField.setText("" + prop.getProperty("dds1UserName"));
 		dds2UserField.setText("" + prop.getProperty("dds2UserName"));
-		dds3UserField.setText("" + prop.getProperty("dds3UserName"));  
+		dds3UserField.setText("" + prop.getProperty("dds3UserName"));
 
 		maxHighBytesField.setText("" + prop.getProperty("maxBytesHigh"));
 		maxMediumBytesField.setText("" + prop.getProperty("maxBytesMedium"));
-		maxLowBytesField.setText("" + prop.getProperty("maxBytesLow"));   
+		maxLowBytesField.setText("" + prop.getProperty("maxBytesLow"));
 		maxHighMsgsField.setText("" + prop.getProperty("maxMsgsHigh"));
 		maxMediumMsgsField.setText("" + prop.getProperty("maxMsgsMedium"));
-		maxLowMsgsField.setText("" + prop.getProperty("maxMsgsLow"));   
+		maxLowMsgsField.setText("" + prop.getProperty("maxMsgsLow"));
 		maxHighSecondsField.setText("" + prop.getProperty("maxSecondsHigh"));
 		maxMediumSecondsField.setText("" + prop.getProperty("maxSecondsMedium"));
 		maxLowSecondsField.setText("" + prop.getProperty("maxSecondsLow"));
@@ -224,13 +179,13 @@ public class LritDcsConfigDialog extends JDialog
 		dom2AHighPriDirField.setText("" + prop.getProperty("dom2ADirHigh"));
 		dom2AMediumPriDirField.setText("" + prop.getProperty("dom2ADirMedium"));
 		dom2ALowPriDirField.setText("" + prop.getProperty("dom2ADirLow"));
-		
+
 		dom2BHostField.setText("" + prop.getProperty("dom2BHostName"));
 		dom2BUserField.setText("" + prop.getProperty("dom2BUser"));
 		dom2BHighPriDirField.setText("" + prop.getProperty("dom2BDirHigh"));
 		dom2BMediumPriDirField.setText("" + prop.getProperty("dom2BDirMedium"));
 		dom2BLowPriDirField.setText("" + prop.getProperty("dom2BDirLow"));
-		
+
 		dom2CHostField.setText("" + prop.getProperty("dom2CHostName"));
 		dom2CUserField.setText("" + prop.getProperty("dom2CUser"));
 		dom2CHighPriDirField.setText("" + prop.getProperty("dom2CDirHigh"));
@@ -244,12 +199,12 @@ public class LritDcsConfigDialog extends JDialog
 		uiPortField.setText("" + prop.getProperty("lritUIPort"));
 		uiHostsField.setText("" + prop.getProperty("UIIPAddresses"));
 		rsaField.setText(""+ prop.getProperty("rsaDir"));
-		
+
 		String strstate=  prop.getProperty("fileSenderState");
 		if(strstate!=null)
-		{				
+		{
 			if(strstate.equalsIgnoreCase("active"))
-			{				
+			{
 		    comboSate.setSelectedItem("Active");
 			}
 			else
@@ -257,12 +212,11 @@ public class LritDcsConfigDialog extends JDialog
 		}
 		else
 			comboSate.setSelectedItem("Dormant");
-		
-//		ptpEnabledCheck.setSelected(TextUtil.str2boolean(prop.getProperty("ptpEnabled")));
-//		ptpDirField.setText("" + prop.getProperty("ptpDir"));
+
+
 	}
-	
-	
+
+
 	public void fillValues()
 	{
 		LritDcsConfig cfg = LritDcsConfig.instance();
@@ -298,13 +252,13 @@ public class LritDcsConfigDialog extends JDialog
 		dom2AHighPriDirField.setText(cfg.getDom2ADirHigh());
 		dom2AMediumPriDirField.setText(cfg.getDom2ADirMedium());
 		dom2ALowPriDirField.setText(cfg.getDom2ADirLow());
-		
+
 		dom2BHostField.setText(cfg.getDom2BHostName());
 		dom2BUserField.setText(cfg.getDom2BUser());
 		dom2BHighPriDirField.setText(cfg.getDom2BDirHigh());
 		dom2BMediumPriDirField.setText(cfg.getDom2BDirMedium());
 		dom2BLowPriDirField.setText(cfg.getDom2BDirLow());
-		
+
 		dom2CHostField.setText(cfg.getDom2CHostName());
 		dom2CUserField.setText(cfg.getDom2CUser());
 		dom2CHighPriDirField.setText(cfg.getDom2CDirHigh());
@@ -317,13 +271,13 @@ public class LritDcsConfigDialog extends JDialog
 		pendingTimeoutField.setText("" + cfg.getLqmPendingTimeout());
 		uiPortField.setText("" + cfg.getLritUIPort());
 		uiHostsField.setText(cfg.getUIIPAddresses());
-		
+
 		txtLritHost.setText(cfg.getFileSenderHost());
-		String strstate=  cfg.getFileSenderState();		
+		String strstate=  cfg.getFileSenderState();
 			if(strstate!=null)
-			{				
+			{
 				if(strstate.equalsIgnoreCase("active"))
-				{				
+				{
 			    comboSate.setSelectedItem("Active");
 				}
 				else
@@ -331,15 +285,12 @@ public class LritDcsConfigDialog extends JDialog
 			}
 			else
 				comboSate.setSelectedItem("Dormant");
-			
-//		ptpEnabledCheck.setSelected(cfg.isPtpEnabled());
-//		ptpDirField.setText(cfg.getPtpDir());
-		
+
 	}
-	
-	
-	
-	
+
+
+
+
 	public void saveConfigValues()
 	{
 		java.util.Properties prop = new java.util.Properties();
@@ -372,30 +323,30 @@ public class LritDcsConfigDialog extends JDialog
 		prop.put("maxBytesHigh",cnvtInt(maxHighBytesField.getText(), 5000));
 		prop.put("maxBytesMedium",cnvtInt(maxMediumBytesField.getText(), 5000));
 		prop.put("maxBytesLow",cnvtInt(maxLowBytesField.getText(), 5000));
-		
+
 		prop.put("maxMsgsHigh",cnvtInt(maxHighMsgsField.getText(), 20));
 		prop.put("maxMsgsMedium",cnvtInt(maxMediumMsgsField.getText(), 20));
 		prop.put("maxMsgsLow",cnvtInt(maxLowMsgsField.getText(), 20));
-		
+
 		prop.put("maxSecondsHigh",cnvtInt(maxHighSecondsField.getText(), 30));
 		prop.put("maxSecondsMedium",cnvtInt(maxMediumSecondsField.getText(), 30));
 		prop.put("maxSecondsLow",cnvtInt(maxLowSecondsField.getText(), 30));
 
 		prop.put("scrubHours",cnvtInt(scrubHoursField.getText(), 48));
 		prop.put("maxManualRetrans",cnvtInt(maxManualField.getText(), 20));
-		prop.put("maxAutoRetrans",cnvtInt(maxAutoField.getText(), 40));		
+		prop.put("maxAutoRetrans",cnvtInt(maxAutoField.getText(), 40));
 		prop.put("dom2AHostName",dom2AHostField.getText());
 		prop.put("dom2AUser",dom2AUserField.getText());
 		prop.put("dom2ADirHigh",dom2AHighPriDirField.getText());
 		prop.put("dom2ADirMedium",dom2AMediumPriDirField.getText());
 		prop.put("dom2ADirLow",dom2ALowPriDirField.getText());
-		
+
 		prop.put("dom2BHostName",dom2BHostField.getText());
 		prop.put("dom2BUser",dom2BUserField.getText());
 		prop.put("dom2BDirHigh",dom2BHighPriDirField.getText());
 		prop.put("dom2BDirMedium",dom2BMediumPriDirField.getText());
 		prop.put("dom2BDirLow",dom2BLowPriDirField.getText());
-		
+
 		prop.put("dom2CHostName",dom2CHostField.getText());
 		prop.put("dom2CUser",dom2CUserField.getText());
 		prop.put("dom2CDirHigh",dom2CHighPriDirField.getText());
@@ -410,19 +361,16 @@ public class LritDcsConfigDialog extends JDialog
 		prop.put("lritUIPort",cnvtInt(uiPortField.getText(), 17005));
 		prop.put("UIIPAddresses",uiHostsField.getText());
 		prop.put("fileSenderHost",txtLritHost.getText());
-		
+
 		prop.put("fileSenderState",(String)(comboSate.getSelectedItem()));
 		prop.put("rsaDir",rsaField.getText());
-		
-//		prop.setProperty("ptpEnabled", "" + ptpEnabledCheck.isSelected());
-//		prop.setProperty("ptpDir", ptpDirField.getText());
-		
+
 		this.setConfigProps(prop);
 	}
 
 
 	public void saveValues()
-	{		
+	{
 		LritDcsConfig cfg = LritDcsConfig.instance();
 		cfg.setDdsTimeOut( cnvtInt(serverTimeoutCombo.getSelectedItem(), 60) );
 		cfg.setDdsRetryPeriod(cnvtInt(serverRetryCombo.getSelectedItem(),600));
@@ -472,13 +420,13 @@ public class LritDcsConfigDialog extends JDialog
 		cfg.setDom2ADirHigh(dom2AHighPriDirField.getText());
 		cfg.setDom2ADirMedium(dom2AMediumPriDirField.getText());
 		cfg.setDom2ADirLow(dom2ALowPriDirField.getText());
-		
+
 		cfg.setDom2BHostName(dom2BHostField.getText());
 		cfg.setDom2BUser(dom2BUserField.getText());
 		cfg.setDom2BDirHigh(dom2BHighPriDirField.getText());
 		cfg.setDom2BDirMedium(dom2BMediumPriDirField.getText());
 		cfg.setDom2BDirLow(dom2BLowPriDirField.getText());
-		
+
 		cfg.setDom2CHostName(dom2CHostField.getText());
 		cfg.setDom2CUser(dom2CUserField.getText());
 		cfg.setDom2CDirHigh(dom2CHighPriDirField.getText());
@@ -493,16 +441,15 @@ public class LritDcsConfigDialog extends JDialog
 		cfg.setLritUIPort(cnvtInt(uiPortField.getText(), 17005));
 		cfg.setUIIPAddresses(uiHostsField.getText());
 		cfg.setFileSenderHost(txtLritHost.getText());
-		
+
 		s= (String)(comboSate.getSelectedItem());
-		
+
 		cfg.setFileSenderState(s);
-		
-//		cfg.setPtpEnabled(ptpEnabledCheck.isSelected());
-//		cfg.setPtpDir(ptpDirField.getText());
+
 	}
 
-	private void jbInit() throws Exception {
+	private void jbInit()
+	{
 		GridBagConstraints gridBagConstraints101 = new GridBagConstraints();
 		gridBagConstraints101.fill = GridBagConstraints.BOTH;
 		gridBagConstraints101.gridy = 0;
@@ -542,7 +489,7 @@ public class LritDcsConfigDialog extends JDialog
 		gridBagConstraints43.gridwidth = 1;
 		gridBagConstraints43.weighty = 0.7D;
 		gridBagConstraints43.gridx = 0;
-			
+
 		GridBagConstraints gridBagConstraints17 = new GridBagConstraints(0, 1, 2, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 2, 0, 5), 0, -4);
 		gridBagConstraints17.gridx = 0;
 		gridBagConstraints17.ipady = 0;
@@ -555,17 +502,17 @@ public class LritDcsConfigDialog extends JDialog
 		gridBagConstraints16.ipadx = 0;
 		gridBagConstraints16.weighty = 1.4D;
 		gridBagConstraints16.gridx = 0;
-		
+
 		ddsServersPanel.setBorder(BorderFactory.createTitledBorder(
-			BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), 
-			"DDS Servers", TitledBorder.LEADING, TitledBorder.DEFAULT_POSITION, 
+			BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
+			"DDS Servers", TitledBorder.LEADING, TitledBorder.DEFAULT_POSITION,
 			new Font("Dialog", Font.BOLD, 12), new Color(51, 51, 51)));
-			
-			
-			
+
+
+
 		titledBorder1 = new TitledBorder(BorderFactory.createEtchedBorder(Color.white,new Color(165, 163, 151)),"DDS Servers");
 		titledBorder2 = new TitledBorder(BorderFactory.createEtchedBorder(Color.white,new Color(165, 163, 151)),"LRIT File Limits");
-			
+
 		panel1.setLayout(borderLayout1);
 		okButton.setText("OK");
 		okButton.addActionListener(new LritDcsConfigDialog_okButton_actionAdapter(this));
@@ -604,11 +551,11 @@ public class LritDcsConfigDialog extends JDialog
 		maxManualField.setText("20");
 		jLabel18.setText("Max Auto Retrans Q\'d: ");
 		maxAutoField.setText("40");
-		
-		
-		
-		
-		
+
+
+
+
+
 		dom2AHostField.setText("");
 		dom2AUserField.setText("");
 		dom2AHighPriDirField.setText("");
@@ -616,14 +563,14 @@ public class LritDcsConfigDialog extends JDialog
 		dom2ALowPriDirField.setText("");
 		dom2ALowPriDirField.setCursor(new Cursor(Cursor.TEXT_CURSOR));
 
-		
+
 		pendingTimeoutField.setText("120 ");
 		lqmPortField.setText("17004");
-		
+
 		lqmHostField.setText("");
-		
+
 		uiPortField.setText("17005");
-		
+
 		jPanel7.setLayout(new GridBagLayout());
 		jPanel7.add(lblLritHost, gridBagConstraints73);
 		jPanel7.add(getTxtLritHost(), gridBagConstraints83);
@@ -637,79 +584,79 @@ public class LritDcsConfigDialog extends JDialog
 		panel1.add(outerPanel, BorderLayout.CENTER);
 		outerPanel.add(lqmUiPanel, gridBagConstraints53);
 		outerPanel.add(domain2Panel, gridBagConstraints16);
-		
-		outerPanel.add(ddsServersPanel, 
-			new GridBagConstraints(0, 1, 2, 1, 1.0, 1.0, 
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, 
+
+		outerPanel.add(ddsServersPanel,
+			new GridBagConstraints(0, 1, 2, 1, 1.0, 1.0,
+				GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(5, 2, 0, 5), 0, 0));
 
 		outerPanel.add(jPanel4, gridBagConstraints17);
 		outerPanel.add(jPanel7, gridBagConstraints43);
-		ddsServersPanel.add(new JLabel("(seconds)"), 
+		ddsServersPanel.add(new JLabel("(seconds)"),
 			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(8, 10, 0, 0), 0, 0));
-		ddsServersPanel.add(new JLabel("Host or IP Address"), 
-			new GridBagConstraints(3, 0, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+		ddsServersPanel.add(new JLabel("Host or IP Address"),
+			new GridBagConstraints(3, 0, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(8, 30, 0, 0), 0, 0));
-		ddsServersPanel.add(new JLabel("Port"), 
+		ddsServersPanel.add(new JLabel("Port"),
 			new GridBagConstraints(4, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(8, 30, 0, 0), 0, 0));
-		ddsServersPanel.add(new JLabel("User"), 
+		ddsServersPanel.add(new JLabel("User"),
 			new GridBagConstraints(5, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(8, 30, 0, 0), 0, 0));
 
 		ddsServersPanel.add(new JLabel("Server Timeout: "),
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 15, 2, 0), 0, 0));
-		ddsServersPanel.add(serverTimeoutCombo,	
+		ddsServersPanel.add(serverTimeoutCombo,
 			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 0), 0, 0));
-		ddsServersPanel.add(new JLabel("Server 1: "), 
+		ddsServersPanel.add(new JLabel("Server 1: "),
 			new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 15, 2, 0), 0, 0));
-		ddsServersPanel.add(dds1HostCombo, 
+		ddsServersPanel.add(dds1HostCombo,
 			new GridBagConstraints(3, 1, 1, 1, 1.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 0), 133, 0));
-		ddsServersPanel.add(dds1PortCombo,	
-			new GridBagConstraints(4, 1, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+		ddsServersPanel.add(dds1PortCombo,
+			new GridBagConstraints(4, 1, 1, 1, 1.0, 0.0,
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 10, 2, 0), 30, 0));
-		ddsServersPanel.add(dds1UserField, 
+		ddsServersPanel.add(dds1UserField,
 			new GridBagConstraints(5, 1, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 10, 2, 10), 60, 0));
 
-		ddsServersPanel.add(new JLabel("Retry After: "), 
+		ddsServersPanel.add(new JLabel("Retry After: "),
 			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
-            	GridBagConstraints.EAST, GridBagConstraints.NONE, 
+            	GridBagConstraints.EAST, GridBagConstraints.NONE,
             	new Insets(2, 15, 2, 0), 0, 0));
-		ddsServersPanel.add(serverRetryCombo, 
+		ddsServersPanel.add(serverRetryCombo,
 			new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 0), 0, 0));
-		ddsServersPanel.add(new JLabel("Server 2: "), 
+		ddsServersPanel.add(new JLabel("Server 2: "),
 			new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 15, 2, 0), 0, 0));
-		ddsServersPanel.add(dds2HostCombo, 
+		ddsServersPanel.add(dds2HostCombo,
 			new GridBagConstraints(3, 2, 1, 1, 1.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 0), 133, 0));
-		ddsServersPanel.add(dds2PortCombo,	
+		ddsServersPanel.add(dds2PortCombo,
 			new GridBagConstraints(4, 2, 1, 1, 1.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 10, 2, 0), 30, 0));
 		ddsServersPanel.add(dds2UserField,
 			new GridBagConstraints(5, 2, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 10, 2, 10), 60, 0));
 
 		ddsServersPanel.add(new JLabel("Server 3: "),
@@ -718,15 +665,15 @@ public class LritDcsConfigDialog extends JDialog
 				new Insets(2, 15, 8, 0), 0, 0));
 		ddsServersPanel.add(dds3HostCombo,
 			new GridBagConstraints(3, 3, 1, 1, 1.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 8, 0), 133, 0));
 		ddsServersPanel.add(dds3PortCombo,
 			new GridBagConstraints(4, 3, 1, 1, 1.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 10, 8, 0), 30, 0));
 		ddsServersPanel.add(dds3UserField,
 			new GridBagConstraints(5, 3, 1, 1, 1.0, 0.0,
-            	GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+            	GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
             	new Insets(2, 10, 8, 10), 60, 0));
 
 		domain2Panel.setBorder(
@@ -734,114 +681,103 @@ public class LritDcsConfigDialog extends JDialog
 				BorderFactory.createEtchedBorder(Color.white,new Color(165, 163, 151)),
 				"Domain 2 Parameters"));
 		domain2Panel.setLayout(new GridBagLayout());
-		
+
 		domain2Panel.add(new JLabel("Host or IP Address"),
-			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.CENTER, GridBagConstraints.NONE, 
+			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.CENTER, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 0), 0, 0));
-		domain2Panel.add(new JLabel("SSH User"), 
-			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.CENTER, GridBagConstraints.NONE, 
+		domain2Panel.add(new JLabel("SSH User"),
+			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.CENTER, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 0), 0, 0));
-		domain2Panel.add(new JLabel("High Pri Dir"), 
-			new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.CENTER, GridBagConstraints.NONE, 
+		domain2Panel.add(new JLabel("High Pri Dir"),
+			new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.CENTER, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 0), 0, 0));
-		domain2Panel.add(new JLabel("Medium Pri Dir"), 
-			new GridBagConstraints(4, 0, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.CENTER, GridBagConstraints.NONE, 
+		domain2Panel.add(new JLabel("Medium Pri Dir"),
+			new GridBagConstraints(4, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.CENTER, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 0), 0, 0));
-		domain2Panel.add(new JLabel("Low Pri Dir"), 
-			new GridBagConstraints(5, 0, 1, 1, 0.0, 0.0, 
+		domain2Panel.add(new JLabel("Low Pri Dir"),
+			new GridBagConstraints(5, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 0), 0, 0));
 
-		domain2Panel.add(new JLabel("Domain 2A:"), 
-			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, 
+		domain2Panel.add(new JLabel("Domain 2A:"),
+			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 0), 0, 0));
-		domain2Panel.add(dom2AHostField, 
-			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+		domain2Panel.add(dom2AHostField,
+			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 5), 150, 0));
-		domain2Panel.add(dom2AUserField, 
-			new GridBagConstraints(2, 1, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+		domain2Panel.add(dom2AUserField,
+			new GridBagConstraints(2, 1, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 5), 70, 0));
-		domain2Panel.add(dom2AHighPriDirField, 
+		domain2Panel.add(dom2AHighPriDirField,
 			new GridBagConstraints(3, 1, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 5), 130, 0));
-		domain2Panel.add(dom2AMediumPriDirField, 
-			new GridBagConstraints(4, 1, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+		domain2Panel.add(dom2AMediumPriDirField,
+			new GridBagConstraints(4, 1, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 5), 130, 1));
-		domain2Panel.add(dom2ALowPriDirField, 
-			new GridBagConstraints(5, 1, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+		domain2Panel.add(dom2ALowPriDirField,
+			new GridBagConstraints(5, 1, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 15), 130, 1));
 
-		domain2Panel.add(new JLabel("Domain 2B:"), 
-			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, 
+		domain2Panel.add(new JLabel("Domain 2B:"),
+			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 0), 0, 0));
-		domain2Panel.add(dom2BHostField, 
-			new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+		domain2Panel.add(dom2BHostField,
+			new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 5), 150, 0));
-		domain2Panel.add(dom2BUserField, 
-			new GridBagConstraints(2, 2, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+		domain2Panel.add(dom2BUserField,
+			new GridBagConstraints(2, 2, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 5), 70, 0));
-		domain2Panel.add(dom2BHighPriDirField, 
+		domain2Panel.add(dom2BHighPriDirField,
 			new GridBagConstraints(3, 2, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 5), 130, 0));
-		domain2Panel.add(dom2BMediumPriDirField, 
-			new GridBagConstraints(4, 2, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+		domain2Panel.add(dom2BMediumPriDirField,
+			new GridBagConstraints(4, 2, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 5), 130, 1));
-		domain2Panel.add(dom2BLowPriDirField, 
-			new GridBagConstraints(5, 2, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+		domain2Panel.add(dom2BLowPriDirField,
+			new GridBagConstraints(5, 2, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 15), 130, 1));
 
-		domain2Panel.add(new JLabel("Domain 2C:"), 
-			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0, 
+		domain2Panel.add(new JLabel("Domain 2C:"),
+			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 0), 0, 0));
-		domain2Panel.add(dom2CHostField, 
-			new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+		domain2Panel.add(dom2CHostField,
+			new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 5), 150, 0));
-		domain2Panel.add(dom2CUserField, 
-			new GridBagConstraints(2, 3, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+		domain2Panel.add(dom2CUserField,
+			new GridBagConstraints(2, 3, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 5), 70, 0));
-		domain2Panel.add(dom2CHighPriDirField, 
+		domain2Panel.add(dom2CHighPriDirField,
 			new GridBagConstraints(3, 3, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 5), 130, 0));
-		domain2Panel.add(dom2CMediumPriDirField, 
-			new GridBagConstraints(4, 3, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+		domain2Panel.add(dom2CMediumPriDirField,
+			new GridBagConstraints(4, 3, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 5), 130, 1));
-		domain2Panel.add(dom2CLowPriDirField, 
-			new GridBagConstraints(5, 3, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+		domain2Panel.add(dom2CLowPriDirField,
+			new GridBagConstraints(5, 3, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 15), 130, 1));
 
-//		domain2Panel.add(ptpEnabledCheck, 
-//			new GridBagConstraints(0, 4, 2, 1, 0.0, 0.0, 
-//				GridBagConstraints.EAST, GridBagConstraints.NONE,
-//				new Insets(2, 0, 2, 0), 0, 0));
-//		domain2Panel.add(ptpDirField, 
-//			new GridBagConstraints(2, 4, 2, 1, 1.0, 0.0, 
-//				GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
-//				new Insets(2, 0, 2, 0), 0, 0));
-//		
-		
-		
 		jPanel4.add(jLabel10,	 new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0
             ,GridBagConstraints.EAST, GridBagConstraints.NONE, new Insets(9, 20, 0, 0), 0, 0));
 		jPanel4.add(jLabel11,	  new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0
@@ -885,7 +821,7 @@ public class LritDcsConfigDialog extends JDialog
 		jPanel4.add(maxAutoField,	new GridBagConstraints(5, 3, 1, 1, 1.0, 0.0
 						,GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(8, 6, 8, 25), 12, 0));
 
-		
+
 		lqmUiPanel.setLayout(new GridBagLayout());
 		lqmUiPanel.setBorder(
 			new TitledBorder(
@@ -894,57 +830,57 @@ public class LritDcsConfigDialog extends JDialog
 
 		lqmEnableCheck.setText("Listen for LQM on port: ");
 	    lqmEnableCheck.addActionListener(
-	    	new java.awt.event.ActionListener() 
+	    	new java.awt.event.ActionListener()
 	    	{
 	            public void actionPerformed(ActionEvent e) {
 	                lqmEnableChecked();
 	            }
 	        });
-		lqmUiPanel.add(lqmEnableCheck, 
-			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+		lqmUiPanel.add(lqmEnableCheck,
+			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 15, 2, 0), 0, 0));
 		lqmUiPanel.add(lqmPortField,
-			new GridBagConstraints(1, 0, 1, 1, .1, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+			new GridBagConstraints(1, 0, 1, 1, .1, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 0), 60, 0));
-		lqmUiPanel.add(new JLabel(" from host:"), 
-			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+		lqmUiPanel.add(new JLabel(" from host:"),
+			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 0), 0, 0));
-		lqmUiPanel.add(lqmHostField, 
-			new GridBagConstraints(3, 0, 1, 1, .9, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL, 
+		lqmUiPanel.add(lqmHostField,
+			new GridBagConstraints(3, 0, 1, 1, .9, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 15), 120, 0));
 
-		lqmUiPanel.add(new JLabel("Pending Timeout Sec: "), 
-			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+		lqmUiPanel.add(new JLabel("Pending Timeout Sec: "),
+			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 15, 2, 0), 0, 0));
 		lqmUiPanel.add(pendingTimeoutField,
 			new GridBagConstraints(1, 1, 1, 1, .1, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 0), 60, 0));
-		
-		lqmUiPanel.add(new JLabel("Listen for GUI on Port: "), 
-			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+
+		lqmUiPanel.add(new JLabel("Listen for GUI on Port: "),
+			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 15, 2, 0), 0, 0));
 		lqmUiPanel.add(uiPortField,
 			new GridBagConstraints(1, 2, 1, 1, .1, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 0), 0, 0));
-		lqmUiPanel.add(new JLabel(" from hosts:"), 
-			new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+		lqmUiPanel.add(new JLabel(" from hosts:"),
+			new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 0), 0, 0));
-		lqmUiPanel.add(uiHostsField, 
-			new GridBagConstraints(3, 2, 1, 1, .9, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+		lqmUiPanel.add(uiHostsField,
+			new GridBagConstraints(3, 2, 1, 1, .9, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 15), 0, 0));
-		
 
-		
+
+
 		dds1HostCombo.setEditable(true);
 		dds2HostCombo.setEditable(true);
 		dds3HostCombo.setEditable(true);
@@ -957,10 +893,10 @@ public class LritDcsConfigDialog extends JDialog
 
 	void okButton_actionPerformed(ActionEvent e)
 	{
-		
+
 		saveValues();
 		saveConfigValues();
-		
+
 		isOK = true;
 		closeDlg();
 	}
@@ -971,7 +907,7 @@ public class LritDcsConfigDialog extends JDialog
 		closeDlg();
 	}
 
-	void lqmEnableChecked() 
+	void lqmEnableChecked()
 	{
 
 	}
@@ -994,9 +930,9 @@ public class LritDcsConfigDialog extends JDialog
 	}
 
 	/**
-	 * This method initializes txtLritHost	
-	 * 	
-	 * @return javax.swing.JTextField	
+	 * This method initializes txtLritHost
+	 *
+	 * @return javax.swing.JTextField
 	 */
 	public JTextField getTxtLritHost() {
 		if (txtLritHost == null) {
@@ -1007,20 +943,20 @@ public class LritDcsConfigDialog extends JDialog
 	}
 
 	/**
-	 * This method initializes comboSate	
-	 * 	
-	 * @return javax.swing.JComboBox	
+	 * This method initializes comboSate
+	 *
+	 * @return javax.swing.JComboBox
 	 */
 	private JComboBox getComboSate() {
 		if (comboSate == null) {
 			comboSate = new JComboBox();
 			comboSate.addItem("Active");
 			comboSate.addItem("Dormant");
-			
+
 		}
 		return comboSate;
 	}
-	
+
 	/**
 	 * @return the configProps
 	 */
@@ -1039,7 +975,7 @@ public class LritDcsConfigDialog extends JDialog
 		LritDcsConfigDialog dlg = new LritDcsConfigDialog();
 		dlg.setVisible(true);
 	}
-	
+
 }
 
 
@@ -1065,4 +1001,3 @@ class LritDcsConfigDialog_cancelButton_actionAdapter implements java.awt.event.A
 		adaptee.cancelButton_actionPerformed(e);
 	}
 }
-

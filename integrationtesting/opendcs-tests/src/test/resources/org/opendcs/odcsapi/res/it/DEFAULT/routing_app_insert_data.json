@@ -1,0 +1,16 @@
+{
+  "appId" : null,
+  "appName" : "Computational App",
+  "appType" : "computation",
+  "comment" : "Processes input values",
+  "lastModified" : 1609459200000,
+  "manualEditingApp" : false,
+  "properties" : {
+    "computation" : "average",
+    "input" : "Buckhorn.Temp-Water.Inst.1Day.0.cda-test",
+    "output" : "Buckhorn.Temp-Water.Inst.1Day.0.cda-test",
+    "period" : "1 day",
+    "start" : 1675335600000,
+    "end" : 1675422000000
+  }
+}

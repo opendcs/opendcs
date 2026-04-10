@@ -1,23 +1,18 @@
-/**
- * $Id$
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract 
- * to the United States Government. No warranty is provided or implied 
- * other than specific contractual terms between COVE and the U.S. Government
- * 
- * Copyright 2017 U.S. Government.
- *
- * $Log$
- * Revision 1.3  2018/03/30 14:13:32  mmaloney
- * Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
- *
- * Revision 1.2  2017/09/05 18:35:33  mmaloney
- * dev
- *
- * Revision 1.1  2017/06/27 13:44:33  mmaloney
- * Added for 6.4
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.eventmon;
 
 import ilex.util.TextUtil;
@@ -28,6 +23,9 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import javax.swing.table.AbstractTableModel;
 
@@ -48,9 +46,9 @@ import decodes.tsdb.DbIoException;
 import decodes.util.DecodesSettings;
 
 @SuppressWarnings("serial")
-public class DacqEventTableModel extends AbstractTableModel
-	implements SortingListTableModel
+public class DacqEventTableModel extends AbstractTableModel	implements SortingListTableModel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	String[] colnames = null;
 	int [] widths = { 10, 10, 6, 8, 8, 10, 48 };
 	private int sortColumn = 0;
@@ -134,7 +132,6 @@ public class DacqEventTableModel extends AbstractTableModel
 				 || (containing != null && 
 				 		!evt.getEventText().toLowerCase().contains(containing.toLowerCase())))
 				{
-//System.out.println("Filtered out evt=" + evt.getEventTime() + ", since=" + since + ", until=" + until);
 					evtit.remove();
 				}
 			}
@@ -142,8 +139,7 @@ public class DacqEventTableModel extends AbstractTableModel
 		}
 		catch (DbIoException ex)
 		{
-			System.err.println(ex.toString());
-			ex.printStackTrace();
+			log.atError().setCause(ex).log("Unable to reload events.");
 		}
 		finally
 		{

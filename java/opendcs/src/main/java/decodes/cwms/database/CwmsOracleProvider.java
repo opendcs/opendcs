@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.cwms.database;
 
 import java.io.File;
@@ -13,20 +28,29 @@ import java.util.stream.Collectors;
 
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.statement.Call;
-import org.jdbi.v3.postgres.PostgresPlugin;
+import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityProvider;
 import org.opendcs.database.DatabaseService;
+import org.opendcs.database.JdbiTransaction;
+import org.opendcs.database.TransactionContextImpl;
+import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.DatabaseEngine;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.impl.cwms.dao.CwmsUserManagementImpl;
+import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
+import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
+import org.opendcs.database.model.Role;
+import org.opendcs.spi.database.MigrationHelper;
 import org.opendcs.spi.database.MigrationProvider;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.dbimport.DbImport;
 import decodes.launcher.Profile;
+import decodes.sql.DbKey;
 import decodes.tsdb.ImportComp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
-import ilex.util.EnvExpander;
 
 /**
  * CwmsOracleProvider provides support for handling installation and updates of the OpenDCS-CWMS-Oracle
@@ -34,7 +58,7 @@ import ilex.util.EnvExpander;
  */
 public class CwmsOracleProvider implements MigrationProvider
 {
-    private static final Logger log = LoggerFactory.getLogger(CwmsOracleProvider.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     public static final String NAME = "CWMS-Oracle";
 
     private Map<String,String> placeholders = new HashMap<>();
@@ -45,23 +69,23 @@ public class CwmsOracleProvider implements MigrationProvider
         properties.add(
             new MigrationProperty(
                 "CWMS_SCHEMA", String.class,
-                "How many tables should be used to partition numeric timeseries data."));
+                "Name of the CWMS Schema to reference"));
         properties.add(
             new MigrationProperty(
                 "CCP_SCHEMA", String.class,
-                "How many tables should be used to balance text timeseries data."));
+                "Name of CCP schema to create."));
         properties.add(
             new MigrationProperty(
                 "DEFAULT_OFFICE_CODE", Integer.class,
-                ""));
+                "Integer value of the default office to assign"));
         properties.add(
             new MigrationProperty(
                 "DEFAULT_OFFICE", String.class,
-                ""));
+                "Ascii value of the default office to assign"));
         properties.add(
             new MigrationProperty(
                 "TABLE_SPACE_SPEC", String.class,
-                ""));
+                "If data will be on a separate table space indicate the line here."));
     }
 
     @Override
@@ -85,7 +109,8 @@ public class CwmsOracleProvider implements MigrationProvider
     @Override
     public void registerJdbiPlugins(Jdbi jdbi)
     {
-        //jdbi.installPlugin(new OraclePlugin());
+        jdbi.registerArgument(new DatabaseKeyArgumentFactory());
+        jdbi.registerColumnMapper(new DatabaseKeyColumnMapper());
     }
 
     @Override
@@ -97,87 +122,74 @@ public class CwmsOracleProvider implements MigrationProvider
     @Override
     public void createUser(Jdbi jdbi, String username, String password, List<String> roles)
     {
-        log.warn("Create User ignored. CWMS Users are managed externally.");
+        final var context = new TransactionContextImpl(null, null, DatabaseEngine.POSTGRES);
+        jdbi.useTransaction(h ->
+        {
+            var tx = new JdbiTransaction(h, context);
+            var dao = new CwmsUserManagementImpl();
+
+            try(Call createUser = h.createCall("call ccp.create_user(:user,:pw)");
+                Call createCwmsUser = h.createCall("call cwms_sec.create_user(:user,:pw, null, null)");
+                Call assignRole = h.createCall("call cwms_sec.add_user_to_group(:user,:role,:office)");)
+            {
+                setupIdentityProvider(tx, dao);
+                createUser.bind("user", username)
+                          .bind("pw", password)
+                          .invoke();
+
+                createCwmsUser.bind("user",username)
+                          .bind("pw", password)
+                          .invoke();
+                for(String role: roles)
+                {
+                    assignRole.bind("user",username)
+                              .bind("role",role)
+                              .bind("office", placeholders.get("DEFAULT_OFFICE"))
+                              .invoke();
+                    // we're moving away from a single office but we need something
+                    // in place now to avoid too many changes while merging these
+                    // tests together. This is an easy stop-gap.
+                    assignRole.bind("user",username)
+                              .bind("role",role)
+                              .bind("office", "HQ")
+                              .invoke();
+                }
+            }
+            catch (OpenDcsDataException ex)
+            {
+                throw new RuntimeException("Unable to setup builtin identity provider.", ex);
+            }
+        });
     }
 
-    @Override
-    public List<File> getDecodesData()
+    private void setupIdentityProvider(DataTransaction tx, UserManagementDao dao) throws OpenDcsDataException
     {
-        List<File> files = new ArrayList<>();
-        String decodesData[] =
+        var providers = dao.getIdentityProviders(tx, -1, -1);
+        for (var provider: providers)
         {
-            "${DCSTOOL_HOME}/edit-db/enum",
-            "${DCSTOOL_HOME}/edit-db/eu/EngineeringUnitList.xml",
-            "${DCSTOOL_HOME}/edit-db/datatype/DataTypeEquivalenceList.xml",
-            "${DCSTOOL_HOME}/edit-db/presentation",
-            "${DCSTOOL_HOME}/edit-db/loading-app"
-        };
-
-        fillFiles(files, decodesData, ".xml");
-        if (log.isTraceEnabled())
-        {
-            for (File f: files)
+            if (provider instanceof BuiltInIdentityProvider)
             {
-                log.trace("Importing '{}'", f.getAbsolutePath());
+                return;
             }
         }
-        return files;
+        dao.addRole(tx, new Role(null, "ODCS_API_GUEST", null, null));
+        dao.addRole(tx, new Role(null, "ODCS_API_USER", null, null));
+        dao.addRole(tx, new Role(null, "ODCS_API_ADMIN", null, null));
+
+        var newProvider = new BuiltInIdentityProvider(DbKey.NullKey, "builttin", null, Map.of());
+
+        dao.addIdentityProvider(tx, newProvider);
     }
 
-    @Override
-    public List<File> getComputationData()
+    private List<File> getComputationData()
     {
-        List<File> files = new ArrayList<>();
         String computationData[] =
         {
-            "${DCSTOOL_HOME}/imports/comp-standard/algorithms.xml",
-            "${DCSTOOL_HOME}/imports/comp-standard/Division.xml",
-            "${DCSTOOL_HOME}/imports/comp-standard/Multiplication.xml",
             "${DCSTOOL_HOME}/schema/cwms/cwms-comps.xml"
         };
-        fillFiles(files, computationData, ".xml");
-        return files;
-    }
-
-    /**
-        for the input array of fileNames[] expand and store the absolute paths of files (that are usable) in the List<File>files  argument.
-    */
-    private void fillFiles(List<File> files, String fileNames[], String suffix)
-    {
-        for (String filename: fileNames)
-        {
-            File f = new File(EnvExpander.expand(filename, System.getProperties()));
-            if (f.exists() && f.canRead() && f.isFile())
-            {
-                files.add(f);
-            }
-            else if (f.exists() && f.canRead() && f.isDirectory())
-            {
-                try
-                {
-                    files.addAll(Files.walk(f.toPath())
-                                      .map(p -> p.toFile())
-                                      .filter(file -> file.isFile())
-                                      .filter(file -> file.getAbsolutePath().endsWith(suffix))
-                                      .collect(Collectors.toList())
-                        );
-                }
-                catch (IOException ex)
-                {
-                    log.atError()
-                       .setCause(ex)
-                       .log("Unable to process diretory '{}'", f.getAbsolutePath());
-                }
-            }
-            else if(f.exists() && !f.canRead())
-            {
-                log.error("File '{}' is not readable. Skipping.", f.getAbsolutePath());
-            }
-            else
-            {
-                log.error("File '{}' is not present. Skipping.", f.getAbsolutePath());
-            }
-        }
+        List<File> rval = MigrationHelper.getComputationData(log);
+        rval.addAll(MigrationHelper.getUsableFiles(computationData, ".xml",log));
+        return rval;
     }
 
     @Override
@@ -189,7 +201,7 @@ public class CwmsOracleProvider implements MigrationProvider
         Properties creds = new Properties();
         creds.put("username", username);
         creds.put("password", password);
-        List<File> decodesFiles = getDecodesData();
+        List<File> decodesFiles = MigrationHelper.getDecodesData(log);
         List<File> computationFiles = getComputationData();
         try
         {
@@ -244,5 +256,20 @@ public class CwmsOracleProvider implements MigrationProvider
         ArrayList<String> theSchemas = new ArrayList<>();
         theSchemas.add("CCP");
         return theSchemas;
+    }
+
+    public boolean createSchemas()
+    {
+        return true;
+    }
+
+    @Override
+    public List<String> getAdminRoles()
+    {
+        ArrayList<String> roles = new ArrayList<>();
+        roles.add("CCP MGR");
+        roles.add("CCP PROC");
+        roles.add("CWMS Users");
+        return roles;
     }
 }

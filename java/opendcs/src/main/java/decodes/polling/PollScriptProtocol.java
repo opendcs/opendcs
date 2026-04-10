@@ -1,12 +1,11 @@
 /*
- * $Id$
- * 
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
  * No warranty is provided or implied other than specific contractual terms 
  * between COVE and Alberta ESRD.
  *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +23,6 @@ package decodes.polling;
 
 import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
@@ -40,6 +38,9 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.Constants;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
@@ -50,10 +51,9 @@ import decodes.db.EnumValue;
 import decodes.db.TransportMedium;
 import decodes.util.DecodesSettings;
 
-public class PollScriptProtocol
-	extends LoggerProtocol
-	implements StreamReaderOwner
+public class PollScriptProtocol	extends LoggerProtocol implements StreamReaderOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	protected String module = "PollScriptProtocol";
 	private ArrayList<PollScriptCommand> script = new ArrayList<PollScriptCommand>();
 	protected StreamReader streamReader = null;
@@ -79,7 +79,7 @@ public class PollScriptProtocol
 	{
 		this.ioPort = port;
 		
-		pollingThread.debug3(module + ".login()");
+		log.trace("login()");
 		
 		// Use enum associated with tm.loggerType to find Poll script.
 		DbEnum lte = Database.getDb().enumList.getEnum(Constants.enum_LoggerType);
@@ -116,9 +116,9 @@ public class PollScriptProtocol
 			properties.setProperty("PASSWORD", EnvExpander.expand(tm.getPassword()));
 		
 		// Then read it into memory
-		annotate("Loading script file: " + scriptFile.getPath());
+		log.trace("Loading script file: {}", scriptFile.getPath());
 		readScript(scriptFile);
-		pollingThread.debug2("Successfully read script file '" + scriptFile + "'");
+		log.trace("Successfully read script file '{}'", scriptFile);
 		
 		// Note: No actual login is done here. The script handles it.
 	}
@@ -179,7 +179,7 @@ public class PollScriptProtocol
 					catch(NumberFormatException ex)
 					{
 						throw new LoginException("Script '" + scriptFile.getPath() + "':"
-							+ lnr.getLineNumber() + " invalid number of seconds '" + s + "' after WAIT.");
+							+ lnr.getLineNumber() + " invalid number of seconds '" + s + "' after WAIT.", ex);
 					}
 					
 					PollScriptWaitCmd pswc = new PollScriptWaitCmd(this, sec, keyword.equals("waitr"), line);
@@ -224,7 +224,7 @@ public class PollScriptProtocol
 					{
 						throw new LoginException("Script '" + scriptFile.getPath() + "':"
 							+ lnr.getLineNumber() + " invalid integer number of iterations '" 
-							+ s + "' after LOOPWAIT.");
+							+ s + "' after LOOPWAIT.", ex);
 					}
 					script.add(loopWaitCmd = new PollScriptLoopWaitCmd(this, iterations, line));
 				}
@@ -249,8 +249,7 @@ public class PollScriptProtocol
 		}
 		catch (IOException ex)
 		{
-			String msg = "Error reading script file '" + scriptFile.getPath() + "': " + ex;
-			annotate(msg);
+			final String msg = "Error reading script file '" + scriptFile.getPath() + "'";
 			throw new LoginException(msg);
 		}
 		finally
@@ -265,7 +264,9 @@ public class PollScriptProtocol
 	{
 		this.ioPort = port;
 		if (pollingThread != null)
-			pollingThread.debug1("spawning StreamReader to responses from station.");
+		{
+			log.debug("spawning StreamReader to responses from station.");
+		}
 
 		streamReader = new StreamReader(port.getIn(), this);
 		streamReader.setPollSessionLogger(pollSessionLogger);
@@ -280,18 +281,17 @@ public class PollScriptProtocol
 				PollScriptCommand cmd = script.get(scriptIdx);
 				if (_inputClosed)
 					throw new ProtocolException("Input Stream from Station Closed.");
-				annotate(cmd.getCmdLine());
 				cmd.execute();
 				if (abnormalShutdown != null)
 					break;
 				if (streamReader.getSessionIdx() >= StreamReader.MAX_BUF_SIZE)
 					break;
 			}
-			String msg = "Script execution complete."
-				+ (abnormalShutdown == null ? "" : " Abnormal Shutdown: " + abnormalShutdown);
-			annotate(msg);
 			if (pollingThread != null)
-				pollingThread.debug1(msg);
+			{
+				log.debug("Script execution complete. {}",
+						 (abnormalShutdown == null ? "" : "Abnormal Shutdown: " + abnormalShutdown));	
+			}
 		}
 		finally { streamReader.shutdown(); }
 	}
@@ -311,7 +311,7 @@ public class PollScriptProtocol
 		
 		this.transportMedium = tm;
 		Date sessionStart = new Date();
-		pollingThread.debug2("getData() session starting at " + sessionStart);
+		log.trace("getData() session starting at {}", sessionStart);
 
 		ProtocolException toThrow = null;
 		try { executeScript(port, since); }
@@ -323,8 +323,8 @@ public class PollScriptProtocol
 		// If session unsuccessful ...
 		if (toThrow != null || abnormalShutdown != null)
 		{
-			pollingThread.info("toThrow=" + toThrow + ", abnormalShutdown=" + abnormalShutdown
-				+ ", there " + (capturedData == null ? "is NO" : "IS") + " captured data.");
+			log.info("toThrow={}, abnormalShutdown={}, there {} capture data.",
+					 toThrow, abnormalShutdown, (capturedData == null ? "is NO" : "IS"));
 
 			// If there was a partial captured message, save the best one out of all attempts.
 			if (capturedData != null &&
@@ -346,7 +346,7 @@ public class PollScriptProtocol
 	
 	private DcpMsg wrapCapturedData(byte []data, Date sessionStart, Date sessionEnd, TransportMedium tm)
 	{
-		pollingThread.debug2("getData() session finished at " + sessionEnd);
+		log.trace("getData() session finished at {}", sessionEnd);
 
 		// Build DcpMsg from info in tm and captured data.
 		// Set all necessary attributes in DcpMsg.
@@ -383,15 +383,14 @@ public class PollScriptProtocol
 			ret.setFailureCode('G');
 			
 			ret.setHeaderLength(msgdata.length - capturedData.length);
-			pollingThread.debug2("getData() returning message.");
+			log.trace("getData() returning message.");
 
 			return ret;
 		}
 		catch (IOException ex)
 		{
 			// Won't happen for byte array OS
-			String msg = module + "Unexpected error in PollScriptProtocol.getData(): " + ex;
-			Logger.instance().failure(msg);
+			log.atError().setCause(ex).log("Unexpected error in PollScriptProtocol.getData()");
 		}
 		finally
 		{
@@ -420,7 +419,7 @@ public class PollScriptProtocol
 	@Override
 	public void inputError(Exception ex)
 	{
-		pollingThread.warning("input error: " + ex);
+		log.warn("input error.");
 		abnormalShutdown = ex;
 	}
 	

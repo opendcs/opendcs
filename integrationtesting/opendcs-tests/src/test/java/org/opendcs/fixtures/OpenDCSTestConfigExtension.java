@@ -10,9 +10,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -27,17 +29,19 @@ import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.TsdbAppRequired;
+import org.opendcs.fixtures.configurations.cwms.CwmsOracleConfiguration;
 import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
 import org.opendcs.fixtures.helpers.TestResources;
 import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.fixtures.spi.ConfigurationProvider;
-import org.slf4j.LoggerFactory;
-
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import decodes.db.Database;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesSettings;
-import ilex.util.FileLogger;
+import io.restassured.RestAssured;
+import jakarta.ws.rs.core.Response;
 import lrgs.gui.DecodesInterface;
 import uk.org.webcompere.systemstubs.ThrowingRunnable;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
@@ -45,11 +49,15 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
+import static io.restassured.RestAssured.given;
+import static org.opendcs.fixtures.assertions.Waiting.assertResultWithinTimeFrame;
+
 public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEachCallback, AfterAllCallback, TestExecutionListener
 {
-    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(OpenDCSTestConfigExtension.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     private static Configuration configuration = null;
+    private static TomcatServer tomcatInstance = null;
     private static Map<String,BackgroundTsDbApp<? extends TsdbAppTemplate>> runningApps = new HashMap<>();
 
     private SystemExit exit = null;
@@ -91,10 +99,12 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
         properties.setup();
         environment.setup();
         File userDir = configuration.getUserDir();
-        logger.info("DCSTOOL_USERDIR="+userDir);
+        log.info("DCSTOOL_USERDIR="+userDir);
         environment.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
         properties.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
         properties.set("INPUT_DATA",new File(TestResources.resourceDir,"/shared").getAbsolutePath());
+        properties.set("APP_NAME", "test-apps");
+        properties.set("logback.configurationFile", System.getProperty("DCSTOOL_HOME")+"/logback.xml");
         configuration.getEnvironment().forEach((k,v) -> environment.set(k,v));
     }
 
@@ -115,22 +125,31 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
             try
             {
                 configuration.start(exit, environment, properties);
+                if (configuration.supportsRestApi())
+                {
+                    tomcatInstance = startTomcat();
+                    RestAssured.baseURI = "http://localhost";
+                    RestAssured.port = tomcatInstance.getPort();
+                    RestAssured.basePath = "odcsapi";
+                    healthCheck();
+                    TomcatServer.setupTestUser(configuration.getOpenDcsDatabase());
+                }
             }
             catch(Throwable t)
             {
-                logger.atError()
+                log.atError()
                       .setCause(t)
                       .log("Unable to initialize configuration.");
                 configError = true;
-                throw t;
+                throw new Exception(t);
             }
         }
         else if (configError)
         {
-            logger.warn("Skipping 2nd attempt to start database.");
+            log.warn("Skipping 2nd attempt to start database.");
         }
 
-        logger.info("Initializing decodes.");
+        log.info("Initializing decodes.");
         DecodesSettings settings = DecodesSettings.instance();
         Properties props = new Properties();
         try(InputStream propStream = configuration.getPropertiesFile().toURI().toURL().openStream())
@@ -165,7 +184,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
     private void startOrCheckApplications(Object testInstance, Method testMethod, ExtensionContext ctx, EnvironmentVariables environment,
             SystemProperties properties, SystemExit exit) throws Exception
     {
-        logger.info("Starting or Checking required applications.");
+        log.info("Starting or Checking required applications.");
         ArrayList<TsdbAppRequired> requiredApps = new ArrayList<>();
         TsdbAppRequired apps[] = testInstance.getClass().getAnnotationsByType(TsdbAppRequired.class);
         for (TsdbAppRequired app: apps)
@@ -184,7 +203,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
             BackgroundTsDbApp<? extends TsdbAppTemplate> runningApp = runningApps.get(app.appName());
             if (runningApp == null)
             {
-                logger.info("Starting Application " + app.appName() + "{" + app.app().getName()+"}");
+                log.info("Starting Application " + app.appName() + "{" + app.app().getName()+"}");
                 runningApp = BackgroundTsDbApp.forApp(
                                 app.app(),app.appName(),configuration.getPropertiesFile(),
                                 setupLog(app.appName()+".log"),environment
@@ -232,6 +251,11 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
                 {
                     f.setAccessible(true);
                     withEnvProps(() -> f.set(testInstance,configuration.getOpenDcsDatabase()));
+                }
+                else if (f.getType().equals(TomcatServer.class) && configuration.isRunning())
+                {
+                    f.setAccessible(true);
+                    withEnvProps(() -> f.set(testInstance, tomcatInstance));
                 }
             }
             catch (Throwable ex)
@@ -347,7 +371,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
     @Override
     public void testPlanExecutionStarted(TestPlan testPlan)
     {
-        logger.info("All tests are starting.");
+        log.info("All tests are starting.");
         try
         {
             Field preventDecodesShutdownField = DecodesInterface.class.getDeclaredField("preventDecodesShutdown");
@@ -360,7 +384,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
         }
         if (configuration == null)
         {
-            logger.warn("CREATING CONFIGURATION");
+            log.warn("CREATING CONFIGURATION");
             String engine = System.getProperty("opendcs.test.engine");
             if (engine == null)
             {
@@ -385,8 +409,6 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
                 {
                     File tmp = Files.createTempDirectory("configs-"+configProvider.getImplementation()).toFile();
                     configuration = configProvider.getConfig(tmp);
-                    ilex.util.Logger.setLogger(new FileLogger("test", new File(tmp,"log.txt").getAbsolutePath(),200*1024*1024));
-                    ilex.util.Logger.instance().setMinLogPriority(ilex.util.Logger.E_DEFAULT_MIN_LOG_PRIORITY);
                 }
                 catch (Exception ex)
                 {
@@ -399,6 +421,62 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
             }
         }
     }
+
+    private TomcatServer startTomcat() throws Exception
+	{
+        // TODO: Move to individual configuration
+        if(CwmsOracleConfiguration.NAME.equals(configuration.getName()))
+		{
+			System.setProperty(TomcatServer.DB_DRIVER_CLASS, "oracle.jdbc.driver.OracleDriver");
+			System.setProperty(TomcatServer.DB_DATASOURCE_CLASS, "org.apache.tomcat.jdbc.pool.DataSourceFactory");
+			System.setProperty(TomcatServer.DB_VALIDATION_QUERY, "SELECT 1 FROM dual");
+		}
+		else
+		{
+			String validationQuery = "SELECT 1";
+			System.setProperty(TomcatServer.DB_DRIVER_CLASS, "org.postgresql.Driver");
+			System.setProperty(TomcatServer.DB_DATASOURCE_CLASS, "org.apache.tomcat.jdbc.pool.DataSourceFactory");
+			System.setProperty(TomcatServer.DB_VALIDATION_QUERY, validationQuery);
+		}
+		String restWarFile = Objects.requireNonNull(System.getProperty("opendcs.restapi.warfile"), "opendcs.restapi.warfile is not set");
+		String guiWarFile = Objects.requireNonNull(System.getProperty("opendcs.gui.warfile"), "opendcs.gui.warfile is not set");
+		TomcatServer tomcat = new TomcatServer("build/tomcat", 0, restWarFile, guiWarFile);
+        withEnvProps(tomcat::start);
+		return tomcat;
+	}
+
+	private static void healthCheck() throws Exception
+	{
+        assertResultWithinTimeFrame(i ->
+        {
+            // do we need to call all of them? no.
+			// Is there a more reasonable natural way to test these? also no.
+			return 
+            	given()
+					.when()
+					.get("/health/started")
+					.then()
+					.extract()
+					.statusCode() == Response.Status.OK.getStatusCode()
+                &&
+				given()
+					.when()
+					.get("/health/ready")
+					.then()
+					.extract()
+					.statusCode() == Response.Status.OK.getStatusCode()
+                &&
+				given()
+					.when()
+					.get("/health/live")
+					.then()
+					.extract()
+					.statusCode() == Response.Status.OK.getStatusCode();
+        },
+        1, TimeUnit.MINUTES, 
+        3, TimeUnit.SECONDS,
+        "api server not available in reasonable time");
+	}
 
     @Override
     public void testPlanExecutionFinished(TestPlan testPlan)

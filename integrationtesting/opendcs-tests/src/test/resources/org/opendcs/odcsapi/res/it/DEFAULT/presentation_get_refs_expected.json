@@ -1,0 +1,18 @@
+[
+  {
+    "groupId": 5,
+    "name": "Parent Presentation Group",
+    "inheritsFrom": null,
+    "inheritsFromId": -1,
+    "lastModified": "2025-01-10T17:38:35.000Z[UTC]",
+    "production": true
+  },
+  {
+    "groupId": 6,
+    "name": "Test Presentation Group",
+    "inheritsFrom": "Parent Presentation Group",
+    "inheritsFromId": 5,
+    "lastModified": "2025-01-10T17:38:35.000Z[UTC]",
+    "production": true
+  }
+]

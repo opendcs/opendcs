@@ -1,5 +1,19 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.util.hads;
-
 
 import java.io.File;
 import java.io.FileReader;
@@ -8,18 +22,21 @@ import java.io.LineNumberReader;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import lrgs.common.DcpAddress;
 
 /**
  * This class creates HadsEntry records.
  * This class downloads the National Weather Service from
  * its web site and store the data in the hads array list.
- * 
+ *
  */
 public class Hads
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private ArrayList<HadsEntry> hads;
 	private int badLines;
 	private static Hads _instance = null;
@@ -47,45 +64,34 @@ public class Hads
 	 */
 	public synchronized boolean load(File file)
 	{
-		Logger.instance().info("Loading USGS Hads from '" + 
-				file.getPath() + "'");
+		log.info("Loading USGS Hads from '{}'", file.getPath());
 
 		ArrayList<HadsEntry> tmphads = new ArrayList<HadsEntry>();
 
 		badLines = 0;
-		try
+
+		try (FileReader reader = new FileReader(file))
 		{
-			LineNumberReader lnr = new LineNumberReader(new FileReader(file));
+			LineNumberReader lnr = new LineNumberReader(reader);
 			String line;
-//			int countLines = 1;
 			while( (line = lnr.readLine() ) != null)
-			{	//The first 4 lines are header lines
-//				if (countLines > 4)//Data starts at line 4 of the file
-//				{
-					try { tmphads.add(new HadsEntry(line)); }
-					catch(BadHadsEntryException ex)
-					{
-						Logger.instance().warning(
-							"Bad USGS Hads line " + lnr.getLineNumber() + ": " 
-							+ ex);
-						badLines++;
-					}	
-//				}
-//				countLines++;
+			{
+				try { tmphads.add(new HadsEntry(line)); }
+				catch(BadHadsEntryException ex)
+				{
+					log.atWarn().setCause(ex).log("Bad USGS Hads line {}", lnr.getLineNumber());
+					badLines++;
+				}
 			}
-			lnr.close();
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("IO Error reading Hads File '" 
-				+ file.getPath() + "': " + ex + " -- Old Hads restored.");
+			log.atWarn().setCause(ex).log("IO Error reading Hads File '{}' -- Old Hads restored.", file.getPath());
 			return false;
 		}
 		Collections.sort(tmphads);
 		hads = tmphads;
-		Logger.instance().info(
-			"Parsed Hads File '" + file.getPath() + "' - " + hads.size()
-			+ " entries.");
+		log.info("Parsed Hads File '{}' - {} entries.", file.getPath(), hads.size());
 		return true;
 	}
 
@@ -104,7 +110,7 @@ public class Hads
 		else
 			return null;
 	}
-	
+
 	public synchronized HadsEntry getByName(String name)
 	{
 		for(HadsEntry he : hads)
@@ -185,8 +191,8 @@ public class Hads
 			"http://www.weather.gov/ohd/hads/compressed_defs/all_dcp_defs.txt",
 			//"C:/DCSTOOLTest1/dcpmon/hads");
 			"$HOME/hads");
-		
-		java.io.BufferedReader br = 
+
+		java.io.BufferedReader br =
 			new java.io.BufferedReader(
 				new java.io.InputStreamReader(System.in));
 		while(true)

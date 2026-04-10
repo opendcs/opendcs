@@ -1,19 +1,22 @@
-/**
- * $Id: PlatformMonitorFrame.java,v 1.2 2016/08/05 14:50:18 mmaloney Exp $
- *
- * $Log: PlatformMonitorFrame.java,v $
- * Revision 1.2  2016/08/05 14:50:18  mmaloney
- * Station and Routing Status GUI updates.
- *
- * Revision 1.1  2016/07/20 15:40:12  mmaloney
- * First platstat impl GUI.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.platstat;
 
 import ilex.gui.EventsPanel;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -39,6 +42,9 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import opendcs.dai.DacqEventDAI;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
 import decodes.db.PlatformStatus;
@@ -56,9 +62,9 @@ import decodes.util.DecodesSettings;
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
 @SuppressWarnings("serial")
-public class PlatformMonitorFrame 
-	extends TopFrame 
+public class PlatformMonitorFrame extends TopFrame 
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private PlatformTableModel platstatModel = null;
 	private EventsPanel eventsPanel = new EventsPanel();
 	private JSplitPane outerPane = null;
@@ -225,7 +231,7 @@ public class PlatformMonitorFrame
 			}
 			catch (DbIoException ex)
 			{
-				Logger.instance().warning("Error reading events: " + ex);
+				log.atWarn().setCause(ex).log("Error reading events.");
 			}
 			finally
 			{
@@ -237,7 +243,8 @@ public class PlatformMonitorFrame
 	private String formatEvt(DacqEvent evt)
 	{
 		StringBuilder sb = new StringBuilder();
-		sb.append(Logger.priorityName[evt.getEventPriority()] + " ");
+		// NOTE: this whole block will need to be replaced with "something" in the future
+		// once all the logging is replaced.
 		sb.append(evtTimeSdf.format(evt.getEventTime()) + " ");
 		if (evt.getSubsystem() != null)
 			sb.append("(" + evt.getSubsystem() + ") ");

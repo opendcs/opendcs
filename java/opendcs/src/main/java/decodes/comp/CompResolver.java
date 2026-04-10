@@ -1,38 +1,21 @@
-/**
- * @(#) CompResolver.java
- */
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.1  2008/04/04 18:20:59  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.6  2004/08/30 23:26:01  mjmaloney
-*  javadoc
-*
-*  Revision 1.5  2004/08/24 14:31:28  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.4  2004/08/11 21:40:56  mjmaloney
-*  Improved javadocs
-*
-*  Revision 1.3  2004/06/30 20:01:49  mjmaloney
-*  Isolated DECODES interface behind IDataCollection and ITimeSeries interfaces.
-*
-*  Revision 1.2  2004/06/24 18:36:05  mjmaloney
-*  Preliminary working version.
-*
-*  Revision 1.1  2004/06/24 14:29:51  mjmaloney
-*  Created.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
+
 package decodes.comp;
 
-import decodes.comp.Computation;
 import decodes.datasource.RawMessage;
 import decodes.db.RoutingSpec;
 import decodes.decoder.DecodedMessage;

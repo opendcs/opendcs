@@ -7,7 +7,9 @@ package lrgs.dqm;
 This class defines the interface to the DOMSAT quality monitor. Currently
 this is implemented by DapsDqmInterface. In the future the DQM function
 may be handled internally.
+@deprecated DOMSAT is no longer in service, these classes will be removed.
 */
+@Deprecated
 public interface DqmInterface
 {
 	/**

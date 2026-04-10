@@ -1,0 +1,15 @@
+{
+  "reflistId" : null,
+  "enumName" : "daysOfWeek",
+  "items" : {
+    "monday" : {
+      "value" : "monday",
+      "description" : "Day in week",
+      "execClassName" : null,
+      "editClassName" : null,
+      "sortNumber" : 1
+    }
+  },
+  "defaultValue" : "Sunday",
+  "description" : "Days of the week"
+}

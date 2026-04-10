@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.decoder;
 
@@ -9,10 +21,12 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.text.NumberFormat;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.var.TimedVariable;
 import ilex.var.NoConversionException;
 import ilex.var.IFlags;
-import ilex.util.Logger;
 
 import decodes.db.Database;
 import decodes.db.EngineeringUnit;
@@ -29,9 +43,9 @@ This holds a series of timed samples for a single sensor on a single
 platform. It also contains references to meta-data from the DECODES
 database.
 */
-public class TimeSeries
-	implements decodes.comp.ITimeSeries
+public class TimeSeries	implements decodes.comp.ITimeSeries
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Relation to Sensor objects */
 	private int sensorNumber;
     /** EU-converted samples extracted from message */
@@ -79,8 +93,6 @@ public class TimeSeries
 	public TimeSeries(int sensorNumber)
 	{
 		this.sensorNumber = sensorNumber;
-//		beginTime = new Date();
-//		endTime = new Date(0L);
 		samples = new Vector<TSSample>();
 		sensor = null;
 		eu = unknownEU;
@@ -113,15 +125,11 @@ public class TimeSeries
 		{
 			if (sensor.scriptSensor == null)
 			{
-				Logger.instance().debug1(
-					"No EU assignment and no script sensor defined for '"
-					+ sensor.getName() + "'");
+				log.debug("No EU assignment and no script sensor defined for '{}'", sensor.getName());
 			}
 			else if (sensor.scriptSensor.rawConverter == null)
 			{
-				Logger.instance().debug1(
-					"No EU assignment and no raw converter defined for '"
-					+ sensor.getName() + "'");
+			log.debug("No EU assignment and no raw converter defined for '{}", sensor.getName());
 			}
 			else
 			{
@@ -130,16 +138,14 @@ public class TimeSeries
 				{
 					try 
 					{
-						Logger.instance().log(Logger.E_DEBUG3,
-							"preparing unit converter for raw to " + ucdb.toAbbr);
+						log.trace("preparing unit converter for raw to {}", ucdb.toAbbr);
 						ucdb.prepareForExec(); 
 					}
-					catch(DatabaseException e)
+					catch(DatabaseException ex)
 					{
-					
-						Logger.instance().log(Logger.E_FAILURE,
-							"Cannot prepare raw EU converter for sensor '"
-							+ sensor.getName() + "'");
+						log.atError()
+						   .setCause(ex)
+						   .log("Cannot prepare raw EU converter for sensor '{}'", sensor.getName());
 						return;
 					}
 				}
@@ -148,9 +154,7 @@ public class TimeSeries
 					eu = converter.getTo();
 				else
 				{
-					Logger.instance().log(Logger.E_DEBUG3,
-						"No converter defined for sensor '" 
-						+ sensor.getName() + "'");
+					log.trace("No converter defined for sensor '{}'", sensor.getName());
 				}
 			}
 		}
@@ -316,7 +320,7 @@ public class TimeSeries
 	}
 
 	/**
-	  @return the formated sample at the specified index.
+	  @return the formatted sample at the specified index.
 	*/
 	public String formattedSampleAt(int idx)
 	{
@@ -392,16 +396,6 @@ public class TimeSeries
 		return d; 
 	}
 
-//
-//	/** Sets the begin time for this time series. */
-//	public void setBeginTime(Date d) { beginTime = d; }
-//
-//	/** Returns the end time for this time series. */
-//	public Date getEndTime() { return endTime; }
-//
-//	/** Sets the end time for this time series. */
-//	public void setEndTime(Date d) { endTime = d; }
-
 	/**
 	From ITimeSeries interface, sets data order.
 	@param c 'A' for ascending, 'D' for descending
@@ -438,20 +432,22 @@ public class TimeSeries
 			double v = 0.0;
 
 			try { v = tv.getDoubleValue(); }
-			catch (NoConversionException e)
+			catch (NoConversionException ex)
 			{
-				Logger.instance().log(Logger.E_FAILURE,
-					"Cannot EU convert a non-numeric value for sensor '"
-					+ sensor.configSensor.sensorName + "'");
+				log.atError()
+				   .setCause(ex)
+				   .log("Cannot EU convert a non-numeric value for sensor '{}'",
+						sensor.configSensor.sensorName);
 				continue;
 			}
 
 			try { v = converter.convert(v); }
-			catch(DecodesException e)
+			catch(DecodesException ex)
 			{
-				Logger.instance().log(Logger.E_FAILURE,
-					"EU Converter exception for sensor '"
-					+ sensor.configSensor.sensorName + "': " + e);
+				log.atError()
+				   .setCause(ex)
+				   .log("EU Converter exception for sensor '{}'",
+						sensor.configSensor.sensorName);
 				continue;
 			}
 
@@ -490,9 +486,8 @@ public class TimeSeries
 				converter = Database.getDb().unitConverterSet.get(eu, dpEU);
 				if (converter == null)
 				{
-					Logger.instance().log(Logger.E_WARNING,
-						"Cannot convert samples for '" + getDisplayName()
-						+ "' from " + eu.abbr + " to " + dpEU.getAbbr());
+					log.warn("Cannot convert samples for '{}' from '{}' to '{}'",
+							 getDisplayName(), eu.abbr, dpEU.getAbbr());
 				}
 			}
 		}
@@ -537,13 +532,9 @@ public class TimeSeries
 					else
 						tss.fv = defaultNumberFormat.format(x);
 				}
-				catch(NoConversionException e)  // means non-numeric sample
+				catch(DecodesException | NoConversionException ex)  // means non-numeric sample
 				{
-					Logger.instance().log(Logger.E_WARNING, e.toString());
-				}
-				catch(DecodesException e)
-				{
-					Logger.instance().log(Logger.E_WARNING, e.toString());
+					log.atWarn().setCause(ex).log("Unable to format sample.");
 				}
 			}
 		}
@@ -576,8 +567,9 @@ public class TimeSeries
 			try { minReplaceValue = Double.parseDouble(s); }
 			catch(Exception ex)
 			{
-				Logger.instance().warning(sensor.getDisplayName()
-					+ ": Invalid minReplaceValue '" + s + "'");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("{}: Invalid maxReplaceValue '{}'", sensor.getDisplayName(), s);
 				minReplaceValue = Constants.undefinedDouble;
 			}
 		}
@@ -587,8 +579,9 @@ public class TimeSeries
 			try { maxReplaceValue = Double.parseDouble(s); }
 			catch(Exception ex)
 			{
-				Logger.instance().warning(sensor.getDisplayName()
-					+ ": Invalid maxReplaceValue '" + s + "'");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("{}: Invalid maxReplaceValue '{}'", sensor.getDisplayName(), s);
 				minReplaceValue = Constants.undefinedDouble;
 			}
 			
@@ -616,9 +609,8 @@ public class TimeSeries
 				else
 					f |= IFlags.IS_MISSING;
 				tss.tv.setFlags(f);
-				Logger.instance().debug1(sensor.getDisplayName()
-					+ ": Value " + d + " below minimum of " + min
-					+ " -- " + what);
+				log.debug("{}: Value {} below minimum of {} -- {}",
+						  sensor.getDisplayName(), d, min, what);
 			}
 			if (max != Constants.undefinedDouble && d > max)
 			{
@@ -632,9 +624,8 @@ public class TimeSeries
 				else
 					f |= IFlags.IS_MISSING;
 				tss.tv.setFlags(f);
-				Logger.instance().debug1(sensor.getDisplayName()
-					+ ": Value " + d + " above maximum of " + max
-					+ " -- " + what);
+				log.debug("{}: Value {} above maximum of {} -- {}",
+						  sensor.getDisplayName(), d, max, what);
 			}
 		}
 	}

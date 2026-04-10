@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.launcher;
 
 import java.io.BufferedReader;
@@ -10,14 +25,16 @@ import javax.swing.SwingUtilities;
 
 import ilex.net.BasicServer;
 import ilex.net.BasicSvrThread;
-import ilex.util.Logger;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 /**
  * This class is used by the main GUI launcher to keep connections to child launchers
  * that are handling different non-default profiles.
  */
 public class ProfileLauncherConn extends BasicSvrThread
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private String profileName = null;
     private ProfileLauncherConnState state = ProfileLauncherConnState.WAIT_PROFILE_NAME;
     private int cmdNum = 1;
@@ -41,7 +58,7 @@ public class ProfileLauncherConn extends BasicSvrThread
         }
         catch(IOException ex)
         {
-            Logger.instance().warning(module + " IOException getting input stream: " + ex);
+            log.atWarn().setCause(ex).log("IOException getting input stream.");
             state = ProfileLauncherConnState.DEAD;
         }
 
@@ -55,40 +72,40 @@ public class ProfileLauncherConn extends BasicSvrThread
         try { line = input.readLine(); }
         catch(IOException ex)
         {
-            Logger.instance().warning(module + " IOException on readLine: " + ex);
+            log.atWarn().setCause(ex).log("IOException on readLine.");
             disconnect();
             return;
         }
         if (line == null)
         {
-            Logger.instance().warning(module + " readLine returned null -- assuming disconnect.");
+            log.warn(module + " readLine returned null -- assuming disconnect.");
             disconnect();
             return;
         }
         if (line.trim().length() == 0)
         {
             // Shouldn't happen?
-            Logger.instance().warning(module + " received empty line -- ignored.");
+            log.warn("received empty line -- ignored.");
             return;
         }
-        Logger.instance().debug1(module + " received reply '" + line + "'");
+        log.debug("received reply '{}'", line);
 
         switch(state)
         {
         case WAIT_PROFILE_NAME:
             setProfileName(line.trim());
-            Logger.instance().info(module + " Received ID message from client. profileName=" + profileName);
+            log.info("Received ID message from client. profileName={}", profileName);
             state = ProfileLauncherConnState.IDLE;
             break;
         case IDLE:
-            Logger.instance().warning(module + " received '" + line + "' in IDLE state -- ignored.");
+            log.warn("Received '{}' in IDLE state -- ignored.", line);
             break;
         case WAIT_CMD_RESPONSE:
             processReply(line);
             state = ProfileLauncherConnState.IDLE;
             break;
         case DEAD:
-            Logger.instance().warning(module + " DEAD interface received reply '" + line + "' -- ignored");
+            log.warn("DEAD interface received reply '{}' -- ignored", line);
         }
     }
 
@@ -102,7 +119,7 @@ public class ProfileLauncherConn extends BasicSvrThread
         String words[] = line.split(" ");
         if (words == null || words.length < 2)
         {
-            Logger.instance().warning(module + " processReply empty line '" + line + "'");
+            log.warn("processReply empty line '{}'", line);
             return;
         }
 
@@ -114,15 +131,15 @@ public class ProfileLauncherConn extends BasicSvrThread
             {
                 // Are we out of sync with the client (e.g. we sent two commands before it could
                 // reply to the first?
-                Logger.instance().warning(module + " processReply expected reply to cmdNum=" + cmdNum
-                    + " but received " + n + " -- ignored.");
+                log.warn("processReply expected reply to cmdNum={} but received {} -- ignored.", cmdNum, n);
                 return;
             }
         }
         catch(NumberFormatException ex)
         {
-            Logger.instance().warning(module + " processReply received invalid line with no cmdNum '"
-                + line + "' -- ignored");
+            log.atWarn()
+               .setCause(ex)
+               .log("processReply received invalid line with no cmdNum '{}' -- ignored", line);
             return;
         }
 
@@ -135,7 +152,7 @@ public class ProfileLauncherConn extends BasicSvrThread
         else if (words[1].startsWith("error"))
         {
             final String msg = "Error from " + module + ": " + line;
-            Logger.instance().warning(msg);
+            log.warn(msg);
             SwingUtilities.invokeLater(
                 new Runnable()
                 {
@@ -170,7 +187,7 @@ public class ProfileLauncherConn extends BasicSvrThread
         lastCmd = cmd;
         String toSend = "" + (++cmdNum) + " " + cmd;
         output.println(toSend);
-        Logger.instance().info(module + " sent '" + toSend + "'");
+        log.info("sent '{}' toSend");
         state = ProfileLauncherConnState.WAIT_CMD_RESPONSE;
     }
 

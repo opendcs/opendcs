@@ -1,35 +1,27 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.2  2010/01/07 21:48:09  shweta
-*  Enhancements for multiple DDS Receive  group.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.1  2008/04/04 18:21:16  cvs
-*  Added legacy code to repository
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.4  2005/06/28 17:37:02  mjmaloney
-*  Java-Only-Archive implementation.
-*
-*  Revision 1.3  2004/09/02 13:09:05  mjmaloney
-*  javadoc
-*
-*  Revision 1.2  2004/06/08 19:31:36  mjmaloney
-*  Final cosmetic mods
-*
-*  Revision 1.1  2004/05/04 18:03:56  mjmaloney
-*  Moved from statusgui package to here.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package lrgs.statusxml;
 
-import java.io.IOException;
-import java.util.Iterator;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
+import ilex.util.TextUtil;
 import ilex.xml.*;
-import ilex.util.*;
 import lrgs.apistatus.DownLink;
 import lrgs.apistatus.QualityMeasurement;
 
@@ -39,9 +31,9 @@ This class maps the DECODES XML representation for DownLink elements.
 
 @author Michael Maloney, Ilex Engineering, Inc.
 */
-public class DownLinkXio
-	implements XmlObjectParser, TaggedLongOwner, TaggedStringOwner
+public class DownLinkXio implements XmlObjectParser, TaggedLongOwner, TaggedStringOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The downlink we're parsing. */
 	private DownLink dl;
 
@@ -59,7 +51,7 @@ public class DownLinkXio
 	private static final int berTag   = 5;
 	private static final int groupTag = 6;
 
-	
+
 	/**
 	  Construct parser.
 	  @param lsse the LrgsStatusSnapshotExt to populate from XML data
@@ -106,7 +98,7 @@ public class DownLinkXio
 		else if (localName.equalsIgnoreCase(StatusXmlTags.LastMsgRecvTime))
 			hier.pushObjectParser(new TaggedLongSetter(this, lmrtTag));
 		else if (localName.equalsIgnoreCase(StatusXmlTags.LastSeqNum))
-			hier.pushObjectParser(new TaggedLongSetter(this, lsnTag));		
+			hier.pushObjectParser(new TaggedLongSetter(this, lsnTag));
 		else if (localName.equalsIgnoreCase(StatusXmlTags.BER))
 			hier.pushObjectParser(new TaggedLongSetter(this, berTag));
 		else if (localName.equalsIgnoreCase(StatusXmlTags.group))
@@ -123,18 +115,17 @@ public class DownLinkXio
 			}
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().log(Logger.E_WARNING, 
-					"Invalid hour in Quality record, hour='"
-					+ hours + "' -- must be 0...23 -- Quality ignored.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Invalid hour in Quality record, hour='{}' -- must be 0...23 -- Quality ignored.",
+				   		hours);
 				hier.pushObjectParser(new ElementIgnorer());
 			}
 		}
 		else
 		{
-		
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+
+			log.warn("Invalid element '{}' under {} -- skipped", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
@@ -186,7 +177,7 @@ public class DownLinkXio
 			dl.lastSeqNum = (int)value;
 			dl.hasSeqNum = true;
 			break;
-		
+
 		}
 	}
 

@@ -1,20 +1,18 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.4  2019/08/27 20:14:40  mmaloney
- * Make sure alarms always go forward in time.
- *
- * Revision 1.3  2019/08/26 20:49:52  mmaloney
- * Alarm Implementations.
- *
- * Revision 1.2  2019/08/07 14:18:58  mmaloney
- * 6.6 RC04
- *
- * Revision 1.1  2019/07/02 13:48:03  mmaloney
- * 6.6RC04 First working Alarm Implementation
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.alarm;
 
 import java.io.PrintStream;
@@ -46,15 +44,17 @@ import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.alarm.mail.AlarmMailer;
 import decodes.tsdb.alarm.mail.MailerException;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.LoadingAppDAI;
 
-public class AlarmManager
-	extends Thread
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
+public class AlarmManager extends Thread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final String module = "AlarmManager";
 	private static AlarmManager _instance = null;
 	private boolean _shutdown = false;
@@ -108,7 +108,7 @@ public class AlarmManager
 			_instance = new AlarmManager(tsdb, appId);
 	
 		long now = System.currentTimeMillis();
-Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _instance.lastMailerConfig);
+		log.trace("AlarmManager.instance() now={}, lastCfg={}", now, _instance.lastMailerConfig);
 		if (now - _instance.lastMailerConfig > MAILER_CONFIG_MS)
 		{
 			_instance.configureMailer();
@@ -140,7 +140,7 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 		
 		// The mailer thread runs in the background.
 		this.start();
-		Logger.instance().debug3(module + ".constructor appId=" + appId);
+		log.trace("constructor appId={}", appId);
 	}
 
 	/**
@@ -148,7 +148,7 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 	 */
 	private void configureMailer()
 	{
-		Logger.instance().debug3("AlarmManager.configureMailer");
+		log.trace("AlarmManager.configureMailer");
 		LoadingAppDAI loadingAppDAO = tsdb.makeLoadingAppDAO();
 		AlarmDAI alarmDAO = tsdb.makeAlarmDAO();
 		CompAppInfo cai = null;
@@ -163,9 +163,9 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 				String host = PropertiesUtil.getIgnoreCase(mailProps, "mail.smtp.host");
 				if (host == null || host.trim().length() == 0 || host.equals("-"))
 				{
-					Logger.instance().info(module 
-						+ " email alarm output disabled because 'mail.smtp.host' is undefined in properties for "
-						+ "loading application '" + cai.getAppName() + "'");
+					log.info("email alarm output disabled because 'mail.smtp.host' is undefined in properties for " +
+							 "loading application '{}'",
+							 cai.getAppName());
 					mailerEnabled = false;
 				}
 				else
@@ -177,8 +177,11 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 					catch(NumberFormatException ex)
 					{
 						resendSeconds = 3600 * 24;
-						Logger.instance().warning("Invalid resendSeconds property '" + s + "' -- should be number of seconds "
-							+ ": will use default of " + resendSeconds);
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Invalid resendSeconds property '{}' -- should be number of seconds " +
+						   		": will use default of {}",
+								s, resendSeconds);
 					}
 				}
 				s = PropertiesUtil.getIgnoreCase(mailProps, "notifyMaxAgeDays");
@@ -188,8 +191,11 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 					catch(NumberFormatException ex)
 					{
 						notifyMaxAgeDays = 30;
-						Logger.instance().warning("Invalid notifyMaxAgeDays property '" + s + "' -- should be number of days "
-							+ ": will use default of " + notifyMaxAgeDays);
+						log.atError()
+						   .setCause(ex)
+						   .log("Invalid notifyMaxAgeDays property '{}' -- should be number of days " +
+						   		": will use default of {}",
+								s, notifyMaxAgeDays);
 					}
 				}
 
@@ -202,17 +208,18 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 		}
 		catch(MailerException ex)
 		{
-			Logger.instance().failure(module + " Cannot configure alarm mailer: " + ex 
-				+ " -- email notifications will be disabled config for loading app '" 
-				+ cai.getAppName() + "' is fixed.");
+			log.atError()
+			   .setCause(ex)
+			   .log("Cannot configure alarm mailer -- email notifications will " +
+			   		" be disabled config for loading app '{}' until fixed",
+					cai.getAppName());
 			mailerEnabled = false;
 		}
 		catch (Exception ex)
 		{
-			Logger.instance().failure(module + " Error while '" + action + "': " + ex
-				+ " -- mailer will be disabled until configuration is fixed.");
-			if (Logger.instance().getLogOutput() != null)
-				ex.printStackTrace(Logger.instance().getLogOutput());
+			log.atError()
+			   .setCause(ex)
+			   .log("Error while '{}' -- mailer will be disabled until configuration is fixed.", action);
 			mailerEnabled = false;
 		}
 		finally
@@ -228,7 +235,7 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 	 */
 	public void shutdown()
 	{
-		Logger.instance().debug3(module + ".shutdown() appId=" + appId);
+		log.trace(".shutdown() appId={}", appId);
 		_shutdown = true;
 		_instance = null;
 	}
@@ -271,12 +278,9 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 			}
 			catch(Exception ex)
 			{
-				String msg = module + " unexpected exception while " + action + ": " + ex
-					+ " -- will shutdown.";
-				Logger.instance().failure(msg);
-				System.err.println(msg);
-				if (Logger.instance().getLogOutput() != null)
-					ex.printStackTrace(Logger.instance().getLogOutput());
+				log.atError()
+				   .setCause(ex)
+				   .log("unexpected exception while {} -- will shutdown.", action);
 				shutdown();
 			}
 		}
@@ -294,7 +298,7 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 		if (toSend.size() == 0)
 			return;
 		
-Logger.instance().debug3("AlarmManager.checkQueue will attempt to send " + toSend.size() + " alarms.");
+		log.trace("AlarmManager.checkQueue will attempt to send {} alarms.", toSend.size());
 		// Sort by Group ID, TSID, and then assertTime
 		Collections.sort(toSend,
 			new Comparator<AlarmMsg>()
@@ -387,7 +391,7 @@ Logger.instance().debug3("AlarmManager.checkQueue will attempt to send " + toSen
 	 */
 	private void sendEmail(DbKey groupId, String msg)
 	{
-Logger.instance().debug3("AlarmManager sendEmail mailerEnabled=" + mailerEnabled + " msg=" + msg);
+		log.trace("AlarmManager sendEmail mailerEnabled={} msg={}", mailerEnabled, msg);
 		if (!mailerEnabled)
 			return;
 		
@@ -404,11 +408,9 @@ Logger.instance().debug3("AlarmManager sendEmail mailerEnabled=" + mailerEnabled
 		}
 		catch (Exception ex)
 		{
-			String s = module + ".sendEmail failed while " + action + ": " + ex;
-			Logger.instance().warning(s);
-			PrintStream ps = Logger.instance().getLogOutput();
-			if (ps != null)
-				ex.printStackTrace(ps);
+			log.atWarn()
+			   .setCause(ex)
+			   .log(".sendEmail failed while {}", action);
 		}
 		finally
 		{
@@ -562,7 +564,7 @@ Logger.instance().debug3("AlarmManager sendEmail mailerEnabled=" + mailerEnabled
 				String alarmMsg = sb.toString();
 				if (!DbKey.isNull(scrn.getAlarmGroupId()))
 				{
-Logger.instance().debug3("AlarmManager, group is not null, enqueuing alarm for email '" + alarmMsg + "'");
+					log.trace("AlarmManager, group is not null, enqueuing alarm for email '{}'", alarmMsg);
 					msgQ.add(new AlarmMsg(scrn.getAlarmGroupId(), tsid, now, limitSet.getHintText(), alarmMsg));
 				}
 				
@@ -595,10 +597,9 @@ Logger.instance().debug3("AlarmManager, group is not null, enqueuing alarm for e
 		}
 		catch (Exception ex)
 		{
-			Logger.instance().warning(module + ".checkAlarms tsid=" + tsid + " error while " + action + ": " + ex);
-			PrintStream ps = Logger.instance().getLogOutput();
-			if (ps != null)
-				ex.printStackTrace(ps);
+			log.atWarn()
+			   .setCause(ex)
+			   .log(".checkAlarms tsid={} error while {}", tsid, action);
 		}
 		finally
 		{
@@ -612,8 +613,9 @@ Logger.instance().debug3("AlarmManager, group is not null, enqueuing alarm for e
 	{
 		Alarm currentAlarm = currentAlarms.get(tsid.getKey());
 		boolean isMissing = numExpected - numReceived > limitSet.getMaxMissingValues();
-Logger.instance().debug3("AlarmManager.missingCheckResults tsid='" + tsid.getUniqueString() + "' chkTime="
-+ sdf.format(chkTime) + ", numReceived=" + numReceived + ", numExpected=" + numExpected + ", isMissing=" + isMissing);
+		log.trace("AlarmManager.missingCheckResults tsid='{}' chkTime={}, " +
+				  "numReceived={}, numExpected={}, isMissing={}",
+				  tsid.getUniqueString(), chkTime, numReceived, numExpected, isMissing);
 		if (!isMissing)
 		{
 			// MISSING alarms will be cancelled in the 'checkAlarms' method above when new
@@ -679,8 +681,7 @@ Logger.instance().debug3("AlarmManager.missingCheckResults tsid='" + tsid.getUni
 		try
 		{
 			alarmDAO.refreshCurrentAlarms(currentAlarms, TsdbAppTemplate.getAppInstance().getAppId());
-			Logger.instance().debug1(module + " after refresh there are " + currentAlarms.size()
-				+ " currently asserted alarms.");
+			log.debug("after refresh there are {} currently asserted alarms.", currentAlarms.size());
 		}
 		finally
 		{

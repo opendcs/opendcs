@@ -1,37 +1,39 @@
-/**
- * $Id$
- * 
- * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log$
- * Revision 1.1  2019/03/05 14:52:59  mmaloney
- * Checked in partial implementation of Alarm classes.
- *
- * Revision 1.2  2017/06/13 16:35:15  mmaloney
- * Added getFrame method to support launcher.
- *
- * Revision 1.1  2017/05/17 20:36:57  mmaloney
- * First working version.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.alarm.editor;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
 import javax.swing.ImageIcon;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
+
 import lrgs.gui.DecodesInterface;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
 
-public class AlarmEditor
-	extends TsdbAppTemplate
-
+public class AlarmEditor extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	private static String module = "alarmedit";
 	private AlarmEditFrame aeFrame = null;
 	private boolean exitOnClose = true;
@@ -85,10 +87,7 @@ public class AlarmEditor
 		} 
 		catch (Exception ex)
 		{
-			String msg = module + " Can not initialize. " + ex.getMessage();
-			Logger.instance().failure(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			log.atError().setCause(ex).log("Can not initialize.");
 		}
 	}
 

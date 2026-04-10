@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.platwiz;
 
@@ -7,7 +19,6 @@ import ilex.util.LoadResourceBundle;
 
 import java.awt.*;
 import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.event.*;
 import java.io.IOException;
 import java.util.ResourceBundle;
@@ -21,7 +32,6 @@ import decodes.db.PlatformConfig;
 import decodes.db.EquipmentModel;
 import decodes.db.TransportMedium;
 import decodes.db.DecodesScript.DecodesScriptBuilder;
-import decodes.db.DatabaseException;
 import decodes.dbeditor.ConfigEditPanel;
 import decodes.dbeditor.ConfigSelectDialog;
 import decodes.dbeditor.ConfigSelectController;
@@ -29,16 +39,18 @@ import decodes.dbeditor.EquipmentModelSelectDialog;
 import decodes.gui.TopFrame;
 import decodes.util.DecodesSettings;
 
-/** Panel for defining the sensors and selecting the config. */
-public class DefineSensorsPanel extends JPanel
-		implements WizardPanel
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
+/** Panel for defining the sensors and selecting the config. */
+public class DefineSensorsPanel extends JPanel implements WizardPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static ResourceBundle genericLabels = 
 		PlatformWizard.getGenericLabels();
 	private static ResourceBundle platwizLabels = 
 		PlatformWizard.getPlatwizLabels();
-//	static { ConfigEditPanel.AddDecodingScriptsPanel = false; }
 	ConfigEditPanel configEditPanel = new ConfigEditPanel(false);
 	JLabel jLabel1 = new JLabel();
 	JPanel jPanel4 = new JPanel();
@@ -49,12 +61,15 @@ public class DefineSensorsPanel extends JPanel
 	JTextField configNameField = new JTextField();
 
 	/** Constructs new DefineSensorsPanel */
-	public DefineSensorsPanel() {
-		try {
+	public DefineSensorsPanel() 
+	{
+		try
+		{
 			jbInit();
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch(Exception ex) 
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -67,7 +82,6 @@ public class DefineSensorsPanel extends JPanel
 		jLabel1.setText(
 		platwizLabels.getString("DefineSensorsPanel.platformConfig"));
 		jPanel4.setLayout(flowLayout1);
-//		selectButton.setPreferredSize(new Dimension(85, 23));
 		selectButton.setText(genericLabels.getString("select"));
 		selectButton.addActionListener(new DefineSensorsPanel_selectButton_actionAdapter(this));
 		newButton.setPreferredSize(new Dimension(85, 23));
@@ -158,15 +172,14 @@ public class DefineSensorsPanel extends JPanel
 		
 		if (pc == null)
 		{
-//System.out.println("test pc is null");
 			return;
 		}
 		try { pc.read(); }
 		catch(DatabaseException ex)
 		{
-			PlatformWizard.instance().getFrame().showError(
-				platwizLabels.getString("DefineSensorsPanel.readConfigErr")
-				+ ex.toString());
+			String msg = platwizLabels.getString("DefineSensorsPanel.readConfigErr");
+			log.atError().setCause(ex).log(msg);
+			PlatformWizard.instance().getFrame().showError(msg + ex.toString());
 		}
 		p.setConfig(pc);
 		p.setConfigName(p.getConfigName());
@@ -179,6 +192,7 @@ public class DefineSensorsPanel extends JPanel
 		try { activate(); }
 		catch(PanelException ex)
 		{
+			log.atError().setCause(ex).log("Unable to show panel.");
 			PlatformWizard.instance().getFrame().showError(ex.toString());
 		}
 	}
@@ -220,7 +234,9 @@ public class DefineSensorsPanel extends JPanel
 				modelName = modelName.trim();
 				try {
 					pc = Database.getDb().getDbIo().newPlatformConfig(pc, modelName, originator);
-				} catch ( Exception ex) {
+				} catch ( Exception ex) 
+				{
+					log.atError().setCause(ex).log("Unable to create platform config.");
 					PlatformWizard.instance().getFrame().showError(ex.toString());
 				}
 			}
@@ -261,13 +277,13 @@ public class DefineSensorsPanel extends JPanel
 		}
 		catch(PanelException ex)
 		{
+			log.atError().setCause(ex).log("Unable to show panel.");
 			PlatformWizard.instance().getFrame().showError(ex.toString());
 		}
 	}
 
 	void setTransportMedium (Platform p, PlatformConfig pc, EquipmentModel em)
 	{
-//	    pc.addScript(new DecodesScript(pc, "EDL"));
 		String siteId = p.getSiteName(false);
 		if ( em != null && siteId != null )
 		{
