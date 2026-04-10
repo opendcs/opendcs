@@ -15,6 +15,8 @@ import java.util.Iterator;
 import ilex.var.Variable;
 import ilex.util.ArrayUtil;
 
+import org.opendcs.decodes.api.DataMessage;
+
 import decodes.util.*;
 import decodes.db.*;
 import lrgs.common.DcpMsg;
@@ -23,7 +25,7 @@ import lrgs.common.DcpMsg;
 A RawMessage object holds the data received from the data source along with
 references to the platform's meta data in the database.
 */
-public class RawMessage
+public class RawMessage implements DataMessage
 {
 	private Platform platform;
 	private TransportMedium transportMedium;

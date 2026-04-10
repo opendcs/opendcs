@@ -47,6 +47,8 @@ import decodes.tsdb.LockBusyException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.TsdbCompLock;
+import org.opendcs.decodes.api.DataMessage;
+
 import decodes.util.*;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.DecoderException;
@@ -425,10 +427,28 @@ public class RoutingSpecThread extends Thread
 			// Retrieve the next raw message from the data source.
 			//=====================================================
 			myExec.setSubsystem("acquire");
+			DataMessage dataMessage = null;
 			RawMessage rm = null;
 			try
 			{
-				rm = source.getRawMessage();
+				dataMessage = source.getDataMessage();
+				/* future note: support other types of DataMessage like the comment below.
+				if (dataMessage instanceof DecodedMessage)
+				{
+					// DataSource returned a pre-decoded message — skip decoding
+					myExec.setSubsystem("format-output");
+					formatAndOutputMessage((DecodedMessage) dataMessage, null);
+					currentStatus = "Running";
+					continue;
+				}
+				*/
+				if (dataMessage instanceof RawMessage) {
+					rm = (RawMessage) dataMessage;
+				}
+				else {
+					log.error("Unknown DataMessage type: {}", dataMessage.getClass().getName());
+				}
+
 				if (rm == null)
 				{
 					log.trace("Data source failed to return message, pausing for 1 seconds.");
@@ -636,7 +656,7 @@ public class RoutingSpecThread extends Thread
 	/**
 	 * Try to decode. Return decoded message if success, null if error.
 	 * @param rm raw message
-	 * @param platformStatus platform status in case of errors
+	 * @param platstat platform status in case of errors
 	 * @return decoded message if success, null if error
 	 */
 	private DecodedMessage attemptDecode(RawMessage rm, PlatformStatus platstat)
