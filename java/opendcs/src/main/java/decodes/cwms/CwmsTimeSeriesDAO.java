@@ -818,10 +818,10 @@ public class CwmsTimeSeriesDAO
         }
         catch(SQLException ex)
         {
-            String msg = "Error in cwmsTsJdbc.store for '" + path + "'";
+            String msg = "Error in cwmsTsJdbc.store for '{}'";
             log.atError()
                .setCause(ex)
-               .log(msg);
+               .log(msg, path);
 
             if (OracleSqlExceptionHelper.isConnectionError(ex))
             {
