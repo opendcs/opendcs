@@ -107,6 +107,36 @@ public class AW_AlgorithmTemplate extends AW_AlgorithmBase
 	}
 
 	/**
+	 * Called once after all aggregate periods (or all time slices) complete
+	 * successfully. Use for saving final results. Do NOT release resources
+	 * here — use alwaysAfterTimeSlices() instead.
+	 */
+	public void afterAllTimeSlices()
+		throws DbCompException
+	{
+		// Example: save accumulated output profiles
+	}
+
+	/**
+	 * Called in a finally block — guaranteed to run even if an exception
+	 * occurred during computation. Use this to release any resources
+	 * (database connections, DAOs, etc.) that were acquired in
+	 * beforeAllTimeSlices().
+	 *
+	 * Example:
+	 * <pre>
+	 *     public void alwaysAfterTimeSlices() {
+	 *         if (conn != null) tsdb.freeConnection(conn);
+	 *         if (myDAO != null) myDAO.close();
+	 *     }
+	 * </pre>
+	 */
+	public void alwaysAfterTimeSlices()
+	{
+		// Release resources here. This runs even on failure.
+	}
+
+	/**
 	 * Required method returns a list of all input time series names.
 	 */
 	public String[] getInputNames()
