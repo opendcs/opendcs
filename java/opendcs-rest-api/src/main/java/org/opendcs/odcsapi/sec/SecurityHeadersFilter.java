@@ -44,7 +44,9 @@ public final class SecurityHeadersFilter implements ContainerResponseFilter
 				.getMatchedResources()
 				.stream()
 				.map(Object::getClass)
-				.noneMatch(c -> c == OpenApiResource.class))
+				.noneMatch(c -> c == OpenApiResource.class)
+			&& (response.getMediaType() == null
+				|| (response.getMediaType() != null && !response.getMediaType().equals(MediaType.SERVER_SENT_EVENTS_TYPE))))
 		{
 			response.getHeaders().putSingle("X-Content-Type-Options", "nosniff");
 			response.getHeaders().putSingle("Content-Type", MediaType.APPLICATION_JSON_TYPE);

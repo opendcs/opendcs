@@ -15,38 +15,18 @@
 */
 package decodes.tsdb.compedit.algotab;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.PathMatcher;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.swing.table.AbstractTableModel;
 
-import org.opendcs.utils.ClasspathIO;
-import org.opendcs.utils.logging.OpenDcsLoggerFactory;
-
-import decodes.tsdb.CompMetaData;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesDb;
-import decodes.tsdb.xml.CompXio;
-import decodes.tsdb.xml.DbXmlException;
-import ilex.util.EnvExpander;
 import ilex.util.Pair;
-import opendcs.dai.AlgorithmDAI;
+import org.opendcs.utils.AlgorithmCatalogScanner;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 public final class ExecClassTableModel extends AbstractTableModel
 {
@@ -150,123 +130,22 @@ public final class ExecClassTableModel extends AbstractTableModel
 
     public void load(boolean newOnly) throws NoSuchObjectException
     {
-        Path toolHome = Paths.get(EnvExpander.expand("$DCSTOOL_HOME"));
-        Path userDir = Paths.get(EnvExpander.expand("$DCSTOOL_USERDIR"));
-        PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:**/*.xml");
-        final CompXio reader = new CompXio("algoreader", null);
-        Function<URL,Stream<DbCompAlgorithm>> readAlgos = (URL url) ->
-        {
-            if (url == null)
-            {
-                return Stream.empty();
-            }
-            try (InputStream stream = url.openStream())
-            {
-                ArrayList<CompMetaData> data = reader.readStream(stream);
-                return data.stream()
-                        .filter(cmd -> cmd instanceof DbCompAlgorithm)
-                        .map(cmd ->
-                        {
-                            return (DbCompAlgorithm)cmd;
-                        });
-            }
-            catch (DbXmlException | IOException ex)
-            {
-                // We're looking at every XML, we only care about issues
-                // with files we actually want.
-                if (!ex.getMessage().contains("Root element is not 'CompMetaData'"))
-                {
-                    log.atWarn()
-                       .setCause(ex)
-                       .log("Unable to process file {}", url.toString());
-                }
-                return Stream.empty();
-            }
-        };
         try
         {
-            Predicate<DbCompAlgorithm> districtByExec = new Predicate<DbCompAlgorithm>()
+            Set<String> importedExecClasses = AlgorithmCatalogScanner.getImportedExecClasses(tsDb);
+            for (DbCompAlgorithm algo : AlgorithmCatalogScanner.scanAvailableAlgorithms())
             {
-                Set<String> execNames = new HashSet<>();
-
-                @Override
-                public boolean test(DbCompAlgorithm t)
-                {
-                    return execNames.add(t.getExecClass());
-                }
-
-            };
-
-            final Function<DbCompAlgorithm,Boolean> presentInDb = new Function<DbCompAlgorithm,Boolean>()
-            {
-                Set<String> execNames = new HashSet<>();
-
-                @Override
-                public Boolean apply(DbCompAlgorithm algo)
-                {
-                    if (execNames.contains(algo.getExecClass()))
-                    {
-                        return true;
-                    }
-                    try(AlgorithmDAI dai = tsDb.makeAlgorithmDAO())
-                    {
-                        boolean found = false;
-                        ArrayList<DbCompAlgorithm> algos = dai.listAlgorithms();
-                        for (DbCompAlgorithm a: algos)
-                        {
-                            if (execNames.add(a.getExecClass()))
-                            {
-                                found = true;
-                            }
-                        }
-                        return found;
-                    }
-                    catch (DbIoException ex)
-                    {
-                        log.atError()
-                           .setCause(ex)
-                           .log("Unable to search database for current algorithms.");
-                    }
-
-                    return false;
-                }
-            };
-            Stream.concat(Files.find(toolHome, 5, (path, attributes) -> matcher.matches(path)),
-                          Files.find(userDir, 5, (path, attributes) -> matcher.matches(path)))
-                    .map(path ->
-                    {
-                        try
-                        {
-                            return path.toUri().toURL();
-                        }
-                        catch (MalformedURLException ex)
-                        {
-                            return null;
-                        }
-                    })
-                    .flatMap(readAlgos)
-                    .filter(districtByExec)
-                    .peek(algo -> System.out.println(algo.getName()))
-                    .map(a -> new Pair<>(presentInDb.apply(a),a))
-                    .collect(Collectors.toCollection(() -> this.classlist));
-
-            ClasspathIO.getAllResourcesIn("algorithms", this.getClass().getClassLoader())
-                       .stream()
-                       .filter(u -> u.toExternalForm().endsWith(".xml"))
-                       .flatMap(readAlgos)
-                       .filter(districtByExec)
-                       .peek(algo -> System.out.println("From Jars:" + algo.getName()))
-                       .map(a -> new Pair<>(presentInDb.apply(a),a))
-                       .collect(Collectors.toCollection(() -> this.classlist));
+                boolean alreadyImported = importedExecClasses.contains(algo.getExecClass());
+                classlist.add(new Pair<>(alreadyImported, algo));
+            }
             this.fireTableDataChanged();
         }
-        catch (IOException ex)
+        catch (DbIoException ex)
         {
             log.atError()
                .setCause(ex)
-               .log("Unable to process DCSTOOL_HOME or DCSTOOL_USER directory.");
+               .log("Unable to search database for current algorithms.");
         }
-
     }
 
     public void removeAlgo(DbCompAlgorithm algoToRemove)

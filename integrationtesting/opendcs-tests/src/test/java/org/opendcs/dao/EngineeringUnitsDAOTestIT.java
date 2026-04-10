@@ -25,7 +25,7 @@ class EngineeringUnitsDAOTestIT extends AppTestBase
         var unitDao = db.getDao(EngineeringUnitDao.class).orElseThrow();
         try (var tx = db.newTransaction())
         {
-            var unit = unitDao.lookup(tx, "ft");
+            var unit = unitDao.getByName(tx, "ft");
             assertTrue(unit.isPresent());
         }
     }
@@ -87,7 +87,7 @@ class EngineeringUnitsDAOTestIT extends AppTestBase
 
             unitDao.delete(tx, unitIn.getAbbr());
 
-            var unitShouldNotExist = unitDao.lookup(tx, unitIn.getName());
+            var unitShouldNotExist = unitDao.getByName(tx, unitIn.getName());
             assertFalse(unitShouldNotExist.isPresent());
         }
     }

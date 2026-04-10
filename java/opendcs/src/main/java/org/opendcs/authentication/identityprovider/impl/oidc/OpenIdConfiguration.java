@@ -10,30 +10,115 @@ import org.slf4j.Logger;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import static org.opendcs.utils.json.Helpers.getTextField;
+
 public final class OpenIdConfiguration
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     public final URI wellKnownUri;
-    public final String issuer;
-    public final URI authUri;
-    public final URI tokenUri;
-    public final URI userInfoUri;
-    public final URI logoutUri;
-    public final URI jwksUri;
+    private String issuer = null;
+    private URI authUri;
+    private URI tokenUri;
+    private URI userInfoUri;
+    private URI logoutUri;
+    private URI jwksUri;
 
-    public OpenIdConfiguration(URI wellKnown) throws IOException
+    /**
+     * Establish the required set of well known configuration data.
+     * Data will not be retrieved from the URL until use is requested.
+     * @param wellKnown
+     */
+    public OpenIdConfiguration(URI wellKnown)
     {
         this.wellKnownUri = wellKnown;
+    }
 
+    /**
+     * Get the defined issuer
+     * @return
+     * @throws OidcConfigurationException if the well known data could not be processed.
+     */
+    public String getIssuer()
+    {
+        retrieveData();
+        return issuer;
+    }
+
+    /**
+     *
+     * @return
+     * @throws OidcConfigurationException if the well known data could not be processed.
+     */
+    public URI getAuthUri()
+    {
+        retrieveData();
+        return authUri;
+    }
+
+    /**
+     *
+     * @return
+     * @throws OidcConfigurationException if the well known data could not be processed.
+     */
+    public URI getTokenUri()
+    {
+        retrieveData();
+        return tokenUri;
+    }
+
+    /**
+     *
+     * @return
+     * @throws OidcConfigurationException if the well known data could not be processed.
+     */
+    public URI getUserInfoUri()
+    {
+        retrieveData();
+        return userInfoUri;
+    }
+
+    /**
+     *
+     * @return
+     * @throws OidcConfigurationException if the well known data could not be processed.
+     */
+    public URI getJwksUri()
+    {
+        retrieveData();
+        return jwksUri;
+    }
+
+    /**
+     *
+     * @return
+     * @throws OidcConfigurationException if the well known data could not be processed.
+     */
+    public URI getLogoutUri()
+    {
+        retrieveData();
+        return logoutUri;
+    }
+
+    /**
+     * Retrieve and process the well-known configuration data
+     * @return
+     * @throws OidcConfigurationException if the well known data could not be processed.
+     */
+    private void retrieveData()
+    {
+        if (issuer != null)
+        {
+            return;
+        }
         HttpURLConnection http = null;
         try
         {
             http = (HttpURLConnection)wellKnownUri.toURL().openConnection();
             http.setRequestMethod("GET");
-            http.setInstanceFollowRedirects(true);            
-            http.setConnectTimeout(5_000); 
-            http.setReadTimeout(5_000);   
+            http.setInstanceFollowRedirects(true);
+            http.setConnectTimeout(5_000);
+            http.setReadTimeout(5_000);
             int status = http.getResponseCode();
             if (status == 200)
             {
@@ -52,22 +137,16 @@ public final class OpenIdConfiguration
                 throw new IOException("Unable to retrieve OpenIdConnect configuration");
             }
         }
-        finally 
+        catch (IOException ex)
+        {
+            throw new OidcConfigurationException("Unable to retrieve or process required OpenID information", ex);
+        }
+        finally
         {
             if (http != null)
             {
                 http.disconnect();
             }
         }
-    }
-
-    private static String getTextField(JsonNode root, String field) throws IOException
-    {
-        var tmp = root.get(field);
-        if (tmp == null || tmp.isNull())
-        {
-            throw new IOException("OpenID Configuration does not contain a '" + field + "'' entry.");
-        }
-        return tmp.asText();
     }
 }

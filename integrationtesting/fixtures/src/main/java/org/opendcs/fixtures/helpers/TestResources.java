@@ -16,7 +16,7 @@ public class TestResources
     /**
      * Helper to get a file from the resource directory
      * @param config Configuration used to retrieve substitution information.
-     * @param file file name under the data/ directory to reference
+     * @param fileName file name under the data/ directory to reference
      * @return
      */
     public static String getResource(Configuration config, String fileName)

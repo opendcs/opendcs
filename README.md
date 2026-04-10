@@ -1,9 +1,20 @@
 ![current build](https://github.com/opendcs/opendcs/actions/workflows/build.yml/badge.svg)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=opendcs&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=opendcs)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=opendcs&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=opendcs)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=opendcs&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=opendcs)
-[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=opendcs&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=opendcs)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=opendcs&metric=coverage)](https://sonarcloud.io/summary/new_code?id=opendcs)
+
+Core Project:
+
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=opendcs_opendcs&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=opendcs_opendcs)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=opendcs_opendcs&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=opendcs_opendcs)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=opendcs_opendcs&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=opendcs_opendcs)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=opendcs_opendcs&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=opendcs_opendcs)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=opendcs_opendcs&metric=coverage)](https://sonarcloud.io/summary/new_code?id=opendcs_opendcs)
+
+UI:
+
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=opendcs_opendcs_ui&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=opendcs_opendcs_ui)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=opendcs_opendcs_ui&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=opendcs_opendcs_ui)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=opendcs_opendcs_ui&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=opendcs_opendcs_ui)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=opendcs_opendcs_ui&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=opendcs_opendcs_ui)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=opendcs_opendcs_ui&metric=coverage)](https://sonarcloud.io/summary/new_code?id=opendcs_opendcs_ui)
 
 [Docker documentation](README.docker.md)
 

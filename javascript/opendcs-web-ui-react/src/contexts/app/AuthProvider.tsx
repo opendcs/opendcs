@@ -17,10 +17,12 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useIdleTimer } from "../../hooks/useIdleTimer";
 import { SessionTimeoutModal } from "../../components/auth/SessionTimeoutModal";
+import type { Scheme } from "../../util/login-providers/Scheme.types";
+import { fromOpenApiUrl } from "../../util/login-providers";
 
 // Inactivity thresholds — adjust to match the server-side session timeout.
-const DEFAULT_WARN_AFTER_MS = 9 * 60 * 1000;
-const DEFAULT_LOGOUT_AFTER_MS = 10 * 60 * 1000;
+const DEFAULT_WARN_AFTER_MS = 13.5 * 60 * 1000;
+const DEFAULT_LOGOUT_AFTER_MS = 14.5 * 60 * 1000;
 
 interface ProviderProps {
   children: ReactNode;
@@ -38,6 +40,7 @@ export const AuthProvider = ({
   const warningDurationS = Math.round((logoutAfterMs - warnAfterMs) / 1000);
   const navigate = useNavigate();
   const [user, setUser] = useState<User | undefined>(undefined);
+  const [schemes, setSchemes] = useState<Record<string, Scheme>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [showWarning, setShowWarning] = useState(false);
   const [countdown, setCountdown] = useState(warningDurationS);
@@ -127,6 +130,20 @@ export const AuthProvider = ({
       .finally(() => setIsLoading(false));
   }, [enhancedConf]);
 
+  // retrieve api schemes
+  useEffect(() => {
+    const fetchSchemes = async () => {
+      const apiUrl = new URL(
+        "./odcsapi/openapi.json",
+        globalThis.window.location.toString(),
+      );
+
+      setSchemes(await fromOpenApiUrl(apiUrl));
+    };
+    console.log("retrieving OpenAPI Schemes");
+    fetchSchemes();
+  }, [apiContext.conf]);
+
   // Idle timer — paused while the warning modal is visible so the countdown
   // (not a new API call) controls what happens next.
   const handleWarn = useCallback(() => {
@@ -136,7 +153,7 @@ export const AuthProvider = ({
 
   const resetIdleTimer = useIdleTimer(
     handleWarn,
-    forceLogout,
+    logout,
     warnAfterMs,
     logoutAfterMs,
     !!user && !showWarning,
@@ -156,14 +173,14 @@ export const AuthProvider = ({
   }, [showWarning]);
 
   // When the countdown reaches 0 the user has had their warning and done
-  // nothing — log them out. This is necessary because useIdleTimer is paused
-  // while the modal is visible (its logout timer was cancelled when the warning
-  // fired), so the countdown is the authoritative clock at this point.
+  // nothing — log them out. Uses the full logout() (not forceLogout()) so the
+  // server session is invalidated. Without this, the cookie remains valid and
+  // the login page may error or redirect back because the session is still alive.
   useEffect(() => {
     if (showWarning && countdown === 0) {
-      forceLogout();
+      logout();
     }
-  }, [showWarning, countdown, forceLogout]);
+  }, [showWarning, countdown, logout]);
 
   // "Stay Logged In" — verify the session is still alive on the server.
   // If it is, the response resets the idle timer via middleware automatically.
@@ -186,7 +203,9 @@ export const AuthProvider = ({
   const authValue: AuthContextType = {
     user,
     isLoading,
+    loginSchemes: schemes,
     setUser,
+    setSchemes,
     logout,
   };
 

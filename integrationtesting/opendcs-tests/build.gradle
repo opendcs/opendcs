@@ -169,6 +169,9 @@ testEngines.each { engine ->
         //additionalSourceDirs files(project(":opendcs").sourceSets.main.java.srcDirs)
         //additionalClassDirs files(project(":opendcs").sourceSets.main.output)
         sourceSets project(":opendcs").sourceSets.main
+        sourceSets project(":opendcs-rest-api").sourceSets.main
+        sourceSets project(":opendcs-api").sourceSets.main
+
         executionData = files("${buildDir}/jacoco/test"+engine.replace("-","")+".exec") // Use the .exec file from the custom test task
         reports {
             html {
@@ -180,7 +183,9 @@ testEngines.each { engine ->
 
         }
 
-
+        sourceDirectories.from(project(":opendcs").sourceSets.main.java.srcDirs)
+        sourceDirectories.from(project(":opendcs-rest-api").sourceSets.main.java.srcDirs)
+        sourceDirectories.from(project(":opendcs-api").sourceSets.main.java.srcDirs)
 
         classDirectories.setFrom(files(classDirectories.files.collect {
             fileTree(dir: it, exclude: commonJacocoExcludes)

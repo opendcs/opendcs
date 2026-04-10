@@ -17,7 +17,7 @@ package decodes.tsdb.algo.jep;
 
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
-import hec.lang.Const;
+import decodes.cwms.HecConstants;
 
 import java.util.Date;
 import java.util.Stack;
@@ -110,7 +110,7 @@ public class RatingFunction	extends PostfixMathCommand
 			RatingSet ratingSet = crd.getRatingSet(specId);
 			what = "performing rating";
 			double d = ratingSet.rateOne(valueSet, tsbt.getTime());
-			if (d == Const.UNDEFINED_DOUBLE)
+			if (d == HecConstants.UNDEFINED_DOUBLE)
 			{
 				throw new RatingException("input value(s) outside rating bounds.");
 			}

@@ -10,6 +10,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.time.ZonedDateTime;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -32,6 +33,8 @@ import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jwt.JWTClaimsSet;
 
 import decodes.sql.DbKey;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 
 public final class OidcIdentityProvider implements IdentityProvider
 {
@@ -59,15 +62,7 @@ public final class OidcIdentityProvider implements IdentityProvider
         this.clientSecret = (String)configMap.get("clientSecret");
         this.clientId = (String)configMap.get("clientId");
         this.redirectUri = (String)configMap.get("redirectUri");
-        try
-        {
-            this.oidcConfig = new OpenIdConfiguration(URI.create((String)configMap.get("wellKnown")));
-        }
-        catch (IOException ex)
-        {
-            throw new OidcConfigurationException("Unable to process well known configuration for provider " + name, ex);
-        }
-        
+        this.oidcConfig = new OpenIdConfiguration(URI.create((String)configMap.get("wellKnown")));
     }
 
     @Override
@@ -125,12 +120,12 @@ public final class OidcIdentityProvider implements IdentityProvider
           .append("redirect_uri=").append(URLEncoder.encode(redirectUri, StandardCharsets.UTF_8))
         ;
 
-        var request = HttpRequest.newBuilder(oidcConfig.tokenUri)
+        var request = HttpRequest.newBuilder(oidcConfig.getTokenUri())
                                 .header("Content-Type", "application/x-www-form-urlencoded")
                                 .POST(HttpRequest.BodyPublishers.ofString(sb.toString()))
                                 .build();
-        
-        
+
+
         try (var client = HttpClient.newBuilder()
                                     .sslContext(WebUtility.sslContext(WebUtility.TRUST_EXISTING_CERTIFICATES))
                                     .build())
@@ -192,8 +187,8 @@ public final class OidcIdentityProvider implements IdentityProvider
 
     private JWTClaimsSet verifyTokenAndGetClaims(OpenIdConfiguration config, String token) throws MalformedURLException, BadJOSEException, ParseException, JOSEException
     {
-        var keySource = JWKSourceBuilder.create(config.jwksUri.toURL()).retrying(true).build();
-        return JwtVerifier.getInstance().getClaimsSet(keySource, token, oidcConfig.issuer);
+        var keySource = JWKSourceBuilder.create(config.getJwksUri().toURL()).retrying(true).build();
+        return JwtVerifier.getInstance().getClaimsSet(keySource, token, oidcConfig.getIssuer());
     }
 
     @Override
@@ -202,7 +197,25 @@ public final class OidcIdentityProvider implements IdentityProvider
     {
         /* unable, and can update credentials will return false */
     }
-    
+
+    @Override
+    public SecurityScheme getSecurityScheme()
+    {
+        var scheme =  new SecurityScheme().openIdConnectUrl(this.oidcConfig.wellKnownUri.toString());
+        scheme.type(Type.OPENIDCONNECT).setDescription("OpenID Connect based Authorization");
+
+        HashMap<String, Object> extension = new HashMap<>();
+
+        HashMap<String, Object> oidcData = new HashMap<>();
+        oidcData.put("redirectUri", this.redirectUri);
+        oidcData.put("clientId", clientId);
+        boolean usePkce = (this.clientSecret == null || this.clientSecret.isBlank());
+        oidcData.put("usePkce", usePkce);
+
+        extension.put("oidcConfig", oidcData);
+        scheme.addExtension("x-logincomponent-configuration", extension);
+        return scheme;
+    }
 
     @AutoService(IdentityProviderProvider.class)
     public static class OidcIdentityProviderProvider implements IdentityProviderProvider

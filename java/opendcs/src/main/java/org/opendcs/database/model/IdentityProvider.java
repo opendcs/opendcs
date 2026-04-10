@@ -15,6 +15,8 @@
 */
 package org.opendcs.database.model;
 
+import decodes.sql.DbKey;
+
 import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.Optional;
@@ -24,7 +26,7 @@ import org.opendcs.authentication.OpenDcsAuthException;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
 
-import decodes.sql.DbKey;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 
 /**
  * Source of information regarding user identities.
@@ -67,4 +69,10 @@ public interface IdentityProvider
     {
         return false;
     }
+
+    /**
+     * Retrieve the OpenAPI SecurityScheme definition for this provider.
+     * @return
+     */
+    SecurityScheme getSecurityScheme();
 }

@@ -16,6 +16,7 @@
 package org.opendcs.authentication.identityprovider.impl.builtin;
 
 import java.time.ZonedDateTime;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -39,6 +40,10 @@ import com.google.auto.service.AutoService;
 import com.password4j.Password;
 
 import decodes.sql.DbKey;
+
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.security.SecurityScheme.In;
+import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 
 /**
  * Identity Provider that marks an internal user.
@@ -210,6 +215,23 @@ public final class BuiltInIdentityProvider implements IdentityProvider
     public boolean canUpdateCredentials()
     {
         return true;
+    }
+
+    @Override
+    public SecurityScheme getSecurityScheme()
+    {
+        HashMap<String, Object> extensions = new HashMap<>();
+        HashMap<String, Object> formData = new HashMap<>();
+        formData.put("usernameInput", "username");
+        formData.put("passwordInput", "password");
+
+        extensions.put("formConfig", formData);
+        var scheme = new SecurityScheme().type(Type.APIKEY)
+                                         .in(In.COOKIE)
+                                         .name("JSESSIONID")
+                                         .description("Default identity provider");
+        scheme.addExtension("x-logincomponent-configuration", extensions);
+        return scheme;
     }
 
     @AutoService(IdentityProviderProvider.class)

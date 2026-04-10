@@ -35,7 +35,7 @@ import decodes.tsdb.ParmRef;
 
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
-import hec.lang.Const;
+import decodes.cwms.HecConstants;
 
 import java.util.ArrayList;
 
@@ -209,7 +209,7 @@ public class CwmsReverseRatingSingleIndep extends decodes.tsdb.algo.AW_Algorithm
         //    <out-range-high-method>ERROR</out-range-high-method>
         // Consequently, always use the array type rating method and let the database
         // determine what happens.
-        // If NULL is the method then the dep output wil be set to Const.UNDEFINED_DOUBLE
+        // If NULL is the method then the dep output wil be set to HecConstants.UNDEFINED_DOUBLE
 
         try (Connection conn = tsdb.getConnection())
         {
@@ -218,7 +218,7 @@ public class CwmsReverseRatingSingleIndep extends decodes.tsdb.algo.AW_Algorithm
 
             for(int i=0; i<times.length; i++)
             {
-                if (depVals[i] != Const.UNDEFINED_DOUBLE)
+                if (depVals[i] != HecConstants.UNDEFINED_DOUBLE)
                 {
                     setOutput(dep, depVals[i], new Date(times[i]));
                 }

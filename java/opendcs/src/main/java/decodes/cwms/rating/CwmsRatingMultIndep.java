@@ -27,7 +27,7 @@ import org.opendcs.annotations.algorithm.Output;
 
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
-import hec.lang.Const;
+import decodes.cwms.HecConstants;
 
 import java.util.ArrayList;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -389,7 +389,7 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 			
 			for(int i=0; i<depVals.length; i++)
 			{
-				if (depVals[i] != Const.UNDEFINED_DOUBLE)
+				if (depVals[i] != HecConstants.UNDEFINED_DOUBLE)
 					setOutput(dep, depVals[i], new Date(valueTimes[i]));
 				else
 					log.warn("ValueSet at time {} could not be rated "

@@ -2,8 +2,8 @@
 #General/Shared Versions
 oracle = { strictly = "23.5.0.24.07" }
 postgres = "42.7.10"
-commons-logging = "1.3.5"
-commons-net = "3.12.0"
+commons-logging = "1.3.6"
+commons-net = "3.13.0"
 dom4j = { strictly = "2.1.4" }
 ganymed-ssh = "build210"
 apache-poi="5.5.1"
@@ -26,9 +26,10 @@ jakarta-jakartaee-api = "11.0.0"
 # CWMS Dep version
 cwms-db = "9.3.5"
 cwms-db-codegen = { strictly = "7.0.0-OpenDCS" }
-monolith = { strictly = "2.0.2" }
+monolith = { strictly = "7.0.5" }
 cwms-ratings = "1.1.0"
-nucleus = "1.1.1"
+nucleus = "4.10.0"
+flogger = "0.7.4"  # used by hec-monolith
 jdbi = "3.39.1"
 flywaydb = "11.20.1"
 sun-mailapi="2.0.2"
@@ -68,7 +69,7 @@ greenmail = "2.1.8"
 mockito = "5.21.0"
 byte-buddy = "1.15.3"
 rest-assured = "6.0.0"
-tomcat = "11.0.14"
+tomcat = "11.0.21"
 microprofile-health = "4.0.1"
 
 # integration test deps
@@ -115,7 +116,7 @@ json-jackson = { module = "org.glassfish.jersey.media:jersey-media-json-jackson"
 jersey-container-servlet = { module = "org.glassfish.jersey.containers:jersey-container-servlet", version.ref = "jersey" }
 jersey-hk2 = { module = "org.glassfish.jersey.inject:jersey-hk2", version.ref = "jersey" }
 jersey-core = { module = "org.glassfish.jersey.core:jersey-client", version.ref = "jersey" }
-jersey-media-multipart = { module = "org.glassfish.jersey.media:jersey-media-multipart", version.ref = "jersey" }
+jersey-media-sse = { module = "org.glassfish.jersey.media:jersey-media-sse", version.ref = "jersey" }
 
 jstl = { module = "jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api", version = "3.0.2"}
 jstl-impl = { module = "org.glassfish.web:jakarta.servlet.jsp.jstl", version = "3.0.1"}
@@ -148,7 +149,8 @@ org-jdbi3-core = { module = "org.jdbi:jdbi3-core", version.ref = "jdbi" }
 org-jdbi3-sqlobject = { module = "org.jdbi:jdbi3-sqlobject", version.ref = "jdbi" }
 org-jdbi3-postgres = { module = "org.jdbi:jdbi3-postgres", version.ref = "jdbi" }
 org-jdbi3-oracle = { module = "org.jdbi:jdbi3-oracle12", version.ref = "jdbi" }
-org-jdbi3-jackson2 = { module ="org.jdbi:jdbi3-jackson2", version.ref = "jdbi" }
+org-jdbi3-jackson2 = { module = "org.jdbi:jdbi3-jackson2", version.ref = "jdbi" }
+org-jdbi3-stringtemplate = { module = "org.jdbi:jdbi3-stringtemplate4", version.ref = "jdbi" }
 org-flywaydb-flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flywaydb" }
 org-flywaydb-flyway-oracle = { module = "org.flywaydb:flyway-database-oracle", version.ref = "flywaydb" }
 org-flywaydb-flyway-postgres = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flywaydb" }
@@ -168,7 +170,10 @@ cwms-db-dao = { module = "mil.army.usace.hec:cwms-db-dao", version.ref = "cwms-d
 hec-db-jdbc = { module = "mil.army.usace.hec:hec-db-jdbc", version.ref = "cwms-db" }
 hec-monolith = { module = "mil.army.usace.hec:hec-monolith", version.ref = "monolith" }
 hec-cwms-ratings-core = { module = "mil.army.usace.hec:hec-cwms-ratings-core", version.ref = "cwms-ratings" }
-hec-nucleus-metadata = { module = "mil.army.usace.hec:hec-nucleus-metadata", version.ref = "nucleus" }
+hec-nucleus-bom = { module = "mil.army.usace.hec:hec-nucleus-bom", version.ref = "nucleus" }
+hec-nucleus-metadata = { module = "mil.army.usace.hec:hec-nucleus-metadata" }
+hec-nucleus-data = { module = "mil.army.usace.hec:hec-nucleus-data" }
+com-google-flogger = { module = "com.google.flogger:flogger", version.ref = "flogger" }
 
 # test deps
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
@@ -217,7 +222,8 @@ swagger-ui = { module ="org.webjars:swagger-ui", version.ref = "swagger-ui" }
 junit = [ "junit-api", "junit-engine", "junit-params" ]
 junit-platform = [ "junit-platform-launcher", "junit-platform-engine", "junit-platform-commons" ]
 flyway = [ "org-flywaydb-flyway-core", "org-flywaydb-flyway-oracle", "org-flywaydb-flyway-postgres" ]
-jdbi = [ "org-jdbi3-core", "org-jdbi3-sqlobject", "org-jdbi3-postgres", "org-jdbi3-oracle", "org-jdbi3-jackson2" ]
+jdbi = [ "org-jdbi3-core", "org-jdbi3-sqlobject", "org-jdbi3-postgres", "org-jdbi3-oracle", "org-jdbi3-jackson2",
+         "org-jdbi3-stringtemplate" ]
 oracle = [ "oracle-ojdbc8" , "oracle-ucp" ]
 jersey = [ "org-eclipse-jetty-jsp", "org-eclipse-jetty-annotations", "org-eclipse-jetty-server", 
             "org-eclipse-jetty-servlets", "org-eclipse-jetty-webapp", "jakarta-servlet",

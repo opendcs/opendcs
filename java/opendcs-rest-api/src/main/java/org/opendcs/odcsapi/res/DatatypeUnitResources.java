@@ -17,19 +17,15 @@ package org.opendcs.odcsapi.res;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
-
 import decodes.db.Constants;
 import decodes.db.DataTypeSet;
 import decodes.db.DatabaseException;
-import decodes.db.DatabaseIO;
 import decodes.db.EngineeringUnit;
 import decodes.db.LinearConverter;
 import decodes.db.NullConverter;
 import decodes.db.Poly5Converter;
 import decodes.db.UnitConverter;
 import decodes.db.UnitConverterDb;
-import decodes.db.UnitConverterSet;
 import decodes.db.UsgsStdConverter;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
@@ -57,6 +53,7 @@ import opendcs.dai.DataTypeDAI;
 
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.EngineeringUnitDao;
+import org.opendcs.database.dai.UnitConverterDao;
 import org.opendcs.odcsapi.beans.ApiDataType;
 import org.opendcs.odcsapi.beans.ApiUnit;
 import org.opendcs.odcsapi.beans.ApiUnitConverter;
@@ -74,6 +71,7 @@ import org.opendcs.odcsapi.util.ApiConstants;
 public final class DatatypeUnitResources extends OpenDcsResource
 {
 	private static final WebAppException UNABLE_TO_GET_EU_DAO = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "No engineering unit DAO available.");
+	private static final WebAppException UNABLE_TO_GET_UC_DAO = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "No unit conversion DAO available.");
 
 	@Context HttpHeaders httpHeaders;
 
@@ -83,18 +81,18 @@ public final class DatatypeUnitResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Retrieve Data Type List",
-			description = "Examples:  \n\n    http://localhost:8080/odcsapi/datatypelist  \n\n    " 
-					+ "http://localhost:8080/odcsapi/datatypelist?standard=cwms  \n\n\n" 
-					+ "The returned data structure is an array of JSON data type objects:\n" 
+			description = "Examples:  \n\n    http://localhost:8080/odcsapi/datatypelist  \n\n    "
+					+ "http://localhost:8080/odcsapi/datatypelist?standard=cwms  \n\n\n"
+					+ "The returned data structure is an array of JSON data type objects:\n"
 					+ "```\n[\n  {\n    \"code\": \"72114\",\n    \"displayName\": \"CWMS:72114\",\n    "
-					+ "\"id\": 367,\n    \"standard\": \"CWMS\"\n  },\n  {\n    \"code\": \"Address\",\n    " 
-					+ "\"displayName\": \"CWMS:Address\",\n    \"id\": 368,\n    \"standard\": \"CWMS\"\n  }," 
+					+ "\"id\": 367,\n    \"standard\": \"CWMS\"\n  },\n  {\n    \"code\": \"Address\",\n    "
+					+ "\"displayName\": \"CWMS:Address\",\n    \"id\": 368,\n    \"standard\": \"CWMS\"\n  },"
 					+ "\n  {\n    \"code\": \"Code-Channel\",\n    \"displayName\": \"CWMS:Code-Channel\",\n    "
-					+ "\"id\": 382,\n    \"standard\": \"CWMS\"\n  },\n  {\n    \"code\": \"Code-DCPAddress\",\n    " 
-					+ "\"displayName\": \"CWMS:Code-DCPAddress\",\n    \"id\": 372,\n    \"standard\": \"CWMS\"\n  }," 
-					+ "\n  {\n    \"code\": \"Depth-Snow\",\n    \"id\": 72,\n    \"standard\": \"CWMS\"\n  }," 
-					+ "\n…\n]\n```\n\nIf the optional ‘standard’ argument is supplied, then only data types with " 
-					+ "the matching standard are returned. Otherwise all data types in the database are " 
+					+ "\"id\": 382,\n    \"standard\": \"CWMS\"\n  },\n  {\n    \"code\": \"Code-DCPAddress\",\n    "
+					+ "\"displayName\": \"CWMS:Code-DCPAddress\",\n    \"id\": 372,\n    \"standard\": \"CWMS\"\n  },"
+					+ "\n  {\n    \"code\": \"Depth-Snow\",\n    \"id\": 72,\n    \"standard\": \"CWMS\"\n  },"
+					+ "\n…\n]\n```\n\nIf the optional ‘standard’ argument is supplied, then only data types with "
+					+ "the matching standard are returned. Otherwise all data types in the database are "
 					+ "returned sorted by (standard, code).",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Successfully retrieved data type list.",
@@ -104,8 +102,8 @@ public final class DatatypeUnitResources extends OpenDcsResource
 			},
 			tags = {"REST - Data Type Methods"}
 	)
-	public Response getDataTypeList(@Parameter(schema = @Schema(implementation = String.class), example = "cwms") 
-		@QueryParam("standard") String std) 
+	public Response getDataTypeList(@Parameter(schema = @Schema(implementation = String.class), example = "cwms")
+		@QueryParam("standard") String std)
 			throws DbException
 	{
 		try (DataTypeDAI dai = getLegacyTimeseriesDB().makeDataTypeDAO())
@@ -183,7 +181,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 								.stream()
 								.map(DatatypeUnitResources::mapUnit)
 								.toList();
-			
+
 			return Response.ok().entity(units).build();
 		}
 		catch (OpenDcsDataException ex)
@@ -199,7 +197,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 		apiUnit.setName(eu.getName());
 		apiUnit.setMeasures(eu.measures);
 		apiUnit.setFamily(eu.family);
-		
+
 		return apiUnit;
 	}
 
@@ -282,7 +280,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 			var unitsDao = db.getDao(EngineeringUnitDao.class)
 							 .orElseThrow(() -> UNABLE_TO_GET_EU_DAO);
 			unitsDao.delete(tx, abbr);
-			
+
 			return Response.noContent().entity("EU with abbr " + abbr + " deleted").build();
 		}
 		catch(OpenDcsDataException ex)
@@ -315,36 +313,25 @@ public final class DatatypeUnitResources extends OpenDcsResource
 			},
 			tags = {"REST - Engineering Unit Methods"}
 	)
-	public Response getUnitConvList() throws DbException
+	public Response getUnitConvList() throws WebAppException
 	{
-		DatabaseIO dbIo = getLegacyDatabase();
-		try
+		final var db = createDb();
+		try (var tx = db.newTransaction())
 		{
-			UnitConverterSet unitConverterSet = new UnitConverterSet();
-			dbIo.readUnitConverterSet(unitConverterSet);
-			return Response.ok().entity(map(unitConverterSet)).build();
+			var ucDao = db.getDao(UnitConverterDao.class)
+							 .orElseThrow(() -> UNABLE_TO_GET_UC_DAO);
+			var ucs = ucDao.getUnitConverterDbs(tx, -1, -1)
+						   .stream()
+						   .map(uc -> map(uc))
+						   .toList();
+			return Response.ok().entity(ucs).build();
 		}
-		catch(DatabaseException ex)
+		catch(OpenDcsDataException ex)
 		{
-			throw new DbException("Unable to retrieve Unit Converter list", ex);
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to retrieve unit conversions", ex);
 		}
-		finally
-		{
-			dbIo.close();
-		}
-	}
 
-	static List<ApiUnitConverter> map(UnitConverterSet unitSet)
-	{
-		List<ApiUnitConverter> ret = new ArrayList<>();
-		Iterator<UnitConverterDb> it = unitSet.iteratorDb();
-		while (it.hasNext())
-		{
-			UnitConverterDb unitConv = it.next();
-			ApiUnitConverter euc = map(unitConv);
-			ret.add(euc);
-		}
-		return ret;
+
 	}
 
 	@POST
@@ -382,28 +369,20 @@ public final class DatatypeUnitResources extends OpenDcsResource
 			},
 			tags = {"REST - Engineering Unit Methods"}
 	)
-	public Response postEUConv(ApiUnitConverter euc) throws DbException
+	public Response postEUConv(ApiUnitConverter euc) throws WebAppException
 	{
-		DatabaseIO dbIo = getLegacyDatabase();
-		try
+		final var db = createDb();
+		try (var tx = db.newTransaction())
 		{
-			UnitConverterDb unitConverterDb = ucDbMap(euc);
-			Long ucId = euc.getUcId();
-			if(ucId != null)
-			{
-				dbIo.deleteUnitConverter(ucId);
-				unitConverterDb.forceSetId(DbKey.NullKey);
-			}
-			dbIo.insertUnitConverter(unitConverterDb);
-			return Response.status(Response.Status.CREATED).entity(map(unitConverterDb)).build();
+			var ucDao = db.getDao(UnitConverterDao.class)
+						  .orElseThrow(() -> UNABLE_TO_GET_UC_DAO);
+			var ucDbIn = ucDbMap(euc);
+			var ucOut = ucDao.save(tx, ucDbIn);
+			return Response.created(null).entity(map(ucOut)).build();
 		}
-		catch(DatabaseException ex)
+		catch(OpenDcsDataException | DatabaseException | DbException ex)
 		{
-			throw new DbException("Unable to store Unit Converter list", ex);
-		}
-		finally
-		{
-			dbIo.close();
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to save unit converter", ex);
 		}
 	}
 
@@ -510,25 +489,23 @@ public final class DatatypeUnitResources extends OpenDcsResource
 	public Response deleteEUConv(@Parameter(description = "EU Conversion Id", required = true,
 			example = "1459", schema = @Schema(implementation = Long.class))
 		@QueryParam("euconvid") Long id)
-			throws DbException, WebAppException
+			throws WebAppException
 	{
 		if (id == null)
 		{
 			throw new MissingParameterException("Missing required euconvid parameter");
 		}
-		DatabaseIO dbIo = getLegacyDatabase();
-		try
+		final var db = createDb();
+		try (var tx = db.newTransaction())
 		{
-			dbIo.deleteUnitConverter(id);
-			return Response.noContent().entity("EUConv with id=" + id + " deleted").build();
+			var ucDao = db.getDao(UnitConverterDao.class)
+							 .orElseThrow(() -> UNABLE_TO_GET_UC_DAO);
+			ucDao.delete(tx, DbKey.createDbKey(id));
+			return Response.noContent().build();
 		}
-		catch(DatabaseException ex)
+		catch(OpenDcsDataException  ex)
 		{
-			throw new DbException("Unable to delete Unit Converter", ex);
-		}
-		finally
-		{
-			dbIo.close();
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to save unit conversion", ex);
 		}
 	}
 }

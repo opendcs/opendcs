@@ -51,9 +51,52 @@ import decodes.cwms.CwmsFlags;
 import decodes.hdb.HdbFlags;
 
 /**
-This is the base class of Algorithms built and maintained by the Algorithm
-Wizard (AW)
-*/
+ * Base class for algorithms built and maintained by the Algorithm Wizard (AW).
+ * <p>
+ * <h3>Algorithm Lifecycle</h3>
+ * The computation framework calls lifecycle methods in the following order:
+ * <pre>
+ * try {
+ *     {@link #beforeAllTimeSlices()}          — one-time setup (open resources, load data)
+ *
+ *     For AGGREGATING / RUNNING_AGGREGATE algorithms:
+ *         for each aggregate period:
+ *             {@link #beforeTimeSlices()}      — per-period setup
+ *             for each time slice:
+ *                 {@link #doAWTimeSlice()}     — core computation (caught individually)
+ *             {@link #afterTimeSlices()}       — per-period finalization
+ *
+ *     For TIME_SLICE algorithms:
+ *         {@link #beforeTimeSlices()}          — called once before all slices
+ *         for each time slice:
+ *             {@link #doAWTimeSlice()}         — core computation (caught individually)
+ *         {@link #afterTimeSlices()}           — called once after all slices
+ *
+ *     {@link #afterAllTimeSlices()}            — one-time finalization (save results)
+ * } finally {
+ *     {@link #alwaysAfterTimeSlices()}         — guaranteed cleanup (release resources)
+ * }
+ * </pre>
+ * <h3>Resource Management</h3>
+ * Algorithms that acquire resources (database connections, DAOs, etc.) in
+ * {@code beforeAllTimeSlices()} must release them in
+ * {@link #alwaysAfterTimeSlices()}, NOT in {@code afterAllTimeSlices()}.
+ * The {@code alwaysAfterTimeSlices()} method runs in a {@code finally}
+ * block, guaranteeing cleanup even when exceptions occur during computation.
+ * Use {@code afterAllTimeSlices()} only for work that should happen on
+ * successful completion (e.g., saving output profiles).
+ * <p>
+ * <h3>Exception Handling</h3>
+ * <ul>
+ *   <li>{@code doAWTimeSlice()} exceptions ({@link DbCompException}) are caught
+ *       per-timeslice — a single slice failure does not abort the period.</li>
+ *   <li>{@code beforeTimeSlices()} and {@code afterTimeSlices()} exceptions
+ *       are NOT caught per-period — they abort the entire computation.</li>
+ *   <li>{@code RuntimeException} from any method is caught by
+ *       {@code applyAlgorithm()} and re-thrown as {@link DbCompException}.</li>
+ *   <li>In all cases, {@code alwaysAfterTimeSlices()} is guaranteed to run.</li>
+ * </ul>
+ */
 public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements PropertiesOwner
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
@@ -428,12 +471,32 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 		catch(RuntimeException ex){
 			throw new DbCompException("RunTime Error: "+ex+"\nAt: "+ex.getStackTrace()[0].toString(), ex);
 		}
+		finally
+		{
+			alwaysAfterTimeSlices();
+		}
 	}
 
 	public void afterAllTimeSlices()
 		throws DbCompException
 	{
 		// Nothing to do here.
+	}
+
+	/**
+	 * Called in a finally block after applyAlgorithm completes, regardless
+	 * of whether an exception occurred. Use this method to release resources
+	 * (database connections, DAOs, etc.) that were acquired in
+	 * {@link #beforeAllTimeSlices()}.
+	 * <p>
+	 * Unlike {@link #afterAllTimeSlices()}, this method is guaranteed to
+	 * run even when exceptions occur during computation. Algorithms that
+	 * open resources in beforeAllTimeSlices should override this method
+	 * to ensure those resources are always released.
+	 */
+	public void alwaysAfterTimeSlices()
+	{
+		// Nothing to do here. Subclasses override to release resources.
 	}
 
 	public void beforeAllTimeSlices()

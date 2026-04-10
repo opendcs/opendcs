@@ -50,7 +50,6 @@ import java.sql.PreparedStatement;
 
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
-import hec.lang.Const;
 import ilex.util.PropertiesUtil;
 import ilex.var.NamedVariable;
 import ilex.var.Variable;
@@ -767,7 +766,7 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 			action = "rateOne";
 			double d = ratingSet.rateOne(tc, timeStamp.getTime(), indeps);
 			
-			if (d == Const.UNDEFINED_DOUBLE)
+			if (d == HecConstants.UNDEFINED_DOUBLE)
 			{
 				StringBuilder sb = new StringBuilder();
 				for(double x : indeps)

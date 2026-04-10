@@ -1,15 +1,13 @@
 import DataTable, {
   type DataTableProps,
   type DataTableRef,
-  type DataTableSlots,
 } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import dtButtons from "datatables.net-buttons-bs5";
 import { useTranslation } from "react-i18next";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { dtLangs } from "../../../lang";
-import { Button, Form } from "react-bootstrap";
-import { Pencil, Save, Trash, X } from "react-bootstrap-icons";
+import { Form } from "react-bootstrap";
 import { renderToString } from "react-dom/server";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -70,6 +68,18 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
   const [editingNames, setEditingNames] = useState<Set<string>>(new Set());
   const nextIdx = useRef(0);
 
+  // Refs so drawCallback and event delegation always have latest values
+  const onAddRef = useRef(onAdd);
+  onAddRef.current = onAdd;
+  const onRemoveRef = useRef(onRemove);
+  onRemoveRef.current = onRemove;
+  const onUpdateRef = useRef(onUpdate);
+  onUpdateRef.current = onUpdate;
+  const editingNamesRef = useRef(editingNames);
+  editingNamesRef.current = editingNames;
+  const newParmsRef = useRef(newParms);
+  newParmsRef.current = newParms;
+
   const allRows = useMemo<RowParm[]>(
     () => [
       ...parms.map(
@@ -114,7 +124,7 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
   const parmTypeSelectHtml = useCallback(
     (defaultValue: string) =>
       renderToString(
-        <Form.Select name="parmType" defaultValue={defaultValue} size="lg">
+        <Form.Select name="parmType" defaultValue={defaultValue}>
           {PARM_TYPES.map((pt) => (
             <option key={pt.value} value={pt.value}>
               {pt.label}
@@ -136,7 +146,6 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
             type="text"
             name="roleName"
             defaultValue={data.kind === "existing" ? data.roleName : ""}
-            size="lg"
             aria-label={t("algorithms:parms.roleName_input")}
           />,
         );
@@ -168,14 +177,14 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
         roleInput?.classList.add("border-warning");
         return;
       }
-      onUpdate?.(oldRoleName, { roleName, parmType });
+      onUpdateRef.current?.(oldRoleName, { roleName, parmType });
       setEditingNames((prev) => {
         const s = new Set(prev);
         s.delete(oldRoleName);
         return s;
       });
     },
-    [findRowNode, onUpdate],
+    [findRowNode],
   );
 
   const handleSaveNew = useCallback(
@@ -187,93 +196,17 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
         roleInput?.classList.add("border-warning");
         return;
       }
-      onAdd?.({ roleName, parmType });
+      onAddRef.current?.({ roleName, parmType });
       setNewParms((prev) => prev.filter((p) => p.idx !== idx));
     },
-    [findRowNode, onAdd],
+    [findRowNode],
   );
 
-  const renderActions = useCallback(
-    (data: RowParm) => {
-      if (!edit) return <></>;
-
-      if (data.kind === "new") {
-        return (
-          <>
-            <Button
-              variant="primary"
-              size="lg"
-              aria-label={t("algorithms:parms.save_parm")}
-              onClick={() => handleSaveNew(data.idx)}
-            >
-              <Save />
-            </Button>
-            <Button
-              variant="secondary"
-              size="lg"
-              aria-label={t("algorithms:parms.cancel_parm")}
-              onClick={() =>
-                setNewParms((prev) => prev.filter((p) => p.idx !== data.idx))
-              }
-            >
-              <X />
-            </Button>
-          </>
-        );
-      }
-
-      if (data.editing) {
-        return (
-          <>
-            <Button
-              variant="primary"
-              size="lg"
-              aria-label={t("algorithms:parms.save_parm")}
-              onClick={() => handleSaveExisting(data.roleName)}
-            >
-              <Save />
-            </Button>
-            <Button
-              variant="secondary"
-              size="lg"
-              aria-label={t("algorithms:parms.cancel_parm")}
-              onClick={() =>
-                setEditingNames((prev) => {
-                  const s = new Set(prev);
-                  s.delete(data.roleName);
-                  return s;
-                })
-              }
-            >
-              <X />
-            </Button>
-          </>
-        );
-      }
-
-      return (
-        <>
-          <Button
-            variant="warning"
-            size="lg"
-            aria-label={t("algorithms:parms.edit_for", { name: data.roleName })}
-            onClick={() => setEditingNames((prev) => new Set([...prev, data.roleName]))}
-          >
-            <Pencil />
-          </Button>
-          <Button
-            variant="danger"
-            size="lg"
-            aria-label={t("algorithms:parms.delete_for", { name: data.roleName })}
-            onClick={() => onRemove?.(data.roleName)}
-          >
-            <Trash />
-          </Button>
-        </>
-      );
-    },
-    [edit, t, handleSaveNew, handleSaveExisting, onRemove],
-  );
+  // Refs for event delegation
+  const handleSaveExistingRef = useRef(handleSaveExisting);
+  handleSaveExistingRef.current = handleSaveExisting;
+  const handleSaveNewRef = useRef(handleSaveNew);
+  handleSaveNewRef.current = handleSaveNew;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: any[] = useMemo(() => {
@@ -281,15 +214,17 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
       { data: null, render: renderRoleName },
       { data: null, render: renderParmType },
     ];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (edit) cols.push({ data: null, name: "actions" } as any);
+    if (edit)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      cols.push({
+        data: null,
+        name: "actions",
+        orderable: false,
+        searchable: false,
+        defaultContent: "",
+      } as any);
     return cols;
   }, [edit, renderRoleName, renderParmType]);
-
-  const slots: DataTableSlots = useMemo(
-    () => ({ actions: renderActions }),
-    [renderActions],
-  );
 
   const options: DataTableProps["options"] = useMemo(
     () => ({
@@ -298,6 +233,102 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
       scrollCollapse: true,
       responsive: true,
       language: dtLangs.get(i18n.language),
+      drawCallback: function () {
+        if (!edit) return;
+        const dt = this.api();
+        dt.rows().every(function () {
+          const data = this.data() as RowParm | undefined;
+          if (!data) return;
+          const node = this.node() as HTMLTableRowElement;
+          const actionsCell = node.querySelector("td:last-child");
+          if (!actionsCell || actionsCell.querySelector(".dt-parm-action") !== null)
+            return;
+          (actionsCell as HTMLElement).style.whiteSpace = "nowrap";
+
+          if (data.kind === "new") {
+            actionsCell.innerHTML =
+              `<button class="btn btn-primary btn-sm dt-parm-action dt-parm-save-new" data-idx="${data.idx}"` +
+              ` aria-label="${t("algorithms:parms.save_parm")}">` +
+              `<i class="bi bi-check-lg"></i></button> ` +
+              `<button class="btn btn-secondary btn-sm dt-parm-action dt-parm-cancel-new" data-idx="${data.idx}"` +
+              ` aria-label="${t("algorithms:parms.cancel_parm")}">` +
+              `<i class="bi bi-x-lg"></i></button>`;
+          } else if (data.kind === "existing" && data.editing) {
+            actionsCell.innerHTML =
+              `<button class="btn btn-primary btn-sm dt-parm-action dt-parm-save-existing" data-role="${data.roleName}"` +
+              ` aria-label="${t("algorithms:parms.save_parm")}">` +
+              `<i class="bi bi-check-lg"></i></button> ` +
+              `<button class="btn btn-secondary btn-sm dt-parm-action dt-parm-cancel-existing" data-role="${data.roleName}"` +
+              ` aria-label="${t("algorithms:parms.cancel_parm")}">` +
+              `<i class="bi bi-x-lg"></i></button>`;
+          } else if (data.kind === "existing") {
+            actionsCell.innerHTML =
+              `<button class="btn btn-warning btn-sm dt-parm-action dt-parm-edit" data-role="${data.roleName}"` +
+              ` aria-label="${t("algorithms:parms.edit_for", { name: data.roleName })}">` +
+              `<i class="bi bi-pencil"></i></button> ` +
+              `<button class="btn btn-danger btn-sm dt-parm-action dt-parm-delete" data-role="${data.roleName}"` +
+              ` aria-label="${t("algorithms:parms.delete_for", { name: data.roleName })}">` +
+              `<i class="bi bi-trash"></i></button>`;
+          }
+        });
+
+        // Event delegation — attach once per draw
+        const tableNode = dt.table().node() as HTMLTableElement;
+        if (tableNode.dataset.parmDelegated) return;
+        tableNode.dataset.parmDelegated = "true";
+        tableNode.addEventListener("click", (e) => {
+          const target = e.target as Element;
+
+          const saveNew = target.closest(".dt-parm-save-new");
+          if (saveNew) {
+            e.stopPropagation();
+            handleSaveNewRef.current(Number(saveNew.getAttribute("data-idx")));
+            return;
+          }
+
+          const cancelNew = target.closest(".dt-parm-cancel-new");
+          if (cancelNew) {
+            e.stopPropagation();
+            const idx = Number(cancelNew.getAttribute("data-idx"));
+            setNewParms((prev) => prev.filter((p) => p.idx !== idx));
+            return;
+          }
+
+          const saveExisting = target.closest(".dt-parm-save-existing");
+          if (saveExisting) {
+            e.stopPropagation();
+            handleSaveExistingRef.current(saveExisting.getAttribute("data-role")!);
+            return;
+          }
+
+          const cancelExisting = target.closest(".dt-parm-cancel-existing");
+          if (cancelExisting) {
+            e.stopPropagation();
+            const role = cancelExisting.getAttribute("data-role")!;
+            setEditingNames((prev) => {
+              const s = new Set(prev);
+              s.delete(role);
+              return s;
+            });
+            return;
+          }
+
+          const editBtn = target.closest(".dt-parm-edit");
+          if (editBtn) {
+            e.stopPropagation();
+            const role = editBtn.getAttribute("data-role")!;
+            setEditingNames((prev) => new Set([...prev, role]));
+            return;
+          }
+
+          const deleteBtn = target.closest(".dt-parm-delete");
+          if (deleteBtn) {
+            e.stopPropagation();
+            onRemoveRef.current?.(deleteBtn.getAttribute("data-role")!);
+            return;
+          }
+        });
+      },
       layout: {
         top1Start: {
           buttons: edit
@@ -321,17 +352,12 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
     [edit, i18n.language, t],
   );
 
-  useEffect(() => {
-    table.current?.dt()?.rows().invalidate().draw(false);
-  }, [allRows]);
-
   return (
     <DataTable
       key={i18n.language}
       columns={columns}
       data={allRows}
       options={options}
-      slots={edit ? slots : undefined}
       ref={table}
       className="table table-hover table-striped w-100 border"
     >

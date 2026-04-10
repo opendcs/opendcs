@@ -1,12 +1,28 @@
 {
   "algorithmId" : null,
-  "name" : "Test Algorithm",
-  "execClass" : null,
-  "description" : "Test Algorithm Description",
+  "name" : "Division",
+  "execClass" : "decodes.tsdb.algo.Division",
+  "description" : "Divide one time series with another using : (a*input1+b)/(c*input2+d). If the denominator is zero then output is not set",
   "props" : {
-    "prop1" : "value1"
+    "a": "1.0",
+    "b": "0",
+    "c": "1.0",
+    "d": "0"
   },
-  "parms" : [ ],
+  "parms" : [
+    {
+      "roleName": "input1",
+      "parmType": "i"
+    },
+    {
+      "roleName": "input2",
+      "parmType": "i"
+    },
+    {
+      "roleName": "output",
+      "parmType": "o"
+    }
+  ],
   "numCompsUsing" : 0,
   "algoScripts" : [ ]
 }

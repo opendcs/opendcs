@@ -8,6 +8,10 @@ import { http, HttpResponse } from "msw";
 import Login from "../../pages/auth/login";
 import { Platforms } from "../../pages/platforms";
 import { ApiPlatformRef } from "opendcs-api";
+import apiAuthSpec from "../../../.storybook/mock/openapi-security-schemes.json";
+import { fromOpenApiData } from "../../util/login-providers";
+
+const authSchemes = await fromOpenApiData(apiAuthSpec);
 
 const platformMswHandlers = {
   platforms: http.get("/odcsapi/platformrefs", () => {
@@ -47,6 +51,8 @@ export const Loading: Story = {
         value={{
           user: undefined,
           isLoading: true,
+          loginSchemes: authSchemes,
+          setSchemes: fn(),
           setUser: fn(),
           logout: fn(),
         }}
@@ -81,6 +87,8 @@ export const Authenticated: Story = {
           value={{
             user: { email: "testuser@example.com" },
             isLoading: false,
+            loginSchemes: authSchemes,
+            setSchemes: fn(),
             setUser: fn(),
             logout: fn(),
           }}
@@ -111,6 +119,8 @@ export const NotAuthenticated: Story = {
           value={{
             user: undefined,
             isLoading: false,
+            loginSchemes: authSchemes,
+            setSchemes: fn(),
             setUser: fn(),
             logout: fn(),
           }}

@@ -20,9 +20,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import decodes.cwms.CwmsTsId;
-import decodes.db.DatabaseException;
 import decodes.db.Site;
 import decodes.sql.DbKey;
 import decodes.tsdb.CTimeSeries;
@@ -36,15 +34,13 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.opendcs.odcsapi.beans.ApiSite;
-import org.opendcs.odcsapi.res.ObjectMapperContextResolver;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.opendcs.odcsapi.util.DTOMappers.mapSite;
 
 final class TimeSeriesResourcesIT extends BaseApiIT
 {
@@ -61,10 +57,10 @@ final class TimeSeriesResourcesIT extends BaseApiIT
 		authenticate();
 
 		// create a site
-		Site tsSite = map(storeSite("ts_site_insert_data.json"));
+		Site tsSite = mapSite(storeSite("ts_site_insert_data.json"));
 		siteId = tsSite.getId().getValue();
 
-		Site tsSite2 = map(storeSite("ts_site_insert_data2.json"));
+		Site tsSite2 = mapSite(storeSite("ts_site_insert_data2.json"));
 		siteId2 = tsSite2.getId().getValue();
 
 		// Create an active time series
@@ -684,94 +680,5 @@ final class TimeSeriesResourcesIT extends BaseApiIT
 		.assertThat()
 			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
 		;
-	}
-
-	private ApiSite storeSite(String jsonPath) throws Exception
-	{
-		assertNotNull(jsonPath);
-		String siteJson = getJsonFromResource(jsonPath);
-
-		var response = given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(MediaType.APPLICATION_JSON)
-			.contentType(MediaType.APPLICATION_JSON)
-			.spec(authSpec)
-			.body(siteJson)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.post("site")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(Response.Status.CREATED.getStatusCode()))
-			.extract()
-		;
-
-		Long localSiteId = response.body().jsonPath().getLong("siteId");
-
-		ObjectMapper mapper = new ObjectMapperContextResolver().getContext(ApiSite.class);
-		ApiSite retVal = mapper.readValue(siteJson, ApiSite.class);
-		retVal.setSiteId(localSiteId);
-		return retVal;
-	}
-
-	private void tearDownSite(Long siteId)
-	{
-		given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(MediaType.APPLICATION_JSON)
-			.queryParam("siteid", siteId)
-			.spec(authSpec)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.delete("site")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
-		;
-
-		given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(MediaType.APPLICATION_JSON)
-			.queryParam("siteid", siteId)
-			.spec(authSpec)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("site")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
-		;
-	}
-
-	private Site map(ApiSite apiSite) throws DatabaseException
-	{
-		Site site = new Site();
-		site.setPublicName(apiSite.getPublicName());
-		site.setLocationType(apiSite.getLocationType());
-		site.setElevation(apiSite.getElevation());
-		site.setElevationUnits(apiSite.getElevUnits());
-		site.latitude = apiSite.getLatitude();
-		site.longitude = apiSite.getLongitude();
-		site.setId(DbKey.createDbKey(apiSite.getSiteId()));
-		site.setLastModifyTime(Date.from(apiSite.getLastModified()));
-		site.setDescription(apiSite.getDescription());
-		site.timeZoneAbbr = apiSite.getTimezone();
-		site.nearestCity = apiSite.getNearestCity();
-		site.state = apiSite.getState();
-		site.country = apiSite.getCountry();
-		site.region = apiSite.getRegion();
-		site.setActive(apiSite.isActive());
-
-		for (String props : apiSite.getProperties().stringPropertyNames())
-		{
-			site.setProperty(props, apiSite.getProperties().getProperty(props));
-		}
-		return site;
 	}
 }

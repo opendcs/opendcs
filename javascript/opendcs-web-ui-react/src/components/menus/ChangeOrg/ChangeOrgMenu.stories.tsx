@@ -18,10 +18,12 @@ export const CanClickChange: Story = {
     orgs: MOCK_ORGANIZATIONS,
     changeOrg: fn(),
   },
-  play: async ({ args, mount, userEvent }) => {
+  play: async ({ args, mount, userEvent, parameters }) => {
     const canvas = await mount();
-
-    const toggle = await canvas.findByRole("button", { name: "organization-settings" });
+    const { i18n } = parameters;
+    const toggle = await canvas.findByRole("button", {
+      name: i18n.t("Change Organization"),
+    });
     await userEvent.click(toggle);
 
     const hq = await canvas.findByText("HQ");

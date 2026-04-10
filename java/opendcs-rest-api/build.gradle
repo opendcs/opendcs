@@ -41,6 +41,7 @@ dependencies {
     annotationProcessor(libs.org.netbeans.lookup)
 
     implementation(project(":opendcs"))
+    implementation(project(":opendcs-api"))
 
     implementation(libs.bundles.jdbi)
     implementation(libs.microprofile.health) // use to get the HealthCheckResponse object
@@ -52,6 +53,7 @@ dependencies {
     swaggerDeps(libs.swagger.annotations)
     swaggerDeps(libs.swagger.models)
     compileOnly(libs.jakarta.servlet)
+    implementation(libs.jersey.media.sse)
     compileOnly(libs.rs.api)
     implementation(libs.json.jackson)
     implementation(libs.jersey.container.servlet)
@@ -106,14 +108,6 @@ jar {
 war {
     dependsOn extractWebJars
     from "${layout.buildDirectory.get().asFile}/generated/webapp"
-}
-
-sonarqube {
-    properties {
-        property 'sonar.coverage.jacoco.xmlReportPaths', "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/test/jacocoTestReport.xml," +
-                "../opendcs-integration-test/build/reports/jacoco/integrationTestReportCWMS/integrationTestReportCWMS.xml," +
-                "../opendcs-integration-test/build/reports/jacoco/integrationTestReportOpenTSDB/integrationTestReportOpenTSDB.xml"
-    }
 }
 
 def fileName = 'opendcs-openapi'

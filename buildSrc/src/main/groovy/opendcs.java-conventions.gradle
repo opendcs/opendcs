@@ -51,6 +51,7 @@ jacocoTestReport {
     reports {
         xml.required = true
     }
+    
 }
 
 checkstyle {

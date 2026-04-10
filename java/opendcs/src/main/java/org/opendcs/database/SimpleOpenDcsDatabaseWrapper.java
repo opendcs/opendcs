@@ -30,17 +30,19 @@ import decodes.cwms.CwmsLocationLevelDAO;
 
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.JdbiException;
+import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDao;
+import org.opendcs.database.api.OpenDcsDaoConfigurationException;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
 import org.opendcs.settings.api.OpenDcsSettings;
+import org.opendcs.utils.AnnotationHelpers;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.openide.util.Lookup;
-import org.openide.util.Lookup.Template;
 import org.openide.util.lookup.Lookups;
 import org.slf4j.Logger;
 
@@ -219,6 +221,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         if (instance != null)
         {
             final var tmp = instance;
+            injectDaos(tmp);
             return Optional.of(new DaoWrapper<>(() -> tmp));
         }
         else
@@ -226,6 +229,54 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
             log.trace("No DAO instance of '{}' found for implementation '{}' or as default", dao.getName(), impl);
             return Optional.empty();
         }
+    }
+
+    /**
+     * Wait, but can't recursion happen?
+     * @param dao
+     * @throws OpenDcsDaoConfigurationException if unable to inject dependency for any reason. This is a runtime exception as
+     * it should be rare and caught during testing.
+     */
+    @SuppressWarnings({"unchecked","java:S3011"}) // unchecked -> we check manually, java:S3001 -> Our current setup does not allow for constructor based injection and
+                                                  // we want to allow for private/protected fields.
+    private void injectDaos(OpenDcsDao dao)
+    {
+        var fieldpairs = AnnotationHelpers.getFieldsWithAnnotation(dao.getClass(), InjectDao.class);
+        for (var pair: fieldpairs)
+        {
+            var anno = pair.second;
+            var field = pair.first;
+
+            var fieldClass = field.getType();
+            if (!OpenDcsDao.class.isAssignableFrom(fieldClass))
+            {
+                throw new OpenDcsDaoConfigurationException("Field " + field.getName() +
+                                               " in class" + fieldClass.getName() +
+                                               " is not a type of " + OpenDcsDao.class.getName());
+            }            
+            final var daoClass = (Class<? extends OpenDcsDao>)fieldClass;
+            var instance = fromLookup(daoClass);
+            if (instance.isPresent())
+            {
+                field.setAccessible(true);
+                try
+                {
+                    field.set(dao, instance.get().create());
+                }
+                catch (IllegalArgumentException | IllegalAccessException ex)
+                {
+                    throw new OpenDcsDaoConfigurationException("Unable to assign DAO to this instance", ex);
+                }
+            }
+            else if (!anno.optional())
+            {
+                throw new OpenDcsDaoConfigurationException("An instance Required DAO " + daoClass.getName() + " is not available.");
+            }
+
+
+        }
+
+
     }
 
     @Override
