@@ -35,6 +35,7 @@ i18n.on("languageChanged", (locale) => {
   // correctly.
   i18n.loadNamespaces([
     "sites",
+    "computations",
     "algorithms",
     "colormode",
     "platforms",

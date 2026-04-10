@@ -7,6 +7,7 @@ import { Container } from "react-bootstrap";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Platforms } from "./pages/platforms";
 import { Algorithms } from "./pages/computations/algorithms";
+import { Computations } from "./pages/computations/computations";
 import { SitesPage } from "./pages/sites";
 import OidcCallback from "./pages/auth/login/OidcCallback";
 
@@ -35,6 +36,7 @@ function App() {
             >
               <Route path="/platforms" element={<Platforms />} />
               <Route path="/sites" element={<SitesPage />} />
+              <Route path="/computations" element={<Computations />} />
               <Route path="/algorithms" element={<Algorithms />} />
             </Route>
           </Route>
