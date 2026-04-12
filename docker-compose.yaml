@@ -19,17 +19,18 @@ services:
   migration:
     build:
       context: .
-      target: tsdbapp
+      target: migration
     environment:
-      - DCS_OWNER=dcs_owner
-      - DCS_OWNER_PASS=dcs_password
-      - DCS_USER=app
-      - DCS_PASS=app_pass
-      - DCS_IMPLEMENTATION=OpenDCS-Postgres
+      - LOG_LEVEL=DEBUG
+      - MIGRATION_USER=dcs_owner
+      - MIGRATION_PASSWORD=dcs_password
+      - APP_USER=app
+      - APP_PASSWORD=app_pass
+      - DATABASE_TYPE=OpenDCS-Postgres
+      - KEYGENERATOR=decodes.sql.SequenceKeyGenerator
       - DATABASE_URL=jdbc:postgresql://db:5432/dcs
       - placeholder_NUM_TS_TABLES=1
       - placeholder_NUM_TEXT_TABLES=1
-    command: ["/schema.sh"]
     volumes:
       - ./compose_files/schema.sh:/schema.sh:ro
     restart: no
@@ -76,8 +77,10 @@ services:
       - DB_MIN_IDLE=1
     depends_on:
       migration:
+        required: true
         condition: service_completed_successfully
       set-db-type:
+        required: true
         condition: service_completed_successfully
   pgadmin:
     image: dpage/pgadmin4

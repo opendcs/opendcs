@@ -80,7 +80,6 @@ ENV APPLICATION_NAME="compdepends"
 
 CMD ["/compdepends.sh"]
 
-
 FROM alpine:3.21.5 AS tomcat_base
 RUN apk --no-cache upgrade && \
     apk --no-cache add \
@@ -108,3 +107,12 @@ COPY /docker_files/tomcat/conf/context.xml /usr/local/tomcat/conf/Catalina/local
 COPY /docker_files/tomcat/conf/tomcat-server.xml /usr/local/tomcat/conf/server.xml
 COPY /docker_files/tomcat/conf/setenv.sh /usr/local/tomcat/bin
 ENV DCSTOOL_HOME="/opt/opendcs"
+
+
+
+FROM tsdbapp AS migration
+COPY docker_scripts/migration.sh /
+CMD ["/migration.sh"]
+ENV APPLICATION_NAME="migration"
+# Current valid options are OpenDCS-Postgres (default), OpenDCS-Oracle, and CWMS-Oracle
+ENV DATABASE_IMPLEMENTATION=OpenDCS-Postgres
