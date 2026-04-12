@@ -369,16 +369,19 @@ public class DbComputation implements CompMetaData, CachableHasProperties
 	 * Delegates to the apply method of the DbAlgorithmExecutive.
 	 * @param msg the data collection
 	 * @param tsdb the database
+	 * @return Collection of time series that were output for this computation
 	 * @throws DbCompException if apply fails.
 	 * @throws DbIoException on IO error to database.
 	 */
-	public void apply( DataCollection msg, TimeSeriesDb tsdb )
+	public DataCollection apply( DataCollection msg, TimeSeriesDb tsdb )
 		throws DbCompException, DbIoException
 	{
 		if (executive == null)
+		{
 			throw new DbCompException("Computation '" + name
 				+ "' not initialized.");
-		executive.apply(msg);
+		}
+		return executive.apply(msg);
 	}
 
 	/**

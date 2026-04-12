@@ -144,15 +144,16 @@ public final class ComputationExecution
 		return new CompResults(numErrors, computesTried);
 	}
 
-	public void executeSingleComp(DbComputation comp, Date start, Date end, DataCollection dataCollection)
+	public DataCollection executeSingleComp(DbComputation comp, Date start, Date end, DataCollection dataCollection)
 			throws DbIoException
 	{
-		executeSingleComp(comp, start, end, dataCollection, false, new ProgressListener.LoggingProgressListener());
+		return executeSingleComp(comp, start, end, dataCollection, false, new ProgressListener.LoggingProgressListener());
 	}
 
-	private void executeSingleComp(DbComputation comp, Date start, Date end, DataCollection dataCollection, boolean ignoreTimeWindow, ProgressListener listener)
+	private DataCollection executeSingleComp(DbComputation comp, Date start, Date end, DataCollection dataCollection, boolean ignoreTimeWindow, ProgressListener listener)
 			throws DbIoException
 	{
+		DataCollection ret = new DataCollection();
 		try(MDC.MDCCloseable mdc = MDC.putCloseable(COMPUTATION_KEY, comp.getName());
 			var compTimer = MDCTimer.startTimer("executing single computation: " + comp.getName());
 			TimeSeriesDAI timeSeriesDAO = getTsDb().makeTimeSeriesDAO())
@@ -203,7 +204,7 @@ public final class ComputationExecution
 					}
 				}
 
-				comp.apply(dataCollection, getTsDb());
+				ret = comp.apply(dataCollection, getTsDb());
 				listener.onProgress("Successfully initiated computation", Level.INFO, null);
 			}
 			catch(DbCompException ex)
@@ -231,6 +232,7 @@ public final class ComputationExecution
 		{
 			listener.onProgress("Unexpected error in computation.", Level.WARN, ex);
 		}
+		return ret;
 	}
 
 	public record CompResults(int numErrors, int computesTried)
