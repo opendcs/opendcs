@@ -15,9 +15,14 @@
 
 package decodes.tsdb;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Function;
 
 import ilex.var.TimedVariable;
 import opendcs.dai.TimeSeriesDAI;
@@ -26,16 +31,39 @@ import org.opendcs.utils.logging.MDCTimer;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
+import static org.opendcs.utils.logging.ThreadUtils.propegate;
+
 public final class ComputationExecution
 {
 	private static final String COMPUTATION_KEY = "computation";
 	private final OpenDcsDatabase db;
 	private int numErrors = 0;
 	private int computesTried = 0;
+	private final ExecutorService executor;
 
+	/**
+	 * Create instance of ComputationExecution using a new SingleThreadExeuctor
+	 * @param db
+	 */
 	public ComputationExecution(OpenDcsDatabase db)
 	{
+		this(db, Executors.newSingleThreadExecutor());
+	}
+
+
+	/**
+	 * Create instance of ComputationExecution using provided ExecutorService.
+	 *
+	 * NOTE: at this time we do not think the operations of DbComputation.apply are thread save.
+	 * This is being initially setup to provided chaining operations and too allow for that
+	 * follow on work.
+	 * @param db
+	 * @param executor
+	 */
+	public ComputationExecution(OpenDcsDatabase db, ExecutorService executor)
+	{
 		this.db = db;
+		this.executor = executor;
 	}
 
 	/**
@@ -54,54 +82,152 @@ public final class ComputationExecution
 		return tsdb;
 	}
 
+
+	/**
+	 * Execute computations with given input data.
+	 *
+	 * @param toRun
+	 * @param theData
+	 * @return
+	 */
 	public CompResults execute(List<DbComputation> toRun, DataCollection theData)
 	{
-		return execute(toRun, theData, null, null);
+		return execute(toRun, theData, null, null, dc -> dc);
 	}
 
+	/**
+	 * Execute computations with the given input data, after each computation run the afterComp handler
+	 * which recieves only the output timeseries for processing.
+	 * @param toRun
+	 * @param theData
+	 * @param afterComp
+	 * @return
+	 */
+	public CompResults execute(List<DbComputation> toRun, DataCollection theData, Function<DataCollection, DataCollection> afterComp)
+	{
+		return execute(toRun, theData, null, null, afterComp);
+	}
+
+	/**
+	 * Run computations using given data and date range, using default pass through afterComp handler
+	 * @param toRun
+	 * @param theData
+	 * @param start
+	 * @param end
+	 * @return
+	 */
 	public CompResults execute(List<DbComputation> toRun, DataCollection theData, Date start, Date end)
 	{
-		return execute(toRun, theData, start, end, new ProgressListener.LoggingProgressListener());
+		return execute(toRun, theData, start, end, dc -> dc);
 	}
 
+	/**
+	 * Run computations using the given data and date range using the given afterComp Handler.
+	 * @param toRun
+	 * @param theData
+	 * @param start
+	 * @param end
+	 * @param afterComp
+	 * @return
+	 */
+	public CompResults execute(List<DbComputation> toRun, DataCollection theData, Date start, Date end, Function<DataCollection, DataCollection> afterComp)
+	{
+		return execute(toRun, theData, start, end, new ProgressListener.LoggingProgressListener(), afterComp);
+	}
+
+	/**
+	 * Run computations using the given data, date rangge, and ProgressListener
+	 * @param toRun
+	 * @param theData
+	 * @param start
+	 * @param end
+	 * @param listener
+	 * @return
+	 */
 	public CompResults execute(List<DbComputation> toRun, DataCollection theData, Date start, Date end, ProgressListener listener)
 	{
+		return execute(toRun, theData, start, end, listener, dc -> dc);
+	}
+
+	/**
+	 * Run computations using the given data, date range, progress listener, and afterComp handler.
+	 * 
+	 *
+	 * 
+	 * @param toRun
+	 * @param theData
+	 * @param start
+	 * @param end
+	 * @param listener
+	 * @param afterComp run using CompletableFuture::thenApply, if you wish to run the task on a different ExecutorService your handler should pass the data along.
+	 * @return
+	 */
+	public CompResults execute(List<DbComputation> toRun, DataCollection theData, Date start, Date end, ProgressListener listener, Function<DataCollection, DataCollection> afterComp)
+	{
 		// Execute the computations
+		List<CompletableFuture<DataCollection>> comps = new ArrayList<>();
 		for(DbComputation comp : toRun)
 		{
-			try (var mdcComputation = MDC.putCloseable(COMPUTATION_KEY, comp.getName());
-				 var compTimer = MDCTimer.startTimer(comp.getName()))
-			{
-				listener.onProgress(String.format("Executing computation '%s' #trigs=%d",
-						comp.getName(), comp.getTriggeringRecNums().size()), Level.DEBUG, null);
-				computesTried++;
-				boolean ignoreTimeWindow = start == null && end == null;
-				executeSingleComp(comp, start, end, theData, ignoreTimeWindow, listener);
-			}
-			catch(DbIoException ex)
-			{
-				listener.onProgress(String.format("Computation '%s' failed.", comp.getName()), Level.WARN, ex);
-				numErrors++;
-				for (Integer rn : comp.getTriggeringRecNums())
+			var future = CompletableFuture.supplyAsync(
+				propegate(() ->
 				{
-					theData.getTasklistHandle().markComputationFailed(rn);
-				}
-			}
-			catch (Exception ex)
-			{
-				listener.onProgress(String.format("Unexpected error in computation %s", comp.getName()), Level.WARN, ex);
-				numErrors++;
-				for(Integer rn : comp.getTriggeringRecNums())
+					DataCollection ret = new DataCollection();
+					try (var mdcComputation = MDC.putCloseable(COMPUTATION_KEY, comp.getName());
+						var compTimer = MDCTimer.startTimer(comp.getName()))
+					{
+						listener.onProgress(String.format("Executing computation '%s' #trigs=%d",
+								comp.getName(), comp.getTriggeringRecNums().size()), Level.DEBUG, null);
+						computesTried++;
+						boolean ignoreTimeWindow = start == null && end == null;
+						ret = executeSingleComp(comp, start, end, theData, ignoreTimeWindow, listener);
+					}
+					catch(DbIoException ex)
+					{
+						listener.onProgress(String.format("Computation '%s' failed.", comp.getName()), Level.WARN, ex);
+						numErrors++;
+						for (Integer rn : comp.getTriggeringRecNums())
+						{
+							theData.getTasklistHandle().markComputationFailed(rn);
+						}
+					}
+					catch (Exception ex)
+					{
+						listener.onProgress(String.format("Unexpected error in computation %s", comp.getName()), Level.WARN, ex);
+						numErrors++;
+						for(Integer rn : comp.getTriggeringRecNums())
+						{
+							theData.getTasklistHandle().markComputationFailed(rn);
+						}
+					}
+					finally
+					{
+						comp.getTriggeringRecNums().clear();
+						listener.onProgress(String.format("End of computation '%s'", comp.getName()), Level.DEBUG, null);
+					}
+					return ret;
+				}), executor)
+				.thenApply(dc ->
 				{
-					theData.getTasklistHandle().markComputationFailed(rn);
-				}
-			}
-			comp.getTriggeringRecNums().clear();
-			listener.onProgress(String.format("End of computation '%s'", comp.getName()), Level.DEBUG, null);
+					listener.logEvent("will save " + dc.size() + " time series from comp", Level.INFO, null);
+					return dc;
+				})
+				.thenApply(afterComp);
+			comps.add(future);
 		}
+		CompletableFuture.allOf(comps.toArray(new CompletableFuture[0])).join();
 		return new CompResults(numErrors, computesTried);
 	}
 
+	/**
+	 * Execute a single computation with the provided inputs, date range, and progress listener.
+	 * @param computation
+	 * @param tsIds
+	 * @param start
+	 * @param end
+	 * @param listener
+	 * @return
+	 * @throws DbIoException
+	 */
 	public CompResults execute(DbComputation computation,
 			List<TimeSeriesIdentifier> tsIds, Date start, Date end, ProgressListener listener)
 		throws DbIoException
@@ -144,12 +270,32 @@ public final class ComputationExecution
 		return new CompResults(numErrors, computesTried);
 	}
 
+	/**
+	 * Run single computation using the provided data, date range and default LoggingProgressListener
+	 * @param comp
+	 * @param start
+	 * @param end
+	 * @param dataCollection
+	 * @return
+	 * @throws DbIoException
+	 */
 	public DataCollection executeSingleComp(DbComputation comp, Date start, Date end, DataCollection dataCollection)
 			throws DbIoException
 	{
 		return executeSingleComp(comp, start, end, dataCollection, false, new ProgressListener.LoggingProgressListener());
 	}
 
+	/**
+	 * Execute a single computation using a data collection.
+	 * @param comp
+	 * @param start
+	 * @param end
+	 * @param dataCollection
+	 * @param ignoreTimeWindow
+	 * @param listener
+	 * @return
+	 * @throws DbIoException
+	 */
 	private DataCollection executeSingleComp(DbComputation comp, Date start, Date end, DataCollection dataCollection, boolean ignoreTimeWindow, ProgressListener listener)
 			throws DbIoException
 	{
