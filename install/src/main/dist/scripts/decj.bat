@@ -187,8 +187,9 @@ exit /B %ERRORLEVEL%
     shift
     :: Check if next arg exists and current doesn't contain = (was split)
     if not "%~1"=="" (
-        echo "!_sysprop!" | findstr "=" >nul
-        if errorlevel 1 (
+        set "_needs_join=1"
+        for /f "tokens=1,2 delims==" %%a in ("!_sysprop!") do if not "%%b"=="" set "_needs_join="
+        if defined _needs_join (
             :: No = found, so reassemble with next arg
             set "_sysprop=!_sysprop!=%~1"
             shift
