@@ -383,9 +383,10 @@ public class ComputationApp extends TsdbAppTemplate
 								{
 									try
 									{
+										log.info("Saving {} values for {}", ts.size(), ts.getNameString());
 										timeSeriesDAO.saveTimeSeries(ts);
 									}
-									catch (Exception ex)
+									catch (DbIoException | BadTimeSeriesException ex)
 									{
 										log.atWarn()
 										.setCause(ex)
