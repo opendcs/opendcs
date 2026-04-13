@@ -198,6 +198,9 @@ public interface TimeSeriesDAI extends DaiBase, OpenDcsDao
 
 	/**
 	 * Flush and reload the internal Time Series ID cache inside the DAO
+	 * While it is preferable to have the internal resource management have no static variables
+	 * existing implementations do so. Any implementation of this should likely synchronize on the
+	 * given class to avoid concurrent modification exceptions.
 	 * @throws DbIoException on error.
 	 */
 	public void reloadTsIdCache()

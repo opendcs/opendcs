@@ -34,6 +34,7 @@ import java.util.TimeZone;
 import org.opendcs.database.ExceptionHelpers;
 import org.opendcs.utils.FailableResult;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.python.modules.synchronize;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.spi.LoggingEventBuilder;
@@ -1311,30 +1312,33 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	@Override
 	public synchronized void reloadTsIdCache() throws DbIoException
 	{
-		cache.clear();
-		String q = "SELECT " + ts_spec_columns + " from TS_SPEC";
-
-		try (ResultSet rs = doQuery(q))
+		synchronized(OpenTimeSeriesDAO.class)
 		{
-			while (rs.next())
+			cache.clear();
+			String q = "SELECT " + ts_spec_columns + " from TS_SPEC";
+
+			try (ResultSet rs = doQuery(q))
 			{
-				try
+				while (rs.next())
 				{
-					cache.put(rs2TsId(rs, true));
-				}
-				catch(NoSuchObjectException ex)
-				{
-					log.atWarn()
-					   .setCause(ex)
-					   .log("Cannot create tsid for key={} -- skipped.", rs.getLong(1));
+					try
+					{
+						cache.put(rs2TsId(rs, true));
+					}
+					catch(NoSuchObjectException ex)
+					{
+						log.atWarn()
+						.setCause(ex)
+						.log("Cannot create tsid for key={} -- skipped.", rs.getLong(1));
+					}
 				}
 			}
+			catch(Exception ex)
+			{
+				throw new DbIoException("Error reading TS_SPEC table: ", ex);
+			}
+			lastCacheReload = System.currentTimeMillis();
 		}
-		catch(Exception ex)
-		{
-			throw new DbIoException("Error reading TS_SPEC table: ", ex);
-		}
-		lastCacheReload = System.currentTimeMillis();
 	}
 
 	@Override

@@ -1154,58 +1154,60 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 
         // Each TSID will need a site, so prefill the site cache to prevent
         // it from doing individual reads for each site.
-
-        String q = cwmsTsidQueryBase + " WHERE upper(a.DB_OFFICE_ID) = upper(?)";
-        int origFetchSize = getFetchSize();
-        try
+        synchronized(CwmsTimeSeriesDAO.class)
         {
-            int tsidFetchSize = DecodesSettings.instance().tsidFetchSize;
-            if (tsidFetchSize > 0)
+            String q = cwmsTsidQueryBase + " WHERE upper(a.DB_OFFICE_ID) = upper(?)";
+            int origFetchSize = getFetchSize();
+            try
             {
-                setFetchSize(tsidFetchSize);
+                int tsidFetchSize = DecodesSettings.instance().tsidFetchSize;
+                if (tsidFetchSize > 0)
+                {
+                    setFetchSize(tsidFetchSize);
+                }
+
+
+                List<TimeSeriesIdentifier> tsidList = getResultsIgnoringNull(q, rs ->
+                {
+                    CwmsTsId retVal = null;
+                    try
+                    {
+                        retVal = rs2TsId(rs, false);
+                    }
+                    catch (DbIoException | NoSuchObjectException ex)
+                    {
+                        log.atWarn()
+                        .setCause(ex)
+                        .log("Error creating Cwms TSID -- skipped.");
+                    }
+                    return retVal;
+                }, dbOfficeId);
+
+                synchronized(cache)
+                {
+                    cache.clear();
+                    for(TimeSeriesIdentifier tsid: tsidList)
+                    {
+                        cache.put(tsid);
+                    }
+                }
+
+                log.debug("After fill, cache has {} TSIDs.", cache.size());
             }
-
-
-            List<TimeSeriesIdentifier> tsidList = getResultsIgnoringNull(q, rs ->
+            catch (SQLException ex)
             {
-                CwmsTsId retVal = null;
-                try
-                {
-                    retVal = rs2TsId(rs, false);
-                }
-                catch (DbIoException | NoSuchObjectException ex)
-                {
-                    log.atWarn()
-                       .setCause(ex)
-                       .log("Error creating Cwms TSID -- skipped.");
-                }
-                return retVal;
-            }, dbOfficeId);
-
-            synchronized(cache)
-            {
-                cache.clear();
-                for(TimeSeriesIdentifier tsid: tsidList)
-                {
-                    cache.put(tsid);
-                }
+                final String msg = "Failed to reload CwmsTimeSeriesDb TsId Cache.";
+                log.atError()
+                .setCause(ex)
+                .log(msg);
+                throw new DbIoException(msg, ex);
             }
-
-            log.debug("After fill, cache has {} TSIDs.", cache.size());
+            finally
+            {
+                setFetchSize(origFetchSize);
+            }
+            lastCacheReload = System.currentTimeMillis();
         }
-        catch (SQLException ex)
-        {
-            final String msg = "Failed to reload CwmsTimeSeriesDb TsId Cache.";
-            log.atError()
-               .setCause(ex)
-               .log(msg);
-            throw new DbIoException(msg, ex);
-        }
-        finally
-        {
-            setFetchSize(origFetchSize);
-        }
-        lastCacheReload = System.currentTimeMillis();
     }
 
     @Override
