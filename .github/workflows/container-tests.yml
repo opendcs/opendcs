@@ -1,0 +1,38 @@
+name: Smoke Tests of container operations
+on:
+  pull_request:
+    branches:
+      - "main"
+      - "7.0"
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - "main"
+      - "7.0"
+# Update this value if we need a different Jdk to be used for sonar analysis.
+env:
+  sonarJdk: 21
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+    #   - name: Clean up disk space, so we don't run out.
+    #     run: |
+    #       sudo rm -rf /usr/share/dotnet
+    #       sudo rm -rf /usr/local/lib/android
+    #       sudo rm -rf /opt/ghc
+      - uses: actions/checkout@v6.0.2
+      - name: Startup System
+        run: |
+          docker compose up -d --wait --wait-timeout 300
+      - name: Login/grab data
+        run: |
+            echo "Login"
+            curl -i --cookie-jar session.cj -X POST http://localhost:7000/odcsapi/credentials --data '{"username": "test_user", "password": "test_password"}' -H 'Content-Type: application/json' -H 'Accept: application/json'
+            echo ""
+            echo "Retrieve Data"
+            curl -s --cookie session.cj -X GET http://localhost:7000/odcsapi/reflists -H 'Content-Type: application/json' -H 'Accept: application/json' \
+                 > data.json
+            CHECKVALUE=`jq -r '.UnitFamily.defaultValue' data.json`
+            [[ "$CHECKVALUE" == "english" ]]

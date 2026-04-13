@@ -17,7 +17,6 @@ package decodes.util;
 
 import java.util.Properties;
 
-import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;

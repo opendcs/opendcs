@@ -41,7 +41,6 @@ import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.impl.opendcs.dao.OpenDcsPgUserManagementImpl;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
-import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.Role;
 import org.opendcs.spi.database.MigrationHelper;
 import org.opendcs.spi.database.MigrationProvider;

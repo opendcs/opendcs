@@ -35,6 +35,20 @@ The following containers support automated processing. The computation container
 
 The above containers are the same except that the default `APPLICATION_NAME` and CMD are to match the default purpose.
 
+
+# Migration
+
+The migration container supports all of the below items as well as additional values to support the various flyway operations. DATABASE_USER and DATABASE_PASSWORD are replaced by the 4 entries described below.
+
+
+| Variable | Default | Description |
+| -------- | ------- | ----------- |
+| MIGRATION_USER | <not set> | Database Schema owning or user permitted to perform Data Definition Language changes |
+| MIGRATION_PASSWORD | <not set> | Password for the migration user |
+| APP_USER | <not set> | User name for the initial dbimport and compimport as all as other applications that will connect |
+| APP_PASSWORD | <not set> | Password for the app users |
+| PLACEHOLDER_\* | <not set> | The SQL files of each implementation may contain Flyway Placeholder values. Any variable starting with PLACEHOLDER_ will have the PLACEHOLDER_ prefix striped and passed along to flyway for use. |
+
 ## Variables
 
 The following environment variables are used to configure the container.
