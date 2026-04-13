@@ -4,13 +4,11 @@ on:
     branches:
       - "main"
       - "7.0"
-      - "8.0"
     types: [opened, synchronize, reopened]
   push:
     branches:
       - "main"
       - "7.0"
-      - "8.0"
 # Update this value if we need a different Jdk to be used for sonar analysis.
 env:
   sonarJdk: 21
