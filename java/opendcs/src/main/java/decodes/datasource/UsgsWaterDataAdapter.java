@@ -246,7 +246,6 @@ final class UsgsWaterDataAdapter
 		Date until,
 		String dataTypeStandard,
 		List<TimeSeriesMetadata> allMetadata)
-		throws Exception
 	{
 		List<SensorResult> results = new ArrayList<>();
 

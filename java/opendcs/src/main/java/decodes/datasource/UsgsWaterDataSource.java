@@ -16,10 +16,8 @@
 package decodes.datasource;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
 
@@ -52,7 +50,6 @@ import decodes.util.PropertySpec;
  *
  * <p>This source overrides {@link #getDataMessage()} to return a DecodedMessage.
  * Each call fetches all Daily or Continuous (instantaneous) data.
- *
  * Daily data is fetched when Config-Sensor interval is 24:00:00; otherwise continuous.</p>
  *
  * <p>Platform sites are identified by USGS site number from the network list transport IDs.
@@ -71,13 +68,13 @@ public class UsgsWaterDataSource extends DataSourceExec
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
-	private ArrayList<String> aggIds = new ArrayList<>();
-	private ArrayList<Platform> platforms = new ArrayList<>();
-	private ArrayList<String> mediumTypes = new ArrayList<>();
+	private final ArrayList<String> aggIds = new ArrayList<>();
+	private final ArrayList<Platform> platforms = new ArrayList<>();
+	private final ArrayList<String> mediumTypes = new ArrayList<>();
 
 	private String dataTypeStandard = "usgs";
 
-	private Properties myProps = new Properties();
+	private final Properties myProps = new Properties();
 
 	private Date dSince = null;
 	private Date dUntil = null;
