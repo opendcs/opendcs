@@ -22,15 +22,15 @@ import ilex.util.HasProperties;
  */
 public final class Property<T>
 {
-    final T defaultValue;
-    final Date expansionDate; // if not set use new Date at time of expansion
-    final Properties expansionSource;
-    final boolean mustExpand;
-    final PropertySpec propertySpec;
-    final String propertyName;
-    final Class<T> targetType;
-    final List<? extends HasProperties> sources;
-    final PropertyConverter<T> converter;
+    private final T defaultValue;
+    private final Date expansionDate; // if not set use new Date at time of expansion
+    private final Properties expansionSource;
+    private boolean mustExpand;
+    private final PropertySpec propertySpec;
+    private final String propertyName;
+    private final Class<T> targetType;
+    private final List<? extends HasProperties> sources;
+    private final PropertyConverter<T> converter;
 
 
     private Property(Builder<T> builder)
@@ -95,6 +95,23 @@ public final class Property<T>
             ret = EnvExpander.expand(value, this.expansionSource, this.expansionDate);
         }
         return ret;
+    }
+
+    @Override
+    public String toString()
+    {
+        // since this will primiarly be used for logging, just force a simple string conversion of the value
+        boolean origExpand = mustExpand;
+        try
+        {
+            mustExpand = false;
+            return (origExpand ? "NonExpandedValue{" : "") + findValue().orElse(defaultValue) +
+                   (origExpand ? "}" : "");
+        }
+        finally
+        {
+            mustExpand = origExpand;
+        }
     }
 
     @SuppressWarnings("java:S2972") // it doesn't really make sense to me to split this class out, while a bit long, it is simple.
