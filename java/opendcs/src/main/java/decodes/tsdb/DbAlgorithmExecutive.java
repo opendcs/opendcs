@@ -92,13 +92,13 @@ public abstract class DbAlgorithmExecutive
 	/** Gregorian Calendar to use for determining aggregate periods: */
 	public GregorianCalendar aggCal = null;
 
-	private int maxMissingValuesForFill;
+	private Property<Integer> maxMissingValuesForFill;
 	private int maxMissingTimeForFill;
 
 	/** Determines open/closed intervals for aggregate periods.
 	 * The default is [lower,upper)
 	 */
-	protected boolean aggLowerBoundClosed = true;
+	protected Property<Boolean> aggLowerBoundClosed; // = true;
 
 	/** Determines open/closed intervals for aggregate periods.
 	 * The default is [lower,upper)
@@ -154,9 +154,8 @@ public abstract class DbAlgorithmExecutive
 
 		this.maxMissingValuesForFill = Property.property("maxMissingValuesForFill", Integer.class)
 											   .withSources(comp, algo, DecodesSettings.instance())
-											   .build()
-											   .find()
-											   .orElse(0);
+											   .withDefaultValue(0)
+											   .build();
 		// this.maxMissingValuesForFill = DecodesSettings.instance().maxMissingValuesForFill;
 		// String s = comp.getProperty("maxMissingValuesForFill");
 		// if (s == null)
@@ -1017,7 +1016,7 @@ public abstract class DbAlgorithmExecutive
 					if (paramSince.compareTo(paramUntil) <= 0)
 					{
 						timeSeriesDAO.fillTimeSeries(parmRef.timeSeries, paramSince, paramUntil,
-							aggLowerBoundClosed, aggUpperBoundClosed, false);
+							aggLowerBoundClosed.get(), aggUpperBoundClosed, false);
 					}
 					int sz = parmRef.timeSeries.size();
 					for(int i=0; i<sz; i++)
@@ -1029,7 +1028,7 @@ public abstract class DbAlgorithmExecutive
 						long sampMsec = sampBaseTime.getTime();
 
 						boolean aboveLowerBound =
-							aggLowerBoundClosed ? sampMsec >= sinceMsec
+							aggLowerBoundClosed.get() ? sampMsec >= sinceMsec
 							: sampMsec > sinceMsec;
 						boolean belowUpperBound =
 							aggUpperBoundClosed ? sampMsec <= untilMsec
@@ -1357,7 +1356,7 @@ public abstract class DbAlgorithmExecutive
 
 						if (intvSecs != 0
 						 && (varSec-prevSec) / intvSecs
-							> maxMissingValuesForFill)
+							> maxMissingValuesForFill.get())
 						{
 							log.warn("Missing number exceeded for role {}, max#={}, deltaT={}, intvsSecs={}",
 									 role, maxMissingValuesForFill, (varSec-prevSec), intvSecs);
@@ -1391,7 +1390,7 @@ public abstract class DbAlgorithmExecutive
 
 						if (intvSecs != 0
 						 && (nextSec - prevSec) / intvSecs
-							> maxMissingValuesForFill)
+							> maxMissingValuesForFill.get())
 						{
 							log.warn("Missing time exceeded for role {}, " +
 									 "prevSec={}, nextSec={}, intvSecs={}, max={} seconds.",
@@ -1453,7 +1452,7 @@ public abstract class DbAlgorithmExecutive
 							log.atWarn().setCause(ex).log("Error with exact delta.");
 						}
 					}
-					// TODO: Determine where interpDeltas should be set.
+					// interpDeltas is set in AW_AlgorithmBase, if you're IDE is flagging this as dead code, it's wrong.
 					else if (interpDeltas && (prev = parmRef.timeSeries.findPrev((int)(tv.getTime().getTime()/1000L)-1)) != null)
 					{
 						try

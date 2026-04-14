@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import org.opendcs.algorithms.AlgorithmUtilties;
 import org.opendcs.utils.AnnotationHelpers;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.opendcs.utils.properties.Property;
 import org.slf4j.Logger;
 
 import ilex.util.TextUtil;
@@ -279,12 +280,10 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 		// so that _awAlgoType is set correctly:
 		
 		// Get the "aggLowerBoundClosed" boolean if there
-		t_string = comp.getProperty("aggLowerBoundClosed");
-		if (t_string != null) 
-			aggLowerBoundClosed = TextUtil.str2boolean(t_string);
-		else // default is true for regular aggregates, false for running aggregates.
-			aggLowerBoundClosed = 
-				_awAlgoType == AWAlgoType.RUNNING_AGGREGATE ? false : true;
+		aggLowerBoundClosed = Property.property("aggLowerBoundClosed", Boolean.class)
+									  .withSources(comp)
+									  .withDefaultValue(_awAlgoType == AWAlgoType.RUNNING_AGGREGATE ? false : true)
+									  .build();
 		
 		t_string = comp.getProperty("aggUpperBoundClosed");
 		if (t_string != null) 
@@ -587,7 +586,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 			// If the following are all true, then we just did the lower period.
 			// Leave the base time alone and do the upper period.
 			if (baseTime != null
-			 && aggUpperBoundClosed && aggLowerBoundClosed
+			 && aggUpperBoundClosed && aggLowerBoundClosed.get()
 			 && baseTime.equals(_aggregatePeriodEnd))
 			{
 				log.trace("Special processing for double-closed boundaries. Just did period ending {}",baseTime);

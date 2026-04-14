@@ -53,12 +53,12 @@ public final class Property<T>
 
     /**
      * Retrieve expected property.
-     * @return The value expected
-     * @throws NoSuchPropertyException
+     * @return The value determined, or provided as the default.
+     * @throws NoSuchPropertyException Runtime Exception
      */
     public T get() throws NoSuchPropertyException
     {
-        return find().orElseThrow(() -> new NoSuchPropertyException("No property avaiabled named '" + propertyName + "' from any configured source"));
+        return find().orElseThrow(() -> new NoSuchPropertyException("No property available named '" + propertyName + "' from any configured source. A default value was not set."));
     }
 
     /**
@@ -211,7 +211,6 @@ public final class Property<T>
             {
                 withConverter(lookupConverter());
             }
-
             return new Property<>(this);
         }
 
