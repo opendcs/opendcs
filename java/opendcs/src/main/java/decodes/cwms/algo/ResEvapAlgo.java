@@ -51,6 +51,7 @@ import org.opendcs.annotations.PropertyRequirements;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.model.cwms.CwmsSiteReferenceValue;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.opendcs.utils.properties.Property;
 import org.slf4j.Logger;
 
 
@@ -209,7 +210,9 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
         _aggPeriodVarRoleName = DAILY_EVAP_DEPTH;
         //aggPeriodInterval = IntervalCodes.int_one_day;
         aggUpperBoundClosed = true;
-        aggLowerBoundClosed = false;
+        aggLowerBoundClosed = Property.property("aggLowerBoundClosed", Boolean.class)
+									  .withDefaultValue(false)
+									  .build();
     }
 
     //Initialized hourly water temperature profiles and return double[] of WTP of the previous timeSlice before base.

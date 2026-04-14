@@ -26,6 +26,7 @@ import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.opendcs.utils.properties.Property;
 import org.slf4j.Logger;
 
 @Algorithm(description = "CentralRunningAverageAlgorithm averages single 'input' parameter to a single 'average' \n" +
@@ -61,7 +62,9 @@ public class CentralRunningAverageAlgorithm extends decodes.tsdb.algo.AW_Algorit
 	public CentralRunningAverageAlgorithm()
 	{
 		super();
-		aggLowerBoundClosed = false;
+		aggLowerBoundClosed = Property.property("aggLowerBoundClosed", Boolean.class)
+									  .withDefaultValue(false)
+									  .build();
 		aggUpperBoundClosed = true;
 	}
 	// Allow javac to generate a no-args constructor.
