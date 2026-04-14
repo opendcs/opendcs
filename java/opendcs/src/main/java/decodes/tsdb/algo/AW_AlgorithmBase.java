@@ -282,6 +282,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 		// Get the "aggLowerBoundClosed" boolean if there
 		aggLowerBoundClosed = Property.property("aggLowerBoundClosed", Boolean.class)
 									  .withSources(comp)
+									  .withExistingPropertyFirst(aggLowerBoundClosed)
 									  .withDefaultValue(_awAlgoType == AWAlgoType.RUNNING_AGGREGATE ? false : true)
 									  .build();
 		
