@@ -19,8 +19,10 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import decodes.db.ConfigSensor;
 import decodes.db.Constants;
@@ -51,9 +53,14 @@ import org.slf4j.Logger;
  *   <li>Fetches daily or continuous time-series data for the matching metadata</li>
  * </ol>
  */
-public class UsgsWaterDataAdapter
+final class UsgsWaterDataAdapter
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
+	private UsgsWaterDataAdapter()
+	{
+		// utility class -- do not instantiate
+	}
 
 	/** 24 hours in seconds -- sensors with this recording interval are treated as daily. */
 	private static final int DAILY_INTERVAL_SECONDS = 86400;
@@ -67,10 +74,50 @@ public class UsgsWaterDataAdapter
 		UsgsWaterDataApi.setApiKey(apiKey);
 	}
 
+	/** Cached metadata from {@link #prefetchMetadata}, keyed by monitoring location ID. */
+	private static Map<String, List<TimeSeriesMetadata>> metadataCache;
+
+	/**
+	 * Batch-fetch time-series metadata for multiple sites and cache internally.
+	 * {@link #fetchPlatformData} uses the cache to avoid per-site API calls,
+	 * reducing usage against the 1,000 requests/hour API limit.
+	 *
+	 * @param siteNumbers list of USGS site numbers (digits only, e.g. "13037500")
+	 */
+	public static void prefetchMetadata(List<String> siteNumbers)
+	{
+		String[] siteIds = new String[siteNumbers.size()];
+		for (int i = 0; i < siteNumbers.size(); i++)
+		{
+			String id = siteNumbers.get(i);
+			siteIds[i] = id.startsWith("USGS-") ? id : "USGS-" + id;
+		}
+		try
+		{
+			metadataCache = UsgsWaterDataApi.getTimeSeriesMetadata(siteIds);
+			log.info("Batch-fetched metadata for {} of {} sites",
+				metadataCache.size(), siteNumbers.size());
+		}
+		catch (Exception ex)
+		{
+			log.error("Error batch-fetching metadata for {} sites: {}",
+				siteNumbers.size(), ex.getMessage());
+			metadataCache = null;
+		}
+	}
+
+	/**
+	 * Clear the metadata cache. Should be called when processing is complete.
+	 */
+	public static void clearMetadataCache()
+	{
+		metadataCache = null;
+	}
+
 	/**
 	 * Holds one fetched time-series result associated with a platform sensor.
 	 */
-	public static class SensorResult
+	static final class SensorResult
 	{
 		public final int sensorNumber;
 		public final ConfigSensor configSensor;
@@ -165,6 +212,42 @@ public class UsgsWaterDataAdapter
 		String dataTypeStandard)
 		throws Exception
 	{
+		List<TimeSeriesMetadata> allMetadata;
+		if (metadataCache != null)
+		{
+			String key = siteNumber.startsWith("USGS-") ? siteNumber
+				: "USGS-" + siteNumber;
+			allMetadata = metadataCache.getOrDefault(key, Collections.emptyList());
+		}
+		else
+		{
+			allMetadata = UsgsWaterDataApi.getTimeSeriesMetadata(siteNumber);
+		}
+		return fetchPlatformData(platform, siteNumber, since, until,
+			dataTypeStandard, allMetadata);
+	}
+
+	/**
+	 * Fetch time-series data for all non-omitted sensors on a platform,
+	 * using pre-fetched metadata.
+	 *
+	 * @param platform the platform whose sensors define what to fetch
+	 * @param siteNumber the USGS site number (digits only, e.g. "12345678")
+	 * @param since start of time range
+	 * @param until end of time range
+	 * @param dataTypeStandard data type standard to match (typically "usgs")
+	 * @param allMetadata pre-fetched time-series metadata for this site
+	 * @return list of sensor results (may be empty, never null)
+	 */
+	public static List<SensorResult> fetchPlatformData(
+		Platform platform,
+		String siteNumber,
+		Date since,
+		Date until,
+		String dataTypeStandard,
+		List<TimeSeriesMetadata> allMetadata)
+		throws Exception
+	{
 		List<SensorResult> results = new ArrayList<>();
 
 		if (platform.getConfig() == null)
@@ -172,10 +255,6 @@ public class UsgsWaterDataAdapter
 			log.warn("Platform for site {} has no configuration", siteNumber);
 			return results;
 		}
-
-		List<TimeSeriesMetadata> allMetadata =
-			UsgsWaterDataApi.getTimeSeriesMetadata(siteNumber);
-
 
 		if (allMetadata == null || allMetadata.isEmpty())
 		{

@@ -16,8 +16,10 @@
 package decodes.datasource;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
 
@@ -157,12 +159,14 @@ public class UsgsWaterDataSource extends DataSourceExec
 		if (aggIds.isEmpty())
 			throw new DataSourceException("init() No medium ids.");
 
+		UsgsWaterDataAdapter.prefetchMetadata(aggIds);
 		xportIdx = 0;
 	}
 
 	@Override
 	public void close()
 	{
+		UsgsWaterDataAdapter.clearMetadataCache();
 		currentResults = null;
 		currentPlatform = null;
 	}
