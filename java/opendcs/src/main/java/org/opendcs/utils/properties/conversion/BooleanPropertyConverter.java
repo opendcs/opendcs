@@ -1,12 +1,15 @@
 package org.opendcs.utils.properties.conversion;
 
+import org.openide.util.lookup.ServiceProvider;
+
 import ilex.util.TextUtil;
 
 
 /**
- * Uses TextUtil to allow multiple truty values {@see TextUtil.str2boolean}
+ * Uses TextUtil to allow multiple truthy values {@see TextUtil.str2boolean}
  * but always uses "true" and "false" on output.
  */
+@ServiceProvider(service = PropertyConverter.class)
 public final class BooleanPropertyConverter implements PropertyConverter<Boolean>
 {
 

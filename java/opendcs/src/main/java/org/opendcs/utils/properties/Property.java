@@ -16,20 +16,20 @@ import ilex.util.HasProperties;
 
 /**
  * Establish a known Property value that is to be retrieved.
- * 
+ *
  * The get and find methods *always* lookup the value when called. So the created instances
  * can be stored to retrieve at different times.
  */
 public final class Property<T>
 {
-    private final T defaultValue;
+    final T defaultValue;
     private final Date expansionDate; // if not set use new Date at time of expansion
     private final Properties expansionSource;
     private boolean mustExpand;
     private final PropertySpec propertySpec;
     private final String propertyName;
     private final Class<T> targetType;
-    private final List<? extends HasProperties> sources;
+    final List<? extends HasProperties> sources;
     private final PropertyConverter<T> converter;
 
 
@@ -44,6 +44,11 @@ public final class Property<T>
         this.propertySpec = builder.propertySpec;
         this.sources = builder.sources;
         this.converter = builder.converter;
+    }
+
+    public String name()
+    {
+        return propertyName;
     }
 
     // For both of the below, it may be better to allow the expansion sources to be
@@ -69,7 +74,7 @@ public final class Property<T>
     {
         return findValue();
     }
-    
+
     private Optional<T> findValue()
     {
         T ret = this.defaultValue;
@@ -81,7 +86,7 @@ public final class Property<T>
             {
                 ret = converter.fromString(expand(value));
                 break; // break out of the loop, we found the value we want
-            }   
+            }
         }
 
         return Optional.ofNullable(ret);
@@ -126,7 +131,6 @@ public final class Property<T>
         Class<T> targetType;
         final List<HasProperties> sources = new ArrayList<>();
         PropertyConverter<T> converter;
-    
 
         private Builder(String propertyName, Class<T> targetType)
         {
@@ -134,7 +138,6 @@ public final class Property<T>
             this.targetType = targetType;
         }
 
-        
         /**
          * Include System.getProperties and System.getenv in the possible sources.
          * These will be first in the order of operations. If a different order is desired
@@ -162,6 +165,25 @@ public final class Property<T>
         public Builder<T> withSources(List<? extends HasProperties> sources)
         {
             this.sources.addAll(sources);
+            return this;
+        }
+
+        /**
+         * If a property may have already been set in a given context it can be
+         * provided here.
+         *
+         * Provided Property is held in a wrapper that will handle a null Property<T>
+         * instance if provided.
+         *
+         * This primarily exits for Algorithms where some properties are set by the algorithm init
+         * and then sometimes set *after* that by the parent AW_AlgorithmBase or DbAlgorithmExecutive classes.
+         *
+         * @param property Existing defined property <b>OR</b> null.
+         * @return
+         */
+        public Builder<T> withExistingPropertyFirst(Property<T> property)
+        {
+            this.sources.add(new ExistingPropertySource<>(property));
             return this;
         }
 
@@ -202,7 +224,7 @@ public final class Property<T>
         {
             this.expansionSource = source;
             return expand();
-        }        
+        }
 
         public Builder<T> expand(Properties source, Date date)
         {
@@ -221,7 +243,7 @@ public final class Property<T>
             this.converter = converter;
             return this;
         }
-        
+
         public Property<T> build()
         {
             if (converter == null)
@@ -253,5 +275,14 @@ public final class Property<T>
     {
         // should lookup the type from the spec
         return new Builder<>(spec.name(), null);
+    }
+
+    public static <T> Builder<T> property(Property<T> existing)
+    {
+        return new Builder<>(existing.propertyName, existing.targetType)
+            .withDefaultValue(existing.defaultValue)
+            .withPropertySpec(existing.propertySpec)
+            .withSources(existing.sources)
+            ;
     }
 }
