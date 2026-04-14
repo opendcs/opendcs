@@ -1,6 +1,6 @@
 package org.opendcs.utils.properties;
 
-public class NoSuchPropertyException extends Exception
+public class NoSuchPropertyException extends RuntimeException
 {
     public NoSuchPropertyException(String msg)
     {
