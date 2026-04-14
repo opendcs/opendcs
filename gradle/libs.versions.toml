@@ -12,14 +12,14 @@ jfree="1.0.13"
 jython="2.7.4"
 jep="2.4.5"
 dropwizard="4.2.38"
-passay="1.6.6"
+passay="2.0.0"
 jsch="0.1.55"
-aspectj="1.8.10"
+aspectj="1.9.25.1"
 json="20251224"
 slf4j-api= { strictly = "2.0.17" }
 logback = "1.5.32" 
-jetty = "12.1.4"
-jetty-jsp = "12.1.4"
+jetty = "12.1.8"
+jetty-jsp = "12.1.8"
 jersey = "4.0.2"
 servlet-api = "6.1.0"
 jakarta-jakartaee-api = "11.0.0"
@@ -29,45 +29,45 @@ cwms-db-codegen = { strictly = "7.0.0-OpenDCS" }
 monolith = { strictly = "7.0.5" }
 cwms-ratings = "1.1.0"
 nucleus = "4.10.0"
-flogger = "0.7.4"  # used by hec-monolith
-jdbi = "3.39.1"
-flywaydb = "11.20.1"
+flogger = "0.9"  # used by hec-monolith
+jdbi = "3.52.1"
+flywaydb = "12.4.0"
 sun-mailapi="2.0.2"
-ayza = "10.0.0"
+ayza = "10.0.4"
 auto-service = "1.1.1"
 password4j = "1.8.4"
 
 # Lookup and Service Annotations
-org-netbeans = "RELEASE280"
+org-netbeans = "RELEASE290"
 hec-lookup-compat = "4.0.0"
 
 # API deps
-swagger = "2.2.42"
-swagger-ui = "5.18.3"
-swagger-parser = "2.1.25"
+swagger = "2.2.48"
+swagger-ui = "5.32.2"
+swagger-parser = "2.1.40"
 rs-api = "4.0.0"
-jackson = "2.20.1"
-jackson-annotations = "2.20"
-selenium = "4.38.0"
-nimbus = "10.7"
-jwt = "4.4.0"
-jaxb = "4.0.0"
+jackson = "2.21.2"
+jackson-annotations = "2.21"
+selenium = "4.43.0"
+nimbus = "10.9"
+jwt = "4.5.1"
+jaxb = "4.0.5"
 
-swagger-codegen = "3.0.61"
+swagger-codegen = "3.0.78"
 jakarta-annotation-api = "3.0.0"
 jsr305 = "3.0.2"
-openapitools-databind-nullable = "0.2.1"
+openapitools-databind-nullable = "0.2.10"
 
 #test deps
-junit = "6.0.2"
-junit-launcher = "6.0.2"
+junit = "6.0.3"
+junit-launcher = "6.0.3"
 hamcrest = "3.0"
-commons-io = "2.11.0"
+commons-io = "2.21.0"
 derby = "10.17.1.0"
 webcompere = "2.1.8"
 greenmail = "2.1.8"
-mockito = "5.21.0"
-byte-buddy = "1.15.3"
+mockito = "5.23.0"
+byte-buddy = "1.18.8"
 rest-assured = "6.0.0"
 tomcat = "11.0.21"
 microprofile-health = "4.0.1"
@@ -209,7 +209,7 @@ testcontainers-oracle = { module = "org.testcontainers:testcontainers-oracle-fre
 hec-testcontainers-cwms = { module = "mil.army.usace.hec:testcontainers-cwms", version.ref = "hec-testcontainers-cwms" }
 
 selenium = { module = "org.seleniumhq.selenium:selenium-java", version.ref = "selenium" }
-web-driver-manager = { module = "io.github.bonigarcia:webdrivermanager", version = "6.3.3" }
+web-driver-manager = { module = "io.github.bonigarcia:webdrivermanager", version = "6.3.4" }
 nimbus = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus" }
 jwt = { module = "com.auth0:java-jwt", version.ref = "jwt" }
 
