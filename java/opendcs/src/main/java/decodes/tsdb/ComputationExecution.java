@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import ilex.var.TimedVariable;
@@ -31,14 +32,14 @@ import org.opendcs.utils.logging.MDCTimer;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
-import static org.opendcs.utils.logging.ThreadUtils.propegate;
+import static org.opendcs.utils.logging.ThreadUtils.propagate;
 
 public final class ComputationExecution
 {
 	private static final String COMPUTATION_KEY = "computation";
 	private final OpenDcsDatabase db;
-	private int numErrors = 0;
-	private int computesTried = 0;
+	private AtomicInteger numErrors = new AtomicInteger(0);
+	private AtomicInteger computesTried = new AtomicInteger(0);
 	private final ExecutorService executor;
 
 	/**
@@ -169,7 +170,7 @@ public final class ComputationExecution
 		for(DbComputation comp : toRun)
 		{
 			var future = CompletableFuture.supplyAsync(
-				propegate(() ->
+				propagate(() ->
 				{
 					DataCollection ret = new DataCollection();
 					try (var mdcComputation = MDC.putCloseable(COMPUTATION_KEY, comp.getName());
@@ -177,14 +178,14 @@ public final class ComputationExecution
 					{
 						listener.onProgress(String.format("Executing computation '%s' #trigs=%d",
 								comp.getName(), comp.getTriggeringRecNums().size()), Level.DEBUG, null);
-						computesTried++;
+						computesTried.incrementAndGet();
 						boolean ignoreTimeWindow = start == null && end == null;
 						ret = executeSingleComp(comp, start, end, theData, ignoreTimeWindow, listener);
 					}
 					catch(DbIoException ex)
 					{
 						listener.onProgress(String.format("Computation '%s' failed.", comp.getName()), Level.WARN, ex);
-						numErrors++;
+						numErrors.incrementAndGet();
 						for (Integer rn : comp.getTriggeringRecNums())
 						{
 							theData.getTasklistHandle().markComputationFailed(rn);
@@ -193,7 +194,7 @@ public final class ComputationExecution
 					catch (Exception ex)
 					{
 						listener.onProgress(String.format("Unexpected error in computation %s", comp.getName()), Level.WARN, ex);
-						numErrors++;
+						numErrors.incrementAndGet();
 						for(Integer rn : comp.getTriggeringRecNums())
 						{
 							theData.getTasklistHandle().markComputationFailed(rn);
@@ -215,7 +216,7 @@ public final class ComputationExecution
 			comps.add(future);
 		}
 		CompletableFuture.allOf(comps.toArray(new CompletableFuture[0])).join();
-		return new CompResults(numErrors, computesTried);
+		return new CompResults(numErrors.get(), computesTried.get());
 	}
 
 	/**
@@ -254,7 +255,7 @@ public final class ComputationExecution
 				catch(Exception ex)
 				{
 					listener.onProgress("Error fetching input data.", Level.WARN, ex);
-					numErrors++;
+					numErrors.incrementAndGet();
 				}
 			}
 		}
@@ -262,12 +263,12 @@ public final class ComputationExecution
 		{
 			listener.onProgress("Unexpected error fetching input data.", Level.WARN, ex);
 		}
-		computesTried++;
+		computesTried.incrementAndGet();
 		try (var mdcComputation = MDC.putCloseable(COMPUTATION_KEY, computation.getName()))
 		{
 			executeSingleComp(computation, start, end, theData, false, listener);
 		}
-		return new CompResults(numErrors, computesTried);
+		return new CompResults(numErrors.get(), computesTried.get());
 	}
 
 	/**
@@ -343,7 +344,7 @@ public final class ComputationExecution
 								{
 									// Should not happen! We checked first.
 									listener.onProgress("Unexpected duplicate time series.", Level.ERROR, ex);
-									numErrors++;
+									numErrors.incrementAndGet();
 								}
 							}
 						}
@@ -356,7 +357,7 @@ public final class ComputationExecution
 			catch(DbCompException ex)
 			{
 				listener.onProgress(String.format("Cannot initialize computation '%s'", comp.getName()), Level.WARN, ex);
-				numErrors++;
+				numErrors.incrementAndGet();
 				for (Integer rn : comp.getTriggeringRecNums())
 				{
 					dataCollection.getTasklistHandle().markComputationFailed(rn);
@@ -371,7 +372,7 @@ public final class ComputationExecution
 				else
 					msg = msg + " -- TSID '" + parmRef.tsid.getUniqueString() + "' does not exist in db.";
 				listener.onProgress(msg, Level.WARN, ex);
-				numErrors++;
+				numErrors.incrementAndGet();
 			}
 		}
 		catch (Exception ex)
