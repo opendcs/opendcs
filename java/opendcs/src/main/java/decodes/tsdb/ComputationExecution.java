@@ -54,7 +54,7 @@ public final class ComputationExecution
 	/**
 	 * Create instance of ComputationExecution using provided ExecutorService.
 	 *
-	 * NOTE: at this time we do not think the operations of DbComputation.apply are thread save.
+	 * NOTE: at this time we do not think the operations of DbComputation.apply are thread safe.
 	 * This is being initially setup to provided chaining operations and too allow for that
 	 * follow on work.
 	 * @param db

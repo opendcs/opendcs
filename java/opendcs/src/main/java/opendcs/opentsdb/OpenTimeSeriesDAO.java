@@ -34,7 +34,6 @@ import java.util.TimeZone;
 import org.opendcs.database.ExceptionHelpers;
 import org.opendcs.utils.FailableResult;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
-import org.python.modules.synchronize;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.spi.LoggingEventBuilder;

@@ -15,12 +15,12 @@ public final class ThreadUtils
     }
 
     /**
-	 * Propgate the MDC context into the given task for things like the Trace ID.
+	 * Propagate the MDC context into the given task for things like the Trace ID.
 	 * @param <T>
 	 * @param task
 	 * @return
 	 */
-	public static <T> Supplier<T> propegate(Supplier<T> task)
+	public static <T> Supplier<T> propagate(Supplier<T> task)
 	{
 		final var currentContext = MDC.getCopyOfContextMap();
 		return () ->
