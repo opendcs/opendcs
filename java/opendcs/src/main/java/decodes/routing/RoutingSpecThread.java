@@ -432,7 +432,6 @@ public class RoutingSpecThread extends Thread
 			try
 			{
 				dataMessage = source.getDataMessage();
-				/* future note: support other types of DataMessage like the comment below.
 				if (dataMessage instanceof DecodedMessage)
 				{
 					// DataSource returned a pre-decoded message — skip decoding
@@ -441,7 +440,6 @@ public class RoutingSpecThread extends Thread
 					currentStatus = "Running";
 					continue;
 				}
-				*/
 				if (dataMessage instanceof RawMessage) {
 					rm = (RawMessage) dataMessage;
 				}

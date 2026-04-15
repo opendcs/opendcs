@@ -30,7 +30,7 @@ monolith = { strictly = "7.0.5" }
 cwms-ratings = "1.1.0"
 nucleus = "4.10.0"
 flogger = "0.7.4"  # used by hec-monolith
-usgs-waterdata-api = "0.2.3"
+usgs-waterdata-api = "0.2.4"
 jdbi = "3.39.1"
 flywaydb = "11.20.1"
 sun-mailapi="2.0.2"

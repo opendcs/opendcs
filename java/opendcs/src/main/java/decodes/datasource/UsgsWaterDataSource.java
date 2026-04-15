@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 
 import ilex.util.IDateFormat;
 import ilex.util.PropertiesUtil;
+import ilex.util.TextUtil;
 import ilex.var.TimedVariable;
 
 import decodes.db.Constants;
@@ -148,6 +149,45 @@ public class UsgsWaterDataSource extends DataSourceExec
 							throw new DataSourceException(
 								"Cannot find platform for '" + tid + "'", ex);
 						}
+					}
+				}
+			}
+		}
+
+		// Also check for sc:DCP_NAME_* properties (platforms specified directly)
+		Database db = Database.getDb();
+		for (Object key : myProps.keySet())
+		{
+			String propName = (String) key;
+			if (TextUtil.startsWithIgnoreCase(propName, "sc:DCP_NAME"))
+			{
+				String value = myProps.getProperty(propName);
+				Platform p = db.platformList.getByFileName(value);
+				if (p == null)
+				{
+					log.warn("sc:DCP_NAME '{}' -- no matching platform.", value);
+					continue;
+				}
+				if (!p.isComplete())
+				{
+					try { p.read(); }
+					catch (DatabaseException ex)
+					{
+						log.error("Error reading platform for '{}'", value, ex);
+						continue;
+					}
+				}
+				for (TransportMedium tm : p.transportMedia)
+				{
+					String tid = tm.getMediumId();
+					if (!aggIds.contains(tid))
+					{
+						aggIds.add(tid);
+						mediumTypes.add(tm.getMediumType());
+						platforms.add(p);
+						log.info("sc:DCP_NAME '{}' -> medium ({}, {})",
+							value, tm.getMediumType(), tid);
+						break;
 					}
 				}
 			}
