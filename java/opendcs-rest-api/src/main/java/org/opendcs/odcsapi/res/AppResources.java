@@ -90,7 +90,8 @@ public final class AppResources extends OpenDcsResource
 		}
 		catch (OpenDcsDataException ex)
 		{
-			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to retrieve engineering units", ex);
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+									  "Unable to retrieve Loading App References.", ex);
 		}
 	}
 
@@ -143,7 +144,8 @@ public final class AppResources extends OpenDcsResource
 		}
 		catch (OpenDcsDataException ex)
 		{
-			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to retrieve engineering units", ex);
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+									  "Unable to retrieve Loading App", ex);
 		}
 	}
 
@@ -194,7 +196,8 @@ public final class AppResources extends OpenDcsResource
 		}
 		catch (OpenDcsDataException ex)
 		{
-			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to retrieve engineering units", ex);
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+									  "Unable save Loading App", ex);
 		}
 	}
 
@@ -262,7 +265,8 @@ public final class AppResources extends OpenDcsResource
 		}
 		catch (OpenDcsDataException ex)
 		{
-			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to retrieve engineering units", ex);
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+									  "Unable to delete Loading APp", ex);
 		}
 	}
 
