@@ -9,20 +9,20 @@ import org.opendcs.database.model.mappers.properties.PropertiesMapper;
 
 import decodes.tsdb.CompAppInfo;
 
+import static org.opendcs.database.model.mappers.PrefixRowMapper.addUnderscoreIfMissing;
+
 public final class CompAppInfoReducer implements BiConsumer<Map<Long, CompAppInfo>, RowView>
 {
     private final String prefixAppInfo;
-    private final String prefixProps;
 
     public CompAppInfoReducer()
     {
-        this("a", "p");
+        this("a");
     }
 
-    public CompAppInfoReducer(String prefixAppInfo, String prefixProps)
+    public CompAppInfoReducer(String prefixAppInfo)
     {
-        this.prefixAppInfo = prefixAppInfo;
-        this.prefixProps = prefixProps;
+        this.prefixAppInfo = addUnderscoreIfMissing(prefixAppInfo);
     }
 
     @Override

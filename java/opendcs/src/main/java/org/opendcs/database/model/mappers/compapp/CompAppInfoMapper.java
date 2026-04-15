@@ -24,7 +24,7 @@ public final class CompAppInfoMapper extends PrefixRowMapper<CompAppInfo>
                                              .orElseThrow(() -> new SQLException("No mapper registered for DbKey class."));
         final DbKey id = dbKeyMapper.map(rs, prefix + "loading_application_id", ctx);
         final String name = rs.getString(prefix + "loading_application_name");
-        final Boolean manualEditApp = rs.getBoolean(prefix + "manuel_edit_app");
+        final Boolean manualEditApp = rs.getBoolean(prefix + "manual_edit_app");
         final String comment = rs.getString(prefix + "CMMNT");
 
         CompAppInfo appInfo = new CompAppInfo(id);
