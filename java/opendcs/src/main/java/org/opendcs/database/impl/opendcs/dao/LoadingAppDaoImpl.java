@@ -1,5 +1,6 @@
 package org.opendcs.database.impl.opendcs.dao;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,6 +18,9 @@ import org.opendcs.utils.sql.SqlKeywords;
 import org.opendcs.utils.sql.SqlQueries;
 import org.openide.util.lookup.ServiceProvider;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.DatabaseException;
 import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
@@ -27,7 +31,7 @@ import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 @ServiceProvider(service = LoadingAppDao.class)
 public final class LoadingAppDaoImpl implements LoadingAppDao
 {
-
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static final String SELECT_QUERY = """
         with app (loading_application_id, loading_application_name, cmmnt, manual_edit_app) as (
             select loading_application_id, loading_application_name, cmmnt, manual_edit_app
@@ -115,18 +119,36 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
                      """)
              )
         {
-            final DbKey id = appInfo.idIsSet() ? appInfo.getId() : keyGen.getKey("hdb_loading_application", handle.getConnection());
-            mergeQuery.bind(GenericColumns.ID, id)
+            DbKey id = appInfo.getAppId();
+            var existing = getByName(tx, appInfo.getAppName());
+            if (existing.isPresent())
+            {
+                // If there's an existing app with this name, we'll just assume the provided id, if any, was in error
+                id = existing.get().getAppId();
+                log.trace("""
+                    Using ID from existing App, id={}, that was found. Provided ID was {}.
+                    Existing Name is {}. New Name is {}.
+                    """,
+                    id, appInfo.getId(), existing.get().getAppName(), appInfo.getAppName());
+            }
+            final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("hdb_loading_application", handle.getConnection());
+            
+            mergeQuery.bind(GenericColumns.ID, bindKey)
                  .bind(GenericColumns.NAME, appInfo.getAppName())
                  .bind("manual_edit_app", appInfo.getManualEditApp() ? "Y" : "N")
                  .bind("comment", appInfo.getComment())
                  .execute();
 
-            deleteProps.bind(GenericColumns.ID, id).execute();
+            deleteProps.bind(GenericColumns.ID, bindKey).execute();
+            
+            insertProps.bind(GenericColumns.ID, bindKey)
+                       .bind(GenericColumns.NAME, "LastModified")
+                       .bind("value", CompAppInfoReducer.LAST_MODIFIED_SDF.format(new Date().toInstant()))
+                       .add();
             appInfo.getProperties()
                    .forEach((k,v) ->
                    {
-                        insertProps.bind(GenericColumns.ID, id);
+                        insertProps.bind(GenericColumns.ID, bindKey);
                         insertProps.bind(GenericColumns.NAME, k.toString());
                         var toSave = v != null ? v.toString() : "";
                         insertProps.bind("value", toSave);
@@ -134,7 +156,7 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
                    });
             insertProps.execute();
 
-            return getById(tx, id).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve computation app info that we just saved."));
+            return getById(tx, bindKey).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve computation app info that we just saved."));
         }
         catch (DatabaseException ex)
         {
@@ -147,8 +169,8 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        try (var deleteProperties = handle.createUpdate("delete from hdb_loading_application where loading_application_id = :id");
-             var deleteApp = handle.createUpdate(DELETE_APP_PROPERTIES)
+        try (var deleteApp = handle.createUpdate("delete from hdb_loading_application where loading_application_id = :id");
+             var deleteProperties = handle.createUpdate(DELETE_APP_PROPERTIES)
             )
         {
             deleteProperties.bind(GenericColumns.ID, id).execute();

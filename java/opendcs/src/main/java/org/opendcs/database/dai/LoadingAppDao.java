@@ -38,6 +38,10 @@ public interface LoadingAppDao extends OpenDcsDao
 
     /**
      * Save, or update, a Computation App.
+     * 
+     * Note, due to the use of case insentive search and an improper unique constraint at this time
+     * implementations *SHOULD* retrieve the existing app using getByName and use that ID.
+     * 
      * @param tx Transaction object for the request.
      * @param appInfo If new, don't set the ID. 
      * @return New instance with updated information from database.

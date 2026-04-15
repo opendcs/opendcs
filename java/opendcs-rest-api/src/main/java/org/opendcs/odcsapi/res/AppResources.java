@@ -139,7 +139,7 @@ public final class AppResources extends OpenDcsResource
 								   .orElseThrow(() -> UNABLE_TO_GET_APP_DAO);
 			final var app = appDao.getById(tx, DbKey.createDbKey(appId))
 								  .orElseThrow(() -> new DatabaseItemNotFoundException(String.format(NO_APP_FOUND, appId)));
-			return Response.ok().entity(map(app)).build();
+			return Response.ok().entity(mapLoading(app)).build();
 		}
 		catch (OpenDcsDataException ex)
 		{
@@ -189,7 +189,7 @@ public final class AppResources extends OpenDcsResource
 			CompAppInfo compApp = map(app);
 			
 			return Response.status(Response.Status.CREATED)
-					.entity(map(appDao.save(tx, compApp)))
+					.entity(mapLoading(appDao.save(tx, compApp)))
 					.build();
 		}
 		catch (OpenDcsDataException ex)

@@ -1,5 +1,9 @@
 package org.opendcs.database.model.mappers.compapp;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -11,10 +15,13 @@ import decodes.tsdb.CompAppInfo;
 
 import static org.opendcs.database.model.mappers.PrefixRowMapper.addUnderscoreIfMissing;
 
+
 public final class CompAppInfoReducer implements BiConsumer<Map<Long, CompAppInfo>, RowView>
 {
-    private final String prefixAppInfo;
+    public static final DateTimeFormatter LAST_MODIFIED_SDF = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
+                                                                               .withZone(ZoneId.of("UTC"));
 
+    private final String prefixAppInfo;
     public CompAppInfoReducer()
     {
         this("a");
@@ -34,7 +41,15 @@ public final class CompAppInfoReducer implements BiConsumer<Map<Long, CompAppInf
         var prop = rowView.getRow(PropertiesMapper.PAIR_STRING_STRING);
         if (prop.first != null)
         {
+            if ("LastModified".equals(prop.first))
+            {
+                var tmp = LAST_MODIFIED_SDF.parse(prop.second);
+                appInfo.setLastModified(Date.from(Instant.from(tmp)));
+            }
+            else
+            {
             appInfo.setProperty(prop.first, prop.second);
+            }
         }
     }
 }
