@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,6 +30,8 @@ import ilex.var.TimedVariable;
 import opendcs.dai.TimeSeriesDAI;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.utils.logging.MDCTimer;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
@@ -36,6 +39,7 @@ import static org.opendcs.utils.logging.ThreadUtils.propagate;
 
 public final class ComputationExecution
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final String COMPUTATION_KEY = "computation";
 	private final OpenDcsDatabase db;
 	private AtomicInteger numErrors = new AtomicInteger(0);
@@ -57,7 +61,8 @@ public final class ComputationExecution
 	 *
 	 * NOTE: at this time we do not think the operations of DbComputation.apply are thread safe.
 	 * This is being initially setup to provided chaining operations and too allow for that
-	 * follow on work.
+	 * follow on work. Experiment with a > 1 Thread pool at your own risk.
+	 *
 	 * @param db
 	 * @param executor
 	 */
@@ -212,10 +217,22 @@ public final class ComputationExecution
 					listener.logEvent("will save " + dc.size() + " time series from comp", Level.INFO, null);
 					return dc;
 				})
-				.thenApply(afterComp);
+				.thenApply(afterComp)
+				.exceptionally(ex -> {
+					log.atError().setCause(ex).log("Computation {} failed.", comp.getName());
+					return new DataCollection();
+				});
 			comps.add(future);
 		}
-		CompletableFuture.allOf(comps.toArray(new CompletableFuture[0])).join();
+
+		try
+		{
+			CompletableFuture.allOf(comps.toArray(new CompletableFuture[0])).join();
+		}
+		catch (CompletionException ex)
+		{
+			log.atError().setCause(ex).log("At least one computation in batch failed to complete.");
+		}
 		return new CompResults(numErrors.get(), computesTried.get());
 	}
 
