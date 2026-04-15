@@ -17,11 +17,9 @@ package org.opendcs.odcsapi.res;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
-import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbCompLock;
@@ -52,6 +50,8 @@ import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
+import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.dai.LoadingAppDao;
 
 /**
  * Resources for editing, monitoring, stopping, and starting processes.
@@ -60,6 +60,7 @@ import org.opendcs.odcsapi.util.ApiConstants;
 public final class AppResources extends OpenDcsResource
 {
 	private static final String NO_APP_FOUND = "No such app with ID: %s";
+	private static final WebAppException UNABLE_TO_GET_APP_DAO = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "No Loading Application DAO available.");
 
 	@GET
 	@Path("apprefs")
@@ -76,20 +77,20 @@ public final class AppResources extends OpenDcsResource
 			},
 			tags = {"REST - Loading Application Records"}
 	)
-	public Response getAppRefs() throws DbException
+	public Response getAppRefs() throws WebAppException
 	{
-		try(LoadingAppDAI dai = getLegacyDatabase().makeLoadingAppDAO())
+		final var db = createDb();
+		try (var tx = db.newTransaction())
 		{
-			List<ApiAppRef> ret = dai.listComputationApps(false)
-					.stream()
-					.map(AppResources::map)
-					.collect(Collectors.toList());
-			return Response.ok()
-					.entity(ret).build();
+			final var appDao = db.getDao(LoadingAppDao.class)
+								   .orElseThrow(() -> UNABLE_TO_GET_APP_DAO);
+			final var apps = appDao.getAll(tx, -1, -1);
+			List<ApiAppRef> ret = apps.stream().map(AppResources::map).toList();
+			return Response.ok().entity(ret).build();
 		}
-		catch(DbIoException ex)
+		catch (OpenDcsDataException ex)
 		{
-			throw new DbException("Unable to retrieve apps", ex);
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to retrieve engineering units", ex);
 		}
 	}
 
@@ -130,18 +131,19 @@ public final class AppResources extends OpenDcsResource
 		{
 			throw new MissingParameterException("Missing required appid parameter.");
 		}
-		try (LoadingAppDAI dai = getLegacyDatabase().makeLoadingAppDAO())
+
+		final var db = createDb();
+		try (var tx = db.newTransaction())
 		{
-			return Response.ok()
-					.entity(mapLoading(dai.getComputationApp(DbKey.createDbKey(appId)))).build();
+			final var appDao = db.getDao(LoadingAppDao.class)
+								   .orElseThrow(() -> UNABLE_TO_GET_APP_DAO);
+			final var app = appDao.getById(tx, DbKey.createDbKey(appId))
+								  .orElseThrow(() -> new DatabaseItemNotFoundException(String.format(NO_APP_FOUND, appId)));
+			return Response.ok().entity(map(app)).build();
 		}
-		catch (NoSuchObjectException ex)
+		catch (OpenDcsDataException ex)
 		{
-			throw new DatabaseItemNotFoundException(String.format(NO_APP_FOUND, appId), ex);
-		}
-		catch (DbIoException ex)
-		{
-			throw new DbException(String.format("Unable to retrieve requested app with id: %d", appId), ex);
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to retrieve engineering units", ex);
 		}
 	}
 
@@ -177,19 +179,22 @@ public final class AppResources extends OpenDcsResource
 			tags = {"REST - Loading Application Records"}
 	)
 	public Response postApp(ApiLoadingApp app)
-			throws DbException
+			throws WebAppException
 	{
-		try (LoadingAppDAI dai = getLegacyDatabase().makeLoadingAppDAO())
+		final var db = createDb();
+		try (var tx = db.newTransaction())
 		{
+			final var appDao = db.getDao(LoadingAppDao.class)
+								   .orElseThrow(() -> UNABLE_TO_GET_APP_DAO);
 			CompAppInfo compApp = map(app);
-			dai.writeComputationApp(compApp);
+			
 			return Response.status(Response.Status.CREATED)
-					.entity(map(compApp))
+					.entity(map(appDao.save(tx, compApp)))
 					.build();
 		}
-		catch(DbIoException ex)
+		catch (OpenDcsDataException ex)
 		{
-			throw new DbException("Unable to store app", ex);
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to retrieve engineering units", ex);
 		}
 	}
 
@@ -239,31 +244,25 @@ public final class AppResources extends OpenDcsResource
 	public Response deleteApp(@Parameter(description = "App ID", required = true, example = "4",
 			schema = @Schema(implementation = Long.class))
 		@QueryParam("appid") Long appId)
-			throws WebAppException, DbException
+			throws WebAppException
 	{
 		if (appId == null)
 		{
 			throw new MissingParameterException("Missing required appid parameter.");
 		}
 
-		try (LoadingAppDAI dai = getLegacyDatabase().makeLoadingAppDAO())
+		final var db = createDb();
+		try (var tx = db.newTransaction())
 		{
-			CompAppInfo app = dai.getComputationApp(DbKey.createDbKey(appId));
-			if (app == null)
-			{
-				throw new DbException(String.format(NO_APP_FOUND, appId));
-			}
-			dai.deleteComputationApp(app);
+			final var appDao = db.getDao(LoadingAppDao.class)
+								   .orElseThrow(() -> UNABLE_TO_GET_APP_DAO);
+			appDao.delete(tx, DbKey.createDbKey(appId));
 			return Response.noContent()
 					.entity("appId with ID " + appId + " deleted").build();
 		}
-		catch (NoSuchObjectException ex)
+		catch (OpenDcsDataException ex)
 		{
-			throw new DatabaseItemNotFoundException(String.format(NO_APP_FOUND, appId), ex);
-		}
-		catch (DbIoException | ConstraintException ex)
-		{
-			throw new DbException(String.format(NO_APP_FOUND, appId), ex);
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to retrieve engineering units", ex);
 		}
 	}
 
