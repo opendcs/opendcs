@@ -102,13 +102,13 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
                 .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
         final String insertSql = """
                 merge into hdb_loading_application app
-                using (select :id id, :name name, :comment comment, :manual_edit_app manual_edit_app <dual>) input
+                using (select :id id, :name name, :comment cmmnt, :manual_edit_app manual_edit_app <dual>) input
                 on (app.loading_application_id = input.id)
                 when matched then
-                    update set loading_application_name = input.name, cmmnt = input.comment, manual_edit_app = input.manual_edit_app
+                    update set loading_application_name = input.name, cmmnt = input.cmmnt, manual_edit_app = input.manual_edit_app
                 when not matched then
                     insert(loading_application_id, loading_application_name, cmmnt, manual_edit_app)
-                    values(input.id, input.name, input.comment, input.manual_edit_app)
+                    values(input.id, input.name, input.cmmnt, input.manual_edit_app)
                 """;
         try (var mergeQuery = handle.createUpdate(insertSql)
                                .define("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
@@ -132,7 +132,7 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
                     id, appInfo.getId(), existing.get().getAppName(), appInfo.getAppName());
             }
             final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("hdb_loading_application", handle.getConnection());
-            
+
             mergeQuery.bind(GenericColumns.ID, bindKey)
                  .bind(GenericColumns.NAME, appInfo.getAppName())
                  .bind("manual_edit_app", appInfo.getManualEditApp() ? "Y" : "N")
@@ -140,7 +140,7 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
                  .execute();
 
             deleteProps.bind(GenericColumns.ID, bindKey).execute();
-            
+
             insertProps.bind(GenericColumns.ID, bindKey)
                        .bind(GenericColumns.NAME, "LastModified")
                        .bind("value", CompAppInfoReducer.LAST_MODIFIED_SDF.format(new Date().toInstant()))
@@ -206,5 +206,5 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
                         .toList();
         }
     }
-    
+
 }
