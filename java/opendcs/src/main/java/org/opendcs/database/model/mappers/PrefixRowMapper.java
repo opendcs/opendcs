@@ -13,18 +13,19 @@ public abstract class PrefixRowMapper<T> implements RowMapper<T>
 
     protected PrefixRowMapper(String prefix)
     {
-        if (prefix == null || prefix.trim().isEmpty())
-        {
-            this.prefix = "";
-        }
-        else
-        {
-            this.prefix = addUnderscoreIfMissing(prefix);
-        }
+        this.prefix = addUnderscoreIfMissing(prefix);
     }
 
     public static String addUnderscoreIfMissing(String prefix)
     {
-        return prefix.endsWith("_") ? prefix : (prefix + "_");
+        var tmp = (prefix == null || prefix.isBlank()) ? "" : prefix;
+        if ("".equals(tmp))
+        {
+            return tmp;
+        }
+        else
+        {
+            return tmp.endsWith("_") ? tmp : (tmp + "_");
+        }
     }
 }
