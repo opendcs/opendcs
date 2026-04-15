@@ -1052,38 +1052,41 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	@Override
 	public synchronized void reloadTsIdCache() throws DbIoException
 	{
-		// Each TSID will need a site, so prefill the site cache to prevent
-		// it from doing individual reads for each site.
-		if (System.currentTimeMillis() - siteDAO.getLastCacheFillMsec() > 60000L * 10)
-			siteDAO.fillCache();
-
-		String q = tsidQuery + tsidJoinClause;
-
-		// MJM 2016/1/8 Added this block of code to minimize reloading the entire cache.
-		boolean doFullLoad = System.currentTimeMillis() - lastCacheLoad > CACHE_RELOAD_INTERVAL;
-		log.trace("reloadTsIdCache doFullLoad={}, lastCacheLoad={}, lastCacheRefresh={}",
-				  doFullLoad, new Date(lastCacheLoad), new Date(lastCacheRefresh));
-		if (!doFullLoad)
-			q = q + " and a.date_time_loaded > "
-				  + db.sqlDate(new Date(lastCacheRefresh-CACHE_REFRESH_OVERLAP));
-		lastCacheRefresh = System.currentTimeMillis();
-		if (doFullLoad)
-			lastCacheLoad = lastCacheRefresh;
-
-		try(ResultSet rs = doQuery(q))
+		synchronized(HdbTimeSeriesDAO.class)
 		{
-			while (rs.next())
+			// Each TSID will need a site, so prefill the site cache to prevent
+			// it from doing individual reads for each site.
+			if (System.currentTimeMillis() - siteDAO.getLastCacheFillMsec() > 60000L * 10)
+				siteDAO.fillCache();
+
+			String q = tsidQuery + tsidJoinClause;
+
+			// MJM 2016/1/8 Added this block of code to minimize reloading the entire cache.
+			boolean doFullLoad = System.currentTimeMillis() - lastCacheLoad > CACHE_RELOAD_INTERVAL;
+			log.trace("reloadTsIdCache doFullLoad={}, lastCacheLoad={}, lastCacheRefresh={}",
+					doFullLoad, new Date(lastCacheLoad), new Date(lastCacheRefresh));
+			if (!doFullLoad)
+				q = q + " and a.date_time_loaded > "
+					+ db.sqlDate(new Date(lastCacheRefresh-CACHE_REFRESH_OVERLAP));
+			lastCacheRefresh = System.currentTimeMillis();
+			if (doFullLoad)
+				lastCacheLoad = lastCacheRefresh;
+
+			try(ResultSet rs = doQuery(q))
 			{
-				try { cache.put(rs2TsId(rs)); }
-				catch(NoSuchObjectException ex)
+				while (rs.next())
 				{
-					// do nothing, warning already issued from rs2TsId
+					try { cache.put(rs2TsId(rs)); }
+					catch(NoSuchObjectException ex)
+					{
+						// do nothing, warning already issued from rs2TsId
+					}
 				}
 			}
-		}
-		catch(Exception ex)
-		{
-			throw new DbIoException("HdbTimeSeriesDAO: Error listing time series", ex);
+			catch(Exception ex)
+			{
+				throw new DbIoException("HdbTimeSeriesDAO: Error listing time series", ex);
+			}
 		}
 	}
 

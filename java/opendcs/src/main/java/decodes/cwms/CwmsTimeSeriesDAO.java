@@ -1,16 +1,16 @@
 /*
 * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
 * of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software 
+*
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
 */
 package decodes.cwms;
@@ -40,7 +40,6 @@ import org.opendcs.utils.FailableResult;
 import org.opendcs.utils.logging.MDCTimer;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import decodes.db.Constants;
 import decodes.db.DataType;
@@ -165,7 +164,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
         {
             return ExceptionHelpers.throwDbIoNoSuchObject(ret.getFailure());
         }
-        
+
     }
 
     private CwmsTsId rs2TsId(ResultSet rs, boolean createDataType)
@@ -285,14 +284,14 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
                 new NoSuchObjectException("No timeseries with name '"+uniqueString+"' is defined in this database.")
             );
         }
-        
+
         FailableResult<TimeSeriesIdentifier,TsdbException> tmp = findTimeSeriesIdentifier(ts_code);
         if (tmp.isSuccess())
         {
             if (displayName != null)
             {
                 tmp.getSuccess().setDisplayName(displayName);
-            }        
+            }
         }
         return tmp;
     }
@@ -1154,58 +1153,58 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 
         // Each TSID will need a site, so prefill the site cache to prevent
         // it from doing individual reads for each site.
-
-        String q = cwmsTsidQueryBase + " WHERE upper(a.DB_OFFICE_ID) = upper(?)";
-        int origFetchSize = getFetchSize();
-        try
+        synchronized(CwmsTimeSeriesDAO.class)
         {
-            int tsidFetchSize = DecodesSettings.instance().tsidFetchSize;
-            if (tsidFetchSize > 0)
+            String q = cwmsTsidQueryBase + " WHERE upper(a.DB_OFFICE_ID) = upper(?)";
+            int origFetchSize = getFetchSize();
+            try
             {
-                setFetchSize(tsidFetchSize);
-            }
-
-
-            List<TimeSeriesIdentifier> tsidList = getResultsIgnoringNull(q, rs ->
-            {
-                CwmsTsId retVal = null;
-                try
+                int tsidFetchSize = DecodesSettings.instance().tsidFetchSize;
+                if (tsidFetchSize > 0)
                 {
-                    retVal = rs2TsId(rs, false);
+                    setFetchSize(tsidFetchSize);
                 }
-                catch (DbIoException | NoSuchObjectException ex)
-                {
-                    log.atWarn()
-                       .setCause(ex)
-                       .log("Error creating Cwms TSID -- skipped.");
-                }
-                return retVal;
-            }, dbOfficeId);
 
-            synchronized(cache)
-            {
+
+                List<TimeSeriesIdentifier> tsidList = getResultsIgnoringNull(q, rs ->
+                {
+                    CwmsTsId retVal = null;
+                    try
+                    {
+                        retVal = rs2TsId(rs, false);
+                    }
+                    catch (DbIoException | NoSuchObjectException ex)
+                    {
+                        log.atWarn()
+                        .setCause(ex)
+                        .log("Error creating Cwms TSID -- skipped.");
+                    }
+                    return retVal;
+                }, dbOfficeId);
+
+
                 cache.clear();
                 for(TimeSeriesIdentifier tsid: tsidList)
                 {
                     cache.put(tsid);
                 }
-            }
 
-            log.debug("After fill, cache has {} TSIDs.", cache.size());
+                log.debug("After fill, cache has {} TSIDs.", cache.size());
+            }
+            catch (SQLException ex)
+            {
+                final String msg = "Failed to reload CwmsTimeSeriesDb TsId Cache.";
+                log.atError()
+                .setCause(ex)
+                .log(msg);
+                throw new DbIoException(msg, ex);
+            }
+            finally
+            {
+                setFetchSize(origFetchSize);
+            }
+            lastCacheReload = System.currentTimeMillis();
         }
-        catch (SQLException ex)
-        {
-            final String msg = "Failed to reload CwmsTimeSeriesDb TsId Cache.";
-            log.atError()
-               .setCause(ex)
-               .log(msg);
-            throw new DbIoException(msg, ex);
-        }
-        finally
-        {
-            setFetchSize(origFetchSize);
-        }
-        lastCacheReload = System.currentTimeMillis();
     }
 
     @Override

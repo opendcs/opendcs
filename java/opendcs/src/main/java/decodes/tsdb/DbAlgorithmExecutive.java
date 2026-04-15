@@ -303,9 +303,11 @@ public abstract class DbAlgorithmExecutive
 	 * @throws DbCompException on computation error.
 	 * @throws DbIoException on IO error to database.
 	 */
-	public void apply( DataCollection dc )
+	public DataCollection apply( DataCollection dc )
 		throws DbCompException, DbIoException
 	{
+		DataCollection savedData = new DataCollection();
+
 		try (MDCCloseable mdcAlgoClass = MDC.putCloseable("algorithmClass", this.getClass().getName()))
 		{
 			this.dc = dc;
@@ -322,6 +324,26 @@ public abstract class DbAlgorithmExecutive
 				addTsToParmRef(role, true);
 
 			applyAlgorithm();
+
+			for (String role: getOutputNames())
+			{
+				var parmRef = getParmRef(role);
+				try
+				{
+					savedData.addTimeSeries(parmRef.timeSeries);
+				}
+				catch (DuplicateTimeSeriesException ex)
+				{
+					log.atError()
+					   .setCause(ex)
+					   .log("""
+							Unable to add time series {} to output collection from role {}. It was already present, this should not happen. Please
+							check your computation configuration for duplicate output mappings
+						""", parmRef.tsid.getUniqueString(), parmRef.role);
+				}
+			}
+
+			return savedData;
 		}
 	}
 

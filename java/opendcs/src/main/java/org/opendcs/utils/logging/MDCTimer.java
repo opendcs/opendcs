@@ -26,7 +26,7 @@ public final class MDCTimer implements AutoCloseable
     }
 
     @Override
-    public void close() throws Exception
+    public void close() // exception removed we know we don't/can't throw here.
     {
         long diff = System.currentTimeMillis() - start;
         log.info("Timer '{}' ended in {} ms", name, diff);

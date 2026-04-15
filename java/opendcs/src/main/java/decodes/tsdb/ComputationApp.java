@@ -372,26 +372,35 @@ public class ComputationApp extends TsdbAppTemplate
 						action = "Applying computations";
 						ComputationExecution execution = new ComputationExecution(db);
 
-						ComputationExecution.CompResults results = execution.execute(List.of(comps), dataCollection);
+						ComputationExecution.CompResults results = execution.execute(List.of(comps), dataCollection,
+						dc ->
+						{
+							List<CTimeSeries> tsList = dc.getAllTimeSeries();
+							log.trace("Saving results for {} time series in data.", tsList.size());
+							try (var allTsTimer = MDCTimer.startTimer("saving results"))
+							{
+								for(CTimeSeries ts : tsList)
+								{
+									try
+									{
+										log.info("Saving {} values for {}", ts.size(), ts.getNameString());
+										timeSeriesDAO.saveTimeSeries(ts);
+									}
+									catch (DbIoException | BadTimeSeriesException ex)
+									{
+										log.atWarn()
+										.setCause(ex)
+										.log("Cannot save time series '{}'", ts.getNameString());
+									}
+								}
+							}
+							return dc;
+						});
 						compsTried += results.computesTried();
 						compErrors += results.numErrors();
 
-						action = "Saving results";
-						List<CTimeSeries> tsList = dataCollection.getAllTimeSeries();
-						log.trace("{} {} time series in data.", action, tsList.size());
-						try (var allTsTimer = MDCTimer.startTimer(action))
-						{
-							for(CTimeSeries ts : tsList)
-							{
-								try { timeSeriesDAO.saveTimeSeries(ts); }
-								catch(Exception ex)
-								{
-									log.atWarn()
-									.setCause(ex)
-									.log("Cannot save time series '{}'", ts.getNameString());
-								}
-							}
-						}
+
+
 
 						action = "Releasing new data";
 						try (var dataReleaseTimer = MDCTimer.startTimer(action))
