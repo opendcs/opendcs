@@ -117,14 +117,35 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
     @Override
     public Optional<Site> getBySiteName(DataTransaction tx, SiteName siteName) throws OpenDcsDataException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getBySiteName'");
+        return getByAnySiteName(tx, List.of(siteName));
     }
 
     @Override
     public Optional<Site> getByAnySiteName(DataTransaction tx, Collection<SiteName> siteNames) throws OpenDcsDataException
     {
-        
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));        
+                              
+        try (var query = handle.createQuery("select siteid from sitename where <where>"))
+        {
+            final StringBuilder whereClause = new StringBuilder();
+            siteNames.forEach(sn ->
+            {
+                final var bindName = sn.getNameType().replaceAll("\\s\\t\\w", "_");
+                if (!whereClause.isEmpty())
+                {
+                    whereClause.append(" or ");
+                }
+                whereClause.append(" ").append("nametype = :").append(bindName);
+                
+                query.bind(sn.getNameType(), sn.getNameValue());
+            });
+            var id = query.define("where", whereClause)
+                          .mapTo(DbKey.class)
+                          .findOne()
+                          .orElse(DbKey.NullKey);
+            return getById(tx, id);
+        }
     }
 
     
