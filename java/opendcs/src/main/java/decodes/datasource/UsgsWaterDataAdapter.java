@@ -292,19 +292,17 @@ final class UsgsWaterDataAdapter
 			String parameterCode = dt.getCode();
 			String usgsStatCode = cs.getUsgsStatCode();
 			String usgsSubLocation = getProperty(cs, ps, "usgsSubLocation");
+			String usgsWebDescription = getProperty(cs, ps, "usgsWebDescription");
 			boolean isDaily = cs.recordingInterval == DAILY_INTERVAL_SECONDS;
 
 			TimeSeriesFilter filter = TimeSeriesMetadata.filter(allMetadata)
 				.dateRange(
-					since.toInstant().atZone(ZoneOffset.UTC).toLocalDate(),
+					since.toInstant().atZone(ZoneOffset.UTC).toLocalDate().minusYears(2),
 					until.toInstant().atZone(ZoneOffset.UTC).toLocalDate())
-				.parameterCode(parameterCode);
-
-			if (usgsStatCode != null && !usgsStatCode.isEmpty())
-				filter = filter.statisticId(usgsStatCode);
-
-			if (usgsSubLocation != null && !usgsSubLocation.isEmpty())
-				filter = filter.sublocation(usgsSubLocation);
+				.parameterCode(parameterCode)
+				.statisticId(usgsStatCode)
+				.webDescriptionContains(usgsWebDescription)
+				.sublocation(usgsSubLocation);
 
 			if (isDaily)
 				filter = filter.computationPeriod("Daily");
