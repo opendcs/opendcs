@@ -4,6 +4,7 @@ import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.sql.DbKey;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,7 +18,7 @@ public interface SiteDao extends OpenDcsDao
 
     Optional<Site> getBySiteName(DataTransaction tx, SiteName siteName) throws OpenDcsDataException;
 
-    Optional<Site> getByAnySiteName(DataTransaction tx, String siteName) throws OpenDcsDataException;
+    Optional<Site> getByAnySiteName(DataTransaction tx, Collection<SiteName> siteNames) throws OpenDcsDataException;
 
     Site save(DataTransaction tx, Site site) throws OpenDcsDataException;
 

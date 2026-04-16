@@ -2,7 +2,9 @@ package org.opendcs.database.impl.opendcs.dao;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,6 +16,7 @@ import org.opendcs.database.model.mappers.properties.PropertiesMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteNameMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteReducer;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
@@ -21,10 +24,13 @@ import org.opendcs.utils.sql.SqlQueries;
 
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.util.lookup.ServiceProviders;
+import org.slf4j.Logger;
 
+import decodes.db.DatabaseException;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.sql.DbKey;
+import decodes.sql.KeyGenerator;
 import decodes.util.DecodesSettings;
 
 // This uses Postgres specific features and is not compatible with Oracle
@@ -38,6 +44,7 @@ import decodes.util.DecodesSettings;
 })
 public final class OpenDcsSiteDaoImpl implements SiteDao
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /**
      * order asc on the inner nametype is to keep the general output predicatable.
      * There <b>shouldn't</b> be any Sites without a Preferred SiteName so this is
@@ -80,8 +87,28 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
     @Override
     public Optional<Site> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getById'");
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var ctx = tx.getContext();
+        var dbEngine = ctx.getDatabase();
+        var preferredType = ctx.getSettings(DecodesSettings.class)
+                              .map(ds -> ds.siteNameTypePreference)
+                              .orElseGet(() -> "CWMS");
+        try (var query = handle.createQuery(SELECT_QUERY))
+        {
+            query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
+                 .define(SqlQueries.WHERE_CLAUSE, "where siteid = :id")
+                 .define(SqlQueries.LIMIT_CLAUSE, "")
+                 .bind("preferredType", preferredType)
+                 .bind(GenericColumns.ID, id);
+
+            return query.registerRowMapper(OpenDcsSiteMapper.withPrefix("s"))
+                        .registerRowMapper(PropertiesMapper.withPrefix("p", true))
+                        .registerRowMapper(OpenDcsSiteNameMapper.withPrefix("sn"))
+                        .reduceRows(new OpenDcsSiteReducer("s"))
+                        .map(s -> s)
+                        .findFirst();
+        }
     }
 
     @Override
@@ -92,16 +119,57 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
     }
 
     @Override
-    public Optional<Site> getByAnySiteName(DataTransaction tx, String siteName) throws OpenDcsDataException
+    public Optional<Site> getByAnySiteName(DataTransaction tx, Collection<SiteName> siteNames) throws OpenDcsDataException
     {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'getByAnySiteName'");
     }
 
+    
+    private Optional<Site> getByAnySiteName(DataTransaction tx, Iterator<SiteName> siteNames) throws OpenDcsDataException
+    {
+        final List<SiteName> names = new ArrayList<>();
+        siteNames.forEachRemaining(names::add);
+        return getByAnySiteName(tx, names);
+    }
+
     @Override
-    public Site save(DataTransaction tx, Site site) throws OpenDcsDataException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'save'");
+    public Site save(DataTransaction tx, Site site) throws OpenDcsDataException
+    {
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var ctx = tx.getContext();
+        var keyGen = ctx.getGenerator(KeyGenerator.class)
+                        .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
+        final var mergeSql = """
+                    merge into site
+                """;
+        try (var merge = handle.createUpdate(mergeSql);
+            var deleteProps = handle.createUpdate("delete from site_property where site_id = :id");
+            var insertProps = handle.prepareBatch("insert into site_property(site_id, prop_name, prop_value) values (:id, :name, :value)");
+            var deleteNames = handle.createUpdate("delete from sitename where siteid = :id");
+            var insertNames = handle.prepareBatch("insert into sitename(siteid, nametype, sitename, dbnum, agency_cd) values (:id, :nametype, :sitename, :dbnum, :agency_code)");
+            )        
+        {
+            DbKey id = site.getId();
+            var existing = getByAnySiteName(tx, site.getNames());
+            if (existing.isPresent())
+            {
+                // If there's an existing app with this name, we'll just assume the provided id, if any, was in error
+                id = existing.get().getId();
+                log.trace("""
+                    Using ID from existing Site, id={}, that was found. Provided ID was {}.
+                    Existing Name is {}. New Name is {}.
+                    """,
+                    id, site.getId());
+            }
+            final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("site", handle.getConnection());
+        }
+        catch (DatabaseException ex)
+        {
+            throw new OpenDcsDataException("Unable to generate key to save site", ex);
+        }
+        return null;
     }
 
     @Override
