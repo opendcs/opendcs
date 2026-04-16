@@ -120,6 +120,8 @@ public class UsgsWaterDataSource extends DataSourceExec
 		if (s != null && !s.isEmpty())
 			UsgsWaterDataAdapter.setApiKey(s);
 
+		UsgsWaterDataAdapter.setApplicationName("OpenDCS");
+
 		dSince = since != null ? IDateFormat.parse(since) :
 			new Date(System.currentTimeMillis() - 3600000L * 24);
 		dUntil = until != null ? IDateFormat.parse(until) : new Date();

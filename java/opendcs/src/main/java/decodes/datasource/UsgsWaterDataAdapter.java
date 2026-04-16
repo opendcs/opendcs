@@ -74,6 +74,15 @@ final class UsgsWaterDataAdapter
 		UsgsWaterDataApi.setApiKey(apiKey);
 	}
 
+	/**
+	 * Set the application name included in the User-Agent header.
+	 * Delegates to {@link UsgsWaterDataApi#setApplicationName(String)}.
+	 */
+	public static void setApplicationName(String name)
+	{
+		UsgsWaterDataApi.setApplicationName(name);
+	}
+
 	/** Cached metadata from {@link #prefetchMetadata}, keyed by monitoring location ID. */
 	private static Map<String, List<TimeSeriesMetadata>> metadataCache;
 
