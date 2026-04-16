@@ -11,7 +11,9 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.SiteDao;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
-
+import org.opendcs.database.model.mappers.sites.OpenDcsSiteMapper;
+import org.opendcs.database.model.mappers.sites.OpenDcsSiteNameMapper;
+import org.opendcs.database.model.mappers.sites.OpenDcsSiteReducer;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
@@ -23,6 +25,7 @@ import org.openide.util.lookup.ServiceProviders;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.sql.DbKey;
+import decodes.util.DecodesSettings;
 
 // This uses Postgres specific features and is not compatible with Oracle
 @ServiceProviders({
@@ -35,36 +38,43 @@ import decodes.sql.DbKey;
 })
 public final class OpenDcsSiteDaoImpl implements SiteDao
 {
+    /**
+     * order asc on the inner nametype is to keep the general output predicatable.
+     * There <b>shouldn't</b> be any Sites without a Preferred SiteName so this is
+     * just to cover edge cases in existing databases.
+     */
     private static final String SELECT_QUERY = """
-            with sitenames (siteid, sitename) as (
-                select  siteid, min(sitename)
-                order by case
-                    when nametype = :prefered_type then 0
-                    else 1
-                end, sitename <collate> asc
-            )
             with sites (siteid) as (
                 select siteid, sitename
-                  from sitenames
+                  from (
+                    select  siteid, nametype, min(sitename) sitename
+                      from sitename
+                     group by siteid, nametype
+                     order by
+                        case
+                            when nametype = :preferredType then 0
+                            else 1
+                        end, nametype <collate> asc
+                     
+                  ) sorted_sitenames
                 <where>
-                order by sitename
+                order by sitename <collate> asc
                 <limit>
             )
-
             select site.id s_id, site.latitude s_latitude, site.longitude s_longitude,
                    site.nearestcity s_nearestcity, site.state s_state, site.region s_region,
                    site.timezone s_timezone, site.country s_country, site.elevation s_elevation,
-                   site.elvunitabbr s_elevunitabbr, site.description s_description, site.active_flag s_active_flag,
-                   site.location_type s_location_type, site.modify_type s_modify_time, site.public_name s_public_name
+                   site.elevunitabbr s_elevunitabbr, site.description s_description, site.active_flag s_active_flag,
+                   site.location_type s_location_type, site.modify_time s_modify_time, site.public_name s_public_name,
 
-                   sn.nametype sn_nametype, sn.sitename sn_sitename, sn.dbnum sn_dbnum, sn.agency_cd sn_agency_cd
+                   sn.nametype sn_nametype, sn.sitename sn_sitename, sn.dbnum sn_dbnum, sn.agency_cd sn_agency_cd,
 
                    prop.prop_name p_prop_name, prop.prop_value p_prop_value
 
              from sites sites
              left outer join site on sites.siteid = site.id
              left outer join sitename sn on sn.siteid = sites.siteid
-             left outer join site_property prop on props.site_id = site.id
+             left outer join site_property prop on prop.site_id = site.id
             """;
 
     @Override
@@ -107,11 +117,16 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabase();
+        var preferredType = ctx.getSettings(DecodesSettings.class)
+                              .map(ds -> ds.siteNameTypePreference)
+                              .orElseGet(() -> "CWMS");
+
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                  .define(SqlQueries.WHERE_CLAUSE, "")
-                 .define(SqlQueries.LIMIT_CLAUSE, addLimitOffset(limit, offset));
+                 .define(SqlQueries.LIMIT_CLAUSE, addLimitOffset(limit, offset))
+                 .bind("preferredType", preferredType);
             if (limit >= 0)
             {
                 query.bind(SqlKeywords.LIMIT, limit);
@@ -121,11 +136,11 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
                 query.bind(SqlKeywords.OFFSET, offset);
             }
 
-            return query.registerRowMapper(SiteRowMapper.withPrefix("s"))
+            return query.registerRowMapper(OpenDcsSiteMapper.withPrefix("s"))
                         .registerRowMapper(PropertiesMapper.withPrefix("p", true))
-                        .registerRowMapper(SiteNameMapper.writhPrefix("sn"))
-                        .values()
-                        .stream()
+                        .registerRowMapper(OpenDcsSiteNameMapper.withPrefix("sn"))
+                        .reduceRows(new OpenDcsSiteReducer("s"))
+                        .map(s -> s)
                         .toList();
         }
     }
