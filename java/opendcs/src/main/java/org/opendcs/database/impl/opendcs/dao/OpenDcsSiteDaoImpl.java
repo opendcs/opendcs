@@ -27,7 +27,6 @@ import org.opendcs.utils.sql.SqlQueries;
 
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.util.lookup.ServiceProviders;
-import org.python.util.Generic;
 import org.slf4j.Logger;
 
 import decodes.db.DatabaseException;
@@ -85,6 +84,11 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
              left outer join site on sites.siteid = site.id
              left outer join sitename sn on sn.siteid = sites.siteid
              left outer join site_property prop on prop.site_id = site.id
+             order by
+                case
+                    when sn_nametype = :preferredType then 0
+                    else 1
+                end, sn_nametype <collate> asc, sn_sitename <collate> asc
             """;
 
     private static final String DELETE_NAMES = "delete from sitename where siteid = :id";

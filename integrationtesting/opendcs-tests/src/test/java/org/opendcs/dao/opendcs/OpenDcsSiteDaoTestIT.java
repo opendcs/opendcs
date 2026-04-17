@@ -19,9 +19,9 @@ import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.util.DecodesSettings;
 
-@EnableIfTsDb({"OpenDCS-Postgres", "OpenDCS-Oracle"})
+@EnableIfTsDb({"OpenDCS-Postgres", "OpenDCS-Oracle", "CWMS-Oracle"})
 @DecodesConfigurationRequired({
-    "shared/test-sites.xml",        
+    "shared/test-sites.xml",
     "SimpleDecodesTest/site-OKVI4.xml"
 })
 class OpenDcsSiteDaoTestIT extends AppTestBase
