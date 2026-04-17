@@ -14,6 +14,7 @@ import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.SiteDao;
+import org.opendcs.database.impl.opendcs.jdbi.column.numeric.NullableDoubleArgumentFactory;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteNameMapper;
@@ -53,7 +54,7 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
      * just to cover edge cases in existing databases.
      */
     private static final String SELECT_QUERY = """
-            with sites (siteid) as (
+            with sites (siteid, sitename) as (
                 select siteid, sitename
                   from (
                     select  siteid, nametype, min(sitename) sitename
@@ -64,7 +65,7 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
                             when nametype = :preferredType then 0
                             else 1
                         end, nametype <collate> asc
-                     
+
                   ) sorted_sitenames
                 <where>
                 order by sitename <collate> asc
@@ -132,8 +133,8 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
     public Optional<Site> getByAnySiteName(DataTransaction tx, Collection<SiteName> siteNames) throws OpenDcsDataException
     {
         var handle = tx.connection(Handle.class)
-                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));        
-                              
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+
         try (var query = handle.createQuery("select distinct siteid from sitename where <where>"))
         {
             final StringBuilder whereClause = new StringBuilder();
@@ -150,7 +151,7 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
                            .append(" and ")
                            .append("sitename =:").append(bindValue)
                            .append(")");
-                
+
                 query.bind(bindName, sn.getNameType())
                      .bind(bindValue, sn.getNameValue());
             });
@@ -162,7 +163,7 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
         }
     }
 
-    
+
     private Optional<Site> getByAnySiteName(DataTransaction tx, Iterator<SiteName> siteNames) throws OpenDcsDataException
     {
         final List<SiteName> names = new ArrayList<>();
@@ -181,7 +182,7 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
         final var mergeSql = """
                     merge into site
                     using (
-                        select 
+                        select
                             :id id, :latitude latitude, :longitude longitude, :nearestcity nearestcity,
                             :state state, :region region, :timezone timezone, :country country,
                             :elevation elevation, :elevunitabbr elevunitabbr, :description description,
@@ -190,8 +191,8 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
                         ) input
                     on (site.id = input.id)
                     when matched then
-                        update set 
-                            id = input.id, latitude = input.latitude, longitude = input.longitude,
+                        update set
+                            latitude = input.latitude, longitude = input.longitude,
                             nearestcity = input.nearestcity, state = input.state, region = input.region,
                             timezone = input.timezone, country = input.country, elevation = input.elevation,
                             elevunitabbr = input.elevunitabbr, description = input.description,
@@ -212,7 +213,7 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
             var insertProps = handle.prepareBatch("insert into site_property(site_id, prop_name, prop_value) values (:id, :name, :value)");
             var deleteNames = handle.createUpdate(DELETE_NAMES);
             var insertNames = handle.prepareBatch("insert into sitename(siteid, nametype, sitename, dbnum, agency_cd) values (:id, :nametype, :sitename, :dbnum, :agency_code)")
-            )        
+            )
         {
             DbKey id = site.getId();
             var existing = getByAnySiteName(tx, site.getNames());
@@ -226,8 +227,9 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
                     id, site.getId());
             }
             final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("site", handle.getConnection());
-            
+
             merge.define("numeric_date", true)
+                 .registerArgument(new NullableDoubleArgumentFactory())
                  .bind(GenericColumns.ID, bindKey)
                  .bind("latitude", site.latitude)
                  .bind("longitude", site.longitude)
