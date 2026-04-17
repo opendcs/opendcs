@@ -8,6 +8,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { dtLangs } from "../../../lang";
 import type { ApiAlgorithm, ApiAlgorithmRef, ApiPropSpec } from "opendcs-api";
 import Algorithm, { AlgorithmSkeleton, type UiAlgorithm } from "./Algorithm";
+import { useTableProcessing } from "../../../components/data-table";
 import type { AlgoParm } from "./AlgorithmParamsTable";
 import { CheckForNewModal } from "./CheckForNewModal";
 import type { RemoveAction, SaveAction, UiState } from "../../../util/Actions";
@@ -25,6 +26,7 @@ export interface AlgorithmsTableProperties {
   getPropSpecs?: (execClass: string) => Promise<ApiPropSpec[]>;
   actions?: SaveAction<ApiAlgorithm> & RemoveAction<number>;
   onRefresh?: () => void;
+  loading?: boolean;
 }
 
 export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
@@ -33,6 +35,7 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
   getPropSpecs,
   actions = {},
   onRefresh,
+  loading = false,
 }) => {
   const { toDom } = useContextWrapper();
   const table = useRef<DataTableRef>(null);
@@ -84,6 +87,7 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
     paging: true,
     responsive: true,
     stateSave: true,
+    processing: true,
     language: dtLangs.get(i18n.language),
     createdRow: (_row, _data, dataIndex) => {
       table.current?.dt()?.row(dataIndex).node().classList.add("child-toggle");
@@ -219,7 +223,9 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
           : Promise.resolve([]);
 
       const node = toDom(
-        <Suspense fallback={<AlgorithmSkeleton edit={edit} />}>
+        <Suspense
+          fallback={<AlgorithmSkeleton edit={edit} className="child-row-opening" />}
+        >
           <Algorithm
             algorithm={algorithmPromise}
             propSpecs={propSpecs}
@@ -258,13 +264,6 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
             edit={edit}
           />
         </Suspense>,
-      );
-      const el = node as HTMLElement;
-      el.classList.add("child-row-opening");
-      el.addEventListener(
-        "animationend",
-        () => el.classList.remove("child-row-opening"),
-        { once: true },
       );
       return node;
     },
@@ -352,6 +351,10 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
   useEffect(() => {
     table.current?.dt()?.draw(false);
   }, [rowState]);
+
+  // Show DataTables' built-in "Processing..." overlay while the algorithm refs
+  // fetch is in flight so the empty table doesn't look like "no algorithms".
+  useTableProcessing(table, loading);
 
   return (
     <>

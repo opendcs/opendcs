@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useApi } from "../../../contexts/app/ApiContext";
 
 export const Algorithms: React.FC = () => {
-  const [algorithms, setAlgorithms] = useState<ApiAlgorithmRef[] | null>(null);
+  const [algorithms, setAlgorithms] = useState<ApiAlgorithmRef[]>([]);
   const [stale, setStale] = useState(true);
   const api = useApi();
   const algorithmApi = useMemo(() => new RESTAlgorithmMethodsApi(api.conf), [api.conf]);
@@ -76,14 +76,11 @@ export const Algorithms: React.FC = () => {
     [api.org, algorithmApi],
   );
 
-  if (algorithms === null) {
-    return null;
-  }
-
   return (
     <div className="content">
       <AlgorithmsTable
         algorithms={algorithms}
+        loading={stale}
         getAlgorithm={getAlgorithm}
         getPropSpecs={getPropSpecs}
         actions={{ save: saveAlgorithm, remove: deleteAlgorithm }}
