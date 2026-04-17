@@ -4,9 +4,11 @@ import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
@@ -24,6 +26,7 @@ import org.opendcs.utils.sql.SqlQueries;
 
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.util.lookup.ServiceProviders;
+import org.python.util.Generic;
 import org.slf4j.Logger;
 
 import decodes.db.DatabaseException;
@@ -33,7 +36,6 @@ import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
 import decodes.util.DecodesSettings;
 
-// This uses Postgres specific features and is not compatible with Oracle
 @ServiceProviders({
     @ServiceProvider(service = SiteDao.class, path = "dao/OpenDCS-Postgres"),
     @ServiceProvider(service = SiteDao.class, path = "dao/OpenDCS-Oracle"),
@@ -87,9 +89,15 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
     private static final String DELETE_NAMES = "delete from sitename where siteid = :id";
     private static final String DELETE_PROPS = "delete from site_property where site_id = :id";
 
+    private static final Pattern WHITE_SPACE = Pattern.compile("[\\h\\v\\p{IsWhite_Space}]+");
+
     @Override
     public Optional<Site> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
+        if (DbKey.isNull(id))
+        {
+            return Optional.empty();
+        }
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
@@ -126,19 +134,25 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));        
                               
-        try (var query = handle.createQuery("select siteid from sitename where <where>"))
+        try (var query = handle.createQuery("select distinct siteid from sitename where <where>"))
         {
             final StringBuilder whereClause = new StringBuilder();
             siteNames.forEach(sn ->
             {
-                final var bindName = sn.getNameType().replaceAll("\\s\\t\\w", "_");
+                final var bindName = WHITE_SPACE.matcher(sn.getNameType()).replaceAll("_");
+                final var bindValue = bindName + "Value";
                 if (!whereClause.isEmpty())
                 {
                     whereClause.append(" or ");
                 }
-                whereClause.append(" ").append("nametype = :").append(bindName);
+                whereClause.append(" (")
+                           .append("nametype = :").append(bindName)
+                           .append(" and ")
+                           .append("sitename =:").append(bindValue)
+                           .append(")");
                 
-                query.bind(sn.getNameType(), sn.getNameValue());
+                query.bind(bindName, sn.getNameType())
+                     .bind(bindValue, sn.getNameValue());
             });
             var id = query.define("where", whereClause)
                           .mapTo(DbKey.class)
@@ -174,6 +188,7 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
                             :active_flag active_flag, :location_type location_type, :modify_time modify_time,
                             :public_name public_name
                         ) input
+                    on (site.id = input.id)
                     when matched then
                         update set 
                             id = input.id, latitude = input.latitude, longitude = input.longitude,
@@ -191,15 +206,12 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
                                input.region, input.timezone, input.country, input.elevation, input.elevunitabbr,
                                input.description, input.active_flag, input.location_type, input.modify_time,
                                input.public_name)
-                    
-                    
-                    on (site.id = input.id)
                 """;
         try (var merge = handle.createUpdate(mergeSql);
             var deleteProps = handle.createUpdate(DELETE_PROPS);
             var insertProps = handle.prepareBatch("insert into site_property(site_id, prop_name, prop_value) values (:id, :name, :value)");
             var deleteNames = handle.createUpdate(DELETE_NAMES);
-            var insertNames = handle.prepareBatch("insert into sitename(siteid, nametype, sitename, dbnum, agency_cd) values (:id, :nametype, :sitename, :dbnum, :agency_code)");
+            var insertNames = handle.prepareBatch("insert into sitename(siteid, nametype, sitename, dbnum, agency_cd) values (:id, :nametype, :sitename, :dbnum, :agency_code)")
             )        
         {
             DbKey id = site.getId();
@@ -210,7 +222,6 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
                 id = existing.get().getId();
                 log.trace("""
                     Using ID from existing Site, id={}, that was found. Provided ID was {}.
-                    Existing Name is {}. New Name is {}.
                     """,
                     id, site.getId());
             }
@@ -218,7 +229,21 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
             
             merge.define("numeric_date", true)
                  .bind(GenericColumns.ID, bindKey)
-                 
+                 .bind("latitude", site.latitude)
+                 .bind("longitude", site.longitude)
+                 .bind("nearestcity", site.nearestCity)
+                 .bind("state", site.state)
+                 .bind("region", site.region)
+                 .bind("timezone", site.timeZoneAbbr)
+                 .bind("country", site.country)
+                 .bind("elevation", site.getElevation())
+                 .bind("elevunitabbr", site.getElevationUnits())
+                 .bind("description", site.getDescription())
+                 .bind("active_flag", site.isActive() ? "TRUE" : "FALSE")
+                 .bind("location_type", site.getLocationType())
+                 .bind("modify_time", new Date())
+                 .bind("public_name", site.getPublicName())
+
                  // bind the rest
                  .execute();
 
@@ -230,7 +255,7 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
                            .bind("nametype", name.getNameType())
                            .bind("sitename", name.getNameValue())
                            .bind("dbnum", name.getUsgsDbno())
-                           .bind("agency_cd", name.getAgencyCode())
+                           .bind("agency_code", name.getAgencyCode())
                            .add()
             );
             insertNames.execute();
@@ -238,7 +263,7 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
 
             site.getProperties().forEach((k,v) ->
             {
-                insertProps.bind("site_id", bindKey);
+                insertProps.bind(GenericColumns.ID, bindKey);
                 insertProps.bind(GenericColumns.NAME, k.toString());
                 var toSave = v != null ? v.toString() : "";
                 insertProps.bind("value", toSave);
