@@ -17,6 +17,7 @@ import type {
 import { Save, X } from "react-bootstrap-icons";
 import { ComputationReducer } from "./ComputationReducer";
 import { ComputationParamsTable } from "./ComputationParamsTable";
+import { normalizeComputationForSave, toSelectValue } from "./computationSave";
 
 export type UiComputation = Partial<ApiComputation>;
 
@@ -197,24 +198,23 @@ export const Computation: React.FC<ComputationProperties> = ({
 
   const saveComputation = useCallback(
     (comp: UiComputation) => {
+      const normalized = normalizeComputationForSave(
+        comp,
+        processOptions,
+        groupOptions,
+      );
+
       actions.save?.({
-        ...(comp as ApiComputation),
+        ...(normalized as ApiComputation),
+        props: { ...(normalized.props ?? {}) },
         parmList: localParms,
       });
     },
-    [actions, localParms],
+    [actions, localParms, processOptions, groupOptions],
   );
 
   const inputChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const { name, value } = event.target;
-      dispatch({ type: "save", payload: { [name]: value } });
-    },
-    [dispatch],
-  );
-
-  const selectChange = useCallback(
-    (event: React.ChangeEvent<HTMLSelectElement>) => {
       const { name, value } = event.target;
       dispatch({ type: "save", payload: { [name]: value } });
     },
@@ -226,6 +226,62 @@ export const Computation: React.FC<ComputationProperties> = ({
       dispatch({ type: "save", payload: { enabled: event.target.checked } });
     },
     [dispatch],
+  );
+
+  const processSelectValue = useMemo(() => {
+    return toSelectValue(
+      localComputation.appId,
+      localComputation.applicationName,
+      processOptions,
+    );
+  }, [localComputation.appId, localComputation.applicationName, processOptions]);
+
+  const groupSelectValue = useMemo(() => {
+    return toSelectValue(
+      localComputation.groupId,
+      localComputation.groupName,
+      groupOptions,
+    );
+  }, [localComputation.groupId, localComputation.groupName, groupOptions]);
+
+  const processChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const raw = event.target.value;
+      if (!raw) {
+        dispatch({ type: "save", payload: { appId: undefined, applicationName: "" } });
+        return;
+      }
+      const appId = Number.parseInt(raw, 10);
+      const selected = processOptions.find((app) => app.appId === appId);
+      dispatch({
+        type: "save",
+        payload: {
+          appId,
+          applicationName: selected?.appName ?? "",
+        },
+      });
+    },
+    [dispatch, processOptions],
+  );
+
+  const groupChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const raw = event.target.value;
+      if (!raw) {
+        dispatch({ type: "save", payload: { groupId: undefined, groupName: "" } });
+        return;
+      }
+      const groupId = Number.parseInt(raw, 10);
+      const selected = groupOptions.find((group) => group.groupId === groupId);
+      dispatch({
+        type: "save",
+        payload: {
+          groupId,
+          groupName: selected?.groupName ?? "",
+        },
+      });
+    },
+    [dispatch, groupOptions],
   );
 
   return (
@@ -272,14 +328,14 @@ export const Computation: React.FC<ComputationProperties> = ({
                   <Col sm={9}>
                     <Form.Select
                       id="applicationName"
-                      name="applicationName"
+                      name="appId"
                       disabled={!edit}
-                      defaultValue={localComputation.applicationName ?? ""}
-                      onChange={selectChange}
+                      value={processSelectValue}
+                      onChange={processChange}
                     >
                       <option value="" />
                       {processOptions.map((app) => (
-                        <option key={app.appId} value={app.appName ?? ""}>
+                        <option key={app.appId} value={String(app.appId ?? "")}>
                           {app.appName}
                         </option>
                       ))}
@@ -293,14 +349,14 @@ export const Computation: React.FC<ComputationProperties> = ({
                   <Col sm={9}>
                     <Form.Select
                       id="groupName"
-                      name="groupName"
+                      name="groupId"
                       disabled={!edit}
-                      defaultValue={localComputation.groupName ?? ""}
-                      onChange={selectChange}
+                      value={groupSelectValue}
+                      onChange={groupChange}
                     >
                       <option value="" />
                       {groupOptions.map((g) => (
-                        <option key={g.groupId} value={g.groupName ?? ""}>
+                        <option key={g.groupId} value={String(g.groupId ?? "")}>
                           {g.groupName}
                         </option>
                       ))}
