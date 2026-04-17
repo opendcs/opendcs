@@ -238,7 +238,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
 					country = "US"; // required
             }
             store.bind(GenericColumns.ID, bindKey)
-                 .bind(GenericColumns.NAME, cwmsName)
+                 .bind(GenericColumns.NAME, cwmsName.getNameValue())
                  .bind("elevation", site.getElevation())
                  .bind("elevation_units", site.getElevationUnits())
                  .bind("vertical_datum", "NAVD88") // TODO : from props
