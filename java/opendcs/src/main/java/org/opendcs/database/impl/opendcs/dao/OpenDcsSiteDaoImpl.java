@@ -44,7 +44,7 @@ import decodes.util.DecodesSettings;
     // This will be done in a follow up PR.
     @ServiceProvider(service = SiteDao.class, path = "dao/OPENTSDB")
 })
-public final class OpenDcsSiteDaoImpl implements SiteDao
+public class OpenDcsSiteDaoImpl implements SiteDao
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /**
@@ -94,7 +94,7 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
     private static final String DELETE_NAMES = "delete from sitename where siteid = :id";
     private static final String DELETE_PROPS = "delete from site_property where site_id = :id";
 
-    private static final Pattern WHITE_SPACE = Pattern.compile("[\\h\\v\\p{IsWhite_Space}]+");
+    public static final Pattern WHITE_SPACE = Pattern.compile("[\\h\\v\\p{IsWhite_Space}]+");
 
     @Override
     public Optional<Site> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException
@@ -122,7 +122,6 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
                         .registerRowMapper(PropertiesMapper.withPrefix("p", true))
                         .registerRowMapper(OpenDcsSiteNameMapper.withPrefix("sn"))
                         .reduceRows(new OpenDcsSiteReducer("s"))
-                        .map(s -> s)
                         .findFirst();
         }
     }
@@ -168,7 +167,7 @@ public final class OpenDcsSiteDaoImpl implements SiteDao
     }
 
 
-    private Optional<Site> getByAnySiteName(DataTransaction tx, Iterator<SiteName> siteNames) throws OpenDcsDataException
+    protected Optional<Site> getByAnySiteName(DataTransaction tx, Iterator<SiteName> siteNames) throws OpenDcsDataException
     {
         final List<SiteName> names = new ArrayList<>();
         siteNames.forEachRemaining(names::add);

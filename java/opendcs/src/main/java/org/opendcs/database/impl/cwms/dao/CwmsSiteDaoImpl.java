@@ -11,23 +11,31 @@ import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.SiteDao;
+import org.opendcs.database.impl.opendcs.dao.OpenDcsSiteDaoImpl;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteNameMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteReducer;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.opendcs.utils.sql.SqlQueries;
 import org.openide.util.lookup.ServiceProvider;
+import org.slf4j.Logger;
 
+import decodes.db.Constants;
+import decodes.db.DatabaseException;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.sql.DbKey;
+import decodes.sql.KeyGenerator;
 import decodes.util.DecodesSettings;
 
 @ServiceProvider(service = SiteDao.class, path = "dao/CWMS-Oracle")
-public final class CwmsSiteDaoImpl implements SiteDao
+public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /**
      * Use of systimestamp for modify_time is not ideal; however it allows for the OpenDCS
      * data flow to behave and have a value without a bunch of downstream null checks.
@@ -74,32 +82,214 @@ public final class CwmsSiteDaoImpl implements SiteDao
 
 
     @Override
-    public Optional<Site> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getById'");
+    public Optional<Site> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException
+    {
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var ctx = tx.getContext();
+        var dbEngine = ctx.getDatabase();
+
+        try (var query = handle.createQuery(SELECT_QUERY))
+        {
+            query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
+                 .define(SqlQueries.WHERE_CLAUSE, "")
+                 .define(SqlQueries.LIMIT_CLAUSE, "")
+                 .define("where", "and location_code = :id")
+                 .bind(GenericColumns.ID, id);
+
+            return query.registerRowMapper(OpenDcsSiteMapper.withPrefix("s"))
+                        .registerRowMapper(PropertiesMapper.withPrefix("p", true))
+                        .registerRowMapper(OpenDcsSiteNameMapper.withPrefix("sn"))
+                        .registerColumnMapper(Date.class, (r, columnNumber, stmtCtx) -> new Date())
+                        .reduceRows(new OpenDcsSiteReducer("s"))
+                        .findFirst();
+        }
     }
 
-    @Override
-    public Optional<Site> getBySiteName(DataTransaction tx, SiteName siteName) throws OpenDcsDataException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getBySiteName'");
-    }
 
     @Override
     public Optional<Site> getByAnySiteName(DataTransaction tx, Collection<SiteName> siteNames)
-            throws OpenDcsDataException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getByAnySiteName'");
+            throws OpenDcsDataException
+    {
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+
+        try (var query = handle.createQuery("""
+            select distinct siteid from 
+                (
+                select siteid, nametype, sitename from sitename
+                union all
+                select location_code siteid, 'CWMS' nametype, location_id sitename from cwms_v_loc where unit_system='SI'
+                )
+            <where>
+            """))
+        {
+            final StringBuilder whereClause = new StringBuilder();
+            siteNames.forEach(sn ->
+            {
+                final var bindName = OpenDcsSiteDaoImpl.WHITE_SPACE.matcher(sn.getNameType()).replaceAll("_");
+                final var bindValue = bindName + "Value";
+
+                if (!whereClause.isEmpty())
+                {
+                    whereClause.append(" or ");
+                }
+                else
+                {
+                    whereClause.append(" where ");
+                }
+                whereClause.append(" (")
+                           .append("nametype = :").append(bindName)
+                           .append(" and ")
+                           .append("sitename =:").append(bindValue)
+                           .append(")");
+
+                query.bind(bindName, sn.getNameType())
+                     .bind(bindValue, sn.getNameValue());
+            });
+            var id = query.define("where", whereClause)
+                          .mapTo(DbKey.class)
+                          .findOne()
+                          .orElse(DbKey.NullKey);
+            return getById(tx, id);
+        }
     }
 
     @Override
-    public Site save(DataTransaction tx, Site site) throws OpenDcsDataException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'save'");
+    public Site save(DataTransaction tx, Site site) throws OpenDcsDataException
+    {
+        var ctx = tx.getContext();
+        var canWrite = ctx.getSettings(DecodesSettings.class)
+                          .orElseGet(() ->
+                          {
+                              var ret = new DecodesSettings();
+                              ret.writeCwmsLocations = false;
+                              return ret;
+                          })
+                          .writeCwmsLocations;
+        if (!canWrite)
+        {
+            throw new OpenDcsDataException("The Current profile does not allow writing CWMS locations.");
+        }
+
+        final var cwmsName = site.getName(Constants.snt_CWMS);
+        if (cwmsName == null)
+        {
+            throw new OpenDcsDataException("CWMS SiteNameType was not provided CWMS Database requires a CWMS name to be present on any Site.");
+        }
+
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        
+        var keyGen = ctx.getGenerator(KeyGenerator.class)
+                        .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
+
+        final var storeSql = """
+                {cwms_loc.store_location2(
+                    p_location_id => :name,
+                    p_elevation => :elevation,
+                    P_elev_unit_id => :elevation_unit,
+                    p_vertical_datum => :vertical_datum,
+                    p_latitude => :latitude,
+                    p_longtidue => :longitude,
+                    p_horizontal_datum => :horizontal_datum,
+                    p_public_name => :public_name,
+                    p_long_name => :long_name,
+                    p_description => :description,
+                    p_time_zone_id => :time_zone,
+                    p_county_name => NULL,
+                    p_state_initial => :state_initial,
+                    p_active => :active,
+                    p_location_kind_id => NULL,
+                    p_map_label => NULL,
+                    p_published_latitude => NULL,
+                    p_published_longitude => NULL,
+                    p_nation_id => :country,
+                    p_nearest_city => :nearest_city,
+
+                    p_ignore_nulls => 'T',
+                    p_db_office_id => NULL
+
+                )}
+                """;
+
+         try (var store = handle.createCall(storeSql);
+            var deleteProps = handle.createUpdate(DELETE_PROPS);
+            var insertProps = handle.prepareBatch("insert into site_property(site_id, prop_name, prop_value) values (:id, :name, :value)");
+            var deleteNames = handle.createUpdate(DELETE_NAMES);
+            var insertNames = handle.prepareBatch("insert into sitename(siteid, nametype, sitename, dbnum, agency_cd) values (:id, :nametype, :sitename, :dbnum, :agency_code)")
+            )
+        {
+            DbKey id = site.getId();
+            var existing = getByAnySiteName(tx, site.getNames());
+            if (existing.isPresent())
+            {
+                // If there's an existing app with this name, we'll just assume the provided id, if any, was in error
+                id = existing.get().getId();
+                log.trace("""
+                    Using ID from existing Site, id={}, that was found. Provided ID was {}.
+                    """,
+                    id, site.getId());
+            }
+            final var bindKey = id;
+            var country = site.country;
+            if (country == null || country.isBlank() || country.trim().toLowerCase().startsWith("us"))
+            {
+					country = "US"; // required
+            }
+            store.bind(GenericColumns.ID, bindKey)
+                 .bind(GenericColumns.NAME, cwmsName)
+                 .bind("elevation", site.getElevation())
+                 .bind("elevation_units", site.getElevationUnits())
+                 .bind("vertical_datum", "NAVD88") // TODO : from props
+                 .bind("latitude", site.latitude)
+                 .bind("longitude", site.longitude)
+                 .bind("horizontal_datum", "WGS84") // TODO: also from props
+                 .bind("public_name", site.getPublicName())
+                 .bind("description", site.getDescription())
+                 .bind("time_zone", site.timeZoneAbbr)
+                 .bind("state_initial", site.state)
+                 .bind("country", country)
+                 .bind("long_name", site.getBriefDescription())
+                 .bind("nearest_city", site.nearestCity)
+                 .invoke();
+
+            deleteProps.bind(GenericColumns.ID, bindKey).execute();
+            deleteNames.bind(GenericColumns.ID, bindKey).execute();
+
+            site.getNames().forEachRemaining(name ->
+            {
+                if (!Constants.snt_CWMS.equals(name.getNameType()))
+                {
+                    insertNames.bind(GenericColumns.ID, bindKey)
+                               .bind("nametype", name.getNameType())
+                               .bind("sitename", name.getNameValue())
+                               .bind("db_num", name.getUsgsDbno())
+                               .bind("agency_code", name.getAgencyCode())
+                               .add();
+                }
+            });
+            insertNames.execute();
+
+            // TODO: exclude values that would be defined above in the store
+            site.getProperties().forEach((k,v) ->
+            {
+                insertProps.bind(GenericColumns.ID, bindKey);
+                insertProps.bind(GenericColumns.NAME, k.toString());
+                var toSave = v != null ? v.toString() : "";
+                insertProps.bind("value", toSave);
+                insertProps.add();
+            });
+            insertProps.execute();
+
+            // we don't directly get the ID so we'll just look up by the well defined CWMS name instead.
+            return getBySiteName(tx, cwmsName).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve site we just saved."));
+        }
     }
 
     @Override
-    public void delete(DataTransaction tx, DbKey id) throws OpenDcsDataException {
+    public void delete(DataTransaction tx, DbKey id) throws OpenDcsDataException
+    {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'delete'");
     }
@@ -117,7 +307,6 @@ public final class CwmsSiteDaoImpl implements SiteDao
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                  .define(SqlQueries.WHERE_CLAUSE, "")
                  .define(SqlQueries.LIMIT_CLAUSE, addLimitOffset(limit, offset));
-                 //.bind("preferredType", preferredType);
             if (limit >= 0)
             {
                 query.bind(SqlKeywords.LIMIT, limit);
