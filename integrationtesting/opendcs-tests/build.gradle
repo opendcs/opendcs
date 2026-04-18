@@ -46,6 +46,7 @@ dependencies {
     
     implementation(project(":opendcs-rest-api"))
     testImplementation(project(":opendcs-rest-api"))
+    testImplementation(project(":opendcs-web-ui-react"))
     testImplementation(libs.bundles.testcontainers)
     testImplementation(libs.bundles.jdbi)
     testImplementation(libs.commons.io)
@@ -111,6 +112,7 @@ testEngines.each { engine ->
         dependsOn ":install:installDist"
         dependsOn ":opendcs:test"
         dependsOn(":opendcs-rest-api:war")
+        dependsOn(":opendcs-web-ui-react:war")
         dependsOn genConfig
         useJUnitPlatform()
 
@@ -238,7 +240,7 @@ tasks.register('owaspZap', JavaExec) {
     def restWar = project(':opendcs-rest-api').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
     def guiWar = project(':opendcs-web-ui-react').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
     group "application"
-    dependsOn(':opendcs-rest-api:war', ':opendcs-web-ui:war')
+    dependsOn(':opendcs-rest-api:war', ':opendcs-web-ui-react:war')
     dependsOn generateConfig
     dependsOn ":install:installDist"
 
