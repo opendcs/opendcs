@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import decodes.db.DataSource;
 import decodes.db.NetworkList;
 
-public class UsgsWaterDataSourceTest
+class UsgsWaterDataSourceTest
 {
 	/**
 	 * Construct with null DataSource and null Database.
@@ -48,7 +48,7 @@ public class UsgsWaterDataSourceTest
 	void testCloseDoesNotThrow()
 	{
 		UsgsWaterDataSource src = createSource();
-		assertDoesNotThrow(() -> src.close());
+		assertDoesNotThrow(src::close);
 	}
 
 	@Test

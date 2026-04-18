@@ -56,14 +56,17 @@ import org.slf4j.Logger;
 final class UsgsWaterDataAdapter
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	/** 24 hours in seconds -- sensors with this recording interval are treated as daily. */
+	private static final int DAILY_INTERVAL_SECONDS = 86400;
+	private static final String USGS_PREFIX = "USGS-";
+	private static final String USGS_STANDARD = "usgs";
+	/** Cached metadata from {@link #prefetchMetadata}, keyed by monitoring location ID. */
+	private static Map<String, List<TimeSeriesMetadata>> metadataCache;
 
 	private UsgsWaterDataAdapter()
 	{
 		// utility class -- do not instantiate
 	}
-
-	/** 24 hours in seconds -- sensors with this recording interval are treated as daily. */
-	private static final int DAILY_INTERVAL_SECONDS = 86400;
 
 	/**
 	 * Set the USGS Water Data API key.
@@ -83,9 +86,6 @@ final class UsgsWaterDataAdapter
 		UsgsWaterDataApi.setApplicationName(name);
 	}
 
-	/** Cached metadata from {@link #prefetchMetadata}, keyed by monitoring location ID. */
-	private static Map<String, List<TimeSeriesMetadata>> metadataCache;
-
 	/**
 	 * Batch-fetch time-series metadata for multiple sites and cache internally.
 	 * {@link #fetchPlatformData} uses the cache to avoid per-site API calls,
@@ -99,7 +99,7 @@ final class UsgsWaterDataAdapter
 		for (int i = 0; i < siteNumbers.size(); i++)
 		{
 			String id = siteNumbers.get(i);
-			siteIds[i] = id.startsWith("USGS-") ? id : "USGS-" + id;
+			siteIds[i] = id.startsWith(USGS_PREFIX) ? id : (USGS_PREFIX + id);
 		}
 		try
 		{
@@ -224,8 +224,8 @@ final class UsgsWaterDataAdapter
 		List<TimeSeriesMetadata> allMetadata;
 		if (metadataCache != null)
 		{
-			String key = siteNumber.startsWith("USGS-") ? siteNumber
-				: "USGS-" + siteNumber;
+			String key = siteNumber.startsWith(USGS_PREFIX) ? siteNumber
+				: (USGS_PREFIX + siteNumber);
 			allMetadata = metadataCache.getOrDefault(key, Collections.emptyList());
 		}
 		else
@@ -410,8 +410,8 @@ final class UsgsWaterDataAdapter
 		if (dt != null)
 			return dt;
 
-		if (dataTypeStandard.equalsIgnoreCase(Constants.datatype_USGS)
-			|| dataTypeStandard.equalsIgnoreCase("usgs"))
+		if (Constants.datatype_USGS.equalsIgnoreCase(dataTypeStandard)
+			|| USGS_STANDARD.equalsIgnoreCase(dataTypeStandard))
 		{
 			dt = cs.getDataType(Constants.datatype_EPA);
 		}
@@ -419,7 +419,7 @@ final class UsgsWaterDataAdapter
 		{
 			dt = cs.getDataType(Constants.datatype_USGS);
 			if (dt == null)
-				dt = cs.getDataType("usgs");
+				dt = cs.getDataType(USGS_STANDARD);
 		}
 		return dt;
 	}

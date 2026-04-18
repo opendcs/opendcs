@@ -26,7 +26,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import decodes.db.ConfigSensor;
-import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Platform;
 import decodes.db.PlatformConfig;
@@ -280,7 +279,7 @@ class UsgsWaterDataAdapterTest
 	// --- Combined: all four sensors on one platform ---
 
 	@Test
-	void testAllSensorsCombined() throws Exception
+	void testAllSensorsCombined()
 	{
 		ConfigSensor discharge = makeSensor(1, Parameter.DISCHARGE,
 			DAILY_INTERVAL, Statistic.MEAN);
@@ -322,7 +321,7 @@ class UsgsWaterDataAdapterTest
 
 
 	@Test
-	void testOmittedSensorSkipped() throws Exception
+	void testOmittedSensorSkipped()
 	{
 		ConfigSensor cs = makeSensor(1, Parameter.DISCHARGE,
 			DAILY_INTERVAL, Statistic.MEAN);
@@ -340,7 +339,7 @@ class UsgsWaterDataAdapterTest
 	}
 
 	@Test
-	void testNoConfigReturnsEmpty() throws Exception
+	void testNoConfigReturnsEmpty()
 	{
 		Platform p = new Platform();  // no config set
 
@@ -355,7 +354,7 @@ class UsgsWaterDataAdapterTest
 	}
 
 	@Test
-	void testSensorWithNoMatchingDataTypeSkipped() throws Exception
+	void testSensorWithNoMatchingDataTypeSkipped()
 	{
 		ConfigSensor cs = new ConfigSensor(null, 1);
 		cs.sensorName = "NoUsgsType";
