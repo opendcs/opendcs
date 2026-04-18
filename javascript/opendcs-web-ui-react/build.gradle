@@ -116,4 +116,10 @@ war {
     from ('dist') {
         exclude "**/mockServiceWorker.js"
     }
+    from ('build_scripts') {
+        include "context.xml"
+
+        into ("META-INF")
+    }
+    webXml = file("build_scripts/web.xml")
 }
