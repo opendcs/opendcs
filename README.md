@@ -201,7 +201,7 @@ OpenDCS Rest API is intended to run as a stand-alone Java program. It uses embed
 
 ## Structure
 ./java/opendcs-rest-api - contains source files for the OpenDCS REST API
-./java/opendcs-web-ui - contains source files for the OpenDCS Web Application Client
+./javascript/opendcs-web-ui-react - contains source files for the OpenDCS Web Application Client
 ./opendcs-integration-test - contains scripts for running embedded tomcat to deploy the REST API and Web Client wars for testing.
 
 
@@ -217,18 +217,14 @@ Assuming the context is 'odcsapi', an example of the SwaggerUI location is http:
 These files are being served up from the resource file 'SwaggerResources.java' file located at 
 'src/main/java/org/opendcs/odcsapi/res/SwaggerResources.java'.
 
-#### web.xml configurations
-The bundled [web.xml](opendcs-rest-api/src/main/webapp/WEB-INF/web.xml) contains the following
-properties that should be configured for your system.
-- `opendcs.rest.api.authorization.type` - supports a comma separated list of authorization types. These can include basic,sso,openid. See section on authorization for details.
-- `opendcs.rest.api.authorization.expiration.duration` - denotes the duration that an authorization attempt is valid for. Defaults to 15 minutes.
-- `opendcs.rest.api.cwms.office` - office id specific to CWMS systems. This is the office the authorizing user will check privileges for.
-- `opendcs.rest.api.authorization.jwt.jwkset.url` - for openid authorization this is the JWK Set URL
-- `opendcs.rest.api.authorization.jwt.issuer.url`  - for openid authorization this is the Issuer URL
 
 ### OPENDCS Web Client
-The gradle task `./gradlew :opendcs-web-ui:war` will create a war file in the `build/libs` directory.
 
+
+The gradle task `./gradlew :opendcs-web-ui-react:build` will create a war file in the `build/dist` directory.
+
+
+Additional the UI project is a react act, if you cd into javascript/opendcs-web-ui-react the usual npm commands will work.
 
 ### Testing
 
