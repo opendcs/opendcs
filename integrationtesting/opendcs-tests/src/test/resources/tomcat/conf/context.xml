@@ -14,7 +14,7 @@
   ~  limitations under the License.
   -->
 
-<Context cookies="true">
+<Context cookies="true" delegate="true">
     <Resource name="jdbc/opentsdb"
               auth="Container"
               type="javax.sql.DataSource"

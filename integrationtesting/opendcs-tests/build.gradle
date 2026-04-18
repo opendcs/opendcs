@@ -46,7 +46,6 @@ dependencies {
     
     implementation(project(":opendcs-rest-api"))
     testImplementation(project(":opendcs-rest-api"))
-    testImplementation(project(":opendcs-web-ui"))
     testImplementation(libs.bundles.testcontainers)
     testImplementation(libs.bundles.jdbi)
     testImplementation(libs.commons.io)
@@ -112,7 +111,6 @@ testEngines.each { engine ->
         dependsOn ":install:installDist"
         dependsOn ":opendcs:test"
         dependsOn(":opendcs-rest-api:war")
-        dependsOn(":opendcs-web-ui:war")
         dependsOn genConfig
         useJUnitPlatform()
 
@@ -140,7 +138,7 @@ testEngines.each { engine ->
         jvmArgs += "-Dcatalina.base=${layout.buildDirectory.file("tomcat")}"
         jvmArgs += "-Dopendcs.test.integration.db=${engine}"
         def restWar = project(':opendcs-rest-api').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
-        def guiWar = project(':opendcs-web-ui').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
+        def guiWar = project(':opendcs-web-ui-react').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
         jvmArgs += "-Dopendcs.restapi.warfile=${restWar}"
         jvmArgs += "-Dopendcs.gui.warfile=${guiWar}"
 
@@ -207,10 +205,10 @@ tasks.register('runWeb') {
 tasks.register('runApi', JavaExec) {
     dependsOn build
     def restWar = project(':opendcs-rest-api').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
-    def guiWar = project(':opendcs-web-ui').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
+    def guiWar = project(':opendcs-web-ui-react').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
     inputs.files(restWar,guiWar)
     group "application"
-    dependsOn(':opendcs-rest-api:war', ':opendcs-web-ui:war')
+    dependsOn(':opendcs-rest-api:war', ':opendcs-web-ui-react:war')
     dependsOn generateConfig
     dependsOn ":install:installDist"
     classpath += sourceSets.test.runtimeClasspath
@@ -238,7 +236,7 @@ tasks.register('runApi', JavaExec) {
 tasks.register('owaspZap', JavaExec) {
     dependsOn build
     def restWar = project(':opendcs-rest-api').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
-    def guiWar = project(':opendcs-web-ui').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
+    def guiWar = project(':opendcs-web-ui-react').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
     group "application"
     dependsOn(':opendcs-rest-api:war', ':opendcs-web-ui:war')
     dependsOn generateConfig

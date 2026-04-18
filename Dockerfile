@@ -102,7 +102,7 @@ CMD ["/usr/local/tomcat/bin/catalina.sh","run"]
 FROM tomcat_base AS web-api
 
 COPY --from=builder /app/java/opendcs-rest-api/build/libs/*.war /usr/local/tomcat/webapps/odcsapi.war
-COPY --from=builder /app/java/opendcs-web-ui/build/libs/*.war /usr/local/tomcat/webapps/ROOT.war
+COPY --from=builder /app/java/opendcs-web-ui-react/build/libs/*.war /usr/local/tomcat/webapps/ROOT.war
 COPY /docker_files/tomcat/conf/context.xml /usr/local/tomcat/conf/Catalina/localhost/odcsapi.xml
 COPY /docker_files/tomcat/conf/tomcat-server.xml /usr/local/tomcat/conf/server.xml
 COPY /docker_files/tomcat/conf/setenv.sh /usr/local/tomcat/bin
