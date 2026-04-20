@@ -17,6 +17,7 @@ package decodes.routing;
 
 import java.util.*;
 
+import org.opendcs.decodes.api.DataMessage;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.spi.LoggingEventBuilder;
@@ -429,9 +430,26 @@ public class RoutingSpecThread extends Thread
 			//=====================================================
 			myExec.setSubsystem("acquire");
 			RawMessage rm = null;
+			DataMessage dataMessage = null;
 			try
 			{
-				rm = source.getRawMessage();
+				dataMessage = source.getDataMessage();
+				if (dataMessage instanceof DecodedMessage)
+				{
+					// DataSource returned a pre-decoded message -- skip decoding
+					myExec.setSubsystem("format-output");
+					formatAndOutputMessage((DecodedMessage) dataMessage, null);
+					currentStatus = "Running";
+					continue;
+				}
+				if (dataMessage instanceof RawMessage)
+				{
+					rm = (RawMessage) dataMessage;
+				}
+				else if (dataMessage != null)
+				{
+					log.error("Unknown DataMessage type: {}", dataMessage.getClass().getName());
+				}
 				if (rm == null)
 				{
 					log.trace("Data source failed to return message, pausing for 1 seconds.");

@@ -32,6 +32,7 @@ cwms-db-codegen = { strictly = "7.0.0-OpenDCS" }
 monolith = { strictly = "2.0.2" }
 cwms-ratings = "1.1.0"
 nucleus = "1.1.1"
+usgs-waterdata-api = "0.2.5"
 # to upgrade past this version requires java 11 -->
 jdbi = "3.39.1"
 flywaydb = "9.8.1"
@@ -115,6 +116,7 @@ hec-db-jdbc = { module = "mil.army.usace.hec:hec-db-jdbc", version.ref = "cwms-d
 hec-monolith = { module = "mil.army.usace.hec:hec-monolith", version.ref = "monolith" }
 hec-cwms-ratings-core = { module = "mil.army.usace.hec:hec-cwms-ratings-core", version.ref = "cwms-ratings" }
 hec-nucleus-metadata = { module = "mil.army.usace.hec:hec-nucleus-metadata", version.ref = "nucleus" }
+usgs-waterdata-api = { module = "io.github.ktarbet:usgs-waterdata-api", version.ref = "usgs-waterdata-api" }
 
 # test deps
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }

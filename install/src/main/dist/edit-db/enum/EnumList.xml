@@ -332,6 +332,11 @@
       <ExecClass>decodes.datasource.SftpDataSource</ExecClass>
 	  <SortNumber>10</SortNumber>
     </EnumValue>
+    <EnumValue EnumValue="usgs-waterdata">
+      <Description>Retrieve USGS water data via the USGS Water Data API</Description>
+      <ExecClass>decodes.datasource.UsgsWaterDataSource</ExecClass>
+	  <SortNumber>12</SortNumber>
+    </EnumValue>
 	<EnumDefaultValue>lrgs</EnumDefaultValue>
   </Enum>
   <Enum Name="ScriptType">
