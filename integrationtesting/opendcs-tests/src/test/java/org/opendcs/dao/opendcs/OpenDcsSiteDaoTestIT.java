@@ -3,6 +3,7 @@ package org.opendcs.dao.opendcs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Date;
@@ -10,6 +11,7 @@ import java.util.Date;
 import org.junit.jupiter.api.Test;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.SiteDao;
+import org.opendcs.database.exceptions.RequiredSiteNameMissingException;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
@@ -94,7 +96,7 @@ class OpenDcsSiteDaoTestIT extends AppTestBase
             {
                 var site = new Site();
 
-                var siteName = new SiteName(site, "CWMS", String.format("00AAAA-Test-Site-%02d", i));
+                var siteName = new SiteName(site, "CWMS", String.format("00AA_TestSite_%02d", i));
                 site.addName(siteName);
 
                 if (i % 8 == 0)
@@ -124,7 +126,7 @@ class OpenDcsSiteDaoTestIT extends AppTestBase
             }
             var name = new SiteName(siteNoPrefName, type, String.format("00AAAA-Test-Site-%02d", numSites));
             siteNoPrefName.addName(name);
-            dao.save(tx, siteNoPrefName); // should we even allow this?
+            assertThrows(RequiredSiteNameMissingException.class ,() -> dao.save(tx, siteNoPrefName));
 
 
             var allSites = dao.getAll(tx, numSites+1, 0);

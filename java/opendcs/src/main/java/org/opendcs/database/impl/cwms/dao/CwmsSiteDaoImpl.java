@@ -11,6 +11,7 @@ import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.SiteDao;
+import org.opendcs.database.exceptions.RequiredSiteNameMissingException;
 import org.opendcs.database.impl.opendcs.dao.OpenDcsSiteDaoImpl;
 import org.opendcs.database.impl.opendcs.jdbi.column.numeric.NullableDoubleArgumentFactory;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
@@ -104,9 +105,8 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
-                 .define(SqlQueries.WHERE_CLAUSE, "")
+                 .define(SqlQueries.WHERE_CLAUSE, "and location_code = :id")
                  .define(SqlQueries.LIMIT_CLAUSE, "")
-                 .define("where", "and location_code = :id")
                  .bind(GenericColumns.ID, id);
 
             return query.registerRowMapper(OpenDcsSiteMapper.withPrefix("s"))
@@ -130,13 +130,13 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             select distinct siteid from 
                 (
                     select siteid, nametype, sitename from (
-                        select siteid, nametype, sitename from sitename
+                        select siteid, nametype, sitename from sitename where db_office_code = cwms_util.user_office_code()
                         union all
                         select location_code siteid, 
                                'CWMS' nametype,
                                location_id sitename
                           from cwms_v_loc
-                         where unit_system = 'SI'
+                         where unit_system = 'SI' and db_office_id = cwms_util.user_office_id()
                     )
                 <where>
                 )
@@ -193,7 +193,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
         final var cwmsName = site.getName(Constants.snt_CWMS);
         if (cwmsName == null)
         {
-            throw new OpenDcsDataException("CWMS SiteNameType was not provided CWMS Database requires a CWMS name to be present on any Site.");
+            throw new RequiredSiteNameMissingException(Constants.snt_CWMS);
         }
 
         var handle = tx.connection(Handle.class)
@@ -257,10 +257,6 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             {
                 country = "US"; // required
             }
-            System.out.println("Saving " + site.getDisplayName() + " with ");
-            System.out.println("\telev" + site.getElevation());
-            System.out.println("\tlat " + site.latitude);
-            System.out.println("\tlong " + site.longitude);
             store.registerArgument(new NullableDoubleArgumentFactory())
                  .bind(GenericColumns.ID, bindKey)
                  .bind(GenericColumns.NAME, cwmsName.getNameValue())
@@ -334,6 +330,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             deleteNames.bind(GenericColumns.ID, id).execute();
             deleteProps.bind(GenericColumns.ID, id).execute();
             deleteLoc.bind(GenericColumns.ID, id).invoke();
+            // as we don't have a foreign key we need to manually check everything within opendcs
         }
     }
 

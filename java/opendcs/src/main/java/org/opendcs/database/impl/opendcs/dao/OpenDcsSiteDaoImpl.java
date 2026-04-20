@@ -14,6 +14,7 @@ import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.SiteDao;
+import org.opendcs.database.exceptions.RequiredSiteNameMissingException;
 import org.opendcs.database.impl.opendcs.jdbi.column.numeric.NullableDoubleArgumentFactory;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteMapper;
@@ -29,6 +30,7 @@ import org.openide.util.lookup.ServiceProvider;
 import org.openide.util.lookup.ServiceProviders;
 import org.slf4j.Logger;
 
+import decodes.db.Constants;
 import decodes.db.DatabaseException;
 import decodes.db.Site;
 import decodes.db.SiteName;
@@ -177,6 +179,12 @@ public class OpenDcsSiteDaoImpl implements SiteDao
     @Override
     public Site save(DataTransaction tx, Site site) throws OpenDcsDataException
     {
+        final var cwmsName = site.getName(Constants.snt_CWMS);
+        if (cwmsName == null)
+        {
+            throw new RequiredSiteNameMissingException(Constants.snt_CWMS);
+        }
+
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
