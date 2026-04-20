@@ -12,6 +12,7 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.SiteDao;
 import org.opendcs.database.impl.opendcs.dao.OpenDcsSiteDaoImpl;
+import org.opendcs.database.impl.opendcs.jdbi.column.numeric.NullableDoubleArgumentFactory;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteNameMapper;
@@ -25,11 +26,9 @@ import org.openide.util.lookup.ServiceProvider;
 import org.slf4j.Logger;
 
 import decodes.db.Constants;
-import decodes.db.DatabaseException;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.sql.DbKey;
-import decodes.sql.KeyGenerator;
 import decodes.util.DecodesSettings;
 
 @ServiceProvider(service = SiteDao.class, path = "dao/CWMS-Oracle")
@@ -51,7 +50,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                 <limit>
             )
             select site.location_code s_id, site.location_id cwms_id , site.latitude s_latitude, site.longitude s_longitude,
-                   site.nearest_city s_nearestcity, site.state_initial s_state, '' s_region,
+                   site.nearest_city s_nearestcity, site.state_initial s_state, site.county_name s_region,
                    site.time_zone_name s_timezone, site.nation_id s_country, site.elevation s_elevation,
                    site.unit_system s_elevunitabbr, site.description s_description, site.active_flag s_active_flag,
                    site.location_type s_location_type, systimestamp s_modify_time, site.public_name s_public_name,
@@ -67,7 +66,20 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                 union all
                 select location_code siteid, 'CWMS' nametype, location_id sitename, null dbnum, null agency_cd from sites
              ) sn on sn.siteid = sites.location_code
-             left outer join site_property prop on prop.site_id = site.location_code
+
+             left outer join (
+                select site_id, prop_name, prop_value from site_property
+                union all
+                select location_code siteid, 'horizontal_datum' prop_name, horizontal_datum prop_value from cwms_v_loc where unit_system = 'SI'
+                union all
+                select location_code siteid, 'vertical_datum' prop_name, vertical_datum prop_value from cwms_v_loc where unit_system = 'SI'
+                union all
+                select location_code siteid, 'vertical_datum' prop_name, vertical_datum prop_value from cwms_v_loc where unit_system = 'SI'
+                union all
+                select location_code siteid, 'bounding_office' prop_name, bounding_office_id prop_value from cwms_v_loc where unit_system = 'SI'
+            ) prop on prop.site_id = site.location_code
+
+
              order by
                 cwms_id COLLATE BINARY asc,
                 case
@@ -117,11 +129,17 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
         try (var query = handle.createQuery("""
             select distinct siteid from 
                 (
-                select siteid, nametype, sitename from sitename
-                union all
-                select location_code siteid, 'CWMS' nametype, location_id sitename from cwms_v_loc where unit_system='SI'
+                    select siteid, nametype, sitename from (
+                        select siteid, nametype, sitename from sitename
+                        union all
+                        select location_code siteid, 
+                               'CWMS' nametype,
+                               location_id sitename
+                          from cwms_v_loc
+                         where unit_system = 'SI'
+                    )
+                <where>
                 )
-            <where>
             """))
         {
             final StringBuilder whereClause = new StringBuilder();
@@ -141,7 +159,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                 whereClause.append(" (")
                            .append("nametype = :").append(bindName)
                            .append(" and ")
-                           .append("sitename =:").append(bindValue)
+                           .append("sitename = :").append(bindValue)
                            .append(")");
 
                 query.bind(bindName, sn.getNameType())
@@ -181,33 +199,33 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         
-        var keyGen = ctx.getGenerator(KeyGenerator.class)
-                        .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
 
         final var storeSql = """
-                {cwms_loc.store_location2(
+                {call cwms_loc.store_location2(
                     p_location_id => :name,
+                    p_location_type => :type,
                     p_elevation => :elevation,
-                    P_elev_unit_id => :elevation_unit,
+                    P_elev_unit_id => :elevation_units,
                     p_vertical_datum => :vertical_datum,
                     p_latitude => :latitude,
-                    p_longtidue => :longitude,
+                    p_longitude => :longitude,
                     p_horizontal_datum => :horizontal_datum,
                     p_public_name => :public_name,
                     p_long_name => :long_name,
                     p_description => :description,
                     p_time_zone_id => :time_zone,
-                    p_county_name => NULL,
+                    p_county_name => :county,
                     p_state_initial => :state_initial,
                     p_active => :active,
                     p_location_kind_id => NULL,
                     p_map_label => NULL,
                     p_published_latitude => NULL,
                     p_published_longitude => NULL,
+                    p_bounding_office_id => :bounding_office,
                     p_nation_id => :country,
                     p_nearest_city => :nearest_city,
 
-                    p_ignore_nulls => 'T',
+                    p_ignorenulls => :ignore_nulls,
                     p_db_office_id => NULL
 
                 )}
@@ -220,11 +238,13 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             var insertNames = handle.prepareBatch("insert into sitename(siteid, nametype, sitename, dbnum, agency_cd) values (:id, :nametype, :sitename, :dbnum, :agency_code)")
             )
         {
+            var ignoreNulls = 'F';
             DbKey id = site.getId();
             var existing = getByAnySiteName(tx, site.getNames());
             if (existing.isPresent())
             {
                 // If there's an existing app with this name, we'll just assume the provided id, if any, was in error
+                ignoreNulls = 'T';
                 id = existing.get().getId();
                 log.trace("""
                     Using ID from existing Site, id={}, that was found. Provided ID was {}.
@@ -235,23 +255,33 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             var country = site.country;
             if (country == null || country.isBlank() || country.trim().toLowerCase().startsWith("us"))
             {
-					country = "US"; // required
+                country = "US"; // required
             }
-            store.bind(GenericColumns.ID, bindKey)
+            System.out.println("Saving " + site.getDisplayName() + " with ");
+            System.out.println("\telev" + site.getElevation());
+            System.out.println("\tlat " + site.latitude);
+            System.out.println("\tlong " + site.longitude);
+            store.registerArgument(new NullableDoubleArgumentFactory())
+                 .bind(GenericColumns.ID, bindKey)
                  .bind(GenericColumns.NAME, cwmsName.getNameValue())
+                 .bind("type", site.getLocationType())
                  .bind("elevation", site.getElevation())
                  .bind("elevation_units", site.getElevationUnits())
-                 .bind("vertical_datum", "NAVD88") // TODO : from props
-                 .bind("latitude", site.latitude)
-                 .bind("longitude", site.longitude)
-                 .bind("horizontal_datum", "WGS84") // TODO: also from props
+                 .bind("vertical_datum", site.getProperty("vertical_datum"))
+                 .bind("latitude", site.latitude != null ? Double.parseDouble(site.latitude) : null)
+                 .bind("longitude", site.longitude != null ? Double.parseDouble(site.longitude) : null)
+                 .bind("horizontal_datum", site.getProperty("horizontal_datum"))
                  .bind("public_name", site.getPublicName())
                  .bind("description", site.getDescription())
                  .bind("time_zone", site.timeZoneAbbr)
+                 .bind("county", site.region)
                  .bind("state_initial", site.state)
                  .bind("country", country)
+                 .bind("active", "T")
                  .bind("long_name", site.getBriefDescription())
                  .bind("nearest_city", site.nearestCity)
+                 .bind("ignore_nulls", ignoreNulls)
+                 .bind("bounding_office", site.getProperty("bounding_office"))
                  .invoke();
 
             deleteProps.bind(GenericColumns.ID, bindKey).execute();
@@ -264,16 +294,21 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                     insertNames.bind(GenericColumns.ID, bindKey)
                                .bind("nametype", name.getNameType())
                                .bind("sitename", name.getNameValue())
-                               .bind("db_num", name.getUsgsDbno())
+                               .bind("dbnum", name.getUsgsDbno())
                                .bind("agency_code", name.getAgencyCode())
                                .add();
                 }
             });
             insertNames.execute();
 
-            // TODO: exclude values that would be defined above in the store
             site.getProperties().forEach((k,v) ->
             {
+                if (k.equals("horizontal_datum") ||
+                    k.equals("vertical_datum") ||
+                    k.equals("bounding_office"))
+                {
+                    return;
+                }
                 insertProps.bind(GenericColumns.ID, bindKey);
                 insertProps.bind(GenericColumns.NAME, k.toString());
                 var toSave = v != null ? v.toString() : "";
@@ -290,8 +325,16 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
     @Override
     public void delete(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'delete'");
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        try (var deleteNames = handle.createUpdate(DELETE_NAMES);
+             var deleteProps = handle.createUpdate(DELETE_PROPS);
+             var deleteLoc = handle.createCall("{call cwms_loc.delete_loc(cwms_loc.get_location_id(:id))}"))
+        {
+            deleteNames.bind(GenericColumns.ID, id).execute();
+            deleteProps.bind(GenericColumns.ID, id).execute();
+            deleteLoc.bind(GenericColumns.ID, id).invoke();
+        }
     }
 
     @Override

@@ -32,7 +32,7 @@ public class OpenDcsSiteReducer implements BiConsumer<Map<Long, Site>, RowView>
                 qid -> rowView.getRow(Site.class)
         );
         var prop = rowView.getRow(PropertiesMapper.PAIR_STRING_STRING);
-        if (prop.first != null)
+        if (prop.first != null && prop.second != null)
         {
             site.setProperty(prop.first, prop.second);
         }

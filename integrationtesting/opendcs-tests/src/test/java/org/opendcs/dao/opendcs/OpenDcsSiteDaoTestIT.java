@@ -42,12 +42,15 @@ class OpenDcsSiteDaoTestIT extends AppTestBase
             site.addName(siteName);
             var siteName2 = new SiteName(site, "local", "Local Test Name");
             site.addName(siteName2);
-            site.country = "US";
+            site.country = "US";            
             site.setDescription("A test site");
             site.setActive(true);
             site.nearestCity = "Bob's ville"; // we're specifically testing that ' here
             // modify time set by Dao
             site.setPublicName("A site that exists to test the new DAO");
+            site.setElevation(50.0);
+            site.setElevationUnits("ft");
+
             site.setProperty("test_prop_1", "test_value_1");
             site.setProperty("test_prop_2", "test_value_2");
             final var timeSaved = new Date();
