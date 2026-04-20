@@ -337,7 +337,7 @@ final class UsgsWaterDataAdapter
 					usgsStatCode, usgsSubLocation);
 			}
 
-			TimeSeriesMetadata meta = matches.getFirst();
+			TimeSeriesMetadata meta = matches.get(0);
 
 			try
 			{
