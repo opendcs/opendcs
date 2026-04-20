@@ -42,7 +42,13 @@ public interface SiteDao extends OpenDcsDao
     Optional<Site> getByAnySiteName(DataTransaction tx, Collection<SiteName> siteNames) throws OpenDcsDataException;
 
     /**
-     * Save (insert or update) a site to the database
+     * Save (insert or update) a site to the database.
+     *
+     * Implementations should fail if a required site name is not present. For example CWMS requires a "CWMS" SiteNameType to be present
+     * as it is used as the CWMS Location ID.
+     *
+     * The OpenDCS-Postgres and OpenDCS-Oracle implementation also require a CWMS Site name.
+     *
      * @param tx
      * @param site
      * @return

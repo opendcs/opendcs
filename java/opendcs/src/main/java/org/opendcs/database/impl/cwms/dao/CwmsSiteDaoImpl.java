@@ -2,6 +2,7 @@ package org.opendcs.database.impl.cwms.dao;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 
+import java.sql.Types;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -18,6 +19,7 @@ import org.opendcs.database.model.mappers.properties.PropertiesMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteNameMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteReducer;
+import org.opendcs.model.cwms.CwmsSite;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
@@ -53,7 +55,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             select site.location_code s_id, site.location_id cwms_id , site.latitude s_latitude, site.longitude s_longitude,
                    site.nearest_city s_nearestcity, site.state_initial s_state, site.county_name s_region,
                    site.time_zone_name s_timezone, site.nation_id s_country, site.elevation s_elevation,
-                   site.unit_system s_elevunitabbr, site.description s_description, site.active_flag s_active_flag,
+                   'm' s_elevunitabbr, site.description s_description, site.active_flag s_active_flag,
                    site.location_type s_location_type, systimestamp s_modify_time, site.public_name s_public_name,
 
                    sn.nametype sn_nametype, sn.sitename sn_sitename, sn.dbnum sn_dbnum, sn.agency_cd sn_agency_cd,
@@ -87,7 +89,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                     when sn_nametype = 'CWMS' then 0
                     else 1
                 end, sn_nametype COLLATE BINARY asc
-             
+
             """;
 
     private static final String DELETE_NAMES = "delete from sitename where siteid = :id";
@@ -125,22 +127,26 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var ctx = tx.getContext();
+        var officeId = ctx.getSettings(DecodesSettings.class)
+                          .orElseThrow(() -> new OpenDcsDataException("DecodesSettings are not available."))
+                          .CwmsOfficeId;
 
         try (var query = handle.createQuery("""
-            select distinct siteid from 
+            select distinct siteid from
                 (
                     select siteid, nametype, sitename from (
-                        select siteid, nametype, sitename from sitename where db_office_code = cwms_util.user_office_code()
+                        select siteid, nametype, sitename from sitename where db_office_code = cwms_util.get_office_code(:officeId)
                         union all
-                        select location_code siteid, 
+                        select location_code siteid,
                                'CWMS' nametype,
                                location_id sitename
                           from cwms_v_loc
-                         where unit_system = 'SI' and db_office_id = cwms_util.user_office_id()
+                         where unit_system = 'SI' and db_office_id = :officeId
                     )
                 <where>
                 )
-            """))
+            """).bind("officeId", officeId))
         {
             final StringBuilder whereClause = new StringBuilder();
             siteNames.forEach(sn ->
@@ -177,14 +183,10 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
     public Site save(DataTransaction tx, Site site) throws OpenDcsDataException
     {
         var ctx = tx.getContext();
-        var canWrite = ctx.getSettings(DecodesSettings.class)
-                          .orElseGet(() ->
-                          {
-                              var ret = new DecodesSettings();
-                              ret.writeCwmsLocations = false;
-                              return ret;
-                          })
-                          .writeCwmsLocations;
+        var settings = ctx.getSettings(DecodesSettings.class)
+                          .orElseThrow(() -> new OpenDcsDataException("No DecodesSettings are available?"));
+        var canWrite = settings.writeCwmsLocations;
+        var officeId = settings.CwmsOfficeId;
         if (!canWrite)
         {
             throw new OpenDcsDataException("The Current profile does not allow writing CWMS locations.");
@@ -198,7 +200,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
 
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        
+
 
         final var storeSql = """
                 {call cwms_loc.store_location2(
@@ -232,6 +234,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                 """;
 
          try (var store = handle.createCall(storeSql);
+            var getCode = handle.createQuery("select cwms_loc.get_location_code(:officeId, :name) id from dual");
             var deleteProps = handle.createUpdate(DELETE_PROPS);
             var insertProps = handle.prepareBatch("insert into site_property(site_id, prop_name, prop_value) values (:id, :name, :value)");
             var deleteNames = handle.createUpdate(DELETE_NAMES);
@@ -239,34 +242,30 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             )
         {
             var ignoreNulls = 'F';
-            DbKey id = site.getId();
             var existing = getByAnySiteName(tx, site.getNames());
             if (existing.isPresent())
             {
                 // If there's an existing app with this name, we'll just assume the provided id, if any, was in error
                 ignoreNulls = 'T';
-                id = existing.get().getId();
                 log.trace("""
-                    Using ID from existing Site, id={}, that was found. Provided ID was {}.
-                    """,
-                    id, site.getId());
+                    Updating an existing site. For Cwms Site update ignore nulls will be set to true,
+                    Generally CWMS doesn't want values removed, just updated.
+                    """);
             }
-            final var bindKey = id;
             var country = site.country;
             if (country == null || country.isBlank() || country.trim().toLowerCase().startsWith("us"))
             {
                 country = "US"; // required
             }
             store.registerArgument(new NullableDoubleArgumentFactory())
-                 .bind(GenericColumns.ID, bindKey)
                  .bind(GenericColumns.NAME, cwmsName.getNameValue())
                  .bind("type", site.getLocationType())
                  .bind("elevation", site.getElevation())
                  .bind("elevation_units", site.getElevationUnits())
-                 .bind("vertical_datum", site.getProperty("vertical_datum"))
+                 .bind(CwmsSite.VERTICAL_DATUM, site.getProperty(CwmsSite.VERTICAL_DATUM))
                  .bind("latitude", site.latitude != null ? Double.parseDouble(site.latitude) : null)
                  .bind("longitude", site.longitude != null ? Double.parseDouble(site.longitude) : null)
-                 .bind("horizontal_datum", site.getProperty("horizontal_datum"))
+                 .bind(CwmsSite.HORIZONTAL_DATUM, site.getProperty(CwmsSite.HORIZONTAL_DATUM))
                  .bind("public_name", site.getPublicName())
                  .bind("description", site.getDescription())
                  .bind("time_zone", site.timeZoneAbbr)
@@ -277,17 +276,24 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                  .bind("long_name", site.getBriefDescription())
                  .bind("nearest_city", site.nearestCity)
                  .bind("ignore_nulls", ignoreNulls)
-                 .bind("bounding_office", site.getProperty("bounding_office"))
+                 .bind(CwmsSite.BOUNDING_OFFICE, site.getProperty(CwmsSite.BOUNDING_OFFICE))
                  .invoke();
 
-            deleteProps.bind(GenericColumns.ID, bindKey).execute();
-            deleteNames.bind(GenericColumns.ID, bindKey).execute();
+            final var idOut = getCode.bind("officeId", officeId)
+                                     .bind(GenericColumns.NAME, cwmsName.getNameValue())
+                                     .mapTo(DbKey.class)
+                                     .findOne()
+                                     .orElseThrow(() -> new OpenDcsDataException("Unable to retrieve location code for the CWMS Location we just saved."))
+                                     ;
+
+            deleteProps.bind(GenericColumns.ID, idOut).execute();
+            deleteNames.bind(GenericColumns.ID, idOut).execute();
 
             site.getNames().forEachRemaining(name ->
             {
                 if (!Constants.snt_CWMS.equals(name.getNameType()))
                 {
-                    insertNames.bind(GenericColumns.ID, bindKey)
+                    insertNames.bind(GenericColumns.ID, idOut)
                                .bind("nametype", name.getNameType())
                                .bind("sitename", name.getNameValue())
                                .bind("dbnum", name.getUsgsDbno())
@@ -299,13 +305,11 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
 
             site.getProperties().forEach((k,v) ->
             {
-                if (k.equals("horizontal_datum") ||
-                    k.equals("vertical_datum") ||
-                    k.equals("bounding_office"))
+                if (CwmsSite.CWMS_SITE_PROPERTIES.contains(k))
                 {
                     return;
                 }
-                insertProps.bind(GenericColumns.ID, bindKey);
+                insertProps.bind(GenericColumns.ID, idOut);
                 insertProps.bind(GenericColumns.NAME, k.toString());
                 var toSave = v != null ? v.toString() : "";
                 insertProps.bind("value", toSave);
@@ -314,7 +318,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             insertProps.execute();
 
             // we don't directly get the ID so we'll just look up by the well defined CWMS name instead.
-            return getBySiteName(tx, cwmsName).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve site we just saved."));
+            return getById(tx, idOut).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve site we just saved."));
         }
     }
 
@@ -325,7 +329,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         try (var deleteNames = handle.createUpdate(DELETE_NAMES);
              var deleteProps = handle.createUpdate(DELETE_PROPS);
-             var deleteLoc = handle.createCall("{call cwms_loc.delete_loc(cwms_loc.get_location_id(:id))}"))
+             var deleteLoc = handle.createCall("{call cwms_loc.delete_location(cwms_loc.get_location_id(:id))}"))
         {
             deleteNames.bind(GenericColumns.ID, id).execute();
             deleteProps.bind(GenericColumns.ID, id).execute();
@@ -361,10 +365,8 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                         .registerRowMapper(OpenDcsSiteNameMapper.withPrefix("sn"))
                         .registerColumnMapper(Date.class, (r, columnNumber, stmtCtx) -> new Date())
                         .reduceRows(new OpenDcsSiteReducer("s"))
-                        
-                        .map(s -> s)
                         .toList();
         }
     }
-    
+
 }

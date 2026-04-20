@@ -134,8 +134,8 @@ class OpenDcsSiteDaoTestIT extends AppTestBase
 
             var first10 = dao.getAll(tx, 10, 0);
             assertEquals(10, first10.size());
-            assertEquals("00AAAA-Test-Site-00", first10.getFirst().getName("CWMS").getNameValue());
-            assertEquals("00AAAA-Test-Site-09", first10.getLast().getName("CWMS").getNameValue());
+            assertEquals("00AA_TestSite_00", first10.getFirst().getName("CWMS").getNameValue());
+            assertEquals("00AA_TestSite_09", first10.getLast().getName("CWMS").getNameValue());
 
             var seventh = first10.get(7);
             assertEquals("test-val-7", seventh.getProperty("test-prop-7"));
@@ -146,11 +146,11 @@ class OpenDcsSiteDaoTestIT extends AppTestBase
 
             var second10 = dao.getAll(tx, 10, 10);
             assertEquals(10, second10.size());
-            assertEquals("00AAAA-Test-Site-10", second10.getFirst().getName("CWMS").getNameValue());
-            assertEquals("00AAAA-Test-Site-19", second10.getLast().getName("CWMS").getNameValue());
+            assertEquals("00AA_TestSite_10", second10.getFirst().getName("CWMS").getNameValue());
+            assertEquals("00AA_TestSite_19", second10.getLast().getName("CWMS").getNameValue());
 
             var improperSite = dao.getBySiteName(tx, name);
-            assertTrue(improperSite.isPresent());
+            assertFalse(improperSite.isPresent());
         }
     }
 }
