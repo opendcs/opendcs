@@ -24,13 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import decodes.db.DatabaseException;
 import decodes.db.Site;
-import decodes.db.SiteList;
 import decodes.db.SiteName;
 import decodes.sql.DbKey;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.NoSuchObjectException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -51,8 +47,9 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import opendcs.dai.PropertiesDAI;
-import opendcs.dai.SiteDAI;
+
+import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.dai.SiteDao;
 import org.opendcs.odcsapi.beans.ApiSite;
 import org.opendcs.odcsapi.beans.ApiSiteRef;
 import org.opendcs.odcsapi.dao.DbException;
@@ -64,6 +61,7 @@ import org.opendcs.odcsapi.util.ApiConstants;
 @Path("/")
 public final class SiteResources extends OpenDcsResource
 {
+	private static final WebAppException UNABLE_TO_GET_SITE_DAO = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "No Site DAO available.");
 	@Context HttpHeaders httpHeaders;
 
 	@GET
@@ -85,22 +83,25 @@ public final class SiteResources extends OpenDcsResource
 			}
 	)
 	public Response getSiteRefs()
-			throws DbException
+			throws WebAppException
 	{
-		try (SiteDAI dai = getLegacyTimeseriesDB().makeSiteDAO())
+		final var db = createDb();
+		try (var tx = db.newTransaction())
 		{
-			SiteList sites = new SiteList();
-			dai.read(sites);
+			var siteDao = db.getDao(SiteDao.class)
+							 .orElseThrow(() -> UNABLE_TO_GET_SITE_DAO);
+			var sites = siteDao.getAll(tx, -1, -1);
 			List<ApiSiteRef> siteRefs = map(sites);
 			return Response.ok().entity(siteRefs).build();
 		}
-		catch (DbIoException ex)
+		catch (OpenDcsDataException ex)
 		{
-			throw new DbException("Unable to retrieve sites", ex);
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+						 			  "Unable to retrieve site list", ex);
 		}
 	}
 
-	static List<ApiSiteRef> map(SiteList sites)
+	static List<ApiSiteRef> map(List<Site> sites)
 	{
 		List<ApiSiteRef> retList = new ArrayList<>();
 		for(Iterator<Site> it = sites.iterator(); it.hasNext(); )
@@ -117,7 +118,7 @@ public final class SiteResources extends OpenDcsResource
 			}
 			siteRef.setPublicName(site.getPublicName());
 			siteRef.setDescription(site.getDescription());
-			siteRef.setSitenames(map(site));
+			siteRef.setSitenames(mapSiteNames(site));
 			retList.add(siteRef);
 		}
 		return retList;
@@ -160,23 +161,28 @@ public final class SiteResources extends OpenDcsResource
 			throw new MissingParameterException("Missing required siteid parameter.");
 		}
 
-		try (SiteDAI dai = getLegacyTimeseriesDB().makeSiteDAO();
-			 PropertiesDAI propsDai = getLegacyTimeseriesDB().makePropertiesDAO())
+		final var db = createDb();
+		try (var tx = db.newTransaction())
 		{
-			DbKey siteKey = DbKey.createDbKey(siteId);
-			Site returnedSite = dai.getSiteById(siteKey);
-			Properties props = new Properties();
-			propsDai.readProperties("SITE_PROPERTY", "SITE_ID", siteKey, props);
-			return Response.ok()
-					.entity(map(returnedSite, props)).build();
+			var siteDao = db.getDao(SiteDao.class)
+							 .orElseThrow(() -> UNABLE_TO_GET_SITE_DAO);
+			var site = siteDao.getById(tx, DbKey.createDbKey(siteId));
+			if (site.isPresent())
+			{
+				var theSite = site.get();
+				return Response.ok()
+							   .entity(map(theSite, theSite.getProperties()))
+							   .build();
+			}
+			else
+			{
+				throw new DatabaseItemNotFoundException(String.format("Requested site with matching ID: %d not found", siteId));
+			}
 		}
-		catch (NoSuchObjectException ex)
+		catch (OpenDcsDataException ex)
 		{
-			throw new DatabaseItemNotFoundException(String.format("Requested site with matching ID: %d not found", siteId), ex);
-		}
-		catch(DbIoException ex)
-		{
-			throw new DbException("Unable to retrieve site by ID", ex);
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+						 			  "Unable to retrieve site ", ex);
 		}
 	}
 
@@ -206,11 +212,11 @@ public final class SiteResources extends OpenDcsResource
 		returnSite.setTimezone(site.timeZoneAbbr);
 		returnSite.setRegion(site.region);
 		returnSite.setPublicName(site.getPublicName());
-		returnSite.setSitenames(map(site));
+		returnSite.setSitenames(mapSiteNames(site));
 		return returnSite;
 	}
 
-	static HashMap<String, String> map(Site site)
+	static HashMap<String, String> mapSiteNames(Site site)
 	{
 		HashMap<String, String> siteNames = new LinkedHashMap<>();
 		for(Iterator<SiteName> iter = site.getNames(); iter.hasNext(); )
@@ -254,39 +260,42 @@ public final class SiteResources extends OpenDcsResource
 			)
 	)
 	public Response postSite(ApiSite site)
-			throws DbException, WebAppException
+			throws WebAppException
 	{
-		try (SiteDAI dai = getLegacyTimeseriesDB().makeSiteDAO();
-			 PropertiesDAI propsDai = getLegacyTimeseriesDB().makePropertiesDAO())
+		if (site == null)
 		{
-			if (site == null)
-			{
-				throw new MissingParameterException("Missing required site parameter.");
-			}
-			Site dbSite = map(site);
-			dai.writeSite(dbSite);
-			DbKey siteKey = dbSite.getId();
-			propsDai.writeProperties("SITE_PROPERTY", "SITE_ID", siteKey, site.getProperties());
-			site.setSiteId(siteKey.getValue());
-			return Response.status(Response.Status.CREATED)
-					.entity(site).build();
+			throw new MissingParameterException("Missing required site parameter.");
 		}
-		catch(DatabaseException | DbIoException ex)
+	
+		final var db = createDb();
+		try (var tx = db.newTransaction())
 		{
-			throw new DbException("Unable to store site", ex);
+			var siteDao = db.getDao(SiteDao.class)
+							.orElseThrow(() -> UNABLE_TO_GET_SITE_DAO);
+			final Site dbSite = map(site);
+			var savedSite = siteDao.save(tx, dbSite);
+			var apiSiteOut = map(savedSite, savedSite.getProperties());
+			return Response.status(Response.Status.CREATED)
+					.entity(apiSiteOut).build();
+
+		}
+		catch(OpenDcsDataException ex)
+		{
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+						 			  "Unable to save site ", ex);
 		}
 	}
 
-	static Site map(ApiSite site) throws DatabaseException
+	static Site map(ApiSite site)
 	{
 		Site returnSite = new Site();
 		if (site.getSiteId() != null)
 		{
-			returnSite.setId(DbKey.createDbKey(site.getSiteId()));
+			returnSite.forceSetId(DbKey.createDbKey(site.getSiteId()));
 		}
 		else
 		{
-			returnSite.setId(DbKey.NullKey);
+			returnSite.forceSetId(DbKey.NullKey);
 		}
 		returnSite.setLocationType(site.getLocationType());
 		returnSite.setElevation(site.getElevation());
@@ -304,12 +313,12 @@ public final class SiteResources extends OpenDcsResource
 		returnSite.setPublicName(site.getPublicName());
 		for (Map.Entry<String, String> entry : site.getSitenames().entrySet())
 		{
-			Site newSite = new Site();
-			newSite.setLocationType(entry.getKey());
-			newSite.setPublicName(entry.getValue());
-			SiteName sn = new SiteName(newSite, entry.getKey());
-			sn.setNameValue(entry.getValue());
+			SiteName sn = new SiteName(returnSite, entry.getKey(), entry.getValue());
 			returnSite.addName(sn);
+		}
+		for (Map.Entry<Object,Object> entry: site.getProperties().entrySet())
+		{
+			returnSite.setProperty((String)entry.getKey(), (String)entry.getValue());
 		}
 		return returnSite;
 	}
@@ -332,21 +341,28 @@ public final class SiteResources extends OpenDcsResource
 	)
 	public Response deleteSite(@Parameter(description = "id to delete", required = true, 
 			example = "3", schema = @Schema(type = "long"))
-		@QueryParam("siteid") Long siteId) throws DbException
+		@QueryParam("siteid") Long siteId) throws WebAppException
 	{
-		try (SiteDAI dai = getLegacyTimeseriesDB().makeSiteDAO())
+		if (siteId == null)
 		{
-			if (siteId == null)
-			{
-				throw new MissingParameterException("Missing required siteid parameter.");
-			}
-			dai.deleteSite(DbKey.createDbKey(siteId));
+			throw new MissingParameterException("Missing required siteid parameter.");
+		}
+
+		final var db = createDb();
+		try (var tx = db.newTransaction())
+		{
+			var siteDao = db.getDao(SiteDao.class)
+							.orElseThrow(() -> UNABLE_TO_GET_SITE_DAO);
+			siteDao.delete(tx, DbKey.createDbKey(siteId));
 			return Response.noContent()
 					.entity("ID " + siteId + " deleted").build();
+
 		}
-		catch(DbIoException | WebAppException ex)
+		catch(OpenDcsDataException ex)
 		{
-			throw new DbException("Unable to delete site", ex);
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+						 			  "Unable to delete site ", ex);
 		}
+
 	}
 }

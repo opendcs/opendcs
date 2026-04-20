@@ -1,6 +1,7 @@
 {
   "siteId" : 18817,
   "sitenames" : {
+    "CWMS" : "Test Lock",
     "LOCK" : "Test Lock"
   },
   "description" : "LOCK Site",

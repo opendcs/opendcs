@@ -2,6 +2,7 @@ package org.opendcs.database.impl.cwms.dao;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Collection;
 import java.util.Date;
@@ -9,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
+import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.SiteDao;
@@ -185,9 +187,8 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
         var ctx = tx.getContext();
         var settings = ctx.getSettings(DecodesSettings.class)
                           .orElseThrow(() -> new OpenDcsDataException("No DecodesSettings are available?"));
-        var canWrite = settings.writeCwmsLocations;
-        var officeId = settings.CwmsOfficeId;
-        if (!canWrite)
+        final var officeId = settings.CwmsOfficeId;
+        if (!settings.writeCwmsLocations)
         {
             throw new OpenDcsDataException("The Current profile does not allow writing CWMS locations.");
         }
@@ -252,11 +253,8 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                     Generally CWMS doesn't want values removed, just updated.
                     """);
             }
-            var country = site.country;
-            if (country == null || country.isBlank() || country.trim().toLowerCase().startsWith("us"))
-            {
-                country = "US"; // required
-            }
+            var country = site.country == null ? "US" : site.country.trim();
+
             store.registerArgument(new NullableDoubleArgumentFactory())
                  .bind(GenericColumns.NAME, cwmsName.getNameValue())
                  .bind("type", site.getLocationType())
@@ -335,6 +333,14 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             deleteProps.bind(GenericColumns.ID, id).execute();
             deleteLoc.bind(GenericColumns.ID, id).invoke();
             // as we don't have a foreign key we need to manually check everything within opendcs
+        }
+        catch (UnableToExecuteStatementException ex)
+        {
+            if (ex.getCause() instanceof SQLException sqlEx && sqlEx.getErrorCode() == 1403 /* ora-01403 no data found  */)
+            {
+                return; // No data, quietly return.
+            }
+            throw ex;
         }
     }
 

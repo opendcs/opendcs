@@ -1,7 +1,8 @@
 {
   "siteId" : null,
   "sitenames" : {
-    "PUMP" : "Pump Site"
+    "PUMP" : "Pump Site",
+    "CWMS" : "Pump Site"
   },
   "description" : "Pump located in NM, USA",
   "latitude" : "35.106766",

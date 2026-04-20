@@ -129,6 +129,9 @@ public class CwmsOracleConfiguration implements Configuration
                 insertDbType.bind("name", "sqlKeyGenerator")
                             .bind("value", OracleSequenceKeyGenerator.class.getName())
                             .execute();
+                insertDbType.bind("name", "writeCwmsLocations")
+                            .bind("value", "true")
+                            .execute();
             }
         }
 
