@@ -26,6 +26,7 @@ import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 
+import org.opendcs.decodes.api.DataMessage;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -237,6 +238,18 @@ public abstract class DataSourceExec implements PropertiesOwner
 		}
 
 		return getSourceRawMessage();
+	}
+
+	/**
+	 * Returns the next message from this data source as a DataMessage.
+	 * Higher level DataSources may override this method to return a DecodedMessage, for example
+	 *
+	 * @return the next DataMessage, or null
+	 * @throws DataSourceException on error.
+	 */
+	public DataMessage getDataMessage() throws DataSourceException
+	{
+		return getRawMessage();
 	}
 
 	/**

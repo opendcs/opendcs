@@ -17,6 +17,7 @@ package decodes.decoder;
 
 import java.util.*;
 
+import org.opendcs.decodes.api.DataMessage;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -57,7 +58,7 @@ import decodes.comp.ITimeSeries;
  * <li>time zone used by TimeSeries in this message</li>
  * </ul>
  */
-public class DecodedMessage implements IDataCollection
+public class DecodedMessage implements IDataCollection, DataMessage
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The raw data */
