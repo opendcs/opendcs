@@ -432,18 +432,16 @@ public class RoutingSpecThread extends Thread
 			try
 			{
 				dataMessage = source.getDataMessage();
-				/* future note: support other types of DataMessage like the comment below.
-				if (dataMessage instanceof DecodedMessage)
+				if (dataMessage instanceof DecodedMessage decodedMessage)
 				{
 					// DataSource returned a pre-decoded message — skip decoding
 					myExec.setSubsystem("format-output");
-					formatAndOutputMessage((DecodedMessage) dataMessage, null);
+					formatAndOutputMessage(decodedMessage, null);
 					currentStatus = "Running";
 					continue;
 				}
-				*/
-				if (dataMessage instanceof RawMessage) {
-					rm = (RawMessage) dataMessage;
+				if (dataMessage instanceof RawMessage rawMessage) {
+					rm = rawMessage;
 				}
 				else {
 					log.error("Unknown DataMessage type: {}", dataMessage.getClass().getName());

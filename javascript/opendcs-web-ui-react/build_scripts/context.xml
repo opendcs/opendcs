@@ -14,20 +14,6 @@
   ~  limitations under the License.
   -->
 
-<Context cookies="true" delegate="true">
-    <Resource name="jdbc/opentsdb"
-              auth="Container"
-              type="javax.sql.DataSource"
-              factory="${DB_DATASOURCE_CLASS}"
-              username="${DB_USERNAME}"
-              password="${DB_PASSWORD}"
-              driverClassName="${DB_DRIVER_CLASS}"
-              logAbandoned="true"
-              url="${DB_URL}"
-              logValidationErrors="true"
-              validationQuery="${DB_VALIDATION_QUERY}"
-              testOnBorrow="true"
-              maxActive="10"
-              maxIdle="4"
-              minIdle="1"/>
+<Context delegate="true">
+    
 </Context>

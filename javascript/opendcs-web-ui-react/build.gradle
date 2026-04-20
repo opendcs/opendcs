@@ -5,6 +5,7 @@ plugins {
     id 'opendcs.version-conventions'
     id 'com.github.node-gradle.node' version '7.1.0'
     id 'org.sonarqube'
+    id 'war'
 }
 
 configurations {
@@ -59,8 +60,7 @@ def lint = tasks.register("eslint", NpxTask) {
     args = ['run', 'lint', '--', '-f', 'json', '-o', 'build/eslint-report.json']
 }
 
-tasks.register("test") {
-    group "Verification"
+test {
     dependsOn testUi
     dependsOn configurations.api
     dependsOn lint
@@ -68,7 +68,7 @@ tasks.register("test") {
 
 node {
     // Version of Node.js to install. Required.
-    version = '24.12.0'
+    version = '24.13.1'
     
    
     // Whether to download Node.js if it is not already installed. Defaults to true.
@@ -109,4 +109,17 @@ def runUiDev = tasks.register("runUiDev", NpxTask) {
     environment = [
         "IN_GRADLE": "1"
     ]
+}
+
+war {
+    dependsOn buildUi
+    from ('dist') {
+        exclude "**/mockServiceWorker.js"
+    }
+    from ('build_scripts') {
+        include "context.xml"
+
+        into ("META-INF")
+    }
+    webXml = file("build_scripts/web.xml")
 }
