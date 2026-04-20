@@ -191,25 +191,12 @@ public class UsgsWebDataSource extends DataSourceExec
 				continue;
 			}
 			
-			DataType dt = cs.getDataType(dataTypeStandard);
+			DataType dt = UsgsWaterDataAdapter.resolveDataType(cs, dataTypeStandard);
 			if (dt == null)
 			{
-				// USGS and EPA data types are equivalent.
-				if (dataTypeStandard.equalsIgnoreCase(Constants.datatype_USGS)
-				 || dataTypeStandard.equalsIgnoreCase("usgs"))
-					dt = cs.getDataType(Constants.datatype_EPA);
-				else if (dataTypeStandard.equalsIgnoreCase(Constants.datatype_EPA))
-				{
-					dt = cs.getDataType(Constants.datatype_USGS);
-					if (dt == null)
-						dt = cs.getDataType("usgs");
-				}
-				if (dt == null)
-				{
-					log.info("trans id '{}' sensor {} has no {} data type -- skipping.",
-							 currentMediumId, sensNum, dataTypeStandard);
-					continue;
-				}
+				log.info("trans id '{}' sensor {} has no {} data type -- skipping.",
+						 currentMediumId, sensNum, dataTypeStandard);
+				continue;
 			}
 			if (numElements++ > 0)
 				sb.append(",");

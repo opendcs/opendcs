@@ -1558,6 +1558,288 @@ An example URL that the data source generated is:
 
 `<https://waterservices.usgs.gov/nwis/iv/?format=rdb&sites=14372300&startDT=2020-10-15T12:47-0400&endDT=2020-10-15T16:47-0400&parameterCd=00065,00060>`_
 
+USGS Water Data Source
+----------------------
+
+This module uses the newer USGS Water Data API
+(`api.waterdata.usgs.gov <https://api.waterdata.usgs.gov>`_) which supersedes the legacy NWIS web
+services used by the *USGS Web Data Source*. Unlike the web source,
+``UsgsWaterDataSource`` does not use a DECODES decoding script. It
+fetches time series directly through the USGS Water Data API and
+produces a ``DecodedMessage`` for each platform. Sensor values are
+matched to Config Sensor records using the USGS parameter code,
+statistic code, and optional sublocation / description qualifiers.
+
+A ready-to-import example XML database accompanies this section:
+:download:`edit-db-usgs-no-key.zip
+<./media/legacy/routing/edit-db-usgs-no-key.zip>`. It contains the
+``usgs-waterdata`` data source, the ``usgs`` routing spec, the two
+platforms (``13206000`` and ``11447650``), and their configs as used
+in the examples below.
+
+One-Time Setup
+~~~~~~~~~~~~~~
+
+Before using the USGS Water Data Source, make sure your database has
+these enumerations:
+
+-  A ``Data Type Standard`` entry with Mnemonic ``usgs``
+
+-  A ``Data Source Type`` entry with Mnemonic ``usgs-waterdata`` (this
+   is **separate** from the ``usgs`` type used by the web source). The
+   Executable Java Class must be entered exactly as:
+
+   ::
+
+       decodes.datasource.UsgsWaterDataSource
+
+Use the reference list editor (``rledit``) to add these if they are not
+already present, and remember to ``File – Save to DB`` before exiting.
+
+Then, in the DECODES Database Editor, create a ``Sources`` record of
+type ``usgs-waterdata`` (the example database ships one named
+``usgs-waterdata``).
+
+API Key
+~~~~~~~
+
+The USGS Water Data API allows up to 100 requests per hour without an
+API key. To make more requests, request a free API key from:
+
+`<https://api.waterdata.usgs.gov/signup/>`_
+
+The API key is supplied via the routing spec property named
+``usgsApiKey``. The routing spec image below shows the property being
+set (the value has been redacted):
+
+.. image:: ./media/legacy/routing/im-85-routing-spec-usgs-waterdata.png
+   :width: 6.5in
+
+Properties
+~~~~~~~~~~
+
+Properties specific to the USGS Water Data Source are:
+
++----------------------+--------+------------------------------------------+
+| Property Name        | Type   | Description & Default Value              |
++======================+========+==========================================+
+| usgsApiKey           | String | Optional USGS Water Data API key. Also   |
+|                      |        | can be supplied via the                  |
+|                      |        | ``USGS_WATER_API_KEY`` environment       |
+|                      |        | variable. Required only when the routing |
+|                      |        | spec issues more than 100 requests per   |
+|                      |        | hour.                                    |
++----------------------+--------+------------------------------------------+
+| dataTypeStandard     | Enum   | Default ``usgs``. Selects which Config   |
+|                      |        | Sensor data-type standard is used to     |
+|                      |        | find the USGS parameter code. The USGS   |
+|                      |        | Water Data API expects 5-digit parameter |
+|                      |        | codes.                                   |
++----------------------+--------+------------------------------------------+
+
+OpenDCS Platform
+~~~~~~~~~~~~~~~~
+
+Create one Platform per USGS gauge. The Transport Medium type should
+be ``other`` and its ID must be the 8-digit USGS site number. The image
+below shows the platform record for *Boise River at Glenwood Bridge*
+(USGS ``13206000``):
+
+.. image:: ./media/legacy/routing/im-86-platform-usgs-waterdata.png
+   :width: 6.5in
+
+OpenDCS Configs
+~~~~~~~~~~~~~~~
+
+Each platform references a Config whose sensors describe the USGS
+time series to retrieve. The USGS web page for a site lists every
+series available; e.g.
+`<https://waterdata.usgs.gov/monitoring-location/USGS-13206000>`_
+
+**Simple case — one series per parameter.** For the config named
+``USGS-13206000`` we retrieve two series, Gage Height and Discharge:
+
++-------------+----------+-------+-------------------+------------------+
+| Sensor Name | Standard | Code  | USGS Stat Code    | Sampling         |
+|             |          |       |                   | Interval         |
++=============+==========+=======+===================+==================+
+| GageHeight  | usgs     | 00065 | 00011 (optional)  | 00:15:00         |
++-------------+----------+-------+-------------------+------------------+
+| Discharge   | usgs     | 00060 | 00011 (optional)  | 00:15:00         |
++-------------+----------+-------+-------------------+------------------+
+
+The ``Edit Config Sensor`` dialog for Discharge looks like:
+
+.. image:: ./media/legacy/routing/im-87-config-sensor-discharge-usgs.png
+   :width: 6.5in
+
+Notes:
+
+-  ``Standard`` is ``usgs`` and ``Code`` is the 5-digit USGS parameter
+   code. The ``dataTypeStandard`` routing property selects which
+   standard is consulted.
+
+-  ``USGS Stat Code`` distinguishes statistics published under the same
+   parameter code (mean, instantaneous, etc.). See *Common Statistic
+   Codes* below.
+
+-  ``Sampling Interval`` controls which series is fetched:
+
+   -  ``24:00:00`` — Daily values.
+
+   -  Anything shorter (e.g. ``00:15:00``) — Continuous / instantaneous
+      values.
+
+**Disambiguating multiple series with the same parameter code.** Some
+sites publish several series under the same parameter code. For
+example, the Sacramento River at Freeport (``USGS-11447650``) has two
+water-temperature series (``00010``) at different sublocations, plus a
+tidally filtered daily discharge (``72137``):
+
++------------------------+-----+-------+-----------------+------------------+-----------------------------------------------+
+| Sensor Name            | Std | Code  | USGS Stat Code  | Sampling         | Config / Sensor Properties                    |
+|                        |     |       |                 | Interval         |                                               |
++========================+=====+=======+=================+==================+===============================================+
+| WaterTempRightBank     | usgs| 00010 | 00011           | 00:15:00         | ``usgsWebDescription=Right Bank Pump Stand``  |
++------------------------+-----+-------+-----------------+------------------+-----------------------------------------------+
+| WaterTempEastFender    | usgs| 00010 | 00011           | 00:15:00         | ``usgsSublocation=BGC PROJECT``               |
++------------------------+-----+-------+-----------------+------------------+-----------------------------------------------+
+| Discharge              | usgs| 72137 | 00003           | 24:00:00         | (none)                                        |
++------------------------+-----+-------+-----------------+------------------+-----------------------------------------------+
+
+It is possible for a USGS station to have two sensors with the same parameter code.
+To be specific use usgsSublocation and/or usgsWebDescription properties to be specific as shown in the image below.
+
+
+-  ``usgsSublocation`` — matches the USGS sublocation value.
+
+-  ``usgsWebDescription`` — substring matched against the series USGS
+   description. In the USGS web page this is wrapped in square brackets like: [Right Bank Pump Stand]
+
+The ``Edit Config Sensor`` dialog for the Right Bank water temperature
+is shown below, with the ``usgsWebDescription`` property filled in:
+
+.. image:: ./media/legacy/routing/im-88-config-sensor-watertemp-usgs.png
+   :width: 4.5in
+
+Reference
+~~~~~~~~~
+
+**Common Statistic Codes**
+
++-------------------+-----------+
+| Name              | USGS Code |
++===================+===========+
+| MAXIMUM           | 00001     |
++-------------------+-----------+
+| MINIMUM           | 00002     |
++-------------------+-----------+
+| MEAN              | 00003     |
++-------------------+-----------+
+| AM                | 00004     |
++-------------------+-----------+
+| PM                | 00005     |
++-------------------+-----------+
+| SUM               | 00006     |
++-------------------+-----------+
+| MODE              | 00007     |
++-------------------+-----------+
+| MEDIAN            | 00008     |
++-------------------+-----------+
+| STD               | 00009     |
++-------------------+-----------+
+| VARIANCE          | 00010     |
++-------------------+-----------+
+| INSTANTANEOUS     | 00011     |
++-------------------+-----------+
+| EQUIVALENT_MEAN   | 00012     |
++-------------------+-----------+
+| SKEWNESS          | 00013     |
++-------------------+-----------+
+
+Reference:
+`<https://api.waterdata.usgs.gov/ogcapi/v0/collections/statistic-codes>`_
+
+**Common Parameter Codes**
+
++----------------------+-----------+
+| Name                 | USGS Code |
++======================+===========+
+| WATER_TEMPERATURE    | 00010     |
++----------------------+-----------+
+| AIR_TEMPERATURE      | 00021     |
++----------------------+-----------+
+| WIND_SPEED           | 00035     |
++----------------------+-----------+
+| WIND_DIRECTION       | 00036     |
++----------------------+-----------+
+| PRECIPITATION        | 00045     |
++----------------------+-----------+
+| RELATIVE_HUMIDITY    | 00052     |
++----------------------+-----------+
+| DISCHARGE            | 00060     |
++----------------------+-----------+
+| STAGE                | 00065     |
++----------------------+-----------+
+| SPECIFIC_CONDUCTANCE | 00095     |
++----------------------+-----------+
+| SALINITY             | 00096     |
++----------------------+-----------+
+| RESERVOIR_STORAGE    | 72036     |
++----------------------+-----------+
+| SOLAR_RADIATION      | 62608     |
++----------------------+-----------+
+| ELEVATION_NAVD88     | 63160     |
++----------------------+-----------+
+
+Reference:
+`<https://api.waterdata.usgs.gov/ogcapi/v0/collections/parameter-codes/items>`_
+
+
+
+Example Command and Output
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Running the routing spec from the command line::
+
+    rs -d3 -P%appdata%\.opendcs\usgs.profile usgs -Dusgs.debug=true
+
+The ``-Dusgs.debug=true`` system property is optional. When set, it saves the
+intermediate files returned from the USGS Water Data API into
+``$HOME/usgs.waterdata`` for troubleshooting.
+
+
+
+Abbreviated ``human-readable`` output::
+
+    Message for Platform 13206000-Boise River at Glenwood Bridge
+                        | GageHeight | Discharge |
+                        |   00065    |   00060   |
+              UTC       |     ft     |   ft^3/s  |
+    04/06/2026 15:00:00 |    3.36    |    275    |
+    04/06/2026 15:15:00 |    3.35    |    271    |
+    04/06/2026 15:30:00 |    3.33    |    264    |
+    ...
+
+    Message for Platform 11447650-Sacramento R a Freeport CA
+                        | WaterTempEastFender | WaterTempRightBank | Discharge |
+                        |       00010         |       00010        |   72137   |
+              UTC       |        degC         |        degC        |   ft^3/s  |
+    04/06/2026 00:00:00 |                     |                    |   13400   |
+    04/06/2026 15:00:00 |        16.7         |        16.6        |           |
+    04/06/2026 15:15:00 |        16.7         |        16.7        |           |
+    ...
+
+.. note::
+   In the second example above, the ``Discharge`` column (parameter code
+   ``72137``) is daily mean data reported once per day at 00:00:00 UTC,
+   while the water temperature columns are continuous 15-minute data.
+   Mixing time series with different reporting intervals in the same
+   message is expected — empty cells appear where a given sensor has no
+   value at that timestamp.
+
+
+
 Network Lists
 =============
 
