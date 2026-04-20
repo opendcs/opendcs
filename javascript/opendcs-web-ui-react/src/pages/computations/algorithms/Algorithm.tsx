@@ -68,7 +68,9 @@ const SkeletonTable: React.FC<{
         style={{ height: "2rem", background: "var(--odcs-table-header-bg)" }}
       >
         {Array.from({ length: cols + (edit ? 1 : 0) }).map((_, i) => (
-          <Placeholder key={i} animation="glow" className="flex-fill me-2">
+          // Column placeholders are indistinguishable — index is the stable
+          // identity here (list never reorders).
+          <Placeholder key={`thead-${i}`} animation="glow" className="flex-fill me-2">
             <Placeholder xs={6} className="rounded" style={{ height: "0.75rem" }} />
           </Placeholder>
         ))}

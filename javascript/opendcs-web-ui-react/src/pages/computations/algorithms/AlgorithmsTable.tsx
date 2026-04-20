@@ -70,7 +70,9 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
         variant: "danger",
         show: (row) => (row.algorithmId ?? 0) > 0,
         aria: (row) => t("algorithms:editor.delete_for", { id: row.algorithmId }),
-        onClick: ({ row }) => actions.remove?.(row.algorithmId!),
+        onClick: ({ row }) => {
+          if (row.algorithmId !== undefined) actions.remove?.(row.algorithmId);
+        },
       },
     ],
     [t, actions],
@@ -88,10 +90,10 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
         rowActions={rowActions}
         renderDetail={({ row, mode, actions: detailActions }) => {
           const algorithmPromise: Promise<UiAlgorithm> =
-            row.algorithmId && row.algorithmId > 0
-              ? getAlgorithm!(row.algorithmId!)
+            row.algorithmId && row.algorithmId > 0 && getAlgorithm
+              ? getAlgorithm(row.algorithmId)
               : Promise.resolve({
-                  algorithmId: row.algorithmId!,
+                  algorithmId: row.algorithmId,
                 } as UiAlgorithm);
           const parmsPromise: Promise<AlgoParm[]> = algorithmPromise.then(
             (algo) => (algo.parms ?? []) as AlgoParm[],

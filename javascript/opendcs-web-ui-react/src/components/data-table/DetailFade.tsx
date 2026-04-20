@@ -1,5 +1,14 @@
 import { useEffect, useState, type ReactNode } from "react";
 
+type Phase = "entering" | "fading" | "ready";
+
+function contentLayerClassName(phase: Phase, hasEntered: boolean): string {
+  const base = "detail-appear__layer";
+  if (phase !== "ready") return `${base} detail-appear__layer--hidden`;
+  if (hasEntered) return base;
+  return `${base} detail-appear__layer--enter`;
+}
+
 export interface DetailFadeProps {
   skeleton: ReactNode;
   children: ReactNode;
@@ -17,7 +26,7 @@ export interface DetailFadeProps {
  * the fade.
  */
 export const DetailFade: React.FC<DetailFadeProps> = ({ skeleton, children }) => {
-  const [phase, setPhase] = useState<"entering" | "fading" | "ready">("entering");
+  const [phase, setPhase] = useState<Phase>("entering");
   const [hasEntered, setHasEntered] = useState(false);
 
   useEffect(() => {
@@ -49,14 +58,7 @@ export const DetailFade: React.FC<DetailFadeProps> = ({ skeleton, children }) =>
         </div>
       )}
       <div
-        className={
-          "detail-appear__layer" +
-          (phase !== "ready"
-            ? " detail-appear__layer--hidden"
-            : hasEntered
-              ? ""
-              : " detail-appear__layer--enter")
-        }
+        className={contentLayerClassName(phase, hasEntered)}
         onAnimationEnd={(e) => {
           if (e.target !== e.currentTarget) return;
           if (phase === "ready" && !hasEntered) setHasEntered(true);

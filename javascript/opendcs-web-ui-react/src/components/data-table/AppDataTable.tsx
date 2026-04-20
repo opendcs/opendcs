@@ -241,7 +241,7 @@ const ENTITY_ESCAPES: Record<string, string> = {
 };
 
 const escapeHtml = (s: string): string =>
-  s.replace(/[&<>"']/g, (c) => ENTITY_ESCAPES[c]);
+  s.replaceAll(/[&<>"']/g, (c) => ENTITY_ESCAPES[c]);
 
 function renderActionButtonHtml<T>(action: RowAction<T>, row: T): string {
   return (
@@ -267,9 +267,9 @@ function readEditedRow<T>(
   columns.forEach((col, idx) => {
     if (!col.edit || !col.data) return;
     const cell = cells[idx];
-    if (cell) updates[col.data as string] = col.edit.read(cell);
+    if (cell) updates[col.data] = col.edit.read(cell);
   });
-  return { ...(original as object), ...updates } as T;
+  return { ...original, ...updates } as T;
 }
 
 // Minimum shape of DataTables' per-row API that we rely on inside drawCallback.
@@ -283,6 +283,102 @@ type DtRowApi = {
   };
 };
 
+/** Build the DataTables `render` function for a column, accounting for the
+ *  mode-aware edit swap. Returns `undefined` if the column needs no custom
+ *  render. */
+function makeColumnRender<T>(
+  col: ColumnDef<T>,
+  hasInlineEdit: boolean,
+  idOf: (row: T) => string,
+  rowStateRef: { readonly current: Record<string, RowMode> },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): ((data: any, type: string, row: T, meta: any) => any) | undefined {
+  const baseRender = col.render;
+  const editRender = col.edit?.render;
+  const needsWrapper = Boolean(baseRender || (hasInlineEdit && editRender));
+  if (!needsWrapper) return undefined;
+  const fallback = (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data: any,
+    type: string,
+    row: T,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    meta: any,
+  ) => (baseRender ? baseRender(data, type, row, meta) : (data ?? ""));
+  return (data, type, row, meta) => {
+    if (type !== "display") return fallback(data, type, row, meta);
+    if (hasInlineEdit && editRender) {
+      const mode = rowStateRef.current[idOf(row)];
+      if (mode === "edit" || mode === "new") return editRender(row);
+    }
+    return fallback(data, type, row, meta);
+  };
+}
+
+/** Inject the action-button HTML into the last cell of `rowEl`. */
+function injectActionCell<T>(
+  rowEl: HTMLTableRowElement,
+  rowData: T,
+  actions: RowAction<T>[],
+): void {
+  const cell = rowEl.querySelector("td:last-child") as HTMLElement | null;
+  if (!cell) return;
+  const html = actions
+    .filter((a) => !a.show || a.show(rowData))
+    .map((a) => renderActionButtonHtml(a, rowData))
+    .join(" ");
+  if (cell.innerHTML === html) return;
+  cell.style.whiteSpace = "nowrap";
+  cell.innerHTML = html;
+}
+
+interface ChildSyncRefs {
+  rowStateRef: { readonly current: Record<string, RowMode> };
+  childModeRef: { current: Record<string, RowMode> };
+  childNodesRef: { current: Record<string, Node> };
+}
+
+/** Show / hide / rebuild / reattach the DataTables child row for one row
+ *  based on the current `rowState`. */
+function syncChildRow<T>(
+  row: DtRowApi,
+  rowData: T,
+  id: string,
+  refs: ChildSyncRefs,
+  buildDetailNode: (row: T, mode: RowMode) => Node,
+): void {
+  const state = refs.rowStateRef.current[id];
+  const isShown = row.child.isShown();
+
+  if (state === undefined) {
+    if (!isShown) return;
+    row.child(false);
+    delete refs.childModeRef.current[id];
+    delete refs.childNodesRef.current[id];
+    return;
+  }
+
+  const prevMode = refs.childModeRef.current[id];
+  if (isShown && prevMode === state) return;
+
+  if (isShown) row.child.hide();
+  const cached = prevMode === state ? refs.childNodesRef.current[id] : undefined;
+  const node = cached ?? buildDetailNode(rowData, state);
+  refs.childNodesRef.current[id] = node;
+  refs.childModeRef.current[id] = state;
+  row.child(node, "child-row").show?.();
+}
+
+/** Compute the next synthetic negative id for an `addNew` insertion, one
+ *  less than the smallest existing local numeric id. */
+function nextAddNewId<T>(existing: T[], getId: (row: T) => string | number): number {
+  const minId = existing.reduce((m, r) => {
+    const rid = getId(r);
+    return typeof rid === "number" ? Math.min(m, rid) : m;
+  }, 0);
+  return minId - 1;
+}
+
 // =============================================================================
 // Component
 // =============================================================================
@@ -292,7 +388,7 @@ const BASE_TABLE_CLASS = "table table-hover table-striped w-100 border";
 const CLICKABLE_ROW_CLASS = "tablerow-cursor";
 
 export function AppDataTable<T, TId extends string | number, TSave = T>(
-  props: AppDataTableProps<T, TId, TSave>,
+  props: Readonly<AppDataTableProps<T, TId, TSave>>,
 ): React.ReactElement {
   const {
     data,
@@ -399,8 +495,8 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   const toggleByIdStr = useCallback((id: string) => {
     setRowState((prev) => {
       const next = { ...prev };
-      if (next[id] !== undefined) delete next[id];
-      else next[id] = "show";
+      if (next[id] === undefined) next[id] = "show";
+      else delete next[id];
       return next;
     });
   }, []);
@@ -417,28 +513,28 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
       const m = rowStateRef.current[idOf(row)];
       return m === "edit" || m === "new";
     };
+    const dropLocalNew = (row: T, id: string) => {
+      newRowIdsRef.current.delete(row as object);
+      setLocalItems((prev) => prev.filter((r) => r !== row));
+      setModeByIdStr(id, undefined);
+    };
     const commitSave = (row: T, rowEl: HTMLTableRowElement) => {
       const updated = readEditedRow(row, rowEl, columns);
       const id = idOf(row);
       const isNew = rowStateRef.current[id] === "new";
       if (isNew) {
-        if (inlineEdit.onAdd?.(updated) !== false) {
-          newRowIdsRef.current.delete(row as object);
-          setLocalItems((prev) => prev.filter((r) => r !== row));
-          setModeByIdStr(id, undefined);
-        }
-      } else {
-        if (inlineEdit.onSave(row, updated) !== false) {
-          setModeByIdStr(id, undefined);
-        }
+        if (inlineEdit.onAdd?.(updated) === false) return;
+        dropLocalNew(row, id);
+        return;
       }
+      if (inlineEdit.onSave(row, updated) === false) return;
+      setModeByIdStr(id, undefined);
     };
     const commitCancel = (row: T) => {
       const id = idOf(row);
-      const isNew = rowStateRef.current[id] === "new";
-      if (isNew) {
-        newRowIdsRef.current.delete(row as object);
-        setLocalItems((prev) => prev.filter((r) => r !== row));
+      if (rowStateRef.current[id] === "new") {
+        dropLocalNew(row, id);
+        return;
       }
       setModeByIdStr(id, undefined);
     };
@@ -504,14 +600,12 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
         save: async (updated) => {
           // Await the consumer's save (if it's a Promise) before transitioning
           // so the follow-up `renderDetail` fetch reads committed data.
-          const result = onSave?.(updated);
-          if (result && typeof (result as Promise<unknown>).then === "function") {
-            try {
-              await result;
-            } catch {
-              // Caller reported the error; don't swallow here, but also
-              // don't block the UI transition — close the row regardless.
-            }
+          // `await` works on thenables and passes through non-promises unchanged.
+          try {
+            await onSave?.(updated);
+          } catch {
+            // Caller reported the error; don't swallow here, but also
+            // don't block the UI transition — close the row regardless.
           }
           pendingNavRef.current = true;
           setLocalItems((prev) => prev.filter((r) => idOf(r) !== id));
@@ -546,33 +640,15 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   // When inlineEdit is enabled, wrap each column's render to swap to the
   // `edit.render` output when the row is in "edit" / "new" mode.
   const dtColumns = useMemo(() => {
-    const cols = columns.map((c) => {
-      const baseRender = c.render;
-      const editRender = c.edit?.render;
-      const needsWrapper = Boolean(baseRender || (hasInlineEdit && editRender));
-      const wrappedRender = needsWrapper
-        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (data: any, type: string, row: T, meta: any) => {
-            if (type !== "display") {
-              return baseRender ? baseRender(data, type, row, meta) : (data ?? "");
-            }
-            if (hasInlineEdit && editRender) {
-              const mode = rowStateRef.current[idOf(row)];
-              if (mode === "edit" || mode === "new") return editRender(row);
-            }
-            return baseRender ? baseRender(data, type, row, meta) : (data ?? "");
-          }
-        : undefined;
-      return {
-        data: c.data,
-        defaultContent: c.defaultContent ?? "",
-        className: c.className,
-        name: c.name,
-        orderable: c.orderable,
-        searchable: c.searchable,
-        render: wrappedRender,
-      };
-    });
+    const cols = columns.map((c) => ({
+      data: c.data,
+      defaultContent: c.defaultContent ?? "",
+      className: c.className,
+      name: c.name,
+      orderable: c.orderable,
+      searchable: c.searchable,
+      render: makeColumnRender(c, hasInlineEdit, idOf, rowStateRef),
+    }));
     if (hasActionsCol) {
       cols.push({
         data: null,
@@ -599,60 +675,30 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
       table.current?.dt()?.row(dataIndex).node().classList.add("child-toggle");
     },
     drawCallback: function () {
+      // DataTables binds `this` to the Api on each callback — read it once
+      // and hand everything else off to plain helpers so this component body
+      // stays free of `this`-using flows.
       const dt = this.api();
+      const childRefs: ChildSyncRefs = {
+        rowStateRef,
+        childModeRef,
+        childNodesRef,
+      };
       dt.rows({ page: "current", search: "applied" }).every(function () {
-        const rowData = this.data() as T | undefined;
+        const rowApi = this as unknown as DtRowApi;
+        const rowData = rowApi.data() as T | undefined;
         if (!rowData) return;
-        const id = idOf(rowData);
-        const row = this as unknown as DtRowApi;
-        const rowEl = row.node() as HTMLTableRowElement;
+        const rowEl = rowApi.node() as HTMLTableRowElement;
         rowDataRef.current.set(rowEl, rowData);
-
-        // Inject action buttons into the actions cell (last cell).
-        if (hasActionsCol) {
-          const cell = rowEl.querySelector("td:last-child") as HTMLElement | null;
-          if (cell) {
-            const html = rowActionsList
-              .filter((a) => !a.show || a.show(rowData))
-              .map((a) => renderActionButtonHtml(a, rowData))
-              .join(" ");
-            if (cell.innerHTML !== html) {
-              cell.style.whiteSpace = "nowrap";
-              cell.innerHTML = html;
-            }
-          }
-        }
-
-        // Sync the child row to rowState: show/hide/reattach/rebuild.
-        // Skipped entirely for non-expandable tables.
+        if (hasActionsCol) injectActionCell(rowEl, rowData, rowActionsList);
         if (hasDetail) {
-          const state = rowStateRef.current[id];
-          const isShown = row.child.isShown();
-          const prevMode = childModeRef.current[id];
-          if (state !== undefined) {
-            if (!isShown || prevMode !== state) {
-              if (isShown) row.child.hide();
-              if (prevMode !== state) {
-                const node = buildDetailNodeRef.current(rowData, state);
-                childNodesRef.current[id] = node;
-                row.child(node, "child-row").show?.();
-              } else {
-                const cached = childNodesRef.current[id];
-                if (cached) {
-                  row.child(cached, "child-row").show?.();
-                } else {
-                  const node = buildDetailNodeRef.current(rowData, state);
-                  childNodesRef.current[id] = node;
-                  row.child(node, "child-row").show?.();
-                }
-              }
-              childModeRef.current[id] = state;
-            }
-          } else if (isShown) {
-            row.child(false);
-            delete childModeRef.current[id];
-            delete childNodesRef.current[id];
-          }
+          syncChildRow(
+            rowApi,
+            rowData,
+            idOf(rowData),
+            childRefs,
+            buildDetailNodeRef.current,
+          );
         }
       });
     },
@@ -681,13 +727,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
                         }
                       }
                       setLocalItems((prev) => {
-                        // nextId = one less than the smallest existing local numeric id.
-                        const minId = prev.reduce((m, r) => {
-                          const rid = getId(r);
-                          return typeof rid === "number" ? Math.min(m, rid) : m;
-                        }, 0);
-                        const nextId = minId - 1;
-                        const newItem = addNew.template(nextId);
+                        const newItem = addNew.template(nextAddNewId(prev, getId));
                         const newId = String(getId(newItem));
                         setRowState((prevRS) => ({ ...prevRS, [newId]: "new" }));
                         return [...prev, newItem];
@@ -746,19 +786,17 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
       if (!tr || tr.classList.contains("child-row")) return;
 
       // Row action?
-      const btn = target.closest("[data-row-action]") as HTMLButtonElement | null;
+      const btn = target.closest<HTMLButtonElement>("[data-row-action]");
       if (btn) {
-        const key = btn.getAttribute("data-row-action");
+        const key = btn.dataset.rowAction;
         const action = rowActionsList.find((a) => a.key === key);
-        if (action) {
-          const rowEl = btn.closest("tr") as HTMLTableRowElement | null;
-          const rowData = rowEl ? rowDataRef.current.get(rowEl) : undefined;
-          if (rowData && rowEl) {
-            e.preventDefault();
-            e.stopPropagation();
-            action.onClick({ row: rowData, rowEl, api: rowActionApi });
-            return;
-          }
+        const rowEl = action ? btn.closest<HTMLTableRowElement>("tr") : null;
+        const rowData = rowEl ? rowDataRef.current.get(rowEl) : undefined;
+        if (action && rowEl && rowData) {
+          e.preventDefault();
+          e.stopPropagation();
+          action.onClick({ row: rowData, rowEl, api: rowActionApi });
+          return;
         }
       }
 
@@ -830,7 +868,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
       <thead>
         <tr>
           {columns.map((c, i) => (
-            <th key={i}>{c.header}</th>
+            <th key={c.name ?? c.data ?? `col-${i}`}>{c.header}</th>
           ))}
           {hasActionsCol && <th>{actionsLabel}</th>}
         </tr>
