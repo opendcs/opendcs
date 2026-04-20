@@ -255,8 +255,7 @@ public class UsgsWaterDataSource extends DataSourceExec
 			}
 			catch (Exception ex)
 			{
-				log.error("Error fetching data for site {}: {}",
-					siteNum, ex.getMessage());
+				log.atError().setCause(ex).log("Error fetching data for site {}", siteNum);
 				continue;
 			}
 

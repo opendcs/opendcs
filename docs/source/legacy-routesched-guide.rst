@@ -1707,8 +1707,9 @@ tidally filtered daily discharge (``72137``):
 | Discharge              | usgs| 72137 | 00003           | 24:00:00         | (none)                                        |
 +------------------------+-----+-------+-----------------+------------------+-----------------------------------------------+
 
-When two series share a parameter code, add one of these properties on
-the Config Sensor (or Platform Sensor) to select very specific:
+It is possible for a USGS station to have two sensors with the same parameter code.
+To be specific use usgsSublocation and/or usgsWebDescription properties to be specific as shown in the image below.
+
 
 -  ``usgsSublocation`` — matches the USGS sublocation value.
 
