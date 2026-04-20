@@ -3,6 +3,7 @@ import DataTable, {
   type DataTableRef,
 } from "datatables.net-react";
 import DT from "datatables.net-bs5";
+import dtButtons from "datatables.net-buttons-bs5";
 import {
   Suspense,
   useCallback,
@@ -20,6 +21,10 @@ import { useTableProcessing } from "./useTableProcessing";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
+// Buttons plugin — required because the wrapper uses `layout.top1Start` to
+// render `+` / extra header buttons via DataTables' Buttons feature.
+// eslint-disable-next-line react-hooks/rules-of-hooks
+DataTable.use(dtButtons);
 
 // =============================================================================
 // Types
