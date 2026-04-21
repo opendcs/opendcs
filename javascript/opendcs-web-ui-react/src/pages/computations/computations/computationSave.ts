@@ -1,9 +1,44 @@
-import type { ApiAppRef, ApiComputation, ApiTsGroupRef } from "opendcs-api";
+import type {
+  ApiAppRef,
+  ApiCompParm,
+  ApiComputation,
+  ApiTsGroupRef,
+} from "opendcs-api";
 
 export type UiComputation = Partial<ApiComputation>;
 
 const hasAssignedId = (value: number | undefined): value is number =>
   value !== undefined && value > 0;
+
+const validDataTypeName = (value: string | undefined): string | undefined => {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  // The REST mapper currently expects a standard "source:code" data type name.
+  return trimmed.includes(":") ? trimmed : undefined;
+};
+
+const sanitizeParmForSave = (parm: ApiCompParm): ApiCompParm => {
+  const dataType = validDataTypeName(parm.dataType);
+
+  return {
+    ...parm,
+    tsKey: hasAssignedId(parm.tsKey) ? parm.tsKey : undefined,
+    dataType,
+    dataTypeId:
+      dataType && hasAssignedId(parm.dataTypeId) ? parm.dataTypeId : undefined,
+    siteId: hasAssignedId(parm.siteId) ? parm.siteId : undefined,
+  };
+};
+
+const sanitizePropsForSave = (
+  props: Record<string, string> | undefined,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(props ?? {}).filter(([name]) => name.trim().length > 0),
+  );
 
 const findProcessOption = (
   comp: UiComputation,
@@ -16,7 +51,15 @@ const findProcessOption = (
     }
   }
   if (!comp.applicationName) {
-    return undefined;
+    return (
+      processOptions.find(
+        (app) => app.appName === "compproc" && hasAssignedId(app.appId),
+      ) ??
+      processOptions.find(
+        (app) => app.appType === "ComputationProcess" && hasAssignedId(app.appId),
+      ) ??
+      processOptions.find((app) => hasAssignedId(app.appId))
+    );
   }
   return processOptions.find((app) => app.appName === comp.applicationName);
 };
@@ -52,6 +95,37 @@ export const normalizeComputationForSave = (
     groupId: groupOption?.groupId,
     groupName: groupOption?.groupName ?? comp.groupName ?? "",
   };
+};
+
+export const saveComputationDraft = async (
+  comp: UiComputation,
+  localParms: ApiCompParm[],
+  processOptions: ApiAppRef[],
+  groupOptions: ApiTsGroupRef[],
+  save?: (item: ApiComputation) => void | Promise<ApiComputation | void>,
+) => {
+  const normalized = normalizeComputationForSave(comp, processOptions, groupOptions);
+  if (!normalized.name?.trim()) {
+    throw new Error("Enter a computation name before saving.");
+  }
+  if (!hasAssignedId(normalized.algorithmId) && !normalized.algorithmName?.trim()) {
+    throw new Error("Select an algorithm before saving.");
+  }
+
+  return save?.({
+    ...(normalized as ApiComputation),
+    computationId: hasAssignedId(normalized.computationId)
+      ? normalized.computationId
+      : undefined,
+    algorithmId: hasAssignedId(normalized.algorithmId)
+      ? normalized.algorithmId
+      : undefined,
+    appId: hasAssignedId(normalized.appId) ? normalized.appId : undefined,
+    groupId: hasAssignedId(normalized.groupId) ? normalized.groupId : undefined,
+    lastModified: undefined,
+    props: sanitizePropsForSave(normalized.props),
+    parmList: localParms.map(sanitizeParmForSave),
+  });
 };
 
 export const toSelectValue = (

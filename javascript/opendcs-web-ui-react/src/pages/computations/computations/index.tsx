@@ -85,25 +85,67 @@ export const Computations: React.FC = () => {
   );
 
   const saveComputation = useCallback(
-    (computation: ApiComputation) => {
+    async (computation: ApiComputation) => {
       const computationId =
         computation.computationId && computation.computationId > 0
           ? computation.computationId
           : undefined;
-      computationApi
-        .postComputation(api.org, { ...computation, computationId })
-        .then(() => setStale(true))
-        .catch((e: unknown) => console.error("Failed to save computation", e));
+      try {
+        const saved = await computationApi.postComputation(api.org, {
+          ...computation,
+          computationId,
+        });
+        if (saved.computationId && saved.computationId > 0) {
+          setComputations((current) => {
+            const savedRef: ApiComputationRef = {
+              computationId: saved.computationId,
+              name: saved.name,
+              algorithmId: saved.algorithmId,
+              algorithmName: saved.algorithmName,
+              processId: saved.appId,
+              processName: saved.applicationName,
+              enabled: saved.enabled,
+              description: saved.comment,
+              groupId: saved.groupId,
+              groupName: saved.groupName,
+            };
+            const existingIndex = current.findIndex(
+              (item) => item.computationId === saved.computationId,
+            );
+            if (existingIndex < 0) {
+              return [...current, savedRef];
+            }
+            return current.map((item, index) =>
+              index === existingIndex ? savedRef : item,
+            );
+          });
+        }
+        setStale(true);
+        return saved;
+      } catch (e: unknown) {
+        console.error("Failed to save computation", e);
+        throw e;
+      }
     },
     [api.org, computationApi],
   );
 
   const deleteComputation = useCallback(
-    (computationId: number) => {
-      computationApi
-        .deleteComputation(api.org, computationId)
-        .then(() => setStale(true))
-        .catch((e: unknown) => console.error("Failed to delete computation", e));
+    async (computationId: number) => {
+      try {
+        await computationApi.deleteComputation(api.org, computationId);
+        setStale(true);
+      } catch (e: unknown) {
+        console.error("Failed to delete computation", e);
+        throw e;
+      }
+    },
+    [api.org, computationApi],
+  );
+
+  const runComputation = useCallback(
+    async (computationId: number, start: Date, end: Date) => {
+      await computationApi.runComputation(api.org, computationId, start, end);
     },
     [api.org, computationApi],
   );
@@ -114,7 +156,11 @@ export const Computations: React.FC = () => {
         computations={computations}
         getComputation={getComputation}
         getAlgorithm={getAlgorithm}
-        actions={{ save: saveComputation, remove: deleteComputation }}
+        actions={{
+          save: saveComputation,
+          remove: deleteComputation,
+          run: runComputation,
+        }}
         processOptions={processOptions}
         groupOptions={groupOptions}
       />

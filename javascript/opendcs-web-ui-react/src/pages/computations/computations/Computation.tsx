@@ -1,6 +1,15 @@
-import { Button, Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
+import {
+  Alert,
+  Button,
+  Card,
+  Col,
+  Form,
+  FormGroup,
+  Placeholder,
+  Row,
+} from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../../components/properties";
-import { use, useCallback, useMemo, useReducer, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import type {
   ApiAlgorithm,
   ApiAppRef,
@@ -9,15 +18,11 @@ import type {
   ApiTsGroupRef,
 } from "opendcs-api";
 import { useTranslation } from "react-i18next";
-import type {
-  CancelAction,
-  CollectionActions,
-  SaveAction,
-} from "../../../util/Actions";
-import { Save, X } from "react-bootstrap-icons";
+import type { CancelAction, CollectionActions } from "../../../util/Actions";
+import { PlayFill, Save, X } from "react-bootstrap-icons";
 import { ComputationReducer } from "./ComputationReducer";
 import { ComputationParamsTable } from "./ComputationParamsTable";
-import { normalizeComputationForSave, toSelectValue } from "./computationSave";
+import { saveComputationDraft, toSelectValue } from "./computationSave";
 
 export type UiComputation = Partial<ApiComputation>;
 
@@ -102,14 +107,24 @@ export const ComputationSkeleton: React.FC<{ edit?: boolean }> = ({ edit = false
 export interface ComputationProperties {
   computation: Promise<UiComputation> | UiComputation;
   algorithm?: Promise<ApiAlgorithm | undefined> | ApiAlgorithm | undefined;
-  actions?: SaveAction<ApiComputation> & CancelAction<number>;
+  actions?: {
+    save?: (item: ApiComputation) => void | Promise<ApiComputation | void>;
+    run?: (item: number, start: Date, end: Date) => void | Promise<void>;
+  } & CancelAction<number>;
   edit?: boolean;
   processOptions?: ApiAppRef[];
   groupOptions?: ApiTsGroupRef[];
+  onDraftChange?: (draft: UiComputation) => void;
+  onSelectAlgorithm?: (draft: UiComputation) => void;
 }
 
 const roleKey = (roleName: string | undefined): string =>
   (roleName ?? "").trim().toLowerCase();
+
+const toDateTimeLocalValue = (date: Date): string => {
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return localDate.toISOString().slice(0, 16);
+};
 
 const mergeRequiredParms = (
   existingParms: ApiCompParm[],
@@ -161,8 +176,13 @@ export const Computation: React.FC<ComputationProperties> = ({
   edit = false,
   processOptions = [],
   groupOptions = [],
+  onDraftChange,
+  onSelectAlgorithm,
 }) => {
   const { t } = useTranslation(["computations", "translation"]);
+  const saveAction = actions.save;
+  const runAction = actions.run;
+  const cancelAction = actions.cancel;
   const providedComputation =
     computation instanceof Promise ? use(computation) : computation;
   const providedAlgorithm = algorithm instanceof Promise ? use(algorithm) : algorithm;
@@ -176,6 +196,23 @@ export const Computation: React.FC<ComputationProperties> = ({
       requiredParmsFromAlgorithm(providedAlgorithm),
     ),
   );
+  const defaultRunEnd = useMemo(() => new Date(), []);
+  const defaultRunStart = useMemo(
+    () => new Date(defaultRunEnd.getTime() - 24 * 60 * 60 * 1000),
+    [defaultRunEnd],
+  );
+  const [runStart, setRunStart] = useState(toDateTimeLocalValue(defaultRunStart));
+  const [runEnd, setRunEnd] = useState(toDateTimeLocalValue(defaultRunEnd));
+  const [running, setRunning] = useState(false);
+  const [runError, setRunError] = useState<string | null>(null);
+  const [runSucceeded, setRunSucceeded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const activeComputationId =
+    localComputation.computationId ?? providedComputation.computationId;
+  const canShowRunControls = runAction !== undefined;
+  const canRunComputation =
+    activeComputationId !== undefined && activeComputationId > 0 && canShowRunControls;
 
   const props = useMemo<Property[]>(() => {
     const saved = localComputation.props || {};
@@ -197,21 +234,61 @@ export const Computation: React.FC<ComputationProperties> = ({
     : {};
 
   const saveComputation = useCallback(
-    (comp: UiComputation) => {
-      const normalized = normalizeComputationForSave(
-        comp,
-        processOptions,
-        groupOptions,
-      );
-
-      actions.save?.({
-        ...(normalized as ApiComputation),
-        props: { ...(normalized.props ?? {}) },
-        parmList: localParms,
-      });
+    async (comp: UiComputation) => {
+      setSaving(true);
+      setSaveError(null);
+      try {
+        return await saveComputationDraft(
+          comp,
+          localParms,
+          processOptions,
+          groupOptions,
+          saveAction,
+        );
+      } catch (error) {
+        console.error("Failed to save computation", error);
+        setSaveError(
+          error instanceof Error ? error.message : t("computations:editor.save_failed"),
+        );
+        throw error;
+      } finally {
+        setSaving(false);
+      }
     },
-    [actions, localParms, processOptions, groupOptions],
+    [localParms, processOptions, groupOptions, saveAction, t],
   );
+
+  const runComputation = useCallback(async () => {
+    if (!canRunComputation) {
+      return;
+    }
+
+    const start = new Date(runStart);
+    const end = new Date(runEnd);
+    if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime())) {
+      setRunSucceeded(false);
+      setRunError(t("computations:editor.run_invalid_dates"));
+      return;
+    }
+    if (start >= end) {
+      setRunSucceeded(false);
+      setRunError(t("computations:editor.run_invalid_window"));
+      return;
+    }
+
+    setRunning(true);
+    setRunError(null);
+    setRunSucceeded(false);
+    try {
+      await Promise.resolve(runAction?.(activeComputationId, start, end));
+      setRunSucceeded(true);
+    } catch (error) {
+      console.error(`Failed to run computation ${activeComputationId}`, error);
+      setRunError(t("computations:editor.run_failed"));
+    } finally {
+      setRunning(false);
+    }
+  }, [activeComputationId, canRunComputation, runEnd, runAction, runStart, t]);
 
   const inputChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -284,6 +361,18 @@ export const Computation: React.FC<ComputationProperties> = ({
     [dispatch, groupOptions],
   );
 
+  useEffect(() => {
+    if (!edit) {
+      return;
+    }
+
+    onDraftChange?.({
+      ...localComputation,
+      props: { ...(localComputation.props ?? {}) },
+      parmList: localParms,
+    });
+  }, [edit, localComputation, localParms, onDraftChange]);
+
   return (
     <Card>
       <Card.Body>
@@ -301,7 +390,7 @@ export const Computation: React.FC<ComputationProperties> = ({
                       id="compName"
                       name="name"
                       readOnly={!edit}
-                      defaultValue={localComputation.name}
+                      value={localComputation.name ?? ""}
                       onChange={inputChange}
                     />
                   </Col>
@@ -311,14 +400,30 @@ export const Computation: React.FC<ComputationProperties> = ({
                     {t("computations:editor.algorithmName")}
                   </Form.Label>
                   <Col sm={9}>
-                    <Form.Control
-                      type="text"
-                      id="algorithmName"
-                      name="algorithmName"
-                      readOnly={!edit}
-                      defaultValue={localComputation.algorithmName}
-                      onChange={inputChange}
-                    />
+                    <div className="d-flex gap-2">
+                      <Form.Control
+                        type="text"
+                        id="algorithmName"
+                        name="algorithmName"
+                        readOnly={true}
+                        value={localComputation.algorithmName ?? ""}
+                      />
+                      {edit && (
+                        <Button
+                          variant="outline-secondary"
+                          onClick={() =>
+                            onSelectAlgorithm?.({
+                              ...localComputation,
+                              props: { ...(localComputation.props ?? {}) },
+                              parmList: localParms,
+                            })
+                          }
+                          aria-label={t("computations:editor.select_algorithm")}
+                        >
+                          {t("computations:editor.select_algorithm")}
+                        </Button>
+                      )}
+                    </div>
                   </Col>
                 </FormGroup>
                 <FormGroup as={Row} className="mb-3">
@@ -372,7 +477,7 @@ export const Computation: React.FC<ComputationProperties> = ({
                       id="enabled"
                       name="enabled"
                       disabled={!edit}
-                      defaultChecked={localComputation.enabled ?? false}
+                      checked={localComputation.enabled ?? false}
                       onChange={enabledChange}
                     />
                   </Col>
@@ -390,7 +495,7 @@ export const Computation: React.FC<ComputationProperties> = ({
                       id="comment"
                       name="comment"
                       readOnly={!edit}
-                      defaultValue={localComputation.comment}
+                      value={localComputation.comment ?? ""}
                       onChange={inputChange}
                     />
                   </Col>
@@ -428,28 +533,110 @@ export const Computation: React.FC<ComputationProperties> = ({
             />
           </Col>
         </Row>
+        {canShowRunControls && (
+          <Row className="mt-3">
+            {edit && canRunComputation && (
+              <Col xs={12}>
+                <Alert className="mb-0 py-2" variant="warning">
+                  {t("computations:editor.run_uses_saved")}
+                </Alert>
+              </Col>
+            )}
+            {!canRunComputation && (
+              <Col xs={12}>
+                <Alert className="mb-0 py-2" variant="info">
+                  {t("computations:editor.run_save_first")}
+                </Alert>
+              </Col>
+            )}
+            <Col className="d-flex flex-wrap align-items-end gap-2">
+              <Form.Group controlId={`run-start-${activeComputationId}`}>
+                <Form.Label>{t("computations:editor.run_start")}</Form.Label>
+                <Form.Control
+                  type="datetime-local"
+                  value={runStart}
+                  onChange={(event) => {
+                    setRunStart(event.target.value);
+                    setRunSucceeded(false);
+                    setRunError(null);
+                  }}
+                />
+              </Form.Group>
+              <Form.Group controlId={`run-end-${activeComputationId}`}>
+                <Form.Label>{t("computations:editor.run_end")}</Form.Label>
+                <Form.Control
+                  type="datetime-local"
+                  value={runEnd}
+                  onChange={(event) => {
+                    setRunEnd(event.target.value);
+                    setRunSucceeded(false);
+                    setRunError(null);
+                  }}
+                />
+              </Form.Group>
+              <Button
+                type="button"
+                variant="success"
+                disabled={running || !canRunComputation}
+                onClick={() => {
+                  void runComputation();
+                }}
+                aria-label={t("computations:editor.run_for", {
+                  id: activeComputationId,
+                })}
+              >
+                <PlayFill />{" "}
+                {running
+                  ? t("computations:editor.running")
+                  : t("computations:editor.run")}
+              </Button>
+            </Col>
+            {(runError || runSucceeded) && (
+              <Col xs={12} className="mt-2">
+                <Alert className="mb-0 py-2" variant={runError ? "danger" : "success"}>
+                  {runError ?? t("computations:editor.run_succeeded")}
+                </Alert>
+              </Col>
+            )}
+          </Row>
+        )}
         {edit && (
           <Row className="mt-3">
+            {saveError && (
+              <Col xs={12} className="mb-2">
+                <Alert className="mb-0 py-2" variant="danger">
+                  {saveError}
+                </Alert>
+              </Col>
+            )}
             <Col className="d-flex justify-content-end gap-2">
               <Button
+                type="button"
                 onClick={() => {
-                  actions.cancel?.(providedComputation.computationId!);
+                  if (activeComputationId !== undefined) {
+                    cancelAction?.(activeComputationId);
+                  }
                 }}
                 variant="secondary"
                 aria-label={t("computations:editor.cancel_for", {
-                  id: providedComputation.computationId,
+                  id: activeComputationId,
                 })}
               >
                 <X /> {t("translation:cancel")}
               </Button>
               <Button
-                onClick={() => saveComputation(localComputation)}
+                type="button"
+                onClick={() => {
+                  void saveComputation(localComputation);
+                }}
                 variant="primary"
+                disabled={saving}
                 aria-label={t("computations:editor.save_for", {
-                  id: localComputation.computationId,
+                  id: activeComputationId,
                 })}
               >
-                <Save /> {t("translation:save")}
+                <Save />{" "}
+                {saving ? t("computations:editor.saving") : t("translation:save")}
               </Button>
             </Col>
           </Row>

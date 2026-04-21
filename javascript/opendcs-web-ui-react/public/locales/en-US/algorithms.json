@@ -12,6 +12,8 @@
     "name": "Name",
     "execClass": "Exec Class",
     "description": "Description",
+    "select_for_computation": "Use algorithm {{id}} for the current computation",
+    "create_computation_for": "Create a computation from algorithm {{id}}",
     "edit_for": "Edit algorithm {{id}}",
     "delete_for": "Delete algorithm {{id}}",
     "cancel_for": "Cancel editing algorithm {{id}}",

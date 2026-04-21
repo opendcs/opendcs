@@ -12,6 +12,8 @@
     "name": "Name",
     "execClass": "Ausführungsklasse",
     "description": "Beschreibung",
+    "select_for_computation": "Algorithmus {{id}} für die aktuelle Berechnung verwenden",
+    "create_computation_for": "Eine Berechnung aus Algorithmus {{id}} erstellen",
     "edit_for": "Algorithmus {{id}} bearbeiten",
     "delete_for": "Algorithmus {{id}} löschen",
     "cancel_for": "Bearbeitung von Algorithmus {{id}} abbrechen",
