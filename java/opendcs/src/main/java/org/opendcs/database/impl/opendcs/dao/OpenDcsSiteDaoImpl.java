@@ -88,9 +88,9 @@ public class OpenDcsSiteDaoImpl implements SiteDao
              left outer join site_property prop on prop.site_id = site.id
              order by
                 case
-                    when sn_nametype = :preferredType then 0
+                    when sn.nametype = :preferredType then 0
                     else 1
-                end, sn_nametype <collate> asc, sn_sitename <collate> asc
+                end, sn.nametype <collate> asc, sn.sitename <collate> asc
             """;
 
     private static final String DELETE_NAMES = "delete from sitename where siteid = :id";

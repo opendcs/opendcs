@@ -44,6 +44,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
+import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import org.apache.catalina.session.StandardSession;
 import org.junit.jupiter.api.Tag;
@@ -294,8 +295,10 @@ public class BaseApiIT extends AppTestBase
 	public TimeSeriesIdentifier storeTimeSeries(CTimeSeries ts) throws Exception
 	{
 		TimeSeriesIdentifier id;
-		try (TimeSeriesDAI dai = getTsdb().makeTimeSeriesDAO())
+		try (SiteDAI sdai = getTsdb().makeSiteDAO();
+			TimeSeriesDAI dai = getTsdb().makeTimeSeriesDAO())
 		{
+			sdai.fillCache();
 			dai.saveTimeSeries(ts);
 		}
 		catch (Throwable ex)

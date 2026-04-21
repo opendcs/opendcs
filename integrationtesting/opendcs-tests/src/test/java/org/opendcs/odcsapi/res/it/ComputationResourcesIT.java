@@ -69,6 +69,7 @@ import org.opendcs.odcsapi.res.ComputationResources;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
@@ -97,16 +98,19 @@ final class ComputationResourcesIT extends BaseApiIT
 	private final SystemExit exit = new SystemExit();
 	List<CTimeSeries> expectedTsList = new ArrayList<>();
 
+	private String traceId;
+
 	@BeforeEach
 	void init() throws Exception
 	{
+		traceId = UUID.randomUUID().toString();
+		MDC.put("traceID", traceId);
 		setUpCreds();
 		authenticate();
 
 		ApiComputation comp = getDtoFromResource("computation_insert_data.json", ApiComputation.class);
 
-		ApiSite site = getDtoFromResource("computation_site_data.json", ApiSite.class);
-		Site tsSite = mapSite(site);
+		final ApiSite site = getDtoFromResource("computation_site_data.json", ApiSite.class);
 
 		ApiLoadingApp app = getDtoFromResource("computation_app_data.json", ApiLoadingApp.class);
 		String appJson = MAPPER.writeValueAsString(app);
@@ -115,6 +119,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
 			.body(appJson)
@@ -140,6 +145,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
 			.body(algJson)
@@ -159,9 +165,10 @@ final class ComputationResourcesIT extends BaseApiIT
 		String siteJson = MAPPER.writeValueAsString(site);
 
 		// Insert the site
-		response = given()
+		final var siteResponse = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
 			.body(siteJson)
@@ -175,9 +182,10 @@ final class ComputationResourcesIT extends BaseApiIT
 			.statusCode(is(Response.Status.CREATED.getStatusCode()))
 			.extract()
 		;
-
-		siteId = response.body().jsonPath().getLong("siteId");
-
+		log.atDebug().addArgument(() -> siteResponse.body().asPrettyString()).log("siteJson: {}");
+		// pull the siteId from the response as it changes every method call
+		siteId = siteResponse.body().jsonPath().getLong("siteId");
+		final Site tsSite = mapSite(siteResponse.body().as(ApiSite.class));
 		// Create an active time series
 		CwmsTsId identifier = new CwmsTsId();
 		identifier.setUniqueString(String.format("%s.%s.%s.%s.%s.%s", tsSite.getDisplayName(),
@@ -274,6 +282,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
 			.body(compJson)
@@ -298,6 +307,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
 			.accept(MediaType.APPLICATION_JSON)
 			.queryParam("computationid", compId)
 		.when()
@@ -314,6 +324,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
 			.accept(MediaType.APPLICATION_JSON)
 			.queryParam("appid", appId)
 		.when()
@@ -330,6 +341,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
 			.accept(MediaType.APPLICATION_JSON)
 			.queryParam("algorithmid", algId)
 		.when()
@@ -347,6 +359,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		tearDownSite(siteId);
 
 		logout();
+		MDC.remove("traceId");
 	}
 
 	@Test
@@ -357,6 +370,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
 			.accept(MediaType.APPLICATION_JSON)
 		.when()
 			.redirects().follow(true)
@@ -391,6 +405,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
 			.accept(MediaType.APPLICATION_JSON)
 			.queryParam("site", siteId)
 			.queryParam("datatype", comp.getParmList().getFirst().getDataTypeId())
@@ -429,6 +444,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
 			.accept(MediaType.APPLICATION_JSON)
 			.queryParam("site", comp.getParmList().getFirst().getSiteId())
 			.queryParam("datatype", comp.getParmList().getFirst().getDataTypeId())
@@ -450,6 +466,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
 			.accept(MediaType.APPLICATION_JSON)
 			.queryParam("site", comp.getParmList().getFirst().getSiteId())
 			.queryParam("datatype", comp.getParmList().getFirst().getDataTypeId())
@@ -472,6 +489,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
 			.accept(MediaType.APPLICATION_JSON)
 			.queryParam("site", comp.getParmList().getFirst().getSiteId())
 			.queryParam("datatype", comp.getParmList().getFirst().getDataTypeId())
@@ -499,6 +517,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
 			.accept(MediaType.APPLICATION_JSON)
 			.queryParam("computationid", compId)
 		.when()
@@ -546,6 +565,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		var response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
 			.body(compJson)
@@ -566,6 +586,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
 			.accept(MediaType.APPLICATION_JSON)
 			.queryParam("computationid", newCompId)
 		.when()
@@ -601,6 +622,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
 			.accept(MediaType.APPLICATION_JSON)
 			.queryParam("computationid", newCompId)
 		.when()
@@ -617,6 +639,7 @@ final class ComputationResourcesIT extends BaseApiIT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
 			.accept(MediaType.APPLICATION_JSON)
 			.queryParam("computationid", newCompId)
 		.when()
