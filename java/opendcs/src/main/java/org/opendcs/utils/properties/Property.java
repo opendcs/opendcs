@@ -183,7 +183,8 @@ public final class Property<T>
          */
         public Builder<T> withExistingPropertyFirst(Property<T> property)
         {
-            this.sources.add(new ExistingPropertySource<>(property));
+            // whenever this is set, always use it first.
+            this.sources.addFirst(new ExistingPropertySource<>(property));
             return this;
         }
 
