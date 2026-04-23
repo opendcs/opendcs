@@ -1,0 +1,19 @@
+11111111 0     1    14060/12:00:00 23.95      I dummy       Stage   XX 3600 I  Stage
+11111111 0     1    14060/13:00:00 23.96      I dummy       Stage   XX 3600 I  Stage
+11111111 0     1    14060/14:00:00 23.97      I dummy       Stage   XX 3600 I  Stage
+11111111 0     2    14060/12:00:00 17.2       I dummy       Humidity XX 3600 I  Humidity
+11111111 0     2    14060/13:00:00 16.9       I dummy       Humidity XX 3600 I  Humidity
+11111111 0     2    14060/14:00:00 15.2       I dummy       Humidity XX 3600 I  Humidity
+11111111 0     3    14060/12:00:00 98.1       I dummy       Temp    XX 3600 I  Temp
+11111111 0     3    14060/13:00:00 98.1       I dummy       Temp    XX 3600 I  Temp
+11111111 0     3    14060/14:00:00 98.2       I dummy       Temp    XX 3600 I  Temp
+11111111 0     4    14060/12:00:00 8252       I dummy       Storage XX 3600 I  Storage
+11111111 0     4    14060/13:00:00 8252       I dummy       Storage XX 3600 I  Storage
+11111111 0     4    14060/14:00:00 8252       I dummy       Storage XX 3600 I  Storage
+11111111 0     5    14060/12:00:00 0          I dummy       Precip  XX 3600 I  Precip
+11111111 0     5    14060/13:00:00 0          I dummy       Precip  XX 3600 I  Precip
+11111111 0     5    14060/14:00:00 0          I dummy       Precip  XX 3600 I  Precip
+11111111 0     6    14060/12:00:00 0          I dummy       Zero    XX 3600 I  Zero
+11111111 0     6    14060/13:00:00 0          I dummy       Zero    XX 3600 I  Zero
+11111111 0     6    14060/14:00:00 0          I dummy       Zero    XX 3600 I  Zero
+ZZZZ
