@@ -7,6 +7,7 @@ import {
   FormGroup,
   Placeholder,
   Row,
+  Table,
 } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../../components/properties";
 import { use, useCallback, useEffect, useMemo, useReducer, useState } from "react";
@@ -23,6 +24,7 @@ import { PlayFill, Save, X } from "react-bootstrap-icons";
 import { ComputationReducer } from "./ComputationReducer";
 import { ComputationParamsTable } from "./ComputationParamsTable";
 import { saveComputationDraft, toSelectValue } from "./computationSave";
+import type { ComputationRunResult } from "./computationRun";
 
 export type UiComputation = Partial<ApiComputation>;
 
@@ -109,7 +111,11 @@ export interface ComputationProperties {
   algorithm?: Promise<ApiAlgorithm | undefined> | ApiAlgorithm | undefined;
   actions?: {
     save?: (item: ApiComputation) => void | Promise<ApiComputation | void>;
-    run?: (item: number, start: Date, end: Date) => void | Promise<void>;
+    run?: (
+      item: number,
+      start: Date,
+      end: Date,
+    ) => void | ComputationRunResult | Promise<void | ComputationRunResult>;
   } & CancelAction<number>;
   edit?: boolean;
   processOptions?: ApiAppRef[];
@@ -124,6 +130,49 @@ const roleKey = (roleName: string | undefined): string =>
 const toDateTimeLocalValue = (date: Date): string => {
   const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
   return localDate.toISOString().slice(0, 16);
+};
+
+const snapshotComputationDraft = (
+  computation: UiComputation,
+  parms: ApiCompParm[],
+): string => {
+  const props = Object.fromEntries(
+    Object.entries(computation.props ?? {}).sort(([left], [right]) =>
+      left.localeCompare(right),
+    ),
+  );
+  const normalizedParms = parms.map((parm) => ({
+    algoRoleName: parm.algoRoleName ?? "",
+    algoParmType: parm.algoParmType ?? "",
+    siteId: parm.siteId ?? undefined,
+    siteName: parm.siteName ?? "",
+    dataTypeId: parm.dataTypeId ?? undefined,
+    dataType: parm.dataType ?? "",
+    interval: parm.interval ?? "",
+    paramType: parm.paramType ?? "",
+    duration: parm.duration ?? "",
+    version: parm.version ?? "",
+    deltaT: parm.deltaT ?? 0,
+    deltaTUnits: parm.deltaTUnits ?? "",
+    unitsAbbr: parm.unitsAbbr ?? "",
+    ifMissing: parm.ifMissing ?? "",
+    tsKey: parm.tsKey ?? undefined,
+  }));
+
+  return JSON.stringify({
+    computationId: computation.computationId ?? undefined,
+    name: computation.name ?? "",
+    algorithmId: computation.algorithmId ?? undefined,
+    algorithmName: computation.algorithmName ?? "",
+    appId: computation.appId ?? undefined,
+    applicationName: computation.applicationName ?? "",
+    groupId: computation.groupId ?? undefined,
+    groupName: computation.groupName ?? "",
+    enabled: computation.enabled ?? false,
+    comment: computation.comment ?? "",
+    props,
+    parmList: normalizedParms,
+  });
 };
 
 const mergeRequiredParms = (
@@ -186,15 +235,17 @@ export const Computation: React.FC<ComputationProperties> = ({
   const providedComputation =
     computation instanceof Promise ? use(computation) : computation;
   const providedAlgorithm = algorithm instanceof Promise ? use(algorithm) : algorithm;
+  const initialParms = mergeRequiredParms(
+    providedComputation.parmList ?? [],
+    requiredParmsFromAlgorithm(providedAlgorithm),
+  );
   const [localComputation, dispatch] = useReducer(
     ComputationReducer,
     providedComputation,
   );
-  const [localParms, setLocalParms] = useState<ApiCompParm[]>(() =>
-    mergeRequiredParms(
-      providedComputation.parmList ?? [],
-      requiredParmsFromAlgorithm(providedAlgorithm),
-    ),
+  const [localParms, setLocalParms] = useState<ApiCompParm[]>(() => initialParms);
+  const [savedSnapshot, setSavedSnapshot] = useState(() =>
+    snapshotComputationDraft(providedComputation, initialParms),
   );
   const defaultRunEnd = useMemo(() => new Date(), []);
   const defaultRunStart = useMemo(
@@ -206,6 +257,7 @@ export const Computation: React.FC<ComputationProperties> = ({
   const [running, setRunning] = useState(false);
   const [runError, setRunError] = useState<string | null>(null);
   const [runSucceeded, setRunSucceeded] = useState(false);
+  const [runResult, setRunResult] = useState<ComputationRunResult | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const activeComputationId =
@@ -213,6 +265,19 @@ export const Computation: React.FC<ComputationProperties> = ({
   const canShowRunControls = runAction !== undefined;
   const canRunComputation =
     activeComputationId !== undefined && activeComputationId > 0 && canShowRunControls;
+  const hasUnsavedChanges = useMemo(
+    () => snapshotComputationDraft(localComputation, localParms) !== savedSnapshot,
+    [localComputation, localParms, savedSnapshot],
+  );
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) {
+      return;
+    }
+    setRunSucceeded(false);
+    setRunError(null);
+    setRunResult(null);
+  }, [hasUnsavedChanges]);
 
   const props = useMemo<Property[]>(() => {
     const saved = localComputation.props || {};
@@ -238,13 +303,30 @@ export const Computation: React.FC<ComputationProperties> = ({
       setSaving(true);
       setSaveError(null);
       try {
-        return await saveComputationDraft(
+        const saved = await saveComputationDraft(
           comp,
           localParms,
           processOptions,
           groupOptions,
           saveAction,
         );
+        const savedComputation =
+          saved ??
+          ({
+            ...(comp as ApiComputation),
+            parmList: localParms,
+          } as ApiComputation);
+        const mergedSavedParms = mergeRequiredParms(
+          savedComputation.parmList ?? [],
+          requiredParmsFromAlgorithm(providedAlgorithm),
+        );
+        dispatch({ type: "replace", payload: savedComputation });
+        setLocalParms(mergedSavedParms);
+        setSavedSnapshot(snapshotComputationDraft(savedComputation, mergedSavedParms));
+        setRunSucceeded(false);
+        setRunError(null);
+        setRunResult(null);
+        return saved;
       } catch (error) {
         console.error("Failed to save computation", error);
         setSaveError(
@@ -255,7 +337,7 @@ export const Computation: React.FC<ComputationProperties> = ({
         setSaving(false);
       }
     },
-    [localParms, processOptions, groupOptions, saveAction, t],
+    [localParms, processOptions, groupOptions, saveAction, providedAlgorithm, t],
   );
 
   const runComputation = useCallback(async () => {
@@ -279,8 +361,14 @@ export const Computation: React.FC<ComputationProperties> = ({
     setRunning(true);
     setRunError(null);
     setRunSucceeded(false);
+    setRunResult(null);
     try {
-      await Promise.resolve(runAction?.(activeComputationId, start, end));
+      const result = await Promise.resolve(
+        runAction?.(activeComputationId, start, end),
+      );
+      if (result) {
+        setRunResult(result);
+      }
       setRunSucceeded(true);
     } catch (error) {
       console.error(`Failed to run computation ${activeComputationId}`, error);
@@ -289,6 +377,20 @@ export const Computation: React.FC<ComputationProperties> = ({
       setRunning(false);
     }
   }, [activeComputationId, canRunComputation, runEnd, runAction, runStart, t]);
+
+  const timeSeriesByKey = useMemo(() => {
+    const byKey = new Map<
+      number,
+      NonNullable<ComputationRunResult["series"]>[number]
+    >();
+    (runResult?.series ?? []).forEach((series) => {
+      const key = series.tsid?.key;
+      if (key !== undefined) {
+        byKey.set(key, series);
+      }
+    });
+    return byKey;
+  }, [runResult]);
 
   const inputChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -535,7 +637,7 @@ export const Computation: React.FC<ComputationProperties> = ({
         </Row>
         {canShowRunControls && (
           <Row className="mt-3">
-            {edit && canRunComputation && (
+            {edit && canRunComputation && hasUnsavedChanges && (
               <Col xs={12}>
                 <Alert className="mb-0 py-2" variant="warning">
                   {t("computations:editor.run_uses_saved")}
@@ -559,6 +661,7 @@ export const Computation: React.FC<ComputationProperties> = ({
                     setRunStart(event.target.value);
                     setRunSucceeded(false);
                     setRunError(null);
+                    setRunResult(null);
                   }}
                 />
               </Form.Group>
@@ -571,6 +674,7 @@ export const Computation: React.FC<ComputationProperties> = ({
                     setRunEnd(event.target.value);
                     setRunSucceeded(false);
                     setRunError(null);
+                    setRunResult(null);
                   }}
                 />
               </Form.Group>
@@ -596,6 +700,75 @@ export const Computation: React.FC<ComputationProperties> = ({
                 <Alert className="mb-0 py-2" variant={runError ? "danger" : "success"}>
                   {runError ?? t("computations:editor.run_succeeded")}
                 </Alert>
+              </Col>
+            )}
+            {runResult && (
+              <Col xs={12} className="mt-2">
+                <Card>
+                  <Card.Body>
+                    <Card.Title as="h5">
+                      {t("computations:editor.results_title")}
+                    </Card.Title>
+                    {runResult.messages.length > 0 && (
+                      <div className="mb-2 small text-body-secondary">
+                        {runResult.messages.slice(-3).map((message, idx) => (
+                          <div key={`${message}-${idx}`}>{message}</div>
+                        ))}
+                      </div>
+                    )}
+                    {runResult.errors.length > 0 && (
+                      <Alert className="py-2" variant="warning">
+                        {runResult.errors.join(" ")}
+                      </Alert>
+                    )}
+                    {(runResult.results?.tsIds ?? []).length === 0 ? (
+                      <Alert className="mb-0 py-2" variant="info">
+                        {t("computations:editor.results_no_outputs")}
+                      </Alert>
+                    ) : (
+                      <Table responsive bordered hover size="sm" className="mb-0">
+                        <thead>
+                          <tr>
+                            <th>{t("computations:editor.results_tsid")}</th>
+                            <th>{t("computations:editor.results_key")}</th>
+                            <th>{t("computations:editor.results_values")}</th>
+                            <th>{t("computations:editor.results_latest_time")}</th>
+                            <th>{t("computations:editor.results_latest_value")}</th>
+                            <th>{t("computations:editor.results_units")}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(runResult.results?.tsIds ?? []).map((tsid, idx) => {
+                            const key = tsid.key;
+                            const series =
+                              key !== undefined ? timeSeriesByKey.get(key) : undefined;
+                            const values = series?.values ?? [];
+                            const latest =
+                              values.length > 0 ? values[values.length - 1] : undefined;
+                            return (
+                              <tr key={`${tsid.uniqueString ?? "output"}-${idx}`}>
+                                <td>{tsid.uniqueString ?? ""}</td>
+                                <td>{key ?? ""}</td>
+                                <td>{values.length}</td>
+                                <td>
+                                  {latest?.sampleTime
+                                    ? new Date(latest.sampleTime).toLocaleString()
+                                    : ""}
+                                </td>
+                                <td>{latest?.value ?? ""}</td>
+                                <td>
+                                  {tsid.storageUnits ??
+                                    series?.tsid?.storageUnits ??
+                                    ""}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </Table>
+                    )}
+                  </Card.Body>
+                </Card>
               </Col>
             )}
           </Row>

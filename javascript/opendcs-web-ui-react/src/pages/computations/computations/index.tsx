@@ -3,15 +3,33 @@ import {
   type ApiAppRef,
   type ApiComputation,
   type ApiComputationRef,
+  type ApiDataType,
+  type ApiSiteRef,
   type ApiTsGroupRef,
   RESTAlgorithmMethodsApi,
   RESTComputationMethodsApi,
+  RESTDECODESSiteRecordsApi,
+  RESTDataTypeMethodsApi,
   RESTLoadingApplicationRecordsApi,
+  TimeSeriesMethodsApi,
   TimeSeriesMethodsGroupsApi,
 } from "opendcs-api";
 import { ComputationsTable } from "./ComputationsTable";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useApi } from "../../../contexts/app/ApiContext";
+import {
+  loadRunResultTimeSeries,
+  runComputationStream,
+  type ComputationRunResult,
+} from "./computationRun";
+import { resolveComputationParmReferences } from "./computationSave";
+
+const toComputationRef = (saved: ApiComputation): ApiComputationRef => ({
+  ...saved,
+  processId: saved.appId,
+  processName: saved.applicationName,
+  description: saved.comment,
+});
 
 export const Computations: React.FC = () => {
   const [computations, setComputations] = useState<ApiComputationRef[]>([]);
@@ -27,8 +45,13 @@ export const Computations: React.FC = () => {
     [api.conf],
   );
   const groupApi = useMemo(() => new TimeSeriesMethodsGroupsApi(api.conf), [api.conf]);
+  const timeSeriesApi = useMemo(() => new TimeSeriesMethodsApi(api.conf), [api.conf]);
+  const siteApi = useMemo(() => new RESTDECODESSiteRecordsApi(api.conf), [api.conf]);
+  const dataTypeApi = useMemo(() => new RESTDataTypeMethodsApi(api.conf), [api.conf]);
   const [processOptions, setProcessOptions] = useState<ApiAppRef[]>([]);
   const [groupOptions, setGroupOptions] = useState<ApiTsGroupRef[]>([]);
+  const [siteOptions, setSiteOptions] = useState<ApiSiteRef[]>([]);
+  const [dataTypeOptions, setDataTypeOptions] = useState<ApiDataType[]>([]);
 
   useEffect(() => {
     if (!api.org) return;
@@ -63,6 +86,38 @@ export const Computations: React.FC = () => {
   }, [api.org, groupApi]);
 
   useEffect(() => {
+    if (!api.org) return;
+    let cancelled = false;
+    siteApi
+      .getsiterefs(api.org)
+      .then((refs) => {
+        if (!cancelled) setSiteOptions(refs);
+      })
+      .catch(() => {
+        if (!cancelled) setSiteOptions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [api.org, siteApi]);
+
+  useEffect(() => {
+    if (!api.org) return;
+    let cancelled = false;
+    dataTypeApi
+      .getDataTypeList(api.org)
+      .then((items) => {
+        if (!cancelled) setDataTypeOptions(items);
+      })
+      .catch(() => {
+        if (!cancelled) setDataTypeOptions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [api.org, dataTypeApi]);
+
+  useEffect(() => {
     const fetchComputations = async () => {
       const refs = await computationApi.getComputationRefs(api.org);
       setComputations(refs);
@@ -91,24 +146,31 @@ export const Computations: React.FC = () => {
           ? computation.computationId
           : undefined;
       try {
+        const [resolvedSites, resolvedDataTypes] = await Promise.all([
+          siteOptions.length > 0
+            ? Promise.resolve(siteOptions)
+            : siteApi.getsiterefs(api.org).catch(() => [] as ApiSiteRef[]),
+          dataTypeOptions.length > 0
+            ? Promise.resolve(dataTypeOptions)
+            : dataTypeApi.getDataTypeList(api.org).catch(() => [] as ApiDataType[]),
+        ]);
+        if (siteOptions.length === 0 && resolvedSites.length > 0) {
+          setSiteOptions(resolvedSites);
+        }
+        if (dataTypeOptions.length === 0 && resolvedDataTypes.length > 0) {
+          setDataTypeOptions(resolvedDataTypes);
+        }
         const saved = await computationApi.postComputation(api.org, {
-          ...computation,
+          ...resolveComputationParmReferences(
+            computation,
+            resolvedSites,
+            resolvedDataTypes,
+          ),
           computationId,
         });
         if (saved.computationId && saved.computationId > 0) {
           setComputations((current) => {
-            const savedRef: ApiComputationRef = {
-              computationId: saved.computationId,
-              name: saved.name,
-              algorithmId: saved.algorithmId,
-              algorithmName: saved.algorithmName,
-              processId: saved.appId,
-              processName: saved.applicationName,
-              enabled: saved.enabled,
-              description: saved.comment,
-              groupId: saved.groupId,
-              groupName: saved.groupName,
-            };
+            const savedRef = toComputationRef(saved);
             const existingIndex = current.findIndex(
               (item) => item.computationId === saved.computationId,
             );
@@ -127,7 +189,7 @@ export const Computations: React.FC = () => {
         throw e;
       }
     },
-    [api.org, computationApi],
+    [api.org, computationApi, siteOptions, dataTypeOptions, siteApi, dataTypeApi],
   );
 
   const deleteComputation = useCallback(
@@ -144,10 +206,15 @@ export const Computations: React.FC = () => {
   );
 
   const runComputation = useCallback(
-    async (computationId: number, start: Date, end: Date) => {
-      await computationApi.runComputation(api.org, computationId, start, end);
+    async (
+      computationId: number,
+      start: Date,
+      end: Date,
+    ): Promise<ComputationRunResult> => {
+      const runResult = await runComputationStream(api.org, computationId, start, end);
+      return loadRunResultTimeSeries(timeSeriesApi, api.org, runResult);
     },
-    [api.org, computationApi],
+    [api.org, timeSeriesApi],
   );
 
   return (

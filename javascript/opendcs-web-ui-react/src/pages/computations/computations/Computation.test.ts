@@ -3,9 +3,15 @@ import type {
   ApiAppRef,
   ApiCompParm,
   ApiComputation,
+  ApiDataType,
+  ApiSiteRef,
   ApiTsGroupRef,
 } from "opendcs-api";
-import { normalizeComputationForSave, saveComputationDraft } from "./computationSave";
+import {
+  normalizeComputationForSave,
+  resolveComputationParmReferences,
+  saveComputationDraft,
+} from "./computationSave";
 import { mergeAlgorithmParms, mergeAlgorithmProps } from "./computationWorkspace";
 
 type UiComputation = Partial<ApiComputation>;
@@ -18,6 +24,19 @@ const processOptions: ApiAppRef[] = [
 const groupOptions: ApiTsGroupRef[] = [
   { groupId: 5, groupName: "Daily", groupType: "Computation" },
   { groupId: 6, groupName: "Hourly", groupType: "Computation" },
+];
+
+const siteOptions: ApiSiteRef[] = [
+  {
+    siteId: 44,
+    publicName: "TESTSITE",
+    sitenames: { cwms: "TESTSITE", nwshb5: "TS01" },
+  },
+];
+
+const dataTypeOptions: ApiDataType[] = [
+  { id: 12, standard: "SHEF-PE", code: "Flow", displayName: "SHEF-PE:Flow" },
+  { id: 13, standard: "SHEF-PE", code: "Stage", displayName: "SHEF-PE:Stage" },
 ];
 
 test("normalizeComputationForSave resolves valid ids from option names", () => {
@@ -219,7 +238,7 @@ test("saveComputationDraft strips temporary ids and incomplete parameter keys", 
         expect.objectContaining({
           algoRoleName: "input",
           dataTypeId: undefined,
-          dataType: undefined,
+          dataType: "Stage",
           siteId: undefined,
           tsKey: undefined,
         }),
@@ -232,6 +251,101 @@ test("saveComputationDraft strips temporary ids and incomplete parameter keys", 
       ],
     }),
   );
+});
+
+test("saveComputationDraft preserves plain datatype names for unresolved parameters", async () => {
+  const save = vi.fn();
+
+  await saveComputationDraft(
+    {
+      name: "Draft",
+      algorithmId: 10,
+      algorithmName: "AverageAlgorithm",
+    },
+    [
+      {
+        algoRoleName: "output",
+        algoParmType: "o",
+        dataType: "Flow",
+        siteName: "TESTSITE",
+      },
+    ],
+    processOptions,
+    groupOptions,
+    save,
+  );
+
+  expect(save).toHaveBeenCalledWith(
+    expect.objectContaining({
+      parmList: [
+        expect.objectContaining({
+          algoRoleName: "output",
+          dataType: "Flow",
+          siteName: "TESTSITE",
+          dataTypeId: undefined,
+          siteId: undefined,
+        }),
+      ],
+    }),
+  );
+});
+
+test("resolveComputationParmReferences resolves site and datatype ids from names", () => {
+  const resolved = resolveComputationParmReferences(
+    {
+      computationId: 1,
+      name: "Draft",
+      parmList: [
+        {
+          algoRoleName: "output",
+          algoParmType: "o",
+          siteName: "TS01",
+          dataType: "Flow",
+        },
+      ],
+    },
+    siteOptions,
+    dataTypeOptions,
+  );
+
+  expect(resolved.parmList).toEqual([
+    expect.objectContaining({
+      algoRoleName: "output",
+      siteId: 44,
+      siteName: "TESTSITE",
+      dataTypeId: 12,
+      dataType: "SHEF-PE:Flow",
+    }),
+  ]);
+});
+
+test("resolveComputationParmReferences leaves ambiguous datatypes unresolved", () => {
+  const resolved = resolveComputationParmReferences(
+    {
+      computationId: 1,
+      name: "Draft",
+      parmList: [
+        {
+          algoRoleName: "output",
+          algoParmType: "o",
+          dataType: "Flow",
+        },
+      ],
+    },
+    siteOptions,
+    [
+      ...dataTypeOptions,
+      { id: 14, standard: "CWMS", code: "Flow", displayName: "CWMS:Flow" },
+    ],
+  );
+
+  expect(resolved.parmList).toEqual([
+    expect.objectContaining({
+      algoRoleName: "output",
+      dataType: "Flow",
+      dataTypeId: undefined,
+    }),
+  ]);
 });
 
 test("mergeAlgorithmParms populates required parameter roles", () => {

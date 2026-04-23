@@ -23,6 +23,7 @@ import {
   loadComputationWorkspace,
   saveComputationWorkspace,
 } from "./computationWorkspace";
+import type { ComputationRunResult } from "./computationRun";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -36,7 +37,11 @@ export interface ComputationsTableProperties {
   actions?: {
     save?: (item: ApiComputation) => void | Promise<ApiComputation | void>;
     remove?: (item: number) => void | Promise<void>;
-    run?: (item: number, start: Date, end: Date) => void | Promise<void>;
+    run?: (
+      item: number,
+      start: Date,
+      end: Date,
+    ) => void | ComputationRunResult | Promise<void | ComputationRunResult>;
   };
   processOptions?: ApiAppRef[];
   groupOptions?: ApiTsGroupRef[];
@@ -224,6 +229,20 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
       };
     });
   }, []);
+
+  const resetChildRow = useCallback((computationId: number) => {
+    delete childModeRef.current[computationId];
+    delete childNodesRef.current[computationId];
+  }, []);
+
+  const closeEditor = useCallback(
+    (computationId: number) => {
+      resetChildRow(computationId);
+      clearDraft(computationId);
+      setRowMode(computationId, undefined);
+    },
+    [clearDraft, resetChildRow, setRowMode],
+  );
 
   const createDraft = useCallback(
     (seed: UiComputation = {}) => {
@@ -481,22 +500,44 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
             }}
             actions={{
               save: async (comp: ApiComputation) => {
-                await Promise.resolve(saveAction?.(comp));
-                delete childModeRef.current[computationId];
-                delete childNodesRef.current[computationId];
-                clearDraft(computationId);
-                setRowMode(computationId, undefined);
-                setWorkspace((current) => ({
-                  ...current,
-                  selectionTargetId: null,
-                }));
+                const saved = (await Promise.resolve(saveAction?.(comp))) ?? comp;
+                const savedId =
+                  saved.computationId !== undefined && saved.computationId > 0
+                    ? saved.computationId
+                    : computationId;
+                const nextMode: UiState =
+                  rowStateRef.current[computationId] ??
+                  rowStateRef.current[savedId] ??
+                  (savedId > 0 ? "edit" : "new");
+
+                for (const draftId of new Set([computationId, savedId])) {
+                  closedDraftIdsRef.current.delete(draftId);
+                  resetChildRow(draftId);
+                }
+
+                setWorkspace((current) => {
+                  const { [computationId]: _removedDraft, ...remainingDrafts } =
+                    current.drafts;
+                  const { [computationId]: _removedRowState, ...remainingRowState } =
+                    current.rowState;
+
+                  return {
+                    ...current,
+                    drafts: {
+                      ...remainingDrafts,
+                      [savedId]: saved,
+                    },
+                    rowState: {
+                      ...remainingRowState,
+                      [savedId]: nextMode,
+                    },
+                    selectionTargetId: null,
+                  };
+                });
               },
               run: runAction,
               cancel: (item) => {
-                delete childModeRef.current[item];
-                delete childNodesRef.current[item];
-                clearDraft(item);
-                setRowMode(item, undefined);
+                closeEditor(item);
                 setWorkspace((current) => ({
                   ...current,
                   selectionTargetId: null,
@@ -597,17 +638,11 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
           const id = Number(deleteBtn.getAttribute("data-id"));
           if (!removeAction) {
             if (id < 0) {
-              delete childModeRef.current[id];
-              delete childNodesRef.current[id];
-              clearDraft(id);
-              setRowMode(id, undefined);
+              closeEditor(id);
             }
             return;
           }
-          delete childModeRef.current[id];
-          delete childNodesRef.current[id];
-          clearDraft(id);
-          setRowMode(id, undefined);
+          closeEditor(id);
           setWorkspace((current) => ({
             ...current,
             selectionTargetId:
@@ -637,7 +672,7 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
     i18n.language,
     getComputation,
     ensureDraftVisible,
-    clearDraft,
+    closeEditor,
     createDraft,
     copiedComputation,
     setRowMode,
