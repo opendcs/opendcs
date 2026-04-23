@@ -6,7 +6,7 @@
   "elevation": 200.0,
   "elevUnits": "m",
   "state": "CA",
-  "country": "USA",
+  "country": "US",
   "nearestCity": "Sacramento",
   "timezone": "PST",
   "region": "Yolo County",
@@ -18,6 +18,6 @@
   "locationType": "river",
   "lastModified": 1625141800000,
   "sitenames": {
-    "stream": "Platform 20"
+    "CWMS": "Platform 20"
   }
 }

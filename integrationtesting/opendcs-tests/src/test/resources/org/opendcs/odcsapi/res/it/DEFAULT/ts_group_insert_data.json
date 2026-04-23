@@ -27,7 +27,7 @@
     {
       "siteId" : "[SITE_ID]",
       "sitenames" : {
-        "Stream" : "TS test site"
+        "CWMS" : "TS test site"
       },
       "description" : "A TS site",
       "publicName" : "TS test site"
@@ -35,7 +35,7 @@
     {
       "siteId" : "[SITE_ID_2]",
       "sitenames" : {
-        "Stream" : "TS test site 2"
+        "CWMS" : "TS test site 2"
       },
       "description" : "A second TS site",
       "publicName" : "TS test site 2"

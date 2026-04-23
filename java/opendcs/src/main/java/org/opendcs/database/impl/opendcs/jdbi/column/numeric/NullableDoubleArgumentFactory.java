@@ -39,16 +39,15 @@ public class NullableDoubleArgumentFactory implements ArgumentFactory.Preparable
     {
         if (type == double.class || type == Double.class)
         {
-            final double val = (double)value;
             return Optional.of((position, statement, ctx) ->
             {
-                if (val == undefinedValue)
+                if (value == null || (double)value == undefinedValue)
                 {
                     statement.setNull(position, Types.DOUBLE);
                 }
                 else
                 {
-                    statement.setDouble(position, val);
+                    statement.setDouble(position, (double)value);
                 }
             });
         }

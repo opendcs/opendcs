@@ -1,7 +1,7 @@
 {
   "siteId" : null,
   "sitenames" : {
-    "Stream" : "Stream test site"
+    "CWMS" : "Stream test site"
   },
   "description" : "A stream site",
   "latitude" : "38.575764",
