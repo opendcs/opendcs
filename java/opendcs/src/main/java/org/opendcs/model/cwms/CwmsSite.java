@@ -15,7 +15,6 @@ public final class CwmsSite extends Site
 
     private CwmsSite()
     {
-        super();
         /* class is for future expansion and for the moment, to hold some constants. */
     }
     

@@ -52,7 +52,6 @@ import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.SiteDao;
 import org.opendcs.odcsapi.beans.ApiSite;
 import org.opendcs.odcsapi.beans.ApiSiteRef;
-import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
@@ -154,7 +153,7 @@ public final class SiteResources extends OpenDcsResource
 	public Response getSiteFull(@Parameter(description = "id to fetch", required = true,
 			example = "3", schema = @Schema(type = "long"))
 		@QueryParam("siteid") Long siteId)
-	throws WebAppException, DbException
+	throws WebAppException
 	{
 		if (siteId == null)
 		{

@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 
 import decodes.db.Site;
-import decodes.db.SiteList;
 import decodes.db.SiteName;
 import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiSite;
@@ -59,7 +58,7 @@ final class SiteResourcesTest
 	}
 
 	@Test
-	void testMapSite() throws Exception
+	void testMapSite()
 	{
 		ApiSite apiSite = new ApiSite();
 		apiSite.setActive(true);

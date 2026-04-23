@@ -662,13 +662,13 @@ final class ComputationResourcesIT extends BaseApiIT
 		importData(Optional.of(Path.of("ResEvap", "Test1")));
 		assertFalse(expectedTsList.isEmpty(), "No time series found imported");
 
-		final var traceId = UUID.randomUUID().toString();
+		final var compTraceId = UUID.randomUUID().toString();
 
 		ClientRequestFilter auth = ctx ->
 		{
 			ctx.getHeaders().putSingle(ApiConstants.ORGANIZATION_HEADER, organization);
 			ctx.getHeaders().putSingle("Cookie", getCookie());
-			ctx.getHeaders().putSingle(LoggingFilter.HEADER_TRACE_ID, traceId);
+			ctx.getHeaders().putSingle(LoggingFilter.HEADER_TRACE_ID, compTraceId);
 		};
 
 		URI baseURI = URI.create(String.format("%s:%d/%s", RestAssured.baseURI, RestAssured.port, RestAssured.basePath));
@@ -759,13 +759,13 @@ final class ComputationResourcesIT extends BaseApiIT
 		importData(Optional.of(Path.of("CopyTest", "Test1")));
 		assertFalse(expectedTsList.isEmpty(), "No time series found imported");
 
-		final var traceId = UUID.randomUUID().toString();
-		log.info("Computation is being run with Trace ID '{}'", traceId);
+		final var compTraceId = UUID.randomUUID().toString();
+		log.info("Computation is being run with Trace ID '{}'", compTraceId);
 		ClientRequestFilter auth = ctx ->
 		{
 			ctx.getHeaders().putSingle(ApiConstants.ORGANIZATION_HEADER, organization);
 			ctx.getHeaders().putSingle("Cookie", getCookie());
-			ctx.getHeaders().putSingle(LoggingFilter.HEADER_TRACE_ID, traceId);
+			ctx.getHeaders().putSingle(LoggingFilter.HEADER_TRACE_ID, compTraceId);
 		};
 
 		URI baseURI = URI.create(String.format("%s:%d/%s", RestAssured.baseURI, RestAssured.port, RestAssured.basePath));

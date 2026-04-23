@@ -6,7 +6,11 @@ import java.sql.SQLException;
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 
-public class CwmsBoolean implements ColumnMapper<Boolean> {
+/**
+ * Maps CWMS 'T'/'F' column to Java Boolean
+ */
+public class CwmsBoolean implements ColumnMapper<Boolean>
+{
 
     @Override
     public Boolean map(ResultSet rs, int columnNumber, StatementContext ctx) throws SQLException

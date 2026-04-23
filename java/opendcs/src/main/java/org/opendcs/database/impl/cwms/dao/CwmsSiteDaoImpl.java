@@ -3,7 +3,6 @@ package org.opendcs.database.impl.cwms.dao;
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -182,6 +181,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
     }
 
     @Override
+    @SuppressWarnings("java:S138") // this is really only long because the SQL and Binds are vertical for clarity.
     public Site save(DataTransaction tx, Site site) throws OpenDcsDataException
     {
         var ctx = tx.getContext();

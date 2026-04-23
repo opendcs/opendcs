@@ -1,7 +1,5 @@
 package org.opendcs.fixtures.configurations.opendcs.oracle;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
@@ -10,14 +8,12 @@ import java.sql.Driver;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.sql.DataSource;
@@ -34,11 +30,7 @@ import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.spi.database.MigrationProvider;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.testcontainers.containers.startupcheck.StartupCheckStrategy;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.oracle.OracleContainer;
-
-import com.github.dockerjava.api.model.HealthCheck;
 
 import decodes.db.Database;
 import decodes.launcher.Profile;
@@ -61,7 +53,7 @@ import uk.org.webcompere.systemstubs.security.SystemExit;
  */
 public class OpenDCSOracleConfiguration implements Configuration
 {
-    private static Logger log = OpenDcsLoggerFactory.getLogger();
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     public static final String NAME = "OpenDCS-Oracle";
 

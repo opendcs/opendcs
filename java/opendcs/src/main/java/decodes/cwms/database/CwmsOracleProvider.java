@@ -114,7 +114,7 @@ public class CwmsOracleProvider implements MigrationProvider
         jdbi.registerArgument(new DatabaseKeyArgumentFactory())
             .registerColumnMapper(new DatabaseKeyColumnMapper())
             .registerArgument(new CwmsBooleanArgumentFactory())
-            .registerColumnMapper(new CwmsBoolean());
+            .registerColumnMapper(new CwmsBoolean())
         ;
     }
 
