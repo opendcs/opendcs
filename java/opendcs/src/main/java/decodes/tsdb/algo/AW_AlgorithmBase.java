@@ -1590,7 +1590,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 		if (name.equalsIgnoreCase("aggUpperBoundClosed"))
 			return "" + aggUpperBoundClosed;
 		else if (name.equalsIgnoreCase("aggLowerBoundClosed"))
-			return "" + aggLowerBoundClosed;
+			return "" + aggLowerBoundClosed.get();
 		else if (name.equalsIgnoreCase("aggregateTimeZone"))
 			return aggTZ.getID();
 		else if (name.equalsIgnoreCase("noAggregateFill"))
