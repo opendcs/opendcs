@@ -65,7 +65,9 @@ public class CentralRunningAverageAlgorithm extends decodes.tsdb.algo.AW_Algorit
 		aggLowerBoundClosed = Property.property("aggLowerBoundClosed", Boolean.class)
 									  .withDefaultValue(false)
 									  .build();
-		aggUpperBoundClosed = true;
+		aggUpperBoundClosed = Property.property("aggUpperBoundClosed", Boolean.class)
+									  .withDefaultValue(true)
+									  .build();
 	}
 	// Allow javac to generate a no-args constructor.
 

@@ -286,12 +286,11 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 									  .withDefaultValue(_awAlgoType == AWAlgoType.RUNNING_AGGREGATE ? false : true)
 									  .build();
 		
-		t_string = comp.getProperty("aggUpperBoundClosed");
-		if (t_string != null) 
-			aggUpperBoundClosed = TextUtil.str2boolean(t_string);
-		else // default is false for regular aggregates, true for running aggregates.
-			aggUpperBoundClosed = 
-				_awAlgoType == AWAlgoType.RUNNING_AGGREGATE ? true : false;
+		aggUpperBoundClosed = Property.property("aggUpperBoundClosed", Boolean.class)
+									  .withSources(comp)
+									  .withExistingPropertyFirst(aggUpperBoundClosed)
+									  .withDefaultValue(_awAlgoType == AWAlgoType.RUNNING_AGGREGATE ? true: false)
+									  .build();
 
 		t_string = comp.getProperty("interpDeltas");
 		if (t_string != null)
@@ -566,7 +565,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 			aggCal.setTime(t);
 			aggCal.add(calIncr.getCalConstant(), calIncr.getCount());
 			while(aggCal.getTime().before(end)
-				|| (this.aggUpperBoundClosed && aggCal.equals(end)))
+				|| (this.aggUpperBoundClosed.get() && aggCal.equals(end)))
 			{
 				t = aggCal.getTime();
 				inputBaseTimes.add(t);
@@ -587,7 +586,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 			// If the following are all true, then we just did the lower period.
 			// Leave the base time alone and do the upper period.
 			if (baseTime != null
-			 && aggUpperBoundClosed && aggLowerBoundClosed.get()
+			 && aggUpperBoundClosed.get() && aggLowerBoundClosed.get()
 			 && baseTime.equals(_aggregatePeriodEnd))
 			{
 				log.trace("Special processing for double-closed boundaries. Just did period ending {}",baseTime);
@@ -698,7 +697,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 				aggCal.add(Calendar.YEAR, -1);
 
 			lower = aggCal.getTimeInMillis();
-			if (aggUpperBoundClosed && lower == orig)
+			if (aggUpperBoundClosed.get() && lower == orig)
 			{
 				aggCal.add(Calendar.YEAR, -1);
 				lower = aggCal.getTimeInMillis();
@@ -776,7 +775,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 			// is to be considered as part of the April Aggregate.
 			// Thus, if the bottom of the period is the orig time then 
 			// drop back one interval.
-			if (aggUpperBoundClosed && lower == orig)
+			if (aggUpperBoundClosed.get() && lower == orig)
 			{
 				aggCal.add(calIncr.getCalConstant(), -calIncr.getCount());
 				lower = aggCal.getTimeInMillis();
