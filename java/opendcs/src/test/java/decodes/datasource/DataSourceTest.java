@@ -3,7 +3,6 @@ package decodes.datasource;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -20,7 +19,6 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
-import org.opendcs.utils.FailableResult;
 
 import org.opendcs.decodes.api.DataMessage;
 
@@ -99,7 +97,7 @@ public class DataSourceTest
             }
             if (index > 0)
             {
-                /* outputing message with some delay to see the affects */
+                /* outputting message with some delay to see the affects */
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException e) {
