@@ -17,8 +17,8 @@ import ilex.util.HasProperties;
 /**
  * Establish a known Property value that is to be retrieved.
  *
- * The get and find methods *always* lookup the value when called. So the created instances
- * can be stored to retrieve at different times.
+ * The get and find methods *always* lookup the value when called. 
+ * Values are not cached.
  */
 public final class Property<T>
 {
