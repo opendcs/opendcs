@@ -227,8 +227,10 @@ public class AlgorithmTestsIT extends AppTestBase
 
                 DataCollection theData = new DataCollection();
 
-                for (CTimeSeries ctsi: inputTS){
-                    for (int idx = 0; idx < ctsi.size(); idx++){
+                for (CTimeSeries ctsi: inputTS)
+                {
+                    for (int idx = 0; idx < ctsi.size(); idx++)
+                    {
                         VarFlags.setWasAdded(ctsi.sampleAt(idx));
                     }
                     theData.addTimeSeries(ctsi);
