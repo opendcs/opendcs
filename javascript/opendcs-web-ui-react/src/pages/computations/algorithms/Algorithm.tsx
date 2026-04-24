@@ -187,16 +187,16 @@ export const Algorithm: React.FC<AlgorithmProperties> = ({
 }) => {
   const { t } = useTranslation(["algorithms", "translation"]);
   const providedAlgorithm = algorithm instanceof Promise ? use(algorithm) : algorithm;
-  const resolvedSpecs: ApiPropSpec[] = propSpecs
-    ? propSpecs instanceof Promise
-      ? use(propSpecs)
-      : propSpecs
-    : [];
-  const resolvedParms: AlgoParm[] = initialParms
-    ? initialParms instanceof Promise
-      ? use(initialParms)
-      : initialParms
-    : [];
+
+  let resolvedSpecs: ApiPropSpec[];
+  if (!propSpecs) resolvedSpecs = [];
+  else if (propSpecs instanceof Promise) resolvedSpecs = use(propSpecs);
+  else resolvedSpecs = propSpecs;
+
+  let resolvedParms: AlgoParm[];
+  if (!initialParms) resolvedParms = [];
+  else if (initialParms instanceof Promise) resolvedParms = use(initialParms);
+  else resolvedParms = initialParms;
   const [localAlgorithm, dispatch] = useReducer(AlgorithmReducer, providedAlgorithm);
   const [localParms, setLocalParms] = useState<AlgoParm[]>(resolvedParms);
 

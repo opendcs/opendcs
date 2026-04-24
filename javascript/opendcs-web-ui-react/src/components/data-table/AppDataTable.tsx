@@ -379,6 +379,18 @@ function nextAddNewId<T>(existing: T[], getId: (row: T) => string | number): num
   return minId - 1;
 }
 
+/** Filter a local-items array by reference identity — extracted so callers
+ *  don't have to stack `setLocalItems((prev) => prev.filter((r) => …))`
+ *  (which pushes nesting depth past Sonar's limit). */
+function withoutRef<T>(items: T[], target: T): T[] {
+  return items.filter((r) => r !== target);
+}
+
+/** Same but compares by stringified id via the provided `idOf`. */
+function withoutId<T>(items: T[], id: string, idOf: (r: T) => string): T[] {
+  return items.filter((r) => idOf(r) !== id);
+}
+
 // =============================================================================
 // Component
 // =============================================================================
@@ -515,7 +527,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     };
     const dropLocalNew = (row: T, id: string) => {
       newRowIdsRef.current.delete(row as object);
-      setLocalItems((prev) => prev.filter((r) => r !== row));
+      setLocalItems((prev) => withoutRef(prev, row));
       setModeByIdStr(id, undefined);
     };
     const commitSave = (row: T, rowEl: HTMLTableRowElement) => {
@@ -608,13 +620,13 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
             // don't block the UI transition — close the row regardless.
           }
           pendingNavRef.current = true;
-          setLocalItems((prev) => prev.filter((r) => idOf(r) !== id));
+          setLocalItems((prev) => withoutId(prev, id, idOf));
           setModeByIdStr(id, "show");
         },
         cancel: () => {
           const local = localItemsRef.current.find((r) => idOf(r) === id);
           if (local) {
-            setLocalItems((prev) => prev.filter((r) => idOf(r) !== id));
+            setLocalItems((prev) => withoutId(prev, id, idOf));
           }
           setModeByIdStr(id, undefined);
         },
