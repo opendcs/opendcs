@@ -274,17 +274,26 @@ public abstract class DataSourceExec implements PropertiesOwner
 	protected abstract RawMessage getSourceRawMessage()
 		throws DataSourceException;
 
-	public Stream<FailableResult<RawMessage,DataSourceException>> getRawMessages() throws DataSourceException
+	/**
+	 * Provide a stream of DataMessage that can be chained to other operations.
+	 * 
+	 * The stream provided by the default implementation closes only when the source throws DataSourceEndException.
+	 * Other Errors are provided in the Error Result so that callers can design how to handle errors.
+	 * 
+	 * @return Either a valid DataMessage or the exception thrown by getSourceRawMessage.
+	 * @throws DataSourceException exception DataSourceEndException, which terminates the stream.
+	 */
+	public Stream<FailableResult<DataMessage,DataSourceException>> stream() throws DataSourceException
 	{
-		return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new Iterator<FailableResult<RawMessage,DataSourceException>>()
+		return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new Iterator<FailableResult<DataMessage,DataSourceException>>()
 		{
-			private FailableResult<RawMessage,DataSourceException> nextMessage = null;
+			private FailableResult<DataMessage,DataSourceException> nextMessage = null;
 			@Override
 			public boolean hasNext() 
 			{
 				try
 				{
-					nextMessage = FailableResult.success(getRawMessage());
+					nextMessage = FailableResult.success(getDataMessage());
 					if (nextMessage != null)
 					{
 						return true;
@@ -294,7 +303,7 @@ public abstract class DataSourceExec implements PropertiesOwner
 				{
 					if (!(ex instanceof DataSourceEndException))
 					{
-						nextMessage =FailableResult.failure(ex);
+						nextMessage = FailableResult.failure(ex);
 						return true;
 					}
 				}
@@ -302,7 +311,7 @@ public abstract class DataSourceExec implements PropertiesOwner
 			}
 
 			@Override
-			public FailableResult<RawMessage,DataSourceException> next()
+			public FailableResult<DataMessage,DataSourceException> next()
 			{
 				return nextMessage;
 			}
