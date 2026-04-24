@@ -22,6 +22,8 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.opendcs.utils.FailableResult;
 
+import org.opendcs.decodes.api.DataMessage;
+
 import decodes.db.InvalidDatabaseException;
 import decodes.db.NetworkList;
 
@@ -32,9 +34,9 @@ public class DataSourceTest
     void test_datasource_stream() throws Exception
     {
         TestDataSource testDS = new TestDataSource();
-        List<FailableResult<RawMessage,DataSourceException>> results = testDS.getRawMessages().collect(Collectors.toList());
+        var results = testDS.stream().collect(Collectors.toList());
         assertEquals(testDS.size(), results.size(), "All messages and the end marker have not been returned.");
-        assertArrayEquals("A message".getBytes(),results.get(0).getSuccess().data, "Correct data was not returned.");
+        assertArrayEquals("A message".getBytes(), ((RawMessage)results.get(0).getSuccess()).data, "Correct data was not returned.");
     }
 
 
@@ -42,7 +44,7 @@ public class DataSourceTest
     void test_datasource_stream_collector() throws Exception
     {
         TestDataSource testDS = new TestDataSource();
-        DataSourceException result = testDS.getRawMessages()
+        DataSourceException result = testDS.stream()
                                            .filter(msg -> msg.isSuccess())
                                            .map(msg -> msg.getSuccess())
                                            .map(msg -> {
@@ -89,7 +91,7 @@ public class DataSourceTest
         }
 
         @Override
-        public RawMessage getRawMessage() throws DataSourceException
+        public RawMessage getSourceRawMessage() throws DataSourceException
         {
             if (index >= messages.length)
             {
@@ -111,21 +113,21 @@ public class DataSourceTest
         }
     }
 
-    public static class MessageCollector implements Collector<RawMessage, List<RawMessage>, DataSourceException>
+    public static class MessageCollector implements Collector<DataMessage, List<DataMessage>, DataSourceException>
     {
 
         @Override
-        public Supplier<List<RawMessage>> supplier()
+        public Supplier<List<DataMessage>> supplier()
         {
             /*
              This type is arbitrary but the examples used Lists. I'm thinking the instance of the collector
              takes a "StatusReporter" object as a constructor parameter and this is what's returned.
             */
-            return () -> new ArrayList<RawMessage>();
+            return () -> new ArrayList<DataMessage>();
         }
 
         @Override
-        public BiConsumer<List<RawMessage>, RawMessage> accumulator()
+        public BiConsumer<List<DataMessage>, DataMessage> accumulator()
         {
             return (list,msg) ->
             {
@@ -140,7 +142,7 @@ public class DataSourceTest
          * be able to apply
          */
         @Override
-        public BinaryOperator<List<RawMessage>> combiner() {
+        public BinaryOperator<List<DataMessage>> combiner() {
             return (left,right) ->
             {
                 System.out.println("Combining");
@@ -150,13 +152,13 @@ public class DataSourceTest
         }
 
         @Override
-        public Function<List<RawMessage>, DataSourceException> finisher() 
+        public Function<List<DataMessage>, DataSourceException> finisher() 
         {            
             return (list) -> 
             {
-                for (RawMessage rm :list)
+                for (var message: list)
                 {
-                    System.out.println(new Date().toString() + ": " + rm);
+                    System.out.println(new Date().toString() + ": " + message);
                 }
                 System.out.println(new Date().toString() + ": Finishing.");
                 return new DataSourceEndException("The end");
