@@ -98,12 +98,12 @@ public abstract class DbAlgorithmExecutive
 	/** Determines open/closed intervals for aggregate periods.
 	 * The default is [lower,upper)
 	 */
-	protected Property<Boolean> aggLowerBoundClosed; // = true;
+	protected Property<Boolean> aggLowerBoundClosed; 
 
 	/** Determines open/closed intervals for aggregate periods.
 	 * The default is [lower,upper)
 	 */
-	protected Property<Boolean> aggUpperBoundClosed; // = false;
+	protected Property<Boolean> aggUpperBoundClosed; 
 
 	/** If true, than deltas can be interpolated up to maxDeltaInterp intervals */
 	protected boolean interpDeltas = false;

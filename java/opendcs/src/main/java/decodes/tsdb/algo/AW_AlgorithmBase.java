@@ -283,7 +283,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 		aggLowerBoundClosed = Property.property("aggLowerBoundClosed", Boolean.class)
 									  .withSources(comp)
 									  .withExistingPropertyFirst(aggLowerBoundClosed)
-									  .withDefaultValue(_awAlgoType == AWAlgoType.RUNNING_AGGREGATE ? false : true)
+									  .withDefaultValue(_awAlgoType != AWAlgoType.RUNNING_AGGREGATE)
 									  .build();
 		
 		aggUpperBoundClosed = Property.property("aggUpperBoundClosed", Boolean.class)
