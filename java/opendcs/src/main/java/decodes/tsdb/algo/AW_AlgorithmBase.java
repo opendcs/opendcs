@@ -289,7 +289,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 		aggUpperBoundClosed = Property.property("aggUpperBoundClosed", Boolean.class)
 									  .withSources(comp)
 									  .withExistingPropertyFirst(aggUpperBoundClosed)
-									  .withDefaultValue(_awAlgoType == AWAlgoType.RUNNING_AGGREGATE ? true: false)
+									  .withDefaultValue(_awAlgoType == AWAlgoType.RUNNING_AGGREGATE)
 									  .build();
 
 		t_string = comp.getProperty("interpDeltas");
@@ -1587,7 +1587,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 		if (v != null)
 			return v;
 		if (name.equalsIgnoreCase("aggUpperBoundClosed"))
-			return "" + aggUpperBoundClosed;
+			return "" + aggUpperBoundClosed.get();
 		else if (name.equalsIgnoreCase("aggLowerBoundClosed"))
 			return "" + aggLowerBoundClosed.get();
 		else if (name.equalsIgnoreCase("aggregateTimeZone"))
