@@ -151,7 +151,9 @@ public class FillForward extends decodes.tsdb.algo.AW_AlgorithmBase
 		aggLowerBoundClosed = Property.property("aggLowerBoundClosed", Boolean.class)
 									  .withDefaultValue(false)
 									  .build();
-		aggUpperBoundClosed = true;
+		aggUpperBoundClosed = Property.property("aggUpperBoundClosed", Boolean.class)
+									  .withDefaultValue(true)
+									  .build();
 		AggregatePeriod aggPeriod = determineAggPeriod(_timeSliceBaseTime, outputIntvs);
 
 		// Loop forward specified number of increments.

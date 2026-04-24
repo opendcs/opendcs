@@ -54,8 +54,10 @@ public class RunningAverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		super();
 		aggLowerBoundClosed = Property.property("aggLowerBoundClosed", Boolean.class)
 									  .withDefaultValue(false)
-									  .build();;
-		aggUpperBoundClosed = true;
+									  .build();
+		aggUpperBoundClosed = Property.property("aggUpperBoundClosed", Boolean.class)
+									  .withDefaultValue(true)
+									  .build();
 	}
 	// Allow javac to generate a no-args constructor.
 

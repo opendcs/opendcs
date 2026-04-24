@@ -53,7 +53,9 @@ public class SumOverTimeAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	{
 		_awAlgoType = AWAlgoType.AGGREGATING;
 		_aggPeriodVarRoleName = "sum";
-		aggUpperBoundClosed = true;
+		aggUpperBoundClosed = Property.property("aggUpperBoundClosed", Boolean.class)
+									  .withDefaultValue(true)
+									  .build();
 		aggLowerBoundClosed = Property.property("aggLowerBoundClosed", Boolean.class)
 									  .withDefaultValue(false)
 									  .build();
