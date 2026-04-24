@@ -27,6 +27,7 @@ import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.opendcs.utils.properties.Property;
 import org.slf4j.Logger;
 
 import java.util.Date;
@@ -147,8 +148,12 @@ public class FillForward extends decodes.tsdb.algo.AW_AlgorithmBase
 		// Now I am guaranteed that agg period END will be => the latest input time.
 		// This also automatically takes the aggregate time zone and offset into
 		// consideration.
-		aggLowerBoundClosed = false;
-		aggUpperBoundClosed = true;
+		aggLowerBoundClosed = Property.property("aggLowerBoundClosed", Boolean.class)
+									  .withDefaultValue(false)
+									  .build();
+		aggUpperBoundClosed = Property.property("aggUpperBoundClosed", Boolean.class)
+									  .withDefaultValue(true)
+									  .build();
 		AggregatePeriod aggPeriod = determineAggPeriod(_timeSliceBaseTime, outputIntvs);
 
 		// Loop forward specified number of increments.
