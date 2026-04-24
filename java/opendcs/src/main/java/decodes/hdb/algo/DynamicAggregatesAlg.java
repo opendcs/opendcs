@@ -282,11 +282,15 @@ public class DynamicAggregatesAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 			log.trace(query);
 			// do the aggregate query to get the aggregate value and the total_count of the records
 			String lower_limit = " >= ";
-			if(!aggLowerBoundClosed.get())
-			lower_limit = " > ";
+			if (!aggLowerBoundClosed.get())
+			{
+				lower_limit = " > ";
+			}
 			String upper_limit = " < ";
-			if(aggUpperBoundClosed)
-			upper_limit = " <= ";
+			if (aggUpperBoundClosed.get())
+			{
+				upper_limit = " <= ";
+			}
 
 			// TODO: use bind varss. Will it suck, yes, but it avoids sql injection attacks and will likely boost performance
 			// as the Oracle query planner will be able to save the plan

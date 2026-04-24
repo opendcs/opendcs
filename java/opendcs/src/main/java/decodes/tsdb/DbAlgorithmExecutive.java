@@ -103,7 +103,7 @@ public abstract class DbAlgorithmExecutive
 	/** Determines open/closed intervals for aggregate periods.
 	 * The default is [lower,upper)
 	 */
-	protected boolean aggUpperBoundClosed = false;
+	protected Property<Boolean> aggUpperBoundClosed; // = false;
 
 	/** If true, than deltas can be interpolated up to maxDeltaInterp intervals */
 	protected boolean interpDeltas = false;
@@ -156,43 +156,11 @@ public abstract class DbAlgorithmExecutive
 											   .withSources(comp, algo, DecodesSettings.instance())
 											   .withDefaultValue(0)
 											   .build();
-		// this.maxMissingValuesForFill = DecodesSettings.instance().maxMissingValuesForFill;
-		// String s = comp.getProperty("maxMissingValuesForFill");
-		// if (s == null)
-		// 	s = algo.getProperty("maxMissingValuesForFill");
-		// if (s != null)
-		// {
-		// 	try { maxMissingValuesForFill = Integer.parseInt(s.trim()); }
-		// 	catch(NumberFormatException ex)
-		// 	{
-		// 		this.maxMissingValuesForFill = DecodesSettings.instance().maxMissingValuesForFill;
-		// 		log.atError()
-		// 		   .setCause(ex)
-		// 		   .log("Bad maxMissingValuesForFill property '{}' will use default of {}",
-		// 		   		s, maxMissingValuesForFill);
-		// 	}
-		// }
 		this.maxMissingTimeForFill = Property.property("maxMissingTimeForFill", Integer.class)
 											   .withSources(comp, algo, DecodesSettings.instance())
 											   .build()
 											   .find()
 											   .orElse(0);
-		// this.maxMissingTimeForFill = DecodesSettings.instance().maxMissingTimeForFill;
-		// s = comp.getProperty("maxMissingTimeForFill");
-		// if (s == null)
-		// 	s = algo.getProperty("maxMissingTimeForFill");
-		// if (s != null)
-		// {
-		// 	try { maxMissingTimeForFill = Integer.parseInt(s.trim()); }
-		// 	catch(NumberFormatException ex)
-		// 	{
-		// 		this.maxMissingTimeForFill = DecodesSettings.instance().maxMissingTimeForFill;
-		// 		log.atWarn()
-		// 		   .setCause(ex)
-		// 		   .log("Bad maxMissingTimeForFill property '{}' will use default of {}",
-		// 		   		s, maxMissingTimeForFill);
-		// 	}
-		// }
 
 		parseTimeRound();
 
@@ -346,9 +314,9 @@ public abstract class DbAlgorithmExecutive
 					log.atError()
 					   .setCause(ex)
 					   .log("""
-							Unable to add time series {} to output collection from role {}. It was already present, this should not happen. Please
-							check your computation configuration for duplicate output mappings
-						""", parmRef.tsid.getUniqueString(), parmRef.role);
+                            Unable to add time series {} to output collection from role {}. It was already present, this should not happen. Please
+                            check your computation configuration for duplicate output mappings
+                        """, parmRef.tsid.getUniqueString(), parmRef.role);
 				}
 			}
 
@@ -1016,7 +984,7 @@ public abstract class DbAlgorithmExecutive
 					if (paramSince.compareTo(paramUntil) <= 0)
 					{
 						timeSeriesDAO.fillTimeSeries(parmRef.timeSeries, paramSince, paramUntil,
-							aggLowerBoundClosed.get(), aggUpperBoundClosed, false);
+							aggLowerBoundClosed.get(), aggUpperBoundClosed.get(), false);
 					}
 					int sz = parmRef.timeSeries.size();
 					for(int i=0; i<sz; i++)
@@ -1028,10 +996,10 @@ public abstract class DbAlgorithmExecutive
 						long sampMsec = sampBaseTime.getTime();
 
 						boolean aboveLowerBound =
-							aggLowerBoundClosed.get() ? sampMsec >= sinceMsec
-							: sampMsec > sinceMsec;
+							(aggLowerBoundClosed.get()) ? (sampMsec >= sinceMsec)
+							: (sampMsec > sinceMsec);
 						boolean belowUpperBound =
-							aggUpperBoundClosed ? sampMsec <= untilMsec
+							aggUpperBoundClosed.get() ? sampMsec <= untilMsec
 							: sampMsec < untilMsec;
 						if (aboveLowerBound && belowUpperBound)
 							baseTimes.add(sampBaseTime);
