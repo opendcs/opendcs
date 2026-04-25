@@ -20,6 +20,7 @@ const meta = {
 export default meta;
 
 type Story = StoryObj<typeof meta>;
+const capturedSavePayload: { value?: ApiComputation } = {};
 
 const sharedComputations: ApiComputation[] = [
   {
@@ -175,6 +176,7 @@ const ComputationsTableWrapper: React.FC<{ initialComps: ApiComputation[] }> = (
   );
 
   const saveComputation = useCallback((comp: ApiComputation) => {
+    capturedSavePayload.value = comp;
     setLocalComps((prev) => {
       if (comp.computationId! < 0) {
         return [
@@ -333,5 +335,45 @@ export const CopyComputation: Story = {
     });
     expect(nameInput).toHaveValue("");
     expect(canvas.queryByText("output_units")).not.toBeInTheDocument();
+  },
+};
+
+export const EditProcessGroupPayload: Story = {
+  args: { computations: toComputationRefs(sharedComputations) },
+  render: StoryRender,
+  play: async ({ mount, parameters, userEvent }) => {
+    capturedSavePayload.value = undefined;
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:editor.edit_for", { id: 1 }),
+    });
+    await act(async () => userEvent.click(editBtn));
+
+    const processSelect = await canvas.findByRole("combobox", {
+      name: i18n.t("computations:editor.applicationName"),
+    });
+    await act(async () => userEvent.selectOptions(processSelect, "201"));
+
+    const groupSelect = await canvas.findByRole("combobox", {
+      name: i18n.t("computations:editor.groupName"),
+    });
+    await act(async () => userEvent.selectOptions(groupSelect, "6"));
+
+    const saveBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:editor.save_for", { id: 1 }),
+    });
+    await act(async () => userEvent.click(saveBtn));
+
+    await waitFor(() => {
+      expect(capturedSavePayload.value).toBeDefined();
+      expect(capturedSavePayload.value?.appId).toBe(201);
+      expect(capturedSavePayload.value?.applicationName).toBe("routingproc");
+      expect(capturedSavePayload.value?.groupId).toBe(6);
+      expect(capturedSavePayload.value?.groupName).toBe("Hourly");
+      expect(capturedSavePayload.value?.props).toBeDefined();
+      expect(Array.isArray(capturedSavePayload.value?.parmList)).toBeTruthy();
+    });
   },
 };

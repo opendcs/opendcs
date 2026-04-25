@@ -21,6 +21,7 @@
   "description": "Beschreibung",
   "cancel": "Abbrechen",
   "save": "Speichern",
+  "delete": "Löschen",
   "loading_reference_lists": "Referenzlistendaten werden geladen...",
   "user-settings": "Benutzereinstellungen",
   "date_time": "Datum/Uhrzeit",

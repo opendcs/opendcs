@@ -24,6 +24,8 @@ export interface AlgorithmsTableProperties {
   getAlgorithm?: (algorithmId: number) => Promise<ApiAlgorithm>;
   getPropSpecs?: (execClass: string) => Promise<ApiPropSpec[]>;
   actions?: SaveAction<ApiAlgorithm> & RemoveAction<number>;
+  onUseForComputation?: (algorithm: TableAlgorithmRef) => void;
+  computationSelectionActive?: boolean;
   onRefresh?: () => void;
 }
 
@@ -32,6 +34,8 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
   getAlgorithm,
   getPropSpecs,
   actions = {},
+  onUseForComputation,
+  computationSelectionActive = false,
   onRefresh,
 }) => {
   const { toDom } = useContextWrapper();
@@ -51,6 +55,8 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
   // Navigate to last page on next draw (after save/import adds a new algorithm)
   const pendingNavRef = useRef(false);
   const [showCheckNew, setShowCheckNew] = useState(false);
+  const saveAction = actions.save;
+  const removeAction = actions.remove;
 
   useEffect(() => {
     rowStateRef.current = rowState;
@@ -102,6 +108,15 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
           (actionsCell as HTMLElement).style.whiteSpace = "nowrap";
           const editLabel = t("algorithms:editor.edit_for", { id: idx });
           const deleteLabel = t("algorithms:editor.delete_for", { id: idx });
+          const computationLabel = computationSelectionActive
+            ? t("algorithms:editor.select_for_computation", { id: idx })
+            : t("algorithms:editor.create_computation_for", { id: idx });
+          const computationBtn =
+            idx > 0 && onUseForComputation
+              ? `<button class="btn btn-info btn-sm dt-action-computation" data-id="${idx}"` +
+                ` aria-label="${computationLabel}">` +
+                `<i class="bi bi-diagram-3"></i></button> `
+              : "";
           const editBtn =
             `<button class="btn btn-warning btn-sm dt-action-edit" data-id="${idx}"` +
             ` aria-label="${editLabel}">` +
@@ -112,7 +127,7 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
                 ` aria-label="${deleteLabel}">` +
                 `<i class="bi bi-trash"></i></button>`
               : "";
-          actionsCell.innerHTML = editBtn + deleteBtn;
+          actionsCell.innerHTML = computationBtn + editBtn + deleteBtn;
         }
 
         // Sync child rows
@@ -225,8 +240,9 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
             propSpecs={propSpecs}
             initialParms={parmsPromise}
             actions={{
-              save: (algo: ApiAlgorithm) => {
-                actions.save!(algo);
+              save: async (algo: ApiAlgorithm) => {
+                const resolvedAlgorithm =
+                  (await Promise.resolve(saveAction?.(algo))) ?? algo;
                 pendingNavRef.current = true;
                 delete childModeRef.current[algo.algorithmId!];
                 delete childNodesRef.current[algo.algorithmId!];
@@ -235,7 +251,10 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
                 ]);
                 updateRowState((prev) => {
                   const { [algo.algorithmId!]: _, ...states } = prev;
-                  return { ...states, [algo.algorithmId!]: "show" };
+                  return {
+                    ...states,
+                    [resolvedAlgorithm.algorithmId!]: "show",
+                  };
                 });
               },
               cancel: (item) => {
@@ -268,7 +287,7 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
       );
       return node;
     },
-    [getAlgorithm, getPropSpecs, toDom, actions.save],
+    [getAlgorithm, getPropSpecs, toDom, saveAction],
   );
 
   useEffect(() => {
@@ -319,13 +338,23 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
         return;
       }
 
+      // Handle computation button click
+      const computationBtn = target.closest(".dt-action-computation");
+      if (computationBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const row = table.current!.dt()!.row(tr as HTMLTableRowElement);
+        onUseForComputation?.(row.data() as TableAlgorithmRef);
+        return;
+      }
+
       // Handle delete button click
       const deleteBtn = target.closest(".dt-action-delete");
       if (deleteBtn) {
         e.preventDefault();
         e.stopPropagation();
         const id = Number(deleteBtn.getAttribute("data-id"));
-        actions.remove?.(id);
+        removeAction?.(id);
         return;
       }
 
@@ -344,7 +373,7 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
         return { ...remaining, [idx]: newValue };
       });
     });
-  }, [i18n.language, getAlgorithm, actions.remove]);
+  }, [i18n.language, getAlgorithm, onUseForComputation, removeAction]);
 
   // Trigger a DataTable redraw when rowState changes so drawCallback
   // can sync child rows. This is safe because drawCallback handles

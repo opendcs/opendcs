@@ -1,6 +1,7 @@
 import type { UiComputation } from "./Computation";
 
 export type ComputationAction =
+  | { type: "replace"; payload: UiComputation }
   | { type: "save_prop"; payload: { name: string; value: string } }
   | { type: "delete_prop"; payload: { name: string } }
   | { type: "save"; payload: UiComputation };
@@ -10,6 +11,11 @@ export function ComputationReducer(
   action: ComputationAction,
 ): UiComputation {
   switch (action.type) {
+    case "replace": {
+      return {
+        ...action.payload,
+      };
+    }
     case "save_prop": {
       return {
         ...current,

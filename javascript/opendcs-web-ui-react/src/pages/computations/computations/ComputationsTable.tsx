@@ -14,11 +14,16 @@ import type {
   ApiTsGroupRef,
 } from "opendcs-api";
 import Computation, { ComputationSkeleton, type UiComputation } from "./Computation";
-import type { RemoveAction, SaveAction, UiState } from "../../../util/Actions";
+import type { UiState } from "../../../util/Actions";
 import { useContextWrapper } from "../../../util/ContextWrapper";
-import { Button } from "react-bootstrap";
-import { Files, Pencil, Trash } from "react-bootstrap-icons";
 import type { RowState } from "../../../util/DataTables";
+import { useNavigate } from "react-router-dom";
+import {
+  getNextComputationDraftId,
+  loadComputationWorkspace,
+  saveComputationWorkspace,
+} from "./computationWorkspace";
+import type { ComputationRunResult } from "./computationRun";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -29,7 +34,15 @@ export interface ComputationsTableProperties {
   computations: TableComputationRef[];
   getComputation?: (computationId: number) => Promise<ApiComputation>;
   getAlgorithm?: (algorithmId: number) => Promise<ApiAlgorithm>;
-  actions?: SaveAction<ApiComputation> & RemoveAction<number>;
+  actions?: {
+    save?: (item: ApiComputation) => void | Promise<ApiComputation | void>;
+    remove?: (item: number) => void | Promise<void>;
+    run?: (
+      item: number,
+      start: Date,
+      end: Date,
+    ) => void | ComputationRunResult | Promise<void | ComputationRunResult>;
+  };
   processOptions?: ApiAppRef[];
   groupOptions?: ApiTsGroupRef[];
 }
@@ -40,6 +53,15 @@ const isOutputParm = (parm: { algoParmType?: string }): boolean =>
 const isOutputProp = (propName: string): boolean =>
   propName.trim().toLowerCase().startsWith("output");
 
+const descriptionSnippet = (value: unknown): string => {
+  const description = String(value ?? "").trim();
+  const maxLength = 80;
+  if (description.length <= maxLength) {
+    return description;
+  }
+  return `${description.slice(0, maxLength - 1).trimEnd()}...`;
+};
+
 export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
   computations,
   getComputation,
@@ -49,37 +71,52 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
   groupOptions = [],
 }) => {
   const { toDom } = useContextWrapper();
+  const navigate = useNavigate();
   const table = useRef<DataTableRef>(null);
   const [t, i18n] = useTranslation(["computations", "translation"]);
-  const [localComputations, updateLocalComputations] = useState<TableComputationRef[]>(
-    [],
-  );
-  const [localDrafts, setLocalDrafts] = useState<Record<number, UiComputation>>({});
-  const [rowState, updateRowState] = useState<RowState<number>>({});
-  const rowStateRef = useRef(rowState);
-  const prevRowStateRef = useRef<RowState<number>>({});
-  const localComputationsRef = useRef(localComputations);
-  const localDraftsRef = useRef(localDrafts);
+  const saveAction = actions.save;
+  const removeAction = actions.remove;
+  const runAction = actions.run;
+  const [workspace, setWorkspace] = useState(loadComputationWorkspace);
+  const [removingIds, setRemovingIds] = useState<number[]>([]);
+  const workspaceRef = useRef(workspace);
+  const rowStateRef = useRef(workspace.rowState);
+  const draftsRef = useRef(workspace.drafts);
+  const prevDataIdsRef = useRef("");
+  const renderComputationRef = useRef<
+    (data: TableComputationRef, edit: boolean) => Node
+  >(() => document.createElement("div"));
+  const childModeRef = useRef<RowState<number>>({});
+  const childNodesRef = useRef<Record<number, Node>>({});
+  const closedDraftIdsRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
-    rowStateRef.current = rowState;
-  }, [rowState]);
+    if (typeof window === "undefined") {
+      return;
+    }
 
-  useEffect(() => {
-    localComputationsRef.current = localComputations;
-  }, [localComputations]);
-
-  useEffect(() => {
-    localDraftsRef.current = localDrafts;
-  }, [localDrafts]);
-
-  const nextLocalComputationId = useCallback((): number => {
-    const existingIds = localComputationsRef.current
-      .map((c) => c.computationId)
-      .filter((id): id is number => id !== undefined && id < 0);
-    if (existingIds.length === 0) return -1;
-    return Math.min(...existingIds) - 1;
+    Object.keys(window.localStorage)
+      .filter((key) => key.startsWith("DataTables_computationTable_"))
+      .forEach((key) => window.localStorage.removeItem(key));
   }, []);
+
+  useEffect(() => {
+    workspaceRef.current = workspace;
+    rowStateRef.current = workspace.rowState;
+    draftsRef.current = workspace.drafts;
+  }, [workspace]);
+
+  useEffect(() => {
+    saveComputationWorkspace(workspace);
+  }, [workspace]);
+
+  useEffect(() => {
+    setRemovingIds((current) =>
+      current.filter((id) =>
+        computations.some((computation) => computation.computationId === id),
+      ),
+    );
+  }, [computations]);
 
   const toTableRef = useCallback((comp: UiComputation): TableComputationRef => {
     return {
@@ -95,6 +132,136 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
       groupName: comp.groupName,
     };
   }, []);
+
+  const ensureDraftVisible = useCallback(() => {
+    const dt = table.current?.dt();
+    if (!dt) {
+      return;
+    }
+
+    const currentPage = dt.page();
+    const currentOrder = dt.order();
+    const needsNav =
+      currentPage !== 0 ||
+      currentOrder.length === 0 ||
+      currentOrder[0][0] !== 0 ||
+      currentOrder[0][1] !== "asc";
+
+    if (needsNav) {
+      dt.order([0, "asc"]).page("first").draw(false);
+    }
+  }, []);
+
+  const updateDraft = useCallback((draft: UiComputation) => {
+    const computationId = draft.computationId;
+    if (computationId === undefined) {
+      return;
+    }
+
+    setWorkspace((current) => ({
+      ...current,
+      drafts: {
+        ...current.drafts,
+        [computationId]: {
+          ...(current.drafts[computationId] ?? {}),
+          ...draft,
+        },
+      },
+    }));
+  }, []);
+
+  const persistDraft = useCallback((draft: UiComputation) => {
+    const computationId = draft.computationId;
+    if (computationId === undefined) {
+      return;
+    }
+    if (closedDraftIdsRef.current.has(computationId)) {
+      return;
+    }
+
+    const nextDrafts = {
+      ...draftsRef.current,
+      [computationId]: {
+        ...(draftsRef.current[computationId] ?? {}),
+        ...draft,
+      },
+    };
+    draftsRef.current = nextDrafts;
+    saveComputationWorkspace({
+      ...workspaceRef.current,
+      drafts: nextDrafts,
+      rowState: rowStateRef.current,
+    });
+  }, []);
+
+  const clearDraft = useCallback((computationId: number) => {
+    closedDraftIdsRef.current.add(computationId);
+    const { [computationId]: _removed, ...remainingDraftsRef } = draftsRef.current;
+    draftsRef.current = remainingDraftsRef;
+    setWorkspace((current) => {
+      const { [computationId]: _, ...remainingDrafts } = current.drafts;
+      return {
+        ...current,
+        drafts: remainingDrafts,
+      };
+    });
+  }, []);
+
+  const setRowMode = useCallback((computationId: number, mode: UiState) => {
+    if (mode === "edit" || mode === "new") {
+      closedDraftIdsRef.current.delete(computationId);
+    }
+    setWorkspace((current) => {
+      if (mode === undefined) {
+        const { [computationId]: _, ...remainingRows } = current.rowState;
+        return {
+          ...current,
+          rowState: remainingRows,
+        };
+      }
+
+      return {
+        ...current,
+        rowState: {
+          ...current.rowState,
+          [computationId]: mode,
+        },
+      };
+    });
+  }, []);
+
+  const resetChildRow = useCallback((computationId: number) => {
+    delete childModeRef.current[computationId];
+    delete childNodesRef.current[computationId];
+  }, []);
+
+  const closeEditor = useCallback(
+    (computationId: number) => {
+      resetChildRow(computationId);
+      clearDraft(computationId);
+      setRowMode(computationId, undefined);
+    },
+    [clearDraft, resetChildRow, setRowMode],
+  );
+
+  const createDraft = useCallback(
+    (seed: UiComputation = {}) => {
+      const draftId =
+        seed.computationId !== undefined
+          ? seed.computationId
+          : getNextComputationDraftId(draftsRef.current);
+      const draft = {
+        ...(draftsRef.current[draftId] ?? {}),
+        ...seed,
+        computationId: draftId,
+      };
+
+      closedDraftIdsRef.current.delete(draftId);
+      updateDraft(draft);
+      return draft;
+    },
+    [updateDraft],
+  );
 
   const copiedComputation = useCallback(
     (source: ApiComputation, newId: number): UiComputation => {
@@ -115,10 +282,22 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
     [],
   );
 
-  const computationData = useMemo(
-    () => [...computations, ...localComputations],
-    [computations, localComputations],
-  );
+  const computationData = useMemo(() => {
+    const hiddenIds = new Set(removingIds);
+    const localDraftRows = Object.values(workspace.drafts)
+      .filter(
+        (draft): draft is UiComputation =>
+          draft.computationId !== undefined && draft.computationId < 0,
+      )
+      .map((draft) => toTableRef(draft));
+
+    return [
+      ...computations.filter(
+        (computation) => !hiddenIds.has(computation.computationId ?? Number.NaN),
+      ),
+      ...localDraftRows,
+    ];
+  }, [computations, workspace.drafts, toTableRef, removingIds]);
 
   const renderEnabled = useCallback((data: unknown, type: string) => {
     const enabled = Boolean(data);
@@ -130,7 +309,21 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
 
   const columns = useMemo(
     () => [
-      { data: "computationId", defaultContent: "new", className: "dt-left" },
+      {
+        data: "computationId",
+        defaultContent: "new",
+        className: "dt-left",
+        render: (data: unknown, type: string) => {
+          const id = typeof data === "number" ? data : Number(data);
+          if (!Number.isFinite(id)) {
+            return type === "display" ? "new" : data;
+          }
+          if (type === "display" && id < 0) {
+            return "new";
+          }
+          return id;
+        },
+      },
       { data: "name", defaultContent: "" },
       { data: "algorithmName", defaultContent: "" },
       { data: "processName", defaultContent: "" },
@@ -140,85 +333,97 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
         className: "dt-center",
         render: renderEnabled,
       },
-      { data: "description", defaultContent: "" },
-      { data: null, name: "actions" },
+      {
+        data: "description",
+        defaultContent: "",
+        render: (data: unknown, type: string) =>
+          type === "display" ? descriptionSnippet(data) : (data ?? ""),
+      },
+      {
+        data: null,
+        name: "actions",
+        orderable: false,
+        searchable: false,
+        defaultContent: "",
+      },
     ],
     [renderEnabled],
   );
 
-  const renderActions = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (data: TableComputationRef, _row: any) => {
-      const id = data.computationId;
-      if (id === undefined) {
-        return <></>;
-      }
-
-      const curRowState = rowStateRef.current[id];
-      const inEdit = curRowState === "edit" || curRowState === "new";
-      return (
-        <>
-          {!inEdit && (
-            <Button
-              variant="warning"
-              onClick={(e) => {
-                e.stopPropagation();
-                updateRowState((prev) => ({ ...prev, [id]: "edit" }));
-              }}
-              aria-label={t("computations:editor.edit_for", { id })}
-            >
-              <Pencil />
-            </Button>
-          )}
-          {!inEdit && id > 0 && getComputation && (
-            <Button
-              variant="info"
-              aria-label={t("computations:editor.copy_for", { id })}
-              onClick={async (e) => {
-                e.stopPropagation();
-                if (!getComputation) return;
-                try {
-                  const source = await getComputation(id);
-                  const newId = nextLocalComputationId();
-                  const draft = copiedComputation(source, newId);
-                  updateLocalComputations((prev) => [...prev, toTableRef(draft)]);
-                  setLocalDrafts((prev) => ({ ...prev, [newId]: draft }));
-                  updateRowState((prev) => ({ ...prev, [newId]: "new" }));
-                } catch (error) {
-                  console.warn(`Failed to copy computation ${id}`, error);
-                }
-              }}
-            >
-              <Files />
-            </Button>
-          )}
-          {!inEdit && id > 0 && (
-            <Button
-              variant="danger"
-              aria-label={t("computations:editor.delete_for", { id })}
-              onClick={(e) => {
-                e.stopPropagation();
-                actions.remove?.(id);
-              }}
-            >
-              <Trash />
-            </Button>
-          )}
-        </>
-      );
-    },
-    [t, getComputation, nextLocalComputationId, copiedComputation, toTableRef, actions],
-  );
-
-  const slots = { actions: renderActions };
-
   const options: DataTableProps["options"] = {
     paging: true,
     responsive: true,
-    stateSave: true,
+    stateSave: false,
+    destroy: true,
     language: dtLangs.get(i18n.language),
     createdRow: (_row, _data, dataIndex) => {
       table.current?.dt()?.row(dataIndex).node().classList.add("child-toggle");
+    },
+    drawCallback: function () {
+      const dt = this.api();
+      const actionsColumnIndex = dt.column("actions:name").index("visible");
+      dt.rows({ page: "current", search: "applied" }).every(function () {
+        const data = this.data() as TableComputationRef | undefined;
+        if (!data) return;
+        const idx = data.computationId!;
+        const node = this.node() as HTMLTableRowElement;
+        const actionsCell =
+          typeof actionsColumnIndex === "number"
+            ? node.children.item(actionsColumnIndex)
+            : null;
+        if (!actionsCell) return;
+
+        const inEdit =
+          rowStateRef.current[idx] === "edit" || rowStateRef.current[idx] === "new";
+        const editLabel = t("computations:editor.edit_for", { id: idx });
+        const copyLabel = t("computations:editor.copy_for", { id: idx });
+        const deleteLabel = t("computations:editor.delete_for", { id: idx });
+        const editBtn = !inEdit
+          ? `<button type="button" class="btn btn-warning btn-sm dt-action-edit" data-id="${idx}" aria-label="${editLabel}"><i class="bi bi-pencil"></i></button>`
+          : "";
+        const deleteBtn =
+          idx !== undefined
+            ? ` <button type="button" class="btn btn-danger btn-sm dt-action-delete" data-id="${idx}" aria-label="${deleteLabel}"><i class="bi bi-trash"></i></button>`
+            : "";
+        const copyBtn =
+          idx !== undefined
+            ? ` <button type="button" class="btn btn-info btn-sm dt-action-copy" data-id="${idx}" aria-label="${copyLabel}"><i class="bi bi-files"></i></button>`
+            : "";
+        (actionsCell as HTMLElement).style.whiteSpace = "nowrap";
+        actionsCell.innerHTML = editBtn + deleteBtn + copyBtn;
+
+        const state = rowStateRef.current[idx];
+        const isShown = this.child.isShown();
+        const prevMode = childModeRef.current[idx];
+        if (state !== undefined) {
+          if (!isShown || prevMode !== state) {
+            if (isShown) {
+              this.child.hide();
+            }
+            if (prevMode !== state) {
+              const edit = state !== "show";
+              const childNode = renderComputationRef.current(data, edit);
+              childNodesRef.current[idx] = childNode;
+              this.child(childNode, "child-row").show();
+            } else {
+              const cached = childNodesRef.current[idx];
+              if (cached) {
+                this.child(cached, "child-row").show();
+              } else {
+                const edit = state !== "show";
+                const childNode = renderComputationRef.current(data, edit);
+                childNodesRef.current[idx] = childNode;
+                this.child(childNode, "child-row").show();
+              }
+            }
+            childModeRef.current[idx] = state;
+          }
+        } else if (isShown) {
+          this.child(false);
+          delete childModeRef.current[idx];
+          delete childNodesRef.current[idx];
+        }
+      });
     },
     layout: {
       top1Start: {
@@ -226,18 +431,11 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
           {
             text: "+",
             action: () => {
-              updateLocalComputations((prev) => {
-                const newId = nextLocalComputationId();
-                setLocalDrafts((drafts) => ({
-                  ...drafts,
-                  [newId]: { computationId: newId },
-                }));
-                updateRowState((prevRowState) => ({
-                  ...prevRowState,
-                  [newId]: "new",
-                }));
-                return [...prev, { computationId: newId }];
-              });
+              ensureDraftVisible();
+              const draft = createDraft();
+              if (draft.computationId !== undefined) {
+                setRowMode(draft.computationId, "new");
+              }
             },
             attr: { "aria-label": t("computations:add_computation") },
           },
@@ -249,13 +447,13 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
   const renderComputation = useCallback(
     (data: TableComputationRef, edit: boolean = false): Node => {
       const computationId = data.computationId!;
+      const storedDraft = draftsRef.current[computationId];
       const computationPromise: Promise<UiComputation> =
-        computationId > 0
-          ? getComputation!(computationId)
-          : Promise.resolve(
-              localDraftsRef.current[computationId] ??
-                ({ computationId } as UiComputation),
-            );
+        storedDraft !== undefined
+          ? Promise.resolve(storedDraft)
+          : computationId > 0
+            ? getComputation!(computationId)
+            : Promise.resolve({ computationId } as UiComputation);
 
       const algorithmPromise: Promise<ApiAlgorithm | undefined> =
         computationPromise.then(async (comp) => {
@@ -278,41 +476,72 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
           <Computation
             computation={computationPromise}
             algorithm={algorithmPromise}
+            onDraftChange={(draft) => {
+              persistDraft(draft);
+            }}
+            onSelectAlgorithm={(draft) => {
+              if (draft.computationId === undefined) {
+                return;
+              }
+              const nextWorkspace = {
+                ...workspace,
+                drafts: {
+                  ...workspace.drafts,
+                  [draft.computationId]: {
+                    ...(workspace.drafts[draft.computationId] ?? {}),
+                    ...draft,
+                  },
+                },
+                selectionTargetId: draft.computationId,
+              };
+              setWorkspace(nextWorkspace);
+              saveComputationWorkspace(nextWorkspace);
+              navigate("/algorithms");
+            }}
             actions={{
-              save: (comp: ApiComputation) => {
-                actions.save?.(comp);
-                if (comp.computationId === undefined) {
-                  return;
+              save: async (comp: ApiComputation) => {
+                const saved = (await Promise.resolve(saveAction?.(comp))) ?? comp;
+                const savedId =
+                  saved.computationId !== undefined && saved.computationId > 0
+                    ? saved.computationId
+                    : computationId;
+                const nextMode: UiState =
+                  rowStateRef.current[computationId] ??
+                  rowStateRef.current[savedId] ??
+                  (savedId > 0 ? "edit" : "new");
+
+                for (const draftId of new Set([computationId, savedId])) {
+                  closedDraftIdsRef.current.delete(draftId);
+                  resetChildRow(draftId);
                 }
-                updateLocalComputations((prev) => [
-                  ...prev.filter((pc) => pc.computationId !== comp.computationId),
-                ]);
-                setLocalDrafts((prev) => {
-                  const { [comp.computationId!]: _, ...rest } = prev;
-                  return rest;
-                });
-                updateRowState((prev) => {
-                  const { [comp.computationId!]: _, ...states } = prev;
-                  return { ...states, [comp.computationId!]: "show" };
+
+                setWorkspace((current) => {
+                  const { [computationId]: _removedDraft, ...remainingDrafts } =
+                    current.drafts;
+                  const { [computationId]: _removedRowState, ...remainingRowState } =
+                    current.rowState;
+
+                  return {
+                    ...current,
+                    drafts: {
+                      ...remainingDrafts,
+                      [savedId]: saved,
+                    },
+                    rowState: {
+                      ...remainingRowState,
+                      [savedId]: nextMode,
+                    },
+                    selectionTargetId: null,
+                  };
                 });
               },
+              run: runAction,
               cancel: (item) => {
-                const local = localComputationsRef.current.find(
-                  (lc) => lc.computationId === item,
-                );
-                if (local) {
-                  updateLocalComputations((prev) => [
-                    ...prev.filter((plc) => plc.computationId !== item),
-                  ]);
-                }
-                setLocalDrafts((prev) => {
-                  const { [item]: _, ...rest } = prev;
-                  return rest;
-                });
-                updateRowState((prev) => {
-                  const { [item]: _, ...states } = prev;
-                  return { ...states };
-                });
+                closeEditor(item);
+                setWorkspace((current) => ({
+                  ...current,
+                  selectionTargetId: null,
+                }));
               },
             }}
             edit={edit}
@@ -330,14 +559,29 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
       );
       return node;
     },
-    [getComputation, getAlgorithm, toDom, actions, processOptions, groupOptions],
+    [
+      getComputation,
+      getAlgorithm,
+      toDom,
+      workspace,
+      persistDraft,
+      navigate,
+      saveAction,
+      runAction,
+      clearDraft,
+      setRowMode,
+      processOptions,
+      groupOptions,
+    ],
   );
 
   useEffect(() => {
-    updateRowState({});
-    prevRowStateRef.current = {};
-    updateLocalComputations([]);
-    setLocalDrafts({});
+    renderComputationRef.current = renderComputation;
+  }, [renderComputation]);
+
+  useEffect(() => {
+    childModeRef.current = {};
+    childNodesRef.current = {};
   }, [i18n.language]);
 
   useEffect(() => {
@@ -349,24 +593,105 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
         const target = e.target! as Element;
         const tr = target.closest("tr");
         if (tr?.classList.contains("child-row")) return;
+
+        const editBtn = target.closest(".dt-action-edit");
+        if (editBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const id = Number(editBtn.getAttribute("data-id"));
+          setRowMode(id, "edit");
+          return;
+        }
+
+        const copyBtn = target.closest(".dt-action-copy");
+        if (copyBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const id = Number(copyBtn.getAttribute("data-id"));
+          const sourcePromise =
+            id > 0 && getComputation
+              ? getComputation(id)
+              : Promise.resolve(draftsRef.current[id] as ApiComputation | undefined);
+          sourcePromise
+            .then((source) => {
+              if (!source) {
+                return;
+              }
+              ensureDraftVisible();
+              const draft = createDraft(
+                copiedComputation(source, getNextComputationDraftId(draftsRef.current)),
+              );
+              if (draft.computationId !== undefined) {
+                setRowMode(draft.computationId, "new");
+              }
+            })
+            .catch((error) => {
+              console.warn(`Failed to copy computation ${id}`, error);
+            });
+          return;
+        }
+
+        const deleteBtn = target.closest(".dt-action-delete");
+        if (deleteBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const id = Number(deleteBtn.getAttribute("data-id"));
+          if (!removeAction) {
+            if (id < 0) {
+              closeEditor(id);
+            }
+            return;
+          }
+          closeEditor(id);
+          setWorkspace((current) => ({
+            ...current,
+            selectionTargetId:
+              current.selectionTargetId === id ? null : current.selectionTargetId,
+          }));
+          if (id > 0) {
+            setRemovingIds((current) =>
+              current.includes(id) ? current : [...current, id],
+            );
+            Promise.resolve(removeAction(id)).catch((error) => {
+              console.error(`Failed to remove computation ${id}`, error);
+              setRemovingIds((current) => current.filter((value) => value !== id));
+            });
+          }
+          return;
+        }
+
         e.preventDefault();
         e.stopPropagation();
         const dt = table.current!.dt()!;
         const row = dt.row(tr as HTMLTableRowElement);
-        updateRowState((prev) => {
-          const idx = (row.data() as TableComputationRef).computationId!;
-          const { [idx]: existing, ...remaining } = prev;
-          let newValue: UiState = "show";
-          if (existing !== undefined) {
-            newValue = undefined;
-          }
-          return { ...remaining, [idx]: newValue };
-        });
+        const idx = (row.data() as TableComputationRef).computationId!;
+        const existing = rowStateRef.current[idx];
+        setRowMode(idx, existing === undefined ? "show" : undefined);
       });
-  }, [i18n.language, getComputation]);
+  }, [
+    i18n.language,
+    getComputation,
+    ensureDraftVisible,
+    closeEditor,
+    createDraft,
+    copiedComputation,
+    setRowMode,
+    removeAction,
+  ]);
 
   useEffect(() => {
     if (table.current?.dt()) {
+      const currentIds = computationData
+        .map((row) => String(row.computationId ?? ""))
+        .join(",");
+      const idsChanged = currentIds !== prevDataIdsRef.current;
+      prevDataIdsRef.current = currentIds;
+      const hasActiveEditor = Object.values(rowStateRef.current).some(
+        (mode) => mode === "edit" || mode === "new",
+      );
+      if (!idsChanged && hasActiveEditor) {
+        return;
+      }
       const dt = table.current.dt()!;
       dt.rows({ page: "current", search: "applied" }).invalidate();
       dt.draw(false);
@@ -374,28 +699,8 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
   }, [computationData]);
 
   useEffect(() => {
-    if (table.current?.dt()) {
-      const dt = table.current.dt()!;
-      const visibleRows = dt.rows({ page: "current", search: "applied" });
-      let rowClosed = false;
-      visibleRows.every(function () {
-        const idx = (this.data() as TableComputationRef).computationId!;
-        const currentState = rowStateRef.current[idx];
-        const prevState = prevRowStateRef.current[idx];
-        if (currentState === prevState) return;
-        if (currentState !== undefined) {
-          const data: TableComputationRef = this.data() as TableComputationRef;
-          const edit = currentState !== "show";
-          this.child(renderComputation(data, edit), "child-row").show();
-        } else {
-          this.child(false);
-          rowClosed = true;
-        }
-      });
-      prevRowStateRef.current = { ...rowStateRef.current };
-      if (rowClosed) dt.draw(false);
-    }
-  }, [rowState, rowStateRef, renderComputation]);
+    table.current?.dt()?.draw(false);
+  }, [workspace.rowState]);
 
   return (
     <DataTable
@@ -404,7 +709,6 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
       columns={columns}
       data={computationData}
       options={options}
-      slots={slots}
       ref={table}
       className="table table-hover table-striped tablerow-cursor w-100 border"
     >
