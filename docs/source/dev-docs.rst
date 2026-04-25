@@ -531,7 +531,28 @@ Testing the Decodes Language
 
 Adding Decoding Tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-To add new tests for the Decoding language and functions, developers need to create four files in the `./opendcs/java/opendcs/src/test/resources/decodes/db` directory:
+New Decoding tests can be created by simply adding a set of files
+to the directory ``./opendcs/java/opendcs/src/test/resources/decodes/db``.
+
+Two test styles are available. Both share the same ``.decodescript``, ``.input*``,
+and ``.sensors`` files.
+
+- **Per-sample assertions** — add a ``.assertions`` file that
+  lists expected values at specific sensor/time pairs. Discovered at runtime by
+  ``DecodesScriptSampleTest``, which generates a separate JUnit test per
+  matching file set. Best when you care about numeric tolerance or flag state
+  on individual samples.
+- **Formatter + golden text** (see :ref:`formatter_decoding_tests`) — add a
+  ``.formatter`` file that defines an ``OutputFormatter`` and add a
+  ``.expected`` file holding the expected text. Discovered at runtime by
+  ``DecodesScriptFormatterTest``, which generates a separate JUnit
+  test per matching file set.
+  
+The tests are automatically generated based on the files you add
+(``.assertions`` vs ``.expected``); adding both files will create two tests.
+
+To add a new per-sample assertion test, developers need to create four files
+in the ``./opendcs/java/opendcs/src/test/resources/decodes/db`` directory:
 
 1. **`.assertions` file**:  
     - Purpose: Defines the expected output for the test to validate the Decoding.
@@ -593,6 +614,81 @@ To add new tests for the Decoding language and functions, developers need to cre
 
 
 By adding these files, developers can create tests to ensure the correctness and reliability of the Decodes language including new or modified Decodes Functions.
+
+.. _formatter_decoding_tests:
+
+Adding Formatter-Based Decoding Tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To test Decoding/Formatting, create a ``.formatter`` and an ``.expected`` file.
+The test will execute ``DecodesScript.decodeMessage(...)``
+and pass the resulting ``DecodedMessage`` to the ``OutputFormatter``
+specified in the ``.formatter`` file; the result is compared to the
+``.expected`` file contents.
+
+
+Place the files in the same directory as the per-sample tests
+(``./opendcs/java/opendcs/src/test/resources/decodes/db``). The shared files
+(``.decodescript``, ``.input*``, ``.sensors``) are identical to the per-sample
+testing described above. In addition, two files select and drive the formatter:
+
+1. **``.formatter`` file**:
+    - Purpose: Define the ``OutputFormatter`` to instantiate and 
+      provide initialization properties. Parsed as a ``java.util.Properties`` file, so
+      ``#`` is a comment and each entry is ``key=value``.
+    - Required key: ``class`` — fully qualified class name of the formatter.
+    - Optional key: ``timezone`` — TimeZone ID (default ``UTC``).
+    - All other keys are passed to ``OutputFormatter.initFormatter``.
+    - Example:
+      .. code-block:: properties
+
+         # Formatter configuration (java.util.Properties format)
+         class=decodes.consumer.EmitAsciiFormatter
+         timezone=UTC
+         # Any additional keys are passed to the formatter's initFormatter.
+         # For example, EmitAsciiFormatter honors 'delimiter':
+         delimiter=,
+
+2. **``.expected`` file**:
+    - Purpose: Expected text that the formatter's output is compared against with
+      a whole-string ``assertEquals``. Trailing newline, if present, is
+      preserved.
+    - Example:
+      .. code-block:: text
+
+         11111111 0     1    14060/12:00:00 23.95      I dummy      Stage    ...
+
+See ``CsvDocSampleFormatted.*`` in that directory for a working example.
+
+Generating the initial ``.expected`` file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A test set is only picked up by ``DecodesScriptFormatterTest`` if its
+``.expected`` file exists.  The steps are:
+
+1. Create the test set's other four files (``.decodescript``, ``.sensors``,
+   ``.input*``, ``.formatter``) and an **empty** ``.expected`` file. 
+
+2. Run just this test class:
+
+   .. code-block:: bash
+
+      ./gradlew :opendcs:test --tests decodes.db.DecodesScriptFormatterTest
+
+   The test will fail with an ``AssertionFailedError`` whose message contains
+   both the empty expected value and the full actual formatter output in the
+   form ``expected: <> but was: <...>``. The actual output also appears in the
+   JUnit report at
+   ``java/opendcs/build/reports/tests/test/classes/decodes.db.DecodesScriptFormatterTest.html``
+   and in the machine-readable XML at
+   ``java/opendcs/build/test-results/test/TEST-decodes.db.DecodesScriptFormatterTest.xml``.
+
+3. Inspect the actual output. 
+   Confirm it matches what the formatter *should* be producing for this input.
+   Once verified, paste it into ``.expected`` (preserving the trailing newline
+   if present) and rerun the same gradle command. The test should now pass.
+
+Subsequent formatter or decoder changes that alter the output will cause a
+failure, and you may need to update the ``.expected`` file to reflect the change.
 
 Algorithms
 ~~~~~~~~~~

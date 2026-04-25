@@ -6,6 +6,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -14,14 +15,20 @@ import java.text.SimpleDateFormat;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Properties;
+import java.util.Set;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import decodes.consumer.OutputFormatter;
 import decodes.datasource.ShefPMParser;
 import decodes.db.DataType;
+import decodes.db.PresentationGroup;
 import decodes.decoder.TimeSeries;
 import org.junit.jupiter.params.provider.Arguments;
 import org.opendcs.utils.ClasspathIO;
@@ -88,7 +95,64 @@ public class DecodesHelper {
                                                               UnknownPlatformException, IncompleteDatabaseException,
                                                               InvalidDatabaseException, DecoderException, NoConversionException
     {
+        Artifacts a = loadArtifacts(testName, resourcePath);
+        ArrayList<DecodesAssertion> assertions = loadAssertions(requireResource(resourcePath, testName, ".assertions"));
+        return arguments(testName, a.script, a.rawMessage, a.decodedMessage, assertions);
+    }
+
+    private static ArrayList<DecodesAssertion> loadAssertions(URL assertionsURL) throws IOException
+    {
         ArrayList<DecodesAssertion> assertions = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(assertionsURL.openStream())))
+        {
+            String line;
+            while ((line = reader.readLine()) != null)
+            {
+                String trimmed = line.trim();
+                if (trimmed.isEmpty() || trimmed.startsWith("#"))
+                {
+                    continue;
+                }
+                assertions.add(parseAssertion(line));
+            }
+        }
+        return assertions;
+    }
+
+    private static DecodesAssertion parseAssertion(String line)
+    {
+        String[] parts = line.trim().split(",");
+        Variable v;
+        try
+        {
+            v = new Variable(Double.parseDouble(parts[2].trim()));
+        }
+        catch (NumberFormatException ex)
+        {
+            /* String was provided, use as-is. */
+            v = new Variable(parts[2].trim());
+        }
+        return new DecodesAssertion(
+            Integer.parseInt(parts[0].trim()),
+            ZonedDateTime.parse(parts[1].trim()),
+            v,
+            Double.parseDouble(parts[3].trim()),
+            parts[4].trim()
+        );
+    }
+
+    /**
+     * Load the shared decoding artifacts for a test set: .decodescript, .sensors, .input_*.
+     * Prepares the RawMessage and invokes DecodesScript.decodeMessage.
+     *
+     * Used by both the assertion-based test pattern (.assertions) and the
+     * formatter-based test pattern (.formatter + .expected).
+     */
+    private static Artifacts loadArtifacts(String testName, String resourcePath) throws DecodesScriptException, IOException,
+                                                              URISyntaxException, HeaderParseException,
+                                                              UnknownPlatformException, IncompleteDatabaseException,
+                                                              InvalidDatabaseException, DecoderException, NoConversionException
+    {
         DecodesScript.trackDecoding = true;
         PlatformConfig platformConfig = new PlatformConfig();
         String path = "/" + resourcePath + "/";
@@ -100,7 +164,6 @@ public class DecodesHelper {
                                      .build();
 
         URL sensors = DecodesScript.class.getResource(path + testName + ".sensors");
-        URL assertionsURL = DecodesScript.class.getResource(path + testName + ".assertions");
 
         int sensorIndex = 0;
         String sensorLine = null;
@@ -109,7 +172,8 @@ public class DecodesHelper {
             while ((sensorLine = reader.readLine()) != null)
             {
                 //sensor number, sensor name, units, description, type:code, alogrithm, A:B:C:D:E:F, recording mode, interval
-                if( sensorLine.trim().startsWith("#"))
+                String trimmed = sensorLine.trim();
+                if (trimmed.isEmpty() || trimmed.startsWith("#"))
                 {
                     continue;
                 }
@@ -117,7 +181,7 @@ public class DecodesHelper {
                 String parts[] = sensorLine.split(",");
                 ScriptSensor stage = new ScriptSensor(decodesScript, sensorIndex);
 
-                stage.rawConverter = new UnitConverterDb("raw", parts[1]); 
+                stage.rawConverter = new UnitConverterDb("raw", parts[1]);
                 stage.rawConverter.algorithm = lookupAlgo(parts);
                 stage.rawConverter.coefficients = lookupCoefficients(parts);
                 decodesScript.scriptSensors.add(stage);
@@ -138,40 +202,142 @@ public class DecodesHelper {
             }
         }
 
-        String assertionLine = null;
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(assertionsURL.openStream())))
-        {
-            while((assertionLine = reader.readLine() ) != null)
-            {
-                if( assertionLine.trim().startsWith("#"))
-                {
-                    continue;
-                }
-                String parts[] = assertionLine.trim().split(",");
-                Variable v = null;
-                try
-                {
-                    v = new Variable(Double.parseDouble(parts[2].trim()));
-                }
-                catch(NumberFormatException ex)
-                {
-                    /* String was provided, use as-is. */
-                    v = new Variable(parts[2].trim());
-                }
-                DecodesAssertion a = new DecodesAssertion(
-                    Integer.parseInt(parts[0].trim()),
-                    ZonedDateTime.parse(parts[1].trim()),
-                    v,
-                    Double.parseDouble(parts[3].trim()),
-                    parts[4].trim()
-                );
-                assertions.add(a);
-            }
-        }
-        
         RawMessage rawMessage = prepareRawMessage(input, decodesScript);
         DecodedMessage decodedMessage = decodesScript.decodeMessage(rawMessage);
-        return arguments(testName,decodesScript,rawMessage,decodedMessage,assertions);
+        return new Artifacts(decodesScript, rawMessage, decodedMessage);
+    }
+
+    /**
+     * Build a test-case for the formatter-based pattern. Expects the following
+     * files:
+     *   - {testName}.decodescript
+     *   - {testName}.sensors
+     *   - {testName}.input_*
+     *   - {testName}.expected    -- golden text to compare whole-output against.
+     *   - {testName}.formatter   -- java.util.Properties file. Example:
+     * <pre>
+     * class=decodes.consumer.EmitAsciiFormatter
+     * timezone=UTC
+     * # any additional keys are passed to the formatter's initFormatter
+     * delimiter=,
+     * </pre>
+     */
+    public static Arguments getScriptWithFormatter(String testName, String resourcePath) throws Exception
+    {
+        Artifacts a = loadArtifacts(testName, resourcePath);
+        FormatterSpec spec = loadFormatterSpec(requireResource(resourcePath, testName, ".formatter"), testName);
+        String expected = loadExpectedText(requireResource(resourcePath, testName, ".expected"));
+        return arguments(testName, a.script, a.rawMessage, a.decodedMessage,
+                         spec.className, spec.rsProps, spec.timezone, expected);
+    }
+
+    private static FormatterSpec loadFormatterSpec(URL formatterUrl, String testName) throws IOException
+    {
+        Properties fileProps = new Properties();
+        try (InputStreamReader reader = new InputStreamReader(formatterUrl.openStream()))
+        {
+            fileProps.load(reader);
+        }
+        String className = fileProps.getProperty("class");
+        if (className == null || className.trim().isEmpty())
+        {
+            throw new IllegalStateException("'" + testName + ".formatter' must define 'class'");
+        }
+        TimeZone tz = TimeZone.getTimeZone(fileProps.getProperty("timezone", "UTC"));
+        Properties rsProps = new Properties();
+        for (String key : fileProps.stringPropertyNames())
+        {
+            if (!"class".equals(key) && !"timezone".equals(key))
+            {
+                rsProps.setProperty(key, fileProps.getProperty(key));
+            }
+        }
+        return new FormatterSpec(className, rsProps, tz);
+    }
+
+    private static String loadExpectedText(URL expectedUrl) throws IOException, URISyntaxException
+    {
+        String text = String.join("\n", Files.readAllLines(Paths.get(expectedUrl.toURI())));
+        // Files.readAllLines drops the trailing newline; put it back if the file ended with one.
+        byte[] raw = Files.readAllBytes(Paths.get(expectedUrl.toURI()));
+        if (raw.length > 0 && raw[raw.length - 1] == '\n')
+        {
+            text = text + "\n";
+        }
+        return text;
+    }
+
+    private static URL requireResource(String resourcePath, String testName, String suffix) throws FileNotFoundException
+    {
+        String path = "/" + resourcePath + "/";
+        URL url = DecodesScript.class.getResource(path + testName + suffix);
+        if (url == null)
+        {
+            throw new FileNotFoundException("Could not find '" + testName + suffix + "' in '" + path + "'");
+        }
+        return url;
+    }
+
+    /**
+     * Instantiate and run an OutputFormatter against a DecodedMessage, returning the
+     * full text the formatter wrote to its DataConsumer.
+     *
+     * Uses reflection to invoke OutputFormatter.initFormatter (protected) so tests do
+     * not need to live in the decodes.consumer package, and to avoid the
+     * DbEnum("OutputFormat") lookup that OutputFormatter.makeOutputFormatter requires.
+     */
+    public static String formatDecodedMessage(DecodedMessage msg, String formatterClass,
+                                              Properties rsProps, TimeZone tz) throws Exception
+    {
+        OutputFormatter formatter = (OutputFormatter) Class.forName(formatterClass)
+                                                           .getDeclaredConstructor()
+                                                           .newInstance();
+        Method init = OutputFormatter.class.getDeclaredMethod(
+            "initFormatter", String.class, TimeZone.class, PresentationGroup.class, Properties.class);
+        init.setAccessible(true);
+        init.invoke(formatter, formatterClass, tz, null, rsProps);
+
+        StringConsumer consumer = new StringConsumer();
+        consumer.setTimeZone(tz);
+        try
+        {
+            formatter.formatMessage(msg, consumer);
+        }
+        finally
+        {
+            formatter.shutdown();
+        }
+        return consumer.getOutput();
+    }
+
+    /** Holder for the shared decoding artifacts produced by loadArtifacts. */
+    private static final class Artifacts
+    {
+        final DecodesScript script;
+        final RawMessage rawMessage;
+        final DecodedMessage decodedMessage;
+
+        Artifacts(DecodesScript script, RawMessage rawMessage, DecodedMessage decodedMessage)
+        {
+            this.script = script;
+            this.rawMessage = rawMessage;
+            this.decodedMessage = decodedMessage;
+        }
+    }
+
+    /** Holder for the parsed contents of a .formatter file. */
+    private static final class FormatterSpec
+    {
+        final String className;
+        final Properties rsProps;
+        final TimeZone timezone;
+
+        FormatterSpec(String className, Properties rsProps, TimeZone timezone)
+        {
+            this.className = className;
+            this.rsProps = rsProps;
+            this.timezone = timezone;
+        }
     }
 
     private static void setRecordingModeAndInterval(ConfigSensor configSensor, String[] parts)
@@ -335,16 +501,12 @@ public class DecodesHelper {
 
     public static Stream<Arguments> decodesTestSets(final String path) throws Exception
     {
-        List<URL> scripts = ClasspathIO.getAllResourcesIn(path);
-        return scripts.stream()
+        List<URL> resources = ClasspathIO.getAllResourcesIn(path);
+        Set<String> fixturesWithAssertions = fixtureNamesWithSuffix(resources, ".assertions");
+        return resources.stream()
             .filter( u-> u.toString().endsWith(".decodescript"))
-            .map(u-> {
-                    String fileName = u.toString();
-                    int lastSlash = fileName.lastIndexOf("/");
-                    String testName = fileName.substring(lastSlash+1)
-                                                                  .replace(".decodescript","");
-                    return testName;
-            })
+            .map(DecodesHelper::testNameFromUrl)
+            .filter(fixturesWithAssertions::contains)
             .map(name -> {
                 try
                 {
@@ -360,6 +522,51 @@ public class DecodesHelper {
     public static Stream<Arguments> decodesTestSets() throws Exception
     {
         return decodesTestSets("decodes/db");
+    }
+
+    public static Stream<Arguments> decodesFormatterTestSets(final String path) throws Exception
+    {
+        List<URL> resources = ClasspathIO.getAllResourcesIn(path);
+        Set<String> fixturesWithExpected = fixtureNamesWithSuffix(resources, ".expected");
+        return resources.stream()
+            .filter( u-> u.toString().endsWith(".decodescript"))
+            .map(DecodesHelper::testNameFromUrl)
+            .filter(fixturesWithExpected::contains)
+            .map(name -> {
+                try
+                {
+                    return getScriptWithFormatter(name, path);
+                }
+                catch(Exception ex)
+                {
+                    throw new RuntimeException("unable to load formatter test information for: " +name+"  , path="+path, ex);
+                }
+            });
+    }
+
+    public static Stream<Arguments> decodesFormatterTestSets() throws Exception
+    {
+        return decodesFormatterTestSets("decodes/db");
+    }
+
+    private static String testNameFromUrl(URL u)
+    {
+        String fileName = u.toString();
+        int lastSlash = fileName.lastIndexOf("/");
+        int lastDot = fileName.lastIndexOf('.');
+        return fileName.substring(lastSlash + 1, lastDot);
+    }
+
+    private static Set<String> fixtureNamesWithSuffix(List<URL> resources, String suffix)
+    {
+        return resources.stream()
+            .filter(u -> u.toString().endsWith(suffix))
+            .map(u -> {
+                String fileName = u.toString();
+                int lastSlash = fileName.lastIndexOf("/");
+                return fileName.substring(lastSlash + 1).replace(suffix, "");
+            })
+            .collect(Collectors.toCollection(HashSet::new));
     }
 
     public static DecodedSample sampleFor(int sensor, ZonedDateTime sampleTime,

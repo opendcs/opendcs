@@ -1,0 +1,2 @@
+class=decodes.consumer.EmitAsciiFormatter
+timezone=UTC
