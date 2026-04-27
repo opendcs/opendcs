@@ -9,7 +9,7 @@ WORKDIR /app
 COPY . .
 
 RUN --mount=type=cache,target=/root \
-    ./gradlew installDist war -Dno.docs=true --info
+    ./gradlew installDist war -Dno.docs=true --info --max-workers=2
 # end initial build
 
 FROM eclipse-temurin:21-jre-alpine AS opendcs_base
@@ -31,7 +31,7 @@ ENV DCSTOOL_HOME=/opt/opendcs
 ENV DECODES_INSTALL_DIR=${DCSTOOL_HOME}
 ENTRYPOINT ["/opt/opendcs/env.sh"]
 LABEL org.opencontainers.image.source=https://github.com/opendcs/opendcs
-LABEL org.opencontainers.image.source=https://github.com/opendcs/opendcs/README.docker.md
+LABEL org.opencontainers.image.documentation=https://github.com/opendcs/opendcs/README.docker.md
 # end baseline setup
 
 FROM opendcs_base AS lrgs
