@@ -20,7 +20,6 @@ public class CwmsBooleanArgumentFactory implements ArgumentFactory.Preparable
     {
         if (type == boolean.class || type == Boolean.class)
         {
-            final var val = (boolean) value;
             return Optional.of((position, statement, ctx) ->
             {
                 if (value == null)
@@ -29,6 +28,7 @@ public class CwmsBooleanArgumentFactory implements ArgumentFactory.Preparable
                 }
                 else
                 {
+            final var val = (boolean) value;
                     statement.setString(position, val ? "T" : "F");
                 }
             });
@@ -39,7 +39,7 @@ public class CwmsBooleanArgumentFactory implements ArgumentFactory.Preparable
     @Override
     public Optional<Function<Object, Argument>> prepare(Type type, ConfigRegistry config)
     {
-        if (type == double.class || type == Double.class)
+        if (type == boolen.class || type == Boolean.class)
         {
             return Optional.of(value -> build(type, value, config).get());
         }
