@@ -1,0 +1,4 @@
+# sensor number, sensor name, units, description, type:code
+# AQT1/AQT2 should be skipped per issue 1813.
+1, Airgap, mm, none,NOS:Q1
+2, VB, volts, none,NOS:L1
