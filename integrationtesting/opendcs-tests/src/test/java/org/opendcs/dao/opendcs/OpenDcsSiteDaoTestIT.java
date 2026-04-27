@@ -44,7 +44,7 @@ class OpenDcsSiteDaoTestIT extends AppTestBase
             site.addName(siteName);
             var siteName2 = new SiteName(site, "local", "Local Test Name");
             site.addName(siteName2);
-            site.country = "US";            
+            site.country = "US";
             site.setDescription("A test site");
             site.setActive(true);
             site.nearestCity = "Bob's ville"; // we're specifically testing that ' here
@@ -96,13 +96,11 @@ class OpenDcsSiteDaoTestIT extends AppTestBase
             {
                 var site = new Site();
 
-                var siteName = new SiteName(site, "CWMS", String.format("00AA_TestSite_%02d", i));
-                site.addName(siteName);
+                site.addName("CWMS", String.format("00AA_TestSite_%02d", i));
 
                 if (i % 8 == 0)
                 {
-                    var siteName2 = new SiteName(site, "local", String.format("Local-Test-Site-%02d", i));
-                    site.addName(siteName2);
+                    site.addName("local", String.format("Local-Test-Site-%02d", i));
                 }
 
                 if (i % 7 == 0)
@@ -124,8 +122,7 @@ class OpenDcsSiteDaoTestIT extends AppTestBase
             {
                 type = "CWMS";
             }
-            var name = new SiteName(siteNoPrefName, type, String.format("00AAAA-Test-Site-%02d", numSites));
-            siteNoPrefName.addName(name);
+            siteNoPrefName.addName(type, String.format("00AAAA-Test-Site-%02d", numSites));
             assertThrows(RequiredSiteNameMissingException.class ,() -> dao.save(tx, siteNoPrefName));
 
 

@@ -49,7 +49,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                   from cwms_v_loc
                   where unit_system='SI'
                   <where>
-                  and db_office_id = ':officeId'
+                  and db_office_id = :officeId
                 order by location_id COLLATE BINARY asc
                 <limit>
             )
@@ -102,12 +102,15 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabase();
-
+        var officeId = ctx.getSettings(DecodesSettings.class)
+                          .orElseThrow(() -> new OpenDcsDataException("DecodesSettings are not available."))
+                          .CwmsOfficeId;
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                  .define(SqlQueries.WHERE_CLAUSE, "and location_code = :id")
                  .define(SqlQueries.LIMIT_CLAUSE, "")
+                 .bind("officeId", officeId)
                  .bind(GenericColumns.ID, id);
 
             return query.registerRowMapper(OpenDcsSiteMapper.withPrefix("s"))
@@ -323,6 +326,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+
         try (var deleteNames = handle.createUpdate(DELETE_NAMES);
              var deleteProps = handle.createUpdate(DELETE_PROPS);
              var deleteLoc = handle.createCall("{call cwms_loc.delete_location(cwms_loc.get_location_id(:id))}"))
@@ -349,12 +353,16 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabase();
+        var settings = ctx.getSettings(DecodesSettings.class)
+                          .orElseThrow(() -> new OpenDcsDataException("No DecodesSettings are available?"));
+        final var officeId = settings.CwmsOfficeId;
 
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                  .define(SqlQueries.WHERE_CLAUSE, "")
-                 .define(SqlQueries.LIMIT_CLAUSE, addLimitOffset(limit, offset));
+                 .define(SqlQueries.LIMIT_CLAUSE, addLimitOffset(limit, offset))
+                 .bind("officeId", officeId);
             if (limit >= 0)
             {
                 query.bind(SqlKeywords.LIMIT, limit);
