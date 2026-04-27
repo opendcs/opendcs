@@ -49,7 +49,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                   from cwms_v_loc
                   where unit_system='SI'
                   <where>
-                  and db_office_id = 'SPK'
+                  and db_office_id = ':officeId'
                 order by location_id COLLATE BINARY asc
                 <limit>
             )
@@ -75,8 +75,6 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                 select site_id, prop_name, prop_value from site_property
                 union all
                 select location_code siteid, 'horizontal_datum' prop_name, horizontal_datum prop_value from cwms_v_loc where unit_system = 'SI'
-                union all
-                select location_code siteid, 'vertical_datum' prop_name, vertical_datum prop_value from cwms_v_loc where unit_system = 'SI'
                 union all
                 select location_code siteid, 'vertical_datum' prop_name, vertical_datum prop_value from cwms_v_loc where unit_system = 'SI'
                 union all

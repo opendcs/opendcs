@@ -245,6 +245,19 @@ public class Site extends IdDatabaseObject implements HasProperties, CachableDbO
 	}
 
 	/**
+	 * More generic form of addName. Calls {@see addName(SiteName sn)} internally
+	 * so the same logic is fallowed.
+	 *
+	 * @param nameType Site Name Type
+	 * @param nameValue Actual site Name
+	 */
+	public synchronized void addName(String nameType, String nameValue)
+	{
+		var sn = new SiteName(this, nameType, nameValue);
+		this.addName(sn);
+	}
+
+	/**
 	 * Removes all names defined for this site (for use by editor).
 	 */
 	public synchronized void clearNames()

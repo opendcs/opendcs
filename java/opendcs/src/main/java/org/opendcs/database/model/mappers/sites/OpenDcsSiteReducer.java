@@ -44,5 +44,5 @@ public class OpenDcsSiteReducer implements BiConsumer<Map<Long, Site>, RowView>
             site.addName(siteName);
         }
     }
-    
+
 }

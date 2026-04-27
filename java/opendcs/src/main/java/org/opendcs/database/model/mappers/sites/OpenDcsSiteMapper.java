@@ -17,7 +17,7 @@ public class OpenDcsSiteMapper extends PrefixRowMapper<Site>
 {
 
 
-    
+
     protected OpenDcsSiteMapper(String prefix)
     {
         super(prefix);
@@ -40,8 +40,8 @@ public class OpenDcsSiteMapper extends PrefixRowMapper<Site>
 
         var id = columnMapperForKey.map(rs, prefix + "id", ctx);
         ret.forceSetId(id);
-        
-        ret.setPublicName(rs.getString(prefix + "public_name"));        
+
+        ret.setPublicName(rs.getString(prefix + "public_name"));
         ret.setDescription(rs.getString(prefix + "description"));
 
         ret.latitude = rs.getString(prefix + "latitude");
@@ -62,5 +62,5 @@ public class OpenDcsSiteMapper extends PrefixRowMapper<Site>
 
         return ret;
     }
-    
+
 }

@@ -39,7 +39,7 @@ public class CwmsBooleanArgumentFactory implements ArgumentFactory.Preparable
     @Override
     public Optional<Function<Object, Argument>> prepare(Type type, ConfigRegistry config)
     {
-        if (type == boolen.class || type == Boolean.class)
+        if (type == boolean.class || type == Boolean.class)
         {
             return Optional.of(value -> build(type, value, config).get());
         }
