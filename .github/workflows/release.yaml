@@ -96,9 +96,12 @@ jobs:
       - name: Extract build from build image.
         run: |
           tar -xf out.tar --strip-components=1 --wildcards --no-anchored '*build*'
-      - name: Build
+      - name: Build Release
         run: |
-          ./gradlew --info build signWar -PversionOverride=$VERSION signDist signMavenPublication -x test -Psign=true \
+          ./gradlew --info build -x test
+      - name: Sign Artifacts
+        run: |
+          ./gradlew --info signWar -PversionOverride=$VERSION signDist signMavenPublication -x test -Psign=true \
              -PsigningKeyPassword="${{ secrets.signingKeyPassword != null && secrets.signingKeyPassword || secrets.SIGNING_KEY_PASSWORD }}" \
              -PcentralApiUsername=${{ secrets.mavenCentralUsername != null && secrets.mavenCentralUsername || secrets.ORG_OPENDCS_CENTRALAPI_USERNAME }} \
              -PcentralApiPassword=${{ secrets.mavenCentralPassword != null && secrets.mavenCentralPassword || secrets.ORG_OPENDCS_CENTRALAPI_PASSWORD }} \

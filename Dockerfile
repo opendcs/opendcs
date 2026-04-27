@@ -16,7 +16,7 @@ WORKDIR /app
 COPY . .
 
 RUN --mount=type=cache,target=/root \
-    ./gradlew installDist war -Dno.docs=true --info
+    ./gradlew --no-daemon installDist war -Dno.docs=true --info
 # end initial build
 
 FROM --platform=$BUILDPLATFORM scratch AS export
