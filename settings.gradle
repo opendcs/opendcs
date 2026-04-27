@@ -48,9 +48,6 @@ project(":testing:gui").projectDir=file("integrationtesting/test-gui-examples")
 include ":opendcs-rest-api"
 project(":opendcs-rest-api").projectDir=file("java/opendcs-rest-api")
 
-include ":opendcs-web-ui"
-project(":opendcs-web-ui").projectDir=file("java/opendcs-web-ui")
-
 include ":opendcs-web-ui-react"
 project(":opendcs-web-ui-react").projectDir=file("javascript/opendcs-web-ui-react")
 

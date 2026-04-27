@@ -98,8 +98,9 @@ jobs:
             -Dsonar.pullrequest.base=${{ steps.pr-context.outputs.target_branch }} \
             -Dsonar.coverage.jacoco.xmlReportPaths= \
             -Dsonar.coverage.jacoco.aggregateXmlReportPaths= \
-            -Dsonar.exclusions="**/*.java,**/java/opendcs-web-ui/**/*.*" \
+            -Dsonar.exclusions="**/*.java" \
             -Dsonar.test.exclusions=**/*.java \
             -Dsonar.projectBaseDir=javascript/opendcs-web-ui-react \
             -PUI=true \
-            -Dsonar.projectKey=opendcs_opendcs_ui
+            -Dsonar.projectKey=opendcs_opendcs_ui \
+            -Dsonar.projectName="OpenDCS UI"

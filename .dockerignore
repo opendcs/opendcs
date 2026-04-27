@@ -11,6 +11,7 @@ Dockerfile
 compose_files
 .dockerignore
 **/build
+**/node_modules
 .vscode
 .settings
 .gradle

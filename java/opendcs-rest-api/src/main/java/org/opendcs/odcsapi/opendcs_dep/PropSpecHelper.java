@@ -76,6 +76,7 @@ public final class PropSpecHelper
 		SCP_DATA_SOURCE("decodes.datasource.ScpDataSource"),
 		SOCKET_STREAM_DATA_SOURCE("decodes.datasource.SocketStreamDataSource"),
 		USGS_WEB_DATA_SOURCE("decodes.datasource.UsgsWebDataSource"),
+		USGS_WATER_DATA_SOURCE("decodes.datasource.UsgsWaterDataSource"),
 		WEB_ABSTRACT_DATA_SOURCE("decodes.datasource.WebAbstractDataSource"),
 		WEB_DATA_SOURCE("decodes.datasource.WebDataSource"),
 		WEB_DIRECTORY_DATA_SOURCE("decodes.datasource.WebDirectoryDataSource"),
