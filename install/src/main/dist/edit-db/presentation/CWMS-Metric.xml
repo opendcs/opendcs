@@ -248,6 +248,18 @@
     <MaxDecimals>3</MaxDecimals>
   </DataPresentation>
   <DataPresentation>
+    <DataType Standard="CWMS" Code="Evap">
+    </DataType>
+    <UnitsAbbr>mm</UnitsAbbr>
+    <MaxDecimals>2</MaxDecimals>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="CWMS" Code="%-Humidity">
+    </DataType>
+    <UnitsAbbr>%</UnitsAbbr>
+    <MaxDecimals>3</MaxDecimals>
+  </DataPresentation>
+  <DataPresentation>
     <DataType Standard="CWMS" Code="Temp-Water">
     </DataType>
     <UnitsAbbr>C</UnitsAbbr>

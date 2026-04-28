@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+	<Algorithm name="EvapHamon">
+		<Comment>
+			
+		</Comment>
+		<ExecClass>org.opendcs.algorithms.EvapHamon</ExecClass>
+		<AlgoParm roleName="tempAir24hour">
+			<ParmType>i</ParmType>
+		</AlgoParm>
+		<AlgoParm roleName="windSpeed24hour">
+			<ParmType>i</ParmType>
+		</AlgoParm>
+		<AlgoParm roleName="solarRadiation24hour">
+			<ParmType>i</ParmType>
+		</AlgoParm>
+		<AlgoParm roleName="relativeHumidity24hour">
+			<ParmType>i</ParmType>
+		</AlgoParm>
+		<AlgoParm roleName="evap24hour">
+			<ParmType>o</ParmType>
+		</AlgoParm>
+	</Algorithm>
+	<Computation name="Test1EvapHamon">
+		<Comment></Comment>
+		<Enabled>false</Enabled>
+		<AlgorithmName>EvapHamon</AlgorithmName>
+		<LastModified>2025-01-15 05:54:55 PST</LastModified>
+		<CompProperty name="aggregateTimeZone">US/Central</CompProperty>		
+		<CompProperty name="tempAir24hour_EU">degC</CompProperty>
+		<CompProperty name="windSpeed24hour_EU">km/h</CompProperty>
+		<CompProperty name="relativeHumidity24hour_EU">%</CompProperty>
+		<CompProperty name="solarRadiation24hour_EU">w/m2</CompProperty>
+		<CompProperty name="evap24hour_EU">in</CompProperty>
+		<CompParm roleName="tempAir24Hour">
+			<SiteDataType>
+				<SiteName NameType="CWMS">TESTSITE1</SiteName>
+				<DataType Standard="CWMS" code="Temp-Air"/>
+			</SiteDataType>
+			<Interval>~1Day</Interval>
+			<TableSelector>Ave.1Day.test-hamon</TableSelector>
+			<DeltaT>0</DeltaT>
+			<DeltaTUnits>Seconds</DeltaTUnits>
+		</CompParm>
+		<CompParm roleName="windSpeed24Hour">
+			<SiteDataType>
+				<SiteName NameType="CWMS">TESTSITE1</SiteName>
+				<DataType Standard="CWMS" code="Speed-Wind"/>
+			</SiteDataType>
+			<Interval>~1Day</Interval>
+			<TableSelector>Ave.1Day.test-hamon</TableSelector>
+			<DeltaT>0</DeltaT>
+			<DeltaTUnits>Seconds</DeltaTUnits>
+		</CompParm>
+		<CompParm roleName="relativeHumidity24Hour">
+			<SiteDataType>
+				<SiteName NameType="CWMS">TESTSITE1</SiteName>
+				<DataType Standard="CWMS" code="%-Humidity"/>
+			</SiteDataType>
+			<Interval>~1Day</Interval>
+			<TableSelector>Ave.1Day.test-hamon</TableSelector>
+			<DeltaT>0</DeltaT>
+			<DeltaTUnits>Seconds</DeltaTUnits>
+		</CompParm>
+		<CompParm roleName="solarRadiation24Hour">
+			<SiteDataType>
+				<SiteName NameType="CWMS">TESTSITE1</SiteName>
+				<DataType Standard="CWMS" code="Irrad"/>
+			</SiteDataType>
+			<Interval>~1Day</Interval>
+			<TableSelector>Ave.1Day.test-hamon</TableSelector>
+			<DeltaT>0</DeltaT>
+			<DeltaTUnits>Seconds</DeltaTUnits>
+		</CompParm>
+		<CompParm roleName="evap24hour">
+			<SiteDataType>
+				<SiteName NameType="CWMS">TESTSITE1</SiteName>
+				<DataType Standard="CWMS" code="Evap"/>
+			</SiteDataType>
+			<Interval>~1Day</Interval>
+			<TableSelector>Total.1Day.test-hamon</TableSelector>
+			<DeltaT>0</DeltaT>
+			<DeltaTUnits>Seconds</DeltaTUnits>
+		</CompParm>
+	</Computation>
+</CompMetaData>

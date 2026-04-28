@@ -49,7 +49,7 @@ public class EvapHamon extends decodes.tsdb.algo.AW_AlgorithmBase
     @Override
     protected void beforeTimeSlices() throws DbCompException
     {
-        EngineeringUnit eu = EngineeringUnit.getEngineeringUnit(getParmUnitsAbbr("tempAir24hour"));
+        EngineeringUnit eu = EngineeringUnit.getEngineeringUnit(getParmUnitsAbbr("evap24hour"));
         if (evapUc == null)
         {
             evapUc = decodes.db.CompositeConverter.build(EngineeringUnit.getEngineeringUnit("mm"), eu);
@@ -72,27 +72,27 @@ public class EvapHamon extends decodes.tsdb.algo.AW_AlgorithmBase
 //AW:TIMESLICE
         // Enter code to be executed at each time-slice.
         //unit conversions
-        double windSpeed24hourKmD  = windSpeed24hour * 24;  //convert from kilometers per hour to Kilometers per day
+        final double windSpeed24hourKmD  = windSpeed24hour * 24;  //convert from kilometers per hour to Kilometers per day
         //convert from watts/(m^2 * min) to Langley/day (a Langley is one thermochemical calorie per square centimeter). Known as Qs in eqn 2.13
-        solarRadiation24hour = solarRadiation24hour * (60.0 * 24.0)/698.0; 
-        double xcompl = 1.0 - (relativeHumidity24hour/100.0);
+        final double solarRadiation24hourLngD = solarRadiation24hour * (60.0 * 24.0)/698.0; 
+        final double xcompl = 1.0 - (relativeHumidity24hour/100.0);
 
-        double TdC = tempAir24hour - //NOSONAR
+        final double TdC = tempAir24hour - //NOSONAR
                     (
                         (14.55 + (0.114*tempAir24hour))*xcompl +
                             Math.pow((2.5 + 0.007*tempAir24hour)*xcompl, 3.0) +
                             (15.9 + 0.117*tempAir24hour)*Math.pow(xcompl, 14.0)
                     );
-        double delLambda1 = Math.pow(1.0 + (0.66/Math.pow(0.00815*tempAir24hour+ 0.8912, 7.0)), -1.0);
+        final double delLambda1 = Math.pow(1.0 + (0.66/Math.pow(0.00815*tempAir24hour+ 0.8912, 7.0)), -1.0);
 
-        double delLambda2 = 1.0 - delLambda1;
-        double Qn = 0.00714*solarRadiation24hour + //NOSONAR
-                    0.00000526*solarRadiation24hour*Math.pow(tempAir24hour+17.8, 1.87) +
-                    0.00000394*Math.pow(solarRadiation24hour, 2.0) - 
-                    0.00000000239*Math.pow(solarRadiation24hour, 2.0)*Math.pow(tempAir24hour - 7.2, 2.0) - 1.02;
-        double es_ea = 33.86 * (Math.pow(0.00738*tempAir24hour + 0.8072, 8.0) - Math.pow(0.00738*TdC + 0.8072, 8.0)); //NOSONAR
-        double Ea = Math.pow(es_ea, 0.88) * (0.42 + 0.0029*windSpeed24hourKmD); //NOSONAR
-        double dailyEvapMilliMeters = (delLambda1*Qn + delLambda2*Ea);
+        final double delLambda2 = 1.0 - delLambda1;
+        final double Qn = 0.00714*solarRadiation24hourLngD + //NOSONAR
+                    0.00000526*solarRadiation24hourLngD*Math.pow(tempAir24hour+17.8, 1.87) +
+                    0.00000394*Math.pow(solarRadiation24hourLngD, 2.0) - 
+                    0.00000000239*Math.pow(solarRadiation24hourLngD, 2.0)*Math.pow(tempAir24hour - 7.2, 2.0) - 1.02;
+        final double es_ea = 33.86 * (Math.pow(0.00738*tempAir24hour + 0.8072, 8.0) - Math.pow(0.00738*TdC + 0.8072, 8.0)); //NOSONAR
+        final double Ea = Math.pow(es_ea, 0.88) * (0.42 + 0.0029*windSpeed24hourKmD); //NOSONAR
+        final double dailyEvapMilliMeters = (delLambda1*Qn + delLambda2*Ea);
         double dailyEvap;
         try 
         {
