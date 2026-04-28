@@ -40,6 +40,14 @@ const isOutputParm = (parm: { algoParmType?: string }): boolean =>
 const isOutputProp = (propName: string): boolean =>
   propName.trim().toLowerCase().startsWith("output");
 
+const descriptionSnippet = (description: string | undefined): string => {
+  const normalized = (description ?? "").replace(/\s+/g, " ").trim();
+  if (normalized.length <= 120) {
+    return normalized;
+  }
+  return `${normalized.slice(0, 117).trimEnd()}...`;
+};
+
 export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
   computations,
   getComputation,
@@ -60,10 +68,15 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
   const prevRowStateRef = useRef<RowState<number>>({});
   const localComputationsRef = useRef(localComputations);
   const localDraftsRef = useRef(localDrafts);
+  const latestActionsRef = useRef(actions);
 
   useEffect(() => {
     rowStateRef.current = rowState;
   }, [rowState]);
+
+  useEffect(() => {
+    latestActionsRef.current = actions;
+  }, [actions]);
 
   useEffect(() => {
     localComputationsRef.current = localComputations;
@@ -128,6 +141,14 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
     return enabled ? "✓" : "";
   }, []);
 
+  const renderDescription = useCallback((data: unknown, type: string) => {
+    const description = typeof data === "string" ? data : "";
+    if (type !== "display") {
+      return description;
+    }
+    return descriptionSnippet(description);
+  }, []);
+
   const columns = useMemo(
     () => [
       { data: "computationId", defaultContent: "new", className: "dt-left" },
@@ -140,10 +161,10 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
         className: "dt-center",
         render: renderEnabled,
       },
-      { data: "description", defaultContent: "" },
+      { data: "description", defaultContent: "", render: renderDescription },
       { data: null, name: "actions" },
     ],
-    [renderEnabled],
+    [renderEnabled, renderDescription],
   );
 
   const renderActions = useCallback(
@@ -198,7 +219,7 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
               aria-label={t("computations:editor.delete_for", { id })}
               onClick={(e) => {
                 e.stopPropagation();
-                actions.remove?.(id);
+                latestActionsRef.current.remove?.(id);
               }}
             >
               <Trash />
@@ -207,7 +228,7 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
         </>
       );
     },
-    [t, getComputation, nextLocalComputationId, copiedComputation, toTableRef, actions],
+    [t, getComputation, nextLocalComputationId, copiedComputation, toTableRef],
   );
 
   const slots = { actions: renderActions };
@@ -278,9 +299,15 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
           <Computation
             computation={computationPromise}
             algorithm={algorithmPromise}
+            getAlgorithm={getAlgorithm}
             actions={{
-              save: (comp: ApiComputation) => {
-                actions.save?.(comp);
+              save: async (comp: ApiComputation) => {
+                try {
+                  await latestActionsRef.current.save?.(comp);
+                } catch (e) {
+                  console.error("Failed to save computation", e);
+                  return;
+                }
                 if (comp.computationId === undefined) {
                   return;
                 }
@@ -330,7 +357,7 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
       );
       return node;
     },
-    [getComputation, getAlgorithm, toDom, actions, processOptions, groupOptions],
+    [getComputation, getAlgorithm, toDom, processOptions, groupOptions],
   );
 
   useEffect(() => {

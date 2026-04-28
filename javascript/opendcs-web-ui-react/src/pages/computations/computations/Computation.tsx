@@ -1,8 +1,18 @@
-import { Button, Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
+import {
+  Button,
+  Card,
+  Col,
+  Form,
+  FormGroup,
+  InputGroup,
+  Placeholder,
+  Row,
+} from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../../components/properties";
 import { use, useCallback, useMemo, useReducer, useState } from "react";
 import type {
   ApiAlgorithm,
+  ApiAlgorithmRef,
   ApiAppRef,
   ApiCompParm,
   ApiComputation,
@@ -17,6 +27,7 @@ import type {
 import { Save, X } from "react-bootstrap-icons";
 import { ComputationReducer } from "./ComputationReducer";
 import { ComputationParamsTable } from "./ComputationParamsTable";
+import { AlgorithmSelectModal } from "./AlgorithmSelectModal";
 
 export type UiComputation = Partial<ApiComputation>;
 
@@ -101,6 +112,7 @@ export const ComputationSkeleton: React.FC<{ edit?: boolean }> = ({ edit = false
 export interface ComputationProperties {
   computation: Promise<UiComputation> | UiComputation;
   algorithm?: Promise<ApiAlgorithm | undefined> | ApiAlgorithm | undefined;
+  getAlgorithm?: (algorithmId: number) => Promise<ApiAlgorithm>;
   actions?: SaveAction<ApiComputation> & CancelAction<number>;
   edit?: boolean;
   processOptions?: ApiAppRef[];
@@ -153,9 +165,25 @@ const requiredParmsFromAlgorithm = (algorithm?: ApiAlgorithm): ApiCompParm[] =>
       algoParmType: parm.parmType,
     }));
 
+const assignedId = (value: number | undefined): number | undefined =>
+  value !== undefined && value > 0 ? value : undefined;
+
+const prepareParmForSave = (parm: ApiCompParm): ApiCompParm => {
+  const dataType = parm.dataType?.trim();
+  return {
+    ...parm,
+    tsKey: assignedId(parm.tsKey),
+    siteId: assignedId(parm.siteId),
+    dataType: dataType && dataType.length > 0 ? dataType : undefined,
+    dataTypeId:
+      dataType && dataType.length > 0 ? assignedId(parm.dataTypeId) : undefined,
+  };
+};
+
 export const Computation: React.FC<ComputationProperties> = ({
   computation,
   algorithm,
+  getAlgorithm,
   actions = {},
   edit = false,
   processOptions = [],
@@ -174,6 +202,40 @@ export const Computation: React.FC<ComputationProperties> = ({
       providedComputation.parmList ?? [],
       requiredParmsFromAlgorithm(providedAlgorithm),
     ),
+  );
+  const [showAlgorithmModal, setShowAlgorithmModal] = useState(false);
+  const [nameError, setNameError] = useState(false);
+
+  const handleAlgorithmSelected = useCallback(
+    async (ref: ApiAlgorithmRef) => {
+      let payload: UiComputation = {
+        algorithmName: ref.algorithmName,
+        algorithmId: ref.algorithmId,
+      };
+      if (!getAlgorithm || !ref.algorithmId) {
+        dispatch({ type: "save", payload });
+        return;
+      }
+      try {
+        const fullAlgo = await getAlgorithm(ref.algorithmId);
+        payload = {
+          ...payload,
+          algorithmName: fullAlgo.name ?? ref.algorithmName,
+          ...(localComputation.comment ? {} : { comment: fullAlgo.description }),
+          props: fullAlgo.props
+            ? { ...fullAlgo.props, ...(localComputation.props ?? {}) }
+            : localComputation.props,
+        };
+        setLocalParms((prev) =>
+          mergeRequiredParms(prev, requiredParmsFromAlgorithm(fullAlgo)),
+        );
+        dispatch({ type: "save", payload });
+      } catch (e) {
+        console.warn("Failed to load full algorithm after selection", e);
+        dispatch({ type: "save", payload });
+      }
+    },
+    [getAlgorithm, localComputation.comment, localComputation.props],
   );
 
   const props = useMemo<Property[]>(() => {
@@ -196,10 +258,15 @@ export const Computation: React.FC<ComputationProperties> = ({
     : {};
 
   const saveComputation = useCallback(
-    (comp: UiComputation) => {
+    async (comp: UiComputation) => {
+      if (!comp.name?.trim()) {
+        setNameError(true);
+        return;
+      }
+      setNameError(false);
       actions.save?.({
         ...(comp as ApiComputation),
-        parmList: localParms,
+        parmList: localParms.map(prepareParmForSave),
       });
     },
     [actions, localParms],
@@ -245,9 +312,16 @@ export const Computation: React.FC<ComputationProperties> = ({
                       id="compName"
                       name="name"
                       readOnly={!edit}
-                      defaultValue={localComputation.name}
-                      onChange={inputChange}
+                      value={localComputation.name ?? ""}
+                      isInvalid={nameError}
+                      onChange={(e) => {
+                        if (nameError) setNameError(false);
+                        inputChange(e);
+                      }}
                     />
+                    <Form.Control.Feedback type="invalid">
+                      A name is required.
+                    </Form.Control.Feedback>
                   </Col>
                 </FormGroup>
                 <FormGroup as={Row} className="mb-3">
@@ -255,14 +329,32 @@ export const Computation: React.FC<ComputationProperties> = ({
                     {t("computations:editor.algorithmName")}
                   </Form.Label>
                   <Col sm={9}>
-                    <Form.Control
-                      type="text"
-                      id="algorithmName"
-                      name="algorithmName"
-                      readOnly={!edit}
-                      defaultValue={localComputation.algorithmName}
-                      onChange={inputChange}
-                    />
+                    {edit ? (
+                      <InputGroup>
+                        <Form.Control
+                          type="text"
+                          id="algorithmName"
+                          name="algorithmName"
+                          readOnly
+                          value={localComputation.algorithmName ?? ""}
+                          placeholder="No algorithm selected"
+                        />
+                        <Button
+                          variant="outline-secondary"
+                          onClick={() => setShowAlgorithmModal(true)}
+                          aria-label="Select Algorithm"
+                        >
+                          Select...
+                        </Button>
+                      </InputGroup>
+                    ) : (
+                      <Form.Control
+                        type="text"
+                        id="algorithmName"
+                        readOnly
+                        value={localComputation.algorithmName ?? ""}
+                      />
+                    )}
                   </Col>
                 </FormGroup>
                 <FormGroup as={Row} className="mb-3">
@@ -316,7 +408,7 @@ export const Computation: React.FC<ComputationProperties> = ({
                       id="enabled"
                       name="enabled"
                       disabled={!edit}
-                      defaultChecked={localComputation.enabled ?? false}
+                      checked={localComputation.enabled ?? false}
                       onChange={enabledChange}
                     />
                   </Col>
@@ -334,7 +426,7 @@ export const Computation: React.FC<ComputationProperties> = ({
                       id="comment"
                       name="comment"
                       readOnly={!edit}
-                      defaultValue={localComputation.comment}
+                      value={localComputation.comment ?? ""}
                       onChange={inputChange}
                     />
                   </Col>
@@ -387,7 +479,9 @@ export const Computation: React.FC<ComputationProperties> = ({
                 <X /> {t("translation:cancel")}
               </Button>
               <Button
-                onClick={() => saveComputation(localComputation)}
+                onClick={() => {
+                  void saveComputation(localComputation);
+                }}
                 variant="primary"
                 aria-label={t("computations:editor.save_for", {
                   id: localComputation.computationId,
@@ -399,6 +493,12 @@ export const Computation: React.FC<ComputationProperties> = ({
           </Row>
         )}
       </Card.Body>
+      <AlgorithmSelectModal
+        show={showAlgorithmModal}
+        onHide={() => setShowAlgorithmModal(false)}
+        onSelect={handleAlgorithmSelected}
+        getAlgorithm={getAlgorithm}
+      />
     </Card>
   );
 };
