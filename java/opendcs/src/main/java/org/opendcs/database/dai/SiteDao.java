@@ -33,7 +33,7 @@ public interface SiteDao extends OpenDcsDao
     Optional<Site> getBySiteName(DataTransaction tx, SiteName siteName) throws OpenDcsDataException;
 
     /**
-     * Given a collection of NameTypes find by matching any one of them.
+     * Given a collection of SiteName find by matching any one of them.
      * @param tx
      * @param siteNames
      * @return
@@ -68,8 +68,8 @@ public interface SiteDao extends OpenDcsDao
     /**
      * Retrieve all sites with the given row and offset.
      *
-     * Data is sorted by prefered site name type first, then any others. While there *SHOULD* always
-     * be a prefered name entry existing database may not. This can lead to inconsistent shorting.
+     * Data is sorted by preferred site name type first, then any others. While there *SHOULD* always
+     * be a preferred name entry, an existing database may not. This can lead to inconsistent shorting.
      *
      * @param tx
      * @param limit

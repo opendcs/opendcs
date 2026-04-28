@@ -246,7 +246,7 @@ public class Site extends IdDatabaseObject implements HasProperties, CachableDbO
 
 	/**
 	 * More generic form of addName. Calls {@see addName(SiteName sn)} internally
-	 * so the same logic is fallowed.
+	 * so the same logic is followed.
 	 *
 	 * @param nameType Site Name Type
 	 * @param nameValue Actual site Name

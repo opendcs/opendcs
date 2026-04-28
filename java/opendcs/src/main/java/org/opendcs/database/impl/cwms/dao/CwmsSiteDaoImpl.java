@@ -99,6 +99,10 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
     @Override
     public Optional<Site> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
+    if (id == null)
+    {
+      return Optional.empty(); 
+    }
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
