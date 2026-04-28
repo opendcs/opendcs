@@ -65,14 +65,14 @@ jobs:
       - name: show version
         run: echo ${VERSION}
       - name: Log in to the Container registry
-        uses: docker/login-action@v4.0.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.token != null && secrets.token || secrets.GITHUB_TOKEN }}
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v6.0.0
+        uses: docker/metadata-action@a66e1c87e2eca0503c343edf1d208c716d54b8a8
         with:
           tags: |
             type=sha
@@ -82,7 +82,7 @@ jobs:
             type=schedule,pattern=${{inputs.branch}}-{{date 'YYYY.MM.DD-hhmmss'}}
       - name: Create and Push Docker images
         id: baked
-        uses: docker/bake-action@v7
+        uses: docker/bake-action@c84e68213864526ca0f9aea48dacec058fd70ea64142721923b901755e67b538
         with:
           source: .
           set: |
