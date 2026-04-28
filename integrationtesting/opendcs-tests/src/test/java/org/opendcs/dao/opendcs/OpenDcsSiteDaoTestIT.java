@@ -18,7 +18,6 @@ import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.db.Site;
-import decodes.db.SiteName;
 import decodes.util.DecodesSettings;
 
 @EnableIfTsDb({"OpenDCS-Postgres", "OpenDCS-Oracle", "CWMS-Oracle"})
@@ -40,8 +39,8 @@ class OpenDcsSiteDaoTestIT extends AppTestBase
         try (var tx = db.newTransaction())
         {
             var site = new Site();
-            var siteName = site.addName("CWMS", "SimpleTestSite");
-            var siteName2 = site.addName("local", "Local Test Name");
+            final var siteName = site.addName("CWMS", "SimpleTestSite");
+            final var siteName2 = site.addName("local", "Local Test Name");
             site.country = "US";
             site.setDescription("A test site");
             site.setActive(true);
@@ -61,10 +60,13 @@ class OpenDcsSiteDaoTestIT extends AppTestBase
             assertEquals("Bob's ville", site.nearestCity);
             assertTrue(siteOut.getLastModifyTime().getTime() >= timeSaved.getTime());
 
-            final var siteByName = dao.getBySiteName(tx, siteName2);
+            final var siteByName2 = dao.getBySiteName(tx, siteName);
+            assertTrue(siteByName2.isPresent());
+
+            final var siteByName = dao.getBySiteName(tx, siteName);
             assertTrue(siteByName.isPresent());
 
-            final var updateSiteIn = siteByName.get();
+            final var updateSiteIn = siteByName2.get();
             updateSiteIn.nearestCity = "Bob's Town"; // The place grew
             final var updateSiteOut = dao.save(tx, updateSiteIn);
             assertEquals("Bob's Town", updateSiteOut.nearestCity);
