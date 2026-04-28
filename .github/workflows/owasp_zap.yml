@@ -19,7 +19,7 @@ jobs:
           java-version: 21
           distribution: 'temurin'
       - name: Cache Gradle packages
-        uses: actions/cache@v5.0.4
+        uses: actions/cache@v5.0.5
         with:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
@@ -27,7 +27,7 @@ jobs:
       - name: Run OWASP Zap
         run: ./gradlew :testing:opendcs-tests:owaspZap --stacktrace
       - name: Upload Full HTML Report
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: zap_report.html
           path: integrationtesting/opendcs-tests/build/test-results/owasp_zap/zap_report.html
