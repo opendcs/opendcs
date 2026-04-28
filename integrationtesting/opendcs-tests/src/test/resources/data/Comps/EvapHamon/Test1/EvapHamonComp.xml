@@ -2,7 +2,7 @@
 <CompMetaData>
 	<Algorithm name="EvapHamon">
 		<Comment>
-			
+
 		</Comment>
 		<ExecClass>org.opendcs.algorithms.EvapHamon</ExecClass>
 		<AlgoParm roleName="tempAir24hour">
@@ -26,7 +26,7 @@
 		<Enabled>false</Enabled>
 		<AlgorithmName>EvapHamon</AlgorithmName>
 		<LastModified>2025-01-15 05:54:55 PST</LastModified>
-		<CompProperty name="aggregateTimeZone">US/Central</CompProperty>		
+		<CompProperty name="aggregateTimeZone">US/Central</CompProperty>
 		<CompProperty name="tempAir24hour_EU">degC</CompProperty>
 		<CompProperty name="windSpeed24hour_EU">km/h</CompProperty>
 		<CompProperty name="relativeHumidity24hour_EU">%</CompProperty>
