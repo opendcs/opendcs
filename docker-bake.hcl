@@ -14,7 +14,7 @@ target "build" {
 target "lrgs" {
     inherits = ["docker-metadata-action"]
     context = "."
-    dockefile = "Dockerfile"
+    dockerfile = "Dockerfile"
     tags = [for tag in target.docker-metadata-action.tags : "ghcr.io/opendcs/lrgs:${tag}"]
     target = "lrgs"
 }
@@ -22,7 +22,7 @@ target "lrgs" {
 target "compproc" {
     inherits = ["docker-metadata-action"]
     context = "."
-    dockefile = "Dockerfile"
+    dockerfile = "Dockerfile"
     tags = [for tag in target.docker-metadata-action.tags : "ghcr.io/opendcs/compproc:${tag}"]
     target = "compproc"
 }
@@ -30,7 +30,7 @@ target "compproc" {
 target "compdepends" {
     inherits = ["docker-metadata-action"]
     context = "."
-    dockefile = "Dockerfile"
+    dockerfile = "Dockerfile"
     tags = [for tag in target.docker-metadata-action.tags : "ghcr.io/opendcs/compdepends:${tag}"]
     target = "compdepends"
 }
@@ -38,7 +38,7 @@ target "compdepends" {
 target "routingscheduler" {
     inherits = ["docker-metadata-action"]
     context = "."
-    dockefile = "Dockerfile"
+    dockerfile = "Dockerfile"
     tags = [for tag in target.docker-metadata-action.tags : "ghcr.io/opendcs/routingscheduler:${tag}"]
     target = "routingscheduler"
 }
@@ -46,7 +46,7 @@ target "routingscheduler" {
 target "web-api" {
     inherits = ["docker-metadata-action"]
     context = "."
-    dockefile = "Dockerfile"
+    dockerfile = "Dockerfile"
     tags = [for tag in target.docker-metadata-action.tags : "ghcr.io/opendcs/web-api:${tag}"]
     target = "web-api"
 }
@@ -54,7 +54,7 @@ target "web-api" {
 target "migration" {
     inherits = ["docker-metadata-action"]
     context = "."
-    dockefile = "Dockerfile"
+    dockerfile = "Dockerfile"
     tags = [for tag in target.docker-metadata-action.tags : "ghcr.io/opendcs/migration:${tag}"]
     target = "migration"
 }
