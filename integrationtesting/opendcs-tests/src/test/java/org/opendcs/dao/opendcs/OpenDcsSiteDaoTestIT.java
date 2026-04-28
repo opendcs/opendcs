@@ -115,14 +115,11 @@ class OpenDcsSiteDaoTestIT extends AppTestBase
 
             final var siteNoPrefName = new Site();
             siteNoPrefName.setDescription("A site that exist to not have a name matching the prefered type");
-            var settings = db.getSettings(DecodesSettings.class).orElseThrow();
-            var pref = settings.siteNameTypePreference;
-            var type = "local";
-            if (pref.equals("local"))
-            {
-                type = "CWMS";
-            }
-            siteNoPrefName.addName(type, String.format("00AAAA-Test-Site-%02d", numSites));
+            final var settings = db.getSettings(DecodesSettings.class).orElseThrow();
+            final var pref = settings.siteNameTypePreference;
+            final var type = pref.equals("local") ? "CWMS" : "local";
+            final var name = new SiteName(siteNoPrefName, type, String.format("00AAAA-Test-Site-%02d", numSites));
+            siteNoPrefName.addName(name);
             assertThrows(RequiredSiteNameMissingException.class ,() -> dao.save(tx, siteNoPrefName));
 
 
