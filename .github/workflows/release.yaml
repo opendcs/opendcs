@@ -72,7 +72,7 @@ jobs:
           password: ${{ secrets.token != null && secrets.token || secrets.GITHUB_TOKEN }}
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@a66e1c87e2eca0503c343edf1d208c716d54b8a8
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf
         with:
           tags: |
             type=sha
@@ -82,7 +82,7 @@ jobs:
             type=schedule,pattern=${{inputs.branch}}-{{date 'YYYY.MM.DD-hhmmss'}}
       - name: Create and Push Docker images
         id: baked
-        uses: docker/bake-action@c84e68213864526ca0f9aea48dacec058fd70ea64142721923b901755e67b538
+        uses: docker/bake-action@a66e1c87e2eca0503c343edf1d208c716d54b8a8
         with:
           source: .
           set: |
