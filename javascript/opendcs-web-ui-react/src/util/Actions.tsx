@@ -4,7 +4,7 @@ export interface SaveAction<T> {
    * @param item The item to save
    * @returns nothing
    */
-  save?: (item: T) => void;
+  save?: (item: T) => void | Promise<void>;
 }
 
 export interface EditAction<V> {
