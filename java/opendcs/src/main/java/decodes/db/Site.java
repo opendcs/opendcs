@@ -251,10 +251,11 @@ public class Site extends IdDatabaseObject implements HasProperties, CachableDbO
 	 * @param nameType Site Name Type
 	 * @param nameValue Actual site Name
 	 */
-	public synchronized void addName(String nameType, String nameValue)
+	public synchronized SiteName addName(String nameType, String nameValue)
 	{
 		var sn = new SiteName(this, nameType, nameValue);
 		this.addName(sn);
+		return sn;
 	}
 
 	/**

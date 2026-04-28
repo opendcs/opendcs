@@ -40,10 +40,8 @@ class OpenDcsSiteDaoTestIT extends AppTestBase
         try (var tx = db.newTransaction())
         {
             var site = new Site();
-            var siteName = new SiteName(site, "CWMS", "SimpleTestSite");
-            site.addName(siteName);
-            var siteName2 = new SiteName(site, "local", "Local Test Name");
-            site.addName(siteName2);
+            var siteName = site.addName("CWMS", "SimpleTestSite");
+            var siteName2 = site.addName("local", "Local Test Name");
             site.country = "US";
             site.setDescription("A test site");
             site.setActive(true);
@@ -118,8 +116,7 @@ class OpenDcsSiteDaoTestIT extends AppTestBase
             final var settings = db.getSettings(DecodesSettings.class).orElseThrow();
             final var pref = settings.siteNameTypePreference;
             final var type = pref.equals("local") ? "CWMS" : "local";
-            final var name = new SiteName(siteNoPrefName, type, String.format("00AAAA-Test-Site-%02d", numSites));
-            siteNoPrefName.addName(name);
+            final var name = siteNoPrefName.addName(type, String.format("00AAAA-Test-Site-%02d", numSites));
             assertThrows(RequiredSiteNameMissingException.class ,() -> dao.save(tx, siteNoPrefName));
 
 
