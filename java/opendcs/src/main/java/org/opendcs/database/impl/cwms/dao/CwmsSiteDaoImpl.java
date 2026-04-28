@@ -29,6 +29,7 @@ import org.opendcs.utils.sql.SqlQueries;
 import org.openide.util.lookup.ServiceProvider;
 import org.slf4j.Logger;
 
+import decodes.cwms.CwmsConstants;
 import decodes.db.Constants;
 import decodes.db.Site;
 import decodes.db.SiteName;
@@ -49,7 +50,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                   from cwms_v_loc
                   where unit_system='SI'
                   <where>
-                  and db_office_id = :officeId
+                  and db_office_id = :cwmsofficeid
                 order by location_id COLLATE BINARY asc
                 <limit>
             )
@@ -110,7 +111,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                  .define(SqlQueries.WHERE_CLAUSE, "and location_code = :id")
                  .define(SqlQueries.LIMIT_CLAUSE, "")
-                 .bind("officeId", officeId)
+                 .bind(CwmsConstants.CWMS_OFFICE_ID, officeId)
                  .bind(GenericColumns.ID, id);
 
             return query.registerRowMapper(OpenDcsSiteMapper.withPrefix("s"))
@@ -138,17 +139,17 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             select distinct siteid from
                 (
                     select siteid, nametype, sitename from (
-                        select siteid, nametype, sitename from sitename where db_office_code = cwms_util.get_office_code(:officeId)
+                        select siteid, nametype, sitename from sitename where db_office_code = cwms_util.get_office_code(:cwmsofficeid)
                         union all
                         select location_code siteid,
                                'CWMS' nametype,
                                location_id sitename
                           from cwms_v_loc
-                         where unit_system = 'SI' and db_office_id = :officeId
+                         where unit_system = 'SI' and db_office_id = :cwmsofficeid
                     )
                 <where>
                 )
-            """).bind("officeId", officeId))
+            """).bind(CwmsConstants.CWMS_OFFICE_ID, officeId))
         {
             final StringBuilder whereClause = new StringBuilder();
             siteNames.forEach(sn ->
@@ -236,7 +237,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                 """;
 
          try (var store = handle.createCall(storeSql);
-            var getCode = handle.createQuery("select cwms_loc.get_location_code(:officeId, :name) id from dual");
+            var getCode = handle.createQuery("select cwms_loc.get_location_code(:cwmsofficeid, :name) id from dual");
             var deleteProps = handle.createUpdate(DELETE_PROPS);
             var insertProps = handle.prepareBatch("insert into site_property(site_id, prop_name, prop_value) values (:id, :name, :value)");
             var deleteNames = handle.createUpdate(DELETE_NAMES);
@@ -278,7 +279,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                  .bind(CwmsSite.BOUNDING_OFFICE, site.getProperty(CwmsSite.BOUNDING_OFFICE))
                  .invoke();
 
-            final var idOut = getCode.bind("officeId", officeId)
+            final var idOut = getCode.bind(CwmsConstants.CWMS_OFFICE_ID, officeId)
                                      .bind(GenericColumns.NAME, cwmsName.getNameValue())
                                      .mapTo(DbKey.class)
                                      .findOne()
@@ -362,7 +363,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                  .define(SqlQueries.WHERE_CLAUSE, "")
                  .define(SqlQueries.LIMIT_CLAUSE, addLimitOffset(limit, offset))
-                 .bind("officeId", officeId);
+                 .bind(CwmsConstants.CWMS_OFFICE_ID, officeId);
             if (limit >= 0)
             {
                 query.bind(SqlKeywords.LIMIT, limit);
