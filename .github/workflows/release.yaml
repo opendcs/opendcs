@@ -100,8 +100,9 @@ jobs:
           tar -xf out.tar --strip-components=1 --wildcards --no-anchored '*build*'
       - name: weird test
         run: |
-          curl -i https://www.hec.usace.army.mil/nexus/repository/maven-public/mil/army/usace/hec/cwms-db-jooq-codegen/7.0.0-OpenDCS/cwms-db-jooq-codegen-7.0.0-OpenDCS.pom
           netstat -anp || true
+          curl -i https://www.hec.usace.army.mil/nexus/repository/maven-public/mil/army/usace/hec/cwms-db-jooq-codegen/7.0.0-OpenDCS/cwms-db-jooq-codegen-7.0.0-OpenDCS.pom
+          
       - name: Build Release
         run: |          
           ./gradlew --info --debug build -x test
