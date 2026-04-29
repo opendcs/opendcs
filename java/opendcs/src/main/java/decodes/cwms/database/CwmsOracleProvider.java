@@ -38,6 +38,8 @@ import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.impl.cwms.dao.CwmsUserManagementImpl;
+import org.opendcs.database.impl.cwms.jdbi.CwmsBoolean;
+import org.opendcs.database.impl.cwms.jdbi.CwmsBooleanArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
 import org.opendcs.database.model.Role;
@@ -109,8 +111,11 @@ public class CwmsOracleProvider implements MigrationProvider
     @Override
     public void registerJdbiPlugins(Jdbi jdbi)
     {
-        jdbi.registerArgument(new DatabaseKeyArgumentFactory());
-        jdbi.registerColumnMapper(new DatabaseKeyColumnMapper());
+        jdbi.registerArgument(new DatabaseKeyArgumentFactory())
+            .registerColumnMapper(new DatabaseKeyColumnMapper())
+            .registerArgument(new CwmsBooleanArgumentFactory())
+            .registerColumnMapper(new CwmsBoolean())
+        ;
     }
 
     @Override

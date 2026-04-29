@@ -1,6 +1,7 @@
 {
   "siteId" : 1,
   "sitenames" : {
+    "CWMS" : "Pump Site",
     "PUMP" : "Pump Site"
   },
   "description" : "Pump located in NM, USA",

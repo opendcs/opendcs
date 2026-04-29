@@ -54,8 +54,8 @@ public class SiteDaoTestIT extends AppTestBase
         try(SiteDAI dao = tsdb.makeSiteDAO();)
         {
             Site s = new Site();
-            s.addName(new SiteName(s,"CWMS","TestSite"));
-            s.addName(new SiteName(s, "local", "TestSite-local name"));
+            s.addName("CWMS","TestSite");
+            s.addName("local", "TestSite-local name");
             s.setActive(true);
             s.setDescription("A test site");
             dao.writeSite(s);

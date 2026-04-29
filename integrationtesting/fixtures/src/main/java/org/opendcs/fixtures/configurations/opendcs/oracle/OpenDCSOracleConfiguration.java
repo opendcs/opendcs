@@ -1,7 +1,5 @@
 package org.opendcs.fixtures.configurations.opendcs.oracle;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
@@ -9,6 +7,7 @@ import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,7 +15,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 import javax.sql.DataSource;
 
@@ -30,6 +28,8 @@ import org.opendcs.database.impl.opendcs.OpenDcsOracleProvider;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.spi.database.MigrationProvider;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.testcontainers.oracle.OracleContainer;
 
 import decodes.db.Database;
@@ -53,7 +53,7 @@ import uk.org.webcompere.systemstubs.security.SystemExit;
  */
 public class OpenDCSOracleConfiguration implements Configuration
 {
-    private static Logger log = Logger.getLogger(OpenDCSOracleConfiguration.class.getName());
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     public static final String NAME = "OpenDCS-Oracle";
 
@@ -113,7 +113,7 @@ public class OpenDCSOracleConfiguration implements Configuration
      * Actually setup the database
      * @throws Exception
     */
-    @SuppressWarnings("resource") // lives for life of tests, test containers cleans up for us
+    @SuppressWarnings({"resource", "java:S2696"}) // lives for life of tests, test containers cleans up for us
     private void installDb(SystemExit exit,EnvironmentVariables environment, SystemProperties properties, UserPropertiesBuilder configBuilder) throws Exception
     {
         // These should always be set.
@@ -125,20 +125,18 @@ public class OpenDCSOracleConfiguration implements Configuration
         {
             return;
         }
-        if(db == null)
+        if (db == null)
         {
-            db = new OracleContainer("gvenzl/oracle-free:full-faststart")
+            db = new OracleContainer("gvenzl/oracle-free:23-full-faststart")
                     .withCreateContainerCmdModifier(cmd ->
-                    {
                         cmd.getHostConfig()
-                            .withMemory(4L*1024*1024*1024)
-                            .withCpuPeriod(20000L)
-                            .withCpuQuota(25000L)
-                        ;
-                    })
+                           .withMemory(4L*1024*1024*1024)
+                           .withCpuCount(2L)
+                     )
+                    .withLogConsumer(lo -> log.trace(lo.getUtf8String()))
                     .withUsername(SCHEMA_OWNING_USER)
                     .withPassword(SCHEMA_OWNING_USER_PASSWORD)
-                    .withStartupTimeoutSeconds(300)
+                    .withStartupTimeout(Duration.ofMinutes(5))
                     ;
         }
 
