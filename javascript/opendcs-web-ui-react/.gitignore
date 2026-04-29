@@ -30,4 +30,5 @@ storybook-static
 **/__screenshots__
 coverage
 src/lang/index.ts
+test-results
 

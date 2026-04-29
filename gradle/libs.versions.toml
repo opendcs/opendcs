@@ -80,6 +80,9 @@ bucket4j = "8.15.0"
 # manual test deps
 gherkin-kiwi = "1.0.0-M11"
 
+# open telemetry
+otel = "2.27.0"
+
 [libraries]
 gherkin-kiwi = { module = "org.opendcs.testing:gradle-plugin", version.ref="gherkin-kiwi" }
 oracle-ojdbc8 = { module = "com.oracle.database.jdbc:ojdbc8", version.ref = "oracle" }
@@ -218,6 +221,8 @@ com-bucket4j-bucket4j = { module = "com.bucket4j:bucket4j_jdk11-core", version.r
 
 # webjars
 swagger-ui = { module ="org.webjars:swagger-ui", version.ref = "swagger-ui" }
+
+io-opentelemetry-agent = { module = "io.opentelemetry.javaagent:opentelemetry-javaagent", version.ref = "otel" }
 
 [bundles]
 junit = [ "junit-api", "junit-engine", "junit-params" ]

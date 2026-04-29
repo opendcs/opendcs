@@ -17,6 +17,7 @@ def commonJacocoExcludes = [
 
 configurations {
     extra
+    otel
 }
 
 dependencies {
@@ -82,6 +83,8 @@ dependencies {
             replacedBy("io.swagger.core.v3:swagger-core-jakarta")
         }
     }
+
+    otel(libs.io.opentelemetry.agent)
 }
 
 def genConfig = tasks.register('generateConfig', Copy) {
@@ -153,6 +156,11 @@ testEngines.each { engine ->
         jvmArgs += "-DAPP_NAME=tests"
         jvmArgs += "-DtestLoggerPort="+ project.findProperty("testLoggerPort") ?: "35356"
         jvmArgs += "-Djava.security.manager=allow"
+        jvmArgs += "-javaagent:${configurations.otel.singleFile}"
+        jvmArgs += "-Dotel.traces.exporter=logging"
+        jvmArgs += "-Dotel.javaagent.logging=application"
+        jvmArgs += "-Dotel.service.name=opendcs-tests"
+        jvmArgs += "-Dotel.logs.exporter=none"
 
         reports {
             html {}
