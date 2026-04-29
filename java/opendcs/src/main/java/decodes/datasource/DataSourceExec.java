@@ -20,8 +20,14 @@
 */
 package decodes.datasource;
 
+import java.util.Iterator;
 import java.util.Properties;
+import java.util.Spliterators;
 import java.util.Vector;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+import org.opendcs.utils.FailableResult;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
@@ -267,6 +273,51 @@ public abstract class DataSourceExec implements PropertiesOwner
 	*/
 	protected abstract RawMessage getSourceRawMessage()
 		throws DataSourceException;
+
+	/**
+	 * Provide a stream of DataMessage that can be chained to other operations.
+	 * 
+	 * The stream provided by the default implementation closes only when the source throws DataSourceEndException.
+	 * Other Errors are provided in the Error Result so that callers can design how to handle errors.
+	 * 
+	 * @return Either a valid DataMessage or the exception thrown by getSourceRawMessage.
+	 * @throws DataSourceException exception DataSourceEndException, which terminates the stream.
+	 */
+	public Stream<FailableResult<DataMessage,DataSourceException>> stream() throws DataSourceException
+	{
+		return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new Iterator<FailableResult<DataMessage,DataSourceException>>()
+		{
+			private FailableResult<DataMessage,DataSourceException> nextMessage = null;
+			@Override
+			public boolean hasNext() 
+			{
+				try
+				{
+					nextMessage = FailableResult.success(getDataMessage());
+					if (nextMessage != null)
+					{
+						return true;
+					}
+				}
+				catch (DataSourceException ex)
+				{
+					if (!(ex instanceof DataSourceEndException))
+					{
+						nextMessage = FailableResult.failure(ex);
+						return true;
+					}
+				}
+				return false;
+			}
+
+			@Override
+			public FailableResult<DataMessage,DataSourceException> next()
+			{
+				return nextMessage;
+			}
+
+		}, 0), false );
+	}
 
 	/**
 	  Find the matching transport medium for this platform.
