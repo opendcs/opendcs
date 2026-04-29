@@ -105,7 +105,7 @@ jobs:
           
       - name: Build Release
         run: |          
-          ./gradlew --info --debug build -x test
+          ./gradlew --info --debug build -x test --max-workers=8
       - name: Sign Artifacts
         run: |
           ./gradlew --info signWar -PversionOverride=$VERSION signDist signMavenPublication -x test -Psign=true \
