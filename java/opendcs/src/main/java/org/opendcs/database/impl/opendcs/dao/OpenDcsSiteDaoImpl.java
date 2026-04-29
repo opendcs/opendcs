@@ -41,7 +41,7 @@ import decodes.util.DecodesSettings;
 @ServiceProviders({
     @ServiceProvider(service = SiteDao.class, path = "dao/OpenDCS-Postgres"),
     @ServiceProvider(service = SiteDao.class, path = "dao/OpenDCS-Oracle"),
-    // deprecated and also implies supported by the Oracle impl which is false.
+    // deprecated
     // Unfortunately correct behavior requires eliminating the use of the editDatabaseCode so the names are used.
     // This will be done in a follow up PR.
     @ServiceProvider(service = SiteDao.class, path = "dao/OPENTSDB")
