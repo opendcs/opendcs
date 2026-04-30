@@ -21,6 +21,7 @@
   "description": "Descripción",
   "cancel": "Cancelar",
   "save": "Guardar",
+  "delete": "Eliminar",
   "loading_reference_lists": "Cargando datos de listas de referencia...",
   "user-settings": "Configuración de usuario",
   "date_time": "Fecha/Hora",

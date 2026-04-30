@@ -31,7 +31,6 @@ DataTable.use(DT);
 DataTable.use(dtButtons);
 
 export type CompParm = ApiCompParm;
-export { PARM_TYPES, parmTypeLabel };
 export type { ParmTypeOption };
 
 type ExistingRow = {
@@ -56,6 +55,11 @@ type RowValues = {
   unitsAbbr?: string;
   ifMissing?: string;
   roleInput: HTMLInputElement | null;
+};
+
+const mergeString = (next: string | undefined, current: string | undefined) => {
+  if (next === undefined) return current;
+  return next.length > 0 ? next : undefined;
 };
 
 export interface ComputationParamsTableProps {
@@ -207,12 +211,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
     };
   };
 
-  const mergeString = (next: string | undefined, current: string | undefined) => {
-    if (next === undefined) return current;
-    return next.length > 0 ? next : undefined;
-  };
-
-  const buildParm = (values: RowValues, base: CompParm = {}): CompParm => {
+  const buildParm = useCallback((values: RowValues, base: CompParm = {}): CompParm => {
     const parsedDeltaT =
       values.deltaT === undefined ? undefined : Number.parseInt(values.deltaT, 10);
 
@@ -234,7 +233,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
       unitsAbbr: mergeString(values.unitsAbbr, base.unitsAbbr),
       ifMissing: mergeString(values.ifMissing, base.ifMissing),
     };
-  };
+  }, []);
 
   const renderTextInput = useCallback(
     (name: string, defaultValue: string, ariaLabel: string) =>
@@ -756,7 +755,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
       responsive: true,
       language: dtLangs.get(i18n.language),
       layout: {
-        top1Start: {
+        bottomStart: {
           buttons: edit
             ? [
                 {

@@ -115,7 +115,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
         return data.name;
       }
     },
-    [rowStateRef],
+    [t],
   );
 
   const renderValue = useCallback(
@@ -144,7 +144,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
         );
       }
     },
-    [rowStateRef],
+    [t],
   );
 
   const dataColumns = useMemo(
@@ -185,7 +185,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
     } else {
       return { buttons: [] };
     }
-  }, [actions, edit, canAdd]);
+  }, [edit, canAdd, t]);
 
   const options: DataTableProps["options"] = useMemo(() => {
     return {
@@ -196,21 +196,18 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
       responsive: true,
       language: dtLangs.get(i18n.language),
       layout: {
-        top1Start: {
+        bottomStart: {
           buttons: buttons,
         },
       },
       createdRow: (
         row: HTMLElement,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        data: any,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        data: object | unknown[],
         _index: number,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         _cells: HTMLTableCellElement[],
-      ) => (row.dataset.propName = data.name),
+      ) => (row.dataset.propName = (data as LocalProperty).name),
     };
-  }, [buttons]);
+  }, [buttons, i18n.language]);
 
   const getAndSaveProp: (data: LocalProperty) => void = useCallback(
     (data: LocalProperty): void => {
@@ -256,7 +253,6 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
   );
 
   const renderActions = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     (data: LocalProperty, _row: Property) => {
       const rowState = rowStateRef.current;
       const state = data.name ? rowState[data.name] : rowState[data.idx];
@@ -318,7 +314,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
     return {
       actions: renderActions,
     };
-  }, [actions, rowStateRef]);
+  }, [renderActions]);
 
   useEffect(() => {
     table.current?.dt()?.rows().invalidate().draw(false);
