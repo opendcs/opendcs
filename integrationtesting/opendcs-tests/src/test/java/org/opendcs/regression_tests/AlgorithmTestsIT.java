@@ -211,10 +211,10 @@ public class AlgorithmTestsIT extends AppTestBase
                 String tsName = currExpect.getNameString();
                 TimeSeriesIdentifier outputID = tsDao.getTimeSeriesIdentifier(tsName);
 
-                log.info(currExpect.getNameString());
+                log.info("Checking Time series {}", currExpect.getNameString());
 
                 CTimeSeries algoOutput = theData.getTimeSeriesByTsidKey(outputID);
-                log.info("expected units: " + currExpect.getUnitsAbbr());
+                log.info("expected units: {}", currExpect.getUnitsAbbr());
                 TSUtil.convertUnits(algoOutput, currExpect.getUnitsAbbr());
 
                 
@@ -224,8 +224,8 @@ public class AlgorithmTestsIT extends AppTestBase
                     {
                         TimedVariable TVOutput = algoOutput.sampleAt(i);
                         TimedVariable TVExpected = currExpect.findWithin(TVOutput.getTime(), 0);
-                        log.info("output time: "+TVOutput.getTime());
-                        log.info("output value  : "+TVOutput.getDoubleValue());
+                        log.info("output time:    {}", TVOutput.getTime());
+                        log.info("output value:   {}", TVOutput.getDoubleValue());
                         log.info("expected value: {}", TVExpected != null
                                                                           ? TVExpected.getDoubleValue()
                                                                           : " intentionally missing in output file");

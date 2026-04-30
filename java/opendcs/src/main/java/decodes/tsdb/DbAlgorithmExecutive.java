@@ -27,6 +27,7 @@ import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
 import org.opendcs.utils.AnnotationHelpers;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.opendcs.utils.properties.Property;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
 import org.slf4j.MDC.MDCCloseable;
@@ -91,18 +92,18 @@ public abstract class DbAlgorithmExecutive
 	/** Gregorian Calendar to use for determining aggregate periods: */
 	public GregorianCalendar aggCal = null;
 
-	private int maxMissingValuesForFill;
+	private Property<Integer> maxMissingValuesForFill;
 	private int maxMissingTimeForFill;
 
 	/** Determines open/closed intervals for aggregate periods.
 	 * The default is [lower,upper)
 	 */
-	protected boolean aggLowerBoundClosed = true;
+	protected Property<Boolean> aggLowerBoundClosed; 
 
 	/** Determines open/closed intervals for aggregate periods.
 	 * The default is [lower,upper)
 	 */
-	protected boolean aggUpperBoundClosed = false;
+	protected Property<Boolean> aggUpperBoundClosed; 
 
 	/** If true, than deltas can be interpolated up to maxDeltaInterp intervals */
 	protected boolean interpDeltas = false;
@@ -151,39 +152,15 @@ public abstract class DbAlgorithmExecutive
 
 		DbCompAlgorithm algo = comp.getAlgorithm();
 
-		this.maxMissingValuesForFill = DecodesSettings.instance().maxMissingValuesForFill;
-		String s = comp.getProperty("maxMissingValuesForFill");
-		if (s == null)
-			s = algo.getProperty("maxMissingValuesForFill");
-		if (s != null)
-		{
-			try { maxMissingValuesForFill = Integer.parseInt(s.trim()); }
-			catch(NumberFormatException ex)
-			{
-				this.maxMissingValuesForFill = DecodesSettings.instance().maxMissingValuesForFill;
-				log.atError()
-				   .setCause(ex)
-				   .log("Bad maxMissingValuesForFill property '{}' will use default of {}",
-				   		s, maxMissingValuesForFill);
-			}
-		}
-
-		this.maxMissingTimeForFill = DecodesSettings.instance().maxMissingTimeForFill;
-		s = comp.getProperty("maxMissingTimeForFill");
-		if (s == null)
-			s = algo.getProperty("maxMissingTimeForFill");
-		if (s != null)
-		{
-			try { maxMissingTimeForFill = Integer.parseInt(s.trim()); }
-			catch(NumberFormatException ex)
-			{
-				this.maxMissingTimeForFill = DecodesSettings.instance().maxMissingTimeForFill;
-				log.atWarn()
-				   .setCause(ex)
-				   .log("Bad maxMissingTimeForFill property '{}' will use default of {}",
-				   		s, maxMissingTimeForFill);
-			}
-		}
+		this.maxMissingValuesForFill = Property.property("maxMissingValuesForFill", Integer.class)
+											   .withSources(comp, algo, DecodesSettings.instance())
+											   .withDefaultValue(0)
+											   .build();
+		this.maxMissingTimeForFill = Property.property("maxMissingTimeForFill", Integer.class)
+											   .withSources(comp, algo, DecodesSettings.instance())
+											   .build()
+											   .find()
+											   .orElse(0);
 
 		parseTimeRound();
 
@@ -337,9 +314,9 @@ public abstract class DbAlgorithmExecutive
 					log.atError()
 					   .setCause(ex)
 					   .log("""
-							Unable to add time series {} to output collection from role {}. It was already present, this should not happen. Please
-							check your computation configuration for duplicate output mappings
-						""", parmRef.tsid.getUniqueString(), parmRef.role);
+                            Unable to add time series {} to output collection from role {}. It was already present, this should not happen. Please
+                            check your computation configuration for duplicate output mappings
+                        """, parmRef.tsid.getUniqueString(), parmRef.role);
 				}
 			}
 
@@ -1007,7 +984,7 @@ public abstract class DbAlgorithmExecutive
 					if (paramSince.compareTo(paramUntil) <= 0)
 					{
 						timeSeriesDAO.fillTimeSeries(parmRef.timeSeries, paramSince, paramUntil,
-							aggLowerBoundClosed, aggUpperBoundClosed, false);
+							aggLowerBoundClosed.get(), aggUpperBoundClosed.get(), false);
 					}
 					int sz = parmRef.timeSeries.size();
 					for(int i=0; i<sz; i++)
@@ -1019,10 +996,10 @@ public abstract class DbAlgorithmExecutive
 						long sampMsec = sampBaseTime.getTime();
 
 						boolean aboveLowerBound =
-							aggLowerBoundClosed ? sampMsec >= sinceMsec
-							: sampMsec > sinceMsec;
+							(aggLowerBoundClosed.get()) ? (sampMsec >= sinceMsec)
+							: (sampMsec > sinceMsec);
 						boolean belowUpperBound =
-							aggUpperBoundClosed ? sampMsec <= untilMsec
+							aggUpperBoundClosed.get() ? sampMsec <= untilMsec
 							: sampMsec < untilMsec;
 						if (aboveLowerBound && belowUpperBound)
 							baseTimes.add(sampBaseTime);
@@ -1347,7 +1324,7 @@ public abstract class DbAlgorithmExecutive
 
 						if (intvSecs != 0
 						 && (varSec-prevSec) / intvSecs
-							> maxMissingValuesForFill)
+							> maxMissingValuesForFill.get())
 						{
 							log.warn("Missing number exceeded for role {}, max#={}, deltaT={}, intvsSecs={}",
 									 role, maxMissingValuesForFill, (varSec-prevSec), intvSecs);
@@ -1381,7 +1358,7 @@ public abstract class DbAlgorithmExecutive
 
 						if (intvSecs != 0
 						 && (nextSec - prevSec) / intvSecs
-							> maxMissingValuesForFill)
+							> maxMissingValuesForFill.get())
 						{
 							log.warn("Missing time exceeded for role {}, " +
 									 "prevSec={}, nextSec={}, intvSecs={}, max={} seconds.",
@@ -1443,7 +1420,7 @@ public abstract class DbAlgorithmExecutive
 							log.atWarn().setCause(ex).log("Error with exact delta.");
 						}
 					}
-					// TODO: Determine where interpDeltas should be set.
+					// interpDeltas is set in AW_AlgorithmBase, if you're IDE is flagging this as dead code, it's wrong.
 					else if (interpDeltas && (prev = parmRef.timeSeries.findPrev((int)(tv.getTime().getTime()/1000L)-1)) != null)
 					{
 						try
