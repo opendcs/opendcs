@@ -70,6 +70,8 @@ dependencies {
     runtimeOnly(libs.slf4j.jdk14)
     runtimeOnly(libs.org.glassfish.jaxb.runtime)
     runtimeOnly(libs.com.faster.xml.jackson.annotations) // updated for swagger compatibility
+    runtimeOnly(project(":opendcs-implementation"))
+    runtimeOnly(project(":cwms-implementation"))
 
     webjars(libs.swagger.ui)
 
