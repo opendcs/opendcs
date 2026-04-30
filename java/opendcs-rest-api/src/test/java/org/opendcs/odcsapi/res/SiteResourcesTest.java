@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 
 import decodes.db.Site;
-import decodes.db.SiteList;
 import decodes.db.SiteName;
 import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiSite;
@@ -18,19 +17,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.opendcs.odcsapi.res.SiteResources.map;
+import static org.opendcs.odcsapi.res.SiteResources.mapSiteNames;
 
 final class SiteResourcesTest
 {
 	@Test
 	void testMapSiteList()
 	{
-		SiteList sl = new SiteList();
+		
 		Site site1 = siteBuilder("Albuquerque");
 		Site site2 = siteBuilder("Santa Fe");
-		sl.addSite(site1);
-		sl.addSite(site2);
 
-		List<ApiSiteRef> siteRefs = map(sl);
+		List<ApiSiteRef> siteRefs = map(List.of(site1, site2));
 
 		assertNotNull(siteRefs);
 		assertNotNull(siteRefs.get(0));
@@ -60,7 +58,7 @@ final class SiteResourcesTest
 	}
 
 	@Test
-	void testMapSite() throws Exception
+	void testMapSite()
 	{
 		ApiSite apiSite = new ApiSite();
 		apiSite.setActive(true);
@@ -132,7 +130,7 @@ final class SiteResourcesTest
 	void testSiteNamesMap()
 	{
 		Site site = siteBuilder("Albuquerque");
-		Map<String, String> names = map(site);
+		Map<String, String> names = mapSiteNames(site);
 		assertNotNull(names);
 		for (Iterator<SiteName> it = site.getNames(); it.hasNext(); )
 		{

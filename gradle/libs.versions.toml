@@ -1,6 +1,6 @@
 [versions]
 #General/Shared Versions
-oracle = { strictly = "23.5.0.24.07" }
+oracle = { strictly = "23.26.1.0.0" }
 postgres = "42.7.10"
 commons-logging = "1.3.6"
 commons-net = "3.13.0"
@@ -30,7 +30,7 @@ cwms-ratings = "1.1.0"
 nucleus = "4.10.0"
 flogger = "0.7.4"  # used by hec-monolith
 usgs-waterdata-api = "0.2.5"
-jdbi = "3.39.1"
+jdbi = "3.53.0"
 flywaydb = "11.20.1"
 sun-mailapi="2.0.2"
 ayza = "10.0.0"

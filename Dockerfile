@@ -1,7 +1,14 @@
-# Depends on having buildx available for the --mount feature
-FROM eclipse-temurin:25-jdk-jammy AS builder
+# syntax=docker/dockerfile:1
+# check=skip=SecretsUsedInArgOrEnv
+# The values are either not secrets or are placeholders
 
-RUN --mount=type=cache,target=/var/cache/apt \ 
+
+# Depends on having buildx available for the --mount feature
+# use buildplatform for the builder, since we're building a java application
+# it's already cross platform.
+FROM --platform=$BUILDPLATFORM eclipse-temurin:25-jdk-jammy AS builder
+
+RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && apt-get -y upgrade && \
     apt-get install -y python3-venv python3-pip git
 WORKDIR /app
@@ -9,8 +16,11 @@ WORKDIR /app
 COPY . .
 
 RUN --mount=type=cache,target=/root \
-    ./gradlew installDist war -Dno.docs=true --info
+    ./gradlew --no-daemon installDist war -Dno.docs=true --info
 # end initial build
+
+FROM --platform=$BUILDPLATFORM scratch AS export
+COPY --from=builder --parents /app .
 
 FROM eclipse-temurin:21-jre-alpine AS opendcs_base
 
@@ -31,7 +41,7 @@ ENV DCSTOOL_HOME=/opt/opendcs
 ENV DECODES_INSTALL_DIR=${DCSTOOL_HOME}
 ENTRYPOINT ["/opt/opendcs/env.sh"]
 LABEL org.opencontainers.image.source=https://github.com/opendcs/opendcs
-LABEL org.opencontainers.image.source=https://github.com/opendcs/opendcs/README.docker.md
+LABEL org.opencontainers.image.documentation=https://github.com/opendcs/opendcs/README.docker.md
 # end baseline setup
 
 FROM opendcs_base AS lrgs
@@ -39,9 +49,8 @@ COPY docker_scripts/lrgs.sh /
 USER opendcs:opendcs
 WORKDIR /lrgs_home
 ENV LRGSHOME=/lrgs_home
-ENV LRGS_ADMIN_PASSWORD=""
 # DDS Port
-EXPOSE 16003 
+EXPOSE 16003
 CMD ["/lrgs.sh"]
 
 
@@ -53,9 +62,8 @@ WORKDIR /dcs_user_dir
 ENV DCSTOOL_USERDIR=/dcs_user_dir
 ENV DATABASE_TYPE=xml
 ENV DATABASE_URL="${DCSTOOL_USERDIR}/edit-db"
+# Ignore Secrets In Env warning here, this just explains how to reference the secrets.
 ENV DB_AUTH="env-auth-source:username=DATABASE_USERNAME,password=DATABASE_PASSWORD"
-ENV DATABASE_USERNAME=""
-ENV DATABASE_PASSWORD=""
 ENV DATABASE_DRIVER=""
 ENV CWMS_OFFICE=""
 ENV DATATYPE_STANDARD=""
@@ -80,7 +88,7 @@ ENV APPLICATION_NAME="compdepends"
 
 CMD ["/compdepends.sh"]
 
-FROM alpine:3.21.5 AS tomcat_base
+FROM alpine:3.23.4 AS tomcat_base
 RUN apk --no-cache upgrade && \
     apk --no-cache add \
         openjdk21-jre \
