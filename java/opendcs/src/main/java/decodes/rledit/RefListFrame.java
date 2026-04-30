@@ -24,6 +24,7 @@ import javax.swing.*;
 import javax.swing.border.*;
 
 import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.EnumDao;
 
@@ -37,7 +38,6 @@ import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import ilex.util.*;
-import opendcs.dai.EnumDAI;
 import decodes.db.*;
 import decodes.dbeditor.TraceDialog;
 import decodes.decoder.Season;
@@ -949,7 +949,8 @@ public class RefListFrame extends JFrame
 		dlg.setCloseText(CLOSE_MSG);
 		final AtomicBoolean result = new AtomicBoolean(false);
 		final Collection<DbEnum> changedEnums = EnumTab.getChanged();
-        final var enumDao = database.getDao(EnumDao.class).get();
+        final var enumDao = database.getDao(EnumDao.class)
+                                    .orElseThrow(() -> new OpenDcsDataRuntimeException("Unable to retrieve Enum DAO"));
 		SwingWorker<Boolean,String> worker = new SwingWorker<Boolean,String>()
 		{
 			@Override
@@ -968,8 +969,7 @@ public class RefListFrame extends JFrame
 				{
 					publish("Writing Enumerations");
                     
-					try(DataTransaction tx = database.newTransaction();
-						)
+					try(DataTransaction tx = database.newTransaction())
 					{
 						for (DbEnum curEnum: changedEnums)
 						{

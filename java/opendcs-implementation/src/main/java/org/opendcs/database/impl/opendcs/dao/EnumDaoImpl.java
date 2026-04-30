@@ -14,6 +14,7 @@ import org.opendcs.database.model.mappers.dbenum.DbEnumBuilderReducer;
 import org.opendcs.database.model.mappers.dbenum.EnumValueMapper;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlKeywords;
+import org.opendcs.utils.sql.SqlErrorMessages;
 import org.openide.util.lookup.ServiceProvider;
 
 import decodes.db.DatabaseException;
@@ -28,12 +29,12 @@ import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 @ServiceProvider(service = EnumDao.class)
 public class EnumDaoImpl implements EnumDao 
 {
-    
+
     @Override
     public Collection<DbEnum> getEnums(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
         var handle = tx.connection(Handle.class)
-                       .orElseThrow(() -> new OpenDcsDataException("Unable to get Database connection object."));
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
 
         final String queryText = """
                 with e (id, name, defaultValue, description) as (
@@ -65,7 +66,7 @@ public class EnumDaoImpl implements EnumDao
                          .registerRowMapper(EnumValue.class, EnumValueMapper.withPrefix("v"))
                          .reduceRows(DbEnumBuilderReducer.DBENUM_BUILDER_REDUCER)
                          .map(DbEnumBuilder::build)
-                         .collect(Collectors.toList());
+                         .toList();
         }
     }
 
@@ -73,7 +74,7 @@ public class EnumDaoImpl implements EnumDao
     public Optional<DbEnum> getEnum(DataTransaction tx, String enumName) throws OpenDcsDataException
     {
         var handle = tx.connection(Handle.class)
-                       .orElseThrow(() -> new OpenDcsDataException("Unable to get Database connection object."));
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         try (var query = handle.createQuery("select id from enum where upper(name) = upper(:name)"))
         {
             var id = query.bind(GenericColumns.NAME, enumName)
@@ -99,7 +100,7 @@ public class EnumDaoImpl implements EnumDao
                  where e.id = :id
                 """;
         var handle = tx.connection(Handle.class)
-                       .orElseThrow(() -> new OpenDcsDataException("Unable to get Database connection object."));
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         try (var query = handle.createQuery(queryText))
         {
             return query.bind(GenericColumns.ID, id)
@@ -120,7 +121,7 @@ public class EnumDaoImpl implements EnumDao
         var dbEngine = context.getDatabase();
 
         var handle = tx.connection(Handle.class)
-                       .orElseThrow(() -> new OpenDcsDataException("Unable to get Database connection object."));
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         final String enumMergeText = """
                     MERGE into enum e
                     USING (select :id id, :name name, :defaultValue defaultValue, :description description <dual>) s
@@ -162,8 +163,7 @@ public class EnumDaoImpl implements EnumDao
                          .add();
             }
             addValues.execute();
-            var dbEnumDb = getEnum(tx, id).orElseThrow(() -> new OpenDcsDataException("Could not retrieve the enum we just saved."));
-			return dbEnumDb;
+            return getEnum(tx, id).orElseThrow(() -> new OpenDcsDataException("Could not retrieve the enum we just saved."));
         }
         catch (DatabaseException ex)
         {
@@ -179,7 +179,7 @@ public class EnumDaoImpl implements EnumDao
             throw new OpenDcsDataException("Cannot delete an enum that doesn't exist.");
         }
         var handle = tx.connection(Handle.class)
-                       .orElseThrow(() -> new OpenDcsDataException("Unable to get Database connection object."));
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         final String deleteValuesSql = "delete from enumvalue where enumid = :id";
         final String deleteEnumSql = "delete from enum where id = :id";
         try (var deleteValues = handle.createUpdate(deleteValuesSql);

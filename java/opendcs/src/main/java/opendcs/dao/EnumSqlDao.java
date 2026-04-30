@@ -20,6 +20,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
+
 import org.jdbi.v3.core.Jdbi;
 import org.opendcs.database.JdbiTransaction;
 import org.opendcs.database.TransactionContextImpl;
@@ -56,20 +58,16 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
     public EnumSqlDao(DatabaseConnectionOwner tsdb)
     {
         this(tsdb, "EnumSqlDao");
-    }
-
-    public EnumSqlDao()
-    {
-        this(null, "EnumSqlDao - null tsdb");
-    }
+    }    
 
     public EnumSqlDao(DatabaseConnectionOwner tsdb, String module)
     {
-        super(tsdb, module);
+        super(Objects.requireNonNull(tsdb, "A Database connection owner must be provided."), module);
         newDao = this.db.getOdcsDatabase()
-                        .orElseThrow(() -> new OpenDcsDataRuntimeException("OpenDCS database not yet set."))
-                        .getDao(EnumDao.class)
-                        .orElseThrow(() -> new OpenDcsDataRuntimeException("No updated EnumDao available"));
+                    .orElseThrow(() -> new OpenDcsDataRuntimeException("OpenDCS database not yet set."))
+                    .getDao(EnumDao.class)
+                    .orElseThrow(() -> new OpenDcsDataRuntimeException("No updated EnumDao available"));
+    
     }
 
     @Override
