@@ -690,7 +690,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
       // DataTables binds `this` to the Api on each callback — read it once
       // and hand everything else off to plain helpers so this component body
       // stays free of `this`-using flows.
-      const dt = this.api();
+      const dt = this.api(); // NOSONAR — DataTables binds `this` to the Api instance in drawCallback
       const childRefs: ChildSyncRefs = {
         rowStateRef,
         childModeRef,
