@@ -4,7 +4,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:7.2.3.7755"
+        classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:7.3.0.8198"
     }
 }
 
