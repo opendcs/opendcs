@@ -82,9 +82,10 @@ package decodes.db;
 //import java.util.HashMap;
 import ilex.util.TextUtil;
 
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Vector;
 
 import decodes.sql.DbKey;
 
@@ -245,6 +246,14 @@ public class PlatformConfigList
 		throws DatabaseException
 	{
 		myDatabase.getDbIo().readConfigList(this);
+	}
+
+	public synchronized void refresh()
+		throws DatabaseException
+	{
+		read();
+		for(PlatformConfig pc : new ArrayList<PlatformConfig>(configVec))
+			pc.read();
 	}
 
   	/**

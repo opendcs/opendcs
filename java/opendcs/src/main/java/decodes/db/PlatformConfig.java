@@ -495,6 +495,12 @@ public class PlatformConfig extends IdDatabaseObject
 		configSensors.removeAllElements();
 	}
 
+	public void clearDecodingDefinition()
+	{
+		configSensors.clear();
+		decodesScripts.clear();
+	}
+
 	/**
       Called when the config sensors have changed.  Makes sure that there is
       exactly one ScriptSensor for each config sensor, and no extras.
