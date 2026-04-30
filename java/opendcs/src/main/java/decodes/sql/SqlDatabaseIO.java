@@ -29,6 +29,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.TimeZone;
 
 import org.opendcs.database.api.OpenDcsDatabase;
@@ -2255,5 +2256,10 @@ public class SqlDatabaseIO extends DatabaseIO implements DatabaseConnectionOwner
     public void setKeyGenerator(KeyGenerator keyGenerator)
     {
         this.keyGenerator = keyGenerator;
+    }
+    @Override
+    public Optional<OpenDcsDatabase> getOdcsDatabase()
+    {
+        return Optional.ofNullable(this.dcsDb);
     }
 }

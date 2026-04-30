@@ -10,12 +10,12 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.dai.EnumDao;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.db.DbEnum;
-import opendcs.dai.EnumDAI;
 
 class DbEnumDaoTestIT extends AppTestBase
 {
@@ -25,9 +25,9 @@ class DbEnumDaoTestIT extends AppTestBase
     @Test
     void test_write_enum() throws Exception
     {
-        Optional<EnumDAI> dai = db.getDao(EnumDAI.class);
+        final var dai = db.getDao(EnumDao.class);
         assertTrue(dai.isPresent(), "Unable to retrieve EnumDAI instance from database.");
-        EnumDAI enumDai = dai.get();
+        var enumDai = dai.get();
         try (DataTransaction tx = db.newTransaction())
         {
             DbEnum dbEnum = new DbEnum("TestEnum");
@@ -52,7 +52,7 @@ class DbEnumDaoTestIT extends AppTestBase
     @EnableIfTsDb
     void test_pagination() throws Exception
     {
-        EnumDAI dai = db.getDao(EnumDAI.class)
+        var dai = db.getDao(EnumDao.class)
                         .orElseGet(() -> fail("Unable to retrieve EnumDAI instance from database."));
         try (var tx = db.newTransaction())
         {

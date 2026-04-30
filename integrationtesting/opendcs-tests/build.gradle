@@ -39,6 +39,9 @@ dependencies {
     testImplementation project(":opendcs-schemas")
     testImplementation project(":opendcs-schemas-cwms-oracle")
     testImplementation project(":testing:fixtures")
+    testImplementation(project(":opendcs"))
+    testImplementation(project(":opendcs-implementation"))
+    testImplementation(project(":cwms-implementation"))
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)
     testImplementation(libs.com.bucket4j.bucket4j)
@@ -129,7 +132,10 @@ testEngines.each { engine ->
         def stageDir = install.layout.getBuildDirectory().dir("install/${install.distributions.main.distributionBaseName.get()}").get()
         def classPath = (project(':opendcs').jar.outputs.files
                     + project(":opendcs").configurations.runtimeClasspath
-                    + configurations.extra).asPath
+                    + configurations.extra
+                    + project(":opendcs-implementation").configurations.runtimeClasspath
+                    + project(":cwms-implementation").configurations.runtimeClasspath
+                    ).asPath
         inputs.property "opendcs.test.engine", engine
 
         systemProperties += project.properties.findAll {k, v -> k.startsWith("opendcs")}

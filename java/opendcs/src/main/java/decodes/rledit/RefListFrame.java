@@ -25,6 +25,7 @@ import javax.swing.border.*;
 
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.dai.EnumDao;
 
 import java.util.*;
 import java.util.List;
@@ -948,12 +949,14 @@ public class RefListFrame extends JFrame
 		dlg.setCloseText(CLOSE_MSG);
 		final AtomicBoolean result = new AtomicBoolean(false);
 		final Collection<DbEnum> changedEnums = EnumTab.getChanged();
+        final var enumDao = database.getDao(EnumDao.class).get();
 		SwingWorker<Boolean,String> worker = new SwingWorker<Boolean,String>()
 		{
 			@Override
 			protected Boolean doInBackground() throws Exception
 			{
 				Database db = Database.getDb();
+                
 				if (seasonsChanged)
 				{
 					publish("Writing Seasons");
@@ -964,8 +967,9 @@ public class RefListFrame extends JFrame
 				if (EnumTab.enumsChanged())
 				{
 					publish("Writing Enumerations");
+                    
 					try(DataTransaction tx = database.newTransaction();
-						EnumDAI enumDao = database.getDao(EnumDAI.class).get();)
+						)
 					{
 						for (DbEnum curEnum: changedEnums)
 						{
