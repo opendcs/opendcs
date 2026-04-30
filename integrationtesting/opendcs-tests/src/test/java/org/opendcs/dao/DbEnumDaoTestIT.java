@@ -17,6 +17,7 @@ import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.db.DbEnum;
 
+@EnableIfTsDb
 class DbEnumDaoTestIT extends AppTestBase
 {
     @ConfiguredField
