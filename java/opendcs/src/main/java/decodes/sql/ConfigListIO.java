@@ -182,6 +182,7 @@ public class ConfigListIO extends SqlDbObjIo
                     equipId, _pcList.getDatabase());
         }
 
+        pc.clearDecodingDefinition();
         readConfigSensors(id, pc);
 
         readDecodesScripts(pc);

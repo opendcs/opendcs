@@ -390,13 +390,16 @@ public class RoutingSpecThread extends Thread
 			
 
 			
-			// MJM 20041027 Added the following check:
-			// Every 10 minutes, re-read platform list to see if any platforms
-			// have been added.
+			// Every 10 minutes, re-read DECODES configs and the platform list so
+			// routing can pick up edits without a process restart.
 			if (now - Database.getDb().platformList.getLastReadTime() > 10*60000L)
 			{
 				myExec.setSubsystem("platlist");
-				try { Database.getDb().platformList.read(); }
+				try
+				{
+					Database.getDb().platformConfigList.refresh();
+					Database.getDb().platformList.read();
+				}
 				catch(DatabaseException ex)
 				{
 					log.atError().setCause(ex).log("Could not refresh platform list.");
