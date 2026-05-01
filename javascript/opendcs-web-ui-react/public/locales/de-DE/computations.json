@@ -22,6 +22,7 @@
     "select_algorithm_filter": "Algorithmen filtern",
     "select_algorithm_exec_class": "Ausführungsklasse",
     "select_algorithm_none": "Keine Algorithmen gefunden.",
+    "select_algorithm_no_description": "Keine Beschreibung verfügbar.",
     "edit_for": "Berechnung {{id}} bearbeiten",
     "copy_for": "Berechnung {{id}} kopieren",
     "delete_for": "Berechnung {{id}} löschen",
