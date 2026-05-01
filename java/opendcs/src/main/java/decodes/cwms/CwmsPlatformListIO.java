@@ -18,6 +18,8 @@ package decodes.cwms;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -72,6 +74,7 @@ public class CwmsPlatformListIO extends PlatformListIO
 
 		log.trace("Executing '{}'", q);
 		ResultSet rs = stmt.executeQuery(q);
+		Set<DbKey> refreshedConfigs = new HashSet<>();
 
 		if (rs != null) {
 			while (rs.next()) 
@@ -102,19 +105,15 @@ public class CwmsPlatformListIO extends PlatformListIO
 				DbKey configId = DbKey.createDbKey(rs, 5);
 				if (!rs.wasNull()) 
 				{
-					PlatformConfig pc = 
-						platformList.getDatabase().platformConfigList.getById(
-							configId);
-					if (pc == null)
+					PlatformConfig pc = null;
+					try
 					{
-						log.warn("Platform({}) references config({})," +
-								 " which is not in list, will attempt read...",
-								 platformId, configId);
-						try { pc = _configListIO.getConfig(configId); }
-						catch(Exception ex)
-						{
-							log.atWarn().setCause(ex).log("Error reading config({})", configId);
-						}
+						pc = getConfigForPlatformList(platformList, configId,
+							refreshedConfigs);
+					}
+					catch(Exception ex)
+					{
+						log.atWarn().setCause(ex).log("Error reading config({})", configId);
 					}
 					if (pc != null)
 					{
