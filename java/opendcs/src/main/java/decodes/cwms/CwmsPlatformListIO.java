@@ -18,6 +18,8 @@ package decodes.cwms;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -72,23 +74,24 @@ public class CwmsPlatformListIO extends PlatformListIO
 
 		log.trace("Executing '{}'", q);
 		ResultSet rs = stmt.executeQuery(q);
+		Set<DbKey> refreshedConfigs = new HashSet<>();
 
 		if (rs != null) {
 			while (rs.next()) 
 			{
 				DbKey platformId = DbKey.createDbKey(rs, 1);
 
-				// MJM 20041027 Check to see if this ID is already in the
-				// cached platform list and ignore if so. That way, I can
-				// periodically refresh the platform list to get any newly
-				// created platforms after the start of the routing spec.
-				// Refreshing will not affect previously read/used platforms.
 				Platform p = _pList.getById(platformId);
-				if (p != null)
-					continue;
-
-				p = new Platform(platformId);
-				_pList.add(p);
+				if (p == null)
+				{
+					p = new Platform(platformId);
+					_pList.add(p);
+				}
+				else
+				{
+					p.transportMedia.clear();
+					p.setIsComplete(false);
+				}
 
 				p.agency = rs.getString(2);
 
@@ -96,36 +99,45 @@ public class CwmsPlatformListIO extends PlatformListIO
 				if (!rs.wasNull()) {
 					p.setSite(p.getDatabase().siteList.getSiteById(siteId));
 				}
+				else
+					p.setSite(null);
 
 				DbKey configId = DbKey.createDbKey(rs, 5);
 				if (!rs.wasNull()) 
 				{
-					PlatformConfig pc = 
-						platformList.getDatabase().platformConfigList.getById(
-							configId);
-					if (pc == null)
+					PlatformConfig pc = null;
+					try
 					{
-						log.warn("Platform({}) references config({})," +
-								 " which is not in list, will attempt read...",
-								 platformId, configId);
-						try { pc = _configListIO.getConfig(configId); }
-						catch(Exception ex)
-						{
-							log.atWarn().setCause(ex).log("Error reading config({})", configId);
-						}
+						pc = getConfigForPlatformList(platformList, configId,
+							refreshedConfigs);
+					}
+					catch(Exception ex)
+					{
+						log.atWarn().setCause(ex).log("Error reading config({})", configId);
 					}
 					if (pc != null)
+					{
 						p.setConfigName(pc.configName);
-					p.setConfig(pc);
+						p.setConfig(pc);
+					}
+					else
+					{
+						p.setConfigName(null);
+						p.setConfig(null);
+					}
+				}
+				else
+				{
+					p.setConfigName(null);
+					p.setConfig(null);
 				}
 
 				String desc = rs.getString(6);
-				if (!rs.wasNull()) 
-					p.setDescription(desc);
+				p.setDescription(rs.wasNull() ? null : desc);
 
 				p.lastModifyTime = getTimeStamp(rs, 7, null);
 
-				p.expiration = getTimeStamp(rs, 8, p.expiration);
+				p.expiration = getTimeStamp(rs, 8, null);
 
 				if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
 					p.setPlatformDesignator(rs.getString(9));

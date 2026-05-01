@@ -82,9 +82,9 @@ package decodes.db;
 //import java.util.HashMap;
 import ilex.util.TextUtil;
 
-import java.util.Vector;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Vector;
 
 import decodes.sql.DbKey;
 
@@ -266,4 +266,3 @@ public class PlatformConfigList
 		configIdList.clear();
 	}
 }
-
