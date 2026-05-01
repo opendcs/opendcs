@@ -22,7 +22,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -245,6 +247,7 @@ public class PlatformListIO extends SqlDbObjIo
                 }
 
                 log.debug("Executing query '{}'", q);
+                Set<DbKey> refreshedConfigs = new HashSet<>();
                 try (ResultSet rs = stmt.executeQuery())
                 {
                     if (rs != null)
@@ -298,11 +301,7 @@ public class PlatformListIO extends SqlDbObjIo
                             DbKey configId = DbKey.createDbKey(rs, 5);
                             if (!rs.wasNull())
                             {
-                                PlatformConfig pc = platformList.getDatabase().platformConfigList.getById(configId);
-                                if (pc == null)
-                                {
-                                    pc = _configListIO.getConfig(configId);
-                                }
+                                PlatformConfig pc = getConfigForPlatformList(platformList, configId, refreshedConfigs);
                                 if (pc != null)
                                 {
                                     p.setConfigName(pc.configName);
@@ -337,6 +336,28 @@ public class PlatformListIO extends SqlDbObjIo
             }
         }
         readAllTransportMedia(platformList);
+    }
+
+    protected PlatformConfig getConfigForPlatformList(PlatformList platformList, DbKey configId,
+        Set<DbKey> refreshedConfigs)
+        throws DatabaseException, SQLException
+    {
+        PlatformConfig pc = platformList.getDatabase().platformConfigList.getById(configId);
+        if (pc == null)
+        {
+            pc = _configListIO.getConfig(configId);
+            PlatformConfig cachedPc = platformList.getDatabase().platformConfigList.getById(configId);
+            if (cachedPc != null)
+            {
+                pc = cachedPc;
+            }
+            refreshedConfigs.add(configId);
+        }
+        else if (refreshedConfigs.add(configId))
+        {
+            _configListIO.readConfig(pc);
+        }
+        return pc;
     }
 
     protected void readAllTransportMedia(PlatformList platformList)

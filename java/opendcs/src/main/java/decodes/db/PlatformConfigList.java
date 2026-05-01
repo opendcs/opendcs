@@ -82,7 +82,6 @@ package decodes.db;
 //import java.util.HashMap;
 import ilex.util.TextUtil;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Vector;
@@ -248,14 +247,6 @@ public class PlatformConfigList
 		myDatabase.getDbIo().readConfigList(this);
 	}
 
-	public synchronized void refresh()
-		throws DatabaseException
-	{
-		read();
-		for(PlatformConfig pc : new ArrayList<PlatformConfig>(configVec))
-			pc.read();
-	}
-
   	/**
    	* Writes this PlatformConfigList out to the database.
    	*/
@@ -275,4 +266,3 @@ public class PlatformConfigList
 		configIdList.clear();
 	}
 }
-
