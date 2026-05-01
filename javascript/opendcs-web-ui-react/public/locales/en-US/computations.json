@@ -22,6 +22,7 @@
     "select_algorithm_filter": "Filter algorithms",
     "select_algorithm_exec_class": "Exec Class",
     "select_algorithm_none": "No algorithms found.",
+    "select_algorithm_no_description": "No description available.",
     "edit_for": "Edit computation {{id}}",
     "copy_for": "Copy computation {{id}}",
     "delete_for": "Delete computation {{id}}",

@@ -103,33 +103,38 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const FilterAndSelect: Story = {
-  play: async ({ args, mount, userEvent }) => {
+  play: async ({ args, mount, parameters, userEvent }) => {
     await mount();
+    const { i18n } = parameters;
 
-    await screen.findByText("Select Algorithm");
+    await screen.findByText(i18n.t("computations:editor.select_algorithm_title"));
     expect(await screen.findByText("AverageAlgorithm")).toBeInTheDocument();
     expect(await screen.findByText("MaxToDate")).toBeInTheDocument();
 
     await userEvent.type(
-      screen.getByRole("searchbox", { name: "Filter algorithms" }),
+      screen.getByRole("searchbox", {
+        name: i18n.t("computations:editor.select_algorithm_filter"),
+      }),
       "max",
     );
     expect(screen.queryByText("AverageAlgorithm")).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByText("MaxToDate"));
     await waitFor(() =>
-      expect(
-        screen.getByText("Full description loaded after selecting MaxToDate."),
-      ).toBeInTheDocument(),
+      expect(screen.getByText(mockAlgorithms[1].description!)).toBeInTheDocument(),
     );
 
-    await userEvent.click(screen.getByRole("button", { name: "Select" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: i18n.t("translation:select") }),
+    );
 
     await waitFor(() =>
       expect(args.onSelect).toHaveBeenCalledWith(mockAlgorithmRefs[1]),
     );
     await waitFor(() =>
-      expect(screen.queryByText("Select Algorithm")).not.toBeInTheDocument(),
+      expect(
+        screen.queryByText(i18n.t("computations:editor.select_algorithm_title")),
+      ).not.toBeInTheDocument(),
     );
   },
 };

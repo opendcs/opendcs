@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, Form, Modal, Spinner, Table } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
 import {
   RESTAlgorithmMethodsApi,
   type ApiAlgorithm,
@@ -21,6 +22,7 @@ export const AlgorithmSelectModal: React.FC<Props> = ({
   getAlgorithm,
 }) => {
   const api = useApi();
+  const [t] = useTranslation(["computations", "translation"]);
   const algorithmApi = useMemo(() => new RESTAlgorithmMethodsApi(api.conf), [api.conf]);
   const [algorithms, setAlgorithms] = useState<ApiAlgorithmRef[]>([]);
   const [loading, setLoading] = useState(false);
@@ -80,6 +82,11 @@ export const AlgorithmSelectModal: React.FC<Props> = ({
         (a.description ?? "").toLowerCase().includes(q),
     );
   }, [algorithms, filter]);
+  const selectedDescription =
+    selected &&
+    (fullDescription ??
+      selected.description ??
+      t("computations:editor.select_algorithm_no_description"));
 
   const handleSelect = useCallback(async () => {
     if (selected) {
@@ -96,31 +103,31 @@ export const AlgorithmSelectModal: React.FC<Props> = ({
   return (
     <Modal show={show} onHide={onHide} centered size="xl">
       <Modal.Header closeButton>
-        <Modal.Title>Select Algorithm</Modal.Title>
+        <Modal.Title>{t("computations:editor.select_algorithm_title")}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <Form.Control
           type="search"
-          placeholder="Filter algorithms"
+          placeholder={t("computations:editor.select_algorithm_filter")}
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           className="mb-3"
-          aria-label="Filter algorithms"
+          aria-label={t("computations:editor.select_algorithm_filter")}
         />
         {loading ? (
           <div className="text-center p-4">
             <Spinner animation="border" />
           </div>
         ) : filtered.length === 0 ? (
-          <p>No algorithms found.</p>
+          <p>{t("computations:editor.select_algorithm_none")}</p>
         ) : (
           <div style={{ maxHeight: "45vh", overflowY: "auto" }}>
             <Table striped bordered hover>
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Exec Class</th>
+                  <th>{t("computations:header.Id")}</th>
+                  <th>{t("computations:editor.name")}</th>
+                  <th>{t("computations:editor.select_algorithm_exec_class")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -161,7 +168,7 @@ export const AlgorithmSelectModal: React.FC<Props> = ({
               {descLoading ? (
                 <Spinner animation="border" size="sm" />
               ) : (
-                (fullDescription ?? selected.description ?? "No description available.")
+                selectedDescription
               )}
             </div>
           </div>
@@ -169,14 +176,18 @@ export const AlgorithmSelectModal: React.FC<Props> = ({
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={onHide}>
-          Cancel
+          {t("translation:cancel")}
         </Button>
         <Button
           variant="primary"
           onClick={handleSelect}
           disabled={selected === null || selecting}
         >
-          {selecting ? <Spinner animation="border" size="sm" /> : "Select"}
+          {selecting ? (
+            <Spinner animation="border" size="sm" />
+          ) : (
+            t("translation:select")
+          )}
         </Button>
       </Modal.Footer>
     </Modal>
