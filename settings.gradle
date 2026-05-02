@@ -21,6 +21,12 @@ project(":lrgs-web").projectDir=file("java/lrgs-web")
 include ":opendcs"
 project(":opendcs").projectDir=file("java/opendcs")
 
+include ":opendcs-implementation"
+project(":opendcs-implementation").projectDir=file("java/opendcs-implementation")
+
+include ":cwms-implementation"
+project(":cwms-implementation").projectDir=file("java/cwms-implementation")
+
 include(":opendcs-schemas")
 project(":opendcs-schemas").projectDir=file("schema/opendcs-schemas")
 
