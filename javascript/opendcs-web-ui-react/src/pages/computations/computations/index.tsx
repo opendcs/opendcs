@@ -85,15 +85,33 @@ export const Computations: React.FC = () => {
   );
 
   const saveComputation = useCallback(
-    (computation: ApiComputation) => {
+    (computation: ApiComputation): Promise<void> => {
       const computationId =
         computation.computationId && computation.computationId > 0
           ? computation.computationId
           : undefined;
-      computationApi
-        .postComputation(api.org, { ...computation, computationId })
-        .then(() => setStale(true))
-        .catch((e: unknown) => console.error("Failed to save computation", e));
+      const appId =
+        computation.appId && computation.appId > 0 ? computation.appId : undefined;
+      const groupId =
+        computation.groupId && computation.groupId > 0
+          ? computation.groupId
+          : undefined;
+      const algorithmId =
+        computation.algorithmId && computation.algorithmId > 0
+          ? computation.algorithmId
+          : undefined;
+      return computationApi
+        .postComputation(api.org, {
+          ...computation,
+          computationId,
+          appId,
+          groupId,
+          algorithmId,
+          lastModified: undefined,
+          effectiveStartDate: undefined,
+          effectiveEndDate: undefined,
+        })
+        .then(() => setStale(true));
     },
     [api.org, computationApi],
   );
