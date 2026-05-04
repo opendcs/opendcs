@@ -249,14 +249,17 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 			}
 		}
 
-		try
+		if (tsdb instanceof CwmsTimeSeriesDb)
 		{
-			algoConnection = tsdb.getConnection();
-			log.debug("Acquired database connection for algorithm execution");
-		}
-		catch (Exception ex)
-		{
-			throw new DbCompException("Could not acquire database connection for algorithm execution", ex);
+			try
+			{
+				algoConnection = tsdb.getConnection();
+				log.debug("Acquired database connection for algorithm execution");
+			}
+			catch (Exception ex)
+			{
+				throw new DbCompException("Could not acquire database connection for algorithm execution", ex);
+			}
 		}
 
 //AW:BEFORE_TIMESLICES_END
