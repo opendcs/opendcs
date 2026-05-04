@@ -14,18 +14,13 @@ import org.opendcs.database.model.mappers.PrefixRowMapper;
 import org.opendcs.database.model.mappers.datatype.DataTypeMapper;
 import org.opendcs.database.model.mappers.equipmentmodel.EquipmentModelMapper;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
-import org.opendcs.database.model.mappers.unitconverter.UnitConverterMapper;
 import org.opendcs.models.PlatformConfigBuilder;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 
-import decodes.db.ScriptSensor;
+import decodes.db.DecodesScript.DecodesScriptBuilder;
 import decodes.sql.DbKey;
 
-/**
- * Given the rather complex, and volumous, join of DECODES Configurations (PlatformConfigs)
- * We process each row manually to assosciate the information with the correct PlatformConfig
- */
 public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, PlatformConfigBuilder>>
 {
     private final String configPrefix;
@@ -37,29 +32,26 @@ public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, 
     private final DataTypeMapper dataTypeMapper;
     private final DecodesScriptBuilderMapper scriptBuilderMapper;
     private final FormatStatementMapper formatStatementMapper;
-    private final UnitConverterMapper unitConverterMapper;
 
 
-    @SuppressWarnings("java:S107") // It's just big
-    public DecodesConfigAccumulator(String configPrefix, DecodesConfigMapper configMapper,
+    public DecodesConfigAccumulator(String configPrefix, DecodesConfigMapper configMapper, 
                                 EquipmentModelMapper equipmentModelMapper, PropertiesMapper equipmentPropertiesMapper,
                                 ConfigSensorMapper sensorMapper, PropertiesMapper sensorPropertiesMapper,
                                 DataTypeMapper dataTypeMapper, DecodesScriptBuilderMapper scriptBuilderMapper,
-                                FormatStatementMapper formatStatementMapper, UnitConverterMapper unitConverterMapper)
+                                FormatStatementMapper formatStatementMapper)
     {
         this.configPrefix = PrefixRowMapper.addUnderscoreIfMissing(configPrefix);
         this.configMapper = configMapper;
         this.equipmentModelMapper = equipmentModelMapper;
         this.equipmentPropertiesMapper = equipmentPropertiesMapper;
         this.sensorMapper = sensorMapper;
-        this.sensorPropertiesMapper = sensorPropertiesMapper;
+        this.sensorPropertiesMapper = sensorPropertiesMapper;        
         this.dataTypeMapper = dataTypeMapper;
         this.scriptBuilderMapper = scriptBuilderMapper;
         this.formatStatementMapper = formatStatementMapper;
-        this.unitConverterMapper = unitConverterMapper;
     }
 
-
+    
     @Override
     public Map<Long, PlatformConfigBuilder> apply(Map<Long, PlatformConfigBuilder> previous, ResultSet rs, StatementContext ctx)
             throws SQLException
@@ -71,7 +63,7 @@ public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, 
         {
             pc = previous.computeIfAbsent(rs.getLong(configPrefix+GenericColumns.ID),
                 pcId ->
-                {
+                { 
                     try
                     {
                         return new PlatformConfigBuilder(configMapper.map(rs, ctx));
@@ -92,14 +84,13 @@ public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, 
             }
             throw ex;
         }
-
-        rs.getLong(configPrefix+"equipmentid");
+        var ignored = rs.getLong(configPrefix+"equipmentid");
         if (!rs.wasNull())
         {
             pc.withEquipmentModel(equipmentModelMapper.map(rs, ctx));
         }
 
-
+        
         var emProps = equipmentPropertiesMapper.map(rs, ctx);
         if (emProps.first != null)
         {
@@ -125,31 +116,22 @@ public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, 
 
         var scriptId = columnMapperForKey.map(rs, "ds_" + GenericColumns.ID , ctx);
         var scriptBuilder = pc.getDecodesScriptBuilder(scriptId).orElse(null);
-        if (scriptBuilder == null && !(scriptId == null || DbKey.isNull(scriptId)))
+        if (scriptBuilder == null)
         {
             scriptBuilder = scriptBuilderMapper.map(rs, ctx);
             pc.withDecodesScriptBuilder(scriptBuilder);
         }
-
+        
         var formatStatement = formatStatementMapper.map(rs, ctx);
         if (formatStatement != null)
         {
             // we set this so we know it's the In Memory reader
             ((InMemoryDecodesScriptReader)scriptBuilder.getReader()).addStatement(formatStatement);
         }
-
-        var sensorScriptId = columnMapperForKey.map(rs, "ss_decodesscriptid", ctx);
-        var sensorScriptNum = rs.getInt("ss_sensornumber");
-
-        if (!DbKey.isNull(sensorScriptId))
-        {
-            var scriptSensor = new ScriptSensor(null, sensorScriptNum);
-            var uc = unitConverterMapper.map(rs, ctx);
-            scriptSensor.rawConverter = uc;
-            pc.withScriptSensor(sensorScriptId, scriptSensor);
-        }
+        // decodes scripts
+        /// and descript scripts data
 
         return previous;
     }
-
+    
 }

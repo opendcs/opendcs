@@ -18,7 +18,7 @@ public class ConfigSensorMapper extends PrefixRowMapper<ConfigSensor>
 
     @Override
     public ConfigSensor map(ResultSet rs, StatementContext ctx) throws SQLException
-    {
+    {        
         final var num = rs.getInt(prefix + "sensornumber");
         if (rs.wasNull())
         {
@@ -31,7 +31,7 @@ public class ConfigSensorMapper extends PrefixRowMapper<ConfigSensor>
 
         cs.recordingInterval = rs.getInt(prefix + "recordinginterval");
         cs.recordingMode = rs.getString(prefix + "recordingMode").charAt(0);
-
+        
         final var absoluteMin = rs.getDouble(prefix + "absolutemin");
         if (!rs.wasNull())
         {
@@ -46,7 +46,7 @@ public class ConfigSensorMapper extends PrefixRowMapper<ConfigSensor>
 
         return cs;
     }
-
+    
 
     public static ConfigSensorMapper withPrefix(String prefix)
     {

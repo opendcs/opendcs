@@ -824,13 +824,13 @@ public class DecodesScript extends IdDatabaseObject
 
         /**
          * Assign a data order
-         * @param dataOrder
+         * @param dataOrder 
          * @return
          */
         public DecodesScriptBuilder withDataOrder(char dataOrder)
         {
             return withDataOrder(() -> dataOrder);
-        }
+        }        
 
         /**
          * Assign a data order supplier

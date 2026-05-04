@@ -32,8 +32,9 @@ public class FormatStatementMapper extends PrefixRowMapper<FormatStatement>
         fs.format = format;
         return fs;
     }
+    
 
-    public static FormatStatementMapper withPrefix(String prefix)
+    public FormatStatementMapper withPrefix(String prefix)
     {
         return new FormatStatementMapper(prefix);
     }
