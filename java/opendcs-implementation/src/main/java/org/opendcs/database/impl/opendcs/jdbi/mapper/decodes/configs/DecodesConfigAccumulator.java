@@ -119,7 +119,7 @@ public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, 
 
         var scriptId = columnMapperForKey.map(rs, "ds_" + GenericColumns.ID , ctx);
         var scriptBuilder = pc.getDecodesScriptBuilder(scriptId).orElse(null);
-        if (scriptBuilder == null)
+        if (scriptBuilder == null && !(scriptId == null || DbKey.isNull(scriptId)))
         {
             scriptBuilder = scriptBuilderMapper.map(rs, ctx);
             pc.withDecodesScriptBuilder(scriptBuilder);

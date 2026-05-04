@@ -28,6 +28,11 @@ public class DecodesScriptBuilderMapper extends PrefixRowMapper<DecodesScriptBui
                                                     .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
         var builder = new DecodesScriptBuilder(new InMemoryDecodesScriptReader());
         final var id = columnMapperForKey.map(rs, prefix + GenericColumns.ID, ctx);
+
+        if (rs.wasNull() || DbKey.isNull(id))
+        {
+            return null;
+        }
         final var name = rs.getString(prefix + GenericColumns.NAME);
         final var scriptType = rs.getString(prefix + "script_type");
         final var dataOrder = rs.getString(prefix + "dataorder");
