@@ -23,6 +23,7 @@ import decodes.decoder.DataOperations;
 import decodes.decoder.EndOfDataException;
 import decodes.decoder.FieldParseException;
 import decodes.decoder.SwitchFormatException;
+import decodes.sql.DbKey;
 import decodes.decoder.EndlessLoopException;
 import decodes.util.DecodesSettings;
 import ilex.var.Variable;
@@ -696,6 +697,8 @@ public class DecodesScript extends IdDatabaseObject
         private Supplier<String> nameSupplier;
         private Supplier<String> scriptType;
         private Supplier<Boolean> addDefaultSensors;
+        private Supplier<Character> dataOrder;
+        private Supplier<DbKey> scriptId;
 
         public DecodesScriptBuilder(DecodesScriptReader reader)
         {
@@ -703,6 +706,8 @@ public class DecodesScript extends IdDatabaseObject
             nameSupplier = () -> "";
             scriptType = () -> Constants.scriptTypeDecodes;
             addDefaultSensors = () -> false;
+            dataOrder = () -> Constants.dataOrderUndefined;
+            scriptId = () -> DbKey.NullKey;
         }
 
         /**
@@ -739,6 +744,8 @@ public class DecodesScript extends IdDatabaseObject
   
             Objects.requireNonNull(scriptType,"Script type cannot be null");
             script.scriptType = scriptType.get();
+            script.dataOrder = dataOrder.get();
+            script.forceSetId(scriptId.get());
             try
             {
                 Optional<FormatStatement> fs = null;
@@ -815,6 +822,38 @@ public class DecodesScript extends IdDatabaseObject
             return this;
         }
 
+        /**
+         * Assign a data order
+         * @param dataOrder 
+         * @return
+         */
+        public DecodesScriptBuilder withDataOrder(char dataOrder)
+        {
+            return withDataOrder(() -> dataOrder);
+        }        
+
+        /**
+         * Assign a data order supplier
+         * @param dataOrder
+         * @return
+         */
+        public DecodesScriptBuilder withDataOrder(Supplier<Character> dataOrder)
+        {
+            this.dataOrder = dataOrder;
+            return this;
+        }
+
+        public DecodesScriptBuilder withId(DbKey id)
+        {
+            return withId(() -> id);
+        }
+
+        public DecodesScriptBuilder withId(Supplier<DbKey> scriptIdSupplier)
+        {
+            this.scriptId = scriptIdSupplier;
+            return this;
+        }
+
         public DecodesScriptBuilder scriptType(String scriptType)
         {
             Objects.requireNonNull(scriptType,"Script type cannot be null");
@@ -838,8 +877,19 @@ public class DecodesScript extends IdDatabaseObject
                 ss.rawConverter.algorithm = Constants.eucvt_none;
                 ds.addScriptSensor(ss);
             }
-            
+        }
 
+        /**
+         * Retrieve the current reader.
+         */
+        public DecodesScriptReader getReader()
+        {
+            return this.scriptReader;
+        }
+
+        public DbKey getScriptId()
+        {
+            return this.scriptId.get();
         }
     }
 
