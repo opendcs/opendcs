@@ -1,0 +1,52 @@
+plugins
+{
+    id 'opendcs.deps-conventions'
+    id 'opendcs.java-conventions'
+    id 'opendcs.publishing-conventions'
+    id 'opendcs.sonar-conventions'
+    id 'java-library'
+}
+
+configurations {
+    all {
+        exclude group: "com.oracle.database.jdbc", module: "jmscommon"
+        exclude group: "stax"
+        exclude group: "javax.media"
+        exclude group: "com.sun.media"
+        exclude group: "log4j"
+        exclude group: "org.apache.xmlbeans", module: "xmlbeans"
+        exclude group: "dom4j", module: "dom4j"
+        exclude group: "com.rmanet", module: "lookup"
+    }
+}
+
+dependencies {
+    annotationProcessor(project(":opendcs-annotations"))
+    annotationProcessor(libs.auto.service.processor)
+    annotationProcessor(libs.org.netbeans.lookup)
+
+    api(project(":opendcs-annotations"))
+    api(project(":opendcs-api"))
+
+    api(project(":opendcs"))
+    api(project(":opendcs-implementation"))
+
+    implementation(libs.bundles.jdbi)
+    implementation(libs.org.netbeans.lookup)
+    implementation(libs.auto.service.annotations)
+}
+
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = 'cwms-implementation'
+            from components.java
+
+            pom {
+                name = 'OpenDCS CWMS Implementation'
+                description = 'Contains CWMS Oracle data access'
+            }
+        }
+    }
+}

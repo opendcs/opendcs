@@ -43,6 +43,9 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Optional;
+
+import org.opendcs.database.api.OpenDcsDatabase;
 
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
@@ -361,5 +364,12 @@ public interface DatabaseConnectionOwner
 		throws DbIoException;
 	
 	public AlarmDAI makeAlarmDAO();
+
+	/**
+	 * Helper method to deal with the transition to the new scheme
+	 * 
+	 * @return
+	 */
+	Optional<OpenDcsDatabase> getOdcsDatabase();
 
 }

@@ -5,6 +5,9 @@ import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Optional;
+
+import org.opendcs.database.api.OpenDcsDatabase;
 
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.db.UnitConverter;
@@ -347,6 +350,12 @@ public class NonPoolingConnectionOwner implements TestConnectionOwner
             throws DbIoException, NoSuchObjectException, BadTimeSeriesException {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'transformTsidByCompParm'");
+    }
+
+    @Override
+    public Optional<OpenDcsDatabase> getOdcsDatabase()
+    {
+        return Optional.empty();
     }
     
 }
