@@ -7,6 +7,7 @@ import org.opendcs.database.dai.DecodesConfigDao;
 import org.opendcs.database.model.mappers.datatype.DataTypeMapper;
 import org.opendcs.database.model.mappers.equipmentmodel.EquipmentModelMapper;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
+import org.opendcs.database.model.mappers.unitconverter.UnitConverterMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.configs.DecodesConfigMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.scripts.DecodesScriptBuilderMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.scripts.FormatStatementMapper;
@@ -46,12 +47,19 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                     cs.sensornumber cs_sensornumber, cs.sensorname cs_sensorname, cs.recordingmode cs_recordingmode,
                     cs.recordinginterval cs_recordinginterval, cs.timeoffirstsample cs_timeoffirstsample, 
                     cs.equipmentid cs_equipmentid, cs.absolutemin cs_absolutemin, cs.absolutemax cs_absolutemax,
-                    cs.stat_cd cs_stat_cd, csp.sensornumber csp_sensornumber, csp.prop_name csp_prop_name, csp.prop_value csp_prop_value
+                    cs.stat_cd cs_stat_cd, csp.sensornumber csp_sensornumber, csp.prop_name csp_prop_name, csp.prop_value csp_prop_value,
+
+                    dt.id dt_id, dt.standard dt_standard, dt.code dt_code, dt.display_name dt_display_name,
 
                     ds.id ds_id, ds.name ds_name, ds.script_type ds_script_type, ds.dataorder ds_dataorder,
-                    fs.sequencenum fs_sequencenum, fs.label fs_label, fs.format fs_format
+                    fs.sequencenum fs_sequencenum, fs.label fs_label, fs.format fs_format,
 
-                    // todo, script sensors
+
+                    ss.decodesscriptid ss_decodesscriptid, ss.sensornumber ss_sensornumber,
+                    uc.id uc_id, uc.fromunitsabbr uc_fromunitsabbr, uc.tounitsabbr uc_tounitsabbr, uc.algorithm uc_algorithm,
+                    uc.a uc_a, uc.b uc_b, uc.c uc_c, uc.d uc_d, uc.e uc_e, uc.f uc_f,
+                    from_eu.unitabbr from_unitabbr, from_eu.name from_name, from_eu.family from_family, from_eu.measures from_measures,
+                    to_eu.unitabbr to_unitabbr, to_eu.name to_name, to_eu.family to_family, to_eu.measures to_measures
 
               from pc
             left outer join equipmentmodel em on em.id = pc.equipmentId
@@ -62,6 +70,10 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
             left outer join datatype dt on csdt.datatypeid = dt.id
             left outer join decodesscript ds on ds.configid = pc.id
             left outer join formatstatement fs on fs.decodesscriptid = ds.id
+            left outer join scriptsensor ss on ss.decodesscriptid = ds.id
+            left outer join unitconverter uc on ss.unitconverterid = uc.id
+            left join engineeringunit from_eu on from_eu.unitabbr = uc.fromunitsabbr
+            left join engineeringunit to_eu on to_eu.unitabbr = uc.tounitsabbr
 
 
             order by 
@@ -95,13 +107,14 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
             return query.registerRowMapper(DecodesConfigMapper.withPrefix("pc"))
                         .registerRowMapper(EquipmentModelMapper.withPrefix("em"))
                         .registerRowMapper(PropertiesMapper.PAIR_STRING_STRING, PropertiesMapper.withPrefix("ep"))
+                        .registerRowMapper(UnitConverterMapper.withPrefix("uc"))
                         .reduceResultSet(new LinkedHashMap<>(),
                                          new DecodesConfigAccumulator(
                                             "pc", DecodesConfigMapper.withPrefix("pc"),
                                             EquipmentModelMapper.withPrefix("em"), PropertiesMapper.withPrefix("ep"),
                                             ConfigSensorMapper.withPrefix("cs"), PropertiesMapper.withPrefix("csp", true),
                                             DataTypeMapper.withPrefix("dt"), DecodesScriptBuilderMapper.withPrefix("ds"),
-                                            FormatStatementMapper.withPrefix("fs")
+                                            FormatStatementMapper.withPrefix("fs"), UnitConverterMapper.withPrefix("uc")
                                          )
                                         )
                         .values()
@@ -122,15 +135,11 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabase();
-        var preferredType = ctx.getSettings(DecodesSettings.class)
-                              .map(ds -> ds.siteNameTypePreference)
-                              .orElseGet(() -> "CWMS");
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                  .define(SqlQueries.WHERE_CLAUSE, "where upper(name) = upper(:name)")
                  .define(SqlQueries.LIMIT_CLAUSE, "")
-                 .bind("preferredType", preferredType)
                  .bind(GenericColumns.NAME, name);
 
             return query.registerRowMapper(DecodesConfigMapper.withPrefix("pc"))
@@ -142,7 +151,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                                             EquipmentModelMapper.withPrefix("em"), PropertiesMapper.withPrefix("ep"),
                                             ConfigSensorMapper.withPrefix("cs"), PropertiesMapper.withPrefix("csp", true),
                                             DataTypeMapper.withPrefix("dt"), DecodesScriptBuilderMapper.withPrefix("ds"),
-                                            FormatStatementMapper.withPrefix("fs")
+                                            FormatStatementMapper.withPrefix("fs"), UnitConverterMapper.withPrefix("uc")
                                          )
                                         )
                         .values()
