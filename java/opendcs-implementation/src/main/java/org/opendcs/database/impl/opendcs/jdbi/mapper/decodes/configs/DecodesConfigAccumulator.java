@@ -14,11 +14,12 @@ import org.opendcs.database.model.mappers.PrefixRowMapper;
 import org.opendcs.database.model.mappers.datatype.DataTypeMapper;
 import org.opendcs.database.model.mappers.equipmentmodel.EquipmentModelMapper;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
+import org.opendcs.database.model.mappers.unitconverter.UnitConverterMapper;
 import org.opendcs.models.PlatformConfigBuilder;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 
-import decodes.db.DecodesScript.DecodesScriptBuilder;
+import decodes.db.ScriptSensor;
 import decodes.sql.DbKey;
 
 public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, PlatformConfigBuilder>>
@@ -32,13 +33,14 @@ public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, 
     private final DataTypeMapper dataTypeMapper;
     private final DecodesScriptBuilderMapper scriptBuilderMapper;
     private final FormatStatementMapper formatStatementMapper;
+    private final UnitConverterMapper unitConverterMapper;
 
 
     public DecodesConfigAccumulator(String configPrefix, DecodesConfigMapper configMapper, 
                                 EquipmentModelMapper equipmentModelMapper, PropertiesMapper equipmentPropertiesMapper,
                                 ConfigSensorMapper sensorMapper, PropertiesMapper sensorPropertiesMapper,
                                 DataTypeMapper dataTypeMapper, DecodesScriptBuilderMapper scriptBuilderMapper,
-                                FormatStatementMapper formatStatementMapper)
+                                FormatStatementMapper formatStatementMapper, UnitConverterMapper unitConverterMapper)
     {
         this.configPrefix = PrefixRowMapper.addUnderscoreIfMissing(configPrefix);
         this.configMapper = configMapper;
@@ -49,6 +51,7 @@ public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, 
         this.dataTypeMapper = dataTypeMapper;
         this.scriptBuilderMapper = scriptBuilderMapper;
         this.formatStatementMapper = formatStatementMapper;
+        this.unitConverterMapper = unitConverterMapper;
     }
 
     
@@ -128,8 +131,17 @@ public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, 
             // we set this so we know it's the In Memory reader
             ((InMemoryDecodesScriptReader)scriptBuilder.getReader()).addStatement(formatStatement);
         }
-        // decodes scripts
-        /// and descript scripts data
+
+        var sensorScriptId = columnMapperForKey.map(rs, "ss_decodesscriptid", ctx);
+        var sensorScriptNum = rs.getInt("ss_sensornumber");
+
+        if (!DbKey.isNull(sensorScriptId))
+        {
+            var scriptSensor = new ScriptSensor(null, sensorScriptNum);
+            var uc = unitConverterMapper.map(rs, ctx);
+            scriptSensor.rawConverter = uc;
+            pc.withScriptSensor(sensorScriptId, scriptSensor);
+        }
 
         return previous;
     }

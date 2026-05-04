@@ -17,7 +17,10 @@ public class InMemoryDecodesScriptReader implements DecodesScriptReader
 
     public void addStatement(FormatStatement statement)
     {
-
+        if (!statements.stream().anyMatch(fs -> fs.sequenceNum == statement.sequenceNum))
+        {
+            statements.add(statement);
+        }
     }
 
     @Override
@@ -28,8 +31,13 @@ public class InMemoryDecodesScriptReader implements DecodesScriptReader
             return Optional.empty();
         }
         
+        if (current == 0)
+        {
+            // make sure the statements are ordered by sequence number, just in case.
+            statements.sort((a,b) -> Integer.compare(a.sequenceNum, b.sequenceNum));
+        }
         
-        var ret = new FormatStatement(script, current);
+        var ret = new FormatStatement(script, current + 1); // statements are 1 based, not 0 based
         var fs = statements.get(current);
         ret.format = fs.format;
         ret.label = fs.label;

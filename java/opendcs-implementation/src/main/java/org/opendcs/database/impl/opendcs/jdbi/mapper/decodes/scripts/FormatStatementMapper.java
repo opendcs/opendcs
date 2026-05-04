@@ -34,7 +34,7 @@ public class FormatStatementMapper extends PrefixRowMapper<FormatStatement>
     }
     
 
-    public FormatStatementMapper withPrefix(String prefix)
+    public static FormatStatementMapper withPrefix(String prefix)
     {
         return new FormatStatementMapper(prefix);
     }
