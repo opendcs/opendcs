@@ -14,6 +14,8 @@ import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
+import decodes.db.PlatformConfig;
+
 @EnableIfTsDb
 @DecodesConfigurationRequired({
     "shared/test-sites.xml",
@@ -28,7 +30,7 @@ class DecodesDaoTestIT extends AppTestBase
 
 
     @Test
-    void test_basic_operations() throws Exception
+    void test_existing_config() throws Exception
     {
         var decodesConfigDao = db.getDao(DecodesConfigDao.class)
                                  .orElseThrow();
@@ -56,6 +58,21 @@ class DecodesDaoTestIT extends AppTestBase
             assertEquals("usgs-standard", scriptSensor1.rawConverter.algorithm);
             assertArrayEquals(new double[]{0.01, 0, 1.0, 0.0, 0.0, 0.0}, scriptSensor1.rawConverter.coefficients);
         }
+    }
 
+
+    @Test
+    void test_basic_operations() throws Exception
+    {
+        var decodesConfigDao = db.getDao(DecodesConfigDao.class)
+                                 .orElseThrow();
+
+        try (var tx = db.newTransaction())
+        {
+            final var pcIn = new PlatformConfig("TestConfig-1");
+            pcIn.description = "A simple test configuration.";
+            final var pcOut = decodesConfigDao.save(tx, pcIn);
+            assertEquals("TestConfig-1", pcOut.getName());
+        }
     }
 }

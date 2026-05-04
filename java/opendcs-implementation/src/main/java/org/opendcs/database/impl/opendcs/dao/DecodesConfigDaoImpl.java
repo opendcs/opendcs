@@ -1,9 +1,11 @@
 package org.opendcs.database.impl.opendcs.dao;
 
 import org.jdbi.v3.core.Handle;
+import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.DecodesConfigDao;
+import org.opendcs.database.dai.UnitConverterDao;
 import org.opendcs.database.model.mappers.datatype.DataTypeMapper;
 import org.opendcs.database.model.mappers.equipmentmodel.EquipmentModelMapper;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
@@ -13,13 +15,17 @@ import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.scripts.DecodesScri
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.scripts.FormatStatementMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.configs.ConfigSensorMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.configs.DecodesConfigAccumulator;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlQueries;
 import org.openide.util.lookup.ServiceProvider;
+import org.slf4j.Logger;
 
+import decodes.db.DatabaseException;
 import decodes.db.PlatformConfig;
 import decodes.sql.DbKey;
+import decodes.sql.KeyGenerator;
 import decodes.util.DecodesSettings;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
@@ -31,6 +37,10 @@ import java.util.Optional;
 @ServiceProvider(service = DecodesConfigDao.class)
 public class DecodesConfigDaoImpl implements DecodesConfigDao
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
+    @InjectDao
+    UnitConverterDao ucDao;
 
     private static final String SELECT_QUERY = """
             with pc (id, name, description, equipmentId) as (
@@ -162,10 +172,58 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
     }
 
     @Override
-    public PlatformConfig save(DataTransaction arg0, PlatformConfig arg1) throws OpenDcsDataException
+    public PlatformConfig save(DataTransaction tx, PlatformConfig pc) throws OpenDcsDataException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'save'");
+
+
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var ctx = tx.getContext();
+        var dbEngine = ctx.getDatabase();
+        var keyGen = ctx.getGenerator(KeyGenerator.class)
+                        .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
+        final var mergeSql = """
+                merge into platformconfig pc
+                using (
+                    select :id id, :name name, :description description, :equipmentid equipmentid                
+                ) input
+                on (pc.id = input.id)
+                when matched then
+                    update set 
+                        name = input.name, description = input.description, equipmentid = input.equipmentid
+                when not matched then
+                    insert (id, name, description, equipmentid)
+                    values(input.id, input.name, input.description, input.equipmentid)
+                """;
+        try (var merge = handle.createUpdate(mergeSql))
+        {
+            DbKey id = pc.getId();
+            var existing = getByName(tx, pc.getName());
+            if (existing.isPresent())
+            {
+                // If there's an existing app with this name, we'll just assume the provided id, if any, was in error
+                id = existing.get().getId();
+                log.trace("""
+                    Using ID from existing Config, id={}, that was found. Provided ID was {}.
+                    """,
+                    id, pc.getId());
+            }
+            final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("platformconfig", handle.getConnection());
+
+            final var em = pc.getEquipmentModel();
+            merge.bind(GenericColumns.ID, bindKey)
+                 .bind(GenericColumns.NAME, pc.getName())
+                 .bind(GenericColumns.DESCRIPTION, pc.description)
+                 .bindByType("equipmentid", em != null ? em.getId() : (DbKey)null, DbKey.class)
+                 .execute()
+                 ;
+
+            return getById(tx, bindKey).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Platform Config we just saved."));
+        }
+        catch (DatabaseException ex)
+        {
+            throw new OpenDcsDataException("Unable to create surrogate key for new platform config.", ex);
+        }
     }
 
     @Override
