@@ -119,6 +119,7 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	private double missingValue = -9000000000000.;
 	private double missingLimit = -8999999999900.;
 	private int aggregateCount = 0;
+	private Connection algoConnection = null;
 //AW:LOCALVARS_END
 
 //AW:OUTPUTS
@@ -246,6 +247,16 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 				String msg = "Error executing beforeScript.";
 				throw new DbCompException(msg, ex);
 			}
+		}
+
+		try
+		{
+			algoConnection = tsdb.getConnection();
+			log.debug("Acquired database connection for algorithm execution");
+		}
+		catch (Exception ex)
+		{
+			throw new DbCompException("Could not acquire database connection for algorithm execution", ex);
 		}
 
 //AW:BEFORE_TIMESLICES_END
@@ -487,6 +498,27 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 			}
 		}
 //AW:AFTER_TIMESLICES_END
+	}
+
+	@Override
+	public void alwaysAfterTimeSlices()
+	{
+		if (algoConnection != null)
+		{
+			try
+			{
+				algoConnection.close();
+				log.debug("Closed database connection for algorithm execution");
+			}
+			catch (Exception ex)
+			{
+				log.atWarn().setCause(ex).log("Error closing algorithm connection");
+			}
+			finally
+			{
+				algoConnection = null;
+			}
+		}
 	}
 
 	/**
@@ -1250,7 +1282,10 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 
 		try
 		{
-			return tsdb.rating(specId, _timeSliceBaseTime, indeps);
+			if (algoConnection != null && tsdb instanceof CwmsTimeSeriesDb)
+				return ((CwmsTimeSeriesDb)tsdb).rating(specId, _timeSliceBaseTime, algoConnection, indeps);
+			else
+				return tsdb.rating(specId, _timeSliceBaseTime, indeps);
 		}
 		catch(Exception ex)
 		{
