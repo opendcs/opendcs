@@ -91,7 +91,8 @@ public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, 
             }
             throw ex;
         }
-        var ignored = rs.getLong(configPrefix+"equipmentid");
+
+        rs.getLong(configPrefix+"equipmentid");
         if (!rs.wasNull())
         {
             pc.withEquipmentModel(equipmentModelMapper.map(rs, ctx));

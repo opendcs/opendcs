@@ -144,7 +144,7 @@ public class PlatformConfigBuilder
     public PlatformConfigBuilder withScriptSensor(DbKey scriptId, ScriptSensor sensor)
     {
         var scriptSensorsList = scriptSensors.computeIfAbsent(scriptId, num -> new ArrayList<>());
-        if (!scriptSensorsList.stream().anyMatch(ss -> ss.sensorNumber == sensor.sensorNumber))
+        if (scriptSensorsList.stream().noneMatch(ss -> ss.sensorNumber == sensor.sensorNumber))
         {
             scriptSensorsList.add(sensor);
         }
@@ -179,10 +179,13 @@ public class PlatformConfigBuilder
             {
                 var script = scriptBuilder.build(true);
                 var scriptSensorsList = scriptSensors.get(script.getId());
-                for (var sensor: scriptSensorsList)
+                if (scriptSensorsList != null)
                 {
-                    sensor.decodesScript = script;
-                    script.addScriptSensor(sensor);
+                    for (var sensor: scriptSensorsList)
+                    {
+                        sensor.decodesScript = script;
+                        script.addScriptSensor(sensor);
+                    }
                 }
 
                 pc.addScript(script);

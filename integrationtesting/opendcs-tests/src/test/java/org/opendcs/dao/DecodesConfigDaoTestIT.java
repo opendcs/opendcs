@@ -7,6 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.ArrayList;
+import java.util.Random;
+
 import org.junit.jupiter.api.Test;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.DecodesConfigDao;
@@ -21,6 +24,8 @@ import decodes.db.DataType;
 import decodes.db.DecodesScript;
 import decodes.db.FormatStatement;
 import decodes.db.PlatformConfig;
+import decodes.db.ScriptSensor;
+import decodes.db.UnitConverterDb;
 
 @EnableIfTsDb
 @DecodesConfigurationRequired({
@@ -33,6 +38,8 @@ class DecodesConfigDaoTestIT extends AppTestBase
     @ConfiguredField
     OpenDcsDatabase db;
 
+    // this random sources needs to be repeatable, hence static seed.
+    private static final Random RANDOM = new Random(30); // NOSONAR
 
 
     @Test
@@ -121,6 +128,100 @@ class DecodesConfigDaoTestIT extends AppTestBase
             assertEquals(1, onlyOne.size());
             assertEquals("OKVI4", onlyOne.getFirst().getName());
             assertEquals("ST", onlyOne.getFirst().decodesScripts.getFirst().scriptName);
+
+            final var numConfigs = 30;
+
+            final var savedConfigs = new ArrayList<PlatformConfig>();
+
+            for (var i = 0; i < numConfigs; i++)
+            {
+                final var name = String.format("0000-Config-%02d", i);
+
+                var pc = createConfig(name, RANDOM.nextInt(3), RANDOM.nextInt(2), RANDOM.nextInt(3), (i % 7) == 0);
+                var pcOut = decodesConfigDao.save(tx, pc);
+                savedConfigs.add(pcOut);
+            }
+
+            final var allSaved = decodesConfigDao.getAll(tx, numConfigs, 0);
+            assertEquals(numConfigs, allSaved.size());
+
+
+            final var first10 = decodesConfigDao.getAll(tx, 10, 0);
+            assertEquals(savedConfigs.getFirst().configName, first10.getFirst().configName);
+            assertEquals(savedConfigs.get(9).configName, first10.getLast().configName);
+
+            final var second10 = decodesConfigDao.getAll(tx, 10, 10);
+            assertEquals(savedConfigs.get(10).configName, second10.getFirst().configName);
+            assertEquals(savedConfigs.get(19).configName, second10.getLast().configName);
+
+            tx.rollback();
         }
+    }
+
+
+    private PlatformConfig createConfig(String name, int numScripts, int numStatements, int numSensors, boolean sensorProperties) throws Exception
+    {
+        final var SENSORS = new String[]{"Stage", "Elev", "Flow"};
+        final var UNTIS = new String[]{"in", "ft", "cfs"};
+
+        var pc = new PlatformConfig(name);
+
+        for (var i = 0; i < numSensors; i++)
+        {
+            var sensor = new ConfigSensor(pc, i + 1);
+            sensor.sensorName = SENSORS[RANDOM.nextInt(SENSORS.length)];
+            sensor.recordingInterval = 900;
+            sensor.recordingMode = 'F';
+            sensor.timeOfFirstSample = 0;
+            sensor.addDataType(DataType.getDataType("CWMS", sensor.sensorName));
+            if (sensorProperties)
+            {
+                sensor.setProperty("CwmsInterval", "15Minutes");
+            }
+        }
+
+        for (var i = 0; i < numScripts; i++)
+        {
+            var script = DecodesScript.empty()
+                                      .platformConfig(pc)
+                                      .scriptName(String.format("S-%d", i))
+                                      .withDataOrder('A')
+                                      .build();
+            for (var j = 0; j < numStatements; j++)
+            {
+                var fs = new FormatStatement(script, j + 1);
+                fs.label = "STMT" + j;
+                fs.format = String.format("/%dx", j);
+                script.getFormatStatements().add(fs);
+            }
+
+            for (var k = 0; k < numSensors; k++)
+            {
+                var scriptSensor = new ScriptSensor(script, k + 1);
+
+                final var sensorName = pc.getSensor(k + 1);
+                int idx = 0;
+                for (var sensorIdx = 0; sensorIdx < SENSORS.length; sensorIdx++)
+                {
+                    if (SENSORS[sensorIdx].equals(sensorName))
+                    {
+                        idx = sensorIdx;
+                        break;
+                    }
+                }
+                var toUnits = UNTIS[idx];
+
+                scriptSensor.rawConverter = new UnitConverterDb("raw", toUnits);
+                scriptSensor.rawConverter.algorithm = Constants.eucvt_none;
+
+                script.addScriptSensor(scriptSensor);
+            }
+
+
+
+            pc.addScript(script);
+        }
+
+        return pc;
     }
 }
