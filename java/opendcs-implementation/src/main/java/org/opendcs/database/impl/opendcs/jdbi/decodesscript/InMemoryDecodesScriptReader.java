@@ -21,7 +21,7 @@ public class InMemoryDecodesScriptReader implements DecodesScriptReader
 
     public void addStatement(FormatStatement statement)
     {
-        if (!statements.stream().anyMatch(fs -> fs.sequenceNum == statement.sequenceNum))
+        if (statements.stream().noneMatch(fs -> fs.sequenceNum == statement.sequenceNum))
         {
             statements.add(statement);
         }

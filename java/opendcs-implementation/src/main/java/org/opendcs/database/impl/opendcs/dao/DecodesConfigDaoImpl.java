@@ -41,9 +41,6 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
-    @InjectDao
-    UnitConverterDao ucDao;
-
     private static final String SELECT_QUERY = """
             with pc (id, name, description, equipmentId) as (
                 select id, name, description, equipmentId
@@ -113,6 +110,9 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
     private static final String DELETE_FORMATSTATEMENTS =
         "delete from formatstatement where decodesscriptid  in (select id from decodesscript where configid = :id)";
     private static final String DELETE_DECODESSCRIPT = "delete from decodesscript where configid = :id";
+
+    @InjectDao
+    UnitConverterDao ucDao;
 
     @Override
     public Optional<PlatformConfig> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException
@@ -242,7 +242,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
             merge.bind(GenericColumns.ID, bindKey)
                  .bind(GenericColumns.NAME, pc.getName())
                  .bind(GenericColumns.DESCRIPTION, pc.description)
-                 .bindByType("equipmentid", em != null ? em.getId() : (DbKey)null, DbKey.class)
+                 .bindByType("equipmentid", em != null ? em.getId() : null, DbKey.class)
                  .execute()
                  ;
 

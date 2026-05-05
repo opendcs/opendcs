@@ -12,7 +12,7 @@ import org.opendcs.utils.sql.SqlErrorMessages;
 import decodes.db.PlatformConfig;
 import decodes.sql.DbKey;
 
-public class DecodesConfigMapper extends PrefixRowMapper<PlatformConfig>
+public final class DecodesConfigMapper extends PrefixRowMapper<PlatformConfig>
 {
     public static final String DEFAULT_PREFIX = "pc";
     public static final DecodesConfigMapper DEFAULT_MAPPER = new DecodesConfigMapper(DEFAULT_PREFIX);
