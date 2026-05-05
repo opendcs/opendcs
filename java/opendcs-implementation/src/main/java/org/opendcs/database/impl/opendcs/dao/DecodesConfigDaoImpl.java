@@ -13,6 +13,7 @@ import org.opendcs.database.model.mappers.unitconverter.UnitConverterMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.configs.DecodesConfigMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.scripts.DecodesScriptBuilderMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.scripts.FormatStatementMapper;
+import org.opendcs.database.impl.opendcs.jdbi.column.numeric.NullableDoubleArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.configs.ConfigSensorMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.configs.DecodesConfigAccumulator;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -55,7 +56,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                     em.equipmentType e_equipmentType, ep.name ep_name, ep.prop_value ep_prop_value,
 
                     cs.sensornumber cs_sensornumber, cs.sensorname cs_sensorname, cs.recordingmode cs_recordingmode,
-                    cs.recordinginterval cs_recordinginterval, cs.timeoffirstsample cs_timeoffirstsample, 
+                    cs.recordinginterval cs_recordinginterval, cs.timeoffirstsample cs_timeoffirstsample,
                     cs.equipmentid cs_equipmentid, cs.absolutemin cs_absolutemin, cs.absolutemax cs_absolutemax,
                     cs.stat_cd cs_stat_cd, csp.sensornumber csp_sensornumber, csp.prop_name csp_prop_name, csp.prop_value csp_prop_value,
 
@@ -86,11 +87,31 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
             left join engineeringunit to_eu on to_eu.unitabbr = uc.tounitsabbr
 
 
-            order by 
+            order by
                 pc.name <collate> asc,
                 cs.sensornumber asc,
                 fs.sequencenum asc
             """;
+
+    private static final String DELETE_CONFIGSENSOR_PROPERTIES = "delete from configsensorproperty where configid = :id";
+    private static final String DELETE_CONFIGSENSOR_DATATYPE = "delete from configsensordatatype where configid = :id";
+    private static final String DELETE_CONFIGSENSOR = "delete from configsensor where configid = :id";
+    private static final String DELETE_SCRIPTSENSOR = """
+            delete from scriptsensor
+             where decodesscriptid in (select id from decodesscript where configid = :id)
+            """;
+    private static final String GET_SCRIPTSENSOR_UC_ID = """
+                select unitconverterid from scriptsensor
+                 where decodesscriptid in (
+                    select id
+                      from decodesscript
+                     where configid = :id
+                 )
+            """;
+    private static final String DELETE_UNITCONVERETER = "delete from unitconverter where id = :id";
+    private static final String DELETE_FORMATSTATEMENTS =
+        "delete from formatstatement where decodesscriptid  in (select id from decodesscript where configid = :id)";
+    private static final String DELETE_DECODESSCRIPT = "delete from decodesscript where configid = :id";
 
     @Override
     public Optional<PlatformConfig> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException
@@ -179,23 +200,32 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                         .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
         final var mergeSql = """
                 merge into platformconfig pc
                 using (
-                    select :id id, :name name, :description description, :equipmentid equipmentid                
+                    select :id id, :name name, :description description, :equipmentid equipmentid
                 ) input
                 on (pc.id = input.id)
                 when matched then
-                    update set 
+                    update set
                         name = input.name, description = input.description, equipmentid = input.equipmentid
                 when not matched then
                     insert (id, name, description, equipmentid)
                     values(input.id, input.name, input.description, input.equipmentid)
                 """;
-        try (var merge = handle.createUpdate(mergeSql))
+        try (var merge = handle.createUpdate(mergeSql);
+             var deleteConfigSensorProps = handle.createUpdate(DELETE_CONFIGSENSOR_PROPERTIES);
+             var deleteConfigSensorDataType = handle.createUpdate(DELETE_CONFIGSENSOR_DATATYPE);
+             var deleteConfigSensor = handle.createUpdate(DELETE_CONFIGSENSOR);
+             var deleteFormatStatements = handle.createUpdate(DELETE_FORMATSTATEMENTS);
+             var deleteScriptSensorUc = handle.prepareBatch(DELETE_UNITCONVERETER);
+             var getUnitConverterIds = handle.createQuery(GET_SCRIPTSENSOR_UC_ID);
+             var deleteScriptSensor = handle.createUpdate(DELETE_SCRIPTSENSOR);
+             var deleteScript = handle.createUpdate(DELETE_DECODESSCRIPT);
+            )
+
         {
             DbKey id = pc.getId();
             var existing = getByName(tx, pc.getName());
@@ -218,6 +248,32 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                  .execute()
                  ;
 
+            // delete everything
+            deleteConfigSensorProps.bind(GenericColumns.ID, bindKey).execute();
+            deleteConfigSensorDataType.bind(GenericColumns.ID, bindKey).execute();
+
+            var ucIds = getUnitConverterIds.bind(GenericColumns.ID, bindKey)
+                                           .mapTo(DbKey.class)
+                                           .collectIntoList();
+
+            deleteScriptSensor.bind(GenericColumns.ID, bindKey).execute();
+
+            for (var ucId: ucIds)
+            {
+                deleteScriptSensorUc.bind(GenericColumns.ID, ucId).add();
+            }
+            deleteScriptSensorUc.execute();
+
+            deleteConfigSensor.bind(GenericColumns.ID, bindKey).execute();
+            deleteFormatStatements.bind(GenericColumns.ID, bindKey).execute();
+            deleteScript.bind(GenericColumns.ID, bindKey).execute();
+
+
+
+            // put everything back
+            insertConfigSensors(handle, bindKey, pc);
+            insertScripts(tx, handle, bindKey, pc, keyGen);
+
             return getById(tx, bindKey).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Platform Config we just saved."));
         }
         catch (DatabaseException ex)
@@ -226,11 +282,160 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
         }
     }
 
-    @Override
-    public void delete(DataTransaction arg0, DbKey arg1) throws OpenDcsDataException
+
+    private void insertConfigSensors(Handle handle, DbKey configId, PlatformConfig pc) throws OpenDcsDataException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'delete'");
+        try (var insertSensor = handle.prepareBatch("""
+                    insert into
+                    configsensor(
+                            configid, sensornumber, sensorname, recordingmode,
+                            recordinginterval, timeoffirstsample, equipmentid,
+                            absolutemin, absolutemax, stat_cd
+                        )
+                    values (:configid, :sensornumber, :sensorname, :recordingmode,
+                            :recordinginterval, :timeoffirstsample, :equipmentid,
+                            :absolutemin, :absolutemax, :stat_cd)
+                    """).registerArgument(new NullableDoubleArgumentFactory());
+            var insertSensorProps = handle.prepareBatch("""
+                    insert into
+                     configsensorproperty(configid, sensornumber, prop_name, prop_value)
+                     values (:configid, :sensornumber, :prop_name, :prop_value)
+                    """);
+            var insertSensorDataType = handle.prepareBatch("""
+                    insert into configsensordatatype (configid, sensornumber, datatypeid)
+                    values(:configid, :sensornumber, :datatypeid)
+                    """)
+                )
+        {
+            for (var sensor: pc.getSensorVec())
+            {
+                insertSensor.bind("configid", configId)
+                            .bind("sensornumber", sensor.sensorNumber)
+                            .bind("sensorname", sensor.sensorName)
+                            .bind("recordingmode", sensor.recordingMode)
+                            .bind("recordinginterval", sensor.recordingInterval)
+                            .bind("timeoffirstsample", sensor.timeOfFirstSample)
+                            .bind("equipmentid", sensor.equipmentModel != null ? sensor.equipmentModel.getId() : null)
+                            .bind("absolutemin", sensor.absoluteMin)
+                            .bind("absolutemax", sensor.absoluteMax)
+                            .bind("stat_cd", sensor.getUsgsStatCode())
+                            .add();
+                for (var dt: sensor.getDataTypeVec())
+                {
+                    insertSensorDataType.bind("configid", configId)
+                                        .bind("sensornumber", sensor.sensorNumber)
+                                        .bind("datatypeid", dt.getId())
+                                        .add();
+                }
+
+                sensor.getProperties().forEach((k,v) ->
+                {
+                    insertSensorProps.bind("configid", configId)
+                                     .bind("sensornumber", sensor.sensorNumber)
+                                     .bind("prop_name", k)
+                                     .bind("prop_value", v)
+                                     .add();
+                });
+            }
+
+            insertSensor.execute();
+            insertSensorProps.execute();
+            insertSensorDataType.execute();
+
+        }
+
+    }
+
+    private void insertScripts(DataTransaction tx, Handle handle, DbKey configId, PlatformConfig pc, KeyGenerator keyGen) throws OpenDcsDataException, DatabaseException
+    {
+        try (var insertScript = handle.prepareBatch("""
+                insert into
+                    decodesscript(id, configid, name, script_type, dataorder)
+                           values(:id, :configid, :name, :script_type, :dataorder)
+                """);
+            var insertScriptSensor = handle.prepareBatch("""
+                    insert into scriptsensor (decodesscriptid, sensornumber, unitconverterid)
+                        values (:decodesscriptid, :sensornumber, :unitconverterid)
+                    """);
+            var insertFormatStatement = handle.prepareBatch("""
+                    insert into
+                        formatstatement(decodesscriptid, sequencenum, label, format)
+                        values (:decodesscriptid, :sequencenum, :label, :format)
+                    """))
+        {
+            for (var script: pc.decodesScripts)
+            {
+                final var id = script.idIsSet() ? script.getId() : keyGen.getKey("decodesscript", handle.getConnection());
+                insertScript.bind(GenericColumns.ID, id)
+                            .bind("configid", configId)
+                            .bind(GenericColumns.NAME, script.scriptName)
+                            .bind("script_type", script.scriptType)
+                            .bind("dataorder", script.getDataOrder())
+                            .add();
+
+                for (var sensor: script.scriptSensors)
+                {
+
+                    final var uc = ucDao.save(tx, sensor.rawConverter);
+
+                    insertScriptSensor.bind("decodesscriptid", id)
+                                      .bind("sensornumber", sensor.sensorNumber)
+                                      .bind("unitconverterid", uc.getId())
+                                      .add();
+                }
+
+                for (var fs: script.getFormatStatements())
+                {
+                    insertFormatStatement.bind("decodesscriptid", id)
+                                         .bind("sequencenum", fs.sequenceNum)
+                                         .bind("label", fs.label)
+                                         .bind("format", fs.format)
+                                         .add();
+                }
+            }
+
+            insertScript.execute();
+            insertScriptSensor.execute();
+            insertFormatStatement.execute();
+        }
+    }
+
+
+    @Override
+    public void delete(DataTransaction tx, DbKey id) throws OpenDcsDataException
+    {
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        try(var deleteConfigSensorProps = handle.createUpdate(DELETE_CONFIGSENSOR_PROPERTIES);
+            var deleteConfigSensorDataType = handle.createUpdate(DELETE_CONFIGSENSOR_DATATYPE);
+            var deleteConfigSensor = handle.createUpdate(DELETE_CONFIGSENSOR);
+            var deleteFormatStatements = handle.createUpdate(DELETE_FORMATSTATEMENTS);
+            var deleteScriptSensorUc = handle.prepareBatch(DELETE_UNITCONVERETER);
+            var getUnitConverterIds = handle.createQuery(GET_SCRIPTSENSOR_UC_ID);
+            var deleteScriptSensor = handle.createUpdate(DELETE_SCRIPTSENSOR);
+            var deleteScript = handle.createUpdate(DELETE_FORMATSTATEMENTS);
+            var deleteConfig = handle.createUpdate("delete from platformconfig where id = :id"))
+        {
+            deleteConfigSensorProps.bind(GenericColumns.ID, id).execute();
+            deleteConfigSensorDataType.bind(GenericColumns.ID, id).execute();
+            deleteConfigSensor.bind(GenericColumns.ID, id).execute();
+            var ucIds = getUnitConverterIds.bind(GenericColumns.ID, id)
+                                           .mapTo(DbKey.class)
+                                           .collectIntoList();
+
+            deleteScriptSensor.bind(GenericColumns.ID, id).execute();
+
+            for (var ucId: ucIds)
+            {
+                deleteScriptSensorUc.bind(GenericColumns.ID, ucId).add();
+            }
+            deleteScriptSensorUc.execute();
+            deleteFormatStatements.bind(GenericColumns.ID, id).execute();
+            deleteScriptSensor.bind(GenericColumns.ID, id).execute();
+            deleteScript.bind(GenericColumns.ID, id).execute();
+            deleteConfig.bind(GenericColumns.ID, id).execute();
+
+        }
     }
 
     @Override
