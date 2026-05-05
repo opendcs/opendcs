@@ -22,6 +22,10 @@ import org.opendcs.utils.sql.SqlErrorMessages;
 import decodes.db.ScriptSensor;
 import decodes.sql.DbKey;
 
+/**
+ * Given the rather complex, and volumous, join of DECODES Configurations (PlatformConfigs)
+ * We process each row manually to assosciate the information with the correct PlatformConfig
+ */
 public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, PlatformConfigBuilder>>
 {
     private final String configPrefix;
@@ -36,7 +40,7 @@ public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, 
     private final UnitConverterMapper unitConverterMapper;
 
 
-    public DecodesConfigAccumulator(String configPrefix, DecodesConfigMapper configMapper, 
+    public DecodesConfigAccumulator(String configPrefix, DecodesConfigMapper configMapper,
                                 EquipmentModelMapper equipmentModelMapper, PropertiesMapper equipmentPropertiesMapper,
                                 ConfigSensorMapper sensorMapper, PropertiesMapper sensorPropertiesMapper,
                                 DataTypeMapper dataTypeMapper, DecodesScriptBuilderMapper scriptBuilderMapper,
@@ -47,14 +51,14 @@ public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, 
         this.equipmentModelMapper = equipmentModelMapper;
         this.equipmentPropertiesMapper = equipmentPropertiesMapper;
         this.sensorMapper = sensorMapper;
-        this.sensorPropertiesMapper = sensorPropertiesMapper;        
+        this.sensorPropertiesMapper = sensorPropertiesMapper;
         this.dataTypeMapper = dataTypeMapper;
         this.scriptBuilderMapper = scriptBuilderMapper;
         this.formatStatementMapper = formatStatementMapper;
         this.unitConverterMapper = unitConverterMapper;
     }
 
-    
+
     @Override
     public Map<Long, PlatformConfigBuilder> apply(Map<Long, PlatformConfigBuilder> previous, ResultSet rs, StatementContext ctx)
             throws SQLException
@@ -66,7 +70,7 @@ public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, 
         {
             pc = previous.computeIfAbsent(rs.getLong(configPrefix+GenericColumns.ID),
                 pcId ->
-                { 
+                {
                     try
                     {
                         return new PlatformConfigBuilder(configMapper.map(rs, ctx));
@@ -93,7 +97,7 @@ public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, 
             pc.withEquipmentModel(equipmentModelMapper.map(rs, ctx));
         }
 
-        
+
         var emProps = equipmentPropertiesMapper.map(rs, ctx);
         if (emProps.first != null)
         {
@@ -124,7 +128,7 @@ public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, 
             scriptBuilder = scriptBuilderMapper.map(rs, ctx);
             pc.withDecodesScriptBuilder(scriptBuilder);
         }
-        
+
         var formatStatement = formatStatementMapper.map(rs, ctx);
         if (formatStatement != null)
         {
@@ -145,5 +149,5 @@ public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, 
 
         return previous;
     }
-    
+
 }

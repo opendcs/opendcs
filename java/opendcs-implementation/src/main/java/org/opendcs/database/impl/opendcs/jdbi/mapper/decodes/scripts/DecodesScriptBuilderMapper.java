@@ -45,7 +45,7 @@ public class DecodesScriptBuilderMapper extends PrefixRowMapper<DecodesScriptBui
         return builder;
 
     }
-    
+
     public static DecodesScriptBuilderMapper withPrefix(String prefix)
     {
         return new DecodesScriptBuilderMapper(prefix);

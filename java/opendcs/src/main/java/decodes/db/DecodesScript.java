@@ -1,16 +1,16 @@
 /*
 * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
 * of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software 
+*
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
 */
 package decodes.db;
@@ -324,7 +324,7 @@ public class DecodesScript extends IdDatabaseObject
      * Clear the replacement and missing symbol lists.
      */
     private void clearReplacements(){
-        
+
         missingSymbols.clear();
         replaceSymbols.clear();;
 
@@ -584,7 +584,7 @@ public class DecodesScript extends IdDatabaseObject
     {
         return replaceSymbols.getOrDefault(value, value);
     }
-    
+
     public void setIncludePMs(ArrayList<String> includePMs)
     {
         this.includePMs = includePMs;
@@ -667,7 +667,7 @@ public class DecodesScript extends IdDatabaseObject
     }
 
     /**
-     * Used for starting a new blank decodes script. 
+     * Used for starting a new blank decodes script.
      * @return a Builder object for further operations
      */
     public static DecodesScriptBuilder empty()
@@ -686,7 +686,7 @@ public class DecodesScript extends IdDatabaseObject
     }
 
     /**
-     * Utility class to help with creating DecodesScript objects 
+     * Utility class to help with creating DecodesScript objects
      * and making sure they're in a valid state.
      * @since 2022-11-05
      */
@@ -711,7 +711,7 @@ public class DecodesScript extends IdDatabaseObject
         }
 
         /**
-         * Finalize the creation of a decodes script. After this 
+         * Finalize the creation of a decodes script. After this
          * the script should be ready for decoding operations.
          *
          * Defaults to <b>NOT</b> throwing an exception on a script processing error.
@@ -737,11 +737,11 @@ public class DecodesScript extends IdDatabaseObject
         {
             Objects.requireNonNull(nameSupplier, "nameSupplier cannot be null. Set before calling build.");
             DecodesScript script = new DecodesScript(nameSupplier.get());
-            
+
             Objects.requireNonNull(platformSupplier, "platformSupplier cannot be null. Set before calling build.");
             script.platformConfig = platformSupplier.get();
             Objects.requireNonNull(script.platformConfig, "A valid platform configuration was not available.");
-  
+
             Objects.requireNonNull(scriptType,"Script type cannot be null");
             script.scriptType = scriptType.get();
             script.dataOrder = dataOrder.get();
@@ -775,7 +775,7 @@ public class DecodesScript extends IdDatabaseObject
         }
 
         /**
-         * Assign a platform configuration 
+         * Assign a platform configuration
          * @param pc initialized PlatformConfig
          * @return the builder for further operations
          */
@@ -824,13 +824,13 @@ public class DecodesScript extends IdDatabaseObject
 
         /**
          * Assign a data order
-         * @param dataOrder 
+         * @param dataOrder
          * @return
          */
         public DecodesScriptBuilder withDataOrder(char dataOrder)
         {
             return withDataOrder(() -> dataOrder);
-        }        
+        }
 
         /**
          * Assign a data order supplier

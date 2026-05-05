@@ -12,7 +12,7 @@ import org.opendcs.utils.sql.SqlErrorMessages;
 import decodes.db.PlatformConfig;
 import decodes.sql.DbKey;
 
-public class DecodesConfigMapper extends PrefixRowMapper<PlatformConfig> 
+public class DecodesConfigMapper extends PrefixRowMapper<PlatformConfig>
 {
     public static final String DEFAULT_PREFIX = "pc";
     public static final DecodesConfigMapper DEFAULT_MAPPER = new DecodesConfigMapper(DEFAULT_PREFIX);
@@ -34,8 +34,7 @@ public class DecodesConfigMapper extends PrefixRowMapper<PlatformConfig>
         pc.description = rs.getString(prefix + GenericColumns.DESCRIPTION);
         return pc;
     }
- 
-    
+
     public static DecodesConfigMapper withPrefix(String prefix)
     {
         if (DEFAULT_PREFIX.equalsIgnoreCase(prefix))

@@ -19,6 +19,7 @@ import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.configs.DecodesConf
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
+import org.opendcs.utils.sql.SqlKeywords;
 import org.opendcs.utils.sql.SqlQueries;
 import org.openide.util.lookup.ServiceProvider;
 import org.slf4j.Logger;
@@ -48,8 +49,8 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                 select id, name, description, equipmentId
                   from PlatformConfig
                 <where>
-                <limit>
                 order by name <collate> ASC
+                <limit>
             )
             select pc.id pc_id, pc.name pc_name, pc.description pc_description, pc.equipmentId pc_equipmentId,
                     em.id e_id, em.name e_name, em.company e_company, em.model e_model, em.description e_description,
@@ -124,15 +125,12 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabase();
-        var preferredType = ctx.getSettings(DecodesSettings.class)
-                              .map(ds -> ds.siteNameTypePreference)
-                              .orElseGet(() -> "CWMS");
+
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                  .define(SqlQueries.WHERE_CLAUSE, "where id = :id")
                  .define(SqlQueries.LIMIT_CLAUSE, "")
-                 .bind("preferredType", preferredType)
                  .bind(GenericColumns.ID, id);
 
             return query.registerRowMapper(DecodesConfigMapper.withPrefix("pc"))
@@ -315,7 +313,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                             .bind("recordingmode", sensor.recordingMode)
                             .bind("recordinginterval", sensor.recordingInterval)
                             .bind("timeoffirstsample", sensor.timeOfFirstSample)
-                            .bind("equipmentid", sensor.equipmentModel != null ? sensor.equipmentModel.getId() : null)
+                            .bindByType("equipmentid", sensor.equipmentModel != null ? sensor.equipmentModel.getId() : null, DbKey.class)
                             .bind("absolutemin", sensor.absoluteMin)
                             .bind("absolutemax", sensor.absoluteMax)
                             .bind("stat_cd", sensor.getUsgsStatCode())
@@ -439,9 +437,46 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
     }
 
     @Override
-    public List<PlatformConfig> getAll(DataTransaction arg0, int arg1, int arg2) throws OpenDcsDataException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getAll'");
+    public List<PlatformConfig> getAll(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
+    {
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var ctx = tx.getContext();
+        var dbEngine = ctx.getDatabase();
+
+        try (var query = handle.createQuery(SELECT_QUERY))
+        {
+            query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
+                 .define(SqlQueries.WHERE_CLAUSE, "")
+                 .define(SqlQueries.LIMIT_CLAUSE, SqlQueries.addLimitOffset(limit, offset));
+
+            if (limit >= 0)
+            {
+                query.bind(SqlKeywords.LIMIT, limit);
+            }
+            if (offset >= 0)
+            {
+                query.bind(SqlKeywords.OFFSET, offset);
+            }
+
+            return query.registerRowMapper(DecodesConfigMapper.withPrefix("pc"))
+                        .registerRowMapper(EquipmentModelMapper.withPrefix("em"))
+                        .registerRowMapper(PropertiesMapper.PAIR_STRING_STRING, PropertiesMapper.withPrefix("ep"))
+                        .registerRowMapper(UnitConverterMapper.withPrefix("uc"))
+                        .reduceResultSet(new LinkedHashMap<>(),
+                                         new DecodesConfigAccumulator(
+                                            "pc", DecodesConfigMapper.withPrefix("pc"),
+                                            EquipmentModelMapper.withPrefix("em"), PropertiesMapper.withPrefix("ep"),
+                                            ConfigSensorMapper.withPrefix("cs"), PropertiesMapper.withPrefix("csp", true),
+                                            DataTypeMapper.withPrefix("dt"), DecodesScriptBuilderMapper.withPrefix("ds"),
+                                            FormatStatementMapper.withPrefix("fs"), UnitConverterMapper.withPrefix("uc")
+                                         )
+                                        )
+                        .values()
+                        .stream()
+                        .map(pcb -> pcb.build())
+                        .toList();
+        }
     }
 
 }

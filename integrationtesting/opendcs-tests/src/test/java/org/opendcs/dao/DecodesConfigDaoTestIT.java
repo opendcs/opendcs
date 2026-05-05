@@ -19,7 +19,6 @@ import decodes.db.ConfigSensor;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.DecodesScript;
-import decodes.db.DecodesScriptReader;
 import decodes.db.FormatStatement;
 import decodes.db.PlatformConfig;
 
@@ -29,7 +28,7 @@ import decodes.db.PlatformConfig;
     "SimpleDecodesTest/site-OKVI4.xml",
     "SimpleDecodesTest/OKVI4-decodes.xml"
 })
-class DecodesDaoTestIT extends AppTestBase
+class DecodesConfigDaoTestIT extends AppTestBase
 {
     @ConfiguredField
     OpenDcsDatabase db;
@@ -104,6 +103,24 @@ class DecodesDaoTestIT extends AppTestBase
 
             final var pcNotExist = decodesConfigDao.getByName(tx, "TestConfig-1");
             assertTrue(pcNotExist.isEmpty());
+        }
+    }
+
+    @Test
+    void test_pagination() throws Exception
+    {
+        var decodesConfigDao = db.getDao(DecodesConfigDao.class)
+                                 .orElseThrow();
+
+        try (var tx = db.newTransaction())
+        {
+            var all = decodesConfigDao.getAll(tx, -1, -1);
+            assertFalse(all.isEmpty());
+
+            var onlyOne = decodesConfigDao.getAll(tx, 1, 1);
+            assertEquals(1, onlyOne.size());
+            assertEquals("OKVI4", onlyOne.getFirst().getName());
+            assertEquals("ST", onlyOne.getFirst().decodesScripts.getFirst().scriptName);
         }
     }
 }
