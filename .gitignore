@@ -4,6 +4,7 @@ stage
 bin/
 build
 .gradle
+.gradle-sandbox
 *.tgz
 .*~
 .vscode
