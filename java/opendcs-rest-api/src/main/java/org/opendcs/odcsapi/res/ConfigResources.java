@@ -64,7 +64,9 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.dai.DataTypeDao;
 import org.opendcs.database.dai.DecodesConfigDao;
 import org.opendcs.odcsapi.beans.ApiConfigRef;
 import org.opendcs.odcsapi.beans.ApiConfigScript;
@@ -126,7 +128,7 @@ public final class ConfigResources extends OpenDcsResource
 			final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
 			final var configs = dao.getAll(tx, -1, -1)
 								   .stream()
-								   .map(pc -> map(pc))
+								   .map(pc -> mapRef(pc))
 								   .toList();
 			return Response.ok().entity(configs).build();
 		}
@@ -137,26 +139,22 @@ public final class ConfigResources extends OpenDcsResource
 		}
 	}
 
-	static List<ApiConfigRef> map(PlatformConfigList configList)
+
+	static ApiConfigRef mapRef(PlatformConfig config)
 	{
-		List<ApiConfigRef> configRefs = new ArrayList<>();
-		for (PlatformConfig config : configList.values())
+		ApiConfigRef configRef = new ApiConfigRef();
+		if (config.getId() != null)
 		{
-			ApiConfigRef configRef = new ApiConfigRef();
-			if (config.getId() != null)
-			{
-				configRef.setConfigId(config.getId().getValue());
-			}
-			else
-			{
-				configRef.setConfigId(DbKey.NullKey.getValue());
-			}
-			configRef.setName(config.getName());
-			configRef.setNumPlatforms(config.numPlatformsUsing);
-			configRef.setDescription(config.description);
-			configRefs.add(configRef);
+			configRef.setConfigId(config.getId().getValue());
 		}
-		return configRefs;
+		else
+		{
+			configRef.setConfigId(DbKey.NullKey.getValue());
+		}
+		configRef.setName(config.getName());
+		configRef.setNumPlatforms(config.numPlatformsUsing);
+		configRef.setDescription(config.description);
+		return configRef;
 	}
 
 	@GET
@@ -185,29 +183,21 @@ public final class ConfigResources extends OpenDcsResource
 			throw new MissingParameterException("Missing required configid parameter.");
 		}
 
-		DatabaseIO dbIo = getLegacyDatabase();
-		try
+
+		final var db = createDb();
+		try (var tx = db.newTransaction())
 		{
-			PlatformConfig config = new PlatformConfig();
-			config.setId(DbKey.createDbKey(configId));
-			dbIo.readConfig(config);
+			final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
+			final var config =  dao.getById(tx, DbKey.createDbKey(configId))
+								   .orElseThrow(() -> new DatabaseItemNotFoundException("Config with ID " + configId + " not found"));
+			
+								   
 			return Response.ok().entity(map(config)).build();
 		}
-		catch (ValueNotFoundException ex)
+		catch (OpenDcsDataException ex)
 		{
-			throw new DatabaseItemNotFoundException("Config with ID " + configId + " not found", ex);
-		}
-		catch (DatabaseException ex)
-		{
-			if (ex.getCause() instanceof ValueNotFoundException)
-			{
-				throw new DatabaseItemNotFoundException("Config with ID " + configId + " not found", ex);
-			}
-			throw new DbException("Error reading config", ex);
-		}
-		finally
-		{
-			dbIo.close();
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+						 			  "Unable to retrieve site list", ex);
 		}
 	}
 
@@ -338,30 +328,27 @@ public final class ConfigResources extends OpenDcsResource
 			},
 			tags = {"REST - DECODES Platform Configurations"}
 	)
-	public Response postConfig(ApiPlatformConfig config) throws DbException
-	{
-		DatabaseIO dbIo = getLegacyDatabase();
-		try
+	public Response postConfig(ApiPlatformConfig config) throws WebAppException
+	{		
+		final var db = createDb();
+		try (var tx = db.newTransaction())
 		{
-			DataTypeSet dataTypeSet = new DataTypeSet();
-			dbIo.readDataTypeSet(dataTypeSet);
-			PlatformConfig pc = map(config, dataTypeSet);
-			dbIo.writeConfig(pc);
-			return Response.status(Response.Status.CREATED)
-					.entity(map(pc))
-					.build();
+			final var dataTypeDao = db.getDao(DataTypeDao.class).orElseThrow();
+			final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
+			var configIn = map(config, dataTypeDao, tx);
+
+			final var configOut =  dao.save(tx, configIn);
+				   
+			return Response.ok().entity(map(configOut)).build();
 		}
-		catch (DatabaseException ex)
+		catch (OpenDcsDataException ex)
 		{
-			throw new DbException("Error saving config", ex);
-		}
-		finally
-		{
-			dbIo.close();
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+						 			  "Unable to retrieve site list", ex);
 		}
 	}
 
-	static PlatformConfig map(ApiPlatformConfig config, DataTypeSet dataTypeSet) throws DbException
+	static PlatformConfig map(ApiPlatformConfig config, DataTypeDao dataTypeDao, DataTransaction tx) throws OpenDcsDataException
 	{
 		try
 		{
@@ -400,7 +387,8 @@ public final class ConfigResources extends OpenDcsResource
 				configSensor.setUsgsStatCode(sensor.getUsgsStatCode());
 				for (Map.Entry<String, String> entry : sensor.getDataTypes().entrySet())
 				{
-					DataType dt = dataTypeSet.get(entry.getKey(), entry.getValue());
+					DataType dt = dataTypeDao.lookup(tx, entry.getKey(), entry.getValue())
+											 .orElseGet(null);
 					if(dt == null )
 					{
 						dt = new DataType(entry.getKey(), entry.getValue());
@@ -416,9 +404,9 @@ public final class ConfigResources extends OpenDcsResource
 
 			return pc;
 		}
-		catch (DatabaseException ex)
+		catch (DbException | DatabaseException ex)
 		{
-			throw new DbException("Error mapping platform config", ex);
+			throw new OpenDcsDataException("Error mapping platform config", ex);
 		}
 	}
 
@@ -567,33 +555,31 @@ public final class ConfigResources extends OpenDcsResource
 			throw new MissingParameterException("Missing required configid parameter.");
 		}
 
-		DatabaseIO dbIo = getLegacyDatabase();
-		try
+
+		final var db = createDb();
+		try (var tx = db.newTransaction())
 		{
-			PlatformConfig pc = new PlatformConfig();
-			pc.setId(DbKey.createDbKey(configId));
-			dbIo.readConfig(pc);
+			final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
 
-			if (pc.numPlatformsUsing > 0)
-			{
-				return Response.status(Response.Status.METHOD_NOT_ALLOWED)
-						.entity(" Cannot delete config with ID "
-								+ configId + " because it is used by one or more platforms.")
-						.build();
-			}
+			// saved as we do need to know this
+			// if (pc.numPlatformsUsing > 0)
+			// {
+			// 	return Response.status(Response.Status.METHOD_NOT_ALLOWED)
+			// 			.entity(" Cannot delete config with ID "
+			// 					+ configId + " because it is used by one or more platforms.")
+			// 			.build();
+			// }
 
-			dbIo.deleteConfig(pc);
+			dao.delete(tx, DbKey.createDbKey(configId));
+
 			return Response.noContent()
 					.entity("Config with ID " + configId + " deleted")
 					.build();
 		}
-		catch (DatabaseException ex)
+		catch (OpenDcsDataException ex)
 		{
-			throw new DbException("Error deleting config", ex);
-		}
-		finally
-		{
-			dbIo.close();
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+						 			  "Unable to retrieve site list", ex);
 		}
 	}
 }
