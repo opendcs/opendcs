@@ -189,6 +189,7 @@ class DecodesConfigDaoTestIT extends AppTestBase
             {
                 sensor.setProperty("CwmsInterval", "15Minutes");
             }
+            pc.addSensor(sensor);
         }
 
         for (var i = 0; i < numScripts; i++)
@@ -210,7 +211,7 @@ class DecodesConfigDaoTestIT extends AppTestBase
             {
                 var scriptSensor = new ScriptSensor(script, k + 1);
 
-                final var sensorName = pc.getSensor(k + 1);
+                final var sensorName = pc.getSensor(k + 1).sensorName;
                 int idx = 0;
                 for (var sensorIdx = 0; sensorIdx < SENSORS.length; sensorIdx++)
                 {
