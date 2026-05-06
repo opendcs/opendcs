@@ -97,7 +97,7 @@ class DecodesConfigDaoTestIT extends AppTestBase
             sensor1.recordingInterval = 0;
             sensor1.recordingMode = Constants.recordingModeFixed;
             sensor1.setProperty("cwmsInterval", "15Minutes");
-            sensor1.addDataType(dataTypeDao.lookup(tx, "Stage").orElseThrow());
+            sensor1.addDataType(dataTypeDao.lookup(tx, "CWMS", "Stage").orElseThrow());
             pcIn.addSensor(sensor1);
             final var script = DecodesScript.empty()
                                             .platformConfig(pcIn)
@@ -183,7 +183,8 @@ class DecodesConfigDaoTestIT extends AppTestBase
             sensor.recordingInterval = 900;
             sensor.recordingMode = 'F';
             sensor.timeOfFirstSample = 0;
-            sensor.addDataType(dataTypeDao.lookup(tx, sensor.sensorName).orElseThrow());
+            sensor.addDataType(dataTypeDao.lookup(tx, "CWMS", sensor.sensorName)
+                                          .orElseGet(() -> fail("DataType for " + sensor.sensorName + " doesn't exist.")));
             if (sensorProperties)
             {
                 sensor.setProperty("CwmsInterval", "15Minutes");
