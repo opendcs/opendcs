@@ -63,6 +63,9 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.dai.DecodesConfigDao;
 import org.opendcs.odcsapi.beans.ApiConfigRef;
 import org.opendcs.odcsapi.beans.ApiConfigScript;
 import org.opendcs.odcsapi.beans.ApiConfigScriptSensor;
@@ -79,6 +82,9 @@ import org.opendcs.odcsapi.util.ApiConstants;
 @Path("/")
 public final class ConfigResources extends OpenDcsResource
 {
+	private static final WebAppException UNABLE_TO_GET_CONFIG_DAO = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "No Decodes Config DAO available.");
+
+
 	@Context HttpHeaders httpHeaders;
 
 	@GET
@@ -112,22 +118,22 @@ public final class ConfigResources extends OpenDcsResource
 			tags = {"REST - DECODES Platform Configurations"}
 	)
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
-	public Response getConfigRefs() throws DbException
+	public Response getConfigRefs() throws WebAppException
 	{
-		DatabaseIO dbIo = getLegacyDatabase();
-		try
+		final var db = createDb();
+		try (var tx = db.newTransaction())
 		{
-			PlatformConfigList configList = new PlatformConfigList();
-			dbIo.readConfigList(configList);
-			return Response.ok().entity(map(configList)).build();
+			final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
+			final var configs = dao.getAll(tx, -1, -1)
+								   .stream()
+								   .map(pc -> map(pc))
+								   .toList();
+			return Response.ok().entity(configs).build();
 		}
-		catch(DatabaseException ex)
+		catch (OpenDcsDataException ex)
 		{
-			throw new DbException("Error reading config list", ex);
-		}
-		finally
-		{
-			dbIo.close();
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+						 			  "Unable to retrieve site list", ex);
 		}
 	}
 
