@@ -38,7 +38,7 @@ class DecodesConfigDaoTestIT extends AppTestBase
 {
 
     private static final String[] SENSORS = new String[]{"Stage", "Elev", "Flow"};
-    private static final String[] UNTIS = new String[]{"in", "ft", "cfs"};
+    private static final String[] UNITS = new String[]{"in", "ft", "cfs"};
 
     @ConfiguredField
     OpenDcsDatabase db;
@@ -220,7 +220,7 @@ class DecodesConfigDaoTestIT extends AppTestBase
                         break;
                     }
                 }
-                var toUnits = UNTIS[idx];
+                var toUnits = UNITS[idx];
 
                 scriptSensor.rawConverter = new UnitConverterDb("raw", toUnits);
                 scriptSensor.rawConverter.algorithm = Constants.eucvt_none;

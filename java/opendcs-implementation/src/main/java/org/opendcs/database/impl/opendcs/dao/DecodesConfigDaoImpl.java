@@ -111,7 +111,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                      where configid = :id
                  )
             """;
-    private static final String DELETE_UNITCONVERETER = "delete from unitconverter where id = :id";
+    private static final String DELETE_UNITCONVERTER = "delete from unitconverter where id = :id";
     private static final String DELETE_FORMATSTATEMENTS =
         "delete from formatstatement where decodesscriptid  in (select id from decodesscript where configid = :id)";
     private static final String DELETE_DECODESSCRIPT = "delete from decodesscript where configid = :id";
@@ -223,7 +223,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
              var deleteConfigSensorDataType = handle.createUpdate(DELETE_CONFIGSENSOR_DATATYPE);
              var deleteConfigSensor = handle.createUpdate(DELETE_CONFIGSENSOR);
              var deleteFormatStatements = handle.createUpdate(DELETE_FORMATSTATEMENTS);
-             var deleteScriptSensorUc = handle.prepareBatch(DELETE_UNITCONVERETER);
+             var deleteScriptSensorUc = handle.prepareBatch(DELETE_UNITCONVERTER);
              var getUnitConverterIds = handle.createQuery(GET_SCRIPTSENSOR_UC_ID);
              var deleteScriptSensor = handle.createUpdate(DELETE_SCRIPTSENSOR);
              var deleteScript = handle.createUpdate(DELETE_DECODESSCRIPT)
@@ -412,10 +412,10 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
             var deleteConfigSensorDataType = handle.createUpdate(DELETE_CONFIGSENSOR_DATATYPE);
             var deleteConfigSensor = handle.createUpdate(DELETE_CONFIGSENSOR);
             var deleteFormatStatements = handle.createUpdate(DELETE_FORMATSTATEMENTS);
-            var deleteScriptSensorUc = handle.prepareBatch(DELETE_UNITCONVERETER);
+            var deleteScriptSensorUc = handle.prepareBatch(DELETE_UNITCONVERTER);
             var getUnitConverterIds = handle.createQuery(GET_SCRIPTSENSOR_UC_ID);
             var deleteScriptSensor = handle.createUpdate(DELETE_SCRIPTSENSOR);
-            var deleteScript = handle.createUpdate(DELETE_FORMATSTATEMENTS);
+            var deleteScript = handle.createUpdate(DELETE_DECODESSCRIPT);
             var deleteConfig = handle.createUpdate("delete from platformconfig where id = :id"))
         {
             deleteConfigSensorProps.bind(GenericColumns.ID, id).execute();
