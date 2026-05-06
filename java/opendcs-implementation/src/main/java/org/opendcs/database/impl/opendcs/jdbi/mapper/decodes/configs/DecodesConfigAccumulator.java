@@ -40,6 +40,7 @@ public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, 
     private final UnitConverterMapper unitConverterMapper;
 
 
+    @SuppressWarnings("java:S107") // It's just big
     public DecodesConfigAccumulator(String configPrefix, DecodesConfigMapper configMapper,
                                 EquipmentModelMapper equipmentModelMapper, PropertiesMapper equipmentPropertiesMapper,
                                 ConfigSensorMapper sensorMapper, PropertiesMapper sensorPropertiesMapper,
