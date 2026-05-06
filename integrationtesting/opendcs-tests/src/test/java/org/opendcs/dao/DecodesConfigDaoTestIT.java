@@ -11,7 +11,9 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import org.junit.jupiter.api.Test;
+import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.dai.DataTypeDao;
 import org.opendcs.database.dai.DecodesConfigDao;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
@@ -20,7 +22,6 @@ import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.db.ConfigSensor;
 import decodes.db.Constants;
-import decodes.db.DataType;
 import decodes.db.DecodesScript;
 import decodes.db.FormatStatement;
 import decodes.db.PlatformConfig;
@@ -35,6 +36,10 @@ import decodes.db.UnitConverterDb;
 })
 class DecodesConfigDaoTestIT extends AppTestBase
 {
+
+    private static final String[] SENSORS = new String[]{"Stage", "Elev", "Flow"};
+    private static final String[] UNTIS = new String[]{"in", "ft", "cfs"};
+
     @ConfiguredField
     OpenDcsDatabase db;
 
@@ -80,6 +85,9 @@ class DecodesConfigDaoTestIT extends AppTestBase
         var decodesConfigDao = db.getDao(DecodesConfigDao.class)
                                  .orElseThrow();
 
+        var dataTypeDao = db.getDao(DataTypeDao.class)
+                            .orElseThrow();
+
         try (var tx = db.newTransaction())
         {
             final var pcIn = new PlatformConfig("TestConfig-1");
@@ -89,7 +97,7 @@ class DecodesConfigDaoTestIT extends AppTestBase
             sensor1.recordingInterval = 0;
             sensor1.recordingMode = Constants.recordingModeFixed;
             sensor1.setProperty("cwmsInterval", "15Minutes");
-            sensor1.addDataType(DataType.getDataType("CWMS", "Stage"));
+            sensor1.addDataType(dataTypeDao.lookup(tx, "Stage").orElseThrow());
             pcIn.addSensor(sensor1);
             final var script = DecodesScript.empty()
                                             .platformConfig(pcIn)
@@ -119,6 +127,9 @@ class DecodesConfigDaoTestIT extends AppTestBase
         var decodesConfigDao = db.getDao(DecodesConfigDao.class)
                                  .orElseThrow();
 
+        var dataTypeDao = db.getDao(DataTypeDao.class)
+                            .orElseThrow();
+
         try (var tx = db.newTransaction())
         {
             var all = decodesConfigDao.getAll(tx, -1, -1);
@@ -137,7 +148,7 @@ class DecodesConfigDaoTestIT extends AppTestBase
             {
                 final var name = String.format("0000-Config-%02d", i);
 
-                var pc = createConfig(name, RANDOM.nextInt(3), RANDOM.nextInt(2), RANDOM.nextInt(3), (i % 7) == 0);
+                var pc = createConfig(name, RANDOM.nextInt(3), RANDOM.nextInt(2), RANDOM.nextInt(3), (i % 7) == 0, tx, dataTypeDao);
                 var pcOut = decodesConfigDao.save(tx, pc);
                 savedConfigs.add(pcOut);
             }
@@ -159,10 +170,9 @@ class DecodesConfigDaoTestIT extends AppTestBase
     }
 
 
-    private PlatformConfig createConfig(String name, int numScripts, int numStatements, int numSensors, boolean sensorProperties) throws Exception
+    private PlatformConfig createConfig(String name, int numScripts, int numStatements, int numSensors, boolean sensorProperties, DataTransaction tx, DataTypeDao dataTypeDao) throws Exception
     {
-        final var SENSORS = new String[]{"Stage", "Elev", "Flow"};
-        final var UNTIS = new String[]{"in", "ft", "cfs"};
+        
 
         var pc = new PlatformConfig(name);
 
@@ -173,7 +183,7 @@ class DecodesConfigDaoTestIT extends AppTestBase
             sensor.recordingInterval = 900;
             sensor.recordingMode = 'F';
             sensor.timeOfFirstSample = 0;
-            sensor.addDataType(DataType.getDataType("CWMS", sensor.sensorName));
+            sensor.addDataType(dataTypeDao.lookup(tx, sensor.sensorName).orElseThrow());
             if (sensorProperties)
             {
                 sensor.setProperty("CwmsInterval", "15Minutes");

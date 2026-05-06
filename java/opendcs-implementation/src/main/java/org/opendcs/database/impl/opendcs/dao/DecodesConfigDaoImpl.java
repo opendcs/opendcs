@@ -28,7 +28,6 @@ import decodes.db.DatabaseException;
 import decodes.db.PlatformConfig;
 import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
-import decodes.util.DecodesSettings;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 
@@ -39,6 +38,12 @@ import java.util.Optional;
 @ServiceProvider(service = DecodesConfigDao.class)
 public class DecodesConfigDaoImpl implements DecodesConfigDao
 {
+    private static final String SENSORNUMBER = "sensornumber";
+
+    private static final String DECODESSCRIPTID = "decodesscriptid";
+
+    private static final String CONFIGID = "configid";
+
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     private static final String SELECT_QUERY = """
@@ -221,7 +226,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
              var deleteScriptSensorUc = handle.prepareBatch(DELETE_UNITCONVERETER);
              var getUnitConverterIds = handle.createQuery(GET_SCRIPTSENSOR_UC_ID);
              var deleteScriptSensor = handle.createUpdate(DELETE_SCRIPTSENSOR);
-             var deleteScript = handle.createUpdate(DELETE_DECODESSCRIPT);
+             var deleteScript = handle.createUpdate(DELETE_DECODESSCRIPT)
             )
 
         {
@@ -281,7 +286,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
     }
 
 
-    private void insertConfigSensors(Handle handle, DbKey configId, PlatformConfig pc) throws OpenDcsDataException
+    private void insertConfigSensors(Handle handle, DbKey configId, PlatformConfig pc)
     {
         try (var insertSensor = handle.prepareBatch("""
                     insert into
@@ -307,8 +312,8 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
         {
             for (var sensor: pc.getSensorVec())
             {
-                insertSensor.bind("configid", configId)
-                            .bind("sensornumber", sensor.sensorNumber)
+                insertSensor.bind(CONFIGID, configId)
+                            .bind(SENSORNUMBER, sensor.sensorNumber)
                             .bind("sensorname", sensor.sensorName)
                             .bind("recordingmode", sensor.recordingMode)
                             .bind("recordinginterval", sensor.recordingInterval)
@@ -320,20 +325,19 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                             .add();
                 for (var dt: sensor.getDataTypeVec())
                 {
-                    insertSensorDataType.bind("configid", configId)
-                                        .bind("sensornumber", sensor.sensorNumber)
+                    insertSensorDataType.bind(CONFIGID, configId)
+                                        .bind(SENSORNUMBER, sensor.sensorNumber)
                                         .bind("datatypeid", dt.getId())
                                         .add();
                 }
 
                 sensor.getProperties().forEach((k,v) ->
-                {
-                    insertSensorProps.bind("configid", configId)
-                                     .bind("sensornumber", sensor.sensorNumber)
+                    insertSensorProps.bind(CONFIGID, configId)
+                                     .bind(SENSORNUMBER, sensor.sensorNumber)
                                      .bind("prop_name", k)
                                      .bind("prop_value", v)
-                                     .add();
-                });
+                                     .add()
+                );
             }
 
             insertSensor.execute();
@@ -365,7 +369,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
             {
                 final var id = script.idIsSet() ? script.getId() : keyGen.getKey("decodesscript", handle.getConnection());
                 insertScript.bind(GenericColumns.ID, id)
-                            .bind("configid", configId)
+                            .bind(CONFIGID, configId)
                             .bind(GenericColumns.NAME, script.scriptName)
                             .bind("script_type", script.scriptType)
                             .bind("dataorder", script.getDataOrder())
@@ -376,15 +380,15 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
 
                     final var uc = ucDao.save(tx, sensor.rawConverter);
 
-                    insertScriptSensor.bind("decodesscriptid", id)
-                                      .bind("sensornumber", sensor.sensorNumber)
+                    insertScriptSensor.bind(DECODESSCRIPTID, id)
+                                      .bind(SENSORNUMBER, sensor.sensorNumber)
                                       .bind("unitconverterid", uc.getId())
                                       .add();
                 }
 
                 for (var fs: script.getFormatStatements())
                 {
-                    insertFormatStatement.bind("decodesscriptid", id)
+                    insertFormatStatement.bind(DECODESSCRIPTID, id)
                                          .bind("sequencenum", fs.sequenceNum)
                                          .bind("label", fs.label)
                                          .bind("format", fs.format)
@@ -448,7 +452,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
         {
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                  .define(SqlQueries.WHERE_CLAUSE, "")
-                 .define(SqlQueries.LIMIT_CLAUSE, SqlQueries.addLimitOffset(limit, offset));
+                 .define(SqlQueries.LIMIT_CLAUSE, addLimitOffset(limit, offset));
 
             if (limit >= 0)
             {
