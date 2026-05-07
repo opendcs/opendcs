@@ -1,6 +1,7 @@
 import { Button, Card, Col, Form, Row } from "react-bootstrap";
 import type UserProperties from "./UserProperties";
 import { useCallback, useEffect, useState, type ChangeEvent } from "react";
+import { useTranslation } from "react-i18next";
 
 export function PasswordChange({
   user,
@@ -8,13 +9,14 @@ export function PasswordChange({
 }: UserProperties & {
   updatePassword: (current: string, newPassword: string) => void;
 }) {
-  const changeChange: boolean =
+  const canChange: boolean =
     user.identityProviders?.find((idp) => idp.provider?.type === "BuiltIn") !==
     undefined;
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
   const [passwordsMatch, setPasswordsMatch] = useState(false);
+  const { t } = useTranslation(["user-data"]);
 
   useEffect(() => {
     setPasswordsMatch(
@@ -44,11 +46,9 @@ export function PasswordChange({
   );
 
   return (
-    changeChange && (
+    canChange && (
       <Card>
-        <Card.Title className="d-flex">
-          <span>Update Password</span>{" "}
-        </Card.Title>
+        <Card.Title className="d-flex">{t("password_change.title")}</Card.Title>
         <Card.Body>
           <Form
             onSubmit={(event) => {
@@ -59,7 +59,7 @@ export function PasswordChange({
             <Row>
               <Form.Group as={Row} controlId="currentPassword">
                 <Form.Label column sm="1">
-                  Current Password
+                  {t("password_change.current_password")}
                 </Form.Label>
                 <Col sm="auto">
                   <Form.Control
@@ -73,7 +73,7 @@ export function PasswordChange({
             <Row>
               <Form.Group as={Row} controlId="newPassword">
                 <Form.Label column sm="1">
-                  New Password
+                  {t("password_change.new_password")}
                 </Form.Label>
                 <Col sm="auto">
                   <Form.Control
@@ -87,7 +87,7 @@ export function PasswordChange({
             <Row>
               <Form.Group as={Row} controlId="repeatPassword">
                 <Form.Label column sm="1">
-                  Repeat Password
+                  {t("password_change.repeat_password")}
                 </Form.Label>
                 <Col sm="auto">
                   <Form.Control
@@ -106,7 +106,7 @@ export function PasswordChange({
                 variant="warning"
                 size="lg"
               >
-                Update Password
+                {t("password_change.update_password")}
               </Button>
             </Row>
           </Form>

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { UserProfile } from "./UserProfile";
+import { UserProfilePage } from "./UserProfilePage";
 import { fn } from "storybook/test";
 import {
   ApiContext,
@@ -7,10 +7,31 @@ import {
 } from "../../../contexts/app/ApiContext";
 import { AuthContext } from "../../../contexts/app/AuthContext";
 import { BasicUser } from "../../../../.storybook/mock/TestUsers";
+import { http, HttpResponse } from "msw";
 
 const meta = {
-  component: UserProfile,
-} satisfies Meta<typeof UserProfile>;
+  component: UserProfilePage,
+  parameters: {
+    msw: {
+      handlers: [
+        http.post("/odcsapi/user/updatePassword", async ({ request }) => {
+          const json = await request.json();
+          console.log(json);
+          const { currentPassword, newPassword } = json as {
+            currentPassword: string;
+            newPassword: string;
+          };
+
+          if (currentPassword !== "current password") {
+            return new HttpResponse(null, { status: 403, statusText: "Forbidden" });
+          } else {
+            return new HttpResponse(null, { status: 200 });
+          }
+        }),
+      ],
+    },
+  },
+} satisfies Meta<typeof UserProfilePage>;
 
 export default meta;
 
@@ -34,8 +55,6 @@ const authDecorator = (Story: any) => (
 );
 
 export const Default: Story = {
-  args: {
-    updatePassword: fn(),
-  },
+  args: {},
   decorators: [authDecorator],
 };

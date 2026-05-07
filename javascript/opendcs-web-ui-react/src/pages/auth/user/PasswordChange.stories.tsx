@@ -21,13 +21,20 @@ export const Default: Story = {
 
 export const CanChange: Story = {
   args: { ...Default.args },
-  play: async ({ mount, userEvent, args }) => {
+  play: async ({ mount, userEvent, args, parameters }) => {
     const canvas = await mount();
     const mockUpdatePassword = args!.updatePassword;
+    const { i18n } = parameters;
 
-    const currentPassword = await canvas.findByLabelText("Current Password");
-    const newPassword = await canvas.findByLabelText("New Password");
-    const repeatPassword = await canvas.findByLabelText("Repeat Password");
+    const currentPassword = await canvas.findByLabelText(
+      i18n.t("user-data:password_change.current_password"),
+    );
+    const newPassword = await canvas.findByLabelText(
+      i18n.t("user-data:password_change.new_password"),
+    );
+    const repeatPassword = await canvas.findByLabelText(
+      i18n.t("user-data:password_change.repeat_password"),
+    );
 
     await userEvent.clear(currentPassword);
     await userEvent.clear(newPassword);
@@ -40,7 +47,9 @@ export const CanChange: Story = {
     await userEvent.type(newPassword, newPasswordValue);
     await userEvent.type(repeatPassword, newPasswordValue);
 
-    const submitChange = await canvas.findByRole("button", { name: "Update Password" });
+    const submitChange = await canvas.findByRole("button", {
+      name: i18n.t("user-data:password_change.update_password"),
+    });
     await waitFor(() => expect(submitChange).not.toBeDisabled());
     await userEvent.click(submitChange);
 

@@ -1,0 +1,14 @@
+{
+  "userprofile": {
+    "created_at": "Creado en",
+    "updated_at": "Actualizado en"
+  },
+  "password_change": {
+    "title": "Cambio de contraseña",
+    "current_password": "Contraseña actual",
+    "new_password": "Nueva contraseña",
+    "repeat_password": "Repita la contraseña",
+    "update_password": "Actualizar contraseña"
+  },
+  "role": "Rol"
+}
