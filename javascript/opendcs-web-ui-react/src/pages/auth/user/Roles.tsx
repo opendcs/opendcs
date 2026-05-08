@@ -15,7 +15,7 @@ export function Roles({ user }: UserProperties) {
       data={user.roles || []}
       columns={[
         { header: t("role"), data: "name" },
-        { header: t("translation:description"), data: "name" },
+        { header: t("translation:description"), data: "description" },
       ]}
       getId={function (row: Role): number {
         return row.id!.value!;

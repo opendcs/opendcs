@@ -15,7 +15,17 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     user: BasicUser,
-    updatePassword: fn(),
+    updatePassword: fn(
+      async (currentPassword: string, newPassword: string): Promise<boolean> => {
+        if (currentPassword !== "current password") {
+          return false;
+        } else if (newPassword === "Bad New Password") {
+          return false;
+        } else {
+          return true;
+        }
+      },
+    ),
   },
 };
 
