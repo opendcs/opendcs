@@ -1,8 +1,9 @@
 import React from "react";
-import { Button, Dropdown } from "react-bootstrap";
+import { Button, Dropdown, Nav } from "react-bootstrap";
 import { PersonGear } from "react-bootstrap-icons";
 import { useTranslation } from "react-i18next";
 import type { User } from "../../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
+import { Link } from "react-router-dom";
 
 const UserToggle: React.FC = ({ ...args }) => {
   return (
@@ -24,7 +25,11 @@ export const UserMenu: React.FC<UserMenuProperties> = ({ user, logout }) => {
     <Dropdown drop="start">
       <Dropdown.Toggle as={UserToggle} aria-label={t("user-settings")} />
       <Dropdown.Menu>
-        <Dropdown.Item>Profile - {user.email}</Dropdown.Item>
+        <Dropdown.Item>
+          <Nav.Link as={Link} to="/user/profile">
+            {t("profile")}
+          </Nav.Link>
+        </Dropdown.Item>
         <Dropdown.Item>Admin</Dropdown.Item>
         <Dropdown.Divider />
         <Dropdown.Item onClick={logout}>{t("translation:logout")}</Dropdown.Item>
