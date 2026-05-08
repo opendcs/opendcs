@@ -23,7 +23,7 @@ const AuthTimeoutDemo = ({
   warnAfterMs: number;
   logoutAfterMs: number;
 }) => (
-  <MemoryRouter initialEntries={["/app"]}>
+  <div>
     <Routes>
       <Route
         path="/app"
@@ -34,8 +34,16 @@ const AuthTimeoutDemo = ({
         }
       />
       <Route path="/login" element={<p>You have been logged out.</p>} />
+      <Route
+        path="*"
+        element={
+          <AuthProvider warnAfterMs={warnAfterMs} logoutAfterMs={logoutAfterMs}>
+            <p>You are logged in.</p>
+          </AuthProvider>
+        }
+      />
     </Routes>
-  </MemoryRouter>
+  </div>
 );
 
 const meta = {

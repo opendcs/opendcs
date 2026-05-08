@@ -60,13 +60,12 @@ export const Loading: Story = {
           logout: fn(),
         }}
       >
-        <MemoryRouter initialEntries={["/login"]}>
-          <Routes>
-            <Route element={<Story />}>
-              <Route path="/login" element={<div>Login Page</div>} />
-            </Route>
-          </Routes>
-        </MemoryRouter>
+        <Routes>
+          <Route element={<Story />}>
+            <Route path="/login" element={<div>Login Page</div>} />
+          </Route>
+          <Route path="*" element={<Story />} />
+        </Routes>
       </AuthContext>
     ),
   ],
@@ -91,13 +90,12 @@ export const NotAuthenticated: Story = {
             logout: fn(),
           }}
         >
-          <MemoryRouter initialEntries={["/login"]}>
-            <Routes>
-              <Route element={<Story />}>
-                <Route path="/login" element={<Login />} />
-              </Route>
-            </Routes>
-          </MemoryRouter>
+          <Routes>
+            <Route element={<Story />}>
+              <Route path="/login" element={<Login />} />
+            </Route>
+            <Route path="*" element={<Login />} />
+          </Routes>
         </AuthContext>
       </ApiContext>
     ),
@@ -129,14 +127,13 @@ export const AlreadyAuthenticated: Story = {
             logout: fn(),
           }}
         >
-          <MemoryRouter initialEntries={["/login"]}>
-            <Routes>
-              <Route element={<Story />}>
-                <Route path="/login" element={<Login />} />
-              </Route>
-              <Route path="/platforms" element={<Platforms />} />
-            </Routes>
-          </MemoryRouter>
+          <Routes>
+            <Route element={<Story />}>
+              <Route path="/login" element={<Login />} />
+            </Route>
+            <Route path="/platforms" element={<Platforms />} />
+            <Route path="*" element={<Platforms />} />
+          </Routes>
         </AuthContext>
       </ApiContext>
     ),

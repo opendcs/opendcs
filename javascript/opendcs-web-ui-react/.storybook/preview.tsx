@@ -12,6 +12,8 @@ import i18n from "../src/i18n";
 import { WithTheme } from "./mock/WithTheme";
 import { WithUnits } from "./mock/WithUnits";
 import { WithQueryClient } from "./mock/WithQueryClient";
+import { WithOrganization } from "./mock/WithOrganization";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 // MSW setup
 initialize(
@@ -28,6 +30,16 @@ initialize(
   },
   [],
 );
+
+const routerDecorator = (Story: any) => {
+  return (
+    <MemoryRouter initialEntries={["/app"]}>
+      <Routes>
+        <Route path="/app" element={<Story />} />
+      </Routes>
+    </MemoryRouter>
+  );
+};
 
 const preview: Preview = {
   parameters: {
@@ -53,7 +65,8 @@ const preview: Preview = {
   // Storybook applies decorators with last = outermost, so WithQueryClient
   // (which provides the QueryClient via QueryClientProvider) must come AFTER
   // WithUnits, which seeds that QueryClient via useQueryClient().
-  decorators: [WithI18next, WithTheme, WithRefLists, WithUnits, WithQueryClient],
+  decorators: [WithI18next, WithTheme, WithOrganization, WithRefLists, WithUnits, WithQueryClient, routerDecorator],
+  
   globalTypes: {
     locale: {
       name: "Locale",
