@@ -22,8 +22,10 @@ import decodes.db.UnitConverter;
 import decodes.sql.DbKey;
 import decodes.xml.DecodesScriptParser;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.opendcs.database.dai.DataTypeDao;
 import org.opendcs.odcsapi.beans.ApiConfigRef;
 import org.opendcs.odcsapi.beans.ApiConfigScript;
@@ -42,6 +44,7 @@ import static org.opendcs.odcsapi.res.ConfigResources.coefficientMap;
 import static org.opendcs.odcsapi.res.ConfigResources.map;
 import static org.opendcs.odcsapi.res.ConfigResources.mapRef;
 
+@ExtendWith(MockitoExtension.class)
 final class ConfigResourcesTest
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
@@ -138,7 +141,7 @@ final class ConfigResourcesTest
 		configSensor.setSensorNumber(12);
 		configSensor.setUsgsStatCode("00000");
 		Map<String, String> dataTypes = new HashMap<>();
-		dataTypes.put("Test data type", "Test data type description");
+		dataTypes.put(Constants.datatype_CWMS, "Stage");
 		configSensor.setDataTypes(dataTypes);
 		Properties properties = new Properties();
 		properties.put("Test property", "Test property value");
