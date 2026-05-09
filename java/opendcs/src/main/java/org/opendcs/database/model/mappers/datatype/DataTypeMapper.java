@@ -31,6 +31,10 @@ public final class DataTypeMapper extends PrefixRowMapper<DataType>
         ColumnMapper<DbKey> dbKeyMapper = ctx.findColumnMapperFor(DbKey.class)
                                              .orElseThrow(() -> new SQLException("No mapper registered for DbKey class."));
         final DbKey id = dbKeyMapper.map(rs, prefix + GenericColumns.ID, ctx);
+        if (rs.wasNull() || DbKey.isNull(id))
+        {
+            return null;
+        }
         String standard = rs.getString(prefix + "standard");
         String code = rs.getString(prefix + "code");
         String displayname = rs.getString(prefix + "display_name");
