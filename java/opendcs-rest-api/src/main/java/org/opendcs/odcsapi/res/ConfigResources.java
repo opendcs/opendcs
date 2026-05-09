@@ -25,9 +25,7 @@ import java.util.Vector;
 import decodes.db.ConfigSensor;
 import decodes.db.Constants;
 import decodes.db.DataType;
-import decodes.db.DataTypeSet;
 import decodes.db.DatabaseException;
-import decodes.db.DatabaseIO;
 import decodes.db.DecodesScript;
 import decodes.db.DecodesScriptException;
 import decodes.db.EngineeringUnit;
@@ -35,13 +33,11 @@ import decodes.db.FormatStatement;
 import decodes.db.LinearConverter;
 import decodes.db.NullConverter;
 import decodes.db.PlatformConfig;
-import decodes.db.PlatformConfigList;
 import decodes.db.Poly5Converter;
 import decodes.db.ScriptSensor;
 import decodes.db.UnitConverter;
 import decodes.db.UnitConverterDb;
 import decodes.db.UsgsStdConverter;
-import decodes.db.ValueNotFoundException;
 import decodes.sql.DbKey;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -190,8 +186,7 @@ public final class ConfigResources extends OpenDcsResource
 			final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
 			final var config =  dao.getById(tx, DbKey.createDbKey(configId))
 								   .orElseThrow(() -> new DatabaseItemNotFoundException("Config with ID " + configId + " not found"));
-			
-								   
+
 			return Response.ok().entity(map(config)).build();
 		}
 		catch (OpenDcsDataException ex)
@@ -329,7 +324,7 @@ public final class ConfigResources extends OpenDcsResource
 			tags = {"REST - DECODES Platform Configurations"}
 	)
 	public Response postConfig(ApiPlatformConfig config) throws WebAppException
-	{		
+	{
 		final var db = createDb();
 		try (var tx = db.newTransaction())
 		{
@@ -338,8 +333,10 @@ public final class ConfigResources extends OpenDcsResource
 			var configIn = map(config, dataTypeDao, tx);
 
 			final var configOut =  dao.save(tx, configIn);
-				   
-			return Response.ok().entity(map(configOut)).build();
+
+			return Response.status(Response.Status.CREATED)
+						   .entity(map(configOut))
+						   .build();
 		}
 		catch (OpenDcsDataException ex)
 		{
@@ -388,7 +385,7 @@ public final class ConfigResources extends OpenDcsResource
 				for (Map.Entry<String, String> entry : sensor.getDataTypes().entrySet())
 				{
 					DataType dt = dataTypeDao.lookup(tx, entry.getKey(), entry.getValue())
-											 .orElseGet(null);
+											 .orElse(null);
 					if(dt == null )
 					{
 						dt = new DataType(entry.getKey(), entry.getValue());
