@@ -35,7 +35,7 @@ const routerDecorator = (Story: any) => {
   return (
     <MemoryRouter initialEntries={["/app"]}>
       <Routes>
-        <Route path="/app" element={<Story />} />
+        <Route path="*" element={<Story />} />
       </Routes>
     </MemoryRouter>
   );

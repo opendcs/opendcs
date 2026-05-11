@@ -36,11 +36,13 @@ export const WithOrganization: Decorator = (Story, { args }) => {
         }}
       >
         <OrganizationsContext value={{ organizations: orgs }}>
-          <Routes>
+          <Story />
+          {/* <Routes>
+
             <Route path="/login" element={<Story />} />
             <Route path="/platforms" element={<PlatformsPage />} />
             <Route path="*" element={<Story />} />
-          </Routes>
+          </Routes> */}
         </OrganizationsContext>
       </AuthContext>
     </ApiContext>

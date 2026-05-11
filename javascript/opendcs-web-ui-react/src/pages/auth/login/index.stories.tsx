@@ -10,10 +10,16 @@ import {
 } from "../../../contexts/app/ApiContext";
 import apiAuthSpec from "../../../../.storybook/mock/openapi-security-schemes.json";
 import { fromOpenApiData } from "../../../util/login-providers";
+import { Route, Routes } from "react-router-dom";
 
 const ORG_HEADER = "x-organization-id";
 
 const authSchemes = await fromOpenApiData(apiAuthSpec);
+
+// A simple stand-in for the page the user is redirected to after login
+function PlatformsPage() {
+  return <div data-testid="platforms-page">Platforms Page</div>;
+}
 
 const meta: Meta<typeof Login & { organizations: string[] }> = {
   component: Login,
@@ -64,7 +70,11 @@ const authDecorator = (Story: any) => (
         logout: fn(),
       }}
     >
-      <Story />
+      <Routes>
+        <Route path="/login" element={<Story />} />
+        <Route path="/platforms" element={<PlatformsPage />} />
+        <Route path="*" element={<Story />} />
+      </Routes>
     </AuthContext>
   </ApiContext>
 );
