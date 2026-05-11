@@ -57,7 +57,7 @@ public class DataTypeDaoImpl implements DataTypeDao
                 using (select :id id, :standard standard, :code code, :display_name display_name <dual>) input
                 on (dt.id = input.id)
                 when matched then
-                    update set standard = input.standard, code = input.code, display_name = input.display_name                               
+                    update set standard = input.standard, code = input.code, display_name = input.display_name
                 when not matched then
                     insert(id, standard, code, display_name)
                     values(input.id, input.standard, input.code, input.display_name)
@@ -91,7 +91,7 @@ public class DataTypeDaoImpl implements DataTypeDao
                                             .orElseThrow(() -> new OpenDcsDataException("No Decodes Settings?"))
                                             .dataTypeStdPreference;
         final String querySql = """
-                    select id, standard, code, display_name 
+                    select id, standard, code, display_name
                       from datatype
                      where upper(code) = upper(:code)
 
@@ -120,6 +120,31 @@ public class DataTypeDaoImpl implements DataTypeDao
             }
         }
         return ret;
+    }
+
+    @Override
+    public Optional<DataType> lookup(DataTransaction tx, String standard, String dataTypeCode) throws OpenDcsDataException
+    {
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+
+        final String querySql = """
+                    select id, standard, code, display_name
+                      from datatype
+                     where
+                        upper(standard) = upper(:standard) and
+                        upper(code) = upper(:code)
+
+                """;
+        try (var query = handle.createQuery(querySql))
+        {
+            return query.bind("code", dataTypeCode)
+                        .bind("standard", standard)
+                        .registerRowMapper(DataType.class,
+                                           DataTypeMapper.withPrefix(""))
+                        .mapTo(DataType.class)
+                        .findOne();
+        }
     }
 
     @Override
