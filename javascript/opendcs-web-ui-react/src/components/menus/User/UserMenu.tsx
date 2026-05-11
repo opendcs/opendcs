@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Dropdown, Nav } from "react-bootstrap";
+import { Button, Dropdown } from "react-bootstrap";
 import { PersonGear } from "react-bootstrap-icons";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
