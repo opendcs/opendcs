@@ -23,13 +23,22 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
+import decodes.dbimport.DbImport;
+import decodes.launcher.Profile;
 import decodes.sql.DbKey;
+import decodes.tsdb.ImportComp;
+import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
+import org.opendcs.database.DatabaseService;
+import org.opendcs.spi.database.MigrationHelper;
 import org.apache.catalina.Host;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.Manager;
@@ -319,6 +328,88 @@ public final class TomcatServer implements AutoCloseable
 			System.setProperty(DB_VALIDATION_QUERY, validationQuery);
 		}
 		setupClientUser(dbType);
+		loadSeedData(config);
+	}
+
+	/**
+	 * Optionally load extra seed data on top of the baseline. Triggered by the
+	 * gradle property -Popendcs.runApi.seedData=&lt;dir&gt; which expects
+	 * &lt;dir&gt;/decodes/*.xml (run through DbImport) and/or
+	 * &lt;dir&gt;/comps/*.xml (run through ImportComp). Either subdir is optional.
+	 *
+	 * Mirrors the approach in OpenDcsPgProvider.loadBaselineData so the runtime
+	 * path does not need SystemStubs / SecurityManager.
+	 */
+	private static void loadSeedData(Configuration config) throws Exception
+	{
+		String seedPath = System.getProperty("opendcs.runApi.seedData");
+		if (seedPath == null || seedPath.trim().isEmpty())
+		{
+			return;
+		}
+		File seedDir = new File(seedPath);
+		if (!seedDir.isDirectory())
+		{
+			log.warn("opendcs.runApi.seedData='{}' is not an existing directory; skipping seed load.", seedPath);
+			return;
+		}
+
+		File decodesDir = new File(seedDir, "decodes");
+		File compsDir = new File(seedDir, "comps");
+
+		List<File> decodesFiles = decodesDir.isDirectory()
+				? MigrationHelper.getUsableFiles(new String[]{decodesDir.getAbsolutePath()}, ".xml", log)
+				: Collections.emptyList();
+		List<File> compFiles = compsDir.isDirectory()
+				? MigrationHelper.getUsableFiles(new String[]{compsDir.getAbsolutePath()}, ".xml", log)
+				: Collections.emptyList();
+
+		if (decodesFiles.isEmpty() && compFiles.isEmpty())
+		{
+			log.warn("opendcs.runApi.seedData='{}' has no 'decodes/' or 'comps/' XML files; nothing loaded.", seedPath);
+			return;
+		}
+
+		String username = System.getProperty(DB_USERNAME);
+		String password = System.getProperty(DB_PASSWORD);
+		System.setProperty("DCS_USER", username);
+		System.setProperty("DCS_PASS", password);
+		try
+		{
+			Profile srcProfile = Profile.getProfile(config.getPropertiesFile());
+			File tmp = Files.createTempFile("dcsseed", ".profile").toFile();
+			tmp.deleteOnExit();
+			Profile tmpProfile = Profile.getProfile(tmp);
+			DecodesSettings settings = DecodesSettings.fromProfile(srcProfile);
+			settings.DbAuthFile = "java-auth-source:password=DCS_PASS,username=DCS_USER";
+			settings.saveToProfile(tmpProfile);
+
+			if (!decodesFiles.isEmpty())
+			{
+				log.info("Loading {} seed DECODES file(s) from {}", decodesFiles.size(), decodesDir.getAbsolutePath());
+				List<String> fileNames = decodesFiles.stream()
+													  .map(File::getAbsolutePath)
+													  .collect(Collectors.toList());
+				new DbImport(tmpProfile, null, false, false, false, false, true,
+							 null, null, null, null, fileNames).importDatabase();
+			}
+
+			if (!compFiles.isEmpty())
+			{
+				log.info("Loading {} seed computation file(s) from {}", compFiles.size(), compsDir.getAbsolutePath());
+				List<String> fileNames = compFiles.stream()
+												  .map(File::getAbsolutePath)
+												  .collect(Collectors.toList());
+				OpenDcsDatabase db = DatabaseService.getDatabaseFor("utility", settings);
+				TimeSeriesDb tsDb = db.getLegacyDatabase(TimeSeriesDb.class).orElseThrow();
+				new ImportComp(tsDb, false, false, fileNames).runApp();
+			}
+		}
+		finally
+		{
+			System.clearProperty("DCS_USER");
+			System.clearProperty("DCS_PASS");
+		}
 	}
 
 	public static void setupTestUser(OpenDcsDatabase db) throws OpenDcsDataException
