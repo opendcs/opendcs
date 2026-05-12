@@ -42,6 +42,8 @@ export interface ColumnDef<T> {
   name?: string;
   orderable?: boolean;
   searchable?: boolean;
+  /** DataTables column `type` — skip the type auto-sniffer when set. */
+  type?: "num" | "string" | "date" | "html" | "html-num" | "num-fmt";
   /**
    * DataTables column `render` — returns the cell content for the given
    * render `type` (`"display"`, `"sort"`, `"filter"`, `"type"`). For custom
@@ -659,6 +661,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
       name: c.name,
       orderable: c.orderable,
       searchable: c.searchable,
+      type: c.type,
       render: makeColumnRender(c, hasInlineEdit, idOf, rowStateRef),
     }));
     if (hasActionsCol) {
@@ -669,6 +672,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
         name: "actions",
         orderable: false,
         searchable: false,
+        type: undefined,
         render: undefined,
       });
     }
@@ -681,6 +685,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     responsive: true,
     stateSave: true,
     processing: true,
+    deferRender: true,
     language: dtLangs.get(i18n.language),
     ...dataTableOptions,
     createdRow: (_row, _data, dataIndex) => {

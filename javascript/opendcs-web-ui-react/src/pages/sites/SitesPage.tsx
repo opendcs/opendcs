@@ -44,6 +44,7 @@ export const SitesPage: React.FC = () => {
   return (
     <SitesTable
       sites={sites}
+      loading={stale}
       getSite={getSite}
       actions={{ save: saveSite, remove: deleteSite }}
     />
