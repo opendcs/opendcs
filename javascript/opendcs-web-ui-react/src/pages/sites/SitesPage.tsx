@@ -1,24 +1,22 @@
 import { ApiSite, RESTDECODESSiteRecordsApi, type ApiSiteRef } from "opendcs-api";
 import { SitesTable } from "./SitesTable";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useApi } from "../../contexts/app/ApiContext";
+import { useStaleFetch } from "../../hooks/useStaleFetch";
 
 export const SitesPage: React.FC = () => {
-  const [sites, setSites] = useState<ApiSiteRef[]>([]);
-  const [stale, setStale] = useState(true);
   const api = useApi();
   const sitesApi = useMemo(() => new RESTDECODESSiteRecordsApi(api.conf), [api.conf]);
 
-  useEffect(() => {
-    const fetchSites = async () => {
-      const sites = await sitesApi.getsiterefs(api.org);
-      setSites(sites);
-      setStale(false);
-    };
-    if (stale === true) {
-      fetchSites();
-    }
-  }, [stale, api.org, sitesApi]);
+  const fetchSiteRefs = useCallback(
+    () => sitesApi.getsiterefs(api.org),
+    [sitesApi, api.org],
+  );
+  const {
+    data: sites,
+    loading,
+    refresh,
+  } = useStaleFetch<ApiSiteRef[]>(fetchSiteRefs, []);
 
   const getSite = useCallback(
     (siteId: number) => {
@@ -29,22 +27,22 @@ export const SitesPage: React.FC = () => {
 
   const saveSite = useCallback(
     (site: ApiSite) => {
-      sitesApi.postsite(api.org, site).then(() => setStale(true));
+      sitesApi.postsite(api.org, site).then(() => refresh());
     },
-    [api.org, sitesApi],
+    [api.org, sitesApi, refresh],
   );
 
   const deleteSite = useCallback(
     (siteId: number) => {
-      sitesApi.deletesite(api.org, siteId).then(() => setStale(true));
+      sitesApi.deletesite(api.org, siteId).then(() => refresh());
     },
-    [api.org, sitesApi],
+    [api.org, sitesApi, refresh],
   );
 
   return (
     <SitesTable
       sites={sites}
-      loading={stale}
+      loading={loading}
       getSite={getSite}
       actions={{ save: saveSite, remove: deleteSite }}
     />

@@ -8,5 +8,20 @@
     "Config": "Config",
     "Description": "Description",
     "Expiration": "Expiration"
-  }
+  },
+  "name": "Name",
+  "agency": "Agency",
+  "description": "Description",
+  "designator": "Designator",
+  "production": "Production",
+  "siteId": "Site Id",
+  "configId": "Config Id",
+  "lastModified": "Last Modified",
+  "transport_media": "Transport Media",
+  "platform_sensors": "Sensors",
+  "add_platform": "Add new Platform",
+  "edit_platform": "Edit platform with id {{id}}",
+  "delete_for": "Delete Platform with id {{id}}",
+  "save_platform": "Save platform with id {{id}}",
+  "cancel_for": "Cancel editing for Platform with id {{id}}"
 }
