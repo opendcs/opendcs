@@ -37,6 +37,8 @@ import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDaoConfigurationException;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.impl.opendcs.jdbi.column.chrono.OpenDcsTimeColumn;
+import org.opendcs.database.impl.opendcs.jdbi.column.chrono.OpenDcsTimeColumnArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
 import org.opendcs.settings.api.OpenDcsSettings;
@@ -74,7 +76,10 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         this.dataSource = dataSource;
         this.jdbi = Jdbi.create(dataSource);
         jdbi.registerArgument(new DatabaseKeyArgumentFactory())
-            .registerColumnMapper(new DatabaseKeyColumnMapper());
+            .registerColumnMapper(new DatabaseKeyColumnMapper())
+            .registerArgument(new OpenDcsTimeColumnArgumentFactory())
+            .registerColumnMapper(new OpenDcsTimeColumn());
+
         if (this.timeSeriesDb != null)
         {
             this.timeSeriesDb.setDcsDatabase(this);

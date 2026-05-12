@@ -2,6 +2,7 @@
   "siteId": 4,
   "sitenames":
   {
+    "CWMS": "Pump Site",
     "PUMP": "Pump Site"
   },
   "publicName": "Pump Site",

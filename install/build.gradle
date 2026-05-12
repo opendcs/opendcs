@@ -19,6 +19,8 @@ dependencies
 {
     annotations(project(":opendcs-annotations"))
     opendcs(project(":opendcs"))
+    opendcs(project(":opendcs-implementation"))
+    opendcs(project(":cwms-implementation"))
     opendcs(project(":lrgs-web"))
     opendcs(project(":opendcs-logback-event-provider"))
     opendcs(project(":opendcs-schemas"))

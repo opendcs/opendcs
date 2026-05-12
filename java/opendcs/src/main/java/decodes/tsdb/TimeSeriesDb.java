@@ -33,6 +33,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.TimeZone;
 
@@ -1629,4 +1630,9 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
         }
     }
 
+    @Override
+    public Optional<OpenDcsDatabase> getOdcsDatabase()
+    {
+        return Optional.ofNullable(this.dcsDb);
+    }
 }

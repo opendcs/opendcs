@@ -1,7 +1,7 @@
 {
   "siteId" : null,
   "sitenames" : {
-    "Site" : "Test Site"
+    "CWMS" : "Test Site"
   },
   "description" : "A site for computations",
   "latitude" : "40.8",

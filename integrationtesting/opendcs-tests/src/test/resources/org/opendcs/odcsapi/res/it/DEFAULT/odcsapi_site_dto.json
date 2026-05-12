@@ -1,7 +1,7 @@
 {
   "siteId" : null,
   "sitenames" : {
-    "locationtype" : "publicName"
+    "CWMS" : "publicName"
   },
   "description" : null,
   "latitude" : "38.6",

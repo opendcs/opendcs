@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useApi } from "../../../contexts/app/ApiContext";
 
 export const Algorithms: React.FC = () => {
-  const [algorithms, setAlgorithms] = useState<ApiAlgorithmRef[] | null>(null);
+  const [algorithms, setAlgorithms] = useState<ApiAlgorithmRef[]>([]);
   const [stale, setStale] = useState(true);
   const api = useApi();
   const algorithmApi = useMemo(() => new RESTAlgorithmMethodsApi(api.conf), [api.conf]);
@@ -53,15 +53,19 @@ export const Algorithms: React.FC = () => {
   );
 
   const saveAlgorithm = useCallback(
-    (algorithm: ApiAlgorithm) => {
+    (algorithm: ApiAlgorithm): Promise<void> => {
       const algorithmId =
         algorithm.algorithmId && algorithm.algorithmId > 0
           ? algorithm.algorithmId
           : undefined;
-      algorithmApi
+      // Return the POST promise so the table wrapper can await it before
+      // transitioning the detail back to show mode (avoids save→refetch race).
+      return algorithmApi
         .postAlgorithm(api.org, { ...algorithm, algorithmId })
         .then(() => setStale(true))
-        .catch((e: unknown) => console.error("Failed to save algorithm", e));
+        .catch((e: unknown) => {
+          console.error("Failed to save algorithm", e);
+        });
     },
     [api.org, algorithmApi],
   );
@@ -76,14 +80,11 @@ export const Algorithms: React.FC = () => {
     [api.org, algorithmApi],
   );
 
-  if (algorithms === null) {
-    return null;
-  }
-
   return (
     <div className="content">
       <AlgorithmsTable
         algorithms={algorithms}
+        loading={stale}
         getAlgorithm={getAlgorithm}
         getPropSpecs={getPropSpecs}
         actions={{ save: saveAlgorithm, remove: deleteAlgorithm }}

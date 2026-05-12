@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashSet;
@@ -25,22 +24,18 @@ import javax.xml.stream.events.XMLEvent;
 
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.dai.EnumDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import decodes.db.DbEnum;
-import decodes.db.EnumList;
 import decodes.db.EnumValue;
 import decodes.sql.DbKey;
-import decodes.tsdb.DbIoException;
 import decodes.util.DecodesSettings;
 import decodes.xml.jdbc.XmlConnection;
-import opendcs.dai.EnumDAI;
-import opendcs.dao.DaoBase;
 import opendcs.dao.DbObjectCache;
-import opendcs.util.functional.DaoConsumer;
 
-public class EnumXmlDao implements EnumDAI
+public class EnumXmlDao implements EnumDao
 {
     private static final Logger log = LoggerFactory.getLogger(EnumXmlDao.class);
     private final DecodesSettings settings;
@@ -50,73 +45,6 @@ public class EnumXmlDao implements EnumDAI
     {
         this.settings = settings;
         this.cache = cache;
-    }
-
-
-    @Override
-    public ResultSet doQuery(String q) throws DbIoException
-    {
-        throw new UnsupportedOperationException("Unimplemented method 'doQuery'");
-    }
-
-    @Override
-    public ResultSet doQuery2(String q) throws DbIoException
-    {
-        throw new UnsupportedOperationException("Unimplemented method 'doQuery2'");
-    }
-
-    @Override
-    public int doModify(String q) throws DbIoException
-    {
-        throw new UnsupportedOperationException("Unimplemented method 'doModify'");
-    }
-
-    @Override
-    public void setManualConnection(Connection conn)
-    {
-        throw new UnsupportedOperationException("Unimplemented method 'setManualConnection'");
-    }
-
-    @Override
-    public void inTransactionOf(DaoBase other) throws IllegalStateException 
-    {
-        throw new UnsupportedOperationException("Unimplemented method 'inTransactionOf'");
-    }
-
-    @Override
-    public void inTransaction(DaoConsumer consumer) throws Exception
-    {
-        throw new UnsupportedOperationException("Unimplemented method 'inTransaction'");
-    }
-
-    @Override
-    public DbEnum getEnum(String enumName) throws DbIoException
-    {
-        throw new UnsupportedOperationException("Unimplemented method 'getEnum'");
-    }
-
-    @Override
-    public void readEnumList(EnumList top) throws DbIoException
-    {
-        throw new UnsupportedOperationException("Unimplemented method 'readEnumList'");
-    }
-
-    @Override
-    public void writeEnumList(EnumList enumList) throws DbIoException
-    {
-        throw new UnsupportedOperationException("Unimplemented method 'writeEnumList'");
-    }
-
-    @Override
-    public void writeEnum(DbEnum dbenum) throws DbIoException
-    {
-        throw new UnsupportedOperationException("Unimplemented method 'writeEnum'");
-    }
-
-    @Override
-    public void close()
-    {
-        /** no-op in new scheme */
     }
 
     @Override
@@ -316,49 +244,6 @@ public class EnumXmlDao implements EnumDAI
             throw new OpenDcsDataException("Unable to write enum to XML database.",ex);
         }
     }
-
-
-    @Override
-    public DbKey getEnumId(String enumName) throws DbIoException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getEnumId'");
-    }
-
-
-    @Override
-    public void deleteEnumList(DbKey refListId) throws DbIoException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'deleteEnumList'");
-    }
-
-
-    @Override
-    public EnumValue getEnumValue(DbKey id, String enumVal) throws DbIoException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getEnumValue'");
-    }
-
-
-    @Override
-    public void deleteEnumValue(DbKey id, String enumVal) throws DbIoException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'deleteEnumValue'");
-    }
-
-
-    @Override
-    public void writeEnumValue(DbKey enumId, EnumValue enumVal, String fromAbbr, int sortNum) throws DbIoException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'writeEnumValue'");
-    }
-
-
-    @Override
-    public DbEnum getEnumById(DbKey enumId) throws DbIoException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getEnumById'");
-    }
-
 
     @Override
     public void deleteEnum(DataTransaction tx, DbKey dbEnumId) throws OpenDcsDataException {

@@ -44,19 +44,19 @@ textarea {
   pointer-events: none;
 }
 
-@keyframes child-row-open {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+// Algorithm detail card min-heights — keep the row stable while the skeleton
+// → real-content swap happens. Applied to every Card in the algorithm detail
+// stack (Suspense fallback, DetailFade's in-component skeleton, and the real
+// Algorithm Card). Values are tuned so the min is slightly above whichever of
+// skeleton/real content is taller.
+.algorithm-card {
+  min-height: 39rem;
 }
 
-.child-row-opening {
-  animation: child-row-open 0.5s ease-out both;
+// Edit-mode adds a Cancel/Save footer row, making the card taller than the
+// show-mode min.
+.algorithm-card--edit {
+  min-height: 44rem;
 }
 
 .details-toggle__icon {

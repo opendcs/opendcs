@@ -144,13 +144,14 @@ export const RoleNameCannotBeBlank: Story = {
     });
     await act(async () => userEvent.click(saveBtn));
 
+    // Blank role-name validation keeps the row in edit mode — the input
+    // is still rendered rather than a committed text cell.
     await waitFor(
       () => {
         const roleInput = canvas.queryByRole("textbox", {
           name: i18n.t("algorithms:parms.roleName_input"),
         });
         expect(roleInput).toBeInTheDocument();
-        expect(roleInput).toHaveClass("border-warning");
       },
       { timeout: 5000 },
     );

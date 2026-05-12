@@ -1,16 +1,16 @@
 /*
 * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
 * of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software 
+*
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
 */
 package decodes.decoder;
@@ -28,7 +28,7 @@ import decodes.db.PlatformConfig;
 import decodes.datasource.RawMessage;
 
 /** Handles NOS 6-minute message format. */
-public class Nos6Min extends NosDecoder 
+public class Nos6Min extends NosDecoder
 {
         private static final Logger log = OpenDcsLoggerFactory.getLogger();
         public static final String module = "Nos6Min";
@@ -43,25 +43,25 @@ public class Nos6Min extends NosDecoder
                 return new Nos6Min();
         }
 
-        public String getFuncName() 
-        { 
-                return module; 
+        public String getFuncName()
+        {
+                return module;
         }
 
         public boolean isValid(int wl)
-        { 
-                // Discard ??? (262143) or @@@ (0) from decoding 
+        {
+                // Discard ??? (262143) or @@@ (0) from decoding
 	        return (wl != 262143 && wl != 0) ? true : false;
         }
 
         public boolean isValidU1(int wl)
-        { 
-                // Discard ?? (4095) or @@ (0) from U1 decoding 
+        {
+                // Discard ?? (4095) or @@ (0) from U1 decoding
 	        return (wl != 4095 && wl != 0) ? true : false;
         }
 
         public boolean isValidOffset(int x)
-        { 
+        {
 	        return (x != 63) ? true : false;
         }
 
@@ -85,7 +85,7 @@ public class Nos6Min extends NosDecoder
                         throw new DecoderException(module + " function cannot be called with null config.");
 
                 char msgType = (char)dd.curByte();
-                if (msgType != 'P') 
+                if (msgType != 'P')
                 {
                         RawMessage ErrRawM = msg.getRawMessage();
                         byte[] ErrRawData = ErrRawM.getData();
@@ -161,27 +161,51 @@ public class Nos6Min extends NosDecoder
                                          x, y, timeOffset, dataTime, redundantDataTime);
                                 break;
                         case '1': // PWL Aqua Track = Acousitic Water Level
-                        case '(': // Air Gap
-                                wl = getInt(3, false);
-                                
+                  
+				wl = getInt(3, false);
+
                                 sigma = getInt(2, false);
                                 outlier = getInt(1, false);
 
-                                // For the second DCP Air Gap data, there are no AQT1 or AQT2.                          
                                 if (Qcount ==0)
                                 {
                                    x = getInt(2, true); // AQT1
-                                   y = getInt(2, true); // AQT2                                
+                                   y = getInt(2, true); // AQT2
                                 }
-                                else 
+                                else
                                 {
-                                   x = 999999;
-                                   y = 999999;
+                                  x = 999999;
+                                  y = 999999;
                                 }
-                                
-                                sensorNum = getSensorNumber(
-                                        flag == '1' ? 'A' : 
-                                        flag == '(' ? 'Q' : 'A', config);
+
+                                sensorNum = getSensorNumber('A', config);
+                                if (sensorNum == -1)
+                                        continue;
+
+                                v = new Variable("" + wl + "," + sigma + "," + outlier
+                                        + "," + x + "," + y);
+                                if (isValid(wl))
+                                   msg.addSampleWithTime(sensorNum, v, dataTime, 1);
+                                else
+                                   log.warn("Aqua WL sensor data is discarded for station {}{} WL={}",
+                                            stationId, dcpNum, wl);
+
+                                Qcount++;
+                                break;
+			case '(': // Air Gap
+                                wl = getInt(3, false);
+
+                                sigma = getInt(2, false);
+                                outlier = getInt(1, false);
+
+				// With the switch to MWWL sensors for air gap, we no longer
+                                // require the AQT1 and AQT2 values to be transmitted. Set to
+                                // dummy empty.
+                                log.info("Skipping read of dummy air gap AQT1 and AQT2 values");
+                                x = 999999;
+                                y = 999999;
+
+                                sensorNum = getSensorNumber('Q', config);
                                 if (sensorNum == -1)
                                         continue;
 
@@ -190,7 +214,7 @@ public class Nos6Min extends NosDecoder
 		         	if (isValid(wl))
                                    msg.addSampleWithTime(sensorNum, v, dataTime, 1);
 				else
-				   log.warn("Aqua or Air Gap WL sensor data is discarded for station {}{} WL={}",
+				   log.warn("Air Gap WL sensor data is discarded for station {}{} WL={}",
                 	                    stationId, dcpNum, wl);
 
                                 Qcount++;
@@ -224,7 +248,7 @@ public class Nos6Min extends NosDecoder
                                 v.setFlags(v.getFlags() | NosDecoder.FLAG_REDUNDANT);
                                 if (sensorNum != -1) // sensor number already set from previous flag
                                 {
-			           // Discard ??? (262143) or @@@ (0) from decoding 
+			           // Discard ??? (262143) or @@@ (0) from decoding
 				   if ( isValid(Integer.valueOf(v.getStringValue())) )
 				   {
                                         msg.addSampleWithTime(sensorNum, v, redundantDataTime, 1);
@@ -239,7 +263,7 @@ public class Nos6Min extends NosDecoder
 
                         case '3': // Wind speed, dir, gust
                                 x = getInt(2, false);
-                                y = getInt(2, false); 
+                                y = getInt(2, false);
                                 z = getInt(2, false);
 
                                 ancSensor = getSensorNumber('C', config);
@@ -393,7 +417,7 @@ public class Nos6Min extends NosDecoder
                                         ancSensor = getSensorNumber('O', config);
                                         if (ancSensor == -1)
                                                 continue;
-                                        msg.addSampleWithTime(ancSensor, 
+                                        msg.addSampleWithTime(ancSensor,
                                                 new Variable("" + x + "," + y), dataTime, 1);
                                 }
                 else if (c2 == '7')
@@ -447,7 +471,7 @@ public class Nos6Min extends NosDecoder
                         default:
                                 if (!Character.isWhitespace(flag))
                                 {
-                                    log.warn("Unrecognized flag char '{}'", flag);    
+                                        log.warn("Unrecognized flag char '{}'", flag);
                                 }
                         }
                 }

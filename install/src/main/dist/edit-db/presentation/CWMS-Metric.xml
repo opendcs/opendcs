@@ -158,6 +158,12 @@
     <MaxDecimals>3</MaxDecimals>
   </DataPresentation>
   <DataPresentation>
+    <DataType Standard="CWMS" Code="Elev">
+    </DataType>
+    <UnitsAbbr>m</UnitsAbbr>
+    <MaxDecimals>3</MaxDecimals>
+  </DataPresentation>
+  <DataPresentation>
     <DataType Standard="CWMS" Code="Elev-Pool">
     </DataType>
     <UnitsAbbr>m</UnitsAbbr>

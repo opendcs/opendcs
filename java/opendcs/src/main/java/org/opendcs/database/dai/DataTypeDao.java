@@ -49,6 +49,16 @@ public interface DataTypeDao extends OpenDcsDao
      */
 	Optional<DataType> lookup(DataTransaction tx, String dataTypeCode) throws OpenDcsDataException;
 
+     /**
+      * Given a Standard and DataType Code attempt to find a matching data type. {@see DataType for more information}
+      * @param tx
+      * @param standard
+      * @param dataTypeCode
+      * @return
+      * @throws OpenDcsDataException
+      */
+     Optional<DataType> lookup(DataTransaction tx, String standard, String dataTypeCode) throws OpenDcsDataException;
+
 	/**
      * Retreive all DataTypes constrained to a limit and office if desired.
      * @param tx active transaction

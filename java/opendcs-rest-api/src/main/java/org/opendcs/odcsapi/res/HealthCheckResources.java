@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponse.Status;
+import org.opendcs.database.dai.EnumDao;
 import org.opendcs.odcsapi.util.ApiConstants;
 
 import io.swagger.v3.oas.annotations.Hidden;
@@ -14,7 +15,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import opendcs.dao.EnumSqlDao;
 
 /**
  * Provide health checks in the format provided by microprofile-health.
@@ -55,7 +55,7 @@ public final class HealthCheckResources extends OpenDcsResource
         try
         {
             var db = this.createDb();
-            db.getDao(EnumSqlDao.class).orElseThrow();
+            db.getDao(EnumDao.class).orElseThrow();
             var hcr = new HealthCheckResponse("live", Status.UP, Optional.empty());
             return Response.ok().entity(hcr).build();
         }

@@ -164,6 +164,12 @@
     <MaxDecimals>2</MaxDecimals>
   </DataPresentation>
   <DataPresentation>
+    <DataType Standard="CWMS" Code="Elev">
+    </DataType>
+    <UnitsAbbr>ft</UnitsAbbr>
+    <MaxDecimals>2</MaxDecimals>
+  </DataPresentation>
+  <DataPresentation>
     <DataType Standard="CWMS" Code="Elev-Pool">
     </DataType>
     <UnitsAbbr>ft</UnitsAbbr>

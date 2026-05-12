@@ -1,0 +1,69 @@
+// =============================================================================
+// Shared DataTable child-row detail primitives
+//
+// Used by the DetailFade component and any DataTable that opens a detail
+// card in a child row. Consuming pages supply their own min-height on the
+// card so the outer row height stays stable during skeleton → real swaps.
+// =============================================================================
+
+// Row-reveal animation applied to the first skeleton that mounts when a
+// DataTable child row opens (usually the Suspense fallback).
+@keyframes child-row-open {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.child-row-opening {
+  animation: child-row-open 0.5s ease-out both;
+}
+
+// Sequential skeleton → content transition stack (driven by DetailFade).
+// Both layers occupy the same grid cell so real content mounts hidden under
+// the skeleton; inner async work (e.g. DataTables wrapping <table>s) can
+// settle before it ever becomes visible. Skeleton fades out first, then the
+// content fades in.
+.detail-appear {
+  display: grid;
+}
+
+.detail-appear__layer {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+.detail-appear__layer--hidden {
+  visibility: hidden;
+}
+
+.detail-appear__layer--exit {
+  animation: detail-appear-fade-out 0.25s ease-in both;
+  pointer-events: none;
+}
+
+.detail-appear__layer--enter {
+  animation: detail-appear-fade-in 0.25s ease-out both;
+}
+
+@keyframes detail-appear-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes detail-appear-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

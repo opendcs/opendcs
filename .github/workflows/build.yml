@@ -131,7 +131,7 @@ jobs:
             ./**/build/**/jacoco/**/*.xml
             ./**/build/**/test-*.xml
             ./build/reports/jacoco/codeCoverageReport/**/
-            ./**/build/**/*.class            
+            ./**/build/**/*.class
             ./javascript/opendcs-web-ui-react/coverage/**
             ./javascript/opendcs-web-ui-react/build/eslint-report.json
       - name: Upload Test Reports
@@ -162,4 +162,4 @@ jobs:
       - uses: actions/checkout@v6.0.2
       - name: Build base container images
         run: |
-          docker build -t opendcs:test-container --target opendcs_base . 
+          docker build -t opendcs:test-container --target opendcs_base .
