@@ -226,13 +226,13 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
         if (tr?.classList.contains("child-row")) {
           return; // don't do anything if we click the child row.
         }
+        const dt = table.current!.dt()!;
+        const rowData = dt.row(tr as HTMLTableRowElement).data() as TableSiteRef | undefined;
+        if (!rowData) return;
         e.preventDefault();
         e.stopPropagation();
-        const dt = table.current!.dt()!;
-
-        const row = dt.row(tr as HTMLTableRowElement);
         updateRowState((prev) => {
-          const idx = (row.data() as TableSiteRef).siteId!;
+          const idx = rowData.siteId!;
           const { [idx]: existing, ...remaining } = prev;
           let newValue: UiState = "show";
           if (existing !== undefined) {

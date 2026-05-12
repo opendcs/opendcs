@@ -349,12 +349,13 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
         const target = e.target! as Element;
         const tr = target.closest("tr");
         if (tr?.classList.contains("child-row")) return;
+        const dt = table.current!.dt()!;
+        const rowData = dt.row(tr as HTMLTableRowElement).data() as TableComputationRef | undefined;
+        if (!rowData) return;
         e.preventDefault();
         e.stopPropagation();
-        const dt = table.current!.dt()!;
-        const row = dt.row(tr as HTMLTableRowElement);
         updateRowState((prev) => {
-          const idx = (row.data() as TableComputationRef).computationId!;
+          const idx = rowData.computationId!;
           const { [idx]: existing, ...remaining } = prev;
           let newValue: UiState = "show";
           if (existing !== undefined) {
