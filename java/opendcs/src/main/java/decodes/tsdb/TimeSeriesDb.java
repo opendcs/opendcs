@@ -1604,6 +1604,12 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
         throw new DbCompException("Rating not supported in this database.");
     }
 
+    public double rating(String specId, Date timeStamp, Connection conn, double... indeps)
+        throws DbCompException, RangeException
+    {
+        return rating(specId, timeStamp, indeps);
+    }
+
     public ArrayList<String> listVersions()
         throws DbIoException
     {

@@ -52,6 +52,7 @@ import decodes.comp.TabRatingReader;
 import decodes.comp.TableBoundsException;
 import decodes.cwms.CwmsFlags;
 import decodes.cwms.CwmsTimeSeriesDb;
+import opendcs.util.sql.WrappedConnection;
 import decodes.cwms.validation.DatchkReader;
 import decodes.cwms.validation.Screening;
 import decodes.cwms.validation.ScreeningCriteria;
@@ -249,17 +250,14 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 			}
 		}
 
-		if (tsdb instanceof CwmsTimeSeriesDb)
+		try
 		{
-			try
-			{
-				algoConnection = tsdb.getConnection();
-				log.debug("Acquired database connection for algorithm execution");
-			}
-			catch (Exception ex)
-			{
-				throw new DbCompException("Could not acquire database connection for algorithm execution", ex);
-			}
+			algoConnection = tsdb.getConnection();
+			log.debug("Acquired database connection for algorithm execution");
+		}
+		catch (Exception ex)
+		{
+			throw new DbCompException("Could not acquire database connection for algorithm execution", ex);
 		}
 
 //AW:BEFORE_TIMESLICES_END
@@ -1285,8 +1283,8 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 
 		try
 		{
-			if (algoConnection != null && tsdb instanceof CwmsTimeSeriesDb)
-				return ((CwmsTimeSeriesDb)tsdb).rating(specId, _timeSliceBaseTime, algoConnection, indeps);
+			if (algoConnection != null)
+				return tsdb.rating(specId, _timeSliceBaseTime, algoConnection, indeps);
 			else
 				return tsdb.rating(specId, _timeSliceBaseTime, indeps);
 		}
@@ -1379,6 +1377,8 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	}
 
 	public Connection getConnection(){
+		if (algoConnection != null)
+			return new WrappedConnection(algoConnection);
 		return tsdb.getConnection();
 	}
 

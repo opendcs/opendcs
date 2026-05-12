@@ -918,11 +918,6 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 		}
 	}
 
-	/**
-	 * Rating overload that accepts an existing connection to avoid pool churn.
-	 * Used by PythonAlgorithm to reuse a single connection across all rating()
-	 * calls within one algorithm execution rather than acquiring one per call.
-	 */
 	public double rating(String specId, Date timeStamp, Connection conn, double... indeps)
 		throws DbCompException, RangeException
 	{
@@ -947,10 +942,6 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 		catch (RatingException ex)
 		{
 			throw new RangeException("Error while " + action + ", specId=" + specId, ex);
-		}
-		catch (SQLException ex)
-		{
-			throw new DbCompException("Error during database operations.", ex);
 		}
 	}
 
