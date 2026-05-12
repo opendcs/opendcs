@@ -24,9 +24,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           RUN_ID: ${{ github.event_name == 'workflow_dispatch' && inputs.build_run_id || github.event.workflow_run.id }}
+          EVENT_NAME: ${{ github.event_name }}
+          WR_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          WR_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          WR_HEAD_REPO_FULL: ${{ github.event.workflow_run.head_repository.full_name }}
+          WR_HEAD_OWNER: ${{ github.event.workflow_run.head_repository.owner.login }}
+          WR_BASE_OWNER: ${{ github.event.workflow_run.repository.owner.login }}
+          WR_EVENT: ${{ github.event.workflow_run.event }}
         run: |
           set -euo pipefail
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
             run_json=$(gh api "repos/${REPO}/actions/runs/${RUN_ID}")
             head_sha=$(jq -r '.head_sha' <<<"$run_json")
             head_branch=$(jq -r '.head_branch' <<<"$run_json")
@@ -39,12 +46,12 @@ jobs:
               echo "::warning::Build run $RUN_ID concluded as '$conclusion' (not 'success'). Continuing because this is a manual dispatch."
             fi
           else
-            head_sha="${{ github.event.workflow_run.head_sha }}"
-            head_branch="${{ github.event.workflow_run.head_branch }}"
-            head_repo_full="${{ github.event.workflow_run.head_repository.full_name }}"
-            head_owner="${{ github.event.workflow_run.head_repository.owner.login }}"
-            base_owner="${{ github.event.workflow_run.repository.owner.login }}"
-            event="${{ github.event.workflow_run.event }}"
+            head_sha="$WR_HEAD_SHA"
+            head_branch="$WR_HEAD_BRANCH"
+            head_repo_full="$WR_HEAD_REPO_FULL"
+            head_owner="$WR_HEAD_OWNER"
+            base_owner="$WR_BASE_OWNER"
+            event="$WR_EVENT"
           fi
           if [[ "$head_owner" != "$base_owner" ]]; then
             pr_branch="${head_owner}:${head_branch}"
