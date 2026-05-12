@@ -37,7 +37,7 @@ import org.slf4j.event.Level;
 
 import static org.opendcs.utils.logging.ThreadUtils.propagate;
 
-public final class ComputationExecution
+public final class ComputationExecution implements AutoCloseable
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final String COMPUTATION_KEY = "computation";
@@ -45,6 +45,7 @@ public final class ComputationExecution
 	private AtomicInteger numErrors = new AtomicInteger(0);
 	private AtomicInteger computesTried = new AtomicInteger(0);
 	private final ExecutorService executor;
+	private final boolean ownsExecutor;
 
 	/**
 	 * Create instance of ComputationExecution using a new SingleThreadExeuctor
@@ -52,7 +53,9 @@ public final class ComputationExecution
 	 */
 	public ComputationExecution(OpenDcsDatabase db)
 	{
-		this(db, Executors.newSingleThreadExecutor());
+		this.db = db;
+		this.executor = Executors.newSingleThreadExecutor();
+		this.ownsExecutor = true;
 	}
 
 
@@ -63,6 +66,8 @@ public final class ComputationExecution
 	 * This is being initially setup to provided chaining operations and too allow for that
 	 * follow on work. Experiment with a > 1 Thread pool at your own risk.
 	 *
+	 * The caller retains ownership of the provided executor and is responsible for its shutdown.
+	 *
 	 * @param db
 	 * @param executor
 	 */
@@ -70,6 +75,16 @@ public final class ComputationExecution
 	{
 		this.db = db;
 		this.executor = executor;
+		this.ownsExecutor = false;
+	}
+
+	@Override
+	public void close()
+	{
+		if (ownsExecutor)
+		{
+			executor.shutdown();
+		}
 	}
 
 	/**
