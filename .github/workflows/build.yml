@@ -38,7 +38,7 @@ jobs:
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.0.1
+        uses: gradle/actions/setup-gradle@v6.0.1  # NOSONAR first-party Gradle action, tag pinning acceptable
         with:
           dependency-graph: generate-and-submit
       - name: Change temp dir in windows
@@ -55,7 +55,7 @@ jobs:
       - name: Install/Setup playwright
         working-directory: javascript/opendcs-web-ui-react
         run : |
-          npm install
+          npm ci --ignore-scripts
           npx playwright install
       - name: Enforce Formatting
         working-directory: javascript/opendcs-web-ui-react
@@ -65,11 +65,9 @@ jobs:
         run: |
           ./gradlew test --info
       - name: integration tests (XML)
-        # There is an odd issues with the log file name on the windows runner.
-        # It does work locally though. Will work on it later.
-        # Integration tests require docker now for test containers.
-        # More work required to deal with the other platforms. Should be workable
-        # at some point though.
+        # XML is the cross-platform integration smoke test; it runs on all three
+        # OSes inside this job. The DB-backed engines (Postgres, Oracle, CWMS-Oracle)
+        # run only on ubuntu in the integration-db matrix because they require docker.
         run: |
           ./gradlew :testing:opendcs-tests:testOpenDCSXML --info
       - name: Upload jacoco exec data (tests)
@@ -79,6 +77,7 @@ jobs:
           name: jacoco-exec-tests
           path: |
             ./**/build/jacoco/*.exec
+            ./**/build/reports/jacoco/**
             ./javascript/opendcs-web-ui-react/coverage/**
             ./javascript/opendcs-web-ui-react/build/eslint-report.json
           if-no-files-found: warn
@@ -101,7 +100,8 @@ jobs:
           detailed_summary: true
   integration-db:
     # Database-backed integration suites run in parallel, one runner per engine.
-    needs: tests
+    # No `needs: tests` so this matrix runs concurrently with the tests matrix;
+    # the coverage job below waits on both before aggregating.
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -129,7 +129,7 @@ jobs:
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.0.1
+        uses: gradle/actions/setup-gradle@v6.0.1  # NOSONAR first-party Gradle action, tag pinning acceptable
       - name: install node for react ui and tests
         uses: actions/setup-node@v6
         with:
@@ -138,7 +138,7 @@ jobs:
           cache-dependency-path: javascript/opendcs-web-ui-react/package-lock.json
       - name: Install node dependencies (required to build UI war)
         working-directory: javascript/opendcs-web-ui-react
-        run: npm install
+        run: npm ci --ignore-scripts
       - name: integration tests (${{ matrix.engine.name }})
         run: |
           ./gradlew :testing:opendcs-tests:${{ matrix.engine.task }} --info
@@ -147,7 +147,9 @@ jobs:
         uses: actions/upload-artifact@v7.0.0
         with:
           name: jacoco-exec-${{ matrix.engine.name }}
-          path: ./**/build/jacoco/*.exec
+          path: |
+            ./**/build/jacoco/*.exec
+            ./**/build/reports/jacoco/**
           if-no-files-found: warn
       - name: Upload Test Reports
         uses: actions/upload-artifact@v7.0.0
@@ -187,7 +189,7 @@ jobs:
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.0.1
+        uses: gradle/actions/setup-gradle@v6.0.1  # NOSONAR first-party Gradle action, tag pinning acceptable
       - name: install node for react ui
         uses: actions/setup-node@v6
         with:
