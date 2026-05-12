@@ -3,25 +3,76 @@ on:
   workflow_run:
     workflows: ["OpenDCS Build and unit tests"]
     types: [completed]
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: 'Run ID of an "OpenDCS Build and unit tests" workflow whose coverage to analyze. Find it via `gh run list --workflow="OpenDCS Build and unit tests"` or copy the numeric id from the run URL.'
+        required: true
+        type: string
 
 jobs:
   Sonar:
     runs-on: ubuntu-latest
-    if: github.event.workflow_run && github.event.workflow_run.conclusion == 'success'
+    # Auto-trigger only when the upstream build succeeded; manual dispatch is always allowed.
+    if: |
+      github.event_name == 'workflow_dispatch'
+      || (github.event.workflow_run && github.event.workflow_run.conclusion == 'success')
     steps:
+      - name: Resolve source build context
+        id: ctx
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            run_id="${{ inputs.build_run_id }}"
+            run_json=$(gh api "repos/${REPO}/actions/runs/${run_id}")
+            head_sha=$(jq -r '.head_sha' <<<"$run_json")
+            head_branch=$(jq -r '.head_branch' <<<"$run_json")
+            head_repo_full=$(jq -r '.head_repository.full_name' <<<"$run_json")
+            head_owner=$(jq -r '.head_repository.owner.login' <<<"$run_json")
+            base_owner=$(jq -r '.repository.owner.login' <<<"$run_json")
+            event=$(jq -r '.event' <<<"$run_json")
+            conclusion=$(jq -r '.conclusion' <<<"$run_json")
+            if [[ "$conclusion" != "success" ]]; then
+              echo "::warning::Build run $run_id concluded as '$conclusion' (not 'success'). Continuing because this is a manual dispatch."
+            fi
+          else
+            run_id="${{ github.event.workflow_run.id }}"
+            head_sha="${{ github.event.workflow_run.head_sha }}"
+            head_branch="${{ github.event.workflow_run.head_branch }}"
+            head_repo_full="${{ github.event.workflow_run.head_repository.full_name }}"
+            head_owner="${{ github.event.workflow_run.head_repository.owner.login }}"
+            base_owner="${{ github.event.workflow_run.repository.owner.login }}"
+            event="${{ github.event.workflow_run.event }}"
+          fi
+          if [[ "$head_owner" != "$base_owner" ]]; then
+            pr_branch="${head_owner}:${head_branch}"
+          else
+            pr_branch="$head_branch"
+          fi
+          {
+            echo "run_id=$run_id"
+            echo "head_sha=$head_sha"
+            echo "head_branch=$head_branch"
+            echo "head_repo_full=$head_repo_full"
+            echo "pr_branch=$pr_branch"
+            echo "event=$event"
+            if [[ "$event" == "pull_request" ]]; then
+              echo "is_pr=true"
+            else
+              echo "is_pr=false"
+            fi
+          } >> "$GITHUB_OUTPUT"
       - name: 'Get PR number'
         id: pr-context
         env:
           # The GH CLI uses this ENV for providing an auth token:
           GH_TOKEN: ${{ github.token }}
           PR_TARGET_REPO: ${{ github.repository }}
-          PR_BRANCH: |-
-            ${{
-              (github.event.workflow_run.head_repository.owner.login != github.event.workflow_run.repository.owner.login)
-                && format('{0}:{1}', github.event.workflow_run.head_repository.owner.login, github.event.workflow_run.head_branch)
-                || github.event.workflow_run.head_branch
-            }}
-          IS_PR: ${{ (github.event.workflow_run.event == 'pull_request') && true || false }}
+          PR_BRANCH: ${{ steps.ctx.outputs.pr_branch }}
+          IS_PR: ${{ steps.ctx.outputs.is_pr }}
         # Query the PR number by repo + branch, then assign to step output:
         run: |
           if [[ ${IS_PR} == "true" ]]; then
@@ -48,8 +99,8 @@ jobs:
       - name: Checkout PR code
         uses: actions/checkout@v6.0.2
         with:
-          repository: ${{ github.event.workflow_run.head_repository.full_name }}
-          ref: ${{ steps.pr-context.outputs.source_branch }}
+          repository: ${{ steps.ctx.outputs.head_repo_full }}
+          ref: ${{ steps.ctx.outputs.head_sha }}
           fetch-depth: 0
     # perform the analaysis now
       - name: Cache SonarCloud packages
@@ -68,7 +119,7 @@ jobs:
         uses: actions/download-artifact@v8.0.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ github.event.workflow_run.id }}
+          run-id: ${{ steps.ctx.outputs.run_id }}
           path: ./
           merge-multiple: true
       - name: Show jacoco files
@@ -80,7 +131,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
          ./gradlew sonar --info -Dorg.gradle.jvmargs=-Xmx4096M \
-            -Dsonar.scm.revision=${{ github.event.workflow_run.head_sha }} \
+            -Dsonar.scm.revision=${{ steps.ctx.outputs.head_sha }} \
             -Dsonar.pullrequest.key=${{ steps.pr-context.outputs.number }} \
             -Dsonar.pullrequest.branch=${{ steps.pr-context.outputs.source_branch }} \
             -Dsonar.pullrequest.base=${{ steps.pr-context.outputs.target_branch }} \
@@ -92,7 +143,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
          ./gradlew sonar --info -Dorg.gradle.jvmargs=-Xmx4096M \
-            -Dsonar.scm.revision=${{ github.event.workflow_run.head_sha }} \
+            -Dsonar.scm.revision=${{ steps.ctx.outputs.head_sha }} \
             -Dsonar.pullrequest.key=${{ steps.pr-context.outputs.number }} \
             -Dsonar.pullrequest.branch=${{ steps.pr-context.outputs.source_branch }} \
             -Dsonar.pullrequest.base=${{ steps.pr-context.outputs.target_branch }} \
