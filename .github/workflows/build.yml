@@ -38,7 +38,7 @@ jobs:
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.0.1
+        uses: gradle/actions/setup-gradle@v6.1.0
         with:
           dependency-graph: generate-and-submit
       - name: Change temp dir in windows
@@ -109,14 +109,14 @@ jobs:
         run: |
           ./gradlew codeCoverageReport --info
       - name: Cache SonarCloud packages
-        uses: actions/cache@v5.0.4
+        uses: actions/cache@v5.0.5
         if: matrix.platform == 'ubuntu-latest' && matrix.jdk == env.sonarJdk
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
       - name: Cache Gradle packages
-        uses: actions/cache@v5.0.4
+        uses: actions/cache@v5.0.5
         if: matrix.platform == 'ubuntu-latest' && matrix.jdk == env.sonarJdk
         with:
           path: ~/.gradle/caches
@@ -124,7 +124,7 @@ jobs:
           restore-keys: ${{ runner.os }}-gradle
       - name: Upload Coverage
         if: matrix.platform == 'ubuntu-latest' && matrix.jdk == env.sonarJdk
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: coverage
           path: |
@@ -135,7 +135,7 @@ jobs:
             ./javascript/opendcs-web-ui-react/coverage/**
             ./javascript/opendcs-web-ui-react/build/eslint-report.json
       - name: Upload Test Reports
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         if: always()
         with:
           name: test-report-${{ runner.os }}-${{ matrix.jdk }}
