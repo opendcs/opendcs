@@ -78,6 +78,7 @@ const StoryRender: ArgsStoryFn<
     sites: TableSiteRef[];
     getSite?: ((siteId: number) => Promise<ApiSite | undefined>) | undefined;
     actions?: SaveAction<ApiSite> & RemoveAction<number>;
+    loading?: boolean;
   }
 > = (args) => {
   const [storySites, updateSites] = useState<ApiSite[]>([]);
@@ -146,6 +147,7 @@ const StoryRender: ArgsStoryFn<
   return (
     <SitesTable
       sites={siteRefs}
+      loading={args.loading}
       getSite={localGetSite}
       actions={{ save: saveSite, remove: removeSite }}
     />
@@ -164,6 +166,14 @@ export const Default: Story = {
      * work without storybook constantly trying to rerender or manually call things.
      */
   },
+};
+
+export const Loading: Story = {
+  args: {
+    sites: [],
+    loading: true,
+  },
+  render: StoryRender,
 };
 
 export const WithSites: Story = {
