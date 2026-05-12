@@ -19,18 +19,15 @@ export async function fromOpenApiData(
     const apiSchemes = spec.components.securitySchemes!;
     for (const scheme in apiSchemes) {
       let option: Scheme = apiSchemes[scheme]["x-logincomponent-configuration"];
-      console.log(option);
-      console.log(apiSchemes[scheme]);
-      console.log(apiSchemes[scheme].openIdConnectUrl);
       if (apiSchemes[scheme].openIdConnectUrl) {
         option = {
+          ...option,
           oidcConfig: {
-            ...option.oidcConfig,
+            ...(option.oidcConfig as OidcScheme),
             wellKnownUrl: apiSchemes[scheme].openIdConnectUrl,
           },
         };
       }
-      console.log(option);
       schemes = {
         ...schemes,
         [scheme]: option,

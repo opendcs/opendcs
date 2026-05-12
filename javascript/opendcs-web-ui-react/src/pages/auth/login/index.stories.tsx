@@ -86,6 +86,7 @@ export const DefaultPageWithOrgs: Story = {
   decorators: [authDecorator],
   play: async ({ args, mount }) => {
     const canvas = await mount();
+    expect(await canvas.findByText("kc_idp_hint")).toBeInTheDocument();
   },
 };
 

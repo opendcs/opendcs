@@ -16,6 +16,9 @@
           "formConfig": {
             "usernameInput": "username",
             "passwordInput": "password"
+          },
+          "queryParameters": {
+            "login": "prompt"
           }
         }
       },
@@ -27,6 +30,9 @@
           "oidcConfig": {
             "redirectUri": "http://localhost:5173/oidc-callback",
             "clientId": "opendcs-public"
+          },
+          "queryParameters": {
+            "kc_idp_hint": ["federated-provider-1", "federated-provider-2"]
           }
         }
       },
