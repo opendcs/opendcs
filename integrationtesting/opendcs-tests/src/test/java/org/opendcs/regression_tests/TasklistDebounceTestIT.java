@@ -52,7 +52,8 @@ final class TasklistDebounceTestIT extends AppTestBase
         {
             DbKey appKey = laDAI.lookupAppId(APP_NAME);
             DbKey tsKey = createInputTs("TESTSITE1.Stage.Inst.15Minutes.0.debounce-default", tsDAI);
-            insertTasklistRow(dao, appKey, tsKey);
+            DbKey sourceKey = ensureDataSource(dao, appKey);
+            insertTasklistRow(dao, appKey, tsKey, sourceKey);
 
             DataCollection data = tsDAI.getNewData(appKey, 20000);
             assertTrue(rowPresent(data, tsKey),
@@ -70,7 +71,8 @@ final class TasklistDebounceTestIT extends AppTestBase
         {
             DbKey appKey = laDAI.lookupAppId(APP_NAME);
             DbKey tsKey = createInputTs("TESTSITE1.Stage.Inst.15Minutes.0.debounce-fresh", tsDAI);
-            insertTasklistRow(dao, appKey, tsKey);
+            DbKey sourceKey = ensureDataSource(dao, appKey);
+            insertTasklistRow(dao, appKey, tsKey, sourceKey);
 
             DataCollection immediate = tsDAI.getNewData(appKey, 20000);
             assertEquals(false, rowPresent(immediate, tsKey),
@@ -90,17 +92,45 @@ final class TasklistDebounceTestIT extends AppTestBase
         return tsDAI.createTimeSeries(tsId);
     }
 
-    private void insertTasklistRow(DaoBase dao, DbKey appKey, DbKey tsKey) throws Exception
+    private void insertTasklistRow(DaoBase dao, DbKey appKey, DbKey tsKey, DbKey sourceKey)
+            throws Exception
     {
         try (Connection c = db.getConnection())
         {
             KeyGenerator keyGen = db.getKeyGenerator();
             dao.doModify(
                 "insert into cp_comp_tasklist(record_num, loading_application_id, "
-                + "ts_id, num_value, date_time_loaded, sample_time, flags) "
-                + "values (?,?,?,?,?,?,?)",
+                + "ts_id, num_value, date_time_loaded, sample_time, flags, source_id) "
+                + "values (?,?,?,?,?,?,?,?)",
                 keyGen.getKey("cp_comp_tasklist", c), appKey, tsKey, 1.0,
-                new Date(), new Date(), 0);
+                new Date(), new Date(), 0, sourceKey);
+        }
+    }
+
+    /**
+     * cp_comp_tasklist.source_id has a NOT NULL FK to TSDB_DATA_SOURCE. Reuse an
+     * existing row for this loading app if one is present (compproc may have
+     * inserted one already), otherwise create one.
+     */
+    private DbKey ensureDataSource(DaoBase dao, DbKey appKey) throws Exception
+    {
+        DbKey existing = dao.getSingleResultOr(
+            "select source_id from tsdb_data_source where loading_application_id = ? "
+            + "and module is null",
+            rs -> DbKey.createDbKey(rs, 1),
+            null,
+            appKey);
+        if (existing != null && !DbKey.isNull(existing))
+            return existing;
+
+        try (Connection c = db.getConnection())
+        {
+            DbKey sourceKey = db.getKeyGenerator().getKey("tsdb_data_source", c);
+            dao.doModify(
+                "insert into tsdb_data_source(source_id, loading_application_id, module) "
+                + "values (?,?,null)",
+                sourceKey, appKey);
+            return sourceKey;
         }
     }
 
