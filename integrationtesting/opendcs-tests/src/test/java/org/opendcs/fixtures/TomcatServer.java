@@ -389,7 +389,7 @@ public final class TomcatServer implements AutoCloseable
 				log.info("Loading {} seed DECODES file(s) from {}", decodesFiles.size(), decodesDir.getAbsolutePath());
 				List<String> fileNames = decodesFiles.stream()
 													  .map(File::getAbsolutePath)
-													  .collect(Collectors.toList());
+													  .toList();
 				new DbImport(tmpProfile, null, false, false, false, false, true,
 							 null, null, null, null, fileNames).importDatabase();
 			}
@@ -399,7 +399,7 @@ public final class TomcatServer implements AutoCloseable
 				log.info("Loading {} seed computation file(s) from {}", compFiles.size(), compsDir.getAbsolutePath());
 				List<String> fileNames = compFiles.stream()
 												  .map(File::getAbsolutePath)
-												  .collect(Collectors.toList());
+												  .toList();
 				OpenDcsDatabase db = DatabaseService.getDatabaseFor("utility", settings);
 				TimeSeriesDb tsDb = db.getLegacyDatabase(TimeSeriesDb.class).orElseThrow();
 				new ImportComp(tsDb, false, false, fileNames).runApp();
