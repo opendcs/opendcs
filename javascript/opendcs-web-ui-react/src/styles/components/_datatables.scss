@@ -59,6 +59,17 @@ textarea {
   min-height: 44rem;
 }
 
+// Site detail card min-heights — same purpose as .algorithm-card: keep the
+// row stable while the skeleton → real-content swap happens. Applied to
+// every Card in the site detail stack.
+.site-card {
+  min-height: 35rem;
+}
+
+.site-card--edit {
+  min-height: 37rem;
+}
+
 .details-toggle__icon {
   transition: transform 0.2s ease;
 }
