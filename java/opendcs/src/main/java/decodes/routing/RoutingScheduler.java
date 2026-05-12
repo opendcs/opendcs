@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.function.IntConsumer;
 
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -153,9 +154,26 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 		appNameArg.setDefaultValue("RoutingScheduler");
 	}
 
+	/**
+	 * Builds a {@link Thread.UncaughtExceptionHandler} that logs the dead thread and
+	 * terminates the JVM via {@code exitAction}. Issue #1807: a silently dying worker
+	 * thread must take the process down so external monitoring restarts it.
+	 */
+	static Thread.UncaughtExceptionHandler newFatalHandler(IntConsumer exitAction)
+	{
+		return (t, e) ->
+		{
+			log.atError().setCause(e)
+				.log("Uncaught exception in thread '{}' — exiting RoutingScheduler.", t.getName());
+			exitAction.accept(1);
+		};
+	}
+
 	@Override
 	protected void oneTimeInit()
 	{
+		Thread.setDefaultUncaughtExceptionHandler(newFatalHandler(System::exit));
+
 		/**
 		 * Using lock files as an IPC mechanism (for status GUI) is unreliable in windoze.
 		 * Tell server lock never to exit as a result of lock file I/O error.

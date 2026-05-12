@@ -599,6 +599,20 @@ public class RoutingSpecThread extends Thread
 
 				currentStatus = "Running";
 			}
+			catch (Throwable ex)
+			{
+				// Issue #1807: any unchecked exception/error from decode, output, or DAO
+				// access used to escape run() and silently kill this thread. Log with
+				// platform context, terminate the spec cleanly, and let
+				// ScheduleEntryExecutive restart it per its existing recovery logic.
+				numErrsRun++;
+				numErrsToday++;
+				log.atError().setCause(ex)
+					.log("Unhandled error processing message from platform '{}' — terminating routing spec.",
+						platform != null ? platform.getDisplayName() : "unknown");
+				done = true;
+				currentStatus = "ERROR-system";
+			}
 		}
 
 		quit();
