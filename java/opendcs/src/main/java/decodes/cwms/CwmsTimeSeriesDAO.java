@@ -1328,7 +1328,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
         String debounceClause = "";
         int debounceSec = DecodesSettings.instance().tasklistDebounceSeconds;
         if (debounceSec > 0)
-            debounceClause = " and a.DATE_TIME_LOADED <= SYSDATE - " + debounceSec + "/86400";
+            debounceClause = " and a.DATE_TIME_LOADED <= SYSDATE - ?/86400";
 
         getTaskListStmtQuery =
             "select a.RECORD_NUM, a.SITE_DATATYPE_ID, a.VALUE, a.START_DATE_TIME, "
@@ -1345,6 +1345,8 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
             )
         {
             getTaskListStmt.setLong(1,applicationId.getValue());
+            if (debounceSec > 0)
+                getTaskListStmt.setInt(2, debounceSec);
 
             ArrayList<TasklistRec> tasklistRecs = new ArrayList<TasklistRec>();
             ArrayList<Integer> badRecs = new ArrayList<Integer>();

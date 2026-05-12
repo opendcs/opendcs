@@ -6,12 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.sql.Connection;
 import java.util.Date;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
@@ -34,9 +34,7 @@ import opendcs.dao.DaoBase;
     "shared/presgrp-regtest.xml"
 })
 @ComputationConfigurationRequired({"shared/loading-apps.xml"})
-@Disabled("Mirrors CompProcTestIT.test_bad_recs_cleared — disabled until "
-        + "cp_comp_tasklist sourceid NOT NULL constraint can be addressed for "
-        + "cross-implementation tests. Manually enable to run against OpenDCS Postgres.")
+@EnableIfTsDb({"OpenDCS-Postgres"})
 final class TasklistDebounceTestIT extends AppTestBase
 {
     @ConfiguredField
