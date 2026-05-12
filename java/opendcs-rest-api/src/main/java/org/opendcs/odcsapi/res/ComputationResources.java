@@ -353,19 +353,21 @@ public final class ComputationResources extends OpenDcsResource
 					{
 						MDC.setContextMap(contextMap);
 					}
-					ComputationExecution execution = new ComputationExecution(createDb());
-					SseProgressListener listener = new SseProgressListener(eventSink, sse, compStatus, taskID);
-					ComputationExecution.CompResults results = execution.execute(List.of(comp), new DataCollection(), startDate, endDate, listener);
+					try (ComputationExecution execution = new ComputationExecution(createDb()))
+					{
+						SseProgressListener listener = new SseProgressListener(eventSink, sse, compStatus, taskID);
+						ComputationExecution.CompResults results = execution.execute(List.of(comp), new DataCollection(), startDate, endDate, listener);
 
-					event = sse.newEventBuilder()
-							.name(compStatus)
-							.id(taskID)
-							.mediaType(MediaType.TEXT_PLAIN_TYPE)
-							.data(String.format("Computation executed with %d errors", results.numErrors()))
-							.build();
-					eventSink.send(event);
+						event = sse.newEventBuilder()
+								.name(compStatus)
+								.id(taskID)
+								.mediaType(MediaType.TEXT_PLAIN_TYPE)
+								.data(String.format("Computation executed with %d errors", results.numErrors()))
+								.build();
+						eventSink.send(event);
 
-					processOutput(outputList, taskID, sse, eventSink, startTime, endTime);
+						processOutput(outputList, taskID, sse, eventSink, startTime, endTime);
+					}
 				}
 				finally
 				{
