@@ -41,6 +41,7 @@ i18n.on("languageChanged", (locale) => {
     "platforms",
     "properties",
     "decodes",
+    "loadingapps",
   ]);
 });
 

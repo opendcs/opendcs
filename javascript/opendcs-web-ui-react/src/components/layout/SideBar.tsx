@@ -8,7 +8,13 @@ export interface SideBarProps {
 }
 
 export const SideBar = ({ open, onClose }: SideBarProps) => {
-  const [t] = useTranslation(["platforms", "sites", "algorithms", "computations"]);
+  const [t] = useTranslation([
+    "platforms",
+    "sites",
+    "algorithms",
+    "computations",
+    "loadingapps",
+  ]);
   const location = useLocation();
 
   return (
@@ -56,6 +62,14 @@ export const SideBar = ({ open, onClose }: SideBarProps) => {
             onClick={onClose}
           >
             {t("algorithms:algorithmsTitle")}
+          </Nav.Link>
+          <Nav.Link
+            as={Link}
+            to="/loading-apps"
+            active={location.pathname === "/loading-apps"}
+            onClick={onClose}
+          >
+            {t("loadingapps:title")}
           </Nav.Link>
         </Nav>
       </nav>
