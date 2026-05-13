@@ -223,7 +223,7 @@ export const Computation: React.FC<ComputationProperties> = ({
           algorithmName: fullAlgo.name ?? ref.algorithmName,
           ...(localComputation.comment ? {} : { comment: fullAlgo.description }),
           props: fullAlgo.props
-            ? { ...fullAlgo.props, ...(localComputation.props ?? {}) }
+            ? { ...fullAlgo.props, ...localComputation.props }
             : localComputation.props,
         };
         setLocalParms((prev) =>
@@ -479,8 +479,8 @@ export const Computation: React.FC<ComputationProperties> = ({
                 <X /> {t("translation:cancel")}
               </Button>
               <Button
-                onClick={() => {
-                  void saveComputation(localComputation);
+                onClick={async () => {
+                  await saveComputation(localComputation);
                 }}
                 variant="primary"
                 aria-label={t("computations:editor.save_for", {

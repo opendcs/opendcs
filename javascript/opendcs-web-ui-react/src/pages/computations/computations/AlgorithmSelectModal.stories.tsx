@@ -121,7 +121,7 @@ export const FilterAndSelect: Story = {
 
     await userEvent.click(screen.getByText("MaxToDate"));
     await waitFor(() =>
-      expect(screen.getByText(mockAlgorithms[1].description!)).toBeInTheDocument(),
+      expect(screen.getByText(mockAlgorithms[1].description ?? "")).toBeInTheDocument(),
     );
 
     await userEvent.click(

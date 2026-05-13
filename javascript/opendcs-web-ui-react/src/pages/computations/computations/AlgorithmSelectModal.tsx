@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Button, Form, Modal, Spinner, Table } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import {
@@ -100,6 +100,47 @@ export const AlgorithmSelectModal: React.FC<Props> = ({
     }
   }, [selected, onSelect, onHide]);
 
+  let algorithmListContent: ReactNode;
+  if (loading) {
+    algorithmListContent = (
+      <div className="text-center p-4">
+        <Spinner animation="border" />
+      </div>
+    );
+  } else if (filtered.length === 0) {
+    algorithmListContent = <p>{t("computations:editor.select_algorithm_none")}</p>;
+  } else {
+    algorithmListContent = (
+      <div style={{ maxHeight: "45vh", overflowY: "auto" }}>
+        <Table striped bordered hover>
+          <thead>
+            <tr>
+              <th>{t("computations:header.Id")}</th>
+              <th>{t("computations:editor.name")}</th>
+              <th>{t("computations:editor.select_algorithm_exec_class")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((algo) => (
+              <tr
+                key={algo.algorithmId}
+                onClick={() => handleRowClick(algo)}
+                style={{ cursor: "pointer" }}
+                className={
+                  selected?.algorithmId === algo.algorithmId ? "table-primary" : ""
+                }
+              >
+                <td>{algo.algorithmId}</td>
+                <td>{algo.algorithmName}</td>
+                <td>{algo.execClass}</td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </div>
+    );
+  }
+
   return (
     <Modal show={show} onHide={onHide} centered size="xl">
       <Modal.Header closeButton>
@@ -114,41 +155,7 @@ export const AlgorithmSelectModal: React.FC<Props> = ({
           className="mb-3"
           aria-label={t("computations:editor.select_algorithm_filter")}
         />
-        {loading ? (
-          <div className="text-center p-4">
-            <Spinner animation="border" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <p>{t("computations:editor.select_algorithm_none")}</p>
-        ) : (
-          <div style={{ maxHeight: "45vh", overflowY: "auto" }}>
-            <Table striped bordered hover>
-              <thead>
-                <tr>
-                  <th>{t("computations:header.Id")}</th>
-                  <th>{t("computations:editor.name")}</th>
-                  <th>{t("computations:editor.select_algorithm_exec_class")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((algo) => (
-                  <tr
-                    key={algo.algorithmId}
-                    onClick={() => handleRowClick(algo)}
-                    style={{ cursor: "pointer" }}
-                    className={
-                      selected?.algorithmId === algo.algorithmId ? "table-primary" : ""
-                    }
-                  >
-                    <td>{algo.algorithmId}</td>
-                    <td>{algo.algorithmName}</td>
-                    <td>{algo.execClass}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </div>
-        )}
+        {algorithmListContent}
         {selected && (
           <div
             className="mt-3 p-3 border rounded"

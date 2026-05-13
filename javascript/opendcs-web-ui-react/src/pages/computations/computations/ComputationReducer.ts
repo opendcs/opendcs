@@ -21,13 +21,9 @@ export function ComputationReducer(
       };
     }
     case "delete_prop": {
-      const { [action.payload.name]: _, ...props } = current.props ?? {};
-      return {
-        ...current,
-        props: {
-          ...props,
-        },
-      };
+      const props = { ...current.props };
+      delete props[action.payload.name];
+      return { ...current, props };
     }
     case "save": {
       return {
@@ -37,7 +33,7 @@ export function ComputationReducer(
     }
     case "merge_algo_props": {
       // Keep existing user values; add new keys from algorithm defaults
-      const merged = { ...action.payload, ...(current.props ?? {}) };
+      const merged = { ...action.payload, ...current.props };
       return { ...current, props: merged };
     }
   }
