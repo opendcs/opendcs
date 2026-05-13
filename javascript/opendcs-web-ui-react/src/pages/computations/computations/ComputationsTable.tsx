@@ -38,6 +38,20 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
 }) => {
   const [t] = useTranslation(["computations", "translation"]);
 
+  const descriptionSnippet = useCallback((description: string | undefined): string => {
+    const normalized = (description ?? "").replace(/\s+/g, " ").trim();
+    if (normalized.length <= 120) return normalized;
+    return `${normalized.slice(0, 117).trimEnd()}...`;
+  }, []);
+
+  const renderDescription = useCallback(
+    (data: unknown, type: string) => {
+      const d = typeof data === "string" ? data : "";
+      return type !== "display" ? d : descriptionSnippet(d);
+    },
+    [descriptionSnippet],
+  );
+
   const renderEnabled = useCallback((data: unknown, type: string) => {
     const enabled = Boolean(data);
     if (type !== "display") return enabled ? 1 : 0;
@@ -72,9 +86,10 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
         data: "description",
         header: t("computations:header.Description"),
         type: "string",
+        render: renderDescription,
       },
     ],
-    [t, renderEnabled],
+    [t, renderEnabled, renderDescription],
   );
 
   const rowActions = useMemo<RowAction<TableComputationRef>[]>(
@@ -135,6 +150,7 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
           <Computation
             computation={computationPromise}
             algorithm={algorithmPromise}
+            getAlgorithm={getAlgorithm}
             actions={{
               save: detailActions.save,
               cancel: detailActions.cancel,
