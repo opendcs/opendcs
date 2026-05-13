@@ -9,6 +9,7 @@ import { Platforms } from "./pages/platforms";
 import { Algorithms } from "./pages/computations/algorithms";
 import { Computations } from "./pages/computations/computations";
 import { SitesPage } from "./pages/sites";
+import { LoadingAppsPage } from "./pages/loading-apps";
 import OidcCallback from "./pages/auth/login/OidcCallback";
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
               <Route path="/sites" element={<SitesPage />} />
               <Route path="/computations" element={<Computations />} />
               <Route path="/algorithms" element={<Algorithms />} />
+              <Route path="/loading-apps" element={<LoadingAppsPage />} />
             </Route>
           </Route>
         </Routes>
