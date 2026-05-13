@@ -26,6 +26,11 @@ export interface PropertiesTableProps {
   classes?: string;
 }
 
+/** Returns the property name, falling back to the new-row counter when the name is blank. */
+function propDisplayName(row: Property, rowId: string): string {
+  return row.name || rowId.replace("__appdt_new_", "") || "";
+}
+
 /**
  * Properties table component for use by all pages. Control of the properties
  * by what uses the component — the save and remove methods provided should
@@ -48,13 +53,15 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
         data: "name",
         header: t("translation:name"),
         edit: {
-          render: (row) =>
+          render: (row, rowId) =>
             renderToString(
               <Form.Control
                 type="text"
                 name="name"
                 defaultValue={row.name ?? ""}
-                aria-label={t("properties:name_input", { name: row.name })}
+                aria-label={t("properties:name_input", {
+                  name: propDisplayName(row, rowId),
+                })}
               />,
             ),
           read: (cell) =>
@@ -66,13 +73,15 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
         data: "value",
         header: t("translation:value"),
         edit: {
-          render: (row) =>
+          render: (row, rowId) =>
             renderToString(
               <Form.Control
                 type="text"
                 name="value"
                 defaultValue={row.value ?? ""}
-                aria-label={t("properties:value_input", { name: row.name })}
+                aria-label={t("properties:value_input", {
+                  name: propDisplayName(row, rowId),
+                })}
               />,
             ),
           read: (cell) =>
@@ -108,9 +117,14 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
                 newTemplate: canAdd ? () => ({ name: "", value: "" }) : undefined,
                 labels: {
                   edit: (r) => t("properties:edit_prop", { name: r.name }),
-                  remove: (r) => t("properties:delete_prop", { name: r.name }),
-                  save: (r) => t("properties:save_prop", { name: r.name }),
-                  cancel: () => t("translation:cancel"),
+                  remove: (r, rowId) =>
+                    t("properties:delete_prop", { name: propDisplayName(r, rowId) }),
+                  save: (r, rowId) =>
+                    t("properties:save_prop", { name: propDisplayName(r, rowId) }),
+                  cancel: (r, rowId) =>
+                    rowId.startsWith("__appdt_new_")
+                      ? t("properties:delete_prop", { name: propDisplayName(r, rowId) })
+                      : t("translation:cancel"),
                   add: t("properties:add_prop"),
                 },
               }

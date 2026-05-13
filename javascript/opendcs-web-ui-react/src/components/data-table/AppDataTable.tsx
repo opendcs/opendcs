@@ -128,6 +128,7 @@ export interface AddNewConfig<T> {
 export interface ColumnEdit<T> {
   /** HTML string for the cell when its row is in `"edit"` or `"new"` mode. */
   render: (row: T) => string;
+  render: (row: T, rowId: string) => string;
   /** Read the edited value back from the cell's form control on save. */
   read: (cell: HTMLElement) => unknown;
 }
@@ -154,6 +155,10 @@ export interface InlineEditConfig<T> {
     remove?: (row: T) => string;
     save?: (row: T) => string;
     cancel?: (row: T) => string;
+    edit?: (row: T, rowId: string) => string;
+    remove?: (row: T, rowId: string) => string;
+    save?: (row: T, rowId: string) => string;
+    cancel?: (row: T, rowId: string) => string;
     add?: string;
   };
 }
@@ -311,7 +316,7 @@ function makeColumnRender<T>(
     if (type !== "display") return fallback(data, type, row, meta);
     if (hasInlineEdit && editRender) {
       const mode = rowStateRef.current[idOf(row)];
-      if (mode === "edit" || mode === "new") return editRender(row);
+      if (mode === "edit" || mode === "new") return editRender(row, idOf(row));
     }
     return fallback(data, type, row, meta);
   };
@@ -558,7 +563,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
         icon: "bi-pencil",
         variant: "warning",
         show: inShowMode,
-        aria: (row) => labels.edit?.(row) ?? "Edit",
+        aria: (row) => labels.edit?.(row, idOf(row)) ?? "Edit",
         onClick: ({ row }) => setModeByIdStr(idOf(row), "edit"),
       },
       ...(inlineEdit.onRemove
@@ -568,7 +573,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
               icon: "bi-trash",
               variant: "danger",
               show: inShowMode,
-              aria: (row: T) => labels.remove?.(row) ?? "Delete",
+              aria: (row: T) => labels.remove?.(row, idOf(row)) ?? "Delete",
               onClick: ({ row }: RowActionContext<T>) => inlineEdit.onRemove!(row),
             } as RowAction<T>,
           ]
@@ -578,7 +583,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
         icon: "bi-check-lg",
         variant: "primary",
         show: inEditMode,
-        aria: (row) => labels.save?.(row) ?? "Save",
+        aria: (row) => labels.save?.(row, idOf(row)) ?? "Save",
         onClick: ({ row, rowEl }) => commitSave(row, rowEl),
       },
       {
@@ -586,7 +591,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
         icon: "bi-x-lg",
         variant: "secondary",
         show: inEditMode,
-        aria: (row) => labels.cancel?.(row) ?? "Cancel",
+        aria: (row) => labels.cancel?.(row, idOf(row)) ?? "Cancel",
         onClick: ({ row }) => commitCancel(row),
       },
     ];
