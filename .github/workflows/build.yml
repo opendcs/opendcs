@@ -39,6 +39,13 @@ jobs:
         uses: gradle/actions/setup-gradle@v6.0.1  # NOSONAR first-party Gradle action, tag pinning acceptable
         with:
           dependency-graph: generate-and-submit
+      - name: Enable Gradle build cache for CI
+        # Writes org.gradle.caching=true into the runner's $GRADLE_USER_HOME so task
+        # outputs are stored in the local build cache, which setup-gradle persists
+        # between jobs via the GitHub Actions cache.
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
       - name: install node for react ui
         uses: actions/setup-node@v6
         with:
@@ -53,7 +60,9 @@ jobs:
         run: |
           npm run format:check
       - name: Compile and assemble
-        run: ./gradlew assemble :testing:opendcs-tests:testClasses --info
+        # `testClasses` (unqualified) runs the aggregate task in every subproject so
+        # all `:*:compileTestJava` outputs land in the build cache for downstream jobs.
+        run: ./gradlew assemble testClasses --info
   ubuntu-tests:
     # Ubuntu unit + LRGS + XML integration tests. Runs in parallel with the integration-db
     # engine jobs once `compile` finishes; all consume the same warmed Gradle cache.
@@ -76,6 +85,10 @@ jobs:
           python-version: "3.8"
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6.0.1  # NOSONAR first-party Gradle action, tag pinning acceptable
+      - name: Enable Gradle build cache for CI
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
       - name: install node for react ui and tests
         uses: actions/setup-node@v6
         with:
@@ -141,6 +154,17 @@ jobs:
           python-version: "3.8"
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6.0.1  # NOSONAR first-party Gradle action, tag pinning acceptable
+      - name: Enable Gradle build cache for CI
+        if: matrix.platform != 'windows-latest'
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
+      - name: Enable Gradle build cache for CI (Windows)
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.gradle"
+          echo "org.gradle.caching=true" >> "$HOME/.gradle/gradle.properties"
       - name: Change temp dir in windows
         if: matrix.platform == 'windows-latest'
         run: |
@@ -217,6 +241,10 @@ jobs:
           python-version: "3.8"
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6.0.1  # NOSONAR first-party Gradle action, tag pinning acceptable
+      - name: Enable Gradle build cache for CI
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
       - name: install node for react ui and tests
         uses: actions/setup-node@v6
         with:
@@ -279,6 +307,10 @@ jobs:
           python-version: "3.8"
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6.0.1  # NOSONAR first-party Gradle action, tag pinning acceptable
+      - name: Enable Gradle build cache for CI
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
       - name: install node for react ui
         uses: actions/setup-node@v6
         with:
