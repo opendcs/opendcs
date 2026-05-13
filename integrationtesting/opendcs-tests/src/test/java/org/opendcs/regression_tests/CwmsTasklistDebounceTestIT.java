@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
-import java.util.Date;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +28,12 @@ import opendcs.dao.DaoBase;
  * columns, no source_id NOT NULL constraint). Inserts a fresh row and an aged
  * row referring to a synthetic site_datatype_id, runs getNewData +
  * releaseNewData, and asserts which specific record_nums survived.
+ *
+ * <p>Date values are produced inline by the SQL using {@code SYSDATE -
+ * ?/86400} (seconds-as-fraction-of-day) so the time component is preserved.
+ * Going through {@code DaoBase.bind()} with a Java {@code Date} would route
+ * to {@code java.sql.Date} for the non-OpenTSDB branch, which truncates the
+ * time to midnight and breaks the second-granularity debounce comparison.
  */
 @DecodesConfigurationRequired({
     "shared/test-sites.xml",
@@ -42,8 +47,8 @@ final class CwmsTasklistDebounceTestIT extends AppTestBase
     private TimeSeriesDb db;
 
     private static final String APP_NAME = "compproc_regtest";
-    private static final long FRESH_AGE_MS = 100L;
-    private static final long AGED_AGE_MS = 10_000L;
+    private static final int FRESH_AGE_SEC = 0;
+    private static final int AGED_AGE_SEC = 10;
     // Synthetic ts_code used as the site_datatype_id. No FK constraint, so the
     // row is treated as a non-existent TSID (NoSuchObjectException →
     // bad-rec) by processTasklistEntry — exactly what the assertions expect.
@@ -60,9 +65,8 @@ final class CwmsTasklistDebounceTestIT extends AppTestBase
             DbKey appKey = laDAI.lookupAppId(APP_NAME);
             DbKey sdi = DbKey.createDbKey(SYNTHETIC_SDI);
 
-            long now = System.currentTimeMillis();
-            DbKey freshRec = insertTasklistRow(dao, appKey, sdi, new Date(now - FRESH_AGE_MS));
-            DbKey agedRec = insertTasklistRow(dao, appKey, sdi, new Date(now - AGED_AGE_MS));
+            DbKey freshRec = insertTasklistRow(dao, appKey, sdi, FRESH_AGE_SEC);
+            DbKey agedRec = insertTasklistRow(dao, appKey, sdi, AGED_AGE_SEC);
 
             consumeNewData(tsDAI, appKey);
 
@@ -84,9 +88,8 @@ final class CwmsTasklistDebounceTestIT extends AppTestBase
             DbKey appKey = laDAI.lookupAppId(APP_NAME);
             DbKey sdi = DbKey.createDbKey(SYNTHETIC_SDI);
 
-            long now = System.currentTimeMillis();
-            DbKey freshRec = insertTasklistRow(dao, appKey, sdi, new Date(now - FRESH_AGE_MS));
-            DbKey agedRec = insertTasklistRow(dao, appKey, sdi, new Date(now - AGED_AGE_MS));
+            DbKey freshRec = insertTasklistRow(dao, appKey, sdi, FRESH_AGE_SEC);
+            DbKey agedRec = insertTasklistRow(dao, appKey, sdi, AGED_AGE_SEC);
 
             consumeNewData(tsDAI, appKey);
 
@@ -114,7 +117,12 @@ final class CwmsTasklistDebounceTestIT extends AppTestBase
         db.releaseNewData(dc, tsDAI, 250);
     }
 
-    private DbKey insertTasklistRow(DaoBase dao, DbKey appKey, DbKey sdi, Date dateTimeLoaded)
+    /**
+     * Inserts a tasklist row with date_time_loaded and start_date_time set to
+     * {@code SYSDATE - ageSeconds/86400} so the time component is preserved at
+     * Oracle DATE second precision.
+     */
+    private DbKey insertTasklistRow(DaoBase dao, DbKey appKey, DbKey sdi, int ageSeconds)
             throws Exception
     {
         try (Connection c = db.getConnection())
@@ -124,9 +132,9 @@ final class CwmsTasklistDebounceTestIT extends AppTestBase
                 "insert into cp_comp_tasklist(record_num, loading_application_id, "
                 + "site_datatype_id, value, date_time_loaded, start_date_time, "
                 + "delete_flag, flags) "
-                + "values (?,?,?,?,?,?,?,?)",
+                + "values (?,?,?,?, SYSDATE - ?/86400, SYSDATE - ?/86400, ?, ?)",
                 recNum, appKey, sdi, 1.0,
-                dateTimeLoaded, dateTimeLoaded, "N", 0);
+                ageSeconds, ageSeconds, "N", 0);
             return recNum;
         }
     }
