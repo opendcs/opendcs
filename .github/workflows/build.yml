@@ -14,20 +14,164 @@ env:
   sonarJdk: 21
 
 jobs:
-  tests:
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [ubuntu-latest, macos-latest, windows-latest]
-        jdk: [21]
-    runs-on: ${{matrix.platform}}
+  compile:
+    # Compiles main + test classes, builds the UI war, runs the JS format check, and
+    # submits the dependency graph. Populates the shared Gradle build cache (via
+    # gradle/actions/setup-gradle) so every downstream test job — ubuntu-tests and the
+    # three integration-db engines — starts hot and runs in parallel.
+    runs-on: ubuntu-latest
     steps:
       - name: Clean up disk space, so we don't run out.
-        if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /opt/ghc
+      - uses: actions/checkout@v6.0.2
+      - name: Set up JDK
+        uses: actions/setup-java@v5.2.0
+        with:
+          java-version: 21
+          distribution: temurin
+      - uses: actions/setup-python@v6.2.0
+        with:
+          python-version: "3.8"
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6.0.1  # NOSONAR first-party Gradle action, tag pinning acceptable
+        with:
+          dependency-graph: generate-and-submit
+          # Force a cache write from this job so downstream test jobs can restore
+          # ~/.gradle/caches/modules-2 and caches/<gradle-version>/transforms-* on PR
+          # branches. Without this, setup-gradle defaults to read-only on non-default
+          # branches and every downstream job re-downloads plugins and re-runs the
+          # InstrumentationAnalysisTransform passes.
+          cache-read-only: false
+      - name: Enable Gradle build cache for CI
+        # Writes org.gradle.caching=true into the runner's $GRADLE_USER_HOME so task
+        # outputs are stored in the local build cache, which the cache step below
+        # persists between jobs via the GitHub Actions cache.
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
+      - name: Share Gradle build cache across jobs
+        # Persists ~/.gradle/caches/build-cache-1 under a workflow-run-scoped key so
+        # downstream jobs (ubuntu-tests, integration-db engines) restore the entries
+        # produced here. Cache keys are content-addressed by Gradle, so reusing across
+        # PRs is safe — changed sources get new keys and recompile automatically.
+        uses: actions/cache@v5.0.4
+        with:
+          path: ~/.gradle/caches/build-cache-1
+          key: gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-${{ github.job }}
+          restore-keys: |
+            gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-
+            gradle-build-cache-${{ runner.os }}-
+      - name: install node for react ui
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: javascript/opendcs-web-ui-react/package-lock.json
+      - name: Install node dependencies (required to build UI war)
+        working-directory: javascript/opendcs-web-ui-react
+        run: npm ci --ignore-scripts
+      - name: Enforce Formatting
+        working-directory: javascript/opendcs-web-ui-react
+        run: |
+          npm run format:check
+      - name: Compile and assemble
+        # `testClasses` (unqualified) runs the aggregate task in every subproject so
+        # all `:*:compileTestJava` outputs land in the build cache for downstream jobs.
+        run: ./gradlew assemble testClasses --info
+  ubuntu-tests:
+    # Ubuntu unit + LRGS + XML integration tests. Runs in parallel with the integration-db
+    # engine jobs once `compile` finishes; all consume the same warmed Gradle cache.
+    # `name:` preserves the old check name `tests (ubuntu-latest, 21)` so existing branch
+    # protection rules keep matching without needing to be re-edited.
+    name: "tests (ubuntu-latest, 21)"
+    needs: compile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clean up disk space, so we don't run out.
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+      - uses: actions/checkout@v6.0.2
+      - name: Set up JDK
+        uses: actions/setup-java@v5.2.0
+        with:
+          java-version: 21
+          distribution: temurin
+      - uses: actions/setup-python@v6.2.0
+        with:
+          python-version: "3.8"
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6.0.1  # NOSONAR first-party Gradle action, tag pinning acceptable
+      - name: Enable Gradle build cache for CI
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
+      - name: Share Gradle build cache across jobs
+        uses: actions/cache@v5.0.4
+        with:
+          path: ~/.gradle/caches/build-cache-1
+          key: gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-${{ github.job }}
+          restore-keys: |
+            gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-
+            gradle-build-cache-${{ runner.os }}-
+      - name: install node for react ui and tests
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: javascript/opendcs-web-ui-react/package-lock.json
+      - name: Install/Setup playwright
+        working-directory: javascript/opendcs-web-ui-react
+        run : |
+          npm ci --ignore-scripts
+          npx --no-install --ignore-scripts playwright install
+      - name: Unit and LRGS tests
+        run: |
+          ./gradlew test --info
+      - name: integration tests (XML)
+        run: |
+          ./gradlew :testing:opendcs-tests:testOpenDCSXML --info
+      - name: Upload jacoco exec data (tests)
+        uses: actions/upload-artifact@v7.0.0
+        with:
+          name: jacoco-exec-tests
+          path: |
+            ./**/build/jacoco/*.exec
+            ./**/build/reports/jacoco/**
+            ./javascript/opendcs-web-ui-react/coverage/**
+            ./javascript/opendcs-web-ui-react/build/eslint-report.json
+          if-no-files-found: warn
+      - name: Upload Test Reports
+        uses: actions/upload-artifact@v7.0.0
+        if: always()
+        with:
+          name: test-report-ubuntu-${{ env.sonarJdk }}
+          path: |
+            ./**/build/reports/tests/**
+            ./**/build/test-results/**
+          if-no-files-found: error
+      - name: Test Report
+        uses: mikepenz/action-junit-report@bccf2e31636835cf0874589931c4116687171386 # v6.4.0
+        if: always()
+        with:
+          annotate_only: true
+          include_passed: true
+          report_paths: '**/TEST-*.xml'
+          detailed_summary: true
+  tests:
+    # Cross-platform smoke tests on macOS/Windows. The ubuntu equivalents run in `build`
+    # so we don't compile twice on the same OS.
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-latest, windows-latest]
+        jdk: [21]
+    runs-on: ${{matrix.platform}}
+    steps:
       - uses: actions/checkout@v6.0.2
       - name: Set up JDK
         uses: actions/setup-java@v5.2.0
@@ -38,9 +182,26 @@ jobs:
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.0.1
+        uses: gradle/actions/setup-gradle@v6.0.1  # NOSONAR first-party Gradle action, tag pinning acceptable
+      - name: Enable Gradle build cache for CI
+        if: matrix.platform != 'windows-latest'
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
+      - name: Enable Gradle build cache for CI (Windows)
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.gradle"
+          echo "org.gradle.caching=true" >> "$HOME/.gradle/gradle.properties"
+      - name: Share Gradle build cache across jobs
+        uses: actions/cache@v5.0.4
         with:
-          dependency-graph: generate-and-submit
+          path: ~/.gradle/caches/build-cache-1
+          key: gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-${{ github.job }}
+          restore-keys: |
+            gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-
+            gradle-build-cache-${{ runner.os }}-
       - name: Change temp dir in windows
         if: matrix.platform == 'windows-latest'
         run: |
@@ -55,85 +216,17 @@ jobs:
       - name: Install/Setup playwright
         working-directory: javascript/opendcs-web-ui-react
         run : |
-          npm install
-          npx playwright install
-      - name: Enforce Formatting
-        working-directory: javascript/opendcs-web-ui-react
-        run : |
-          npm run format:check
+          npm ci --ignore-scripts
+          npx --no-install --ignore-scripts playwright install
       - name: Unit and LRGS tests
         run: |
           ./gradlew test --info
       - name: integration tests (XML)
-        # There is an odd issues with the log file name on the windows runner.
-        # It does work locally though. Will work on it later.
-        # Integration tests require docker now for test containers.
-        # More work required to deal with the other platforms. Should be workable
-        # at some point though.
+        # XML is the cross-platform integration smoke test. DB-backed engines
+        # (Postgres, Oracle, CWMS-Oracle) run only on ubuntu in the integration-db
+        # matrix because they require docker.
         run: |
           ./gradlew :testing:opendcs-tests:testOpenDCSXML --info
-      - name: integration tests (OpenDCS-Postgres)
-        # There is an odd issues with the log file name on the windows runner.
-        # It does work locally though. Will work on it later.
-        # Integration tests require docker now for test containers.
-        # More work required to deal with the other platforms. Should be workable
-        # at some point though.
-        if: matrix.platform == 'ubuntu-latest'
-        run: |
-          ./gradlew :testing:opendcs-tests:testOpenDCSPostgres --info
-      - name: integration tests (OpenDCS-Oracle)
-        # There is an odd issues with the log file name on the windows runner.
-        # It does work locally though. Will work on it later.
-        # Integration tests require docker now for test containers.
-        # More work required to deal with the other platforms. Should be workable
-        # at some point though.
-        if: matrix.platform == 'ubuntu-latest'
-        run: |
-          ./gradlew :testing:opendcs-tests:testOpenDCSOracle  --info
-      - name: integration tests (CWMS-Oracle)
-        # There is an odd issues with the log file name on the windows runner.
-        # It does work locally though. Will work on it later.
-        # Integration tests require docker now for test containers.
-        # More work required to deal with the other platforms. Should be workable
-        # at some point though.
-        if: matrix.platform == 'ubuntu-latest'
-        run: |
-          ./gradlew :testing:opendcs-tests:testCWMSOracle  --info
-      - name: Gather Code Coverage into single report
-        # There is an odd issues with the log file name on the windows runner.
-        # It does work locally though. Will work on it later.
-        # Integration tests require docker now for test containers.
-        # More work required to deal with the other platforms. Should be workable
-        # at some point though.
-        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == env.sonarJdk
-        run: |
-          ./gradlew codeCoverageReport --info
-      - name: Cache SonarCloud packages
-        uses: actions/cache@v5.0.4
-        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == env.sonarJdk
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-      - name: Cache Gradle packages
-        uses: actions/cache@v5.0.4
-        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == env.sonarJdk
-        with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
-          restore-keys: ${{ runner.os }}-gradle
-      - name: Upload Coverage
-        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == env.sonarJdk
-        uses: actions/upload-artifact@v7.0.0
-        with:
-          name: coverage
-          path: |
-            ./**/build/**/jacoco/**/*.xml
-            ./**/build/**/test-*.xml
-            ./build/reports/jacoco/codeCoverageReport/**/
-            ./**/build/**/*.class
-            ./javascript/opendcs-web-ui-react/coverage/**
-            ./javascript/opendcs-web-ui-react/build/eslint-report.json
       - name: Upload Test Reports
         uses: actions/upload-artifact@v7.0.0
         if: always()
@@ -151,6 +244,165 @@ jobs:
           include_passed: true
           report_paths: '**/TEST-*.xml'
           detailed_summary: true
+  integration-db:
+    # Database-backed integration suites run in parallel, one runner per engine.
+    # `needs: compile` ensures the Gradle build cache is already populated so each
+    # engine job skips compilation and goes straight to running its test task.
+    # Runs concurrently with `ubuntu-tests` (unit + XML) since both consume the cache.
+    needs: compile
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        engine:
+          - name: opendcs-postgres
+            task: testOpenDCSPostgres
+          - name: opendcs-oracle
+            task: testOpenDCSOracle
+          - name: cwms-oracle
+            task: testCWMSOracle
+    steps:
+      - name: Clean up disk space, so we don't run out.
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+      - uses: actions/checkout@v6.0.2
+      - name: Set up JDK
+        uses: actions/setup-java@v5.2.0
+        with:
+          java-version: 21
+          distribution: temurin
+      - uses: actions/setup-python@v6.2.0
+        with:
+          python-version: "3.8"
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6.0.1  # NOSONAR first-party Gradle action, tag pinning acceptable
+      - name: Enable Gradle build cache for CI
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
+      - name: Share Gradle build cache across jobs
+        uses: actions/cache@v5.0.4
+        with:
+          path: ~/.gradle/caches/build-cache-1
+          key: gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-${{ github.job }}
+          restore-keys: |
+            gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-
+            gradle-build-cache-${{ runner.os }}-
+      - name: install node for react ui and tests
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: javascript/opendcs-web-ui-react/package-lock.json
+      - name: Install node dependencies (required to build UI war)
+        working-directory: javascript/opendcs-web-ui-react
+        run: npm ci --ignore-scripts
+      - name: integration tests (${{ matrix.engine.name }})
+        run: |
+          ./gradlew :testing:opendcs-tests:${{ matrix.engine.task }} --info
+      - name: Upload jacoco exec data
+        if: always()
+        uses: actions/upload-artifact@v7.0.0
+        with:
+          name: jacoco-exec-${{ matrix.engine.name }}
+          path: |
+            ./**/build/jacoco/*.exec
+            ./**/build/reports/jacoco/**
+          if-no-files-found: warn
+      - name: Upload Test Reports
+        uses: actions/upload-artifact@v7.0.0
+        if: always()
+        with:
+          name: test-report-${{ matrix.engine.name }}
+          path: |
+            ./**/build/reports/tests/**
+            ./**/build/test-results/**
+          if-no-files-found: error
+      - name: Test Report
+        uses: mikepenz/action-junit-report@bccf2e31636835cf0874589931c4116687171386 # v6.4.0
+        if: always()
+        with:
+          annotate_only: true
+          include_passed: true
+          report_paths: '**/TEST-*.xml'
+          detailed_summary: true
+  coverage:
+    # Aggregates jacoco exec files from `ubuntu-tests` (unit + XML) and every `integration-db`
+    # matrix entry into the single `coverage` artifact that sonar.yaml consumes. `tests`
+    # (macOS/Windows) is included only to gate publishing on those passing — it produces no
+    # coverage of its own.
+    needs: [ubuntu-tests, tests, integration-db]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clean up disk space, so we don't run out.
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+      - uses: actions/checkout@v6.0.2
+      - name: Set up JDK
+        uses: actions/setup-java@v5.2.0
+        with:
+          java-version: ${{ env.sonarJdk }}
+          distribution: temurin
+      - uses: actions/setup-python@v6.2.0
+        with:
+          python-version: "3.8"
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6.0.1  # NOSONAR first-party Gradle action, tag pinning acceptable
+      - name: Enable Gradle build cache for CI
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
+      - name: Share Gradle build cache across jobs
+        uses: actions/cache@v5.0.4
+        with:
+          path: ~/.gradle/caches/build-cache-1
+          key: gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-${{ github.job }}
+          restore-keys: |
+            gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-
+            gradle-build-cache-${{ runner.os }}-
+      - name: install node for react ui
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: javascript/opendcs-web-ui-react/package-lock.json
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v5.0.4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      - name: Cache Gradle packages
+        uses: actions/cache@v5.0.4
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+          restore-keys: ${{ runner.os }}-gradle
+      - name: Restore jacoco exec data and UI coverage
+        uses: actions/download-artifact@v8.0.1
+        with:
+          pattern: jacoco-exec-*
+          path: ./
+          merge-multiple: true
+      - name: Compile classes for coverage report
+        run: ./gradlew classes --info
+      - name: Generate aggregate coverage report
+        run: ./gradlew codeCoverageReport --info
+      - name: Upload Coverage
+        uses: actions/upload-artifact@v7.0.0
+        with:
+          name: coverage
+          path: |
+            ./**/build/**/jacoco/**/*.xml
+            ./**/build/**/test-*.xml
+            ./build/reports/jacoco/codeCoverageReport/**/
+            ./**/build/**/*.class
+            ./javascript/opendcs-web-ui-react/coverage/**
+            ./javascript/opendcs-web-ui-react/build/eslint-report.json
   containers:
     runs-on: [ubuntu-latest]
     steps:
