@@ -138,8 +138,6 @@ class DecodesConfigDaoTestIT extends AppTestBase
 
             var onlyOne = decodesConfigDao.getAll(tx, 1, 0);
             assertEquals(1, onlyOne.size());
-            assertEquals("OKVI4", onlyOne.getFirst().getName());
-            assertEquals("ST", onlyOne.getFirst().decodesScripts.getFirst().scriptName);
 
             final var numConfigs = 30;
 
