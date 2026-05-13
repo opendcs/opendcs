@@ -1724,10 +1724,10 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		int debounceSec = DecodesSettings.instance().tasklistDebounceSeconds;
 		if (debounceSec > 0)
 		{
-			debounceClause = db.isOracle()
-				? " and a.DATE_TIME_LOADED <= SYSDATE - " + debounceSec + "/86400"
-				: " and a.DATE_TIME_LOADED <= CURRENT_TIMESTAMP - INTERVAL '"
-					+ debounceSec + " SECOND'";
+			// DATE_TIME_LOADED is BIGINT epoch millis (see V6.8__opendcs.sql),
+			// so compare against an epoch-ms cutoff rather than SYSDATE/CURRENT_TIMESTAMP.
+			long cutoffMs = System.currentTimeMillis() - (debounceSec * 1000L);
+			debounceClause = " and a.DATE_TIME_LOADED <= " + cutoffMs;
 		}
 		String getMinStmtQuery = "select min(a.record_num) from cp_comp_tasklist a "
 				+ "where a.LOADING_APPLICATION_ID = " + applicationId

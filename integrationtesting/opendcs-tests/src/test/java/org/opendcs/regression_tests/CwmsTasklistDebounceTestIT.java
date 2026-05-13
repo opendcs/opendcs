@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
+import java.util.Date;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
@@ -15,26 +17,26 @@ import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import decodes.sql.DbKey;
 import decodes.tsdb.DataCollection;
 import decodes.tsdb.TimeSeriesDb;
-import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.util.DecodesSettings;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
 
 /**
- * Verifies tasklistDebounceSeconds filters fresh cp_comp_tasklist rows out of
- * getNewData() while still returning aged ones. The test inserts two rows
- * (one with date_time_loaded = now-100ms, one with now-10s), runs getNewData
- * + releaseNewData, then asserts which specific record_nums survive. Aged
- * rows are always consumed; fresh rows survive iff debounce held them back.
+ * CWMS-Oracle counterpart of {@link TasklistDebounceTestIT}. Exercises the
+ * SYSDATE-based debounce predicate in {@link decodes.cwms.CwmsTimeSeriesDAO}.
+ * Uses the CWMS cp_comp_tasklist schema (site_datatype_id, Oracle DATE
+ * columns, no source_id NOT NULL constraint). Inserts a fresh row and an aged
+ * row referring to a synthetic site_datatype_id, runs getNewData +
+ * releaseNewData, and asserts which specific record_nums survived.
  */
 @DecodesConfigurationRequired({
     "shared/test-sites.xml",
     "shared/presgrp-regtest.xml"
 })
 @ComputationConfigurationRequired({"shared/loading-apps.xml"})
-@EnableIfTsDb({"OpenDCS-Postgres", "OpenDCS-Oracle"})
-final class TasklistDebounceTestIT extends AppTestBase
+@EnableIfTsDb({"CWMS-Oracle"})
+final class CwmsTasklistDebounceTestIT extends AppTestBase
 {
     @ConfiguredField
     private TimeSeriesDb db;
@@ -42,6 +44,10 @@ final class TasklistDebounceTestIT extends AppTestBase
     private static final String APP_NAME = "compproc_regtest";
     private static final long FRESH_AGE_MS = 100L;
     private static final long AGED_AGE_MS = 10_000L;
+    // Synthetic ts_code used as the site_datatype_id. No FK constraint, so the
+    // row is treated as a non-existent TSID (NoSuchObjectException →
+    // bad-rec) by processTasklistEntry — exactly what the assertions expect.
+    private static final long SYNTHETIC_SDI = 9_999_999L;
 
     @Test
     void debounce_excludes_fresh_row_keeps_aged_row_processed() throws Exception
@@ -52,12 +58,11 @@ final class TasklistDebounceTestIT extends AppTestBase
              DaoBase dao = new DaoBase(db, "test"))
         {
             DbKey appKey = laDAI.lookupAppId(APP_NAME);
-            DbKey tsKey = createInputTs("TESTSITE1.Stage.Inst.15Minutes.0.debounce-window", tsDAI);
-            DbKey sourceKey = ensureDataSource(dao, appKey);
+            DbKey sdi = DbKey.createDbKey(SYNTHETIC_SDI);
 
             long now = System.currentTimeMillis();
-            DbKey freshRec = insertTasklistRow(dao, appKey, tsKey, sourceKey, now - FRESH_AGE_MS);
-            DbKey agedRec = insertTasklistRow(dao, appKey, tsKey, sourceKey, now - AGED_AGE_MS);
+            DbKey freshRec = insertTasklistRow(dao, appKey, sdi, new Date(now - FRESH_AGE_MS));
+            DbKey agedRec = insertTasklistRow(dao, appKey, sdi, new Date(now - AGED_AGE_MS));
 
             consumeNewData(tsDAI, appKey);
 
@@ -77,12 +82,11 @@ final class TasklistDebounceTestIT extends AppTestBase
              DaoBase dao = new DaoBase(db, "test"))
         {
             DbKey appKey = laDAI.lookupAppId(APP_NAME);
-            DbKey tsKey = createInputTs("TESTSITE1.Stage.Inst.15Minutes.0.debounce-off", tsDAI);
-            DbKey sourceKey = ensureDataSource(dao, appKey);
+            DbKey sdi = DbKey.createDbKey(SYNTHETIC_SDI);
 
             long now = System.currentTimeMillis();
-            DbKey freshRec = insertTasklistRow(dao, appKey, tsKey, sourceKey, now - FRESH_AGE_MS);
-            DbKey agedRec = insertTasklistRow(dao, appKey, tsKey, sourceKey, now - AGED_AGE_MS);
+            DbKey freshRec = insertTasklistRow(dao, appKey, sdi, new Date(now - FRESH_AGE_MS));
+            DbKey agedRec = insertTasklistRow(dao, appKey, sdi, new Date(now - AGED_AGE_MS));
 
             consumeNewData(tsDAI, appKey);
 
@@ -93,27 +97,24 @@ final class TasklistDebounceTestIT extends AppTestBase
         }
     }
 
-    /**
-     * Run getNewData followed by releaseNewData so that both bad-recs (deleted
-     * inline by getNewData) and validly-processed rows (deleted by releaseNewData)
-     * are cleared from cp_comp_tasklist. Test assertions then only depend on
-     * whether a row was visible to getNewData at all, not on which deletion path
-     * it took.
-     */
+    @AfterEach
+    void cleanupSyntheticRows() throws Exception
+    {
+        try (DaoBase dao = new DaoBase(db, "cleanup"))
+        {
+            dao.doModify(
+                "delete from cp_comp_tasklist where site_datatype_id = ?",
+                DbKey.createDbKey(SYNTHETIC_SDI));
+        }
+    }
+
     private void consumeNewData(TimeSeriesDAI tsDAI, DbKey appKey) throws Exception
     {
         DataCollection dc = tsDAI.getNewData(appKey, 20000);
         db.releaseNewData(dc, tsDAI, 250);
     }
 
-    private DbKey createInputTs(String tsidStr, TimeSeriesDAI tsDAI) throws Exception
-    {
-        TimeSeriesIdentifier tsId = db.makeTsId(tsidStr);
-        return tsDAI.createTimeSeries(tsId);
-    }
-
-    private DbKey insertTasklistRow(DaoBase dao, DbKey appKey, DbKey tsKey, DbKey sourceKey,
-                                    long dateTimeLoadedMs)
+    private DbKey insertTasklistRow(DaoBase dao, DbKey appKey, DbKey sdi, Date dateTimeLoaded)
             throws Exception
     {
         try (Connection c = db.getConnection())
@@ -121,10 +122,11 @@ final class TasklistDebounceTestIT extends AppTestBase
             DbKey recNum = db.getKeyGenerator().getKey("cp_comp_tasklist", c);
             dao.doModify(
                 "insert into cp_comp_tasklist(record_num, loading_application_id, "
-                + "ts_id, num_value, date_time_loaded, sample_time, flags, source_id) "
+                + "site_datatype_id, value, date_time_loaded, start_date_time, "
+                + "delete_flag, flags) "
                 + "values (?,?,?,?,?,?,?,?)",
-                recNum, appKey, tsKey, 1.0,
-                dateTimeLoadedMs, dateTimeLoadedMs, 0, sourceKey);
+                recNum, appKey, sdi, 1.0,
+                dateTimeLoaded, dateTimeLoaded, "N", 0);
             return recNum;
         }
     }
@@ -136,31 +138,5 @@ final class TasklistDebounceTestIT extends AppTestBase
             rs -> rs.getInt(1),
             recNum);
         return count != null && count > 0;
-    }
-
-    /**
-     * cp_comp_tasklist.source_id has a NOT NULL FK to TSDB_DATA_SOURCE. Reuse an
-     * existing row for this loading app if one is present, otherwise create one.
-     */
-    private DbKey ensureDataSource(DaoBase dao, DbKey appKey) throws Exception
-    {
-        DbKey existing = dao.getSingleResultOr(
-            "select source_id from tsdb_data_source where loading_application_id = ? "
-            + "and module is null",
-            rs -> DbKey.createDbKey(rs, 1),
-            null,
-            appKey);
-        if (existing != null && !DbKey.isNull(existing))
-            return existing;
-
-        try (Connection c = db.getConnection())
-        {
-            DbKey sourceKey = db.getKeyGenerator().getKey("tsdb_data_source", c);
-            dao.doModify(
-                "insert into tsdb_data_source(source_id, loading_application_id, module) "
-                + "values (?,?,null)",
-                sourceKey, appKey);
-            return sourceKey;
-        }
     }
 }
