@@ -507,6 +507,17 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     });
   }, []);
 
+  // --- Expose imperative handle --------------------------------------------
+  useImperativeHandle(
+    ref,
+    () => ({
+      scheduleScrollToEnd: () => {
+        pendingNavRef.current = true;
+      },
+    }),
+    [],
+  );
+
   const toggleByIdStr = useCallback((id: string) => {
     setRowState((prev) => {
       const next = { ...prev };
