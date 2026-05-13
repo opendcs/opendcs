@@ -39,6 +39,12 @@ jobs:
         uses: gradle/actions/setup-gradle@v6.0.1  # NOSONAR first-party Gradle action, tag pinning acceptable
         with:
           dependency-graph: generate-and-submit
+          # Force a cache write from this job so downstream test jobs can restore
+          # ~/.gradle/caches/modules-2 and caches/<gradle-version>/transforms-* on PR
+          # branches. Without this, setup-gradle defaults to read-only on non-default
+          # branches and every downstream job re-downloads plugins and re-runs the
+          # InstrumentationAnalysisTransform passes.
+          cache-read-only: false
       - name: Enable Gradle build cache for CI
         # Writes org.gradle.caching=true into the runner's $GRADLE_USER_HOME so task
         # outputs are stored in the local build cache, which the cache step below
