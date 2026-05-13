@@ -41,11 +41,23 @@ jobs:
           dependency-graph: generate-and-submit
       - name: Enable Gradle build cache for CI
         # Writes org.gradle.caching=true into the runner's $GRADLE_USER_HOME so task
-        # outputs are stored in the local build cache, which setup-gradle persists
-        # between jobs via the GitHub Actions cache.
+        # outputs are stored in the local build cache, which the cache step below
+        # persists between jobs via the GitHub Actions cache.
         run: |
           mkdir -p ~/.gradle
           echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
+      - name: Share Gradle build cache across jobs
+        # Persists ~/.gradle/caches/build-cache-1 under a workflow-run-scoped key so
+        # downstream jobs (ubuntu-tests, integration-db engines) restore the entries
+        # produced here. Cache keys are content-addressed by Gradle, so reusing across
+        # PRs is safe — changed sources get new keys and recompile automatically.
+        uses: actions/cache@v5.0.4
+        with:
+          path: ~/.gradle/caches/build-cache-1
+          key: gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-${{ github.job }}
+          restore-keys: |
+            gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-
+            gradle-build-cache-${{ runner.os }}-
       - name: install node for react ui
         uses: actions/setup-node@v6
         with:
@@ -66,6 +78,9 @@ jobs:
   ubuntu-tests:
     # Ubuntu unit + LRGS + XML integration tests. Runs in parallel with the integration-db
     # engine jobs once `compile` finishes; all consume the same warmed Gradle cache.
+    # `name:` preserves the old check name `tests (ubuntu-latest, 21)` so existing branch
+    # protection rules keep matching without needing to be re-edited.
+    name: "tests (ubuntu-latest, 21)"
     needs: compile
     runs-on: ubuntu-latest
     steps:
@@ -89,6 +104,14 @@ jobs:
         run: |
           mkdir -p ~/.gradle
           echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
+      - name: Share Gradle build cache across jobs
+        uses: actions/cache@v5.0.4
+        with:
+          path: ~/.gradle/caches/build-cache-1
+          key: gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-${{ github.job }}
+          restore-keys: |
+            gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-
+            gradle-build-cache-${{ runner.os }}-
       - name: install node for react ui and tests
         uses: actions/setup-node@v6
         with:
@@ -99,7 +122,7 @@ jobs:
         working-directory: javascript/opendcs-web-ui-react
         run : |
           npm ci --ignore-scripts
-          npx playwright install
+          npx --no-install --ignore-scripts playwright install
       - name: Unit and LRGS tests
         run: |
           ./gradlew test --info
@@ -165,6 +188,14 @@ jobs:
         run: |
           mkdir -p "$HOME/.gradle"
           echo "org.gradle.caching=true" >> "$HOME/.gradle/gradle.properties"
+      - name: Share Gradle build cache across jobs
+        uses: actions/cache@v5.0.4
+        with:
+          path: ~/.gradle/caches/build-cache-1
+          key: gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-${{ github.job }}
+          restore-keys: |
+            gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-
+            gradle-build-cache-${{ runner.os }}-
       - name: Change temp dir in windows
         if: matrix.platform == 'windows-latest'
         run: |
@@ -180,7 +211,7 @@ jobs:
         working-directory: javascript/opendcs-web-ui-react
         run : |
           npm ci --ignore-scripts
-          npx playwright install
+          npx --no-install --ignore-scripts playwright install
       - name: Unit and LRGS tests
         run: |
           ./gradlew test --info
@@ -245,6 +276,14 @@ jobs:
         run: |
           mkdir -p ~/.gradle
           echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
+      - name: Share Gradle build cache across jobs
+        uses: actions/cache@v5.0.4
+        with:
+          path: ~/.gradle/caches/build-cache-1
+          key: gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-${{ github.job }}
+          restore-keys: |
+            gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-
+            gradle-build-cache-${{ runner.os }}-
       - name: install node for react ui and tests
         uses: actions/setup-node@v6
         with:
@@ -311,6 +350,14 @@ jobs:
         run: |
           mkdir -p ~/.gradle
           echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
+      - name: Share Gradle build cache across jobs
+        uses: actions/cache@v5.0.4
+        with:
+          path: ~/.gradle/caches/build-cache-1
+          key: gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-${{ github.job }}
+          restore-keys: |
+            gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-
+            gradle-build-cache-${{ runner.os }}-
       - name: install node for react ui
         uses: actions/setup-node@v6
         with:
