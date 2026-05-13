@@ -127,7 +127,6 @@ export interface AddNewConfig<T> {
 
 export interface ColumnEdit<T> {
   /** HTML string for the cell when its row is in `"edit"` or `"new"` mode. */
-  render: (row: T) => string;
   render: (row: T, rowId: string) => string;
   /** Read the edited value back from the cell's form control on save. */
   read: (cell: HTMLElement) => unknown;
@@ -151,10 +150,6 @@ export interface InlineEditConfig<T> {
   newTemplate?: () => T;
   /** Aria-label generators for the auto-generated action buttons. */
   labels?: {
-    edit?: (row: T) => string;
-    remove?: (row: T) => string;
-    save?: (row: T) => string;
-    cancel?: (row: T) => string;
     edit?: (row: T, rowId: string) => string;
     remove?: (row: T, rowId: string) => string;
     save?: (row: T, rowId: string) => string;
@@ -537,16 +532,30 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
       setLocalItems((prev) => withoutRef(prev, row));
       setModeByIdStr(id, undefined);
     };
+    const markInvalidInputs = (rowEl: HTMLTableRowElement) => {
+      rowEl
+        .querySelectorAll<HTMLInputElement>("input, textarea, select")
+        .forEach((el) => {
+          if (!el.value.trim()) el.classList.add("border-warning");
+          else el.classList.remove("border-warning");
+        });
+    };
     const commitSave = (row: T, rowEl: HTMLTableRowElement) => {
       const updated = readEditedRow(row, rowEl, columns);
       const id = idOf(row);
       const isNew = rowStateRef.current[id] === "new";
       if (isNew) {
-        if (inlineEdit.onAdd?.(updated) === false) return;
+        if (inlineEdit.onAdd?.(updated) === false) {
+          markInvalidInputs(rowEl);
+          return;
+        }
         dropLocalNew(row, id);
         return;
       }
-      if (inlineEdit.onSave(row, updated) === false) return;
+      if (inlineEdit.onSave(row, updated) === false) {
+        markInvalidInputs(rowEl);
+        return;
+      }
       setModeByIdStr(id, undefined);
     };
     const commitCancel = (row: T) => {
