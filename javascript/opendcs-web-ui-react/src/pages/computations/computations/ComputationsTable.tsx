@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   ApiAlgorithm,
@@ -27,39 +27,6 @@ export interface ComputationsTableProperties {
   groupOptions?: ApiTsGroupRef[];
 }
 
-// Output parms/props belong to the algorithm's output role and are not copied
-// because they would produce duplicate output bindings on the new computation.
-const isOutputParm = (parm: { algoParmType?: string }): boolean =>
-  (parm.algoParmType ?? "").trim().toLowerCase().startsWith("o");
-
-const isOutputProp = (propName: string): boolean =>
-  propName.trim().toLowerCase().startsWith("output");
-
-const toTableRef = (comp: UiComputation): TableComputationRef => ({
-  computationId: comp.computationId,
-  name: comp.name,
-  algorithmId: comp.algorithmId,
-  algorithmName: comp.algorithmName,
-  processId: comp.appId,
-  processName: comp.applicationName,
-  enabled: comp.enabled,
-  description: comp.comment,
-  groupId: comp.groupId,
-  groupName: comp.groupName,
-});
-
-const copiedComputation = (source: ApiComputation, newId: number): UiComputation => ({
-  ...source,
-  computationId: newId,
-  name: "",
-  props: Object.fromEntries(
-    Object.entries(source.props ?? {}).filter(([key]) => !isOutputProp(key)),
-  ),
-  parmList: (source.parmList ?? [])
-    .filter((parm) => !isOutputParm(parm))
-    .map((parm) => ({ ...parm })),
-});
-
 export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
   computations,
   loading = false,
@@ -70,10 +37,6 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
   groupOptions = [],
 }) => {
   const [t] = useTranslation(["computations", "translation"]);
-  // Copies are managed externally so AppDataTable receives them as regular data
-  // rows. The user clicks the row to open it, same as any existing computation.
-  const [localComputations, setLocalComputations] = useState<TableComputationRef[]>([]);
-  const draftsRef = useRef<Record<number, UiComputation>>({});
 
   const renderEnabled = useCallback((data: unknown, type: string) => {
     const enabled = Boolean(data);
@@ -88,18 +51,28 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
         header: t("computations:header.Id"),
         defaultContent: "new",
         className: "dt-left",
+        type: "num",
       },
-      { data: "name", header: t("computations:header.Name") },
-      { data: "algorithmName", header: t("computations:header.Algorithm") },
-      { data: "processName", header: t("computations:header.Process") },
+      { data: "name", header: t("computations:header.Name"), type: "string" },
+      {
+        data: "algorithmName",
+        header: t("computations:header.Algorithm"),
+        type: "string",
+      },
+      { data: "processName", header: t("computations:header.Process"), type: "string" },
       {
         data: "enabled",
         header: t("computations:header.Enabled"),
         defaultContent: "",
         className: "dt-center",
+        type: "num",
         render: renderEnabled,
       },
-      { data: "description", header: t("computations:header.Description") },
+      {
+        data: "description",
+        header: t("computations:header.Description"),
+        type: "string",
+      },
     ],
     [t, renderEnabled],
   );
@@ -114,25 +87,6 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
         onClick: ({ row, api }) => api.setMode(row, "edit"),
       },
       {
-        key: "copy",
-        icon: "bi-files",
-        variant: "info",
-        show: (row) => (row.computationId ?? 0) > 0,
-        aria: (row) => t("computations:editor.copy_for", { id: row.computationId }),
-        onClick: async ({ row }) => {
-          if (!getComputation || !row.computationId) return;
-          try {
-            const source = await getComputation(row.computationId);
-            const newId = -Date.now();
-            const draft = copiedComputation(source, newId);
-            draftsRef.current[newId] = draft;
-            setLocalComputations((prev) => [...prev, toTableRef(draft)]);
-          } catch (err) {
-            console.warn(`Failed to copy computation ${row.computationId}`, err);
-          }
-        },
-      },
-      {
         key: "delete",
         icon: "bi-trash",
         variant: "danger",
@@ -143,17 +97,12 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
         },
       },
     ],
-    [t, getComputation, actions],
-  );
-
-  const allComputations = useMemo(
-    () => [...computations, ...localComputations],
-    [computations, localComputations],
+    [t, actions],
   );
 
   return (
     <AppDataTable<TableComputationRef, number, ApiComputation>
-      data={allComputations}
+      data={computations}
       loading={loading}
       getId={(c) => c.computationId!}
       columns={columns}
@@ -164,10 +113,7 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
         const computationPromise: Promise<UiComputation> =
           computationId > 0 && getComputation
             ? getComputation(computationId)
-            : Promise.resolve(
-                draftsRef.current[computationId] ??
-                  ({ computationId } as UiComputation),
-              );
+            : Promise.resolve({ computationId } as UiComputation);
 
         const algorithmPromise: Promise<ApiAlgorithm | undefined> =
           computationPromise.then(async (comp) => {
@@ -190,8 +136,8 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
             computation={computationPromise}
             algorithm={algorithmPromise}
             actions={{
-              save: (comp) => detailActions.save(comp),
-              cancel: () => detailActions.cancel(),
+              save: detailActions.save,
+              cancel: detailActions.cancel,
             }}
             edit={mode !== "show"}
             processOptions={processOptions}
