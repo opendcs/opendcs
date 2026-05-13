@@ -161,18 +161,28 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 	 */
 	static Thread.UncaughtExceptionHandler newFatalHandler(IntConsumer exitAction)
 	{
-		return (t, e) ->
+		return (t, ex) ->
 		{
-			log.atError().setCause(e)
+			log.atError().setCause(ex)
 				.log("Uncaught exception in thread '{}' — exiting RoutingScheduler.", t.getName());
 			exitAction.accept(1);
 		};
 	}
 
+	/**
+	 * Installs the fatal-thread handler as the JVM default. Extracted so tests
+	 * can exercise the real install path with a captured exit action instead
+	 * of asserting only on the factory's output.
+	 */
+	static void installFatalHandler(IntConsumer exitAction)
+	{
+		Thread.setDefaultUncaughtExceptionHandler(newFatalHandler(exitAction));
+	}
+
 	@Override
 	protected void oneTimeInit()
 	{
-		Thread.setDefaultUncaughtExceptionHandler(newFatalHandler(System::exit));
+		installFatalHandler(System::exit);
 
 		/**
 		 * Using lock files as an IPC mechanism (for status GUI) is unreliable in windoze.

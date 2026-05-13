@@ -1,6 +1,7 @@
 package decodes.routing;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
@@ -12,8 +13,14 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Verifies the fatal-uncaught-exception handler added for issue #1807.
- * A worker thread that throws must take the JVM down (here, signalled via the
- * injected exit action) so external monitoring restarts RoutingScheduler.
+ *
+ * Three layers under test:
+ *  - {@link RoutingScheduler#newFatalHandler} returns a handler that logs and
+ *    invokes the supplied exit action.
+ *  - {@link RoutingScheduler#installFatalHandler} installs that handler as the
+ *    JVM default — this is the same code path {@code oneTimeInit()} runs.
+ *  - A worker thread that throws an uncaught exception fires the installed
+ *    handler and triggers the exit action with code 1.
  */
 final class RoutingSchedulerTest
 {
@@ -31,7 +38,7 @@ final class RoutingSchedulerTest
     }
 
     @Test
-    void uncaughtExceptionInWorkerThread_triggersFatalHandler() throws Exception
+    void installFatalHandler_setsDefaultAndFiresOnUncaughtException() throws Exception
     {
         AtomicReference<String> deadThreadName = new AtomicReference<>();
         AtomicReference<Throwable> deadCause = new AtomicReference<>();
@@ -40,22 +47,28 @@ final class RoutingSchedulerTest
 
         Thread.UncaughtExceptionHandler original =
             Thread.getDefaultUncaughtExceptionHandler();
-        Thread.UncaughtExceptionHandler captured = (t, e) ->
-        {
-            deadThreadName.set(t.getName());
-            deadCause.set(e);
-            latch.countDown();
-        };
         try
         {
-            // Wrap newFatalHandler so we capture both the exit-action invocation and
-            // the thread/cause that fired the handler in a single end-to-end flow.
-            Thread.UncaughtExceptionHandler fatal =
-                RoutingScheduler.newFatalHandler(exitCode::set);
-            Thread.setDefaultUncaughtExceptionHandler((t, e) ->
+            // Production code path: install via the same helper oneTimeInit() uses.
+            RoutingScheduler.installFatalHandler(code ->
             {
-                fatal.uncaughtException(t, e);
-                captured.uncaughtException(t, e);
+                exitCode.set(code);
+                latch.countDown();
+            });
+
+            Thread.UncaughtExceptionHandler installed =
+                Thread.getDefaultUncaughtExceptionHandler();
+            assertNotNull(installed,
+                "installFatalHandler must register a JVM default uncaught-exception handler.");
+
+            // Wrap the installed handler with a capture for thread name + cause so
+            // we can verify the handler receives the actual thrown context, not
+            // just that some handler ran.
+            Thread.setDefaultUncaughtExceptionHandler((t, ex) ->
+            {
+                deadThreadName.set(t.getName());
+                deadCause.set(ex);
+                installed.uncaughtException(t, ex);
             });
 
             Thread bad = new Thread(() -> { throw new RuntimeException("boom"); }, "bad-worker");
@@ -66,7 +79,7 @@ final class RoutingSchedulerTest
             assertEquals("bad-worker", deadThreadName.get());
             assertEquals("boom", deadCause.get().getMessage());
             assertEquals(1, exitCode.get(),
-                "Fatal handler must request exit code 1 when a worker thread dies.");
+                "Installed handler must request exit code 1 when a worker thread dies.");
         }
         finally
         {
