@@ -1325,6 +1325,11 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
                     ? " and (a.FAIL_TIME is null OR SYSDATE - a.FAIL_TIME >= 1/24)"
                     : "";
 
+        String debounceClause = "";
+        int debounceSec = DecodesSettings.instance().tasklistDebounceSeconds;
+        if (debounceSec > 0)
+            debounceClause = " and a.DATE_TIME_LOADED <= SYSDATE - ?/86400";
+
         getTaskListStmtQuery =
             "select a.RECORD_NUM, a.SITE_DATATYPE_ID, a.VALUE, a.START_DATE_TIME, "
             + "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
@@ -1332,6 +1337,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
             + "where a.LOADING_APPLICATION_ID = ?"
             + " and ROWNUM < " + maxTake
             + failTimeClause
+            + debounceClause
             + " ORDER BY a.site_datatype_id, a.start_date_time";
 
         try (Connection conn = getConnection();
@@ -1339,6 +1345,8 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
             )
         {
             getTaskListStmt.setLong(1,applicationId.getValue());
+            if (debounceSec > 0)
+                getTaskListStmt.setInt(2, debounceSec);
 
             ArrayList<TasklistRec> tasklistRecs = new ArrayList<TasklistRec>();
             ArrayList<Integer> badRecs = new ArrayList<Integer>();

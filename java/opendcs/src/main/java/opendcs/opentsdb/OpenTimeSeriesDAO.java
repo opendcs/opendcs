@@ -1720,9 +1720,19 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		if (DecodesSettings.instance().retryFailedComputations)
 			failTimeClause = " and (a.FAIL_TIME is null OR "
 				+ System.currentTimeMillis() + " -  a.FAIL_TIME >= 3600000)";
+		String debounceClause = "";
+		int debounceSec = DecodesSettings.instance().tasklistDebounceSeconds;
+		if (debounceSec > 0)
+		{
+			// DATE_TIME_LOADED is BIGINT epoch millis (see V6.8__opendcs.sql),
+			// so compare against an epoch-ms cutoff rather than SYSDATE/CURRENT_TIMESTAMP.
+			long cutoffMs = System.currentTimeMillis() - (debounceSec * 1000L);
+			debounceClause = " and a.DATE_TIME_LOADED <= " + cutoffMs;
+		}
 		String getMinStmtQuery = "select min(a.record_num) from cp_comp_tasklist a "
 				+ "where a.LOADING_APPLICATION_ID = " + applicationId
-				+ failTimeClause;
+				+ failTimeClause
+				+ debounceClause;
 
 		// 2nd query gets tasklist recs within record_num range.
 		String getTaskListStmtQuery =
@@ -1730,7 +1740,8 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			+ "a.DELETE_FLAG, a.flags "
 			+ "from CP_COMP_TASKLIST a "
 			+ "where a.LOADING_APPLICATION_ID = " + applicationId
-			+ failTimeClause;
+			+ failTimeClause
+			+ debounceClause;
 		try
 		{
 			if (db.isOracle())
