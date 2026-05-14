@@ -131,7 +131,7 @@ public final class ConfigResources extends OpenDcsResource
 		catch (OpenDcsDataException ex)
 		{
 			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-						 			  "Unable to retrieve site list", ex);
+						 			  "Unable to retrieve configs", ex);
 		}
 	}
 
@@ -192,7 +192,7 @@ public final class ConfigResources extends OpenDcsResource
 		catch (OpenDcsDataException ex)
 		{
 			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-						 			  "Unable to retrieve site list", ex);
+						 			  "Unable to retrieve config", ex);
 		}
 	}
 
@@ -341,7 +341,7 @@ public final class ConfigResources extends OpenDcsResource
 		catch (OpenDcsDataException ex)
 		{
 			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-						 			  "Unable to retrieve site list", ex);
+						 			  "Unable to save config", ex);
 		}
 	}
 
@@ -576,7 +576,7 @@ public final class ConfigResources extends OpenDcsResource
 		catch (OpenDcsDataException ex)
 		{
 			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-						 			  "Unable to retrieve site list", ex);
+						 			  "Unable to delete config", ex);
 		}
 	}
 }
