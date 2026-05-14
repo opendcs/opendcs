@@ -1,6 +1,9 @@
 import { OidcClient } from "oidc-client-ts";
 import type { OidcScheme, Scheme } from "./Scheme.types";
 
+export type QueryParameters = Record<string, string>;
+export type ParamMap = { [k: string]: QueryParameters };
+
 export async function fromOpenApiUrl(url: URL): Promise<Record<string, Scheme>> {
   const res = await fetch(url);
   if (res.ok) {
@@ -42,11 +45,15 @@ export async function fromOpenApiData(
  * @param scheme OidcScheme to map to a client.
  * @returns
  */
-export const oidcConfigToClient = (scheme: OidcScheme): OidcClient => {
+export const oidcConfigToClient = (
+  scheme: OidcScheme,
+  queryParameters: QueryParameters,
+): OidcClient => {
   return new OidcClient({
     redirect_uri: scheme.oidcConfig.redirectUri,
     client_id: scheme.oidcConfig.clientId,
     authority: scheme.oidcConfig.wellKnownUrl.replace(/\/\.well-known.*$/, ""),
     disablePKCE: !scheme.oidcConfig.usePkce,
+    extraQueryParams: queryParameters,
   });
 };
