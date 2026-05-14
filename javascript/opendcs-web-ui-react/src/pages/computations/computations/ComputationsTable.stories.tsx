@@ -528,3 +528,119 @@ export const TableWithoutGetComputation: Story = {
     expect(await canvas.findByText("DailyFlowAve")).toBeInTheDocument();
   },
 };
+
+export const EditComputationCancel: Story = {
+  args: { computations: toComputationRefs(sharedComputations) },
+  render: StoryRender,
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:editor.edit_for", { id: 1 }),
+    });
+    await act(async () => userEvent.click(editBtn));
+
+    const cancelBtn = await canvas.findByRole(
+      "button",
+      { name: i18n.t("computations:editor.cancel_for", { id: 1 }) },
+      { timeout: 5000 },
+    );
+    await act(async () => userEvent.click(cancelBtn));
+
+    await waitFor(async () => {
+      const editBtnAfter = await canvas.findByRole("button", {
+        name: i18n.t("computations:editor.edit_for", { id: 1 }),
+      });
+      expect(editBtnAfter).toBeInTheDocument();
+    });
+  },
+};
+
+export const AddComputationThenSave: Story = {
+  args: { computations: toComputationRefs(sharedComputations) },
+  render: StoryRender,
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const addBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:add_computation"),
+    });
+    await act(async () => userEvent.click(addBtn));
+
+    const nameInput = await canvas.findByRole(
+      "textbox",
+      { name: i18n.t("computations:editor.name") },
+      { timeout: 5000 },
+    );
+    await act(async () => userEvent.type(nameInput, "BrandNewComp"));
+
+    const saveBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:editor.save_for", { id: -1 }),
+    });
+    await act(async () => userEvent.click(saveBtn));
+
+    await waitFor(() => {
+      expect(canvas.queryByText("-1")).not.toBeInTheDocument();
+    });
+    expect(await canvas.findByText("BrandNewComp")).toBeInTheDocument();
+  },
+};
+
+export const NewRowHidesCopyAndDelete: Story = {
+  args: { computations: toComputationRefs(sharedComputations) },
+  render: StoryRender,
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const addBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:add_computation"),
+    });
+    await act(async () => userEvent.click(addBtn));
+
+    await canvas.findByRole(
+      "button",
+      { name: i18n.t("computations:editor.cancel_for", { id: -1 }) },
+      { timeout: 5000 },
+    );
+
+    expect(
+      canvas.queryByRole("button", {
+        name: i18n.t("computations:editor.copy_for", { id: -1 }),
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      canvas.queryByRole("button", {
+        name: i18n.t("computations:editor.delete_for", { id: -1 }),
+      }),
+    ).not.toBeInTheDocument();
+  },
+};
+
+export const ClickInsideOpenChildRowKeepsItOpen: Story = {
+  args: { computations: toComputationRefs(sharedComputations) },
+  render: StoryRender,
+  play: async ({ mount, parameters }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const flowCell = await canvas.findByText("DailyFlowAve");
+    await act(async () => flowCell.click());
+
+    const nameInput = await canvas.findByRole(
+      "textbox",
+      { name: i18n.t("computations:editor.name") },
+      { timeout: 5000 },
+    );
+
+    await act(async () => nameInput.click());
+
+    expect(
+      await canvas.findByRole("textbox", {
+        name: i18n.t("computations:editor.name"),
+      }),
+    ).toBeInTheDocument();
+  },
+};

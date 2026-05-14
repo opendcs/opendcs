@@ -572,8 +572,8 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
       rowEl
         .querySelectorAll<HTMLInputElement>("input, textarea, select")
         .forEach((el) => {
-          if (!el.value.trim()) el.classList.add("border-warning");
-          else el.classList.remove("border-warning");
+          if (el.value.trim()) el.classList.remove("border-warning");
+          else el.classList.add("border-warning");
         });
     };
     const commitSave = (row: T, rowEl: HTMLTableRowElement) => {
