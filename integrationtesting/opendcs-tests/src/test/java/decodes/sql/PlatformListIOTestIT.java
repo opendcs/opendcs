@@ -5,10 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.Timestamp;
-import java.time.Instant;
+import java.util.Date;
 
+import org.jdbi.v3.core.Handle;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,7 +52,8 @@ class PlatformListIOTestIT extends AppTestBase
 			platformId = keyGenerator.getKey("Platform", conn);
 			configId = keyGenerator.getKey("PlatformConfig", conn);
 
-			insertPlatformWithConfig(conn, "old-sensor");
+			Handle handle = tx.connection(Handle.class).orElseThrow();
+			insertPlatformWithConfig(handle, "old-sensor");
 			tx.commit();
 		}
 	}
@@ -88,8 +88,8 @@ class PlatformListIOTestIT extends AppTestBase
 
 		try (DataTransaction tx = openDcsDatabase.newTransaction())
 		{
-			Connection conn = tx.connection(Connection.class).orElseThrow();
-			updateSensorName(conn, "new-sensor");
+			Handle handle = tx.connection(Handle.class).orElseThrow();
+			updateSensorName(handle, "new-sensor");
 			tx.commit();
 		}
 
@@ -102,60 +102,51 @@ class PlatformListIOTestIT extends AppTestBase
 		assertEquals(1, rereadPlatform.getConfig().getNumSensors());
 	}
 
-	private void insertPlatformWithConfig(Connection conn, String sensorName)
-		throws Exception
+	private void insertPlatformWithConfig(Handle handle, String sensorName)
 	{
-		try (PreparedStatement stmt = conn.prepareStatement(
-			"INSERT INTO PlatformConfig (ID, Name, Description, EquipmentId) VALUES (?, ?, ?, NULL)"))
-		{
-			stmt.setLong(1, configId.getValue());
-			stmt.setString(2, "platform-list-io-test-config");
-			stmt.setString(3, "platform list io test config");
-			stmt.executeUpdate();
-		}
+		handle.createUpdate("INSERT INTO PlatformConfig "
+				+ "(ID, Name, Description, EquipmentId) "
+				+ "VALUES (:id, :name, :description, NULL)")
+			.bind("id", configId)
+			.bind("name", "platform-list-io-test-config")
+			.bind("description", "platform list io test config")
+			.execute();
 
-		try (PreparedStatement stmt = conn.prepareStatement(
-			"INSERT INTO ConfigSensor "
+		handle.createUpdate("INSERT INTO ConfigSensor "
 				+ "(ConfigId, SensorNumber, SensorName, RecordingMode, RecordingInterval, TimeOfFirstSample, "
 				+ "EquipmentId, AbsoluteMin, AbsoluteMax, Stat_Cd) "
-				+ "VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, NULL, NULL)"))
-		{
-			stmt.setLong(1, configId.getValue());
-			stmt.setInt(2, SENSOR_NUMBER);
-			stmt.setString(3, sensorName);
-			stmt.setString(4, "U");
-			stmt.setInt(5, 0);
-			stmt.setInt(6, 0);
-			stmt.executeUpdate();
-		}
+				+ "VALUES (:configId, :sensorNumber, :sensorName, :recordingMode, "
+				+ ":recordingInterval, :timeOfFirstSample, NULL, NULL, NULL, NULL)")
+			.bind("configId", configId)
+			.bind("sensorNumber", SENSOR_NUMBER)
+			.bind("sensorName", sensorName)
+			.bind("recordingMode", "U")
+			.bind("recordingInterval", 0)
+			.bind("timeOfFirstSample", 0)
+			.execute();
 
-		try (PreparedStatement stmt = conn.prepareStatement(
-			"INSERT INTO Platform "
+		handle.createUpdate("INSERT INTO Platform "
 				+ "(ID, Agency, IsProduction, SiteId, ConfigId, Description, LastModifyTime, Expiration, "
 				+ "PlatformDesignator) "
-				+ "VALUES (?, ?, ?, NULL, ?, ?, ?, NULL, NULL)"))
-		{
-			stmt.setLong(1, platformId.getValue());
-			stmt.setString(2, "TEST");
-			stmt.setString(3, "true");
-			stmt.setLong(4, configId.getValue());
-			stmt.setString(5, "platform list io test platform");
-			stmt.setTimestamp(6, Timestamp.from(Instant.now()));
-			stmt.executeUpdate();
-		}
+				+ "VALUES (:id, :agency, :isProduction, NULL, :configId, :description, "
+				+ ":lastModifyTime, NULL, NULL)")
+			.bind("id", platformId)
+			.bind("agency", "TEST")
+			.bind("isProduction", "true")
+			.bind("configId", configId)
+			.bind("description", "platform list io test platform")
+			.bind("lastModifyTime", new Date())
+			.execute();
 	}
 
-	private void updateSensorName(Connection conn, String sensorName)
-		throws Exception
+	private void updateSensorName(Handle handle, String sensorName)
 	{
-		try (PreparedStatement stmt = conn.prepareStatement(
-			"UPDATE ConfigSensor SET SensorName = ? WHERE ConfigId = ? AND SensorNumber = ?"))
-		{
-			stmt.setString(1, sensorName);
-			stmt.setLong(2, configId.getValue());
-			stmt.setInt(3, SENSOR_NUMBER);
-			stmt.executeUpdate();
-		}
+		handle.createUpdate("UPDATE ConfigSensor SET SensorName = :sensorName "
+				+ "WHERE ConfigId = :configId AND SensorNumber = :sensorNumber")
+			.bind("sensorName", sensorName)
+			.bind("configId", configId)
+			.bind("sensorNumber", SENSOR_NUMBER)
+			.execute();
 	}
 
 	private void cleanupFixtureRows()
@@ -166,27 +157,23 @@ class PlatformListIOTestIT extends AppTestBase
 
 		try (DataTransaction tx = openDcsDatabase.newTransaction())
 		{
-			Connection conn = tx.connection(Connection.class).orElseThrow();
-			deleteById(conn, "PlatformSensorProperty", "PlatformID", platformId);
-			deleteById(conn, "PlatformSensor", "PlatformID", platformId);
-			deleteById(conn, "TransportMedium", "PlatformID", platformId);
-			deleteById(conn, "Platform", "ID", platformId);
-			deleteById(conn, "ConfigSensorDataType", "ConfigID", configId);
-			deleteById(conn, "ConfigSensorProperty", "ConfigID", configId);
-			deleteById(conn, "ConfigSensor", "ConfigID", configId);
-			deleteById(conn, "PlatformConfig", "ID", configId);
+			Handle handle = tx.connection(Handle.class).orElseThrow();
+			deleteById(handle, "PlatformSensorProperty", "PlatformID", platformId);
+			deleteById(handle, "PlatformSensor", "PlatformID", platformId);
+			deleteById(handle, "TransportMedium", "PlatformID", platformId);
+			deleteById(handle, "Platform", "ID", platformId);
+			deleteById(handle, "ConfigSensorDataType", "ConfigID", configId);
+			deleteById(handle, "ConfigSensorProperty", "ConfigID", configId);
+			deleteById(handle, "ConfigSensor", "ConfigID", configId);
+			deleteById(handle, "PlatformConfig", "ID", configId);
 			tx.commit();
 		}
 	}
 
-	private static void deleteById(Connection conn, String table, String column, DbKey id)
-		throws Exception
+	private static void deleteById(Handle handle, String table, String column, DbKey id)
 	{
-		try (PreparedStatement stmt = conn.prepareStatement(
-			"DELETE FROM " + table + " WHERE " + column + " = ?"))
-		{
-			stmt.setLong(1, id.getValue());
-			stmt.executeUpdate();
-		}
+		handle.createUpdate("DELETE FROM " + table + " WHERE " + column + " = :id")
+			.bind("id", id)
+			.execute();
 	}
 }
