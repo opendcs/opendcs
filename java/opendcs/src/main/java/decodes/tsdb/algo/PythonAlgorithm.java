@@ -1376,10 +1376,16 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		}
 	}
 
-	public Connection getConnection(){
+	public Connection getConnection()
+	{
 		if (algoConnection != null)
+		{
 			return new WrappedConnection(algoConnection);
-		return tsdb.getConnection();
+		}
+		else
+		{
+			return tsdb.getConnection();
+		}
 	}
 
 	public PythonInterpreter getPythonIntepreter()
