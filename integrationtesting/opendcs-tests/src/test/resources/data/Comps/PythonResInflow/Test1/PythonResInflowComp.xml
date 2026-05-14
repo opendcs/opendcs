@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+    <Algorithm name="Project_Res_Inlfow_6hrAnd24hr">
+        <Comment>
+            calculates average 6 hour and 24 hours inflows from the average 2 hour
+            storage...will calculate negative inflow
+        </Comment>
+        <ExecClass>decodes.tsdb.algo.PythonAlgorithm</ExecClass>
+        <AlgoParm roleName="outflow">
+            <ParmType>i</ParmType>
+        </AlgoParm>
+        <AlgoParm roleName="stage">
+            <ParmType>i</ParmType>
+        </AlgoParm>
+        <AlgoParm roleName="storage2hrAvg">
+            <ParmType>o</ParmType>
+        </AlgoParm>
+        <AlgoParm roleName="inflow1day">
+            <ParmType>o</ParmType>
+        </AlgoParm>
+        <AlgoParm roleName="inflow6hr">
+            <ParmType>o</ParmType>
+        </AlgoParm>
+        <AlgoScript scriptType="I">
+            <AlgoScriptLine indent="0">#Wed Jan 08 20:20:37 GMT 2025</AlgoScriptLine>
+            <AlgoScriptLine indent="0">AlgorithmType=TIME_SLICE</AlgoScriptLine>
+        </AlgoScript>
+        <AlgoScript scriptType="B">
+            <AlgoScriptLine indent="0"># Define storage look up table location</AlgoScriptLine>
+            <AlgoScriptLine indent="0"></AlgoScriptLine>
+            <AlgoScriptLine indent="0">stageStorRating = stage.location + &apos;.Stage;Stor.Standard.Production&apos;</AlgoScriptLine>
+        </AlgoScript>
+        <AlgoScript scriptType="T">
+            <AlgoScriptLine indent="0"># 6 hour and 1 day inflow using 2 hour average elevation</AlgoScriptLine>
+            <AlgoScriptLine indent="0"># Average storage</AlgoScriptLine>
+            <AlgoScriptLine indent="0">try:</AlgoScriptLine>
+            <AlgoScriptLine indent="4">avgStage = runningAverage(&apos;stage&apos;, &apos;2Hours&apos;, &apos;(]&apos;)</AlgoScriptLine>
+            <AlgoScriptLine indent="4">avgStorage = round(rating(stageStorRating, avgStage),2)</AlgoScriptLine>
+            <AlgoScriptLine indent="4">setOutput(&apos;storage2hrAvg&apos;, avgStorage)</AlgoScriptLine>
+            <AlgoScriptLine indent="0">except NoValueException as e:</AlgoScriptLine>
+            <AlgoScriptLine indent="4">warning(&apos;Error in avg storage: &apos;+e.toString())</AlgoScriptLine>
+            <AlgoScriptLine indent="0"></AlgoScriptLine>
+            <AlgoScriptLine indent="0">## get average of outflow</AlgoScriptLine>
+            <AlgoScriptLine indent="0">try:</AlgoScriptLine>
+            <AlgoScriptLine indent="4">avg6hrOutflow = runningAverage(&apos;outflow&apos;, &apos;6Hours&apos;, &apos;(]&apos;)</AlgoScriptLine>
+            <AlgoScriptLine indent="4">avg1dOutflow = runningAverage(&apos;outflow&apos;, &apos;1Day&apos;, &apos;(]&apos;)</AlgoScriptLine>
+            <AlgoScriptLine indent="0">except NoValueException as e:</AlgoScriptLine>
+            <AlgoScriptLine indent="4">warning(&apos;Error average outflow: &apos;+e.toString())</AlgoScriptLine>
+            <AlgoScriptLine indent="0"></AlgoScriptLine>
+            <AlgoScriptLine indent="0">### calc inflows if storage and outflow values exist</AlgoScriptLine>
+            <AlgoScriptLine indent="0">## calc 6 hr avg inflow</AlgoScriptLine>
+            <AlgoScriptLine indent="0">try: # 6 hr avg inflow calc</AlgoScriptLine>
+            <AlgoScriptLine indent="3"># Holdout is a 6hr or 1 day delta storage converted from acre-ft to cfs (not saved)</AlgoScriptLine>
+            <AlgoScriptLine indent="4">holdout6hr = changeSince(&apos;storage2hrAvg&apos;, &apos;6Hours&apos;)*2.0167</AlgoScriptLine>
+            <AlgoScriptLine indent="4"># inflow = outflow + holdout</AlgoScriptLine>
+            <AlgoScriptLine indent="4">inflow6hrAvg = round(avg6hrOutflow+holdout6hr,1)</AlgoScriptLine>
+            <AlgoScriptLine indent="4">setOutput(&apos;inflow6hr&apos;, inflow6hrAvg)</AlgoScriptLine>
+            <AlgoScriptLine indent="0">except NoValueException as e:</AlgoScriptLine>
+            <AlgoScriptLine indent="4">warning(&apos;Error in 6 hr changeSince: &apos;+e.toString())</AlgoScriptLine>
+            <AlgoScriptLine indent="0"></AlgoScriptLine>
+            <AlgoScriptLine indent="0">## calc 1 day avg inflow</AlgoScriptLine>
+            <AlgoScriptLine indent="0">try: # 1day  avg inflow calc</AlgoScriptLine>
+            <AlgoScriptLine indent="4">holdout1day = changeSince(&apos;storage2hrAvg&apos;, &apos;1Day&apos;)*0.5042</AlgoScriptLine>
+            <AlgoScriptLine indent="4"># inflow = outflow + holdout</AlgoScriptLine>
+            <AlgoScriptLine indent="4">inflow1dayAvg = round(avg1dOutflow + holdout1day,1)</AlgoScriptLine>
+            <AlgoScriptLine indent="4">setOutput(&apos;inflow1day&apos;, inflow1dayAvg)</AlgoScriptLine>
+            <AlgoScriptLine indent="0">except NoValueException as e:</AlgoScriptLine>
+            <AlgoScriptLine indent="4">warning(&apos;Error in 1 day changeSince: &apos;+e.toString())</AlgoScriptLine>
+        </AlgoScript>
+        <AlgoScript scriptType="P">
+            <AlgoScriptLine indent="0">acftToCfs.tooltip=</AlgoScriptLine>
+            <AlgoScriptLine indent="0">storageTimeDelta.tooltip=</AlgoScriptLine>
+        </AlgoScript>
+    </Algorithm>
+    <Computation name="Test1PythonResInflow">
+        <Comment>Integration test for Project_Res_Inlfow_6hrAnd24hr Python algorithm.</Comment>
+        <Enabled>false</Enabled>
+        <AlgorithmName>Project_Res_Inlfow_6hrAnd24hr</AlgorithmName>
+        <LastModified>2026-05-14 12:00:00 UTC</LastModified>
+        <ValidStart>2024-10-01 00:00:00 UTC</ValidStart>
+        <ValidEnd>2024-10-02 06:00:00 UTC</ValidEnd>
+        <CompProperty name="stage_EU">ft</CompProperty>
+        <CompProperty name="outflow_EU">cfs</CompProperty>
+        <CompProperty name="storage2hrAvg_EU">ac-ft</CompProperty>
+        <CompProperty name="inflow6hr_EU">cfs</CompProperty>
+        <CompProperty name="inflow1day_EU">cfs</CompProperty>
+        <CompParm roleName="stage">
+            <SiteDataType>
+                <SiteName NameType="CWMS">TESTSITE1</SiteName>
+                <DataType Standard="CWMS" code="Stage"/>
+            </SiteDataType>
+            <Interval>1Hour</Interval>
+            <TableSelector>Inst.0.Test</TableSelector>
+            <DeltaT>0</DeltaT>
+            <DeltaTUnits>Seconds</DeltaTUnits>
+        </CompParm>
+        <CompParm roleName="outflow">
+            <SiteDataType>
+                <SiteName NameType="CWMS">TESTSITE1</SiteName>
+                <DataType Standard="CWMS" code="Flow-Out"/>
+            </SiteDataType>
+            <Interval>1Hour</Interval>
+            <TableSelector>Ave.1Hour.Test</TableSelector>
+            <DeltaT>0</DeltaT>
+            <DeltaTUnits>Seconds</DeltaTUnits>
+        </CompParm>
+        <CompParm roleName="storage2hrAvg">
+            <SiteDataType>
+                <SiteName NameType="CWMS">TESTSITE1</SiteName>
+                <DataType Standard="CWMS" code="Stor"/>
+            </SiteDataType>
+            <Interval>1Hour</Interval>
+            <TableSelector>Ave.2Hours.Test</TableSelector>
+            <DeltaT>0</DeltaT>
+            <DeltaTUnits>Seconds</DeltaTUnits>
+        </CompParm>
+        <CompParm roleName="inflow6hr">
+            <SiteDataType>
+                <SiteName NameType="CWMS">TESTSITE1</SiteName>
+                <DataType Standard="CWMS" code="Flow-In"/>
+            </SiteDataType>
+            <Interval>1Hour</Interval>
+            <TableSelector>Ave.6Hours.Test</TableSelector>
+            <DeltaT>0</DeltaT>
+            <DeltaTUnits>Seconds</DeltaTUnits>
+        </CompParm>
+        <CompParm roleName="inflow1day">
+            <SiteDataType>
+                <SiteName NameType="CWMS">TESTSITE1</SiteName>
+                <DataType Standard="CWMS" code="Flow-In"/>
+            </SiteDataType>
+            <Interval>1Hour</Interval>
+            <TableSelector>Ave.1Day.Test</TableSelector>
+            <DeltaT>0</DeltaT>
+            <DeltaTUnits>Seconds</DeltaTUnits>
+        </CompParm>
+    </Computation>
+</CompMetaData>

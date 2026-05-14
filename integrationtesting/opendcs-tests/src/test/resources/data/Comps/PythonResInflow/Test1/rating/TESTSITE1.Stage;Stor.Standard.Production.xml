@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ratings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.hec.usace.army.mil/xmlSchema/cwms/Ratings.xsd">
+    <rating-template office-id="SPK">
+        <parameters-id>Stage;Stor</parameters-id>
+        <version>Standard</version>
+        <ind-parameter-specs>
+            <ind-parameter-spec position="1">
+                <parameter>Stage</parameter>
+                <in-range-method>LINEAR</in-range-method>
+                <out-range-low-method>NEAREST</out-range-low-method>
+                <out-range-high-method>NEAREST</out-range-high-method>
+            </ind-parameter-spec>
+        </ind-parameter-specs>
+        <dep-parameter>Stor</dep-parameter>
+        <description>Linear stage-to-storage rating for PythonResInflow integration test.</description>
+    </rating-template>
+    <rating-spec office-id="SPK">
+        <rating-spec-id>TESTSITE1.Stage;Stor.Standard.Production</rating-spec-id>
+        <template-id>Stage;Stor.Standard</template-id>
+        <location-id>TESTSITE1</location-id>
+        <version>Production</version>
+        <source-agency/>
+        <in-range-method>LINEAR</in-range-method>
+        <out-range-low-method>NEAREST</out-range-low-method>
+        <out-range-high-method>NEAREST</out-range-high-method>
+        <active>true</active>
+        <auto-update>false</auto-update>
+        <auto-activate>false</auto-activate>
+        <auto-migrate-extension>false</auto-migrate-extension>
+        <ind-rounding-specs>
+            <ind-rounding-spec position="1">2222233332</ind-rounding-spec>
+        </ind-rounding-specs>
+        <dep-rounding-spec>2222233332</dep-rounding-spec>
+        <description/>
+    </rating-spec>
+    <simple-rating office-id="SPK">
+        <rating-spec-id>TESTSITE1.Stage;Stor.Standard.Production</rating-spec-id>
+        <units-id>ft;ac-ft</units-id>
+        <effective-date>2024-01-01T00:00:00Z</effective-date>
+        <create-date>2024-01-01T00:00:00Z</create-date>
+        <active>true</active>
+        <description/>
+        <rating-points>
+            <point>
+                <ind>95.0</ind>
+                <dep>500.0</dep>
+            </point>
+            <point>
+                <ind>100.0</ind>
+                <dep>1000.0</dep>
+            </point>
+            <point>
+                <ind>105.0</ind>
+                <dep>1500.0</dep>
+            </point>
+            <point>
+                <ind>110.0</ind>
+                <dep>2000.0</dep>
+            </point>
+        </rating-points>
+    </simple-rating>
+</ratings>
