@@ -42,6 +42,8 @@ export interface ColumnDef<T> {
   name?: string;
   orderable?: boolean;
   searchable?: boolean;
+  /** DataTables column `type` — skip the type auto-sniffer when set. */
+  type?: "num" | "string" | "date" | "html" | "html-num" | "num-fmt";
   /**
    * DataTables column `render` — returns the cell content for the given
    * render `type` (`"display"`, `"sort"`, `"filter"`, `"type"`). For custom
@@ -125,7 +127,7 @@ export interface AddNewConfig<T> {
 
 export interface ColumnEdit<T> {
   /** HTML string for the cell when its row is in `"edit"` or `"new"` mode. */
-  render: (row: T) => string;
+  render: (row: T, rowId: string) => string;
   /** Read the edited value back from the cell's form control on save. */
   read: (cell: HTMLElement) => unknown;
 }
@@ -148,10 +150,10 @@ export interface InlineEditConfig<T> {
   newTemplate?: () => T;
   /** Aria-label generators for the auto-generated action buttons. */
   labels?: {
-    edit?: (row: T) => string;
-    remove?: (row: T) => string;
-    save?: (row: T) => string;
-    cancel?: (row: T) => string;
+    edit?: (row: T, rowId: string) => string;
+    remove?: (row: T, rowId: string) => string;
+    save?: (row: T, rowId: string) => string;
+    cancel?: (row: T, rowId: string) => string;
     add?: string;
   };
 }
@@ -309,7 +311,7 @@ function makeColumnRender<T>(
     if (type !== "display") return fallback(data, type, row, meta);
     if (hasInlineEdit && editRender) {
       const mode = rowStateRef.current[idOf(row)];
-      if (mode === "edit" || mode === "new") return editRender(row);
+      if (mode === "edit" || mode === "new") return editRender(row, idOf(row));
     }
     return fallback(data, type, row, meta);
   };
@@ -530,16 +532,30 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
       setLocalItems((prev) => withoutRef(prev, row));
       setModeByIdStr(id, undefined);
     };
+    const markInvalidInputs = (rowEl: HTMLTableRowElement) => {
+      rowEl
+        .querySelectorAll<HTMLInputElement>("input, textarea, select")
+        .forEach((el) => {
+          if (!el.value.trim()) el.classList.add("border-warning");
+          else el.classList.remove("border-warning");
+        });
+    };
     const commitSave = (row: T, rowEl: HTMLTableRowElement) => {
       const updated = readEditedRow(row, rowEl, columns);
       const id = idOf(row);
       const isNew = rowStateRef.current[id] === "new";
       if (isNew) {
-        if (inlineEdit.onAdd?.(updated) === false) return;
+        if (inlineEdit.onAdd?.(updated) === false) {
+          markInvalidInputs(rowEl);
+          return;
+        }
         dropLocalNew(row, id);
         return;
       }
-      if (inlineEdit.onSave(row, updated) === false) return;
+      if (inlineEdit.onSave(row, updated) === false) {
+        markInvalidInputs(rowEl);
+        return;
+      }
       setModeByIdStr(id, undefined);
     };
     const commitCancel = (row: T) => {
@@ -556,7 +572,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
         icon: "bi-pencil",
         variant: "warning",
         show: inShowMode,
-        aria: (row) => labels.edit?.(row) ?? "Edit",
+        aria: (row) => labels.edit?.(row, idOf(row)) ?? "Edit",
         onClick: ({ row }) => setModeByIdStr(idOf(row), "edit"),
       },
       ...(inlineEdit.onRemove
@@ -566,7 +582,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
               icon: "bi-trash",
               variant: "danger",
               show: inShowMode,
-              aria: (row: T) => labels.remove?.(row) ?? "Delete",
+              aria: (row: T) => labels.remove?.(row, idOf(row)) ?? "Delete",
               onClick: ({ row }: RowActionContext<T>) => inlineEdit.onRemove!(row),
             } as RowAction<T>,
           ]
@@ -576,7 +592,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
         icon: "bi-check-lg",
         variant: "primary",
         show: inEditMode,
-        aria: (row) => labels.save?.(row) ?? "Save",
+        aria: (row) => labels.save?.(row, idOf(row)) ?? "Save",
         onClick: ({ row, rowEl }) => commitSave(row, rowEl),
       },
       {
@@ -584,7 +600,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
         icon: "bi-x-lg",
         variant: "secondary",
         show: inEditMode,
-        aria: (row) => labels.cancel?.(row) ?? "Cancel",
+        aria: (row) => labels.cancel?.(row, idOf(row)) ?? "Cancel",
         onClick: ({ row }) => commitCancel(row),
       },
     ];
@@ -659,6 +675,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
       name: c.name,
       orderable: c.orderable,
       searchable: c.searchable,
+      type: c.type,
       render: makeColumnRender(c, hasInlineEdit, idOf, rowStateRef),
     }));
     if (hasActionsCol) {
@@ -669,6 +686,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
         name: "actions",
         orderable: false,
         searchable: false,
+        type: undefined,
         render: undefined,
       });
     }
@@ -681,6 +699,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     responsive: true,
     stateSave: true,
     processing: true,
+    deferRender: true,
     language: dtLangs.get(i18n.language),
     ...dataTableOptions,
     createdRow: (_row, _data, dataIndex) => {

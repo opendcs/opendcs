@@ -370,34 +370,35 @@ public class ComputationApp extends TsdbAppTemplate
 						DbComputation[] comps = resolver.resolve(dataCollection);
 
 						action = "Applying computations";
-						ComputationExecution execution = new ComputationExecution(db);
-
-						ComputationExecution.CompResults results = execution.execute(List.of(comps), dataCollection,
-						dc ->
+						try (ComputationExecution execution = new ComputationExecution(db))
 						{
-							List<CTimeSeries> tsList = dc.getAllTimeSeries();
-							log.trace("Saving results for {} time series in data.", tsList.size());
-							try (var allTsTimer = MDCTimer.startTimer("saving results"))
+							ComputationExecution.CompResults results = execution.execute(List.of(comps), dataCollection,
+							dc ->
 							{
-								for(CTimeSeries ts : tsList)
+								List<CTimeSeries> tsList = dc.getAllTimeSeries();
+								log.trace("Saving results for {} time series in data.", tsList.size());
+								try (var allTsTimer = MDCTimer.startTimer("saving results"))
 								{
-									try
+									for(CTimeSeries ts : tsList)
 									{
-										log.info("Saving {} values for {}", ts.size(), ts.getNameString());
-										timeSeriesDAO.saveTimeSeries(ts);
-									}
-									catch (DbIoException | BadTimeSeriesException ex)
-									{
-										log.atWarn()
-										.setCause(ex)
-										.log("Cannot save time series '{}'", ts.getNameString());
+										try
+										{
+											log.info("Saving {} values for {}", ts.size(), ts.getNameString());
+											timeSeriesDAO.saveTimeSeries(ts);
+										}
+										catch (DbIoException | BadTimeSeriesException ex)
+										{
+											log.atWarn()
+											.setCause(ex)
+											.log("Cannot save time series '{}'", ts.getNameString());
+										}
 									}
 								}
-							}
-							return dc;
-						});
-						compsTried += results.computesTried();
-						compErrors += results.numErrors();
+								return dc;
+							});
+							compsTried += results.computesTried();
+							compErrors += results.numErrors();
+						}
 
 
 
@@ -471,6 +472,8 @@ public class ComputationApp extends TsdbAppTemplate
 	private void runAppInit()
 	{
 		debugSdf.setTimeZone(TimeZone.getTimeZone(theDb.databaseTimezone));
+		log.info("tasklistDebounceSeconds={}",
+				DecodesSettings.instance().tasklistDebounceSeconds);
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		TimeSeriesDAI tsDAO = theDb.makeTimeSeriesDAO();
 		TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
@@ -826,19 +829,19 @@ public class ComputationApp extends TsdbAppTemplate
 			until = timedCompCal.getTime();
 		}
 
-		ComputationExecution execution = new ComputationExecution(db);
-
-		log.debug("Executing comp '{}' over time period {} to {}", tc.getName(), since, until);
-		if (!DbKey.isNull(tc.getGroupId()))
+		try (ComputationExecution execution = new ComputationExecution(db))
 		{
-			ArrayList<DbComputation> executeList = expandForGroup(tc, timeSeriesDAO, tsGroupDAO);
-			execution.execute(executeList, dataCollection, since, until);
+			log.debug("Executing comp '{}' over time period {} to {}", tc.getName(), since, until);
+			if (!DbKey.isNull(tc.getGroupId()))
+			{
+				ArrayList<DbComputation> executeList = expandForGroup(tc, timeSeriesDAO, tsGroupDAO);
+				execution.execute(executeList, dataCollection, since, until);
+			}
+			else // Not a group computation, just execute.
+			{
+				execution.executeSingleComp(tc, since, until, dataCollection);
+			}
 		}
-		else // Not a group computation, just execute.
-		{
-			execution.executeSingleComp(tc, since, until, dataCollection);
-		}
-
 	}
 
 	private ArrayList<DbComputation> expandForGroup(DbComputation tc, TimeSeriesDAI timeSeriesDAO, TsGroupDAI tsGroupDAO)
