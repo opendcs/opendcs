@@ -7,12 +7,11 @@ import {
   RESTRetrievingPropertySpecsApi,
 } from "opendcs-api";
 import { AlgorithmsTable } from "./AlgorithmsTable";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useApi } from "../../../contexts/app/ApiContext";
+import { useStaleFetch } from "../../../hooks/useStaleFetch";
 
 export const Algorithms: React.FC = () => {
-  const [algorithms, setAlgorithms] = useState<ApiAlgorithmRef[]>([]);
-  const [stale, setStale] = useState(true);
   const api = useApi();
   const algorithmApi = useMemo(() => new RESTAlgorithmMethodsApi(api.conf), [api.conf]);
   const propSpecsApi = useMemo(
@@ -20,20 +19,15 @@ export const Algorithms: React.FC = () => {
     [api.conf],
   );
 
-  useEffect(() => {
-    let cancelled = false;
-    if (stale) {
-      algorithmApi.getalgorithmrefs(api.org).then((refs) => {
-        if (!cancelled) {
-          setAlgorithms(refs);
-          setStale(false);
-        }
-      });
-    }
-    return () => {
-      cancelled = true;
-    };
-  }, [stale, api.org, algorithmApi]);
+  const fetchAlgorithmRefs = useCallback(
+    () => algorithmApi.getalgorithmrefs(api.org),
+    [algorithmApi, api.org],
+  );
+  const {
+    data: algorithms,
+    loading,
+    refresh,
+  } = useStaleFetch<ApiAlgorithmRef[]>(fetchAlgorithmRefs, []);
 
   const getAlgorithm = useCallback(
     (algorithmId: number) => algorithmApi.getalgorithm(api.org, algorithmId),
@@ -62,33 +56,33 @@ export const Algorithms: React.FC = () => {
       // transitioning the detail back to show mode (avoids save→refetch race).
       return algorithmApi
         .postAlgorithm(api.org, { ...algorithm, algorithmId })
-        .then(() => setStale(true))
+        .then(() => refresh())
         .catch((e: unknown) => {
           console.error("Failed to save algorithm", e);
         });
     },
-    [api.org, algorithmApi],
+    [api.org, algorithmApi, refresh],
   );
 
   const deleteAlgorithm = useCallback(
     (algorithmId: number) => {
       algorithmApi
         .deleteAlgorithm(api.org, algorithmId)
-        .then(() => setStale(true))
+        .then(() => refresh())
         .catch((e: unknown) => console.error("Failed to delete algorithm", e));
     },
-    [api.org, algorithmApi],
+    [api.org, algorithmApi, refresh],
   );
 
   return (
     <div className="content">
       <AlgorithmsTable
         algorithms={algorithms}
-        loading={stale}
+        loading={loading}
         getAlgorithm={getAlgorithm}
         getPropSpecs={getPropSpecs}
         actions={{ save: saveAlgorithm, remove: deleteAlgorithm }}
-        onRefresh={() => setStale(true)}
+        onRefresh={refresh}
       />
     </div>
   );

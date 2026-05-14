@@ -8,9 +8,17 @@ import {
 } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { act } from "react";
 import { expect } from "storybook/test";
+import { MemoryRouter } from "react-router-dom";
 
 const meta = {
   component: SitesPage,
+  decorators: [
+    (Story) => (
+      <MemoryRouter initialEntries={["/sites"]}>
+        <Story />
+      </MemoryRouter>
+    ),
+  ],
 } satisfies Meta<typeof SitesPage>;
 
 export default meta;

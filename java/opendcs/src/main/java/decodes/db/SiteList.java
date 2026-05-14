@@ -15,6 +15,7 @@
 */
 package decodes.db;
 
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.Iterator;
 
@@ -63,7 +64,7 @@ public class SiteList extends DatabaseObject
 	/**
 	* Adds a site object to the collection.
 	*/
-	public void addSite(Site newSite)
+	public synchronized void addSite(Site newSite)
 	{
 		// Add to vector if not already present.
 		for(Site existingSite : siteVec)
@@ -84,7 +85,7 @@ public class SiteList extends DatabaseObject
 	  Removes a site from the list.
 	  @param site the Site to remove
 	*/
-	public void removeSite(Site site)
+	public synchronized void removeSite(Site site)
 	{
 		siteVec.remove(site);
 	}
@@ -114,14 +115,14 @@ public class SiteList extends DatabaseObject
 	/**
 	* @return a Site from its SiteName or null if no match is found.
 	*/
-	public Site getSite(SiteName sn)
+	public synchronized Site getSite(SiteName sn)
 	{
 		String nt = sn.getNameType();
 		String dn = sn.getDisplayName();
 		for(Site testsite : siteVec)
 		{
 			SiteName testname = testsite.getName(nt);
-			if (testname != null 
+			if (testname != null
 			 && dn.equalsIgnoreCase(testname.getDisplayName()))
 				return testsite;
 		}
@@ -135,7 +136,7 @@ public class SiteList extends DatabaseObject
 		@param name the name-value of the SiteName object
 		@return Site or null if no match
 	*/
-	public Site getSite(String nameType, String name)
+	public synchronized Site getSite(String nameType, String name)
 	{
 		nameType = nameType.toLowerCase();
 		name = name.toLowerCase();
@@ -156,28 +157,31 @@ public class SiteList extends DatabaseObject
 	  @param id the ID
 	  @return Site or null if no match
 	*/
-	public Site getSiteById(DbKey id)
+	public synchronized Site getSiteById(DbKey id)
 	{
 		for(Site site : siteVec)
 			if (id.equals(site.getId()))
 				return site;
 		return null;
 	}
-	
+
 	/**
 	* @return number of sites in the collection
 	*/
-	public int size()
+	public synchronized int size()
 	{
 		return siteVec.size();
 	}
 
 	/**
-	* @return iterator into collection of sites.
+	* @return iterator over a point-in-time snapshot of the collection. The
+	* snapshot is independent of subsequent mutations to the underlying list,
+	* so callers can iterate without risking ConcurrentModificationException
+	* from concurrent add/remove on another thread.
 	*/
-	public Iterator<Site> iterator()
+	public synchronized Iterator<Site> iterator()
 	{
-		return siteVec.iterator();
+		return new ArrayList<>(siteVec).iterator();
 	}
 
 	/**
@@ -220,12 +224,19 @@ public class SiteList extends DatabaseObject
 	public void write()
 		throws DatabaseException
 	{
-		for(Site site : siteVec)
+		// Iterate a snapshot so site.write() (which may take its own locks
+		// or even mutate the list) can't race with concurrent add/remove.
+		ArrayList<Site> snapshot;
+		synchronized (this)
+		{
+			snapshot = new ArrayList<>(siteVec);
+		}
+		for(Site site : snapshot)
 			site.write();
 	}
 
 
-	public void clear()
+	public synchronized void clear()
 	{
 		siteVec.clear();
 	}

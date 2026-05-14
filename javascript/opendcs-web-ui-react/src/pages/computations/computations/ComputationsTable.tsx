@@ -375,11 +375,10 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
         if (getComputation === undefined) return;
         const target = e.target! as Element;
         const tr = target.closest("tr");
-        if (tr?.classList.contains("child-row")) return;
+        if (!tr) return;
+        if (tr.classList.contains("child-row")) return;
         const dt = table.current!.dt()!;
-        const rowData = dt.row(tr as HTMLTableRowElement).data() as
-          | TableComputationRef
-          | undefined;
+        const rowData: TableComputationRef | undefined = dt.row(tr).data();
         if (!rowData) return;
         e.preventDefault();
         e.stopPropagation();

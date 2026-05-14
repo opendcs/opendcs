@@ -126,7 +126,7 @@ const computationHandlers = {
   ),
   computation: http.get("/odcsapi/computation", ({ request }) => {
     const url = new URL(request.url);
-    const id = parseInt(url.searchParams.get("computationid") ?? "-1");
+    const id = Number.parseInt(url.searchParams.get("computationid") ?? "-1");
     const comp = mockComputations.find((c) => c.computationId === id);
     if (!comp) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json(comp);
@@ -140,7 +140,7 @@ const computationHandlers = {
   }),
   algorithm: http.get("/odcsapi/algorithm", ({ request }) => {
     const url = new URL(request.url);
-    const id = parseInt(url.searchParams.get("algorithmid") ?? "-1");
+    const id = Number.parseInt(url.searchParams.get("algorithmid") ?? "-1");
     const algo = mockAlgorithms.find((a) => a.algorithmId === id);
     if (!algo) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json(algo);
@@ -370,7 +370,7 @@ const statefulDeleteHandlers = (() => {
     ),
     deleteComputation: http.delete("/odcsapi/computation", ({ request }) => {
       const url = new URL(request.url);
-      const id = parseInt(url.searchParams.get("computationid") ?? "-1");
+      const id = Number.parseInt(url.searchParams.get("computationid") ?? "-1");
       remainingRefs = remainingRefs.filter((ref) => ref.computationId !== id);
       return new HttpResponse(null, { status: 204 });
     }),

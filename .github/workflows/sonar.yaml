@@ -13,6 +13,11 @@ on:
 jobs:
   Sonar:
     runs-on: ubuntu-latest
+    # `workflow_run`-triggered runs do not auto-attach a status to the PR, so we
+    # create our own check on the head SHA below; this needs `checks: write`.
+    permissions:
+      contents: read
+      checks: write
     # Auto-trigger only when the upstream build succeeded; manual dispatch is always allowed.
     if: |
       github.event_name == 'workflow_dispatch'
@@ -91,6 +96,27 @@ jobs:
               exit 1
             fi
           fi
+      # Surface this workflow on the PR before any long-running step so reviewers
+      # see "SonarCloud Workflow — in progress" instead of nothing while the
+      # gradle scan is uploading to SonarCloud. The final step below patches it
+      # to success/failure regardless of how the job exits.
+      - name: Create in-progress check on PR head
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ steps.ctx.outputs.head_sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          check_id=$(gh api -X POST "repos/${REPO}/check-runs" \
+            -f name="SonarCloud Workflow" \
+            -f head_sha="${HEAD_SHA}" \
+            -f status="in_progress" \
+            -f details_url="${RUN_URL}" \
+            -f "output[title]=SonarCloud analysis running" \
+            -f "output[summary]=Uploading scan to SonarCloud. The SonarCloud check posted by the SonarCloud app may take additional time to appear after this completes." \
+            --jq .id)
+          echo "id=${check_id}" >> "${GITHUB_OUTPUT}"
       - name: Set up JDK
         uses: actions/setup-java@v5.2.0
         with:
@@ -125,8 +151,30 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event_name == 'workflow_dispatch' && inputs.build_run_id || github.event.workflow_run.id }}
-          path: ./
-          merge-multiple: true
+          path: ./_artifacts
+      # Each artifact lands in ./_artifacts/<artifact-name>/. Restore them into the
+      # workspace, but suffix `TEST-*.xml` files with their source artifact so the
+      # same test class from two matrix jobs (e.g. ubuntu-21 and macOS-21) cannot
+      # race-overwrite each other and produce a half-written XML that crashes
+      # Sonar's Surefire parser.
+      - name: Stage artifacts into workspace (namespace TEST-*.xml per source)
+        run: |
+          set -euo pipefail
+          shopt -s globstar nullglob
+          for art_dir in ./_artifacts/*/; do
+            art=$(basename "$art_dir")
+            while IFS= read -r -d '' src; do
+              rel=${src#"$art_dir"}
+              if [[ "$(basename "$src")" == TEST-*.xml ]]; then
+                dest="./${rel%.xml}.${art}.xml"
+              else
+                dest="./${rel}"
+              fi
+              mkdir -p "$(dirname "$dest")"
+              cp "$src" "$dest"
+            done < <(find "$art_dir" -type f -print0)
+          done
+          rm -rf ./_artifacts
       - name: Show jacoco files
         run : |
           find . -name "jacoco*.xml" -type f
@@ -160,3 +208,25 @@ jobs:
             -PUI=true \
             -Dsonar.projectKey=opendcs_opendcs_ui \
             -Dsonar.projectName="OpenDCS UI"
+      # Always patch the check run created above so the PR shows a definitive
+      # outcome instead of a stuck "in progress" badge when the job ends.
+      - name: Finalize check on PR head
+        if: always() && steps.check.outputs.id != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          CHECK_ID: ${{ steps.check.outputs.id }}
+          JOB_STATUS: ${{ job.status }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          case "${JOB_STATUS}" in
+            success)   conclusion="success"; title="SonarCloud scan submitted";;
+            cancelled) conclusion="cancelled"; title="SonarCloud workflow cancelled";;
+            *)         conclusion="failure"; title="SonarCloud workflow failed";;
+          esac
+          gh api -X PATCH "repos/${REPO}/check-runs/${CHECK_ID}" \
+            -f status="completed" \
+            -f conclusion="${conclusion}" \
+            -f details_url="${RUN_URL}" \
+            -f "output[title]=${title}" \
+            -f "output[summary]=See the workflow run for full logs. The SonarCloud app posts its own analysis result check separately once the cloud analysis finishes."
