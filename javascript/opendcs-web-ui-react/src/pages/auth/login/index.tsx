@@ -155,10 +155,11 @@ export default function Login() {
             })}
             {organizations.length > 0 ? (
               <Form.Group className="mb-3">
-                <Form.Label>{t("organization")}</Form.Label>
+                <Form.Label id="organization-label">{t("organization")}</Form.Label>
                 <Form.Select
                   id="organization"
                   name="organization"
+                  aria-labelledby="organization-label"
                   required
                   defaultValue={api.org}
                   onChange={(e) => {

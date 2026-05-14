@@ -104,7 +104,7 @@ export const SuccessfulLogin: Story = {
     // Set the organization
     userEvent.selectOptions(
       await canvas.getByRole("combobox", {
-        name: "",
+        name: "Organization",
       }),
       JSON.stringify(args.organization),
     );
@@ -140,7 +140,7 @@ export const FailedLogin_BadCredentials: Story = {
     await userEvent.type(canvas.getByPlaceholderText(/password/i), "wrongpass");
 
     await userEvent.selectOptions(
-      canvas.getByRole("combobox", { name: "" }),
+      canvas.getByRole("combobox", { name: "Organization" }),
       JSON.stringify(args.organization),
     );
 
@@ -174,7 +174,7 @@ export const FailedLogin_BadOrg: Story = {
     await userEvent.type(canvas.getByPlaceholderText(/password/i), "secret");
 
     await userEvent.selectOptions(
-      canvas.getByRole("combobox", { name: "" }),
+      canvas.getByRole("combobox", { name: "Organization" }),
       JSON.stringify(args.organization),
     );
 
@@ -199,7 +199,7 @@ export const SuccessfulLogin_HiddenOrganizations: Story = {
     await userEvent.type(canvas.getByPlaceholderText(/password/i), "secret");
 
     await waitFor(() => {
-      expect(canvas.queryByRole("combobox", { name: "" })).toBeNull();
+      expect(canvas.queryByRole("combobox", { name: "Organization" })).toBeNull();
     });
 
     await userEvent.click(canvas.getByRole("button", { name: /^login$/i }));
