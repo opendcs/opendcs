@@ -153,12 +153,6 @@ export const Platform: React.FC<PlatformProperties> = ({
     dispatch({ type: "save", payload: { [name]: value } });
   }, []);
 
-  const numberChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target;
-    const parsed = value === "" ? undefined : Number(value);
-    dispatch({ type: "save", payload: { [name]: parsed } });
-  }, []);
-
   const checkboxChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = event.target;
     dispatch({ type: "save", payload: { [name]: checked } });
