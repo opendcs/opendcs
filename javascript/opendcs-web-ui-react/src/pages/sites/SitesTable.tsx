@@ -8,6 +8,7 @@ import Site, { SiteSkeleton, type UiSite } from "./Site";
 import type { RemoveAction, SaveAction } from "../../util/Actions";
 import {
   AppDataTable,
+  type AppDataTableHandle,
   type ColumnDef,
   type RowAction,
 } from "../../components/data-table";
@@ -19,6 +20,7 @@ export interface SiteTableProperties {
   getSite?: (siteId: number) => Promise<ApiSite>;
   actions?: SaveAction<ApiSite> & RemoveAction<number>;
   loading?: boolean;
+  tableRef?: React.Ref<AppDataTableHandle>;
 }
 
 export const SitesTable: React.FC<SiteTableProperties> = ({
@@ -26,6 +28,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
   getSite,
   actions = {},
   loading = false,
+  tableRef,
 }) => {
   const [t] = useTranslation(["sites", "translation"]);
 
@@ -106,6 +109,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
       onSave={actions.save}
       caption={t("sites:title")}
       tableId="siteTable"
+      ref={tableRef}
     />
   );
 };

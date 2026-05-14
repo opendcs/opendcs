@@ -5,12 +5,13 @@ import {
   Form,
   FormCheck,
   FormGroup,
+  InputGroup,
   Placeholder,
   Row,
 } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../components/properties";
 import { use, useCallback, useMemo, useReducer } from "react";
-import type { ApiPlatform } from "opendcs-api";
+import type { ApiPlatform, ApiPlatformConfig, ApiSite } from "opendcs-api";
 import { useTranslation } from "react-i18next";
 import type { CancelAction, CollectionActions, SaveAction } from "../../util/Actions";
 import { Save, X } from "react-bootstrap-icons";
@@ -83,28 +84,53 @@ export const PlatformSkeleton: React.FC<{ edit?: boolean; className?: string }> 
   </Card>
 );
 
+export interface PlatformDetails {
+  platform: UiPlatform;
+  site?: ApiSite;
+  config?: ApiPlatformConfig;
+}
+
 export interface PlatformProperties {
-  platform: Promise<UiPlatform> | UiPlatform;
+  details: Promise<PlatformDetails> | PlatformDetails;
   actions?: SaveAction<ApiPlatform> & CancelAction<number>;
   edit?: boolean;
+  /**
+   * Invoked when the user clicks the "edit site" button. Lifted out of the
+   * component because `Platform` is rendered into a detached React root for
+   * the DataTable child row, where router hooks like `useNavigate` don't work.
+   */
+  onEditSite?: (siteId: number) => void;
 }
 
 const mapProps: (props: { [k: string]: string }) => Property[] = (props) =>
   Object.entries(props).map(([name, value]): Property => ({ name, value }));
 
+const siteDisplayName = (site: ApiSite): string =>
+  site.publicName ||
+  (site.sitenames ? Object.values(site.sitenames)[0] : undefined) ||
+  String(site.siteId ?? "");
+
 export const Platform: React.FC<PlatformProperties> = ({
-  platform,
+  details,
   actions = {},
   edit = false,
+  onEditSite,
 }) => {
   const [t] = useTranslation(["platforms", "translation"]);
-  const providedPlatform = platform instanceof Promise ? use(platform) : platform;
+  const resolved = details instanceof Promise ? use(details) : details;
+  const providedPlatform = resolved.platform;
   const [localPlatform, dispatch] = useReducer(PlatformReducer, providedPlatform);
 
   const props = useMemo(
     () => mapProps(localPlatform.properties || {}),
     [localPlatform.properties],
   );
+
+  // Names from the initial fetch. If the user edits siteId/configId, this stays
+  // pinned to the originally-fetched record — re-resolution would require
+  // another single-record fetch and is out of scope here.
+  const siteName = resolved.site ? siteDisplayName(resolved.site) : "";
+  const configName = resolved.config?.name ?? "";
 
   const propertyActions: CollectionActions<Property, string> = edit
     ? {
@@ -157,25 +183,62 @@ export const Platform: React.FC<PlatformProperties> = ({
                     type="text"
                     id="name"
                     name="name"
-                    readOnly={!edit}
+                    readOnly={true}
+                    disabled={true}
                     defaultValue={localPlatform.name}
                     onChange={inputChange}
                   />
                 </Col>
               </FormGroup>
               <FormGroup as={Row} className="mb-3">
-                <Form.Label column sm={3} htmlFor="agency">
-                  {t("platforms:agency")}
+                <Form.Label column sm={3} htmlFor="siteId">
+                  {t("platforms:site")}
                 </Form.Label>
                 <Col sm={9}>
-                  <Form.Control
-                    type="text"
-                    id="agency"
-                    name="agency"
-                    readOnly={!edit}
-                    defaultValue={localPlatform.agency}
-                    onChange={inputChange}
-                  />
+                  {edit ? (
+                    <div className="d-flex gap-2">
+                      <InputGroup>
+                        <Form.Control
+                          type="text"
+                          id="siteId"
+                          name="siteId"
+                          readOnly={true}
+                          disabled={true}
+                          defaultValue={siteName}
+                          onChange={inputChange}
+                        />
+                        <button
+                          type="button"
+                          className="dt-button btn btn-secondary"
+                          aria-label={t("platforms:select_site")}
+                        >
+                          choose
+                        </button>
+                      </InputGroup>
+                      <button
+                        type="button"
+                        className="dt-button btn btn-secondary"
+                        aria-label={t("platforms:edit_site")}
+                        disabled={localPlatform.siteId === undefined || !onEditSite}
+                        onClick={() => {
+                          if (localPlatform.siteId !== undefined) {
+                            onEditSite?.(localPlatform.siteId);
+                          }
+                        }}
+                      >
+                        edit
+                      </button>
+                    </div>
+                  ) : (
+                    <Form.Control
+                      type="text"
+                      id="siteId"
+                      name="siteId"
+                      readOnly={true}
+                      defaultValue={siteName}
+                      onChange={inputChange}
+                    />
+                  )}
                 </Col>
               </FormGroup>
               <FormGroup as={Row} className="mb-3">
@@ -189,6 +252,57 @@ export const Platform: React.FC<PlatformProperties> = ({
                     name="designator"
                     readOnly={!edit}
                     defaultValue={localPlatform.designator}
+                    onChange={inputChange}
+                  />
+                </Col>
+              </FormGroup>
+              <FormGroup as={Row} className="mb-3">
+                <Form.Label column sm={3} htmlFor="configId">
+                  {t("platforms:config")}
+                </Form.Label>
+                <Col sm={9}>
+                  {edit ? (
+                    <InputGroup>
+                      <Form.Control
+                        type="text"
+                        id="configId"
+                        name="configId"
+                        readOnly={true}
+                        disabled={true}
+                        defaultValue={siteName}
+                        onChange={inputChange}
+                      />
+                      <button
+                        type="button"
+                        className="dt-button btn btn-secondary"
+                        aria-label={t("platforms:select_config")}
+                      >
+                        choose
+                      </button>
+                    </InputGroup>
+                  ) : (
+                    <Form.Control
+                      type="text"
+                      id="configId"
+                      name="configId"
+                      readOnly={true}
+                      defaultValue={configName}
+                      onChange={inputChange}
+                    />
+                  )}
+                </Col>
+              </FormGroup>
+              <FormGroup as={Row} className="mb-3">
+                <Form.Label column sm={3} htmlFor="agency">
+                  {t("platforms:agency")}
+                </Form.Label>
+                <Col sm={9}>
+                  <Form.Control
+                    type="text"
+                    id="agency"
+                    name="agency"
+                    readOnly={!edit}
+                    defaultValue={localPlatform.agency}
                     onChange={inputChange}
                   />
                 </Col>
@@ -209,47 +323,18 @@ export const Platform: React.FC<PlatformProperties> = ({
                 </Col>
               </FormGroup>
               <FormGroup as={Row} className="mb-3">
-                <Form.Label column sm={3} htmlFor="siteId">
-                  {t("platforms:siteId")}
-                </Form.Label>
-                <Col sm={9}>
-                  <Form.Control
-                    type="number"
-                    id="siteId"
-                    name="siteId"
-                    readOnly={!edit}
-                    defaultValue={localPlatform.siteId}
-                    onChange={numberChange}
-                  />
-                </Col>
-              </FormGroup>
-              <FormGroup as={Row} className="mb-3">
-                <Form.Label column sm={3} htmlFor="configId">
-                  {t("platforms:configId")}
-                </Form.Label>
-                <Col sm={9}>
-                  <Form.Control
-                    type="number"
-                    id="configId"
-                    name="configId"
-                    readOnly={!edit}
-                    defaultValue={localPlatform.configId}
-                    onChange={numberChange}
-                  />
-                </Col>
-              </FormGroup>
-              <FormGroup as={Row} className="mb-3">
                 <Form.Label column sm={3} htmlFor="production">
                   {t("platforms:production")}
                 </Form.Label>
-                <Col sm={9}>
+                <Col sm={9} className="d-flex align-items-center">
                   <FormCheck
-                    type="checkbox"
+                    type="switch"
                     id="production"
                     name="production"
                     disabled={!edit}
                     defaultChecked={localPlatform.production ?? false}
                     onChange={checkboxChange}
+                    style={{ fontSize: "1.5rem" }}
                   />
                 </Col>
               </FormGroup>
@@ -285,7 +370,9 @@ export const Platform: React.FC<PlatformProperties> = ({
               <Col className="d-flex justify-content-end gap-2">
                 <Button
                   onClick={() => {
-                    actions.cancel?.(providedPlatform.platformId!);
+                    if (providedPlatform.platformId !== undefined) {
+                      actions.cancel?.(providedPlatform.platformId);
+                    }
                   }}
                   variant="secondary"
                   aria-label={t("platforms:cancel_for", {

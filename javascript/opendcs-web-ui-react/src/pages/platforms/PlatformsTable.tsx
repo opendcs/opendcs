@@ -1,7 +1,17 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import type { ApiPlatform, ApiPlatformRef } from "opendcs-api";
-import Platform, { PlatformSkeleton, type UiPlatform } from "./Platform";
+import type {
+  ApiPlatform,
+  ApiPlatformConfig,
+  ApiPlatformRef,
+  ApiSite,
+} from "opendcs-api";
+import Platform, {
+  PlatformSkeleton,
+  type PlatformDetails,
+  type UiPlatform,
+} from "./Platform";
 import type { RemoveAction, SaveAction } from "../../util/Actions";
 import {
   AppDataTable,
@@ -14,6 +24,8 @@ export type TablePlatformRef = Partial<ApiPlatformRef>;
 export interface PlatformsTableProperties {
   platforms: TablePlatformRef[];
   getPlatform?: (platformId: number) => Promise<ApiPlatform>;
+  getSite?: (siteId: number) => Promise<ApiSite>;
+  getConfig?: (configId: number) => Promise<ApiPlatformConfig>;
   actions?: SaveAction<ApiPlatform> & RemoveAction<number>;
   loading?: boolean;
 }
@@ -21,10 +33,17 @@ export interface PlatformsTableProperties {
 export const PlatformsTable: React.FC<PlatformsTableProperties> = ({
   platforms,
   getPlatform,
+  getSite,
+  getConfig,
   actions = {},
   loading = false,
 }) => {
   const [t] = useTranslation(["platforms", "translation"]);
+  const navigate = useNavigate();
+  const onEditSite = useCallback(
+    (siteId: number) => navigate(`/sites?siteId=${siteId}`),
+    [navigate],
+  );
 
   const columns = useMemo<ColumnDef<TablePlatformRef>[]>(
     () => [
@@ -97,18 +116,31 @@ export const PlatformsTable: React.FC<PlatformsTableProperties> = ({
       actionsLabel={t("translation:actions")}
       rowActions={rowActions}
       renderDetail={({ row, mode, actions: detailActions }) => {
-        const platformPromise: Promise<UiPlatform> =
+        const detailsPromise: Promise<PlatformDetails> =
           row.platformId && row.platformId > 0 && getPlatform
-            ? getPlatform(row.platformId)
-            : Promise.resolve({ platformId: row.platformId } as UiPlatform);
+            ? getPlatform(row.platformId).then(async (platform) => {
+                const [site, config] = await Promise.all([
+                  platform.siteId !== undefined && getSite
+                    ? getSite(platform.siteId).catch(() => undefined)
+                    : undefined,
+                  platform.configId !== undefined && getConfig
+                    ? getConfig(platform.configId).catch(() => undefined)
+                    : undefined,
+                ]);
+                return { platform, site, config };
+              })
+            : Promise.resolve({
+                platform: { platformId: row.platformId } as UiPlatform,
+              });
         return (
           <Platform
-            platform={platformPromise}
+            details={detailsPromise}
             actions={{
               save: (p) => detailActions.save(p),
               cancel: () => detailActions.cancel(),
             }}
             edit={mode !== "show"}
+            onEditSite={onEditSite}
           />
         );
       }}
