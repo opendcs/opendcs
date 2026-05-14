@@ -172,7 +172,7 @@ public final class ConfigResources extends OpenDcsResource
 			tags = {"REST - DECODES Platform Configurations"}
 	)
 	public Response getConfig(@Parameter(schema = @Schema(implementation = Long.class, example = "12"), required = true)
-		@QueryParam("configid") Long configId) throws WebAppException, DbException
+		@QueryParam("configid") Long configId) throws WebAppException
 	{
 		if (configId == null)
 		{
@@ -545,7 +545,7 @@ public final class ConfigResources extends OpenDcsResource
 	public Response deleteConfig(@Parameter(description = "The unique ID of the configuration to delete",
 			required = true, schema = @Schema(implementation = Long.class))
 		@QueryParam("configid") Long configId)
-			throws DbException, WebAppException
+			throws WebAppException
 	{
 		if (configId == null)
 		{
@@ -557,15 +557,10 @@ public final class ConfigResources extends OpenDcsResource
 		try (var tx = db.newTransaction())
 		{
 			final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
-
-			// saved as we do need to know this
-			// if (pc.numPlatformsUsing > 0)
-			// {
-			// 	return Response.status(Response.Status.METHOD_NOT_ALLOWED)
-			// 			.entity(" Cannot delete config with ID "
-			// 					+ configId + " because it is used by one or more platforms.")
-			// 			.build();
-			// }
+			// no need to check if platforms use script, both the platform table
+			// has a foreign key on platformconfig that prevents deletion if used.
+			// will likely want to handle "foreign key errors" better
+			// but that should be generic to all deletes, not super specific.
 
 			dao.delete(tx, DbKey.createDbKey(configId));
 
