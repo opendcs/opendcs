@@ -15,6 +15,7 @@
 - U.S. Federal Government (in countries where recognized)
 -                Karl L Tarbet (karl.l.tarbet[@]usace.army.mil)
 -                Zoe A Miller (zoe.a.miller[@]usace.army.mil)
+                 Eric Novotny (eric.v.novotny@usace.army.mil)
 -  
 - _Add the copyright date, your name, and email address here. (PLEASE KEEP THIS LINE)_
 - _Your copyright date should be the date you are adding yourself to this file.
