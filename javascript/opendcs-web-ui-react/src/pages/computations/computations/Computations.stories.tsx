@@ -9,7 +9,16 @@ import type {
   ApiTsGroupRef,
 } from "opendcs-api";
 import { act } from "react";
-import { expect, waitFor } from "storybook/test";
+import { expect, fn, waitFor } from "storybook/test";
+import {
+  ApiContext,
+  defaultValue as apiDefault,
+} from "../../../contexts/app/ApiContext";
+
+const WithOrg: React.FC<{ children: React.ReactNode; org?: string }> = ({
+  children,
+  org = "SPK",
+}) => <ApiContext value={{ ...apiDefault, org, setOrg: fn() }}>{children}</ApiContext>;
 
 const meta = {
   component: Computations,
@@ -234,5 +243,195 @@ export const AddAndCancel: Story = {
     await waitFor(() => {
       expect(canvas.queryByText("-1")).not.toBeInTheDocument();
     });
+  },
+};
+
+const orgScopedHandlers = {
+  appRefs: http.get("/odcsapi/apprefs", () =>
+    HttpResponse.json<ApiAppRef[]>(mockAppRefs),
+  ),
+  groupRefs: http.get("/odcsapi/tsgrouprefs", () =>
+    HttpResponse.json<ApiTsGroupRef[]>(mockGroupRefs),
+  ),
+  computationRefs: computationHandlers.computationRefs,
+  computation: computationHandlers.computation,
+  saveComputation: computationHandlers.saveComputation,
+  deleteComputation: computationHandlers.deleteComputation,
+  algorithm: computationHandlers.algorithm,
+};
+
+export const LoadsRefsForOrganization: Story = {
+  args: {},
+  parameters: {
+    msw: { handlers: orgScopedHandlers },
+  },
+  render: () => (
+    <WithOrg>
+      <Computations />
+    </WithOrg>
+  ),
+  play: async ({ mount }) => {
+    const canvas = await mount();
+    expect(await canvas.findByText("DailyFlowAve")).toBeInTheDocument();
+  },
+};
+
+export const AppRefsFetchFailureFallsBackToEmpty: Story = {
+  args: {},
+  parameters: {
+    msw: {
+      handlers: {
+        ...orgScopedHandlers,
+        appRefs: http.get(
+          "/odcsapi/apprefs",
+          () => new HttpResponse(null, { status: 500 }),
+        ),
+      },
+    },
+  },
+  render: () => (
+    <WithOrg>
+      <Computations />
+    </WithOrg>
+  ),
+  play: async ({ mount }) => {
+    const canvas = await mount();
+    expect(await canvas.findByText("DailyFlowAve")).toBeInTheDocument();
+  },
+};
+
+export const GroupRefsFetchFailureFallsBackToEmpty: Story = {
+  args: {},
+  parameters: {
+    msw: {
+      handlers: {
+        ...orgScopedHandlers,
+        groupRefs: http.get(
+          "/odcsapi/tsgrouprefs",
+          () => new HttpResponse(null, { status: 500 }),
+        ),
+      },
+    },
+  },
+  render: () => (
+    <WithOrg>
+      <Computations />
+    </WithOrg>
+  ),
+  play: async ({ mount }) => {
+    const canvas = await mount();
+    expect(await canvas.findByText("DailyFlowAve")).toBeInTheDocument();
+  },
+};
+
+export const AddSaveNewComputation: Story = {
+  args: {},
+  parameters: {
+    msw: { handlers: orgScopedHandlers },
+  },
+  render: () => (
+    <WithOrg>
+      <Computations />
+    </WithOrg>
+  ),
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    await canvas.findByText("DailyFlowAve");
+
+    const addBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:add_computation"),
+    });
+    await act(async () => userEvent.click(addBtn));
+
+    const nameInput = await canvas.findByRole(
+      "textbox",
+      { name: i18n.t("computations:editor.name") },
+      { timeout: 5000 },
+    );
+    await userEvent.type(nameInput, "FreshComputation");
+
+    const saveBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:editor.save_for", { id: -1 }),
+    });
+    await act(async () => userEvent.click(saveBtn));
+
+    await waitFor(() => expect(canvas.queryByText("-1")).not.toBeInTheDocument());
+  },
+};
+
+const statefulDeleteHandlers = (() => {
+  let remainingRefs: ApiComputationRef[] = [...mockComputationRefs];
+  return {
+    ...orgScopedHandlers,
+    computationRefs: http.get("/odcsapi/computationrefs", () =>
+      HttpResponse.json<ApiComputationRef[]>(remainingRefs),
+    ),
+    deleteComputation: http.delete("/odcsapi/computation", ({ request }) => {
+      const url = new URL(request.url);
+      const id = parseInt(url.searchParams.get("computationid") ?? "-1");
+      remainingRefs = remainingRefs.filter((ref) => ref.computationId !== id);
+      return new HttpResponse(null, { status: 204 });
+    }),
+  };
+})();
+
+export const DeleteSuccess: Story = {
+  args: {},
+  parameters: {
+    msw: { handlers: statefulDeleteHandlers },
+  },
+  render: () => (
+    <WithOrg>
+      <Computations />
+    </WithOrg>
+  ),
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const deleteBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:editor.delete_for", { id: 2 }),
+    });
+    await act(async () => userEvent.click(deleteBtn));
+
+    await waitFor(() =>
+      expect(canvas.queryByText("DailyStageMax")).not.toBeInTheDocument(),
+    );
+  },
+};
+
+export const DeleteFailureLogsError: Story = {
+  args: {},
+  parameters: {
+    msw: {
+      handlers: {
+        ...orgScopedHandlers,
+        deleteComputation: http.delete(
+          "/odcsapi/computation",
+          () => new HttpResponse(null, { status: 500 }),
+        ),
+      },
+    },
+  },
+  render: () => (
+    <WithOrg>
+      <Computations />
+    </WithOrg>
+  ),
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const deleteBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:editor.delete_for", { id: 2 }),
+    });
+    await act(async () => userEvent.click(deleteBtn));
+
+    // Row remains because delete failed; error is logged.
+    await waitFor(() =>
+      expect(canvas.queryByText("DailyStageMax")).toBeInTheDocument(),
+    );
   },
 };

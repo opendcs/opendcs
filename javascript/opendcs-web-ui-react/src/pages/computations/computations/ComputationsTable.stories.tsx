@@ -7,9 +7,8 @@ import type {
   ApiComputationRef,
   ApiTsGroupRef,
 } from "opendcs-api";
-import { act } from "@testing-library/react";
 import { expect, waitFor } from "storybook/test";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { act, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ArgsStoryFn } from "storybook/internal/types";
 import type { RemoveAction, SaveAction } from "../../../util/Actions";
 
@@ -21,6 +20,9 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+const longDescription =
+  "This computation derives a long-form description that intentionally exceeds the one hundred and twenty character truncation threshold so the description snippet helper exercises its slicing branch.";
+
 const sharedComputations: ApiComputation[] = [
   {
     computationId: 1,
@@ -30,7 +32,7 @@ const sharedComputations: ApiComputation[] = [
     appId: 200,
     applicationName: "compproc",
     enabled: true,
-    comment: "Computes daily average flow.",
+    comment: longDescription,
     groupId: 5,
     groupName: "Daily",
     props: { output_units: "cfs" },
@@ -333,5 +335,196 @@ export const CopyComputation: Story = {
     });
     expect(nameInput).toHaveValue("");
     expect(canvas.queryByText("output_units")).not.toBeInTheDocument();
+  },
+};
+
+export const AddTwoComputationsThenCancel: Story = {
+  args: { computations: toComputationRefs(sharedComputations) },
+  render: StoryRender,
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const addBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:add_computation"),
+    });
+    await act(async () => userEvent.click(addBtn));
+
+    const cancelFirst = await canvas.findByRole(
+      "button",
+      { name: i18n.t("computations:editor.cancel_for", { id: -1 }) },
+      { timeout: 5000 },
+    );
+    expect(cancelFirst).toBeInTheDocument();
+
+    await act(async () => userEvent.click(addBtn));
+
+    const cancelSecond = await canvas.findByRole(
+      "button",
+      { name: i18n.t("computations:editor.cancel_for", { id: -2 }) },
+      { timeout: 5000 },
+    );
+    expect(cancelSecond).toBeInTheDocument();
+
+    await act(async () => userEvent.click(cancelSecond));
+    await waitFor(() => expect(canvas.queryByText("-2")).not.toBeInTheDocument());
+  },
+};
+
+export const CopyFailureLogsWarning: Story = {
+  args: { computations: toComputationRefs(sharedComputations) },
+  render: () => {
+    const refs = toComputationRefs(sharedComputations);
+    const failingGetComputation = async (): Promise<ApiComputation> => {
+      throw new Error("simulated copy failure");
+    };
+    const failingGetAlgorithm = async (id: number): Promise<ApiAlgorithm> =>
+      getAlgorithmFromList(sharedAlgorithms)(id);
+
+    return (
+      <ComputationsTable
+        computations={refs}
+        getComputation={failingGetComputation}
+        getAlgorithm={failingGetAlgorithm}
+        actions={{
+          save: () => {},
+          remove: () => {},
+        }}
+        processOptions={sampleProcessOptions}
+        groupOptions={sampleGroupOptions}
+      />
+    );
+  },
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const copyBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:editor.copy_for", { id: 1 }),
+    });
+    await act(async () => userEvent.click(copyBtn));
+
+    await waitFor(() => expect(canvas.queryByText("-1")).not.toBeInTheDocument());
+  },
+};
+
+export const SaveFailureLogsError: Story = {
+  args: { computations: toComputationRefs(sharedComputations) },
+  render: () => {
+    const refs = toComputationRefs(sharedComputations);
+    const failingSave = async (): Promise<void> => {
+      throw new Error("simulated save failure");
+    };
+    return (
+      <ComputationsTable
+        computations={refs}
+        getComputation={getComputationFromList(sharedComputations)}
+        getAlgorithm={getAlgorithmFromList(sharedAlgorithms)}
+        actions={{
+          save: failingSave,
+          remove: () => {},
+        }}
+        processOptions={sampleProcessOptions}
+        groupOptions={sampleGroupOptions}
+      />
+    );
+  },
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:editor.edit_for", { id: 1 }),
+    });
+    await act(async () => userEvent.click(editBtn));
+
+    const saveBtn = await canvas.findByRole(
+      "button",
+      { name: i18n.t("computations:editor.save_for", { id: 1 }) },
+      { timeout: 5000 },
+    );
+    await act(async () => userEvent.click(saveBtn));
+
+    // The error is logged; computation row remains.
+    await waitFor(() => expect(canvas.queryByText("DailyFlowAve")).toBeInTheDocument());
+  },
+};
+
+export const AlgorithmFetchFailureLogsWarning: Story = {
+  args: { computations: toComputationRefs(sharedComputations) },
+  render: () => {
+    const refs = toComputationRefs(sharedComputations);
+    const failingGetAlgorithm = async (): Promise<ApiAlgorithm> => {
+      throw new Error("simulated algorithm fetch failure");
+    };
+    return (
+      <ComputationsTable
+        computations={refs}
+        getComputation={getComputationFromList(sharedComputations)}
+        getAlgorithm={failingGetAlgorithm}
+        actions={{ save: () => {}, remove: () => {} }}
+        processOptions={sampleProcessOptions}
+        groupOptions={sampleGroupOptions}
+      />
+    );
+  },
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:editor.edit_for", { id: 1 }),
+    });
+    await act(async () => userEvent.click(editBtn));
+
+    const algorithmField = await canvas.findByRole(
+      "textbox",
+      { name: i18n.t("computations:editor.algorithmName") },
+      { timeout: 5000 },
+    );
+    expect(algorithmField).toBeInTheDocument();
+  },
+};
+
+export const ToggleRowOpenAndClose: Story = {
+  args: { computations: toComputationRefs(sharedComputations) },
+  render: StoryRender,
+  play: async ({ mount, parameters }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const flowCell = await canvas.findByText("DailyFlowAve");
+    await act(async () => flowCell.click());
+
+    await canvas.findByRole(
+      "textbox",
+      { name: i18n.t("computations:editor.name") },
+      { timeout: 5000 },
+    );
+
+    await act(async () => flowCell.click());
+
+    await waitFor(() =>
+      expect(
+        canvas.queryByRole("textbox", { name: i18n.t("computations:editor.name") }),
+      ).not.toBeInTheDocument(),
+    );
+  },
+};
+
+export const TableWithoutGetComputation: Story = {
+  args: { computations: toComputationRefs(sharedComputations) },
+  render: () => {
+    const refs = toComputationRefs(sharedComputations);
+    return (
+      <ComputationsTable
+        computations={refs}
+        actions={{ save: () => {}, remove: () => {} }}
+      />
+    );
+  },
+  play: async ({ mount }) => {
+    const canvas = await mount();
+    expect(await canvas.findByText("DailyFlowAve")).toBeInTheDocument();
   },
 };
