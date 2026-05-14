@@ -883,13 +883,25 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   }, [i18n.language, rowActionsList, rowActionApi, idOf, toggleByIdStr, hasDetail]);
 
   // --- Language change: DataTable remounts (key={i18n.language}), reset state ---
+  // Only reset on a *user-driven* language switch, not on the initial settling
+  // from i18next's language detector. Resetting during startup wipes any state
+  // a parent set on mount (e.g. SitesPage's deep-link openRow) before the
+  // first draw, so rows opened by the parent never appear.
+  const langInitRef = useRef<string | null>(null);
   useEffect(() => {
+    if (!i18n.isInitialized) return;
+    if (langInitRef.current === null) {
+      langInitRef.current = i18n.language;
+      return;
+    }
+    if (langInitRef.current === i18n.language) return;
+    langInitRef.current = i18n.language;
     setRowState({});
     setLocalItems([]);
     childModeRef.current = {};
     childNodesRef.current = {};
     // WeakMap entries are GC'd with their row objects; no reset needed.
-  }, [i18n.language]);
+  }, [i18n.language, i18n.isInitialized]);
 
   // --- Trigger a redraw when rowState changes so drawCallback / cell render
   //     picks up the new state. For inline-edit tables, also invalidate the
