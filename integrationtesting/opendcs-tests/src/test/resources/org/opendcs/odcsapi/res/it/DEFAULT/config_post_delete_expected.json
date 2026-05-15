@@ -5,7 +5,7 @@
   "description": "Test Platform 1",
   "configSensors": [
     {
-      "sensorNumber" : 0,
+      "sensorNumber" : 1,
       "sensorName" : "Test Sensor 1",
       "recordingMode" : "U",
       "recordingInterval" : 90,
@@ -16,7 +16,7 @@
         "site" : "Test Site 1"
       },
       "dataTypes" : {
-        "Test Type" : "Test Units 1"
+        "CWMS" : "Elev"
       },
       "usgsStatCode" : null
     }
