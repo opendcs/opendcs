@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.sql.Connection;
+import java.util.Date;
 
 import org.jdbi.v3.core.Handle;
 import org.junit.jupiter.api.AfterEach;
@@ -15,6 +16,7 @@ import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
+import org.opendcs.fixtures.configurations.cwms.CwmsOracleConfiguration;
 
 import decodes.db.Database;
 import decodes.db.Platform;
@@ -124,16 +126,22 @@ class PlatformListIOTestIT extends AppTestBase
 			.bind("timeOfFirstSample", 0)
 			.execute();
 
-		handle.createUpdate("INSERT INTO Platform "
+		var insertPlatform = handle.createUpdate("INSERT INTO Platform "
 				+ "(ID, Agency, IsProduction, SiteId, ConfigId, Description, LastModifyTime, Expiration, "
 				+ "PlatformDesignator) "
 				+ "VALUES (:id, :agency, :isProduction, NULL, :configId, :description, "
-				+ "NULL, NULL, NULL)")
+				+ ":lastModifyTime, NULL, NULL)");
+
+		if (!CwmsOracleConfiguration.NAME.equals(configuration.getName()))
+			insertPlatform.define("numeric_date", true);
+
+		insertPlatform
 			.bind("id", platformId)
 			.bind("agency", "TEST")
 			.bind("isProduction", "true")
 			.bind("configId", configId)
 			.bind("description", "platform list io test platform")
+			.bind("lastModifyTime", new Date())
 			.execute();
 	}
 
