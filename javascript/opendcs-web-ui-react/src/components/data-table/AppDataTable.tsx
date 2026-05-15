@@ -446,6 +446,11 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   // rowState is keyed by stringified row id so both consumer ids (TId) and
   // wrapper-generated synthetic ids (for inline-edit new rows) coexist.
   const [rowState, setRowState] = useState<Record<string, RowMode>>({});
+  // Hide the wrapper until DataTables finishes its first init. React renders
+  // the bare <table> (with <caption> + <thead>) before DataTables inserts the
+  // top toolbar (buttons / search / page-length), which would otherwise flash
+  // the title at the top and shift it down once the toolbar appears.
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Live ref mirrors so drawCallback / click handlers read the latest values.
   const rowStateRef = useRef(rowState);
@@ -745,6 +750,9 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     createdRow: (_row, _data, dataIndex) => {
       table.current?.dt()?.row(dataIndex).node().classList.add("child-toggle");
     },
+    initComplete: () => {
+      setIsInitialized(true);
+    },
     drawCallback: function () {
       // DataTables binds `this` to the Api on each callback — read it once
       // and hand everything else off to plain helpers so this component body
@@ -935,27 +943,29 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   }, [data]);
 
   return (
-    <DataTable
-      key={i18n.language}
-      id={tableId}
-      columns={dtColumns}
-      data={tableData}
-      options={options}
-      ref={table}
-      className={
-        tableClassName ??
-        (hasDetail ? `${BASE_TABLE_CLASS} ${CLICKABLE_ROW_CLASS}` : BASE_TABLE_CLASS)
-      }
-    >
-      {caption && <caption className="caption-title-center">{caption}</caption>}
-      <thead>
-        <tr>
-          {columns.map((c, i) => (
-            <th key={c.name ?? c.data ?? `col-${i}`}>{c.header}</th>
-          ))}
-          {hasActionsCol && <th>{actionsLabel}</th>}
-        </tr>
-      </thead>
-    </DataTable>
+    <div style={{ visibility: isInitialized ? "visible" : "hidden" }}>
+      <DataTable
+        key={i18n.language}
+        id={tableId}
+        columns={dtColumns}
+        data={tableData}
+        options={options}
+        ref={table}
+        className={
+          tableClassName ??
+          (hasDetail ? `${BASE_TABLE_CLASS} ${CLICKABLE_ROW_CLASS}` : BASE_TABLE_CLASS)
+        }
+      >
+        {caption && <caption className="caption-title-center">{caption}</caption>}
+        <thead>
+          <tr>
+            {columns.map((c, i) => (
+              <th key={c.name ?? c.data ?? `col-${i}`}>{c.header}</th>
+            ))}
+            {hasActionsCol && <th>{actionsLabel}</th>}
+          </tr>
+        </thead>
+      </DataTable>
+    </div>
   );
 }
