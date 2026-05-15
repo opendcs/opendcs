@@ -124,6 +124,20 @@ jobs:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: javascript/opendcs-web-ui-react/package-lock.json
+      - name: Cache Storybook + Vite deps
+        # Storybook+vitest's browser-mode dep optimizer (sb-vitest/deps/*) is
+        # flaky on a cold cache: when vite re-bundles deps mid-test the URL
+        # query string changes and any module already loading from the old URL
+        # 404s with "Failed to fetch dynamically imported module". Caching the
+        # warmed dir between runs avoids the cold path entirely. Key is
+        # content-addressed by the lockfile + storybook/vite config so any
+        # change there invalidates and rebuilds the cache.
+        uses: actions/cache@v5.0.4
+        with:
+          path: javascript/opendcs-web-ui-react/node_modules/.cache/storybook
+          key: storybook-cache-${{ runner.os }}-${{ hashFiles('javascript/opendcs-web-ui-react/package-lock.json', 'javascript/opendcs-web-ui-react/.storybook/**', 'javascript/opendcs-web-ui-react/vite.config.ts') }}
+          restore-keys: |
+            storybook-cache-${{ runner.os }}-
       - name: Install/Setup playwright
         working-directory: javascript/opendcs-web-ui-react
         run : |
@@ -213,6 +227,15 @@ jobs:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: javascript/opendcs-web-ui-react/package-lock.json
+      - name: Cache Storybook + Vite deps
+        # See ubuntu-tests for rationale. Per-OS cache key because the warmed
+        # bundles include host-specific paths.
+        uses: actions/cache@v5.0.4
+        with:
+          path: javascript/opendcs-web-ui-react/node_modules/.cache/storybook
+          key: storybook-cache-${{ runner.os }}-${{ hashFiles('javascript/opendcs-web-ui-react/package-lock.json', 'javascript/opendcs-web-ui-react/.storybook/**', 'javascript/opendcs-web-ui-react/vite.config.ts') }}
+          restore-keys: |
+            storybook-cache-${{ runner.os }}-
       - name: Install/Setup playwright
         working-directory: javascript/opendcs-web-ui-react
         run : |
