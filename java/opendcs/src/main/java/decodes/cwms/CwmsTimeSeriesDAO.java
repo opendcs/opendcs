@@ -1326,7 +1326,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
                     : "";
 
         String debounceClause = "";
-        int debounceSec = DecodesSettings.instance().tasklistDebounceSeconds;
+        int debounceSec = ((TimeSeriesDb) db).getTasklistDebounceSeconds();
         if (debounceSec > 0)
             debounceClause = " and a.DATE_TIME_LOADED <= SYSDATE - ?/86400";
 

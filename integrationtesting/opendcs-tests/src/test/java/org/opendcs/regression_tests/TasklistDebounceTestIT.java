@@ -16,7 +16,6 @@ import decodes.sql.DbKey;
 import decodes.tsdb.DataCollection;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
-import decodes.util.DecodesSettings;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
@@ -46,7 +45,7 @@ final class TasklistDebounceTestIT extends AppTestBase
     @Test
     void debounce_excludes_fresh_row_keeps_aged_row_processed() throws Exception
     {
-        DecodesSettings.instance().tasklistDebounceSeconds = 2;
+        db.setTasklistDebounceSeconds(2);
         try (TimeSeriesDAI tsDAI = db.makeTimeSeriesDAO();
              LoadingAppDAI laDAI = db.makeLoadingAppDAO();
              DaoBase dao = new DaoBase(db, "test"))
@@ -71,7 +70,7 @@ final class TasklistDebounceTestIT extends AppTestBase
     @Test
     void debounce_zero_processes_both_rows() throws Exception
     {
-        DecodesSettings.instance().tasklistDebounceSeconds = 0;
+        db.setTasklistDebounceSeconds(0);
         try (TimeSeriesDAI tsDAI = db.makeTimeSeriesDAO();
              LoadingAppDAI laDAI = db.makeLoadingAppDAO();
              DaoBase dao = new DaoBase(db, "test"))

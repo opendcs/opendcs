@@ -1208,7 +1208,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 					+ "to_char(FAIL_TIME,'dd-mon-yyyy hh24:mi:ss'),"
 					+ "'dd-mon-yyyy hh24:mi:ss') >= 1/24)";
 
-		int debounceSec = DecodesSettings.instance().tasklistDebounceSeconds;
+		int debounceSec = ((TimeSeriesDb)db).getTasklistDebounceSeconds();
 		if (debounceSec > 0)
 			q = q + " and DATE_TIME_LOADED <= SYSDATE - " + debounceSec + "/86400";
 

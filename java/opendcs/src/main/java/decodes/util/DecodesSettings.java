@@ -284,14 +284,6 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
     public boolean retryFailedComputations = false;
 
     /**
-     * Number of seconds a CP_COMP_TASKLIST entry must age before
-     * getNewData() returns it. Prevents a downstream comp from running
-     * on a partial input set when multiple upstream timeseries are saved
-     * within the same poll cycle. Default 0 = no debounce.
-     */
-    public int tasklistDebounceSeconds = 0;
-
-    /**
      * Process the minute offset fields when decoding ASCII self-describing messages.
      */
     public boolean asciiSelfDescProcessMOFF = true;
@@ -511,11 +503,6 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
             "If (false) then don't attempt to retry failed computations. If (true)" +
             " then do attempt to retry by using FAIL_TIME in the tasklist records " +
             "to retry up to maxComputationRetries set above"),
-        new PropertySpec("tasklistDebounceSeconds", PropertySpec.INT,
-            "(default=0) Seconds a CP_COMP_TASKLIST entry must age before " +
-            "getNewData() returns it. Prevents downstream comps from running on " +
-            "partial inputs when multiple upstream timeseries are saved in the " +
-            "same poll cycle"),
         new PropertySpec("defaultMaxDecimals", PropertySpec.INT,
             "(default=4) Default max decimals if no presentation element is found"),
         new PropertySpec("platformListDesignatorCol", PropertySpec.BOOLEAN,

@@ -128,6 +128,11 @@ public class ComputationApp extends TsdbAppTemplate
 		new PropertySpec("checkTimedCompsSec", PropertySpec.INT,
 			"(default=600, or 10 minutes) check for changes to timed computations "
 			+ "every this number of seconds."),
+		new PropertySpec("tasklistDebounceSeconds", PropertySpec.INT,
+			"(default=0) Seconds a CP_COMP_TASKLIST entry must age before "
+			+ "getNewData() returns it. Prevents downstream comps from running on "
+			+ "partial inputs when multiple upstream timeseries are saved in the "
+			+ "same poll cycle."),
 
 		new PropertySpec("mail.smtp.auth", PropertySpec.BOOLEAN, "(default=false) "
 			+ "If true then authenticate when connecting to mail server."),
@@ -472,8 +477,6 @@ public class ComputationApp extends TsdbAppTemplate
 	private void runAppInit()
 	{
 		debugSdf.setTimeZone(TimeZone.getTimeZone(theDb.databaseTimezone));
-		log.info("tasklistDebounceSeconds={}",
-				DecodesSettings.instance().tasklistDebounceSeconds);
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		TimeSeriesDAI tsDAO = theDb.makeTimeSeriesDAO();
 		TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
@@ -540,6 +543,22 @@ public class ComputationApp extends TsdbAppTemplate
 					checkTimedCompsSec = 600;
 				}
 			}
+
+			s = appInfo.getProperty("tasklistDebounceSeconds");
+			if (s != null)
+			{
+				try { theDb.setTasklistDebounceSeconds(Integer.parseInt(s.trim())); }
+				catch(NumberFormatException ex)
+				{
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Bad app property 'tasklistDebounceSeconds' -- should be integer -- ignored.");
+					theDb.setTasklistDebounceSeconds(0);
+				}
+			}
+			else
+				theDb.setTasklistDebounceSeconds(0);
+			log.info("tasklistDebounceSeconds={}", theDb.getTasklistDebounceSeconds());
 
 			if (!theDb.isCwms())
 			{

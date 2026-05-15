@@ -1721,7 +1721,7 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			failTimeClause = " and (a.FAIL_TIME is null OR "
 				+ System.currentTimeMillis() + " -  a.FAIL_TIME >= 3600000)";
 		String debounceClause = "";
-		int debounceSec = DecodesSettings.instance().tasklistDebounceSeconds;
+		int debounceSec = ((TimeSeriesDb)db).getTasklistDebounceSeconds();
 		if (debounceSec > 0)
 		{
 			// DATE_TIME_LOADED is BIGINT epoch millis (see V6.8__opendcs.sql),
