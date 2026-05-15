@@ -918,6 +918,33 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 		}
 	}
 
+	public double rating(String specId, Date timeStamp, Connection conn, double... indeps)
+		throws DbCompException, RangeException
+	{
+		String action = "reading rating";
+		try (CwmsRatingDao crd = new CwmsRatingDao(this))
+		{
+			crd.setManualConnection(conn);
+			RatingSet ratingSet = crd.getRatingSet(specId);
+			action = "rateOne";
+			double d = ratingSet.rateOne(conn, timeStamp.getTime(), indeps);
+
+			if (d == Const.UNDEFINED_DOUBLE)
+			{
+				StringBuilder sb = new StringBuilder();
+				for (double x : indeps)
+					sb.append(x + ",");
+				sb.deleteCharAt(sb.length()-1);
+				throw new RangeException("Input values (" + sb.toString() + ") outside rating range.");
+			}
+			return d;
+		}
+		catch (RatingException ex)
+		{
+			throw new RangeException("Error while " + action + ", specId=" + specId, ex);
+		}
+	}
+
 	@Override
 	public void closeConnection()
 	{
