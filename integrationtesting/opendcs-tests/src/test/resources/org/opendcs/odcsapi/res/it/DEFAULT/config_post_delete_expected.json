@@ -16,7 +16,7 @@
         "site" : "Test Site 1"
       },
       "dataTypes" : {
-        "CWMS" : "Stage"
+        "CWMS" : "Elev"
       },
       "usgsStatCode" : null
     }
