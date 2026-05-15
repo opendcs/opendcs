@@ -639,4 +639,3 @@ public class PlatformConfig extends IdDatabaseObject
 
 
 }
-

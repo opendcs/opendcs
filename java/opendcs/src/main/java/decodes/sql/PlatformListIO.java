@@ -22,7 +22,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -245,6 +247,7 @@ public class PlatformListIO extends SqlDbObjIo
                 }
 
                 log.debug("Executing query '{}'", q);
+                Set<DbKey> refreshedConfigs = new HashSet<>();
                 try (ResultSet rs = stmt.executeQuery())
                 {
                     if (rs != null)
@@ -253,19 +256,17 @@ public class PlatformListIO extends SqlDbObjIo
                         {
                             DbKey platformId = DbKey.createDbKey(rs, 1);
 
-                            // MJM 20041027 Check to see if this ID is already in the
-                            // cached platform list and ignore if so. That way, I can
-                            // periodically refresh the platform list to get any newly
-                            // created platforms after the start of the routing spec.
-                            // Refreshing will not affect previously read/used platforms.
                             Platform p = _pList.getById(platformId);
-                            if (p != null)
+                            if (p == null)
                             {
-                                continue;
+                                p = new Platform(platformId);
+                                _pList.add(p);
                             }
-
-                            p = new Platform(platformId);
-                            _pList.add(p);
+                            else
+                            {
+                                p.transportMedia.clear();
+                                p.setIsComplete(false);
+                            }
 
                             p.agency = rs.getString(2);
 
@@ -292,28 +293,38 @@ public class PlatformListIO extends SqlDbObjIo
                                 }
                                 p.setSite(s);
                             }
+                            else
+                            {
+                                p.setSite(null);
+                            }
 
                             DbKey configId = DbKey.createDbKey(rs, 5);
                             if (!rs.wasNull())
                             {
-                                PlatformConfig pc = platformList.getDatabase().platformConfigList.getById(configId);
-                                if (pc == null)
+                                PlatformConfig pc = getConfigForPlatformList(platformList, configId, refreshedConfigs);
+                                if (pc != null)
                                 {
-                                    pc = _configListIO.getConfig(configId);
+                                    p.setConfigName(pc.configName);
+                                    p.setConfig(pc);
                                 }
-                                p.setConfigName(pc.configName);
-                                p.setConfig(pc);
+                                else
+                                {
+                                    p.setConfigName(null);
+                                    p.setConfig(null);
+                                }
+                            }
+                            else
+                            {
+                                p.setConfigName(null);
+                                p.setConfig(null);
                             }
 
                             String desc = rs.getString(6);
-                            if (!rs.wasNull())
-                            {
-                                p.setDescription(desc);
-                            }
+                            p.setDescription(rs.wasNull() ? null : desc);
 
                             p.lastModifyTime = getTimeStamp(rs, 7, null);
 
-                            p.expiration = getTimeStamp(rs, 8, p.expiration);
+                            p.expiration = getTimeStamp(rs, 8, null);
 
                             if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
                             {
@@ -325,6 +336,28 @@ public class PlatformListIO extends SqlDbObjIo
             }
         }
         readAllTransportMedia(platformList);
+    }
+
+    protected PlatformConfig getConfigForPlatformList(PlatformList platformList, DbKey configId,
+        Set<DbKey> refreshedConfigs)
+        throws DatabaseException, SQLException
+    {
+        PlatformConfig pc = platformList.getDatabase().platformConfigList.getById(configId);
+        if (pc == null)
+        {
+            pc = _configListIO.getConfig(configId);
+            PlatformConfig cachedPc = platformList.getDatabase().platformConfigList.getById(configId);
+            if (cachedPc != null)
+            {
+                pc = cachedPc;
+            }
+            refreshedConfigs.add(configId);
+        }
+        else if (refreshedConfigs.add(configId))
+        {
+            _configListIO.readConfig(pc);
+        }
+        return pc;
     }
 
     protected void readAllTransportMedia(PlatformList platformList)
