@@ -38,11 +38,15 @@ public class ConfigSensorMapper extends PrefixRowMapper<ConfigSensor>
             cs.absoluteMin = absoluteMin;
         }
 
+        cs.timeOfFirstSample = rs.getInt(prefix + "timeoffirstsample");
+
         final var absoluteMax = rs.getDouble(prefix + "absolutemax");
         if (!rs.wasNull())
         {
             cs.absoluteMax = absoluteMax;
         }
+
+        cs.setUsgsStatCode(rs.getString(prefix + "stat_cd"));
 
         return cs;
     }

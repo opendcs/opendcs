@@ -5,21 +5,26 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Vector;
 
 import decodes.db.ConfigSensor;
+import decodes.db.Constants;
 import decodes.db.DataType;
-import decodes.db.DataTypeSet;
 import decodes.db.DecodesScript;
 import decodes.db.FormatStatement;
 import decodes.db.PlatformConfig;
-import decodes.db.PlatformConfigList;
 import decodes.db.ScriptSensor;
 import decodes.db.UnitConverter;
 import decodes.sql.DbKey;
 import decodes.xml.DecodesScriptParser;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.opendcs.database.dai.DataTypeDao;
 import org.opendcs.odcsapi.beans.ApiConfigRef;
 import org.opendcs.odcsapi.beans.ApiConfigScript;
 import org.opendcs.odcsapi.beans.ApiConfigScriptSensor;
@@ -35,25 +40,27 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.opendcs.odcsapi.res.ConfigResources.coefficientMap;
 import static org.opendcs.odcsapi.res.ConfigResources.map;
+import static org.opendcs.odcsapi.res.ConfigResources.mapRef;
 
+@ExtendWith(MockitoExtension.class)
 final class ConfigResourcesTest
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
+	@Mock
+	DataTypeDao dataTypeDao;
+
 	@Test
 	void testPlatformConfigListMap() throws Exception
 	{
-		PlatformConfigList pcl = new PlatformConfigList();
 		PlatformConfig config = new PlatformConfig();
 		config.numPlatformsUsing = 11;
 		config.configName = "Test config";
 		config.description = "Platform description";
 		config.setId(DbKey.createDbKey(5899L));
-		pcl.add(config);
 
-		List<ApiConfigRef> configRefs = map(pcl);
+		List<ApiConfigRef> configRefs = List.of(mapRef(config));
 
-		assertNotNull(configRefs);
 		assertEquals(config.numPlatformsUsing, configRefs.get(0).getNumPlatforms());
 		assertEquals(config.configName, configRefs.get(0).getName());
 		assertEquals(config.description, configRefs.get(0).getDescription());
@@ -132,7 +139,7 @@ final class ConfigResourcesTest
 		configSensor.setSensorNumber(12);
 		configSensor.setUsgsStatCode("00000");
 		Map<String, String> dataTypes = new HashMap<>();
-		dataTypes.put("Test data type", "Test data type description");
+		dataTypes.put(Constants.datatype_CWMS, "Stage");
 		configSensor.setDataTypes(dataTypes);
 		Properties properties = new Properties();
 		properties.put("Test property", "Test property value");
@@ -140,11 +147,10 @@ final class ConfigResourcesTest
 		configSensors.add(configSensor);
 		apiConfig.setConfigSensors(configSensors);
 
-		DataTypeSet dataTypeSet = new DataTypeSet();
-		DataType dataType = new DataType("Test data type", "Test data type description");
-		dataType.setId(DbKey.createDbKey(1234L));
-		dataTypeSet.add(dataType);
-		PlatformConfig config = map(apiConfig, dataTypeSet);
+		DataType dataType = new DataType(Constants.datatype_CWMS, "Stage");
+		dataType.forceSetId(DbKey.createDbKey(1234L));
+		Mockito.when(dataTypeDao.lookup(null,Constants.datatype_CWMS, "Stage")).thenReturn(Optional.of(dataType));
+		PlatformConfig config = map(apiConfig, dataTypeDao, null);
 
 		assertNotNull(config);
 		assertEquals(apiConfig.getNumPlatforms(), config.numPlatformsUsing);
