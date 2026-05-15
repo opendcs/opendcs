@@ -127,7 +127,7 @@ export interface AddNewConfig<T> {
 
 export interface ColumnEdit<T> {
   /** HTML string for the cell when its row is in `"edit"` or `"new"` mode. */
-  render: (row: T) => string;
+  render: (row: T, rowId: string) => string;
   /** Read the edited value back from the cell's form control on save. */
   read: (cell: HTMLElement) => unknown;
 }
@@ -150,10 +150,10 @@ export interface InlineEditConfig<T> {
   newTemplate?: () => T;
   /** Aria-label generators for the auto-generated action buttons. */
   labels?: {
-    edit?: (row: T) => string;
-    remove?: (row: T) => string;
-    save?: (row: T) => string;
-    cancel?: (row: T) => string;
+    edit?: (row: T, rowId: string) => string;
+    remove?: (row: T, rowId: string) => string;
+    save?: (row: T, rowId: string) => string;
+    cancel?: (row: T, rowId: string) => string;
     add?: string;
   };
 }
@@ -166,6 +166,13 @@ export interface AppDataTableHandle {
    * schedule this automatically.
    */
   scheduleScrollToEnd: () => void;
+  /**
+   * Open the row whose id matches `id` in the given `mode` (defaults to
+   * `"show"`). If the row exists in the current data set the table is paged
+   * to it; otherwise the open is deferred until the row appears via a future
+   * `data` update.
+   */
+  openRow: (id: string | number, mode?: RowMode) => void;
 }
 
 export interface AppDataTableProps<T, TId extends string | number, TSave = T> {
@@ -311,7 +318,7 @@ function makeColumnRender<T>(
     if (type !== "display") return fallback(data, type, row, meta);
     if (hasInlineEdit && editRender) {
       const mode = rowStateRef.current[idOf(row)];
-      if (mode === "edit" || mode === "new") return editRender(row);
+      if (mode === "edit" || mode === "new") return editRender(row, idOf(row));
     }
     return fallback(data, type, row, meta);
   };
@@ -478,17 +485,6 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   // Scroll-to-end scheduling (after save / import).
   const pendingNavRef = useRef(false);
 
-  // --- Expose imperative handle --------------------------------------------
-  useImperativeHandle(
-    ref,
-    () => ({
-      scheduleScrollToEnd: () => {
-        pendingNavRef.current = true;
-      },
-    }),
-    [],
-  );
-
   // --- Derived data ---------------------------------------------------------
   const tableData = useMemo(() => [...data, ...localItems], [data, localItems]);
 
@@ -515,6 +511,46 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     });
   }, []);
 
+  // Page the table to the row whose id matches `idStr`, when possible. Safe
+  // to call when the row isn't loaded yet (just no-ops); the row-state change
+  // alone is enough — once the row appears in a future `data` update, the
+  // drawCallback / syncChildRow flow opens it.
+  const pageToRowId = useCallback(
+    (idStr: string) => {
+      const dt = table.current?.dt();
+      if (!dt) return;
+      const ordered = dt
+        .rows({ search: "applied", order: "applied" })
+        .indexes()
+        .toArray();
+      const pos = ordered.findIndex(
+        (idx: number) => String(getId(dt.row(idx).data() as T)) === idStr,
+      );
+      if (pos < 0) return;
+      const pageLen = dt.page.info().length;
+      if (pageLen <= 0) return;
+      const targetPage = Math.floor(pos / pageLen);
+      if (dt.page() !== targetPage) dt.page(targetPage).draw(false);
+    },
+    [getId],
+  );
+
+  // --- Expose imperative handle --------------------------------------------
+  useImperativeHandle(
+    ref,
+    () => ({
+      scheduleScrollToEnd: () => {
+        pendingNavRef.current = true;
+      },
+      openRow: (id, mode = "show") => {
+        const idStr = String(id);
+        setModeByIdStr(idStr, mode);
+        pageToRowId(idStr);
+      },
+    }),
+    [setModeByIdStr, pageToRowId],
+  );
+
   // --- Effective row actions list ------------------------------------------
   // When `inlineEdit` is set, auto-generate edit/delete/save/cancel buttons.
   // `rowActions` (if also provided) are appended as extras.
@@ -532,16 +568,30 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
       setLocalItems((prev) => withoutRef(prev, row));
       setModeByIdStr(id, undefined);
     };
+    const markInvalidInputs = (rowEl: HTMLTableRowElement) => {
+      rowEl
+        .querySelectorAll<HTMLInputElement>("input, textarea, select")
+        .forEach((el) => {
+          if (el.value.trim()) el.classList.remove("border-warning");
+          else el.classList.add("border-warning");
+        });
+    };
     const commitSave = (row: T, rowEl: HTMLTableRowElement) => {
       const updated = readEditedRow(row, rowEl, columns);
       const id = idOf(row);
       const isNew = rowStateRef.current[id] === "new";
       if (isNew) {
-        if (inlineEdit.onAdd?.(updated) === false) return;
+        if (inlineEdit.onAdd?.(updated) === false) {
+          markInvalidInputs(rowEl);
+          return;
+        }
         dropLocalNew(row, id);
         return;
       }
-      if (inlineEdit.onSave(row, updated) === false) return;
+      if (inlineEdit.onSave(row, updated) === false) {
+        markInvalidInputs(rowEl);
+        return;
+      }
       setModeByIdStr(id, undefined);
     };
     const commitCancel = (row: T) => {
@@ -558,7 +608,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
         icon: "bi-pencil",
         variant: "warning",
         show: inShowMode,
-        aria: (row) => labels.edit?.(row) ?? "Edit",
+        aria: (row) => labels.edit?.(row, idOf(row)) ?? "Edit",
         onClick: ({ row }) => setModeByIdStr(idOf(row), "edit"),
       },
       ...(inlineEdit.onRemove
@@ -568,7 +618,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
               icon: "bi-trash",
               variant: "danger",
               show: inShowMode,
-              aria: (row: T) => labels.remove?.(row) ?? "Delete",
+              aria: (row: T) => labels.remove?.(row, idOf(row)) ?? "Delete",
               onClick: ({ row }: RowActionContext<T>) => inlineEdit.onRemove!(row),
             } as RowAction<T>,
           ]
@@ -578,7 +628,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
         icon: "bi-check-lg",
         variant: "primary",
         show: inEditMode,
-        aria: (row) => labels.save?.(row) ?? "Save",
+        aria: (row) => labels.save?.(row, idOf(row)) ?? "Save",
         onClick: ({ row, rowEl }) => commitSave(row, rowEl),
       },
       {
@@ -586,7 +636,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
         icon: "bi-x-lg",
         variant: "secondary",
         show: inEditMode,
-        aria: (row) => labels.cancel?.(row) ?? "Cancel",
+        aria: (row) => labels.cancel?.(row, idOf(row)) ?? "Cancel",
         onClick: ({ row }) => commitCancel(row),
       },
     ];
@@ -612,6 +662,10 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
       const id = idOf(row);
       const actions: DetailActions<TSave> = {
         save: async (updated) => {
+          // Only scroll to the last page when committing a row that was added
+          // locally via `addNew` — those land at the end of the table after
+          // the server refresh. Edits to existing rows shouldn't move the user.
+          const isNewLocal = localItemsRef.current.some((r) => idOf(r) === id);
           // Await the consumer's save (if it's a Promise) before transitioning
           // so the follow-up `renderDetail` fetch reads committed data.
           // `await` works on thenables and passes through non-promises unchanged.
@@ -621,7 +675,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
             // Caller reported the error; don't swallow here, but also
             // don't block the UI transition — close the row regardless.
           }
-          pendingNavRef.current = true;
+          if (isNewLocal) pendingNavRef.current = true;
           setLocalItems((prev) => withoutId(prev, id, idOf));
           setModeByIdStr(id, "show");
         },
