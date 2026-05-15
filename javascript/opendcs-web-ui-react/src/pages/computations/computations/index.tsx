@@ -130,6 +130,7 @@ export const Computations: React.FC = () => {
     <div className="content">
       <ComputationsTable
         computations={computations}
+        loading={stale}
         getComputation={getComputation}
         getAlgorithm={getAlgorithm}
         actions={{ save: saveComputation, remove: deleteComputation }}

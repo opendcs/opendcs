@@ -65,5 +65,13 @@
     "deltaTUnits_input": "Parameter-Delta-T-Einheiten",
     "units_input": "Parameter-Einheiten",
     "ifMissing_input": "Aktion bei fehlendem Wert"
+  },
+  "add_from_algorithms": {
+    "button": "Add from Algorithms",
+    "title": "Add Computations from Algorithms",
+    "select_all": "Select all algorithms",
+    "none_found": "No algorithms available.",
+    "add_selected": "Add {{count}} Computation(s)",
+    "adding": "Adding..."
   }
 }

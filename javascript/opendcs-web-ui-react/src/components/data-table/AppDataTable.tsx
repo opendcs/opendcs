@@ -158,7 +158,7 @@ export interface InlineEditConfig<T> {
   };
 }
 
-export interface AppDataTableHandle {
+export interface AppDataTableHandle<T = unknown> {
   /**
    * Mark the table so that the next time the `data` prop updates (usually
    * after an external refresh) it pages to the last page. Paired with a
@@ -173,6 +173,12 @@ export interface AppDataTableHandle {
    * `data` update.
    */
   openRow: (id: string | number, mode?: RowMode) => void;
+  /**
+   * Append a locally-generated row. `template` receives the next synthetic
+   * negative id and returns the row object. Calling this in a loop is safe —
+   * each call uses a functional state update so ids never collide.
+   */
+  appendLocalItem: (template: (nextId: number) => T, mode?: RowMode) => void;
 }
 
 export interface AppDataTableProps<T, TId extends string | number, TSave = T> {
@@ -234,7 +240,7 @@ export interface AppDataTableProps<T, TId extends string | number, TSave = T> {
   dataTableOptions?: Partial<DataTableProps["options"]>;
 
   // --- Imperative handle (React 19 ref-as-prop) ---
-  ref?: React.Ref<AppDataTableHandle>;
+  ref?: React.Ref<AppDataTableHandle<T>>;
 }
 
 // =============================================================================
@@ -551,6 +557,19 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     [getId],
   );
 
+  const appendLocalItem = useCallback(
+    (template: (nextId: number) => T, mode: RowMode = "new") => {
+      setLocalItems((prev) => {
+        const newId = nextAddNewId(prev, getId);
+        const newItem = template(newId);
+        const newIdStr = String(getId(newItem));
+        setRowState((prevRS) => ({ ...prevRS, [newIdStr]: mode }));
+        return [...prev, newItem];
+      });
+    },
+    [getId],
+  );
+
   // --- Expose imperative handle --------------------------------------------
   useImperativeHandle(
     ref,
@@ -563,8 +582,9 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
         setModeByIdStr(idStr, mode);
         pageToRowId(idStr);
       },
+      appendLocalItem,
     }),
-    [setModeByIdStr, pageToRowId],
+    [setModeByIdStr, pageToRowId, appendLocalItem],
   );
 
   // --- Effective row actions list ------------------------------------------
