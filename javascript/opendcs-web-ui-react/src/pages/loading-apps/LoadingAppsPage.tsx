@@ -33,15 +33,26 @@ export const LoadingAppsPage: React.FC = () => {
   );
 
   const saveApp = useCallback(
-    (app: ApiLoadingApp) => {
-      appsApi.postApp(api.org, app).then(() => setStale(true));
+    (app: ApiLoadingApp): Promise<void> => {
+      const appId = app.appId && app.appId > 0 ? app.appId : undefined;
+      // Return the POST promise so the table wrapper can await it before
+      // transitioning the detail back to show mode (avoids save→refetch race).
+      return appsApi
+        .postApp(api.org, { ...app, appId })
+        .then(() => setStale(true))
+        .catch((e: unknown) => {
+          console.error("Failed to save loading app", e);
+        });
     },
     [api.org, appsApi],
   );
 
   const deleteApp = useCallback(
     (appId: number) => {
-      appsApi.deleteApp(api.org, appId).then(() => setStale(true));
+      appsApi
+        .deleteApp(api.org, appId)
+        .then(() => setStale(true))
+        .catch((e: unknown) => console.error("Failed to delete loading app", e));
     },
     [api.org, appsApi],
   );

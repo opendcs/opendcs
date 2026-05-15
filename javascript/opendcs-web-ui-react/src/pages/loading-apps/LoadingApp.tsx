@@ -117,12 +117,15 @@ export const LoadingApp: React.FC<LoadingAppProperties> = ({
       const { name, value } = event.target;
       dispatch({ type: "save", payload: { [name]: value } });
     },
-    [],
+    [dispatch],
   );
 
-  const checkChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    dispatch({ type: "save", payload: { manualEditingApp: event.target.checked } });
-  }, []);
+  const checkChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      dispatch({ type: "save", payload: { manualEditingApp: event.target.checked } });
+    },
+    [dispatch],
+  );
 
   return (
     <DetailFade skeleton={<LoadingAppSkeleton edit={edit} />}>
