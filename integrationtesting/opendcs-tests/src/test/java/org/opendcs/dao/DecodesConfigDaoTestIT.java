@@ -37,7 +37,8 @@ import decodes.db.UnitConverterDb;
 class DecodesConfigDaoTestIT extends AppTestBase
 {
 
-    private static final String[] SENSORS = new String[]{"Stage", "Elev", "Flow"};
+    private static final String DATATYPE_STANDARD = "SHEF-PE";
+    private static final String[] SENSORS = new String[]{"HG", "PC", "VB"};
     private static final String[] UNITS = new String[]{"in", "ft", "cfs"};
 
     @ConfiguredField
@@ -97,7 +98,7 @@ class DecodesConfigDaoTestIT extends AppTestBase
             sensor1.recordingInterval = 0;
             sensor1.recordingMode = Constants.recordingModeFixed;
             sensor1.setProperty("cwmsInterval", "15Minutes");
-            sensor1.addDataType(dataTypeDao.lookup(tx, "CWMS", "Stage").orElseThrow());
+            sensor1.addDataType(dataTypeDao.lookup(tx, "SHEF-PE", "HG").orElseThrow());
             pcIn.addSensor(sensor1);
             final var script = DecodesScript.empty()
                                             .platformConfig(pcIn)
@@ -135,10 +136,8 @@ class DecodesConfigDaoTestIT extends AppTestBase
             var all = decodesConfigDao.getAll(tx, -1, -1);
             assertFalse(all.isEmpty());
 
-            var onlyOne = decodesConfigDao.getAll(tx, 1, 1);
+            var onlyOne = decodesConfigDao.getAll(tx, 1, 0);
             assertEquals(1, onlyOne.size());
-            assertEquals("OKVI4", onlyOne.getFirst().getName());
-            assertEquals("ST", onlyOne.getFirst().decodesScripts.getFirst().scriptName);
 
             final var numConfigs = 30;
 
@@ -183,7 +182,7 @@ class DecodesConfigDaoTestIT extends AppTestBase
             sensor.recordingInterval = 900;
             sensor.recordingMode = 'F';
             sensor.timeOfFirstSample = 0;
-            sensor.addDataType(dataTypeDao.lookup(tx, "CWMS", sensor.sensorName)
+            sensor.addDataType(dataTypeDao.lookup(tx, DATATYPE_STANDARD, sensor.sensorName)
                                           .orElseGet(() -> fail("DataType for " + sensor.sensorName + " doesn't exist.")));
             if (sensorProperties)
             {

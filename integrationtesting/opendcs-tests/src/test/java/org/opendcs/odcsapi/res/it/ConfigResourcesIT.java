@@ -206,7 +206,7 @@ final class ConfigResourcesIT extends BaseApiIT
 			.body("configSensors[0].absoluteMax", equalTo(expected.get("configSensors[0].absoluteMax")))
 			.body("configSensors[0].properties", equalTo(expected.get("configSensors[0].properties")))
 			.body("configSensors[0].usgsStatCode", equalTo(expected.get("configSensors[0].usgsStatCode")))
-			.body("configSensors[0].datatypes", equalTo(expected.get("configSensors[0].datatypes")))
+			.body("configSensors[0].dataTypes", equalTo(expected.get("configSensors[0].dataTypes")))
 			.body("scripts[0].name", equalTo(expected.getString("scripts[0].name")))
 			.body("scripts[0].dataOrder", equalTo(expected.getString("scripts[0].dataOrder")))
 			.body("scripts[0].headerType", equalTo(expected.getString("scripts[0].headerType")))
