@@ -51,7 +51,7 @@ public final class UserResources extends OpenDcsResource
 					)
         ),
         responses = {
-            @ApiResponse(responseCode = "200", description = "Password was changed."),
+            @ApiResponse(responseCode = "204", description = "Password was changed."),
             @ApiResponse(responseCode = "403", description = "Password was not changed.")
         }
     )
