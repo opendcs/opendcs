@@ -1186,7 +1186,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 
 
 	@Override
-	public DataCollection getNewData(DbKey applicationId, int maxTake)
+	public DataCollection getNewData(DbKey applicationId, int maxTake, int tasklistDebounceSeconds)
 		throws DbIoException
 	{
 		// Since DAO is recreated every compApp loop, removed cache load
@@ -1208,9 +1208,8 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 					+ "to_char(FAIL_TIME,'dd-mon-yyyy hh24:mi:ss'),"
 					+ "'dd-mon-yyyy hh24:mi:ss') >= 1/24)";
 
-		int debounceSec = DecodesSettings.instance().tasklistDebounceSeconds;
-		if (debounceSec > 0)
-			q = q + " and DATE_TIME_LOADED <= SYSDATE - " + debounceSec + "/86400";
+		if (tasklistDebounceSeconds > 0)
+			q = q + " and DATE_TIME_LOADED <= SYSDATE - " + tasklistDebounceSeconds + "/86400";
 
 //		now add the order by record_num to insure last change wins
 		q = q + " order by record_num";

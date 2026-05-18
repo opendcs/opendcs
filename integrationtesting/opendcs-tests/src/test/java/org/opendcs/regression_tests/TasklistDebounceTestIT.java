@@ -16,7 +16,6 @@ import decodes.sql.DbKey;
 import decodes.tsdb.DataCollection;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
-import decodes.util.DecodesSettings;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
@@ -42,11 +41,11 @@ final class TasklistDebounceTestIT extends AppTestBase
     private static final String APP_NAME = "compproc_regtest";
     private static final long FRESH_AGE_MS = 100L;
     private static final long AGED_AGE_MS = 10_000L;
+    private static final int DEBOUNCE_SECONDS = 2;
 
     @Test
     void debounce_excludes_fresh_row_keeps_aged_row_processed() throws Exception
     {
-        DecodesSettings.instance().tasklistDebounceSeconds = 2;
         try (TimeSeriesDAI tsDAI = db.makeTimeSeriesDAO();
              LoadingAppDAI laDAI = db.makeLoadingAppDAO();
              DaoBase dao = new DaoBase(db, "test"))
@@ -59,7 +58,7 @@ final class TasklistDebounceTestIT extends AppTestBase
             DbKey freshRec = insertTasklistRow(dao, appKey, tsKey, sourceKey, now - FRESH_AGE_MS);
             DbKey agedRec = insertTasklistRow(dao, appKey, tsKey, sourceKey, now - AGED_AGE_MS);
 
-            consumeNewData(tsDAI, appKey);
+            consumeNewData(tsDAI, appKey, DEBOUNCE_SECONDS);
 
             assertTrue(rowExists(dao, freshRec),
                 "Fresh row should remain in cp_comp_tasklist (debounce held it back).");
@@ -71,7 +70,6 @@ final class TasklistDebounceTestIT extends AppTestBase
     @Test
     void debounce_zero_processes_both_rows() throws Exception
     {
-        DecodesSettings.instance().tasklistDebounceSeconds = 0;
         try (TimeSeriesDAI tsDAI = db.makeTimeSeriesDAO();
              LoadingAppDAI laDAI = db.makeLoadingAppDAO();
              DaoBase dao = new DaoBase(db, "test"))
@@ -84,7 +82,7 @@ final class TasklistDebounceTestIT extends AppTestBase
             DbKey freshRec = insertTasklistRow(dao, appKey, tsKey, sourceKey, now - FRESH_AGE_MS);
             DbKey agedRec = insertTasklistRow(dao, appKey, tsKey, sourceKey, now - AGED_AGE_MS);
 
-            consumeNewData(tsDAI, appKey);
+            consumeNewData(tsDAI, appKey, 0);
 
             assertFalse(rowExists(dao, freshRec),
                 "With debounce=0, fresh row should have been processed and removed.");
@@ -100,9 +98,9 @@ final class TasklistDebounceTestIT extends AppTestBase
      * whether a row was visible to getNewData at all, not on which deletion path
      * it took.
      */
-    private void consumeNewData(TimeSeriesDAI tsDAI, DbKey appKey) throws Exception
+    private void consumeNewData(TimeSeriesDAI tsDAI, DbKey appKey, int debounceSeconds) throws Exception
     {
-        DataCollection dc = tsDAI.getNewData(appKey, 20000);
+        DataCollection dc = tsDAI.getNewData(appKey, 20000, debounceSeconds);
         db.releaseNewData(dc, tsDAI, 250);
     }
 

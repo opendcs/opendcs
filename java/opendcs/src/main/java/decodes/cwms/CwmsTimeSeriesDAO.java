@@ -1315,7 +1315,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
     }
 
     @Override
-    public DataCollection getNewData(DbKey applicationId, int maxTake)
+    public DataCollection getNewData(DbKey applicationId, int maxTake, int tasklistDebounceSeconds)
         throws DbIoException
     {
         DataCollection dataCollection = new DataCollection();
@@ -1326,8 +1326,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
                     : "";
 
         String debounceClause = "";
-        int debounceSec = DecodesSettings.instance().tasklistDebounceSeconds;
-        if (debounceSec > 0)
+        if (tasklistDebounceSeconds > 0)
             debounceClause = " and a.DATE_TIME_LOADED <= SYSDATE - ?/86400";
 
         getTaskListStmtQuery =
@@ -1345,8 +1344,8 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
             )
         {
             getTaskListStmt.setLong(1,applicationId.getValue());
-            if (debounceSec > 0)
-                getTaskListStmt.setInt(2, debounceSec);
+            if (tasklistDebounceSeconds > 0)
+                getTaskListStmt.setInt(2, tasklistDebounceSeconds);
 
             ArrayList<TasklistRec> tasklistRecs = new ArrayList<TasklistRec>();
             ArrayList<Integer> badRecs = new ArrayList<Integer>();
