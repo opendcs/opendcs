@@ -50,7 +50,9 @@ const preview: Preview = {
     },
     i18n,
   },
-  decorators: [WithI18next, WithTheme, WithRefLists, WithUnits, WithQueryClient],
+  // WithQueryClient must wrap WithUnits because WithUnits seeds the cache via
+  // useQueryClient(). Decorators wrap outside-in (first = outermost).
+  decorators: [WithI18next, WithTheme, WithQueryClient, WithRefLists, WithUnits],
   globalTypes: {
     locale: {
       name: "Locale",
