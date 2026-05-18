@@ -7,6 +7,7 @@ import type {
   ApiComputationRef,
   ApiTsGroupRef,
 } from "opendcs-api";
+// eslint-disable-next-line storybook/use-storybook-testing-library
 import { act } from "@testing-library/react";
 import { expect, waitFor } from "storybook/test";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -153,6 +154,8 @@ type StoryArgs = {
   actions?: SaveAction<ApiComputation> & RemoveAction<number>;
 };
 
+let nextSavedId = 1000;
+
 const ComputationsTableWrapper: React.FC<{ initialComps: ApiComputation[] }> = ({
   initialComps,
 }) => {
@@ -177,10 +180,7 @@ const ComputationsTableWrapper: React.FC<{ initialComps: ApiComputation[] }> = (
   const saveComputation = useCallback((comp: ApiComputation) => {
     setLocalComps((prev) => {
       if (comp.computationId! < 0) {
-        return [
-          ...prev,
-          { ...comp, computationId: Math.floor(Math.random() * 100) + 10 },
-        ];
+        return [...prev, { ...comp, computationId: nextSavedId++ }];
       }
       return prev.map((c) => (c.computationId === comp.computationId ? comp : c));
     });
