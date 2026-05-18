@@ -124,14 +124,43 @@ jobs:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: javascript/opendcs-web-ui-react/package-lock.json
+      - name: Cache Storybook + Vite deps
+        # Storybook+vitest's browser-mode dep optimizer (sb-vitest/deps/*) is
+        # flaky on a cold cache: when vite re-bundles deps mid-test the URL
+        # query string changes and any module already loading from the old URL
+        # 404s with "Failed to fetch dynamically imported module". Caching the
+        # warmed dir between runs avoids the cold path entirely. Key is
+        # content-addressed by the lockfile + storybook/vite config so any
+        # change there invalidates and rebuilds the cache.
+        uses: actions/cache@v5.0.4
+        with:
+          path: javascript/opendcs-web-ui-react/node_modules/.cache/storybook
+          key: storybook-cache-${{ runner.os }}-${{ hashFiles('javascript/opendcs-web-ui-react/package-lock.json', 'javascript/opendcs-web-ui-react/.storybook/**', 'javascript/opendcs-web-ui-react/vite.config.ts') }}
+          restore-keys: |
+            storybook-cache-${{ runner.os }}-
       - name: Install/Setup playwright
         working-directory: javascript/opendcs-web-ui-react
         run : |
           npm ci --ignore-scripts
           npx --no-install --ignore-scripts playwright install
       - name: Unit and LRGS tests
+        # Excludes the React storybook tests — those run in the next step with
+        # retry because storybook+vitest's browser-mode dep optimizer has a
+        # known cold-bundle race (see Cache step above). Other test tasks must
+        # fail fast so real regressions surface immediately.
         run: |
-          ./gradlew test --info
+          ./gradlew test --info -x :opendcs-web-ui-react:testStorybook
+      - name: Storybook tests (with retry on flake)
+        # Wraps just the storybook task in a 2-attempt retry. Each attempt is a
+        # fresh vitest process (fresh dep-optimizer state); the on-disk cache
+        # warmed by attempt #1 carries into attempt #2, so the rerun is fast
+        # and deterministic. The vitest test.retry inside the run doesn't help
+        # because the failure is at file-import level, not test runtime.
+        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
+        with:
+          max_attempts: 2
+          timeout_minutes: 15
+          command: ./gradlew :opendcs-web-ui-react:testStorybook --info
       - name: integration tests (XML)
         run: |
           ./gradlew :testing:opendcs-tests:testOpenDCSXML --info
@@ -213,14 +242,32 @@ jobs:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: javascript/opendcs-web-ui-react/package-lock.json
+      - name: Cache Storybook + Vite deps
+        # See ubuntu-tests for rationale. Per-OS cache key because the warmed
+        # bundles include host-specific paths.
+        uses: actions/cache@v5.0.4
+        with:
+          path: javascript/opendcs-web-ui-react/node_modules/.cache/storybook
+          key: storybook-cache-${{ runner.os }}-${{ hashFiles('javascript/opendcs-web-ui-react/package-lock.json', 'javascript/opendcs-web-ui-react/.storybook/**', 'javascript/opendcs-web-ui-react/vite.config.ts') }}
+          restore-keys: |
+            storybook-cache-${{ runner.os }}-
       - name: Install/Setup playwright
         working-directory: javascript/opendcs-web-ui-react
         run : |
           npm ci --ignore-scripts
           npx --no-install --ignore-scripts playwright install
       - name: Unit and LRGS tests
+        # See ubuntu-tests for why storybook is split out.
         run: |
-          ./gradlew test --info
+          ./gradlew test --info -x :opendcs-web-ui-react:testStorybook
+      - name: Storybook tests (with retry on flake)
+        # See ubuntu-tests for rationale. macOS/Windows runners are slower so
+        # the optimizer race surfaces here more often than on Linux.
+        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
+        with:
+          max_attempts: 2
+          timeout_minutes: 20
+          command: ./gradlew :opendcs-web-ui-react:testStorybook --info
       - name: integration tests (XML)
         # XML is the cross-platform integration smoke test. DB-backed engines
         # (Postgres, Oracle, CWMS-Oracle) run only on ubuntu in the integration-db
