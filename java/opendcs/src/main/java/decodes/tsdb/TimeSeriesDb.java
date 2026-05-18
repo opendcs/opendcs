@@ -167,25 +167,6 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
     // If reclaimTasklistSec > 0, this is the time the reclaim was last done.
     protected long lastReclaimMsec = 0L;
 
-    /**
-     * Set by the tasklistDebounceSeconds Computation App Property.
-     * Number of seconds a CP_COMP_TASKLIST entry must age before
-     * getNewData() returns it. Prevents a downstream comp from running
-     * on a partial input set when multiple upstream timeseries are saved
-     * within the same poll cycle. Default 0 = no debounce.
-     */
-    protected int tasklistDebounceSeconds = 0;
-
-    public int getTasklistDebounceSeconds()
-    {
-        return tasklistDebounceSeconds;
-    }
-
-    public void setTasklistDebounceSeconds(int seconds)
-    {
-        this.tasklistDebounceSeconds = seconds;
-    }
-
     private boolean connected = false;
 
     protected final DecodesSettings settings;

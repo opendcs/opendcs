@@ -110,6 +110,7 @@ public class ComputationApp extends TsdbAppTemplate
 
 	private ArrayList<DbComputation> timedComps = new ArrayList<DbComputation>();
 	private int checkTimedCompsSec = 600;
+	private int tasklistDebounceSeconds = 0;
 	private SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 
 	private static ComputationApp _instance = null;
@@ -355,7 +356,7 @@ public class ComputationApp extends TsdbAppTemplate
 					action = "Getting new data";
 					try (var newDataTime = MDCTimer.startTimer(action))
 					{
-						dataCollection = timeSeriesDAO.getNewData(getAppId(), COMP_RUN_MAX_TAKE);
+						dataCollection = timeSeriesDAO.getNewData(getAppId(), COMP_RUN_MAX_TAKE, tasklistDebounceSeconds);
 					}
 					// In Regression Test Mode, exit after 5 sec of idle
 					if (!dataCollection.isEmpty())
@@ -547,18 +548,18 @@ public class ComputationApp extends TsdbAppTemplate
 			s = appInfo.getProperty("tasklistDebounceSeconds");
 			if (s != null)
 			{
-				try { theDb.setTasklistDebounceSeconds(Integer.parseInt(s.trim())); }
+				try { tasklistDebounceSeconds = Integer.parseInt(s.trim()); }
 				catch(NumberFormatException ex)
 				{
 					log.atWarn()
 					   .setCause(ex)
 					   .log("Bad app property 'tasklistDebounceSeconds' -- should be integer -- ignored.");
-					theDb.setTasklistDebounceSeconds(0);
+					tasklistDebounceSeconds = 0;
 				}
 			}
 			else
-				theDb.setTasklistDebounceSeconds(0);
-			log.info("tasklistDebounceSeconds={}", theDb.getTasklistDebounceSeconds());
+				tasklistDebounceSeconds = 0;
+			log.info("tasklistDebounceSeconds={}", tasklistDebounceSeconds);
 
 			if (!theDb.isCwms())
 			{
