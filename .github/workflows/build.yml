@@ -156,7 +156,7 @@ jobs:
         # warmed by attempt #1 carries into attempt #2, so the rerun is fast
         # and deterministic. The vitest test.retry inside the run doesn't help
         # because the failure is at file-import level, not test runtime.
-        uses: nick-fields/retry@v3.0.2
+        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
         with:
           max_attempts: 2
           timeout_minutes: 15
@@ -263,7 +263,7 @@ jobs:
       - name: Storybook tests (with retry on flake)
         # See ubuntu-tests for rationale. macOS/Windows runners are slower so
         # the optimizer race surfaces here more often than on Linux.
-        uses: nick-fields/retry@v3.0.2
+        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
         with:
           max_attempts: 2
           timeout_minutes: 20
