@@ -256,10 +256,12 @@ public interface TimeSeriesDAI extends DaiBase, OpenDcsDao
 	 * marked with the DB_DELETED flag.
 	 * @param applicationId used to lookup &amp; save the since time.
 	 * @param maxTake maximum number of records to acquire at one time.
+	 * @param tasklistDebounceSeconds seconds a tasklist row must age before being returned.
+	 *        Pass 0 to disable.
 	 * @return DataCollection with newly added or deleted values.
 	 * @throws DbIoException on Database IO error.
 	 */
-	public DataCollection getNewData( DbKey applicationId, int maxTake )
+	public DataCollection getNewData( DbKey applicationId, int maxTake, int tasklistDebounceSeconds )
 		throws DbIoException;
 
 }

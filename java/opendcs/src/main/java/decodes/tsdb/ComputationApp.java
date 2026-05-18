@@ -110,6 +110,7 @@ public class ComputationApp extends TsdbAppTemplate
 
 	private ArrayList<DbComputation> timedComps = new ArrayList<DbComputation>();
 	private int checkTimedCompsSec = 600;
+	private int tasklistDebounceSeconds = 0;
 	private SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 
 	private static ComputationApp _instance = null;
@@ -128,6 +129,11 @@ public class ComputationApp extends TsdbAppTemplate
 		new PropertySpec("checkTimedCompsSec", PropertySpec.INT,
 			"(default=600, or 10 minutes) check for changes to timed computations "
 			+ "every this number of seconds."),
+		new PropertySpec("tasklistDebounceSeconds", PropertySpec.INT,
+			"(default=0) Seconds a CP_COMP_TASKLIST entry must age before "
+			+ "getNewData() returns it. Prevents downstream comps from running on "
+			+ "partial inputs when multiple upstream timeseries are saved in the "
+			+ "same poll cycle."),
 
 		new PropertySpec("mail.smtp.auth", PropertySpec.BOOLEAN, "(default=false) "
 			+ "If true then authenticate when connecting to mail server."),
@@ -350,7 +356,7 @@ public class ComputationApp extends TsdbAppTemplate
 					action = "Getting new data";
 					try (var newDataTime = MDCTimer.startTimer(action))
 					{
-						dataCollection = timeSeriesDAO.getNewData(getAppId(), COMP_RUN_MAX_TAKE);
+						dataCollection = timeSeriesDAO.getNewData(getAppId(), COMP_RUN_MAX_TAKE, tasklistDebounceSeconds);
 					}
 					// In Regression Test Mode, exit after 5 sec of idle
 					if (!dataCollection.isEmpty())
@@ -472,8 +478,6 @@ public class ComputationApp extends TsdbAppTemplate
 	private void runAppInit()
 	{
 		debugSdf.setTimeZone(TimeZone.getTimeZone(theDb.databaseTimezone));
-		log.info("tasklistDebounceSeconds={}",
-				DecodesSettings.instance().tasklistDebounceSeconds);
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		TimeSeriesDAI tsDAO = theDb.makeTimeSeriesDAO();
 		TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
@@ -540,6 +544,22 @@ public class ComputationApp extends TsdbAppTemplate
 					checkTimedCompsSec = 600;
 				}
 			}
+
+			s = appInfo.getProperty("tasklistDebounceSeconds");
+			if (s != null)
+			{
+				try { tasklistDebounceSeconds = Integer.parseInt(s.trim()); }
+				catch(NumberFormatException ex)
+				{
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Bad app property 'tasklistDebounceSeconds' -- should be integer -- ignored.");
+					tasklistDebounceSeconds = 0;
+				}
+			}
+			else
+				tasklistDebounceSeconds = 0;
+			log.info("tasklistDebounceSeconds={}", tasklistDebounceSeconds);
 
 			if (!theDb.isCwms())
 			{

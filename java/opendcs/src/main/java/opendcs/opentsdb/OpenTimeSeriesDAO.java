@@ -1696,7 +1696,7 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 
 
 	@Override
-	public DataCollection getNewData(DbKey applicationId, int maxTake)
+	public DataCollection getNewData(DbKey applicationId, int maxTake, int tasklistDebounceSeconds)
 		throws DbIoException
 	{
 		// Reload the TSID cache every hour.
@@ -1721,12 +1721,11 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			failTimeClause = " and (a.FAIL_TIME is null OR "
 				+ System.currentTimeMillis() + " -  a.FAIL_TIME >= 3600000)";
 		String debounceClause = "";
-		int debounceSec = DecodesSettings.instance().tasklistDebounceSeconds;
-		if (debounceSec > 0)
+		if (tasklistDebounceSeconds > 0)
 		{
 			// DATE_TIME_LOADED is BIGINT epoch millis (see V6.8__opendcs.sql),
 			// so compare against an epoch-ms cutoff rather than SYSDATE/CURRENT_TIMESTAMP.
-			long cutoffMs = System.currentTimeMillis() - (debounceSec * 1000L);
+			long cutoffMs = System.currentTimeMillis() - (tasklistDebounceSeconds * 1000L);
 			debounceClause = " and a.DATE_TIME_LOADED <= " + cutoffMs;
 		}
 		String getMinStmtQuery = "select min(a.record_num) from cp_comp_tasklist a "
