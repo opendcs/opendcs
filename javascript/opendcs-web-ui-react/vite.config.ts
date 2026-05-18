@@ -85,6 +85,13 @@ export default defineConfig({
         ],
         test: {
           name: "storybook",
+          // Retry once on failure. Storybook+vitest's browser-mode dep
+          // optimizer occasionally loses a race when vite re-bundles deps
+          // mid-load — a test file's import 404s with "Failed to fetch
+          // dynamically imported module" using a now-invalid `?v=...` URL.
+          // The cache (see .github/workflows/build.yml) covers the broad
+          // case; this retry handles the residual single-file flake.
+          retry: 1,
           browser: {
             enabled: true,
             headless: true,

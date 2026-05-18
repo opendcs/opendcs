@@ -11,6 +11,7 @@ import { WithI18next } from "./mock/WithI18Next";
 import i18n from "../src/i18n";
 import { WithTheme } from "./mock/WithTheme";
 import { WithUnits } from "./mock/WithUnits";
+import { WithQueryClient } from "./mock/WithQueryClient";
 
 // MSW setup
 initialize(
@@ -49,7 +50,7 @@ const preview: Preview = {
     },
     i18n,
   },
-  decorators: [WithI18next, WithTheme, WithRefLists, WithUnits],
+  decorators: [WithI18next, WithTheme, WithRefLists, WithUnits, WithQueryClient],
   globalTypes: {
     locale: {
       name: "Locale",

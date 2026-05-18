@@ -446,6 +446,11 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   // rowState is keyed by stringified row id so both consumer ids (TId) and
   // wrapper-generated synthetic ids (for inline-edit new rows) coexist.
   const [rowState, setRowState] = useState<Record<string, RowMode>>({});
+  // Hide the wrapper until DataTables finishes its first init. React renders
+  // the bare <table> (with <caption> + <thead>) before DataTables inserts the
+  // top toolbar (buttons / search / page-length), which would otherwise flash
+  // the title at the top and shift it down once the toolbar appears.
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Live ref mirrors so drawCallback / click handlers read the latest values.
   const rowStateRef = useRef(rowState);
@@ -745,6 +750,9 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     createdRow: (_row, _data, dataIndex) => {
       table.current?.dt()?.row(dataIndex).node().classList.add("child-toggle");
     },
+    initComplete: () => {
+      setIsInitialized(true);
+    },
     drawCallback: function () {
       // DataTables binds `this` to the Api on each callback — read it once
       // and hand everything else off to plain helpers so this component body
@@ -883,13 +891,25 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   }, [i18n.language, rowActionsList, rowActionApi, idOf, toggleByIdStr, hasDetail]);
 
   // --- Language change: DataTable remounts (key={i18n.language}), reset state ---
+  // Only reset on a *user-driven* language switch, not on the initial settling
+  // from i18next's language detector. Resetting during startup wipes any state
+  // a parent set on mount (e.g. SitesPage's deep-link openRow) before the
+  // first draw, so rows opened by the parent never appear.
+  const langInitRef = useRef<string | null>(null);
   useEffect(() => {
+    if (!i18n.isInitialized) return;
+    if (langInitRef.current === null) {
+      langInitRef.current = i18n.language;
+      return;
+    }
+    if (langInitRef.current === i18n.language) return;
+    langInitRef.current = i18n.language;
     setRowState({});
     setLocalItems([]);
     childModeRef.current = {};
     childNodesRef.current = {};
     // WeakMap entries are GC'd with their row objects; no reset needed.
-  }, [i18n.language]);
+  }, [i18n.language, i18n.isInitialized]);
 
   // --- Trigger a redraw when rowState changes so drawCallback / cell render
   //     picks up the new state. For inline-edit tables, also invalidate the
@@ -923,27 +943,29 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   }, [data]);
 
   return (
-    <DataTable
-      key={i18n.language}
-      id={tableId}
-      columns={dtColumns}
-      data={tableData}
-      options={options}
-      ref={table}
-      className={
-        tableClassName ??
-        (hasDetail ? `${BASE_TABLE_CLASS} ${CLICKABLE_ROW_CLASS}` : BASE_TABLE_CLASS)
-      }
-    >
-      {caption && <caption className="caption-title-center">{caption}</caption>}
-      <thead>
-        <tr>
-          {columns.map((c, i) => (
-            <th key={c.name ?? c.data ?? `col-${i}`}>{c.header}</th>
-          ))}
-          {hasActionsCol && <th>{actionsLabel}</th>}
-        </tr>
-      </thead>
-    </DataTable>
+    <div style={{ visibility: isInitialized ? "visible" : "hidden" }}>
+      <DataTable
+        key={i18n.language}
+        id={tableId}
+        columns={dtColumns}
+        data={tableData}
+        options={options}
+        ref={table}
+        className={
+          tableClassName ??
+          (hasDetail ? `${BASE_TABLE_CLASS} ${CLICKABLE_ROW_CLASS}` : BASE_TABLE_CLASS)
+        }
+      >
+        {caption && <caption className="caption-title-center">{caption}</caption>}
+        <thead>
+          <tr>
+            {columns.map((c, i) => (
+              <th key={c.name ?? c.data ?? `col-${i}`}>{c.header}</th>
+            ))}
+            {hasActionsCol && <th>{actionsLabel}</th>}
+          </tr>
+        </thead>
+      </DataTable>
+    </div>
   );
 }
