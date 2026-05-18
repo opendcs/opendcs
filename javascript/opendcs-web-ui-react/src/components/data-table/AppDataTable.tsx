@@ -173,11 +173,6 @@ export interface AppDataTableHandle<T = unknown> {
    * `data` update.
    */
   openRow: (id: string | number, mode?: RowMode) => void;
-  /**
-   * Append a locally-generated row. `template` receives the next synthetic
-   * negative id and returns the row object. Calling this in a loop is safe —
-   * each call uses a functional state update so ids never collide.
-   */
   appendLocalItem: (template: (nextId: number) => T, mode?: RowMode) => void;
 }
 
@@ -512,17 +507,6 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
       return next;
     });
   }, []);
-
-  // --- Expose imperative handle --------------------------------------------
-  useImperativeHandle(
-    ref,
-    () => ({
-      scheduleScrollToEnd: () => {
-        pendingNavRef.current = true;
-      },
-    }),
-    [],
-  );
 
   const toggleByIdStr = useCallback((id: string) => {
     setRowState((prev) => {
