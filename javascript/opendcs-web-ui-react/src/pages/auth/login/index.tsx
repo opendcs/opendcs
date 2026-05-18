@@ -15,7 +15,6 @@ import {
 } from "../../../util/login-providers/Scheme.types";
 import { oidcConfigToClient, type ParamMap } from "../../../util/login-providers";
 import type { SigninRequest } from "oidc-client-ts";
-//import type { QueryParameter } from "../../../util/login-providers/openapi";
 
 export default function Login() {
   const { t } = useTranslation();
