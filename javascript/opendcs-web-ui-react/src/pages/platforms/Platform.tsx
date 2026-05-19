@@ -10,13 +10,22 @@ import {
   Row,
 } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../components/properties";
-import { use, useCallback, useMemo, useReducer } from "react";
-import type { ApiPlatform, ApiPlatformConfig, ApiSite } from "opendcs-api";
+import { use, useCallback, useMemo, useReducer, useState } from "react";
+import type {
+  ApiConfigRef,
+  ApiPlatform,
+  ApiPlatformConfig,
+  ApiSite,
+  ApiSiteRef,
+} from "opendcs-api";
 import { useTranslation } from "react-i18next";
 import type { CancelAction, CollectionActions, SaveAction } from "../../util/Actions";
 import { Save, X } from "react-bootstrap-icons";
 import { DetailFade } from "../../components/data-table";
 import { PlatformReducer } from "./PlatformReducer";
+import { SiteSelectModal } from "./SiteSelectModal";
+import { ConfigSelectModal } from "./ConfigSelectModal";
+import { siteDisplayName } from "./siteDisplayName";
 
 const INPUT_H = { height: "2.25rem" };
 const LABEL_H = { height: "1rem" };
@@ -105,11 +114,6 @@ export interface PlatformProperties {
 const mapProps: (props: { [k: string]: string }) => Property[] = (props) =>
   Object.entries(props).map(([name, value]): Property => ({ name, value }));
 
-const siteDisplayName = (site: ApiSite): string =>
-  site.publicName ||
-  (site.sitenames ? Object.values(site.sitenames)[0] : undefined) ||
-  String(site.siteId ?? "");
-
 export const Platform: React.FC<PlatformProperties> = ({
   details,
   actions = {},
@@ -126,11 +130,15 @@ export const Platform: React.FC<PlatformProperties> = ({
     [localPlatform.properties],
   );
 
-  // Names from the initial fetch. If the user edits siteId/configId, this stays
-  // pinned to the originally-fetched record — re-resolution would require
-  // another single-record fetch and is out of scope here.
-  const siteName = resolved.site ? siteDisplayName(resolved.site) : "";
-  const configName = resolved.config?.name ?? "";
+  // Initially seeded from the resolved record; updated locally when the user
+  // picks a different site/config via the chooser modals so the input field
+  // reflects the new choice without another single-record fetch.
+  const [siteName, setSiteName] = useState<string>(
+    resolved.site ? siteDisplayName(resolved.site) : "",
+  );
+  const [configName, setConfigName] = useState<string>(resolved.config?.name ?? "");
+  const [showSiteModal, setShowSiteModal] = useState(false);
+  const [showConfigModal, setShowConfigModal] = useState(false);
 
   const propertyActions: CollectionActions<Property, string> = edit
     ? {
@@ -156,6 +164,18 @@ export const Platform: React.FC<PlatformProperties> = ({
   const checkboxChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = event.target;
     dispatch({ type: "save", payload: { [name]: checked } });
+  }, []);
+
+  const handleSelectSite = useCallback((ref: ApiSiteRef) => {
+    if (ref.siteId === undefined) return;
+    dispatch({ type: "save", payload: { siteId: ref.siteId } });
+    setSiteName(siteDisplayName(ref));
+  }, []);
+
+  const handleSelectConfig = useCallback((ref: ApiConfigRef) => {
+    if (ref.configId === undefined) return;
+    dispatch({ type: "save", payload: { configId: ref.configId } });
+    setConfigName(ref.name ?? String(ref.configId));
   }, []);
 
   return (
@@ -198,16 +218,17 @@ export const Platform: React.FC<PlatformProperties> = ({
                           name="siteId"
                           readOnly={true}
                           disabled={true}
-                          defaultValue={siteName}
+                          value={siteName}
                           onChange={inputChange}
                         />
-                        <button
-                          type="button"
-                          className="dt-button btn btn-secondary"
+                        <Button
+                          variant="secondary"
+                          className="dt-button"
                           aria-label={t("platforms:select_site")}
+                          onClick={() => setShowSiteModal(true)}
                         >
-                          choose
-                        </button>
+                          {t("translation:choose")}
+                        </Button>
                       </InputGroup>
                       <button
                         type="button"
@@ -229,7 +250,7 @@ export const Platform: React.FC<PlatformProperties> = ({
                       id="siteId"
                       name="siteId"
                       readOnly={true}
-                      defaultValue={siteName}
+                      value={siteName}
                       onChange={inputChange}
                     />
                   )}
@@ -263,16 +284,17 @@ export const Platform: React.FC<PlatformProperties> = ({
                         name="configId"
                         readOnly={true}
                         disabled={true}
-                        defaultValue={siteName}
+                        value={configName}
                         onChange={inputChange}
                       />
-                      <button
-                        type="button"
-                        className="dt-button btn btn-secondary"
+                      <Button
+                        variant="secondary"
+                        className="dt-button"
                         aria-label={t("platforms:select_config")}
+                        onClick={() => setShowConfigModal(true)}
                       >
-                        choose
-                      </button>
+                        {t("translation:choose")}
+                      </Button>
                     </InputGroup>
                   ) : (
                     <Form.Control
@@ -280,7 +302,7 @@ export const Platform: React.FC<PlatformProperties> = ({
                       id="configId"
                       name="configId"
                       readOnly={true}
-                      defaultValue={configName}
+                      value={configName}
                       onChange={inputChange}
                     />
                   )}
@@ -389,6 +411,16 @@ export const Platform: React.FC<PlatformProperties> = ({
           )}
         </Card.Body>
       </Card>
+      <SiteSelectModal
+        show={showSiteModal}
+        onHide={() => setShowSiteModal(false)}
+        onSelect={handleSelectSite}
+      />
+      <ConfigSelectModal
+        show={showConfigModal}
+        onHide={() => setShowConfigModal(false)}
+        onSelect={handleSelectConfig}
+      />
     </DetailFade>
   );
 };

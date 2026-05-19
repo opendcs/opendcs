@@ -22,6 +22,7 @@ export const platformKeys = {
   list: (org: string) => [...platformKeys.all(org), "list"] as const,
   detail: (org: string, platformId: number) =>
     [...platformKeys.all(org), "detail", platformId] as const,
+  configList: (org: string) => [...platformKeys.all(org), "configList"] as const,
   config: (org: string, configId: number) =>
     [...platformKeys.all(org), "config", configId] as const,
 };

@@ -15,3 +15,10 @@ export {
   type RowActionContext,
   type RowMode,
 } from "./AppDataTable";
+export {
+  ChooserTable,
+  type ChooserColumnDef,
+  type ChooserMode,
+  type ChooserTableHandle,
+  type ChooserTableProps,
+} from "./ChooserTable";

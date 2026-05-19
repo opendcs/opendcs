@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
-import { Button, Form, Modal, Spinner, Table } from "react-bootstrap";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Button, Modal, Spinner } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useApi } from "../../../contexts/app/ApiContext";
+import { ChooserTable, type ChooserColumnDef } from "../../../components/data-table";
 
 interface AvailableAlgorithm {
   name: string;
@@ -17,10 +18,10 @@ interface Props {
 }
 
 export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) => {
-  const [t] = useTranslation(["algorithms"]);
+  const [t] = useTranslation(["algorithms", "translation"]);
   const api = useApi();
   const [available, setAvailable] = useState<AvailableAlgorithm[]>([]);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selectedExecClasses, setSelectedExecClasses] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
 
@@ -28,7 +29,7 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
     if (!show) return;
     let cancelled = false;
     setLoading(true);
-    setSelected(new Set());
+    setSelectedExecClasses([]);
     fetch("/odcsapi/algorithmcatalog", {
       headers: { "X-ORGANIZATION-ID": api.org },
     })
@@ -47,29 +48,8 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
     };
   }, [show, api.org]);
 
-  const toggleSelect = useCallback((execClass: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(execClass)) {
-        next.delete(execClass);
-      } else {
-        next.add(execClass);
-      }
-      return next;
-    });
-  }, []);
-
-  const toggleAll = useCallback(() => {
-    setSelected((prev) => {
-      if (prev.size === available.length) {
-        return new Set();
-      }
-      return new Set(available.map((a) => a.execClass));
-    });
-  }, [available]);
-
   const importSelected = useCallback(() => {
-    if (selected.size === 0) return;
+    if (selectedExecClasses.length === 0) return;
     setImporting(true);
     fetch("/odcsapi/algorithmcatalog", {
       method: "POST",
@@ -77,7 +57,7 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
         "Content-Type": "application/json",
         "X-ORGANIZATION-ID": api.org,
       },
-      body: JSON.stringify([...selected]),
+      body: JSON.stringify(selectedExecClasses),
     })
       .then((res) => {
         if (!res.ok) throw new Error(`Import failed: ${res.status}`);
@@ -86,61 +66,47 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
       })
       .catch((e: unknown) => console.error("Failed to import algorithms", e))
       .finally(() => setImporting(false));
-  }, [selected, api.org, onImported, onHide]);
+  }, [selectedExecClasses, api.org, onImported, onHide]);
+
+  const columns: ChooserColumnDef<AvailableAlgorithm>[] = useMemo(
+    () => [
+      { data: "name", header: t("algorithms:header.Name") },
+      { data: "execClass", header: t("algorithms:header.ExecClass") },
+      { data: "description", header: t("algorithms:header.Description") },
+    ],
+    [t],
+  );
+
+  let body: ReactNode;
+  if (loading) {
+    body = (
+      <div className="text-center p-4">
+        <Spinner animation="border" />
+      </div>
+    );
+  } else if (available.length === 0) {
+    body = <p>{t("algorithms:check_new.none_found")}</p>;
+  } else {
+    body = (
+      <ChooserTable<AvailableAlgorithm, string>
+        data={available}
+        getId={(a) => a.execClass}
+        columns={columns}
+        mode="multi"
+        selectedIds={selectedExecClasses}
+        onSelectionChange={setSelectedExecClasses}
+        selectAllAriaLabel={t("algorithms:check_new.select_all")}
+        rowSelectAriaLabel={(a) => a.name}
+      />
+    );
+  }
 
   return (
     <Modal show={show} onHide={onHide} centered size="xl">
       <Modal.Header closeButton>
         <Modal.Title>{t("algorithms:check_new.title")}</Modal.Title>
       </Modal.Header>
-      <Modal.Body style={{ maxHeight: "60vh", overflowY: "auto" }}>
-        {loading ? (
-          <div className="text-center p-4">
-            <Spinner animation="border" />
-          </div>
-        ) : available.length === 0 ? (
-          <p>{t("algorithms:check_new.none_found")}</p>
-        ) : (
-          <Table striped bordered hover>
-            <thead>
-              <tr>
-                <th style={{ width: "2.5rem" }}>
-                  <Form.Check
-                    type="checkbox"
-                    checked={selected.size === available.length && available.length > 0}
-                    onChange={toggleAll}
-                    aria-label={t("algorithms:check_new.select_all")}
-                  />
-                </th>
-                <th>{t("algorithms:header.Name")}</th>
-                <th>{t("algorithms:header.ExecClass")}</th>
-                <th>{t("algorithms:header.Description")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {available.map((algo) => (
-                <tr
-                  key={algo.execClass}
-                  onClick={() => toggleSelect(algo.execClass)}
-                  style={{ cursor: "pointer" }}
-                >
-                  <td>
-                    <Form.Check
-                      type="checkbox"
-                      checked={selected.has(algo.execClass)}
-                      readOnly
-                      aria-label={algo.name}
-                    />
-                  </td>
-                  <td>{algo.name}</td>
-                  <td>{algo.execClass}</td>
-                  <td>{algo.description}</td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        )}
-      </Modal.Body>
+      <Modal.Body style={{ maxHeight: "60vh", overflowY: "auto" }}>{body}</Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={onHide}>
           {t("algorithms:check_new.close")}
@@ -148,13 +114,13 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
         <Button
           variant="primary"
           onClick={importSelected}
-          disabled={selected.size === 0 || importing}
+          disabled={selectedExecClasses.length === 0 || importing}
         >
           {importing ? (
             <Spinner animation="border" size="sm" />
           ) : (
             t("algorithms:check_new.import_selected", {
-              count: selected.size,
+              count: selectedExecClasses.length,
             })
           )}
         </Button>

@@ -220,6 +220,47 @@ export const NoAlgorithmsAfterFilter: Story = {
   },
 };
 
+export const SortByNameColumn: Story = {
+  play: async ({ mount, parameters, userEvent }) => {
+    await mount();
+    const { i18n } = parameters;
+
+    await screen.findByText("AverageAlgorithm");
+
+    const readRowOrder = (): string[] => {
+      const cells = screen
+        .getAllByRole("row")
+        .slice(1)
+        .map((row) => row.querySelectorAll("td")[1]?.textContent ?? "");
+      return cells;
+    };
+
+    expect(readRowOrder()).toEqual(["AverageAlgorithm", "MaxToDate"]);
+
+    const nameHeader = screen.getByRole("columnheader", {
+      name: new RegExp(i18n.t("computations:editor.name"), "i"),
+    });
+    // DataTables marks orderable headers with `dt-orderable-asc` and renders a
+    // `.dt-column-order` arrow indicator inside the header — proves the sort
+    // handlers got wired up.
+    expect(nameHeader.classList.contains("dt-orderable-asc")).toBe(true);
+    expect(nameHeader.querySelector(".dt-column-order")).not.toBeNull();
+
+    await userEvent.click(nameHeader);
+    await userEvent.click(nameHeader);
+    await waitFor(() =>
+      expect(readRowOrder()).toEqual(["MaxToDate", "AverageAlgorithm"]),
+    );
+    expect(nameHeader.getAttribute("aria-sort")).toBe("descending");
+
+    await userEvent.click(nameHeader);
+    await waitFor(() =>
+      expect(readRowOrder()).toEqual(["AverageAlgorithm", "MaxToDate"]),
+    );
+    expect(nameHeader.getAttribute("aria-sort")).toBe("ascending");
+  },
+};
+
 export const CancelButtonClosesModal: Story = {
   play: async ({ args, mount, parameters, userEvent }) => {
     await mount();

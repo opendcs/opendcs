@@ -340,11 +340,12 @@ export const Computation: React.FC<ComputationProperties> = ({
                           placeholder="No algorithm selected"
                         />
                         <Button
-                          variant="outline-secondary"
+                          variant="secondary"
+                          className="dt-button"
                           onClick={() => setShowAlgorithmModal(true)}
-                          aria-label="Select Algorithm"
+                          aria-label={t("computations:editor.select_algorithm_title")}
                         >
-                          Select...
+                          {t("translation:choose")}
                         </Button>
                       </InputGroup>
                     ) : (
@@ -497,7 +498,6 @@ export const Computation: React.FC<ComputationProperties> = ({
         show={showAlgorithmModal}
         onHide={() => setShowAlgorithmModal(false)}
         onSelect={handleAlgorithmSelected}
-        getAlgorithm={getAlgorithm}
       />
     </Card>
   );
