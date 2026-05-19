@@ -6,13 +6,15 @@ import type {
   ApiComputation,
   ApiComputationRef,
   ApiTsGroupRef,
+  ApiAlgorithmRef,
 } from "opendcs-api";
 // eslint-disable-next-line storybook/use-storybook-testing-library
 import { act } from "@testing-library/react";
-import { expect, waitFor } from "storybook/test";
+import { expect, screen, waitFor, within } from "storybook/test";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ArgsStoryFn } from "storybook/internal/types";
 import type { RemoveAction, SaveAction } from "../../../util/Actions";
+import { http, HttpResponse } from "msw";
 
 const meta = {
   component: ComputationsTable,
@@ -306,5 +308,80 @@ export const DeleteComputation: Story = {
     await waitFor(() => {
       expect(canvas.queryByText("DailyStageMax")).not.toBeInTheDocument();
     });
+  },
+};
+
+export const CopyComputation: Story = {
+  args: { computations: toComputationRefs(sharedComputations) },
+  render: StoryRender,
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const copyBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:editor.copy_for", { id: 1 }),
+    });
+    await act(async () => userEvent.click(copyBtn));
+
+    // A new local row with id -1 should appear in the table
+    await waitFor(
+      () => {
+        expect(canvas.queryByText("-1")).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
+  },
+};
+
+const mockAlgorithmRefs: ApiAlgorithmRef[] = [
+  {
+    algorithmId: 10,
+    algorithmName: "AverageAlgorithm",
+    execClass: "decodes.comp.AverageAlgorithm",
+    description: "Computes average values.",
+  },
+];
+
+export const BulkAddFromAlgorithms: Story = {
+  args: { computations: toComputationRefs(sharedComputations) },
+  render: StoryRender,
+  parameters: {
+    msw: {
+      handlers: {
+        algorithmRefs: http.get("/odcsapi/algorithmrefs", () =>
+          HttpResponse.json<ApiAlgorithmRef[]>(mockAlgorithmRefs),
+        ),
+      },
+    },
+  },
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    // "Add from algorithms" button lives in the DataTable header
+    const addFromAlgoBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:add_from_algorithms.button"),
+    });
+    await act(async () => userEvent.click(addFromAlgoBtn));
+
+    // Renders in a portal
+    const dialog = await screen.findByRole("dialog", {}, { timeout: 5000 });
+    const modal = within(dialog);
+
+    const algoRow = await modal.findByText("AverageAlgorithm");
+    await act(async () => userEvent.click(algoRow));
+
+    const addBtn = await screen.findByRole("button", {
+      name: i18n.t("computations:add_from_algorithms.add_selected", { count: 1 }),
+    });
+    await act(async () => userEvent.click(addBtn));
+
+    // A new local row with id -1 should appear in the table
+    await waitFor(
+      () => {
+        expect(canvas.queryByText("-1")).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
   },
 };
