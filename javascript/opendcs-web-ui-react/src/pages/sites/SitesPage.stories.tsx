@@ -12,13 +12,6 @@ import { MemoryRouter } from "react-router-dom";
 
 const meta = {
   component: SitesPage,
-  decorators: [
-    (Story) => (
-      <MemoryRouter initialEntries={["/sites"]}>
-        <Story />
-      </MemoryRouter>
-    ),
-  ],
 } satisfies Meta<typeof SitesPage>;
 
 export default meta;

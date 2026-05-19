@@ -103,15 +103,14 @@ const meta = {
   component: PlatformsPage,
   decorators: [
     (Story) => (
-      <MemoryRouter initialEntries={["/platforms"]}>
-        <Routes>
-          <Route path="/platforms" element={<Story />} />
-          <Route
-            path="/sites"
-            element={<div data-testid="sites-page-stub">Sites stub</div>}
-          />
-        </Routes>
-      </MemoryRouter>
+      <Routes>
+        <Route path="/platforms" element={<Story />} />
+        <Route
+          path="/sites"
+          element={<div data-testid="sites-page-stub">Sites stub</div>}
+        />
+        <Route path="*" element={<Story />} />
+      </Routes>
     ),
   ],
 } satisfies Meta<typeof PlatformsPage>;
