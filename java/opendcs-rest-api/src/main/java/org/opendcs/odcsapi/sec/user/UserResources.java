@@ -66,6 +66,11 @@ public final class UserResources extends OpenDcsResource
         }
 		var sessionPrincipal = (OpenDcsPrincipal)session.getAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE);
 
+        if (sessionPrincipal == null)
+        {
+            throw new WebAppException(Response.Status.UNAUTHORIZED.getStatusCode(), "No user session established.");
+        }
+
         final var db = createDb();
         final var umDao = db.getDao(UserManagementDao.class).orElseThrow(() -> UNABLE_TO_GET_UM_DAO);
         try (var tx = db.newTransaction())

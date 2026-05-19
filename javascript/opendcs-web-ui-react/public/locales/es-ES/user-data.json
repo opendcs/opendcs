@@ -8,7 +8,9 @@
     "current_password": "Contraseña actual",
     "new_password": "Nueva contraseña",
     "repeat_password": "Repita la contraseña",
-    "update_password": "Actualizar contraseña"
+    "update_password": "Contraseña actualizada",
+    "success": "Contraseña cambiada",
+    "fail": "No se pudo cambiar"
   },
   "role": "Rol"
 }

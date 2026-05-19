@@ -8,7 +8,9 @@
     "current_password": "Current Password",
     "new_password": "New Password",
     "repeat_password": "Repeat Password",
-    "update_password": "Update Password"
+    "update_password": "Update Password",
+    "success": "Password Changed",
+    "fail": "Change Failed"
   },
   "role": "Role"
 }

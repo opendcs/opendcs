@@ -115,8 +115,8 @@ export function PasswordChange({
                   />
                 </Col>
                 <Col sm="auto">
-                  {success === true && <>Password Changed</>}
-                  {success === false && <>Change Failed</>}
+                  {success === true && <>{t("password_change.success")}</>}
+                  {success === false && <>{t("password_change.failed")}</>}
                 </Col>
               </Form.Group>
             </Row>
