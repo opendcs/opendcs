@@ -45,7 +45,7 @@ export const LoadingAppsTable: React.FC<LoadingAppsTableProperties> = ({
           if (type !== "display") return data;
           if (!data) return "";
           const d = data instanceof Date ? data : new Date(data as string);
-          return isNaN(d.getTime()) ? "" : d.toLocaleString();
+          return Number.isNaN(d.getTime()) ? "" : d.toLocaleString();
         },
       },
     ],

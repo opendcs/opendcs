@@ -20,7 +20,7 @@ export function LoadingAppReducer(
       };
     }
     case "delete_prop": {
-      const props = { ...(current.properties ?? {}) };
+      const props = { ...current.properties };
       delete props[action.payload.name];
       return { ...current, properties: props };
     }

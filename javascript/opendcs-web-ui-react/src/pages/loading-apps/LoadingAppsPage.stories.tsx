@@ -57,7 +57,7 @@ export const Default: Story = {
         ),
         app: http.get("/odcsapi/app", ({ request }) => {
           const url = new URL(request.url);
-          const id = parseInt(url.searchParams.get("appid") ?? "-1");
+          const id = Number.parseInt(url.searchParams.get("appid") ?? "-1");
           return HttpResponse.json<ApiLoadingApp>(
             mockApps.find((a) => a.appId === id) ?? mockApps[0],
           );
@@ -87,7 +87,7 @@ export const EditSave: Story = {
         ),
         app: http.get("/odcsapi/app", ({ request }) => {
           const url = new URL(request.url);
-          const id = parseInt(url.searchParams.get("appid") ?? "-1");
+          const id = Number.parseInt(url.searchParams.get("appid") ?? "-1");
           return HttpResponse.json<ApiLoadingApp>(
             mockApps.find((a) => a.appId === id) ?? mockApps[0],
           );

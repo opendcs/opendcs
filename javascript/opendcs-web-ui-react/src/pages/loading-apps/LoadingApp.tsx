@@ -218,7 +218,10 @@ export const LoadingApp: React.FC<LoadingAppProperties> = ({
             <Row className="mt-3">
               <Col className="d-flex justify-content-end gap-2">
                 <Button
-                  onClick={() => actions.cancel?.(providedApp.appId!)}
+                  onClick={() =>
+                    providedApp.appId !== undefined &&
+                    actions.cancel?.(providedApp.appId)
+                  }
                   variant="secondary"
                   aria-label={t("loadingapps:cancel_for", { id: providedApp.appId })}
                 >
