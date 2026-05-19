@@ -62,11 +62,17 @@ const preview: Preview = {
     },
     i18n,
   },
-  // Storybook applies decorators with last = outermost, so WithQueryClient
-  // (which provides the QueryClient via QueryClientProvider) must come AFTER
-  // WithUnits, which seeds that QueryClient via useQueryClient().
-  decorators: [WithI18next, WithTheme, WithOrganization, WithRefLists, WithUnits, WithQueryClient, routerDecorator],
-  
+
+  decorators: [
+    WithI18next,
+    WithTheme,
+    WithOrganization,
+    WithRefLists,
+    WithUnits,
+    WithQueryClient,
+    routerDecorator,
+  ],
+
   globalTypes: {
     locale: {
       name: "Locale",
