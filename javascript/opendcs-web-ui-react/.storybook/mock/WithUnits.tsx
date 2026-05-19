@@ -8,7 +8,7 @@
 
 import { Decorator } from "@storybook/react-vite";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { ApiUnit, ApiUnitConverter } from "opendcs-api";
 import { unitKeys } from "../../src/queries/keys";
 
@@ -57,7 +57,10 @@ export const WithUnits: Decorator = (Story) => {
   );
 
   // ApiContext default in stories has org === "" (no localStorage org).
-  useEffect(() => {
+  // Seed synchronously during render so child queries find cached data on
+  // their first render — a useEffect would fire after the child mounts,
+  // letting queryFn race ahead and error against an unmocked endpoint.
+  useMemo(() => {
     const org = "";
     queryClient.setQueryData(unitKeys.list(org), units);
     queryClient.setQueryData(unitKeys.conversions(org), conversions);

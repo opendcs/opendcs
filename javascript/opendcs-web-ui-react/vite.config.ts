@@ -19,7 +19,16 @@ export default defineConfig({
   plugins: [react(), svgr()],
   optimizeDeps: {
     exclude: ["opendcs-api", "whatwg-fetch"],
-    include: ["react-dom/client", "react-router-dom"],
+    // Pre-bundle deps that would otherwise trigger a mid-test re-optimize.
+    // react-query-devtools is statically imported by QueryProvider, so once
+    // its first transitive dep loads, vite re-bundles and reloads every test
+    // file — see the storybook retry comment below.
+    include: [
+      "react-dom/client",
+      "react-router-dom",
+      "@tanstack/react-query",
+      "@tanstack/react-query-devtools",
+    ],
   },
   server: {
     fs: {

@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Form } from "react-bootstrap";
 import { renderToString } from "react-dom/server";
+import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import {
   TimeSeriesMethodsIntervalMethodsApi,
   type ApiCompParm,
@@ -40,6 +41,9 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
   const [t] = useTranslation(["computations", "translation"]);
   const api = useApi();
   const { isSuccess: unitsReady } = useUnitListQuery();
+  // renderToString below creates an isolated React tree; UnitSelect inside it
+  // calls useUnitListQuery, so we must re-provide the QueryClient explicitly.
+  const queryClient = useQueryClient();
   const { deltaTUnits, ifMissingActions, defaultIntervals } = useContext(
     ComputationParamsOptionsContext,
   );
@@ -305,12 +309,16 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
           render: (row) =>
             unitsReady
               ? renderToString(
-                  <UnitSelect
-                    size="sm"
-                    name="unitsAbbr"
-                    current={row.unitsAbbr ?? ""}
-                    aria-label={t("computations:parms.units_input")}
-                  />,
+                  // renderToString creates an isolated React tree; UnitSelect calls
+                  // useUnitListQuery, so re-provide the QueryClient explicitly.
+                  <QueryClientProvider client={queryClient}>
+                    <UnitSelect
+                      size="sm"
+                      name="unitsAbbr"
+                      current={row.unitsAbbr ?? ""}
+                      aria-label={t("computations:parms.units_input")}
+                    />
+                  </QueryClientProvider>,
                 )
               : renderToString(
                   <Form.Control
@@ -350,7 +358,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
         },
       },
     ];
-  }, [t, intervalOptions, deltaTUnits, ifMissingActions, unitsReady]);
+  }, [t, intervalOptions, deltaTUnits, ifMissingActions, unitsReady, queryClient]);
 
   const newTemplate = (): CompParm => ({
     algoParmType: "i",

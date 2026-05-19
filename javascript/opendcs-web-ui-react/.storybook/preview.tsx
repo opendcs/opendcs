@@ -50,9 +50,10 @@ const preview: Preview = {
     },
     i18n,
   },
-  // WithQueryClient must wrap WithUnits because WithUnits seeds the cache via
-  // useQueryClient(). Decorators wrap outside-in (first = outermost).
-  decorators: [WithI18next, WithTheme, WithQueryClient, WithRefLists, WithUnits],
+  // Storybook applies decorators with last = outermost, so WithQueryClient
+  // (which provides the QueryClient via QueryClientProvider) must come AFTER
+  // WithUnits, which seeds that QueryClient via useQueryClient().
+  decorators: [WithI18next, WithTheme, WithRefLists, WithUnits, WithQueryClient],
   globalTypes: {
     locale: {
       name: "Locale",
