@@ -342,7 +342,7 @@ const mockAlgorithmRefs: ApiAlgorithmRef[] = [
   },
 ];
 
-export const BulkAddFromAlgorithms: Story = {
+export const AddFromAlgorithms: Story = {
   args: { computations: toComputationRefs(sharedComputations) },
   render: StoryRender,
   parameters: {
@@ -364,17 +364,18 @@ export const BulkAddFromAlgorithms: Story = {
     });
     await act(async () => userEvent.click(addFromAlgoBtn));
 
-    // Renders in a portal
+    // Picker renders in a portal — find the chooser-style dialog
     const dialog = await screen.findByRole("dialog", {}, { timeout: 5000 });
     const modal = within(dialog);
 
     const algoRow = await modal.findByText("AverageAlgorithm");
     await act(async () => userEvent.click(algoRow));
 
-    const addBtn = await screen.findByRole("button", {
-      name: i18n.t("computations:add_from_algorithms.add_selected", { count: 1 }),
+    // Single-select chooser: confirm via the shared "Select" button
+    const selectBtn = await modal.findByRole("button", {
+      name: i18n.t("translation:select"),
     });
-    await act(async () => userEvent.click(addBtn));
+    await act(async () => userEvent.click(selectBtn));
 
     // A new local row with id -1 should appear in the table
     await waitFor(
