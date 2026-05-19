@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Button, Form, Modal, Spinner, Table } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import {
-  RESTAlgorithmMethodsApi,
-  type ApiAlgorithm,
-  type ApiAlgorithmRef,
-} from "opendcs-api";
-import { useApi } from "../../../contexts/app/ApiContext";
+import type { ApiAlgorithm, ApiAlgorithmRef } from "opendcs-api";
+import { useAlgorithmsQuery } from "../../../queries/algorithms";
 
 interface Props {
   show: boolean;
@@ -21,38 +17,22 @@ export const AlgorithmSelectModal: React.FC<Props> = ({
   onSelect,
   getAlgorithm,
 }) => {
-  const api = useApi();
   const [t] = useTranslation(["computations", "translation"]);
-  const algorithmApi = useMemo(() => new RESTAlgorithmMethodsApi(api.conf), [api.conf]);
-  const [algorithms, setAlgorithms] = useState<ApiAlgorithmRef[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { data: algorithms = [], isFetching } = useAlgorithmsQuery();
   const [filter, setFilter] = useState("");
   const [selected, setSelected] = useState<ApiAlgorithmRef | null>(null);
   const [fullDescription, setFullDescription] = useState<string | null>(null);
   const [descLoading, setDescLoading] = useState(false);
   const [selecting, setSelecting] = useState(false);
 
+  // Reset modal-local state when reopened so the user sees a fresh picker.
   useEffect(() => {
     if (!show) return;
-    let cancelled = false;
-    setLoading(true);
     setSelected(null);
     setFullDescription(null);
     setFilter("");
     setSelecting(false);
-    algorithmApi
-      .getalgorithmrefs(api.org)
-      .then((refs) => {
-        if (!cancelled) setAlgorithms(refs);
-      })
-      .catch((e: unknown) => console.error("Failed to fetch algorithm refs", e))
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [show, api.org, algorithmApi]);
+  }, [show]);
 
   const handleRowClick = useCallback(
     async (algo: ApiAlgorithmRef) => {
@@ -101,7 +81,7 @@ export const AlgorithmSelectModal: React.FC<Props> = ({
   }, [selected, onSelect, onHide]);
 
   let algorithmListContent: ReactNode;
-  if (loading) {
+  if (isFetching && algorithms.length === 0) {
     algorithmListContent = (
       <div className="text-center p-4">
         <Spinner animation="border" />

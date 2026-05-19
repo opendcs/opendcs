@@ -1,44 +1,18 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, type ReactNode } from "react";
 import { RefListContext, type RefListContextType } from "./RefListContext";
-import { useApi } from "../app/ApiContext";
-import { Record } from "react-bootstrap-icons";
-import { RESTReferenceListsApi, type ApiRefList } from "opendcs-api";
+import { useRefListsQuery } from "../../queries/refLists";
 
 interface ProviderProps {
   children: ReactNode;
 }
 
+// Thin context wrapper over useRefListsQuery so the existing
+// useRefList()/refList(name) consumer API stays unchanged. Cache + org-scoping
+// + refetch-on-org-switch come from TanStack — the prior implementation kept
+// an empty `[]` dep array and never refetched when the user switched orgs.
 export const RefListProvider = ({ children }: ProviderProps) => {
-  const api = useApi();
-  const [refLists, setRefLists] = useState<Record<string, ApiRefList>>({});
-  const [ready, setReady] = useState(false);
-  const refListsRef = useRef(refLists);
-
-  useEffect(() => {
-    const fetchLists = async () => {
-      const refListApi = new RESTReferenceListsApi(api.conf);
-      const refs = await refListApi.getRefLists(api.org);
-      setRefLists(refs);
-      setReady(true);
-    };
-    fetchLists();
-  }, []);
-
-  useEffect(() => {
-    refListsRef.current = refLists;
-  }, [refLists]);
-
-  const getRefList = useCallback(
-    (list: string) => {
-      return refListsRef.current[list];
-    },
-    [refLists, refListsRef],
-  );
-
-  const refListvalue: RefListContextType = {
-    refList: getRefList,
-    ready: ready,
-  };
-
-  return <RefListContext value={refListvalue}>{children}</RefListContext>;
+  const { data, isSuccess } = useRefListsQuery();
+  const refList = useCallback((name: string) => data?.[name] ?? {}, [data]);
+  const value: RefListContextType = { refList, ready: isSuccess };
+  return <RefListContext value={value}>{children}</RefListContext>;
 };

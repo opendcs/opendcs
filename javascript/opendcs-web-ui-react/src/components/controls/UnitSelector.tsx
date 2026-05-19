@@ -1,6 +1,6 @@
 import type React from "react";
 import { FormSelect, type FormSelectProps } from "react-bootstrap";
-import { useUnits } from "../../contexts/data/UnitsContext";
+import { useUnitListQuery } from "../../queries/units";
 
 export interface UnitSelectorProperties extends FormSelectProps {
   current?: string;
@@ -14,8 +14,8 @@ const UnitSelect: React.FC<UnitSelectorProperties> = ({
   disabled,
   ...props
 }) => {
-  const units = useUnits();
-  return units.ready ? (
+  const { data: units, isSuccess } = useUnitListQuery();
+  return isSuccess ? (
     <FormSelect
       {...props}
       defaultValue={current}
@@ -25,7 +25,7 @@ const UnitSelect: React.FC<UnitSelectorProperties> = ({
       }}
       disabled={disabled}
     >
-      {Object.entries(units.units).map(([id, unit]) => {
+      {Object.entries(units).map(([id, unit]) => {
         return (
           <option key={id} value={unit.abbr}>
             {unit.abbr}

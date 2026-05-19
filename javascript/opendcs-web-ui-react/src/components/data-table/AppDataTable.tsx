@@ -158,7 +158,7 @@ export interface InlineEditConfig<T> {
   };
 }
 
-export interface AppDataTableHandle {
+export interface AppDataTableHandle<T = unknown> {
   /**
    * Mark the table so that the next time the `data` prop updates (usually
    * after an external refresh) it pages to the last page. Paired with a
@@ -173,6 +173,7 @@ export interface AppDataTableHandle {
    * `data` update.
    */
   openRow: (id: string | number, mode?: RowMode) => void;
+  appendLocalItem: (template: (nextId: number) => T, mode?: RowMode) => void;
 }
 
 export interface AppDataTableProps<T, TId extends string | number, TSave = T> {
@@ -234,7 +235,7 @@ export interface AppDataTableProps<T, TId extends string | number, TSave = T> {
   dataTableOptions?: Partial<DataTableProps["options"]>;
 
   // --- Imperative handle (React 19 ref-as-prop) ---
-  ref?: React.Ref<AppDataTableHandle>;
+  ref?: React.Ref<AppDataTableHandle<T>>;
 }
 
 // =============================================================================
@@ -446,10 +447,13 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   // rowState is keyed by stringified row id so both consumer ids (TId) and
   // wrapper-generated synthetic ids (for inline-edit new rows) coexist.
   const [rowState, setRowState] = useState<Record<string, RowMode>>({});
-  // Hide the wrapper until DataTables finishes its first init. React renders
+  // Fade the wrapper in once DataTables finishes its first init. React renders
   // the bare <table> (with <caption> + <thead>) before DataTables inserts the
   // top toolbar (buttons / search / page-length), which would otherwise flash
-  // the title at the top and shift it down once the toolbar appears.
+  // the title at the top and shift it down once the toolbar appears. Uses
+  // opacity (not visibility) so an enclosing `DetailFade`'s `visibility: hidden`
+  // isn't punched through — a child `visibility: visible` would override the
+  // parent, but parent `opacity: 0` always wins over child opacity.
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Live ref mirrors so drawCallback / click handlers read the latest values.
@@ -540,6 +544,19 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     [getId],
   );
 
+  const appendLocalItem = useCallback(
+    (template: (nextId: number) => T, mode: RowMode = "new") => {
+      setLocalItems((prev) => {
+        const newId = nextAddNewId(prev, getId);
+        const newItem = template(newId);
+        const newIdStr = String(getId(newItem));
+        setRowState((prevRS) => ({ ...prevRS, [newIdStr]: mode }));
+        return [...prev, newItem];
+      });
+    },
+    [getId],
+  );
+
   // --- Expose imperative handle --------------------------------------------
   useImperativeHandle(
     ref,
@@ -552,8 +569,9 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
         setModeByIdStr(idStr, mode);
         pageToRowId(idStr);
       },
+      appendLocalItem,
     }),
-    [setModeByIdStr, pageToRowId],
+    [setModeByIdStr, pageToRowId, appendLocalItem],
   );
 
   // --- Effective row actions list ------------------------------------------
@@ -943,7 +961,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   }, [data]);
 
   return (
-    <div style={{ visibility: isInitialized ? "visible" : "hidden" }}>
+    <div style={{ opacity: isInitialized ? undefined : 0 }}>
       <DataTable
         key={i18n.language}
         id={tableId}

@@ -6,6 +6,7 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { QueryErrorBoundary } from "../../components/QueryErrorBoundary";
 
 interface ProviderProps {
   children: ReactNode;
@@ -38,7 +39,7 @@ export const QueryProvider = ({ children }: ProviderProps) => {
 
   return (
     <QueryClientProvider client={client}>
-      {children}
+      <QueryErrorBoundary>{children}</QueryErrorBoundary>
       {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   );

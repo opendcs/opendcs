@@ -1,11 +1,5 @@
-import DataTable, {
-  type DataTableProps,
-  type DataTableRef,
-} from "datatables.net-react";
-import DT from "datatables.net-bs5";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { dtLangs } from "../../../lang";
 import type {
   ApiAlgorithm,
   ApiAppRef,
@@ -14,19 +8,20 @@ import type {
   ApiTsGroupRef,
 } from "opendcs-api";
 import Computation, { ComputationSkeleton, type UiComputation } from "./Computation";
-import type { RemoveAction, SaveAction, UiState } from "../../../util/Actions";
-import { useContextWrapper } from "../../../util/ContextWrapper";
-import { Button } from "react-bootstrap";
-import { Files, Pencil, Trash } from "react-bootstrap-icons";
-import type { RowState } from "../../../util/DataTables";
-
-// eslint-disable-next-line react-hooks/rules-of-hooks
-DataTable.use(DT);
+import type { RemoveAction, SaveAction } from "../../../util/Actions";
+import {
+  AppDataTable,
+  type AppDataTableHandle,
+  type ColumnDef,
+  type RowAction,
+} from "../../../components/data-table";
+import { BulkAddComputationsModal } from "./BulkAddComputationsModal";
 
 export type TableComputationRef = Partial<ApiComputationRef>;
 
 export interface ComputationsTableProperties {
   computations: TableComputationRef[];
+  loading?: boolean;
   getComputation?: (computationId: number) => Promise<ApiComputation>;
   getAlgorithm?: (algorithmId: number) => Promise<ApiAlgorithm>;
   actions?: SaveAction<ApiComputation> & RemoveAction<number>;
@@ -42,415 +37,245 @@ const isOutputProp = (propName: string): boolean =>
 
 const descriptionSnippet = (description: string | undefined): string => {
   const normalized = (description ?? "").replace(/\s+/g, " ").trim();
-  if (normalized.length <= 120) {
-    return normalized;
-  }
+  if (normalized.length <= 120) return normalized;
   return `${normalized.slice(0, 117).trimEnd()}...`;
 };
 
+const toTableRef = (comp: UiComputation): TableComputationRef => ({
+  computationId: comp.computationId,
+  name: comp.name,
+  algorithmId: comp.algorithmId,
+  algorithmName: comp.algorithmName,
+  processId: comp.appId,
+  processName: comp.applicationName,
+  enabled: comp.enabled,
+  description: comp.comment,
+  groupId: comp.groupId,
+  groupName: comp.groupName,
+});
+
+const copiedComputation = (source: ApiComputation, newId: number): UiComputation => ({
+  ...source,
+  computationId: newId,
+  name: "",
+  props: Object.fromEntries(
+    Object.entries(source.props ?? {}).filter(([key]) => !isOutputProp(key)),
+  ),
+  parmList: (source.parmList ?? [])
+    .filter((parm) => !isOutputParm(parm))
+    .map((parm) => ({ ...parm })),
+});
+
 export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
   computations,
+  loading = false,
   getComputation,
   getAlgorithm,
   actions = {},
   processOptions = [],
   groupOptions = [],
 }) => {
-  const { toDom } = useContextWrapper();
-  const table = useRef<DataTableRef>(null);
-  const [t, i18n] = useTranslation(["computations", "translation"]);
-  const [localComputations, updateLocalComputations] = useState<TableComputationRef[]>(
-    [],
-  );
-  const [localDrafts, setLocalDrafts] = useState<Record<number, UiComputation>>({});
-  const [rowState, updateRowState] = useState<RowState<number>>({});
-  const rowStateRef = useRef(rowState);
-  const prevRowStateRef = useRef<RowState<number>>({});
-  const localComputationsRef = useRef(localComputations);
-  const localDraftsRef = useRef(localDrafts);
-  const latestActionsRef = useRef(actions);
-
-  useEffect(() => {
-    rowStateRef.current = rowState;
-  }, [rowState]);
-
-  useEffect(() => {
-    latestActionsRef.current = actions;
-  }, [actions]);
-
-  useEffect(() => {
-    localComputationsRef.current = localComputations;
-  }, [localComputations]);
-
-  useEffect(() => {
-    localDraftsRef.current = localDrafts;
-  }, [localDrafts]);
-
-  const nextLocalComputationId = useCallback((): number => {
-    const existingIds = localComputationsRef.current
-      .map((c) => c.computationId)
-      .filter((id): id is number => id !== undefined && id < 0);
-    if (existingIds.length === 0) return -1;
-    return Math.min(...existingIds) - 1;
-  }, []);
-
-  const toTableRef = useCallback((comp: UiComputation): TableComputationRef => {
-    return {
-      computationId: comp.computationId,
-      name: comp.name,
-      algorithmId: comp.algorithmId,
-      algorithmName: comp.algorithmName,
-      processId: comp.appId,
-      processName: comp.applicationName,
-      enabled: comp.enabled,
-      description: comp.comment,
-      groupId: comp.groupId,
-      groupName: comp.groupName,
-    };
-  }, []);
-
-  const copiedComputation = useCallback(
-    (source: ApiComputation, newId: number): UiComputation => {
-      const copiedProps = Object.fromEntries(
-        Object.entries(source.props ?? {}).filter(([key]) => !isOutputProp(key)),
-      );
-      const copiedParmList = (source.parmList ?? [])
-        .filter((parm) => !isOutputParm(parm))
-        .map((parm) => ({ ...parm }));
-      return {
-        ...source,
-        computationId: newId,
-        name: "",
-        props: copiedProps,
-        parmList: copiedParmList,
-      };
-    },
-    [],
-  );
-
-  const computationData = useMemo(
-    () => [...computations, ...localComputations],
-    [computations, localComputations],
-  );
-
-  const renderEnabled = useCallback((data: unknown, type: string) => {
-    const enabled = Boolean(data);
-    if (type !== "display") {
-      return enabled ? 1 : 0;
-    }
-    return enabled ? "✓" : "";
-  }, []);
+  const [t] = useTranslation(["computations", "translation"]);
+  const [showCheckNew, setShowCheckNew] = useState(false);
+  const tableRef = useRef<AppDataTableHandle<TableComputationRef>>(null);
+  const draftsRef = useRef<Record<number, UiComputation>>({});
 
   const renderDescription = useCallback((data: unknown, type: string) => {
     const description = typeof data === "string" ? data : "";
-    if (type !== "display") {
-      return description;
-    }
+    if (type !== "display") return description;
     return descriptionSnippet(description);
   }, []);
 
-  const columns = useMemo(
+  const renderEnabled = useCallback((data: unknown, type: string) => {
+    const enabled = Boolean(data);
+    if (type !== "display") return enabled ? 1 : 0;
+    return enabled ? "✓" : "";
+  }, []);
+
+  const columns = useMemo<ColumnDef<TableComputationRef>[]>(
     () => [
-      { data: "computationId", defaultContent: "new", className: "dt-left" },
-      { data: "name", defaultContent: "" },
-      { data: "algorithmName", defaultContent: "" },
-      { data: "processName", defaultContent: "" },
+      {
+        data: "computationId",
+        header: t("computations:header.Id"),
+        defaultContent: "new",
+        className: "dt-left",
+        type: "num",
+      },
+      { data: "name", header: t("computations:header.Name"), type: "string" },
+      {
+        data: "algorithmName",
+        header: t("computations:header.Algorithm"),
+        type: "string",
+      },
+      { data: "processName", header: t("computations:header.Process"), type: "string" },
       {
         data: "enabled",
+        header: t("computations:header.Enabled"),
         defaultContent: "",
         className: "dt-center",
+        type: "num",
         render: renderEnabled,
       },
-      { data: "description", defaultContent: "", render: renderDescription },
-      { data: null, name: "actions" },
-    ],
-    [renderEnabled, renderDescription],
-  );
-
-  const renderActions = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (data: TableComputationRef, _row: any) => {
-      const id = data.computationId;
-      if (id === undefined) {
-        return <></>;
-      }
-
-      const curRowState = rowStateRef.current[id];
-      const inEdit = curRowState === "edit" || curRowState === "new";
-      return (
-        <>
-          {!inEdit && (
-            <Button
-              variant="warning"
-              onClick={(e) => {
-                e.stopPropagation();
-                updateRowState((prev) => ({ ...prev, [id]: "edit" }));
-              }}
-              aria-label={t("computations:editor.edit_for", { id })}
-            >
-              <Pencil />
-            </Button>
-          )}
-          {!inEdit && id > 0 && getComputation && (
-            <Button
-              variant="info"
-              aria-label={t("computations:editor.copy_for", { id })}
-              onClick={async (e) => {
-                e.stopPropagation();
-                if (!getComputation) return;
-                try {
-                  const source = await getComputation(id);
-                  const newId = nextLocalComputationId();
-                  const draft = copiedComputation(source, newId);
-                  updateLocalComputations((prev) => [...prev, toTableRef(draft)]);
-                  setLocalDrafts((prev) => ({ ...prev, [newId]: draft }));
-                  updateRowState((prev) => ({ ...prev, [newId]: "new" }));
-                } catch (error) {
-                  console.warn(`Failed to copy computation ${id}`, error);
-                }
-              }}
-            >
-              <Files />
-            </Button>
-          )}
-          {!inEdit && id > 0 && (
-            <Button
-              variant="danger"
-              aria-label={t("computations:editor.delete_for", { id })}
-              onClick={(e) => {
-                e.stopPropagation();
-                latestActionsRef.current.remove?.(id);
-              }}
-            >
-              <Trash />
-            </Button>
-          )}
-        </>
-      );
-    },
-    [t, getComputation, nextLocalComputationId, copiedComputation, toTableRef],
-  );
-
-  const slots = { actions: renderActions };
-
-  const options: DataTableProps["options"] = {
-    paging: true,
-    responsive: true,
-    stateSave: true,
-    language: dtLangs.get(i18n.language),
-    createdRow: (_row, _data, dataIndex) => {
-      table.current?.dt()?.row(dataIndex).node().classList.add("child-toggle");
-    },
-    layout: {
-      top1Start: {
-        buttons: [
-          {
-            text: "+",
-            action: () => {
-              updateLocalComputations((prev) => {
-                const newId = nextLocalComputationId();
-                setLocalDrafts((drafts) => ({
-                  ...drafts,
-                  [newId]: { computationId: newId },
-                }));
-                updateRowState((prevRowState) => ({
-                  ...prevRowState,
-                  [newId]: "new",
-                }));
-                return [...prev, { computationId: newId }];
-              });
-            },
-            attr: { "aria-label": t("computations:add_computation") },
-          },
-        ],
+      {
+        data: "description",
+        header: t("computations:header.Description"),
+        type: "string",
+        render: renderDescription,
       },
-    },
-  };
-
-  const renderComputation = useCallback(
-    (data: TableComputationRef, edit: boolean = false): Node => {
-      const computationId = data.computationId!;
-      const computationPromise: Promise<UiComputation> =
-        computationId > 0
-          ? getComputation!(computationId)
-          : Promise.resolve(
-              localDraftsRef.current[computationId] ??
-                ({ computationId } as UiComputation),
-            );
-
-      const algorithmPromise: Promise<ApiAlgorithm | undefined> =
-        computationPromise.then(async (comp) => {
-          if (!getAlgorithm || !comp.algorithmId || comp.algorithmId <= 0) {
-            return undefined;
-          }
-          try {
-            return await getAlgorithm(comp.algorithmId);
-          } catch (error) {
-            console.warn(
-              `Failed to load algorithm for algorithmId=${comp.algorithmId}`,
-              error,
-            );
-            return undefined;
-          }
-        });
-
-      const node = toDom(
-        <Suspense fallback={<ComputationSkeleton edit={edit} />}>
-          <Computation
-            computation={computationPromise}
-            algorithm={algorithmPromise}
-            getAlgorithm={getAlgorithm}
-            actions={{
-              save: async (comp: ApiComputation) => {
-                try {
-                  await latestActionsRef.current.save?.(comp);
-                } catch (e) {
-                  console.error("Failed to save computation", e);
-                  return;
-                }
-                if (comp.computationId === undefined) {
-                  return;
-                }
-                updateLocalComputations((prev) => [
-                  ...prev.filter((pc) => pc.computationId !== comp.computationId),
-                ]);
-                setLocalDrafts((prev) => {
-                  const { [comp.computationId!]: _, ...rest } = prev;
-                  return rest;
-                });
-                updateRowState((prev) => {
-                  const { [comp.computationId!]: _, ...states } = prev;
-                  return { ...states, [comp.computationId!]: "show" };
-                });
-              },
-              cancel: (item) => {
-                const local = localComputationsRef.current.find(
-                  (lc) => lc.computationId === item,
-                );
-                if (local) {
-                  updateLocalComputations((prev) => [
-                    ...prev.filter((plc) => plc.computationId !== item),
-                  ]);
-                }
-                setLocalDrafts((prev) => {
-                  const { [item]: _, ...rest } = prev;
-                  return rest;
-                });
-                updateRowState((prev) => {
-                  const { [item]: _, ...states } = prev;
-                  return { ...states };
-                });
-              },
-            }}
-            edit={edit}
-            processOptions={processOptions}
-            groupOptions={groupOptions}
-          />
-        </Suspense>,
-      );
-      const el = node as HTMLElement;
-      el.classList.add("child-row-opening");
-      el.addEventListener(
-        "animationend",
-        () => el.classList.remove("child-row-opening"),
-        { once: true },
-      );
-      return node;
-    },
-    [getComputation, getAlgorithm, toDom, processOptions, groupOptions],
+    ],
+    [t, renderEnabled, renderDescription],
   );
 
-  useEffect(() => {
-    updateRowState({});
-    prevRowStateRef.current = {};
-    updateLocalComputations([]);
-    setLocalDrafts({});
-  }, [i18n.language]);
-
-  useEffect(() => {
-    table.current
-      ?.dt()
-      ?.off("click")
-      .on("click", "tbody tr.child-toggle", function (e) {
-        if (getComputation === undefined) return;
-        const target = e.target! as Element;
-        const tr = target.closest("tr");
-        if (!tr) return;
-        if (tr.classList.contains("child-row")) return;
-        const dt = table.current!.dt()!;
-        const rowData: TableComputationRef | undefined = dt.row(tr).data();
-        if (!rowData) return;
-        e.preventDefault();
-        e.stopPropagation();
-        updateRowState((prev) => {
-          const idx = rowData.computationId!;
-          const { [idx]: existing, ...remaining } = prev;
-          let newValue: UiState = "show";
-          if (existing !== undefined) {
-            newValue = undefined;
+  const rowActions = useMemo<RowAction<TableComputationRef>[]>(
+    () => [
+      {
+        key: "edit",
+        icon: "bi-pencil",
+        variant: "warning",
+        aria: (row) => t("computations:editor.edit_for", { id: row.computationId }),
+        onClick: ({ row, api }) => api.setMode(row, "edit"),
+      },
+      {
+        key: "copy",
+        icon: "bi-files",
+        variant: "info",
+        show: (row) => (row.computationId ?? 0) > 0,
+        aria: (row) => t("computations:editor.copy_for", { id: row.computationId }),
+        onClick: async ({ row }) => {
+          if (!getComputation || !row.computationId) return;
+          try {
+            const source = await getComputation(row.computationId);
+            tableRef.current?.appendLocalItem((newId) => {
+              const draft = copiedComputation(source, newId);
+              draftsRef.current[newId] = draft;
+              return toTableRef(draft);
+            }, "new");
+          } catch (err) {
+            console.warn(`Failed to copy computation ${row.computationId}`, err);
           }
-          return { ...remaining, [idx]: newValue };
-        });
-      });
-  }, [i18n.language, getComputation]);
-
-  useEffect(() => {
-    if (table.current?.dt()) {
-      const dt = table.current.dt()!;
-      dt.rows({ page: "current", search: "applied" }).invalidate();
-      dt.draw(false);
-    }
-  }, [computationData]);
-
-  useEffect(() => {
-    if (table.current?.dt()) {
-      const dt = table.current.dt()!;
-      const visibleRows = dt.rows({ page: "current", search: "applied" });
-      let rowClosed = false;
-      visibleRows.every(function () {
-        const idx = (this.data() as TableComputationRef).computationId!;
-        const currentState = rowStateRef.current[idx];
-        const prevState = prevRowStateRef.current[idx];
-        if (currentState === prevState) return;
-        if (currentState !== undefined) {
-          const data: TableComputationRef = this.data() as TableComputationRef;
-          const edit = currentState !== "show";
-          this.child(renderComputation(data, edit), "child-row").show();
-        } else {
-          this.child(false);
-          rowClosed = true;
-        }
-      });
-      prevRowStateRef.current = { ...rowStateRef.current };
-      if (rowClosed) dt.draw(false);
-    }
-  }, [rowState, rowStateRef, renderComputation]);
+        },
+      },
+      {
+        key: "delete",
+        icon: "bi-trash",
+        variant: "danger",
+        show: (row) => (row.computationId ?? 0) > 0,
+        aria: (row) => t("computations:editor.delete_for", { id: row.computationId }),
+        onClick: ({ row }) => {
+          if (row.computationId !== undefined) actions.remove?.(row.computationId);
+        },
+      },
+    ],
+    [t, getComputation, actions],
+  );
 
   return (
-    <DataTable
-      key={i18n.language}
-      id="computationTable"
-      columns={columns}
-      data={computationData}
-      options={options}
-      slots={slots}
-      ref={table}
-      className="table table-hover table-striped tablerow-cursor w-100 border"
-    >
-      <caption className="caption-title-center">
-        {t("computations:computationsTitle")}
-      </caption>
-      <thead>
-        <tr>
-          <th>{t("computations:header.Id")}</th>
-          <th>{t("computations:header.Name")}</th>
-          <th>{t("computations:header.Algorithm")}</th>
-          <th>{t("computations:header.Process")}</th>
-          <th>{t("computations:header.Enabled")}</th>
-          <th>{t("computations:header.Description")}</th>
-          <th>{t("translation:actions")}</th>
-        </tr>
-      </thead>
-    </DataTable>
+    <>
+      <AppDataTable<TableComputationRef, number, ApiComputation>
+        ref={tableRef}
+        data={computations}
+        loading={loading}
+        getId={(c) => c.computationId!}
+        columns={columns}
+        actionsLabel={t("translation:actions")}
+        rowActions={rowActions}
+        extraHeaderButtons={[
+          {
+            text: t("computations:add_from_algorithms.button"),
+            ariaLabel: t("computations:add_from_algorithms.button"),
+            onClick: () => setShowCheckNew(true),
+          },
+        ]}
+        renderDetail={({ row, mode, actions: detailActions }) => {
+          const computationId = row.computationId!;
+          const computationPromise: Promise<UiComputation> =
+            computationId > 0 && getComputation
+              ? getComputation(computationId)
+              : Promise.resolve(
+                  draftsRef.current[computationId] ??
+                    ({ computationId } as UiComputation),
+                );
+
+          const algorithmPromise: Promise<ApiAlgorithm | undefined> =
+            computationPromise.then(async (comp) => {
+              if (!getAlgorithm || !comp.algorithmId || comp.algorithmId <= 0) {
+                return undefined;
+              }
+              try {
+                return await getAlgorithm(comp.algorithmId);
+              } catch (err) {
+                console.warn(
+                  `Failed to load algorithm for algorithmId=${comp.algorithmId}`,
+                  err,
+                );
+                return undefined;
+              }
+            });
+
+          return (
+            <Computation
+              computation={computationPromise}
+              algorithm={algorithmPromise}
+              getAlgorithm={getAlgorithm}
+              actions={{
+                save: detailActions.save,
+                cancel: detailActions.cancel,
+              }}
+              edit={mode !== "show"}
+              processOptions={processOptions}
+              groupOptions={groupOptions}
+            />
+          );
+        }}
+        renderSkeleton={({ mode }) => <ComputationSkeleton edit={mode !== "show"} />}
+        addNew={{
+          template: (id) => ({ computationId: id }),
+          ariaLabel: t("computations:add_computation"),
+        }}
+        onSave={actions.save}
+        caption={t("computations:computationsTitle")}
+        tableId="computationTable"
+      />
+      <BulkAddComputationsModal
+        show={showCheckNew}
+        onHide={() => setShowCheckNew(false)}
+        onAdd={async (algos) => {
+          await Promise.all(
+            algos.map(async (algo) => {
+              let draft: UiComputation = {
+                algorithmId: algo.algorithmId,
+                algorithmName: algo.algorithmName,
+              };
+              if (getAlgorithm && algo.algorithmId) {
+                try {
+                  const fullAlgo = await getAlgorithm(algo.algorithmId);
+                  draft = {
+                    ...draft,
+                    algorithmName: fullAlgo.name ?? algo.algorithmName,
+                    comment: fullAlgo.description,
+                    props: fullAlgo.props ?? {},
+                    parmList: (fullAlgo.parms ?? [])
+                      .filter((p) => (p.roleName ?? "").trim().length > 0)
+                      .map((p) => ({
+                        algoRoleName: p.roleName,
+                        algoParmType: p.parmType,
+                      })),
+                  };
+                } catch (err) {
+                  console.warn(
+                    `Failed to fetch algorithm ${algo.algorithmId} for bulk add`,
+                    err,
+                  );
+                }
+              }
+              tableRef.current?.appendLocalItem((newId) => {
+                draftsRef.current[newId] = { ...draft, computationId: newId };
+                return toTableRef({ ...draft, computationId: newId } as UiComputation);
+              }, "new");
+            }),
+          );
+        }}
+      />
+    </>
   );
 };
