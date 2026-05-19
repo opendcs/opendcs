@@ -447,10 +447,13 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   // rowState is keyed by stringified row id so both consumer ids (TId) and
   // wrapper-generated synthetic ids (for inline-edit new rows) coexist.
   const [rowState, setRowState] = useState<Record<string, RowMode>>({});
-  // Hide the wrapper until DataTables finishes its first init. React renders
+  // Fade the wrapper in once DataTables finishes its first init. React renders
   // the bare <table> (with <caption> + <thead>) before DataTables inserts the
   // top toolbar (buttons / search / page-length), which would otherwise flash
-  // the title at the top and shift it down once the toolbar appears.
+  // the title at the top and shift it down once the toolbar appears. Uses
+  // opacity (not visibility) so an enclosing `DetailFade`'s `visibility: hidden`
+  // isn't punched through — a child `visibility: visible` would override the
+  // parent, but parent `opacity: 0` always wins over child opacity.
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Live ref mirrors so drawCallback / click handlers read the latest values.
@@ -958,7 +961,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   }, [data]);
 
   return (
-    <div style={{ visibility: isInitialized ? "visible" : "hidden" }}>
+    <div style={{ opacity: isInitialized ? undefined : 0 }}>
       <DataTable
         key={i18n.language}
         id={tableId}

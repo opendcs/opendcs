@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Form } from "react-bootstrap";
 import { renderToString } from "react-dom/server";
+import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import {
   TimeSeriesMethodsIntervalMethodsApi,
   type ApiCompParm,
@@ -10,9 +11,7 @@ import {
 import { PARM_TYPES, parmTypeLabel } from "../common/parmTypes";
 import { useApi } from "../../../contexts/app/ApiContext";
 import UnitSelect from "../../../components/controls/UnitSelector";
-import UnitsContext, {
-  defaultValue as defaultUnitsContext,
-} from "../../../contexts/data/UnitsContext";
+import { useUnitListQuery } from "../../../queries/units";
 import ComputationParamsOptionsContext from "../../../contexts/data/ComputationParamsOptionsContext";
 import { AppDataTable, type ColumnDef } from "../../../components/data-table";
 
@@ -41,7 +40,10 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
 }) => {
   const [t] = useTranslation(["computations", "translation"]);
   const api = useApi();
-  const units = useContext(UnitsContext) ?? defaultUnitsContext;
+  const { isSuccess: unitsReady } = useUnitListQuery();
+  // renderToString below creates an isolated React tree; UnitSelect inside it
+  // calls useUnitListQuery, so we must re-provide the QueryClient explicitly.
+  const queryClient = useQueryClient();
   const { deltaTUnits, ifMissingActions, defaultIntervals } = useContext(
     ComputationParamsOptionsContext,
   );
@@ -305,16 +307,18 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
         defaultContent: "",
         edit: {
           render: (row) =>
-            units.ready
+            unitsReady
               ? renderToString(
-                  <UnitsContext value={units}>
+                  // renderToString creates an isolated React tree; UnitSelect calls
+                  // useUnitListQuery, so re-provide the QueryClient explicitly.
+                  <QueryClientProvider client={queryClient}>
                     <UnitSelect
                       size="sm"
                       name="unitsAbbr"
                       current={row.unitsAbbr ?? ""}
                       aria-label={t("computations:parms.units_input")}
                     />
-                  </UnitsContext>,
+                  </QueryClientProvider>,
                 )
               : renderToString(
                   <Form.Control
@@ -354,7 +358,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
         },
       },
     ];
-  }, [t, intervalOptions, deltaTUnits, ifMissingActions, units]);
+  }, [t, intervalOptions, deltaTUnits, ifMissingActions, unitsReady, queryClient]);
 
   const newTemplate = (): CompParm => ({
     algoParmType: "i",

@@ -5,7 +5,7 @@ import { I18nextProvider, useTranslation } from "react-i18next";
 import { AuthContext } from "../contexts/app/AuthContext";
 import { ThemeContext } from "../contexts/app/ThemeContext";
 import { ApiContext } from "../contexts/app/ApiContext";
-import UnitsContext from "../contexts/data/UnitsContext";
+import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 
 export interface Wrappers {
   /**
@@ -32,23 +32,26 @@ export function useContextWrapper(): Wrappers {
   const authContext = use(AuthContext);
   const themeContext = use(ThemeContext);
   const apiContext = use(ApiContext);
-  const unitsContext = use(UnitsContext);
+  const queryClient = useQueryClient();
   const { i18n } = useTranslation();
 
   return {
     toDom: (children: ReactNode): Node => {
       const container = document.createElement("div");
       const root = createRoot(container);
-      // how to determine control?
+      // The DataTables-rendered subtree gets a fresh React root, so contexts
+      // from the parent tree don't flow in automatically. Re-wrap with the
+      // same context values (and the same QueryClient) so any TanStack hooks
+      // used downstream share the parent's cache.
       root.render(
         <I18nextProvider i18n={i18n}>
           <ThemeContext value={themeContext}>
             <ApiContext value={apiContext}>
               <AuthContext value={authContext}>
                 <RefListContext value={refContext}>
-                  <UnitsContext value={unitsContext}>
+                  <QueryClientProvider client={queryClient}>
                     <Suspense fallback="Loading...">{children}</Suspense>
-                  </UnitsContext>
+                  </QueryClientProvider>
                 </RefListContext>
               </AuthContext>
             </ApiContext>
