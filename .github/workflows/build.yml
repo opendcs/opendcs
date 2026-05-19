@@ -36,7 +36,7 @@ jobs:
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.0.1  # NOSONAR first-party Gradle action, tag pinning acceptable
+        uses: gradle/actions/setup-gradle@v6.1.0  # NOSONAR first-party Gradle action, tag pinning acceptable
         with:
           dependency-graph: generate-and-submit
           # Force a cache write from this job so downstream test jobs can restore
@@ -57,7 +57,7 @@ jobs:
         # downstream jobs (ubuntu-tests, integration-db engines) restore the entries
         # produced here. Cache keys are content-addressed by Gradle, so reusing across
         # PRs is safe — changed sources get new keys and recompile automatically.
-        uses: actions/cache@v5.0.4
+        uses: actions/cache@v5.0.5
         with:
           path: ~/.gradle/caches/build-cache-1
           key: gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-${{ github.job }}
@@ -105,13 +105,13 @@ jobs:
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.0.1  # NOSONAR first-party Gradle action, tag pinning acceptable
+        uses: gradle/actions/setup-gradle@v6.1.0  # NOSONAR first-party Gradle action, tag pinning acceptable
       - name: Enable Gradle build cache for CI
         run: |
           mkdir -p ~/.gradle
           echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
       - name: Share Gradle build cache across jobs
-        uses: actions/cache@v5.0.4
+        uses: actions/cache@v5.0.5
         with:
           path: ~/.gradle/caches/build-cache-1
           key: gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-${{ github.job }}
@@ -132,7 +132,7 @@ jobs:
         # warmed dir between runs avoids the cold path entirely. Key is
         # content-addressed by the lockfile + storybook/vite config so any
         # change there invalidates and rebuilds the cache.
-        uses: actions/cache@v5.0.4
+        uses: actions/cache@v5.0.5
         with:
           path: javascript/opendcs-web-ui-react/node_modules/.cache/storybook
           key: storybook-cache-${{ runner.os }}-${{ hashFiles('javascript/opendcs-web-ui-react/package-lock.json', 'javascript/opendcs-web-ui-react/.storybook/**', 'javascript/opendcs-web-ui-react/vite.config.ts') }}
@@ -156,7 +156,7 @@ jobs:
         # warmed by attempt #1 carries into attempt #2, so the rerun is fast
         # and deterministic. The vitest test.retry inside the run doesn't help
         # because the failure is at file-import level, not test runtime.
-        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           max_attempts: 2
           timeout_minutes: 15
@@ -165,7 +165,7 @@ jobs:
         run: |
           ./gradlew :testing:opendcs-tests:testOpenDCSXML --info
       - name: Upload jacoco exec data (tests)
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: jacoco-exec-tests
           path: |
@@ -175,7 +175,7 @@ jobs:
             ./javascript/opendcs-web-ui-react/build/eslint-report.json
           if-no-files-found: warn
       - name: Upload Test Reports
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         if: always()
         with:
           name: test-report-ubuntu-${{ env.sonarJdk }}
@@ -184,7 +184,7 @@ jobs:
             ./**/build/test-results/**
           if-no-files-found: error
       - name: Test Report
-        uses: mikepenz/action-junit-report@bccf2e31636835cf0874589931c4116687171386 # v6.4.0
+        uses: mikepenz/action-junit-report@3a81627bfac62268172037048872e8ebd4207e6d # v6.4.1
         if: always()
         with:
           annotate_only: true
@@ -211,7 +211,7 @@ jobs:
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.0.1  # NOSONAR first-party Gradle action, tag pinning acceptable
+        uses: gradle/actions/setup-gradle@v6.1.0  # NOSONAR first-party Gradle action, tag pinning acceptable
       - name: Enable Gradle build cache for CI
         if: matrix.platform != 'windows-latest'
         run: |
@@ -224,7 +224,7 @@ jobs:
           mkdir -p "$HOME/.gradle"
           echo "org.gradle.caching=true" >> "$HOME/.gradle/gradle.properties"
       - name: Share Gradle build cache across jobs
-        uses: actions/cache@v5.0.4
+        uses: actions/cache@v5.0.5
         with:
           path: ~/.gradle/caches/build-cache-1
           key: gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-${{ github.job }}
@@ -245,7 +245,7 @@ jobs:
       - name: Cache Storybook + Vite deps
         # See ubuntu-tests for rationale. Per-OS cache key because the warmed
         # bundles include host-specific paths.
-        uses: actions/cache@v5.0.4
+        uses: actions/cache@v5.0.5
         with:
           path: javascript/opendcs-web-ui-react/node_modules/.cache/storybook
           key: storybook-cache-${{ runner.os }}-${{ hashFiles('javascript/opendcs-web-ui-react/package-lock.json', 'javascript/opendcs-web-ui-react/.storybook/**', 'javascript/opendcs-web-ui-react/vite.config.ts') }}
@@ -263,7 +263,7 @@ jobs:
       - name: Storybook tests (with retry on flake)
         # See ubuntu-tests for rationale. macOS/Windows runners are slower so
         # the optimizer race surfaces here more often than on Linux.
-        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           max_attempts: 2
           timeout_minutes: 20
@@ -275,7 +275,7 @@ jobs:
         run: |
           ./gradlew :testing:opendcs-tests:testOpenDCSXML --info
       - name: Upload Test Reports
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         if: always()
         with:
           name: test-report-${{ runner.os }}-${{ matrix.jdk }}
@@ -284,7 +284,7 @@ jobs:
             ./**/build/test-results/**
           if-no-files-found: error
       - name: Test Report
-        uses: mikepenz/action-junit-report@bccf2e31636835cf0874589931c4116687171386 # v6.4.0
+        uses: mikepenz/action-junit-report@3a81627bfac62268172037048872e8ebd4207e6d # v6.4.1
         if: always()
         with:
           annotate_only: true
@@ -324,13 +324,13 @@ jobs:
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.0.1  # NOSONAR first-party Gradle action, tag pinning acceptable
+        uses: gradle/actions/setup-gradle@v6.1.0  # NOSONAR first-party Gradle action, tag pinning acceptable
       - name: Enable Gradle build cache for CI
         run: |
           mkdir -p ~/.gradle
           echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
       - name: Share Gradle build cache across jobs
-        uses: actions/cache@v5.0.4
+        uses: actions/cache@v5.0.5
         with:
           path: ~/.gradle/caches/build-cache-1
           key: gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-${{ github.job }}
@@ -351,7 +351,7 @@ jobs:
           ./gradlew :testing:opendcs-tests:${{ matrix.engine.task }} --info
       - name: Upload jacoco exec data
         if: always()
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: jacoco-exec-${{ matrix.engine.name }}
           path: |
@@ -359,7 +359,7 @@ jobs:
             ./**/build/reports/jacoco/**
           if-no-files-found: warn
       - name: Upload Test Reports
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         if: always()
         with:
           name: test-report-${{ matrix.engine.name }}
@@ -368,7 +368,7 @@ jobs:
             ./**/build/test-results/**
           if-no-files-found: error
       - name: Test Report
-        uses: mikepenz/action-junit-report@bccf2e31636835cf0874589931c4116687171386 # v6.4.0
+        uses: mikepenz/action-junit-report@3a81627bfac62268172037048872e8ebd4207e6d # v6.4.1
         if: always()
         with:
           annotate_only: true
@@ -398,13 +398,13 @@ jobs:
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.0.1  # NOSONAR first-party Gradle action, tag pinning acceptable
+        uses: gradle/actions/setup-gradle@v6.1.0  # NOSONAR first-party Gradle action, tag pinning acceptable
       - name: Enable Gradle build cache for CI
         run: |
           mkdir -p ~/.gradle
           echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
       - name: Share Gradle build cache across jobs
-        uses: actions/cache@v5.0.4
+        uses: actions/cache@v5.0.5
         with:
           path: ~/.gradle/caches/build-cache-1
           key: gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-${{ github.job }}
@@ -418,13 +418,13 @@ jobs:
           cache: 'npm'
           cache-dependency-path: javascript/opendcs-web-ui-react/package-lock.json
       - name: Cache SonarCloud packages
-        uses: actions/cache@v5.0.4
+        uses: actions/cache@v5.0.5
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
       - name: Cache Gradle packages
-        uses: actions/cache@v5.0.4
+        uses: actions/cache@v5.0.5
         with:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
@@ -440,7 +440,7 @@ jobs:
       - name: Generate aggregate coverage report
         run: ./gradlew codeCoverageReport --info
       - name: Upload Coverage
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: coverage
           path: |
