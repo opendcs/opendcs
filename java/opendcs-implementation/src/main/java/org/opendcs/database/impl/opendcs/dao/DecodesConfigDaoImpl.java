@@ -139,13 +139,13 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                  .bind(GenericColumns.ID, id);
 
             return query.registerRowMapper(DecodesConfigMapper.withPrefix("pc"))
-                        .registerRowMapper(EquipmentModelMapper.withPrefix("em"))
+                        .registerRowMapper(EquipmentModelMapper.withPrefix("e"))
                         .registerRowMapper(PropertiesMapper.PAIR_STRING_STRING, PropertiesMapper.withPrefix("ep"))
                         .registerRowMapper(UnitConverterMapper.withPrefix("uc"))
                         .reduceResultSet(new LinkedHashMap<>(),
                                          new DecodesConfigAccumulator(
                                             "pc", DecodesConfigMapper.withPrefix("pc"),
-                                            EquipmentModelMapper.withPrefix("em"), PropertiesMapper.withPrefix("ep"),
+                                            EquipmentModelMapper.withPrefix("e"), PropertiesMapper.withPrefix("ep"),
                                             ConfigSensorMapper.withPrefix("cs"), PropertiesMapper.withPrefix("csp", true),
                                             DataTypeMapper.withPrefix("dt"), DecodesScriptBuilderMapper.withPrefix("ds"),
                                             FormatStatementMapper.withPrefix("fs"), UnitConverterMapper.withPrefix("uc")
@@ -177,12 +177,12 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                  .bind(GenericColumns.NAME, name);
 
             return query.registerRowMapper(DecodesConfigMapper.withPrefix("pc"))
-                        .registerRowMapper(EquipmentModelMapper.withPrefix("em"))
+                        .registerRowMapper(EquipmentModelMapper.withPrefix("e"))
                         .registerRowMapper(PropertiesMapper.PAIR_STRING_STRING, PropertiesMapper.withPrefix("ep"))
                         .reduceResultSet(new LinkedHashMap<>(),
                                          new DecodesConfigAccumulator(
                                             "pc", DecodesConfigMapper.withPrefix("pc"),
-                                            EquipmentModelMapper.withPrefix("em"), PropertiesMapper.withPrefix("ep"),
+                                            EquipmentModelMapper.withPrefix("e"), PropertiesMapper.withPrefix("ep"),
                                             ConfigSensorMapper.withPrefix("cs"), PropertiesMapper.withPrefix("csp", true),
                                             DataTypeMapper.withPrefix("dt"), DecodesScriptBuilderMapper.withPrefix("ds"),
                                             FormatStatementMapper.withPrefix("fs"), UnitConverterMapper.withPrefix("uc")
@@ -464,13 +464,13 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
             }
 
             return query.registerRowMapper(DecodesConfigMapper.withPrefix("pc"))
-                        .registerRowMapper(EquipmentModelMapper.withPrefix("em"))
+                        .registerRowMapper(EquipmentModelMapper.withPrefix("e"))
                         .registerRowMapper(PropertiesMapper.PAIR_STRING_STRING, PropertiesMapper.withPrefix("ep"))
                         .registerRowMapper(UnitConverterMapper.withPrefix("uc"))
                         .reduceResultSet(new LinkedHashMap<>(),
                                          new DecodesConfigAccumulator(
                                             "pc", DecodesConfigMapper.withPrefix("pc"),
-                                            EquipmentModelMapper.withPrefix("em"), PropertiesMapper.withPrefix("ep"),
+                                            EquipmentModelMapper.withPrefix("e"), PropertiesMapper.withPrefix("ep"),
                                             ConfigSensorMapper.withPrefix("cs"), PropertiesMapper.withPrefix("csp", true),
                                             DataTypeMapper.withPrefix("dt"), DecodesScriptBuilderMapper.withPrefix("ds"),
                                             FormatStatementMapper.withPrefix("fs"), UnitConverterMapper.withPrefix("uc")
