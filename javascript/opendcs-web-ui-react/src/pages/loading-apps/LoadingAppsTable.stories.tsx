@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { LoadingAppsTable, type TableAppRef } from "./LoadingAppsTable";
 import type { ApiAppRef, ApiLoadingApp } from "opendcs-api";
-import { act, expect, waitFor } from "@storybook/test";
+import { act } from "@testing-library/react";
+import { expect, waitFor } from "storybook/test";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RemoveAction, SaveAction } from "../../util/Actions";
 
