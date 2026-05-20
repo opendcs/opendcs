@@ -15,14 +15,16 @@ export const OidcCallback: React.FC = () => {
   // pull the saved state so we can match it to the right configuration.
   const url = new URL(globalThis.location.href);
   const state: string = url.searchParams.get("state") || "";
-  const clientId = localStorage.getItem(state);
+  const clientId = sessionStorage.getItem(state);
+  const queryParameters = JSON.parse(sessionStorage.getItem("queryParameters") || "{}");
 
   let client: OidcClient | null = null;
   for (const schemeKey in loginSchemes) {
-    const scheme = loginSchemes[schemeKey];
+    const scheme = loginSchemes[schemeKey] as OidcScheme;
+
     if (scheme.oidcConfig?.clientId === clientId) {
       const oidcScheme = scheme as OidcScheme;
-      client = oidcConfigToClient(oidcScheme);
+      client = oidcConfigToClient(oidcScheme, queryParameters);
     }
   }
 

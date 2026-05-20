@@ -1,29 +1,32 @@
 repositories {
-    maven
+    maven {
+        url = "https://www.hec.usace.army.mil/nexus/repository/maven-public"
+        content
         {
-            url = "https://www.hec.usace.army.mil/nexus/repository/maven-public"
-            content
-            {
-                includeGroupByRegex "mil.army.usace.hec.*"
-                includeGroupByRegex "org.jooq.pro"
-                excludeGroup "com.oracle"
-            }
-            metadataSources
-            {
-                mavenPom()
-                artifact()
-            }
+            includeGroupByRegex "mil.army.usace.hec.*"
+            includeGroupByRegex "org.jooq.pro"
+            excludeGroup "com.oracle"
+        }
+        metadataSources
+        {
+            mavenPom()
+            artifact()
+        }
     }
-    mavenCentral() {
-            content
-            {
-                excludeGroupByRegex "mil.army.usace.hec.*"
-            }
-            metadataSources
-            {
-                mavenPom()
-                artifact()
-            }
+    // Some of the main developers are having issues in their organization with the round-robin nature of repo.maven.apache.org 
+    // having some blocked IPs.
+    // Still will allow pointing to a specific target, such as a locally hosted maven repository or a specific URL.
+    maven {
+        url = project.findProperty("mavenCentralUrl")?: "https://repo.maven.apache.org/maven2"
+        content
+        {
+            excludeGroupByRegex "mil.army.usace.hec.*"
+        }
+        metadataSources
+        {
+            mavenPom()
+            artifact()
+        }
     }
     gradlePluginPortal()
 }
