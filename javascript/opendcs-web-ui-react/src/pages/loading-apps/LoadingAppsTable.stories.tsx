@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { LoadingAppsTable, type TableAppRef } from "./LoadingAppsTable";
 import type { ApiAppRef, ApiLoadingApp } from "opendcs-api";
-import { act } from "@testing-library/react";
-import { expect, waitFor } from "storybook/test";
+import { act, expect, waitFor } from "storybook/test";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RemoveAction, SaveAction } from "../../util/Actions";
 
@@ -49,7 +48,7 @@ const getAppFromList =
   (list: ApiLoadingApp[]) =>
   async (id: number): Promise<ApiLoadingApp> => {
     const app = list.find((a) => a.appId === id);
-    if (!app) return Promise.reject(`No app with id ${id}`);
+    if (!app) throw new Error(`No app with id ${id}`);
     return { ...app };
   };
 
@@ -106,7 +105,7 @@ type StoryArgs = {
 
 const StoryRender = (args: StoryArgs) => {
   const initialApps = sharedApps.filter((a) =>
-    (args.apps as ApiAppRef[]).some((ref) => ref.appId === a.appId),
+    args.apps.some((ref) => ref.appId === a.appId),
   );
   return <LoadingAppsTableWrapper initialApps={initialApps} />;
 };
