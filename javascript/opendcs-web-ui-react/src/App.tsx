@@ -10,6 +10,7 @@ import { Algorithms } from "./pages/computations/algorithms";
 import { Computations } from "./pages/computations/computations";
 import { SitesPage } from "./pages/sites";
 import OidcCallback from "./pages/auth/login/OidcCallback";
+import UserProfilePage from "./pages/auth/user/UserProfilePage";
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -38,6 +39,7 @@ function App() {
               <Route path="/sites" element={<SitesPage />} />
               <Route path="/computations" element={<Computations />} />
               <Route path="/algorithms" element={<Algorithms />} />
+              <Route path="/user/profile" element={<UserProfilePage />} />
             </Route>
           </Route>
         </Routes>

@@ -36,12 +36,13 @@ export const WithOrganization: Decorator = (Story, { args }) => {
         }}
       >
         <OrganizationsContext value={{ organizations: orgs }}>
-          <MemoryRouter initialEntries={["/login"]}>
-            <Routes>
-              <Route path="/login" element={<Story />} />
-              <Route path="/platforms" element={<PlatformsPage />} />
-            </Routes>
-          </MemoryRouter>
+          <Story />
+          {/* <Routes>
+
+            <Route path="/login" element={<Story />} />
+            <Route path="/platforms" element={<PlatformsPage />} />
+            <Route path="*" element={<Story />} />
+          </Routes> */}
         </OrganizationsContext>
       </AuthContext>
     </ApiContext>

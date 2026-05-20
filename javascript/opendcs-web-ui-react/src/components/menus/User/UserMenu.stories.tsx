@@ -3,6 +3,13 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { UserMenu } from "./UserMenu";
 import { expect, fn } from "storybook/test";
 import { act } from "react";
+import {
+  ApiContext,
+  defaultValue as apiDefault,
+} from "../../../contexts/app/ApiContext";
+import { BasicUser } from "../../../../.storybook/mock/TestUsers";
+import { AuthContext } from "../../../contexts/app/AuthContext";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 const meta = {
   component: UserMenu,
@@ -12,11 +19,36 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+const authDecorator = (Story: any) => (
+  <ApiContext value={apiDefault}>
+    <AuthContext
+      value={{
+        user: BasicUser,
+        isLoading: false,
+        loginSchemes: {},
+        setSchemes: fn(),
+        setUser: fn(),
+        logout: fn(),
+      }}
+    >
+      <Story />
+    </AuthContext>
+  </ApiContext>
+);
+
+const routeDecorator = (Story: any) => {
+  return (
+    <Routes>
+      <Route path="/user/profile" element={<Story />} />
+    </Routes>
+  );
+};
+
 export const Default: Story = {
   args: {
-    user: { email: "Test Email" },
     logout: fn(),
   },
+  decorators: [authDecorator],
   play: async ({ mount }) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const _canvas = await mount();
@@ -25,9 +57,9 @@ export const Default: Story = {
 
 export const CanClickLogout: Story = {
   args: {
-    user: { email: "Test Email" },
     logout: fn(),
   },
+  decorators: [authDecorator],
   play: async ({ args, mount, parameters, userEvent }) => {
     const canvas = await mount();
     const { i18n } = parameters;

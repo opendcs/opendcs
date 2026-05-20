@@ -2,7 +2,7 @@ import React from "react";
 import { Button, Dropdown } from "react-bootstrap";
 import { PersonGear } from "react-bootstrap-icons";
 import { useTranslation } from "react-i18next";
-import type { User } from "../../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
+import { Link } from "react-router-dom";
 
 const UserToggle: React.FC = ({ ...args }) => {
   return (
@@ -13,18 +13,19 @@ const UserToggle: React.FC = ({ ...args }) => {
 };
 
 export interface UserMenuProperties {
-  user: User;
   logout: () => void;
 }
 
-export const UserMenu: React.FC<UserMenuProperties> = ({ user, logout }) => {
+export const UserMenu: React.FC<UserMenuProperties> = ({ logout }) => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [t, _i18n] = useTranslation();
   return (
     <Dropdown drop="start">
       <Dropdown.Toggle as={UserToggle} aria-label={t("user-settings")} />
       <Dropdown.Menu>
-        <Dropdown.Item>Profile - {user.email}</Dropdown.Item>
+        <Dropdown.Item as={Link} to="/user/profile">
+          {t("profile")}
+        </Dropdown.Item>
         <Dropdown.Item>Admin</Dropdown.Item>
         <Dropdown.Divider />
         <Dropdown.Item onClick={logout}>{t("translation:logout")}</Dropdown.Item>
