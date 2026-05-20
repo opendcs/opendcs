@@ -35,7 +35,7 @@ public class TraceDialogScaffold
             td.setVisible(true);
 		});
 
-        executor.scheduleAtFixedRate(() -> log.info("A random message: " + UUID.randomUUID().toString()), 200, 100, TimeUnit.MILLISECONDS);
+        executor.scheduleAtFixedRate(() -> log.info("A random message: " + UUID.randomUUID().toString()), 10000, 100, TimeUnit.MILLISECONDS);
 
     }
 }

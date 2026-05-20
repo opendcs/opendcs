@@ -38,7 +38,7 @@ public final class LoggingEventListModel extends AbstractListModel<LoggingEvent>
             @Override
             public void onNext(@NonNull LoggingEvent t)
             {
-                if (System.currentTimeMillis() - lastWrite.get() > 500L)
+                if (System.currentTimeMillis() - lastWrite.get() > 1000L)
                 {
                     SwingUtilities.invokeLater(() ->
                     {
