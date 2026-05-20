@@ -1,0 +1,42 @@
+package org.opendcs.dao;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import org.junit.jupiter.api.Test;
+import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.dai.PresentationGroupDao;
+import org.opendcs.fixtures.AppTestBase;
+import org.opendcs.fixtures.annotations.ConfiguredField;
+import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
+
+@EnableIfTsDb
+@DecodesConfigurationRequired({
+    "shared/test-sites.xml",
+    "SimpleDecodesTest/site-OKVI4.xml",
+    "SimpleDecodesTest/OKVI4-decodes.xml"
+})
+class PresentationGroupDaoTestIT extends AppTestBase
+{
+    @ConfiguredField
+    OpenDcsDatabase db;
+
+
+    @Test
+    void test_retrieve_existing() throws Exception
+    {
+        final var dao = db.getDao(PresentationGroupDao.class).orElseThrow();
+
+
+        try (var tx = db.newTransaction())
+        {
+            var group = dao.getByName(tx, "CWMS-English")
+                           .orElseGet(() -> fail("Group was not retrieved"));
+
+            assertFalse(group.dataPresentations.isEmpty());
+        }
+    }
+    
+}

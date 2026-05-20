@@ -1,6 +1,7 @@
 package org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.presentationgroup;
 
 import static org.opendcs.database.model.mappers.PrefixRowMapper.addUnderscoreIfMissing;
+import static org.opendcs.utils.ExceptionUtil.wrappedComputeIfAbsent;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -16,11 +17,14 @@ public class PresentationGroupAccumulator implements ResultSetAccumulator<Map<Lo
 {
     private final String prefix;
     private final PresentationGroupMapper pgMapper;
+    private final DataPresentationMapper dpMapper;
 
-    public PresentationGroupAccumulator(String prefix, PresentationGroupMapper pgMapper)
+    public PresentationGroupAccumulator(String prefix, PresentationGroupMapper pgMapper, 
+                                        DataPresentationMapper dpMapper)
     {
         this.prefix = addUnderscoreIfMissing(prefix);
         this.pgMapper = pgMapper;
+        this.dpMapper = dpMapper;
     }
 
     @Override
@@ -29,9 +33,13 @@ public class PresentationGroupAccumulator implements ResultSetAccumulator<Map<Lo
     {
         final var id = rs.getLong(prefix + GenericColumns.ID);
 
-        final var pg = previous.computeIfAbsent(id, newId -> pgMapper.map(rs, ctx));
+        final var pg = wrappedComputeIfAbsent(previous, id, newId -> pgMapper.map(rs, ctx), SQLException.class);
 
-
+        final var dataPresentation = dpMapper.map(rs, ctx);
+        if (dataPresentation != null)
+        {
+            pg.addDataPresentation(dataPresentation);
+        }
         return previous;
     }
 

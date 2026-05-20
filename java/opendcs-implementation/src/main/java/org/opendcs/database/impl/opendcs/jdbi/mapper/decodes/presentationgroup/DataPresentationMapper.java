@@ -31,9 +31,13 @@ public class DataPresentationMapper extends PrefixRowMapper<DataPresentation>
     {
         ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class)
                                                     .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
-
+        var id = columnMapperForKey.map(rs, prefix + GenericColumns.ID, ctx);
+        if (DbKey.isNull(id))
+        {
+            return null;
+        }
         final var presentation = new DataPresentation();
-        presentation.forceSetId(columnMapperForKey.map(rs, prefix + GenericColumns.ID, ctx));
+        presentation.forceSetId(id);
         presentation.setUnitsAbbr(rs.getString(prefix + "unitabbr"));
         presentation.setMaxDecimals(rs.getInt(prefix + "maxdecimals"));
 
@@ -43,7 +47,6 @@ public class DataPresentationMapper extends PrefixRowMapper<DataPresentation>
         // equipmentid is on the table, but not in the DataPresentation Object
 
         presentation.setDataType(dataTypeMapper.map(rs, ctx));
-
         presentation.prepareForExec();
         presentation.setTimeLastRead();
         
