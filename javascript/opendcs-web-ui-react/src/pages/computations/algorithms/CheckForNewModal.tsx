@@ -1,14 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
-import { Button, Form, Modal, Spinner, Table } from "react-bootstrap";
+import { useCallback, useState } from "react";
+import { Alert, Button, Form, Modal, Spinner, Table } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import { useApi } from "../../../contexts/app/ApiContext";
-
-interface AvailableAlgorithm {
-  name: string;
-  execClass: string;
-  description: string;
-  alreadyImported: boolean;
-}
+import {
+  useAlgorithmCatalogQuery,
+  useImportAlgorithmsMutation,
+} from "../../../queries/algorithms";
 
 interface Props {
   show: boolean;
@@ -18,75 +14,45 @@ interface Props {
 
 export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) => {
   const [t] = useTranslation(["algorithms"]);
-  const api = useApi();
-  const [available, setAvailable] = useState<AvailableAlgorithm[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(false);
-  const [importing, setImporting] = useState(false);
 
-  useEffect(() => {
-    if (!show) return;
-    let cancelled = false;
-    setLoading(true);
-    setSelected(new Set());
-    fetch("/odcsapi/algorithmcatalog", {
-      headers: { "X-ORGANIZATION-ID": api.org },
-    })
-      .then((res) => res.json())
-      .then((data: AvailableAlgorithm[]) => {
-        if (!cancelled) {
-          setAvailable(data.filter((a) => !a.alreadyImported));
-        }
-      })
-      .catch((e: unknown) => console.error("Failed to fetch algorithm catalog", e))
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [show, api.org]);
+  const {
+    data: catalog = [],
+    isLoading,
+    isError: catalogError,
+  } = useAlgorithmCatalogQuery(show);
+
+  const available = catalog.filter((a) => !a.alreadyImported);
+
+  const importMutation = useImportAlgorithmsMutation({
+    onSuccess: () => {
+      onImported();
+      setSelected(new Set());
+      onHide();
+    },
+  });
 
   const toggleSelect = useCallback((execClass: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(execClass)) {
-        next.delete(execClass);
-      } else {
-        next.add(execClass);
-      }
+      if (next.has(execClass)) next.delete(execClass);
+      else next.add(execClass);
       return next;
     });
   }, []);
 
   const toggleAll = useCallback(() => {
-    setSelected((prev) => {
-      if (prev.size === available.length) {
-        return new Set();
-      }
-      return new Set(available.map((a) => a.execClass));
-    });
+    setSelected((prev) =>
+      prev.size === available.length
+        ? new Set()
+        : new Set(available.map((a) => a.execClass)),
+    );
   }, [available]);
 
   const importSelected = useCallback(() => {
     if (selected.size === 0) return;
-    setImporting(true);
-    fetch("/odcsapi/algorithmcatalog", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-ORGANIZATION-ID": api.org,
-      },
-      body: JSON.stringify([...selected]),
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error(`Import failed: ${res.status}`);
-        onImported();
-        onHide();
-      })
-      .catch((e: unknown) => console.error("Failed to import algorithms", e))
-      .finally(() => setImporting(false));
-  }, [selected, api.org, onImported, onHide]);
+    importMutation.mutate([...selected]);
+  }, [selected, importMutation]);
 
   return (
     <Modal show={show} onHide={onHide} centered size="xl">
@@ -94,13 +60,21 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
         <Modal.Title>{t("algorithms:check_new.title")}</Modal.Title>
       </Modal.Header>
       <Modal.Body style={{ maxHeight: "60vh", overflowY: "auto" }}>
-        {loading ? (
+        {catalogError && (
+          <Alert variant="danger">{t("algorithms:check_new.fetch_error")}</Alert>
+        )}
+        {importMutation.isError && (
+          <Alert variant="danger">{t("algorithms:check_new.import_error")}</Alert>
+        )}
+        {isLoading && (
           <div className="text-center p-4">
             <Spinner animation="border" />
           </div>
-        ) : available.length === 0 ? (
+        )}
+        {!isLoading && available.length === 0 && (
           <p>{t("algorithms:check_new.none_found")}</p>
-        ) : (
+        )}
+        {!isLoading && available.length > 0 && (
           <Table striped bordered hover>
             <thead>
               <tr>
@@ -148,14 +122,12 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
         <Button
           variant="primary"
           onClick={importSelected}
-          disabled={selected.size === 0 || importing}
+          disabled={selected.size === 0 || importMutation.isPending}
         >
-          {importing ? (
+          {importMutation.isPending ? (
             <Spinner animation="border" size="sm" />
           ) : (
-            t("algorithms:check_new.import_selected", {
-              count: selected.size,
-            })
+            t("algorithms:check_new.import_selected", { count: selected.size })
           )}
         </Button>
       </Modal.Footer>

@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { Button, Form, Modal, Spinner, Table } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import { RESTAlgorithmMethodsApi, type ApiAlgorithmRef } from "opendcs-api";
-import { useApi } from "../../../contexts/app/ApiContext";
+import type { ApiAlgorithmRef } from "opendcs-api";
+import { useAlgorithmsQuery } from "../../../queries/algorithms";
+import { QueryErrorBoundary } from "../../../components/QueryErrorBoundary";
 
 interface Props {
   show: boolean;
@@ -10,41 +11,14 @@ interface Props {
   onAdd: (algorithms: ApiAlgorithmRef[]) => Promise<void> | void;
 }
 
-export const BulkAddComputationsModal: React.FC<Props> = ({ show, onHide, onAdd }) => {
+const BulkAddComputationsModalInner: React.FC<Props> = ({ show, onHide, onAdd }) => {
   const [t] = useTranslation(["computations", "translation"]);
-  const api = useApi();
-  const algorithmApi = useMemo(() => new RESTAlgorithmMethodsApi(api.conf), [api.conf]);
-  // null = not yet fetched / loading; array = loaded
-  const [algorithms, setAlgorithms] = useState<ApiAlgorithmRef[] | null>(null);
+  const { data: algorithms = [], isLoading } = useAlgorithmsQuery();
   const [filter, setFilter] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [adding, setAdding] = useState(false);
 
-  useEffect(() => {
-    if (!show) return;
-    let cancelled = false;
-    algorithmApi
-      .getalgorithmrefs(api.org)
-      .then((refs) => {
-        if (!cancelled) setAlgorithms(refs);
-      })
-      .catch((e: unknown) => {
-        console.error("Failed to fetch algorithm refs", e);
-        if (!cancelled) setAlgorithms([]);
-      });
-    return () => {
-      cancelled = true;
-      setAlgorithms(null);
-      setSelected(new Set());
-      setFilter("");
-      setAdding(false);
-    };
-  }, [show, api.org, algorithmApi]);
-
-  const loading = algorithms === null;
-
   const filtered = useMemo(() => {
-    if (!algorithms) return [];
     const q = filter.trim().toLowerCase();
     if (!q) return algorithms;
     return algorithms.filter(
@@ -88,7 +62,7 @@ export const BulkAddComputationsModal: React.FC<Props> = ({ show, onHide, onAdd 
     filtered.length > 0 && filteredSelectedCount === filtered.length;
 
   const handleAdd = useCallback(async () => {
-    const selectedAlgos = (algorithms ?? []).filter(
+    const selectedAlgos = algorithms.filter(
       (a) => a.algorithmId !== undefined && selected.has(a.algorithmId),
     );
     setAdding(true);
@@ -96,12 +70,14 @@ export const BulkAddComputationsModal: React.FC<Props> = ({ show, onHide, onAdd 
       await onAdd(selectedAlgos);
     } finally {
       setAdding(false);
+      setSelected(new Set());
+      setFilter("");
     }
     onHide();
   }, [algorithms, selected, onAdd, onHide]);
 
   let bodyContent: ReactNode;
-  if (loading) {
+  if (isLoading) {
     bodyContent = (
       <div className="text-center p-4">
         <Spinner animation="border" />
@@ -205,3 +181,9 @@ export const BulkAddComputationsModal: React.FC<Props> = ({ show, onHide, onAdd 
     </Modal>
   );
 };
+
+export const BulkAddComputationsModal: React.FC<Props> = (props) => (
+  <QueryErrorBoundary>
+    <BulkAddComputationsModalInner {...props} />
+  </QueryErrorBoundary>
+);
