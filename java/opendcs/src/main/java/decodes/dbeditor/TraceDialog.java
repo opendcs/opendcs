@@ -145,7 +145,7 @@ public class TraceDialog extends JDialog
 
 			private void setPosition()
 			{
-				if (autoScroll.isSelected() && TraceDialog.this.isVisible())
+				if (autoScroll.isSelected() && TraceDialog.this.isVisible() && eventArea.getModel().getSize() > 0)
 				{
 					eventArea.ensureIndexIsVisible(eventArea.getModel().getSize()-1);
 					JScrollBar bar = eventScrollPane.getVerticalScrollBar();
