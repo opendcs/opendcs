@@ -42,6 +42,11 @@ public final class LoggingEventBuffer
         }
     }
 
+    public int getMaxSize()
+    {
+        return eventList.getMaxSize();
+    }
+
     /**
      * Read only List backed by the RingBuffer.
      * @return

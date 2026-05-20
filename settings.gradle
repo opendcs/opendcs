@@ -32,3 +32,7 @@ project(":testing:opendcs-tests").projectDir=file("integrationtesting/opendcs-te
 
 include ":testing:manual"
 project(":testing:manual").projectDir=file("integrationtesting/manual")
+
+
+include ":testing:gui-examples"
+project(":testing:gui-examples").projectDir=file("integrationtesting/test-gui-examples")

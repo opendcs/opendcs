@@ -33,6 +33,10 @@ public class RingBuffer<T> implements Publisher<T>, List<T>
         this.maxSize = size;
     }
 
+    public int getMaxSize()
+    {
+        return this.maxSize;
+    }
 
     /**
      * Set the size of this Buffer, NOTE: will grow but not shrink the backing array
