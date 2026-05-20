@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { LoadingAppsTable, type TableAppRef } from "./LoadingAppsTable";
 import type { ApiAppRef, ApiLoadingApp } from "opendcs-api";
-import { act, expect, waitFor } from "storybook/test";
+import { expect, waitFor } from "storybook/test";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RemoveAction, SaveAction } from "../../util/Actions";
 
@@ -150,7 +150,7 @@ export const AddAppThenCancel: Story = {
     const addBtn = await canvas.findByRole("button", {
       name: i18n.t("loadingapps:add_app"),
     });
-    await act(async () => userEvent.click(addBtn));
+    await userEvent.click(addBtn);
 
     const newRow = await waitFor(() => canvas.queryByText("-1"));
     expect(newRow).toBeInTheDocument();
@@ -160,7 +160,7 @@ export const AddAppThenCancel: Story = {
       { name: i18n.t("loadingapps:cancel_for", { id: -1 }) },
       { timeout: 5000 },
     );
-    await act(async () => userEvent.click(cancelBtn));
+    await userEvent.click(cancelBtn);
 
     await waitFor(() => {
       expect(canvas.queryByText("-1")).not.toBeInTheDocument();
@@ -182,7 +182,7 @@ export const EditAppSave: Story = {
         }),
       { timeout: 5000 },
     );
-    await act(async () => userEvent.click(editBtn));
+    await userEvent.click(editBtn);
 
     const saveBtn = await canvas.findByRole(
       "button",
@@ -191,7 +191,7 @@ export const EditAppSave: Story = {
     );
     expect(saveBtn).toBeInTheDocument();
 
-    await act(async () => userEvent.click(saveBtn));
+    await userEvent.click(saveBtn);
 
     const editBtnAfter = await waitFor(
       () =>
@@ -218,7 +218,7 @@ export const DeleteApp: Story = {
         }),
       { timeout: 5000 },
     );
-    await act(async () => userEvent.click(deleteBtn));
+    await userEvent.click(deleteBtn);
 
     await waitFor(() => {
       expect(canvas.queryByText("routing")).not.toBeInTheDocument();
