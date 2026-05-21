@@ -1,0 +1,21 @@
+plugins {
+    id 'opendcs.deps-conventions'
+    id 'opendcs.java-conventions'
+    id 'application'
+}
+
+
+dependencies {
+    implementation project(":opendcs")
+    implementation project(":opendcs-logback-event-provider")
+}
+
+
+run {
+    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
+    mainClass = "decodes.db.TraceDialogScaffold"
+}
+
+test {
+    enabled = false
+}

@@ -15,7 +15,7 @@ class LogbackEventProviderTest
 {
     private static final Logger log = LoggerFactory.getLogger(LogbackEventProviderTest.class);
     @Test
-    void test_event_provider()
+    void test_event_provider() throws Exception
     {
         RingBuffer<LoggingEvent> buffer = new RingBuffer<>(10);
         assertTrue(buffer.isEmpty());
@@ -23,9 +23,10 @@ class LogbackEventProviderTest
         eventProvider.attach(buffer);
         final String msg = "Hello from test";
         log.info(msg);
+        Thread.sleep(1000);
         assertFalse(buffer.isEmpty());
         LoggingEvent le = buffer.get(0);
         assertEquals(msg, le.message);
     }
-    
+
 }

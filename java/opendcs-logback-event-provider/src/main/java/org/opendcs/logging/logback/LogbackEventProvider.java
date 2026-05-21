@@ -7,7 +7,7 @@ import org.opendcs.util.RingBuffer;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.LoggerFactory;
 
-import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.AsyncAppender;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 
@@ -37,9 +37,18 @@ public final class LogbackEventProvider implements LoggingEventProvider
         Logger log = (Logger)LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
         appender.setContext((LoggerContext)factory);
         appender.setName("MemoryBuffer");
-        //log.setLevel(Level.TRACE);
-        log.addAppender(appender);
         appender.start();
+        //log.setLevel(Level.TRACE);
+
+        AsyncAppender asyncAppender = new AsyncAppender();
+        asyncAppender.setContext((LoggerContext)factory);
+        asyncAppender.setName("MemoryBuffer-Async");
+        asyncAppender.addAppender(appender);
+        asyncAppender.setQueueSize(1024); // arbitrary default for us, logback default is 256
+        
+        asyncAppender.start();
+        log.addAppender(asyncAppender);
+        
     }
 
     @Override

@@ -1,18 +1,27 @@
 package org.opendcs.gui.models;
 
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.AbstractListModel;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ListDataListener;
 
 import org.opendcs.logging.LoggingEvent;
 import org.opendcs.logging.spi.LoggingEventProvider;
 import org.opendcs.utils.logging.LoggingEventBuffer;
 
+import io.reactivex.rxjava3.annotations.NonNull;
+import io.reactivex.rxjava3.subscribers.DefaultSubscriber;
+
 public final class LoggingEventListModel extends AbstractListModel<LoggingEvent>
 {
-    LoggingEventBuffer buffer;
-    List<LoggingEvent> events;
+    final LoggingEventBuffer buffer;
+    final List<LoggingEvent> events;
+    final AtomicLong lastWrite = new AtomicLong(0L);
 
     public LoggingEventListModel()
     {
@@ -22,24 +31,53 @@ public final class LoggingEventListModel extends AbstractListModel<LoggingEvent>
             .withProvider(LoggingEventProvider.getProvider())
             .build();
         events = buffer.getEvents();
-        final Thread t = new Thread(() -> 
+        swapListeners();
+        buffer.getPublisher().subscribe(new DefaultSubscriber<LoggingEvent>()
         {
-            while (true)
+
+            @Override
+            public void onNext(@NonNull LoggingEvent t)
             {
-                try
+                if (System.currentTimeMillis() - lastWrite.get() > 1000L)
                 {
-                    final int size = getSize();
-                    SwingUtilities.invokeLater(() -> this.fireIntervalAdded(this, 0, size));
-                    Thread.sleep(500);
+                    SwingUtilities.invokeLater(() ->
+                    {
+                        int size = events.size();
+                        LoggingEventListModel lelm = LoggingEventListModel.this;
+                        lelm.fireIntervalAdded(lelm, size, size);
+                        if (size >= buffer.getMaxSize())
+                        {
+                            lelm.fireIntervalRemoved(t, 0, 0);
+                        }
+                        lastWrite.set(System.currentTimeMillis());
+                    });
                 }
-                catch (InterruptedException ex)
-                {
-                    Thread.currentThread().interrupt();
-                }
+
+                request(1);
             }
-        }, "LoggingEventModel-update-thread");
-        t.setDaemon(true);
-        t.start();
+
+            @Override
+            public void onError(Throwable t)
+            {
+                request(1);
+            }
+
+            @Override
+            public void onComplete()
+            {
+                /* don't care */
+            }
+
+        });
+    }
+
+    private void swapListeners()
+    {
+        ListDataListener[] listeners = this.getListDataListeners();
+        for (ListDataListener listener: listeners)
+        {
+            this.removeListDataListener(listener);
+        }
     }
 
     public void setSize(int size)
@@ -58,5 +96,5 @@ public final class LoggingEventListModel extends AbstractListModel<LoggingEvent>
     {
         return events.get(index);
     }
-    
+
 }
