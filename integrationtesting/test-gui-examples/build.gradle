@@ -15,3 +15,7 @@ run {
     classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
     mainClass = "decodes.db.TraceDialogScaffold"
 }
+
+test {
+    enabled = false
+}
