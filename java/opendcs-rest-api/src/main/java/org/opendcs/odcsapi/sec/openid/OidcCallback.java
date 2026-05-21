@@ -12,6 +12,7 @@ import java.text.ParseException;
 import org.opendcs.authentication.OpenDcsAuthException;
 import org.opendcs.authentication.identityprovider.impl.oidc.AuthCodeCredentials;
 import org.opendcs.authentication.identityprovider.impl.oidc.JwtCredentials;
+import org.opendcs.authentication.identityprovider.impl.oidc.OidcIdentityProvider;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.model.User;
@@ -59,7 +60,7 @@ public final class OidcCallback extends OpenDcsResource
     @Context
 	HttpServletRequest httpRequest;
 
-    
+
 
     @GET()
     @Path("oidc-callback")
@@ -135,7 +136,7 @@ public final class OidcCallback extends OpenDcsResource
                 {
                     var provider = db.getDao(UserManagementDao.class).orElseThrow()
                                     .getIdentityProvider(tx, oidcProvider);
-                    if (provider.isEmpty()) 
+                    if (provider.isEmpty())
                     {
                         location = URI.create(String.format(defaultTarget, URLEncoder.encode("Unable to handle request.", StandardCharsets.UTF_8)));
                     }
@@ -169,9 +170,9 @@ public final class OidcCallback extends OpenDcsResource
         catch (IOException ex)
         {
             log.atDebug().setCause(ex).log("Authentication failed as required information was available or incorrectly formatted.");
-            location = URI.create(String.format(defaultTarget, URLEncoder.encode("Unable to process required information.", StandardCharsets.UTF_8)));   
+            location = URI.create(String.format(defaultTarget, URLEncoder.encode("Unable to process required information.", StandardCharsets.UTF_8)));
         }
-        
+
         return response.status(Response.Status.FOUND).location(location).build();
     }
 
@@ -238,13 +239,14 @@ public final class OidcCallback extends OpenDcsResource
             {
                 jwt = SignedJWT.parse(accessToken);
                 var subject = jwt.getJWTClaimsSet().getSubject();
+
                 final var db = this.createDb();
                 try (var tx = db.newTransaction())
                 {
                     var umDao = db.getDao(UserManagementDao.class).orElseThrow(() -> new OpenDcsDataException("UserManagement not currently supported."));
                     var idps = umDao.getIdentityProvidersForSubject(tx, subject);
                     if (!idps.isEmpty())
-                    {   
+                    {
                         for(var idp: idps)
                         {
                             var userOpt = idp.login(db, tx, new JwtCredentials(accessToken));
@@ -254,7 +256,24 @@ public final class OidcCallback extends OpenDcsResource
                                 response = updateSessionWithUser(user, httpRequest);
                                 break;
                             }
-                        }   
+                        }
+                    }
+                    else // we don't already know about this user so now we search
+                    {
+                        final var issuer = jwt.getJWTClaimsSet().getIssuer();
+                        idps = umDao.getIdentityProviders(tx, -1, -1);
+                        for (var idp: idps)
+                        {
+                            if (idp instanceof OidcIdentityProvider oidcProvider)
+                            {
+                                if (issuer.equals(oidcProvider.getOidcConfiguration().getIssuer()) && oidcProvider.canRegister())
+                                {
+                                    var user = oidcProvider.register(db, tx, new JwtCredentials(accessToken));
+                                    response = updateSessionWithUser(user, httpRequest);
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
             }

@@ -85,7 +85,7 @@ final class OpenIdTestIT extends BaseApiIT
 				config.put("redirectUri", redirectUri);
 				var idpConfIn = new OidcIdentityProvider(null, "test-oidc-conf", null, config);
 				var idpConfOut = umDao.addIdentityProvider(tx, idpConfIn);
-				
+
 				config.put("clientId", "opendcs-public");
 				config.remove("clientSecret");
 				var idpPubIn = new OidcIdentityProvider(null, "test-oidc-pub", null, config);
@@ -110,7 +110,7 @@ final class OpenIdTestIT extends BaseApiIT
 	void test_opendcs_auth_code_flow() throws Exception
 	{
 		//Initial session should be unauthorized
-		var initialSession = 
+		var initialSession =
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
@@ -128,7 +128,7 @@ final class OpenIdTestIT extends BaseApiIT
 		;
 
 		var loginSession = doAuthCodeLogin(initialSession);
-		
+
 		assertNotEquals(initialSession.getValue(), loginSession.getValue(), "Session Cookie was not changed after successful login.");
 
 		// Session should now change as the callback endpiont should have been called.
@@ -181,9 +181,9 @@ final class OpenIdTestIT extends BaseApiIT
 	void test_auth_code_error() throws Exception
 	{
 		final String redirectUri = RestAssured.baseURI + ":" + RestAssured.port + "/" + RestAssured.basePath + "/oidc-callback";
-		
+
 		//Initial session should be unauthorized
-		var initialSession = 
+		var initialSession =
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
@@ -221,7 +221,7 @@ final class OpenIdTestIT extends BaseApiIT
 				.formParam("redirect_uri", redirectUri)
 				.formParam("state", state)
 			.cookie(initialSession)
-		.when()		
+		.when()
 			.redirects().follow(true)
 			.redirects().max(6)
 			.post(URI.create(KeyCloakTestExtension.getCodeUrl()))
@@ -230,10 +230,10 @@ final class OpenIdTestIT extends BaseApiIT
 			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
-		// yank the action URL out of the page 
+		// yank the action URL out of the page
 		var authUrl = loginSessionPage.body().htmlPath().getString("**.find { it.@id == 'kc-form-login'}.@action");
 
-		
+
 
 		// manually do the login POST. This *should* redirect us to our oidc-callback
 		var callbackUrl = given()
@@ -266,7 +266,7 @@ final class OpenIdTestIT extends BaseApiIT
 			.assertThat()
 			.statusCode(is(Response.Status.FOUND.getStatusCode()))
 			.header("Location", matchesPattern("https?://localhost(:\\d+)?/login\\?errorMsg=.*"))
-			
+
 		;
 	}
 
@@ -275,7 +275,7 @@ final class OpenIdTestIT extends BaseApiIT
 	void test_opendcs_auth_code_plus_pkce_flow() throws Exception
 	{
 		//Initial session should be unauthorized
-		var initialSession = 
+		var initialSession =
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
@@ -293,7 +293,7 @@ final class OpenIdTestIT extends BaseApiIT
 		;
 
 		var loginSession = doAuthCodePlusPkceLogin(initialSession);
-		
+
 		assertNotEquals(initialSession.getValue(), loginSession.getValue(), "Session Cookie was not changed after successful login.");
 
 		// Session should now change as the callback endpiont should have been called.
@@ -342,11 +342,52 @@ final class OpenIdTestIT extends BaseApiIT
 		;
 	}
 
+	@Test
+	void test_opendcs_auth_code_plus_pkce_flow_registers_user() throws Exception
+	{
+		//Initial session should be unauthorized
+		var initialSession =
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("check")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.UNAUTHORIZED.getStatusCode()))
+			.cookie(Constants.JSESSIONID)
+			.extract()
+			.detailedCookie(Constants.JSESSIONID)
+		;
+
+		var loginSession = doAuthCodePlusPkceLogin(initialSession, "not_yet_registered", "test_password");
+
+		assertNotEquals(initialSession.getValue(), loginSession.getValue(), "Session Cookie was not changed after successful login.");
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.cookie(loginSession)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("check")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.OK.getStatusCode()))
+		;
+
+	}
+
 
 	private Cookie doAuthCodeLogin(Cookie initialSession) throws IOException
 	{
 		final String redirectUri = RestAssured.baseURI + ":" + RestAssured.port + "/" + RestAssured.basePath + "/oidc-callback";
-		
+
 		HashMap<String,String> oidcInfo = new HashMap<>();
 		final var state = UUID.randomUUID().toString();
 		oidcInfo.put("state", state);
@@ -369,7 +410,7 @@ final class OpenIdTestIT extends BaseApiIT
 				.formParam("redirect_uri", redirectUri)
 				.formParam("state", state)
 			.cookie(initialSession)
-		.when()		
+		.when()
 			.redirects().follow(true)
 			.redirects().max(6)
 			.post(URI.create(KeyCloakTestExtension.getCodeUrl()))
@@ -378,10 +419,10 @@ final class OpenIdTestIT extends BaseApiIT
 			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
-		// yank the action URL out of the page 
+		// yank the action URL out of the page
 		var authUrl = loginSessionPage.body().htmlPath().getString("**.find { it.@id == 'kc-form-login'}.@action");
 
-		
+
 
 		// manually do the login POST. This *should* redirect us to our oidc-callback
 		var callbackUrl = given()
@@ -419,19 +460,23 @@ final class OpenIdTestIT extends BaseApiIT
 		;
 	}
 
+	private Cookie doAuthCodePlusPkceLogin(Cookie initialSession) throws Exception
+	{
+		return doAuthCodePlusPkceLogin(initialSession, "test_user", "test_password");
+	}
 
 	/**
 	 * Handle the flow of AuthCode+PKCE. Note that manually do several OIDC interaction steps here.
 	 * That is expected, the API will receive a token directly while the client would handle the login service interaction.
 	 * So we need to get the AccessToken JWT and then pass it in to the appropriate api handler to get a session.
-	 * 
+	 *
 	 * Additional we will use a localhost redirect in this test, the UI would instead redirect to a specific handler
 	 * page that would take care of token acquisition and final "login".
-	 * 
+	 *
 	 * @param initialSession
 	 * @return
 	 */
-	private Cookie doAuthCodePlusPkceLogin(Cookie initialSession) throws Exception
+	private Cookie doAuthCodePlusPkceLogin(Cookie initialSession, String user, String password) throws Exception
 	{
 		byte[] verifierBytes = new byte[40];
 		SecureRandom.getInstanceStrong().nextBytes(verifierBytes);
@@ -441,7 +486,7 @@ final class OpenIdTestIT extends BaseApiIT
 
 		MessageDigest md = MessageDigest.getInstance("SHA-256");
 		final String challenge = b64encoder.encodeToString(md.digest(verifier.getBytes(StandardCharsets.US_ASCII)));
-		
+
 
 		final String redirectUri = "http://localhost:5000"; // we never directly call this URI so the port here doesn't matter.
 
@@ -464,9 +509,9 @@ final class OpenIdTestIT extends BaseApiIT
 			.extract()
 
 		;
-		
+
 		var authUrl = loginSessionPage.htmlPath().getString("**.find { it.@id == 'kc-form-login'}.@action");
-		
+
 
 		var location = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
@@ -554,14 +599,14 @@ final class OpenIdTestIT extends BaseApiIT
 		{
             return new Result(null, null, null, error, errorDescription);
         }
-		
+
     }
 
 		/**
 	 * Helper class to support creation and query of URL query parameters
 	 */
 	public static final class QueryParameters
-	{	
+	{
 		private Map<String, List<String>> parameters = new HashMap<>();
 
 		private QueryParameters()

@@ -2386,9 +2386,9 @@
     },
     {
       "id": "45ee99c4-3dc8-444d-81d8-2c669a148b00",
-      "username": "no_yet_registered",
+      "username": "not_yet_registered",
       "enabled": true,
-      "email": "no_yet_registered@localhost.localdomain",
+      "email": "not_yet_registered@localhost.localdomain",
       "emailVerified": true,
       "credentials": [
         {

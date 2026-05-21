@@ -22,7 +22,9 @@ import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.model.IdentityProvider;
+import org.opendcs.database.model.IdentityProviderMapping;
 import org.opendcs.database.model.User;
+import org.opendcs.database.model.UserBuilder;
 import org.opendcs.spi.authentication.IdentityProviderProvider;
 import org.opendcs.utils.WebUtility;
 
@@ -84,6 +86,12 @@ public final class OidcIdentityProvider implements IdentityProvider
                 }
             });
         }
+    }
+
+
+    public OpenIdConfiguration getOidcConfiguration()
+    {
+        return oidcConfig;
     }
 
     @Override
@@ -217,6 +225,37 @@ public final class OidcIdentityProvider implements IdentityProvider
             IdentityProviderCredentials credentials) throws OpenDcsAuthException
     {
         /* unable, and can update credentials will return false */
+    }
+
+    @Override
+    public boolean canRegister()
+    {
+        return true;
+    }
+
+    @Override
+    public User register(OpenDcsDatabase db, DataTransaction tx, IdentityProviderCredentials credentials) throws OpenDcsAuthException
+    {
+        try
+        {
+            final var claims = verifyTokenAndGetClaims(oidcConfig, ((JwtCredentials)credentials).accessToken());
+            final var subject = claims.getSubject();
+            final var email = claims.getStringClaim("email");
+            final var preferredUserName = claims.getStringClaim("preferred_username");
+
+            var idpMapping = new IdentityProviderMapping(this, subject);
+
+            var user = new UserBuilder()
+                        .withEmail(email)
+                        .withIdentityMapping(idpMapping)
+                        .withPreference("preferredUserName", preferredUserName)
+                        .build();
+            return user;
+        }
+        catch (MalformedURLException | BadJOSEException | ParseException | JOSEException ex)
+        {
+            throw new OpenDcsAuthException("Unable to validate provided credentials", ex);
+        }
     }
 
     @Override

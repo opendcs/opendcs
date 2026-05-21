@@ -71,6 +71,25 @@ public interface IdentityProvider
     }
 
     /**
+     * Whether or not this user provide be used to register new users.
+     * @return
+     */
+    default boolean canRegister()
+    {
+        return false;
+    }
+
+    /**
+     * Register a new user given the provided credentials.
+     * @param db
+     * @param tx
+     * @param credentials
+     * @return
+     * @throws OpenDcsAuthException
+     */
+    User register(OpenDcsDatabase db, DataTransaction tx, IdentityProviderCredentials credentials) throws OpenDcsAuthException;;
+
+    /**
      * Retrieve the OpenAPI SecurityScheme definition for this provider.
      * @return
      */
