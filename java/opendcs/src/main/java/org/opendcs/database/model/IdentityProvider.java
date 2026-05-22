@@ -71,7 +71,7 @@ public interface IdentityProvider
     }
 
     /**
-     * Whether or not this user provide be used to register new users.
+     * Returns true if this provider can register new users.
      * @return
      */
     default boolean canRegister()
