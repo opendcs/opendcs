@@ -16,7 +16,9 @@ import org.opendcs.fixtures.annotations.EnableIfTsDb;
 @DecodesConfigurationRequired({
     "shared/test-sites.xml",
     "SimpleDecodesTest/site-OKVI4.xml",
-    "SimpleDecodesTest/OKVI4-decodes.xml"
+    "SimpleDecodesTest/OKVI4-decodes.xml",
+    "presentationgroup/parent.xml",
+    "presentationgroup/child.xml"
 })
 class PresentationGroupDaoTestIT extends AppTestBase
 {
