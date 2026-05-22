@@ -23,6 +23,11 @@ import decodes.sql.DbKey;
 @ServiceProvider(service = PresentationGroupDao.class)
 public class PresentationGroupDaoImpl implements PresentationGroupDao
 {
+    /**
+     * This particular query is rather complex, beyond all of the joins a recursive common table expression is 
+     * also used. This allows the query for the given presentation group to also pull in the data for their 
+     * parent group in a single step.
+     */
     final static String SELECT_QUERY = """
             with recursive pg_limit (id, name, inheritsfrom, lastmodifytime, isproduction) as (
                 select id, name, inheritsfrom, lastmodifytime, isproduction
