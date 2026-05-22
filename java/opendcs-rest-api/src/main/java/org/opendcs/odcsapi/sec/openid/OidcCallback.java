@@ -267,11 +267,10 @@ public final class OidcCallback extends OpenDcsResource
                             if (idp instanceof OidcIdentityProvider oidcProvider &&
                                 issuer.equals(oidcProvider.getOidcConfiguration().getIssuer()) &&
                                 oidcProvider.canRegister())
-                                {
+                            {
                                     var user = oidcProvider.register(db, tx, new JwtCredentials(accessToken));
                                     response = updateSessionWithUser(user, httpRequest);
                                     break;
-                                }
                             }
                         }
                     }
