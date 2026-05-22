@@ -33,6 +33,7 @@ public class PresentationGroupMapper extends PrefixRowMapper<PresentationGroup>
         pg.groupName = rs.getString(prefix + GenericColumns.NAME);
         pg.lastModifyTime = columnMapperForDate.map(rs, prefix + "lastmodifytime", ctx);
         pg.isProduction = rs.getBoolean(prefix + "isproduction");
+        pg.inheritsFrom = rs.getString(prefix+"inheritsfrom");
 
         return pg;
     }

@@ -37,10 +37,10 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
                 union all
                 select pgc.id, pgc.name, pgc.inheritsfrom, pgc.lastmodifytime, pgc.isproduction, p.level + 1
                   from presentationgroup pgc
-                  join pg p on pgc.inheritsfrom = p.id
+                  join pg p on pgc.id = p.inheritsfrom
             )
             select 
-                pg.id pg_id, pg.name pg_name, pg.inheritsfrom pg_inheritsfrom, 
+                pg.id pg_id, pg.name pg_name, pgc.name pg_inheritsfrom, 
                 pg.lastmodifytime pg_lastmodifytime, pg.isproduction pg_isproduction,
 
                 dp.id dp_id, dp.unitabbr dp_unitabbr, dp.maxdecimals dp_maxdecimals,
@@ -51,6 +51,7 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
             from pg
             left outer join datapresentation dp on dp.groupid = pg.id
             left outer join datatype dt on dt.id = dp.datatypeid
+            left outer join presentationgroup pgc on pg.inheritsfrom = pgc.id
             
             
             order by pg.name <collate> asc

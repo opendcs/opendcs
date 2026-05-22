@@ -40,13 +40,28 @@ public class PresentationGroupAccumulator implements ResultSetAccumulator<Map<Lo
         {
             pg.addDataPresentation(dataPresentation);
         }
+        // see if I'm the parent to anyone and assign
+        previous.values()
+                .stream()
+                .filter(ppg -> pg.groupName.equals(ppg.inheritsFrom))
+                .forEach(ppg -> ppg.parent = pg);
+        final var parentName = rs.getString(prefix+"inheritsfrom");
 
-        final var parentId = rs.getLong(prefix+"inheritsfrom");
-        if (!rs.wasNull() && pg.parent == null && previous.containsKey(parentId))
+        // see if my child group needs parent assigned.
+        if (!rs.wasNull() && pg.parent == null)
         {
-            pg.parent = previous.get(parentId);
-            pg.inheritsFrom = pg.parent.groupName;
+            var parent = previous.values()
+                                 .stream()
+                                 .filter(ppg -> parentName.equals(ppg.groupName))
+                                 .findAny()
+                                 .orElse(null);
+            if (parent != null)
+            {
+                pg.parent = parent;
+                pg.inheritsFrom = pg.parent.groupName;
+            } // other hasn't been loaded yet, will get picked up by the first parent/child check
         }
+
         return previous;
     }
 
