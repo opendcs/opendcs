@@ -24,12 +24,20 @@ import decodes.sql.DbKey;
 public class PresentationGroupDaoImpl implements PresentationGroupDao
 {
     final static String SELECT_QUERY = """
-            with pg (id, name, inheritsfrom, lastmodifytime, isproduction) as (
+            with recursive pg_limit (id, name, inheritsfrom, lastmodifytime, isproduction) as (
                 select id, name, inheritsfrom, lastmodifytime, isproduction
                 from presentationgroup
                 <where>
                 order by name <collate> asc
                 <limit>
+            ),  pg (id, name, inheritsfrom, lastmodifytime, isproduction) as (
+                select id, name, inheritsfrom, lastmodifytime, isproduction, 1 as level
+                from pg_limit
+
+                union all
+                select pgc.id, pgc.name, pgc.inheritsfrom, pgc.lastmodifytime, pgc.isproduction, p.level + 1
+                  from presentationgroup pgc
+                  join pg p on pgc.inheritsfrom = p.id
             )
             select 
                 pg.id pg_id, pg.name pg_name, pg.inheritsfrom pg_inheritsfrom, 
@@ -76,6 +84,8 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
                                         ))
                         .values()
                         .stream()
+                        // any child groups will also be in this list and may come first in the order
+                        .filter(v -> id.equals(v.getId()))
                         .map(v -> v)
                         .findFirst();
         }
@@ -106,6 +116,8 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
                                         ))
                         .values()
                         .stream()
+                        // any child groups will also be in this list and may come first in the order
+                        .filter(v -> name.equals(v.groupName))
                         .map(v -> v)
                         .findFirst();
         }

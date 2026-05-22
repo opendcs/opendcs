@@ -1,6 +1,8 @@
 package org.opendcs.dao;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -38,6 +40,29 @@ class PresentationGroupDaoTestIT extends AppTestBase
                            .orElseGet(() -> fail("Group was not retrieved"));
 
             assertFalse(group.dataPresentations.isEmpty());
+        }
+    }
+
+    @Test
+    void test_retrieve_existing_with_parent_child_relation() throws Exception
+    {
+        final var dao = db.getDao(PresentationGroupDao.class).orElseThrow();
+
+
+        try (var tx = db.newTransaction())
+        {
+            var parentGroup = dao.getByName(tx, "parent")
+                           .orElseGet(() -> fail("Group was not retrieved"));
+
+            assertFalse(parentGroup.dataPresentations.isEmpty());
+            assertNull(parentGroup.parent);
+            
+
+            var childGroup = dao.getByName(tx, "child")
+                           .orElseGet(() -> fail("Group was not retrieved"));
+
+            assertFalse(childGroup.dataPresentations.isEmpty());
+            assertNotNull(childGroup.parent);
         }
     }
     

@@ -40,6 +40,13 @@ public class PresentationGroupAccumulator implements ResultSetAccumulator<Map<Lo
         {
             pg.addDataPresentation(dataPresentation);
         }
+
+        final var parentId = rs.getLong(prefix+"inheritsfrom");
+        if (!rs.wasNull() && pg.parent == null && previous.containsKey(parentId))
+        {
+            pg.parent = previous.get(parentId);
+            pg.inheritsFrom = pg.parent.groupName;
+        }
         return previous;
     }
 
