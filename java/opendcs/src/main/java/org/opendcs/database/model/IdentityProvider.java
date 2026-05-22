@@ -87,7 +87,7 @@ public interface IdentityProvider
      * @return
      * @throws OpenDcsAuthException
      */
-    User register(OpenDcsDatabase db, DataTransaction tx, IdentityProviderCredentials credentials) throws OpenDcsAuthException;;
+    User register(OpenDcsDatabase db, DataTransaction tx, IdentityProviderCredentials credentials) throws OpenDcsAuthException;
 
     /**
      * Retrieve the OpenAPI SecurityScheme definition for this provider.

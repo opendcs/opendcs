@@ -251,12 +251,11 @@ public final class OidcIdentityProvider implements IdentityProvider
 
             var idpMapping = new IdentityProviderMapping(this, subject);
 
-            var user = new UserBuilder()
+            return new UserBuilder()
                         .withEmail(email)
                         .withIdentityMapping(idpMapping)
                         .withPreference("preferredUserName", preferredUserName)
                         .build();
-            return user;
         }
         catch (MalformedURLException | BadJOSEException | ParseException | JOSEException ex)
         {

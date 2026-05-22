@@ -264,9 +264,9 @@ public final class OidcCallback extends OpenDcsResource
                         idps = umDao.getIdentityProviders(tx, -1, -1);
                         for (var idp: idps)
                         {
-                            if (idp instanceof OidcIdentityProvider oidcProvider)
-                            {
-                                if (issuer.equals(oidcProvider.getOidcConfiguration().getIssuer()) && oidcProvider.canRegister())
+                            if (idp instanceof OidcIdentityProvider oidcProvider &&
+                                issuer.equals(oidcProvider.getOidcConfiguration().getIssuer()) &&
+                                oidcProvider.canRegister())
                                 {
                                     var user = oidcProvider.register(db, tx, new JwtCredentials(accessToken));
                                     response = updateSessionWithUser(user, httpRequest);
