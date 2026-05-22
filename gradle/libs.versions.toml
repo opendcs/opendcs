@@ -78,7 +78,7 @@ hec-testcontainers-cwms = "2.0.0"
 bucket4j = "8.15.0"
 
 # manual test deps
-gherkin-kiwi = "1.0.0-M11"
+gherkin-kiwi = "1.0.0-M12"
 
 [libraries]
 gherkin-kiwi = { module = "org.opendcs.testing:gradle-plugin", version.ref="gherkin-kiwi" }
