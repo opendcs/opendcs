@@ -343,6 +343,47 @@ final class OpenIdTestIT extends BaseApiIT
 	}
 
 	@Test
+	void test_opendcs_auth_code_flow_registers_user() throws Exception
+	{
+		//Initial session should be unauthorized
+		var initialSession =
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("check")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.UNAUTHORIZED.getStatusCode()))
+			.cookie(Constants.JSESSIONID)
+			.extract()
+			.detailedCookie(Constants.JSESSIONID)
+		;
+
+		var loginSession = doAuthCodeLogin(initialSession, "not_yet_registered-2", "test_password");
+
+		assertNotEquals(initialSession.getValue(), loginSession.getValue(), "Session Cookie was not changed after successful login.");
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.cookie(loginSession)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("check")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.OK.getStatusCode()))
+		;
+
+	}
+
+	@Test
 	void test_opendcs_auth_code_plus_pkce_flow_registers_user() throws Exception
 	{
 		//Initial session should be unauthorized
@@ -383,8 +424,12 @@ final class OpenIdTestIT extends BaseApiIT
 
 	}
 
-
 	private Cookie doAuthCodeLogin(Cookie initialSession) throws IOException
+	{
+		return doAuthCodeLogin(initialSession, "test_user", "test_password");
+	}
+
+	private Cookie doAuthCodeLogin(Cookie initialSession, String user, String password) throws IOException
 	{
 		final String redirectUri = RestAssured.baseURI + ":" + RestAssured.port + "/" + RestAssured.basePath + "/oidc-callback";
 
@@ -428,8 +473,8 @@ final class OpenIdTestIT extends BaseApiIT
 		var callbackUrl = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.contentType(ContentType.URLENC)
-			.formParam("username", "test_user")
-			.formParam("password", "test_password")
+			.formParam("username", user)
+			.formParam("password", password)
 			.cookie(initialSession)
 			.cookie(stateCookie)
 			.cookies(loginSessionPage.detailedCookies())

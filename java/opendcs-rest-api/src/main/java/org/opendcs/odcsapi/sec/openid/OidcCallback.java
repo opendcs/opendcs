@@ -135,7 +135,7 @@ public final class OidcCallback extends OpenDcsResource
                 try (var tx = db.newTransaction())
                 {
                     var provider = db.getDao(UserManagementDao.class).orElseThrow()
-                                    .getIdentityProvider(tx, oidcProvider);
+                                     .getIdentityProvider(tx, oidcProvider);
                     if (provider.isEmpty())
                     {
                         location = URI.create(String.format(defaultTarget, URLEncoder.encode("Unable to handle request.", StandardCharsets.UTF_8)));

@@ -170,7 +170,13 @@ public final class OidcIdentityProvider implements IdentityProvider
             if (json.has("id_token"))
             {
                 var idToken = json.get("id_token").asText();
-                return getUserFromToken(db, tx, idToken);
+                var user = getUserFromToken(db, tx, idToken);
+
+                if (user.isEmpty() && canRegister())
+                {
+                    user = Optional.of(register(db, tx, new JwtCredentials(idToken)));
+                }
+                return user;
             }
             else
             {
