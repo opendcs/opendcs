@@ -1,5 +1,6 @@
 package org.opendcs.dao;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -13,6 +14,10 @@ import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
+
+import decodes.db.DataPresentation;
+import decodes.db.DataType;
+import decodes.db.PresentationGroup;
 
 @EnableIfTsDb
 @DecodesConfigurationRequired({
@@ -63,6 +68,39 @@ class PresentationGroupDaoTestIT extends AppTestBase
 
             assertFalse(childGroup.dataPresentations.isEmpty());
             assertNotNull(childGroup.parent);
+        }
+    }
+
+
+    @Test
+    void test_basic_operations() throws Exception
+    {
+        final var dao = db.getDao(PresentationGroupDao.class).orElseThrow();
+
+        final var parentDataPresentation1 = new DataPresentation();
+        parentDataPresentation1.setDataType(new DataType("CWMS", "Stage"));
+        parentDataPresentation1.setMaxDecimals(3);
+        parentDataPresentation1.setUnitsAbbr("ft");
+
+        final var parentDataPresentation2 = new DataPresentation();
+        parentDataPresentation2.setDataType(new DataType("CWMS", "Flow"));
+        parentDataPresentation2.setMaxDecimals(1);
+        parentDataPresentation2.setUnitsAbbr("cfs");
+
+        try (var tx = db.newTransaction())
+        {
+
+            final var parentGroupIn = new PresentationGroup("newParent");
+            parentGroupIn.isProduction = true;
+            parentGroupIn.addDataPresentation(parentDataPresentation1);
+            parentGroupIn.addDataPresentation(parentDataPresentation2);
+
+            final var parentGroupOut = dao.save(tx, parentGroupIn);
+
+            assertEquals(parentGroupOut.groupName, parentGroupIn.groupName);
+            assertEquals(2, parentGroupOut.dataPresentations.size());
+
+
         }
     }
     

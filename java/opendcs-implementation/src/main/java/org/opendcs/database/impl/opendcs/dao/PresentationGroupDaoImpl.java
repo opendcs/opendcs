@@ -3,6 +3,7 @@ package org.opendcs.database.impl.opendcs.dao;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
@@ -12,17 +13,23 @@ import org.opendcs.database.dai.PresentationGroupDao;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.presentationgroup.DataPresentationMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.presentationgroup.PresentationGroupAccumulator;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.presentationgroup.PresentationGroupMapper;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlQueries;
 import org.openide.util.lookup.ServiceProvider;
+import org.slf4j.Logger;
 
+import decodes.db.DatabaseException;
 import decodes.db.PresentationGroup;
 import decodes.sql.DbKey;
+import decodes.sql.KeyGenerator;
 
 @ServiceProvider(service = PresentationGroupDao.class)
 public class PresentationGroupDaoImpl implements PresentationGroupDao
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
     /**
      * This particular query is rather complex, beyond all of the joins a recursive common table expression is 
      * also used. This allows the query for the given presentation group to also pull in the data for their 
@@ -64,6 +71,10 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
 
             """;
 
+    final static String DELETE_DATA_PRESENTATION = """
+            delete from datapresentation where datapresentationid = :id
+            """;
+
 
     @Override
     public Optional<PresentationGroup> getById(DataTransaction tx, DbKey id)  throws OpenDcsDataException
@@ -100,7 +111,7 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
     @Override
     public Optional<PresentationGroup> getByName(DataTransaction tx, String name) throws OpenDcsDataException
     {
-         if (name == null)
+        if (name == null)
         {
             return Optional.empty();
         }
@@ -132,7 +143,38 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
     @Override
     public PresentationGroup save(DataTransaction tx, PresentationGroup group) throws OpenDcsDataException
     {
-        return null;
+        Objects.requireNonNull(group, "Cannot save null group");
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var ctx = tx.getContext();
+        var keyGen = ctx.getGenerator(KeyGenerator.class)
+                        .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
+        final String mergeSql = """
+                merge into         
+
+                """;
+        try (var merge = handle.createUpdate(mergeSql);
+             var deleteProps = handle.createUpdate(DELETE_DATA_PRESENTATION))
+        {
+            DbKey id = group.getId();
+            var existing = getByName(tx, group.groupName);
+            if (existing.isPresent())
+            {
+                // If there's an existing app with this name, we'll just assume the provided id, if any, was in error
+                id = existing.get().getId();
+                log.trace("""
+                    Using ID from existing Presentation, id={}, that was found. Provided ID was {}.
+                    """,
+                    id, group.getId());
+            }
+            final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("site", handle.getConnection());
+
+            return null;
+        }
+        catch (DatabaseException ex)
+        {
+            throw new OpenDcsDataException("Unable to generate key to save site", ex);
+        }
     }
 
     @Override
