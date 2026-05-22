@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { algorithmKeys, platformKeys, siteKeys } from "./keys";
+import { algorithmKeys, intervalKeys, platformKeys, siteKeys } from "./keys";
 
 describe("siteKeys", () => {
   test("all() scopes the key to an org", () => {
@@ -58,6 +58,13 @@ describe("algorithmKeys", () => {
     expect(spec).toEqual(["algorithms", "acme", "propSpecs", "org.example.MyAlgo"]);
   });
 
+  test("catalog() extends all() and is scoped to org", () => {
+    const all = algorithmKeys.all("acme");
+    const catalog = algorithmKeys.catalog("acme");
+    expect(catalog.slice(0, all.length)).toEqual([...all]);
+    expect(catalog).toEqual(["algorithms", "acme", "catalog"]);
+  });
+
   test("keys for different orgs never collide", () => {
     expect(algorithmKeys.list("acme")).not.toEqual(algorithmKeys.list("globex"));
     expect(algorithmKeys.detail("acme", 1)).not.toEqual(
@@ -66,6 +73,25 @@ describe("algorithmKeys", () => {
     expect(algorithmKeys.propSpecs("acme", "X")).not.toEqual(
       algorithmKeys.propSpecs("globex", "X"),
     );
+    expect(algorithmKeys.catalog("acme")).not.toEqual(algorithmKeys.catalog("globex"));
+  });
+});
+
+describe("intervalKeys", () => {
+  test("all() scopes the key to an org", () => {
+    expect(intervalKeys.all("acme")).toEqual(["intervals", "acme"]);
+    expect(intervalKeys.all("acme")).not.toEqual(intervalKeys.all("globex"));
+  });
+
+  test("list() extends all() so invalidating all() also invalidates list()", () => {
+    const all = intervalKeys.all("acme");
+    const list = intervalKeys.list("acme");
+    expect(list.slice(0, all.length)).toEqual([...all]);
+    expect(list).toEqual(["intervals", "acme", "list"]);
+  });
+
+  test("keys for different orgs never collide", () => {
+    expect(intervalKeys.list("acme")).not.toEqual(intervalKeys.list("globex"));
   });
 });
 

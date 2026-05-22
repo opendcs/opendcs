@@ -6,6 +6,7 @@ import {
 } from "./ComputationParamsTable";
 import { expect, waitFor } from "storybook/test";
 import { useCallback, useState } from "react";
+// eslint-disable-next-line storybook/use-storybook-testing-library
 import { act } from "@testing-library/react";
 import type { ArgsStoryFn } from "storybook/internal/types";
 
