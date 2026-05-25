@@ -19,7 +19,11 @@ import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Types;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 
 import java.io.IOException;
 import java.util.List;
@@ -96,9 +100,10 @@ final public class AlgorithmProcessor extends AbstractProcessor
             out.writeCharacters(element.toString());
             out.writeEndElement();
 
-            writeProperties(out, element);
-            writeInputs(out, element);
-            writeOutputs(out, element);
+            Types types = processingEnv.getTypeUtils();
+            writeProperties(out, element,types);
+            writeInputs(out, element,types);
+            writeOutputs(out, element,types);
 
             out.writeEndElement(); // Algorithm
             out.writeEndElement();
@@ -106,9 +111,13 @@ final public class AlgorithmProcessor extends AbstractProcessor
         out.close();
     }
 
-    private static void writeProperties(XMLStreamWriter out, Element element) throws XMLStreamException
+    private static void writeProperties(XMLStreamWriter out, Element element, Types typeUtils) throws XMLStreamException
     {
-        List<Element> props = element.getEnclosedElements()
+        TypeElement currentClass = (TypeElement) element;
+
+        while (currentClass != null && currentClass.getKind() == ElementKind.CLASS)
+        {
+        List<Element> props = currentClass.getEnclosedElements()
                .stream()
                .filter(e -> e.getKind().isField())
                .filter(e -> e.getAnnotation(PropertySpec.class) != null)
@@ -126,11 +135,22 @@ final public class AlgorithmProcessor extends AbstractProcessor
                 out.writeCharacters(propSpec.value());
             out.writeEndElement();                
         };
+        TypeMirror superclass = currentClass.getSuperclass();
+        if (superclass.getKind() == TypeKind.NONE) 
+        {
+            break;
+        }
+        currentClass = (TypeElement) typeUtils.asElement(superclass);
+        }
     }
 
-    private static void writeInputs(XMLStreamWriter out, Element element) throws XMLStreamException
+    private static void writeInputs(XMLStreamWriter out, Element element, Types typeUtils) throws XMLStreamException
     {
-        List<Element> inputs = element.getEnclosedElements()
+        TypeElement currentClass = (TypeElement) element;
+
+        while (currentClass != null && currentClass.getKind() == ElementKind.CLASS)
+        {
+        List<Element> inputs = currentClass.getEnclosedElements()
             .stream()
             .filter(e -> e.getKind().isField())
             .filter(e -> e.getAnnotation(Input.class) != null)
@@ -150,12 +170,22 @@ final public class AlgorithmProcessor extends AbstractProcessor
             out.writeEndElement();
             out.writeEndElement();
         }
+        TypeMirror superclass = currentClass.getSuperclass();
+        if (superclass.getKind() == TypeKind.NONE)
+        {
+            break;
+        }
+        currentClass = (TypeElement) typeUtils.asElement(superclass);
+        }
     }
 
-    private static void writeOutputs(XMLStreamWriter out, Element element) throws XMLStreamException
+    private static void writeOutputs(XMLStreamWriter out, Element element,Types typeUtils) throws XMLStreamException
     {
-        
-        List<Element> outputs = element.getEnclosedElements()
+        TypeElement currentClass = (TypeElement) element;
+
+        while (currentClass != null && currentClass.getKind() == ElementKind.CLASS)
+        {
+        List<Element> outputs = currentClass.getEnclosedElements()
             .stream()
             .filter(e -> e.getKind().isField())
             .filter(e -> e.getAnnotation(Output.class) != null)
@@ -174,6 +204,13 @@ final public class AlgorithmProcessor extends AbstractProcessor
             out.writeCharacters(input.typeCode());
             out.writeEndElement();
             out.writeEndElement();
+        }
+        TypeMirror superclass = currentClass.getSuperclass();
+        if (superclass.getKind() == TypeKind.NONE)
+        {
+            break;
+        }
+        currentClass = (TypeElement) typeUtils.asElement(superclass);
         }
     }
 }
