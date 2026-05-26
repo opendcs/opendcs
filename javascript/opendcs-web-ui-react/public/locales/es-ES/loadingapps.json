@@ -1,0 +1,14 @@
+{
+  "title": "Aplicaciones de carga",
+  "add_app": "Añadir nueva aplicación de carga",
+  "app_id": "ID de aplicación",
+  "app_name": "Nombre de aplicación",
+  "app_type": "Tipo de aplicación",
+  "comment": "Comentario",
+  "last_modified": "Última modificación",
+  "manual_editing": "Edición manual",
+  "edit_app": "Editar aplicación de carga con id {{id}}",
+  "save_app": "Guardar aplicación de carga con id {{id}}",
+  "cancel_for": "Cancelar edición de aplicación de carga con id {{id}}",
+  "delete_for": "Eliminar aplicación de carga con id {{id}}"
+}

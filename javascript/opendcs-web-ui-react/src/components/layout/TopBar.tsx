@@ -52,7 +52,7 @@ export function TopBar({ onToggleSidebar, sidebarOpen }: TopBarProps) {
           ) : (
             ""
           )}
-          {user && <UserMenu user={user} logout={logout} />}
+          {user && <UserMenu logout={logout} />}
         </Nav>
       </Container>
     </Navbar>

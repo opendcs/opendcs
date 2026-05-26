@@ -46,8 +46,8 @@ swagger = "2.2.42"
 swagger-ui = "5.18.3"
 swagger-parser = "2.1.25"
 rs-api = "4.0.0"
-jackson = "2.20.1"
-jackson-annotations = "2.20"
+jackson = "2.21.3"
+jackson-annotations = "2.21"
 selenium = "4.38.0"
 nimbus = "10.7"
 jwt = "4.4.0"
@@ -78,7 +78,7 @@ hec-testcontainers-cwms = "2.0.0"
 bucket4j = "8.15.0"
 
 # manual test deps
-gherkin-kiwi = "1.0.0-M11"
+gherkin-kiwi = "1.0.0-M12"
 
 [libraries]
 gherkin-kiwi = { module = "org.opendcs.testing:gradle-plugin", version.ref="gherkin-kiwi" }

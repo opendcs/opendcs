@@ -14,8 +14,23 @@
  * under the License.
  */
 
+export interface Value {
+  value: string;
+  values?: never;
+}
+
+export interface Values {
+  value?: never;
+  values: string[];
+}
+
+export interface QueryParameters {
+  [k: string]: Value & Values;
+}
+
 export interface Scheme {
-  [k: string]: Record<string, string | object | boolean>;
+  [k: string]: string | object | boolean;
+  queryParameters: { [param: string]: QueryParameters };
 }
 
 export interface FormScheme extends Scheme {

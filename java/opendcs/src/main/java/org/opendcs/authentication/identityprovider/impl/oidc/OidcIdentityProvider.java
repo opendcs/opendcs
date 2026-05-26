@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -51,6 +52,7 @@ public final class OidcIdentityProvider implements IdentityProvider
     private final String clientSecret;
     private final String clientId;
     private final String redirectUri;
+    private final Map<String, List<String>> queryParameters = new HashMap<>();
 
 
     public OidcIdentityProvider(DbKey id, String name, ZonedDateTime updateAt, Map<String, Object> configMap)
@@ -63,6 +65,25 @@ public final class OidcIdentityProvider implements IdentityProvider
         this.clientId = (String)configMap.get("clientId");
         this.redirectUri = (String)configMap.get("redirectUri");
         this.oidcConfig = new OpenIdConfiguration(URI.create((String)configMap.get("wellKnown")));
+
+        final var queryParams = configMap.get("queryParameters");
+        if (queryParams != null && queryParams instanceof Map<?, ?> parms)
+        {
+            parms.forEach((parameter, values) ->
+            {
+                if (values instanceof List<?> valuesList)
+                {
+                    if (valuesList.getFirst() instanceof String)
+                    {
+                        queryParameters.put((String)parameter, (List<String>)valuesList); // NOSONAR type is checked
+                    }
+                }
+                else if (values instanceof String valueString)
+                {
+                    queryParameters.put((String)parameter, List.of(valueString));
+                }
+            });
+        }
     }
 
     @Override
@@ -205,6 +226,7 @@ public final class OidcIdentityProvider implements IdentityProvider
         scheme.type(Type.OPENIDCONNECT).setDescription("OpenID Connect based Authorization");
 
         HashMap<String, Object> extension = new HashMap<>();
+        extension.put("queryParameters", this.queryParameters);
 
         HashMap<String, Object> oidcData = new HashMap<>();
         oidcData.put("redirectUri", this.redirectUri);
