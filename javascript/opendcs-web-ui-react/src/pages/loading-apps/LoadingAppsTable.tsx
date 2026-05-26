@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { ApiAppRef, ApiLoadingApp } from "opendcs-api";
+import type { ApiAppRef, ApiAppStatus, ApiLoadingApp } from "opendcs-api";
 import LoadingApp, { LoadingAppSkeleton, type UiLoadingApp } from "./LoadingApp";
 import type { RemoveAction, SaveAction } from "../../util/Actions";
 import {
@@ -13,6 +13,7 @@ export type TableAppRef = Partial<ApiAppRef>;
 
 export interface LoadingAppsTableProperties {
   apps: TableAppRef[];
+  appStats?: ApiAppStatus[];
   getApp?: (appId: number) => Promise<ApiLoadingApp>;
   actions?: SaveAction<ApiLoadingApp> & RemoveAction<number>;
   loading?: boolean;
@@ -20,6 +21,7 @@ export interface LoadingAppsTableProperties {
 
 export const LoadingAppsTable: React.FC<LoadingAppsTableProperties> = ({
   apps,
+  appStats = [],
   getApp,
   actions = {},
   loading = false,
@@ -48,8 +50,24 @@ export const LoadingAppsTable: React.FC<LoadingAppsTableProperties> = ({
           return Number.isNaN(d.getTime()) ? "" : d.toLocaleString();
         },
       },
+      {
+        data: null,
+        header: t("loadingapps:status"),
+        orderable: false,
+        searchable: false,
+        render: (_: unknown, type: string, row: TableAppRef) => {
+          if (type !== "display") return "";
+          const stat = appStats.find((s) => s.appId === row.appId);
+          const running = stat?.pid != null;
+          const label = running
+            ? t("loadingapps:status_running")
+            : t("loadingapps:status_inactive");
+          const cls = running ? "bg-success" : "bg-secondary";
+          return `<span class="badge ${cls}">${label}</span>`;
+        },
+      },
     ],
-    [t],
+    [t, appStats],
   );
 
   const rowActions = useMemo<RowAction<TableAppRef>[]>(

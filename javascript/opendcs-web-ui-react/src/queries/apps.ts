@@ -6,8 +6,10 @@ import {
   type UseMutationOptions,
 } from "@tanstack/react-query";
 import {
+  OpenDCSProcessMonitorAndControlAPPApi,
   RESTLoadingApplicationRecordsApi,
   type ApiAppRef,
+  type ApiAppStatus,
   type ApiLoadingApp,
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
@@ -20,6 +22,15 @@ const useAppsApi = () => {
     [api.conf],
   );
   return { appApi, org: api.org };
+};
+
+const useAppMonitorApi = () => {
+  const api = useApi();
+  const monitorApi = useMemo(
+    () => new OpenDCSProcessMonitorAndControlAPPApi(api.conf),
+    [api.conf],
+  );
+  return { monitorApi, org: api.org };
 };
 
 // App refs power the "process" dropdown on the Computations editor and the
@@ -74,5 +85,20 @@ export const useDeleteAppMutation = (
       queryClient.invalidateQueries({ queryKey: appKeys.all(org) });
       options?.onSuccess?.(...args);
     },
+  });
+};
+
+export const useAppStatQuery = () => {
+  const { monitorApi, org } = useAppMonitorApi();
+  return useQuery<ApiAppStatus[]>({
+    queryKey: appKeys.stat(org),
+    queryFn: async () => {
+      try {
+        return await monitorApi.getAppStat(org);
+      } catch {
+        return [];
+      }
+    },
+    refetchInterval: 30_000,
   });
 };

@@ -1,6 +1,7 @@
 import { LoadingAppsTable } from "./LoadingAppsTable";
 import {
   useAppRefsQuery,
+  useAppStatQuery,
   useDeleteAppMutation,
   useFetchApp,
   useSaveAppMutation,
@@ -8,6 +9,7 @@ import {
 
 export const LoadingAppsPage: React.FC = () => {
   const { data: apps = [], isLoading } = useAppRefsQuery();
+  const { data: appStats = [] } = useAppStatQuery();
   const fetchApp = useFetchApp();
   const saveApp = useSaveAppMutation();
   const deleteApp = useDeleteAppMutation();
@@ -16,6 +18,7 @@ export const LoadingAppsPage: React.FC = () => {
     <div className="content">
       <LoadingAppsTable
         apps={apps}
+        appStats={appStats}
         loading={isLoading}
         getApp={fetchApp}
         actions={{
