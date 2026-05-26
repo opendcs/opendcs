@@ -22,3 +22,4 @@ export {
   type ChooserTableHandle,
   type ChooserTableProps,
 } from "./ChooserTable";
+export { SelectorModal, type SelectorModalProps } from "./SelectorModal";
