@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.dai.DataTypeDao;
 import org.opendcs.database.dai.PresentationGroupDao;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
@@ -61,7 +62,7 @@ class PresentationGroupDaoTestIT extends AppTestBase
 
             assertFalse(parentGroup.dataPresentations.isEmpty());
             assertNull(parentGroup.parent);
-            
+
 
             var childGroup = dao.getByName(tx, "child")
                            .orElseGet(() -> fail("Group was not retrieved"));
@@ -76,19 +77,21 @@ class PresentationGroupDaoTestIT extends AppTestBase
     void test_basic_operations() throws Exception
     {
         final var dao = db.getDao(PresentationGroupDao.class).orElseThrow();
+        final var dtDao = db.getDao(DataTypeDao.class).orElseThrow();
 
-        final var parentDataPresentation1 = new DataPresentation();
-        parentDataPresentation1.setDataType(new DataType("CWMS", "Stage"));
-        parentDataPresentation1.setMaxDecimals(3);
-        parentDataPresentation1.setUnitsAbbr("ft");
 
-        final var parentDataPresentation2 = new DataPresentation();
-        parentDataPresentation2.setDataType(new DataType("CWMS", "Flow"));
-        parentDataPresentation2.setMaxDecimals(1);
-        parentDataPresentation2.setUnitsAbbr("cfs");
 
         try (var tx = db.newTransaction())
         {
+            final var parentDataPresentation1 = new DataPresentation();
+            parentDataPresentation1.setDataType(dtDao.lookup(tx, "CWMS", "Stage").orElseGet(() -> fail("no datatypes available")));
+            parentDataPresentation1.setMaxDecimals(3);
+            parentDataPresentation1.setUnitsAbbr("ft");
+
+            final var parentDataPresentation2 = new DataPresentation();
+            parentDataPresentation2.setDataType(dtDao.lookup(tx, "CWMS", "Flow").orElseGet(() -> fail("no datatypes available")));
+            parentDataPresentation2.setMaxDecimals(1);
+            parentDataPresentation2.setUnitsAbbr("cfs");
 
             final var parentGroupIn = new PresentationGroup("newParent");
             parentGroupIn.isProduction = true;
@@ -101,7 +104,24 @@ class PresentationGroupDaoTestIT extends AppTestBase
             assertEquals(2, parentGroupOut.dataPresentations.size());
 
 
+            final var childGroupIn = new PresentationGroup("newChild");
+            childGroupIn.isProduction = false;
+            childGroupIn.parent = parentGroupOut;
+            parentDataPresentation1.setMaxDecimals(3);
+            childGroupIn.dataPresentations.add(parentDataPresentation1);
+
+            final var childGroupOut = dao.save(tx, childGroupIn);
+
+            assertEquals(1, childGroupOut.dataPresentations.size());
+            assertNotNull(childGroupOut.parent);
+            assertEquals(parentGroupOut.groupName, childGroupOut.parent.groupName);
+
+            dao.delete(tx, childGroupOut.getId());
+
+            var deletedGroup = dao.getById(tx, childGroupOut.getId());
+            assertTrue(deletedGroup.isEmpty());
+
         }
     }
-    
+
 }
