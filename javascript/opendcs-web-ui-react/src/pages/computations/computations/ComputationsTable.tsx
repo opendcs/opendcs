@@ -15,7 +15,7 @@ import {
   type ColumnDef,
   type RowAction,
 } from "../../../components/data-table";
-import { BulkAddComputationsModal } from "./BulkAddComputationsModal";
+import { AlgorithmSelectModal } from "./AlgorithmSelectModal";
 
 export type TableComputationRef = Partial<ApiComputationRef>;
 
@@ -236,44 +236,40 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
         caption={t("computations:computationsTitle")}
         tableId="computationTable"
       />
-      <BulkAddComputationsModal
+      <AlgorithmSelectModal
         show={showCheckNew}
         onHide={() => setShowCheckNew(false)}
-        onAdd={async (algos) => {
-          await Promise.all(
-            algos.map(async (algo) => {
-              let draft: UiComputation = {
-                algorithmId: algo.algorithmId,
-                algorithmName: algo.algorithmName,
+        onSelect={async (algo) => {
+          let draft: UiComputation = {
+            algorithmId: algo.algorithmId,
+            algorithmName: algo.algorithmName,
+          };
+          if (getAlgorithm && algo.algorithmId) {
+            try {
+              const fullAlgo = await getAlgorithm(algo.algorithmId);
+              draft = {
+                ...draft,
+                algorithmName: fullAlgo.name ?? algo.algorithmName,
+                comment: fullAlgo.description,
+                props: fullAlgo.props ?? {},
+                parmList: (fullAlgo.parms ?? [])
+                  .filter((p) => (p.roleName ?? "").trim().length > 0)
+                  .map((p) => ({
+                    algoRoleName: p.roleName,
+                    algoParmType: p.parmType,
+                  })),
               };
-              if (getAlgorithm && algo.algorithmId) {
-                try {
-                  const fullAlgo = await getAlgorithm(algo.algorithmId);
-                  draft = {
-                    ...draft,
-                    algorithmName: fullAlgo.name ?? algo.algorithmName,
-                    comment: fullAlgo.description,
-                    props: fullAlgo.props ?? {},
-                    parmList: (fullAlgo.parms ?? [])
-                      .filter((p) => (p.roleName ?? "").trim().length > 0)
-                      .map((p) => ({
-                        algoRoleName: p.roleName,
-                        algoParmType: p.parmType,
-                      })),
-                  };
-                } catch (err) {
-                  console.warn(
-                    `Failed to fetch algorithm ${algo.algorithmId} for bulk add`,
-                    err,
-                  );
-                }
-              }
-              tableRef.current?.appendLocalItem((newId) => {
-                draftsRef.current[newId] = { ...draft, computationId: newId };
-                return toTableRef({ ...draft, computationId: newId } as UiComputation);
-              }, "new");
-            }),
-          );
+            } catch (err) {
+              console.warn(
+                `Failed to fetch algorithm ${algo.algorithmId} for add`,
+                err,
+              );
+            }
+          }
+          tableRef.current?.appendLocalItem((newId) => {
+            draftsRef.current[newId] = { ...draft, computationId: newId };
+            return toTableRef({ ...draft, computationId: newId } as UiComputation);
+          }, "new");
         }}
       />
     </>

@@ -8,6 +8,7 @@ import {
 import {
   RESTDECODESPlatformConfigurationsApi,
   RESTDECODESPlatformRecordsApi,
+  type ApiConfigRef,
   type ApiPlatform,
   type ApiPlatformConfig,
   type ApiPlatformRef,
@@ -55,6 +56,14 @@ export const useFetchPlatform = () => {
       queryKey: platformKeys.detail(org, platformId),
       queryFn: () => platformApi.getPlatform(org, platformId),
     });
+};
+
+export const usePlatformConfigsQuery = () => {
+  const { configApi, org } = usePlatformsApi();
+  return useQuery<ApiConfigRef[]>({
+    queryKey: platformKeys.configList(org),
+    queryFn: () => configApi.getConfigRefs(org),
+  });
 };
 
 export const useFetchPlatformConfig = () => {

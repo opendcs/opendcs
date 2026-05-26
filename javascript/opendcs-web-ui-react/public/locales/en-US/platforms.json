@@ -28,5 +28,11 @@
   "save_platform": "Save platform with id {{id}}",
   "cancel_for": "Cancel editing for Platform with id {{id}}",
   "select_site": "Select site",
+  "select_site_filter": "Filter sites",
+  "select_site_none": "No sites found.",
+  "select_config": "Select config",
+  "select_config_filter": "Filter configs",
+  "select_config_none": "No configs found.",
+  "select_config_num_platforms": "# Platforms",
   "edit_site": "Edit site"
 }
