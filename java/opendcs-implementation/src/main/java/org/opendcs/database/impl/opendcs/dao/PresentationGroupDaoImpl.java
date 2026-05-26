@@ -15,6 +15,7 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.PresentationGroupDao;
+import org.opendcs.database.impl.opendcs.jdbi.column.numeric.NullableDoubleArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.presentationgroup.DataPresentationMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.presentationgroup.PresentationGroupAccumulator;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.presentationgroup.PresentationGroupMapper;
@@ -234,6 +235,7 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
         {
             deletePresentations.bind(GenericColumns.ID, groupId).execute();
 
+            insertPresentations.registerArgument(new NullableDoubleArgumentFactory());
             for (var dataPresentation: presentations)
             {
                 final var id = dataPresentation.idIsSet() ? dataPresentation.getId() : keyGen.getKey("datapresentation", handle.getConnection());
