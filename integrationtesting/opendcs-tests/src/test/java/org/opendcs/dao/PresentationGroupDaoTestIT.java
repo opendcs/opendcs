@@ -79,8 +79,6 @@ class PresentationGroupDaoTestIT extends AppTestBase
         final var dao = db.getDao(PresentationGroupDao.class).orElseThrow();
         final var dtDao = db.getDao(DataTypeDao.class).orElseThrow();
 
-
-
         try (var tx = db.newTransaction())
         {
             final var parentDataPresentation1 = new DataPresentation();
@@ -124,4 +122,31 @@ class PresentationGroupDaoTestIT extends AppTestBase
         }
     }
 
+
+    /**
+     * As several presentation groups are already loaded by default, and the groups
+     * themselves are a bit obnoxious to setup, we're just relying on the existing
+     * groups to perform this test.
+     * @throws Exception
+     */
+    @Test
+    void test_pagination() throws Exception
+    {
+        final var dao = db.getDao(PresentationGroupDao.class).orElseThrow();
+
+        try (var tx = db.newTransaction())
+        {
+            var all = dao.getAll(tx, -1, -1);
+            assertFalse(all.isEmpty());
+
+            var few = dao.getAll(tx, 2, 0);
+            assertFalse(few.isEmpty());
+            assertEquals(all.getFirst().groupName, few.getFirst().groupName);
+
+            var nextFew = dao.getAll(tx, 2, 2);
+            assertFalse(nextFew.isEmpty());
+            assertEquals(all.get(2).groupName, nextFew.getFirst().groupName);
+
+        }
+    }
 }

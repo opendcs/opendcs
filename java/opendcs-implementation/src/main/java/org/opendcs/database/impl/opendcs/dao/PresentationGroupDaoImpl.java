@@ -1,6 +1,8 @@
 
 package org.opendcs.database.impl.opendcs.dao;
 
+import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
+
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -18,6 +20,7 @@ import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.presentationgroup.P
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
+import org.opendcs.utils.sql.SqlKeywords;
 import org.opendcs.utils.sql.SqlQueries;
 import org.openide.util.lookup.ServiceProvider;
 import org.slf4j.Logger;
@@ -267,6 +270,33 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
     @Override
     public List<PresentationGroup> getAll(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
-        return List.of();
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var ctx = tx.getContext();
+        var dbEngine = ctx.getDatabase();
+        try (var query = handle.createQuery(SELECT_QUERY))
+        {
+            query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
+                 .define(SqlQueries.WHERE_CLAUSE, "")
+                 .define(SqlQueries.LIMIT_CLAUSE, addLimitOffset(limit, offset))
+                 ;
+            if (limit >= 0)
+            {
+                query.bind(SqlKeywords.LIMIT, limit);
+            }
+            if (offset >= 0)
+            {
+                query.bind(SqlKeywords.OFFSET, offset);
+            }
+            return query.reduceResultSet(new LinkedHashMap<>(),
+                                         new PresentationGroupAccumulator(
+                                            "pg", PresentationGroupMapper.withPrefix("pg"),
+                                            DataPresentationMapper.withPrefix("dp", "dt")
+                                        ))
+                        .values()
+                        .stream()
+                        .map(v -> v)
+                        .toList();
+        }
     }
 }
