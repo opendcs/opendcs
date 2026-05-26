@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { algorithmKeys, intervalKeys, platformKeys, siteKeys } from "./keys";
+import { algorithmKeys, appKeys, intervalKeys, platformKeys, siteKeys } from "./keys";
 
 describe("siteKeys", () => {
   test("all() scopes the key to an org", () => {
@@ -130,5 +130,23 @@ describe("platformKeys", () => {
     expect(platformKeys.config("acme", 1)).not.toEqual(
       platformKeys.config("globex", 1),
     );
+  });
+});
+
+describe("appKeys", () => {
+  test("all() scopes the key to an org", () => {
+    expect(appKeys.all("acme")).toEqual(["apps", "acme"]);
+    expect(appKeys.all("acme")).not.toEqual(appKeys.all("globex"));
+  });
+
+  test("list() extends all() so invalidating all() also invalidates list()", () => {
+    const all = appKeys.all("acme");
+    const list = appKeys.list("acme");
+    expect(list.slice(0, all.length)).toEqual([...all]);
+    expect(list).toEqual(["apps", "acme", "list"]);
+  });
+
+  test("keys for different orgs never collide", () => {
+    expect(appKeys.list("acme")).not.toEqual(appKeys.list("globex"));
   });
 });

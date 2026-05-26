@@ -1,0 +1,14 @@
+{
+  "title": "Ladeanwendungen",
+  "add_app": "Neue Ladeanwendung hinzufügen",
+  "app_id": "App-ID",
+  "app_name": "App-Name",
+  "app_type": "App-Typ",
+  "comment": "Kommentar",
+  "last_modified": "Zuletzt geändert",
+  "manual_editing": "Manuelle Bearbeitung",
+  "edit_app": "Ladeanwendung {{id}} bearbeiten",
+  "save_app": "Ladeanwendung {{id}} speichern",
+  "cancel_for": "Bearbeitung von Ladeanwendung {{id}} abbrechen",
+  "delete_for": "Ladeanwendung {{id}} löschen"
+}
