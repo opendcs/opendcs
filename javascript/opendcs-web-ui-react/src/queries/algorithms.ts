@@ -108,8 +108,6 @@ export const useDeleteAlgorithmMutation = (
   });
 };
 
-// Used after CheckForNewModal imports new algorithms — refresh the list and
-// any cached details so the table reflects the just-imported records.
 export const useInvalidateAlgorithms = () => {
   const { org } = useAlgorithmsApi();
   const queryClient = useQueryClient();
@@ -124,7 +122,7 @@ export interface CatalogAlgorithm {
 }
 
 export const useAlgorithmCatalogQuery = (enabled: boolean) => {
-  const { org } = useAlgorithmsApi();
+  const { org } = useApi();
   return useQuery<CatalogAlgorithm[]>({
     queryKey: algorithmKeys.catalog(org),
     queryFn: () =>
@@ -142,7 +140,7 @@ export const useAlgorithmCatalogQuery = (enabled: boolean) => {
 export const useImportAlgorithmsMutation = (
   options?: Omit<UseMutationOptions<unknown, unknown, string[]>, "mutationFn">,
 ) => {
-  const { org } = useAlgorithmsApi();
+  const { org } = useApi();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (execClasses: string[]) =>

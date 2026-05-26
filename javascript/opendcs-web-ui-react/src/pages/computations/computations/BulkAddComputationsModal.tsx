@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Button, Form, Modal, Spinner, Table } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import type { ApiAlgorithmRef } from "opendcs-api";
@@ -17,6 +17,13 @@ const BulkAddComputationsModalInner: React.FC<Props> = ({ show, onHide, onAdd })
   const [filter, setFilter] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [adding, setAdding] = useState(false);
+
+  useEffect(() => {
+    if (!show) {
+      setSelected(new Set());
+      setFilter("");
+    }
+  }, [show]);
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();

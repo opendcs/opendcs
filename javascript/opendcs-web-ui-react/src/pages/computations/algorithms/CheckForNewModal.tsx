@@ -16,6 +16,11 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
   const [t] = useTranslation(["algorithms"]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
+  const handleHide = useCallback(() => {
+    setSelected(new Set());
+    onHide();
+  }, [onHide]);
+
   const {
     data: catalog = [],
     isLoading,
@@ -27,8 +32,7 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
   const importMutation = useImportAlgorithmsMutation({
     onSuccess: () => {
       onImported();
-      setSelected(new Set());
-      onHide();
+      handleHide();
     },
   });
 
@@ -55,7 +59,7 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
   }, [selected, importMutation]);
 
   return (
-    <Modal show={show} onHide={onHide} centered size="xl">
+    <Modal show={show} onHide={handleHide} centered size="xl">
       <Modal.Header closeButton>
         <Modal.Title>{t("algorithms:check_new.title")}</Modal.Title>
       </Modal.Header>
@@ -116,7 +120,7 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
         )}
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onClick={onHide}>
+        <Button variant="secondary" onClick={handleHide}>
           {t("algorithms:check_new.close")}
         </Button>
         <Button
