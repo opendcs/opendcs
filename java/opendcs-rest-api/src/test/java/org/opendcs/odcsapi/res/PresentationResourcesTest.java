@@ -4,28 +4,31 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Vector;
 
 import decodes.db.DataPresentation;
 import decodes.db.DataType;
 import decodes.db.PresentationGroup;
-import decodes.db.PresentationGroupList;
 import decodes.sql.DbKey;
 import org.junit.jupiter.api.Test;
+import org.opendcs.database.dai.DataTypeDao;
 import org.opendcs.odcsapi.beans.ApiPresentationElement;
 import org.opendcs.odcsapi.beans.ApiPresentationGroup;
 import org.opendcs.odcsapi.beans.ApiPresentationRef;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.opendcs.odcsapi.res.PresentationResources.map;
+import static org.opendcs.odcsapi.res.PresentationResources.mapRef;
 
 final class PresentationResourcesTest
 {
 	@Test
 	void testPresentationGroupListMap() throws Exception
 	{
-		PresentationGroupList pgl = new PresentationGroupList();
 		PresentationGroup pg = new PresentationGroup();
 		pg.setId(DbKey.createDbKey(1234L));
 		pg.inheritsFrom = "Parent Presentation Group";
@@ -40,12 +43,8 @@ final class PresentationResourcesTest
 		dataPres.setMinValue(0.0);
 		dataPres.setUnitsAbbr("TST");
 		pg.addDataPresentation(dataPres);
-		pgl.add(pg);
 
-		ArrayList<ApiPresentationRef> presentationRefs = map(pgl);
-		assertNotNull(presentationRefs);
-		assertEquals(1, presentationRefs.size());
-		ApiPresentationRef apiPresentationRef = presentationRefs.get(0);
+		ApiPresentationRef apiPresentationRef = mapRef(pg);
 		assertEquals(pg.inheritsFrom, apiPresentationRef.getInheritsFrom());
 		assertEquals(pg.groupName, apiPresentationRef.getName());
 		assertEquals(pg.isProduction, apiPresentationRef.isProduction());
@@ -87,6 +86,8 @@ final class PresentationResourcesTest
 	@Test
 	void testPresentationElementMap() throws Exception
 	{
+		var dtDao = mock(DataTypeDao.class);
+		when(dtDao.lookup(null, "SHEF", "HG")).thenReturn(Optional.of(new DataType("SHEF", "HG")));
 		PresentationGroup pg = new PresentationGroup();
 		pg.setId(DbKey.createDbKey(1234L));
 		pg.inheritsFrom = "Parent Presentation Group";
@@ -94,15 +95,15 @@ final class PresentationResourcesTest
 		pg.lastModifyTime = Date.from(Instant.parse("2021-07-01T00:00:00Z"));
 		List<ApiPresentationElement> elementList = new ArrayList<>();
 		ApiPresentationElement ape = new ApiPresentationElement();
-		ape.setDataTypeCode("TST");
+		ape.setDataTypeCode("HG");
 		ape.setMax(100.0);
 		ape.setMin(0.0);
-		ape.setUnits("TST");
-		ape.setDataTypeStd("String");
+		ape.setUnits("ft");
+		ape.setDataTypeStd("SHEF");
 		ape.setFractionalDigits(2);
 		elementList.add(ape);
 
-		Vector<DataPresentation> dataPresentations = map(null, elementList, pg);
+		Vector<DataPresentation> dataPresentations = map(null, dtDao, elementList, pg);
 		assertNotNull(dataPresentations);
 		assertEquals(1, dataPresentations.size());
 		DataPresentation dataPres = dataPresentations.get(0);
@@ -119,6 +120,8 @@ final class PresentationResourcesTest
 	@Test
 	void testApiPresentationGroupMap() throws Exception
 	{
+		var dtDao = mock(DataTypeDao.class);
+		when(dtDao.lookup(null, "CWMS", "Stage")).thenReturn(Optional.of(new DataType("CWMS", "Stage")));
 		ApiPresentationGroup apiPresentationGroup = new ApiPresentationGroup();
 		apiPresentationGroup.setGroupId(1234L);
 		apiPresentationGroup.setInheritsFrom("Parent Presentation Group");
@@ -127,16 +130,16 @@ final class PresentationResourcesTest
 		apiPresentationGroup.setLastModified(Date.from(Instant.parse("2021-07-01T00:00:00Z")));
 		ArrayList<ApiPresentationElement> elements = new ArrayList<>();
 		ApiPresentationElement ape = new ApiPresentationElement();
-		ape.setDataTypeCode("TST");
+		ape.setDataTypeCode("Stage");
 		ape.setMax(100.0);
 		ape.setMin(0.0);
-		ape.setUnits("TST");
-		ape.setDataTypeStd("String");
+		ape.setUnits("ft");
+		ape.setDataTypeStd("CWMS");
 		ape.setFractionalDigits(2);
 		elements.add(ape);
 		apiPresentationGroup.setElements(elements);
 
-		PresentationGroup pg = map(null, apiPresentationGroup);
+		PresentationGroup pg = map(null, dtDao, apiPresentationGroup);
 
 		assertNotNull(pg);
 		assertEquals(apiPresentationGroup.getInheritsFrom(), pg.inheritsFrom);

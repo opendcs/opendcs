@@ -72,6 +72,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 {
 	private static final WebAppException UNABLE_TO_GET_EU_DAO = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "No engineering unit DAO available.");
 	private static final WebAppException UNABLE_TO_GET_UC_DAO = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "No unit conversion DAO available.");
+	public static final WebAppException UNABLE_TO_GET_DT_DAO = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "No data type DAO available.");
 
 	@Context HttpHeaders httpHeaders;
 
