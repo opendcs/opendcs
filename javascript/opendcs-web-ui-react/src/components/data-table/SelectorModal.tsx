@@ -68,7 +68,7 @@ export function SelectorModal<T, TId extends string | number>({
   if (loading && data.length === 0) {
     body = (
       <div className="text-center p-4">
-        <Spinner animation="border" />
+        <Spinner animation="border" role="status" />
       </div>
     );
   } else if (data.length === 0) {

@@ -123,8 +123,8 @@ export const EmptyDataShowsNoneMessage: Story = {
 export const LoadingShowsSpinner: Story = {
   args: { data: [], loading: true },
   play: async ({ mount }) => {
-    const canvas = await mount();
-    // Bootstrap Spinner has role=status.
-    expect(await canvas.findByRole("status")).toBeInTheDocument();
+    await mount();
+    // Bootstrap Spinner — Modal portals to document.body, so query via screen.
+    expect(await screen.findByRole("status")).toBeInTheDocument();
   },
 };
