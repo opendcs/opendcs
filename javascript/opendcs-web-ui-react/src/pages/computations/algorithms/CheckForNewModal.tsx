@@ -18,10 +18,13 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
   const [t] = useTranslation(["algorithms", "translation"]);
   const [selectedExecClasses, setSelectedExecClasses] = useState<string[]>([]);
 
-  const handleHide = useCallback(() => {
-    setSelectedExecClasses([]);
-    onHide();
-  }, [onHide]);
+  // Reset selection each time the modal opens — in-render transition compare
+  // avoids the setState-in-effect anti-pattern (same approach as SelectorModal).
+  const [wasShown, setWasShown] = useState(show);
+  if (show !== wasShown) {
+    setWasShown(show);
+    if (show) setSelectedExecClasses([]);
+  }
 
   const {
     data: catalog = [],
@@ -34,7 +37,7 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
   const importMutation = useImportAlgorithmsMutation({
     onSuccess: () => {
       onImported();
-      handleHide();
+      onHide();
     },
   });
 
@@ -77,7 +80,7 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
   }
 
   return (
-    <Modal show={show} onHide={handleHide} centered size="xl">
+    <Modal show={show} onHide={onHide} centered size="xl">
       <Modal.Header closeButton>
         <Modal.Title>{t("algorithms:check_new.title")}</Modal.Title>
       </Modal.Header>
@@ -91,7 +94,7 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
         {body}
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onClick={handleHide}>
+        <Button variant="secondary" onClick={onHide}>
           {t("algorithms:check_new.close")}
         </Button>
         <Button

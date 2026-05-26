@@ -19,7 +19,6 @@ export interface AlgorithmsTableProperties {
   getAlgorithm?: (algorithmId: number) => Promise<ApiAlgorithm>;
   getPropSpecs?: (execClass: string) => Promise<ApiPropSpec[]>;
   actions?: SaveAction<ApiAlgorithm> & RemoveAction<number>;
-  onRefresh?: () => void;
   loading?: boolean;
 }
 
@@ -28,7 +27,6 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
   getAlgorithm,
   getPropSpecs,
   actions = {},
-  onRefresh,
   loading = false,
 }) => {
   const [t] = useTranslation(["algorithms", "translation"]);
@@ -142,10 +140,7 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
       <CheckForNewModal
         show={showCheckNew}
         onHide={() => setShowCheckNew(false)}
-        onImported={() => {
-          tableRef.current?.scheduleScrollToEnd();
-          onRefresh?.();
-        }}
+        onImported={() => tableRef.current?.scheduleScrollToEnd()}
       />
     </>
   );

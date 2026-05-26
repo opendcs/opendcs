@@ -108,12 +108,6 @@ export const useDeleteAlgorithmMutation = (
   });
 };
 
-export const useInvalidateAlgorithms = () => {
-  const { org } = useAlgorithmsApi();
-  const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: algorithmKeys.all(org) });
-};
-
 export interface CatalogAlgorithm {
   name: string;
   execClass: string;
