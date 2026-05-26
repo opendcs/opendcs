@@ -54,10 +54,13 @@ import org.slf4j.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import decodes.sql.DbKey;
+
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @EnableIfTsDb({"OpenDCS-Postgres"})
 final class OpenIdTestIT extends BaseApiIT
@@ -367,7 +370,7 @@ final class OpenIdTestIT extends BaseApiIT
 
 		assertNotEquals(initialSession.getValue(), loginSession.getValue(), "Session Cookie was not changed after successful login.");
 
-		given()
+		var id = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.cookie(loginSession)
@@ -379,7 +382,19 @@ final class OpenIdTestIT extends BaseApiIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(Response.Status.OK.getStatusCode()))
+		.extract()
+			.body().jsonPath()
+			.getLong("id.value")
 		;
+
+		// now see if the user was created.
+
+		final var umDao = db.getDao(UserManagementDao.class).orElseThrow();
+		try (var tx = db.newTransaction())
+		{
+			var user = umDao.getUser(tx, DbKey.createDbKey(id));
+			assertTrue(user.isPresent());
+		}
 
 	}
 

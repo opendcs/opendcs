@@ -244,22 +244,28 @@ public final class OidcIdentityProvider implements IdentityProvider
     {
         try
         {
+            final var umDao = db.getDao(UserManagementDao.class)
+                                .orElseThrow(() -> new OpenDcsAuthException("Unable to register new user as a UserManagmentDao instance is not available."));
             final var claims = verifyTokenAndGetClaims(oidcConfig, ((JwtCredentials)credentials).accessToken());
             final var subject = claims.getSubject();
             final var email = claims.getStringClaim("email");
             final var preferredUserName = claims.getStringClaim("preferred_username");
 
-            var idpMapping = new IdentityProviderMapping(this, subject);
-
-            return new UserBuilder()
-                        .withEmail(email)
-                        .withIdentityMapping(idpMapping)
-                        .withPreference("preferredUserName", preferredUserName)
-                        .build();
+            final var idpMapping = new IdentityProviderMapping(this, subject);
+            final var user = new UserBuilder()
+                                .withEmail(email)
+                                .withIdentityMapping(idpMapping)
+                                .withPreference("preferredUserName", preferredUserName)
+                                .build();
+            return umDao.addUser(tx, user);
         }
         catch (MalformedURLException | BadJOSEException | ParseException | JOSEException ex)
         {
             throw new OpenDcsAuthException("Unable to validate provided credentials", ex);
+        }
+        catch (OpenDcsDataException ex)
+        {
+            throw new OpenDcsAuthException("Unable to save new user.", ex);
         }
     }
 
