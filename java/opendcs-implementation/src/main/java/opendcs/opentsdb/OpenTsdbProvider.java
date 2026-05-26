@@ -7,6 +7,7 @@ import javax.sql.DataSource;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.impl.opendcs.OpenDcsOracleProvider;
 import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
+import org.opendcs.database.DatabaseQuerySettings;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.database.SimpleOpenDcsDatabaseWrapper;
 import org.opendcs.spi.database.DatabaseProvider;
@@ -56,7 +57,9 @@ public class OpenTsdbProvider implements DatabaseProvider
     {
         Database decodesDb = getDecodesDatabase(dataSource, settings);
         OpenTsdb tsDb = new OpenTsdb(appName, dataSource, settings);
-        var db = new SimpleOpenDcsDatabaseWrapper(settings, decodesDb, tsDb, dataSource);
+        var db = new SimpleOpenDcsDatabaseWrapper(settings, decodesDb, tsDb, dataSource, new DatabaseQuerySettings() {
+            
+        });
         tsDb.setDcsDatabase(db);
         Database.setDb(decodesDb);
         try

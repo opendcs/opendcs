@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.Vector;
 
 import org.jdbi.v3.core.Handle;
+import org.opendcs.database.DatabaseQuerySettings;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
@@ -165,6 +166,9 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
         var ctx = tx.getContext();
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                         .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
+        var numericDate = ctx.getSettings(DatabaseQuerySettings.class)
+                             .map(settings -> settings.numericDate())
+                             .orElse(true);
         final String mergeSql = """
                 merge into presentationgroup pg
                 using (
@@ -181,7 +185,7 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
                     values(input.id, input.name, input.inheritsfrom, input.lastmodifytime, input.isproduction)
                 """;
         try (var merge = handle.createUpdate(mergeSql)
-                               .define("numeric_date", true)
+                               .define("numeric_date", numericDate)
                                .define("dual", ctx.getDatabase() == DatabaseEngine.ORACLE ? " from dual " : ""))
         {
             DbKey id = group.getId();
@@ -195,7 +199,7 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
                     """,
                     id, group.getId());
             }
-            final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("site", handle.getConnection());
+            final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("presentationgroup", handle.getConnection());
 
             merge.bind(GenericColumns.ID, bindKey)
                  .bind(GenericColumns.NAME, group.groupName)
@@ -224,7 +228,7 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
         }
         catch (DatabaseException ex)
         {
-            throw new OpenDcsDataException("Unable to generate key to save site", ex);
+            throw new OpenDcsDataException("Unable to generate key to save presentation group", ex);
         }
     }
 

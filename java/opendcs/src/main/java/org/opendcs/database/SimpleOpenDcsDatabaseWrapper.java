@@ -66,14 +66,16 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     protected final Jdbi jdbi;
     protected final DatabaseEngine dbEngine;
     protected final KeyGenerator keyGenerator;
+    protected final DatabaseQuerySettings querySettings;
     private final Map<Class<? extends OpenDcsDao>, DaoWrapper<? extends OpenDcsDao>> daoMap = new HashMap<>();
 
-    public SimpleOpenDcsDatabaseWrapper(DecodesSettings settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource)
+    public SimpleOpenDcsDatabaseWrapper(DecodesSettings settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource, DatabaseQuerySettings querySettings)
     {
         this.settings = settings;
         this.decodesDb = decodesDb;
         this.timeSeriesDb = timeSeriesDb;
         this.dataSource = dataSource;
+        this.querySettings = querySettings;
         this.jdbi = Jdbi.create(dataSource);
         jdbi.registerArgument(new DatabaseKeyArgumentFactory())
             .registerColumnMapper(new DatabaseKeyColumnMapper())
@@ -331,6 +333,10 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     public <T extends OpenDcsSettings> Optional<T> getSettings(Class<T> settingsClass)
     {
         if (DecodesSettings.class.equals(settingsClass))
+        {
+            return Optional.of((T)settings);
+        }
+        else if(DatabaseQuerySettings.class.equals(settingsClass))
         {
             return Optional.of((T)settings);
         }
