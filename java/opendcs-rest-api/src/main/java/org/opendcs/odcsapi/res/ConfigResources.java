@@ -60,6 +60,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.DataTypeDao;
@@ -121,12 +122,32 @@ public final class ConfigResources extends OpenDcsResource
 		final var db = createDb();
 		try (var tx = db.newTransaction())
 		{
-			final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
-			final var configs = dao.getAll(tx, -1, -1)
-								   .stream()
-								   .map(pc -> mapRef(pc))
-								   .toList();
-			return Response.ok().entity(configs).build();
+			final Handle handle = tx.connection(Handle.class)
+									.orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
+			// Lightweight refs-only query. The full DAO.getAll loads every joined
+			// sensor / script / format-statement / unit-converter row per config,
+			// which OOMs / times out on databases with many configs. The chooser
+			// only needs id / name / description / # platforms.
+			final String sql =
+					"SELECT pc.id AS id, pc.name AS name, pc.description AS description,"
+					+ "       COUNT(p.id) AS numplatforms"
+					+ "  FROM PlatformConfig pc"
+					+ "  LEFT JOIN Platform p ON p.configId = pc.id"
+					+ " GROUP BY pc.id, pc.name, pc.description"
+					+ " ORDER BY pc.name";
+			try (var query = handle.createQuery(sql))
+			{
+				final var configs = query.map((rs, ctx) ->
+					{
+						final ApiConfigRef ref = new ApiConfigRef();
+						ref.setConfigId(rs.getLong("id"));
+						ref.setName(rs.getString("name"));
+						ref.setDescription(rs.getString("description"));
+						ref.setNumPlatforms(rs.getInt("numplatforms"));
+						return ref;
+					}).list();
+				return Response.ok().entity(configs).build();
+			}
 		}
 		catch (OpenDcsDataException ex)
 		{

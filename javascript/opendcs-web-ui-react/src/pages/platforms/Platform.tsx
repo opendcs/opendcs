@@ -25,6 +25,8 @@ import { DetailFade } from "../../components/data-table";
 import { PlatformReducer } from "./PlatformReducer";
 import { SiteSelectModal } from "./SiteSelectModal";
 import { ConfigSelectModal } from "./ConfigSelectModal";
+import { PlatformSensorsTable } from "./PlatformSensorsTable";
+import { TransportMediaTable } from "./TransportMediaTable";
 import { siteDisplayName } from "./siteDisplayName";
 
 const INPUT_H = { height: "2.25rem" };
@@ -41,6 +43,17 @@ const PLATFORM_FIELDS = [
 ] as const;
 
 export type UiPlatform = Partial<ApiPlatform>;
+
+const TablePlaceholder: React.FC = () => (
+  <>
+    <Placeholder animation="glow" className="d-block mb-2">
+      <Placeholder xs={12} className="rounded" style={{ height: "2rem" }} />
+    </Placeholder>
+    <Placeholder animation="glow" className="d-block">
+      <Placeholder xs={12} className="rounded" style={{ height: "8rem" }} />
+    </Placeholder>
+  </>
+);
 
 export const PlatformSkeleton: React.FC<{ edit?: boolean; className?: string }> = ({
   edit = false,
@@ -69,6 +82,14 @@ export const PlatformSkeleton: React.FC<{ edit?: boolean; className?: string }> 
           <Placeholder animation="glow" className="d-block">
             <Placeholder xs={12} style={{ height: "12rem" }} />
           </Placeholder>
+        </Col>
+      </Row>
+      <Row className="mt-4">
+        <Col md={6}>
+          <TablePlaceholder />
+        </Col>
+        <Col md={6}>
+          <TablePlaceholder />
         </Col>
       </Row>
       {edit && (
@@ -378,6 +399,45 @@ export const Platform: React.FC<PlatformProperties> = ({
                 canAdd={true}
                 width={"100%"}
                 height={"auto"}
+              />
+            </Col>
+          </Row>
+          <Row className="mt-4">
+            <Col md={6} style={edit ? { paddingTop: "2.25rem" } : undefined}>
+              <PlatformSensorsTable
+                configSensors={resolved.config?.configSensors ?? []}
+                platformSensors={localPlatform.platformSensors ?? []}
+                edit={edit}
+                actions={{
+                  save: (sensor, originalSensorNum) =>
+                    dispatch({
+                      type: "save_sensor",
+                      payload: { sensor, originalSensorNum },
+                    }),
+                  remove: (sensorNum) =>
+                    dispatch({
+                      type: "delete_sensor",
+                      payload: { sensorNum },
+                    }),
+                }}
+              />
+            </Col>
+            <Col md={6}>
+              <TransportMediaTable
+                media={localPlatform.transportMedia ?? []}
+                edit={edit}
+                actions={{
+                  save: (medium, originalKey) =>
+                    dispatch({
+                      type: "save_transport",
+                      payload: { medium, originalKey },
+                    }),
+                  remove: (key) =>
+                    dispatch({
+                      type: "delete_transport",
+                      payload: { key },
+                    }),
+                }}
               />
             </Col>
           </Row>
