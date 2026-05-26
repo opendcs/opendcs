@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { ApiAppRef, ApiAppStatus, ApiLoadingApp } from "opendcs-api";
+import type { ApiAppRef, ApiLoadingApp } from "opendcs-api";
 import LoadingApp, { LoadingAppSkeleton, type UiLoadingApp } from "./LoadingApp";
 import type { RemoveAction, SaveAction } from "../../util/Actions";
 import {
@@ -9,11 +9,11 @@ import {
   type RowAction,
 } from "../../components/data-table";
 
-export type TableAppRef = Partial<ApiAppRef>;
+// DataTables sees a row-data change when status loads, triggering a redraw.
+export type TableAppRef = Partial<ApiAppRef> & { _pid?: number | null };
 
 export interface LoadingAppsTableProperties {
   apps: TableAppRef[];
-  appStats?: ApiAppStatus[];
   getApp?: (appId: number) => Promise<ApiLoadingApp>;
   actions?: SaveAction<ApiLoadingApp> & RemoveAction<number>;
   loading?: boolean;
@@ -21,7 +21,6 @@ export interface LoadingAppsTableProperties {
 
 export const LoadingAppsTable: React.FC<LoadingAppsTableProperties> = ({
   apps,
-  appStats = [],
   getApp,
   actions = {},
   loading = false,
@@ -51,14 +50,13 @@ export const LoadingAppsTable: React.FC<LoadingAppsTableProperties> = ({
         },
       },
       {
-        data: null,
+        data: "_pid",
         header: t("loadingapps:status"),
         orderable: false,
         searchable: false,
-        render: (_: unknown, type: string, row: TableAppRef) => {
-          if (type !== "display") return "";
-          const stat = appStats.find((s) => s.appId === row.appId);
-          const running = stat?.pid != null;
+        render: (data: unknown, type: string) => {
+          if (type !== "display") return data ?? "";
+          const running = data != null;
           const label = running
             ? t("loadingapps:status_running")
             : t("loadingapps:status_inactive");
@@ -67,7 +65,7 @@ export const LoadingAppsTable: React.FC<LoadingAppsTableProperties> = ({
         },
       },
     ],
-    [t, appStats],
+    [t],
   );
 
   const rowActions = useMemo<RowAction<TableAppRef>[]>(
