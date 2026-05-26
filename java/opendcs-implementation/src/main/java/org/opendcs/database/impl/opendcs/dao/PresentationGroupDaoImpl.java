@@ -12,6 +12,7 @@ import java.util.Vector;
 
 import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.PresentationGroupDao;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.presentationgroup.DataPresentationMapper;
@@ -42,18 +43,18 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
      * parent group in a single step.
      */
     final static String SELECT_QUERY = """
-            with recursive pg_limit (id, name, inheritsfrom, lastmodifytime, isproduction) as (
+            with <recursive_cte> pg_limit (id, name, inheritsfrom, lastmodifytime, isproduction) as (
                 select id, name, inheritsfrom, lastmodifytime, isproduction
                 from presentationgroup
                 <where>
                 order by name <collate> asc
                 <limit>
-            ),  pg (id, name, inheritsfrom, lastmodifytime, isproduction) as (
-                select id, name, inheritsfrom, lastmodifytime, isproduction, 1 as level
+            ),  pg (id, name, inheritsfrom, lastmodifytime, isproduction, cur_level) as (
+                select id, name, inheritsfrom, lastmodifytime, isproduction, 1 as cur_level
                 from pg_limit
 
                 union all
-                select pgc.id, pgc.name, pgc.inheritsfrom, pgc.lastmodifytime, pgc.isproduction, p.level + 1
+                select pgc.id, pgc.name, pgc.inheritsfrom, pgc.lastmodifytime, pgc.isproduction, p.cur_level + 1
                   from presentationgroup pgc
                   join pg p on pgc.id = p.inheritsfrom
             )
@@ -102,6 +103,7 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
+                 .define(SqlQueries.RECURSIVE_CTE_CLAUSE, SqlQueries.recursiveCteFor(dbEngine))
                  .define(SqlQueries.WHERE_CLAUSE, "where id = :id")
                  .define(SqlQueries.LIMIT_CLAUSE, "")
                  .bind(GenericColumns.ID, id);
@@ -134,6 +136,7 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
+                 .define(SqlQueries.RECURSIVE_CTE_CLAUSE, SqlQueries.recursiveCteFor(dbEngine))
                  .define(SqlQueries.WHERE_CLAUSE, "where name = :name")
                  .define(SqlQueries.LIMIT_CLAUSE, "")
                  .bind(GenericColumns.NAME, name);
@@ -165,7 +168,7 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
                 merge into presentationgroup pg
                 using (
                     select :id id, :name name, :inheritsfrom inheritsfrom, :lastmodifytime lastmodifytime,
-                           :isproduction isproduction
+                           :isproduction isproduction <dual>
                 ) input
                 on (pg.id = input.id)
                 when matched then
@@ -176,7 +179,9 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
                     insert(id, name, inheritsfrom, lastmodifytime, isproduction)
                     values(input.id, input.name, input.inheritsfrom, input.lastmodifytime, input.isproduction)
                 """;
-        try (var merge = handle.createUpdate(mergeSql).define("numeric_date", true))
+        try (var merge = handle.createUpdate(mergeSql)
+                               .define("numeric_date", true)
+                               .define("dual", ctx.getDatabase() == DatabaseEngine.ORACLE ? " from dual " : ""))
         {
             DbKey id = group.getId();
             var existing = getByName(tx, group.groupName);
@@ -277,6 +282,7 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
+                 .define(SqlQueries.RECURSIVE_CTE_CLAUSE, SqlQueries.recursiveCteFor(dbEngine))
                  .define(SqlQueries.WHERE_CLAUSE, "")
                  .define(SqlQueries.LIMIT_CLAUSE, addLimitOffset(limit, offset))
                  ;
