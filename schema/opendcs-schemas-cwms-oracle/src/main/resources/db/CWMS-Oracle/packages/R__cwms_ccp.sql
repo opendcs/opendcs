@@ -20,6 +20,8 @@
 -- create the callback procedure within the cwms_ccp package
 ---------------------------------------------------------------------------
 create or replace package cwms_ccp authid current_user as
+  MISSING_VALUE_QUALITY CONSTANT NUMBER := 5;
+
   procedure unregister_callback_proc (
     p_subscriber_name in varchar2,
     p_queue_name      in varchar2)
@@ -320,7 +322,7 @@ create or replace package body cwms_ccp as
         )
       loop
         l_delete_flag := 'N';
-        if (r1.quality_code = 5) then
+        if (r1.quality_code = MISSING_VALUE_QUALITY) then
           l_delete_flag := 'Y';
         end if;
 
