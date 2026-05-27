@@ -56,7 +56,9 @@ export const ConfigOnlyNoOverride: Story = {
     const canvas = await mount();
     await waitFor(() => expect(canvas.getByText("Stage")).toBeInTheDocument());
     // absoluteMax fallback "100" should appear since there's no override.max.
-    expect(canvas.getByText("100")).toBeInTheDocument();
+    // Scope to a table cell so we don't collide with DataTables' page-length
+    // menu, which also contains an option labelled "100".
+    expect(canvas.getByRole("cell", { name: "100" })).toBeInTheDocument();
   },
 };
 

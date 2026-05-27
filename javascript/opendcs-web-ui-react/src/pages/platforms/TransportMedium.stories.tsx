@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import type { ApiRefList, ApiTransportMedium } from "opendcs-api";
-import { expect, waitFor } from "storybook/test";
+import { expect, waitFor, within } from "storybook/test";
 import { TransportMedium } from "./TransportMedium";
 
 const REFLISTS: Record<string, ApiRefList> = {
@@ -222,6 +222,16 @@ export const TypeSwitchRestoresFields: Story = {
     const canvas = await mount();
     const typeSelect = await waitFor(
       () => canvas.getByLabelText(/medium type/i) as HTMLSelectElement,
+      { timeout: 5000 },
+    );
+
+    // Reflists load async via tanstack-query; wait for the polled-modem
+    // option before attempting to select it.
+    await waitFor(
+      () =>
+        expect(
+          within(typeSelect).getByRole("option", { name: /polled-modem/ }),
+        ).toBeInTheDocument(),
       { timeout: 5000 },
     );
 

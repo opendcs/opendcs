@@ -60,7 +60,9 @@ export const ReadOnly: Story = {
   },
   play: async ({ mount }) => {
     const canvas = await mount();
-    await waitFor(() => expect(canvas.getByText("Stage")).toBeInTheDocument());
+    // sensorName is rendered into a `plaintext` Form.Control — still an
+    // <input>, so the value lives on `.value` rather than as text content.
+    await waitFor(() => expect(canvas.getByDisplayValue("Stage")).toBeInTheDocument());
     // No Choose / clear buttons in view mode.
     expect(canvas.queryByRole("button", { name: /Choose/i })).not.toBeInTheDocument();
   },
