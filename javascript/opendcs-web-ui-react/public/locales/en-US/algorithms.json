@@ -23,7 +23,9 @@
     "none_found": "No new algorithms found.",
     "select_all": "Select all",
     "close": "Close",
-    "import_selected": "Import Selected ({{count}})"
+    "import_selected": "Import Selected ({{count}})",
+    "fetch_error": "Failed to load algorithm catalog. Please try again.",
+    "import_error": "Failed to import algorithms. Please try again."
   },
   "parms": {
     "title": "Parameters",

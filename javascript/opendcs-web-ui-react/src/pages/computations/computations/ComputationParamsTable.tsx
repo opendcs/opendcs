@@ -1,17 +1,13 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Form } from "react-bootstrap";
 import { renderToString } from "react-dom/server";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
-import {
-  TimeSeriesMethodsIntervalMethodsApi,
-  type ApiCompParm,
-  type ApiInterval,
-} from "opendcs-api";
+import { type ApiCompParm } from "opendcs-api";
 import { PARM_TYPES, parmTypeLabel } from "../common/parmTypes";
-import { useApi } from "../../../contexts/app/ApiContext";
 import UnitSelect from "../../../components/controls/UnitSelector";
 import { useUnitListQuery } from "../../../queries/units";
+import { useIntervalsQuery } from "../../../queries/intervals";
 import ComputationParamsOptionsContext from "../../../contexts/data/ComputationParamsOptionsContext";
 import { AppDataTable, type ColumnDef } from "../../../components/data-table";
 
@@ -39,7 +35,6 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
   onUpdate,
 }) => {
   const [t] = useTranslation(["computations", "translation"]);
-  const api = useApi();
   const { isSuccess: unitsReady } = useUnitListQuery();
   // renderToString below creates an isolated React tree; UnitSelect inside it
   // calls useUnitListQuery, so we must re-provide the QueryClient explicitly.
@@ -47,31 +42,11 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
   const { deltaTUnits, ifMissingActions, defaultIntervals } = useContext(
     ComputationParamsOptionsContext,
   );
-  const intervalApi = useMemo(
-    () => new TimeSeriesMethodsIntervalMethodsApi(api.conf),
-    [api.conf],
+  const { data: intervals = [] } = useIntervalsQuery();
+  const intervalNames = useMemo(
+    () => intervals.map((i) => i.name ?? "").filter((n) => n.length > 0),
+    [intervals],
   );
-  const [intervalNames, setIntervalNames] = useState<string[]>([]);
-
-  useEffect(() => {
-    if (!api.org) return;
-    let cancelled = false;
-    intervalApi
-      .getIntervals(api.org)
-      .then((intervals: ApiInterval[]) => {
-        if (cancelled) return;
-        setIntervalNames(
-          intervals.map((i) => i.name ?? "").filter((n) => n.length > 0),
-        );
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setIntervalNames([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [api.org, intervalApi]);
 
   const intervalOptions = useMemo(() => {
     const opts = new Set<string>(defaultIntervals);

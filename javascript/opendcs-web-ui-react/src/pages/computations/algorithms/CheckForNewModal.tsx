@@ -1,15 +1,12 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Button, Modal, Spinner } from "react-bootstrap";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { Alert, Button, Modal, Spinner } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import { useApi } from "../../../contexts/app/ApiContext";
 import { ChooserTable, type ChooserColumnDef } from "../../../components/data-table";
-
-interface AvailableAlgorithm {
-  name: string;
-  execClass: string;
-  description: string;
-  alreadyImported: boolean;
-}
+import {
+  useAlgorithmCatalogQuery,
+  useImportAlgorithmsMutation,
+  type CatalogAlgorithm,
+} from "../../../queries/algorithms";
 
 interface Props {
   show: boolean;
@@ -19,56 +16,37 @@ interface Props {
 
 export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) => {
   const [t] = useTranslation(["algorithms", "translation"]);
-  const api = useApi();
-  const [available, setAvailable] = useState<AvailableAlgorithm[]>([]);
   const [selectedExecClasses, setSelectedExecClasses] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [importing, setImporting] = useState(false);
 
-  useEffect(() => {
-    if (!show) return;
-    let cancelled = false;
-    setLoading(true);
-    setSelectedExecClasses([]);
-    fetch("/odcsapi/algorithmcatalog", {
-      headers: { "X-ORGANIZATION-ID": api.org },
-    })
-      .then((res) => res.json())
-      .then((data: AvailableAlgorithm[]) => {
-        if (!cancelled) {
-          setAvailable(data.filter((a) => !a.alreadyImported));
-        }
-      })
-      .catch((e: unknown) => console.error("Failed to fetch algorithm catalog", e))
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [show, api.org]);
+  // Reset selection each time the modal opens — in-render transition compare
+  // avoids the setState-in-effect anti-pattern (same approach as SelectorModal).
+  const [wasShown, setWasShown] = useState(show);
+  if (show !== wasShown) {
+    setWasShown(show);
+    if (show) setSelectedExecClasses([]);
+  }
+
+  const {
+    data: catalog = [],
+    isLoading,
+    isError: catalogError,
+  } = useAlgorithmCatalogQuery(show);
+
+  const available = catalog.filter((a) => !a.alreadyImported);
+
+  const importMutation = useImportAlgorithmsMutation({
+    onSuccess: () => {
+      onImported();
+      onHide();
+    },
+  });
 
   const importSelected = useCallback(() => {
     if (selectedExecClasses.length === 0) return;
-    setImporting(true);
-    fetch("/odcsapi/algorithmcatalog", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-ORGANIZATION-ID": api.org,
-      },
-      body: JSON.stringify(selectedExecClasses),
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error(`Import failed: ${res.status}`);
-        onImported();
-        onHide();
-      })
-      .catch((e: unknown) => console.error("Failed to import algorithms", e))
-      .finally(() => setImporting(false));
-  }, [selectedExecClasses, api.org, onImported, onHide]);
+    importMutation.mutate(selectedExecClasses);
+  }, [selectedExecClasses, importMutation]);
 
-  const columns: ChooserColumnDef<AvailableAlgorithm>[] = useMemo(
+  const columns: ChooserColumnDef<CatalogAlgorithm>[] = useMemo(
     () => [
       { data: "name", header: t("algorithms:header.Name") },
       { data: "execClass", header: t("algorithms:header.ExecClass") },
@@ -78,7 +56,7 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
   );
 
   let body: ReactNode;
-  if (loading) {
+  if (isLoading) {
     body = (
       <div className="text-center p-4">
         <Spinner animation="border" />
@@ -88,7 +66,7 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
     body = <p>{t("algorithms:check_new.none_found")}</p>;
   } else {
     body = (
-      <ChooserTable<AvailableAlgorithm, string>
+      <ChooserTable<CatalogAlgorithm, string>
         data={available}
         getId={(a) => a.execClass}
         columns={columns}
@@ -106,7 +84,15 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
       <Modal.Header closeButton>
         <Modal.Title>{t("algorithms:check_new.title")}</Modal.Title>
       </Modal.Header>
-      <Modal.Body style={{ maxHeight: "60vh", overflowY: "auto" }}>{body}</Modal.Body>
+      <Modal.Body style={{ maxHeight: "60vh", overflowY: "auto" }}>
+        {catalogError && (
+          <Alert variant="danger">{t("algorithms:check_new.fetch_error")}</Alert>
+        )}
+        {importMutation.isError && (
+          <Alert variant="danger">{t("algorithms:check_new.import_error")}</Alert>
+        )}
+        {body}
+      </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={onHide}>
           {t("algorithms:check_new.close")}
@@ -114,9 +100,9 @@ export const CheckForNewModal: React.FC<Props> = ({ show, onHide, onImported }) 
         <Button
           variant="primary"
           onClick={importSelected}
-          disabled={selectedExecClasses.length === 0 || importing}
+          disabled={selectedExecClasses.length === 0 || importMutation.isPending}
         >
-          {importing ? (
+          {importMutation.isPending ? (
             <Spinner animation="border" size="sm" />
           ) : (
             t("algorithms:check_new.import_selected", {
