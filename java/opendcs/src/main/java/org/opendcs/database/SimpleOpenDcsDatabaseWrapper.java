@@ -209,7 +209,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     }
 
     /**
-     * Does lookup for the current implementation first, and then attempts to retrieve a 
+     * Does lookup for the current implementation first, and then attempts to retrieve a
      * generic implementation.
      * @param <T>
      * @param dao
@@ -224,7 +224,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         {
             instance = Lookup.getDefault().lookup(dao);
         }
-        
+
         if (instance != null)
         {
             final var tmp = instance;
@@ -260,7 +260,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
                 throw new OpenDcsDaoConfigurationException("Field " + field.getName() +
                                                " in class" + fieldClass.getName() +
                                                " is not a type of " + OpenDcsDao.class.getName());
-            }            
+            }
             final var daoClass = (Class<? extends OpenDcsDao>)fieldClass;
             var instance = fromLookup(daoClass);
             if (instance.isPresent())
@@ -293,7 +293,8 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         {
             // This DataTransaction is auto closable and handles the closing of the
             // Jdbi Handle instance.
-            return new JdbiTransaction(jdbi.open().begin(), new TransactionContextImpl(keyGenerator, settings, dbEngine)); // NOSONAR
+            return new JdbiTransaction(jdbi.open().begin(),
+                                       new TransactionContextImpl(keyGenerator, settings, dbEngine, querySettings)); // NOSONAR
         }
         catch (JdbiException ex)
         {

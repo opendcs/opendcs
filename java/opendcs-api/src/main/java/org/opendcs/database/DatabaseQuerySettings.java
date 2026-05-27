@@ -4,6 +4,10 @@ import org.opendcs.settings.api.OpenDcsSettings;
 
 public interface DatabaseQuerySettings extends OpenDcsSettings
 {
+    static final DatabaseQuerySettings DEFAULT_SETTINGS = new DatabaseQuerySettings() {
+        /* just use the defaults */
+    };
+
     default boolean numericDate()
     {
         return true; // Reference implementations currently use numeric columns instead of date columns for time.

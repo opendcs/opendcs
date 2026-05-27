@@ -57,9 +57,7 @@ public class OpenTsdbProvider implements DatabaseProvider
     {
         Database decodesDb = getDecodesDatabase(dataSource, settings);
         OpenTsdb tsDb = new OpenTsdb(appName, dataSource, settings);
-        var db = new SimpleOpenDcsDatabaseWrapper(settings, decodesDb, tsDb, dataSource, new DatabaseQuerySettings() {
-            
-        });
+        var db = new SimpleOpenDcsDatabaseWrapper(settings, decodesDb, tsDb, dataSource, DatabaseQuerySettings.DEFAULT_SETTINGS);
         tsDb.setDcsDatabase(db);
         Database.setDb(decodesDb);
         try

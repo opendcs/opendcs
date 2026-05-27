@@ -51,7 +51,7 @@ public final class XmlOpenDcsDatabaseWrapper extends SimpleOpenDcsDatabaseWrappe
         try
         {
             return new SimpleTransaction(this.dataSource.getConnection(),
-                                         new TransactionContextImpl(keyGenerator, settings, dbEngine));
+                                         new TransactionContextImpl(keyGenerator, settings, dbEngine, querySettings));
         }
         catch (SQLException ex)
         {
