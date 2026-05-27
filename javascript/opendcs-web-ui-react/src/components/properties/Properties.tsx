@@ -24,6 +24,8 @@ export interface PropertiesTableProps {
   width?: React.CSSProperties["width"];
   height?: React.CSSProperties["height"];
   classes?: string;
+  /** Override the table caption. Defaults to the `properties:PropertiesTitle` translation. */
+  caption?: React.ReactNode;
 }
 
 /** Returns the property name, falling back to the new-row counter when the name is blank. */
@@ -44,6 +46,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
   width = "20em",
   height = "100vh",
   classes = "",
+  caption,
 }) => {
   const [t] = useTranslation(["properties", "translation"]);
 
@@ -98,7 +101,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
         data={theProps}
         getId={(p) => p.name}
         columns={columns}
-        caption={t("properties:PropertiesTitle")}
+        caption={caption ?? t("properties:PropertiesTitle")}
         actionsLabel={t("translation:actions")}
         inlineEdit={
           edit
