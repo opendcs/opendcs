@@ -122,7 +122,7 @@ public final class ConfigResources extends OpenDcsResource
 		try (var tx = db.newTransaction())
 		{
 			final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
-			final var configs = dao.getAll(tx, -1, -1)
+			final var configs = dao.getAllRefs(tx)
 								   .stream()
 								   .map(pc -> mapRef(pc))
 								   .toList();
