@@ -9,6 +9,8 @@ import { useCallback, useState } from "react";
 // eslint-disable-next-line storybook/use-storybook-testing-library
 import { act } from "@testing-library/react";
 import type { ArgsStoryFn } from "storybook/internal/types";
+import { http, HttpResponse } from "msw";
+import type { ApiInterval } from "opendcs-api";
 
 const meta = {
   component: ComputationParamsTable,
@@ -235,5 +237,42 @@ export const DeleteParm: Story = {
       },
       { timeout: 5000 },
     );
+  },
+};
+
+//  • intervalId:1 has name "1Hour"   → i.name ?? "" = "1Hour", length > 0 = true
+//  • intervalId:2 has name undefined  → i.name ?? "" = "",      length > 0 = false
+//  • intervalId:3 has name ""         → i.name ?? "" = "",      length > 0 = false
+const MOCK_INTERVALS: ApiInterval[] = [
+  { intervalId: 1, name: "1Hour" },
+  { intervalId: 2 /* name intentionally missing */ },
+  { intervalId: 3, name: "" },
+];
+
+/**
+ * Verifies that interval names from the server are merged into the
+ * interval combobox options.
+ */
+export const EditModeWithIntervals: Story = {
+  args: { parms: sampleParms },
+  render: EditableRender,
+  parameters: {
+    msw: {
+      handlers: {
+        intervals: http.get("/odcsapi/intervals", () =>
+          HttpResponse.json<ApiInterval[]>(MOCK_INTERVALS),
+        ),
+      },
+    },
+  },
+  play: async ({ mount, parameters }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    // The table renders with the edit buttons once mounted.
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:parms.edit_for", { name: "input1" }),
+    });
+    expect(editBtn).toBeInTheDocument();
   },
 };

@@ -2,10 +2,12 @@ import type { Meta, ReactRenderer, StoryObj } from "@storybook/react-vite";
 import { AlgorithmsTable, type TableAlgorithmRef } from "./AlgorithmsTable";
 import type { ApiAlgorithm, ApiAlgorithmRef, ApiPropSpec } from "opendcs-api";
 import { act } from "@testing-library/react";
-import { expect, waitFor } from "storybook/test";
+import { expect, screen, waitFor } from "storybook/test";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ArgsStoryFn } from "storybook/internal/types";
 import type { RemoveAction, SaveAction } from "../../../util/Actions";
+import { http, HttpResponse } from "msw";
+import type { CatalogAlgorithm } from "../../../queries/algorithms";
 
 const meta = {
   component: AlgorithmsTable,
@@ -235,5 +237,65 @@ export const DeleteAlgorithm: Story = {
     await waitFor(() => {
       expect(canvas.queryByText("ScalerAdder")).not.toBeInTheDocument();
     });
+  },
+};
+
+const CATALOG: CatalogAlgorithm[] = [
+  {
+    name: "RatingTableInterpolator",
+    execClass: "decodes.comp.RatingTableInterpolator",
+    description: "Interpolates from a rating table.",
+    alreadyImported: false,
+  },
+];
+
+/**
+ * Opens "Check for New", selects an algorithm, and completes the import.
+ */
+export const ImportViaCheckForNew: Story = {
+  args: { algorithms: toAlgoRefs(sharedAlgorithms) },
+  render: StoryRender,
+  parameters: {
+    msw: {
+      handlers: {
+        catalogGet: http.get("/odcsapi/algorithmcatalog", () =>
+          HttpResponse.json<CatalogAlgorithm[]>(CATALOG),
+        ),
+        importPost: http.post(
+          "/odcsapi/algorithmcatalog",
+          () => new HttpResponse(null, { status: 200 }),
+        ),
+      },
+    },
+  },
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    // Open the CheckForNewModal via the header button (table is in canvas).
+    const checkBtn = await waitFor(
+      () => canvas.getByRole("button", { name: i18n.t("algorithms:check_new.button") }),
+      { timeout: 5000 },
+    );
+    await act(async () => userEvent.click(checkBtn));
+
+    // Modal portals to document.body → use screen for its content.
+    await screen.findByText("RatingTableInterpolator", {}, { timeout: 5000 });
+
+    // Select the algorithm row.
+    await act(async () => userEvent.click(screen.getByText("RatingTableInterpolator")));
+
+    // Click Import.
+    const importBtn = await screen.findByRole("button", {
+      name: i18n.t("algorithms:check_new.import_selected", { count: 1 }),
+    });
+    await act(async () => userEvent.click(importBtn));
+
+    // Modal should close (onHide called by CheckForNewModal.onSuccess).
+    await waitFor(
+      () =>
+        expect(screen.queryByText("RatingTableInterpolator")).not.toBeInTheDocument(),
+      { timeout: 5000 },
+    );
   },
 };
