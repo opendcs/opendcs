@@ -29,12 +29,17 @@ final class PresentationResourcesTest
 	@Test
 	void testPresentationGroupListMap() throws Exception
 	{
+		final var parentGroup = new PresentationGroup();
+		parentGroup.forceSetId(DbKey.createDbKey(5678L));
+		parentGroup.groupName = "Parent Presentation Group";
+
 		PresentationGroup pg = new PresentationGroup();
 		pg.setId(DbKey.createDbKey(1234L));
-		pg.inheritsFrom = "Parent Presentation Group";
+		pg.inheritsFrom = parentGroup.groupName;
 		pg.groupName = "Presentation Group";
 		pg.lastModifyTime = Date.from(Instant.parse("2021-07-01T00:00:00Z"));
 		pg.isProduction = true;
+		pg.parent = parentGroup;
 		DataPresentation dataPres = new DataPresentation();
 		dataPres.setDataType(new DataType("New Data Type", "TST"));
 		dataPres.setId(DbKey.createDbKey(1234567L));

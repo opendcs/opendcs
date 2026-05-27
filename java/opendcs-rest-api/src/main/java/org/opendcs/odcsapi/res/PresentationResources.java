@@ -115,7 +115,7 @@ public final class PresentationResources extends OpenDcsResource
         presRef.setName(group.groupName);
         presRef.setInheritsFrom(group.inheritsFrom);
         presRef.setProduction(group.isProduction);
-        if (group.inheritsFrom != null && !group.inheritsFrom.isEmpty())
+        if (group.inheritsFrom != null && !group.inheritsFrom.isEmpty() && group.parent != null)
         {
             presRef.setInheritsFromId(group.parent.getId().getValue());
         }
