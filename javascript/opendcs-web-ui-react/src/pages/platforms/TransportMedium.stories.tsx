@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import type { ApiRefList, ApiTransportMedium } from "opendcs-api";
-import { expect, waitFor, within } from "storybook/test";
+import { expect, fn, waitFor, within } from "storybook/test";
 import { TransportMedium } from "./TransportMedium";
 
 const REFLISTS: Record<string, ApiRefList> = {
@@ -122,6 +122,21 @@ const iridiumMedium: ApiTransportMedium = {
   mediumType: "iridium",
   mediumId: "300434066009870",
   scriptName: "IRI",
+};
+
+const dataLoggerMedium: ApiTransportMedium = {
+  mediumType: "data-logger",
+  mediumId: "DL-7",
+  scriptName: "DL",
+  loggerType: "Sutron",
+};
+
+const incomingTcpMedium: ApiTransportMedium = {
+  mediumType: "incoming-tcp",
+  mediumId: "incoming-7",
+  scriptName: "ITCP",
+  loggerType: "Campbell",
+  doLogin: false,
 };
 
 const meta = {
@@ -266,5 +281,145 @@ export const DoLoginTogglesCredentials: Story = {
       expect(canvas.queryByLabelText(/username/i)).not.toBeInTheDocument();
       expect(canvas.queryByLabelText(/password/i)).not.toBeInTheDocument();
     });
+  },
+};
+
+// Inverse of DoLoginTogglesCredentials: when the medium starts with doLogin
+// off, toggling it on must reveal username + password.
+export const DoLoginToggleOnRevealsCredentials: Story = {
+  args: { medium: tcpMedium, edit: true, originalKey: "polled-tcp::192.168.1.1:9999" },
+  play: async ({ mount, userEvent }) => {
+    const canvas = await mount();
+    const doLogin = (await waitFor(
+      () => canvas.getByLabelText(/do login/i) as HTMLInputElement,
+      { timeout: 5000 },
+    )) as HTMLInputElement;
+    expect(canvas.queryByLabelText(/username/i)).not.toBeInTheDocument();
+
+    await userEvent.click(doLogin);
+
+    await waitFor(() => expect(canvas.getByLabelText(/username/i)).toBeInTheDocument());
+    expect(canvas.getByLabelText(/password/i)).toBeInTheDocument();
+  },
+};
+
+// data-logger shows the loggerType picker (shared with the polled-* families)
+// but never shows doLogin or the serial / GOES fields.
+export const DataLoggerEdit: Story = {
+  args: { medium: dataLoggerMedium, edit: true, originalKey: "data-logger::DL-7" },
+  play: async ({ mount }) => {
+    const canvas = await mount();
+    await waitFor(
+      () => expect(canvas.getByLabelText(/logger type/i)).toBeInTheDocument(),
+      { timeout: 5000 },
+    );
+    expect(canvas.queryByLabelText(/do login/i)).not.toBeInTheDocument();
+    expect(canvas.queryByLabelText(/baud/i)).not.toBeInTheDocument();
+    expect(canvas.queryByLabelText(/channel/i)).not.toBeInTheDocument();
+  },
+};
+
+// incoming-tcp behaves like polled-tcp for field visibility — login fields
+// without the serial bank.
+export const IncomingTcpEdit: Story = {
+  args: {
+    medium: incomingTcpMedium,
+    edit: true,
+    originalKey: "incoming-tcp::incoming-7",
+  },
+  play: async ({ mount }) => {
+    const canvas = await mount();
+    await waitFor(
+      () => expect(canvas.getByLabelText(/logger type/i)).toBeInTheDocument(),
+      { timeout: 5000 },
+    );
+    expect(canvas.getByLabelText(/do login/i)).toBeInTheDocument();
+    expect(canvas.queryByLabelText(/baud/i)).not.toBeInTheDocument();
+    expect(canvas.queryByLabelText(/channel/i)).not.toBeInTheDocument();
+  },
+};
+
+// The mediumId label is category-specific — switching mediumType should swap
+// the label text without losing the typed-in id (the field re-mounts keyed by
+// category, but its defaultValue stays in sync with local.mediumId).
+export const MediumIdLabelChangesPerCategory: Story = {
+  args: { medium: goesMedium, edit: true, originalKey: "goes::CE31D030" },
+  play: async ({ mount, userEvent }) => {
+    const canvas = await mount();
+    // GOES → "DCP Address"
+    await waitFor(
+      () => expect(canvas.getByLabelText(/dcp address/i)).toBeInTheDocument(),
+      { timeout: 5000 },
+    );
+
+    const typeSelect = canvas.getByLabelText(/medium type/i) as HTMLSelectElement;
+    await waitFor(() =>
+      expect(
+        within(typeSelect).getByRole("option", { name: /polled-modem/ }),
+      ).toBeInTheDocument(),
+    );
+
+    await userEvent.selectOptions(typeSelect, "polled-modem");
+    await waitFor(() =>
+      expect(canvas.getByLabelText(/telephone number/i)).toBeInTheDocument(),
+    );
+    expect(canvas.queryByLabelText(/dcp address/i)).not.toBeInTheDocument();
+
+    await userEvent.selectOptions(typeSelect, "polled-tcp");
+    await waitFor(() =>
+      expect(canvas.getByLabelText(/host:port/i)).toBeInTheDocument(),
+    );
+    expect(canvas.queryByLabelText(/telephone number/i)).not.toBeInTheDocument();
+  },
+};
+
+// Save button: fires actions.save with the current medium and the unchanged
+// originalKey when nothing has been edited yet.
+export const SaveInvokesAction: Story = {
+  args: {
+    medium: goesMedium,
+    edit: true,
+    originalKey: "goes::CE31D030",
+    actions: { save: fn(), cancel: fn() },
+  },
+  play: async ({ args, mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+    const saveBtn = await waitFor(() =>
+      canvas.getByRole("button", {
+        name: i18n.t("platforms:save_transport", { id: "CE31D030" }),
+      }),
+    );
+    await userEvent.click(saveBtn);
+
+    expect(args.actions?.save).toHaveBeenCalledWith(
+      expect.objectContaining({ mediumType: "goes", mediumId: "CE31D030" }),
+      "goes::CE31D030",
+    );
+    expect(args.actions?.cancel).not.toHaveBeenCalled();
+  },
+};
+
+// Cancel button: fires actions.cancel with the originalKey so the parent can
+// drop the in-progress edit row without saving.
+export const CancelInvokesAction: Story = {
+  args: {
+    medium: goesMedium,
+    edit: true,
+    originalKey: "goes::CE31D030",
+    actions: { save: fn(), cancel: fn() },
+  },
+  play: async ({ args, mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+    const cancelBtn = await waitFor(() =>
+      canvas.getByRole("button", {
+        name: i18n.t("platforms:cancel_transport_for", { id: "CE31D030" }),
+      }),
+    );
+    await userEvent.click(cancelBtn);
+
+    expect(args.actions?.cancel).toHaveBeenCalledWith("goes::CE31D030");
+    expect(args.actions?.save).not.toHaveBeenCalled();
   },
 };
