@@ -44,7 +44,7 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
      * also used. This allows the query for the given presentation group to also pull in the data for their
      * parent group in a single step.
      */
-    final static String SELECT_QUERY = """
+    static final String SELECT_QUERY = """
             with <recursive_cte> pg_limit (id, name, inheritsfrom, lastmodifytime, isproduction) as (
                 select id, name, inheritsfrom, lastmodifytime, isproduction
                 from presentationgroup
@@ -80,11 +80,11 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
 
             """;
 
-    final static String DELETE_DATA_PRESENTATION = """
+    static final String DELETE_DATA_PRESENTATION = """
             delete from datapresentation where groupid = :id
             """;
 
-    final static String INSERT_DATA_PRESENTATION = """
+    static final String INSERT_DATA_PRESENTATION = """
             insert into
              datapresentation(id, groupid, datatypeid, unitabbr, equipmentid, maxdecimals, max_value, min_value)
              values(:id, :groupid, :datatypeid, :unitabbr, :equipmentid, :maxdecimals, :max_value, :min_value)

@@ -51,19 +51,15 @@ import org.opendcs.database.dai.PresentationGroupDao;
 import org.opendcs.odcsapi.beans.ApiPresentationElement;
 import org.opendcs.odcsapi.beans.ApiPresentationGroup;
 import org.opendcs.odcsapi.beans.ApiPresentationRef;
-import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
-import org.opendcs.utils.logging.OpenDcsLoggerFactory;
-import org.slf4j.Logger;
 
 @Path("/")
 public final class PresentationResources extends OpenDcsResource
 {
     private static final WebAppException UNABLE_TO_GET_PRESENTATIONGROUP_DAO = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "No Presentation Group DAO available.");
-    private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     @Context HttpHeaders httpHeaders;
 
@@ -331,7 +327,7 @@ public final class PresentationResources extends OpenDcsResource
     public Response deletePresentation(@Parameter(description = "presentation group id", required = true, example = "4",
             schema = @Schema(implementation = Long.class))
         @QueryParam("groupid") Long groupId)
-            throws DbException, WebAppException
+            throws WebAppException
     {
         if (groupId == null)
         {

@@ -52,14 +52,21 @@ public final class ExceptionUtil
     }
 
     /**
-     * For situtations where the solution is to just forward the exception
+     * For situtations where the solution is to just forward the exception.
+     *
+     * If the exception thrown by the method matches the expected exception it
+     * will be unwrapped and thrown.
+     *
+     * If it does not match the created {@see WrappedException}, a RuntimeException,
+     * will be rethrown.
+     *
      * @param <K> Map Key Type
      * @param <T> Map value Type
      * @param <E> Expected Exception
      * @param collection collection on which to operate
      * @param key the key
      * @param supplier actually action to be performed on compute if absent
-     * @param exceptionType class instance of the type of exception 
+     * @param exceptionType class instance of the type of exception
      * @return
      * @throws E
      */
@@ -73,7 +80,7 @@ public final class ExceptionUtil
                 {
                     return supplier.accept(newKey);
                 }
-                catch (Exception ex)
+                catch (Exception ex) // NOSONAR
                 {
                     throw new WrappedException(ex);
                 }
