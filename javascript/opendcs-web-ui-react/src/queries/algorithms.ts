@@ -108,10 +108,52 @@ export const useDeleteAlgorithmMutation = (
   });
 };
 
-// Used after CheckForNewModal imports new algorithms — refresh the list and
-// any cached details so the table reflects the just-imported records.
-export const useInvalidateAlgorithms = () => {
-  const { org } = useAlgorithmsApi();
+export interface CatalogAlgorithm {
+  name: string;
+  execClass: string;
+  description: string;
+  alreadyImported: boolean;
+}
+
+export const useAlgorithmCatalogQuery = (enabled: boolean) => {
+  const { org } = useApi();
+  return useQuery<CatalogAlgorithm[]>({
+    queryKey: algorithmKeys.catalog(org),
+    queryFn: () =>
+      fetch("/odcsapi/algorithmcatalog", {
+        headers: { "X-ORGANIZATION-ID": org },
+      }).then((res) => {
+        if (!res.ok) throw new Error(`Catalog fetch failed: ${res.status}`);
+        return res.json() as Promise<CatalogAlgorithm[]>;
+      }),
+    enabled,
+    staleTime: 5 * 60_000,
+  });
+};
+
+export const useImportAlgorithmsMutation = (
+  options?: Omit<UseMutationOptions<unknown, unknown, string[]>, "mutationFn">,
+) => {
+  const { org } = useApi();
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: algorithmKeys.all(org) });
+  return useMutation({
+    mutationFn: (execClasses: string[]) =>
+      fetch("/odcsapi/algorithmcatalog", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-ORGANIZATION-ID": org,
+        },
+        body: JSON.stringify(execClasses),
+      }).then((res) => {
+        if (!res.ok) throw new Error(`Import failed: ${res.status}`);
+      }),
+    ...options,
+    onSuccess: (...args) => {
+      // Invalidate both the catalog (alreadyImported flags changed) and the
+      // algorithm list so the table reflects newly imported records.
+      queryClient.invalidateQueries({ queryKey: algorithmKeys.all(org) });
+      options?.onSuccess?.(...args);
+    },
+  });
 };

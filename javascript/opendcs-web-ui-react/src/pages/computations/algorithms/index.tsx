@@ -4,7 +4,6 @@ import {
   useDeleteAlgorithmMutation,
   useFetchAlgorithm,
   useFetchPropSpecs,
-  useInvalidateAlgorithms,
   useSaveAlgorithmMutation,
 } from "../../../queries/algorithms";
 
@@ -14,7 +13,6 @@ export const Algorithms: React.FC = () => {
   const fetchPropSpecs = useFetchPropSpecs();
   const saveAlgorithm = useSaveAlgorithmMutation();
   const deleteAlgorithm = useDeleteAlgorithmMutation();
-  const refreshAlgorithms = useInvalidateAlgorithms();
 
   return (
     <div className="content">
@@ -30,7 +28,6 @@ export const Algorithms: React.FC = () => {
           save: (algorithm) => saveAlgorithm.mutateAsync(algorithm).then(() => {}),
           remove: (algorithmId) => deleteAlgorithm.mutate(algorithmId),
         }}
-        onRefresh={refreshAlgorithms}
       />
     </div>
   );

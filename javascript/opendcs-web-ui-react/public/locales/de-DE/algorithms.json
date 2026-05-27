@@ -23,7 +23,9 @@
     "none_found": "Keine neuen Algorithmen gefunden.",
     "select_all": "Alle auswählen",
     "close": "Schließen",
-    "import_selected": "Ausgewählte importieren ({{count}})"
+    "import_selected": "Ausgewählte importieren ({{count}})",
+    "fetch_error": "Algorithmus-Katalog konnte nicht geladen werden. Bitte erneut versuchen.",
+    "import_error": "Algorithmen konnten nicht importiert werden. Bitte erneut versuchen."
   },
   "parms": {
     "title": "Parameter",

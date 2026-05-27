@@ -23,7 +23,9 @@
     "none_found": "No se encontraron algoritmos nuevos.",
     "select_all": "Seleccionar todos",
     "close": "Cerrar",
-    "import_selected": "Importar Seleccionados ({{count}})"
+    "import_selected": "Importar Seleccionados ({{count}})",
+    "fetch_error": "No se pudo cargar el catálogo de algoritmos. Por favor, inténtelo de nuevo.",
+    "import_error": "No se pudieron importar los algoritmos. Por favor, inténtelo de nuevo."
   },
   "parms": {
     "title": "Parámetros",

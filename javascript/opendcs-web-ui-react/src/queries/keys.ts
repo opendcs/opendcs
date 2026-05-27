@@ -15,6 +15,7 @@ export const algorithmKeys = {
     [...algorithmKeys.all(org), "detail", algorithmId] as const,
   propSpecs: (org: string, execClass: string) =>
     [...algorithmKeys.all(org), "propSpecs", execClass] as const,
+  catalog: (org: string) => [...algorithmKeys.all(org), "catalog"] as const,
 };
 
 export const platformKeys = {
@@ -54,6 +55,11 @@ export const unitKeys = {
   all: (org: string) => ["units", org] as const,
   list: (org: string) => [...unitKeys.all(org), "list"] as const,
   conversions: (org: string) => [...unitKeys.all(org), "conversions"] as const,
+};
+
+export const intervalKeys = {
+  all: (org: string) => ["intervals", org] as const,
+  list: (org: string) => [...intervalKeys.all(org), "list"] as const,
 };
 
 // Org list is global (not scoped to an org) — it's the source of truth that
