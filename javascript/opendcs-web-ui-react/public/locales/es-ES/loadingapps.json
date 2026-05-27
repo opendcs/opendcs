@@ -10,5 +10,8 @@
   "edit_app": "Editar aplicación de carga con id {{id}}",
   "save_app": "Guardar aplicación de carga con id {{id}}",
   "cancel_for": "Cancelar edición de aplicación de carga con id {{id}}",
-  "delete_for": "Eliminar aplicación de carga con id {{id}}"
+  "delete_for": "Eliminar aplicación de carga con id {{id}}",
+  "status": "Estado",
+  "status_running": "Ejecutando",
+  "status_inactive": "Inactivo"
 }

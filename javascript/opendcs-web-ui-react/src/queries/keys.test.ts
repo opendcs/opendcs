@@ -146,7 +146,15 @@ describe("appKeys", () => {
     expect(list).toEqual(["apps", "acme", "list"]);
   });
 
+  test("stat() extends all() so invalidating all() also invalidates stat()", () => {
+    const all = appKeys.all("acme");
+    const stat = appKeys.stat("acme");
+    expect(stat.slice(0, all.length)).toEqual([...all]);
+    expect(stat).toEqual(["apps", "acme", "stat"]);
+  });
+
   test("keys for different orgs never collide", () => {
     expect(appKeys.list("acme")).not.toEqual(appKeys.list("globex"));
+    expect(appKeys.stat("acme")).not.toEqual(appKeys.stat("globex"));
   });
 });

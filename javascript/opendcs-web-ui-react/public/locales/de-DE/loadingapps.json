@@ -10,5 +10,8 @@
   "edit_app": "Ladeanwendung {{id}} bearbeiten",
   "save_app": "Ladeanwendung {{id}} speichern",
   "cancel_for": "Bearbeitung von Ladeanwendung {{id}} abbrechen",
-  "delete_for": "Ladeanwendung {{id}} löschen"
+  "delete_for": "Ladeanwendung {{id}} löschen",
+  "status": "Status",
+  "status_running": "Läuft",
+  "status_inactive": "Inaktiv"
 }
