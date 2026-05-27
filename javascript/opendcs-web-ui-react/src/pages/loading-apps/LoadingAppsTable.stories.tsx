@@ -122,6 +122,30 @@ export const Default: Story = {
   },
 };
 
+export const WithRunningStatus: Story = {
+  args: {
+    apps: [
+      {
+        appId: 1,
+        appName: "compproc",
+        appType: "computationprocess",
+        comment: "Main computation process",
+        _pid: 12345,
+      },
+      {
+        appId: 2,
+        appName: "routing",
+        appType: "routingscheduler",
+        comment: "Routing scheduler",
+        _pid: null,
+      },
+    ],
+  },
+  play: async ({ mount }) => {
+    await mount();
+  },
+};
+
 export const WithApps: Story = {
   args: { apps: toAppRefs(sharedApps) },
   render: StoryRender,

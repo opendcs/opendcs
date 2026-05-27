@@ -9,7 +9,8 @@ import {
   type RowAction,
 } from "../../components/data-table";
 
-export type TableAppRef = Partial<ApiAppRef>;
+// DataTables sees a row-data change when status loads, triggering a redraw.
+export type TableAppRef = Partial<ApiAppRef> & { _pid?: number | null };
 
 export interface LoadingAppsTableProperties {
   apps: TableAppRef[];
@@ -46,6 +47,21 @@ export const LoadingAppsTable: React.FC<LoadingAppsTableProperties> = ({
           if (!data) return "";
           const d = data instanceof Date ? data : new Date(data as string);
           return Number.isNaN(d.getTime()) ? "" : d.toLocaleString();
+        },
+      },
+      {
+        data: "_pid",
+        header: t("loadingapps:status"),
+        orderable: false,
+        searchable: false,
+        render: (data: unknown, type: string) => {
+          if (type !== "display") return data ?? "";
+          const running = data != null;
+          const label = running
+            ? t("loadingapps:status_running")
+            : t("loadingapps:status_inactive");
+          const cls = running ? "bg-success" : "bg-secondary";
+          return `<span class="badge ${cls}">${label}</span>`;
         },
       },
     ],

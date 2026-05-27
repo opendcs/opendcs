@@ -38,6 +38,7 @@ export const computationKeys = {
 export const appKeys = {
   all: (org: string) => ["apps", org] as const,
   list: (org: string) => [...appKeys.all(org), "list"] as const,
+  stat: (org: string) => [...appKeys.all(org), "stat"] as const,
 };
 
 export const tsGroupKeys = {
