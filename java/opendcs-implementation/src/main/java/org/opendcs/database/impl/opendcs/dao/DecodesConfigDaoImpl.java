@@ -441,6 +441,44 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
     }
 
     @Override
+    public List<PlatformConfig> getAllRefs(DataTransaction tx) throws OpenDcsDataException
+    {
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var ctx = tx.getContext();
+        var dbEngine = ctx.getDatabase();
+
+        // Lightweight refs-only query. The full getAll loads every joined sensor / script /
+        // format-statement / unit-converter row per config, which OOMs / times out on databases
+        // with many configs. Chooser / pick-list callers only need id / name / description /
+        // # platforms.
+        final String sql =
+                "select pc.id pc_id, pc.name pc_name, pc.description pc_description,"
+                + " count(p.id) pc_numplatforms"
+                + " from PlatformConfig pc"
+                + " left join Platform p on p.configId = pc.id"
+                + " group by pc.id, pc.name, pc.description"
+                + " order by pc.name <collate> asc";
+        try (var query = handle.createQuery(sql))
+        {
+            query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine));
+            return query.map((rs, rowCtx) ->
+                {
+                    final PlatformConfig pc = new PlatformConfig();
+                    pc.forceSetId(DbKey.createDbKey(rs, "pc_id"));
+                    pc.configName = rs.getString("pc_name");
+                    pc.description = rs.getString("pc_description");
+                    if (pc.description == null)
+                    {
+                        pc.description = "";
+                    }
+                    pc.numPlatformsUsing = rs.getInt("pc_numplatforms");
+                    return pc;
+                }).list();
+        }
+    }
+
+    @Override
     public List<PlatformConfig> getAll(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
         var handle = tx.connection(Handle.class)

@@ -1,4 +1,4 @@
-import { useCallback, useReducer } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import {
   Button,
   Card,
@@ -11,30 +11,90 @@ import {
 } from "react-bootstrap";
 import { Save, X } from "react-bootstrap-icons";
 import { useTranslation } from "react-i18next";
-import type { ApiTransportMedium } from "opendcs-api";
+import type { ApiRefList, ApiRefListItem, ApiTransportMedium } from "opendcs-api";
 import { DetailFade } from "../../components/data-table";
 import type { CancelAction } from "../../util/Actions";
+import { useRefListsQuery } from "../../queries/refLists";
 import { TransportMediumReducer } from "./TransportMediumReducer";
 
 const INPUT_H = { height: "2.25rem" };
 const LABEL_H = { height: "1rem" };
 
-const MEDIUM_TYPES = [
-  "GOES",
-  "GOES-SELFTIMED",
-  "GOES-RANDOM",
-  "IRIDIUM",
-  "POLLED-MODEM",
-  "POLLED-TCP",
-  "INCOMING-TCP",
-  "DATA-LOGGER",
-  "OTHER",
-] as const;
+// Curated shortlist of timezones that cover the vast majority of US
+// water-data installations. The datalist is *suggestions only* — users can
+// type any IANA zone string they like and it'll save through unchanged.
+const TIMEZONES: readonly string[] = [
+  "UTC",
+  "GMT",
+  "US/Eastern",
+  "US/Central",
+  "US/Mountain",
+  "US/Pacific",
+  "US/Alaska",
+  "US/Hawaii",
+  "US/Arizona",
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "America/Phoenix",
+  "America/Anchorage",
+  "America/Honolulu",
+  "America/Puerto_Rico",
+  "Europe/London",
+];
+const TIMEZONE_LIST_ID = "tm-timezone-list";
 
-const BAUD_RATES = [300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200];
-const PARITY_OPTIONS = ["none", "even", "odd"] as const;
-const DATA_BITS_OPTIONS = [7, 8];
-const STOP_BITS_OPTIONS = [1, 2];
+/** Sort a reflist's items map by sortNumber asc, falling back to value asc. */
+function sortItems(refList: ApiRefList | undefined): ApiRefListItem[] {
+  if (!refList?.items) return [];
+  return Object.values(refList.items).sort((a, b) => {
+    const sa = a.sortNumber ?? Number.MAX_SAFE_INTEGER;
+    const sb = b.sortNumber ?? Number.MAX_SAFE_INTEGER;
+    if (sa !== sb) return sa - sb;
+    return (a.value ?? "").localeCompare(b.value ?? "");
+  });
+}
+
+type MediumCategory =
+  | "goes"
+  | "polled-modem"
+  | "polled-tcp"
+  | "incoming-tcp"
+  | "data-logger"
+  | "other";
+
+/**
+ * Map a TransportMediumType enum value to one of the field-visibility
+ * categories defined by the legacy editor (decodes.dbeditor.TransportMediaEditDialog).
+ * Each category shows a different subset of ApiTransportMedium fields.
+ */
+function categorize(mediumType: string | undefined): MediumCategory {
+  const t = (mediumType ?? "").toLowerCase();
+  if (t.startsWith("goes")) return "goes";
+  if (t === "polled-modem") return "polled-modem";
+  if (t === "polled-tcp") return "polled-tcp";
+  if (t === "incoming-tcp") return "incoming-tcp";
+  if (t === "data-logger") return "data-logger";
+  return "other";
+}
+
+/** i18n key for the `mediumId` field label, which varies per category. */
+function mediumIdLabelKey(category: MediumCategory): string {
+  switch (category) {
+    case "goes":
+      return "platforms:medium_id_dcp_address";
+    case "polled-modem":
+      return "platforms:medium_id_phone";
+    case "polled-tcp":
+      return "platforms:medium_id_host_port";
+    case "incoming-tcp":
+    case "data-logger":
+      return "platforms:medium_id_logger_id";
+    default:
+      return "platforms:medium_id";
+  }
+}
 
 const SKELETON_FIELDS = [
   "mediumType",
@@ -138,6 +198,32 @@ export const TransportMedium: React.FC<TransportMediumProperties> = ({
   const [t] = useTranslation(["platforms", "translation"]);
   const [local, dispatch] = useReducer(TransportMediumReducer, medium);
 
+  const { data: refLists } = useRefListsQuery();
+  const mediumTypeItems = useMemo(
+    () => sortItems(refLists?.TransportMediumType),
+    [refLists],
+  );
+  const loggerTypeItems = useMemo(() => sortItems(refLists?.LoggerType), [refLists]);
+  const baudItems = useMemo(() => sortItems(refLists?.BaudRate), [refLists]);
+  const parityItems = useMemo(() => sortItems(refLists?.Parity), [refLists]);
+  const dataBitsItems = useMemo(() => sortItems(refLists?.DataBits), [refLists]);
+  const stopBitsItems = useMemo(() => sortItems(refLists?.StopBits), [refLists]);
+
+  const category = useMemo(() => categorize(local.mediumType), [local.mediumType]);
+  const showsLogin =
+    category === "polled-modem" ||
+    category === "polled-tcp" ||
+    category === "incoming-tcp";
+
+  // Per-category snapshot of category-specific field values. Lets the user
+  // switch A → B → A without losing the fields they originally had under A.
+  // Seeded by an effect with the incoming medium so going B → A on the first
+  // switch restores the original record instead of leaving the form blank.
+  const snapshotsRef = useRef<Partial<Record<MediumCategory, UiTransportMedium>>>({});
+  useEffect(() => {
+    snapshotsRef.current[categorize(medium.mediumType)] = medium;
+  }, [medium]);
+
   const textChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     dispatch({ type: "save", payload: { [name]: value } });
@@ -147,6 +233,26 @@ export const TransportMedium: React.FC<TransportMediumProperties> = ({
     const { name, value } = event.target;
     dispatch({ type: "save", payload: { [name]: value } });
   }, []);
+
+  const mediumTypeChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const nextType = event.target.value;
+      const nextCategory = categorize(nextType);
+      const currentCategory = categorize(local.mediumType);
+      // Save the outgoing category's fields so the user can come back to
+      // them. We snapshot the entire `local` — the reducer only restores
+      // category-specific keys, common fields always come from `current`.
+      snapshotsRef.current[currentCategory] = local;
+      dispatch({
+        type: "change_type",
+        payload: {
+          mediumType: nextType,
+          restore: snapshotsRef.current[nextCategory],
+        },
+      });
+    },
+    [local],
+  );
 
   const numberChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -207,12 +313,14 @@ export const TransportMedium: React.FC<TransportMediumProperties> = ({
                       <Form.Select
                         id="mediumType"
                         name="mediumType"
-                        value={local.mediumType ?? "GOES"}
-                        onChange={selectChange}
+                        value={local.mediumType ?? ""}
+                        onChange={mediumTypeChange}
                       >
-                        {MEDIUM_TYPES.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
+                        <option value="">—</option>
+                        {mediumTypeItems.map((it) => (
+                          <option key={it.value} value={it.value ?? ""}>
+                            {it.value}
+                            {it.description ? ` — ${it.description}` : ""}
                           </option>
                         ))}
                       </Form.Select>
@@ -227,9 +335,9 @@ export const TransportMedium: React.FC<TransportMediumProperties> = ({
                     )}
                   </Col>
                 </FormGroup>
-                <FormGroup as={Row} className="mb-3">
+                <FormGroup as={Row} className="mb-3" key={`mediumId-${category}`}>
                   <Form.Label column sm={4} htmlFor="mediumId">
-                    {t("platforms:medium_id")}
+                    {t(mediumIdLabelKey(category))}
                   </Form.Label>
                   <Col sm={8}>
                     <Form.Control
@@ -257,66 +365,70 @@ export const TransportMedium: React.FC<TransportMediumProperties> = ({
                     />
                   </Col>
                 </FormGroup>
-                <FormGroup as={Row} className="mb-3">
-                  <Form.Label column sm={4} htmlFor="channelNum">
-                    {t("platforms:channel_num")}
-                  </Form.Label>
-                  <Col sm={8}>
-                    <Form.Control
-                      type="number"
-                      id="channelNum"
-                      name="channelNum"
-                      readOnly={!edit}
-                      defaultValue={local.channelNum ?? ""}
-                      onChange={numberChange}
-                    />
-                  </Col>
-                </FormGroup>
-                <FormGroup as={Row} className="mb-3">
-                  <Form.Label column sm={4} htmlFor="assignedTime">
-                    {t("platforms:assigned_time")}
-                  </Form.Label>
-                  <Col sm={8}>
-                    <Form.Control
-                      type="number"
-                      id="assignedTime"
-                      name="assignedTime"
-                      readOnly={!edit}
-                      defaultValue={local.assignedTime ?? ""}
-                      onChange={numberChange}
-                    />
-                  </Col>
-                </FormGroup>
-                <FormGroup as={Row} className="mb-3">
-                  <Form.Label column sm={4} htmlFor="transportWindow">
-                    {t("platforms:transport_window")}
-                  </Form.Label>
-                  <Col sm={8}>
-                    <Form.Control
-                      type="number"
-                      id="transportWindow"
-                      name="transportWindow"
-                      readOnly={!edit}
-                      defaultValue={local.transportWindow ?? ""}
-                      onChange={numberChange}
-                    />
-                  </Col>
-                </FormGroup>
-                <FormGroup as={Row} className="mb-3">
-                  <Form.Label column sm={4} htmlFor="transportInterval">
-                    {t("platforms:transport_interval")}
-                  </Form.Label>
-                  <Col sm={8}>
-                    <Form.Control
-                      type="number"
-                      id="transportInterval"
-                      name="transportInterval"
-                      readOnly={!edit}
-                      defaultValue={local.transportInterval ?? ""}
-                      onChange={numberChange}
-                    />
-                  </Col>
-                </FormGroup>
+                {category === "goes" && (
+                  <>
+                    <FormGroup as={Row} className="mb-3">
+                      <Form.Label column sm={4} htmlFor="channelNum">
+                        {t("platforms:channel_num")}
+                      </Form.Label>
+                      <Col sm={8}>
+                        <Form.Control
+                          type="number"
+                          id="channelNum"
+                          name="channelNum"
+                          readOnly={!edit}
+                          defaultValue={local.channelNum ?? ""}
+                          onChange={numberChange}
+                        />
+                      </Col>
+                    </FormGroup>
+                    <FormGroup as={Row} className="mb-3">
+                      <Form.Label column sm={4} htmlFor="assignedTime">
+                        {t("platforms:assigned_time")}
+                      </Form.Label>
+                      <Col sm={8}>
+                        <Form.Control
+                          type="number"
+                          id="assignedTime"
+                          name="assignedTime"
+                          readOnly={!edit}
+                          defaultValue={local.assignedTime ?? ""}
+                          onChange={numberChange}
+                        />
+                      </Col>
+                    </FormGroup>
+                    <FormGroup as={Row} className="mb-3">
+                      <Form.Label column sm={4} htmlFor="transportWindow">
+                        {t("platforms:transport_window")}
+                      </Form.Label>
+                      <Col sm={8}>
+                        <Form.Control
+                          type="number"
+                          id="transportWindow"
+                          name="transportWindow"
+                          readOnly={!edit}
+                          defaultValue={local.transportWindow ?? ""}
+                          onChange={numberChange}
+                        />
+                      </Col>
+                    </FormGroup>
+                    <FormGroup as={Row} className="mb-3">
+                      <Form.Label column sm={4} htmlFor="transportInterval">
+                        {t("platforms:transport_interval")}
+                      </Form.Label>
+                      <Col sm={8}>
+                        <Form.Control
+                          type="number"
+                          id="transportInterval"
+                          name="transportInterval"
+                          readOnly={!edit}
+                          defaultValue={local.transportInterval ?? ""}
+                          onChange={numberChange}
+                        />
+                      </Col>
+                    </FormGroup>
+                  </>
+                )}
               </Col>
               <Col>
                 <FormGroup as={Row} className="mb-3">
@@ -343,177 +455,217 @@ export const TransportMedium: React.FC<TransportMediumProperties> = ({
                       type="text"
                       id="timezone"
                       name="timezone"
+                      list={edit ? TIMEZONE_LIST_ID : undefined}
                       readOnly={!edit}
+                      autoComplete="off"
                       defaultValue={local.timezone ?? ""}
                       onChange={textChange}
                     />
                   </Col>
                 </FormGroup>
-                <FormGroup as={Row} className="mb-3">
-                  <Form.Label column sm={4} htmlFor="loggerType">
-                    {t("platforms:logger_type")}
-                  </Form.Label>
-                  <Col sm={8}>
-                    <Form.Control
-                      type="text"
-                      id="loggerType"
-                      name="loggerType"
-                      readOnly={!edit}
-                      defaultValue={local.loggerType ?? ""}
-                      onChange={textChange}
-                    />
-                  </Col>
-                </FormGroup>
-                <FormGroup as={Row} className="mb-3">
-                  <Form.Label column sm={4} htmlFor="baud">
-                    {t("platforms:baud")}
-                  </Form.Label>
-                  <Col sm={8}>
-                    {edit ? (
-                      <Form.Select
-                        id="baud"
-                        name="baud"
-                        value={local.baud ?? ""}
-                        onChange={numberSelectChange}
-                      >
-                        <option value="">—</option>
-                        {BAUD_RATES.map((rate) => (
-                          <option key={rate} value={rate}>
-                            {rate}
-                          </option>
-                        ))}
-                      </Form.Select>
-                    ) : (
-                      <Form.Control type="text" readOnly value={local.baud ?? ""} />
-                    )}
-                  </Col>
-                </FormGroup>
-                <FormGroup as={Row} className="mb-3">
-                  <Form.Label column sm={4} htmlFor="dataBits">
-                    {t("platforms:data_bits")}
-                  </Form.Label>
-                  <Col sm={8}>
-                    {edit ? (
-                      <Form.Select
-                        id="dataBits"
-                        name="dataBits"
-                        value={local.dataBits ?? ""}
-                        onChange={numberSelectChange}
-                      >
-                        <option value="">—</option>
-                        {DATA_BITS_OPTIONS.map((bits) => (
-                          <option key={bits} value={bits}>
-                            {bits}
-                          </option>
-                        ))}
-                      </Form.Select>
-                    ) : (
-                      <Form.Control type="text" readOnly value={local.dataBits ?? ""} />
-                    )}
-                  </Col>
-                </FormGroup>
-                <FormGroup as={Row} className="mb-3">
-                  <Form.Label column sm={4} htmlFor="stopBits">
-                    {t("platforms:stop_bits")}
-                  </Form.Label>
-                  <Col sm={8}>
-                    {edit ? (
-                      <Form.Select
-                        id="stopBits"
-                        name="stopBits"
-                        value={local.stopBits ?? ""}
-                        onChange={numberSelectChange}
-                      >
-                        <option value="">—</option>
-                        {STOP_BITS_OPTIONS.map((bits) => (
-                          <option key={bits} value={bits}>
-                            {bits}
-                          </option>
-                        ))}
-                      </Form.Select>
-                    ) : (
-                      <Form.Control type="text" readOnly value={local.stopBits ?? ""} />
-                    )}
-                  </Col>
-                </FormGroup>
-                <FormGroup as={Row} className="mb-3">
-                  <Form.Label column sm={4} htmlFor="parity">
-                    {t("platforms:parity")}
-                  </Form.Label>
-                  <Col sm={8}>
-                    {edit ? (
-                      <Form.Select
-                        id="parity"
-                        name="parity"
-                        value={local.parity ?? ""}
-                        onChange={selectChange}
-                      >
-                        <option value="">—</option>
-                        {PARITY_OPTIONS.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
-                        ))}
-                      </Form.Select>
-                    ) : (
-                      <Form.Control type="text" readOnly value={local.parity ?? ""} />
-                    )}
-                  </Col>
-                </FormGroup>
-                <FormGroup as={Row} className="mb-3">
-                  <Form.Label column sm={4} htmlFor="doLogin">
-                    {t("platforms:do_login")}
-                  </Form.Label>
-                  <Col sm={8} className="d-flex align-items-center">
-                    <FormCheck
-                      type="switch"
-                      id="doLogin"
-                      name="doLogin"
-                      disabled={!edit}
-                      defaultChecked={local.doLogin ?? false}
-                      onChange={checkboxChange}
-                      style={{ fontSize: "1.5rem" }}
-                    />
-                  </Col>
-                </FormGroup>
-                <FormGroup as={Row} className="mb-3">
-                  <Form.Label column sm={4} htmlFor="tm-loggerUser">
-                    {t("platforms:tm_username")}
-                  </Form.Label>
-                  <Col sm={8}>
-                    <Form.Control
-                      type="text"
-                      id="tm-loggerUser"
-                      name="username"
-                      readOnly={!edit}
-                      autoComplete="off"
-                      data-1p-ignore=""
-                      data-lpignore="true"
-                      data-form-type="other"
-                      defaultValue={local.username ?? ""}
-                      onChange={textChange}
-                    />
-                  </Col>
-                </FormGroup>
-                <FormGroup as={Row} className="mb-3">
-                  <Form.Label column sm={4} htmlFor="tm-loggerSecret">
-                    {t("platforms:tm_password")}
-                  </Form.Label>
-                  <Col sm={8}>
-                    <Form.Control
-                      type="password"
-                      id="tm-loggerSecret"
-                      name="password"
-                      readOnly={!edit}
-                      autoComplete="new-password"
-                      data-1p-ignore=""
-                      data-lpignore="true"
-                      data-form-type="other"
-                      defaultValue={local.password ?? ""}
-                      onChange={textChange}
-                    />
-                  </Col>
-                </FormGroup>
+                {(showsLogin || category === "data-logger") && (
+                  <FormGroup as={Row} className="mb-3">
+                    <Form.Label column sm={4} htmlFor="loggerType">
+                      {t("platforms:logger_type")}
+                    </Form.Label>
+                    <Col sm={8}>
+                      {edit ? (
+                        <Form.Select
+                          id="loggerType"
+                          name="loggerType"
+                          value={local.loggerType ?? ""}
+                          onChange={selectChange}
+                        >
+                          <option value="">—</option>
+                          {loggerTypeItems.map((it) => (
+                            <option key={it.value} value={it.value ?? ""}>
+                              {it.value}
+                              {it.description ? ` — ${it.description}` : ""}
+                            </option>
+                          ))}
+                        </Form.Select>
+                      ) : (
+                        <Form.Control
+                          type="text"
+                          readOnly
+                          value={local.loggerType ?? ""}
+                        />
+                      )}
+                    </Col>
+                  </FormGroup>
+                )}
+                {category === "polled-modem" && (
+                  <>
+                    <FormGroup as={Row} className="mb-3">
+                      <Form.Label column sm={4} htmlFor="baud">
+                        {t("platforms:baud")}
+                      </Form.Label>
+                      <Col sm={8}>
+                        {edit ? (
+                          <Form.Select
+                            id="baud"
+                            name="baud"
+                            value={local.baud ?? ""}
+                            onChange={numberSelectChange}
+                          >
+                            <option value="">—</option>
+                            {baudItems.map((it) => (
+                              <option key={it.value} value={it.value ?? ""}>
+                                {it.value}
+                              </option>
+                            ))}
+                          </Form.Select>
+                        ) : (
+                          <Form.Control type="text" readOnly value={local.baud ?? ""} />
+                        )}
+                      </Col>
+                    </FormGroup>
+                    <FormGroup as={Row} className="mb-3">
+                      <Form.Label column sm={4} htmlFor="dataBits">
+                        {t("platforms:data_bits")}
+                      </Form.Label>
+                      <Col sm={8}>
+                        {edit ? (
+                          <Form.Select
+                            id="dataBits"
+                            name="dataBits"
+                            value={local.dataBits ?? ""}
+                            onChange={numberSelectChange}
+                          >
+                            <option value="">—</option>
+                            {dataBitsItems.map((it) => (
+                              <option key={it.value} value={it.value ?? ""}>
+                                {it.value}
+                              </option>
+                            ))}
+                          </Form.Select>
+                        ) : (
+                          <Form.Control
+                            type="text"
+                            readOnly
+                            value={local.dataBits ?? ""}
+                          />
+                        )}
+                      </Col>
+                    </FormGroup>
+                    <FormGroup as={Row} className="mb-3">
+                      <Form.Label column sm={4} htmlFor="stopBits">
+                        {t("platforms:stop_bits")}
+                      </Form.Label>
+                      <Col sm={8}>
+                        {edit ? (
+                          <Form.Select
+                            id="stopBits"
+                            name="stopBits"
+                            value={local.stopBits ?? ""}
+                            onChange={numberSelectChange}
+                          >
+                            <option value="">—</option>
+                            {stopBitsItems.map((it) => (
+                              <option key={it.value} value={it.value ?? ""}>
+                                {it.value}
+                              </option>
+                            ))}
+                          </Form.Select>
+                        ) : (
+                          <Form.Control
+                            type="text"
+                            readOnly
+                            value={local.stopBits ?? ""}
+                          />
+                        )}
+                      </Col>
+                    </FormGroup>
+                    <FormGroup as={Row} className="mb-3">
+                      <Form.Label column sm={4} htmlFor="parity">
+                        {t("platforms:parity")}
+                      </Form.Label>
+                      <Col sm={8}>
+                        {edit ? (
+                          <Form.Select
+                            id="parity"
+                            name="parity"
+                            value={local.parity ?? ""}
+                            onChange={selectChange}
+                          >
+                            <option value="">—</option>
+                            {parityItems.map((it) => (
+                              <option key={it.value} value={it.value ?? ""}>
+                                {it.value}
+                              </option>
+                            ))}
+                          </Form.Select>
+                        ) : (
+                          <Form.Control
+                            type="text"
+                            readOnly
+                            value={local.parity ?? ""}
+                          />
+                        )}
+                      </Col>
+                    </FormGroup>
+                  </>
+                )}
+                {showsLogin && (
+                  <FormGroup as={Row} className="mb-3">
+                    <Form.Label column sm={4} htmlFor="doLogin">
+                      {t("platforms:do_login")}
+                    </Form.Label>
+                    <Col sm={8} className="d-flex align-items-center">
+                      <FormCheck
+                        type="switch"
+                        id="doLogin"
+                        name="doLogin"
+                        disabled={!edit}
+                        defaultChecked={local.doLogin ?? false}
+                        onChange={checkboxChange}
+                        style={{ fontSize: "1.5rem" }}
+                      />
+                    </Col>
+                  </FormGroup>
+                )}
+                {showsLogin && local.doLogin && (
+                  <>
+                    <FormGroup as={Row} className="mb-3">
+                      <Form.Label column sm={4} htmlFor="tm-loggerUser">
+                        {t("platforms:tm_username")}
+                      </Form.Label>
+                      <Col sm={8}>
+                        <Form.Control
+                          type="text"
+                          id="tm-loggerUser"
+                          name="username"
+                          readOnly={!edit}
+                          autoComplete="off"
+                          data-1p-ignore=""
+                          data-lpignore="true"
+                          data-form-type="other"
+                          defaultValue={local.username ?? ""}
+                          onChange={textChange}
+                        />
+                      </Col>
+                    </FormGroup>
+                    <FormGroup as={Row} className="mb-3">
+                      <Form.Label column sm={4} htmlFor="tm-loggerSecret">
+                        {t("platforms:tm_password")}
+                      </Form.Label>
+                      <Col sm={8}>
+                        <Form.Control
+                          type="password"
+                          id="tm-loggerSecret"
+                          name="password"
+                          readOnly={!edit}
+                          autoComplete="new-password"
+                          data-1p-ignore=""
+                          data-lpignore="true"
+                          data-form-type="other"
+                          defaultValue={local.password ?? ""}
+                          onChange={textChange}
+                        />
+                      </Col>
+                    </FormGroup>
+                  </>
+                )}
               </Col>
             </Row>
             {edit && (
@@ -539,6 +691,13 @@ export const TransportMedium: React.FC<TransportMediumProperties> = ({
                   </Button>
                 </Col>
               </Row>
+            )}
+            {edit && (
+              <datalist id={TIMEZONE_LIST_ID}>
+                {TIMEZONES.map((tz) => (
+                  <option key={tz} value={tz} />
+                ))}
+              </datalist>
             )}
           </Form>
         </Card.Body>

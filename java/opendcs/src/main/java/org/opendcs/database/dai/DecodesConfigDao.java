@@ -59,4 +59,15 @@ public interface DecodesConfigDao extends OpenDcsDao
      * @throws OpenDcsDataException
      */
     List<PlatformConfig> getAll(DataTransaction tx, int limit, int offset) throws OpenDcsDataException;
+
+    /**
+     * Retrieve a lightweight list of every PlatformConfig containing only id, name, description
+     * and {@link PlatformConfig#numPlatformsUsing}. Intended for chooser / pick-list views
+     * where loading the fully joined sensor / script / format-statement / unit-converter graph
+     * (as {@link #getAll} does) would OOM or time out on databases with many configs.
+     * @param tx
+     * @return shallow PlatformConfig objects ordered by name
+     * @throws OpenDcsDataException
+     */
+    List<PlatformConfig> getAllRefs(DataTransaction tx) throws OpenDcsDataException;
 }

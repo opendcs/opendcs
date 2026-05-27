@@ -462,6 +462,36 @@
       <Description>Incoming TCP on a Listening Socket</Description>
     </EnumValue>
   </Enum>
+  <Enum Name="BaudRate">
+    <EnumValue EnumValue="300"><Description>300 baud</Description><SortNumber>1</SortNumber></EnumValue>
+    <EnumValue EnumValue="1200"><Description>1200 baud</Description><SortNumber>2</SortNumber></EnumValue>
+    <EnumValue EnumValue="2400"><Description>2400 baud</Description><SortNumber>3</SortNumber></EnumValue>
+    <EnumValue EnumValue="4800"><Description>4800 baud</Description><SortNumber>4</SortNumber></EnumValue>
+    <EnumValue EnumValue="9600"><Description>9600 baud</Description><SortNumber>5</SortNumber></EnumValue>
+    <EnumValue EnumValue="19200"><Description>19200 baud</Description><SortNumber>6</SortNumber></EnumValue>
+    <EnumValue EnumValue="38400"><Description>38400 baud</Description><SortNumber>7</SortNumber></EnumValue>
+    <EnumValue EnumValue="57600"><Description>57600 baud</Description><SortNumber>8</SortNumber></EnumValue>
+    <EnumValue EnumValue="115200"><Description>115200 baud</Description><SortNumber>9</SortNumber></EnumValue>
+    <EnumDefaultValue>9600</EnumDefaultValue>
+  </Enum>
+  <Enum Name="Parity">
+    <EnumValue EnumValue="none"><Description>No parity bit</Description><SortNumber>1</SortNumber></EnumValue>
+    <EnumValue EnumValue="even"><Description>Even parity</Description><SortNumber>2</SortNumber></EnumValue>
+    <EnumValue EnumValue="odd"><Description>Odd parity</Description><SortNumber>3</SortNumber></EnumValue>
+    <EnumValue EnumValue="mark"><Description>Mark parity (always 1)</Description><SortNumber>4</SortNumber></EnumValue>
+    <EnumValue EnumValue="space"><Description>Space parity (always 0)</Description><SortNumber>5</SortNumber></EnumValue>
+    <EnumDefaultValue>none</EnumDefaultValue>
+  </Enum>
+  <Enum Name="DataBits">
+    <EnumValue EnumValue="7"><Description>7 data bits</Description><SortNumber>1</SortNumber></EnumValue>
+    <EnumValue EnumValue="8"><Description>8 data bits</Description><SortNumber>2</SortNumber></EnumValue>
+    <EnumDefaultValue>8</EnumDefaultValue>
+  </Enum>
+  <Enum Name="StopBits">
+    <EnumValue EnumValue="1"><Description>1 stop bit</Description><SortNumber>1</SortNumber></EnumValue>
+    <EnumValue EnumValue="2"><Description>2 stop bits</Description><SortNumber>2</SortNumber></EnumValue>
+    <EnumDefaultValue>1</EnumDefaultValue>
+  </Enum>
   <Enum Name="StatisticsCode">
     <EnumValue EnumValue="OBS">
       <Description>Observation</Description>
