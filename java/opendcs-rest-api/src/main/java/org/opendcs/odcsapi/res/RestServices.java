@@ -34,7 +34,7 @@ import io.swagger.v3.oas.models.servers.Server;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.slf4j.Logger;
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.dai.IdentityProviderDao;
 import org.opendcs.odcsapi.dao.OpenDcsDatabaseFactory;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
@@ -73,9 +73,9 @@ public final class RestServices extends ResourceConfig
 
         try (var tx = db.newTransaction())
         {
-            var umDao = db.getDao(UserManagementDao.class)
+            var idpDao = db.getDao(IdentityProviderDao.class)
                           .orElseThrow(() -> new OpenDcsDataException("No user Management Dao is available."));
-            var providers = umDao.getIdentityProviders(tx, -1, -1);
+            var providers = idpDao.getIdentityProviders(tx, -1, -1);
             for (var provider: providers)
             {
                 log.info("Adding provider {} to API security schemes", provider.getName());

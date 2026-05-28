@@ -21,6 +21,7 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.dai.UsersDao;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.IdentityProviderMapping;
 import org.opendcs.database.model.User;
@@ -202,7 +203,7 @@ public final class OidcIdentityProvider implements IdentityProvider
         {
             var claims = verifyTokenAndGetClaims(oidcConfig, token);
             var subject = claims.getSubject();
-            var umDao = db.getDao(UserManagementDao.class).orElseThrow();
+            var umDao = db.getDao(UsersDao.class).orElseThrow();
             return umDao.getUsers(tx, -1, -1)
                         .stream()
                         .filter(u -> u.identityProviders.stream()

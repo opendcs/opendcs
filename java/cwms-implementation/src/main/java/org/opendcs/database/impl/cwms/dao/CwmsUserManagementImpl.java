@@ -15,8 +15,6 @@
 */
 package org.opendcs.database.impl.cwms.dao;
 
-import java.sql.SQLType;
-import java.sql.Types;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -28,7 +26,9 @@ import org.jdbi.v3.core.statement.Update;
 import org.jdbi.v3.jackson2.Jackson2Plugin;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.dai.IdentityProviderDao;
+import org.opendcs.database.dai.RolesDao;
+import org.opendcs.database.dai.UsersDao;
 import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigColumnMapper;
 import org.opendcs.database.model.UserBuilder;
@@ -43,12 +43,17 @@ import org.opendcs.database.model.mappers.user.UserBuilderMapper;
 import org.opendcs.database.model.mappers.user.UserBuilderReducer;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.openide.util.lookup.ServiceProvider;
+import org.openide.util.lookup.ServiceProviders;
 import org.opendcs.utils.sql.GenericColumns;
 
 import decodes.sql.DbKey;
 
-@ServiceProvider(service = UserManagementDao.class, path ="dao/CWMS-Oracle")
-public class CwmsUserManagementImpl implements UserManagementDao
+@ServiceProviders({
+    @ServiceProvider(service = UsersDao.class, path ="dao/CWMS-Oracle"),
+    @ServiceProvider(service = RolesDao.class, path ="dao/CWMS-Oracle"),
+        @ServiceProvider(service = IdentityProviderDao.class, path ="dao/CWMS-Oracle")
+})
+public class CwmsUserManagementImpl implements UsersDao, RolesDao, IdentityProviderDao
 {
     private static final RoleMapper ROLE_MAPPER = RoleMapper.withPrefix(null);
     private static final IdentityProviderMapper PROVIDER_MAPPER = IdentityProviderMapper.withPrefix(null);

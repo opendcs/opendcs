@@ -26,7 +26,9 @@ import org.junit.jupiter.api.Test;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityProvider;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.dai.IdentityProviderDao;
+import org.opendcs.database.dai.RolesDao;
+import org.opendcs.database.dai.UsersDao;
 import org.opendcs.database.model.UserBuilder;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.Role;
@@ -48,7 +50,7 @@ class UserManagementDaoTestIT extends AppTestBase
     @Test
     void test_create_role() throws Exception
     {
-        UserManagementDao dao = db.getDao(UserManagementDao.class)
+        var dao = db.getDao(RolesDao.class)
                                   .orElseThrow(() -> new UnsupportedOperationException("user dao not supported."));
         DbKey id = DbKey.NullKey;
         try (DataTransaction tx = db.newTransaction())
@@ -76,7 +78,7 @@ class UserManagementDaoTestIT extends AppTestBase
     @Test
     void test_role_pagination() throws Exception
     {
-        UserManagementDao dao = db.getDao(UserManagementDao.class)
+        var dao = db.getDao(RolesDao.class)
                                   .orElseThrow(() -> new UnsupportedOperationException("user dao not supported."));
         try (DataTransaction tx = db.newTransaction())
         {
@@ -104,7 +106,7 @@ class UserManagementDaoTestIT extends AppTestBase
     @Test
     void test_identity_provider_operations() throws Exception
     {
-        UserManagementDao dao = db.getDao(UserManagementDao.class)
+        var dao = db.getDao(IdentityProviderDao.class)
                                   .orElseGet(() -> fail("user dao not supported."));
         DbKey id = DbKey.NullKey;
         try (DataTransaction tx = db.newTransaction())
@@ -134,7 +136,7 @@ class UserManagementDaoTestIT extends AppTestBase
     @Test
     void test_idp_pagination() throws Exception
     {
-        UserManagementDao dao = db.getDao(UserManagementDao.class)
+        var dao = db.getDao(IdentityProviderDao.class)
                                   .orElseThrow(() -> new UnsupportedOperationException("user dao not supported."));
         try (DataTransaction tx = db.newTransaction())
         {
@@ -164,8 +166,8 @@ class UserManagementDaoTestIT extends AppTestBase
     @Test
     void test_user_operations() throws Exception
     {
-        UserManagementDao dao = db.getDao(UserManagementDao.class)
-                                  .orElseGet(() -> fail("user dao not supported."));
+        var dao = db.getDao(UsersDao.class)
+                    .orElseGet(() -> fail("user dao not supported."));
         DbKey id = DbKey.NullKey;
         try (DataTransaction tx = db.newTransaction())
         {
@@ -199,8 +201,8 @@ class UserManagementDaoTestIT extends AppTestBase
     @Test
     void test_user_pagination() throws Exception
     {
-        UserManagementDao dao = db.getDao(UserManagementDao.class)
-                                  .orElseThrow(() -> new UnsupportedOperationException("user dao not supported."));
+        var dao = db.getDao(UsersDao.class)
+                    .orElseThrow(() -> new UnsupportedOperationException("user dao not supported."));
         try (DataTransaction tx = db.newTransaction())
         {
             for (int i = 0; i < 100; i++)

@@ -4,6 +4,7 @@ import org.opendcs.authentication.OpenDcsAuthException;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityProvider;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInProviderCredentials;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.dai.IdentityProviderDao;
 import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.odcsapi.beans.ApiPasswordChange;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
@@ -30,7 +31,7 @@ import jakarta.ws.rs.core.Response;
 @Tag(name = "User Operations", description = "Endpoints used to manipulate user data.")
 public final class UserResources extends OpenDcsResource
 {
-    private static final WebAppException UNABLE_TO_GET_UM_DAO = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "No User Management DAO available.");
+    private static final WebAppException UNABLE_TO_GET_IDP_DAO = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "No IdentityProvider DAO available.");
 
     @Context
 	HttpServletRequest request;
@@ -72,10 +73,10 @@ public final class UserResources extends OpenDcsResource
         }
 
         final var db = createDb();
-        final var umDao = db.getDao(UserManagementDao.class).orElseThrow(() -> UNABLE_TO_GET_UM_DAO);
+        final var idpDao = db.getDao(IdentityProviderDao.class).orElseThrow(() -> UNABLE_TO_GET_IDP_DAO);
         try (var tx = db.newTransaction())
         {
-            var providers = umDao.getIdentityProvidersForSubject(tx, sessionPrincipal.getName());
+            var providers = idpDao.getIdentityProvidersForSubject(tx, sessionPrincipal.getName());
             BuiltInIdentityProvider idp = null;
             for (var provider: providers)
             {

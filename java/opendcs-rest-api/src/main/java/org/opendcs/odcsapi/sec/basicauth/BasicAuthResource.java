@@ -44,6 +44,7 @@ import org.opendcs.authentication.OpenDcsAuthException;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityProvider;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInProviderCredentials;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.dai.IdentityProviderDao;
 import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.model.User;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
@@ -226,7 +227,7 @@ public final class BasicAuthResource extends OpenDcsResource
 
 		try(var tx = db.newTransaction())
 		{
-			var userMgmt = db.getDao(UserManagementDao.class).orElseThrow();
+			var userMgmt = db.getDao(IdentityProviderDao.class).orElseThrow();
 			var providers = userMgmt.getIdentityProvidersForSubject(tx, creds.getUsername());
 			for(var provider : providers)
 			{

@@ -26,7 +26,9 @@ import org.jdbi.v3.core.statement.Update;
 import org.jdbi.v3.jackson2.Jackson2Plugin;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.dai.IdentityProviderDao;
+import org.opendcs.database.dai.RolesDao;
+import org.opendcs.database.dai.UsersDao;
 import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigColumnMapper;
 import org.opendcs.database.model.UserBuilder;
@@ -50,13 +52,17 @@ import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 
 // This uses Postgres specific features and is not compatible with Oracle
 @ServiceProviders({
-    @ServiceProvider(service = UserManagementDao.class, path = "dao/OpenDCS-Postgres"),
+    @ServiceProvider(service = UsersDao.class, path = "dao/OpenDCS-Postgres"),
+    @ServiceProvider(service = RolesDao.class, path = "dao/OpenDCS-Postgres"),    
+    @ServiceProvider(service = IdentityProviderDao.class, path = "dao/OpenDCS-Postgres"),    
     // deprecated and also implies supported by the Oracle impl which is false.
     // Unfortunately correct behavior requires eliminating the use of the editDatabaseCode so the names are used.
     // This will be done in a follow up PR.
-    @ServiceProvider(service = UserManagementDao.class, path = "dao/OPENTSDB")
+    @ServiceProvider(service = UsersDao.class, path = "dao/OPENTSDB"),
+    @ServiceProvider(service = RolesDao.class, path = "dao/OPENTSDB"),
+    @ServiceProvider(service = IdentityProviderDao.class, path = "dao/OPENTSDB")
 })
-public class OpenDcsPgUserManagementImpl implements UserManagementDao
+public class OpenDcsPgUserManagementImpl implements UsersDao, RolesDao, IdentityProviderDao
 {
 
     private static final RoleMapper ROLE_MAPPER = RoleMapper.withPrefix(null);
