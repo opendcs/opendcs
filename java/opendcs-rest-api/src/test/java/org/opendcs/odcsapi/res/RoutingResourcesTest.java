@@ -49,7 +49,8 @@ final class RoutingResourcesTest
 		assertNotNull(apiRoutingRef);
 		assertEquals(apiRoutingRef.getRoutingId(), routingSpec.getId().getValue());
 		assertEquals(apiRoutingRef.getName(), routingSpec.getName());
-		assertEquals(apiRoutingRef.getDestination(), routingSpec.consumerArg);
+		assertEquals(routingSpec.consumerType + "(" + routingSpec.consumerArg + ")",
+				apiRoutingRef.getDestination());
 		assertEquals(apiRoutingRef.getDataSourceName(), routingSpec.dataSource.getName());
 		assertEquals(apiRoutingRef.getLastModified(), routingSpec.lastModifyTime);
 	}

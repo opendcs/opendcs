@@ -45,7 +45,7 @@ public final class ObjectMapperContextResolver implements ContextResolver<Object
         ObjectMapper objMap = new ObjectMapper();
         objMap.registerModule(new Jdk8Module());
         objMap.registerModule(new JavaTimeModule());
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'[z]");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         objMap.setDateFormat(sdf);
         return objMap;

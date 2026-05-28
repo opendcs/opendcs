@@ -56,6 +56,26 @@ export const WithRefLists: Decorator = (Story) => {
           },
         },
       },
+      DataConsumer: {
+        enumName: "DataConsumer",
+        items: {
+          pipe: { value: "pipe" },
+          file: { value: "file" },
+          directory: { value: "directory" },
+          cwms: { value: "cwms" },
+          tsdb: { value: "tsdb" },
+          socketclient: { value: "socketclient" },
+        },
+      },
+      OutputFormat: {
+        enumName: "OutputFormat",
+        items: {
+          "html-report": { value: "html-report" },
+          "emit-ascii": { value: "emit-ascii" },
+          shef: { value: "shef" },
+          "human-readable": { value: "human-readable" },
+        },
+      },
     };
   }, []);
 
