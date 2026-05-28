@@ -1,9 +1,19 @@
+buildscript {
+    dependencies {
+        // CVE remediation - com.github.node-gradle.node pulls an older jackson-core onto the build classpath;
+        // version sourced from `jackson` in gradle/libs.versions.toml.
+        constraints {
+            classpath("com.fasterxml.jackson.core:jackson-core:${libs.versions.jackson.asProvider().get()}")
+        }
+    }
+}
+
 plugins {
     id 'base'
     id 'opendcs.deps-conventions'
     id 'opendcs.sonar-conventions'
     id 'opendcs.version-conventions'
-    id 'com.github.node-gradle.node' version '7.1.0'
+    id 'com.github.node-gradle.node' version '7.1.0' // when upgrading , may be able to remove jackson-core constraint above
     id 'org.sonarqube'
     id 'war'
 }
