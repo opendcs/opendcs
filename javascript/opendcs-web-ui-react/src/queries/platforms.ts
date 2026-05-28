@@ -6,11 +6,8 @@ import {
   type UseMutationOptions,
 } from "@tanstack/react-query";
 import {
-  RESTDECODESPlatformConfigurationsApi,
   RESTDECODESPlatformRecordsApi,
-  type ApiConfigRef,
   type ApiPlatform,
-  type ApiPlatformConfig,
   type ApiPlatformRef,
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
@@ -22,11 +19,7 @@ const usePlatformsApi = () => {
     () => new RESTDECODESPlatformRecordsApi(api.conf),
     [api.conf],
   );
-  const configApi = useMemo(
-    () => new RESTDECODESPlatformConfigurationsApi(api.conf),
-    [api.conf],
-  );
-  return { platformApi, configApi, org: api.org };
+  return { platformApi, org: api.org };
 };
 
 export const usePlatformsQuery = () => {
@@ -55,24 +48,6 @@ export const useFetchPlatform = () => {
     queryClient.fetchQuery<ApiPlatform>({
       queryKey: platformKeys.detail(org, platformId),
       queryFn: () => platformApi.getPlatform(org, platformId),
-    });
-};
-
-export const usePlatformConfigsQuery = () => {
-  const { configApi, org } = usePlatformsApi();
-  return useQuery<ApiConfigRef[]>({
-    queryKey: platformKeys.configList(org),
-    queryFn: () => configApi.getConfigRefs(org),
-  });
-};
-
-export const useFetchPlatformConfig = () => {
-  const { configApi, org } = usePlatformsApi();
-  const queryClient = useQueryClient();
-  return (configId: number) =>
-    queryClient.fetchQuery<ApiPlatformConfig>({
-      queryKey: platformKeys.config(org, configId),
-      queryFn: () => configApi.getConfig(org, configId),
     });
 };
 

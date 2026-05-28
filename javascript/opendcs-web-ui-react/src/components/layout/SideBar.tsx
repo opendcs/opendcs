@@ -10,6 +10,7 @@ export interface SideBarProps {
 export const SideBar = ({ open, onClose }: SideBarProps) => {
   const [t] = useTranslation([
     "platforms",
+    "configs",
     "sites",
     "algorithms",
     "computations",
@@ -34,6 +35,14 @@ export const SideBar = ({ open, onClose }: SideBarProps) => {
             onClick={onClose}
           >
             {t("platforms:platformsTitle")}
+          </Nav.Link>
+          <Nav.Link
+            as={Link}
+            to="/configs"
+            active={location.pathname === "/configs"}
+            onClick={onClose}
+          >
+            {t("configs:configsTitle")}
           </Nav.Link>
           <Nav.Link
             as={Link}
