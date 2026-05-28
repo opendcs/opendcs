@@ -8,22 +8,22 @@
   },
   "values": [
     {
-      "sampleTime": "2025-02-01T12:25:00.000Z[UTC]",
+      "sampleTime": "2025-02-01T12:25:00.000Z",
       "value": 0.20438668,
       "flags": 0
     },
     {
-      "sampleTime": "2025-02-01T12:30:00.000Z[UTC]",
+      "sampleTime": "2025-02-01T12:30:00.000Z",
       "value": 0.30658004,
       "flags": 0
     },
     {
-      "sampleTime": "2025-02-01T12:35:00.000Z[UTC]",
+      "sampleTime": "2025-02-01T12:35:00.000Z",
       "value": 1.6722547,
       "flags": 0
     },
     {
-      "sampleTime": "2025-02-01T12:40:00.000Z[UTC]",
+      "sampleTime": "2025-02-01T12:40:00.000Z",
       "value": 1.8580608,
       "flags": 0
     }

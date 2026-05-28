@@ -4,7 +4,7 @@
   "appType": "Computation",
   "hostname": "localhost",
   "pid": 8,
-  "heartbeat": "2024-12-30T19:49:39.141Z[UTC]",
+  "heartbeat": "2024-12-30T19:49:39.141Z",
   "eventPort": 12345,
   "status": "Starting"
 }
