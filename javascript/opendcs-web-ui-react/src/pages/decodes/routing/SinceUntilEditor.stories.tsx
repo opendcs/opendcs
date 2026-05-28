@@ -17,9 +17,9 @@ export const SinceNowMinusParsed: Story = {
   play: async ({ mount, parameters }) => {
     const canvas = await mount();
     const { i18n } = parameters;
-    const method = canvas.getByRole("combobox", {
+    const method = (await canvas.findByRole("combobox", {
       name: i18n.t("routing:since"),
-    }) as HTMLSelectElement;
+    })) as HTMLSelectElement;
     expect(method.value).toEqual("nowMinus");
     const amount = canvas.getByLabelText(
       i18n.t("routing:now_minus_amount"),
@@ -34,9 +34,9 @@ export const SinceNowMinusNullFallsBack: Story = {
   play: async ({ mount, parameters }) => {
     const canvas = await mount();
     const { i18n } = parameters;
-    const amount = canvas.getByLabelText(
+    const amount = (await canvas.findByLabelText(
       i18n.t("routing:now_minus_amount"),
-    ) as HTMLInputElement;
+    )) as HTMLInputElement;
     expect(amount.value).toEqual("1 hour");
   },
 };
@@ -47,9 +47,9 @@ export const UntilNowParsed: Story = {
   play: async ({ mount, parameters }) => {
     const canvas = await mount();
     const { i18n } = parameters;
-    const method = canvas.getByRole("combobox", {
+    const method = (await canvas.findByRole("combobox", {
       name: i18n.t("routing:until"),
-    }) as HTMLSelectElement;
+    })) as HTMLSelectElement;
     expect(method.value).toEqual("now");
   },
 };
@@ -61,9 +61,9 @@ export const CalendarParsed: Story = {
   play: async ({ mount, parameters }) => {
     const canvas = await mount();
     const { i18n } = parameters;
-    const method = canvas.getByRole("combobox", {
+    const method = (await canvas.findByRole("combobox", {
       name: i18n.t("routing:since"),
-    }) as HTMLSelectElement;
+    })) as HTMLSelectElement;
     expect(method.value).toEqual("calendar");
     const cal = canvas.getByLabelText(i18n.t("routing:calendar")) as HTMLInputElement;
     expect(cal.value).toEqual("2024-02-01T06:15");
@@ -76,7 +76,7 @@ export const ChangeAmountEmits: Story = {
   play: async ({ mount, args, parameters, userEvent }) => {
     const canvas = await mount();
     const { i18n } = parameters;
-    const amount = canvas.getByLabelText(i18n.t("routing:now_minus_amount"));
+    const amount = await canvas.findByLabelText(i18n.t("routing:now_minus_amount"));
     await userEvent.clear(amount);
     await userEvent.type(amount, "2 days");
     await waitFor(() => expect(args.onChange).toHaveBeenLastCalledWith("now - 2 days"));
@@ -89,7 +89,9 @@ export const SwitchUntilToNowEmits: Story = {
   play: async ({ mount, args, parameters, userEvent }) => {
     const canvas = await mount();
     const { i18n } = parameters;
-    const method = canvas.getByRole("combobox", { name: i18n.t("routing:until") });
+    const method = await canvas.findByRole("combobox", {
+      name: i18n.t("routing:until"),
+    });
     await userEvent.selectOptions(method, "now");
     await waitFor(() => expect(args.onChange).toHaveBeenLastCalledWith("now"));
   },
@@ -101,9 +103,9 @@ export const ReadOnly: Story = {
   play: async ({ mount, parameters }) => {
     const canvas = await mount();
     const { i18n } = parameters;
-    const method = canvas.getByRole("combobox", {
+    const method = (await canvas.findByRole("combobox", {
       name: i18n.t("routing:since"),
-    }) as HTMLSelectElement;
+    })) as HTMLSelectElement;
     expect(method).toBeDisabled();
   },
 };

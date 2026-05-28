@@ -486,17 +486,29 @@ export const AddNetlistViaModal: Story = {
 // Edit a routing and remove its name-attached platform via the row trash action.
 export const RemovePlatformRow: Story = {
   parameters: { msw: { handlers: baseHandlers } },
-  play: async ({ mount, userEvent, parameters }) => {
+  play: async ({ mount, canvasElement, userEvent, parameters }) => {
     const canvas = await mount();
     const { i18n } = parameters;
     const editBtn = await canvas.findByRole("button", {
       name: i18n.t("routing:edit_routing", { id: 8 }),
     });
     await act(async () => userEvent.click(editBtn));
+    // Wait for the detail's fade-in to finish (the Save button becoming
+    // accessible confirms edit mode is interactive).
+    await canvas.findByRole("button", {
+      name: i18n.t("routing:save_routing", { id: 8 }),
+    });
     // "Alpha" is attached by name and shows in the platforms table.
     expect(await canvas.findByText("Alpha")).toBeInTheDocument();
-    const removeBtn = await canvas.findByRole("button", {
-      name: i18n.t("routing:remove_platform", { name: "Alpha" }),
+    // The remove button is injected into the nested DataTable by drawCallback;
+    // target it by its stable data-row-action attribute (role/name queries race
+    // the nested redraw).
+    const removeBtn = await waitFor(() => {
+      const btn = canvasElement.querySelector<HTMLButtonElement>(
+        '#routingSelectedPlatformsTable [data-row-action="remove"]',
+      );
+      if (!btn) throw new Error("remove button not yet rendered");
+      return btn;
     });
     await act(async () => userEvent.click(removeBtn));
     await waitFor(() => expect(canvas.queryByText("Alpha")).not.toBeInTheDocument());
