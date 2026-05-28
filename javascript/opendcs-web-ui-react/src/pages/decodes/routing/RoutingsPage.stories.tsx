@@ -9,7 +9,7 @@ import type {
   ApiRouting,
   ApiRoutingRef,
 } from "opendcs-api";
-import { expect, waitFor } from "storybook/test";
+import { expect, screen, waitFor } from "storybook/test";
 import { RoutingsPage } from "./RoutingsPage";
 
 const ROUTING_REFS: ApiRoutingRef[] = [
@@ -428,5 +428,77 @@ export const DeleteRoutingRow: Story = {
     await waitFor(() =>
       expect(canvas.queryByText("GOES-Hourly")).not.toBeInTheDocument(),
     );
+  },
+};
+
+// Edit a routing, open the platforms add-modal, pick a platform, and confirm it
+// lands in the table. Exercises the shared MultiSelectorModal.
+export const AddPlatformViaModal: Story = {
+  parameters: { msw: { handlers: baseHandlers } },
+  play: async ({ mount, userEvent, parameters }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("routing:edit_routing", { id: 8 }),
+    });
+    await act(async () => userEvent.click(editBtn));
+    const addBtn = await canvas.findByRole("button", {
+      name: i18n.t("routing:add_platforms"),
+    });
+    await act(async () => userEvent.click(addBtn));
+    // Modal portals to document.body — query via screen. Alpha is already
+    // attached, so Bravo is the only available row.
+    const bravo = await screen.findByText("Bravo");
+    await act(async () => userEvent.click(bravo));
+    const confirm = await screen.findByRole("button", {
+      name: i18n.t("routing:add_selected", { count: 1 }),
+    });
+    await act(async () => userEvent.click(confirm));
+    await waitFor(() => expect(canvas.getByText("Bravo")).toBeInTheDocument());
+  },
+};
+
+// Edit a routing, open the network-list add-modal, pick a netlist, and confirm.
+export const AddNetlistViaModal: Story = {
+  parameters: { msw: { handlers: baseHandlers } },
+  play: async ({ mount, userEvent, parameters }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("routing:edit_routing", { id: 8 }),
+    });
+    await act(async () => userEvent.click(editBtn));
+    const addBtn = await canvas.findByRole("button", {
+      name: i18n.t("routing:add_netlists"),
+    });
+    await act(async () => userEvent.click(addBtn));
+    // ACIS-WebService is already attached, so GOES-East is the only option.
+    const goesEast = await screen.findByText("GOES-East");
+    await act(async () => userEvent.click(goesEast));
+    const confirm = await screen.findByRole("button", {
+      name: i18n.t("routing:add_selected_netlists", { count: 1 }),
+    });
+    await act(async () => userEvent.click(confirm));
+    await waitFor(() => expect(canvas.getByText("GOES-East")).toBeInTheDocument());
+  },
+};
+
+// Edit a routing and remove its name-attached platform via the row trash action.
+export const RemovePlatformRow: Story = {
+  parameters: { msw: { handlers: baseHandlers } },
+  play: async ({ mount, userEvent, parameters }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("routing:edit_routing", { id: 8 }),
+    });
+    await act(async () => userEvent.click(editBtn));
+    // "Alpha" is attached by name and shows in the platforms table.
+    expect(await canvas.findByText("Alpha")).toBeInTheDocument();
+    const removeBtn = await canvas.findByRole("button", {
+      name: i18n.t("routing:remove_platform", { name: "Alpha" }),
+    });
+    await act(async () => userEvent.click(removeBtn));
+    await waitFor(() => expect(canvas.queryByText("Alpha")).not.toBeInTheDocument());
   },
 };
