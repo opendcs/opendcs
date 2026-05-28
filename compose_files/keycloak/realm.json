@@ -2415,6 +2415,22 @@
       "realmRoles": [
           "opendcs_user"
       ]
+    },
+    {
+      "id": "45ee99c4-3dc8-444d-81d8-2c669a148b03",
+      "username": "wrong_client_user",
+      "enabled": true,
+      "email": "wrong_client_user@localhost.localdomain",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "test_password"
+        }
+      ],
+      "realmRoles": [
+          "opendcs_user"
+      ]
     }
   ]
 }

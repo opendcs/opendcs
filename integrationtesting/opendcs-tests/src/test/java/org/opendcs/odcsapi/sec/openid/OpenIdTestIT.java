@@ -59,6 +59,7 @@ import decodes.sql.DbKey;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -437,6 +438,52 @@ final class OpenIdTestIT extends BaseApiIT
 			.statusCode(is(Response.Status.OK.getStatusCode()))
 		;
 
+	}
+
+	@Test
+	void test_login_jwt_rejects_token_from_other_client() throws Exception
+	{
+		// A token minted for a DIFFERENT client in the same realm (admin-cli) shares the issuer
+		// but is not intended for OpenDCS. It must be rejected and must not auto-register a user.
+		final String wrongClientToken = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.contentType(ContentType.URLENC)
+				.formParam("client_id", "admin-cli")
+				.formParam("grant_type", "password")
+				.formParam("scope", "openid profile email")
+				.formParam("username", "wrong_client_user")
+				.formParam("password", "test_password")
+		.when()
+			.post(URI.create(KeyCloakTestExtension.getTokenUrl()))
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.assertThat()
+			.statusCode(is(Response.Status.OK.getStatusCode()))
+			.extract()
+			.jsonPath()
+			.getString("access_token")
+		;
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.header("Authorization", "Bearer " + wrongClientToken)
+		.when()
+			.post("/login_jwt")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.UNAUTHORIZED.getStatusCode()))
+		;
+
+		// The wrong-client token must not have caused a user to be registered.
+		final var umDao = db.getDao(UserManagementDao.class).orElseThrow();
+		try (var tx = db.newTransaction())
+		{
+			var registered = umDao.getUsers(tx, -1, -1).stream()
+					.anyMatch(u -> "wrong_client_user@localhost.localdomain".equals(u.email));
+			assertFalse(registered, "A user was registered from a token issued for a different client.");
+		}
 	}
 
 	private Cookie doAuthCodeLogin(Cookie initialSession) throws IOException
