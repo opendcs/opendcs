@@ -255,7 +255,7 @@ public final class BuiltInIdentityProvider implements IdentityProvider
     public User register(OpenDcsDatabase db, DataTransaction tx, IdentityProviderCredentials credentials)
             throws OpenDcsAuthException
     {
-        return null;
+        throw new OpenDcsAuthException("User registration not yet supported.");
     }
 
 }
