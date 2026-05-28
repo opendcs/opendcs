@@ -39,6 +39,8 @@ public interface RolesDao extends OpenDcsDao
      */
     Optional<Role> getRole(DataTransaction tx, DbKey id) throws OpenDcsDataException;
 
+    Optional<Role> getRoleByName(DataTransaction tx, String role) throws OpenDcsDataException;
+
     /**
      * Update an existing role.
      * @param tx
