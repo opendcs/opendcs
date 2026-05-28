@@ -13,7 +13,7 @@
 * License for the specific language governing permissions and limitations
 * under the License.
 */
-package org.opendcs.database.impl.opendcs.dao;
+package org.opendcs.database.impl.opendcs.dao.auth;
 
 import java.util.List;
 import java.util.Optional;
@@ -45,7 +45,7 @@ import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
     // This will be done in a follow up PR.
     @ServiceProvider(service = IdentityProviderDao.class, path = "dao/OPENTSDB")
 })
-public class OpenDcsPgUserManagementImpl implements IdentityProviderDao
+public class IdentityProviderDaoImpl implements IdentityProviderDao
 {
     private static final IdentityProviderMapper PROVIDER_MAPPER = IdentityProviderMapper.withPrefix(null);
 

@@ -39,7 +39,8 @@ import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.IdentityProviderDao;
 import org.opendcs.database.dai.RolesDao;
 import org.opendcs.database.dai.UserManagementDao;
-import org.opendcs.database.impl.cwms.dao.CwmsUserManagementImpl;
+import org.opendcs.database.impl.cwms.dao.auth.CwmsIdentityProviderDaoImpl;
+import org.opendcs.database.impl.cwms.dao.auth.CwmsRolesDaoImpl;
 import org.opendcs.database.impl.cwms.jdbi.CwmsBoolean;
 import org.opendcs.database.impl.cwms.jdbi.CwmsBooleanArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
@@ -135,13 +136,14 @@ public class CwmsOracleProvider implements MigrationProvider
         jdbi.useTransaction(h ->
         {
             var tx = new JdbiTransaction(h, context);
-            var dao = new CwmsUserManagementImpl();
+            var idpDao = new CwmsIdentityProviderDaoImpl();
+            var rolesDao = new CwmsRolesDaoImpl();
 
             try(Call createUser = h.createCall("call ccp.create_user(:user,:pw)");
                 Call createCwmsUser = h.createCall("call cwms_sec.create_user(:user,:pw, null, null)");
                 Call assignRole = h.createCall("call cwms_sec.add_user_to_group(:user,:role,:office)");)
             {
-                setupIdentityProvider(tx, dao, dao);
+                setupIdentityProvider(tx, rolesDao, idpDao);
                 createUser.bind("user", username)
                           .bind("pw", password)
                           .invoke();

@@ -42,7 +42,7 @@ import org.opendcs.database.dai.IdentityProviderDao;
 import org.opendcs.database.dai.RolesDao;
 import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.dai.UsersDao;
-import org.opendcs.database.impl.opendcs.dao.OpenDcsPgUserManagementImpl;
+import org.opendcs.database.impl.opendcs.dao.auth.IdentityProviderDaoImpl;
 import org.opendcs.database.impl.opendcs.dao.auth.RolesDaoImpl;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
@@ -122,7 +122,7 @@ public class OpenDcsPgProvider implements MigrationProvider
         jdbi.useTransaction(h ->
         {
             var tx = new JdbiTransaction(h, context);
-            var idpDao = new OpenDcsPgUserManagementImpl();
+            var idpDao = new IdentityProviderDaoImpl();
             var rolesDao = new RolesDaoImpl();
 
             try(Call createUser = h.createCall("call create_user(:user,:pw)");
