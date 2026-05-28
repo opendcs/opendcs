@@ -413,6 +413,8 @@ final class RoutingResourcesTest
 		RoutingSpec routingSpec = new RoutingSpec();
 		routingSpec.setName("TestRoutingSpec");
 		routingSpec.setId(DbKey.createDbKey(1234L));
+		routingSpec.consumerType = "pipe";
+		routingSpec.consumerArg = "stdout";
 		routingSpec.outputTimeZone = TimeZone.getTimeZone("UTC");
 		routingSpec.lastModifyTime = Date.from(Instant.parse("2021-02-01T00:00:00Z"));
 		routingSpec.enableEquations = true;
