@@ -249,23 +249,29 @@ public final class OidcCallback extends OpenDcsResource
                     {
                         for(var idp: idps)
                         {
-                            var userOpt = idp.login(db, tx, new JwtCredentials(accessToken));
-                            if (userOpt.isPresent())
+                            // A single Identity Provider may serve multiple clients, as in the case of our 
+                            // tests 'opendcs' and 'opendcs-public', both use the same subject id value
+                            // so we have to further distinguish between them.
+                            if (idp instanceof OidcIdentityProvider oidcIdp && oidcIdp.validFor(jwt))
                             {
-                                var user = userOpt.get();
-                                response = updateSessionWithUser(user, httpRequest);
-                                break;
+                                var userOpt = idp.login(db, tx, new JwtCredentials(accessToken));
+                                if (userOpt.isPresent())
+                                {
+                                    var user = userOpt.get();
+                                    response = updateSessionWithUser(user, httpRequest);
+                                    break;
+                                }
                             }
                         }
                     }
                     else // we don't already know about this user so now we search
                     {
-                        final var issuer = jwt.getJWTClaimsSet().getIssuer();
                         idps = umDao.getIdentityProviders(tx, -1, -1);
                         for (var idp: idps)
                         {
                             if (idp instanceof OidcIdentityProvider oidcProvider &&
-                                issuer.equals(oidcProvider.getOidcConfiguration().getIssuer()) &&
+                                oidcProvider.validFor(jwt) &&
+                                
                                 oidcProvider.canRegister())
                             {
                                     var user = oidcProvider.register(db, tx, new JwtCredentials(accessToken));

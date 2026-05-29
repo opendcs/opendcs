@@ -77,13 +77,26 @@ final class JwtVerifier
 			public void verify(JWTClaimsSet claimsSet, SecurityContext context) throws BadJWTException
 			{
 				super.verify(claimsSet, context);
-				boolean inAudience = claimsSet.getAudience() != null && claimsSet.getAudience().contains(clientId);
-				if (!inAudience && !clientId.equals(claimsSet.getClaim("azp")))
+				if (!clientAudienceMatches(claimsSet, clientId))
 				{
 					throw new BadJWTException("JWT was not issued for this client.");
 				}
 			}
 		});
 		return jwtProcessor.process(accessToken, null);
+	}
+
+	/**
+	 * Helper function to avoid duplicating logic.
+	 * determines if the AZP claim matches the clientId or the clientId exists
+	 * within the aud claim.
+	 * @param claimsSet
+	 * @param clientId
+	 * @return
+	 */
+	public static final boolean clientAudienceMatches(JWTClaimsSet claimsSet, String clientId)
+	{
+		boolean inAudience = claimsSet.getAudience() != null && claimsSet.getAudience().contains(clientId);
+		return !(!inAudience && !clientId.equals(claimsSet.getClaim("azp")));
 	}
 }

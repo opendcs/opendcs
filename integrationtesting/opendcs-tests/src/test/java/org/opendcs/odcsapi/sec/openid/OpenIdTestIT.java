@@ -614,7 +614,6 @@ final class OpenIdTestIT extends BaseApiIT
 			.assertThat()
 			.statusCode(Response.Status.OK.getStatusCode())
 			.extract()
-
 		;
 
 		var authUrl = loginSessionPage.htmlPath().getString("**.find { it.@id == 'kc-form-login'}.@action");

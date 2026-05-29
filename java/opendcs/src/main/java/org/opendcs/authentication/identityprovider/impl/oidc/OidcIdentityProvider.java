@@ -34,6 +34,8 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.source.JWKSourceBuilder;
 import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
+import com.nimbusds.jwt.proc.BadJWTException;
 
 import decodes.sql.DbKey;
 import io.swagger.v3.oas.models.security.SecurityScheme;
@@ -287,6 +289,41 @@ public final class OidcIdentityProvider implements IdentityProvider
         extension.put("oidcConfig", oidcData);
         scheme.addExtension("x-logincomponent-configuration", extension);
         return scheme;
+    }
+
+    /**
+     * Determine if this particular instance can authenticate a given JWT.
+     * Both the Aud/AZP need to have the clientID as well as the issuer matching
+     * to distinguish between different clients from the same issuer.
+     * @param jwt successfully parsed, but not validated, JWT with claims.
+     * @return whether or not this provider is appropriate to the given JWT.
+     * @throws OpenDcsAuthException
+     */
+    public boolean validFor(SignedJWT jwt) throws OpenDcsAuthException
+    {
+        boolean ret = true;
+        var oidcConfig = this.getOidcConfiguration();
+
+        try {
+            var claims = jwt.getJWTClaimsSet();
+            if (!oidcConfig.getIssuer().equals(claims.getIssuer()))
+            {
+                ret = false;
+            }
+
+            // we don't just assing here as we're only changing the value if one of the check
+            // is false. We never want to set it back to true
+            if (!JwtVerifier.clientAudienceMatches(claims, clientId))
+            {
+                ret = false;
+            }
+        }
+        catch (ParseException ex)
+        {
+            // don't care, we can't process the claims.
+            ret = false;
+        }
+        return ret;
     }
 
     @AutoService(IdentityProviderProvider.class)
