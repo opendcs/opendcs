@@ -1,15 +1,18 @@
-import { Button, Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
+import { Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../components/properties";
 import { use, useCallback, useMemo, useReducer } from "react";
 import type { ApiLoadingApp } from "opendcs-api";
 import { useTranslation } from "react-i18next";
 import type { CancelAction, CollectionActions, SaveAction } from "../../util/Actions";
-import { Save, X } from "react-bootstrap-icons";
 import { LoadingAppReducer } from "./LoadingAppReducer";
 import { DetailFade } from "../../components/data-table";
-
-const INPUT_H = { height: "2.25rem" };
-const LABEL_H = { height: "1rem" };
+import {
+  CancelButton,
+  EditFormActions,
+  INPUT_H,
+  LABEL_H,
+  SaveButton,
+} from "../../components/forms";
 
 const APP_FIELDS = ["appName", "appType", "comment"] as const;
 
@@ -224,27 +227,18 @@ export const LoadingApp: React.FC<LoadingAppProperties> = ({
           </Row>
 
           {edit && (
-            <Row className="mt-3">
-              <Col className="d-flex justify-content-end gap-2">
-                <Button
-                  onClick={() =>
-                    providedApp.appId !== undefined &&
-                    actions.cancel?.(providedApp.appId)
-                  }
-                  variant="secondary"
-                  aria-label={t("loadingapps:cancel_for", { id: providedApp.appId })}
-                >
-                  <X /> {t("translation:cancel")}
-                </Button>
-                <Button
-                  onClick={saveApp}
-                  variant="primary"
-                  aria-label={t("loadingapps:save_app", { id: localApp.appId })}
-                >
-                  <Save /> {t("translation:save")}
-                </Button>
-              </Col>
-            </Row>
+            <EditFormActions>
+              <CancelButton
+                onClick={() =>
+                  providedApp.appId !== undefined && actions.cancel?.(providedApp.appId)
+                }
+                aria-label={t("loadingapps:cancel_for", { id: providedApp.appId })}
+              />
+              <SaveButton
+                onClick={saveApp}
+                aria-label={t("loadingapps:save_app", { id: localApp.appId })}
+              />
+            </EditFormActions>
           )}
         </Card.Body>
       </Card>

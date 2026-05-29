@@ -9,17 +9,20 @@ import {
   Placeholder,
   Row,
 } from "react-bootstrap";
-import { Save, X } from "react-bootstrap-icons";
 import { useTranslation } from "react-i18next";
 import type { ApiAppRef, ApiRoutingRef, ApiScheduleEntry } from "opendcs-api";
 import { DetailFade } from "../../components/data-table";
+import {
+  CancelButton,
+  EditFormActions,
+  INPUT_H,
+  LABEL_H,
+  SaveButton,
+} from "../../components/forms";
 import type { CancelAction, SaveAction } from "../../util/Actions";
 import { ExecutionSchedule } from "./ExecutionSchedule";
 import { RoutingSpecSelectModal } from "./RoutingSpecSelectModal";
 import { ScheduleReducer, type UiSchedule } from "./ScheduleReducer";
-
-const INPUT_H = { height: "2.25rem" };
-const LABEL_H = { height: "1rem" };
 
 const SKELETON_FIELDS = ["name", "appName", "routingSpecName", "enabled"] as const;
 
@@ -281,28 +284,20 @@ export const Schedule: React.FC<ScheduleProperties> = ({
           </Row>
 
           {edit && (
-            <Row className="mt-3">
-              <Col className="d-flex justify-content-end gap-2">
-                <Button
-                  onClick={cancel}
-                  variant="secondary"
-                  aria-label={t("schedule:cancel_for", {
-                    id: provided.schedEntryId,
-                  })}
-                >
-                  <X /> {t("translation:cancel")}
-                </Button>
-                <Button
-                  onClick={saveSchedule}
-                  variant="primary"
-                  aria-label={t("schedule:save_schedule", {
-                    id: provided.schedEntryId,
-                  })}
-                >
-                  <Save /> {t("translation:save")}
-                </Button>
-              </Col>
-            </Row>
+            <EditFormActions>
+              <CancelButton
+                onClick={cancel}
+                aria-label={t("schedule:cancel_for", {
+                  id: provided.schedEntryId,
+                })}
+              />
+              <SaveButton
+                onClick={saveSchedule}
+                aria-label={t("schedule:save_schedule", {
+                  id: provided.schedEntryId,
+                })}
+              />
+            </EditFormActions>
           )}
         </Card.Body>
       </Card>
