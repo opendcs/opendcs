@@ -90,6 +90,13 @@ export const intervalKeys = {
   list: (org: string) => [...intervalKeys.all(org), "list"] as const,
 };
 
+export const scheduleKeys = {
+  all: (org: string) => ["schedules", org] as const,
+  list: (org: string) => [...scheduleKeys.all(org), "list"] as const,
+  detail: (org: string, schedEntryId: number) =>
+    [...scheduleKeys.all(org), "detail", schedEntryId] as const,
+};
+
 // Org list is global (not scoped to an org) — it's the source of truth that
 // drives the org switcher itself.
 export const orgKeys = {
