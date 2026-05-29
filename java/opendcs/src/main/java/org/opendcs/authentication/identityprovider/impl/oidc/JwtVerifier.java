@@ -30,6 +30,7 @@ import com.nimbusds.jose.proc.JWSVerificationKeySelector;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.JWTClaimNames;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.proc.BadJWTException;
 import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
@@ -49,7 +50,7 @@ final class JwtVerifier
 		return instance;
 	}
 
-	JWTClaimsSet getClaimsSet(JWKSource<SecurityContext> keySource, String accessToken, String issuer)
+	JWTClaimsSet getClaimsSet(JWKSource<SecurityContext> keySource, String accessToken, String issuer, String clientId)
 			throws BadJOSEException, ParseException, JOSEException
 	{
 		// Nimbus API documentation taken from:
@@ -62,13 +63,27 @@ final class JwtVerifier
 		JWSAlgorithm expectedJWSAlg = JWSAlgorithm.RS256;
 		JWSKeySelector<SecurityContext> keySelector = new JWSVerificationKeySelector<>(expectedJWSAlg, keySource);
 		jwtProcessor.setJWSKeySelector(keySelector);
-		jwtProcessor.setJWTClaimsSetVerifier(new DefaultJWTClaimsVerifier<>(
+		// Beyond issuer/expiry, require the token to have been minted for this client. ID tokens carry
+		// the client in "aud"; Keycloak access tokens may omit "aud" and only set "azp", so accept either.
+		jwtProcessor.setJWTClaimsSetVerifier(new DefaultJWTClaimsVerifier<SecurityContext>(
 				new JWTClaimsSet.Builder().issuer(issuer).build(),
 				new HashSet<>(Arrays.asList(
 						JWTClaimNames.SUBJECT,
 						JWTClaimNames.ISSUED_AT,
 						JWTClaimNames.EXPIRATION_TIME,
-						JWTClaimNames.JWT_ID))));
+						JWTClaimNames.JWT_ID)))
+		{
+			@Override
+			public void verify(JWTClaimsSet claimsSet, SecurityContext context) throws BadJWTException
+			{
+				super.verify(claimsSet, context);
+				boolean inAudience = claimsSet.getAudience() != null && claimsSet.getAudience().contains(clientId);
+				if (!inAudience && !clientId.equals(claimsSet.getClaim("azp")))
+				{
+					throw new BadJWTException("JWT was not issued for this client.");
+				}
+			}
+		});
 		return jwtProcessor.process(accessToken, null);
 	}
 }
