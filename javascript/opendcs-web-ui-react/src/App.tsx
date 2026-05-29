@@ -7,6 +7,7 @@ import { Container } from "react-bootstrap";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Platforms } from "./pages/platforms";
 import { Configs } from "./pages/decodes/configs";
+import { Routing } from "./pages/decodes/routing";
 import { Algorithms } from "./pages/computations/algorithms";
 import { Computations } from "./pages/computations/computations";
 import { SitesPage } from "./pages/sites";
@@ -39,6 +40,7 @@ function App() {
             >
               <Route path="/platforms" element={<Platforms />} />
               <Route path="/configs" element={<Configs />} />
+              <Route path="/routing" element={<Routing />} />
               <Route path="/sites" element={<SitesPage />} />
               <Route path="/computations" element={<Computations />} />
               <Route path="/algorithms" element={<Algorithms />} />

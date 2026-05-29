@@ -23,3 +23,4 @@ export {
   type ChooserTableProps,
 } from "./ChooserTable";
 export { SelectorModal, type SelectorModalProps } from "./SelectorModal";
+export { MultiSelectorModal, type MultiSelectorModalProps } from "./MultiSelectorModal";

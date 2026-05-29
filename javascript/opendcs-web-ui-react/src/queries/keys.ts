@@ -32,6 +32,28 @@ export const configKeys = {
     [...configKeys.all(org), "detail", configId] as const,
 };
 
+export const routingKeys = {
+  all: (org: string) => ["routings", org] as const,
+  list: (org: string) => [...routingKeys.all(org), "list"] as const,
+  detail: (org: string, routingId: number) =>
+    [...routingKeys.all(org), "detail", routingId] as const,
+};
+
+export const dataSourceKeys = {
+  all: (org: string) => ["dataSources", org] as const,
+  list: (org: string) => [...dataSourceKeys.all(org), "list"] as const,
+};
+
+export const presentationKeys = {
+  all: (org: string) => ["presentations", org] as const,
+  list: (org: string) => [...presentationKeys.all(org), "list"] as const,
+};
+
+export const netlistKeys = {
+  all: (org: string) => ["netlists", org] as const,
+  list: (org: string) => [...netlistKeys.all(org), "list"] as const,
+};
+
 export const computationKeys = {
   all: (org: string) => ["computations", org] as const,
   list: (org: string) => [...computationKeys.all(org), "list"] as const,
