@@ -76,6 +76,23 @@ export const WithRefLists: Decorator = (Story) => {
           "human-readable": { value: "human-readable" },
         },
       },
+      DataSourceType: {
+        enumName: "DataSourceType",
+        items: {
+          lrgs: { value: "lrgs", description: "LRGS Network Server" },
+          abstractweb: { value: "abstractweb", description: "Abstract Web Source" },
+          file: { value: "file", description: "Single File" },
+          directory: { value: "directory", description: "Directory of Files" },
+          hotbackupgroup: {
+            value: "hotbackupgroup",
+            description: "Hot Backup Group",
+          },
+          roundrobingroup: {
+            value: "roundrobingroup",
+            description: "Round Robin Group",
+          },
+        },
+      },
     };
   }, []);
 

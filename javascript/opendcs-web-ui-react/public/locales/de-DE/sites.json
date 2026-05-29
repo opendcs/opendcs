@@ -1,3 +1,28 @@
 {
-  "title": "Standort"
+  "title": "Standort",
+  "site_id": "Standort-ID",
+  "site_name": "Standortname",
+  "site_names": {
+    "title": "Standortnamen",
+    "select": "Standortnamentyp-Auswahl",
+    "add_name": "Standortnamen hinzufügen",
+    "name_type": "Typ",
+    "type_select_for": "Standortnamentyp-Auswahl für Name {{name}}",
+    "value_input_for": "Standortnamen-Werteingabe für Typ {{type}}",
+    "save_for": "Speicherschaltfläche für Standortnamen vom Typ {{type}}",
+    "edit_for": "Bearbeitungsschaltfläche für Standortnamen vom Typ {{type}}",
+    "delete_for": "Löschschaltfläche für Standortnamen vom Typ {{type}} mit Wert {{name}}"
+  },
+  "configured_names": "Konfigurierte Standortnamen",
+  "description": "Beschreibung",
+  "add_site": "Neuen Standort hinzufügen",
+  "enter_region": "Region",
+  "enter_country": "Land angeben",
+  "use_decimal_format": "Wert im Dezimalformat angeben",
+  "nearestCity": "Nächstgelegene Stadt",
+  "public_name": "Öffentlicher Name",
+  "edit_site": "Standort mit ID {{id}} bearbeiten",
+  "save_site": "Standort mit ID {{id}} speichern",
+  "cancel_for": "Bearbeitung des Standorts mit ID {{id}} abbrechen",
+  "delete_for": "Standort mit ID {{id}} löschen"
 }

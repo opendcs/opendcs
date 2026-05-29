@@ -42,6 +42,8 @@ export const routingKeys = {
 export const dataSourceKeys = {
   all: (org: string) => ["dataSources", org] as const,
   list: (org: string) => [...dataSourceKeys.all(org), "list"] as const,
+  detail: (org: string, dataSourceId: number) =>
+    [...dataSourceKeys.all(org), "detail", dataSourceId] as const,
 };
 
 export const presentationKeys = {

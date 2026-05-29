@@ -1,0 +1,24 @@
+{
+  "title": "Datenquellen",
+  "header": {
+    "Id": "ID",
+    "Name": "Name",
+    "Type": "Typ",
+    "Arguments": "Argumente",
+    "UsedBy": "Verwendet von"
+  },
+  "name": "Name",
+  "type": "Typ",
+  "group_members": "Gruppenmitglieder",
+  "add_datasource": "Datenquelle hinzufügen",
+  "edit_datasource": "Datenquelle {{id}} bearbeiten",
+  "delete_for": "Datenquelle {{id}} löschen",
+  "save_datasource": "Datenquelle {{id}} speichern",
+  "cancel_for": "Bearbeitung der Datenquelle {{id}} abbrechen",
+  "add_members": "Gruppenmitglieder hinzufügen",
+  "add_members_none": "Keine Datenquellen zum Hinzufügen verfügbar.",
+  "remove_member": "Mitglied {{name}} entfernen",
+  "add_selected": "{{count}} ausgewählte hinzufügen",
+  "select_all_members": "Alle Datenquellen auswählen",
+  "select_member": "Datenquelle {{name}} auswählen"
+}

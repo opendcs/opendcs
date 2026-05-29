@@ -1,0 +1,24 @@
+{
+  "title": "Data Sources",
+  "header": {
+    "Id": "Id",
+    "Name": "Name",
+    "Type": "Type",
+    "Arguments": "Arguments",
+    "UsedBy": "Used By"
+  },
+  "name": "Name",
+  "type": "Type",
+  "group_members": "Group Members",
+  "add_datasource": "Add data source",
+  "edit_datasource": "Edit data source {{id}}",
+  "delete_for": "Delete data source {{id}}",
+  "save_datasource": "Save data source {{id}}",
+  "cancel_for": "Cancel editing data source {{id}}",
+  "add_members": "Add group members",
+  "add_members_none": "No data sources available to add.",
+  "remove_member": "Remove member {{name}}",
+  "add_selected": "Add {{count}} selected",
+  "select_all_members": "Select all data sources",
+  "select_member": "Select data source {{name}}"
+}

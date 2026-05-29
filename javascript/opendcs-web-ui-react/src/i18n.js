@@ -20,6 +20,9 @@ i18n
   .init({
     fallbackLng: ["en-US"],
     debug: true,
+    // Only full locale files (e.g. de-DE, es-ES) are shipped, never bare base codes,
+    // so don't resolve/look up base codes like "de" or "es".
+    load: "currentOnly",
     react: {
       useSuspense: true,
     },
