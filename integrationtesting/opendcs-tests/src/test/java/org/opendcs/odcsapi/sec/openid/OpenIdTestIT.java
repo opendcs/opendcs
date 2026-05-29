@@ -443,12 +443,12 @@ final class OpenIdTestIT extends BaseApiIT
 	@Test
 	void test_login_jwt_rejects_token_from_other_client() throws Exception
 	{
-		// A token minted for a DIFFERENT client in the same realm (admin-cli) shares the issuer
-		// but is not intended for OpenDCS. It must be rejected and must not auto-register a user.
+		// A token minted for a DIFFERENT client in the same realm (test-other-client) shares the
+		// issuer but is not intended for OpenDCS. It must be rejected and must not auto-register a user.
 		final String wrongClientToken = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.contentType(ContentType.URLENC)
-				.formParam("client_id", "admin-cli")
+				.formParam("client_id", "test-other-client")
 				.formParam("grant_type", "password")
 				.formParam("scope", "openid profile email")
 				.formParam("username", "wrong_client_user")
