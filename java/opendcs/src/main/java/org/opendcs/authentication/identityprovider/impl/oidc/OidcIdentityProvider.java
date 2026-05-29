@@ -223,7 +223,7 @@ public final class OidcIdentityProvider implements IdentityProvider
     private JWTClaimsSet verifyTokenAndGetClaims(OpenIdConfiguration config, String token) throws MalformedURLException, BadJOSEException, ParseException, JOSEException
     {
         var keySource = JWKSourceBuilder.create(config.getJwksUri().toURL()).retrying(true).build();
-        return JwtVerifier.getInstance().getClaimsSet(keySource, token, oidcConfig.getIssuer());
+        return JwtVerifier.getInstance().getClaimsSet(keySource, token, oidcConfig.getIssuer(), this.clientId);
     }
 
     @Override
