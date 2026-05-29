@@ -1,3 +1,28 @@
 {
-  "title": "Sitios"
+  "title": "Sitios",
+  "site_id": "ID del sitio",
+  "site_name": "Nombre del sitio",
+  "site_names": {
+    "title": "Nombres del sitio",
+    "select": "Selector de tipo de nombre del sitio",
+    "add_name": "Agregar nombre del sitio",
+    "name_type": "Tipo",
+    "type_select_for": "Selección de tipo de nombre del sitio para el nombre {{name}}",
+    "value_input_for": "Entrada de valor de nombre del sitio para el tipo {{type}}",
+    "save_for": "Botón de guardar nombre del sitio para el tipo {{type}}",
+    "edit_for": "Botón de editar nombre del sitio para el tipo {{type}}",
+    "delete_for": "Botón de eliminar nombre del sitio para el tipo {{type}} con valor {{name}}"
+  },
+  "configured_names": "Nombres del sitio configurados",
+  "description": "Descripción",
+  "add_site": "Agregar nuevo sitio",
+  "enter_region": "Región",
+  "enter_country": "Indicar país",
+  "use_decimal_format": "Indicar el valor en formato decimal",
+  "nearestCity": "Ciudad más cercana",
+  "public_name": "Nombre público",
+  "edit_site": "Editar sitio con ID {{id}}",
+  "save_site": "Guardar sitio con ID {{id}}",
+  "cancel_for": "Cancelar la edición del sitio con ID {{id}}",
+  "delete_for": "Eliminar sitio con ID {{id}}"
 }

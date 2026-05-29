@@ -1,0 +1,25 @@
+{
+  "script_editor": {
+    "format_statements": {
+      "title": "Sentencias de formato",
+      "format_statement": "Sentencia de formato",
+      "format_label": "Etiqueta",
+      "format_input": "Área editable de sentencia de formato para la fila {{sequence}}, con etiqueta {{label}}.",
+      "label_input": "Área de etiqueta para la fila {{sequence}}.",
+      "add_above": "Agregar nueva fila de sentencia encima de la fila {{sequence}}, con etiqueta {{label}}.",
+      "add_below": "Agregar nueva fila de sentencia debajo de la fila {{sequence}}, con etiqueta {{label}}.",
+      "delete": "Eliminar sentencia de formato de la fila {{sequence}}, con etiqueta {{label}}.",
+      "drag_control": "Comenzar a arrastrar la sentencia de formato de la fila {{sequence}}, con etiqueta {{label}}."
+    },
+    "sensors": {
+      "unit": "Unidad para el sensor {{name}}",
+      "algorithm": "Algoritmo de conversión para el sensor {{name}}",
+      "coeff": "Coeficiente de algoritmo {{coeff}} para el sensor {{name}}"
+    },
+    "sample": {
+      "title": "Datos de muestra",
+      "raw_data_input": "Entrada de texto de datos de muestra"
+    }
+  },
+  "decode": "Decodificar"
+}
