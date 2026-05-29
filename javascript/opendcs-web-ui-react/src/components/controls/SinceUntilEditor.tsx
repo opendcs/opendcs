@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { Form, InputGroup } from "react-bootstrap";
-import { useTranslation } from "react-i18next";
 import {
   dateToInputValue,
   formatAbsolute,
@@ -18,12 +17,27 @@ const AMOUNT_SUGGESTIONS = ["30 minutes", "1 hour", "2 hours", "1 day"];
 
 const DEFAULT_AMOUNT = "1 hour";
 
+/** Display strings, supplied by the caller so this control stays i18n-agnostic. */
+export interface SinceUntilLabels {
+  /** Accessible label for the method `<select>` (e.g. "Since" / "Until"). */
+  method: string;
+  /** "Now" option text (only shown when `kind === "until"`). */
+  now: string;
+  /** "Now minus" option text. */
+  nowMinus: string;
+  /** Accessible label for the now-minus amount input. */
+  amount: string;
+  /** "Calendar" option text + accessible label for the datetime input. */
+  calendar: string;
+}
+
 export interface SinceUntilEditorProps {
   /** "since" omits the bare "now" option; "until" includes it. */
   kind: "since" | "until";
   value: string | undefined;
   edit?: boolean;
   onChange: (value: string) => void;
+  labels: SinceUntilLabels;
   idPrefix?: string;
 }
 
@@ -76,9 +90,9 @@ export const SinceUntilEditor: React.FC<SinceUntilEditorProps> = ({
   value,
   edit = false,
   onChange,
+  labels,
   idPrefix = kind,
 }) => {
-  const [t] = useTranslation(["routing"]);
   const [state, setState] = useState<ParsedState>(() => parseValue(kind, value));
 
   const update = useCallback(
@@ -97,16 +111,16 @@ export const SinceUntilEditor: React.FC<SinceUntilEditorProps> = ({
   return (
     <InputGroup>
       <Form.Select
-        aria-label={t(`routing:${kind}`)}
+        aria-label={labels.method}
         id={`${idPrefix}-method`}
         value={state.method}
         disabled={!edit}
         onChange={(e) => update({ method: e.currentTarget.value as Method })}
         style={{ maxWidth: "11rem" }}
       >
-        {kind === "until" && <option value="now">{t("routing:now")}</option>}
-        <option value="nowMinus">{t("routing:now_minus")}</option>
-        <option value="calendar">{t("routing:calendar")}</option>
+        {kind === "until" && <option value="now">{labels.now}</option>}
+        <option value="nowMinus">{labels.nowMinus}</option>
+        <option value="calendar">{labels.calendar}</option>
       </Form.Select>
 
       {state.method === "nowMinus" && (
@@ -114,7 +128,7 @@ export const SinceUntilEditor: React.FC<SinceUntilEditorProps> = ({
           <Form.Control
             type="text"
             list={datalistId}
-            aria-label={t("routing:now_minus_amount")}
+            aria-label={labels.amount}
             id={`${idPrefix}-amount`}
             value={state.amount}
             readOnly={!edit}
@@ -131,7 +145,7 @@ export const SinceUntilEditor: React.FC<SinceUntilEditorProps> = ({
       {state.method === "calendar" && (
         <Form.Control
           type="datetime-local"
-          aria-label={t("routing:calendar")}
+          aria-label={labels.calendar}
           id={`${idPrefix}-calendar`}
           value={state.dateInput}
           readOnly={!edit}

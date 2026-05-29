@@ -6,4 +6,5 @@ export { RoutingPlatformsTable } from "./RoutingPlatformsTable";
 export { PlatformsAddModal } from "./PlatformsAddModal";
 export { RoutingNetlistsTable } from "./RoutingNetlistsTable";
 export { NetlistsAddModal } from "./NetlistsAddModal";
-export { SinceUntilEditor } from "./SinceUntilEditor";
+export { RoutingTimeRange } from "./RoutingTimeRange";
+export { RoutingFlags } from "./RoutingFlags";

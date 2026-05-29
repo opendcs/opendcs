@@ -22,7 +22,8 @@ import type {
 import { RoutingReducer, type UiRouting } from "./RoutingReducer";
 import RoutingPlatformsTable from "./RoutingPlatformsTable";
 import RoutingNetlistsTable from "./RoutingNetlistsTable";
-import { SinceUntilEditor } from "./SinceUntilEditor";
+import { RoutingTimeRange } from "./RoutingTimeRange";
+import { RoutingFlags } from "./RoutingFlags";
 import {
   DataSourceSelect,
   PresentationGroupSelect,
@@ -41,12 +42,6 @@ const ROUTING_FIELDS = [
   "outputFormat",
   "outputTZ",
   "presGroupName",
-] as const;
-
-const APPLY_TIME_TO_OPTIONS = [
-  "Local Receive Time",
-  "Platform Xmit Time",
-  "Both",
 ] as const;
 
 const TablePlaceholder: React.FC = () => (
@@ -207,20 +202,6 @@ export const Routing: React.FC<RoutingProperties> = ({
     [],
   );
 
-  const flagCheck = (name: keyof UiRouting, label: string, extra?: React.ReactNode) => (
-    <div className="d-flex align-items-center gap-2 mb-2">
-      <FormCheck
-        type="checkbox"
-        id={`routing-${String(name)}`}
-        label={label}
-        disabled={!edit}
-        checked={Boolean(local[name])}
-        onChange={(e) => setField(name, e.currentTarget.checked)}
-      />
-      {extra}
-    </div>
-  );
-
   return (
     <DetailFade skeleton={<RoutingSkeleton edit={edit} />}>
       <Card
@@ -373,93 +354,16 @@ export const Routing: React.FC<RoutingProperties> = ({
 
           <Row>
             <Col md={6}>
-              <FormGroup as={Row} className="mb-3">
-                <Form.Label column sm={4}>
-                  {t("routing:since")}
-                </Form.Label>
-                <Col sm={8}>
-                  <SinceUntilEditor
-                    kind="since"
-                    value={local.since}
-                    edit={edit}
-                    onChange={(v) => setField("since", v)}
-                  />
-                </Col>
-              </FormGroup>
-              <FormGroup as={Row} className="mb-3">
-                <Form.Label column sm={4}>
-                  {t("routing:until")}
-                </Form.Label>
-                <Col sm={8}>
-                  <SinceUntilEditor
-                    kind="until"
-                    value={local.until}
-                    edit={edit}
-                    onChange={(v) => setField("until", v)}
-                  />
-                </Col>
-              </FormGroup>
-              <FormGroup as={Row} className="mb-3">
-                <Form.Label column sm={4} htmlFor="applyTimeTo">
-                  {t("routing:apply_time_to")}
-                </Form.Label>
-                <Col sm={8}>
-                  <Form.Select
-                    id="applyTimeTo"
-                    aria-label={t("routing:apply_time_to")}
-                    value={local.applyTimeTo ?? APPLY_TIME_TO_OPTIONS[0]}
-                    disabled={!edit}
-                    onChange={(e) => setField("applyTimeTo", e.currentTarget.value)}
-                  >
-                    {APPLY_TIME_TO_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Col>
-              </FormGroup>
+              <RoutingTimeRange
+                since={local.since}
+                until={local.until}
+                applyTimeTo={local.applyTimeTo}
+                edit={edit}
+                onChange={setField}
+              />
             </Col>
             <Col md={6}>
-              {flagCheck("ascendingTime", t("routing:ascending_time"))}
-              {flagCheck("settlingTimeDelay", t("routing:settling_delay"))}
-              {flagCheck("goesSelfTimed", t("routing:goes_self_timed"))}
-              {flagCheck("goesRandom", t("routing:goes_random"))}
-              {flagCheck("networkDCP", t("routing:network_dcp"))}
-              {flagCheck("iridium", t("routing:iridium"))}
-              {flagCheck("qualityNotifications", t("routing:quality_notifications"))}
-              {flagCheck(
-                "goesSpacecraftCheck",
-                t("routing:spacecraft"),
-                <Form.Select
-                  size="sm"
-                  aria-label={t("routing:spacecraft")}
-                  style={{ maxWidth: "7rem" }}
-                  value={local.goesSpacecraftSelection ?? "East"}
-                  disabled={!edit || !local.goesSpacecraftCheck}
-                  onChange={(e) =>
-                    setField("goesSpacecraftSelection", e.currentTarget.value)
-                  }
-                >
-                  <option value="East">{t("routing:east")}</option>
-                  <option value="West">{t("routing:west")}</option>
-                </Form.Select>,
-              )}
-              {flagCheck(
-                "parityCheck",
-                t("routing:parity"),
-                <Form.Select
-                  size="sm"
-                  aria-label={t("routing:parity")}
-                  style={{ maxWidth: "7rem" }}
-                  value={local.paritySelection ?? "Good"}
-                  disabled={!edit || !local.parityCheck}
-                  onChange={(e) => setField("paritySelection", e.currentTarget.value)}
-                >
-                  <option value="Good">{t("routing:good")}</option>
-                  <option value="Bad">{t("routing:bad")}</option>
-                </Form.Select>,
-              )}
+              <RoutingFlags routing={local} edit={edit} onChange={setField} />
             </Col>
           </Row>
 
