@@ -49,11 +49,15 @@ export const dataSourceKeys = {
 export const presentationKeys = {
   all: (org: string) => ["presentations", org] as const,
   list: (org: string) => [...presentationKeys.all(org), "list"] as const,
+  detail: (org: string, groupId: number) =>
+    [...presentationKeys.all(org), "detail", groupId] as const,
 };
 
 export const netlistKeys = {
   all: (org: string) => ["netlists", org] as const,
   list: (org: string) => [...netlistKeys.all(org), "list"] as const,
+  detail: (org: string, netlistId: number) =>
+    [...netlistKeys.all(org), "detail", netlistId] as const,
 };
 
 export const computationKeys = {

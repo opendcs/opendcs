@@ -70,6 +70,30 @@ export const SideBar = ({ open, onClose }: SideBarProps) => {
           >
             {t("datasources:title")}
           </Nav.Link>
+          <Nav.Link
+            as={Link}
+            to="/netlists"
+            active={location.pathname === "/netlists"}
+            onClick={onClose}
+          >
+            {t("netlists:title")}
+          </Nav.Link>
+          <Nav.Link
+            as={Link}
+            to="/presentations"
+            active={location.pathname === "/presentations"}
+            onClick={onClose}
+          >
+            {t("presentations:title")}
+          </Nav.Link>
+          <Nav.Link
+            as={Link}
+            to="/schedule"
+            active={location.pathname === "/schedule"}
+            onClick={onClose}
+          >
+            {t("schedule:title")}
+          </Nav.Link>
         </Nav>
 
         <div className="odcs-sidebar__section-title">Computation</div>
