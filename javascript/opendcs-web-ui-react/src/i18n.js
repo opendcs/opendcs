@@ -19,7 +19,8 @@ i18n
   // for all options read: https://www.i18next.com/overview/configuration-options
   .init({
     fallbackLng: ["en-US"],
-    debug: true,
+    debug: false,
+    showSupportNotice: false,
     // Only full locale files (e.g. de-DE, es-ES) are shipped, never bare base codes,
     // so don't resolve/look up base codes like "de" or "es".
     load: "currentOnly",

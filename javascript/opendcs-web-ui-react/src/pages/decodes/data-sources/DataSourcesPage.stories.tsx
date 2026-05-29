@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { act } from "react";
 import { http, HttpResponse } from "msw";
 import type { ApiDataSource, ApiDataSourceRef } from "opendcs-api";
-import { expect, screen, waitFor } from "storybook/test";
+import { expect, screen, waitFor, within } from "storybook/test";
 import { DataSourcesPage } from "./DataSourcesPage";
 
 const DATA_SOURCE_REFS: ApiDataSourceRef[] = [
@@ -242,7 +242,7 @@ export const DeleteDataSourceRow: Story = {
 // A group-type data source reveals the group-members table with its member rows.
 export const GroupTypeShowsMembers: Story = {
   parameters: { msw: { handlers: baseHandlers } },
-  play: async ({ mount, userEvent, parameters }) => {
+  play: async ({ mount, canvasElement, userEvent, parameters }) => {
     const canvas = await mount();
     const { i18n } = parameters;
     await act(async () => userEvent.click(await canvas.findByText("backup-group")));
@@ -250,7 +250,13 @@ export const GroupTypeShowsMembers: Story = {
     await waitFor(() =>
       expect(canvas.getByText(i18n.t("datasources:group_members"))).toBeInTheDocument(),
     );
-    expect(await canvas.findByText("lrgs-main")).toBeInTheDocument();
+    // "lrgs-main" also appears in the main list, so scope to the members table.
+    const membersTable = await waitFor(() => {
+      const el = canvasElement.querySelector<HTMLElement>("#dataSourceMembersTable");
+      if (!el) throw new Error("members table not yet rendered");
+      return el;
+    });
+    expect(await within(membersTable).findByText("lrgs-main")).toBeInTheDocument();
   },
 };
 
@@ -258,7 +264,7 @@ export const GroupTypeShowsMembers: Story = {
 // lands in the table. Exercises the shared MultiSelectorModal.
 export const AddMemberViaModal: Story = {
   parameters: { msw: { handlers: baseHandlers } },
-  play: async ({ mount, userEvent, parameters }) => {
+  play: async ({ mount, canvasElement, userEvent, parameters }) => {
     const canvas = await mount();
     const { i18n } = parameters;
     const editBtn = await canvas.findByRole("button", {
@@ -269,14 +275,25 @@ export const AddMemberViaModal: Story = {
       name: i18n.t("datasources:add_members"),
     });
     await act(async () => userEvent.click(addBtn));
-    // lrgs-main is already a member and backup-group is itself, so karl-test-xml
-    // is the only available row.
-    const member = await screen.findByText("karl-test-xml");
+    // The modal portals to body and "karl-test-xml" also exists in the main
+    // list, so scope to the dialog. lrgs-main is already a member and
+    // backup-group is itself, so karl-test-xml is the only available row.
+    const dialog = await screen.findByRole("dialog");
+    const member = await within(dialog).findByText("karl-test-xml");
     await act(async () => userEvent.click(member));
-    const confirm = await screen.findByRole("button", {
+    const confirm = await within(dialog).findByRole("button", {
       name: i18n.t("datasources:add_selected", { count: 1 }),
     });
     await act(async () => userEvent.click(confirm));
-    await waitFor(() => expect(canvas.getByText("karl-test-xml")).toBeInTheDocument());
+    // After confirm the member lands in the members table; scope there since the
+    // name also appears in the main list.
+    const membersTable = await waitFor(() => {
+      const el = canvasElement.querySelector<HTMLElement>("#dataSourceMembersTable");
+      if (!el) throw new Error("members table not yet rendered");
+      return el;
+    });
+    await waitFor(() =>
+      expect(within(membersTable).getByText("karl-test-xml")).toBeInTheDocument(),
+    );
   },
 };
