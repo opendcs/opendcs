@@ -339,7 +339,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         }
         else if(DatabaseQuerySettings.class.equals(settingsClass))
         {
-            return Optional.of((T)settings);
+            return Optional.ofNullable((T)querySettings);
         }
         else
         {

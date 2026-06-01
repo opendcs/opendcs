@@ -69,7 +69,7 @@ public class TransactionContextImpl implements TransactionContext
         }
         else if (DatabaseQuerySettings.class.equals(settingsClass))
         {
-            return Optional.of((T)querySettings);
+            return Optional.ofNullable((T)querySettings);
         }
         else
         {
