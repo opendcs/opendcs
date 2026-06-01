@@ -54,10 +54,14 @@ import org.slf4j.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import decodes.sql.DbKey;
+
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @EnableIfTsDb({"OpenDCS-Postgres"})
 final class OpenIdTestIT extends BaseApiIT
@@ -85,7 +89,7 @@ final class OpenIdTestIT extends BaseApiIT
 				config.put("redirectUri", redirectUri);
 				var idpConfIn = new OidcIdentityProvider(null, "test-oidc-conf", null, config);
 				var idpConfOut = umDao.addIdentityProvider(tx, idpConfIn);
-				
+
 				config.put("clientId", "opendcs-public");
 				config.remove("clientSecret");
 				var idpPubIn = new OidcIdentityProvider(null, "test-oidc-pub", null, config);
@@ -110,7 +114,7 @@ final class OpenIdTestIT extends BaseApiIT
 	void test_opendcs_auth_code_flow() throws Exception
 	{
 		//Initial session should be unauthorized
-		var initialSession = 
+		var initialSession =
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
@@ -128,7 +132,7 @@ final class OpenIdTestIT extends BaseApiIT
 		;
 
 		var loginSession = doAuthCodeLogin(initialSession);
-		
+
 		assertNotEquals(initialSession.getValue(), loginSession.getValue(), "Session Cookie was not changed after successful login.");
 
 		// Session should now change as the callback endpiont should have been called.
@@ -181,9 +185,9 @@ final class OpenIdTestIT extends BaseApiIT
 	void test_auth_code_error() throws Exception
 	{
 		final String redirectUri = RestAssured.baseURI + ":" + RestAssured.port + "/" + RestAssured.basePath + "/oidc-callback";
-		
+
 		//Initial session should be unauthorized
-		var initialSession = 
+		var initialSession =
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
@@ -221,7 +225,7 @@ final class OpenIdTestIT extends BaseApiIT
 				.formParam("redirect_uri", redirectUri)
 				.formParam("state", state)
 			.cookie(initialSession)
-		.when()		
+		.when()
 			.redirects().follow(true)
 			.redirects().max(6)
 			.post(URI.create(KeyCloakTestExtension.getCodeUrl()))
@@ -230,10 +234,10 @@ final class OpenIdTestIT extends BaseApiIT
 			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
-		// yank the action URL out of the page 
+		// yank the action URL out of the page
 		var authUrl = loginSessionPage.body().htmlPath().getString("**.find { it.@id == 'kc-form-login'}.@action");
 
-		
+
 
 		// manually do the login POST. This *should* redirect us to our oidc-callback
 		var callbackUrl = given()
@@ -266,7 +270,7 @@ final class OpenIdTestIT extends BaseApiIT
 			.assertThat()
 			.statusCode(is(Response.Status.FOUND.getStatusCode()))
 			.header("Location", matchesPattern("https?://localhost(:\\d+)?/login\\?errorMsg=.*"))
-			
+
 		;
 	}
 
@@ -275,7 +279,7 @@ final class OpenIdTestIT extends BaseApiIT
 	void test_opendcs_auth_code_plus_pkce_flow() throws Exception
 	{
 		//Initial session should be unauthorized
-		var initialSession = 
+		var initialSession =
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
@@ -293,7 +297,7 @@ final class OpenIdTestIT extends BaseApiIT
 		;
 
 		var loginSession = doAuthCodePlusPkceLogin(initialSession);
-		
+
 		assertNotEquals(initialSession.getValue(), loginSession.getValue(), "Session Cookie was not changed after successful login.");
 
 		// Session should now change as the callback endpiont should have been called.
@@ -342,11 +346,155 @@ final class OpenIdTestIT extends BaseApiIT
 		;
 	}
 
+	@Test
+	void test_opendcs_auth_code_flow_registers_user() throws Exception
+	{
+		//Initial session should be unauthorized
+		var initialSession =
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("check")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.UNAUTHORIZED.getStatusCode()))
+			.cookie(Constants.JSESSIONID)
+			.extract()
+			.detailedCookie(Constants.JSESSIONID)
+		;
+
+		var loginSession = doAuthCodeLogin(initialSession, "not_yet_registered-2", "test_password");
+
+		assertNotEquals(initialSession.getValue(), loginSession.getValue(), "Session Cookie was not changed after successful login.");
+
+		var id = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.cookie(loginSession)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("check")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.OK.getStatusCode()))
+		.extract()
+			.body().jsonPath()
+			.getLong("id.value")
+		;
+
+		// now see if the user was created.
+
+		final var umDao = db.getDao(UserManagementDao.class).orElseThrow();
+		try (var tx = db.newTransaction())
+		{
+			var user = umDao.getUser(tx, DbKey.createDbKey(id));
+			assertTrue(user.isPresent());
+		}
+
+	}
+
+	@Test
+	void test_opendcs_auth_code_plus_pkce_flow_registers_user() throws Exception
+	{
+		//Initial session should be unauthorized
+		var initialSession =
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("check")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.UNAUTHORIZED.getStatusCode()))
+			.cookie(Constants.JSESSIONID)
+			.extract()
+			.detailedCookie(Constants.JSESSIONID)
+		;
+
+		var loginSession = doAuthCodePlusPkceLogin(initialSession, "not_yet_registered", "test_password");
+
+		assertNotEquals(initialSession.getValue(), loginSession.getValue(), "Session Cookie was not changed after successful login.");
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.cookie(loginSession)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("check")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.OK.getStatusCode()))
+		;
+
+	}
+
+	@Test
+	void test_login_jwt_rejects_token_from_other_client() throws Exception
+	{
+		// A token minted for a DIFFERENT client in the same realm (test-other-client) shares the
+		// issuer but is not intended for OpenDCS. It must be rejected and must not auto-register a user.
+		final String wrongClientToken = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.contentType(ContentType.URLENC)
+				.formParam("client_id", "test-other-client")
+				.formParam("grant_type", "password")
+				.formParam("scope", "openid profile email")
+				.formParam("username", "wrong_client_user")
+				.formParam("password", "test_password")
+		.when()
+			.post(URI.create(KeyCloakTestExtension.getTokenUrl()))
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.assertThat()
+			.statusCode(is(Response.Status.OK.getStatusCode()))
+			.extract()
+			.jsonPath()
+			.getString("access_token")
+		;
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.header("Authorization", "Bearer " + wrongClientToken)
+		.when()
+			.post("/login_jwt")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.UNAUTHORIZED.getStatusCode()))
+		;
+
+		// The wrong-client token must not have caused a user to be registered.
+		final var umDao = db.getDao(UserManagementDao.class).orElseThrow();
+		try (var tx = db.newTransaction())
+		{
+			var registered = umDao.getUsers(tx, -1, -1).stream()
+					.anyMatch(u -> "wrong_client_user@localhost.localdomain".equals(u.email));
+			assertFalse(registered, "A user was registered from a token issued for a different client.");
+		}
+	}
 
 	private Cookie doAuthCodeLogin(Cookie initialSession) throws IOException
 	{
+		return doAuthCodeLogin(initialSession, "test_user", "test_password");
+	}
+
+	private Cookie doAuthCodeLogin(Cookie initialSession, String user, String password) throws IOException
+	{
 		final String redirectUri = RestAssured.baseURI + ":" + RestAssured.port + "/" + RestAssured.basePath + "/oidc-callback";
-		
+
 		HashMap<String,String> oidcInfo = new HashMap<>();
 		final var state = UUID.randomUUID().toString();
 		oidcInfo.put("state", state);
@@ -369,7 +517,7 @@ final class OpenIdTestIT extends BaseApiIT
 				.formParam("redirect_uri", redirectUri)
 				.formParam("state", state)
 			.cookie(initialSession)
-		.when()		
+		.when()
 			.redirects().follow(true)
 			.redirects().max(6)
 			.post(URI.create(KeyCloakTestExtension.getCodeUrl()))
@@ -378,17 +526,17 @@ final class OpenIdTestIT extends BaseApiIT
 			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
-		// yank the action URL out of the page 
+		// yank the action URL out of the page
 		var authUrl = loginSessionPage.body().htmlPath().getString("**.find { it.@id == 'kc-form-login'}.@action");
 
-		
+
 
 		// manually do the login POST. This *should* redirect us to our oidc-callback
 		var callbackUrl = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.contentType(ContentType.URLENC)
-			.formParam("username", "test_user")
-			.formParam("password", "test_password")
+			.formParam("username", user)
+			.formParam("password", password)
 			.cookie(initialSession)
 			.cookie(stateCookie)
 			.cookies(loginSessionPage.detailedCookies())
@@ -419,19 +567,23 @@ final class OpenIdTestIT extends BaseApiIT
 		;
 	}
 
+	private Cookie doAuthCodePlusPkceLogin(Cookie initialSession) throws Exception
+	{
+		return doAuthCodePlusPkceLogin(initialSession, "test_user", "test_password");
+	}
 
 	/**
 	 * Handle the flow of AuthCode+PKCE. Note that manually do several OIDC interaction steps here.
 	 * That is expected, the API will receive a token directly while the client would handle the login service interaction.
 	 * So we need to get the AccessToken JWT and then pass it in to the appropriate api handler to get a session.
-	 * 
+	 *
 	 * Additional we will use a localhost redirect in this test, the UI would instead redirect to a specific handler
 	 * page that would take care of token acquisition and final "login".
-	 * 
+	 *
 	 * @param initialSession
 	 * @return
 	 */
-	private Cookie doAuthCodePlusPkceLogin(Cookie initialSession) throws Exception
+	private Cookie doAuthCodePlusPkceLogin(Cookie initialSession, String user, String password) throws Exception
 	{
 		byte[] verifierBytes = new byte[40];
 		SecureRandom.getInstanceStrong().nextBytes(verifierBytes);
@@ -441,7 +593,7 @@ final class OpenIdTestIT extends BaseApiIT
 
 		MessageDigest md = MessageDigest.getInstance("SHA-256");
 		final String challenge = b64encoder.encodeToString(md.digest(verifier.getBytes(StandardCharsets.US_ASCII)));
-		
+
 
 		final String redirectUri = "http://localhost:5000"; // we never directly call this URI so the port here doesn't matter.
 
@@ -462,17 +614,16 @@ final class OpenIdTestIT extends BaseApiIT
 			.assertThat()
 			.statusCode(Response.Status.OK.getStatusCode())
 			.extract()
-
 		;
-		
+
 		var authUrl = loginSessionPage.htmlPath().getString("**.find { it.@id == 'kc-form-login'}.@action");
-		
+
 
 		var location = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.contentType(ContentType.URLENC)
-			.formParam("username", "test_user")
-			.formParam("password", "test_password")
+			.formParam("username", user)
+			.formParam("password", password)
 			.cookie(initialSession)
 			.cookies(loginSessionPage.detailedCookies())
 		.when()
@@ -554,14 +705,14 @@ final class OpenIdTestIT extends BaseApiIT
 		{
             return new Result(null, null, null, error, errorDescription);
         }
-		
+
     }
 
 		/**
 	 * Helper class to support creation and query of URL query parameters
 	 */
 	public static final class QueryParameters
-	{	
+	{
 		private Map<String, List<String>> parameters = new HashMap<>();
 
 		private QueryParameters()

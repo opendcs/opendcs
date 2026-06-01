@@ -1417,7 +1417,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
                 // Delete the bad tasklist recs, 250 at a time.
                 if (badRecs.size() > 0)
                 {
-                    log.debug("getNewDataSince deleting {} bad tasklist records.", + badRecs.size());
+                    log.warn("getNewDataSince deleting {} bad tasklist records.", + badRecs.size());
                     doModifyBatch("delete from cp_comp_tasklist where record_num = ?",
                                   (v) -> new Object[] {v},
                                   badRecs, 250);
@@ -1492,7 +1492,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
             }
             catch(decodes.tsdb.DuplicateTimeSeriesException ex)
             { // won't happen -- already verified it's not there.
-                log.trace("An exception has been thrown that shouldn't have been. Please inform the project.", ex);
+                log.error("An exception has been thrown that shouldn't have been. Please inform the project.", ex);
             }
             catch(NoSuchObjectException ex)
             {

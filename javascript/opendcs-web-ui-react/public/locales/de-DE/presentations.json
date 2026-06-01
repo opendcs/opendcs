@@ -1,0 +1,38 @@
+{
+  "title": "Präsentationsgruppen",
+  "header": {
+    "Id": "ID",
+    "Name": "Name",
+    "InheritsFrom": "Erbt von",
+    "Production": "Produktiv",
+    "LastModified": "Zuletzt geändert"
+  },
+  "name": "Name",
+  "inheritsFrom": "Erbt von",
+  "production": "Produktiv",
+  "add_presentation": "Präsentationsgruppe hinzufügen",
+  "edit_presentation": "Präsentationsgruppe {{id}} bearbeiten",
+  "delete_for": "Präsentationsgruppe {{id}} löschen",
+  "save_presentation": "Präsentationsgruppe {{id}} speichern",
+  "cancel_for": "Bearbeitung der Präsentationsgruppe {{id}} abbrechen",
+  "elements": {
+    "title": "Präsentationselemente",
+    "dataTypeStd": "Datentyp-Standard",
+    "dataTypeCode": "Datentyp-Code",
+    "units": "Einheiten",
+    "fractionalDigits": "Nachkommastellen",
+    "min": "Minimalwert",
+    "max": "Maximalwert",
+    "dataTypeStd_input": "Datentyp-Standard für {{name}}",
+    "dataTypeCode_input": "Datentyp-Code für {{name}}",
+    "units_input": "Einheiten für {{name}}",
+    "fractionalDigits_input": "Nachkommastellen für {{name}}",
+    "min_input": "Minimalwert für {{name}}",
+    "max_input": "Maximalwert für {{name}}",
+    "add": "Element hinzufügen",
+    "edit": "Element {{name}} bearbeiten",
+    "remove": "Element {{name}} entfernen",
+    "save_edit": "Element {{name}} speichern",
+    "cancel_edit": "Bearbeitung des Elements {{name}} abbrechen"
+  }
+}

@@ -37,7 +37,7 @@ public final class UserResources extends OpenDcsResource
 
     @POST
     @Path("updatePassword")
-    @RolesAllowed({ApiConstants.ODCS_API_USER})
+    @RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_REGISTERED})
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(
         description = "Update user password",

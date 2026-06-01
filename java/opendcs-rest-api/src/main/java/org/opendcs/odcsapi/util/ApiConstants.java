@@ -23,6 +23,7 @@ public final class ApiConstants
 	public static final String ODCS_API_GUEST = "ODCS_API_GUEST";
 	public static final String ODCS_API_USER = "ODCS_API_USER";
 	public static final String ODCS_API_ADMIN = "ODCS_API_ADMIN";
+	public static final String ODCS_API_REGISTERED = "ODCS_API_REGISTERED";
 	public static final String ORGANIZATION_HEADER = "X-ORGANIZATION-ID";
 
 	private ApiConstants()

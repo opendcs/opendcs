@@ -94,7 +94,7 @@ public interface UserManagementDao extends OpenDcsDao
      * @return All valid providers or empty list if the subject is not registered.
      * @throws OpenDcsDataException
      */
-    List<IdentityProvider> getIdentityProvidersForSubject(DataTransaction tx, String subject) throws OpenDcsDataException;
+    List<IdentityProvider> getIdentityProvidersForSubject(DataTransaction tx, String subject) throws OpenDcsDataException;    
 
     /**
      * Add a new Identity provider configuration to the system

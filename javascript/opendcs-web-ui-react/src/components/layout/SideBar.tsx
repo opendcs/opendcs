@@ -17,6 +17,9 @@ export const SideBar = ({ open, onClose }: SideBarProps) => {
     "loadingapps",
     "routing",
     "datasources",
+    "netlists",
+    "presentations",
+    "schedule",
   ]);
   const location = useLocation();
 
@@ -69,6 +72,30 @@ export const SideBar = ({ open, onClose }: SideBarProps) => {
             onClick={onClose}
           >
             {t("datasources:title")}
+          </Nav.Link>
+          <Nav.Link
+            as={Link}
+            to="/netlists"
+            active={location.pathname === "/netlists"}
+            onClick={onClose}
+          >
+            {t("netlists:title")}
+          </Nav.Link>
+          <Nav.Link
+            as={Link}
+            to="/presentations"
+            active={location.pathname === "/presentations"}
+            onClick={onClose}
+          >
+            {t("presentations:title")}
+          </Nav.Link>
+          <Nav.Link
+            as={Link}
+            to="/schedule"
+            active={location.pathname === "/schedule"}
+            onClick={onClose}
+          >
+            {t("schedule:title")}
           </Nav.Link>
         </Nav>
 
