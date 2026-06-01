@@ -1,0 +1,38 @@
+{
+  "title": "Presentation Groups",
+  "header": {
+    "Id": "Id",
+    "Name": "Name",
+    "InheritsFrom": "Inherits From",
+    "Production": "Is Production",
+    "LastModified": "Last Modified"
+  },
+  "name": "Name",
+  "inheritsFrom": "Inherits From",
+  "production": "Is Production",
+  "add_presentation": "Add presentation group",
+  "edit_presentation": "Edit presentation group {{id}}",
+  "delete_for": "Delete presentation group {{id}}",
+  "save_presentation": "Save presentation group {{id}}",
+  "cancel_for": "Cancel editing presentation group {{id}}",
+  "elements": {
+    "title": "Presentation Elements",
+    "dataTypeStd": "Data Type Standard",
+    "dataTypeCode": "Data Type Code",
+    "units": "Units",
+    "fractionalDigits": "Fractional Digits",
+    "min": "Min Value",
+    "max": "Max Value",
+    "dataTypeStd_input": "Data type standard for {{name}}",
+    "dataTypeCode_input": "Data type code for {{name}}",
+    "units_input": "Units for {{name}}",
+    "fractionalDigits_input": "Fractional digits for {{name}}",
+    "min_input": "Minimum value for {{name}}",
+    "max_input": "Maximum value for {{name}}",
+    "add": "Add element",
+    "edit": "Edit element {{name}}",
+    "remove": "Remove element {{name}}",
+    "save_edit": "Save element {{name}}",
+    "cancel_edit": "Cancel editing element {{name}}"
+  }
+}
