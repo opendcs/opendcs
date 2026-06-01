@@ -20,9 +20,11 @@ import org.opendcs.odcsapi.util.ApiConstants;
 public enum OpenDcsApiRoles
 {
 
-	ODCS_API_GUEST(ApiConstants.ODCS_API_GUEST),
-	ODCS_API_USER(ApiConstants.ODCS_API_USER),
-	ODCS_API_ADMIN(ApiConstants.ODCS_API_ADMIN);
+	ODCS_API_GUEST(ApiConstants.ODCS_API_GUEST), // Unauthenticated users
+	ODCS_API_USER(ApiConstants.ODCS_API_USER), // Authenticated users with some amount of roles
+	ODCS_API_ADMIN(ApiConstants.ODCS_API_ADMIN), // Admin users
+	ODCS_API_REGISTERED(ApiConstants.ODCS_API_REGISTERED) // Registered users that may or may not have any actual roles yet. Allows access to session and user profile.
+	;
 
 	private final String role;
 
