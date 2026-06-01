@@ -76,12 +76,16 @@ public class DbCompResolver
 					{
 						if (trigger.hasAddedOrDeleted())
 						{
-							log.trace("ts id={} #comps={}",
+							// NOTE: should determine a clean way to pass settings into to make this
+							// Optional. At the moment were trying to figure out why in a particular
+							// context things aren't behaving quite right and this isn't an excessive
+							// amount of extra logging.
+							log.info("ts id={} #comps={}",
 									  trigger.getTimeSeriesIdentifier().getUniqueString(),
 									  trigger.getDependentCompIds().size());
 							for(DbKey compId : trigger.getDependentCompIds())
 							{
-								log.trace("dependent compId={}", compId);
+								log.info("dependent compId={}", compId);
 								if (isInPythonWrittenQueue(compId, trigger.getTimeSeriesIdentifier().getKey()))
 								{
 									log.trace("--Resolver Skipping because recently written by python.");
@@ -145,13 +149,15 @@ public class DbCompResolver
 									//    BaseLoc-Spillway2-Gate1.Opening.Inst.15Minutes.0.rev
 
 									ArrayList<TimeSeriesIdentifier> triggers = compDependsDAO.getTriggersFor(origComp.getId());
-									log.trace("{} total triggers found:", triggers.size());
+									log.info("{} total triggers found:", triggers.size());
 									int nAdded = 0, nFailed = 0, nInapplicable = 0;
 									for(TimeSeriesIdentifier otherTrig : triggers)
 									{
-										log.trace("Other trigger '{}'", otherTrig.getUniqueString());
+										log.info("Other trigger '{}'", otherTrig.getUniqueString());
 										if (otherTrig.equals(trigger.getTimeSeriesIdentifier()))
+										{
 											continue;
+										}
 										try
 										{
 											DbComputation comp = makeConcrete(theDb, tsDAI, otherTrig, origComp, true);
@@ -161,7 +167,9 @@ public class DbCompResolver
 												nAdded++;
 											}
 											else
+											{
 												nInapplicable++;
+											}
 										}
 										catch (NoSuchObjectException e)
 										{
@@ -169,7 +177,7 @@ public class DbCompResolver
 											nFailed++;
 										}
 									}
-									log.debug("For extended group resolution: {} added from other triggers, " +
+									log.warn("For extended group resolution: {} added from other triggers, " +
 											  "{} inapplicable from other triggers, " +
 											  "{} failed from other triggers.",
 											  nAdded, nInapplicable, nFailed);
