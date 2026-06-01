@@ -16,10 +16,8 @@
 package org.opendcs.odcsapi.sec;
 
 import java.util.Collections;
-import java.util.ServiceLoader;
 import jakarta.annotation.Priority;
 import jakarta.annotation.security.RolesAllowed;
-import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.ForbiddenException;
@@ -30,7 +28,6 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.ResourceInfo;
 import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.ext.Provider;
 

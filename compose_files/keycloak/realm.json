@@ -816,6 +816,57 @@
       ]
     },
     {
+      "id": "a1b2c3d4-0000-4000-8000-00000000c111",
+      "clientId": "test-other-client",
+      "name": "test-other-client",
+      "description": "A separate client in the same realm, used by tests to verify tokens minted for a different client are rejected.",
+      "baseUrl": "",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "not-used",
+      "redirectUris": [
+        "http://localhost:*",
+        "http://localhost*"
+      ],
+      "webOrigins": [
+        "*"
+      ],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "publicClient": true,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "oauth2.device.authorization.grant.enabled": "false",
+        "use.refresh.tokens": "true",
+        "oidc.ciba.grant.enabled": "false"
+      },
+      "authenticationFlowBindingOverrides": {},
+      "fullScopeAllowed": true,
+      "nodeReRegistrationTimeout": -1,
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "roles",
+        "profile",
+        "email",
+        "subjectDN"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    },
+    {
       "id": "f09103f0-5563-4dc0-bc70-2ff0309edae7",
       "clientId": "realm-management",
       "name": "${client_realm-management}",
@@ -2386,15 +2437,47 @@
     },
     {
       "id": "45ee99c4-3dc8-444d-81d8-2c669a148b00",
-      "username": "no_yet_registered",
+      "username": "not_yet_registered",
       "enabled": true,
-      "email": "no_yet_registered@localhost.localdomain",
+      "email": "not_yet_registered@localhost.localdomain",
       "emailVerified": true,
       "credentials": [
         {
           "type": "password",
           "value": "test_password"
       }
+      ],
+      "realmRoles": [
+          "opendcs_user"
+      ]
+    },
+    {
+      "id": "45ee99c4-3dc8-444d-81d8-2c669a148b02",
+      "username": "not_yet_registered-2",
+      "enabled": true,
+      "email": "not_yet_registered-2@localhost.localdomain",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "test_password"
+      }
+      ],
+      "realmRoles": [
+          "opendcs_user"
+      ]
+    },
+    {
+      "id": "45ee99c4-3dc8-444d-81d8-2c669a148b03",
+      "username": "wrong_client_user",
+      "enabled": true,
+      "email": "wrong_client_user@localhost.localdomain",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "test_password"
+        }
       ],
       "realmRoles": [
           "opendcs_user"
