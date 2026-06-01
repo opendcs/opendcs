@@ -105,18 +105,22 @@ export const Empty: Story = {
   },
 };
 
-// Open a presentation row — detail loads, name prefilled.
+// Open a presentation row — detail loads, name prefilled. The derived row is
+// clicked because its name is unique on the page (the parent's name also
+// appears as the derived row's "Inherits From" cell value).
 export const OpenPresentationDetail: Story = {
   parameters: { msw: { handlers: baseHandlers } },
   play: async ({ mount, userEvent, parameters }) => {
     const canvas = await mount();
     const { i18n } = parameters;
-    await act(async () => userEvent.click(await canvas.findByText("shef-english")));
+    await act(async () =>
+      userEvent.click(await canvas.findByText("shef-english-derived")),
+    );
     await waitFor(async () => {
       const nameInput = (await canvas.findByLabelText(
         i18n.t("presentations:name"),
       )) as HTMLInputElement;
-      expect(nameInput.value).toEqual("shef-english");
+      expect(nameInput.value).toEqual("shef-english-derived");
     });
   },
 };
