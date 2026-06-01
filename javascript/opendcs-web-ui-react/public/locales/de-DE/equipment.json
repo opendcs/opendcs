@@ -1,0 +1,14 @@
+{
+  "title": "Ausrüstung",
+  "equipment_id": "Ausrüstungs-ID",
+  "name": "Name",
+  "equipment_type": "Ausrüstungstyp",
+  "company": "Unternehmen",
+  "model": "Modell",
+  "description": "Beschreibung",
+  "add_equipment": "Neues Ausrüstungsmodell hinzufügen",
+  "edit_equipment": "Ausrüstungsmodell mit ID {{id}} bearbeiten",
+  "save_equipment": "Ausrüstungsmodell mit ID {{id}} speichern",
+  "cancel_for": "Bearbeitung von Ausrüstungsmodell mit ID {{id}} abbrechen",
+  "delete_for": "Ausrüstungsmodell mit ID {{id}} löschen"
+}

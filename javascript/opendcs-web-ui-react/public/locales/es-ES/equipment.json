@@ -1,0 +1,14 @@
+{
+  "title": "Equipos",
+  "equipment_id": "ID de equipo",
+  "name": "Nombre",
+  "equipment_type": "Tipo de equipo",
+  "company": "Empresa",
+  "model": "Modelo",
+  "description": "Descripción",
+  "add_equipment": "Agregar nuevo modelo de equipo",
+  "edit_equipment": "Editar modelo de equipo con ID {{id}}",
+  "save_equipment": "Guardar modelo de equipo con ID {{id}}",
+  "cancel_for": "Cancelar edición del modelo de equipo con ID {{id}}",
+  "delete_for": "Eliminar modelo de equipo con ID {{id}}"
+}

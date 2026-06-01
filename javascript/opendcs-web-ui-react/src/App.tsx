@@ -14,6 +14,7 @@ import { Algorithms } from "./pages/computations/algorithms";
 import { Computations } from "./pages/computations/computations";
 import { SitesPage } from "./pages/sites";
 import { LoadingAppsPage } from "./pages/loading-apps";
+import { EquipmentPage } from "./pages/equipment";
 import OidcCallback from "./pages/auth/login/OidcCallback";
 import UserProfilePage from "./pages/auth/user/UserProfilePage";
 
@@ -49,6 +50,7 @@ function App() {
               <Route path="/computations" element={<Computations />} />
               <Route path="/algorithms" element={<Algorithms />} />
               <Route path="/loading-apps" element={<LoadingAppsPage />} />
+              <Route path="/equipment" element={<EquipmentPage />} />
               <Route path="/user/profile" element={<UserProfilePage />} />
             </Route>
           </Route>

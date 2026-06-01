@@ -12,6 +12,7 @@ export const SideBar = ({ open, onClose }: SideBarProps) => {
     "platforms",
     "configs",
     "sites",
+    "equipment",
     "algorithms",
     "computations",
     "loadingapps",
@@ -54,6 +55,14 @@ export const SideBar = ({ open, onClose }: SideBarProps) => {
             onClick={onClose}
           >
             {t("sites:title")}
+          </Nav.Link>
+          <Nav.Link
+            as={Link}
+            to="/equipment"
+            active={location.pathname === "/equipment"}
+            onClick={onClose}
+          >
+            {t("equipment:title")}
           </Nav.Link>
           <Nav.Link
             as={Link}
