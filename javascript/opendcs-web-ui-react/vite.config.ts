@@ -77,6 +77,10 @@ export default defineConfig({
     },
   },
   test: {
+    // Hide console output from passing tests; still show it for failures so
+    // debugging context is preserved. Must live at the root test config — the
+    // reporter reads `silent` from ctx.config, not per-project settings.
+    silent: "passed-only",
     coverage: {
       enabled: true, // Ensure coverage is enabled
       provider: "istanbul", // Use 'istanbul' as the provider for LCOV output

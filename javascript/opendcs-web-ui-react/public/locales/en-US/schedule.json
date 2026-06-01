@@ -1,0 +1,33 @@
+{
+  "title": "Schedule",
+  "header": {
+    "Id": "Id",
+    "Name": "Name",
+    "LoadingApp": "Loading App",
+    "RoutingSpec": "Routing Spec",
+    "Enabled": "Enabled",
+    "LastModified": "Last Modified"
+  },
+  "name": "Name",
+  "loading_app": "Loading App",
+  "routing_spec": "Routing Spec",
+  "enabled": "Enabled",
+  "start_time": "Start Time",
+  "timezone": "Timezone",
+  "execution_schedule": "Execution Schedule",
+  "run_continuously": "Run Continuously",
+  "run_once": "Run Once",
+  "run_every": "Run Every",
+  "run_amount": "Run interval amount",
+  "run_unit": "Run interval unit",
+  "unit_minute": "Minutes",
+  "unit_hour": "Hours",
+  "unit_day": "Days",
+  "select_routing": "Select routing spec",
+  "select_routing_none": "No routing specs available.",
+  "add_schedule": "Add schedule entry",
+  "edit_schedule": "Edit schedule entry {{id}}",
+  "delete_for": "Delete schedule entry {{id}}",
+  "save_schedule": "Save schedule entry {{id}}",
+  "cancel_for": "Cancel editing schedule entry {{id}}"
+}

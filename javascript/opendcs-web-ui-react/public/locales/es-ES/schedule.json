@@ -1,0 +1,33 @@
+{
+  "title": "Programación",
+  "header": {
+    "Id": "ID",
+    "Name": "Nombre",
+    "LoadingApp": "Aplicación de carga",
+    "RoutingSpec": "Especificación de ruteo",
+    "Enabled": "Habilitado",
+    "LastModified": "Última modificación"
+  },
+  "name": "Nombre",
+  "loading_app": "Aplicación de carga",
+  "routing_spec": "Especificación de ruteo",
+  "enabled": "Habilitado",
+  "start_time": "Hora de inicio",
+  "timezone": "Zona horaria",
+  "execution_schedule": "Programa de ejecución",
+  "run_continuously": "Ejecutar continuamente",
+  "run_once": "Ejecutar una vez",
+  "run_every": "Ejecutar cada",
+  "run_amount": "Valor del intervalo",
+  "run_unit": "Unidad del intervalo",
+  "unit_minute": "Minutos",
+  "unit_hour": "Horas",
+  "unit_day": "Días",
+  "select_routing": "Seleccionar especificación de ruteo",
+  "select_routing_none": "No hay especificaciones de ruteo disponibles.",
+  "add_schedule": "Agregar entrada de programación",
+  "edit_schedule": "Editar entrada de programación {{id}}",
+  "delete_for": "Eliminar entrada de programación {{id}}",
+  "save_schedule": "Guardar entrada de programación {{id}}",
+  "cancel_for": "Cancelar la edición de la entrada de programación {{id}}"
+}
