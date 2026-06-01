@@ -1,6 +1,7 @@
 package org.opendcs.database.dai;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
@@ -10,9 +11,9 @@ import org.opendcs.utils.FailableResult;
 import decodes.db.DataType;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
+import decodes.tsdb.DbCompParm;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
-import decodes.tsdb.TsdbException;
 
 public interface TimeSeriesIdentifierDao extends OpenDcsDao
 {
@@ -27,7 +28,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
 	 * @throws DbIoException if SQL exception occurs during operation
 	 * @throws NoSuchObjectException if no matching time series exists.
 	 */
-	TimeSeriesIdentifier getByUniqueString(DataTransaction tx, String uniqueString) throws NoSuchObjectException;
+	Optional<TimeSeriesIdentifier> getByUniqueString(DataTransaction tx, String uniqueString) throws BadTimeSeriesException, OpenDcsDataException;
 
     /**
 	 * Retrieve a time series identifier by unique surrogate key.
@@ -37,7 +38,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
 	 * @throws DbIoException on SQL errors
 	 * @throws NoSuchObjectException if no such time series
 	 */
-	TimeSeriesIdentifier getById(DataTransaction tx, DbKey key) throws OpenDcsDataException, NoSuchObjectException;
+	Optional<TimeSeriesIdentifier> getById(DataTransaction tx, DbKey key) throws BadTimeSeriesException, OpenDcsDataException;
 
     /**
      * Retrieve by unique string, but return failure cause instead of throwing.
@@ -49,16 +50,16 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
      * @param uniqueString
      * @return
      */
-	FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(DataTransaction tx, String uniqueString);
+	FailableResult<Optional<TimeSeriesIdentifier>,OpenDcsDataException> findBy(DataTransaction tx, String uniqueString);
 
     /**
-     * As findTimeSEriesIdentifier by uniqueString. Returns fillout TimeSeriesIdentifier object if found, or the error
+     * As findBy by uniqueString. Returns filled out TimeSeriesIdentifier object if found, or the error
      * encountered.
      * @param tx
      * @param key
      * @return
      */
-	FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(DataTransaction tx, DbKey key);
+	FailableResult<Optional<TimeSeriesIdentifier>,OpenDcsDataException> findBy(DataTransaction tx, DbKey key);
 
     /**
      * Validates and save, returning a complete instance with DbKey, the provided TimeSeriesIdentifier
@@ -157,4 +158,58 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
         return getStorageUnitsFor(tx, tsId.getDataType());
     }
 
+    /**
+     * This method does the transformation of the unique string for the
+     * time-series identifier.
+     * IT MUST DO NO DATABASE I/O! Thus we do not provide at DataTransaction instance to for that situtation
+     *
+     * @param tsidRet the time-series identifier to transform
+     * @param parm the parameter to transform by
+     * @return tsidRet if not changed, otherwise a new instanced with the required changes.
+     */
+    public abstract TimeSeriesIdentifier transformUniqueString(TimeSeriesIdentifier tsidRet, DbCompParm parm);
+
+
+
+    /**
+	 * Take a time-series identifier and transform it by the values
+	 * specified in the computation parameter. The param could change
+	 * any or all of the parts of the ID.
+	 * This is implemented by the database-specific subclass.
+	 * Contract:
+	 * Do not modify the input tsid object in any way.
+	 * If modifications are made a new TimeSeriesIdentifier is returned
+	 * If no modifications are made, the method must return then input
+	 * object, not a copy of it.
+	 * if 'create' is true, and the time-series doesn't exist, create it.
+	 * Otherwise, return null if the time series does not exist in the database.
+	 * If tsid is null, then create a new TimeSeriesIdentifier from the underlying
+	 * database and fill in the parts from the DbCompParm.
+	 * @param tsId The TimeSeriesIdentifier to transform
+	 * @param parm the computation parameter
+	 * @param createTS if true, create the time series if it doesn't exist.
+	 * @param fillInParm if true, fill in the parm argument with the resulting
+	 * concrete time-series information.
+	 * @param timeSeriesDisplayName use this if createTS as the time-series display name.
+	 * @return transformed identifier, or empty if after transformation, no matching
+	 * time series is found in the database
+	 * @throws DbIoException if database error
+	 * @throws NoSuchObjectException if (createTS) and failed to create TS in database
+	 * @throws BadTimeSeriesException on attempt to create new TS with invalid TSID.
+	 */
+	Optional<TimeSeriesIdentifier> transformTsidByCompParm(DataTransaction tx,
+		TimeSeriesIdentifier tsId, DbCompParm parm, boolean createTS,
+		boolean fillInParm, String timeSeriesDisplayName)
+		throws OpenDcsDataException, NoSuchObjectException, BadTimeSeriesException;
+
+    /**
+	 * Given a DbCompParm object containing an SDI and possibly a siteId
+	 * and/or datatypeId, expand it into site and datatype objects.
+	 * Store these back into  the parameter object.
+	 *
+	 * @param parm the object to expand
+	 * @return TimeSeries Identifier is one can be identified, otherwise, null.
+	 * @throws NoSuchObjectException if an SDI is present but it is invalid.
+	 */
+	public Optional<TimeSeriesIdentifier> expandSDI(DataTransaction tx, DbCompParm parm) throws OpenDcsDataException;
 }
