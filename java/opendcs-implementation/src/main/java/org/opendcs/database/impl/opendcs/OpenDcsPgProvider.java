@@ -40,8 +40,6 @@ import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.IdentityProviderDao;
 import org.opendcs.database.dai.RolesDao;
-import org.opendcs.database.dai.UserManagementDao;
-import org.opendcs.database.dai.UsersDao;
 import org.opendcs.database.impl.opendcs.dao.auth.IdentityProviderDaoImpl;
 import org.opendcs.database.impl.opendcs.dao.auth.RolesDaoImpl;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;

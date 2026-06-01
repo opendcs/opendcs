@@ -10,7 +10,8 @@ import org.opendcs.database.model.User;
 
 import decodes.sql.DbKey;
 
-public interface UsersDao extends OpenDcsDao {
+public interface UsersDao extends OpenDcsDao
+{
     /**
      * Return list of users given the provided limit and offset.
      * @param tx

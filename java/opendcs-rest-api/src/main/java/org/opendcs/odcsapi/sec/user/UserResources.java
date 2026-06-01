@@ -5,7 +5,6 @@ import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityP
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInProviderCredentials;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.IdentityProviderDao;
-import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.odcsapi.beans.ApiPasswordChange;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.res.OpenDcsResource;
@@ -90,7 +89,7 @@ public final class UserResources extends OpenDcsResource
             {
                 throw new WebAppException(Response.Status.FORBIDDEN.getStatusCode(), "Unable to update password");
             }
-            
+
             // check current password
             if (idp.login(db, tx, new BuiltInProviderCredentials(sessionPrincipal.getName(), passwordChange.currentPassword())).isPresent())
             {

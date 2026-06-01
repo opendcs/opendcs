@@ -45,7 +45,6 @@ import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityP
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInProviderCredentials;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.IdentityProviderDao;
-import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.model.User;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.res.OpenDcsResource;

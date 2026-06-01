@@ -20,7 +20,6 @@ import org.opendcs.authentication.OpenDcsAuthException;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.dai.UsersDao;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.IdentityProviderMapping;
@@ -247,8 +246,8 @@ public final class OidcIdentityProvider implements IdentityProvider
     {
         try
         {
-            final var umDao = db.getDao(UserManagementDao.class)
-                                .orElseThrow(() -> new OpenDcsAuthException("Unable to register new user as a UserManagmentDao instance is not available."));
+            final var umDao = db.getDao(UsersDao.class)
+                                .orElseThrow(() -> new OpenDcsAuthException("Unable to register new user as a UserDao instance is not available."));
             final var claims = verifyTokenAndGetClaims(oidcConfig, ((JwtCredentials)credentials).accessToken());
             final var subject = claims.getSubject();
             final var email = claims.getStringClaim("email");

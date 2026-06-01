@@ -30,7 +30,6 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.dai.UsersDao;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.User;

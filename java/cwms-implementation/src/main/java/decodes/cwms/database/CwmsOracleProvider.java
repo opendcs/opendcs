@@ -38,7 +38,6 @@ import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.IdentityProviderDao;
 import org.opendcs.database.dai.RolesDao;
-import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.impl.cwms.dao.auth.CwmsIdentityProviderDaoImpl;
 import org.opendcs.database.impl.cwms.dao.auth.CwmsRolesDaoImpl;
 import org.opendcs.database.impl.cwms.jdbi.CwmsBoolean;
