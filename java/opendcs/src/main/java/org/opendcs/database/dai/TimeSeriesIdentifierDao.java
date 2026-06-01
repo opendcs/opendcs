@@ -82,11 +82,11 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
 
     /**
 	 * Modify an existing Time Series descriptive info.
-     * 
+     *
      * Primarily used by OpenTSDB to handle storage table and other settings.
      *
      * Default implementation returns the provided tsId object.
-     * 
+     *
 	 * @param tsid
      * @return A new instance of tsId with new values, or the original if unmodified
 	 * @throws OpenDcsDataException
@@ -100,7 +100,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
 
 
     /**
-     * Retrieve all time series.
+     * Retrieve all time series, given the limit and offset.
      *
      * @param tx
      * @param limit
@@ -158,18 +158,26 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
         return getStorageUnitsFor(tx, tsId.getDataType());
     }
 
+
+    /**
+     * It's debatable the the following operations should be their own "DAO?".
+     * If not DAO than some similarly accessible "I need to pass the buck to an implementation" handler
+     * style of interface.
+     */
+
     /**
      * This method does the transformation of the unique string for the
      * time-series identifier.
      * IT MUST DO NO DATABASE I/O! Thus we do not provide at DataTransaction instance to for that situtation
+     *
+     * NOTE: <b>every</b> current implementation blatently ignores that statement. They think they don't, trusting,
+     * that data is cached, but there are zero mechanisms in place to garauntee that.
      *
      * @param tsidRet the time-series identifier to transform
      * @param parm the parameter to transform by
      * @return tsidRet if not changed, otherwise a new instanced with the required changes.
      */
     public abstract TimeSeriesIdentifier transformUniqueString(TimeSeriesIdentifier tsidRet, DbCompParm parm);
-
-
 
     /**
 	 * Take a time-series identifier and transform it by the values
