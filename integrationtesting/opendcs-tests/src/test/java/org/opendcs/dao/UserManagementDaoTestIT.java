@@ -39,7 +39,11 @@ import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.sql.DbKey;
 
-
+/**
+ * This tests UsersDao, RolesDao, and IdentityProviderDao.
+ * 
+ * While seperate DAOs, they are generally used together.
+ */
 @EnableIfTsDb({"OpenDCS-Postgres", "CWMS-Oracle"})
 class UserManagementDaoTestIT extends AppTestBase
 {
@@ -51,7 +55,7 @@ class UserManagementDaoTestIT extends AppTestBase
     void test_create_role() throws Exception
     {
         var dao = db.getDao(RolesDao.class)
-                                  .orElseThrow(() -> new UnsupportedOperationException("user dao not supported."));
+                    .orElseThrow(() -> new UnsupportedOperationException("user dao not supported."));
         DbKey id = DbKey.NullKey;
         try (DataTransaction tx = db.newTransaction())
         {

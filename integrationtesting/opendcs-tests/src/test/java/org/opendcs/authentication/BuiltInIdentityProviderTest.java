@@ -18,7 +18,6 @@ import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityP
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInProviderCredentials;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.IdentityProviderDao;
-import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.dai.UsersDao;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.IdentityProviderMapping;

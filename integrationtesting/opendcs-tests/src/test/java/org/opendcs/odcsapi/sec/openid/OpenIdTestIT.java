@@ -393,7 +393,7 @@ final class OpenIdTestIT extends BaseApiIT
 
 		// now see if the user was created.
 
-		final var umDao = db.getDao(UserManagementDao.class).orElseThrow();
+		final var umDao = db.getDao(UsersDao.class).orElseThrow();
 		try (var tx = db.newTransaction())
 		{
 			var user = umDao.getUser(tx, DbKey.createDbKey(id));
@@ -480,7 +480,7 @@ final class OpenIdTestIT extends BaseApiIT
 		;
 
 		// The wrong-client token must not have caused a user to be registered.
-		final var umDao = db.getDao(UserManagementDao.class).orElseThrow();
+		final var umDao = db.getDao(UsersDao.class).orElseThrow();
 		try (var tx = db.newTransaction())
 		{
 			var registered = umDao.getUsers(tx, -1, -1).stream()

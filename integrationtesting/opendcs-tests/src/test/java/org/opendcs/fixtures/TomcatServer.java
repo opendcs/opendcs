@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import decodes.dbimport.DbImport;
 import decodes.launcher.Profile;
@@ -55,7 +54,6 @@ import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.IdentityProviderDao;
-import org.opendcs.database.dai.UserManagementDao;
 import org.opendcs.database.dai.UsersDao;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.IdentityProviderMapping;
