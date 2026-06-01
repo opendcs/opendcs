@@ -3,6 +3,8 @@ package org.opendcs.database.dai;
 import java.util.List;
 import java.util.Optional;
 
+import ilex.util.Pair;
+
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
@@ -28,7 +30,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
 	 * @throws DbIoException if SQL exception occurs during operation
 	 * @throws NoSuchObjectException if no matching time series exists.
 	 */
-	Optional<TimeSeriesIdentifier> getByUniqueString(DataTransaction tx, String uniqueString) throws BadTimeSeriesException, OpenDcsDataException;
+	Optional<? extends TimeSeriesIdentifier> getByUniqueString(DataTransaction tx, String uniqueString) throws BadTimeSeriesException, OpenDcsDataException;
 
     /**
 	 * Retrieve a time series identifier by unique surrogate key.
@@ -38,7 +40,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
 	 * @throws DbIoException on SQL errors
 	 * @throws NoSuchObjectException if no such time series
 	 */
-	Optional<TimeSeriesIdentifier> getById(DataTransaction tx, DbKey key) throws BadTimeSeriesException, OpenDcsDataException;
+	Optional<? extends TimeSeriesIdentifier> getById(DataTransaction tx, DbKey key) throws BadTimeSeriesException, OpenDcsDataException;
 
     /**
      * Retrieve by unique string, but return failure cause instead of throwing.
@@ -50,7 +52,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
      * @param uniqueString
      * @return
      */
-	FailableResult<Optional<TimeSeriesIdentifier>,OpenDcsDataException> findBy(DataTransaction tx, String uniqueString);
+	FailableResult<Optional<? extends TimeSeriesIdentifier>,OpenDcsDataException> findBy(DataTransaction tx, String uniqueString);
 
     /**
      * As findBy by uniqueString. Returns filled out TimeSeriesIdentifier object if found, or the error
@@ -59,7 +61,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
      * @param key
      * @return
      */
-	FailableResult<Optional<TimeSeriesIdentifier>,OpenDcsDataException> findBy(DataTransaction tx, DbKey key);
+	FailableResult<Optional<? extends TimeSeriesIdentifier>,OpenDcsDataException> findBy(DataTransaction tx, DbKey key);
 
     /**
      * Validates and save, returning a complete instance with DbKey, the provided TimeSeriesIdentifier
@@ -107,7 +109,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
      * @param offset
      * @return
      */
-    List<TimeSeriesIdentifier> getAll(DataTransaction tx, int limit, int offset);
+    List<? extends TimeSeriesIdentifier> getAll(DataTransaction tx, int limit, int offset);
 
     /**
      * Construct a new {@see TimeSeriesIdentifier} object appropriate for this DB.
@@ -177,7 +179,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
      * @param parm the parameter to transform by
      * @return tsidRet if not changed, otherwise a new instanced with the required changes.
      */
-    public abstract TimeSeriesIdentifier transformUniqueString(TimeSeriesIdentifier tsidRet, DbCompParm parm);
+    TimeSeriesIdentifier transformUniqueString(TimeSeriesIdentifier tsidRet, DbCompParm parm);
 
     /**
 	 * Take a time-series identifier and transform it by the values
@@ -205,7 +207,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
 	 * @throws NoSuchObjectException if (createTS) and failed to create TS in database
 	 * @throws BadTimeSeriesException on attempt to create new TS with invalid TSID.
 	 */
-	Optional<TimeSeriesIdentifier> transformTsidByCompParm(DataTransaction tx,
+	Optional<? extends TimeSeriesIdentifier> transformTsidByCompParm(DataTransaction tx,
 		TimeSeriesIdentifier tsId, DbCompParm parm, boolean createTS,
 		boolean fillInParm, String timeSeriesDisplayName)
 		throws OpenDcsDataException, NoSuchObjectException, BadTimeSeriesException;
@@ -219,5 +221,32 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
 	 * @return TimeSeries Identifier is one can be identified, otherwise, null.
 	 * @throws NoSuchObjectException if an SDI is present but it is invalid.
 	 */
-	public Optional<TimeSeriesIdentifier> expandSDI(DataTransaction tx, DbCompParm parm) throws OpenDcsDataException;
+	Optional<? extends TimeSeriesIdentifier> expandSDI(DataTransaction tx, DbCompParm parm) throws OpenDcsDataException;
+
+
+    /**
+     * Extract the display name. Default implementation assume display name is contained within parenthesis.
+     * e.g. <pre>Alder Springs.Precip.Total.1Hour.1Hour.comp (Hourly Precip for Alder Springs)</pre>
+     *
+     * Implementations may override as desired.
+     * @param uniqueString time series identifier string to manipulate
+     * @return pair of TimeSeriesIdentifier without display name and extracted displayName, if any.
+     */
+    default Pair<String,Optional<String>> extractDisplayName(String uniqueString)
+    {
+        String displayName = null;
+        String retUniqueString = uniqueString;
+        int paren = uniqueString.lastIndexOf('(');
+		if (paren > 0 && uniqueString.trim().endsWith(")"))
+		{
+			displayName = uniqueString.substring(paren+1);
+			retUniqueString = uniqueString.substring(0,  paren);
+			int endParen = displayName.indexOf(')');
+			if (endParen > 0)
+			{
+				displayName = displayName.substring(0,  endParen);
+			}
+		}
+        return Pair.of(retUniqueString,Optional.ofNullable(displayName));
+    }
 }
