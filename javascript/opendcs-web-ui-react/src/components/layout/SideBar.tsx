@@ -17,6 +17,8 @@ export const SideBar = ({ open, onClose }: SideBarProps) => {
     "loadingapps",
     "routing",
     "datasources",
+    "netlists",
+    "presentations",
     "schedule",
   ]);
   const location = useLocation();

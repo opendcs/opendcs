@@ -76,12 +76,14 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-// Default render: list comes back, all presentations show.
+// Default render: list comes back, all presentations show. "shef-english"
+// appears twice — as the parent's Name and as the derived row's "Inherits
+// From" value — so assert both occurrences rather than a single match.
 export const Default: Story = {
   parameters: { msw: { handlers: baseHandlers } },
   play: async ({ mount }) => {
     const canvas = await mount();
-    expect(await canvas.findByText("shef-english")).toBeInTheDocument();
+    expect(await canvas.findAllByText("shef-english")).toHaveLength(2);
     expect(await canvas.findByText("shef-english-derived")).toBeInTheDocument();
   },
 };
