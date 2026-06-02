@@ -26,7 +26,7 @@ public final class XmlOpenDcsDatabaseWrapper extends SimpleOpenDcsDatabaseWrappe
 
     public XmlOpenDcsDatabaseWrapper(DecodesSettings settings, Database decodesDb, TimeSeriesDb tsDb, DataSource ds)
     {
-        super(settings, decodesDb, tsDb, ds);
+        super(settings, decodesDb, tsDb, ds, null);
         enumCache = new DbObjectCache<>(1800_000L, false);
     }
 
@@ -51,7 +51,7 @@ public final class XmlOpenDcsDatabaseWrapper extends SimpleOpenDcsDatabaseWrappe
         try
         {
             return new SimpleTransaction(this.dataSource.getConnection(),
-                                         new TransactionContextImpl(keyGenerator, settings, dbEngine));
+                                         new TransactionContextImpl(keyGenerator, settings, dbEngine, querySettings));
         }
         catch (SQLException ex)
         {

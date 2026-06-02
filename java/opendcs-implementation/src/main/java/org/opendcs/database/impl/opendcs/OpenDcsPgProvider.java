@@ -30,6 +30,7 @@ import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.statement.Call;
 import org.jdbi.v3.postgres.PostgresPlugin;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityProvider;
+import org.opendcs.database.DatabaseQuerySettings;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.JdbiTransaction;
 import org.opendcs.database.TransactionContextImpl;
@@ -113,7 +114,7 @@ public class OpenDcsPgProvider implements MigrationProvider
     @Override
     public void createUser(Jdbi jdbi, String username, String password, List<String> roles)
     {
-        final var context = new TransactionContextImpl(null, null, DatabaseEngine.POSTGRES);
+        final var context = new TransactionContextImpl(null, null, DatabaseEngine.POSTGRES, DatabaseQuerySettings.DEFAULT_SETTINGS);
         jdbi.useTransaction(h ->
         {
             var tx = new JdbiTransaction(h, context);

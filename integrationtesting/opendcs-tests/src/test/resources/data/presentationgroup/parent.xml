@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Database>
+  <PresentationGroup Name="parent">
+    <IsProduction>false</IsProduction>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stage-Pool">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stor-Res">
+      </DataType>
+      <UnitsAbbr>ft^3</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stor">
+      </DataType>
+      <UnitsAbbr>ac-ft</UnitsAbbr>
+    </DataPresentation>
+  </PresentationGroup>
+</Database>
