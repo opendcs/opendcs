@@ -1,0 +1,32 @@
+{
+  "title": "Listas de red",
+  "header": {
+    "Id": "ID",
+    "Name": "Nombre",
+    "MediumType": "Tipo de medio",
+    "NumPlatforms": "N.º de plataformas",
+    "LastModified": "Última modificación"
+  },
+  "name": "Nombre",
+  "transportMediumType": "Tipo de medio de transporte",
+  "siteNameTypePref": "Tipo de nombre de sitio preferido",
+  "add_netlist": "Agregar lista de red",
+  "edit_netlist": "Editar lista de red {{id}}",
+  "delete_for": "Eliminar lista de red {{id}}",
+  "save_netlist": "Guardar lista de red {{id}}",
+  "cancel_for": "Cancelar la edición de la lista de red {{id}}",
+  "items": {
+    "title": "Elementos de la lista de red",
+    "transportId": "ID de transporte",
+    "platformName": "Nombre de la plataforma",
+    "description": "Descripción",
+    "transportId_input": "ID de transporte para {{name}}",
+    "platformName_input": "Nombre de la plataforma para {{name}}",
+    "description_input": "Descripción para {{name}}",
+    "add": "Agregar elemento",
+    "edit": "Editar elemento {{transportId}}",
+    "remove": "Eliminar elemento {{transportId}}",
+    "save_edit": "Guardar elemento {{transportId}}",
+    "cancel_edit": "Cancelar la edición del elemento {{transportId}}"
+  }
+}

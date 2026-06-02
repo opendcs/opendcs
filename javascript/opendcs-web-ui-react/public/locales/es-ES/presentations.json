@@ -1,0 +1,38 @@
+{
+  "title": "Grupos de presentación",
+  "header": {
+    "Id": "ID",
+    "Name": "Nombre",
+    "InheritsFrom": "Hereda de",
+    "Production": "En producción",
+    "LastModified": "Última modificación"
+  },
+  "name": "Nombre",
+  "inheritsFrom": "Hereda de",
+  "production": "En producción",
+  "add_presentation": "Agregar grupo de presentación",
+  "edit_presentation": "Editar grupo de presentación {{id}}",
+  "delete_for": "Eliminar grupo de presentación {{id}}",
+  "save_presentation": "Guardar grupo de presentación {{id}}",
+  "cancel_for": "Cancelar la edición del grupo de presentación {{id}}",
+  "elements": {
+    "title": "Elementos de presentación",
+    "dataTypeStd": "Estándar de tipo de dato",
+    "dataTypeCode": "Código de tipo de dato",
+    "units": "Unidades",
+    "fractionalDigits": "Dígitos fraccionarios",
+    "min": "Valor mínimo",
+    "max": "Valor máximo",
+    "dataTypeStd_input": "Estándar de tipo de dato para {{name}}",
+    "dataTypeCode_input": "Código de tipo de dato para {{name}}",
+    "units_input": "Unidades para {{name}}",
+    "fractionalDigits_input": "Dígitos fraccionarios para {{name}}",
+    "min_input": "Valor mínimo para {{name}}",
+    "max_input": "Valor máximo para {{name}}",
+    "add": "Agregar elemento",
+    "edit": "Editar elemento {{name}}",
+    "remove": "Eliminar elemento {{name}}",
+    "save_edit": "Guardar elemento {{name}}",
+    "cancel_edit": "Cancelar la edición del elemento {{name}}"
+  }
+}

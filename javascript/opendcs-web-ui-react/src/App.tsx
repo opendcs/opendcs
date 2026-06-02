@@ -9,6 +9,8 @@ import { Platforms } from "./pages/platforms";
 import { Configs } from "./pages/decodes/configs";
 import { Routing } from "./pages/decodes/routing";
 import { DataSources } from "./pages/decodes/data-sources";
+import { Netlists } from "./pages/decodes/netlists";
+import { Presentations } from "./pages/decodes/presentations";
 import { Schedules } from "./pages/schedule";
 import { Algorithms } from "./pages/computations/algorithms";
 import { Computations } from "./pages/computations/computations";
@@ -45,6 +47,8 @@ function App() {
               <Route path="/configs" element={<Configs />} />
               <Route path="/routing" element={<Routing />} />
               <Route path="/data-sources" element={<DataSources />} />
+              <Route path="/netlists" element={<Netlists />} />
+              <Route path="/presentations" element={<Presentations />} />
               <Route path="/schedule" element={<Schedules />} />
               <Route path="/sites" element={<SitesPage />} />
               <Route path="/computations" element={<Computations />} />
