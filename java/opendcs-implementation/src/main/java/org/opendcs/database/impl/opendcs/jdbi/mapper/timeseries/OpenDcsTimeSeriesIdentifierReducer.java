@@ -2,8 +2,10 @@ package org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries;
 
 import java.util.Map;
 
+import org.jdbi.v3.core.generic.GenericType;
 import org.jdbi.v3.core.result.LinkedHashMapRowReducer;
 import org.jdbi.v3.core.result.RowView;
+import org.jooq.types.Interval;
 import org.opendcs.database.model.mappers.PrefixRowMapper;
 
 import decodes.db.DataType;
@@ -46,8 +48,6 @@ public class OpenDcsTimeSeriesIdentifierReducer implements LinkedHashMapRowReduc
         {
             tsi.getSite().addName(siteName);
         }
-
-        
     }
     
 }
