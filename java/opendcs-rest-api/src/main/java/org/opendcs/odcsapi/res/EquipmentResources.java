@@ -17,6 +17,7 @@ package org.opendcs.odcsapi.res;
 
 import java.util.List;
 
+import decodes.db.DatabaseException;
 import decodes.db.EquipmentModel;
 import decodes.sql.DbKey;
 import io.swagger.v3.oas.annotations.Operation;
@@ -216,7 +217,18 @@ public final class EquipmentResources extends OpenDcsResource
 
     static ApiEquipmentModelRef mapRef(EquipmentModel em)
     {
-        ApiEquipmentModelRef ref = new ApiEquipmentModelRef();
+        return populateRef(new ApiEquipmentModelRef(), em);
+    }
+
+    static ApiEquipmentModel mapFull(EquipmentModel em)
+    {
+        ApiEquipmentModel api = populateRef(new ApiEquipmentModel(), em);
+        api.setProperties(em.properties);
+        return api;
+    }
+
+    private static <T extends ApiEquipmentModelRef> T populateRef(T ref, EquipmentModel em)
+    {
         if (em.getId() != null && !em.getId().isNull())
         {
             ref.setEquipmentId(em.getId().getValue());
@@ -229,22 +241,6 @@ public final class EquipmentResources extends OpenDcsResource
         return ref;
     }
 
-    static ApiEquipmentModel mapFull(EquipmentModel em)
-    {
-        ApiEquipmentModel api = new ApiEquipmentModel();
-        if (em.getId() != null && !em.getId().isNull())
-        {
-            api.setEquipmentId(em.getId().getValue());
-        }
-        api.setName(em.name);
-        api.setEquipmentType(em.equipmentType);
-        api.setCompany(em.company);
-        api.setModel(em.model);
-        api.setDescription(em.description);
-        api.setProperties(em.properties);
-        return api;
-    }
-
     static EquipmentModel map(ApiEquipmentModel api) throws WebAppException
     {
         EquipmentModel em = new EquipmentModel();
@@ -254,7 +250,7 @@ public final class EquipmentResources extends OpenDcsResource
             {
                 em.setId(DbKey.createDbKey(api.getEquipmentId()));
             }
-            catch (Exception ex)
+            catch (DatabaseException ex)
             {
                 throw new WebAppException(Response.Status.BAD_REQUEST.getStatusCode(),
                                           "Invalid equipmentId: " + api.getEquipmentId(), ex);

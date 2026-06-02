@@ -18,7 +18,7 @@ package org.opendcs.odcsapi.beans;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "A lightweight reference to an equipment model record, suitable for list and pick-list views.")
-public final class ApiEquipmentModelRef
+public class ApiEquipmentModelRef
 {
     @Schema(description = "The unique numeric identifier for the equipment model.", example = "1")
     private Long equipmentId = null;
