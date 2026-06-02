@@ -57,7 +57,7 @@ public interface UnitConverterDao extends OpenDcsDao
 	Optional<UnitConverterDb> findUnitConverterFor(DataTransaction tx, EngineeringUnit from, EngineeringUnit to) throws OpenDcsDataException;
 
 	/**
-     * Retreive all UnitConverterDbs constrained to a limit and offset if desired.
+     * Retrieve all UnitConverterDbs constrained to a limit and offset if desired.
      *
      * From raw units are excluded. Those unit converters are used by the DecodesScripts and are not 
      * useful for general unit conversion. From raw unit converters are accessible through the getById method.
@@ -71,7 +71,7 @@ public interface UnitConverterDao extends OpenDcsDao
 	List<UnitConverterDb> getUnitConverterDbs(DataTransaction tx, int limit, int offset) throws OpenDcsDataException;
 
      /**
-     * Retreive all UnitConverterDbs constrained to a limit and offset if desired. Limiting to a
+     * Retrieve all UnitConverterDbs constrained to a limit and offset if desired. Limiting to a
      * specific family of measurements, such as length.
      * 
      * From raw units are excluded. Those unit converters are used by the DecodesScripts and are not

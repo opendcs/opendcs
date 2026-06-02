@@ -19,8 +19,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
-import org.jdbi.v3.core.statement.Query;
-import org.jdbi.v3.core.statement.Update;
 import org.jdbi.v3.jackson2.Jackson2Plugin;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
