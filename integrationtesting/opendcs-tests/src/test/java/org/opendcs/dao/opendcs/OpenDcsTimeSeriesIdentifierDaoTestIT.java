@@ -1,7 +1,9 @@
 package org.opendcs.dao.opendcs;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
 import org.opendcs.database.api.OpenDcsDatabase;
@@ -43,9 +45,13 @@ class OpenDcsTimeSeriesIdentifierDaoTestIT extends AppTestBase
         var dao = db.getDao(TimeSeriesIdentifierDao.class).orElseThrow();
         try (var tx = db.newTransaction())
         {
-            var tsIdOut = dao.findBy(tx, tsIdIn.getUniqueString());
+            var tsIdOutResult = dao.findBy(tx, tsIdIn.getUniqueString());
 
-            assertTrue(tsIdOut.isSuccess());
+            assertTrue(tsIdOutResult.isSuccess());
+            var tsIdOut = tsIdOutResult.getSuccess().orElseGet(() -> fail("time series not retrieved."));
+            assertNotNull(tsIdOut);
+            assertNotNull(tsIdOut.getDataType());
+            assertFalse(DbKey.isNull(tsIdOut.getSite().getId()));
         }
     }
 }
