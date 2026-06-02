@@ -12,7 +12,8 @@
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 * License for the specific language governing permissions and limitations
 * under the License.
-*/package org.opendcs.dao;
+*/
+package org.opendcs.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -42,7 +43,7 @@ import decodes.sql.DbKey;
 /**
  * This tests UsersDao, RolesDao, and IdentityProviderDao.
  * 
- * While seperate DAOs, they are generally used together.
+ * While separate DAOs, they are generally used together.
  */
 @EnableIfTsDb({"OpenDCS-Postgres", "CWMS-Oracle"})
 class UserManagementDaoTestIT extends AppTestBase
@@ -55,7 +56,7 @@ class UserManagementDaoTestIT extends AppTestBase
     void test_create_role() throws Exception
     {
         var dao = db.getDao(RolesDao.class)
-                    .orElseThrow(() -> new UnsupportedOperationException("user dao not supported."));
+                    .orElseThrow(() -> new UnsupportedOperationException("roles dao not supported."));
         DbKey id = DbKey.NullKey;
         try (DataTransaction tx = db.newTransaction())
         {
@@ -83,7 +84,7 @@ class UserManagementDaoTestIT extends AppTestBase
     void test_role_pagination() throws Exception
     {
         var dao = db.getDao(RolesDao.class)
-                                  .orElseThrow(() -> new UnsupportedOperationException("user dao not supported."));
+                                  .orElseThrow(() -> new UnsupportedOperationException("roles dao not supported."));
         try (DataTransaction tx = db.newTransaction())
         {
             for (int i = 0; i < 100; i++)
@@ -111,7 +112,7 @@ class UserManagementDaoTestIT extends AppTestBase
     void test_identity_provider_operations() throws Exception
     {
         var dao = db.getDao(IdentityProviderDao.class)
-                                  .orElseGet(() -> fail("user dao not supported."));
+                                  .orElseGet(() -> fail("identity provider dao not supported."));
         DbKey id = DbKey.NullKey;
         try (DataTransaction tx = db.newTransaction())
         {
@@ -141,7 +142,7 @@ class UserManagementDaoTestIT extends AppTestBase
     void test_idp_pagination() throws Exception
     {
         var dao = db.getDao(IdentityProviderDao.class)
-                                  .orElseThrow(() -> new UnsupportedOperationException("user dao not supported."));
+                                  .orElseThrow(() -> new UnsupportedOperationException("identity provider dao not supported."));
         try (DataTransaction tx = db.newTransaction())
         {
             for (int i = 0; i < 100; i++)
