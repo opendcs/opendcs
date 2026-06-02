@@ -47,6 +47,8 @@ import org.opendcs.spi.database.MigrationHelper;
 import org.opendcs.spi.database.MigrationProvider;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
+
+import decodes.cwms.CwmsDatabaseQuerySettings;
 import decodes.dbimport.DbImport;
 import decodes.launcher.Profile;
 import decodes.sql.DbKey;
@@ -127,7 +129,7 @@ public class CwmsOracleProvider implements MigrationProvider
     @Override
     public void createUser(Jdbi jdbi, String username, String password, List<String> roles)
     {
-        final var context = new TransactionContextImpl(null, null, DatabaseEngine.POSTGRES);
+        final var context = new TransactionContextImpl(null, null, DatabaseEngine.POSTGRES, new CwmsDatabaseQuerySettings());
         jdbi.useTransaction(h ->
         {
             var tx = new JdbiTransaction(h, context);

@@ -15,12 +15,14 @@ public class TransactionContextImpl implements TransactionContext
     private final KeyGenerator keyGenerator;
     private final DecodesSettings settings;
     private final DatabaseEngine databaseEngine;
+    private final DatabaseQuerySettings querySettings;
 
-    public TransactionContextImpl(KeyGenerator keyGenerator, DecodesSettings settings, DatabaseEngine databaseEngine)
+    public TransactionContextImpl(KeyGenerator keyGenerator, DecodesSettings settings, DatabaseEngine databaseEngine, DatabaseQuerySettings querySettings)
     {
         this.keyGenerator = keyGenerator;
         this.settings = settings;
         this.databaseEngine = databaseEngine;
+        this.querySettings = querySettings;
     }
 
 
@@ -64,6 +66,10 @@ public class TransactionContextImpl implements TransactionContext
         if (DecodesSettings.class.equals(settingsClass))
         {
             return Optional.of((T)settings);
+        }
+        else if (DatabaseQuerySettings.class.equals(settingsClass))
+        {
+            return Optional.ofNullable((T)querySettings);
         }
         else
         {

@@ -102,7 +102,8 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
             return new SimpleTransaction(db.getConnection(),
                                          new TransactionContextImpl(db.getKeyGenerator(),
                                          DecodesSettings.instance(),
-                                         db.isOracle() ? DatabaseEngine.ORACLE : DatabaseEngine.POSTGRES));
+                                         db.isOracle() ? DatabaseEngine.ORACLE : DatabaseEngine.POSTGRES
+                                        , new CwmsDatabaseQuerySettings()));
         }
         catch (SQLException ex)
         {

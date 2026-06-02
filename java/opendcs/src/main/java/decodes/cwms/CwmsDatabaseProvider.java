@@ -57,7 +57,7 @@ public class CwmsDatabaseProvider implements DatabaseProvider
             Database.setDb(decodesDb); // the CwmsSqlDatabaseIO constructor calls into the Database instance to verify things.
             decodesDb.setDbIo(new CwmsSqlDatabaseIO(dataSource, settings));
             CwmsTimeSeriesDb tsdb = new CwmsTimeSeriesDb(null, dataSource, settings);
-            var db = new SimpleOpenDcsDatabaseWrapper(settings, decodesDb, tsdb, dataSource);
+            var db = new SimpleOpenDcsDatabaseWrapper(settings, decodesDb, tsdb, dataSource, new CwmsDatabaseQuerySettings());
             ((SqlDatabaseIO)decodesDb.getDbIo()).setDcsDatabase(db);
             decodesDb.init(settings);
             tsdb.setDcsDatabase(db);

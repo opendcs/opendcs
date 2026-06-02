@@ -82,7 +82,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
                                            .registerArgument(new DatabaseKeyArgumentFactory())
                                            .registerColumnMapper(new DatabaseKeyColumnMapper()),
                                      new TransactionContextImpl(db.getKeyGenerator(), DecodesSettings.instance(),
-                                         db.isOracle() ? DatabaseEngine.ORACLE : DatabaseEngine.POSTGRES));
+                                         db.isOracle() ? DatabaseEngine.ORACLE : DatabaseEngine.POSTGRES, null));
         }
         catch (SQLException ex)
         {

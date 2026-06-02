@@ -7,6 +7,7 @@ public final class SqlQueries
     public static final String LIMIT_CLAUSE = "limit";
     public static final String WHERE_CLAUSE = "where";
     public static final String COLLATE_CLAUSE = "collate";
+    public static final String RECURSIVE_CTE_CLAUSE = "recursive_cte";
 
     private SqlQueries()
     {
@@ -40,5 +41,16 @@ public final class SqlQueries
     public static String collateClauseFor(DatabaseEngine dbEngine)
     {
         return dbEngine == DatabaseEngine.POSTGRES ? "COLLATE \"C\"" : "COLLATE BINARY";
+    }
+
+    /**
+     * Return the required keyword for recursive CTEs. At this time only oracle supports
+     * the feature, but does not require the keyword.
+     * @param dbEngine
+     * @return
+     */
+    public static Object recursiveCteFor(DatabaseEngine dbEngine)
+    {
+        return  dbEngine == DatabaseEngine.ORACLE ? "" : " RECURSIVE ";
     }
 }
