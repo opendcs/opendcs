@@ -245,12 +245,20 @@ public final class EquipmentResources extends OpenDcsResource
         return api;
     }
 
-    static EquipmentModel map(ApiEquipmentModel api)
+    static EquipmentModel map(ApiEquipmentModel api) throws WebAppException
     {
         EquipmentModel em = new EquipmentModel();
         if (api.getEquipmentId() != null)
         {
-            em.setId(DbKey.createDbKey(api.getEquipmentId()));
+            try
+            {
+                em.setId(DbKey.createDbKey(api.getEquipmentId()));
+            }
+            catch (Exception ex)
+            {
+                throw new WebAppException(Response.Status.BAD_REQUEST.getStatusCode(),
+                                          "Invalid equipmentId: " + api.getEquipmentId(), ex);
+            }
         }
         em.name = api.getName();
         em.equipmentType = api.getEquipmentType();
