@@ -100,7 +100,6 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
         return tsId;
     }
 
-
     /**
      * Retrieve all time series, given the limit and offset.
      *

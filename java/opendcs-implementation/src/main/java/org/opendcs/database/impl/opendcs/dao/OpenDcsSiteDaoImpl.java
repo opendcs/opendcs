@@ -49,6 +49,18 @@ import decodes.util.DecodesSettings;
 public class OpenDcsSiteDaoImpl implements SiteDao
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
+    public static final String SITE_COLUMNS = """
+            site.id s_id, site.latitude s_latitude, site.longitude s_longitude,
+            site.nearestcity s_nearestcity, site.state s_state, site.region s_region,
+            site.timezone s_timezone, site.country s_country, site.elevation s_elevation,
+            site.elevunitabbr s_elevunitabbr, site.description s_description, site.active_flag s_active_flag,
+            site.location_type s_location_type, site.modify_time s_modify_time, site.public_name s_public_name
+        """;
+
+    public static final String SITE_NAME_COLUMNS = """
+                sn.nametype sn_nametype, sn.sitename sn_sitename, sn.dbnum sn_dbnum, sn.agency_cd sn_agency_cd
+            """;
     /**
      * order asc on the inner nametype is to keep the general output predicatable.
      * There <b>shouldn't</b> be any Sites without a Preferred SiteName so this is
@@ -72,13 +84,9 @@ public class OpenDcsSiteDaoImpl implements SiteDao
                 order by sitename <collate> asc
                 <limit>
             )
-            select site.id s_id, site.latitude s_latitude, site.longitude s_longitude,
-                   site.nearestcity s_nearestcity, site.state s_state, site.region s_region,
-                   site.timezone s_timezone, site.country s_country, site.elevation s_elevation,
-                   site.elevunitabbr s_elevunitabbr, site.description s_description, site.active_flag s_active_flag,
-                   site.location_type s_location_type, site.modify_time s_modify_time, site.public_name s_public_name,
+            select <site_columns>,
 
-                   sn.nametype sn_nametype, sn.sitename sn_sitename, sn.dbnum sn_dbnum, sn.agency_cd sn_agency_cd,
+                   <site_name_columns>,
 
                    prop.prop_name p_prop_name, prop.prop_value p_prop_value
 
@@ -117,6 +125,8 @@ public class OpenDcsSiteDaoImpl implements SiteDao
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                  .define(SqlQueries.WHERE_CLAUSE, "where siteid = :id")
                  .define(SqlQueries.LIMIT_CLAUSE, "")
+                 .define("site_columns", SITE_COLUMNS)
+                 .define("site_name_columns", SITE_NAME_COLUMNS)
                  .bind("preferredType", preferredType)
                  .bind(GenericColumns.ID.column(), id);
 
@@ -320,6 +330,8 @@ public class OpenDcsSiteDaoImpl implements SiteDao
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
+                 .define("site_columns", SITE_COLUMNS)
+                 .define("site_name_columns", SITE_NAME_COLUMNS)
                  .define(SqlQueries.WHERE_CLAUSE, "")
                  .define(SqlQueries.LIMIT_CLAUSE, addLimitOffset(limit, offset))
                  .bind("preferredType", preferredType);
