@@ -58,10 +58,14 @@ jobs:
           cache: 'gradle'
       - name: Set Version
         if: inputs.nightly
-        run: echo "VERSION=${{inputs.branch}}-nightly" >> $GITHUB_ENV
+        env:
+          BRANCH: ${{inputs.branch}}
+        run: echo "VERSION=${BRANCH}-nightly" >> "$GITHUB_ENV"
       - name: Set Version
         if: inputs.nightly == false
-        run: echo "VERSION=${{inputs.branch}}" >> $GITHUB_ENV
+        env:
+          BRANCH: ${{inputs.branch}}
+        run: echo "VERSION=${BRANCH}" >> "$GITHUB_ENV"
       - name: show version
         run: echo ${VERSION}
       - name: Set up Docker Buildx
