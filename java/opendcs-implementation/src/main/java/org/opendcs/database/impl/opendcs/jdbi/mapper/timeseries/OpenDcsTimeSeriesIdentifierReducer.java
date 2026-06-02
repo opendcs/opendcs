@@ -4,7 +4,7 @@ import java.util.Map;
 
 import org.jdbi.v3.core.result.LinkedHashMapRowReducer;
 import org.jdbi.v3.core.result.RowView;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 
 import decodes.db.DataType;
 import decodes.db.Site;
@@ -17,7 +17,7 @@ public class OpenDcsTimeSeriesIdentifierReducer implements LinkedHashMapRowReduc
 
     public OpenDcsTimeSeriesIdentifierReducer(String rootPrefix)
     {
-        this.rootPrefix = PrefixRowMapper.addUnderscoreIfMissing(rootPrefix);
+        this.rootPrefix = OpenDcsTableMapper.addUnderscoreIfMissing(rootPrefix);
     }
 
     @Override
@@ -46,8 +46,6 @@ public class OpenDcsTimeSeriesIdentifierReducer implements LinkedHashMapRowReduc
         {
             tsi.getSite().addName(siteName);
         }
-
-        
     }
     
 }
