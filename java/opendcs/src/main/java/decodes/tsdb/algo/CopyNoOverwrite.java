@@ -20,10 +20,8 @@ import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
 
-@Algorithm(description = "CopyAlgorithm copies a single 'input' parameter to a single 'output' parameter.\n" +
-		" \n" +
-		"Modified June 2009 By M. Bogner to add missing property for proper deletes and \n" +
-		"a version")
+// Modified June 2009 By M. Bogner to add missing property for proper deletes and a version
+@Algorithm(description = "Copies 'input' to 'output', filling only empty time-slices without overwriting existing values.")
 public class CopyNoOverwrite extends AW_AlgorithmBase
 {
 	@Input
