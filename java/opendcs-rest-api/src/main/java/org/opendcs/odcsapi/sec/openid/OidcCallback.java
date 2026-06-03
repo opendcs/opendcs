@@ -14,7 +14,7 @@ import org.opendcs.authentication.identityprovider.impl.oidc.AuthCodeCredentials
 import org.opendcs.authentication.identityprovider.impl.oidc.JwtCredentials;
 import org.opendcs.authentication.identityprovider.impl.oidc.OidcIdentityProvider;
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.dai.IdentityProviderDao;
 import org.opendcs.database.model.User;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.res.OpenDcsResource;
@@ -134,9 +134,9 @@ public final class OidcCallback extends OpenDcsResource
 
                 try (var tx = db.newTransaction())
                 {
-                    var provider = db.getDao(UserManagementDao.class).orElseThrow()
-                                     .getIdentityProvider(tx, oidcProvider);
-                    if (provider.isEmpty())
+                    var provider = db.getDao(IdentityProviderDao.class).orElseThrow()
+                                    .getIdentityProvider(tx, oidcProvider);
+                    if (provider.isEmpty()) 
                     {
                         location = URI.create(String.format(defaultTarget, URLEncoder.encode("Unable to handle request.", StandardCharsets.UTF_8)));
                     }
@@ -243,7 +243,7 @@ public final class OidcCallback extends OpenDcsResource
                 final var db = this.createDb();
                 try (var tx = db.newTransaction())
                 {
-                    var umDao = db.getDao(UserManagementDao.class).orElseThrow(() -> new OpenDcsDataException("UserManagement not currently supported."));
+                    var umDao = db.getDao(IdentityProviderDao.class).orElseThrow(() -> new OpenDcsDataException("UserManagement not currently supported."));
                     var idps = umDao.getIdentityProvidersForSubject(tx, subject);
                     if (!idps.isEmpty())
                     {

@@ -38,8 +38,10 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.database.dai.UserManagementDao;
-import org.opendcs.database.impl.opendcs.dao.OpenDcsPgUserManagementImpl;
+import org.opendcs.database.dai.IdentityProviderDao;
+import org.opendcs.database.dai.RolesDao;
+import org.opendcs.database.impl.opendcs.dao.auth.IdentityProviderDaoImpl;
+import org.opendcs.database.impl.opendcs.dao.auth.RolesDaoImpl;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
 import org.opendcs.database.model.Role;
@@ -118,12 +120,13 @@ public class OpenDcsPgProvider implements MigrationProvider
         jdbi.useTransaction(h ->
         {
             var tx = new JdbiTransaction(h, context);
-            var dao = new OpenDcsPgUserManagementImpl();
+            var idpDao = new IdentityProviderDaoImpl();
+            var rolesDao = new RolesDaoImpl();
 
             try(Call createUser = h.createCall("call create_user(:user,:pw)");
                 Call assignRole = h.createCall("call assign_role(:user,:role)");)
             {
-                setupIdentityProvider(tx, dao);
+                setupIdentityProvider(tx, rolesDao, idpDao);
                 createUser.bind("user",username)
                           .bind("pw", password)
                           .invoke();
@@ -141,9 +144,9 @@ public class OpenDcsPgProvider implements MigrationProvider
         });
     }
 
-    private void setupIdentityProvider(DataTransaction tx, UserManagementDao dao) throws OpenDcsDataException
+    private void setupIdentityProvider(DataTransaction tx, RolesDao rolesDao, IdentityProviderDao idpDao) throws OpenDcsDataException
     {
-        var providers = dao.getIdentityProviders(tx, -1, -1);
+        var providers = idpDao.getIdentityProviders(tx, -1, -1);
         for (var provider: providers)
         {
             if (provider instanceof BuiltInIdentityProvider)
@@ -151,13 +154,13 @@ public class OpenDcsPgProvider implements MigrationProvider
                 return;
             }
         }
-        dao.addRole(tx, new Role(null, "ODCS_API_GUEST", null, null));
-        dao.addRole(tx, new Role(null, "ODCS_API_USER", null, null));
-        dao.addRole(tx, new Role(null, "ODCS_API_ADMIN", null, null));
+        rolesDao.addRole(tx, new Role(null, "ODCS_API_GUEST", null, null));
+        rolesDao.addRole(tx, new Role(null, "ODCS_API_USER", null, null));
+        rolesDao.addRole(tx, new Role(null, "ODCS_API_ADMIN", null, null));
 
         var newProvider = new BuiltInIdentityProvider(DbKey.NullKey, "builttin", null, Map.of());
 
-        dao.addIdentityProvider(tx, newProvider);
+        idpDao.addIdentityProvider(tx, newProvider);
     }
 
 

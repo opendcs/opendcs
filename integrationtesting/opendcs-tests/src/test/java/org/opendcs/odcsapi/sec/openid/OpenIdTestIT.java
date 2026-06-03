@@ -41,7 +41,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.opendcs.authentication.identityprovider.impl.oidc.OidcIdentityProvider;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.dai.IdentityProviderDao;
+import org.opendcs.database.dai.UsersDao;
 import org.opendcs.database.model.IdentityProviderMapping;
 import org.opendcs.database.model.UserBuilder;
 import org.opendcs.fixtures.annotations.ConfiguredField;
@@ -77,7 +78,9 @@ final class OpenIdTestIT extends BaseApiIT
 	{
 		if (!providerInitialized)
 		{
-			var umDao = db.getDao(UserManagementDao.class).orElseThrow();
+			var umDao = db.getDao(UsersDao.class).orElseThrow();
+			var idpDao = db.getDao(IdentityProviderDao.class).orElseThrow();
+			
 			try (var tx = db.newTransaction())
 			{
 				var config = new HashMap<String, Object>();
@@ -88,12 +91,12 @@ final class OpenIdTestIT extends BaseApiIT
 				final String redirectUri = RestAssured.baseURI + ":" + RestAssured.port + "/" + RestAssured.basePath + "/oidc-callback";
 				config.put("redirectUri", redirectUri);
 				var idpConfIn = new OidcIdentityProvider(null, "test-oidc-conf", null, config);
-				var idpConfOut = umDao.addIdentityProvider(tx, idpConfIn);
-
+				var idpConfOut = idpDao.addIdentityProvider(tx, idpConfIn);
+				
 				config.put("clientId", "opendcs-public");
 				config.remove("clientSecret");
 				var idpPubIn = new OidcIdentityProvider(null, "test-oidc-pub", null, config);
-				var idpPubOut = umDao.addIdentityProvider(tx, idpPubIn);
+				var idpPubOut = idpDao.addIdentityProvider(tx, idpPubIn);
 
 				var user = umDao.getUsers(tx, -1, -1).stream().filter(u -> "test_user".equals(u.email)).findFirst().orElseThrow();
 
@@ -390,7 +393,7 @@ final class OpenIdTestIT extends BaseApiIT
 
 		// now see if the user was created.
 
-		final var umDao = db.getDao(UserManagementDao.class).orElseThrow();
+		final var umDao = db.getDao(UsersDao.class).orElseThrow();
 		try (var tx = db.newTransaction())
 		{
 			var user = umDao.getUser(tx, DbKey.createDbKey(id));
@@ -477,7 +480,7 @@ final class OpenIdTestIT extends BaseApiIT
 		;
 
 		// The wrong-client token must not have caused a user to be registered.
-		final var umDao = db.getDao(UserManagementDao.class).orElseThrow();
+		final var umDao = db.getDao(UsersDao.class).orElseThrow();
 		try (var tx = db.newTransaction())
 		{
 			var registered = umDao.getUsers(tx, -1, -1).stream()

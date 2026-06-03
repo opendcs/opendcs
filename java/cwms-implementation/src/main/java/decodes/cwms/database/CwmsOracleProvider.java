@@ -36,8 +36,10 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.database.dai.UserManagementDao;
-import org.opendcs.database.impl.cwms.dao.CwmsUserManagementImpl;
+import org.opendcs.database.dai.IdentityProviderDao;
+import org.opendcs.database.dai.RolesDao;
+import org.opendcs.database.impl.cwms.dao.auth.CwmsIdentityProviderDaoImpl;
+import org.opendcs.database.impl.cwms.dao.auth.CwmsRolesDaoImpl;
 import org.opendcs.database.impl.cwms.jdbi.CwmsBoolean;
 import org.opendcs.database.impl.cwms.jdbi.CwmsBooleanArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
@@ -133,13 +135,14 @@ public class CwmsOracleProvider implements MigrationProvider
         jdbi.useTransaction(h ->
         {
             var tx = new JdbiTransaction(h, context);
-            var dao = new CwmsUserManagementImpl();
+            var idpDao = new CwmsIdentityProviderDaoImpl();
+            var rolesDao = new CwmsRolesDaoImpl();
 
             try(Call createUser = h.createCall("call ccp.create_user(:user,:pw)");
                 Call createCwmsUser = h.createCall("call cwms_sec.create_user(:user,:pw, null, null)");
                 Call assignRole = h.createCall("call cwms_sec.add_user_to_group(:user,:role,:office)");)
             {
-                setupIdentityProvider(tx, dao);
+                setupIdentityProvider(tx, rolesDao, idpDao);
                 createUser.bind("user", username)
                           .bind("pw", password)
                           .invoke();
@@ -169,9 +172,9 @@ public class CwmsOracleProvider implements MigrationProvider
         });
     }
 
-    private void setupIdentityProvider(DataTransaction tx, UserManagementDao dao) throws OpenDcsDataException
+    private void setupIdentityProvider(DataTransaction tx, RolesDao rolesDao, IdentityProviderDao idpDao) throws OpenDcsDataException
     {
-        var providers = dao.getIdentityProviders(tx, -1, -1);
+        var providers = idpDao.getIdentityProviders(tx, -1, -1);
         for (var provider: providers)
         {
             if (provider instanceof BuiltInIdentityProvider)
@@ -179,13 +182,13 @@ public class CwmsOracleProvider implements MigrationProvider
                 return;
             }
         }
-        dao.addRole(tx, new Role(null, "ODCS_API_GUEST", null, null));
-        dao.addRole(tx, new Role(null, "ODCS_API_USER", null, null));
-        dao.addRole(tx, new Role(null, "ODCS_API_ADMIN", null, null));
+        rolesDao.addRole(tx, new Role(null, "ODCS_API_GUEST", null, null));
+        rolesDao.addRole(tx, new Role(null, "ODCS_API_USER", null, null));
+        rolesDao.addRole(tx, new Role(null, "ODCS_API_ADMIN", null, null));
 
         var newProvider = new BuiltInIdentityProvider(DbKey.NullKey, "builttin", null, Map.of());
 
-        dao.addIdentityProvider(tx, newProvider);
+        idpDao.addIdentityProvider(tx, newProvider);
     }
 
     private List<File> getComputationData()

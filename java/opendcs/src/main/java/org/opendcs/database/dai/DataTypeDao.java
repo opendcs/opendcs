@@ -60,7 +60,7 @@ public interface DataTypeDao extends OpenDcsDao
      Optional<DataType> lookup(DataTransaction tx, String standard, String dataTypeCode) throws OpenDcsDataException;
 
 	/**
-     * Retreive all DataTypes constrained to a limit and office if desired.
+     * Retrieve all DataTypes constrained to a limit and office if desired.
      * @param tx active transaction
      * @param limit -1 for all, otherwise maximum amount
      * @param offset -1 for no offset, otherwise a valid office from the start of data

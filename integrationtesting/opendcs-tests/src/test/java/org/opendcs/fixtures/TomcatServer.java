@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import decodes.dbimport.DbImport;
 import decodes.launcher.Profile;
@@ -54,7 +53,8 @@ import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInProviderC
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.dai.IdentityProviderDao;
+import org.opendcs.database.dai.UsersDao;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.IdentityProviderMapping;
 import org.opendcs.database.model.Role;
@@ -415,11 +415,13 @@ public final class TomcatServer implements AutoCloseable
 	public static void setupTestUser(OpenDcsDatabase db) throws OpenDcsDataException
 	{
 		
-		var dao = db.getDao(UserManagementDao.class)
-					.orElseThrow(() -> new OpenDcsDataException("No User Management class available for this implementation."));
+		var idpDao = db.getDao(IdentityProviderDao.class)
+					.orElseThrow(() -> new OpenDcsDataException("No Identity Provider DAO available for this implementation."));
+		var userDao = db.getDao(UsersDao.class)
+					.orElseThrow(() -> new OpenDcsDataException("No User DAO available for this implementation."));
 		try (var tx = db.newTransaction())
 		{
-			var idps = dao.getIdentityProviders(tx, -1, -1);
+			var idps = idpDao.getIdentityProviders(tx, -1, -1);
 			IdentityProvider idp = null;
 			for (var provider: idps)
 			{
@@ -442,7 +444,7 @@ public final class TomcatServer implements AutoCloseable
 			ub.withEmail(userName);
 
 			ub.withIdentityMapping(new IdentityProviderMapping(idp, userName));
-			var user = dao.addUser(tx, ub.build());
+			var user = userDao.addUser(tx, ub.build());
 			var creds = new BuiltInProviderCredentials(userName, "test_password"); // NOSONAR
 			idp.updateUserCredentials(db, tx, user, creds);
 		}

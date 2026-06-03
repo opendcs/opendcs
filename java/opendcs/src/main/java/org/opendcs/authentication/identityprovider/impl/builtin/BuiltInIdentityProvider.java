@@ -30,7 +30,7 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.dai.UsersDao;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.User;
 import org.opendcs.spi.authentication.IdentityProviderProvider;
@@ -141,7 +141,7 @@ public final class BuiltInIdentityProvider implements IdentityProvider
                     var pw = Password.check(creds.password, hashedPassword);
                     if (pw.withArgon2())
                     {
-                        var userDao = db.getDao(UserManagementDao.class)
+                        var userDao = db.getDao(UsersDao.class)
                                         .orElseThrow(() -> new OpenDcsAuthException("No User Management DAO is available."));
                         return userDao.getUser(tx, userId);
                     }
