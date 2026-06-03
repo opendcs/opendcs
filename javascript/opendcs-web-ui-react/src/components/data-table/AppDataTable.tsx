@@ -908,20 +908,26 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     });
   }, [i18n.language, rowActionsList, rowActionApi, idOf, toggleByIdStr, hasDetail]);
 
-  // --- Language change: DataTable remounts (key={i18n.language}), reset state ---
-  // Only reset on a *user-driven* language switch, not on the initial settling
-  // from i18next's language detector. Resetting during startup wipes any state
-  // a parent set on mount (e.g. SitesPage's deep-link openRow) before the
-  // first draw, so rows opened by the parent never appear.
+  // --- Language change: DataTable remounts (key=tableKey), reset state ---
+  // Only remount and reset on a *user-driven* language switch, not on the
+  // initial settling from i18next's language detector. Resetting during
+  // startup wipes any state a parent set on mount (e.g. SitesPage's
+  // deep-link openRow) before the first draw, so rows opened by the parent
+  // never appear. Using a separate `tableKey` (instead of `i18n.language`
+  // directly) means the DataTable key stays stable during the initial
+  // detect → settle transition (e.g. "en" → "en-US"), preventing mid-test
+  // remounts that close open detail rows.
+  const [tableKey, setTableKey] = useState(() => i18n.language ?? "__initial__");
   const langInitRef = useRef<string | null>(null);
   useEffect(() => {
     if (!i18n.isInitialized) return;
     if (langInitRef.current === null) {
       langInitRef.current = i18n.language;
-      return;
+      return; // initial settle: keep tableKey stable, no remount
     }
     if (langInitRef.current === i18n.language) return;
     langInitRef.current = i18n.language;
+    setTableKey(i18n.language); // user-initiated switch: remount DataTable
     setRowState({});
     setLocalItems([]);
     childModeRef.current = {};
@@ -963,7 +969,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   return (
     <div style={{ opacity: isInitialized ? undefined : 0 }}>
       <DataTable
-        key={i18n.language}
+        key={tableKey}
         id={tableId}
         columns={dtColumns}
         data={tableData}

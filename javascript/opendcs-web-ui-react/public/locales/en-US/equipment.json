@@ -1,0 +1,14 @@
+{
+  "title": "Equipment",
+  "equipment_id": "Equipment ID",
+  "name": "Name",
+  "equipment_type": "Equipment Type",
+  "company": "Company",
+  "model": "Model",
+  "description": "Description",
+  "add_equipment": "Add new Equipment Model",
+  "edit_equipment": "Edit equipment model with id {{id}}",
+  "save_equipment": "Save equipment model with id {{id}}",
+  "cancel_for": "Cancel editing equipment model with id {{id}}",
+  "delete_for": "Delete equipment model with id {{id}}"
+}
