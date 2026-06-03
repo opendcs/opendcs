@@ -3,6 +3,7 @@ package org.opendcs.database.impl.opendcs.dao;
 import static org.opendcs.utils.sql.SqlQueries.COLLATE_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.LIMIT_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.WHERE_CLAUSE;
+import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,7 +18,9 @@ import org.opendcs.database.model.mappers.datatype.DataTypeMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteNameMapper;
 import org.opendcs.utils.FailableResult;
+import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
+import org.opendcs.utils.sql.SqlKeywords;
 import org.opendcs.utils.sql.SqlQueries;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.util.lookup.ServiceProviders;
@@ -153,28 +156,92 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     }
 
     @Override
-    public FailableResult<Optional<? extends TimeSeriesIdentifier>, OpenDcsDataException> findBy(DataTransaction tx, DbKey key) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'findBy'");
+    public FailableResult<Optional<? extends TimeSeriesIdentifier>, OpenDcsDataException> findBy(DataTransaction tx, DbKey key)
+    {
+        if (DbKey.isNull(key))
+        {
+            return FailableResult.failure(new OpenDcsDataException("Cannot lookup by null DbKey value."));
+        }
+        try
+        {
+            var handle = tx.connection(Handle.class)
+                           .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+            var dbEngine = tx.getContext().getDatabase();
+
+
+            try (var query = handle.createQuery(TIMESERIES_IDENTIFIER_QUERY)
+                                   .define(COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
+                                   .define("site_columns", OpenDcsSiteDaoImpl.SITE_COLUMNS)
+                                   .define("site_name_columns", OpenDcsSiteDaoImpl.SITE_NAME_COLUMNS)
+                                   .define(WHERE_CLAUSE, " where ts_id = :id ")
+                                   .define(LIMIT_CLAUSE, ""))
+            {
+                return FailableResult.success(
+                    query.bind(GenericColumns.ID,  key)
+                         .registerRowMapper(OpenDcsTimeSeriesIdentifierMapper.withPrefix("tsi"))
+                         .registerRowMapper(DataTypeMapper.withPrefix("dt"))
+                         .registerRowMapper(OpenDcsSiteMapper.withPrefix("s"))
+                         .registerRowMapper(OpenDcsSiteNameMapper.withPrefix("sn"))
+                         .reduceRows(new OpenDcsTimeSeriesIdentifierReducer("tsi"))
+                         .map(tsi -> tsi)
+                         .findFirst());
+            }
+        }
+        catch (OpenDcsDataException ex)
+        {
+            return FailableResult.failure(ex);
+        }
     }
 
     @Override
     public TimeSeriesIdentifier save(DataTransaction tx, TimeSeriesIdentifier tsId)
-            throws OpenDcsDataException, BadTimeSeriesException {
+            throws OpenDcsDataException, BadTimeSeriesException
+    {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'save'");
     }
 
     @Override
-    public void delete(DataTransaction tx, DbKey id) throws OpenDcsDataException {
+    public void delete(DataTransaction tx, DbKey id) throws OpenDcsDataException
+    {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'delete'");
     }
 
     @Override
-    public List<? extends TimeSeriesIdentifier> getAll(DataTransaction tx, int limit, int offset) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getAll'");
+    public List<? extends TimeSeriesIdentifier> getAll(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
+    {
+        var handle = tx.connection(Handle.class)
+                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var dbEngine = tx.getContext().getDatabase();
+
+
+        try (var query = handle.createQuery(TIMESERIES_IDENTIFIER_QUERY)
+                                .define(COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
+                                .define("site_columns", OpenDcsSiteDaoImpl.SITE_COLUMNS)
+                                .define("site_name_columns", OpenDcsSiteDaoImpl.SITE_NAME_COLUMNS)
+                                .define(WHERE_CLAUSE, "")
+                                .define(LIMIT_CLAUSE, addLimitOffset(limit, offset)))
+        {
+            if (limit > -1)
+            {
+                query.bind(SqlKeywords.LIMIT, limit);
+            }
+
+            if (offset > -1)
+            {
+                query.bind(SqlKeywords.OFFSET, offset);
+            }
+            return 
+                query.registerRowMapper(OpenDcsTimeSeriesIdentifierMapper.withPrefix("tsi"))
+                        .registerRowMapper(DataTypeMapper.withPrefix("dt"))
+                        .registerRowMapper(OpenDcsSiteMapper.withPrefix("s"))
+                        .registerRowMapper(OpenDcsSiteNameMapper.withPrefix("sn"))
+                        .reduceRows(new OpenDcsTimeSeriesIdentifierReducer("tsi"))
+                        .map(tsi -> tsi)
+                        .toList();
+        }
+            
     }
 
     @Override
