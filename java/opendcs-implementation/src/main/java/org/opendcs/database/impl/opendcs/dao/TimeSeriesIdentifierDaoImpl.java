@@ -9,8 +9,11 @@ import java.util.List;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
+import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.dai.DataTypeDao;
+import org.opendcs.database.dai.SiteDao;
 import org.opendcs.database.dai.TimeSeriesIdentifierDao;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.OpenDcsTimeSeriesIdentifierMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.OpenDcsTimeSeriesIdentifierReducer;
@@ -25,12 +28,16 @@ import org.opendcs.utils.sql.SqlQueries;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.util.lookup.ServiceProviders;
 
+import decodes.cwms.CwmsTsId;
 import decodes.db.DataType;
+import decodes.db.IntervalList;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.DbCompParm;
+import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
+import opendcs.opentsdb.Interval;
 
 /**
  * NOTE: this is intentionally doing no caching at this time. Current focus is simply "correctness."
@@ -41,6 +48,11 @@ import decodes.tsdb.TimeSeriesIdentifier;
 })
 public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
 {
+    @InjectDao
+    SiteDao siteDao;
+
+    @InjectDao
+    DataTypeDao dataTypeDao;
 
     private static final String TIMESERIES_IDENTIFIER_QUERY = """
         with time_series_identifier_limit(
@@ -197,8 +209,81 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     public TimeSeriesIdentifier save(DataTransaction tx, TimeSeriesIdentifier tsId)
             throws OpenDcsDataException, BadTimeSeriesException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'save'");
+        if (tsId instanceof CwmsTsId cwmsTsId)
+        {
+            return internalSaveTsId(tx, cwmsTsId);
+        }
+        else
+        {
+            throw new UnsupportedOperationException("This implementation can only save TimeSeriesIdentifiers of type " + CwmsTsId.class.getName());
+        }
+    }
+
+    private TimeSeriesIdentifier internalSaveTsId(DataTransaction tx, CwmsTsId cwmsTsId)
+            throws OpenDcsDataException, BadTimeSeriesException
+    {
+        // site check
+        final var siteId = getSiteId(tx, cwmsTsId);
+        final var dataTypeId = getDataTypeId(tx, cwmsTsId);
+        
+        final var intervalId = getIntervalCode(tx, cwmsTsId.getInterval());
+        final var durationId = getIntervalCode(tx, cwmsTsId.getDuration());
+        // interval
+
+        // duration
+
+        // storageUnits (from data presentation or what's provided)
+        // only on save? not update?
+
+        // acquire id
+
+
+        // TODO: CompDependsNotify (however no Impl yet.)
+
+        return cwmsTsId;
+    }
+
+    private DbKey getIntervalCode(DataTransaction tx, String name)
+    {
+        // ?
+
+        return null;
+    }
+
+    /**
+     * Given a TimeSeriesIdentifier, either return the SiteId or throw an exception
+     * @param tx
+     * @param cwmsTsId
+     * @return
+     * @throws OpenDcsDataException
+     * @throws BadTimeSeriesException
+     */
+    private DbKey getSiteId(DataTransaction tx, CwmsTsId cwmsTsId) throws OpenDcsDataException, BadTimeSeriesException
+    {
+        var site = cwmsTsId.getSite();
+        DbKey ret = site != null && DbKey.isNull(site.getId()) ? site.getId() : DbKey.NullKey;
+        if (DbKey.isNull(ret)) // have to lookup the site
+        {
+            var siteLookup = siteDao.getByAnySiteName(tx, site.getNameArray());
+            ret = siteLookup.map(s -> s.getId())
+                            .orElseThrow(() -> new BadTimeSeriesException(
+                                "No such site '" + cwmsTsId.getSiteName() + "' for provided time series '" + cwmsTsId.getUniqueString() +"'"
+                            ));
+        }
+        return ret;
+    }
+
+
+    private DbKey getDataTypeId(DataTransaction tx, CwmsTsId cwmsTsId) throws OpenDcsDataException, BadTimeSeriesException
+    {
+        DbKey dtId = cwmsTsId.getDataTypeId();
+        if (DbKey.isNull(dtId))
+        {
+            // NOTE: we should really let the admin configure if this is okay or if there should be fixed data types only.
+            dtId = dataTypeDao.save(tx, cwmsTsId.getDataType()).getId();
+        }
+
+        return dtId;
     }
 
     @Override
