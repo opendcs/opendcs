@@ -27,7 +27,10 @@
     "copy_for": "Berechnung {{id}} kopieren",
     "delete_for": "Berechnung {{id}} löschen",
     "cancel_for": "Bearbeitung von Berechnung {{id}} abbrechen",
-    "save_for": "Berechnung {{id}} speichern"
+    "save_for": "Berechnung {{id}} speichern",
+    "since": "Seit",
+    "until": "Bis",
+    "last_modified": "Zuletzt geändert"
   },
   "parms": {
     "title": "Parameter",

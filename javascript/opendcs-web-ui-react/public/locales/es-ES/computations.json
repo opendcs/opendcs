@@ -27,7 +27,10 @@
     "copy_for": "Copiar cálculo {{id}}",
     "delete_for": "Eliminar cálculo {{id}}",
     "cancel_for": "Cancelar edición del cálculo {{id}}",
-    "save_for": "Guardar cálculo {{id}}"
+    "save_for": "Guardar cálculo {{id}}",
+    "since": "Desde",
+    "until": "Hasta",
+    "last_modified": "Última modificación"
   },
   "parms": {
     "title": "Parámetros",

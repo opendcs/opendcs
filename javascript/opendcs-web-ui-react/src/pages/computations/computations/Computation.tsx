@@ -165,6 +165,18 @@ const requiredParmsFromAlgorithm = (algorithm?: ApiAlgorithm): ApiCompParm[] =>
       algoParmType: parm.parmType,
     }));
 
+const START_TYPES = ["No Limit", "Now -", "Calendar"] as const;
+const END_TYPES = ["No Limit", "Now", "Now +", "Now -", "Calendar"] as const;
+const INTERVALS = ["4 hour", "8 hours", "1 day"] as const;
+const COMP_START_INTERVAL_LIST = "comp-start-interval-list";
+const COMP_END_INTERVAL_LIST = "comp-end-interval-list";
+
+const toDatetimeLocal = (d: Date | undefined | null): string => {
+  if (!d) return "";
+  const dt = d instanceof Date ? d : new Date(d as unknown as string);
+  return isNaN(dt.getTime()) ? "" : dt.toISOString().slice(0, 16);
+};
+
 const assignedId = (value: number | undefined): number | undefined =>
   value !== undefined && value > 0 ? value : undefined;
 
@@ -295,8 +307,32 @@ export const Computation: React.FC<ComputationProperties> = ({
     [dispatch],
   );
 
+  const dateChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const { name, value } = event.target;
+      dispatch({
+        type: "save",
+        payload: { [name]: value ? new Date(value) : undefined },
+      });
+    },
+    [dispatch],
+  );
+
+  const startType = localComputation.effectiveStartType ?? "No Limit";
+  const endType = localComputation.effectiveEndType ?? "No Limit";
+
   return (
     <Card>
+      <datalist id={COMP_START_INTERVAL_LIST}>
+        {INTERVALS.map((i) => (
+          <option key={i} value={i} />
+        ))}
+      </datalist>
+      <datalist id={COMP_END_INTERVAL_LIST}>
+        {INTERVALS.map((i) => (
+          <option key={i} value={i} />
+        ))}
+      </datalist>
       <Card.Body>
         <Row className="g-3">
           <Col xs={12}>
@@ -414,6 +450,109 @@ export const Computation: React.FC<ComputationProperties> = ({
                     />
                   </Col>
                 </FormGroup>
+                <FormGroup as={Row} className="mb-3">
+                  <Form.Label column sm={3} htmlFor="effectiveStartType">
+                    {t("computations:editor.since")}
+                  </Form.Label>
+                  <Col sm={9} className="d-flex gap-2">
+                    <Form.Select
+                      id="effectiveStartType"
+                      name="effectiveStartType"
+                      disabled={!edit}
+                      value={startType}
+                      onChange={selectChange}
+                      style={{ maxWidth: "9rem" }}
+                    >
+                      {START_TYPES.map((v) => (
+                        <option key={v} value={v}>
+                          {v}
+                        </option>
+                      ))}
+                    </Form.Select>
+                    {startType === "Now -" && (
+                      <Form.Control
+                        key={`start-interval-${startType}`}
+                        type="text"
+                        name="effectiveStartInterval"
+                        list={COMP_START_INTERVAL_LIST}
+                        readOnly={!edit}
+                        defaultValue={localComputation.effectiveStartInterval ?? ""}
+                        onChange={inputChange}
+                      />
+                    )}
+                    {startType === "Calendar" && (
+                      <Form.Control
+                        key={`start-date-${startType}`}
+                        type="datetime-local"
+                        name="effectiveStartDate"
+                        readOnly={!edit}
+                        defaultValue={toDatetimeLocal(
+                          localComputation.effectiveStartDate,
+                        )}
+                        onChange={dateChange}
+                      />
+                    )}
+                  </Col>
+                </FormGroup>
+                <FormGroup as={Row} className="mb-3">
+                  <Form.Label column sm={3} htmlFor="effectiveEndType">
+                    {t("computations:editor.until")}
+                  </Form.Label>
+                  <Col sm={9} className="d-flex gap-2">
+                    <Form.Select
+                      id="effectiveEndType"
+                      name="effectiveEndType"
+                      disabled={!edit}
+                      value={endType}
+                      onChange={selectChange}
+                      style={{ maxWidth: "9rem" }}
+                    >
+                      {END_TYPES.map((v) => (
+                        <option key={v} value={v}>
+                          {v}
+                        </option>
+                      ))}
+                    </Form.Select>
+                    {(endType === "Now +" || endType === "Now -") && (
+                      <Form.Control
+                        key={`end-interval-${endType}`}
+                        type="text"
+                        name="effectiveEndInterval"
+                        list={COMP_END_INTERVAL_LIST}
+                        readOnly={!edit}
+                        defaultValue={localComputation.effectiveEndInterval ?? ""}
+                        onChange={inputChange}
+                      />
+                    )}
+                    {endType === "Calendar" && (
+                      <Form.Control
+                        key={`end-date-${endType}`}
+                        type="datetime-local"
+                        name="effectiveEndDate"
+                        readOnly={!edit}
+                        defaultValue={toDatetimeLocal(
+                          localComputation.effectiveEndDate,
+                        )}
+                        onChange={dateChange}
+                      />
+                    )}
+                  </Col>
+                </FormGroup>
+                {localComputation.lastModified && (
+                  <FormGroup as={Row} className="mb-3">
+                    <Form.Label column sm={3} htmlFor="lastModified">
+                      {t("computations:editor.last_modified")}
+                    </Form.Label>
+                    <Col sm={9}>
+                      <Form.Control
+                        plaintext
+                        readOnly
+                        id="lastModified"
+                        value={new Date(localComputation.lastModified).toLocaleString()}
+                      />
+                    </Col>
+                  </FormGroup>
+                )}
               </Col>
               <Col>
                 <FormGroup as={Row} className="mb-3">
