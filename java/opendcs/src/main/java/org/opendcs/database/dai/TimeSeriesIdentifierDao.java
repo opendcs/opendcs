@@ -108,7 +108,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
      * @param offset
      * @return
      */
-    List<? extends TimeSeriesIdentifier> getAll(DataTransaction tx, int limit, int offset);
+    List<? extends TimeSeriesIdentifier> getAll(DataTransaction tx, int limit, int offset) throws OpenDcsDataException;
 
     /**
      * Construct a new {@see TimeSeriesIdentifier} object appropriate for this DB.
