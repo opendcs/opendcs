@@ -32,12 +32,12 @@ import decodes.db.PlatformSensor;
 import ilex.util.TextUtil;
 import ilex.var.TimedVariable;
 import ilex.var.Variable;
-import ktarbet.usgs.waterdata.DailyValue;
-import ktarbet.usgs.waterdata.InstantaneousValue;
-import ktarbet.usgs.waterdata.TimeSeriesFilter;
-import ktarbet.usgs.waterdata.TimeSeriesMetadata;
-import ktarbet.usgs.waterdata.TimeSeries;
-import ktarbet.usgs.waterdata.UsgsWaterDataApi;
+import org.opendcs.usgs.waterdata.DailyValue;
+import org.opendcs.usgs.waterdata.InstantaneousValue;
+import org.opendcs.usgs.waterdata.TimeSeriesFilter;
+import org.opendcs.usgs.waterdata.TimeSeriesMetadata;
+import org.opendcs.usgs.waterdata.TimeSeries;
+import org.opendcs.usgs.waterdata.UsgsWaterDataApi;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
