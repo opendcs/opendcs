@@ -547,8 +547,8 @@ export const Computation: React.FC<ComputationProperties> = ({
                   </Col>
                 </FormGroup>
                 <FormGroup as={Row} className="mb-3">
-                  <Form.Label column sm={3} htmlFor="since-method">
-                    {t("computations:editor.since")}
+                  <Form.Label column sm={3} htmlFor="effective-start-method">
+                    {t("computations:editor.effective_start")}
                   </Form.Label>
                   <Col sm={9}>
                     <SinceUntilEditor
@@ -557,9 +557,9 @@ export const Computation: React.FC<ComputationProperties> = ({
                       edit={edit}
                       onChange={handleSinceChange}
                       allowNoLimit
-                      idPrefix="since"
+                      idPrefix="effective-start"
                       labels={{
-                        method: t("computations:editor.since"),
+                        method: t("computations:editor.effective_start"),
                         noLimit: t("computations:editor.no_limit"),
                         now: t("computations:editor.now"),
                         nowMinus: t("computations:editor.now_minus"),
@@ -570,8 +570,8 @@ export const Computation: React.FC<ComputationProperties> = ({
                   </Col>
                 </FormGroup>
                 <FormGroup as={Row} className="mb-3">
-                  <Form.Label column sm={3} htmlFor="until-method">
-                    {t("computations:editor.until")}
+                  <Form.Label column sm={3} htmlFor="effective-end-method">
+                    {t("computations:editor.effective_end")}
                   </Form.Label>
                   <Col sm={9}>
                     <SinceUntilEditor
@@ -580,9 +580,9 @@ export const Computation: React.FC<ComputationProperties> = ({
                       edit={edit}
                       onChange={handleUntilChange}
                       allowNoLimit
-                      idPrefix="until"
+                      idPrefix="effective-end"
                       labels={{
-                        method: t("computations:editor.until"),
+                        method: t("computations:editor.effective_end"),
                         noLimit: t("computations:editor.no_limit"),
                         now: t("computations:editor.now"),
                         nowMinus: t("computations:editor.now_minus"),
