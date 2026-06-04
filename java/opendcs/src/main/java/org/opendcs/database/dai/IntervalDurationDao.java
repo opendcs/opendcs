@@ -19,11 +19,11 @@ import opendcs.opentsdb.Interval;
  * An Interval is the time between two samples.
  * The duration is a window over which data was aggregated.
  * 
- * Thus this interace is called IntervalDurationDao, as it is rare the usage
+ * Thus this interface is called IntervalDurationDao, as it is rare the usage
  * would ever need one but not the other.
  * 
- * Unfortunately, some implementations do no distinguish between the two.
- * This interface does, if you're system does not, share logic appropriately.
+ * Unfortunately, some implementations do not distinguish between the two.
+ * This interface does, if your system does not, share logic appropriately.
  */
 public interface IntervalDurationDao extends OpenDcsDao
 {

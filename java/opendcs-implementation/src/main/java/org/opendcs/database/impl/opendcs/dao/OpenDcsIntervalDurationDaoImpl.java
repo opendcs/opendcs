@@ -104,7 +104,7 @@ public class OpenDcsIntervalDurationDaoImpl implements IntervalDurationDao
             var existing = findIntervalByName(tx, interval.getName());
             if (existing.isPresent())
             {
-                // If there's an existing app with this name, we'll just assume the provided id, if any, was in error
+                // If there's an existing interval with this name, we'll just assume the provided id, if any, was in error
                 id = existing.get().getKey();
                 log.trace("""
                     Using ID from existing Interval, id={}, that was found. Provided ID was {}.
