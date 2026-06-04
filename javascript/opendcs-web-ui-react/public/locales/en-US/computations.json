@@ -30,7 +30,12 @@
     "save_for": "Save computation {{id}}",
     "since": "Since",
     "until": "Until",
-    "last_modified": "Last Modified"
+    "last_modified": "Last Modified",
+    "no_limit": "No Limit",
+    "now": "Now",
+    "now_minus": "Now −",
+    "calendar": "Calendar",
+    "interval": "Interval"
   },
   "parms": {
     "title": "Parameters",

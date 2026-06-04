@@ -28,6 +28,13 @@ import { Save, X } from "react-bootstrap-icons";
 import { ComputationReducer } from "./ComputationReducer";
 import { ComputationParamsTable } from "./ComputationParamsTable";
 import { AlgorithmSelectModal } from "./AlgorithmSelectModal";
+import SinceUntilEditor from "../../../components/controls/SinceUntilEditor";
+import {
+  isNow,
+  parseAbsolute,
+  parseNowMinus,
+  formatAbsolute,
+} from "../../../components/controls/idTime";
 
 export type UiComputation = Partial<ApiComputation>;
 
@@ -165,16 +172,104 @@ const requiredParmsFromAlgorithm = (algorithm?: ApiAlgorithm): ApiCompParm[] =>
       algoParmType: parm.parmType,
     }));
 
-const START_TYPES = ["No Limit", "Now -", "Calendar"] as const;
-const END_TYPES = ["No Limit", "Now", "Now +", "Now -", "Calendar"] as const;
-const INTERVALS = ["4 hour", "8 hours", "1 day"] as const;
-const COMP_START_INTERVAL_LIST = "comp-start-interval-list";
-const COMP_END_INTERVAL_LIST = "comp-end-interval-list";
+/** Convert the three API effective-time fields into the string format SinceUntilEditor uses. */
+const apiTimeToEditorValue = (
+  type: string | undefined,
+  date: Date | undefined | null,
+  interval: string | undefined,
+): string | undefined => {
+  switch (type) {
+    case "Now":
+      return "now";
+    case "Now -":
+      return interval ? `now - ${interval}` : undefined;
+    case "Calendar": {
+      if (!date) return undefined;
+      const d = date instanceof Date ? date : new Date(date as unknown as string);
+      return isNaN(d.getTime()) ? undefined : formatAbsolute(d);
+    }
+    default:
+      return undefined; // "No Limit" or unset → empty → editor shows No Limit
+  }
+};
 
-const toDatetimeLocal = (d: Date | undefined | null): string => {
-  if (!d) return "";
-  const dt = d instanceof Date ? d : new Date(d as unknown as string);
-  return isNaN(dt.getTime()) ? "" : dt.toISOString().slice(0, 16);
+/** Parse SinceUntilEditor's emitted string back into the three API fields. */
+const editorValueToStartFields = (
+  value: string,
+): Pick<
+  ApiComputation,
+  "effectiveStartType" | "effectiveStartDate" | "effectiveStartInterval"
+> => {
+  if (!value)
+    return {
+      effectiveStartType: "No Limit",
+      effectiveStartDate: undefined,
+      effectiveStartInterval: undefined,
+    };
+  if (isNow(value))
+    return {
+      effectiveStartType: "Now",
+      effectiveStartDate: undefined,
+      effectiveStartInterval: undefined,
+    };
+  const amount = parseNowMinus(value);
+  if (amount !== undefined)
+    return {
+      effectiveStartType: "Now -",
+      effectiveStartInterval: amount,
+      effectiveStartDate: undefined,
+    };
+  const abs = parseAbsolute(value);
+  if (abs)
+    return {
+      effectiveStartType: "Calendar",
+      effectiveStartDate: abs,
+      effectiveStartInterval: undefined,
+    };
+  return {
+    effectiveStartType: "No Limit",
+    effectiveStartDate: undefined,
+    effectiveStartInterval: undefined,
+  };
+};
+
+const editorValueToEndFields = (
+  value: string,
+): Pick<
+  ApiComputation,
+  "effectiveEndType" | "effectiveEndDate" | "effectiveEndInterval"
+> => {
+  if (!value)
+    return {
+      effectiveEndType: "No Limit",
+      effectiveEndDate: undefined,
+      effectiveEndInterval: undefined,
+    };
+  if (isNow(value))
+    return {
+      effectiveEndType: "Now",
+      effectiveEndDate: undefined,
+      effectiveEndInterval: undefined,
+    };
+  const amount = parseNowMinus(value);
+  if (amount !== undefined)
+    return {
+      effectiveEndType: "Now -",
+      effectiveEndInterval: amount,
+      effectiveEndDate: undefined,
+    };
+  const abs = parseAbsolute(value);
+  if (abs)
+    return {
+      effectiveEndType: "Calendar",
+      effectiveEndDate: abs,
+      effectiveEndInterval: undefined,
+    };
+  return {
+    effectiveEndType: "No Limit",
+    effectiveEndDate: undefined,
+    effectiveEndInterval: undefined,
+  };
 };
 
 const assignedId = (value: number | undefined): number | undefined =>
@@ -307,32 +402,33 @@ export const Computation: React.FC<ComputationProperties> = ({
     [dispatch],
   );
 
-  const dateChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const { name, value } = event.target;
-      dispatch({
-        type: "save",
-        payload: { [name]: value ? new Date(value) : undefined },
-      });
+  const handleSinceChange = useCallback(
+    (value: string) => {
+      dispatch({ type: "save", payload: editorValueToStartFields(value) });
     },
     [dispatch],
   );
 
-  const startType = localComputation.effectiveStartType ?? "No Limit";
-  const endType = localComputation.effectiveEndType ?? "No Limit";
+  const handleUntilChange = useCallback(
+    (value: string) => {
+      dispatch({ type: "save", payload: editorValueToEndFields(value) });
+    },
+    [dispatch],
+  );
+
+  const sinceValue = apiTimeToEditorValue(
+    localComputation.effectiveStartType,
+    localComputation.effectiveStartDate,
+    localComputation.effectiveStartInterval,
+  );
+  const untilValue = apiTimeToEditorValue(
+    localComputation.effectiveEndType,
+    localComputation.effectiveEndDate,
+    localComputation.effectiveEndInterval,
+  );
 
   return (
     <Card>
-      <datalist id={COMP_START_INTERVAL_LIST}>
-        {INTERVALS.map((i) => (
-          <option key={i} value={i} />
-        ))}
-      </datalist>
-      <datalist id={COMP_END_INTERVAL_LIST}>
-        {INTERVALS.map((i) => (
-          <option key={i} value={i} />
-        ))}
-      </datalist>
       <Card.Body>
         <Row className="g-3">
           <Col xs={12}>
@@ -451,91 +547,49 @@ export const Computation: React.FC<ComputationProperties> = ({
                   </Col>
                 </FormGroup>
                 <FormGroup as={Row} className="mb-3">
-                  <Form.Label column sm={3} htmlFor="effectiveStartType">
+                  <Form.Label column sm={3} htmlFor="since-method">
                     {t("computations:editor.since")}
                   </Form.Label>
-                  <Col sm={9} className="d-flex gap-2">
-                    <Form.Select
-                      id="effectiveStartType"
-                      name="effectiveStartType"
-                      disabled={!edit}
-                      value={startType}
-                      onChange={selectChange}
-                      style={{ maxWidth: "9rem" }}
-                    >
-                      {START_TYPES.map((v) => (
-                        <option key={v} value={v}>
-                          {v}
-                        </option>
-                      ))}
-                    </Form.Select>
-                    {startType === "Now -" && (
-                      <Form.Control
-                        key={`start-interval-${startType}`}
-                        type="text"
-                        name="effectiveStartInterval"
-                        list={COMP_START_INTERVAL_LIST}
-                        readOnly={!edit}
-                        defaultValue={localComputation.effectiveStartInterval ?? ""}
-                        onChange={inputChange}
-                      />
-                    )}
-                    {startType === "Calendar" && (
-                      <Form.Control
-                        key={`start-date-${startType}`}
-                        type="datetime-local"
-                        name="effectiveStartDate"
-                        readOnly={!edit}
-                        defaultValue={toDatetimeLocal(
-                          localComputation.effectiveStartDate,
-                        )}
-                        onChange={dateChange}
-                      />
-                    )}
+                  <Col sm={9}>
+                    <SinceUntilEditor
+                      kind="since"
+                      value={sinceValue}
+                      edit={edit}
+                      onChange={handleSinceChange}
+                      allowNoLimit
+                      idPrefix="since"
+                      labels={{
+                        method: t("computations:editor.since"),
+                        noLimit: t("computations:editor.no_limit"),
+                        now: t("computations:editor.now"),
+                        nowMinus: t("computations:editor.now_minus"),
+                        amount: t("computations:editor.interval"),
+                        calendar: t("computations:editor.calendar"),
+                      }}
+                    />
                   </Col>
                 </FormGroup>
                 <FormGroup as={Row} className="mb-3">
-                  <Form.Label column sm={3} htmlFor="effectiveEndType">
+                  <Form.Label column sm={3} htmlFor="until-method">
                     {t("computations:editor.until")}
                   </Form.Label>
-                  <Col sm={9} className="d-flex gap-2">
-                    <Form.Select
-                      id="effectiveEndType"
-                      name="effectiveEndType"
-                      disabled={!edit}
-                      value={endType}
-                      onChange={selectChange}
-                      style={{ maxWidth: "9rem" }}
-                    >
-                      {END_TYPES.map((v) => (
-                        <option key={v} value={v}>
-                          {v}
-                        </option>
-                      ))}
-                    </Form.Select>
-                    {(endType === "Now +" || endType === "Now -") && (
-                      <Form.Control
-                        key={`end-interval-${endType}`}
-                        type="text"
-                        name="effectiveEndInterval"
-                        list={COMP_END_INTERVAL_LIST}
-                        readOnly={!edit}
-                        defaultValue={localComputation.effectiveEndInterval ?? ""}
-                        onChange={inputChange}
-                      />
-                    )}
-                    {endType === "Calendar" && (
-                      <Form.Control
-                        key={`end-date-${endType}`}
-                        type="datetime-local"
-                        name="effectiveEndDate"
-                        readOnly={!edit}
-                        defaultValue={toDatetimeLocal(
-                          localComputation.effectiveEndDate,
-                        )}
-                        onChange={dateChange}
-                      />
-                    )}
+                  <Col sm={9}>
+                    <SinceUntilEditor
+                      kind="until"
+                      value={untilValue}
+                      edit={edit}
+                      onChange={handleUntilChange}
+                      allowNoLimit
+                      idPrefix="until"
+                      labels={{
+                        method: t("computations:editor.until"),
+                        noLimit: t("computations:editor.no_limit"),
+                        now: t("computations:editor.now"),
+                        nowMinus: t("computations:editor.now_minus"),
+                        amount: t("computations:editor.interval"),
+                        calendar: t("computations:editor.calendar"),
+                      }}
+                    />
                   </Col>
                 </FormGroup>
                 {localComputation.lastModified && (

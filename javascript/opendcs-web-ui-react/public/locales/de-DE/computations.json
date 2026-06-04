@@ -30,7 +30,12 @@
     "save_for": "Berechnung {{id}} speichern",
     "since": "Seit",
     "until": "Bis",
-    "last_modified": "Zuletzt geändert"
+    "last_modified": "Zuletzt geändert",
+    "no_limit": "Kein Limit",
+    "now": "Jetzt",
+    "now_minus": "Jetzt −",
+    "calendar": "Kalender",
+    "interval": "Intervall"
   },
   "parms": {
     "title": "Parameter",
