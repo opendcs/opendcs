@@ -14,6 +14,8 @@ import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlQueries;
+import org.openide.util.lookup.ServiceProvider;
+import org.openide.util.lookup.ServiceProviders;
 import org.slf4j.Logger;
 
 import decodes.db.DatabaseException;
@@ -22,7 +24,12 @@ import decodes.sql.KeyGenerator;
 import decodes.tsdb.IntervalCodes;
 import opendcs.opentsdb.Interval;
 
-public class IntervalDurationDaoImpl implements IntervalDurationDao
+@ServiceProviders({
+    @ServiceProvider(service = IntervalDurationDao.class, path = "dao/OpenDCS-Postgres"),
+    @ServiceProvider(service = IntervalDurationDao.class, path = "dao/OpenDCS-Oracle"),
+    @ServiceProvider(service = IntervalDurationDao.class, path = "dao/OPENTSDB")
+})
+public class OpenDcsIntervalDurationDaoImpl implements IntervalDurationDao
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
@@ -39,7 +46,7 @@ public class IntervalDurationDaoImpl implements IntervalDurationDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         
         try (var query = handle.createQuery(SELECT_INTERVAL)
-                               .define(SqlQueries.WHERE_CLAUSE, " name = :name ")
+                               .define(SqlQueries.WHERE_CLAUSE, " where name = :name ")
                              )
         {
             return query.bind(GenericColumns.NAME, name)
@@ -57,7 +64,7 @@ public class IntervalDurationDaoImpl implements IntervalDurationDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         
         try (var query = handle.createQuery(SELECT_INTERVAL)
-                               .define(SqlQueries.WHERE_CLAUSE, " interval_id = :id ")
+                               .define(SqlQueries.WHERE_CLAUSE, " where interval_id = :id ")
                              )
         {
             return query.bind(GenericColumns.ID, id)
@@ -78,7 +85,10 @@ public class IntervalDurationDaoImpl implements IntervalDurationDao
             using (select :id id, :name name, :cal_constant cal_constant, :cal_multiplier cal_multiplier <dual>) input
             on (ic.interval_id = input.id)
             when matched then
-                update name = input.name, cal_constant = input.cal_constant, cal_multiplier = input.cal_multiplier
+                update set 
+                    name = input.name,
+                    cal_constant = input.cal_constant,
+                    cal_multiplier = input.cal_multiplier
             when not matched then
                 insert (interval_id, name, cal_constant, cal_multiplier)
                 values (input.id, input.name, input.cal_constant, input.cal_multiplier)
@@ -143,6 +153,23 @@ public class IntervalDurationDaoImpl implements IntervalDurationDao
     public List<Interval> getAllDurations(DataTransaction tx) throws OpenDcsDataException
     {
         return getAllIntervals(tx);
+    }
+
+    @Override
+    public void deleteInterval(DataTransaction tx, DbKey id) throws OpenDcsDataException
+    {
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        try (var deleteQuery = handle.createUpdate("delete from interval_code where interval_id = :id"))
+        {
+            deleteQuery.bind(GenericColumns.ID, id).execute();
+        }
+    }
+
+    @Override
+    public void deleteDuration(DataTransaction tx, DbKey id) throws OpenDcsDataException
+    {
+        deleteInterval(tx, id);
     }
     
 }

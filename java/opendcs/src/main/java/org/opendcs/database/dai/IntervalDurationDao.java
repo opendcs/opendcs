@@ -50,6 +50,11 @@ public interface IntervalDurationDao extends OpenDcsDao
      */
     Interval saveDuration(DataTransaction tx, Interval interval) throws OpenDcsDataException;
 
+
+    void deleteInterval(DataTransaction tx, DbKey id) throws OpenDcsDataException;
+
+    void deleteDuration(DataTransaction tx, DbKey id) throws OpenDcsDataException;
+
     List<Interval> getAllIntervals(DataTransaction tx) throws OpenDcsDataException;
 
     List<Interval> getAllDurations(DataTransaction tx) throws OpenDcsDataException;
