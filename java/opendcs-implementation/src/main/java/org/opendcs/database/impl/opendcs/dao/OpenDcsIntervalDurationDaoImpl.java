@@ -40,7 +40,7 @@ public class OpenDcsIntervalDurationDaoImpl implements IntervalDurationDao
             """;
 
     @Override
-    public Optional<Interval> findByName(DataTransaction tx, String name) throws OpenDcsDataException
+    public Optional<Interval> findIntervalByName(DataTransaction tx, String name) throws OpenDcsDataException
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
@@ -58,7 +58,7 @@ public class OpenDcsIntervalDurationDaoImpl implements IntervalDurationDao
     }
 
     @Override
-    public Optional<Interval> findById(DataTransaction tx, DbKey id) throws OpenDcsDataException
+    public Optional<Interval> findIntervalById(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
@@ -101,7 +101,7 @@ public class OpenDcsIntervalDurationDaoImpl implements IntervalDurationDao
                                .define("dual", ctx.getDatabase() == DatabaseEngine.ORACLE ? " from dual " : ""))
         {
             DbKey id = interval.getKey();
-            var existing = findByName(tx, interval.getName());
+            var existing = findIntervalByName(tx, interval.getName());
             if (existing.isPresent())
             {
                 // If there's an existing app with this name, we'll just assume the provided id, if any, was in error
@@ -119,7 +119,7 @@ public class OpenDcsIntervalDurationDaoImpl implements IntervalDurationDao
                  .bind("cal_multiplier", interval.getCalMultiplier())
                  .execute();
 
-            return findById(tx, bindKey).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Interval we just saved."));
+            return findIntervalById(tx, bindKey).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Interval we just saved."));
         }
         catch (DatabaseException ex)
         {
@@ -170,6 +170,18 @@ public class OpenDcsIntervalDurationDaoImpl implements IntervalDurationDao
     public void deleteDuration(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
         deleteInterval(tx, id);
+    }
+
+    @Override
+    public Optional<Interval> findDurationById(DataTransaction tx, DbKey id) throws OpenDcsDataException
+    {
+        return findIntervalById(tx, id);
+    }
+
+    @Override
+    public Optional<Interval> findDurationByName(DataTransaction tx, String name) throws OpenDcsDataException
+    {
+        return findIntervalByName(tx, name);
     }
     
 }

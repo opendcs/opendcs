@@ -33,15 +33,15 @@ class OpenDcsIntervalDurationDaoTestIT extends AppTestBase
         final var dao = db.getDao(IntervalDurationDao.class).orElseThrow();
         try (var tx = db.newTransaction())
         {
-            var zero = dao.findByName(tx, "0")
+            var zero = dao.findIntervalByName(tx, "0")
                           .orElseGet(() -> fail("No zero interval available"));
             assertEquals(Calendar.MINUTE, zero.getCalConstant());
             assertEquals(0, zero.getCalMultiplier());
-            var irreg = dao.findByName(tx, "irregular")
+            var irreg = dao.findDurationByName(tx, "irregular")
                            .orElseGet(() -> fail("no irregular interval available"));
             assertEquals(Calendar.MINUTE, irreg.getCalConstant());
             assertEquals(0, irreg.getCalMultiplier());
-            var hour1 = dao.findByName(tx, "1Hour")
+            var hour1 = dao.findIntervalByName(tx, "1Hour")
                            .orElseGet(() -> fail("No 1Hour interval available."));
 
             assertEquals(Calendar.HOUR_OF_DAY, hour1.getCalConstant());
@@ -69,7 +69,7 @@ class OpenDcsIntervalDurationDaoTestIT extends AppTestBase
 
             dao.deleteInterval(tx, fiveWeeksOut.getKey());
 
-            var fiveWeeksOut2 = dao.findById(tx, fiveWeeksOut.getKey());
+            var fiveWeeksOut2 = dao.findIntervalById(tx, fiveWeeksOut.getKey());
             assertFalse(fiveWeeksOut2.isPresent());
         }
     }

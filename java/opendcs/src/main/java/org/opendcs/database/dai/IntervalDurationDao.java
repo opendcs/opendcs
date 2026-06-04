@@ -28,9 +28,13 @@ import opendcs.opentsdb.Interval;
 public interface IntervalDurationDao extends OpenDcsDao
 {
     
-    Optional<Interval> findByName(DataTransaction tx, String name) throws OpenDcsDataException;
+    Optional<Interval> findIntervalByName(DataTransaction tx, String name) throws OpenDcsDataException;
 
-    Optional<Interval> findById(DataTransaction tx, DbKey id) throws OpenDcsDataException;
+    Optional<Interval> findIntervalById(DataTransaction tx, DbKey id) throws OpenDcsDataException;
+
+    Optional<Interval> findDurationByName(DataTransaction tx, String name) throws OpenDcsDataException;
+
+    Optional<Interval> findDurationById(DataTransaction tx, DbKey id) throws OpenDcsDataException;
 
     /**
      * Save an interval to this database
