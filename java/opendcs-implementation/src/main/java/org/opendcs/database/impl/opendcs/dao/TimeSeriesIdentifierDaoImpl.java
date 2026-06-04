@@ -13,6 +13,7 @@ import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.DataTypeDao;
+import org.opendcs.database.dai.IntervalDurationDao;
 import org.opendcs.database.dai.SiteDao;
 import org.opendcs.database.dai.TimeSeriesIdentifierDao;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.OpenDcsTimeSeriesIdentifierMapper;
@@ -30,11 +31,9 @@ import org.openide.util.lookup.ServiceProviders;
 
 import decodes.cwms.CwmsTsId;
 import decodes.db.DataType;
-import decodes.db.IntervalList;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.DbCompParm;
-import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
 import opendcs.opentsdb.Interval;
@@ -53,6 +52,9 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
 
     @InjectDao
     DataTypeDao dataTypeDao;
+
+    @InjectDao
+    IntervalDurationDao intervalDurationDao;
 
     private static final String TIMESERIES_IDENTIFIER_QUERY = """
         with time_series_identifier_limit(
@@ -222,15 +224,14 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     private TimeSeriesIdentifier internalSaveTsId(DataTransaction tx, CwmsTsId cwmsTsId)
             throws OpenDcsDataException, BadTimeSeriesException
     {
-        // site check
+        final var existingId = getByUniqueString(tx, cwmsTsId.getUniqueString())
+                                    .map(tsId -> tsId.getDataTypeId())
+                                    .orElse(DbKey.NullKey);
         final var siteId = getSiteId(tx, cwmsTsId);
         final var dataTypeId = getDataTypeId(tx, cwmsTsId);
         
-        final var intervalId = getIntervalCode(tx, cwmsTsId.getInterval());
-        final var durationId = getIntervalCode(tx, cwmsTsId.getDuration());
-        // interval
-
-        // duration
+        final var intervalId = getIntervalId(tx, cwmsTsId.getInterval());
+        final var durationId = getDurationId(tx, cwmsTsId.getDuration());
 
         // storageUnits (from data presentation or what's provided)
         // only on save? not update?
@@ -243,11 +244,18 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         return cwmsTsId;
     }
 
-    private DbKey getIntervalCode(DataTransaction tx, String name)
+    private DbKey getIntervalId(DataTransaction tx, String name) throws OpenDcsDataException
     {
-        // ?
+        return intervalDurationDao.findIntervalByName(tx, name)
+                                  .map(Interval::getKey)
+                                  .orElseThrow(() -> new OpenDcsDataException("No interval named " + name + " is configured in this database."));
+    }
 
-        return null;
+    private DbKey getDurationId(DataTransaction tx, String name) throws OpenDcsDataException
+    {
+        return intervalDurationDao.findDurationByName(tx, name)
+                                  .map(Interval::getKey)
+                                  .orElseThrow(() -> new OpenDcsDataException("No Duration named " + name + " is configured in this database."));
     }
 
     /**
