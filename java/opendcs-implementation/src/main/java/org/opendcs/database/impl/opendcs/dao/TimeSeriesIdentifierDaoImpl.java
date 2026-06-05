@@ -14,6 +14,7 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.DataTypeDao;
 import org.opendcs.database.dai.IntervalDurationDao;
+import org.opendcs.database.dai.PresentationGroupDao;
 import org.opendcs.database.dai.SiteDao;
 import org.opendcs.database.dai.TimeSeriesIdentifierDao;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.OpenDcsTimeSeriesIdentifierMapper;
@@ -36,6 +37,7 @@ import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.DbCompParm;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
+import decodes.util.DecodesSettings;
 import opendcs.opentsdb.Interval;
 
 /**
@@ -55,6 +57,9 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
 
     @InjectDao
     IntervalDurationDao intervalDurationDao;
+
+    @InjectDao
+    PresentationGroupDao presentationGroupDao;
 
     private static final String TIMESERIES_IDENTIFIER_QUERY = """
         with time_series_identifier_limit(
@@ -229,10 +234,11 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
                                     .orElse(DbKey.NullKey);
         final var siteId = getSiteId(tx, cwmsTsId);
         final var dataTypeId = getDataTypeId(tx, cwmsTsId);
-        
+
         final var intervalId = getIntervalId(tx, cwmsTsId.getInterval());
         final var durationId = getDurationId(tx, cwmsTsId.getDuration());
 
+        final var storageUnits = getStorageUnits(tx, cwmsTsId);
         // storageUnits (from data presentation or what's provided)
         // only on save? not update?
 
@@ -242,6 +248,18 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         // TODO: CompDependsNotify (however no Impl yet.)
 
         return cwmsTsId;
+    }
+
+    private String getStorageUnits(DataTransaction tx, CwmsTsId cwmsTsId) throws OpenDcsDataException
+    {
+        var dataType = cwmsTsId.getDataType();
+        var setUnits = cwmsTsId.getStorageUnits();
+
+        var settings = tx.getContext().getSettings(DecodesSettings.class).orElseThrow();
+        
+
+
+        return null;
     }
 
     private DbKey getIntervalId(DataTransaction tx, String name) throws OpenDcsDataException
