@@ -20,6 +20,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import org.jdbi.v3.core.Jdbi;
@@ -81,8 +82,8 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
             return new JdbiTransaction(Jdbi.open(db.getConnection())
                                            .registerArgument(new DatabaseKeyArgumentFactory())
                                            .registerColumnMapper(new DatabaseKeyColumnMapper()),
-                                     new TransactionContextImpl(db.getKeyGenerator(), DecodesSettings.instance(),
-                                         db.isOracle() ? DatabaseEngine.ORACLE : DatabaseEngine.POSTGRES, null));
+                                     new TransactionContextImpl(db.getKeyGenerator(), Map.of(DecodesSettings.class, DecodesSettings.instance()),
+                                         db.isOracle() ? DatabaseEngine.ORACLE : DatabaseEngine.POSTGRES));
         }
         catch (SQLException ex)
         {

@@ -1,10 +1,12 @@
 package decodes.cwms;
 
+import java.util.Map;
 import java.util.Properties;
 
 import javax.sql.DataSource;
 
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.DatabaseQuerySettings;
 import org.opendcs.database.SimpleOpenDcsDatabaseWrapper;
 import org.opendcs.spi.database.DatabaseProvider;
 
@@ -57,7 +59,7 @@ public class CwmsDatabaseProvider implements DatabaseProvider
             Database.setDb(decodesDb); // the CwmsSqlDatabaseIO constructor calls into the Database instance to verify things.
             decodesDb.setDbIo(new CwmsSqlDatabaseIO(dataSource, settings));
             CwmsTimeSeriesDb tsdb = new CwmsTimeSeriesDb(null, dataSource, settings);
-            var db = new SimpleOpenDcsDatabaseWrapper(settings, decodesDb, tsdb, dataSource, new CwmsDatabaseQuerySettings());
+            var db = new SimpleOpenDcsDatabaseWrapper(Map.of(DecodesSettings.class, settings, DatabaseQuerySettings.class, new CwmsDatabaseQuerySettings()), decodesDb, tsdb, dataSource);
             ((SqlDatabaseIO)decodesDb.getDbIo()).setDcsDatabase(db);
             decodesDb.init(settings);
             tsdb.setDcsDatabase(db);

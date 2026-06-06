@@ -59,23 +59,24 @@ import decodes.util.DecodesSettings;
 public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
-    protected final DecodesSettings settings;
+    //protected final DecodesSettings settings;
     private final Database decodesDb;
     private final TimeSeriesDb timeSeriesDb;
     protected final DataSource dataSource;
     protected final Jdbi jdbi;
     protected final DatabaseEngine dbEngine;
     protected final KeyGenerator keyGenerator;
-    protected final DatabaseQuerySettings querySettings;
+    //protected final DatabaseQuerySettings querySettings;
+    protected final Map<Class<? extends OpenDcsSettings>, OpenDcsSettings> settingsMap = new HashMap<>();
     private final Map<Class<? extends OpenDcsDao>, DaoWrapper<? extends OpenDcsDao>> daoMap = new HashMap<>();
 
-    public SimpleOpenDcsDatabaseWrapper(DecodesSettings settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource, DatabaseQuerySettings querySettings)
+    public SimpleOpenDcsDatabaseWrapper(
+            Map<Class<? extends OpenDcsSettings>, OpenDcsSettings> settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource)
     {
-        this.settings = settings;
+        this.settingsMap.putAll(settings);
         this.decodesDb = decodesDb;
         this.timeSeriesDb = timeSeriesDb;
         this.dataSource = dataSource;
-        this.querySettings = querySettings;
         this.jdbi = Jdbi.create(dataSource);
         jdbi.registerArgument(new DatabaseKeyArgumentFactory())
             .registerColumnMapper(new DatabaseKeyColumnMapper())
@@ -98,13 +99,14 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
             throw new IllegalStateException("Unable to determine database type", ex);
         }
 
+        DecodesSettings decodesSettings = (DecodesSettings)settingsMap.get(DecodesSettings.class);
         try
         {
-            keyGenerator = KeyGeneratorFactory.makeKeyGenerator(settings.sqlKeyGenerator);
+            keyGenerator = KeyGeneratorFactory.makeKeyGenerator(decodesSettings.sqlKeyGenerator);
         }
         catch (DatabaseException ex)
         {
-            throw new IllegalStateException("Unable to create key generator of type '" + settings.sqlKeyGenerator + "'", ex);
+            throw new IllegalStateException("Unable to create key generator of type '" + decodesSettings.sqlKeyGenerator + "'", ex);
         }
     }
 
@@ -217,7 +219,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
      */
     private <T extends OpenDcsDao> Optional<DaoWrapper<T>> fromLookup(Class<T> dao)
     {
-        final String impl = this.settings.editDatabaseType;
+        final String impl = ((DecodesSettings)this.settingsMap.get(DecodesSettings.class)).editDatabaseType;
         final var implLookup = Lookups.forPath("dao/"+impl);
         var instance = implLookup.lookup(dao);
         if (instance == null)
@@ -294,7 +296,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
             // This DataTransaction is auto closable and handles the closing of the
             // Jdbi Handle instance.
             return new JdbiTransaction(jdbi.open().begin(),
-                                       new TransactionContextImpl(keyGenerator, settings, dbEngine, querySettings)); // NOSONAR
+                                       new TransactionContextImpl(keyGenerator, settingsMap, dbEngine)); // NOSONAR
         }
         catch (JdbiException ex)
         {
@@ -333,18 +335,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     @Override
     public <T extends OpenDcsSettings> Optional<T> getSettings(Class<T> settingsClass)
     {
-        if (DecodesSettings.class.equals(settingsClass))
-        {
-            return Optional.of((T)settings);
-        }
-        else if(DatabaseQuerySettings.class.equals(settingsClass))
-        {
-            return Optional.ofNullable((T)querySettings);
-        }
-        else
-        {
-            return Optional.empty();
-        }
+        return Optional.ofNullable((T)settingsMap.get(settingsClass));
     }
 
     @Override

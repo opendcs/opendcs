@@ -1,5 +1,6 @@
 package opendcs.opentsdb;
 
+import java.util.Map;
 import java.util.Properties;
 
 import javax.sql.DataSource;
@@ -57,7 +58,7 @@ public class OpenTsdbProvider implements DatabaseProvider
     {
         Database decodesDb = getDecodesDatabase(dataSource, settings);
         OpenTsdb tsDb = new OpenTsdb(appName, dataSource, settings);
-        var db = new SimpleOpenDcsDatabaseWrapper(settings, decodesDb, tsDb, dataSource, DatabaseQuerySettings.DEFAULT_SETTINGS);
+        var db = new SimpleOpenDcsDatabaseWrapper(Map.of(DecodesSettings.class, settings, DatabaseQuerySettings.class, DatabaseQuerySettings.DEFAULT_SETTINGS), decodesDb, tsDb, dataSource);
         tsDb.setDcsDatabase(db);
         Database.setDb(decodesDb);
         try
