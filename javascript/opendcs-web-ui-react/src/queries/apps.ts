@@ -65,7 +65,11 @@ export const useSaveAppMutation = (
     mutationFn: (app: ApiLoadingApp) =>
       appApi.postApp(org, { ...app, appId: normalizeNewId(app.appId) }),
     ...options,
-    onSuccess: invalidateThenDelegate(queryClient, appKeys.all(org), options?.onSuccess),
+    onSuccess: invalidateThenDelegate(
+      queryClient,
+      appKeys.all(org),
+      options?.onSuccess,
+    ),
   });
 };
 
@@ -77,7 +81,11 @@ export const useDeleteAppMutation = (
   return useMutation({
     mutationFn: (appId: number) => appApi.deleteApp(org, appId),
     ...options,
-    onSuccess: invalidateThenDelegate(queryClient, appKeys.all(org), options?.onSuccess),
+    onSuccess: invalidateThenDelegate(
+      queryClient,
+      appKeys.all(org),
+      options?.onSuccess,
+    ),
   });
 };
 

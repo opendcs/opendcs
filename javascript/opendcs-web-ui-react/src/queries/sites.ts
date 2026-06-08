@@ -54,7 +54,11 @@ export const useSaveSiteMutation = (
   return useMutation({
     mutationFn: (site: ApiSite) => sitesApi.postsite(org, site),
     ...options,
-    onSuccess: invalidateThenDelegate(queryClient, siteKeys.all(org), options?.onSuccess),
+    onSuccess: invalidateThenDelegate(
+      queryClient,
+      siteKeys.all(org),
+      options?.onSuccess,
+    ),
   });
 };
 
@@ -66,6 +70,10 @@ export const useDeleteSiteMutation = (
   return useMutation({
     mutationFn: (siteId: number) => sitesApi.deletesite(org, siteId),
     ...options,
-    onSuccess: invalidateThenDelegate(queryClient, siteKeys.all(org), options?.onSuccess),
+    onSuccess: invalidateThenDelegate(
+      queryClient,
+      siteKeys.all(org),
+      options?.onSuccess,
+    ),
   });
 };

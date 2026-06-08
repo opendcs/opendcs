@@ -31,7 +31,9 @@ export const invalidateThenDelegate =
     queryClient: QueryClient,
     rootKey: EntityRootKey,
     onSuccess?: UseMutationOptions<TData, TError, TVariables, TContext>["onSuccess"],
-  ): NonNullable<UseMutationOptions<TData, TError, TVariables, TContext>["onSuccess"]> =>
+  ): NonNullable<
+    UseMutationOptions<TData, TError, TVariables, TContext>["onSuccess"]
+  > =>
   (...args) => {
     queryClient.invalidateQueries({ queryKey: rootKey });
     onSuccess?.(...args);
