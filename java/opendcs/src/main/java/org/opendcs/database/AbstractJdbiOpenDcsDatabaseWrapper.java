@@ -108,6 +108,7 @@ public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatab
         {
             throw new IllegalStateException("Unable to create key generator of type '" + decodesSettings.sqlKeyGenerator + "'", ex);
         }
+        initialSetup();
     }
 
     /**
