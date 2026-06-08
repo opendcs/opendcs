@@ -1,6 +1,7 @@
 package decodes.xml.jdbc;
 
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.sql.DataSource;
@@ -26,7 +27,7 @@ public final class XmlOpenDcsDatabaseWrapper extends SimpleOpenDcsDatabaseWrappe
 
     public XmlOpenDcsDatabaseWrapper(DecodesSettings settings, Database decodesDb, TimeSeriesDb tsDb, DataSource ds)
     {
-        super(settings, decodesDb, tsDb, ds, null);
+        super(Map.of(DecodesSettings.class, settings), decodesDb, tsDb, ds);
         enumCache = new DbObjectCache<>(1800_000L, false);
     }
 
@@ -51,7 +52,7 @@ public final class XmlOpenDcsDatabaseWrapper extends SimpleOpenDcsDatabaseWrappe
         try
         {
             return new SimpleTransaction(this.dataSource.getConnection(),
-                                         new TransactionContextImpl(keyGenerator, settings, dbEngine, querySettings));
+                                         new TransactionContextImpl(keyGenerator, settingsMap, dbEngine));
         }
         catch (SQLException ex)
         {
