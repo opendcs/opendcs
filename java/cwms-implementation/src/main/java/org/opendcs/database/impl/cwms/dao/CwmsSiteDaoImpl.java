@@ -101,12 +101,12 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
     {
     if (id == null)
     {
-      return Optional.empty(); 
+      return Optional.empty();
     }
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
         var officeId = ctx.getSettings(DecodesSettings.class)
                           .orElseThrow(() -> new OpenDcsDataException("DecodesSettings are not available."))
                           .CwmsOfficeId;
@@ -357,7 +357,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
         var settings = ctx.getSettings(DecodesSettings.class)
                           .orElseThrow(() -> new OpenDcsDataException("No DecodesSettings are available?"));
         final var officeId = settings.CwmsOfficeId;

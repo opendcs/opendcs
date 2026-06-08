@@ -3,12 +3,14 @@ package org.opendcs.database.api;
 
 import java.util.Optional;
 
-import org.opendcs.settings.api.OpenDcsSettings;
+import org.opendcs.settings.api.ProvidesOpenDcsSettings;
 
 /**
- * Basic interface of an "OpenDCS Database interface.""
+ * Basic interface of an "OpenDCS Database interface."
+ * Extension of {@see AbstractJdbiOpenDcsDatabaseWrapper} is recommend
+ * for integration into the baseline components.
  */
-public interface OpenDcsDatabase
+public interface OpenDcsDatabase extends ProvidesOpenDcsSettings
 {
     /**
      * Retrieve an instance of the given legacy database type.
@@ -36,18 +38,10 @@ public interface OpenDcsDatabase
     DataTransaction newTransaction() throws OpenDcsDataException;
 
     /**
-     * Retrieve Settings of a given type. All implementations must provide "DecodesSettings".
-     * Implementations may determine if a given set of settings are immutable at runtime.
-     * @param <T> Type of settings. Currently implemented is "DecodesSettings"
-     * @param settingsClass type of settings to get
-     * @return Optional&lt;T&gt; Settings if available, otherwise empty.
-     */
-    <T extends OpenDcsSettings> Optional<T> getSettings(Class<T> settingsClass);
-
-    /**
-     * Which database engine is this
+     * Which database engine (actual RDBMS) is this
      * @return
      */
-    DatabaseEngine getDatabase();
+    DatabaseEngine getDatabaseEngine();
 
+    /* settings retrieval defined by ProvidesOpenDcsSettings interface */
 }

@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.Stack;
 import java.util.Vector;
 
-import org.jdbi.v3.core.argument.Arguments;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.stringtemplate4.StringTemplateEngine;
 import org.opendcs.annotations.api.InjectDao;
@@ -78,7 +77,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                 .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
         final String insertSql = """
@@ -186,7 +185,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        var dbType = tx.getContext().getDatabase();
+        var dbType = tx.getContext().getDatabaseEngine();
 
         final String querySql = """
                 select uc.id, uc.fromunitsabbr, uc.tounitsabbr, uc.algorithm, uc.a,uc.b,uc.c,uc.d,uc.e,uc.f,

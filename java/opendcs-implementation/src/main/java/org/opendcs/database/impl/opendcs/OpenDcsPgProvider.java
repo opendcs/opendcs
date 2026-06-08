@@ -116,7 +116,7 @@ public class OpenDcsPgProvider implements MigrationProvider
     @Override
     public void createUser(Jdbi jdbi, String username, String password, List<String> roles)
     {
-        final var context = new TransactionContextImpl(null, null, DatabaseEngine.POSTGRES, DatabaseQuerySettings.DEFAULT_SETTINGS);
+        final var context = new TransactionContextImpl(null, Map.of(DatabaseQuerySettings.class, DatabaseQuerySettings.DEFAULT_SETTINGS), DatabaseEngine.POSTGRES);
         jdbi.useTransaction(h ->
         {
             var tx = new JdbiTransaction(h, context);

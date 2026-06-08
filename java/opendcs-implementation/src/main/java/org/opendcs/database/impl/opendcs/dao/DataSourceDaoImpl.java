@@ -51,7 +51,7 @@ public class DataSourceDaoImpl implements DataSourceDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             return query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
@@ -71,7 +71,7 @@ public class DataSourceDaoImpl implements DataSourceDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             return query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
@@ -91,7 +91,7 @@ public class DataSourceDaoImpl implements DataSourceDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                 .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
         final String insertSql = """
@@ -177,7 +177,7 @@ public class DataSourceDaoImpl implements DataSourceDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))

@@ -38,6 +38,7 @@ import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.IdentityProviderDao;
 import org.opendcs.database.dai.RolesDao;
+import org.opendcs.database.DatabaseQuerySettings;
 import org.opendcs.database.impl.cwms.dao.auth.CwmsIdentityProviderDaoImpl;
 import org.opendcs.database.impl.cwms.dao.auth.CwmsRolesDaoImpl;
 import org.opendcs.database.impl.cwms.jdbi.CwmsBoolean;
@@ -131,7 +132,7 @@ public class CwmsOracleProvider implements MigrationProvider
     @Override
     public void createUser(Jdbi jdbi, String username, String password, List<String> roles)
     {
-        final var context = new TransactionContextImpl(null, null, DatabaseEngine.POSTGRES, new CwmsDatabaseQuerySettings());
+        final var context = new TransactionContextImpl(null, Map.of(DatabaseQuerySettings.class, new CwmsDatabaseQuerySettings()), DatabaseEngine.POSTGRES);
         jdbi.useTransaction(h ->
         {
             var tx = new JdbiTransaction(h, context);

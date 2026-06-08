@@ -1,11 +1,12 @@
 package decodes.xml.jdbc;
 
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.sql.DataSource;
 
-import org.opendcs.database.SimpleOpenDcsDatabaseWrapper;
+import org.opendcs.database.AbstractJdbiOpenDcsDatabaseWrapper;
 import org.opendcs.database.SimpleTransaction;
 import org.opendcs.database.TransactionContextImpl;
 import org.opendcs.database.api.DataTransaction;
@@ -20,13 +21,13 @@ import decodes.util.DecodesSettings;
 import opendcs.dai.EnumDAI;
 import opendcs.dao.DbObjectCache;
 
-public final class XmlOpenDcsDatabaseWrapper extends SimpleOpenDcsDatabaseWrapper
+public final class XmlOpenDcsDatabaseWrapper extends AbstractJdbiOpenDcsDatabaseWrapper
 {
     private final DbObjectCache<DbEnum> enumCache;
 
     public XmlOpenDcsDatabaseWrapper(DecodesSettings settings, Database decodesDb, TimeSeriesDb tsDb, DataSource ds)
     {
-        super(settings, decodesDb, tsDb, ds, null);
+        super(Map.of(DecodesSettings.class, settings), decodesDb, tsDb, ds);
         enumCache = new DbObjectCache<>(1800_000L, false);
     }
 
@@ -42,7 +43,6 @@ public final class XmlOpenDcsDatabaseWrapper extends SimpleOpenDcsDatabaseWrappe
         {
             return super.getDao(dao);
         }
-        
     }
 
     @Override
@@ -51,11 +51,17 @@ public final class XmlOpenDcsDatabaseWrapper extends SimpleOpenDcsDatabaseWrappe
         try
         {
             return new SimpleTransaction(this.dataSource.getConnection(),
-                                         new TransactionContextImpl(keyGenerator, settings, dbEngine, querySettings));
+                                         new TransactionContextImpl(keyGenerator, settingsMap, dbEngine));
         }
         catch (SQLException ex)
         {
             throw new OpenDcsDataException("Unable to get JDBC Connection.", ex);
         }
+    }
+
+    @Override
+    protected void initialSetup()
+    {
+        /* do nothing */
     }
 }

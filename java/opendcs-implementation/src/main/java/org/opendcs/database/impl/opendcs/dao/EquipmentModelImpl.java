@@ -69,7 +69,7 @@ public class EquipmentModelImpl implements EquipmentModelDao
         }
     }
 
-    
+
 
 
     @Override
@@ -152,7 +152,7 @@ public class EquipmentModelImpl implements EquipmentModelDao
                     values(input.id, input.name, input.model, input.company, input.description, input.equipmentType)
                 """;
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                         .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
         var insertPropsSql = "insert into equipmentproperty(equipmentid, name, prop_value) values (:equipmentid, :name, :value)";
