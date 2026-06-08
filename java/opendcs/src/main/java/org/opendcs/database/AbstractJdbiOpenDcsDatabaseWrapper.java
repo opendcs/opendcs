@@ -71,6 +71,8 @@ public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatab
     protected AbstractJdbiOpenDcsDatabaseWrapper(
             Map<Class<? extends OpenDcsSettings>, OpenDcsSettings> settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource)
     {
+        Objects.requireNonNull(settings.get(DecodesDatabaseSettings.class), 
+                               "All implementations are required to provide a `DecodesSettings` instance.");
         this.settingsMap.putAll(settings);
         this.decodesDb = decodesDb;
         this.timeSeriesDb = timeSeriesDb;
