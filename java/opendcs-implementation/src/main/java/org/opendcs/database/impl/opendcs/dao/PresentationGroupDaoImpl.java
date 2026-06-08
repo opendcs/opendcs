@@ -101,7 +101,7 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
@@ -134,7 +134,7 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
@@ -186,7 +186,7 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
                 """;
         try (var merge = handle.createUpdate(mergeSql)
                                .define("numeric_date", numericDate)
-                               .define("dual", ctx.getDatabase() == DatabaseEngine.ORACLE ? " from dual " : ""))
+                               .define("dual", ctx.getDatabaseEngine() == DatabaseEngine.ORACLE ? " from dual " : ""))
         {
             DbKey id = group.getId();
             var existing = getByName(tx, group.groupName);
@@ -284,7 +284,7 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))

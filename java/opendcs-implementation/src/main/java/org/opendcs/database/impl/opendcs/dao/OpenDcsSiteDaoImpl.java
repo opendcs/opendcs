@@ -108,7 +108,7 @@ public class OpenDcsSiteDaoImpl implements SiteDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
         var preferredType = ctx.getSettings(DecodesSettings.class)
                               .map(ds -> ds.siteNameTypePreference)
                               .orElseGet(() -> "CWMS");
@@ -312,7 +312,7 @@ public class OpenDcsSiteDaoImpl implements SiteDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
         var preferredType = ctx.getSettings(DecodesSettings.class)
                               .map(ds -> ds.siteNameTypePreference)
                               .orElseGet(() -> "CWMS");

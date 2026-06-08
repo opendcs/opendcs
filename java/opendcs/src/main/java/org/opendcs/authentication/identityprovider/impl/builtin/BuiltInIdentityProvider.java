@@ -193,7 +193,7 @@ public final class BuiltInIdentityProvider implements IdentityProvider
                     // We should allow some control of these settings.
                     // However, the defaults are sane, it's easy to do wrong, and this PR is already large enough
                     var hashed = Password.hash(creds.password.getBytes()).addPepper().addRandomSalt().withArgon2();
-                    pwUpdate.define("dual", tx.getContext().getDatabase() == DatabaseEngine.ORACLE ? "from dual" : "")
+                    pwUpdate.define("dual", tx.getContext().getDatabaseEngine() == DatabaseEngine.ORACLE ? "from dual" : "")
                             .bind("id", user.id)
                             .bind("password", hashed.getResult())
                             .execute();

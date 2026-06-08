@@ -6,7 +6,7 @@ import java.util.Optional;
 
 import javax.sql.DataSource;
 
-import org.opendcs.database.SimpleOpenDcsDatabaseWrapper;
+import org.opendcs.database.AbstractJdbiOpenDcsDatabaseWrapper;
 import org.opendcs.database.SimpleTransaction;
 import org.opendcs.database.TransactionContextImpl;
 import org.opendcs.database.api.DataTransaction;
@@ -21,7 +21,7 @@ import decodes.util.DecodesSettings;
 import opendcs.dai.EnumDAI;
 import opendcs.dao.DbObjectCache;
 
-public final class XmlOpenDcsDatabaseWrapper extends SimpleOpenDcsDatabaseWrapper
+public final class XmlOpenDcsDatabaseWrapper extends AbstractJdbiOpenDcsDatabaseWrapper
 {
     private final DbObjectCache<DbEnum> enumCache;
 
@@ -43,7 +43,6 @@ public final class XmlOpenDcsDatabaseWrapper extends SimpleOpenDcsDatabaseWrappe
         {
             return super.getDao(dao);
         }
-        
     }
 
     @Override
@@ -58,5 +57,11 @@ public final class XmlOpenDcsDatabaseWrapper extends SimpleOpenDcsDatabaseWrappe
         {
             throw new OpenDcsDataException("Unable to get JDBC Connection.", ex);
         }
+    }
+
+    @Override
+    protected void initialSetup()
+    {
+        /* do nothing */
     }
 }

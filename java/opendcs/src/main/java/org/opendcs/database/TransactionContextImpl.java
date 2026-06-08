@@ -22,20 +22,12 @@ public class TransactionContextImpl implements TransactionContext
         this.keyGenerator = keyGenerator;
         this. settingsMap = settingsMap;
         this.databaseEngine = databaseEngine;
-        
     }
-
 
     public KeyGenerator getKeyGenerator()
     {
         return this.keyGenerator;
     }
-
-    public DatabaseEngine getDatabaseEngine()
-    {
-        return this.databaseEngine;
-    }
-
 
     @SuppressWarnings("unchecked")
     @Override
@@ -61,7 +53,7 @@ public class TransactionContextImpl implements TransactionContext
 
 
     @Override
-    public DatabaseEngine getDatabase()
+    public DatabaseEngine getDatabaseEngine()
     {
         return this.databaseEngine;
     }

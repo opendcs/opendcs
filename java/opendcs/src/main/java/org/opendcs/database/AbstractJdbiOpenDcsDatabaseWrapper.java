@@ -21,6 +21,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -56,23 +57,23 @@ import decodes.sql.KeyGeneratorFactory;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
 
-public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
+public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatabase
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
-    //protected final DecodesSettings settings;
     private final Database decodesDb;
     private final TimeSeriesDb timeSeriesDb;
     protected final DataSource dataSource;
     protected final Jdbi jdbi;
     protected final DatabaseEngine dbEngine;
     protected final KeyGenerator keyGenerator;
-    //protected final DatabaseQuerySettings querySettings;
     protected final Map<Class<? extends OpenDcsSettings>, OpenDcsSettings> settingsMap = new HashMap<>();
     private final Map<Class<? extends OpenDcsDao>, DaoWrapper<? extends OpenDcsDao>> daoMap = new HashMap<>();
 
-    public SimpleOpenDcsDatabaseWrapper(
+    protected AbstractJdbiOpenDcsDatabaseWrapper(
             Map<Class<? extends OpenDcsSettings>, OpenDcsSettings> settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource)
     {
+        Objects.requireNonNull(settings.get(DecodesSettings.class), 
+                               "All implementations are required to provide a `DecodesSettings` instance.");
         this.settingsMap.putAll(settings);
         this.decodesDb = decodesDb;
         this.timeSeriesDb = timeSeriesDb;
@@ -108,7 +109,13 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         {
             throw new IllegalStateException("Unable to create key generator of type '" + decodesSettings.sqlKeyGenerator + "'", ex);
         }
+        initialSetup();
     }
+
+    /**
+     * Handle any additional setup or overrides to what was previously done.
+     */
+    protected abstract void initialSetup();
 
     @SuppressWarnings("unchecked") // class is checked before casting
     @Override
@@ -159,25 +166,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
                     if (daoMakeMethod.isPresent())
                     {
                         final Method m = daoMakeMethod.get();
-                        return new DaoWrapper<>(() ->
-                        {
-                            try
-                            {
-                                T ret = (T)m.invoke(timeSeriesDb);
-                                if (ret == null)
-                                {
-                                    log.atError().log("retrieval of DAO returned null instead of the expected DAO." + timeSeriesDb + " " + m.toGenericString());
-                                }
-                                return ret;
-                            }
-                            catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
-                            {
-                                log.atError()
-                                .setCause(ex)
-                                .log("Unable to retrieve DAO we should be able to get.");
-                                return null;
-                            }
-                        });
+                        return makeDaoWrapper(() -> timeSeriesDb, m);
                     }
                 }
                 DatabaseIO dbIo = this.decodesDb.getDbIo();
@@ -185,29 +174,39 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
                 if (daoMakeMethod.isPresent())
                 {
                     final Method m = daoMakeMethod.get();
-                    return new DaoWrapper<>(() ->
-                    {
-                        try
-                        {
-                            T ret = (T)m.invoke(this.decodesDb.getDbIo());
-                            if (ret == null)
-                            {
-                                log.atError().log("retrieval of DAO returned null instead of the expected DAO." + this.decodesDb.getDbIo() + " " + m.toGenericString());
-                            }
-                            return ret;
-                        }
-                        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
-                        {
-                            log.atError()
-                               .setCause(ex)
-                               .log("Unable to retrieve DAO we should be able to get.");
-                            return null;
-                        }
-                    });
+                    return makeDaoWrapper(() -> this.decodesDb.getDbIo(), m);
                 }
+
                 return new DaoWrapper<>(() -> null);
             });
         return Optional.ofNullable((T)wrapper.create());
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T,K> DaoWrapper<T> makeDaoWrapper(Supplier<K> instance, Method method)
+    {
+        return new DaoWrapper<T>(() ->
+        {
+            try
+            {
+                T ret = (T)method.invoke(instance.get());
+                if (ret == null)
+                {
+                    log.atError()
+                       .log("retrieval of DAO returned null instead of the expected DAO. {}::{}",
+                            instance.get().getClass().getName(),
+                            method.toGenericString());
+                }
+                return ret;
+            }
+            catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
+            {
+                log.atError()
+                    .setCause(ex)
+                    .log("Unable to retrieve DAO we should be able to get.");
+                return null;
+            }
+        });
     }
 
     /**
@@ -339,7 +338,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     }
 
     @Override
-    public DatabaseEngine getDatabase()
+    public DatabaseEngine getDatabaseEngine()
     {
         return this.dbEngine;
     }
