@@ -21,6 +21,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -71,7 +72,7 @@ public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatab
     protected AbstractJdbiOpenDcsDatabaseWrapper(
             Map<Class<? extends OpenDcsSettings>, OpenDcsSettings> settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource)
     {
-        Objects.requireNonNull(settings.get(DecodesDatabaseSettings.class), 
+        Objects.requireNonNull(settings.get(DecodesSettings.class), 
                                "All implementations are required to provide a `DecodesSettings` instance.");
         this.settingsMap.putAll(settings);
         this.decodesDb = decodesDb;
