@@ -39,14 +39,15 @@ public final class RoleMapper extends PrefixRowMapper<Role>
     @Override
     public Role map(ResultSet rs, StatementContext ctx) throws SQLException
     {
+        final var prefixRs = getResultSetProxy(rs);
         ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class)
                                                     .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
-        DbKey key = columnMapperForKey.map(rs, prefix+GenericColumns.ID, ctx);
-        String name = rs.getString(prefix+GenericColumns.NAME);
-        String description = rs.getString(prefix+GenericColumns.DESCRIPTION);
+        DbKey key = columnMapperForKey.map(prefixRs, GenericColumns.ID, ctx);
+        String name = prefixRs.getString(GenericColumns.NAME);
+        String description = prefixRs.getString(GenericColumns.DESCRIPTION);
         ColumnMapper<ZonedDateTime> columnMapperForZDT = ctx.findColumnMapperFor(ZonedDateTime.class)
                                                             .orElseThrow(() -> new SQLException(SqlErrorMessages.ZDT_MAPPER_NOT_FOUND));
-        ZonedDateTime updatedAt = columnMapperForZDT.map(rs, prefix+GenericColumns.UPDATED_AT, ctx);
+        ZonedDateTime updatedAt = columnMapperForZDT.map(prefixRs, GenericColumns.UPDATED_AT, ctx);
         return new Role(key, name, description, updatedAt);
     }
 
