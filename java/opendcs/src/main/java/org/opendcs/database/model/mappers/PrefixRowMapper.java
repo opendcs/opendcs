@@ -1,26 +1,30 @@
 package org.opendcs.database.model.mappers;
 
 import java.sql.ResultSet;
-
+import java.sql.SQLException;
+import java.util.Set;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
-
 import org.jdbi.v3.core.mapper.RowMapper;
+import org.opendcs.database.sql.TableColumnDefinition;
 
 /**
  * Helper class for row mappers to take a prefix.
  * If the provided prefix does not start end with and underscore (_)
  * one will be added.
  */
-public abstract class PrefixRowMapper<T> implements RowMapper<T>
+public abstract class PrefixRowMapper<T,K> implements RowMapper<T>
 {
     protected final String prefix;
+    
+    private final Set<TableColumnDefinition> columns;
 
-    protected PrefixRowMapper(String prefix)
+    protected PrefixRowMapper(String prefix, Set<TableColumnDefinition> columns)
     {
         this.prefix = addUnderscoreIfMissing(prefix);
+        this.columns = columns;
     }
 
     public static String addUnderscoreIfMissing(String prefix)
@@ -34,6 +38,20 @@ public abstract class PrefixRowMapper<T> implements RowMapper<T>
         {
             return tmp.endsWith("_") ? tmp : (tmp + "_");
         }
+    }    
+
+    /**
+     * Return the requested column with the provided name
+     * @param column the desired column.
+     * @return the prefixed column name
+     */
+    protected <E extends Enum<E> & TableColumnDefinition> String column(E column) throws SQLException
+    {
+        if (!columns.contains(column))
+        {
+            throw new SQLException("Column " + column + " does not exist for this table.");
+        }
+        return prefix + column.column();
     }
 
     /**
