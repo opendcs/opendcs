@@ -2,7 +2,6 @@ package org.opendcs.database.impl.opendcs.dao;
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
@@ -27,7 +26,7 @@ import decodes.sql.KeyGenerator;
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 
 @ServiceProvider(service = EnumDao.class)
-public class EnumDaoImpl implements EnumDao 
+public class EnumDaoImpl implements EnumDao
 {
 
     @Override
@@ -118,7 +117,7 @@ public class EnumDaoImpl implements EnumDao
         var context = tx.getContext();
         var keyGen = context.getGenerator(KeyGenerator.class)
                             .orElseThrow(() -> new OpenDcsDataException("No Keygenerator configured."));
-        var dbEngine = context.getDatabase();
+        var dbEngine = context.getDatabaseEngine();
 
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));

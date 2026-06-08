@@ -278,7 +278,7 @@ public final class TomcatServer implements AutoCloseable
 				when not matched then
 				  insert (prop_name, prop_value)
 				  values(input.prop_name, input.prop_value)
-				""").define("dual", tx.getContext().getDatabase() == DatabaseEngine.ORACLE ? "from dual" : ""))
+				""").define("dual", tx.getContext().getDatabaseEngine() == DatabaseEngine.ORACLE ? "from dual" : ""))
 			{
 				DecodesSettings settings = config.getOpenDcsDatabase()
 												.getSettings(DecodesSettings.class)
@@ -292,9 +292,9 @@ public final class TomcatServer implements AutoCloseable
 							.bind("value", value)
 							.add();
 				}
-				
+
 				upsertProp.execute();
-			
+
 			}
 		}
 		catch (Throwable ex)
@@ -414,7 +414,7 @@ public final class TomcatServer implements AutoCloseable
 
 	public static void setupTestUser(OpenDcsDatabase db) throws OpenDcsDataException
 	{
-		
+
 		var idpDao = db.getDao(IdentityProviderDao.class)
 					.orElseThrow(() -> new OpenDcsDataException("No Identity Provider DAO available for this implementation."));
 		var userDao = db.getDao(UsersDao.class)

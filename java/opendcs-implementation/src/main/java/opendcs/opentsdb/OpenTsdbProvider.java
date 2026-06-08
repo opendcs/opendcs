@@ -10,7 +10,6 @@ import org.opendcs.database.impl.opendcs.OpenDcsOracleProvider;
 import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
 import org.opendcs.database.DatabaseQuerySettings;
 import org.opendcs.database.SimpleDataSource;
-import org.opendcs.database.SimpleOpenDcsDatabaseWrapper;
 import org.opendcs.spi.database.DatabaseProvider;
 
 import decodes.db.Database;
@@ -26,7 +25,7 @@ public class OpenTsdbProvider implements DatabaseProvider
     @Override
     public boolean canCreate(DecodesSettings settings)
     {
-        return settings.editDatabaseTypeCode == DecodesSettings.DB_OPENTSDB 
+        return settings.editDatabaseTypeCode == DecodesSettings.DB_OPENTSDB
             || OpenDcsPgProvider.NAME.equals(settings.editDatabaseType)
             || OpenDcsOracleProvider.NAME.equals(settings.editDatabaseType)
         ;
@@ -48,7 +47,7 @@ public class OpenTsdbProvider implements DatabaseProvider
 
     private Database getDecodesDatabase(javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
     {
-        Database db = new Database(true);            
+        Database db = new Database(true);
         db.setDbIo(new OpenTsdbSqlDbIO(dataSource, settings));
         return db;
     }
@@ -58,7 +57,7 @@ public class OpenTsdbProvider implements DatabaseProvider
     {
         Database decodesDb = getDecodesDatabase(dataSource, settings);
         OpenTsdb tsDb = new OpenTsdb(appName, dataSource, settings);
-        var db = new SimpleOpenDcsDatabaseWrapper(Map.of(DecodesSettings.class, settings, DatabaseQuerySettings.class, DatabaseQuerySettings.DEFAULT_SETTINGS), decodesDb, tsDb, dataSource);
+        var db = new OpenDcsDatabaseWrapper(Map.of(DecodesSettings.class, settings, DatabaseQuerySettings.class, DatabaseQuerySettings.DEFAULT_SETTINGS), decodesDb, tsDb, dataSource);
         tsDb.setDcsDatabase(db);
         Database.setDb(decodesDb);
         try

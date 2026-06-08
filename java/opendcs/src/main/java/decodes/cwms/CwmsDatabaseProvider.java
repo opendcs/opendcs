@@ -7,7 +7,6 @@ import javax.sql.DataSource;
 
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.DatabaseQuerySettings;
-import org.opendcs.database.SimpleOpenDcsDatabaseWrapper;
 import org.opendcs.spi.database.DatabaseProvider;
 
 import decodes.db.Database;
@@ -35,12 +34,12 @@ public class CwmsDatabaseProvider implements DatabaseProvider
         try
         {
             CwmsConnectionInfo conInfo = new CwmsConnectionInfo();
-            ConnectionLoginInfoImpl info = new ConnectionLoginInfoImpl(settings.editDatabaseLocation, 
+            ConnectionLoginInfoImpl info = new ConnectionLoginInfoImpl(settings.editDatabaseLocation,
                                                                 credentials.getProperty("user", credentials.getProperty(("username"))),
                                                                 credentials.getProperty("password"),
                                                                 settings.CwmsOfficeId);
             conInfo.setLoginInfo(info);
-          
+
             DataSource dataSource = CwmsConnectionPool.getPoolFor(conInfo);
             return createDatabase(dataSource, settings);
         }
@@ -59,7 +58,7 @@ public class CwmsDatabaseProvider implements DatabaseProvider
             Database.setDb(decodesDb); // the CwmsSqlDatabaseIO constructor calls into the Database instance to verify things.
             decodesDb.setDbIo(new CwmsSqlDatabaseIO(dataSource, settings));
             CwmsTimeSeriesDb tsdb = new CwmsTimeSeriesDb(null, dataSource, settings);
-            var db = new SimpleOpenDcsDatabaseWrapper(Map.of(DecodesSettings.class, settings, DatabaseQuerySettings.class, new CwmsDatabaseQuerySettings()), decodesDb, tsdb, dataSource);
+            var db = new CwmsOpenDcsDatabaseWrapper(Map.of(DecodesSettings.class, settings, DatabaseQuerySettings.class, new CwmsDatabaseQuerySettings()), decodesDb, tsdb, dataSource);
             ((SqlDatabaseIO)decodesDb.getDbIo()).setDcsDatabase(db);
             decodesDb.init(settings);
             tsdb.setDcsDatabase(db);

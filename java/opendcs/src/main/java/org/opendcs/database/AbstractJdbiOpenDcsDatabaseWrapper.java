@@ -56,7 +56,7 @@ import decodes.sql.KeyGeneratorFactory;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
 
-public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
+public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatabase
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
     //protected final DecodesSettings settings;
@@ -70,7 +70,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     protected final Map<Class<? extends OpenDcsSettings>, OpenDcsSettings> settingsMap = new HashMap<>();
     private final Map<Class<? extends OpenDcsDao>, DaoWrapper<? extends OpenDcsDao>> daoMap = new HashMap<>();
 
-    public SimpleOpenDcsDatabaseWrapper(
+    public AbstractJdbiOpenDcsDatabaseWrapper(
             Map<Class<? extends OpenDcsSettings>, OpenDcsSettings> settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource)
     {
         this.settingsMap.putAll(settings);
@@ -109,6 +109,11 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
             throw new IllegalStateException("Unable to create key generator of type '" + decodesSettings.sqlKeyGenerator + "'", ex);
         }
     }
+
+    /**
+     * Handle any additional setup or overrides to what was previously done.
+     */
+    protected abstract void initialSetup();
 
     @SuppressWarnings("unchecked") // class is checked before casting
     @Override
@@ -339,7 +344,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     }
 
     @Override
-    public DatabaseEngine getDatabase()
+    public DatabaseEngine getDatabaseEngine()
     {
         return this.dbEngine;
     }
