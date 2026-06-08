@@ -12,6 +12,7 @@ import {
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
 import { platformKeys } from "./keys";
+import { invalidateThenDelegate, normalizeNewId } from "./mutationHelpers";
 
 const usePlatformsApi = () => {
   const api = useApi();
@@ -57,18 +58,17 @@ export const useSavePlatformMutation = (
   const { platformApi, org } = usePlatformsApi();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (platform: ApiPlatform) => {
-      const platformId =
-        platform.platformId && platform.platformId > 0
-          ? platform.platformId
-          : undefined;
-      return platformApi.postPlatform(org, { ...platform, platformId });
-    },
+    mutationFn: (platform: ApiPlatform) =>
+      platformApi.postPlatform(org, {
+        ...platform,
+        platformId: normalizeNewId(platform.platformId),
+      }),
     ...options,
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: platformKeys.all(org) });
-      options?.onSuccess?.(...args);
-    },
+    onSuccess: invalidateThenDelegate(
+      queryClient,
+      platformKeys.all(org),
+      options?.onSuccess,
+    ),
   });
 };
 
@@ -80,9 +80,10 @@ export const useDeletePlatformMutation = (
   return useMutation({
     mutationFn: (platformId: number) => platformApi.deletePlatform(org, platformId),
     ...options,
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: platformKeys.all(org) });
-      options?.onSuccess?.(...args);
-    },
+    onSuccess: invalidateThenDelegate(
+      queryClient,
+      platformKeys.all(org),
+      options?.onSuccess,
+    ),
   });
 };

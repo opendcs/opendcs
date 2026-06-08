@@ -12,6 +12,7 @@ import {
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
 import { computationKeys } from "./keys";
+import { invalidateThenDelegate, normalizeNewId } from "./mutationHelpers";
 
 const useComputationsApi = () => {
   const api = useApi();
@@ -46,39 +47,25 @@ export const useSaveComputationMutation = (
   const { computationApi, org } = useComputationsApi();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (computation: ApiComputation) => {
+    mutationFn: (computation: ApiComputation) =>
       // Strip transient/derived ids when "new" so the server assigns them, and
       // clear server-managed timestamps so they're recomputed.
-      const computationId =
-        computation.computationId && computation.computationId > 0
-          ? computation.computationId
-          : undefined;
-      const appId =
-        computation.appId && computation.appId > 0 ? computation.appId : undefined;
-      const groupId =
-        computation.groupId && computation.groupId > 0
-          ? computation.groupId
-          : undefined;
-      const algorithmId =
-        computation.algorithmId && computation.algorithmId > 0
-          ? computation.algorithmId
-          : undefined;
-      return computationApi.postComputation(org, {
+      computationApi.postComputation(org, {
         ...computation,
-        computationId,
-        appId,
-        groupId,
-        algorithmId,
+        computationId: normalizeNewId(computation.computationId),
+        appId: normalizeNewId(computation.appId),
+        groupId: normalizeNewId(computation.groupId),
+        algorithmId: normalizeNewId(computation.algorithmId),
         lastModified: undefined,
         effectiveStartDate: undefined,
         effectiveEndDate: undefined,
-      });
-    },
+      }),
     ...options,
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: computationKeys.all(org) });
-      options?.onSuccess?.(...args);
-    },
+    onSuccess: invalidateThenDelegate(
+      queryClient,
+      computationKeys.all(org),
+      options?.onSuccess,
+    ),
   });
 };
 
@@ -91,9 +78,10 @@ export const useDeleteComputationMutation = (
     mutationFn: (computationId: number) =>
       computationApi.deleteComputation(org, computationId),
     ...options,
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: computationKeys.all(org) });
-      options?.onSuccess?.(...args);
-    },
+    onSuccess: invalidateThenDelegate(
+      queryClient,
+      computationKeys.all(org),
+      options?.onSuccess,
+    ),
   });
 };
