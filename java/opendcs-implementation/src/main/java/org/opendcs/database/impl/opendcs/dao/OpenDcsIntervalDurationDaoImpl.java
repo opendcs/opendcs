@@ -44,7 +44,7 @@ public class OpenDcsIntervalDurationDaoImpl implements IntervalDurationDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        
+
         try (var query = handle.createQuery(SELECT_INTERVAL)
                                .define(SqlQueries.WHERE_CLAUSE, " where name = :name ")
                              )
@@ -54,7 +54,7 @@ public class OpenDcsIntervalDurationDaoImpl implements IntervalDurationDao
                         .mapTo(Interval.class)
                         .findOne();
         }
-        
+
     }
 
     @Override
@@ -62,7 +62,7 @@ public class OpenDcsIntervalDurationDaoImpl implements IntervalDurationDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        
+
         try (var query = handle.createQuery(SELECT_INTERVAL)
                                .define(SqlQueries.WHERE_CLAUSE, " where interval_id = :id ")
                              )
@@ -72,7 +72,7 @@ public class OpenDcsIntervalDurationDaoImpl implements IntervalDurationDao
                         .mapTo(Interval.class)
                         .findOne();
         }
-        
+
     }
 
     @Override
@@ -85,7 +85,7 @@ public class OpenDcsIntervalDurationDaoImpl implements IntervalDurationDao
             using (select :id id, :name name, :cal_constant cal_constant, :cal_multiplier cal_multiplier <dual>) input
             on (ic.interval_id = input.id)
             when matched then
-                update set 
+                update set
                     name = input.name,
                     cal_constant = input.cal_constant,
                     cal_multiplier = input.cal_multiplier
@@ -96,9 +96,9 @@ public class OpenDcsIntervalDurationDaoImpl implements IntervalDurationDao
         var ctx = tx.getContext();
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                         .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
-        
+
         try (var query = handle.createUpdate(MERGE_SQL)
-                               .define("dual", ctx.getDatabase() == DatabaseEngine.ORACLE ? " from dual " : ""))
+                               .define("dual", ctx.getDatabaseEngine() == DatabaseEngine.ORACLE ? " from dual " : ""))
         {
             DbKey id = interval.getKey();
             var existing = findIntervalByName(tx, interval.getName());
@@ -138,7 +138,7 @@ public class OpenDcsIntervalDurationDaoImpl implements IntervalDurationDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        
+
         try (var query = handle.createQuery(SELECT_INTERVAL)
                                .define(SqlQueries.WHERE_CLAUSE, "")
                              )
@@ -183,5 +183,5 @@ public class OpenDcsIntervalDurationDaoImpl implements IntervalDurationDao
     {
         return findIntervalByName(tx, name);
     }
-    
+
 }

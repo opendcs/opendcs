@@ -39,9 +39,9 @@ class JdbiTransactionTest
         }
 
         @Override
-        public DatabaseEngine getDatabase()
+        public DatabaseEngine getDatabaseEngine()
         {
-            throw new UnsupportedOperationException("Unimplemented method 'getDatabase'");
+            throw new UnsupportedOperationException("Unimplemented method 'getDatabaseEngine'");
         }
     };
 

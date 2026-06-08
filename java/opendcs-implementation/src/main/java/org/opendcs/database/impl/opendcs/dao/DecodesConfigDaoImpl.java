@@ -129,7 +129,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
 
         try (var query = handle.createQuery(SELECT_QUERY))
         {
@@ -168,7 +168,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
@@ -446,7 +446,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
 
         // Lightweight refs-only query. The full getAll loads every joined sensor / script /
         // format-statement / unit-converter row per config, which OOMs / times out on databases
@@ -484,7 +484,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
 
         try (var query = handle.createQuery(SELECT_QUERY))
         {

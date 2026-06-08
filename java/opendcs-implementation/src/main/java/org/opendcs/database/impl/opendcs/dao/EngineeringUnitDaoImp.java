@@ -27,8 +27,8 @@ public class EngineeringUnitDaoImp implements EngineeringUnitDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
-        
+        var dbEngine = ctx.getDatabaseEngine();
+
         final String insertSql = """
                 merge into engineeringunit eu
                 using (select :unitabbr unitabbr, :name name, :family family, :measures measures <dual>) input
@@ -69,8 +69,8 @@ public class EngineeringUnitDaoImp implements EngineeringUnitDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         final String querySql = """
-                    select unitabbr, name, family, measures 
-                      from engineeringunit 
+                    select unitabbr, name, family, measures
+                      from engineeringunit
                      where upper(unitabbr) = upper(:unit)
                         or name = :unit
                 """;
@@ -90,13 +90,12 @@ public class EngineeringUnitDaoImp implements EngineeringUnitDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         final String querySql = """
-                    select unitabbr, name, family, measures 
+                    select unitabbr, name, family, measures
                       from engineeringunit
                       order by unitabbr <collate> asc
                       <limit>
-
                 """;
-        var dbType = tx.getContext().getDatabase();
+        var dbType = tx.getContext().getDatabaseEngine();
         try (var query = handle.createQuery(querySql))
         {
             if (limit != -1)
@@ -115,5 +114,4 @@ public class EngineeringUnitDaoImp implements EngineeringUnitDao
                         .list();
         }
     }
-    
 }
