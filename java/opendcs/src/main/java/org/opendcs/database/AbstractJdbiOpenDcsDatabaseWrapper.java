@@ -59,18 +59,16 @@ import decodes.util.DecodesSettings;
 public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatabase
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
-    //protected final DecodesSettings settings;
     private final Database decodesDb;
     private final TimeSeriesDb timeSeriesDb;
     protected final DataSource dataSource;
     protected final Jdbi jdbi;
     protected final DatabaseEngine dbEngine;
     protected final KeyGenerator keyGenerator;
-    //protected final DatabaseQuerySettings querySettings;
     protected final Map<Class<? extends OpenDcsSettings>, OpenDcsSettings> settingsMap = new HashMap<>();
     private final Map<Class<? extends OpenDcsDao>, DaoWrapper<? extends OpenDcsDao>> daoMap = new HashMap<>();
 
-    public AbstractJdbiOpenDcsDatabaseWrapper(
+    protected AbstractJdbiOpenDcsDatabaseWrapper(
             Map<Class<? extends OpenDcsSettings>, OpenDcsSettings> settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource)
     {
         this.settingsMap.putAll(settings);
@@ -164,25 +162,7 @@ public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatab
                     if (daoMakeMethod.isPresent())
                     {
                         final Method m = daoMakeMethod.get();
-                        return new DaoWrapper<>(() ->
-                        {
-                            try
-                            {
-                                T ret = (T)m.invoke(timeSeriesDb);
-                                if (ret == null)
-                                {
-                                    log.atError().log("retrieval of DAO returned null instead of the expected DAO." + timeSeriesDb + " " + m.toGenericString());
-                                }
-                                return ret;
-                            }
-                            catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
-                            {
-                                log.atError()
-                                .setCause(ex)
-                                .log("Unable to retrieve DAO we should be able to get.");
-                                return null;
-                            }
-                        });
+                        return makeDaoWrapper(() -> timeSeriesDb, m);
                     }
                 }
                 DatabaseIO dbIo = this.decodesDb.getDbIo();
@@ -190,29 +170,39 @@ public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatab
                 if (daoMakeMethod.isPresent())
                 {
                     final Method m = daoMakeMethod.get();
-                    return new DaoWrapper<>(() ->
-                    {
-                        try
-                        {
-                            T ret = (T)m.invoke(this.decodesDb.getDbIo());
-                            if (ret == null)
-                            {
-                                log.atError().log("retrieval of DAO returned null instead of the expected DAO." + this.decodesDb.getDbIo() + " " + m.toGenericString());
-                            }
-                            return ret;
-                        }
-                        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
-                        {
-                            log.atError()
-                               .setCause(ex)
-                               .log("Unable to retrieve DAO we should be able to get.");
-                            return null;
-                        }
-                    });
+                    return makeDaoWrapper(() -> this.decodesDb.getDbIo(), m);
                 }
+
                 return new DaoWrapper<>(() -> null);
             });
         return Optional.ofNullable((T)wrapper.create());
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T,K> DaoWrapper<T> makeDaoWrapper(Supplier<K> instance, Method method)
+    {
+        return new DaoWrapper<T>(() ->
+        {
+            try
+            {
+                T ret = (T)method.invoke(instance.get());
+                if (ret == null)
+                {
+                    log.atError()
+                       .log("retrieval of DAO returned null instead of the expected DAO. {}::{}",
+                            instance.get().getClass().getName(),
+                            method.toGenericString());
+                }
+                return ret;
+            }
+            catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
+            {
+                log.atError()
+                    .setCause(ex)
+                    .log("Unable to retrieve DAO we should be able to get.");
+                return null;
+            }
+        });
     }
 
     /**

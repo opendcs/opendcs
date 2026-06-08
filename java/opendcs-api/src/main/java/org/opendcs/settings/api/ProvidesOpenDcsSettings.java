@@ -14,5 +14,5 @@ public interface ProvidesOpenDcsSettings
      * @param settingsClass type of settings to get
      * @return Optional&lt;T&gt; Settings if available, otherwise empty.
      */
-    public <T extends OpenDcsSettings> Optional<T> getSettings(Class<T> settingsClass);
+    <T extends OpenDcsSettings> Optional<T> getSettings(Class<T> settingsClass);
 }
