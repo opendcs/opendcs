@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Database>
+  <Platform PlatformId="100001">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:19:43</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>1.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Timezone>EST5EDT</Timezone>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">Barren</SiteName>
+      <SiteProperty PropertyName="PUBLIC_NAME">Barren</SiteProperty>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
+  <Platform PlatformId="100002">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:20:04</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>10.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Timezone>EST5EDT</Timezone>
+      <Country>UNITED STATES</Country>
+      <NearestCity>TESTSITE2</NearestCity>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">Green</SiteName>
+      <SiteProperty PropertyName="PUBLIC_NAME">Green</SiteProperty>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
+  <Platform PlatformId="100003">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:20:23</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>100.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">Nolin</SiteName>
+      <SiteProperty PropertyName="PUBLIC_NAME">Nolin</SiteProperty>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
+  <Platform PlatformId="100004">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:20:23</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>200.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">Rough</SiteName>
+      <SiteProperty PropertyName="PUBLIC_NAME">Rough</SiteProperty>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
+  <Platform PlatformId="100005">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:20:23</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>300.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">CJBrown</SiteName>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
+  <Platform PlatformId="100006">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:20:23</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>500.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">CaesarCreek</SiteName>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
+  <Platform PlatformId="100007">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:20:23</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>500.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">WestFork</SiteName>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
+  <Platform PlatformId="100008">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:20:23</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>500.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">WHHarsha</SiteName>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
+  <Platform PlatformId="100009">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:20:23</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>500.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">Taylorsville</SiteName>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
+  <Platform PlatformId="100010">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:20:23</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>500.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">CarrCreek</SiteName>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
+  <Platform PlatformId="100011">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:20:23</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>500.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">Buckhorn</SiteName>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
+  <Platform PlatformId="100012">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:20:23</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>500.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">CMHarden</SiteName>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
+  <Platform PlatformId="100013">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:20:23</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>500.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">CaveRun</SiteName>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
+  <Platform PlatformId="100014">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:20:23</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>500.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">CaglesMill</SiteName>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
+  <Platform PlatformId="100015">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:20:23</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>500.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">Monroe</SiteName>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
+  <Platform PlatformId="100016">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:20:23</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>500.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">Patoka</SiteName>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
+  <Platform PlatformId="100017">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:20:23</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>500.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">Brookville</SiteName>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
+  <Platform PlatformId="100018">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:20:23</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>500.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">JERoush</SiteName>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
+  <Platform PlatformId="100019">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:20:23</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>500.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">Mississinewa</SiteName>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
+  <Platform PlatformId="100020">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>01/26/2014 16:20:23</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>500.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for Regression Testing</Description>
+      <SiteName NameType="CWMS">Salamonie</SiteName>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
+</Database>
