@@ -141,6 +141,17 @@ public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatab
         return dataSource;
     }
 
+    /**
+     * Allow implementation to manually add specific types that
+     * may need some custom setup.
+     * @param type
+     * @param wrapper
+     */
+    protected void mapDao(Class<? extends OpenDcsDao> type, DaoWrapper<? extends OpenDcsDao> wrapper)
+    {
+        this.daoMap.put(type, wrapper);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public <T extends OpenDcsDao> Optional<T> getDao(Class<T> dao)
@@ -153,10 +164,6 @@ public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatab
                 if (tmp.isPresent())
                 {
                     return tmp.get();
-                }
-                if (dao.isAssignableFrom(CwmsLocationLevelDAO.class))
-                {
-                    return new DaoWrapper<>(() -> new CwmsLocationLevelDAO(this.timeSeriesDb));
                 }
 
                 Optional<Method> daoMakeMethod;
@@ -317,7 +324,7 @@ public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatab
         return makerMethod;
     }
 
-    private static class DaoWrapper<T>
+    protected static class DaoWrapper<T>
     {
         private final Supplier <T> daoSupplier;
         public DaoWrapper(Supplier<T> daoSupplier)
