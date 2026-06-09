@@ -20,6 +20,8 @@
 -- create the callback procedure within the cwms_ccp package
 ---------------------------------------------------------------------------
 create or replace package cwms_ccp authid current_user as
+  MISSING_VALUE_QUALITY CONSTANT NUMBER := 5;
+
   procedure unregister_callback_proc (
     p_subscriber_name in varchar2,
     p_queue_name      in varchar2)
@@ -308,36 +310,29 @@ create or replace package body cwms_ccp as
     for r2 in
       (select distinct cc.loading_application_id
          from cp_comp_depends cd, cp_computation cc
-         where cd.ts_id = p_ts_code
+         where cd.ts_id = p_ts_code and cc.enabled = 'Y'
            and cc.loading_application_id is not null and cd.computation_id = cc.computation_id
       )
     loop
-      insert into cp_comp_tasklist
-      (  record_num,
-         loading_application_id,
-         site_datatype_id,
-         date_time_loaded,
-         start_date_time,
-         value,
-         unit_id,
-         delete_flag,
-         quality_code,
-         flags)
-      select
-         cp_comp_tasklistidseq.nextval,
-         r2.loading_application_id,
-         p_ts_code,
-         sysdate,
-         r1.date_time,
-         nvl(r1.value,0),
-         l_unit_id,
-         decode (r1.quality_code,5,'Y','N') delete_flag,
-         r1.quality_code,
-         r1.quality_code
-      from cwms_v_tsv r1
-      where r1.ts_code = p_ts_code
-        and r1.date_time >= l_start_time and r1.date_time <= l_end_time
-        and r1.data_entry_date <= p_enqueue_time;
+      for r1 in
+        (select date_time,value,quality_code from cwms_v_tsv
+           where ts_code = p_ts_code and date_time between l_start_time and l_end_time
+            -- and p_enqueue_time >= data_entry_date
+             and (cwms_util.to_millis(p_store_time) = cwms_util.to_millis(data_entry_date) OR p_store_time is NULL)
+        )
+      loop
+        l_delete_flag := 'N';
+        if (r1.quality_code = MISSING_VALUE_QUALITY) then
+          l_delete_flag := 'Y';
+        end if;
+
+        insert into cp_comp_tasklist(record_num,loading_application_id,
+          site_datatype_id,date_time_loaded,start_date_time,value,
+          unit_id,delete_flag,quality_code,flags)
+        values(cp_comp_tasklistidseq.nextval,r2.loading_application_id,
+          p_ts_code,sysdate,r1.date_time,nvl(r1.value,0),l_unit_id,
+          l_delete_flag,r1.quality_code,r1.quality_code);
+      end loop; /* end of for r1 loop */
     end loop;   /* end of for r2 loop */
 
     commit;
