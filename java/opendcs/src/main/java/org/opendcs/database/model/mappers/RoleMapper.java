@@ -29,7 +29,7 @@ import org.opendcs.utils.sql.SqlErrorMessages;
 
 import decodes.sql.DbKey;
 
-public final class RoleMapper extends PrefixRowMapper<Role,org.opendcs.database.model.mappers.RoleMapper.Columns>
+public final class RoleMapper extends PrefixRowMapper<Role,RoleMapper.Columns>
 {
     public static final String ROLE_ID = "role_id";
 
@@ -57,7 +57,8 @@ public final class RoleMapper extends PrefixRowMapper<Role,org.opendcs.database.
         return new RoleMapper(prefix);
     }
 
-    public static enum Columns implements TableColumnDefinition {
+    public enum Columns implements TableColumnDefinition
+    {
         ID(GenericColumns.ID),
         NAME(GenericColumns.NAME),
         DESCRIPTION(GenericColumns.DESCRIPTION),
@@ -66,16 +67,19 @@ public final class RoleMapper extends PrefixRowMapper<Role,org.opendcs.database.
 
         private final String column;
 
-        private Columns(String column) {
+        Columns(String column)
+        {
             this.column = column;
         }
 
-        private Columns(GenericColumns other) {
+        Columns(GenericColumns other)
+        {
             this.column = other.column();
         }
 
         @Override
-        public String column() {
+        public String column()
+        {
             return column;
         }
     }

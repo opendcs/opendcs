@@ -9,9 +9,8 @@ import org.opendcs.database.sql.TableColumnDefinition;
 
 import decodes.db.ConfigSensor;
 
-public class ConfigSensorMapper extends PrefixRowMapper<ConfigSensor,org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.configs.ConfigSensorMapper.Columns>
+public class ConfigSensorMapper extends PrefixRowMapper<ConfigSensor,ConfigSensorMapper.Columns>
 {
-
     protected ConfigSensorMapper(String prefix)
     {
         super(prefix, Columns.class);
@@ -58,7 +57,7 @@ public class ConfigSensorMapper extends PrefixRowMapper<ConfigSensor,org.opendcs
         return new ConfigSensorMapper(prefix);
     }
 
-    public static enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition
     {
         CONFIG_ID("configid"),
         SENSOR_NUMBER("sensornumber"),
@@ -84,6 +83,5 @@ public class ConfigSensorMapper extends PrefixRowMapper<ConfigSensor,org.opendcs
         {
             return column;
         }
-        
     }
 }

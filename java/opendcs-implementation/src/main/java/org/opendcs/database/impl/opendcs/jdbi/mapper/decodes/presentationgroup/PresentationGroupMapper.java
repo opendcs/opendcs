@@ -14,9 +14,9 @@ import org.opendcs.utils.sql.SqlErrorMessages;
 import decodes.db.PresentationGroup;
 import decodes.sql.DbKey;
 
-public class PresentationGroupMapper extends PrefixRowMapper<PresentationGroup, org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.presentationgroup.PresentationGroupMapper.Columns>
+@SuppressWarnings("java:S2143") // Not the time to change this.
+public class PresentationGroupMapper extends PrefixRowMapper<PresentationGroup, PresentationGroupMapper.Columns>
 {
-
     protected PresentationGroupMapper(String prefix)
     {
         super(prefix, Columns.class);
@@ -38,14 +38,13 @@ public class PresentationGroupMapper extends PrefixRowMapper<PresentationGroup, 
 
         return pg;
     }
-    
 
     public static PresentationGroupMapper withPrefix(String prefix)
     {
         return new PresentationGroupMapper(prefix);
     }
 
-    public static enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition
     {
         ID(GenericColumns.ID),
         NAME(GenericColumns.NAME),
@@ -71,6 +70,5 @@ public class PresentationGroupMapper extends PrefixRowMapper<PresentationGroup, 
         {
             return column;
         }
-        
     }
 }

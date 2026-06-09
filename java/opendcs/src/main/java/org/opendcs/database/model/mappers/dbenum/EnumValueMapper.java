@@ -10,7 +10,7 @@ import org.opendcs.utils.sql.GenericColumns;
 
 import decodes.db.EnumValue;
 
-public class EnumValueMapper extends PrefixRowMapper<EnumValue, org.opendcs.database.model.mappers.dbenum.EnumValueMapper.Columns>
+public final class EnumValueMapper extends PrefixRowMapper<EnumValue,EnumValueMapper.Columns>
 {
 
     private EnumValueMapper(String prefix)
@@ -38,7 +38,7 @@ public class EnumValueMapper extends PrefixRowMapper<EnumValue, org.opendcs.data
     }
 
 
-    public static enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition
     {
         ENUMID("enumid"),
         ENUM_VALUE("enumvalue"),
@@ -65,6 +65,6 @@ public class EnumValueMapper extends PrefixRowMapper<EnumValue, org.opendcs.data
         {
             return this.column;
         }
-        
+
     }
 }

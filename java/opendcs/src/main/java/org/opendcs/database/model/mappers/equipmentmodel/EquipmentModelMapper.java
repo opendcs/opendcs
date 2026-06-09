@@ -2,7 +2,6 @@ package org.opendcs.database.model.mappers.equipmentmodel;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.EnumSet;
 
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
@@ -15,13 +14,12 @@ import decodes.db.DatabaseException;
 import decodes.db.EquipmentModel;
 import decodes.sql.DbKey;
 
-public final class EquipmentModelMapper extends PrefixRowMapper<EquipmentModel, org.opendcs.database.model.mappers.equipmentmodel.EquipmentModelMapper.Columns>
+public final class EquipmentModelMapper extends PrefixRowMapper<EquipmentModel,EquipmentModelMapper.Columns>
 {
     private EquipmentModelMapper(String prefix)
     {
         super(prefix, Columns.class);
     }
-
 
     public static EquipmentModelMapper withPrefix(String prefix)
     {
@@ -50,7 +48,7 @@ public final class EquipmentModelMapper extends PrefixRowMapper<EquipmentModel, 
         return em;
     }
 
-    public static enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition
     {
         ID(GenericColumns.ID),
         NAME(GenericColumns.NAME),
@@ -62,12 +60,12 @@ public final class EquipmentModelMapper extends PrefixRowMapper<EquipmentModel, 
 
         private final String column;
 
-        private Columns(String column)
+        Columns(String column)
         {
             this.column = column;
         }
 
-        private Columns(GenericColumns other)
+        Columns(GenericColumns other)
         {
             this.column = other.column();
         }
@@ -77,6 +75,6 @@ public final class EquipmentModelMapper extends PrefixRowMapper<EquipmentModel, 
         {
             return column;
         }
-        
+
     }
 }

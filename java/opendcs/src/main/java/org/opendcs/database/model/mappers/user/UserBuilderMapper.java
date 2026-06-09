@@ -18,7 +18,6 @@ package org.opendcs.database.model.mappers.user;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
-import java.util.EnumSet;
 import java.util.Map;
 
 import org.jdbi.v3.core.generic.GenericType;
@@ -32,7 +31,7 @@ import org.opendcs.utils.sql.GenericColumns;
 
 import decodes.sql.DbKey;
 
-public final class UserBuilderMapper extends PrefixRowMapper<UserBuilder,org.opendcs.database.model.mappers.user.UserBuilderMapper.Columns>
+public final class UserBuilderMapper extends PrefixRowMapper<UserBuilder,UserBuilderMapper.Columns>
 {
     /**
      * Used for queries referencing the user id as a foreign key
@@ -65,7 +64,7 @@ public final class UserBuilderMapper extends PrefixRowMapper<UserBuilder,org.ope
                .withUpdatedAt(columnMapperForZDT.map(rs, column(Columns.UPDATED_AT), ctx))
                .withCreatedAt(columnMapperForZDT.map(rs, column(Columns.CREATED_AT), ctx))
                 ;
-        ColumnMapper<Map<String, Object>> columnMapperForConfig = 
+        ColumnMapper<Map<String, Object>> columnMapperForConfig =
                 ctx.findColumnMapperFor(new GenericType<Map<String, Object>>() {})
                    .orElseThrow(() -> new SQLException(SqlErrorMessages.CONFIG_MAPPER_NOT_FOUND));
 
@@ -73,7 +72,7 @@ public final class UserBuilderMapper extends PrefixRowMapper<UserBuilder,org.ope
         return builder.withPreferences(preferences);
     }
 
-    public static enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition
     {
         ID(GenericColumns.ID),
         EMAIL(GenericColumns.EMAIL),

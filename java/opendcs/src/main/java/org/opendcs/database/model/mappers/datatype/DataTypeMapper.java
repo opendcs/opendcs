@@ -13,9 +13,8 @@ import decodes.db.DataType;
 import decodes.db.DatabaseException;
 import decodes.sql.DbKey;
 
-public final class DataTypeMapper extends PrefixRowMapper<DataType, org.opendcs.database.model.mappers.datatype.DataTypeMapper.Columns>
+public final class DataTypeMapper extends PrefixRowMapper<DataType,DataTypeMapper.Columns>
 {
-
     private DataTypeMapper(String prefix)
     {
         super(prefix, Columns.class);
@@ -51,9 +50,8 @@ public final class DataTypeMapper extends PrefixRowMapper<DataType, org.opendcs.
         dt.setDisplayName(displayname);
         return dt;
     }
-    
 
-    public static enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition
     {
         ID(GenericColumns.ID),
         STANDARD("standard"),
@@ -78,7 +76,5 @@ public final class DataTypeMapper extends PrefixRowMapper<DataType, org.opendcs.
         {
             return this.column;
         }
-        
     }
-
 }

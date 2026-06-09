@@ -11,7 +11,7 @@ import org.opendcs.database.sql.TableColumnDefinition;
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 
-public final class CompAppInfoMapper extends PrefixRowMapper<CompAppInfo, org.opendcs.database.model.mappers.compapp.CompAppInfoMapper.Columns>
+public final class CompAppInfoMapper extends PrefixRowMapper<CompAppInfo, CompAppInfoMapper.Columns>
 {
     private CompAppInfoMapper(String prefix)
     {
@@ -40,9 +40,8 @@ public final class CompAppInfoMapper extends PrefixRowMapper<CompAppInfo, org.op
     {
         return new CompAppInfoMapper(prefix);
     }
-    
 
-    public static enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition
     {
         APP_ID("loading_application_id"),
         APP_NAME("loading_application_name"),
@@ -62,6 +61,5 @@ public final class CompAppInfoMapper extends PrefixRowMapper<CompAppInfo, org.op
         {
             return column;
         }
-        
     }
 }

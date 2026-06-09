@@ -39,7 +39,7 @@ public class FormatStatementMapper extends PrefixRowMapper<FormatStatement, org.
         return new FormatStatementMapper(prefix);
     }
 
-    public static enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition
     {
         SEQUENCE_NUMBER("sequencenum"),
         LABEL("label"),

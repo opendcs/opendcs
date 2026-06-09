@@ -17,7 +17,6 @@ package org.opendcs.database.model.mappers.user;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.EnumSet;
 
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.model.IdentityProvider;
@@ -27,7 +26,7 @@ import org.opendcs.database.model.mappers.PrefixRowMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 
-public final class IdentityProviderMappingMapper extends PrefixRowMapper<IdentityProviderMapping, org.opendcs.database.model.mappers.user.IdentityProviderMappingMapper.Columns>
+public final class IdentityProviderMappingMapper extends PrefixRowMapper<IdentityProviderMapping,IdentityProviderMappingMapper.Columns>
 {
     private final IdentityProviderMapper idpMapper;
 
@@ -52,9 +51,10 @@ public final class IdentityProviderMappingMapper extends PrefixRowMapper<Identit
         return new IdentityProviderMappingMapper(prefix);
     }
 
-    public static enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition
     {
-        SUBJECT(GenericColumns.SUBJECT);
+        SUBJECT(GenericColumns.SUBJECT)
+        ;
 
         private final String column;
 
@@ -68,6 +68,5 @@ public final class IdentityProviderMappingMapper extends PrefixRowMapper<Identit
         {
             return this.column;
         }
-        
     }
 }

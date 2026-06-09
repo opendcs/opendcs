@@ -15,9 +15,9 @@ import org.opendcs.utils.sql.SqlErrorMessages;
 import decodes.db.DataPresentation;
 import decodes.sql.DbKey;
 
-public class DataPresentationMapper extends PrefixRowMapper<DataPresentation, org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.presentationgroup.DataPresentationMapper.Columns>
+public class DataPresentationMapper extends PrefixRowMapper<DataPresentation,DataPresentationMapper.Columns>
 {
-    private static final ColumnMapper<Double> DOUBLE_MAPPER = new NullableDouble();    
+    private static final ColumnMapper<Double> DOUBLE_MAPPER = new NullableDouble();
 
     private final DataTypeMapper dataTypeMapper;
 
@@ -44,16 +44,16 @@ public class DataPresentationMapper extends PrefixRowMapper<DataPresentation, or
 
         presentation.setMaxValue(DOUBLE_MAPPER.map(rs, column(Columns.MAX_VALUE), ctx));
         presentation.setMinValue(DOUBLE_MAPPER.map(rs, column(Columns.MIN_VALUE), ctx));
-        
+
         // equipmentid is on the table, but not in the DataPresentation Object
 
         presentation.setDataType(dataTypeMapper.map(rs, ctx));
         presentation.prepareForExec();
         presentation.setTimeLastRead();
-        
+
         return presentation;
     }
-    
+
     /**
      * Create an instance of DataPresentation mapper appropriate to the current query.
      * @param prefix prefix for the datapresentation values.
@@ -65,7 +65,7 @@ public class DataPresentationMapper extends PrefixRowMapper<DataPresentation, or
         return new DataPresentationMapper(prefix, dataTypePrefix);
     }
 
-    public static enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition
     {
         ID(GenericColumns.ID),
         UNIT_ABBR("unitabbr"),
@@ -91,6 +91,5 @@ public class DataPresentationMapper extends PrefixRowMapper<DataPresentation, or
         {
             return column;
         }
-        
     }
 }

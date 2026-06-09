@@ -15,7 +15,8 @@ import org.opendcs.utils.sql.SqlErrorMessages;
 import decodes.db.Site;
 import decodes.sql.DbKey;
 
-public class OpenDcsSiteMapper extends PrefixRowMapper<Site, org.opendcs.database.model.mappers.sites.OpenDcsSiteMapper.Columns>
+@SuppressWarnings("java:S2143") // May happen in future work.
+public class OpenDcsSiteMapper extends PrefixRowMapper<Site,OpenDcsSiteMapper.Columns>
 {
     protected OpenDcsSiteMapper(String prefix)
     {
@@ -62,7 +63,7 @@ public class OpenDcsSiteMapper extends PrefixRowMapper<Site, org.opendcs.databas
         return ret;
     }
 
-    public static enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition
     {
         ID(GenericColumns.ID),
         PUBLIC_NAME("public_name"),
@@ -98,7 +99,6 @@ public class OpenDcsSiteMapper extends PrefixRowMapper<Site, org.opendcs.databas
         {
             return this.column;
         }
-        
     }
 
 }

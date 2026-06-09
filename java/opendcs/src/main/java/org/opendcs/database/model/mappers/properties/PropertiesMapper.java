@@ -11,7 +11,7 @@ import org.opendcs.utils.sql.GenericColumns;
 
 import ilex.util.Pair;
 
-public final class PropertiesMapper extends PrefixRowMapper<Pair<String,String>, org.opendcs.database.model.mappers.properties.PropertiesMapper.Columns>
+public final class PropertiesMapper extends PrefixRowMapper<Pair<String,String>,PropertiesMapper.Columns>
 {
     private final String prop;
 
@@ -66,10 +66,11 @@ public final class PropertiesMapper extends PrefixRowMapper<Pair<String,String>,
         }
     }
 
-    public static enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition
     {
         NAME(GenericColumns.NAME),
-        VALUE("prop_value");
+        VALUE("prop_value")
+        ;
 
         private final String column;
 
@@ -88,6 +89,5 @@ public final class PropertiesMapper extends PrefixRowMapper<Pair<String,String>,
         {
             return column;
         }
-        
     }
 }

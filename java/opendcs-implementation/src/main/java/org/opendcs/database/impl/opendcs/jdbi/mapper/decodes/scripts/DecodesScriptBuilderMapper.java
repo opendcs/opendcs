@@ -14,9 +14,8 @@ import org.opendcs.utils.sql.SqlErrorMessages;
 import decodes.db.DecodesScript.DecodesScriptBuilder;
 import decodes.sql.DbKey;
 
-public class DecodesScriptBuilderMapper extends PrefixRowMapper<DecodesScriptBuilder, org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.scripts.DecodesScriptBuilderMapper.Columns>
+public class DecodesScriptBuilderMapper extends PrefixRowMapper<DecodesScriptBuilder,DecodesScriptBuilderMapper.Columns>
 {
-
     protected DecodesScriptBuilderMapper(String prefix)
     {
         super(prefix, Columns.class);
@@ -52,7 +51,7 @@ public class DecodesScriptBuilderMapper extends PrefixRowMapper<DecodesScriptBui
         return new DecodesScriptBuilderMapper(prefix);
     }
 
-    public static enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition
     {
         ID(GenericColumns.ID),
         NAME(GenericColumns.NAME),

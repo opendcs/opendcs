@@ -14,7 +14,8 @@ import decodes.sql.DbKey;
 import decodes.tsdb.IntervalCodes;
 import opendcs.opentsdb.Interval;
 
-public class IntervalMapper extends PrefixRowMapper<Interval, org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.IntervalMapper.Columns>
+@SuppressWarnings("java:S2143")
+public class IntervalMapper extends PrefixRowMapper<Interval, IntervalMapper.Columns>
  {
 
     protected IntervalMapper(String prefix)
@@ -35,14 +36,13 @@ public class IntervalMapper extends PrefixRowMapper<Interval, org.opendcs.databa
         ret.setCalMultiplier(rs.getInt(column(Columns.CALENDAR_MULTIPLIER)));
         return ret;
     }
-    
 
     public static IntervalMapper withPrefix(String prefix)
     {
         return new IntervalMapper(prefix);
     }
 
-    public static enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition
     {
         NAME(GenericColumns.NAME),
         ID("interval_id"),
@@ -67,6 +67,5 @@ public class IntervalMapper extends PrefixRowMapper<Interval, org.opendcs.databa
         {
             return column;
         }
-        
     }
 }

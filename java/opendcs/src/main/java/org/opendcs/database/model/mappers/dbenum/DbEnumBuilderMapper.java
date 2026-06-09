@@ -12,9 +12,8 @@ import org.opendcs.utils.sql.GenericColumns;
 import decodes.db.DbEnum.DbEnumBuilder;
 import decodes.sql.DbKey;
 
-public class DbEnumBuilderMapper extends PrefixRowMapper<DbEnumBuilder, org.opendcs.database.model.mappers.dbenum.DbEnumBuilderMapper.Columns>
+public class DbEnumBuilderMapper extends PrefixRowMapper<DbEnumBuilder,DbEnumBuilderMapper.Columns>
 {
-
     private DbEnumBuilderMapper(String prefix)
     {
         super(prefix, Columns.class);
@@ -37,7 +36,7 @@ public class DbEnumBuilderMapper extends PrefixRowMapper<DbEnumBuilder, org.open
         return new DbEnumBuilder(id, name, defaultValue, description);
     }
 
-    public static enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition
     {
         ID(GenericColumns.ID),
         NAME(GenericColumns.NAME),
@@ -62,6 +61,5 @@ public class DbEnumBuilderMapper extends PrefixRowMapper<DbEnumBuilder, org.open
         {
             return column;
         }
-        
     }
 }

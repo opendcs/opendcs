@@ -9,7 +9,7 @@ import org.opendcs.database.sql.TableColumnDefinition;
 
 import decodes.db.SiteName;
 
-public class OpenDcsSiteNameMapper extends PrefixRowMapper<SiteName, org.opendcs.database.model.mappers.sites.OpenDcsSiteNameMapper.Columns>
+public class OpenDcsSiteNameMapper extends PrefixRowMapper<SiteName,OpenDcsSiteNameMapper.Columns>
 {
 
     protected OpenDcsSiteNameMapper(String prefix)
@@ -36,8 +36,8 @@ public class OpenDcsSiteNameMapper extends PrefixRowMapper<SiteName, org.opendcs
         ret.setUsgsDbno(rs.getString(prefix + "dbnum"));
         return ret;
     }
-    
-    public static enum Columns implements TableColumnDefinition
+
+    public enum Columns implements TableColumnDefinition
     {
         NAME_TYPE("nametype"),
         SITE_NAME("sitename"),
@@ -53,10 +53,9 @@ public class OpenDcsSiteNameMapper extends PrefixRowMapper<SiteName, org.opendcs
         }
 
         @Override
-        public String column() 
+        public String column()
         {
             return this.column;
         }
-        
     }
 }

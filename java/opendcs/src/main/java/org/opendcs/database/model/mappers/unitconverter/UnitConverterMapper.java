@@ -2,7 +2,6 @@ package org.opendcs.database.model.mappers.unitconverter;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.EnumSet;
 
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
@@ -21,9 +20,8 @@ import decodes.db.UnitConverterDb;
 import decodes.db.UsgsStdConverter;
 import decodes.sql.DbKey;
 
-public final class UnitConverterMapper extends PrefixRowMapper<UnitConverterDb, org.opendcs.database.model.mappers.unitconverter.UnitConverterMapper.Columns>
+public final class UnitConverterMapper extends PrefixRowMapper<UnitConverterDb,UnitConverterMapper.Columns>
 {
-
     private UnitConverterMapper(String prefix)
     {
         super(prefix, Columns.class);
@@ -61,7 +59,7 @@ public final class UnitConverterMapper extends PrefixRowMapper<UnitConverterDb, 
             converter.setId(id);
             converter.algorithm = algorithm;
             converter.coefficients = coefficients;
-            // implement the logic of UnitConverterDb.prepareForExec so that we simply don't need to.            
+            // implement the logic of UnitConverterDb.prepareForExec so that we simply don't need to.
             var from = fromMapper.map(rs, ctx);
             var to = toMapper.map(rs, ctx);
 
@@ -95,8 +93,8 @@ public final class UnitConverterMapper extends PrefixRowMapper<UnitConverterDb, 
         }
         return converter;
     }
-    
-    public static enum Columns implements TableColumnDefinition
+
+    public enum Columns implements TableColumnDefinition
     {
         ID(GenericColumns.ID),
         FROM_UNITS_ABBR("fromunitsabbr"),
@@ -107,10 +105,10 @@ public final class UnitConverterMapper extends PrefixRowMapper<UnitConverterDb, 
         C("c"),
         D("d"),
         E("e"),
-        F("f")        
+        F("f")
         ;
-        private final String column;
 
+        private final String column;
 
         Columns(String column)
         {
@@ -126,7 +124,6 @@ public final class UnitConverterMapper extends PrefixRowMapper<UnitConverterDb, 
         public String column()
         {
             return column;
-        }        
-    
+        }
     }
 }

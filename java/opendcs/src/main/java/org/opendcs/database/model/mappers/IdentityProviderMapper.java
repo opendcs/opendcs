@@ -18,7 +18,6 @@ package org.opendcs.database.model.mappers;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
-import java.util.EnumSet;
 import java.util.Map;
 
 import org.jdbi.v3.core.generic.GenericType;
@@ -36,7 +35,7 @@ import decodes.sql.DbKey;
 /**
  * Map identity provider columns
  */
-public final class IdentityProviderMapper extends PrefixRowMapper<IdentityProvider, org.opendcs.database.model.mappers.IdentityProviderMapper.Columns>
+public final class IdentityProviderMapper extends PrefixRowMapper<IdentityProvider,IdentityProviderMapper.Columns>
 {
     public static final String IDENTITY_PROVIDER_ID = "identity_provider_id";
 
@@ -78,24 +77,23 @@ public final class IdentityProviderMapper extends PrefixRowMapper<IdentityProvid
         return new IdentityProviderMapper(prefix);
     }
 
-    public static enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition
     {
         ID(GenericColumns.ID),
         NAME(GenericColumns.NAME),
         TYPE("type"),
         UPDATED_AT(GenericColumns.UPDATED_AT),
         CONFIG(GenericColumns.CONFIG)
-
         ;
 
         private final String column;
 
-        private Columns(String column)
+        Columns(String column)
         {
             this.column = column;
         }
 
-        private Columns(GenericColumns other)
+        Columns(GenericColumns other)
         {
             this.column = other.column();
         }
@@ -105,6 +103,5 @@ public final class IdentityProviderMapper extends PrefixRowMapper<IdentityProvid
         {
             return column;
         }
-        
     }
 }

@@ -12,9 +12,8 @@ import org.opendcs.utils.sql.GenericColumns;
 import decodes.db.DataSource;
 import decodes.sql.DbKey;
 
-public final class DataSourceMapper extends PrefixRowMapper<DataSource, org.opendcs.database.model.mappers.datasource.DataSourceMapper.Columns>
+public final class DataSourceMapper extends PrefixRowMapper<DataSource,DataSourceMapper.Columns>
 {
-
     private DataSourceMapper(String prefix)
     {
         super(prefix, Columns.class);
@@ -41,8 +40,8 @@ public final class DataSourceMapper extends PrefixRowMapper<DataSource, org.open
         ds.setDataSourceArg(dataSourceArg);
         return ds;
     }
-    
-    public static enum Columns implements TableColumnDefinition
+
+    public enum Columns implements TableColumnDefinition
     {
         ID(GenericColumns.ID),
         NAME(GenericColumns.NAME),
@@ -67,6 +66,5 @@ public final class DataSourceMapper extends PrefixRowMapper<DataSource, org.open
         {
             return column;
         }
-        
     }
 }
