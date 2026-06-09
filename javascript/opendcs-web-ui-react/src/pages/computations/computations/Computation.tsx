@@ -30,11 +30,10 @@ import { ComputationParamsTable } from "./ComputationParamsTable";
 import { AlgorithmSelectModal } from "./AlgorithmSelectModal";
 import SinceUntilEditor from "../../../components/controls/SinceUntilEditor";
 import {
-  isNow,
-  parseAbsolute,
-  parseNowMinus,
-  formatAbsolute,
-} from "../../../components/controls/idTime";
+  apiTimeToEditorValue,
+  editorValueToStartFields,
+  editorValueToEndFields,
+} from "./computationTime";
 
 export type UiComputation = Partial<ApiComputation>;
 
@@ -171,106 +170,6 @@ const requiredParmsFromAlgorithm = (algorithm?: ApiAlgorithm): ApiCompParm[] =>
       algoRoleName: parm.roleName,
       algoParmType: parm.parmType,
     }));
-
-/** Convert the three API effective-time fields into the string format SinceUntilEditor uses. */
-const apiTimeToEditorValue = (
-  type: string | undefined,
-  date: Date | undefined | null,
-  interval: string | undefined,
-): string | undefined => {
-  switch (type) {
-    case "Now":
-      return "now";
-    case "Now -":
-      return interval ? `now - ${interval}` : undefined;
-    case "Calendar": {
-      if (!date) return undefined;
-      const d = date instanceof Date ? date : new Date(date as unknown as string);
-      return isNaN(d.getTime()) ? undefined : formatAbsolute(d);
-    }
-    default:
-      return undefined; // "No Limit" or unset → empty → editor shows No Limit
-  }
-};
-
-/** Parse SinceUntilEditor's emitted string back into the three API fields. */
-const editorValueToStartFields = (
-  value: string,
-): Pick<
-  ApiComputation,
-  "effectiveStartType" | "effectiveStartDate" | "effectiveStartInterval"
-> => {
-  if (!value)
-    return {
-      effectiveStartType: "No Limit",
-      effectiveStartDate: undefined,
-      effectiveStartInterval: undefined,
-    };
-  if (isNow(value))
-    return {
-      effectiveStartType: "Now",
-      effectiveStartDate: undefined,
-      effectiveStartInterval: undefined,
-    };
-  const amount = parseNowMinus(value);
-  if (amount !== undefined)
-    return {
-      effectiveStartType: "Now -",
-      effectiveStartInterval: amount,
-      effectiveStartDate: undefined,
-    };
-  const abs = parseAbsolute(value);
-  if (abs)
-    return {
-      effectiveStartType: "Calendar",
-      effectiveStartDate: abs,
-      effectiveStartInterval: undefined,
-    };
-  return {
-    effectiveStartType: "No Limit",
-    effectiveStartDate: undefined,
-    effectiveStartInterval: undefined,
-  };
-};
-
-const editorValueToEndFields = (
-  value: string,
-): Pick<
-  ApiComputation,
-  "effectiveEndType" | "effectiveEndDate" | "effectiveEndInterval"
-> => {
-  if (!value)
-    return {
-      effectiveEndType: "No Limit",
-      effectiveEndDate: undefined,
-      effectiveEndInterval: undefined,
-    };
-  if (isNow(value))
-    return {
-      effectiveEndType: "Now",
-      effectiveEndDate: undefined,
-      effectiveEndInterval: undefined,
-    };
-  const amount = parseNowMinus(value);
-  if (amount !== undefined)
-    return {
-      effectiveEndType: "Now -",
-      effectiveEndInterval: amount,
-      effectiveEndDate: undefined,
-    };
-  const abs = parseAbsolute(value);
-  if (abs)
-    return {
-      effectiveEndType: "Calendar",
-      effectiveEndDate: abs,
-      effectiveEndInterval: undefined,
-    };
-  return {
-    effectiveEndType: "No Limit",
-    effectiveEndDate: undefined,
-    effectiveEndInterval: undefined,
-  };
-};
 
 const assignedId = (value: number | undefined): number | undefined =>
   value !== undefined && value > 0 ? value : undefined;
