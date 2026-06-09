@@ -136,7 +136,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                  .define(SqlQueries.WHERE_CLAUSE, "where id = :id")
                  .define(SqlQueries.LIMIT_CLAUSE, "")
-                 .bind(GenericColumns.ID, id);
+                 .bind(GenericColumns.ID.column(), id);
 
             return query.registerRowMapper(DecodesConfigMapper.withPrefix("pc"))
                         .registerRowMapper(EquipmentModelMapper.withPrefix("e"))
@@ -174,7 +174,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                  .define(SqlQueries.WHERE_CLAUSE, "where upper(name) = upper(:name)")
                  .define(SqlQueries.LIMIT_CLAUSE, "")
-                 .bind(GenericColumns.NAME, name);
+                 .bind(GenericColumns.NAME.column(), name);
 
             return query.registerRowMapper(DecodesConfigMapper.withPrefix("pc"))
                         .registerRowMapper(EquipmentModelMapper.withPrefix("e"))
@@ -244,32 +244,32 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
             final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("platformconfig", handle.getConnection());
 
             final var em = pc.getEquipmentModel();
-            merge.bind(GenericColumns.ID, bindKey)
-                 .bind(GenericColumns.NAME, pc.getName())
-                 .bind(GenericColumns.DESCRIPTION, pc.description)
+            merge.bind(GenericColumns.ID.column(), bindKey)
+                 .bind(GenericColumns.NAME.column(), pc.getName())
+                 .bind(GenericColumns.DESCRIPTION.column(), pc.description)
                  .bindByType("equipmentid", em != null ? em.getId() : null, DbKey.class)
                  .execute()
                  ;
 
             // delete everything
-            deleteConfigSensorProps.bind(GenericColumns.ID, bindKey).execute();
-            deleteConfigSensorDataType.bind(GenericColumns.ID, bindKey).execute();
+            deleteConfigSensorProps.bind(GenericColumns.ID.column(), bindKey).execute();
+            deleteConfigSensorDataType.bind(GenericColumns.ID.column(), bindKey).execute();
 
-            var ucIds = getUnitConverterIds.bind(GenericColumns.ID, bindKey)
+            var ucIds = getUnitConverterIds.bind(GenericColumns.ID.column(), bindKey)
                                            .mapTo(DbKey.class)
                                            .collectIntoList();
 
-            deleteScriptSensor.bind(GenericColumns.ID, bindKey).execute();
+            deleteScriptSensor.bind(GenericColumns.ID.column(), bindKey).execute();
 
             for (var ucId: ucIds)
             {
-                deleteScriptSensorUc.bind(GenericColumns.ID, ucId).add();
+                deleteScriptSensorUc.bind(GenericColumns.ID.column(), ucId).add();
             }
             deleteScriptSensorUc.execute();
 
-            deleteConfigSensor.bind(GenericColumns.ID, bindKey).execute();
-            deleteFormatStatements.bind(GenericColumns.ID, bindKey).execute();
-            deleteScript.bind(GenericColumns.ID, bindKey).execute();
+            deleteConfigSensor.bind(GenericColumns.ID.column(), bindKey).execute();
+            deleteFormatStatements.bind(GenericColumns.ID.column(), bindKey).execute();
+            deleteScript.bind(GenericColumns.ID.column(), bindKey).execute();
 
 
 
@@ -368,9 +368,9 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
             for (var script: pc.decodesScripts)
             {
                 final var id = script.idIsSet() ? script.getId() : keyGen.getKey("decodesscript", handle.getConnection());
-                insertScript.bind(GenericColumns.ID, id)
+                insertScript.bind(GenericColumns.ID.column(), id)
                             .bind(CONFIGID, configId)
-                            .bind(GenericColumns.NAME, script.scriptName)
+                            .bind(GenericColumns.NAME.column(), script.scriptName)
                             .bind("script_type", script.scriptType)
                             .bind("dataorder", script.getDataOrder())
                             .add();
@@ -418,24 +418,24 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
             var deleteScript = handle.createUpdate(DELETE_DECODESSCRIPT);
             var deleteConfig = handle.createUpdate("delete from platformconfig where id = :id"))
         {
-            deleteConfigSensorProps.bind(GenericColumns.ID, id).execute();
-            deleteConfigSensorDataType.bind(GenericColumns.ID, id).execute();
-            deleteConfigSensor.bind(GenericColumns.ID, id).execute();
-            var ucIds = getUnitConverterIds.bind(GenericColumns.ID, id)
+            deleteConfigSensorProps.bind(GenericColumns.ID.column(), id).execute();
+            deleteConfigSensorDataType.bind(GenericColumns.ID.column(), id).execute();
+            deleteConfigSensor.bind(GenericColumns.ID.column(), id).execute();
+            var ucIds = getUnitConverterIds.bind(GenericColumns.ID.column(), id)
                                            .mapTo(DbKey.class)
                                            .collectIntoList();
 
-            deleteScriptSensor.bind(GenericColumns.ID, id).execute();
+            deleteScriptSensor.bind(GenericColumns.ID.column(), id).execute();
 
             for (var ucId: ucIds)
             {
-                deleteScriptSensorUc.bind(GenericColumns.ID, ucId).add();
+                deleteScriptSensorUc.bind(GenericColumns.ID.column(), ucId).add();
             }
             deleteScriptSensorUc.execute();
-            deleteFormatStatements.bind(GenericColumns.ID, id).execute();
-            deleteScriptSensor.bind(GenericColumns.ID, id).execute();
-            deleteScript.bind(GenericColumns.ID, id).execute();
-            deleteConfig.bind(GenericColumns.ID, id).execute();
+            deleteFormatStatements.bind(GenericColumns.ID.column(), id).execute();
+            deleteScriptSensor.bind(GenericColumns.ID.column(), id).execute();
+            deleteScript.bind(GenericColumns.ID.column(), id).execute();
+            deleteConfig.bind(GenericColumns.ID.column(), id).execute();
 
         }
     }

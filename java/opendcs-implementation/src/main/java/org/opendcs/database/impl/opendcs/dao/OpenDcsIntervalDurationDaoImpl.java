@@ -49,7 +49,7 @@ public class OpenDcsIntervalDurationDaoImpl implements IntervalDurationDao
                                .define(SqlQueries.WHERE_CLAUSE, " where name = :name ")
                              )
         {
-            return query.bind(GenericColumns.NAME, name)
+            return query.bind(GenericColumns.NAME.column(), name)
                         .registerRowMapper(IntervalMapper.withPrefix(null))
                         .mapTo(Interval.class)
                         .findOne();
@@ -67,7 +67,7 @@ public class OpenDcsIntervalDurationDaoImpl implements IntervalDurationDao
                                .define(SqlQueries.WHERE_CLAUSE, " where interval_id = :id ")
                              )
         {
-            return query.bind(GenericColumns.ID, id)
+            return query.bind(GenericColumns.ID.column(), id)
                         .registerRowMapper(IntervalMapper.withPrefix(null))
                         .mapTo(Interval.class)
                         .findOne();
@@ -113,8 +113,8 @@ public class OpenDcsIntervalDurationDaoImpl implements IntervalDurationDao
             }
             final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("interval_code", handle.getConnection());
 
-            query.bind(GenericColumns.ID, bindKey)
-                 .bind(GenericColumns.NAME, interval.getName())
+            query.bind(GenericColumns.ID.column(), bindKey)
+                 .bind(GenericColumns.NAME.column(), interval.getName())
                  .bind("cal_constant", IntervalCodes.getCalConstName(interval.getCalConstant()))
                  .bind("cal_multiplier", interval.getCalMultiplier())
                  .execute();
@@ -162,7 +162,7 @@ public class OpenDcsIntervalDurationDaoImpl implements IntervalDurationDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         try (var deleteQuery = handle.createUpdate("delete from interval_code where interval_id = :id"))
         {
-            deleteQuery.bind(GenericColumns.ID, id).execute();
+            deleteQuery.bind(GenericColumns.ID.column(), id).execute();
         }
     }
 

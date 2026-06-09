@@ -38,7 +38,7 @@ import decodes.sql.DbKey;
  */
 public final class IdentityProviderMapper extends PrefixRowMapper<IdentityProvider, org.opendcs.database.model.mappers.IdentityProviderMapper.Columns>
 {
-    //public static final String IDENTITY_PROVIDER_ID = "identity_provider_id";
+    public static final String IDENTITY_PROVIDER_ID = "identity_provider_id";
 
     private IdentityProviderMapper(String prefix)
     {

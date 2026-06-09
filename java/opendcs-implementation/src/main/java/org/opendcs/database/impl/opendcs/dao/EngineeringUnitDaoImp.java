@@ -43,7 +43,7 @@ public class EngineeringUnitDaoImp implements EngineeringUnitDao
                                .define("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : ""))
         {
             query.bind("unitabbr", unit.getAbbr())
-                 .bind(GenericColumns.NAME, unit.getName())
+                 .bind(GenericColumns.NAME.column(), unit.getName())
                  .bind("family", unit.getFamily())
                  .bind("measures", unit.getMeasures())
                  .execute();

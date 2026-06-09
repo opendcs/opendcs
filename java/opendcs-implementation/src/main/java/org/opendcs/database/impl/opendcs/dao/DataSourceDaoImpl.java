@@ -57,7 +57,7 @@ public class DataSourceDaoImpl implements DataSourceDao
             return query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                         .define(SqlQueries.WHERE_CLAUSE, "where id = :id")
                         .define(SqlQueries.LIMIT_CLAUSE, "")
-                        .bind(GenericColumns.ID, id)
+                        .bind(GenericColumns.ID.column(), id)
                         .reduceResultSet(new LinkedHashMap<>(), DataSourceAccumulator.DATA_SOURCE_ACCUMULATOR)
                         .values()
                         .stream()
@@ -77,7 +77,7 @@ public class DataSourceDaoImpl implements DataSourceDao
             return query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                         .define(SqlQueries.WHERE_CLAUSE, "where name = :name")
                         .define(SqlQueries.LIMIT_CLAUSE, "")
-                        .bind(GenericColumns.NAME, name)
+                        .bind(GenericColumns.NAME.column(), name)
                         .reduceResultSet(new LinkedHashMap<>(), DataSourceAccumulator.DATA_SOURCE_ACCUMULATOR)
                         .values()
                         .stream()
@@ -115,12 +115,12 @@ public class DataSourceDaoImpl implements DataSourceDao
         {
             final DbKey id = dataSource.idIsSet() ? dataSource.getId() : keyGen.getKey("datasource", handle.getConnection());
             mergeQuery.bind("id", id)
-                 .bind(GenericColumns.NAME, dataSource.getName())
+                 .bind(GenericColumns.NAME.column(), dataSource.getName())
                  .bind("datasourcetype", dataSource.dataSourceType)
                  .bind("datasourcearg", dataSource.getDataSourceArg())
                  .execute();
 
-            deleteGroupQuery.bind(GenericColumns.ID, id).execute();
+            deleteGroupQuery.bind(GenericColumns.ID.column(), id).execute();
 
             if (!dataSource.groupMembers.isEmpty())
             {
@@ -166,8 +166,8 @@ public class DataSourceDaoImpl implements DataSourceDao
              var deleteSource = handle.createUpdate("delete from datasource where id = :id")
             )
         {
-            deleteMembers.bind(GenericColumns.ID, id).execute();
-            deleteSource.bind(GenericColumns.ID, id).execute();
+            deleteMembers.bind(GenericColumns.ID.column(), id).execute();
+            deleteSource.bind(GenericColumns.ID.column(), id).execute();
         }
     }
 

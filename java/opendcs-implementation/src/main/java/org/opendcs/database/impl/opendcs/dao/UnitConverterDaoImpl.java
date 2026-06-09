@@ -55,7 +55,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
                 """;
         try (var query = handle.createQuery(querySql))
         {
-            return query.bind(GenericColumns.ID, id)
+            return query.bind(GenericColumns.ID.column(), id)
                         .registerRowMapper(UnitConverterDb.class, UnitConverterMapper.withPrefix(""))
                         .mapTo(UnitConverterDb.class)
                         .findOne();
@@ -97,7 +97,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
         {
             final DbKey id = unitConverter.idIsSet() ? unitConverter.getId() : keyGen.getKey("unitconverter", handle.getConnection());
             query.registerArgument(new NullableDoubleArgumentFactory())
-                 .bind(GenericColumns.ID, id)
+                 .bind(GenericColumns.ID.column(), id)
                  .bind("fromunitsabbr", unitConverter.fromAbbr)
                  .bind("tounitsabbr", unitConverter.toAbbr)
                  .bind("algorithm", unitConverter.algorithm)
@@ -124,7 +124,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
         final var deleteDataTypeSql = "delete from unitconverter where id = :id";
         try (var deleteDataType = handle.createUpdate(deleteDataTypeSql))
         {
-            deleteDataType.bind(GenericColumns.ID, id).execute();
+            deleteDataType.bind(GenericColumns.ID.column(), id).execute();
         }
     }
 

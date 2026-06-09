@@ -8,13 +8,14 @@ import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.impl.opendcs.jdbi.column.numeric.NullableDouble;
 import org.opendcs.database.model.mappers.PrefixRowMapper;
 import org.opendcs.database.model.mappers.datatype.DataTypeMapper;
+import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 
 import decodes.db.DataPresentation;
 import decodes.sql.DbKey;
 
-public class DataPresentationMapper extends PrefixRowMapper<DataPresentation>
+public class DataPresentationMapper extends PrefixRowMapper<DataPresentation, org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.presentationgroup.DataPresentationMapper.Columns>
 {
     private static final ColumnMapper<Double> DOUBLE_MAPPER = new NullableDouble();    
 
@@ -22,7 +23,7 @@ public class DataPresentationMapper extends PrefixRowMapper<DataPresentation>
 
     protected DataPresentationMapper(String prefix, String dataTypePrefix)
     {
-        super(prefix);
+        super(prefix, Columns.class);
         dataTypeMapper = DataTypeMapper.withPrefix(dataTypePrefix);
     }
 
@@ -31,18 +32,18 @@ public class DataPresentationMapper extends PrefixRowMapper<DataPresentation>
     {
         ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class)
                                                     .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
-        var id = columnMapperForKey.map(rs, prefix + GenericColumns.ID, ctx);
+        var id = columnMapperForKey.map(rs, column(Columns.ID), ctx);
         if (DbKey.isNull(id))
         {
             return null;
         }
         final var presentation = new DataPresentation();
         presentation.forceSetId(id);
-        presentation.setUnitsAbbr(rs.getString(prefix + "unitabbr"));
-        presentation.setMaxDecimals(rs.getInt(prefix + "maxdecimals"));
+        presentation.setUnitsAbbr(rs.getString(column(Columns.UNIT_ABBR)));
+        presentation.setMaxDecimals(rs.getInt(column(Columns.MAX_DECIMALS)));
 
-        presentation.setMaxValue(DOUBLE_MAPPER.map(rs, prefix + "max_value", ctx));
-        presentation.setMinValue(DOUBLE_MAPPER.map(rs, prefix + "min_value", ctx));
+        presentation.setMaxValue(DOUBLE_MAPPER.map(rs, column(Columns.MAX_VALUE), ctx));
+        presentation.setMinValue(DOUBLE_MAPPER.map(rs, column(Columns.MIN_VALUE), ctx));
         
         // equipmentid is on the table, but not in the DataPresentation Object
 
@@ -62,5 +63,34 @@ public class DataPresentationMapper extends PrefixRowMapper<DataPresentation>
     public static DataPresentationMapper withPrefix(String prefix, String dataTypePrefix)
     {
         return new DataPresentationMapper(prefix, dataTypePrefix);
+    }
+
+    public static enum Columns implements TableColumnDefinition
+    {
+        ID(GenericColumns.ID),
+        UNIT_ABBR("unitabbr"),
+        MAX_DECIMALS("max_decimals"),
+        MAX_VALUE("max_value"),
+        MIN_VALUE("min_value")
+        ;
+
+        private final String column;
+
+        Columns(String column)
+        {
+            this.column = column;
+        }
+
+        Columns(TableColumnDefinition other)
+        {
+            this.column = other.column();
+        }
+
+        @Override
+        public String column()
+        {
+            return column;
+        }
+        
     }
 }

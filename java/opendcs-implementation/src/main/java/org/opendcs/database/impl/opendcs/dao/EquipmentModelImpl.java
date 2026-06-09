@@ -111,7 +111,7 @@ public class EquipmentModelImpl implements EquipmentModelDao
                 """;
         try (var emQuery = handle.createQuery(emQuerySQL))
         {
-            return emQuery.bind(GenericColumns.NAME, name)
+            return emQuery.bind(GenericColumns.NAME.column(), name)
                           .registerRowMapper(EquipmentModelMapper.withPrefix("e"))
                           .registerRowMapper(PropertiesMapper.PAIR_STRING_STRING, PropertiesMapper.withPrefix("p"))
                           .reduceRows(new EquipmentModelReducer("e", "p"))
@@ -129,8 +129,8 @@ public class EquipmentModelImpl implements EquipmentModelDao
         try (var deleteProps = handle.createUpdate(PROPERTIES_DELETE_SQL);
              var deleteEquipmentModel = handle.createUpdate(deleteEquipmentModelSql))
         {
-            deleteProps.bind(GenericColumns.ID, id).execute();
-            deleteEquipmentModel.bind(GenericColumns.ID, id).execute();
+            deleteProps.bind(GenericColumns.ID.column(), id).execute();
+            deleteEquipmentModel.bind(GenericColumns.ID.column(), id).execute();
         }
     }
 
@@ -162,18 +162,18 @@ public class EquipmentModelImpl implements EquipmentModelDao
              var insertProps = handle.prepareBatch(insertPropsSql))
         {
             final DbKey id = em.idIsSet() ? em.getId() : keyGen.getKey("equipmentmodel", handle.getConnection());
-            emMerge.bind(GenericColumns.ID, id);
-            emMerge.bind(GenericColumns.NAME, em.name);
+            emMerge.bind(GenericColumns.ID.column(), id);
+            emMerge.bind(GenericColumns.NAME.column(), em.name);
             emMerge.bind("model", em.model);
             emMerge.bind("company", em.company);
-            emMerge.bind(GenericColumns.DESCRIPTION, em.description);
+            emMerge.bind(GenericColumns.DESCRIPTION.column(), em.description);
             emMerge.bind("equipmentType", em.equipmentType);
             emMerge.execute();
             propsDelete.bind("id", id).execute();
             em.properties.forEach((k,v) ->
             {
                 insertProps.bind("equipmentid", id);
-                insertProps.bind(GenericColumns.NAME, k.toString());
+                insertProps.bind(GenericColumns.NAME.column(), k.toString());
                 var toSave = v != null ? v.toString() : "";
                 insertProps.bind("value", toSave);
                 insertProps.add();

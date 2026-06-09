@@ -31,7 +31,7 @@ public class CwmsRolesDaoImpl implements RolesDao
         Handle handle = getHandle(tx);
         try (var select = handle.createQuery("select id, name, description, updated_at from opendcs_role where name = :name"))
         {
-            return select.bind(GenericColumns.NAME, role)
+            return select.bind(GenericColumns.NAME.column(), role)
                          .map(ROLE_MAPPER)
                          .findOne();
         }
@@ -69,8 +69,8 @@ public class CwmsRolesDaoImpl implements RolesDao
                     values (:name, :description)   
                     """))
         {
-            final var id = addRole.bind(GenericColumns.NAME, role.name)
-                                  .bind(GenericColumns.DESCRIPTION, role.description)
+            final var id = addRole.bind(GenericColumns.NAME.column(), role.name)
+                                  .bind(GenericColumns.DESCRIPTION.column(), role.description)
                                   .executeAndReturnGeneratedKeys("id")
                                   .mapTo(DbKey.class)
                                   .one();
@@ -86,7 +86,7 @@ public class CwmsRolesDaoImpl implements RolesDao
         Handle handle = getHandle(tx);
         try (var select = handle.createQuery("select id, name, description, updated_at from opendcs_role where id = :id"))
         {
-            return select.bind(GenericColumns.ID, id)
+            return select.bind(GenericColumns.ID.column(), id)
                          .map(ROLE_MAPPER).findOne();
         }
     }
@@ -98,9 +98,9 @@ public class CwmsRolesDaoImpl implements RolesDao
         try (var update = handle.createUpdate(
             "update opendcs_role set name =:name, description = :description where id=:id"))
         {
-            update.bind(GenericColumns.NAME, role.name)
-                  .bind(GenericColumns.DESCRIPTION, role.description)
-                  .bind(GenericColumns.ID, id)
+            update.bind(GenericColumns.NAME.column(), role.name)
+                  .bind(GenericColumns.DESCRIPTION.column(), role.description)
+                  .bind(GenericColumns.ID.column(), id)
                   .execute();
             return getRole(tx, id).orElseThrow(
                 () -> new OpenDcsDataException("Unable to retrieve Role we just updated.")
@@ -114,7 +114,7 @@ public class CwmsRolesDaoImpl implements RolesDao
         var handle = getHandle(tx);
         try (var delete = handle.createUpdate("delete from opendcs_role where id = :id"))
         {
-             delete.bind(GenericColumns.ID, id)
+             delete.bind(GenericColumns.ID.column(), id)
                    .execute();
         }
     }
