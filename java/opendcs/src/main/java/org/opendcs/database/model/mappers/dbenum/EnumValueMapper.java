@@ -18,7 +18,7 @@ public final class EnumValueMapper extends PrefixRowMapper<EnumValue,EnumValueMa
         super(prefix, Columns.class);
     }
 
-    public static final EnumValueMapper withPrefix(String prefix)
+    public static EnumValueMapper withPrefix(String prefix)
     {
         return new EnumValueMapper(prefix);
     }

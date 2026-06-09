@@ -9,7 +9,7 @@ import org.opendcs.database.sql.TableColumnDefinition;
 
 import decodes.db.FormatStatement;
 
-public class FormatStatementMapper extends PrefixRowMapper<FormatStatement, org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.scripts.FormatStatementMapper.Columns>
+public final class FormatStatementMapper extends PrefixRowMapper<FormatStatement,FormatStatementMapper.Columns>
 {
 
     protected FormatStatementMapper(String prefix)
@@ -58,6 +58,5 @@ public class FormatStatementMapper extends PrefixRowMapper<FormatStatement, org.
         {
             return column;
         }
-        
     }
 }

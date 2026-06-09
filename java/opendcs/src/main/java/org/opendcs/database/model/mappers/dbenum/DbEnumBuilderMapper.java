@@ -12,7 +12,7 @@ import org.opendcs.utils.sql.GenericColumns;
 import decodes.db.DbEnum.DbEnumBuilder;
 import decodes.sql.DbKey;
 
-public class DbEnumBuilderMapper extends PrefixRowMapper<DbEnumBuilder,DbEnumBuilderMapper.Columns>
+public final class DbEnumBuilderMapper extends PrefixRowMapper<DbEnumBuilder,DbEnumBuilderMapper.Columns>
 {
     private DbEnumBuilderMapper(String prefix)
     {

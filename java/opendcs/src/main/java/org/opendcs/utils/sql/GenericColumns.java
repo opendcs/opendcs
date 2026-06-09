@@ -5,7 +5,7 @@ import org.opendcs.database.sql.TableColumnDefinition;
 /**
  * Enumeration of common column names. Individual Mappers
  * must duplicate these to their local enumeration, they should
- * do so by providing a constructor that takes a GenericColumns 
+ * do so by providing a constructor that takes a GenericColumns
  * enum to handle the copy.
  */
 public enum GenericColumns implements TableColumnDefinition
@@ -19,12 +19,11 @@ public enum GenericColumns implements TableColumnDefinition
     EMAIL ("email"),
     SUBJECT ("subject"),
     DESCRIPTION ("description")
-
     ;
 
     private final String column;
 
-    private GenericColumns(String column)
+    GenericColumns(String column)
     {
         this.column = column;
     }
