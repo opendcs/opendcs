@@ -36,12 +36,13 @@ import decodes.sql.DbKey;
 /**
  * Map identity provider columns
  */
-public final class IdentityProviderMapper extends PrefixRowMapper<IdentityProvider,org.opendcs.database.model.mappers.IdentityProviderMapper.Columns>
+public final class IdentityProviderMapper extends PrefixRowMapper<IdentityProvider, org.opendcs.database.model.mappers.IdentityProviderMapper.Columns>
 {
+    //public static final String IDENTITY_PROVIDER_ID = "identity_provider_id";
 
     private IdentityProviderMapper(String prefix)
     {
-        super(prefix, EnumSet.allOf(Columns.class));
+        super(prefix, Columns.class);
     }
 
     @Override
@@ -81,10 +82,11 @@ public final class IdentityProviderMapper extends PrefixRowMapper<IdentityProvid
     {
         ID(GenericColumns.ID),
         NAME(GenericColumns.NAME),
-        UPDATED_AT(GenericColumns.CREATED_AT),
-        CONFIG(GenericColumns.CONFIG),
         TYPE("type"),
-        IDENTITY_PROVIDER_ID("identity_provider_id");
+        UPDATED_AT(GenericColumns.UPDATED_AT),
+        CONFIG(GenericColumns.CONFIG)
+
+        ;
 
         private final String column;
 
@@ -93,7 +95,8 @@ public final class IdentityProviderMapper extends PrefixRowMapper<IdentityProvid
             this.column = column;
         }
 
-        private Columns(GenericColumns other) {
+        private Columns(GenericColumns other)
+        {
             this.column = other.column();
         }
 
@@ -102,5 +105,6 @@ public final class IdentityProviderMapper extends PrefixRowMapper<IdentityProvid
         {
             return column;
         }
+        
     }
 }

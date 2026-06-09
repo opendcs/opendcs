@@ -6,16 +6,18 @@ import java.sql.SQLException;
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 
 import decodes.db.DbEnum.DbEnumBuilder;
 import decodes.sql.DbKey;
 
-public class DbEnumBuilderMapper extends PrefixRowMapper<DbEnumBuilder>
+public class DbEnumBuilderMapper extends PrefixRowMapper<DbEnumBuilder, org.opendcs.database.model.mappers.dbenum.DbEnumBuilderMapper.Columns>
 {
 
-    private DbEnumBuilderMapper(String prefix) {
-        super(prefix);
+    private DbEnumBuilderMapper(String prefix)
+    {
+        super(prefix, Columns.class);
     }
 
     public static DbEnumBuilderMapper withPrefix(String prefix)
@@ -33,5 +35,33 @@ public class DbEnumBuilderMapper extends PrefixRowMapper<DbEnumBuilder>
         final String defaultValue = rs.getString(prefix + "defaultValue");
         final String description = rs.getString(prefix + GenericColumns.DESCRIPTION);
         return new DbEnumBuilder(id, name, defaultValue, description);
+    }
+
+    public static enum Columns implements TableColumnDefinition
+    {
+        ID(GenericColumns.ID),
+        NAME(GenericColumns.NAME),
+        DEFAULT_VALUE("defaultValue"),
+        DESCRIPTION(GenericColumns.DESCRIPTION)
+        ;
+
+        private final String column;
+
+        Columns(String column)
+        {
+            this.column = column;
+        }
+
+        Columns(GenericColumns other)
+        {
+            this.column = other.column();
+        }
+
+        @Override
+        public String column()
+        {
+            return column;
+        }
+        
     }
 }

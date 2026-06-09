@@ -30,6 +30,11 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
         this.columns = columns;
     }
 
+    protected PrefixRowMapper(String prefix, Class<E> enumClass)
+    {
+        this(prefix, EnumSet.allOf(enumClass));
+    }
+
     public static String addUnderscoreIfMissing(String prefix)
     {
         var tmp = (prefix == null || prefix.isBlank()) ? "" : prefix;
@@ -55,5 +60,5 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
             throw new SQLException("Column " + column + " does not exist for this table.");
         }
         return prefix + column.column();
-    }    
+    }
 }
