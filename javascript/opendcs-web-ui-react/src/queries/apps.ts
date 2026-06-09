@@ -14,6 +14,7 @@ import {
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
 import { appKeys } from "./keys";
+import { invalidateThenDelegate, normalizeNewId } from "./mutationHelpers";
 
 const useAppsApi = () => {
   const api = useApi();
@@ -61,15 +62,14 @@ export const useSaveAppMutation = (
   const { appApi, org } = useAppsApi();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (app: ApiLoadingApp) => {
-      const appId = app.appId && app.appId > 0 ? app.appId : undefined;
-      return appApi.postApp(org, { ...app, appId });
-    },
+    mutationFn: (app: ApiLoadingApp) =>
+      appApi.postApp(org, { ...app, appId: normalizeNewId(app.appId) }),
     ...options,
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: appKeys.all(org) });
-      options?.onSuccess?.(...args);
-    },
+    onSuccess: invalidateThenDelegate(
+      queryClient,
+      appKeys.all(org),
+      options?.onSuccess,
+    ),
   });
 };
 
@@ -81,10 +81,11 @@ export const useDeleteAppMutation = (
   return useMutation({
     mutationFn: (appId: number) => appApi.deleteApp(org, appId),
     ...options,
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: appKeys.all(org) });
-      options?.onSuccess?.(...args);
-    },
+    onSuccess: invalidateThenDelegate(
+      queryClient,
+      appKeys.all(org),
+      options?.onSuccess,
+    ),
   });
 };
 
