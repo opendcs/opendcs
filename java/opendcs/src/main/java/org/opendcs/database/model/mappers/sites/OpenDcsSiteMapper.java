@@ -56,7 +56,7 @@ public class OpenDcsSiteMapper extends PrefixRowMapper<Site, org.opendcs.databas
         ret.country = rs.getString(column(Columns.COUNTRY));
         ret.setActive(rs.getBoolean(column(Columns.ACTIVE_FLAG)));
         ret.setLocationType(rs.getString(column(Columns.LOCATION_TYPE)));
-        ret.setLastModifyTime(dateMapper.map(rs, prefix + column(Columns.MODIFY_TIME), ctx));
+        ret.setLastModifyTime(dateMapper.map(rs, column(Columns.MODIFY_TIME), ctx));
 
 
         return ret;

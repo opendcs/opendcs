@@ -32,7 +32,7 @@ public class IntervalMapper extends PrefixRowMapper<Interval, org.opendcs.databa
         final var calConstant = rs.getString(column(Columns.CALENDAR_CONSTANT));
         ret.setCalConstant(IntervalCodes.getCalConstant(calConstant));
 
-        ret.setCalMultiplier(rs.getInt(column(Columns.CALENDAR_CONSTANT)));
+        ret.setCalMultiplier(rs.getInt(column(Columns.CALENDAR_MULTIPLIER)));
         return ret;
     }
     

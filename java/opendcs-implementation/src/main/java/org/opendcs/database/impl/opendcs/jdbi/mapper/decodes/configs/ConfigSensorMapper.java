@@ -63,7 +63,7 @@ public class ConfigSensorMapper extends PrefixRowMapper<ConfigSensor,org.opendcs
         CONFIG_ID("configid"),
         SENSOR_NUMBER("sensornumber"),
         SENSOR_NAME("sensorname"),
-        RECORDING_INTERVAL("recording_interval"),
+        RECORDING_INTERVAL("recordinginterval"),
         RECORDING_MODE("recordingMode"),
         ABSOLUTE_MIN("absolutemin"),
         TIME_OF_FIRST_SAMPLE("timeoffirstsample"),

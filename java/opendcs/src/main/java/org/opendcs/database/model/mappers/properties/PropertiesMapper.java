@@ -54,9 +54,16 @@ public final class PropertiesMapper extends PrefixRowMapper<Pair<String,String>,
      * Override default behavior to insert prop_ or not.
      */
     @Override
-    protected String column(Columns column)
+    protected String column(Columns column) throws SQLException
     {
-        return prefix + prop + column.column();
+        if (Columns.NAME == column)
+        {
+            return prefix + prop + column.column();
+        }
+        else
+        {
+            return super.column(column);
+        }
     }
 
     public static enum Columns implements TableColumnDefinition

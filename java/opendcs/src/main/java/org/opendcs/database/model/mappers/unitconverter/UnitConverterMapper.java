@@ -99,7 +99,7 @@ public final class UnitConverterMapper extends PrefixRowMapper<UnitConverterDb, 
     public static enum Columns implements TableColumnDefinition
     {
         ID(GenericColumns.ID),
-        FROM_UNITS_ABBR("fromunitsabr"),
+        FROM_UNITS_ABBR("fromunitsabbr"),
         TO_UNITS_ABBR("tounitsabbr"),
         ALGORITHM("algorithm"),
         A("a"),

@@ -69,7 +69,7 @@ public class DataPresentationMapper extends PrefixRowMapper<DataPresentation, or
     {
         ID(GenericColumns.ID),
         UNIT_ABBR("unitabbr"),
-        MAX_DECIMALS("max_decimals"),
+        MAX_DECIMALS("maxdecimals"),
         MAX_VALUE("max_value"),
         MIN_VALUE("min_value")
         ;

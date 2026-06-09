@@ -32,7 +32,7 @@ public final class DataSourceMapper extends PrefixRowMapper<DataSource, org.open
         ColumnMapper<DbKey> dbKeyMapper = ctx.findColumnMapperFor(DbKey.class)
                                              .orElseThrow(() -> new SQLException("No mapper registered for DbKey class."));
         final DbKey id = dbKeyMapper.map(rs, column(Columns.ID), ctx);
-        final String name = rs.getString(prefix + column(Columns.NAME));
+        final String name = rs.getString(column(Columns.NAME));
         final String dataSourceType = rs.getString(column(Columns.SOURCE_TYPE));
         final String dataSourceArg = rs.getString(column(Columns.SOURCE_ARGS));
 

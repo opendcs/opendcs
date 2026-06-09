@@ -47,7 +47,7 @@ public final class CompAppInfoMapper extends PrefixRowMapper<CompAppInfo, org.op
         APP_ID("loading_application_id"),
         APP_NAME("loading_application_name"),
         MANUAL_EDIT_APP("manual_edit_app"),
-        COMMENT("cmmt")
+        COMMENT("cmmnt")
         ;
 
         private final String column;

@@ -41,7 +41,7 @@ public class EnumValueMapper extends PrefixRowMapper<EnumValue, org.opendcs.data
     public static enum Columns implements TableColumnDefinition
     {
         ENUMID("enumid"),
-        ENUM_VALUE("enum_value"),
+        ENUM_VALUE("enumvalue"),
         DESCRIPTION(GenericColumns.DESCRIPTION),
         EXEC_CLASS("execclass"),
         EDIT_CLASS("editclass"),
