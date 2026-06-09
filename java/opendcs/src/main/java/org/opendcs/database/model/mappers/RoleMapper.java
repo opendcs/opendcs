@@ -29,15 +29,13 @@ import org.opendcs.utils.sql.SqlErrorMessages;
 
 import decodes.sql.DbKey;
 
-public final class RoleMapper extends PrefixRowMapper<Role, TableColumnDefinition>
+public final class RoleMapper extends PrefixRowMapper<Role,org.opendcs.database.model.mappers.RoleMapper.Columns>
 {
     public static final String ROLE_ID = "role_id";
 
     private RoleMapper(String prefix)
     {
-        super(prefix,
-              EnumSet.of(GenericColumns.ID, GenericColumns.NAME, GenericColumns.DESCRIPTION, GenericColumns.UPDATED_AT)
-            );
+        super(prefix, EnumSet.allOf(Columns.class));
     }
 
     @Override
@@ -45,12 +43,12 @@ public final class RoleMapper extends PrefixRowMapper<Role, TableColumnDefinitio
     {
         ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class)
                                                     .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
-        DbKey key = columnMapperForKey.map(rs, column(COLUMNS.ID), ctx);
-        String name = rs.getString(column(COLUMNS.NAME));
-        String description = rs.getString(column(COLUMNS.DESCRIPTION));
+        DbKey key = columnMapperForKey.map(rs, column(Columns.ID), ctx);
+        String name = rs.getString(column(Columns.NAME));
+        String description = rs.getString(column(Columns.DESCRIPTION));
         ColumnMapper<ZonedDateTime> columnMapperForZDT = ctx.findColumnMapperFor(ZonedDateTime.class)
                                                             .orElseThrow(() -> new SQLException(SqlErrorMessages.ZDT_MAPPER_NOT_FOUND));
-        ZonedDateTime updatedAt = columnMapperForZDT.map(rs, column(COLUMNS.UPDATED_AT), ctx);
+        ZonedDateTime updatedAt = columnMapperForZDT.map(rs, column(Columns.UPDATED_AT), ctx);
         return new Role(key, name, description, updatedAt);
     }
 
@@ -59,26 +57,26 @@ public final class RoleMapper extends PrefixRowMapper<Role, TableColumnDefinitio
         return new RoleMapper(prefix);
     }
 
-    public static enum COLUMNS implements TableColumnDefinition
-    {
+    public static enum Columns implements TableColumnDefinition {
         ID(GenericColumns.ID),
         NAME(GenericColumns.NAME),
         DESCRIPTION(GenericColumns.DESCRIPTION),
-        UPDATED_AT(GenericColumns.UPDATED_AT),
-
+        UPDATED_AT(GenericColumns.UPDATED_AT)
         ;
 
         private final String column;
 
-        private COLUMNS(String column)
-        {
+        private Columns(String column) {
             this.column = column;
         }
 
+        private Columns(GenericColumns other) {
+            this.column = other.column();
+        }
+
         @Override
-        public String column()
-        {
-            return this.column;
+        public String column() {
+            return column;
         }
     }
 }

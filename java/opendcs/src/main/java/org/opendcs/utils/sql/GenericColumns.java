@@ -2,6 +2,12 @@ package org.opendcs.utils.sql;
 
 import org.opendcs.database.sql.TableColumnDefinition;
 
+/**
+ * Enumeration of common column names. Individual Mappers
+ * must duplicate these to their local enumeration, they should
+ * do so by providing a constructor that takes a GenericColumns 
+ * enum to handle the copy.
+ */
 public enum GenericColumns implements TableColumnDefinition
 {
     CREATED_AT("created_at"),
