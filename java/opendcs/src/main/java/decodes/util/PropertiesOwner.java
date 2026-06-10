@@ -1,5 +1,7 @@
 package decodes.util;
 
+import java.util.Properties;
+
 /**
  * Used by classes that can take properties to control their actions.
  * They must support this interface returning specifications for their
@@ -13,11 +15,20 @@ public interface PropertiesOwner
 	/**
 	 * @return specifications of supported properties.
 	 */
-	public PropertySpec[] getSupportedProps();
+	PropertySpec[] getSupportedProps();
 	
 	/**
 	 * @return true if additional unnamed props are allowed, falis if only the
 	 * ones returned by getSupportedProps are allowed.
 	 */
-	public boolean additionalPropsAllowed();
+	boolean additionalPropsAllowed();
+
+	/**
+	 * Some objects support 
+	 * @param properties
+	 */
+	default void loadFromProperties(Properties properties)
+	{
+
+	}
 }

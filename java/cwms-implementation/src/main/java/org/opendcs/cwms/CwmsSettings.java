@@ -21,6 +21,10 @@ public final class CwmsSettings implements PropertiesOwner, OpenDcsSettings
         // Future work.
     }
 
+    public CwmsSettings()
+    {
+    }
+
     @Override
     public PropertySpec[] getSupportedProps()
     {

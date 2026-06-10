@@ -152,7 +152,7 @@ public class TsListFrame extends TopFrame
 		launchDialog(dlg);
 		if (dlg.isOkPressed())
 		{
-			OpenDcsDbSettings.instance().setFromProperties(props);
+			OpenDcsDbSettings.instance().loadFromProperties(props);
 			try
 			{
 				theDb.writeTsdbProperties(props);

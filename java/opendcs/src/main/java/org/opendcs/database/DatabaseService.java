@@ -13,11 +13,13 @@ import javax.sql.DataSource;
 import org.opendcs.authentication.AuthSourceService;
 import org.opendcs.authentication.impl.NoOpAuthSourceProvider;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.spi.authentication.AuthSource;
 import org.opendcs.spi.database.DatabaseProvider;
 
 import decodes.db.DatabaseException;
 import decodes.util.DecodesSettings;
+import decodes.util.PropertiesOwner;
 import ilex.util.AuthException;
 
 public class DatabaseService
@@ -111,7 +113,22 @@ public class DatabaseService
      */
     private static DecodesSettings decodesSettingsFromJdbc(DataSource dataSource, Properties props) throws DatabaseException
     {
+
         DecodesSettings settings = new DecodesSettings();
+        return loadSettingsFromProperties(dataSource, settings);
+    }
+
+    /**
+     * NOTE: This will mutate the provided settings instance.
+     * @param <T> Type of Setttings
+     * @param dataSource
+     * @param settings settings instance on which to load data
+     * @param props previously loaded properties that may
+     * @return the passed in settings object
+     */
+    public static <T extends PropertiesOwner & OpenDcsSettings> T loadSettingsFromProperties(DataSource dataSource, T settings) throws DatabaseException
+    {
+        Properties props = new Properties();
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement("select prop_name,prop_value from tsdb_property");
              ResultSet rs = stmt.executeQuery())
@@ -126,12 +143,11 @@ public class DatabaseService
                 }
             }
             settings.loadFromProperties(props);
+            return settings;
         }
         catch (SQLException ex)
         {
             throw new DatabaseException("Error retrieving settings data.", ex);
         }
-
-        return settings;
     }
 }

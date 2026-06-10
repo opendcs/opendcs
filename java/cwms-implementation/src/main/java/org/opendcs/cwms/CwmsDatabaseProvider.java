@@ -7,6 +7,7 @@ import javax.sql.DataSource;
 
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.DatabaseQuerySettings;
+import org.opendcs.database.DatabaseService;
 import org.opendcs.spi.database.DatabaseProvider;
 
 import com.google.auto.service.AutoService;
@@ -63,8 +64,7 @@ public class CwmsDatabaseProvider implements DatabaseProvider
     {
         try
         {
-            Properties props = loadPropertiesTable(dataSource);
-            var cwmsSettings = new CwmsSettings(props);
+            var cwmsSettings = DatabaseService.loadSettingsFromProperties(dataSource, new CwmsSettings());
             var allSettings = Map.of(
                 DecodesSettings.class, settings,
                 DatabaseQuerySettings.class, new CwmsDatabaseQuerySettings(),

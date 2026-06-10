@@ -69,10 +69,10 @@ public class OpenDcsDbSettings implements PropertiesOwner, OpenDcsSettings
 
 	public OpenDcsDbSettings(Properties props)
 	{
-		setFromProperties(props);
+		loadFromProperties(props);
 	}
 
-	public void setFromProperties(Properties props)
+	public void loadFromProperties(Properties props)
 	{
 		this.props = props;
 		PropertiesUtil.loadFromProps(this, props);
