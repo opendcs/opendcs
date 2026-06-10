@@ -54,7 +54,7 @@ public final class PropertiesMapper extends PrefixRowMapper<Pair<String,String>,
      * Override default behavior to insert prop_ or not.
      */
     @Override
-    protected String column(Columns column) throws SQLException
+    public String column(Columns column) throws SQLException
     {
         if (Columns.NAME == column)
         {
