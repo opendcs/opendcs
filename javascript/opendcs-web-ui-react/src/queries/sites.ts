@@ -8,6 +8,7 @@ import {
 import { RESTDECODESSiteRecordsApi, type ApiSite, type ApiSiteRef } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
 import { siteKeys } from "./keys";
+import { invalidateThenDelegate } from "./mutationHelpers";
 
 const useSitesApi = () => {
   const api = useApi();
@@ -53,10 +54,11 @@ export const useSaveSiteMutation = (
   return useMutation({
     mutationFn: (site: ApiSite) => sitesApi.postsite(org, site),
     ...options,
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: siteKeys.all(org) });
-      options?.onSuccess?.(...args);
-    },
+    onSuccess: invalidateThenDelegate(
+      queryClient,
+      siteKeys.all(org),
+      options?.onSuccess,
+    ),
   });
 };
 
@@ -68,9 +70,10 @@ export const useDeleteSiteMutation = (
   return useMutation({
     mutationFn: (siteId: number) => sitesApi.deletesite(org, siteId),
     ...options,
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: siteKeys.all(org) });
-      options?.onSuccess?.(...args);
-    },
+    onSuccess: invalidateThenDelegate(
+      queryClient,
+      siteKeys.all(org),
+      options?.onSuccess,
+    ),
   });
 };
