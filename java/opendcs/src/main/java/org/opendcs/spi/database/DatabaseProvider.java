@@ -3,6 +3,7 @@ package org.opendcs.spi.database;
 import decodes.db.DatabaseException;
 import decodes.util.DecodesSettings;
 
+import java.sql.SQLException;
 import java.util.Properties;
 
 import org.opendcs.database.api.OpenDcsDatabase;
@@ -47,4 +48,31 @@ public interface DatabaseProvider
      * @throws DatabaseException
      */
     OpenDcsDatabase createDatabase(javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException;
+
+    /**
+     * Load the tsdb_property table to a properties object.
+     * @param dataSource
+     * @return
+     * @throws DatabaseException
+     */
+    default Properties loadPropertiesTable(javax.sql.DataSource dataSource) throws DatabaseException
+    {
+        Properties props = new Properties();
+        try (var c = dataSource.getConnection();
+             var getProps = c.prepareStatement("select prop_name, prop_value from tsdb_property");
+             var rs = getProps.executeQuery())
+        {
+            while(rs.next())
+            {
+                var key = rs.getString("prop_name");
+                var value = rs.getString("prop_value");
+                props.put(key, value);
+            }
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("Unable to load properties.", ex);
+        }
+        return props;
+    }
 }

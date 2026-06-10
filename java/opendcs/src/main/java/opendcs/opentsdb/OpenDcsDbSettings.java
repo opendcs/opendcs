@@ -17,6 +17,7 @@ package opendcs.opentsdb;
 
 import java.util.Properties;
 
+import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -29,10 +30,10 @@ import ilex.util.PropertiesUtil;
  * @author mmaloney Mike Maloney, Cove Software LLC
  *
  */
-public class OpenTsdbSettings implements PropertiesOwner
+public class OpenDcsDbSettings implements PropertiesOwner, OpenDcsSettings
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
-	private static OpenTsdbSettings _instance = null;
+	private static OpenDcsDbSettings INSTANCE = null;
 
 	/** Allow the UTC Offset of time series to vary by an hour over DST change. */
 	public boolean allowDstOffsetVariation = true;
@@ -61,6 +62,16 @@ public class OpenTsdbSettings implements PropertiesOwner
 			"(default=false) Set to true to enable debugs on database connection management."),
 	};
 
+	public OpenDcsDbSettings()
+	{
+		/* do nothing */
+	}
+
+	public OpenDcsDbSettings(Properties props)
+	{
+		setFromProperties(props);
+	}
+
 	public void setFromProperties(Properties props)
 	{
 		this.props = props;
@@ -74,7 +85,7 @@ public class OpenTsdbSettings implements PropertiesOwner
 		{
 			log.atWarn()
 			   .setCause(ex)
-			   .log("OpenTsdbSettings: Bad offsetErrorAction '{}': defaulting to round.", offsetErrorAction);
+			   .log("Bad offsetErrorAction '{}': defaulting to round.", offsetErrorAction);
 			offsetErrorActionEnum = OffsetErrorAction.ROUND;
 		}
 	}
@@ -91,11 +102,11 @@ public class OpenTsdbSettings implements PropertiesOwner
 		return ret;
 	}
 
-	public static OpenTsdbSettings instance()
+	public static OpenDcsDbSettings instance()
 	{
-		if (_instance == null)
-			_instance = new OpenTsdbSettings();
-		return _instance;
+		if (INSTANCE == null)
+			INSTANCE = new OpenDcsDbSettings();
+		return INSTANCE;
 	}
 
 	@Override
