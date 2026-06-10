@@ -31,7 +31,7 @@ public final class DecodesConfigMapper extends PrefixRowMapper<PlatformConfig,De
         final var pc = new PlatformConfig();
         final var id = columnMapperForKey.map(rs, column(Columns.ID), ctx);
         pc.forceSetId(id);
-        pc.configName = rs.getString(columns(Columns.NAME));
+        pc.configName = rs.getString(column(Columns.NAME));
         pc.description = rs.getString(column(Columns.DESCRIPTION));
         return pc;
     }
@@ -52,7 +52,8 @@ public final class DecodesConfigMapper extends PrefixRowMapper<PlatformConfig,De
     {
         ID(GenericColumns.ID),
         NAME(GenericColumns.NAME),
-        DESCRIPTION(GenericColumns.DESCRIPTION);
+        DESCRIPTION(GenericColumns.DESCRIPTION)
+        ;
 
         private final String column;
 

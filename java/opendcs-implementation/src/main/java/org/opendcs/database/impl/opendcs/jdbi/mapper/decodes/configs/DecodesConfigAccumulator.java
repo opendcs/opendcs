@@ -1,5 +1,7 @@
 package org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.configs;
 
+import static org.opendcs.utils.ExceptionUtil.wrappedComputeIfAbsent;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
@@ -73,7 +75,7 @@ public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, 
             SQLException.class
         );
 
-        rs.getLong(configMapper.column(DeocdesConfigMapper.Columns.EQUIPMENT_ID));
+        rs.getLong(equipmentModelMapper.column(EquipmentModelMapper.Columns.ID));
         if (!rs.wasNull())
         {
             pc.withEquipmentModel(equipmentModelMapper.map(rs, ctx));
