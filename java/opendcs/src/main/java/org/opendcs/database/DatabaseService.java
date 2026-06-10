@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.ServiceLoader;
@@ -16,6 +17,8 @@ import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.spi.authentication.AuthSource;
 import org.opendcs.spi.database.DatabaseProvider;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.DatabaseException;
 import decodes.util.DecodesSettings;
@@ -24,6 +27,7 @@ import ilex.util.AuthException;
 
 public class DatabaseService
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static ServiceLoader<DatabaseProvider> loader = ServiceLoader.load(DatabaseProvider.class);
 
     public static OpenDcsDatabase getDatabaseFor(String appName, DecodesSettings settings) throws DatabaseException
@@ -45,10 +49,12 @@ public class DatabaseService
 
     public static OpenDcsDatabase getDatabaseFor(String appName, DecodesSettings settings, Properties credentials) throws DatabaseException
     {
+        loader.reload();
         final Iterator<DatabaseProvider> providers = loader.iterator();
+        ArrayList<String> attemptedProviders = new ArrayList<>();
         while (providers.hasNext())
         {
-            final DatabaseProvider provider = providers.next();
+            final DatabaseProvider provider = providers.next();            
             if (provider.canCreate(settings))
             {
                 try
@@ -60,8 +66,12 @@ public class DatabaseService
                     throw new DatabaseException("Unable to create database instance.", ex);
                 }
             }
+            attemptedProviders.add(provider.getClass().getName());
         }
-        throw new DatabaseException("No provider found for database type  " + settings.editDatabaseType);
+        
+        throw new DatabaseException(String.format("""
+                No provider found for database type  %s. Availabled types are %s.        
+                """, settings.editDatabaseType, String.join(",", attemptedProviders)));
     }
 
     /**
@@ -92,7 +102,9 @@ public class DatabaseService
 
     private static OpenDcsDatabase createDatabaseFromSettings(DataSource dataSource, DecodesSettings settings) throws DatabaseException
     {
+        loader.reload();
         final Iterator<DatabaseProvider> providers = loader.iterator();
+        ArrayList<String> attemptedProviders = new ArrayList<>();
         while (providers.hasNext())
         {
             final DatabaseProvider provider = providers.next();
@@ -101,7 +113,9 @@ public class DatabaseService
                 return provider.createDatabase(dataSource, settings);
             }
         }
-        throw new DatabaseException("No provider for database type " + settings.editDatabaseType);
+        throw new DatabaseException(String.format("""
+                No provider found for database type  %s. Availabled types are %s.        
+                """, settings.editDatabaseType, String.join(",", attemptedProviders)));
     }
 
     /**
@@ -113,9 +127,8 @@ public class DatabaseService
      */
     private static DecodesSettings decodesSettingsFromJdbc(DataSource dataSource, Properties props) throws DatabaseException
     {
-
         DecodesSettings settings = new DecodesSettings();
-        return loadSettingsFromProperties(dataSource, settings);
+        return loadSettingsFromProperties(dataSource, settings, props);
     }
 
     /**
@@ -123,12 +136,25 @@ public class DatabaseService
      * @param <T> Type of Setttings
      * @param dataSource
      * @param settings settings instance on which to load data
-     * @param props previously loaded properties that may
      * @return the passed in settings object
      */
     public static <T extends PropertiesOwner & OpenDcsSettings> T loadSettingsFromProperties(DataSource dataSource, T settings) throws DatabaseException
     {
+        return loadSettingsFromProperties(dataSource, settings, new Properties());
+    }
+
+    /**
+     * NOTE: This will mutate the provided settings instance.
+     * @param <T> Type of Setttings
+     * @param dataSource
+     * @param settings settings instance on which to load data
+     * @param props previously loaded properties that may be required
+     * @return the passed in settings object
+     */
+    public static <T extends PropertiesOwner & OpenDcsSettings> T loadSettingsFromProperties(DataSource dataSource, T settings, Properties existingProps) throws DatabaseException
+    {
         Properties props = new Properties();
+        props.putAll(existingProps);
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement("select prop_name,prop_value from tsdb_property");
              ResultSet rs = stmt.executeQuery())
