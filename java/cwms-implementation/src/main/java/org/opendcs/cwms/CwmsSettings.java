@@ -10,7 +10,7 @@ import decodes.util.PropertySpec;
 /**
  * Hold any CWMS Specific operational settings.
  * 
- * NOTE: Inentionally empty. Placehodler for future work.
+ * NOTE: Intentionally empty. Placeholder for future work.
  */
 public final class CwmsSettings implements PropertiesOwner, OpenDcsSettings
 {
