@@ -66,7 +66,10 @@ public interface DatabaseProvider
             {
                 var key = rs.getString("prop_name");
                 var value = rs.getString("prop_value");
-                props.put(key, value);
+                if (value != null || !rs.wasNull())
+                {
+                    props.put(key, value);
+                }
             }
         }
         catch (SQLException ex)
