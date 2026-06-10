@@ -46,7 +46,8 @@ public final class DataSourceMapper extends PrefixRowMapper<DataSource,DataSourc
         ID(GenericColumns.ID),
         NAME(GenericColumns.NAME),
         SOURCE_TYPE("datasourcetype"),
-        SOURCE_ARGS("datasourcearg")
+        SOURCE_ARGS("datasourcearg"),
+        SEQUENCE_NUMBER("sequencenum")
         ;
 
         private final String column;

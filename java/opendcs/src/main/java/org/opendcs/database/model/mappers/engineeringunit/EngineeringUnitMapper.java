@@ -25,10 +25,10 @@ public final class EngineeringUnitMapper extends PrefixRowMapper<EngineeringUnit
     @Override
     public EngineeringUnit map(ResultSet rs, StatementContext ctx) throws SQLException
     {
-        final String abbr = rs.getString(prefix + "unitabbr");
-        final String name = rs.getString(prefix + "name");
-        final String family = rs.getString(prefix + "family");
-        final String measures = rs.getString(prefix + "measures");
+        final String abbr = rs.getString(column(Columns.UNIT_ABBR));
+        final String name = rs.getString(column(Columns.NAME));
+        final String family = rs.getString(column(Columns.FAMILY));
+        final String measures = rs.getString(column(Columns.MEASURES));
         return new EngineeringUnit(abbr, name, family, measures);
     }
 

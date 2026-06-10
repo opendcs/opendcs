@@ -29,10 +29,10 @@ public final class DbEnumBuilderMapper extends PrefixRowMapper<DbEnumBuilder,DbE
     {
         ColumnMapper<DbKey> dbKeyMapper = ctx.findColumnMapperFor(DbKey.class)
                                              .orElseThrow(() -> new SQLException("No mapper registered for DbKey class."));
-        final DbKey id = dbKeyMapper.map(rs, prefix + GenericColumns.ID, ctx);
-        final String name = rs.getString(prefix + GenericColumns.NAME);
-        final String defaultValue = rs.getString(prefix + "defaultValue");
-        final String description = rs.getString(prefix + GenericColumns.DESCRIPTION);
+        final DbKey id = dbKeyMapper.map(rs, column(Columns.ID), ctx);
+        final String name = rs.getString(column(Columns.NAME));
+        final String defaultValue = rs.getString(column(Columns.DEFAULT_VALUE));
+        final String description = rs.getString(column(Columns.DESCRIPTION));
         return new DbEnumBuilder(id, name, defaultValue, description);
     }
 

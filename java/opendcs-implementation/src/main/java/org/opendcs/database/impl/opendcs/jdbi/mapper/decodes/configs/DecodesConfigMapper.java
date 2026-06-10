@@ -29,10 +29,10 @@ public final class DecodesConfigMapper extends PrefixRowMapper<PlatformConfig,De
         ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class)
                                                     .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
         final var pc = new PlatformConfig();
-        final var id = columnMapperForKey.map(rs, prefix + GenericColumns.ID, ctx);
+        final var id = columnMapperForKey.map(rs, column(Columns.ID), ctx);
         pc.forceSetId(id);
-        pc.configName = rs.getString(prefix + GenericColumns.NAME);
-        pc.description = rs.getString(prefix + GenericColumns.DESCRIPTION);
+        pc.configName = rs.getString(columns(Columns.NAME));
+        pc.description = rs.getString(column(Columns.DESCRIPTION));
         return pc;
     }
 

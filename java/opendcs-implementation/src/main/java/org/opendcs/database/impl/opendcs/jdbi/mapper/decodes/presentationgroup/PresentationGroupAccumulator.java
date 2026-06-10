@@ -19,7 +19,7 @@ public class PresentationGroupAccumulator implements ResultSetAccumulator<Map<Lo
     private final PresentationGroupMapper pgMapper;
     private final DataPresentationMapper dpMapper;
 
-    public PresentationGroupAccumulator(String prefix, PresentationGroupMapper pgMapper, 
+    public PresentationGroupAccumulator(String prefix, PresentationGroupMapper pgMapper,
                                         DataPresentationMapper dpMapper)
     {
         this.prefix = addUnderscoreIfMissing(prefix);
@@ -31,7 +31,7 @@ public class PresentationGroupAccumulator implements ResultSetAccumulator<Map<Lo
     public Map<Long, PresentationGroup> apply(Map<Long, PresentationGroup> previous, ResultSet rs, StatementContext ctx)
             throws SQLException
     {
-        final var id = rs.getLong(prefix + GenericColumns.ID);
+        final var id = rs.getLong(pgMapper.column(PresentationGroupMapper.Columns.ID));
 
         final var pg = wrappedComputeIfAbsent(previous, id, newId -> pgMapper.map(rs, ctx), SQLException.class);
 
@@ -45,7 +45,7 @@ public class PresentationGroupAccumulator implements ResultSetAccumulator<Map<Lo
                 .stream()
                 .filter(ppg -> pg.groupName.equals(ppg.inheritsFrom))
                 .forEach(ppg -> ppg.parent = pg);
-        final var parentName = rs.getString(prefix+"inheritsfrom");
+        final var parentName = rs.getString(pgMapper.column(PresentationGroupMapper.Columns.INHERITS_FROM));
 
         // see if my child group needs parent assigned.
         if (!rs.wasNull() && pg.parent == null)
@@ -65,5 +65,5 @@ public class PresentationGroupAccumulator implements ResultSetAccumulator<Map<Lo
         return previous;
     }
 
-      
+
 }

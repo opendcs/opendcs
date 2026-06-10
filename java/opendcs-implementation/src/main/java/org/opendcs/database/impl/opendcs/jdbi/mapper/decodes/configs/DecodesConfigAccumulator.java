@@ -66,39 +66,18 @@ public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, 
     {
         ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class)
                                                     .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
-        PlatformConfigBuilder pc = null;
-        try
-        {
-            pc = previous.computeIfAbsent(rs.getLong(configPrefix+GenericColumns.ID),
-                pcId ->
-                {
-                    try
-                    {
-                        return new PlatformConfigBuilder(configMapper.map(rs, ctx));
-                    }
-                catch (SQLException ex)
-                {
-                    // We have to use RuntimeException to escape the computeIfAbsent when there
-                    // is an error.
-                    throw new RuntimeException(ex); // NOSONAR
-                }
-            });
-        }
-        catch (RuntimeException ex)
-        {
-            if (ex.getCause() instanceof SQLException sqlException)
-            {
-                throw sqlException;
-            }
-            throw ex;
-        }
+        PlatformConfigBuilder pc = wrappedComputeIfAbsent(
+            previous,
+            rs.getLong(configMapper.column(DecodesConfigMapper.Columns.ID)),
+            newId ->  new PlatformConfigBuilder(configMapper.map(rs, ctx)),
+            SQLException.class
+        );
 
-        rs.getLong(configPrefix+"equipmentid");
+        rs.getLong(configMapper.column(DeocdesConfigMapper.Columns.EQUIPMENT_ID));
         if (!rs.wasNull())
         {
             pc.withEquipmentModel(equipmentModelMapper.map(rs, ctx));
         }
-
 
         var emProps = equipmentPropertiesMapper.map(rs, ctx);
         if (emProps.first != null)

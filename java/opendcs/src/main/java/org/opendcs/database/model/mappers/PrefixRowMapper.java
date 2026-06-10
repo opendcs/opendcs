@@ -53,7 +53,7 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
      * @param column the desired column.
      * @return the prefixed column name
      */
-    protected String column(E column) throws SQLException
+    public String column(E column) throws SQLException
     {
         if (!columns.contains(column))
         {

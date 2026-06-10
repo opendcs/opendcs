@@ -25,15 +25,15 @@ public class OpenDcsSiteNameMapper extends PrefixRowMapper<SiteName,OpenDcsSiteN
     @Override
     public SiteName map(ResultSet rs, StatementContext ctx) throws SQLException
     {
-        var type = rs.getString(prefix + "nametype");
-        var name = rs.getString(prefix + "sitename");
+        var type = rs.getString(column(Columns.NAME_TYPE));
         if (type == null)
         {
             return null;
         }
+        var name = rs.getString(column(Columns.SITE_NAME));
         var ret = new SiteName(null, type, name);
-        ret.setAgencyCode(rs.getString(prefix + "agency_cd"));
-        ret.setUsgsDbno(rs.getString(prefix + "dbnum"));
+        ret.setAgencyCode(rs.getString(column(Columns.AGENCY_CODE)));
+        ret.setUsgsDbno(rs.getString(column(Columns.USGS_DBNO)));
         return ret;
     }
 
