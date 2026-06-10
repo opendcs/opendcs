@@ -28,6 +28,12 @@ import { Save, X } from "react-bootstrap-icons";
 import { ComputationReducer } from "./ComputationReducer";
 import { ComputationParamsTable } from "./ComputationParamsTable";
 import { AlgorithmSelectModal } from "./AlgorithmSelectModal";
+import SinceUntilEditor from "../../../components/controls/SinceUntilEditor";
+import {
+  apiTimeToEditorValue,
+  editorValueToStartFields,
+  editorValueToEndFields,
+} from "./computationTime";
 
 export type UiComputation = Partial<ApiComputation>;
 
@@ -295,6 +301,31 @@ export const Computation: React.FC<ComputationProperties> = ({
     [dispatch],
   );
 
+  const handleSinceChange = useCallback(
+    (value: string) => {
+      dispatch({ type: "save", payload: editorValueToStartFields(value) });
+    },
+    [dispatch],
+  );
+
+  const handleUntilChange = useCallback(
+    (value: string) => {
+      dispatch({ type: "save", payload: editorValueToEndFields(value) });
+    },
+    [dispatch],
+  );
+
+  const sinceValue = apiTimeToEditorValue(
+    localComputation.effectiveStartType,
+    localComputation.effectiveStartDate,
+    localComputation.effectiveStartInterval,
+  );
+  const untilValue = apiTimeToEditorValue(
+    localComputation.effectiveEndType,
+    localComputation.effectiveEndDate,
+    localComputation.effectiveEndInterval,
+  );
+
   return (
     <Card>
       <Card.Body>
@@ -414,6 +445,67 @@ export const Computation: React.FC<ComputationProperties> = ({
                     />
                   </Col>
                 </FormGroup>
+                <FormGroup as={Row} className="mb-3">
+                  <Form.Label column sm={3} htmlFor="effective-start-method">
+                    {t("computations:editor.effective_start")}
+                  </Form.Label>
+                  <Col sm={9}>
+                    <SinceUntilEditor
+                      kind="since"
+                      value={sinceValue}
+                      edit={edit}
+                      onChange={handleSinceChange}
+                      allowNoLimit
+                      idPrefix="effective-start"
+                      labels={{
+                        method: t("computations:editor.effective_start"),
+                        noLimit: t("computations:editor.no_limit"),
+                        now: t("computations:editor.now"),
+                        nowMinus: t("computations:editor.now_minus"),
+                        amount: t("computations:editor.interval"),
+                        calendar: t("computations:editor.calendar"),
+                      }}
+                    />
+                  </Col>
+                </FormGroup>
+                <FormGroup as={Row} className="mb-3">
+                  <Form.Label column sm={3} htmlFor="effective-end-method">
+                    {t("computations:editor.effective_end")}
+                  </Form.Label>
+                  <Col sm={9}>
+                    <SinceUntilEditor
+                      kind="until"
+                      value={untilValue}
+                      edit={edit}
+                      onChange={handleUntilChange}
+                      allowNoLimit
+                      idPrefix="effective-end"
+                      labels={{
+                        method: t("computations:editor.effective_end"),
+                        noLimit: t("computations:editor.no_limit"),
+                        now: t("computations:editor.now"),
+                        nowMinus: t("computations:editor.now_minus"),
+                        amount: t("computations:editor.interval"),
+                        calendar: t("computations:editor.calendar"),
+                      }}
+                    />
+                  </Col>
+                </FormGroup>
+                {localComputation.lastModified && (
+                  <FormGroup as={Row} className="mb-3">
+                    <Form.Label column sm={3} htmlFor="lastModified">
+                      {t("computations:editor.last_modified")}
+                    </Form.Label>
+                    <Col sm={9}>
+                      <Form.Control
+                        plaintext
+                        readOnly
+                        id="lastModified"
+                        value={new Date(localComputation.lastModified).toLocaleString()}
+                      />
+                    </Col>
+                  </FormGroup>
+                )}
               </Col>
               <Col>
                 <FormGroup as={Row} className="mb-3">

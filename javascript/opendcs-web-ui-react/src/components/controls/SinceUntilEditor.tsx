@@ -9,7 +9,7 @@ import {
   parseNowMinus,
 } from "./idTime";
 
-type Method = "now" | "nowMinus" | "calendar";
+type Method = "noLimit" | "now" | "nowMinus" | "calendar";
 
 // Common now-minus amounts offered as suggestions; the field stays editable so
 // custom amounts (e.g. "3 hours") are allowed, matching the Swing combo.
@@ -21,6 +21,8 @@ const DEFAULT_AMOUNT = "1 hour";
 export interface SinceUntilLabels {
   /** Accessible label for the method `<select>` (e.g. "Since" / "Until"). */
   method: string;
+  /** "No Limit" option text (only shown when `allowNoLimit` is true). */
+  noLimit?: string;
   /** "Now" option text (only shown when `kind === "until"`). */
   now: string;
   /** "Now minus" option text. */
@@ -39,6 +41,8 @@ export interface SinceUntilEditorProps {
   onChange: (value: string) => void;
   labels: SinceUntilLabels;
   idPrefix?: string;
+  /** When true, adds a "No Limit" option that emits an empty string. */
+  allowNoLimit?: boolean;
 }
 
 interface ParsedState {
@@ -50,7 +54,11 @@ interface ParsedState {
 const parseValue = (
   kind: "since" | "until",
   value: string | undefined,
+  allowNoLimit: boolean,
 ): ParsedState => {
+  if (allowNoLimit && !value) {
+    return { method: "noLimit", amount: DEFAULT_AMOUNT, dateInput: "" };
+  }
   if (kind === "until" && isNow(value)) {
     return { method: "now", amount: DEFAULT_AMOUNT, dateInput: "" };
   }
@@ -67,6 +75,9 @@ const parseValue = (
     };
   }
   // No usable value (blank or the buggy "now - null"): sensible default.
+  if (allowNoLimit) {
+    return { method: "noLimit", amount: DEFAULT_AMOUNT, dateInput: "" };
+  }
   return kind === "until"
     ? { method: "now", amount: DEFAULT_AMOUNT, dateInput: "" }
     : { method: "nowMinus", amount: DEFAULT_AMOUNT, dateInput: "" };
@@ -74,6 +85,8 @@ const parseValue = (
 
 const assemble = (state: ParsedState): string => {
   switch (state.method) {
+    case "noLimit":
+      return "";
     case "now":
       return "now";
     case "nowMinus":
@@ -92,8 +105,11 @@ export const SinceUntilEditor: React.FC<SinceUntilEditorProps> = ({
   onChange,
   labels,
   idPrefix = kind,
+  allowNoLimit = false,
 }) => {
-  const [state, setState] = useState<ParsedState>(() => parseValue(kind, value));
+  const [state, setState] = useState<ParsedState>(() =>
+    parseValue(kind, value, allowNoLimit),
+  );
 
   const update = useCallback(
     (patch: Partial<ParsedState>) => {
@@ -118,6 +134,9 @@ export const SinceUntilEditor: React.FC<SinceUntilEditorProps> = ({
         onChange={(e) => update({ method: e.currentTarget.value as Method })}
         style={{ maxWidth: "11rem" }}
       >
+        {allowNoLimit && (
+          <option value="noLimit">{labels.noLimit ?? "No Limit"}</option>
+        )}
         {kind === "until" && <option value="now">{labels.now}</option>}
         <option value="nowMinus">{labels.nowMinus}</option>
         <option value="calendar">{labels.calendar}</option>
