@@ -88,9 +88,9 @@ public class IdentityProviderDaoImpl implements IdentityProviderDao
                 handle.createQuery("insert into identity_provider (name, type, updated_at, config) " +
                                                             "values (:name, :type, now(), :config::jsonb) returning id, name, type, updated_at, config::text"))
         {
-            return addIdp.bind(GenericColumns.NAME, provider.getName())
-                            .bind(IdentityProviderMapper.TYPE, provider.getType())
-                            .bind(GenericColumns.CONFIG, provider.configToMap())
+            return addIdp.bind(GenericColumns.NAME.column(), provider.getName())
+                            .bind(IdentityProviderMapper.Columns.TYPE.column(), provider.getType())
+                            .bind(IdentityProviderMapper.Columns.CONFIG.column(), provider.configToMap())
                             .map(PROVIDER_MAPPER).one();
         }
     }
@@ -101,7 +101,7 @@ public class IdentityProviderDaoImpl implements IdentityProviderDao
         Handle handle = getHandle(tx);
         try (Query getIdp = handle.createQuery("select id, name, type, updated_at, config::text from identity_provider where id = :id"))
         {
-            return getIdp.bind(GenericColumns.ID, id).map(PROVIDER_MAPPER).findOne();
+            return getIdp.bind(GenericColumns.ID.column(), id).map(PROVIDER_MAPPER).findOne();
         }
     }
 
@@ -111,7 +111,7 @@ public class IdentityProviderDaoImpl implements IdentityProviderDao
         Handle handle = getHandle(tx);
         try (Query getIdp = handle.createQuery("select id, name, type, updated_at, config::text from identity_provider where name = :name"))
         {
-            return getIdp.bind(GenericColumns.NAME, name).map(PROVIDER_MAPPER).findOne();
+            return getIdp.bind(GenericColumns.NAME.column(), name).map(PROVIDER_MAPPER).findOne();
         }
     }
 
@@ -124,10 +124,10 @@ public class IdentityProviderDaoImpl implements IdentityProviderDao
                 handle.createQuery("update identity_provider set name = :name, type = :type, " +
                                     "config = :config::jsonb where id = :id returning id, name, type, updated_at, config::text"))
         {
-            return updateIdp.bind(GenericColumns.ID, id)
-                            .bind(GenericColumns.NAME, provider.getName())
-                            .bind(IdentityProviderMapper.TYPE, provider.getType())
-                            .bind(GenericColumns.CONFIG, provider.configToMap())
+            return updateIdp.bind(GenericColumns.ID.column(), id)
+                            .bind(GenericColumns.NAME.column(), provider.getName())
+                            .bind(IdentityProviderMapper.Columns.TYPE.column(), provider.getType())
+                            .bind(GenericColumns.CONFIG.column(), provider.configToMap())
                             .map(PROVIDER_MAPPER).one();
         }
     }
@@ -138,7 +138,7 @@ public class IdentityProviderDaoImpl implements IdentityProviderDao
         Handle handle = getHandle(tx);
         try (Update deleteIdp = handle.createUpdate("delete from identity_provider where id = :id"))
         {
-            deleteIdp.bind(GenericColumns.ID, id).execute();
+            deleteIdp.bind(GenericColumns.ID.column(), id).execute();
         }
     }
 
@@ -177,7 +177,7 @@ public class IdentityProviderDaoImpl implements IdentityProviderDao
                 """;
         try (var getIdps = handle.createQuery(idpsSql))
         {
-            return getIdps.bind(GenericColumns.SUBJECT, subject)
+            return getIdps.bind(GenericColumns.SUBJECT.column(), subject)
                           .map(IdentityProviderMapper.withPrefix("idp"))
                           .collectIntoList();
         }

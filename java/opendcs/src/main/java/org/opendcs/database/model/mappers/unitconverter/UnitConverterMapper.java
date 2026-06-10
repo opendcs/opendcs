@@ -8,6 +8,7 @@ import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.impl.opendcs.jdbi.column.numeric.NullableDouble;
 import org.opendcs.database.model.mappers.PrefixRowMapper;
 import org.opendcs.database.model.mappers.engineeringunit.EngineeringUnitMapper;
+import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 
 import decodes.db.Constants;
@@ -19,12 +20,11 @@ import decodes.db.UnitConverterDb;
 import decodes.db.UsgsStdConverter;
 import decodes.sql.DbKey;
 
-public final class UnitConverterMapper extends PrefixRowMapper<UnitConverterDb>
+public final class UnitConverterMapper extends PrefixRowMapper<UnitConverterDb,UnitConverterMapper.Columns>
 {
-
     private UnitConverterMapper(String prefix)
     {
-        super(prefix);
+        super(prefix, Columns.class);
     }
 
     public static UnitConverterMapper withPrefix(String prefix)
@@ -40,18 +40,18 @@ public final class UnitConverterMapper extends PrefixRowMapper<UnitConverterDb>
         ColumnMapper<Double> doubleMapper = new NullableDouble();
         var fromMapper = EngineeringUnitMapper.withPrefix("from");
         var toMapper = EngineeringUnitMapper.withPrefix("to");
-        final DbKey id = dbKeyMapper.map(rs, prefix + GenericColumns.ID, ctx);
-        String fromUnits = rs.getString(prefix + "fromunitsabbr");
-        String toUnits = rs.getString(prefix + "tounitsabbr");
-        String algorithm = rs.getString(prefix + "algorithm");
+        final DbKey id = dbKeyMapper.map(rs, column(Columns.ID), ctx);
+        String fromUnits = rs.getString(column(Columns.FROM_UNITS_ABBR));
+        String toUnits = rs.getString(column(Columns.TO_UNITS_ABBR));
+        String algorithm = rs.getString(column(Columns.ALGORITHM));
 
         double[] coefficients = new double[6];
-        coefficients[0] = doubleMapper.map(rs, prefix + "a", ctx);
-        coefficients[1] = doubleMapper.map(rs, prefix + "b", ctx);
-        coefficients[2] = doubleMapper.map(rs, prefix + "c", ctx);
-        coefficients[3] = doubleMapper.map(rs, prefix + "d", ctx);
-        coefficients[4] = doubleMapper.map(rs, prefix + "e", ctx);
-        coefficients[5] = doubleMapper.map(rs, prefix + "f", ctx);
+        coefficients[0] = doubleMapper.map(rs, column(Columns.A), ctx);
+        coefficients[1] = doubleMapper.map(rs, column(Columns.B), ctx);
+        coefficients[2] = doubleMapper.map(rs, column(Columns.C), ctx);
+        coefficients[3] = doubleMapper.map(rs, column(Columns.D), ctx);
+        coefficients[4] = doubleMapper.map(rs, column(Columns.E), ctx);
+        coefficients[5] = doubleMapper.map(rs, column(Columns.F), ctx);
 
         var converter = new UnitConverterDb(fromUnits, toUnits);
         try
@@ -59,7 +59,7 @@ public final class UnitConverterMapper extends PrefixRowMapper<UnitConverterDb>
             converter.setId(id);
             converter.algorithm = algorithm;
             converter.coefficients = coefficients;
-            // implement the logic of UnitConverterDb.prepareForExec so that we simply don't need to.            
+            // implement the logic of UnitConverterDb.prepareForExec so that we simply don't need to.
             var from = fromMapper.map(rs, ctx);
             var to = toMapper.map(rs, ctx);
 
@@ -93,5 +93,37 @@ public final class UnitConverterMapper extends PrefixRowMapper<UnitConverterDb>
         }
         return converter;
     }
-    
+
+    public enum Columns implements TableColumnDefinition
+    {
+        ID(GenericColumns.ID),
+        FROM_UNITS_ABBR("fromunitsabbr"),
+        TO_UNITS_ABBR("tounitsabbr"),
+        ALGORITHM("algorithm"),
+        A("a"),
+        B("b"),
+        C("c"),
+        D("d"),
+        E("e"),
+        F("f")
+        ;
+
+        private final String column;
+
+        Columns(String column)
+        {
+            this.column = column;
+        }
+
+        Columns(GenericColumns other)
+        {
+            this.column = other.column();
+        }
+
+        @Override
+        public String column()
+        {
+            return column;
+        }
+    }
 }

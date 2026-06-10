@@ -118,7 +118,7 @@ public class OpenDcsSiteDaoImpl implements SiteDao
                  .define(SqlQueries.WHERE_CLAUSE, "where siteid = :id")
                  .define(SqlQueries.LIMIT_CLAUSE, "")
                  .bind("preferredType", preferredType)
-                 .bind(GenericColumns.ID, id);
+                 .bind(GenericColumns.ID.column(), id);
 
             return query.registerRowMapper(OpenDcsSiteMapper.withPrefix("s"))
                         .registerRowMapper(PropertiesMapper.withPrefix("p", true))
@@ -241,7 +241,7 @@ public class OpenDcsSiteDaoImpl implements SiteDao
 
             merge.define("numeric_date", true)
                  .registerArgument(new NullableDoubleArgumentFactory())
-                 .bind(GenericColumns.ID, bindKey)
+                 .bind(GenericColumns.ID.column(), bindKey)
                  .bind("latitude", site.latitude)
                  .bind("longitude", site.longitude)
                  .bind("nearestcity", site.nearestCity)
@@ -260,11 +260,11 @@ public class OpenDcsSiteDaoImpl implements SiteDao
                  // bind the rest
                  .execute();
 
-            deleteProps.bind(GenericColumns.ID, bindKey).execute();
-            deleteNames.bind(GenericColumns.ID, bindKey).execute();
+            deleteProps.bind(GenericColumns.ID.column(), bindKey).execute();
+            deleteNames.bind(GenericColumns.ID.column(), bindKey).execute();
 
             site.getNames().forEachRemaining(name ->
-                insertNames.bind(GenericColumns.ID, bindKey)
+                insertNames.bind(GenericColumns.ID.column(), bindKey)
                            .bind("nametype", name.getNameType())
                            .bind("sitename", name.getNameValue())
                            .bind("dbnum", name.getUsgsDbno())
@@ -276,8 +276,8 @@ public class OpenDcsSiteDaoImpl implements SiteDao
 
             site.getProperties().forEach((k,v) ->
             {
-                insertProps.bind(GenericColumns.ID, bindKey);
-                insertProps.bind(GenericColumns.NAME, k.toString());
+                insertProps.bind(GenericColumns.ID.column(), bindKey);
+                insertProps.bind(GenericColumns.NAME.column(), k.toString());
                 var toSave = v != null ? v.toString() : "";
                 insertProps.bind("value", toSave);
                 insertProps.add();
@@ -300,9 +300,9 @@ public class OpenDcsSiteDaoImpl implements SiteDao
              var deleteProps = handle.createUpdate(DELETE_PROPS);
              var deleteSite = handle.createUpdate("delete from site where id = :id"))
         {
-            deleteNames.bind(GenericColumns.ID, id).execute();
-            deleteProps.bind(GenericColumns.ID, id).execute();
-            deleteSite.bind(GenericColumns.ID, id).execute();
+            deleteNames.bind(GenericColumns.ID.column(), id).execute();
+            deleteProps.bind(GenericColumns.ID.column(), id).execute();
+            deleteSite.bind(GenericColumns.ID.column(), id).execute();
         }
     }
 

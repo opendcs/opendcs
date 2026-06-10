@@ -108,7 +108,7 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
                  .define(SqlQueries.RECURSIVE_CTE_CLAUSE, SqlQueries.recursiveCteFor(dbEngine))
                  .define(SqlQueries.WHERE_CLAUSE, "where id = :id")
                  .define(SqlQueries.LIMIT_CLAUSE, "")
-                 .bind(GenericColumns.ID, id);
+                 .bind(GenericColumns.ID.column(), id);
 
             return query.reduceResultSet(new LinkedHashMap<>(),
                                          new PresentationGroupAccumulator(
@@ -141,7 +141,7 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
                  .define(SqlQueries.RECURSIVE_CTE_CLAUSE, SqlQueries.recursiveCteFor(dbEngine))
                  .define(SqlQueries.WHERE_CLAUSE, "where name = :name")
                  .define(SqlQueries.LIMIT_CLAUSE, "")
-                 .bind(GenericColumns.NAME, name);
+                 .bind(GenericColumns.NAME.column(), name);
 
             return query.reduceResultSet(new LinkedHashMap<>(),
                                          new PresentationGroupAccumulator(
@@ -201,8 +201,8 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
             }
             final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("presentationgroup", handle.getConnection());
 
-            merge.bind(GenericColumns.ID, bindKey)
-                 .bind(GenericColumns.NAME, group.groupName)
+            merge.bind(GenericColumns.ID.column(), bindKey)
+                 .bind(GenericColumns.NAME.column(), group.groupName)
                  .bind("lastmodifytime", new Date())
                  .bind("isproduction", group.isProduction)
                  ;
@@ -237,13 +237,13 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
         try (var deletePresentations = handle.createUpdate(DELETE_DATA_PRESENTATION);
              var insertPresentations = handle.prepareBatch(INSERT_DATA_PRESENTATION))
         {
-            deletePresentations.bind(GenericColumns.ID, groupId).execute();
+            deletePresentations.bind(GenericColumns.ID.column(), groupId).execute();
 
             insertPresentations.registerArgument(new NullableDoubleArgumentFactory());
             for (var dataPresentation: presentations)
             {
                 final var id = dataPresentation.idIsSet() ? dataPresentation.getId() : keyGen.getKey("datapresentation", handle.getConnection());
-                insertPresentations.bind(GenericColumns.ID, id)
+                insertPresentations.bind(GenericColumns.ID.column(), id)
                                    .bind("groupid", groupId)
                                    .bind("datatypeid", dataPresentation.getDataType().getId())
                                    .bind("unitabbr", dataPresentation.getUnitsAbbr())
@@ -272,8 +272,8 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
         try (var deleteGroup = handle.createUpdate("delete from presentationgroup where id = :id");
              var deletePresentations = handle.createUpdate(DELETE_DATA_PRESENTATION))
         {
-            deletePresentations.bind(GenericColumns.ID, id).execute();
-            deleteGroup.bind(GenericColumns.ID, id).execute();
+            deletePresentations.bind(GenericColumns.ID.column(), id).execute();
+            deleteGroup.bind(GenericColumns.ID.column(), id).execute();
         }
     }
 

@@ -81,10 +81,10 @@ public class CwmsIdentityProviderDaoImpl implements IdentityProviderDao
                      values (:name, :type, :config)
                     """))
         {
-            var id = addIdp.bind(GenericColumns.NAME, provider.getName())
-                           .bind(IdentityProviderMapper.TYPE, provider.getType())
-                           .bindByType(GenericColumns.CONFIG, provider.configToMap(), ConfigColumnMapper.CONFIG_TYPE)
-                           .executeAndReturnGeneratedKeys(GenericColumns.ID)
+            var id = addIdp.bind(GenericColumns.NAME.column(), provider.getName())
+                           .bind(IdentityProviderMapper.Columns.TYPE.column(), provider.getType())
+                           .bindByType(IdentityProviderMapper.Columns.CONFIG.column(), provider.configToMap(), ConfigColumnMapper.CONFIG_TYPE)
+                           .executeAndReturnGeneratedKeys(GenericColumns.ID.column())
                            .mapTo(DbKey.class)
                            .one();
             return getIdentityProvider(tx, id).orElseThrow(
@@ -99,7 +99,7 @@ public class CwmsIdentityProviderDaoImpl implements IdentityProviderDao
         var handle = getHandle(tx);
         try (var getIdp = handle.createQuery("select id, name, type, updated_at, config from identity_provider where id = :id"))
         {
-            return getIdp.bind(GenericColumns.ID, id).map(PROVIDER_MAPPER).findOne();
+            return getIdp.bind(GenericColumns.ID.column(), id).map(PROVIDER_MAPPER).findOne();
         }
     }
 
@@ -109,7 +109,7 @@ public class CwmsIdentityProviderDaoImpl implements IdentityProviderDao
         var handle = getHandle(tx);
         try (var getIdp = handle.createQuery("select id, name, type, updated_at, config from identity_provider where name = :name"))
         {
-            return getIdp.bind(GenericColumns.NAME, name).map(PROVIDER_MAPPER).findOne();
+            return getIdp.bind(GenericColumns.NAME.column(), name).map(PROVIDER_MAPPER).findOne();
         }
     }
 
@@ -123,10 +123,10 @@ public class CwmsIdentityProviderDaoImpl implements IdentityProviderDao
                     update identity_provider set name = :name, type = :type, config = :config where id = :id
                     """))
         {
-            updateIdp.bind(GenericColumns.ID, id)
-                     .bind(GenericColumns.NAME, provider.getName())
-                     .bind(IdentityProviderMapper.TYPE, provider.getType())
-                     .bindByType(GenericColumns.CONFIG, provider.configToMap(), ConfigColumnMapper.CONFIG_TYPE)
+            updateIdp.bind(GenericColumns.ID.column(), id)
+                     .bind(GenericColumns.NAME.column(), provider.getName())
+                     .bind(IdentityProviderMapper.Columns.TYPE.column(), provider.getType())
+                     .bindByType(IdentityProviderMapper.Columns.CONFIG.column(), provider.configToMap(), ConfigColumnMapper.CONFIG_TYPE)
                      .execute();
             return getIdentityProvider(tx, id).orElseThrow(
                 () -> new OpenDcsDataException("Unable to retrieve Identity Provider that was just updated.")
@@ -140,7 +140,7 @@ public class CwmsIdentityProviderDaoImpl implements IdentityProviderDao
         var handle = getHandle(tx);
         try (var deleteIdp = handle.createUpdate("delete from identity_provider where id = :id"))
         {
-            deleteIdp.bind(GenericColumns.ID, id).execute();
+            deleteIdp.bind(GenericColumns.ID.column(), id).execute();
         }
     }
 
@@ -178,7 +178,7 @@ public class CwmsIdentityProviderDaoImpl implements IdentityProviderDao
                 """;
         try (var getIdps = handle.createQuery(idpsSql))
         {
-            return getIdps.bind(GenericColumns.SUBJECT, subject)
+            return getIdps.bind(GenericColumns.SUBJECT.column(), subject)
                           .map(IdentityProviderMapper.withPrefix("idp"))
                           .collectIntoList();
         }

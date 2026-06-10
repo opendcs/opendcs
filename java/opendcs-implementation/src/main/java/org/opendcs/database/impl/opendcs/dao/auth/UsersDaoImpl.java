@@ -55,8 +55,8 @@ public class UsersDaoImpl implements UsersDao
                                         "values (:email, now(), :preferences::jsonb) returning id"))
         {
             id = DbKey.createDbKey(
-                addUser.bind(GenericColumns.EMAIL, user.email)
-                    .bind(GenericColumns.PREFERENCES, user.preferences)
+                addUser.bind(GenericColumns.EMAIL.column(), user.email)
+                    .bind(GenericColumns.PREFERENCES.column(), user.preferences)
                     .mapTo(Long.class)
                     .one()
                 );
@@ -89,7 +89,7 @@ public class UsersDaoImpl implements UsersDao
             {
                 idpBatch.bind(UserBuilderMapper.USER_ID, id)
                         .bind(IdentityProviderMapper.IDENTITY_PROVIDER_ID, idpM.provider.getId())
-                        .bind(GenericColumns.SUBJECT, idpM.subject)
+                        .bind(GenericColumns.SUBJECT.column(), idpM.subject)
                         .add();
             }
             idpBatch.execute();
@@ -118,7 +118,7 @@ public class UsersDaoImpl implements UsersDao
             "  where u.id = :id"
             ))
         {
-             return user.bind(GenericColumns.ID, id)
+             return user.bind(GenericColumns.ID.column(), id)
               .registerRowMapper(UserBuilder.class, UserBuilderMapper.withPrefix("u"))
               .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
               .registerRowMapper(IdentityProviderMapping.class, IdentityProviderMappingMapper.withPrefix("i"))
@@ -140,14 +140,14 @@ public class UsersDaoImpl implements UsersDao
             "update opendcs_user set email = :email, preferences = :preferences::jsonb " +
             "where id = :id"))
         {
-            userUpdate.bind(GenericColumns.ID, id)
-                        .bind(GenericColumns.PREFERENCES, user.preferences)
-                        .bind(GenericColumns.EMAIL, user.email) // wait should we allow changing the email?
+            userUpdate.bind(GenericColumns.ID.column(), id)
+                        .bind(GenericColumns.PREFERENCES.column(), user.preferences)
+                        .bind(GenericColumns.EMAIL.column(), user.email) // wait should we allow changing the email?
                         .execute();
         }
         try (var deleteRoles = handle.createUpdate("delete from user_roles where user_id = :id"))
         {
-            deleteRoles.bind(GenericColumns.ID, id).execute();
+            deleteRoles.bind(GenericColumns.ID.column(), id).execute();
         }
         try (PreparedBatch roleBatch = handle.prepareBatch("insert into user_roles(user_id, role_id) values (:user_id, :role_id)"))
         {
@@ -162,7 +162,7 @@ public class UsersDaoImpl implements UsersDao
 
         try (var deleteProviders = handle.createUpdate("delete from user_identity_provider where user_id=:id"))
         {
-            deleteProviders.bind(GenericColumns.ID, id).execute();
+            deleteProviders.bind(GenericColumns.ID.column(), id).execute();
         }
 
         try (PreparedBatch idpBatch = 
@@ -173,7 +173,7 @@ public class UsersDaoImpl implements UsersDao
             {
                 idpBatch.bind(UserBuilderMapper.USER_ID, id)
                         .bind(IdentityProviderMapper.IDENTITY_PROVIDER_ID, idpM.provider.getId())
-                        .bind(GenericColumns.SUBJECT, idpM.subject)
+                        .bind(GenericColumns.SUBJECT.column(), idpM.subject)
                         .add();
             }
             idpBatch.execute();
@@ -191,10 +191,10 @@ public class UsersDaoImpl implements UsersDao
              var deletePassword = handle.createUpdate("delete from opendcs_user_password where user_id = :id");
              var deleteUser = handle.createUpdate("delete from opendcs_user where id = :id"))
         {
-            deletePassword.bind(GenericColumns.ID, id).execute();
-            deleteRoles.bind(GenericColumns.ID, id).execute();
-            deleteIdps.bind(GenericColumns.ID, id).execute();
-            deleteUser.bind(GenericColumns.ID, id).execute();
+            deletePassword.bind(GenericColumns.ID.column(), id).execute();
+            deleteRoles.bind(GenericColumns.ID.column(), id).execute();
+            deleteIdps.bind(GenericColumns.ID.column(), id).execute();
+            deleteUser.bind(GenericColumns.ID.column(), id).execute();
         }
     }
 

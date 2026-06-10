@@ -18,22 +18,24 @@ package org.opendcs.database.model.mappers;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
+import java.util.EnumSet;
 
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.model.Role;
+import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 
 import decodes.sql.DbKey;
 
-public final class RoleMapper extends PrefixRowMapper<Role>
+public final class RoleMapper extends PrefixRowMapper<Role,RoleMapper.Columns>
 {
     public static final String ROLE_ID = "role_id";
 
     private RoleMapper(String prefix)
     {
-        super(prefix);
+        super(prefix, EnumSet.allOf(Columns.class));
     }
 
     @Override
@@ -41,17 +43,44 @@ public final class RoleMapper extends PrefixRowMapper<Role>
     {
         ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class)
                                                     .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
-        DbKey key = columnMapperForKey.map(rs, prefix+GenericColumns.ID, ctx);
-        String name = rs.getString(prefix+GenericColumns.NAME);
-        String description = rs.getString(prefix+GenericColumns.DESCRIPTION);
+        DbKey key = columnMapperForKey.map(rs, column(Columns.ID), ctx);
+        String name = rs.getString(column(Columns.NAME));
+        String description = rs.getString(column(Columns.DESCRIPTION));
         ColumnMapper<ZonedDateTime> columnMapperForZDT = ctx.findColumnMapperFor(ZonedDateTime.class)
                                                             .orElseThrow(() -> new SQLException(SqlErrorMessages.ZDT_MAPPER_NOT_FOUND));
-        ZonedDateTime updatedAt = columnMapperForZDT.map(rs, prefix+GenericColumns.UPDATED_AT, ctx);
+        ZonedDateTime updatedAt = columnMapperForZDT.map(rs, column(Columns.UPDATED_AT), ctx);
         return new Role(key, name, description, updatedAt);
     }
 
     public static RoleMapper withPrefix(String prefix)
     {
         return new RoleMapper(prefix);
+    }
+
+    public enum Columns implements TableColumnDefinition
+    {
+        ID(GenericColumns.ID),
+        NAME(GenericColumns.NAME),
+        DESCRIPTION(GenericColumns.DESCRIPTION),
+        UPDATED_AT(GenericColumns.UPDATED_AT)
+        ;
+
+        private final String column;
+
+        Columns(String column)
+        {
+            this.column = column;
+        }
+
+        Columns(GenericColumns other)
+        {
+            this.column = other.column();
+        }
+
+        @Override
+        public String column()
+        {
+            return column;
+        }
     }
 }
