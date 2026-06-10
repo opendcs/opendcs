@@ -8,7 +8,7 @@ import org.opendcs.database.sql.TableColumnDefinition;
 
 /**
  * Helper class for row mappers to take a prefix.
- * If the provided prefix does not start end with and underscore (_)
+ * If the provided prefix does not start end with an underscore (_)
  * one will be added.
  * 
  * A enum of defined columns must also be provided. At this time only
@@ -16,7 +16,7 @@ import org.opendcs.database.sql.TableColumnDefinition;
  * <pre> table.column prefix_column</pre> list for joins.
  * 
  * @param <T> The type that the mapper will return
- * @param <E> A enum containing all columns. This enum must implement the {@see TableColumnDefinition} interface.
+ * @param <E> A enum containing all columns. This enum must implement the {@link TableColumnDefinition} interface.
  */
 public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinition> implements RowMapper<T>
 {
