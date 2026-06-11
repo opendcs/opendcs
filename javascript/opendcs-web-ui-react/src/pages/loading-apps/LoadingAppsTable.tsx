@@ -10,7 +10,10 @@ import {
 } from "../../components/data-table";
 
 // DataTables sees a row-data change when status loads, triggering a redraw.
-export type TableAppRef = Partial<ApiAppRef> & { _pid?: number | null };
+export type TableAppRef = Partial<ApiAppRef> & {
+  _pid?: number | null;
+  _status?: string | null;
+};
 
 export interface LoadingAppsTableProperties {
   apps: TableAppRef[];
@@ -54,14 +57,15 @@ export const LoadingAppsTable: React.FC<LoadingAppsTableProperties> = ({
         header: t("loadingapps:status"),
         orderable: false,
         searchable: false,
-        render: (data: unknown, type: string) => {
+        render: (data: unknown, type: string, row: TableAppRef) => {
           if (type !== "display") return data ?? "";
           const running = data != null;
           const label = running
             ? t("loadingapps:status_running")
             : t("loadingapps:status_inactive");
           const cls = running ? "bg-success" : "bg-secondary";
-          return `<span class="badge ${cls}">${label}</span>`;
+          const detail = running && row._status ? ` — ${row._status}` : "";
+          return `<span class="badge ${cls}">${label}</span>${detail}`;
         },
       },
     ],
