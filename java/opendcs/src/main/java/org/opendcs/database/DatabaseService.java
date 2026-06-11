@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
 
@@ -24,6 +25,7 @@ import decodes.db.DatabaseException;
 import decodes.util.DecodesSettings;
 import decodes.util.PropertiesOwner;
 import ilex.util.AuthException;
+import opendcs.util.functional.ThrowingFunction;
 
 public class DatabaseService
 {
@@ -49,34 +51,46 @@ public class DatabaseService
 
     public static OpenDcsDatabase getDatabaseFor(String appName, DecodesSettings settings, Properties credentials) throws DatabaseException
     {
+        return getDatabaseFor(settings, provider -> provider.createDatabase(appName, settings, credentials));
+    }
+
+    /**
+     * Handles the actual logic of looping through the providers
+     * @param settings
+     * @param createFunc function to apply once a valid provided is found.
+     * @return
+     * @throws DatabaseException
+     */
+    private static OpenDcsDatabase getDatabaseFor(DecodesSettings settings, ThrowingFunction<DatabaseProvider, OpenDcsDatabase, Exception> createFunc) throws DatabaseException
+    {
         loader.reload();
         final Iterator<DatabaseProvider> providers = loader.iterator();
         ArrayList<String> attemptedProviders = new ArrayList<>();
         while (providers.hasNext())
         {
-            final DatabaseProvider provider = providers.next();            
+            final DatabaseProvider provider = providers.next();
+            attemptedProviders.add(provider.getClass().getName());
             if (provider.canCreate(settings))
             {
                 try
                 {
-                    return provider.createDatabase(appName, settings, credentials);
+                    return createFunc.accept(provider);
                 }
                 catch (Exception ex)
                 {
                     throw new DatabaseException("Unable to create database instance.", ex);
                 }
             }
-            attemptedProviders.add(provider.getClass().getName());
         }
-        
+
         throw new DatabaseException(String.format("""
-                No provider found for database type  %s. Availabled types are %s.        
+                No provider found for database type  %s. Available types are %s.
                 """, settings.editDatabaseType, String.join(",", attemptedProviders)));
     }
 
     /**
      * Create database given a valid DataSource. Will load settings from the database.
-     * @param dataSource any valid javax.sql.DataSource. However, a connection pool is expected as multiple connections 
+     * @param dataSource any valid javax.sql.DataSource. However, a connection pool is expected as multiple connections
      *                   may be needed
      * @return
      * @throws DatabaseException any error with class initialization or loading of properties
@@ -102,20 +116,7 @@ public class DatabaseService
 
     private static OpenDcsDatabase createDatabaseFromSettings(DataSource dataSource, DecodesSettings settings) throws DatabaseException
     {
-        loader.reload();
-        final Iterator<DatabaseProvider> providers = loader.iterator();
-        ArrayList<String> attemptedProviders = new ArrayList<>();
-        while (providers.hasNext())
-        {
-            final DatabaseProvider provider = providers.next();
-            if (provider.canCreate(settings))
-            {
-                return provider.createDatabase(dataSource, settings);
-            }
-        }
-        throw new DatabaseException(String.format("""
-                No provider found for database type  %s. Availabled types are %s.        
-                """, settings.editDatabaseType, String.join(",", attemptedProviders)));
+        return getDatabaseFor(settings, provider -> provider.createDatabase(dataSource, settings));
     }
 
     /**
