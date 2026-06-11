@@ -52,6 +52,28 @@ class OpenDcsTimeSeriesIdentifierDaoTestIT extends AppTestBase
             assertNotNull(tsIdOut);
             assertNotNull(tsIdOut.getDataType());
             assertFalse(DbKey.isNull(tsIdOut.getSite().getId()));
+
+            dao.delete(tx, tsIdOut.getKey());
+
+            assertFalse(dao.getById(tx, tsIdOut.getKey()).isPresent());
+        }
+    }
+
+    @Test
+    void test_create_timeseries() throws Exception
+    {
+        var tsIdIn = tsDb.makeTsId("TESTSITE1.Stage.Inst.1Hour.0.test");
+
+        tsIdIn.setDescription("Simple test identifier.");
+        var dao = db.getDao(TimeSeriesIdentifierDao.class).orElseThrow();
+        try (var tx = db.newTransaction())
+        {
+            var id = dao.save(tx, tsIdIn).getKey();
+            assertFalse(DbKey.isNull(id));
+
+
+            dao.delete(tx, id);
+            assertFalse(dao.getById(tx, id).isPresent());
         }
     }
 }
