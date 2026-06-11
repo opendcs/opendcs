@@ -58,9 +58,14 @@ public class OpenDcsSiteDaoImpl implements SiteDao
             site.location_type s_location_type, site.modify_time s_modify_time, site.public_name s_public_name
         """;
 
+    public static final String SITE_COLUMN_KEY = "site_columns";
+
     public static final String SITE_NAME_COLUMNS = """
                 sn.nametype sn_nametype, sn.sitename sn_sitename, sn.dbnum sn_dbnum, sn.agency_cd sn_agency_cd
             """;
+
+    public static final String SITE_NAME_COLUMNS_KEY = "site_name_columns";
+
     /**
      * order asc on the inner nametype is to keep the general output predicatable.
      * There <b>shouldn't</b> be any Sites without a Preferred SiteName so this is
@@ -125,8 +130,8 @@ public class OpenDcsSiteDaoImpl implements SiteDao
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                  .define(SqlQueries.WHERE_CLAUSE, "where siteid = :id")
                  .define(SqlQueries.LIMIT_CLAUSE, "")
-                 .define("site_columns", SITE_COLUMNS)
-                 .define("site_name_columns", SITE_NAME_COLUMNS)
+                 .define(SITE_COLUMN_KEY, SITE_COLUMNS)
+                 .define(SITE_NAME_COLUMNS_KEY, SITE_NAME_COLUMNS)
                  .bind("preferredType", preferredType)
                  .bind(GenericColumns.ID.column(), id);
 
@@ -330,8 +335,8 @@ public class OpenDcsSiteDaoImpl implements SiteDao
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
-                 .define("site_columns", SITE_COLUMNS)
-                 .define("site_name_columns", SITE_NAME_COLUMNS)
+                 .define(SITE_COLUMN_KEY, SITE_COLUMNS)
+                 .define(SITE_NAME_COLUMNS_KEY, SITE_NAME_COLUMNS)
                  .define(SqlQueries.WHERE_CLAUSE, "")
                  .define(SqlQueries.LIMIT_CLAUSE, addLimitOffset(limit, offset))
                  .bind("preferredType", preferredType);

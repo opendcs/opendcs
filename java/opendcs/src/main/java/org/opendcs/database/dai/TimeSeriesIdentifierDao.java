@@ -30,7 +30,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
 	 * @throws DbIoException if SQL exception occurs during operation
 	 * @throws NoSuchObjectException if no matching time series exists.
 	 */
-	Optional<? extends TimeSeriesIdentifier> getByUniqueString(DataTransaction tx, String uniqueString) throws BadTimeSeriesException, OpenDcsDataException;
+	Optional<TimeSeriesIdentifier> getByUniqueString(DataTransaction tx, String uniqueString) throws BadTimeSeriesException, OpenDcsDataException;
 
     /**
 	 * Retrieve a time series identifier by unique surrogate key.
@@ -40,7 +40,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
 	 * @throws DbIoException on SQL errors
 	 * @throws NoSuchObjectException if no such time series
 	 */
-	Optional<? extends TimeSeriesIdentifier> getById(DataTransaction tx, DbKey key) throws BadTimeSeriesException, OpenDcsDataException;
+	Optional<TimeSeriesIdentifier> getById(DataTransaction tx, DbKey key) throws BadTimeSeriesException, OpenDcsDataException;
 
     /**
      * Retrieve by unique string, but return failure cause instead of throwing.
@@ -52,7 +52,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
      * @param uniqueString
      * @return
      */
-	FailableResult<Optional<? extends TimeSeriesIdentifier>,OpenDcsDataException> findBy(DataTransaction tx, String uniqueString);
+	FailableResult<Optional<TimeSeriesIdentifier>,OpenDcsDataException> findBy(DataTransaction tx, String uniqueString);
 
     /**
      * As findBy by uniqueString. Returns filled out TimeSeriesIdentifier object if found, or the error
@@ -61,7 +61,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
      * @param key
      * @return
      */
-	FailableResult<Optional<? extends TimeSeriesIdentifier>,OpenDcsDataException> findBy(DataTransaction tx, DbKey key);
+	FailableResult<Optional<TimeSeriesIdentifier>,OpenDcsDataException> findBy(DataTransaction tx, DbKey key);
 
     /**
      * Validates and save, returning a complete instance with DbKey, the provided TimeSeriesIdentifier
@@ -108,7 +108,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
      * @param offset
      * @return
      */
-    List<? extends TimeSeriesIdentifier> getAll(DataTransaction tx, int limit, int offset) throws OpenDcsDataException;
+    List<TimeSeriesIdentifier> getAll(DataTransaction tx, int limit, int offset) throws OpenDcsDataException;
 
     /**
      * Construct a new {@see TimeSeriesIdentifier} object appropriate for this DB.
@@ -134,7 +134,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
     {
         TimeSeriesIdentifier tsId = this.makeEmptyTsId();
         tsId.setUniqueString(uniqueString);
-        tsId.setStorageUnits(this.getStorageUnitsFor(tx, tsId.getDataType()));
+        tsId.setStorageUnits(this.getStorageUnitsFor(tx, tsId.getDataType()).orElse(null));
         return tsId;
     }
 
@@ -145,7 +145,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
      * @return
      * @throws OpenDcsDataException
      */
-    String getStorageUnitsFor(DataTransaction tx, DataType dataType) throws OpenDcsDataException;
+    Optional<String> getStorageUnitsFor(DataTransaction tx, DataType dataType) throws OpenDcsDataException;
 
     /**
      * Retrieve appropriate storage unit for the given tsId
@@ -154,17 +154,15 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
      * @return
      * @throws OpenDcsDataException
      */
-    default String getStorageUnitsFor(DataTransaction tx, TimeSeriesIdentifier tsId) throws OpenDcsDataException
+    default Optional<String> getStorageUnitsFor(DataTransaction tx, TimeSeriesIdentifier tsId) throws OpenDcsDataException
     {
         return getStorageUnitsFor(tx, tsId.getDataType());
     }
 
+    // It's debatable the the following operations should be their own "DAO?".
+    // If not DAO than some similarly accessible "I need to pass the buck to an implementation" handler
+    // style of interface.
 
-    /**
-     * It's debatable the the following operations should be their own "DAO?".
-     * If not DAO than some similarly accessible "I need to pass the buck to an implementation" handler
-     * style of interface.
-     */
 
     /**
      * This method does the transformation of the unique string for the
@@ -206,7 +204,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
 	 * @throws NoSuchObjectException if (createTS) and failed to create TS in database
 	 * @throws BadTimeSeriesException on attempt to create new TS with invalid TSID.
 	 */
-	Optional<? extends TimeSeriesIdentifier> transformTsidByCompParm(DataTransaction tx,
+	Optional<TimeSeriesIdentifier> transformTsidByCompParm(DataTransaction tx,
 		TimeSeriesIdentifier tsId, DbCompParm parm, boolean createTS,
 		boolean fillInParm, String timeSeriesDisplayName)
 		throws OpenDcsDataException, NoSuchObjectException, BadTimeSeriesException;
@@ -220,7 +218,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
 	 * @return TimeSeries Identifier is one can be identified, otherwise, null.
 	 * @throws NoSuchObjectException if an SDI is present but it is invalid.
 	 */
-	Optional<? extends TimeSeriesIdentifier> expandSDI(DataTransaction tx, DbCompParm parm) throws OpenDcsDataException;
+	Optional<TimeSeriesIdentifier> expandSDI(DataTransaction tx, DbCompParm parm) throws OpenDcsDataException;
 
 
     /**

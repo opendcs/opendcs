@@ -12,33 +12,40 @@ import org.jdbi.v3.core.Handle;
 import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.dai.CompDependsNotifyDao;
 import org.opendcs.database.dai.DataTypeDao;
 import org.opendcs.database.dai.IntervalDurationDao;
 import org.opendcs.database.dai.PresentationGroupDao;
 import org.opendcs.database.dai.SiteDao;
 import org.opendcs.database.dai.TimeSeriesIdentifierDao;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.OpenDcsTimeSeriesIdentifierMapper;
+import org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.OpenDcsTimeSeriesIdentifierMapper.Columns;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.OpenDcsTimeSeriesIdentifierReducer;
 import org.opendcs.database.model.mappers.datatype.DataTypeMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteNameMapper;
 import org.opendcs.utils.FailableResult;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.opendcs.utils.sql.SqlQueries;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.util.lookup.ServiceProviders;
+import org.slf4j.Logger;
 
 import decodes.cwms.CwmsTsId;
 import decodes.db.DataType;
+import decodes.db.DatabaseException;
 import decodes.sql.DbKey;
+import decodes.sql.KeyGenerator;
 import decodes.tsdb.BadTimeSeriesException;
+import decodes.tsdb.CpDependsNotify;
 import decodes.tsdb.DbCompParm;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
-import decodes.util.DecodesSettings;
 import opendcs.opentsdb.Interval;
+import opendcs.opentsdb.OpenDcsDbSettings;
 
 /**
  * NOTE: this is intentionally doing no caching at this time. Current focus is simply "correctness."
@@ -47,8 +54,10 @@ import opendcs.opentsdb.Interval;
     @ServiceProvider(service = TimeSeriesIdentifierDao.class, path = "dao/OpenDCS-Postgres"),
     @ServiceProvider(service = TimeSeriesIdentifierDao.class, path = "dao/OPENTSDB")
 })
+@SuppressWarnings("java:S2143")
 public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     @InjectDao
     SiteDao siteDao;
 
@@ -61,42 +70,46 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     @InjectDao
     PresentationGroupDao presentationGroupDao;
 
+    @InjectDao
+    CompDependsNotifyDao compDependsDao;
+
+    @SuppressWarnings("java:S1213")
     private static final String TIMESERIES_IDENTIFIER_QUERY = """
         with time_series_identifier_limit(
                 id, unique_string, site_name, data_type_standard, data_type_code, interval, duration, ts_version, active_flag,
                 storage_units, storage_table, storage_type, modify_time, description, utc_offset, allow_dst_offset_variation, offset_error_action,
-                datatype_id, site_id, interval_id, duration_id    
+                datatype_id, site_id, interval_id, duration_id
             ) as (
             select id, unique_string, site_name, data_type_standard, data_type_code, interval, duration, ts_version, active_flag,
                 storage_units, storage_table, storage_type, modify_time, description, utc_offset, allow_dst_offset_variation, offset_error_action,
-                datatype_id, site_id, interval_id, duration_id    
+                datatype_id, site_id, interval_id, duration_id
             from time_series_identifier
             <where>
             order by unique_string <collate> asc
             <limit>
         )
-        select 
-            tsi.id tsi_id, tsi.ts_version, tsi.site_name, tsi.unique_string tsi_unique_string, tsi.site_name tsi_site_name,  tsi.interval tsi_interval, tsi.duration tsi_duration, 
+        select
+            tsi.id tsi_id, tsi.ts_version tsi_version, tsi.site_name tsi_site_name, tsi.unique_string tsi_unique_string, tsi.interval tsi_interval, tsi.duration tsi_duration,
             tsi.active_flag tsi_active_flag, tsi.storage_units tsi_storage_units, tsi.storage_table tsi_storage_table, tsi.storage_type tsi_storage_type,
             tsi.modify_time tsi_modify_time, tsi.description tsi_description, tsi.utc_offset tsi_utc_offset, tsi.allow_dst_offset_variation tsi_allow_dst_offset_variation,
             tsi.offset_error_action tsi_offset_error_action,
-            
+
             dt.id dt_id, dt.standard dt_standard, dt.code dt_code, dt.display_name dt_display_name,
-            
+
             <site_columns>,
             <site_name_columns>,
             ic.interval_id ic_interval_id, ic.name ic_name, ic.cal_constant ic_cal_constant, ic.cal_multiplier ic_cal_multiplier,
             dc.interval_id dc_interval_id, dc.name dc_name, dc.cal_constant dc_cal_constant, dc.cal_multiplier dc_cal_multiplier,
 
-            tsi.site_id, tsi.interval_id, tsi.duration_id
-        
+            tsi.site_id tsi_site_id, tsi.interval_id tsi_interval_id, tsi.duration_id tsi_duration_id
+
         from time_series_identifier_limit tsi
         join datatype dt on dt.id = tsi.datatype_id
         join site on site.id = tsi.site_id
         join sitename sn on sn.siteid = tsi.site_id
         join interval_code ic on ic.interval_id = tsi.interval_id
         join interval_code dc on dc.interval_id = tsi.duration_id
-                
+
         order by tsi.unique_string <collate> asc
         """;
 
@@ -121,7 +134,8 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
 
     @Override
     public Optional<? extends TimeSeriesIdentifier> getById(DataTransaction tx, DbKey key)
-            throws BadTimeSeriesException, OpenDcsDataException {
+            throws BadTimeSeriesException, OpenDcsDataException
+    {
         var ret = findBy(tx, key);
         if (ret.isSuccess())
         {
@@ -139,7 +153,8 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
 
     @Override
     public FailableResult<Optional<? extends TimeSeriesIdentifier>, OpenDcsDataException> findBy(DataTransaction tx,
-            String uniqueString) {
+            String uniqueString)
+    {
         // extract the display name, if it was used.
         final var identifier = extractDisplayName(uniqueString);
 
@@ -152,8 +167,8 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
 
             try (var query = handle.createQuery(TIMESERIES_IDENTIFIER_QUERY)
                                    .define(COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
-                                   .define("site_columns", OpenDcsSiteDaoImpl.SITE_COLUMNS)
-                                   .define("site_name_columns", OpenDcsSiteDaoImpl.SITE_NAME_COLUMNS)
+                                   .define(OpenDcsSiteDaoImpl.SITE_COLUMN_KEY, OpenDcsSiteDaoImpl.SITE_COLUMNS)
+                                   .define(OpenDcsSiteDaoImpl.SITE_NAME_COLUMNS_KEY, OpenDcsSiteDaoImpl.SITE_NAME_COLUMNS)
                                    .define(WHERE_CLAUSE, " where unique_string = :unique_string ")
                                    .define(LIMIT_CLAUSE, ""))
             {
@@ -190,9 +205,9 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
 
             try (var query = handle.createQuery(TIMESERIES_IDENTIFIER_QUERY)
                                    .define(COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
-                                   .define("site_columns", OpenDcsSiteDaoImpl.SITE_COLUMNS)
-                                   .define("site_name_columns", OpenDcsSiteDaoImpl.SITE_NAME_COLUMNS)
-                                   .define(WHERE_CLAUSE, " where ts_id = :id ")
+                                   .define(OpenDcsSiteDaoImpl.SITE_COLUMN_KEY, OpenDcsSiteDaoImpl.SITE_COLUMNS)
+                                   .define(OpenDcsSiteDaoImpl.SITE_NAME_COLUMNS_KEY, OpenDcsSiteDaoImpl.SITE_NAME_COLUMNS)
+                                   .define(WHERE_CLAUSE, " where id = :id ")
                                    .define(LIMIT_CLAUSE, ""))
             {
                 return FailableResult.success(
@@ -230,7 +245,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
             throws OpenDcsDataException, BadTimeSeriesException
     {
         final var existingId = getByUniqueString(tx, cwmsTsId.getUniqueString())
-                                    .map(tsId -> tsId.getDataTypeId())
+                                    .map(tsId -> tsId.getKey())
                                     .orElse(DbKey.NullKey);
         final var siteId = getSiteId(tx, cwmsTsId);
         final var dataTypeId = getDataTypeId(tx, cwmsTsId);
@@ -239,27 +254,108 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         final var durationId = getDurationId(tx, cwmsTsId.getDuration());
 
         final var storageUnits = getStorageUnits(tx, cwmsTsId);
-        // storageUnits (from data presentation or what's provided)
         // only on save? not update?
 
-        // acquire id
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var ctx = tx.getContext();
+        var keyGen = ctx.getGenerator(KeyGenerator.class)
+                        .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
 
+        final String MERGE_SQL = """
+            merge into ts_spec
+            using (select
+                :id id, :active_flag active_flag, :allow_dst_offset_variation allow_dst_offset, :site_id site_id,
+                :datatype_id datatype_id, :statistics_code statistics_code, :interval_id interval_id, :duration_id duration_id,
+                :version version, :storage_units storage_units, :storage_table storage_table, :storage_type storage_type,
+                :modify_time modify_time, :description description, :utc_offset utc_offset,
+                :offset_error_action offset_error_action
+            <dual>) input
+            on (ts_spec.ts_id = input.id)
+            when matched then
+                update set
+                    ts_id = input.id, active_flag = input.active_flag, allow_dst_offset_variation = input.allow_dst_offset, site_id = input.site_id,
+                    datatype_id = input.datatype_id, statistics_code = input.statistics_code, interval_id = input.interval_id, duration_id = input.duration_id,
+                    ts_version = input.version, storage_units = input.storage_units, storage_table = input.storage_table, storage_type = input.storage_type,
+                    modify_time = input.modify_time, description = input.description, utc_offset = input.utc_offset,
+                    offset_error_action = input.offset_error_action
+            when not matched then
+                insert(
+                    ts_id, active_flag, allow_dst_offset_variation, site_id, datatype_id, statistics_code, interval_id, duration_id,
+                    ts_version, storage_units, storage_table, storage_type, modify_time, description, utc_offset, offset_error_action)
+                values(
+                    input.id, input.active_flag, input.allow_dst_offset, input.site_id, input.datatype_id, input.statistics_code, input.interval_id,
+                    input.duration_id, input.version, input.storage_units, input.storage_table, input.storage_type, input.modify_time,
+                    input.description, input.utc_offset, input.offset_error_action
+                )
+                """;
 
-        // TODO: CompDependsNotify (however no Impl yet.)
+        try (var merge = handle.createUpdate(MERGE_SQL))
+        {
+            DbKey id = cwmsTsId.getKey();
 
-        return cwmsTsId;
+            if (!DbKey.isNull(existingId))
+            {
+                // If there's an existing app with this name, we'll just assume the provided id, if any, was in error
+                id = existingId;
+                log.trace("""
+                    Using ID from existing Time Series Identifier, id={}, that was found. Provided ID was {}.
+                    """,
+                    id, existingId);
+            }
+            final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("ts_spec", handle.getConnection());
+
+            merge.bind(Columns.ID.column(), bindKey)
+                 .bind(Columns.ACTIVE_FLAG.column(), cwmsTsId.isActive())
+                 .bind(Columns.ALLOW_DST_OFFSET_VARIATION.column(), cwmsTsId.isAllowDstOffsetVariation())
+                 .bind(Columns.INTERVAL_ID.column(), intervalId)
+                 .bind(Columns.DURATION_ID.column(), durationId)
+                 .bind(Columns.SITE_ID.column(), siteId)
+                 .bind(Columns.MODIFY_TIME.column(), System.currentTimeMillis())
+                 .bind(Columns.UTC_OFFSET.column(), cwmsTsId.getUtcOffset())
+                 .bind(Columns.STATISTICS_CODE.column(), cwmsTsId.getStatisticsCode())
+                 .bind(Columns.DESCRIPTION.column(), cwmsTsId.getDescription())
+                 .bind(Columns.STORAGE_UNITS.column(), storageUnits)
+                 .bind(Columns.STORAGE_TABLE.column(), cwmsTsId.getStorageTable())
+                 .bind(Columns.STORAGE_TYPE.column(), cwmsTsId.getStorageType())
+                 .bind(Columns.DATA_TYPE_ID.column(), dataTypeId)
+                 .bind(Columns.VERSION.column(), cwmsTsId.getVersion())
+                 .bind(Columns.OFFSET_ERROR_ACTION.column(), cwmsTsId.getOffsetErrorAction().name())
+                 .execute();
+
+            final var ret = getById(tx, bindKey)
+                            .orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Time Series Identifier we just saved."));
+            saveNotify(tx, bindKey);
+            return ret;
+        }
+        catch (DatabaseException ex)
+        {
+            throw new OpenDcsDataException("Unable to get key for new time series identifier.", ex);
+        }
+    }
+
+    private void saveNotify(DataTransaction tx, DbKey id)
+    {
+        try
+        {
+            CpDependsNotify cdn = new CpDependsNotify();
+            cdn.setKey(id);
+            cdn.setEventType(CpDependsNotify.TS_MODIFIED);
+            compDependsDao.saveRecord(tx, cdn);
+        }
+        catch (OpenDcsDataException ex)
+        {
+            log.atWarn().setCause(ex).log("Unable to save notification record", ex);
+        }
     }
 
     private String getStorageUnits(DataTransaction tx, CwmsTsId cwmsTsId) throws OpenDcsDataException
     {
+
         var dataType = cwmsTsId.getDataType();
         var setUnits = cwmsTsId.getStorageUnits();
 
-        var settings = tx.getContext().getSettings(DecodesSettings.class).orElseThrow();
-        
-
-
-        return null;
+        return getStorageUnitsFor(tx, dataType).orElse(setUnits);
     }
 
     private DbKey getIntervalId(DataTransaction tx, String name) throws OpenDcsDataException
@@ -300,7 +396,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     }
 
 
-    private DbKey getDataTypeId(DataTransaction tx, CwmsTsId cwmsTsId) throws OpenDcsDataException, BadTimeSeriesException
+    private DbKey getDataTypeId(DataTransaction tx, CwmsTsId cwmsTsId) throws OpenDcsDataException
     {
         DbKey dtId = cwmsTsId.getDataTypeId();
         if (DbKey.isNull(dtId))
@@ -315,8 +411,12 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     @Override
     public void delete(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'delete'");
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        try (var deleteTs = handle.createUpdate("delete from ts_spec where ts_id = :id"))
+        {
+            deleteTs.bind(Columns.ID.column(), id).execute();
+        }
     }
 
     @Override
@@ -343,7 +443,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
             {
                 query.bind(SqlKeywords.OFFSET, offset);
             }
-            return 
+            return
                 query.registerRowMapper(OpenDcsTimeSeriesIdentifierMapper.withPrefix("tsi"))
                         .registerRowMapper(DataTypeMapper.withPrefix("dt"))
                         .registerRowMapper(OpenDcsSiteMapper.withPrefix("s"))
@@ -352,38 +452,54 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
                         .map(tsi -> tsi)
                         .toList();
         }
-            
+
     }
 
     @Override
-    public TimeSeriesIdentifier makeEmptyTsId() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'makeEmptyTsId'");
+    public TimeSeriesIdentifier makeEmptyTsId()
+    {
+        return new CwmsTsId();
     }
 
     @Override
-    public String getStorageUnitsFor(DataTransaction tx, DataType dataType) throws OpenDcsDataException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getStorageUnitsFor'");
+    public Optional<String> getStorageUnitsFor(DataTransaction tx, DataType dataType) throws OpenDcsDataException
+    {
+        var dbSettings = tx.getContext()
+                           .getSettings(OpenDcsDbSettings.class)
+                           .orElseThrow(() -> new OpenDcsDataException("Required settings instance is not available."));
+        var pgGroupName = dbSettings.storagePresentationGroup;
+
+        var presentationGroup = presentationGroupDao.getByName(tx, pgGroupName)
+                                                    .orElseThrow(() -> new OpenDcsDataException("No presentation grouped named '" + pgGroupName + "' is available in this database."));
+
+        var presentation = presentationGroup.findDataPresentation(dataType);
+        if (presentation != null)
+        {
+            return Optional.of(presentation.getUnitsAbbr());
+        }
+        else
+        {
+            return Optional.empty();
+        }
     }
 
     @Override
-    public TimeSeriesIdentifier transformUniqueString(TimeSeriesIdentifier tsidRet, DbCompParm parm) {
-        // TODO Auto-generated method stub
+    public TimeSeriesIdentifier transformUniqueString(TimeSeriesIdentifier tsidRet, DbCompParm parm)
+    {
         throw new UnsupportedOperationException("Unimplemented method 'transformUniqueString'");
     }
 
     @Override
     public Optional<? extends TimeSeriesIdentifier> transformTsidByCompParm(DataTransaction tx, TimeSeriesIdentifier tsId,
             DbCompParm parm, boolean createTS, boolean fillInParm, String timeSeriesDisplayName)
-            throws OpenDcsDataException, NoSuchObjectException, BadTimeSeriesException {
-        // TODO Auto-generated method stub
+            throws OpenDcsDataException, NoSuchObjectException, BadTimeSeriesException
+    {
         throw new UnsupportedOperationException("Unimplemented method 'transformTsidByCompParm'");
     }
 
     @Override
-    public Optional<? extends TimeSeriesIdentifier> expandSDI(DataTransaction tx, DbCompParm parm) throws OpenDcsDataException {
-        // TODO Auto-generated method stub
+    public Optional<? extends TimeSeriesIdentifier> expandSDI(DataTransaction tx, DbCompParm parm) throws OpenDcsDataException
+    {
         throw new UnsupportedOperationException("Unimplemented method 'expandSDI'");
     }
 
