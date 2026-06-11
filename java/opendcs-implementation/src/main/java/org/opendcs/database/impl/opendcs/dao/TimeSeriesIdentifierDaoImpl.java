@@ -114,7 +114,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         """;
 
     @Override
-    public Optional<? extends TimeSeriesIdentifier> getByUniqueString(DataTransaction tx, String uniqueString)
+    public Optional<TimeSeriesIdentifier> getByUniqueString(DataTransaction tx, String uniqueString)
             throws BadTimeSeriesException, OpenDcsDataException
     {
         var ret = findBy(tx, uniqueString);
@@ -133,7 +133,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     }
 
     @Override
-    public Optional<? extends TimeSeriesIdentifier> getById(DataTransaction tx, DbKey key)
+    public Optional<TimeSeriesIdentifier> getById(DataTransaction tx, DbKey key)
             throws BadTimeSeriesException, OpenDcsDataException
     {
         var ret = findBy(tx, key);
@@ -152,7 +152,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     }
 
     @Override
-    public Result<Optional<? extends TimeSeriesIdentifier>, OpenDcsDataException> findBy(DataTransaction tx,
+    public Result<Optional<TimeSeriesIdentifier>, OpenDcsDataException> findBy(DataTransaction tx,
             String uniqueString) {
         // extract the display name, if it was used.
         final var identifier = extractDisplayName(uniqueString);
@@ -189,11 +189,11 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     }
 
     @Override
-    public Result<Optional<? extends TimeSeriesIdentifier>, OpenDcsDataException> findBy(DataTransaction tx, DbKey key)
+    public Result<Optional<TimeSeriesIdentifier>, OpenDcsDataException> findBy(DataTransaction tx, DbKey key)
     {
         if (DbKey.isNull(key))
         {
-            return FailableResult.failure(new OpenDcsDataException("Cannot lookup by null DbKey value."));
+            return Result.failure(new OpenDcsDataException("Cannot lookup by null DbKey value."));
         }
         try
         {
@@ -209,7 +209,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
                                    .define(WHERE_CLAUSE, " where id = :id ")
                                    .define(LIMIT_CLAUSE, ""))
             {
-                return FailableResult.success(
+                return Result.success(
                     query.bind(GenericColumns.ID.column(),  key)
                          .registerRowMapper(OpenDcsTimeSeriesIdentifierMapper.withPrefix("tsi"))
                          .registerRowMapper(DataTypeMapper.withPrefix("dt"))
@@ -419,7 +419,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     }
 
     @Override
-    public List<? extends TimeSeriesIdentifier> getAll(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
+    public List<TimeSeriesIdentifier> getAll(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
         var handle = tx.connection(Handle.class)
                         .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
@@ -489,7 +489,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     }
 
     @Override
-    public Optional<? extends TimeSeriesIdentifier> transformTsidByCompParm(DataTransaction tx, TimeSeriesIdentifier tsId,
+    public Optional<TimeSeriesIdentifier> transformTsidByCompParm(DataTransaction tx, TimeSeriesIdentifier tsId,
             DbCompParm parm, boolean createTS, boolean fillInParm, String timeSeriesDisplayName)
             throws OpenDcsDataException, NoSuchObjectException, BadTimeSeriesException
     {
@@ -497,7 +497,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     }
 
     @Override
-    public Optional<? extends TimeSeriesIdentifier> expandSDI(DataTransaction tx, DbCompParm parm) throws OpenDcsDataException
+    public Optional<TimeSeriesIdentifier> expandSDI(DataTransaction tx, DbCompParm parm) throws OpenDcsDataException
     {
         throw new UnsupportedOperationException("Unimplemented method 'expandSDI'");
     }
