@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
 
@@ -29,7 +28,6 @@ import opendcs.util.functional.ThrowingFunction;
 
 public class DatabaseService
 {
-    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static ServiceLoader<DatabaseProvider> loader = ServiceLoader.load(DatabaseProvider.class);
 
     public static OpenDcsDatabase getDatabaseFor(String appName, DecodesSettings settings) throws DatabaseException

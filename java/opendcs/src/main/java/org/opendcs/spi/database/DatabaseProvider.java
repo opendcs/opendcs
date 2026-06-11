@@ -3,7 +3,6 @@ package org.opendcs.spi.database;
 import decodes.db.DatabaseException;
 import decodes.util.DecodesSettings;
 
-import java.sql.SQLException;
 import java.util.Properties;
 
 import org.opendcs.database.api.OpenDcsDatabase;
