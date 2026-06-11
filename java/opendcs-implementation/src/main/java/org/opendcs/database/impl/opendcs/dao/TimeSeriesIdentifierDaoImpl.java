@@ -147,7 +147,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         {
             var handle = tx.connection(Handle.class)
                            .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-            var dbEngine = tx.getContext().getDatabase();
+            var dbEngine = tx.getContext().getDatabaseEngine();
 
 
             try (var query = handle.createQuery(TIMESERIES_IDENTIFIER_QUERY)
@@ -185,7 +185,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         {
             var handle = tx.connection(Handle.class)
                            .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-            var dbEngine = tx.getContext().getDatabase();
+            var dbEngine = tx.getContext().getDatabaseEngine();
 
 
             try (var query = handle.createQuery(TIMESERIES_IDENTIFIER_QUERY)
@@ -196,7 +196,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
                                    .define(LIMIT_CLAUSE, ""))
             {
                 return FailableResult.success(
-                    query.bind(GenericColumns.ID,  key)
+                    query.bind(GenericColumns.ID.column(),  key)
                          .registerRowMapper(OpenDcsTimeSeriesIdentifierMapper.withPrefix("tsi"))
                          .registerRowMapper(DataTypeMapper.withPrefix("dt"))
                          .registerRowMapper(OpenDcsSiteMapper.withPrefix("s"))
@@ -324,7 +324,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     {
         var handle = tx.connection(Handle.class)
                         .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        var dbEngine = tx.getContext().getDatabase();
+        var dbEngine = tx.getContext().getDatabaseEngine();
 
 
         try (var query = handle.createQuery(TIMESERIES_IDENTIFIER_QUERY)
