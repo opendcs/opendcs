@@ -114,7 +114,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         """;
 
     @Override
-    public Optional<? extends TimeSeriesIdentifier> getByUniqueString(DataTransaction tx, String uniqueString)
+    public Optional<TimeSeriesIdentifier> getByUniqueString(DataTransaction tx, String uniqueString)
             throws BadTimeSeriesException, OpenDcsDataException
     {
         var ret = findBy(tx, uniqueString);
@@ -133,7 +133,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     }
 
     @Override
-    public Optional<? extends TimeSeriesIdentifier> getById(DataTransaction tx, DbKey key)
+    public Optional<TimeSeriesIdentifier> getById(DataTransaction tx, DbKey key)
             throws BadTimeSeriesException, OpenDcsDataException
     {
         var ret = findBy(tx, key);
@@ -152,7 +152,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     }
 
     @Override
-    public FailableResult<Optional<? extends TimeSeriesIdentifier>, OpenDcsDataException> findBy(DataTransaction tx,
+    public FailableResult<Optional<TimeSeriesIdentifier>, OpenDcsDataException> findBy(DataTransaction tx,
             String uniqueString)
     {
         // extract the display name, if it was used.
@@ -190,7 +190,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     }
 
     @Override
-    public FailableResult<Optional<? extends TimeSeriesIdentifier>, OpenDcsDataException> findBy(DataTransaction tx, DbKey key)
+    public FailableResult<Optional<TimeSeriesIdentifier>, OpenDcsDataException> findBy(DataTransaction tx, DbKey key)
     {
         if (DbKey.isNull(key))
         {
@@ -420,7 +420,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     }
 
     @Override
-    public List<? extends TimeSeriesIdentifier> getAll(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
+    public List<TimeSeriesIdentifier> getAll(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
         var handle = tx.connection(Handle.class)
                         .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
@@ -490,7 +490,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     }
 
     @Override
-    public Optional<? extends TimeSeriesIdentifier> transformTsidByCompParm(DataTransaction tx, TimeSeriesIdentifier tsId,
+    public Optional<TimeSeriesIdentifier> transformTsidByCompParm(DataTransaction tx, TimeSeriesIdentifier tsId,
             DbCompParm parm, boolean createTS, boolean fillInParm, String timeSeriesDisplayName)
             throws OpenDcsDataException, NoSuchObjectException, BadTimeSeriesException
     {
@@ -498,7 +498,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     }
 
     @Override
-    public Optional<? extends TimeSeriesIdentifier> expandSDI(DataTransaction tx, DbCompParm parm) throws OpenDcsDataException
+    public Optional<TimeSeriesIdentifier> expandSDI(DataTransaction tx, DbCompParm parm) throws OpenDcsDataException
     {
         throw new UnsupportedOperationException("Unimplemented method 'expandSDI'");
     }
