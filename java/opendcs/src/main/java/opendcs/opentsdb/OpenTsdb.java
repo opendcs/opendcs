@@ -483,7 +483,7 @@ public class OpenTsdb extends TimeSeriesDb
 
 	public String getStorageUnitsForDataType(DataType dt)
 	{
-		String pgname = OpenTsdbSettings.instance().storagePresentationGroup;
+		String pgname = OpenDcsDbSettings.instance().storagePresentationGroup;
 
 		PresentationGroup pg = Database.getDb().presentationGroupList.find(pgname);
 		if (pg == null)

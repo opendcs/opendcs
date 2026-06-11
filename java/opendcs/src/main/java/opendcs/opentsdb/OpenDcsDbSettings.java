@@ -17,6 +17,7 @@ package opendcs.opentsdb;
 
 import java.util.Properties;
 
+import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -29,10 +30,22 @@ import ilex.util.PropertiesUtil;
  * @author mmaloney Mike Maloney, Cove Software LLC
  *
  */
-public class OpenTsdbSettings implements PropertiesOwner
+public class OpenDcsDbSettings implements PropertiesOwner, OpenDcsSettings
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
-	private static OpenTsdbSettings _instance = null;
+	private static OpenDcsDbSettings INSTANCE = null;
+
+	private static PropertySpec[] propSpecs =
+	{
+		new PropertySpec("allowDstOffsetVariation", PropertySpec.BOOLEAN,
+			"(default=true) allows daylight time offset variation in time series data."),
+		new PropertySpec("offsetErrorAction", PropertySpec.JAVA_ENUM+"opendcs.opentsdb.OffsetErrorAction",
+			"Action when UTC Offset is detected when storing data. One of IGNORE, REJECT, ROUND."),
+		new PropertySpec("storagePresentationGroup", PropertySpec.STRING,
+			"Name of presentation group that determines storage units for each data type."),
+		new PropertySpec("traceConnections", PropertySpec.BOOLEAN,
+			"(default=false) Set to true to enable debugs on database connection management."),
+	};
 
 	/** Allow the UTC Offset of time series to vary by an hour over DST change. */
 	public boolean allowDstOffsetVariation = true;
@@ -49,19 +62,18 @@ public class OpenTsdbSettings implements PropertiesOwner
 
 	public Properties props = new Properties();
 
-	private static PropertySpec propSpecs[] =
+	public OpenDcsDbSettings()
 	{
-		new PropertySpec("allowDstOffsetVariation", PropertySpec.BOOLEAN,
-			"(default=true) allows daylight time offset variation in time series data."),
-		new PropertySpec("offsetErrorAction", PropertySpec.JAVA_ENUM+"opendcs.opentsdb.OffsetErrorAction",
-			"Action when UTC Offset is detected when storing data. One of IGNORE, REJECT, ROUND."),
-		new PropertySpec("storagePresentationGroup", PropertySpec.STRING,
-			"Name of presentation group that determines storage units for each data type."),
-		new PropertySpec("traceConnections", PropertySpec.BOOLEAN,
-			"(default=false) Set to true to enable debugs on database connection management."),
-	};
+		/* do nothing */
+	}
 
-	public void setFromProperties(Properties props)
+	public OpenDcsDbSettings(Properties props)
+	{
+		loadFromProperties(props);
+	}
+
+	@Override
+	public void loadFromProperties(Properties props)
 	{
 		this.props = props;
 		PropertiesUtil.loadFromProps(this, props);
@@ -74,7 +86,7 @@ public class OpenTsdbSettings implements PropertiesOwner
 		{
 			log.atWarn()
 			   .setCause(ex)
-			   .log("OpenTsdbSettings: Bad offsetErrorAction '{}': defaulting to round.", offsetErrorAction);
+			   .log("Bad offsetErrorAction '{}': defaulting to round.", offsetErrorAction);
 			offsetErrorActionEnum = OffsetErrorAction.ROUND;
 		}
 	}
@@ -91,11 +103,11 @@ public class OpenTsdbSettings implements PropertiesOwner
 		return ret;
 	}
 
-	public static OpenTsdbSettings instance()
+	public static OpenDcsDbSettings instance()
 	{
-		if (_instance == null)
-			_instance = new OpenTsdbSettings();
-		return _instance;
+		if (INSTANCE == null)
+			INSTANCE = new OpenDcsDbSettings();
+		return INSTANCE;
 	}
 
 	@Override

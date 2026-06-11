@@ -47,4 +47,5 @@ public interface DatabaseProvider
      * @throws DatabaseException
      */
     OpenDcsDatabase createDatabase(javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException;
+
 }

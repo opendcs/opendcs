@@ -16,7 +16,7 @@
 package decodes.tsdb.groupedit;
 
 import ilex.util.LoadResourceBundle;
-import opendcs.opentsdb.OpenTsdbSettings;
+import opendcs.opentsdb.OpenDcsDbSettings;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -145,14 +145,14 @@ public class TsListFrame extends TopFrame
 			JOptionPane.showMessageDialog(this, "Changing TSDB Properties will require restart "
 				+ "of any background processes using these properties.");
 		}
-		Properties props = OpenTsdbSettings.instance().getPropertiesSet();
+		Properties props = OpenDcsDbSettings.instance().getPropertiesSet();
 		PropertiesEditDialog dlg = new PropertiesEditDialog(
 			groupResources.getString("TsdbListPanel.TsdbProperties"), props);
-		dlg.setPropertiesOwner(OpenTsdbSettings.instance());
+		dlg.setPropertiesOwner(OpenDcsDbSettings.instance());
 		launchDialog(dlg);
 		if (dlg.isOkPressed())
 		{
-			OpenTsdbSettings.instance().setFromProperties(props);
+			OpenDcsDbSettings.instance().loadFromProperties(props);
 			try
 			{
 				theDb.writeTsdbProperties(props);

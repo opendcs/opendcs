@@ -9,8 +9,11 @@ import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.impl.opendcs.OpenDcsOracleProvider;
 import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
 import org.opendcs.database.DatabaseQuerySettings;
+import org.opendcs.database.DatabaseService;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.spi.database.DatabaseProvider;
+
+import com.google.auto.service.AutoService;
 
 import decodes.db.Database;
 import decodes.db.DatabaseException;
@@ -18,6 +21,7 @@ import decodes.sql.SqlDatabaseIO;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
 
+@AutoService(DatabaseProvider.class)
 public class OpenTsdbProvider implements DatabaseProvider
 {
     private String appName = null;
@@ -57,7 +61,15 @@ public class OpenTsdbProvider implements DatabaseProvider
     {
         Database decodesDb = getDecodesDatabase(dataSource, settings);
         OpenTsdb tsDb = new OpenTsdb(appName, dataSource, settings);
-        var db = new OpenDcsDatabaseWrapper(Map.of(DecodesSettings.class, settings, DatabaseQuerySettings.class, DatabaseQuerySettings.DEFAULT_SETTINGS), decodesDb, tsDb, dataSource);
+
+        var dbSettings = DatabaseService.loadSettingsFromProperties(dataSource, new OpenDcsDbSettings());
+
+        var allSettings = Map.of(
+            DecodesSettings.class, settings,
+            DatabaseQuerySettings.class, DatabaseQuerySettings.DEFAULT_SETTINGS,
+            OpenDcsDbSettings.class, dbSettings
+        );
+        var db = new OpenDcsDatabaseWrapper(allSettings, decodesDb, tsDb, dataSource);
         tsDb.setDcsDatabase(db);
         Database.setDb(decodesDb);
         try

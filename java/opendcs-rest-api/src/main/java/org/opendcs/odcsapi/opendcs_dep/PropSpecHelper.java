@@ -154,7 +154,7 @@ public final class PropSpecHelper
 		SCREENING_ALGORITHM("decodes.cwms.validation.ScreeningAlgorithm"),
 		DECODES_SETTINGS("decodes.util.DecodesSettings"),
 		LRGS_CONFIG("lrgs.lrgsmain.LrgsConfig"),
-		OPEN_TSDB_SETTINGS("opendcs.opentsdb.OpenTsdbSettings");
+		OPEN_DCS_DB_SETTINGS("opendcs.opentsdb.OpenDcsDbSettings");
 
 		private final String className;
 
