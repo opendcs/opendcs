@@ -17,8 +17,6 @@ import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.spi.authentication.AuthSource;
 import org.opendcs.spi.database.DatabaseProvider;
-import org.opendcs.utils.logging.OpenDcsLoggerFactory;
-import org.slf4j.Logger;
 
 import decodes.db.DatabaseException;
 import decodes.util.DecodesSettings;
