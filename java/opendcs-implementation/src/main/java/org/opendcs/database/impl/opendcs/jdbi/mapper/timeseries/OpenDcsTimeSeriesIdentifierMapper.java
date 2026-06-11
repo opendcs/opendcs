@@ -37,6 +37,7 @@ public class OpenDcsTimeSeriesIdentifierMapper extends PrefixRowMapper<TimeSerie
         ret.setSiteName(rs.getString(column(Columns.SITE_NAME)));
         ret.setDescription(rs.getString(column(Columns.DESCRIPTION)));
         ret.setActive(rs.getBoolean(column(Columns.ACTIVE_FLAG)));
+        ret.setVersion(rs.getString(column(Columns.VERSION)));
         ret.setStorageTable(rs.getInt(column(Columns.STORAGE_TABLE)));
         ret.setStorageType(rs.getString(column(Columns.STORAGE_TYPE)).charAt(0));
         ret.setStorageUnits(rs.getString(column(Columns.STORAGE_UNITS)));
@@ -46,7 +47,6 @@ public class OpenDcsTimeSeriesIdentifierMapper extends PrefixRowMapper<TimeSerie
         ret.setUtcOffset(rs.getInt(column(Columns.UTC_OFFSET)));
         ret.setAllowDstOffsetVariation(rs.getBoolean(column(Columns.ALLOW_DST_OFFSET_VARIATION)));
         ret.setOffsetErrorAction(OffsetErrorAction.fromString(rs.getString(column(Columns.OFFSET_ERROR_ACTION))));
-
         return ret;
     }
 
@@ -62,6 +62,7 @@ public class OpenDcsTimeSeriesIdentifierMapper extends PrefixRowMapper<TimeSerie
         SITE_NAME("site_name"),
         DESCRIPTION(GenericColumns.DESCRIPTION),
         ACTIVE_FLAG("active_flag"),
+        STATISTICS_CODE("statistics_code"),
         STORAGE_TABLE("storage_table"),
         STORAGE_TYPE("storage_type"),
         STORAGE_UNITS("storage_units"),
@@ -70,7 +71,14 @@ public class OpenDcsTimeSeriesIdentifierMapper extends PrefixRowMapper<TimeSerie
         MODIFY_TIME("modify_time"),
         UTC_OFFSET("utc_offset"),
         ALLOW_DST_OFFSET_VARIATION("allow_dst_offset_variation"),
-        OFFSET_ERROR_ACTION("offset_error_action")
+        OFFSET_ERROR_ACTION("offset_error_action"),
+        VERSION("version"),
+        // Columns for MERGE
+        DATA_TYPE_ID("datatype_id"),
+        INTERVAL_ID("interval_id"),
+        DURATION_ID("duration_id"),
+        SITE_ID("site_id")
+
         ;
 
         private final String column;
