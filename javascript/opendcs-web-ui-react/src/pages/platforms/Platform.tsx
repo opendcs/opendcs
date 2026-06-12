@@ -211,7 +211,7 @@ export const Platform: React.FC<PlatformProperties> = ({
             <Col>
               <FormGroup as={Row} className="mb-3">
                 <Form.Label column sm={3} htmlFor="name">
-                  {t("platforms:name")}
+                  {t("platforms:site")}
                 </Form.Label>
                 <Col sm={9}>
                   <Form.Control
@@ -227,7 +227,7 @@ export const Platform: React.FC<PlatformProperties> = ({
               </FormGroup>
               <FormGroup as={Row} className="mb-3">
                 <Form.Label column sm={3} htmlFor="siteId">
-                  {t("platforms:site")}
+                  {t("platforms:public_name")}
                 </Form.Label>
                 <Col sm={9}>
                   {edit ? (

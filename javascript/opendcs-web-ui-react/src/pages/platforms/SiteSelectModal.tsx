@@ -20,7 +20,7 @@ export const SiteSelectModal: React.FC<Props> = ({ show, onHide, onSelect }) => 
       { data: "siteId", header: t("platforms:header.Id"), type: "num" },
       {
         data: null,
-        header: t("platforms:site"),
+        header: t("platforms:public_name"),
         render: (_d, _t, row) => siteDisplayName(row),
       },
       {

@@ -6,7 +6,7 @@
     "Description": "Descripción",
     "Expiration": "Vencimiento",
     "Id": "Identificación",
-    "Platform": "Plataforma",
+    "Site": "Sitio",
     "TransportId": "Identificación de transporte"
   },
   "name": "Nombre",
