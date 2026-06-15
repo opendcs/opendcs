@@ -8,7 +8,7 @@ package opendcs.opentsdb;
 public class StorageTableSpec
 {
 	private int tableNum = -1;         // Suffix for table name
-	private int storageType = 'N';     // 'N'umeric or 'S'tring
+	private char storageType = 'N';     // 'N'umeric or 'S'tring
 	private int numTsPresent = 0;      // Number of TSIDs currently assigned to table
 	private int estAnnualValues = 0;   // Estimated annual values for all TS in this table
 
@@ -27,7 +27,7 @@ public class StorageTableSpec
 		this.tableNum = tableNum;
 	}
 
-	public int getStorageType()
+	public char getStorageType()
 	{
 		return storageType;
 	}
