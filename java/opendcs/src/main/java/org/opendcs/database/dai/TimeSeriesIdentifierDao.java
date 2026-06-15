@@ -80,25 +80,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
      * @param id
      * @throws OpenDcsDataException
      */
-    void delete(DataTransaction tx, DbKey id) throws OpenDcsDataException;
-
-    /**
-	 * Modify an existing Time Series descriptive info.
-     *
-     * Primarily used by OpenTSDB to handle storage table and other settings.
-     *
-     * Default implementation returns the provided tsId object.
-     *
-	 * @param tsid
-     * @return A new instance of tsId with new values, or the original if unmodified
-	 * @throws OpenDcsDataException
-	 * @throws NoSuchObjectException
-	 * @throws BadTimeSeriesException
-	 */
-	default TimeSeriesIdentifier modifyTSID(TimeSeriesIdentifier tsId) throws NoSuchObjectException, BadTimeSeriesException
-    {
-        return tsId;
-    }
+    void delete(DataTransaction tx, DbKey id) throws OpenDcsDataException;    
 
     /**
      * Retrieve all time series, given the limit and offset.

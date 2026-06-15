@@ -10,6 +10,7 @@ import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 import org.opendcs.annotations.api.InjectDao;
+import org.opendcs.annotations.api.InjectOperations;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.CompDependsNotifyDao;
@@ -24,6 +25,7 @@ import org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.OpenDcsTimeSerie
 import org.opendcs.database.model.mappers.datatype.DataTypeMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteNameMapper;
+import org.opendcs.operations.timeseries.TimeSeriesOperations;
 import org.opendcs.utils.FailableResult;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
@@ -70,6 +72,9 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
 
     @InjectDao
     CompDependsNotifyDao compDependsDao;
+
+    @InjectOperations
+    TimeSeriesOperations timeSeriesOps;
 
     @SuppressWarnings("java:S1213")
     private static final String TIMESERIES_IDENTIFIER_QUERY = """
