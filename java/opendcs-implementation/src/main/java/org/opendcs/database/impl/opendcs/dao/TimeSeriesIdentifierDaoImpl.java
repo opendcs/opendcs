@@ -46,6 +46,8 @@ import decodes.tsdb.CpDependsNotify;
 import decodes.tsdb.TimeSeriesIdentifier;
 import opendcs.opentsdb.Interval;
 import opendcs.opentsdb.OpenDcsDbSettings;
+import opendcs.opentsdb.OpenTimeSeriesDAO;
+import opendcs.opentsdb.StorageTableSpec;
 
 /**
  * NOTE: this is intentionally doing no caching at this time. Current focus is simply "correctness."
@@ -247,9 +249,9 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     private TimeSeriesIdentifier internalSaveTsId(DataTransaction tx, CwmsTsId cwmsTsId)
             throws OpenDcsDataException, BadTimeSeriesException
     {
-        final var existingId = getByUniqueString(tx, cwmsTsId.getUniqueString())
-                                    .map(tsId -> tsId.getKey())
-                                    .orElse(DbKey.NullKey);
+        var existing = (CwmsTsId)getByUniqueString(tx, cwmsTsId.getUniqueString())
+                                    .orElse(cwmsTsId);
+        final var existingId = existing.getKey();
         final var siteId = getSiteId(tx, cwmsTsId);
         final var dataTypeId = getDataTypeId(tx, cwmsTsId);
 
@@ -257,13 +259,24 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         final var durationId = getDurationId(tx, cwmsTsId.getDuration());
 
         final var storageUnits = getStorageUnits(tx, cwmsTsId);
-        // only on save? not update?
+
 
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                         .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
+
+        var toSave = cwmsTsId;
+        if (existing != cwmsTsId) // some field should not be updated
+        {
+            validateChanges(existing, cwmsTsId);
+        }
+        else
+        {
+            toSave = allocateTable(handle, (CwmsTsId)cwmsTsId.copyNoKey());
+        }
+
 
         final String MERGE_SQL = """
             merge into ts_spec
@@ -295,7 +308,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
 
         try (var merge = handle.createUpdate(MERGE_SQL))
         {
-            DbKey id = cwmsTsId.getKey();
+            DbKey id = toSave.getKey();
 
             if (!DbKey.isNull(existingId))
             {
@@ -309,21 +322,21 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
             final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("ts_spec", handle.getConnection());
 
             merge.bind(Columns.ID.column(), bindKey)
-                 .bind(Columns.ACTIVE_FLAG.column(), cwmsTsId.isActive())
-                 .bind(Columns.ALLOW_DST_OFFSET_VARIATION.column(), cwmsTsId.isAllowDstOffsetVariation())
+                 .bind(Columns.ACTIVE_FLAG.column(), toSave.isActive())
+                 .bind(Columns.ALLOW_DST_OFFSET_VARIATION.column(), toSave.isAllowDstOffsetVariation())
                  .bind(Columns.INTERVAL_ID.column(), intervalId)
                  .bind(Columns.DURATION_ID.column(), durationId)
                  .bind(Columns.SITE_ID.column(), siteId)
                  .bind(Columns.MODIFY_TIME.column(), System.currentTimeMillis())
-                 .bind(Columns.UTC_OFFSET.column(), cwmsTsId.getUtcOffset())
-                 .bind(Columns.STATISTICS_CODE.column(), cwmsTsId.getStatisticsCode())
-                 .bind(Columns.DESCRIPTION.column(), cwmsTsId.getDescription())
+                 .bind(Columns.UTC_OFFSET.column(), toSave.getUtcOffset())
+                 .bind(Columns.STATISTICS_CODE.column(), toSave.getStatisticsCode())
+                 .bind(Columns.DESCRIPTION.column(), toSave.getDescription())
                  .bind(Columns.STORAGE_UNITS.column(), storageUnits)
-                 .bind(Columns.STORAGE_TABLE.column(), cwmsTsId.getStorageTable())
-                 .bind(Columns.STORAGE_TYPE.column(), cwmsTsId.getStorageType())
+                 .bind(Columns.STORAGE_TABLE.column(), toSave.getStorageTable())
+                 .bind(Columns.STORAGE_TYPE.column(), toSave.getStorageType())
                  .bind(Columns.DATA_TYPE_ID.column(), dataTypeId)
-                 .bind(Columns.VERSION.column(), cwmsTsId.getVersion())
-                 .bind(Columns.OFFSET_ERROR_ACTION.column(), cwmsTsId.getOffsetErrorAction().name())
+                 .bind(Columns.VERSION.column(), toSave.getVersion())
+                 .bind(Columns.OFFSET_ERROR_ACTION.column(), toSave.getOffsetErrorAction().name())
                  .execute();
 
             final var ret = getById(tx, bindKey)
@@ -334,6 +347,89 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         catch (DatabaseException ex)
         {
             throw new OpenDcsDataException("Unable to get key for new time series identifier.", ex);
+        }
+    }
+
+    private CwmsTsId allocateTable(Handle handle, CwmsTsId inputTs) throws OpenDcsDataException
+    {
+        var ret = (CwmsTsId)inputTs.copyNoKey();
+        try (var selectTable = handle.createQuery("""
+            select for update table_num, storage_type, num_ts_present, est_annual_values
+            from storage_table_list
+            where storage_type = :storage_type
+            and est_annual_values = (select min(est_annual_values) from storage_table_list where storage_type = :storage_type)
+            order by table_num
+        """);
+            var updateTable = handle.createUpdate("""
+                update storage_table_list set
+                    num_ts_present = :num_ts_present,
+                    est_annual_values = :est_annual_values
+                    where storage_Type = :storage_type,
+                    and table_num = :table_num
+                    """))
+        {
+            var storageTable  =
+                selectTable.bind("storage_type", inputTs.getStorageType())
+                           .map(rv ->
+                            {
+                                var spec = new StorageTableSpec(inputTs.getStorageType());
+                                spec.setNumTsPresent(rv.getColumn("num_ts_present", int.class));
+                                spec.setEstAnnualValues(rv.getColumn("est_annual_values", int.class));
+                                spec.setTableNum(rv.getColumn("table_num", int.class));
+                                return spec;
+                            }
+                           )
+                           .findOne()
+                           .orElseThrow(() -> new OpenDcsDataException("No storage tables available!"));
+
+            ret.setStorageTable(storageTable.getTableNum());
+
+            updateTable.bind("num_ts_present", storageTable.getNumTsPresent() + 1)
+                       .bind("est_annual_values", OpenTimeSeriesDAO.interval2estAnnualValues(inputTs.getIntervalOb()))
+                       .bind("storage_type", storageTable.getStorageType())
+                       .bind("table_num", storageTable.getTableNum())
+                       .execute();
+        }
+
+
+        return inputTs;
+    }
+
+    /**
+     * Validate that only fields that can change are changed.
+     * @param existing
+     * @param input
+     * @throws OpenDcsDataException
+     */
+    private void validateChanges(CwmsTsId existing, CwmsTsId input) throws OpenDcsDataException
+    {
+        if (!existing.getInterval().equalsIgnoreCase(input.getInterval()))
+        {
+            throw new OpenDcsDataException("Cannot change interval of data.");
+        }
+        if (!existing.getDuration().equalsIgnoreCase(input.getDuration()))
+        {
+            throw new OpenDcsDataException("Cannot change duration of data.");
+        }
+        if (!existing.getStatisticsCode().equalsIgnoreCase(input.getStatisticsCode()))
+        {
+            throw new OpenDcsDataException("Cannot change stastics code of data.");
+        }
+        if (existing.getStorageTable() != input.getStorageTable())
+        {
+            throw new OpenDcsDataException("Cannot alter storage table of data using this method.");
+        }
+        if (existing.getStorageType() != input.getStorageType())
+        {
+            throw new OpenDcsDataException("Cannot alter storage type of data.");
+        }
+        if (existing.getUtcOffset() != input.getUtcOffset())
+        {
+            throw new OpenDcsDataException("Cannot alter UTC offset using this method.");
+        }
+        if (!existing.getStorageUnits().equalsIgnoreCase(input.getStorageUnits()))
+        {
+            throw new OpenDcsDataException("Cannot alter Storage units using this method.");
         }
     }
 
