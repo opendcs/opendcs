@@ -77,4 +77,21 @@ public interface TimeSeriesOperations extends OpenDcsOperations
 	 */
 	Optional<TimeSeriesIdentifier> expandSDI(DataTransaction tx, DbCompParm parm) throws OpenDcsDataException;
 
+    /**
+	 * Modify an existing Time Series descriptive info.
+     *
+     * Primarily used by OpenTSDB to handle storage table and other settings.
+     *
+     * Default implementation returns the provided tsId object.
+     *
+	 * @param tsid
+     * @return A new instance of tsId with new values, or the original if unmodified
+	 * @throws OpenDcsDataException
+	 * @throws NoSuchObjectException
+	 * @throws BadTimeSeriesException
+	 */
+	default TimeSeriesIdentifier modifyTSID(TimeSeriesIdentifier tsId) throws NoSuchObjectException, BadTimeSeriesException
+    {
+        return tsId;
+    }
 }
