@@ -41,8 +41,6 @@ import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CpDependsNotify;
-import decodes.tsdb.DbCompParm;
-import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
 import opendcs.opentsdb.Interval;
 import opendcs.opentsdb.OpenDcsDbSettings;
@@ -482,25 +480,4 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
             return Optional.empty();
         }
     }
-
-    @Override
-    public TimeSeriesIdentifier transformUniqueString(TimeSeriesIdentifier tsidRet, DbCompParm parm)
-    {
-        throw new UnsupportedOperationException("Unimplemented method 'transformUniqueString'");
-    }
-
-    @Override
-    public Optional<TimeSeriesIdentifier> transformTsidByCompParm(DataTransaction tx, TimeSeriesIdentifier tsId,
-            DbCompParm parm, boolean createTS, boolean fillInParm, String timeSeriesDisplayName)
-            throws OpenDcsDataException, NoSuchObjectException, BadTimeSeriesException
-    {
-        throw new UnsupportedOperationException("Unimplemented method 'transformTsidByCompParm'");
-    }
-
-    @Override
-    public Optional<TimeSeriesIdentifier> expandSDI(DataTransaction tx, DbCompParm parm) throws OpenDcsDataException
-    {
-        throw new UnsupportedOperationException("Unimplemented method 'expandSDI'");
-    }
-
 }
