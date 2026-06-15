@@ -365,12 +365,33 @@ public final class ComputationResources extends OpenDcsResource
 								.data(String.format("Computation executed with %d errors", results.numErrors()))
 								.build();
 						eventSink.send(event);
-
-						processOutput(outputList, taskID, sse, eventSink, startTime, endTime);
 					}
+					catch (Exception ex)
+					{
+						log.error("Error during computation execution for computation ID: {}", computationId, ex);
+						OutboundSseEvent errEvent = sse.newEventBuilder()
+								.name(compStatus)
+								.id(taskID)
+								.mediaType(MediaType.TEXT_PLAIN_TYPE)
+								.data(String.format("Computation failed: %s", ex.getMessage()))
+								.build();
+						eventSink.send(errEvent);
+					}
+				}
+				catch (Exception ex)
+				{
+					log.error("Unexpected error in computation async task for computation ID: {}", computationId, ex);
 				}
 				finally
 				{
+					try
+					{
+						processOutput(outputList, taskID, sse, eventSink, startTime, endTime);
+					}
+					catch (Exception ex)
+					{
+						log.error("Error sending computation results for computation ID: {}", computationId, ex);
+					}
 					try
 					{
 						eventSink.close();
