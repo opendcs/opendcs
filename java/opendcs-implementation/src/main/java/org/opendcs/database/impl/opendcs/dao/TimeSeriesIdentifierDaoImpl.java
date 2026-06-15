@@ -354,17 +354,18 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     {
         var ret = (CwmsTsId)inputTs.copyNoKey();
         try (var selectTable = handle.createQuery("""
-            select for update table_num, storage_type, num_ts_present, est_annual_values
+            select table_num, storage_type, num_ts_present, est_annual_values
             from storage_table_list
             where storage_type = :storage_type
             and est_annual_values = (select min(est_annual_values) from storage_table_list where storage_type = :storage_type)
             order by table_num
+            for update
         """);
             var updateTable = handle.createUpdate("""
                 update storage_table_list set
                     num_ts_present = :num_ts_present,
                     est_annual_values = :est_annual_values
-                    where storage_Type = :storage_type,
+                    where storage_Type = :storage_type
                     and table_num = :table_num
                     """))
         {
@@ -373,9 +374,9 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
                            .map(rv ->
                             {
                                 var spec = new StorageTableSpec(inputTs.getStorageType());
-                                spec.setNumTsPresent(rv.getColumn("num_ts_present", int.class));
-                                spec.setEstAnnualValues(rv.getColumn("est_annual_values", int.class));
-                                spec.setTableNum(rv.getColumn("table_num", int.class));
+                                spec.setNumTsPresent(rv.getColumn("num_ts_present", Integer.class));
+                                spec.setEstAnnualValues(rv.getColumn("est_annual_values", Integer.class));
+                                spec.setTableNum(rv.getColumn("table_num", Integer.class));
                                 return spec;
                             }
                            )
@@ -392,7 +393,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         }
 
 
-        return inputTs;
+        return ret;
     }
 
     /**
