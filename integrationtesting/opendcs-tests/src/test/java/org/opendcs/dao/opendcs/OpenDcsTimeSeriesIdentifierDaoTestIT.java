@@ -1,6 +1,8 @@
 package org.opendcs.dao.opendcs;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -13,6 +15,7 @@ import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
+import decodes.cwms.CwmsTsId;
 import decodes.sql.DbKey;
 import decodes.tsdb.TimeSeriesDb;
 
@@ -68,12 +71,14 @@ class OpenDcsTimeSeriesIdentifierDaoTestIT extends AppTestBase
         var dao = db.getDao(TimeSeriesIdentifierDao.class).orElseThrow();
         try (var tx = db.newTransaction())
         {
-            var id = dao.save(tx, tsIdIn).getKey();
-            assertFalse(DbKey.isNull(id));
+            var tsi = dao.save(tx, tsIdIn);
+            assertFalse(DbKey.isNull(tsi.getKey()));
 
+            var cwmsTsId = assertInstanceOf(CwmsTsId.class, tsi);
+            assertNotEquals(-1, cwmsTsId.getStorageTable());
 
-            dao.delete(tx, id);
-            assertFalse(dao.getById(tx, id).isPresent());
+            dao.delete(tx, tsi.getKey());
+            assertFalse(dao.getById(tx, tsi.getKey()).isPresent());
         }
     }
 }
