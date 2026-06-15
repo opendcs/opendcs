@@ -35,7 +35,7 @@ public class DataTypeDaoImpl implements DataTypeDao
                 """;
         try (var query = handle.createQuery(querySql))
         {
-            return query.bind("id", id)
+            return query.bind(GenericColumns.ID.column(), id)
                         .registerRowMapper(DataType.class, DataTypeMapper.withPrefix(""))
                         .mapTo(DataType.class)
                         .findOne();
@@ -49,7 +49,7 @@ public class DataTypeDaoImpl implements DataTypeDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                 .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
         final String insertSql = """
@@ -67,7 +67,7 @@ public class DataTypeDaoImpl implements DataTypeDao
         {
             final DbKey id = dataType.idIsSet() ? dataType.getId() : keyGen.getKey("datatype", handle.getConnection());
             query.registerRowMapper(DataType.class, DataTypeMapper.withPrefix(""))
-                 .bind("id", id)
+                 .bind(GenericColumns.ID.column(), id)
                  .bind("standard", dataType.getStandard())
                  .bind("code", dataType.getCode())
                  .bind("display_name", dataType.getDisplayName())
@@ -181,7 +181,7 @@ public class DataTypeDaoImpl implements DataTypeDao
         final var deleteDataTypeSql = "delete from datatype where id = :id";
         try (var deleteDataType = handle.createUpdate(deleteDataTypeSql))
         {
-            deleteDataType.bind(GenericColumns.ID, id).execute();
+            deleteDataType.bind(GenericColumns.ID.column(), id).execute();
         }
     }
 }

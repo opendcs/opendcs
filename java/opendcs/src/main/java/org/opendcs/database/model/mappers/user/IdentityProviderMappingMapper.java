@@ -23,15 +23,16 @@ import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.IdentityProviderMapping;
 import org.opendcs.database.model.mappers.IdentityProviderMapper;
 import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 
-public final class IdentityProviderMappingMapper extends PrefixRowMapper<IdentityProviderMapping>
+public final class IdentityProviderMappingMapper extends PrefixRowMapper<IdentityProviderMapping,IdentityProviderMappingMapper.Columns>
 {
     private final IdentityProviderMapper idpMapper;
 
     private IdentityProviderMappingMapper(String prefix)
     {
-        super(prefix);
+        super(prefix, Columns.class);
         idpMapper = IdentityProviderMapper.withPrefix(prefix);
     }
 
@@ -40,7 +41,7 @@ public final class IdentityProviderMappingMapper extends PrefixRowMapper<Identit
     {
 
         IdentityProvider provider = idpMapper.map(rs, ctx);
-        String subject = rs.getString(prefix+GenericColumns.SUBJECT);
+        String subject = rs.getString(column(Columns.SUBJECT));
 
         return new IdentityProviderMapping(provider, subject);
     }
@@ -48,5 +49,24 @@ public final class IdentityProviderMappingMapper extends PrefixRowMapper<Identit
     public static IdentityProviderMappingMapper withPrefix(String prefix)
     {
         return new IdentityProviderMappingMapper(prefix);
+    }
+
+    public enum Columns implements TableColumnDefinition
+    {
+        SUBJECT(GenericColumns.SUBJECT)
+        ;
+
+        private final String column;
+
+        Columns(GenericColumns other)
+        {
+            this.column = other.column();
+        }
+
+        @Override
+        public String column()
+        {
+            return this.column;
+        }
     }
 }

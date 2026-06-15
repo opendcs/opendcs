@@ -2,7 +2,6 @@ package org.opendcs.database.impl.opendcs.dao;
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
@@ -27,7 +26,7 @@ import decodes.sql.KeyGenerator;
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 
 @ServiceProvider(service = EnumDao.class)
-public class EnumDaoImpl implements EnumDao 
+public class EnumDaoImpl implements EnumDao
 {
 
     @Override
@@ -77,7 +76,7 @@ public class EnumDaoImpl implements EnumDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         try (var query = handle.createQuery("select id from enum where upper(name) = upper(:name)"))
         {
-            var id = query.bind(GenericColumns.NAME, enumName)
+            var id = query.bind(GenericColumns.NAME.column(), enumName)
                           .mapTo(DbKey.class)
                           .findOne();
             return getEnum(tx, id.orElse(DbKey.NullKey));
@@ -103,7 +102,7 @@ public class EnumDaoImpl implements EnumDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         try (var query = handle.createQuery(queryText))
         {
-            return query.bind(GenericColumns.ID, id)
+            return query.bind(GenericColumns.ID.column(), id)
                         .registerRowMapper(DbEnumBuilder.class, DbEnumBuilderMapper.withPrefix("e"))
                         .registerRowMapper(EnumValue.class, EnumValueMapper.withPrefix("v"))
                         .reduceRows(DbEnumBuilderReducer.DBENUM_BUILDER_REDUCER)
@@ -118,7 +117,7 @@ public class EnumDaoImpl implements EnumDao
         var context = tx.getContext();
         var keyGen = context.getGenerator(KeyGenerator.class)
                             .orElseThrow(() -> new OpenDcsDataException("No Keygenerator configured."));
-        var dbEngine = context.getDatabase();
+        var dbEngine = context.getDatabaseEngine();
 
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
@@ -144,19 +143,19 @@ public class EnumDaoImpl implements EnumDao
              var addValues = handle.prepareBatch(addValueText))
         {
             final DbKey id = dbEnum.idIsSet() ? dbEnum.getId() : keyGen.getKey("enum", handle.getConnection());
-            enumMerge.bind(GenericColumns.ID, id)
-                     .bind(GenericColumns.NAME, dbEnum.enumName)
+            enumMerge.bind(GenericColumns.ID.column(), id)
+                     .bind(GenericColumns.NAME.column(), dbEnum.enumName)
                      .bind("defaultValue", dbEnum.getDefault())
-                     .bind(GenericColumns.DESCRIPTION, dbEnum.getDescription())
+                     .bind(GenericColumns.DESCRIPTION.column(), dbEnum.getDescription())
                      .execute();
 
-            removeValues.bind(GenericColumns.ID, id).execute();
+            removeValues.bind(GenericColumns.ID.column(), id).execute();
 
             for (var enumValue: dbEnum.values())
             {
-                addValues.bind(GenericColumns.ID, id)
+                addValues.bind(GenericColumns.ID.column(), id)
                          .bind("enumvalue", enumValue.getValue())
-                         .bind(GenericColumns.DESCRIPTION, enumValue.getDescription())
+                         .bind(GenericColumns.DESCRIPTION.column(), enumValue.getDescription())
                          .bind("execclass", enumValue.getExecClassName())
                          .bind("editclass", enumValue.getEditClassName())
                          .bind("sortnumber", enumValue.getSortNumber())

@@ -18,6 +18,7 @@
   "elevation": "Elevation",
   "elevation_units": "Elevation Units",
   "state": "State",
+  "timezone": "Time Zone",
   "description": "Description",
   "cancel": "Cancel",
   "save": "Save",

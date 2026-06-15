@@ -6,15 +6,16 @@ import java.sql.SQLException;
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.sql.TableColumnDefinition;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 
-public final class CompAppInfoMapper extends PrefixRowMapper<CompAppInfo>
+public final class CompAppInfoMapper extends PrefixRowMapper<CompAppInfo, CompAppInfoMapper.Columns>
 {
     private CompAppInfoMapper(String prefix)
     {
-        super(prefix);
+        super(prefix, Columns.class);
     }
 
     @Override
@@ -22,10 +23,10 @@ public final class CompAppInfoMapper extends PrefixRowMapper<CompAppInfo>
     {
         ColumnMapper<DbKey> dbKeyMapper = ctx.findColumnMapperFor(DbKey.class)
                                              .orElseThrow(() -> new SQLException("No mapper registered for DbKey class."));
-        final DbKey id = dbKeyMapper.map(rs, prefix + "loading_application_id", ctx);
-        final String name = rs.getString(prefix + "loading_application_name");
-        final Boolean manualEditApp = rs.getBoolean(prefix + "manual_edit_app");
-        final String comment = rs.getString(prefix + "CMMNT");
+        final DbKey id = dbKeyMapper.map(rs, column(Columns.APP_ID), ctx);
+        final String name = rs.getString(column(Columns.APP_NAME));
+        final Boolean manualEditApp = rs.getBoolean(column(Columns.MANUAL_EDIT_APP));
+        final String comment = rs.getString(column(Columns.COMMENT));
 
         CompAppInfo appInfo = new CompAppInfo(id);
         appInfo.setAppName(name);
@@ -39,5 +40,26 @@ public final class CompAppInfoMapper extends PrefixRowMapper<CompAppInfo>
     {
         return new CompAppInfoMapper(prefix);
     }
-    
+
+    public enum Columns implements TableColumnDefinition
+    {
+        APP_ID("loading_application_id"),
+        APP_NAME("loading_application_name"),
+        MANUAL_EDIT_APP("manual_edit_app"),
+        COMMENT("cmmnt")
+        ;
+
+        private final String column;
+
+        Columns(String column)
+        {
+            this.column = column;
+        }
+
+        @Override
+        public String column()
+        {
+            return column;
+        }
+    }
 }

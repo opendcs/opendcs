@@ -21,6 +21,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -56,21 +57,24 @@ import decodes.sql.KeyGeneratorFactory;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
 
-public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
+public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatabase
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
-    protected final DecodesSettings settings;
     private final Database decodesDb;
     private final TimeSeriesDb timeSeriesDb;
     protected final DataSource dataSource;
     protected final Jdbi jdbi;
     protected final DatabaseEngine dbEngine;
     protected final KeyGenerator keyGenerator;
+    protected final Map<Class<? extends OpenDcsSettings>, OpenDcsSettings> settingsMap = new HashMap<>();
     private final Map<Class<? extends OpenDcsDao>, DaoWrapper<? extends OpenDcsDao>> daoMap = new HashMap<>();
 
-    public SimpleOpenDcsDatabaseWrapper(DecodesSettings settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource)
+    protected AbstractJdbiOpenDcsDatabaseWrapper(
+            Map<Class<? extends OpenDcsSettings>, OpenDcsSettings> settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource)
     {
-        this.settings = settings;
+        Objects.requireNonNull(settings.get(DecodesSettings.class), 
+                               "All implementations are required to provide a `DecodesSettings` instance.");
+        this.settingsMap.putAll(settings);
         this.decodesDb = decodesDb;
         this.timeSeriesDb = timeSeriesDb;
         this.dataSource = dataSource;
@@ -96,15 +100,22 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
             throw new IllegalStateException("Unable to determine database type", ex);
         }
 
+        DecodesSettings decodesSettings = (DecodesSettings)settingsMap.get(DecodesSettings.class);
         try
         {
-            keyGenerator = KeyGeneratorFactory.makeKeyGenerator(settings.sqlKeyGenerator);
+            keyGenerator = KeyGeneratorFactory.makeKeyGenerator(decodesSettings.sqlKeyGenerator);
         }
         catch (DatabaseException ex)
         {
-            throw new IllegalStateException("Unable to create key generator of type '" + settings.sqlKeyGenerator + "'", ex);
+            throw new IllegalStateException("Unable to create key generator of type '" + decodesSettings.sqlKeyGenerator + "'", ex);
         }
+        initialSetup();
     }
+
+    /**
+     * Handle any additional setup or overrides to what was previously done.
+     */
+    protected abstract void initialSetup();
 
     @SuppressWarnings("unchecked") // class is checked before casting
     @Override
@@ -130,6 +141,17 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         return dataSource;
     }
 
+    /**
+     * Allow implementation to manually add specific types that
+     * may need some custom setup.
+     * @param type
+     * @param wrapper
+     */
+    protected void mapDao(Class<? extends OpenDcsDao> type, DaoWrapper<? extends OpenDcsDao> wrapper)
+    {
+        this.daoMap.put(type, wrapper);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public <T extends OpenDcsDao> Optional<T> getDao(Class<T> dao)
@@ -143,10 +165,6 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
                 {
                     return tmp.get();
                 }
-                if (dao.isAssignableFrom(CwmsLocationLevelDAO.class))
-                {
-                    return new DaoWrapper<>(() -> new CwmsLocationLevelDAO(this.timeSeriesDb));
-                }
 
                 Optional<Method> daoMakeMethod;
                 if (timeSeriesDb != null)
@@ -155,25 +173,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
                     if (daoMakeMethod.isPresent())
                     {
                         final Method m = daoMakeMethod.get();
-                        return new DaoWrapper<>(() ->
-                        {
-                            try
-                            {
-                                T ret = (T)m.invoke(timeSeriesDb);
-                                if (ret == null)
-                                {
-                                    log.atError().log("retrieval of DAO returned null instead of the expected DAO." + timeSeriesDb + " " + m.toGenericString());
-                                }
-                                return ret;
-                            }
-                            catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
-                            {
-                                log.atError()
-                                .setCause(ex)
-                                .log("Unable to retrieve DAO we should be able to get.");
-                                return null;
-                            }
-                        });
+                        return makeDaoWrapper(() -> timeSeriesDb, m);
                     }
                 }
                 DatabaseIO dbIo = this.decodesDb.getDbIo();
@@ -181,33 +181,43 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
                 if (daoMakeMethod.isPresent())
                 {
                     final Method m = daoMakeMethod.get();
-                    return new DaoWrapper<>(() ->
-                    {
-                        try
-                        {
-                            T ret = (T)m.invoke(this.decodesDb.getDbIo());
-                            if (ret == null)
-                            {
-                                log.atError().log("retrieval of DAO returned null instead of the expected DAO." + this.decodesDb.getDbIo() + " " + m.toGenericString());
-                            }
-                            return ret;
-                        }
-                        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
-                        {
-                            log.atError()
-                               .setCause(ex)
-                               .log("Unable to retrieve DAO we should be able to get.");
-                            return null;
-                        }
-                    });
+                    return makeDaoWrapper(() -> this.decodesDb.getDbIo(), m);
                 }
+
                 return new DaoWrapper<>(() -> null);
             });
         return Optional.ofNullable((T)wrapper.create());
     }
 
+    @SuppressWarnings("unchecked")
+    private <T,K> DaoWrapper<T> makeDaoWrapper(Supplier<K> instance, Method method)
+    {
+        return new DaoWrapper<T>(() ->
+        {
+            try
+            {
+                T ret = (T)method.invoke(instance.get());
+                if (ret == null)
+                {
+                    log.atError()
+                       .log("retrieval of DAO returned null instead of the expected DAO. {}::{}",
+                            instance.get().getClass().getName(),
+                            method.toGenericString());
+                }
+                return ret;
+            }
+            catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
+            {
+                log.atError()
+                    .setCause(ex)
+                    .log("Unable to retrieve DAO we should be able to get.");
+                return null;
+            }
+        });
+    }
+
     /**
-     * Does lookup for the current implementation first, and then attempts to retrieve a 
+     * Does lookup for the current implementation first, and then attempts to retrieve a
      * generic implementation.
      * @param <T>
      * @param dao
@@ -215,14 +225,14 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
      */
     private <T extends OpenDcsDao> Optional<DaoWrapper<T>> fromLookup(Class<T> dao)
     {
-        final String impl = this.settings.editDatabaseType;
+        final String impl = ((DecodesSettings)this.settingsMap.get(DecodesSettings.class)).editDatabaseType;
         final var implLookup = Lookups.forPath("dao/"+impl);
         var instance = implLookup.lookup(dao);
         if (instance == null)
         {
             instance = Lookup.getDefault().lookup(dao);
         }
-        
+
         if (instance != null)
         {
             final var tmp = instance;
@@ -258,7 +268,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
                 throw new OpenDcsDaoConfigurationException("Field " + field.getName() +
                                                " in class" + fieldClass.getName() +
                                                " is not a type of " + OpenDcsDao.class.getName());
-            }            
+            }
             final var daoClass = (Class<? extends OpenDcsDao>)fieldClass;
             var instance = fromLookup(daoClass);
             if (instance.isPresent())
@@ -291,7 +301,8 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         {
             // This DataTransaction is auto closable and handles the closing of the
             // Jdbi Handle instance.
-            return new JdbiTransaction(jdbi.open().begin(), new TransactionContextImpl(keyGenerator, settings, dbEngine)); // NOSONAR
+            return new JdbiTransaction(jdbi.open().begin(),
+                                       new TransactionContextImpl(keyGenerator, settingsMap, dbEngine)); // NOSONAR
         }
         catch (JdbiException ex)
         {
@@ -313,7 +324,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         return makerMethod;
     }
 
-    private static class DaoWrapper<T>
+    protected static class DaoWrapper<T>
     {
         private final Supplier <T> daoSupplier;
         public DaoWrapper(Supplier<T> daoSupplier)
@@ -330,18 +341,11 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     @Override
     public <T extends OpenDcsSettings> Optional<T> getSettings(Class<T> settingsClass)
     {
-        if (DecodesSettings.class.equals(settingsClass))
-        {
-            return Optional.of((T)settings);
-        }
-        else
-        {
-            return Optional.empty();
-        }
+        return Optional.ofNullable((T)settingsMap.get(settingsClass));
     }
 
     @Override
-    public DatabaseEngine getDatabase()
+    public DatabaseEngine getDatabaseEngine()
     {
         return this.dbEngine;
     }

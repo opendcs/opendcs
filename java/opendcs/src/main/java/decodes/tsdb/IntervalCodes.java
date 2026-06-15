@@ -382,4 +382,25 @@ public class IntervalCodes
 			return "year";
 		else return "unknown";
 	}
+
+    public static int getCalConstant(String calConstant)
+	{     
+		/** One of MINUTE, HOUR_OF_DAY, DAY_OF_MONTH, WEEK_OF_YEAR, MONTH, YEAR */
+		if (calConstant.length() == 0)
+			return -1;
+		calConstant = calConstant.toUpperCase();
+		if (calConstant.charAt(0) == 'H')
+			return Calendar.HOUR_OF_DAY;
+		else if (calConstant.charAt(0) == 'D')
+			return Calendar.DAY_OF_MONTH;
+		else if (calConstant.charAt(0) == 'W')
+			return Calendar.WEEK_OF_YEAR;
+		else if (calConstant.charAt(0) == 'Y')
+			return Calendar.YEAR;
+		else if (calConstant.startsWith("MI"))
+			return Calendar.MINUTE;
+		else if (calConstant.startsWith("MO"))
+			return Calendar.MONTH;
+		else return -1;
+    }
 }

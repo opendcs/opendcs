@@ -20,7 +20,7 @@ public class OpenDcsTimeColumnArgumentFactory implements ArgumentFactory.Prepara
             return Optional.of(
                 (position, statement, ctx) ->
                 {
-                    final var tmp = (Boolean)ctx.getAttribute("numeric_date");                    
+                    final var tmp = (Boolean)ctx.getAttribute("numeric_date");
                     final var datesAreInt =  tmp != null && tmp;
                     if (datesAreInt)
                     {
@@ -47,5 +47,5 @@ public class OpenDcsTimeColumnArgumentFactory implements ArgumentFactory.Prepara
         }
         return Optional.empty();
     }
-    
+
 }

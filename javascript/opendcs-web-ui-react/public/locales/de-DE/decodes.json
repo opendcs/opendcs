@@ -1,0 +1,25 @@
+{
+  "script_editor": {
+    "format_statements": {
+      "title": "Formatanweisungen",
+      "format_statement": "Formatanweisung",
+      "format_label": "Bezeichnung",
+      "format_input": "Bearbeitbarer Formatanweisungsbereich für Zeile {{sequence}}, mit Bezeichnung {{label}}.",
+      "label_input": "Bezeichnungsbereich für Zeile {{sequence}}.",
+      "add_above": "Neue Anweisungszeile über Zeile {{sequence}} hinzufügen, mit Bezeichnung {{label}}.",
+      "add_below": "Neue Anweisungszeile unter Zeile {{sequence}} hinzufügen, mit Bezeichnung {{label}}.",
+      "delete": "Formatanweisung für Zeile {{sequence}} mit Bezeichnung {{label}} löschen.",
+      "drag_control": "Ziehen der Formatanweisung für Zeile {{sequence}} mit Bezeichnung {{label}} starten."
+    },
+    "sensors": {
+      "unit": "Einheit für Sensor {{name}}",
+      "algorithm": "Umrechnungsalgorithmus für Sensor {{name}}",
+      "coeff": "Algorithmuskoeffizient {{coeff}} für Sensor {{name}}"
+    },
+    "sample": {
+      "title": "Beispieldaten",
+      "raw_data_input": "Texteingabe für Beispieldaten"
+    }
+  },
+  "decode": "Dekodieren"
+}

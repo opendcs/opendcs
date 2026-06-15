@@ -6,15 +6,13 @@ import {
   type UseMutationOptions,
 } from "@tanstack/react-query";
 import {
-  RESTDECODESPlatformConfigurationsApi,
   RESTDECODESPlatformRecordsApi,
-  type ApiConfigRef,
   type ApiPlatform,
-  type ApiPlatformConfig,
   type ApiPlatformRef,
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
 import { platformKeys } from "./keys";
+import { invalidateThenDelegate, normalizeNewId } from "./mutationHelpers";
 
 const usePlatformsApi = () => {
   const api = useApi();
@@ -22,11 +20,7 @@ const usePlatformsApi = () => {
     () => new RESTDECODESPlatformRecordsApi(api.conf),
     [api.conf],
   );
-  const configApi = useMemo(
-    () => new RESTDECODESPlatformConfigurationsApi(api.conf),
-    [api.conf],
-  );
-  return { platformApi, configApi, org: api.org };
+  return { platformApi, org: api.org };
 };
 
 export const usePlatformsQuery = () => {
@@ -58,42 +52,23 @@ export const useFetchPlatform = () => {
     });
 };
 
-export const usePlatformConfigsQuery = () => {
-  const { configApi, org } = usePlatformsApi();
-  return useQuery<ApiConfigRef[]>({
-    queryKey: platformKeys.configList(org),
-    queryFn: () => configApi.getConfigRefs(org),
-  });
-};
-
-export const useFetchPlatformConfig = () => {
-  const { configApi, org } = usePlatformsApi();
-  const queryClient = useQueryClient();
-  return (configId: number) =>
-    queryClient.fetchQuery<ApiPlatformConfig>({
-      queryKey: platformKeys.config(org, configId),
-      queryFn: () => configApi.getConfig(org, configId),
-    });
-};
-
 export const useSavePlatformMutation = (
   options?: Omit<UseMutationOptions<unknown, unknown, ApiPlatform>, "mutationFn">,
 ) => {
   const { platformApi, org } = usePlatformsApi();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (platform: ApiPlatform) => {
-      const platformId =
-        platform.platformId && platform.platformId > 0
-          ? platform.platformId
-          : undefined;
-      return platformApi.postPlatform(org, { ...platform, platformId });
-    },
+    mutationFn: (platform: ApiPlatform) =>
+      platformApi.postPlatform(org, {
+        ...platform,
+        platformId: normalizeNewId(platform.platformId),
+      }),
     ...options,
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: platformKeys.all(org) });
-      options?.onSuccess?.(...args);
-    },
+    onSuccess: invalidateThenDelegate(
+      queryClient,
+      platformKeys.all(org),
+      options?.onSuccess,
+    ),
   });
 };
 
@@ -105,9 +80,10 @@ export const useDeletePlatformMutation = (
   return useMutation({
     mutationFn: (platformId: number) => platformApi.deletePlatform(org, platformId),
     ...options,
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: platformKeys.all(org) });
-      options?.onSuccess?.(...args);
-    },
+    onSuccess: invalidateThenDelegate(
+      queryClient,
+      platformKeys.all(org),
+      options?.onSuccess,
+    ),
   });
 };

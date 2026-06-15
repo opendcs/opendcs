@@ -20,9 +20,11 @@ import org.opendcs.authentication.OpenDcsAuthException;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.dai.UsersDao;
 import org.opendcs.database.model.IdentityProvider;
+import org.opendcs.database.model.IdentityProviderMapping;
 import org.opendcs.database.model.User;
+import org.opendcs.database.model.UserBuilder;
 import org.opendcs.spi.authentication.IdentityProviderProvider;
 import org.opendcs.utils.WebUtility;
 
@@ -32,6 +34,8 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.source.JWKSourceBuilder;
 import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
+import com.nimbusds.jwt.proc.BadJWTException;
 
 import decodes.sql.DbKey;
 import io.swagger.v3.oas.models.security.SecurityScheme;
@@ -84,6 +88,12 @@ public final class OidcIdentityProvider implements IdentityProvider
                 }
             });
         }
+    }
+
+
+    public OpenIdConfiguration getOidcConfiguration()
+    {
+        return oidcConfig;
     }
 
     @Override
@@ -162,7 +172,13 @@ public final class OidcIdentityProvider implements IdentityProvider
             if (json.has("id_token"))
             {
                 var idToken = json.get("id_token").asText();
-                return getUserFromToken(db, tx, idToken);
+                var user = getUserFromToken(db, tx, idToken);
+
+                if (user.isEmpty() && canRegister())
+                {
+                    user = Optional.of(register(db, tx, new JwtCredentials(idToken)));
+                }
+                return user;
             }
             else
             {
@@ -186,7 +202,7 @@ public final class OidcIdentityProvider implements IdentityProvider
         {
             var claims = verifyTokenAndGetClaims(oidcConfig, token);
             var subject = claims.getSubject();
-            var umDao = db.getDao(UserManagementDao.class).orElseThrow();
+            var umDao = db.getDao(UsersDao.class).orElseThrow();
             return umDao.getUsers(tx, -1, -1)
                         .stream()
                         .filter(u -> u.identityProviders.stream()
@@ -209,7 +225,7 @@ public final class OidcIdentityProvider implements IdentityProvider
     private JWTClaimsSet verifyTokenAndGetClaims(OpenIdConfiguration config, String token) throws MalformedURLException, BadJOSEException, ParseException, JOSEException
     {
         var keySource = JWKSourceBuilder.create(config.getJwksUri().toURL()).retrying(true).build();
-        return JwtVerifier.getInstance().getClaimsSet(keySource, token, oidcConfig.getIssuer());
+        return JwtVerifier.getInstance().getClaimsSet(keySource, token, oidcConfig.getIssuer(), this.clientId);
     }
 
     @Override
@@ -217,6 +233,42 @@ public final class OidcIdentityProvider implements IdentityProvider
             IdentityProviderCredentials credentials) throws OpenDcsAuthException
     {
         /* unable, and can update credentials will return false */
+    }
+
+    @Override
+    public boolean canRegister()
+    {
+        return true;
+    }
+
+    @Override
+    public User register(OpenDcsDatabase db, DataTransaction tx, IdentityProviderCredentials credentials) throws OpenDcsAuthException
+    {
+        try
+        {
+            final var umDao = db.getDao(UsersDao.class)
+                                .orElseThrow(() -> new OpenDcsAuthException("Unable to register new user as a UserDao instance is not available."));
+            final var claims = verifyTokenAndGetClaims(oidcConfig, ((JwtCredentials)credentials).accessToken());
+            final var subject = claims.getSubject();
+            final var email = claims.getStringClaim("email");
+            final var preferredUserName = claims.getStringClaim("preferred_username");
+
+            final var idpMapping = new IdentityProviderMapping(this, subject);
+            final var user = new UserBuilder()
+                                .withEmail(email)
+                                .withIdentityMapping(idpMapping)
+                                .withPreference("preferredUserName", preferredUserName)
+                                .build();
+            return umDao.addUser(tx, user);
+        }
+        catch (MalformedURLException | BadJOSEException | ParseException | JOSEException ex)
+        {
+            throw new OpenDcsAuthException("Unable to validate provided credentials", ex);
+        }
+        catch (OpenDcsDataException ex)
+        {
+            throw new OpenDcsAuthException("Unable to save new user.", ex);
+        }
     }
 
     @Override
@@ -237,6 +289,41 @@ public final class OidcIdentityProvider implements IdentityProvider
         extension.put("oidcConfig", oidcData);
         scheme.addExtension("x-logincomponent-configuration", extension);
         return scheme;
+    }
+
+    /**
+     * Determine if this particular instance can authenticate a given JWT.
+     * Both the Aud/AZP need to have the clientID as well as the issuer matching
+     * to distinguish between different clients from the same issuer.
+     * @param jwt successfully parsed, but not validated, JWT with claims.
+     * @return whether or not this provider is appropriate to the given JWT.
+     * @throws OpenDcsAuthException
+     */
+    public boolean validFor(SignedJWT jwt) throws OpenDcsAuthException
+    {
+        boolean ret = true;
+        var oidcConfig = this.getOidcConfiguration();
+
+        try {
+            var claims = jwt.getJWTClaimsSet();
+            if (!oidcConfig.getIssuer().equals(claims.getIssuer()))
+            {
+                ret = false;
+            }
+
+            // we don't just assing here as we're only changing the value if one of the check
+            // is false. We never want to set it back to true
+            if (!JwtVerifier.clientAudienceMatches(claims, clientId))
+            {
+                ret = false;
+            }
+        }
+        catch (ParseException ex)
+        {
+            // don't care, we can't process the claims.
+            ret = false;
+        }
+        return ret;
     }
 
     @AutoService(IdentityProviderProvider.class)

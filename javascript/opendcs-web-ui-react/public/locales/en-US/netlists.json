@@ -1,0 +1,32 @@
+{
+  "title": "Network Lists",
+  "header": {
+    "Id": "Id",
+    "Name": "Name",
+    "MediumType": "Medium Type",
+    "NumPlatforms": "# of Platforms",
+    "LastModified": "Last Modified"
+  },
+  "name": "Name",
+  "transportMediumType": "Transport Medium Type",
+  "siteNameTypePref": "Site Name Type",
+  "add_netlist": "Add network list",
+  "edit_netlist": "Edit network list {{id}}",
+  "delete_for": "Delete network list {{id}}",
+  "save_netlist": "Save network list {{id}}",
+  "cancel_for": "Cancel editing network list {{id}}",
+  "items": {
+    "title": "Network List Items",
+    "transportId": "Transport ID",
+    "platformName": "Platform Name",
+    "description": "Description",
+    "transportId_input": "Transport ID for {{name}}",
+    "platformName_input": "Platform name for {{name}}",
+    "description_input": "Description for {{name}}",
+    "add": "Add item",
+    "edit": "Edit item {{transportId}}",
+    "remove": "Remove item {{transportId}}",
+    "save_edit": "Save item {{transportId}}",
+    "cancel_edit": "Cancel editing item {{transportId}}"
+  }
+}

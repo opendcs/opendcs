@@ -1,0 +1,32 @@
+{
+  "title": "Netzwerklisten",
+  "header": {
+    "Id": "ID",
+    "Name": "Name",
+    "MediumType": "Medientyp",
+    "NumPlatforms": "Anzahl Plattformen",
+    "LastModified": "Zuletzt geändert"
+  },
+  "name": "Name",
+  "transportMediumType": "Transportmedientyp",
+  "siteNameTypePref": "Bevorzugter Standortnamenstyp",
+  "add_netlist": "Netzwerkliste hinzufügen",
+  "edit_netlist": "Netzwerkliste {{id}} bearbeiten",
+  "delete_for": "Netzwerkliste {{id}} löschen",
+  "save_netlist": "Netzwerkliste {{id}} speichern",
+  "cancel_for": "Bearbeitung der Netzwerkliste {{id}} abbrechen",
+  "items": {
+    "title": "Netzwerklisteneinträge",
+    "transportId": "Transport-ID",
+    "platformName": "Plattformname",
+    "description": "Beschreibung",
+    "transportId_input": "Transport-ID für {{name}}",
+    "platformName_input": "Plattformname für {{name}}",
+    "description_input": "Beschreibung für {{name}}",
+    "add": "Eintrag hinzufügen",
+    "edit": "Eintrag {{transportId}} bearbeiten",
+    "remove": "Eintrag {{transportId}} entfernen",
+    "save_edit": "Eintrag {{transportId}} speichern",
+    "cancel_edit": "Bearbeitung des Eintrags {{transportId}} abbrechen"
+  }
+}

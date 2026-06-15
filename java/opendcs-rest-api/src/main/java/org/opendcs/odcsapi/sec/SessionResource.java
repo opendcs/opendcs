@@ -47,7 +47,7 @@ public final class SessionResource
 	@GET
 	@Path("check")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
+	@RolesAllowed({ApiConstants.ODCS_API_REGISTERED, ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Check if session authentication is valid",
 			description = "The ‘check’ GET method can be called with a configured session.",
@@ -84,7 +84,7 @@ public final class SessionResource
 	@DELETE
 	@Path("logout")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_REGISTERED})
 	@Operation(
 			summary = "Remove access tokens and clear the client's session.",
 			description = "Session variables for the client will be cleared. The auth token will be invalidated.",
@@ -111,6 +111,7 @@ public final class SessionResource
 		{
 			roles.add(OpenDcsApiRoles.valueOf(role.name));
 		}
+		roles.add(OpenDcsApiRoles.ODCS_API_REGISTERED);
 		OpenDcsPrincipal principal = new OpenDcsPrincipal(user, roles);
 		HttpSession oldSession = httpRequest.getSession(false);
 		if(oldSession != null)

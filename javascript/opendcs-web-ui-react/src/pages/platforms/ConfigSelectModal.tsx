@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { ApiConfigRef } from "opendcs-api";
-import { usePlatformConfigsQuery } from "../../queries/platforms";
+import { useConfigsQuery } from "../../queries/configs";
 import { SelectorModal, type ChooserColumnDef } from "../../components/data-table";
 
 interface Props {
@@ -12,7 +12,7 @@ interface Props {
 
 export const ConfigSelectModal: React.FC<Props> = ({ show, onHide, onSelect }) => {
   const [t] = useTranslation(["platforms", "translation"]);
-  const { data: configs = [], isFetching } = usePlatformConfigsQuery();
+  const { data: configs = [], isFetching } = useConfigsQuery();
 
   const columns: ChooserColumnDef<ApiConfigRef>[] = useMemo(
     () => [

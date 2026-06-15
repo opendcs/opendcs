@@ -22,15 +22,8 @@ import java.util.Vector;
 
 import decodes.db.DataPresentation;
 import decodes.db.DataType;
-import decodes.db.DatabaseException;
-import decodes.db.DatabaseIO;
 import decodes.db.PresentationGroup;
-import decodes.db.PresentationGroupList;
-import decodes.db.RoutingSpec;
-import decodes.db.ValueNotFoundException;
 import decodes.sql.DbKey;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.NoSuchObjectException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -51,375 +44,316 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import opendcs.dai.DataTypeDAI;
+import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.dai.DataTypeDao;
+import org.opendcs.database.dai.PresentationGroupDao;
 import org.opendcs.odcsapi.beans.ApiPresentationElement;
 import org.opendcs.odcsapi.beans.ApiPresentationGroup;
 import org.opendcs.odcsapi.beans.ApiPresentationRef;
-import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
-import org.opendcs.utils.logging.OpenDcsLoggerFactory;
-import org.slf4j.Logger;
 
 @Path("/")
 public final class PresentationResources extends OpenDcsResource
 {
-	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+    private static final WebAppException UNABLE_TO_GET_PRESENTATIONGROUP_DAO = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "No Presentation Group DAO available.");
 
-	@Context HttpHeaders httpHeaders;
+    @Context HttpHeaders httpHeaders;
 
-	@GET
-	@Path("presentationrefs")
-	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
-	@Operation(
-			summary = "Returns a list of references to presentation groups suitable for displaying a list",
-			tags = {"REST - DECODES Presentation Group Records"},
-			operationId = "getpresentationrefs",
-			responses = {
-					@ApiResponse(responseCode = "200", description = "Success",
-						content = @Content(mediaType = MediaType.APPLICATION_JSON,
-							array = @ArraySchema(schema = @Schema(implementation = ApiPresentationRef.class)))),
-					@ApiResponse(responseCode = "500", description = "Internal Server Error")
-			}
-	)
-	public Response getPresentationRefs() throws DbException
-	{
-		DatabaseIO dbIo = getLegacyDatabase();
-		try
-		{
-			PresentationGroupList groupList = new PresentationGroupList();
-			dbIo.readPresentationGroupList(groupList);
-			return Response.ok().entity(map(groupList)).build();
-		}
-		catch (DatabaseException ex)
-		{
-			throw new DbException("Unable to retrieve presentation groups", ex);
-		}
-		finally
-		{
-			dbIo.close();
-		}
-	}
+    @GET
+    @Path("presentationrefs")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
+    @Operation(
+            summary = "Returns a list of references to presentation groups suitable for displaying a list",
+            tags = {"REST - DECODES Presentation Group Records"},
+            operationId = "getpresentationrefs",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Success",
+                        content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            array = @ArraySchema(schema = @Schema(implementation = ApiPresentationRef.class)))),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+            }
+    )
+    public Response getPresentationRefs() throws WebAppException
+    {
+        final var db = createDb();
+        try (var tx = db.newTransaction())
+        {
+            final var dao = db.getDao(PresentationGroupDao.class).orElseThrow(() -> UNABLE_TO_GET_PRESENTATIONGROUP_DAO);
+            final var groups = dao.getAll(tx, -1, -1)
+                                   .stream()
+                                   .map(pg -> mapRef(pg))
+                                   .toList();
+            return Response.ok().entity(groups).build();
+        }
+        catch (OpenDcsDataException ex)
+        {
+            throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+                                       "Unable to retrieve presentation group refs.", ex);
+        }
+    }
 
-	static ArrayList<ApiPresentationRef> map(PresentationGroupList groupList)
-	{
-		ArrayList<ApiPresentationRef> ret = new ArrayList<>();
-		for (PresentationGroup group : groupList.getVector())
-		{
-			ApiPresentationRef presRef = new ApiPresentationRef();
-			if (group.getId() != null)
-			{
-				presRef.setGroupId(group.getId().getValue());
-			}
-			else
-			{
-				presRef.setGroupId(DbKey.NullKey.getValue());
-			}
-			presRef.setName(group.groupName);
-			presRef.setInheritsFrom(group.inheritsFrom);
-			presRef.setProduction(group.isProduction);
-			if (group.inheritsFrom != null && !group.inheritsFrom.isEmpty())
-			{
-				for (PresentationGroup pg : groupList.getVector())
-				{
-					if (pg.groupName.equalsIgnoreCase(group.inheritsFrom))
-					{
-						presRef.setInheritsFromId(pg.getId().getValue());
-						break;
-					}
-				}
-			}
-			else
-			{
-				presRef.setInheritsFromId(DbKey.NullKey.getValue());
-			}
-			presRef.setLastModified(group.lastModifyTime);
-			ret.add(presRef);
-		}
-		return ret;
-	}
+    static ApiPresentationRef mapRef(PresentationGroup group)
+    {
+        ApiPresentationRef presRef = new ApiPresentationRef();
+        if (group.getId() != null)
+        {
+            presRef.setGroupId(group.getId().getValue());
+        }
+        else
+        {
+            presRef.setGroupId(DbKey.NullKey.getValue());
+        }
+        presRef.setName(group.groupName);
+        presRef.setInheritsFrom(group.inheritsFrom);
+        presRef.setProduction(group.isProduction);
+        if (group.inheritsFrom != null && !group.inheritsFrom.isEmpty() && group.parent != null)
+        {
+            presRef.setInheritsFromId(group.parent.getId().getValue());
+        }
+        else
+        {
+            presRef.setInheritsFromId(DbKey.NullKey.getValue());
+        }
+        presRef.setLastModified(group.lastModifyTime);
+        return presRef;
+    }
 
-	@GET
-	@Path("presentation")
-	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
-	@Operation(
-			summary = "This method returns a JSON representation of a single, complete DECODES Presentation Group record",
-			description = "Example: \n \n `http://localhost:8080/odcsapi/presentation?groupid=4` \n \n "
-					+ "This method returns a JSON representation of a single, complete DECODES Presentation Group record. "
-					+ "The following structure is returned.\n\n"
-					+ "**Note**: the optional min and max elements are not always present.",
-			tags = {"REST - DECODES Presentation Group Records"},
-			responses = {
-					@ApiResponse(responseCode = "200", description = "Success",
-							content = @Content(mediaType = MediaType.APPLICATION_JSON,
-									schema = @Schema(implementation = ApiPresentationGroup.class))),
-					@ApiResponse(responseCode = "400", description = "Missing or invalid group ID parameter"),
-					@ApiResponse(responseCode = "404", description = "Presentation group not found"),
-					@ApiResponse(responseCode = "500", description = "Default error sample response")
-			}
-	)
-	public Response getPresentation(@Parameter(description = "presentation group id", required = true, example = "4",
-			schema = @Schema(implementation = Long.class))
-		@QueryParam("groupid") Long groupId)
-			throws WebAppException, DbException
-	{
-		if (groupId == null)
-		{
-			throw new MissingParameterException("Missing required groupid parameter.");
-		}
+    @GET
+    @Path("presentation")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
+    @Operation(
+            summary = "This method returns a JSON representation of a single, complete DECODES Presentation Group record",
+            description = "Example: \n \n `http://localhost:8080/odcsapi/presentation?groupid=4` \n \n "
+                    + "This method returns a JSON representation of a single, complete DECODES Presentation Group record. "
+                    + "The following structure is returned.\n\n"
+                    + "**Note**: the optional min and max elements are not always present.",
+            tags = {"REST - DECODES Presentation Group Records"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Success",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = ApiPresentationGroup.class))),
+                    @ApiResponse(responseCode = "400", description = "Missing or invalid group ID parameter"),
+                    @ApiResponse(responseCode = "404", description = "Presentation group not found"),
+                    @ApiResponse(responseCode = "500", description = "Default error sample response")
+            }
+    )
+    public Response getPresentation(@Parameter(description = "presentation group id", required = true, example = "4",
+            schema = @Schema(implementation = Long.class))
+        @QueryParam("groupid") Long groupId)
+            throws WebAppException
+    {
+        if (groupId == null)
+        {
+            throw new MissingParameterException("Missing required groupid parameter.");
+        }
 
-		DatabaseIO dbIo = getLegacyDatabase();
-		try
-		{
-			PresentationGroup group = new PresentationGroup();
-			group.setId(DbKey.createDbKey(groupId));
-			dbIo.readPresentationGroup(group);
-			return Response.ok().entity(map(group)).build();
-		}
-		catch (ValueNotFoundException ex)
-		{
-			throw new DatabaseItemNotFoundException(String.format("Presentation group with ID %s not found", groupId), ex);
-		}
-		catch (DatabaseException ex)
-		{
-			if (ex.getCause() instanceof ValueNotFoundException)
-			{
-				throw new DatabaseItemNotFoundException(String.format("Presentation group with ID %s not found", groupId), ex);
-			}
-			throw new DbException(String.format("Unable to retrieve presentation group with ID: %s", groupId), ex);
-		}
-		finally
-		{
-			dbIo.close();
-		}
-	}
 
-	static ApiPresentationGroup map(PresentationGroup group)
-	{
-		ApiPresentationGroup presGrp = new ApiPresentationGroup();
-		presGrp.setLastModified(group.lastModifyTime);
-		presGrp.setName(group.groupName);
-		presGrp.setProduction(group.isProduction);
-		if (group.parent != null && group.parent.groupName != null && !group.parent.groupName.isEmpty())
-		{
-			presGrp.setInheritsFrom(group.parent.groupName);
-			presGrp.setInheritsFromId(group.parent.getId().getValue());
-		}
-		if (group.getId() != null)
-		{
-			presGrp.setGroupId(group.getId().getValue());
-		}
-		else
-		{
-			presGrp.setGroupId(DbKey.NullKey.getValue());
-		}
-		presGrp.setElements(map(group.dataPresentations));
-		return presGrp;
-	}
+        final var db = createDb();
+        try (var tx = db.newTransaction())
+        {
+            final var dao = db.getDao(PresentationGroupDao.class).orElseThrow(() -> UNABLE_TO_GET_PRESENTATIONGROUP_DAO);
+            final var group = dao.getById(tx, DbKey.createDbKey(groupId))
+                                 .orElseThrow(() -> new DatabaseItemNotFoundException(String.format("Presentation group with ID %s not found", groupId)));
+            return Response.ok().entity(map(group)).build();
+        }
+        catch (OpenDcsDataException ex)
+        {
+            throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+                                       "Unable to retrieve presentation group.", ex);
+        }
+    }
 
-	static List<ApiPresentationElement> map(List<DataPresentation> dataPresentations)
-	{
-		List<ApiPresentationElement> ret = new ArrayList<>();
-		for(DataPresentation dp : dataPresentations)
-		{
-			ApiPresentationElement ape = new ApiPresentationElement();
-			ape.setDataTypeCode(dp.getDataType().getCode());
-			ape.setDataTypeStd(dp.getDataType().getStandard());
-			ape.setFractionalDigits(dp.getMaxDecimals());
-			ape.setMax(dp.getMaxValue());
-			ape.setMin(dp.getMinValue());
-			ape.setUnits(dp.getUnitsAbbr());
-			ret.add(ape);
-		}
-		return ret;
-	}
+    static ApiPresentationGroup map(PresentationGroup group)
+    {
+        ApiPresentationGroup presGrp = new ApiPresentationGroup();
+        presGrp.setLastModified(group.lastModifyTime);
+        presGrp.setName(group.groupName);
+        presGrp.setProduction(group.isProduction);
+        if (group.parent != null && group.parent.groupName != null && !group.parent.groupName.isEmpty())
+        {
+            presGrp.setInheritsFrom(group.parent.groupName);
+            presGrp.setInheritsFromId(group.parent.getId().getValue());
+        }
+        if (group.getId() != null)
+        {
+            presGrp.setGroupId(group.getId().getValue());
+        }
+        else
+        {
+            presGrp.setGroupId(DbKey.NullKey.getValue());
+        }
+        presGrp.setElements(map(group.dataPresentations));
+        return presGrp;
+    }
 
-	@POST
-	@Path("presentation")
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
-	@Operation(
-			summary = "Create or Overwrite Existing Decodes Presentation Group",
-			description = "It takes a single DECODES "
-					+ "Presentation Group in JSON format, as described above for GET.\n\n"
-					+ "For creating a new record, leave groupId out of the passed data structure.\n\n"
-					+ "For overwriting an existing one, include the groupId that was previously returned. "
-					+ "The presentation group in the database is replaced with the one sent.",
-			tags = {"REST - DECODES Presentation Group Records"},
-			requestBody = @RequestBody(content = @Content(schema = @Schema(implementation = ApiPresentationGroup.class),
-					mediaType = MediaType.APPLICATION_JSON,
-					examples = {
-							@ExampleObject(name = "Basic", value = ResourceExamples.PresentationExamples.BASIC),
-							@ExampleObject(name = "New", value = ResourceExamples.PresentationExamples.NEW),
-							@ExampleObject(name = "Update", value = ResourceExamples.PresentationExamples.UPDATE)
-					}), required = true),
-			responses = {
-					@ApiResponse(responseCode = "201", description = "Successfully stored presentation group",
-							content = @Content(schema = @Schema(implementation = ApiPresentationGroup.class))),
-					@ApiResponse(responseCode = "500", description = "Internal Server Error")
-			}
-	)
-	public Response postPresentation(@Parameter(description = "Presentation group data", required = true)
-		ApiPresentationGroup presGrp)
-			throws DbException
-	{
-		DatabaseIO dbIo = getLegacyDatabase();
-		try (DataTypeDAI dai = getLegacyTimeseriesDB().makeDataTypeDAO())
-		{
-			PresentationGroup group = map(dai, presGrp);
-			dbIo.writePresentationGroup(group);
-			return Response.status(Response.Status.CREATED)
-					.entity(map(group))
-					.build();
-		}
-		catch (DatabaseException ex)
-		{
-			throw new DbException("Unable to store presentation group", ex);
-		}
-		finally
-		{
-			dbIo.close();
-		}
-	}
+    static List<ApiPresentationElement> map(List<DataPresentation> dataPresentations)
+    {
+        List<ApiPresentationElement> ret = new ArrayList<>();
+        for(DataPresentation dp : dataPresentations)
+        {
+            ApiPresentationElement ape = new ApiPresentationElement();
+            ape.setDataTypeCode(dp.getDataType().getCode());
+            ape.setDataTypeStd(dp.getDataType().getStandard());
+            ape.setFractionalDigits(dp.getMaxDecimals());
+            ape.setMax(dp.getMaxValue());
+            ape.setMin(dp.getMinValue());
+            ape.setUnits(dp.getUnitsAbbr());
+            ret.add(ape);
+        }
+        return ret;
+    }
 
-	static PresentationGroup map(DataTypeDAI dai, ApiPresentationGroup presGrp) throws DatabaseException
-	{
-		// The inheritsFromId is not present in the target data object, so it is not mapped
-		// The inheritsFromId is found internally using the inheritsFrom group name
-		PresentationGroup group = new PresentationGroup();
-		group.lastModifyTime = presGrp.getLastModified();
-		group.groupName = presGrp.getName();
-		if (presGrp.getGroupId() != null)
-		{
-			group.setId(DbKey.createDbKey(presGrp.getGroupId()));
-		}
-		else
-		{
-			group.setId(DbKey.NullKey);
-		}
-		group.isProduction = presGrp.isProduction();
-		group.inheritsFrom = presGrp.getInheritsFrom();
-		if (presGrp.getInheritsFromId() != null)
-		{
-			PresentationGroup parentGroup = new PresentationGroup();
-			parentGroup.groupName = presGrp.getInheritsFrom();
-			parentGroup.setId(DbKey.createDbKey(presGrp.getInheritsFromId()));
-			group.parent = parentGroup;
-		}
-		group.dataPresentations = map(dai, presGrp.getElements(), group);
-		group.lastModifyTime = new Date();
-		return group;
-	}
+    @POST
+    @Path("presentation")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
+    @Operation(
+            summary = "Create or Overwrite Existing Decodes Presentation Group",
+            description = "It takes a single DECODES "
+                    + "Presentation Group in JSON format, as described above for GET.\n\n"
+                    + "For creating a new record, leave groupId out of the passed data structure.\n\n"
+                    + "For overwriting an existing one, include the groupId that was previously returned. "
+                    + "The presentation group in the database is replaced with the one sent.",
+            tags = {"REST - DECODES Presentation Group Records"},
+            requestBody = @RequestBody(content = @Content(schema = @Schema(implementation = ApiPresentationGroup.class),
+                    mediaType = MediaType.APPLICATION_JSON,
+                    examples = {
+                            @ExampleObject(name = "Basic", value = ResourceExamples.PresentationExamples.BASIC),
+                            @ExampleObject(name = "New", value = ResourceExamples.PresentationExamples.NEW),
+                            @ExampleObject(name = "Update", value = ResourceExamples.PresentationExamples.UPDATE)
+                    }), required = true),
+            responses = {
+                    @ApiResponse(responseCode = "201", description = "Successfully stored presentation group",
+                            content = @Content(schema = @Schema(implementation = ApiPresentationGroup.class))),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+            }
+    )
+    public Response postPresentation(@Parameter(description = "Presentation group data", required = true)
+        ApiPresentationGroup presGrp)
+            throws WebAppException
+    {
 
-	static Vector<DataPresentation> map(DataTypeDAI dai, List<ApiPresentationElement> elements, PresentationGroup group)
-			throws DatabaseException
-	{
-		Vector<DataPresentation> ret = new Vector<>();
+        final var db = createDb();
+        try (var tx = db.newTransaction())
+        {
+            final var dao = db.getDao(PresentationGroupDao.class).orElseThrow(() -> UNABLE_TO_GET_PRESENTATIONGROUP_DAO);
+            final var dtDao = db.getDao(DataTypeDao.class).orElseThrow(() -> DatatypeUnitResources.UNABLE_TO_GET_DT_DAO);
+            final var group = dao.save(tx, map(tx, dtDao, presGrp));
+            return Response.status(Response.Status.CREATED)
+                           .entity(map(group))
+                           .build();
+        }
+        catch (OpenDcsDataException ex)
+        {
+            throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+                                      "Unable to retrieve presentation group.", ex);
+        }
+    }
 
-		for (ApiPresentationElement ape : elements)
-		{
-			DataPresentation dataPres = new DataPresentation();
-			dataPres.setUnitsAbbr(ape.getUnits());
-			DataType dt = new DataType(ape.getDataTypeStd(), ape.getDataTypeCode());
+    static PresentationGroup map(DataTransaction tx, DataTypeDao dtDao, ApiPresentationGroup presGrp) throws OpenDcsDataException
+    {
+        // The inheritsFromId is not present in the target data object, so it is not mapped
+        // The inheritsFromId is found internally using the inheritsFrom group name
+        PresentationGroup group = new PresentationGroup();
+        group.lastModifyTime = presGrp.getLastModified();
+        group.groupName = presGrp.getName();
+        if (presGrp.getGroupId() != null)
+        {
+            group.forceSetId(DbKey.createDbKey(presGrp.getGroupId()));
+        }
+        else
+        {
+            group.forceSetId(DbKey.NullKey);
+        }
+        group.isProduction = presGrp.isProduction();
+        group.inheritsFrom = presGrp.getInheritsFrom();
+        if (presGrp.getInheritsFromId() != null)
+        {
+            PresentationGroup parentGroup = new PresentationGroup();
+            parentGroup.groupName = presGrp.getInheritsFrom();
+            parentGroup.forceSetId(DbKey.createDbKey(presGrp.getInheritsFromId()));
+            group.parent = parentGroup;
+        }
+        group.dataPresentations = map(tx, dtDao, presGrp.getElements(), group);
+        group.lastModifyTime = new Date();
+        return group;
+    }
 
-			// Perform a lookup to see if the data type exists in the database
-			// If it does, use the existing data type, otherwise create a new one by setting the ID to null
-			if (dai != null)
-			{
-				try
-				{
-					DataType retDt = dai.lookupDataType(ape.getDataTypeCode());
-					if(retDt != null)
-					{
-						dt = retDt;
-					}
-				}
-				catch (DbIoException | NoSuchObjectException ex)
-				{
-					log.atDebug().setCause(ex).log("Unable to lookup data type {}. Setting to null.", ape.getDataTypeCode());
-					dt.setId(DbKey.NullKey);
-				}
-			}
-			else
-			{
-				dt.setId(DbKey.NullKey);
-			}
-			dataPres.setDataType(dt);
-			dataPres.setMaxDecimals(ape.getFractionalDigits());
-			dataPres.setMinValue(ape.getMin());
-			dataPres.setMaxValue(ape.getMax());
-			dataPres.setGroup(group);
-			ret.add(dataPres);
-		}
-		return ret;
-	}
+    static Vector<DataPresentation> map(DataTransaction tx, DataTypeDao dtDao, List<ApiPresentationElement> elements, PresentationGroup group)
+            throws OpenDcsDataException
+    {
+        Vector<DataPresentation> ret = new Vector<>();
 
-	@DELETE
-	@Path("presentation")
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
-	@Operation(
-			summary = "Delete Existing Presentation Group",
-			description = "Required argument groupid must be passed in the URL.",
-			tags = {"REST - DECODES Presentation Group Records"},
-			responses = {
-					@ApiResponse(responseCode = "204", description = "Successfully deleted presentation group"),
-					@ApiResponse(responseCode = "400", description = "Missing or invalid group ID parameter"),
-					@ApiResponse(responseCode = "405", description = "Cannot delete the group because it is in use"),
-					@ApiResponse(responseCode = "500", description = "Internal Server Error")
-			}
-	)
-	public Response deletePresentation(@Parameter(description = "presentation group id", required = true, example = "4",
-			schema = @Schema(implementation = Long.class))
-		@QueryParam("groupid") Long groupId)
-			throws DbException, WebAppException
-	{
-		if (groupId == null)
-		{
-			throw new MissingParameterException("Missing required groupid parameter.");
-		}
+        for (ApiPresentationElement ape : elements)
+        {
+            DataPresentation dataPres = new DataPresentation();
+            dataPres.setUnitsAbbr(ape.getUnits());
+            final var dt = dtDao.lookup(tx, ape.getDataTypeStd(), ape.getDataTypeCode())
+                                .orElseGet(() -> new DataType(ape.getDataTypeStd(), ape.getDataTypeCode()));
 
-		DatabaseIO dbIo = getLegacyDatabase();
-		try
-		{
-			PresentationGroup group = new PresentationGroup();
-			group.setId(DbKey.createDbKey(groupId));
+            dataPres.setDataType(dt);
+            dataPres.setMaxDecimals(ape.getFractionalDigits());
+            dataPres.setMinValue(ape.getMin());
+            dataPres.setMaxValue(ape.getMax());
+            dataPres.setGroup(group);
+            ret.add(dataPres);
+        }
+        return ret;
+    }
 
-			List<RoutingSpec> routeList = dbIo.routeSpecsUsing(groupId);
-			if (!routeList.isEmpty())
-			{
-				StringBuilder sb = new StringBuilder();
-				for (RoutingSpec rs : routeList)
-				{
-					sb.append(String.format("%s:%s, ", rs.getId(), rs.getName()));
-				}
-				String routeSpecs = sb.toString();
-				if (routeSpecs.endsWith(", "))
-				{
-					routeSpecs = routeSpecs.substring(0, routeSpecs.length() - 2);
-				}
-				return Response.status(Response.Status.METHOD_NOT_ALLOWED)
-						.entity(String.format("Cannot delete presentation group %s " +
-								"because it is used by the following routing specs: %s", groupId, routeSpecs)).build();
-			}
-			dbIo.deletePresentationGroup(group);
-			return Response.noContent()
-					.entity("Presentation Group with ID " + groupId + " deleted")
-					.build();
-		}
-		catch (DatabaseException ex)
-		{
-			throw new DbException("Unable to delete presentation group", ex);
-		}
-		finally
-		{
-			dbIo.close();
-		}
-	}
+    @DELETE
+    @Path("presentation")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
+    @Operation(
+            summary = "Delete Existing Presentation Group",
+            description = "Required argument groupid must be passed in the URL.",
+            tags = {"REST - DECODES Presentation Group Records"},
+            responses = {
+                    @ApiResponse(responseCode = "204", description = "Successfully deleted presentation group"),
+                    @ApiResponse(responseCode = "400", description = "Missing or invalid group ID parameter"),
+                    @ApiResponse(responseCode = "405", description = "Cannot delete the group because it is in use"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+            }
+    )
+    public Response deletePresentation(@Parameter(description = "presentation group id", required = true, example = "4",
+            schema = @Schema(implementation = Long.class))
+        @QueryParam("groupid") Long groupId)
+            throws WebAppException
+    {
+        if (groupId == null)
+        {
+            throw new MissingParameterException("Missing required groupid parameter.");
+        }
+
+        final var db = createDb();
+        try (var tx = db.newTransaction())
+        {
+            final var dao = db.getDao(PresentationGroupDao.class).orElseThrow(() -> UNABLE_TO_GET_PRESENTATIONGROUP_DAO);
+
+            dao.delete(tx, DbKey.createDbKey(groupId));
+            return Response.noContent()
+                           .entity("Presentation Group with ID " + groupId + " deleted")
+                           .build();
+        }
+        catch (OpenDcsDataException ex)
+        {
+            throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+                                       "Unable to delete presentation group.", ex);
+        }
+
+        // Left for reference when "foreign key conflicts" are handled better.
+        // return Response.status(Response.Status.METHOD_NOT_ALLOWED)
+        //         .entity(String.format("Cannot delete presentation group %s " +
+        //                 "because it is used by the following routing specs: %s", groupId, routeSpecs)).build();
+
+    }
 }

@@ -25,12 +25,13 @@ import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.model.UserBuilder;
 import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.GenericColumns;
 
 import decodes.sql.DbKey;
 
-public final class UserBuilderMapper extends PrefixRowMapper<UserBuilder>
+public final class UserBuilderMapper extends PrefixRowMapper<UserBuilder,UserBuilderMapper.Columns>
 {
     /**
      * Used for queries referencing the user id as a foreign key
@@ -39,7 +40,7 @@ public final class UserBuilderMapper extends PrefixRowMapper<UserBuilder>
 
     private UserBuilderMapper(String prefix)
     {
-        super(prefix);
+        super(prefix, Columns.class);
     }
 
 
@@ -58,16 +59,44 @@ public final class UserBuilderMapper extends PrefixRowMapper<UserBuilder>
         ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class)
                                                     .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
 
-        builder.withId(columnMapperForKey.map(rs, prefix+GenericColumns.ID, ctx))
-               .withEmail(rs.getString(prefix+GenericColumns.EMAIL))
-               .withUpdatedAt(columnMapperForZDT.map(rs, prefix+GenericColumns.UPDATED_AT, ctx))
-               .withCreatedAt(columnMapperForZDT.map(rs, prefix+GenericColumns.CREATED_AT, ctx))
+        builder.withId(columnMapperForKey.map(rs, column(Columns.ID), ctx))
+               .withEmail(rs.getString(column(Columns.EMAIL)))
+               .withUpdatedAt(columnMapperForZDT.map(rs, column(Columns.UPDATED_AT), ctx))
+               .withCreatedAt(columnMapperForZDT.map(rs, column(Columns.CREATED_AT), ctx))
                 ;
-        ColumnMapper<Map<String, Object>> columnMapperForConfig = 
+        ColumnMapper<Map<String, Object>> columnMapperForConfig =
                 ctx.findColumnMapperFor(new GenericType<Map<String, Object>>() {})
                    .orElseThrow(() -> new SQLException(SqlErrorMessages.CONFIG_MAPPER_NOT_FOUND));
 
-        Map<String, Object> preferences = columnMapperForConfig.map(rs, prefix+GenericColumns.PREFERENCES, ctx);
+        Map<String, Object> preferences = columnMapperForConfig.map(rs, column(Columns.PREFERENCES), ctx);
         return builder.withPreferences(preferences);
+    }
+
+    public enum Columns implements TableColumnDefinition
+    {
+        ID(GenericColumns.ID),
+        EMAIL(GenericColumns.EMAIL),
+        UPDATED_AT(GenericColumns.UPDATED_AT),
+        CREATED_AT(GenericColumns.CREATED_AT),
+        PREFERENCES(GenericColumns.PREFERENCES)
+        ;
+
+        private final String column;
+
+        Columns(String column)
+        {
+            this.column = column;
+        }
+
+        Columns(GenericColumns other)
+        {
+            this.column = other.column();
+        }
+
+        @Override
+        public String column()
+        {
+            return column;
+        }
     }
 }

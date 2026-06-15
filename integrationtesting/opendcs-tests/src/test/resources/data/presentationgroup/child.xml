@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Database>
+  <PresentationGroup Name="child">
+    <InheritsFrom>parent</InheritsFrom>
+    <IsProduction>false</IsProduction>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stage" />
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stor" />
+      <UnitsAbbr>ac-ft</UnitsAbbr>
+      <MaxDecimals>5</MaxDecimals>
+    </DataPresentation>
+  </PresentationGroup>
+</Database>

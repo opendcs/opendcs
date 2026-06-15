@@ -8,19 +8,19 @@ import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.impl.opendcs.jdbi.column.numeric.NullableDouble;
 import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.sql.TableColumnDefinition;
+import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 
 import decodes.db.Site;
 import decodes.sql.DbKey;
 
-public class OpenDcsSiteMapper extends PrefixRowMapper<Site>
+@SuppressWarnings("java:S2143") // May happen in future work.
+public class OpenDcsSiteMapper extends PrefixRowMapper<Site,OpenDcsSiteMapper.Columns>
 {
-
-
-
     protected OpenDcsSiteMapper(String prefix)
     {
-        super(prefix);
+        super(prefix, Columns.class);
     }
 
     public static OpenDcsSiteMapper withPrefix(String prefix)
@@ -38,29 +38,67 @@ public class OpenDcsSiteMapper extends PrefixRowMapper<Site>
                                 .orElseThrow(() -> new SQLException(SqlErrorMessages.TIME_MAPPER_NOT_FOUND));
         var ret = new Site();
 
-        var id = columnMapperForKey.map(rs, prefix + "id", ctx);
+        var id = columnMapperForKey.map(rs, column(Columns.ID), ctx);
         ret.forceSetId(id);
 
-        ret.setPublicName(rs.getString(prefix + "public_name"));
-        ret.setDescription(rs.getString(prefix + "description"));
+        ret.setPublicName(rs.getString(column(Columns.PUBLIC_NAME)));
+        ret.setDescription(rs.getString(column(Columns.DESCRIPTION)));
 
-        ret.latitude = rs.getString(prefix + "latitude");
-        ret.longitude = rs.getString(prefix + "longitude");
+        ret.latitude = rs.getString(column(Columns.LATITUDE));
+        ret.longitude = rs.getString(column(Columns.LONGITUDE));
 
-        ret.setElevation(doubleMapper.map(rs, prefix + "elevation", ctx));
-        ret.setElevationUnits(rs.getString(prefix + "elevunitabbr"));
+        ret.setElevation(doubleMapper.map(rs, column(Columns.ELEVATION), ctx));
+        ret.setElevationUnits(rs.getString(column(Columns.ELEVATION_UNITS)));
 
-        ret.nearestCity = rs.getString(prefix + "nearestcity");
-        ret.state = rs.getString(prefix + "state");
-        ret.region = rs.getString(prefix + "region");
-        ret.timeZoneAbbr = rs.getString(prefix + "timezone");
-        ret.country = rs.getString(prefix + "country");
-        ret.setActive(rs.getBoolean(prefix + "active_flag"));
-        ret.setLocationType(rs.getString(prefix + "location_type"));
-        ret.setLastModifyTime(dateMapper.map(rs, prefix + "modify_time", ctx));
+        ret.nearestCity = rs.getString(column(Columns.NEAREST_CITY));
+        ret.state = rs.getString(column(Columns.STATE));
+        ret.region = rs.getString(column(Columns.REGION));
+        ret.timeZoneAbbr = rs.getString(column(Columns.TIMEZONE));
+        ret.country = rs.getString(column(Columns.COUNTRY));
+        ret.setActive(rs.getBoolean(column(Columns.ACTIVE_FLAG)));
+        ret.setLocationType(rs.getString(column(Columns.LOCATION_TYPE)));
+        ret.setLastModifyTime(dateMapper.map(rs, column(Columns.MODIFY_TIME), ctx));
 
 
         return ret;
+    }
+
+    public enum Columns implements TableColumnDefinition
+    {
+        ID(GenericColumns.ID),
+        PUBLIC_NAME("public_name"),
+        DESCRIPTION(GenericColumns.DESCRIPTION),
+        LATITUDE("latitude"),
+        LONGITUDE("longitude"),
+        ELEVATION("elevation"),
+        ELEVATION_UNITS("elevunitabbr"),
+        NEAREST_CITY("nearestcity"),
+        STATE("state"),
+        REGION("region"),
+        TIMEZONE("timezone"),
+        COUNTRY("country"),
+        ACTIVE_FLAG("active_flag"),
+        LOCATION_TYPE("location_type"),
+        MODIFY_TIME("modify_time")
+        ;
+
+        private final String column;
+
+        Columns(String column)
+        {
+            this.column = column;
+        }
+
+        Columns(GenericColumns other)
+        {
+            this.column = other.column();
+        }
+
+        @Override
+        public String column()
+        {
+            return this.column;
+        }
     }
 
 }

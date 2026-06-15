@@ -1,5 +1,12 @@
 import { describe, expect, test } from "vitest";
-import { algorithmKeys, appKeys, intervalKeys, platformKeys, siteKeys } from "./keys";
+import {
+  algorithmKeys,
+  appKeys,
+  configKeys,
+  intervalKeys,
+  platformKeys,
+  siteKeys,
+} from "./keys";
 
 describe("siteKeys", () => {
   test("all() scopes the key to an org", () => {
@@ -115,21 +122,37 @@ describe("platformKeys", () => {
     expect(detail).toEqual(["platforms", "acme", "detail", 42]);
   });
 
-  test("config() extends all() and includes the config id", () => {
-    const all = platformKeys.all("acme");
-    const config = platformKeys.config("acme", 7);
-    expect(config.slice(0, all.length)).toEqual([...all]);
-    expect(config).toEqual(["platforms", "acme", "config", 7]);
-  });
-
   test("keys for different orgs never collide", () => {
     expect(platformKeys.list("acme")).not.toEqual(platformKeys.list("globex"));
     expect(platformKeys.detail("acme", 1)).not.toEqual(
       platformKeys.detail("globex", 1),
     );
-    expect(platformKeys.config("acme", 1)).not.toEqual(
-      platformKeys.config("globex", 1),
-    );
+  });
+});
+
+describe("configKeys", () => {
+  test("all() scopes the key to an org", () => {
+    expect(configKeys.all("acme")).toEqual(["configs", "acme"]);
+    expect(configKeys.all("acme")).not.toEqual(configKeys.all("globex"));
+  });
+
+  test("list() extends all() so invalidating all() also invalidates list()", () => {
+    const all = configKeys.all("acme");
+    const list = configKeys.list("acme");
+    expect(list.slice(0, all.length)).toEqual([...all]);
+    expect(list).toEqual(["configs", "acme", "list"]);
+  });
+
+  test("detail() extends all() and includes the config id", () => {
+    const all = configKeys.all("acme");
+    const detail = configKeys.detail("acme", 7);
+    expect(detail.slice(0, all.length)).toEqual([...all]);
+    expect(detail).toEqual(["configs", "acme", "detail", 7]);
+  });
+
+  test("keys for different orgs never collide", () => {
+    expect(configKeys.list("acme")).not.toEqual(configKeys.list("globex"));
+    expect(configKeys.detail("acme", 1)).not.toEqual(configKeys.detail("globex", 1));
   });
 });
 

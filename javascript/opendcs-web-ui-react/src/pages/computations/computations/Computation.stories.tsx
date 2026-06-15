@@ -532,6 +532,68 @@ export const AddAndRemoveProperty: Story = {
   },
 };
 
+// Read path: API effectiveStart/End fields parsed into SinceUntilEditor display.
+export const EffectiveTimeParsed: Story = {
+  args: {
+    computation: {
+      ...sampleComputation,
+      effectiveStartType: "Now -",
+      effectiveStartInterval: "1 hour",
+      effectiveEndType: "No Limit",
+    },
+    edit: false,
+    processOptions: sampleProcessOptions,
+    groupOptions: sampleGroupOptions,
+  },
+  play: async ({ mount, parameters }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const startSelect = (await canvas.findByRole("combobox", {
+      name: i18n.t("computations:editor.effective_start"),
+    })) as HTMLSelectElement;
+    expect(startSelect.value).toEqual("nowMinus");
+
+    const amount = (await canvas.findByLabelText(
+      i18n.t("computations:editor.interval"),
+    )) as HTMLInputElement;
+    expect(amount.value).toEqual("1 hour");
+
+    const endSelect = (await canvas.findByRole("combobox", {
+      name: i18n.t("computations:editor.effective_end"),
+    })) as HTMLSelectElement;
+    expect(endSelect.value).toEqual("noLimit");
+  },
+};
+
+// Write path: switch Effective Start to Calendar → datetime input appears.
+export const EditEffectiveStartToCalendar: Story = {
+  args: {
+    computation: {
+      ...sampleComputation,
+      effectiveStartType: "Now -",
+      effectiveStartInterval: "2 hours",
+    },
+    processOptions: sampleProcessOptions,
+    groupOptions: sampleGroupOptions,
+  },
+  render: EditableRender,
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const startSelect = await canvas.findByRole("combobox", {
+      name: i18n.t("computations:editor.effective_start"),
+    });
+    await userEvent.selectOptions(startSelect, "calendar");
+
+    const calInput = await canvas.findByLabelText(
+      i18n.t("computations:editor.calendar"),
+    );
+    expect(calInput).toBeInTheDocument();
+  },
+};
+
 export const ComputationFromPromise: Story = {
   args: {
     computation: sampleComputation,

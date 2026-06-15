@@ -4,10 +4,12 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.DaoHelper;
 import org.opendcs.database.dai.SiteReferenceMetaData;
+import org.opendcs.database.DatabaseQuerySettings;
 import org.opendcs.database.SimpleTransaction;
 import org.opendcs.database.TransactionContextImpl;
 import org.opendcs.database.api.DataTransaction;
@@ -101,8 +103,9 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
         {
             return new SimpleTransaction(db.getConnection(),
                                          new TransactionContextImpl(db.getKeyGenerator(),
-                                         DecodesSettings.instance(),
-                                         db.isOracle() ? DatabaseEngine.ORACLE : DatabaseEngine.POSTGRES));
+                                         Map.of(DecodesSettings.class, DecodesSettings.instance(), DatabaseQuerySettings.class, new CwmsDatabaseQuerySettings()),
+                                         db.isOracle() ? DatabaseEngine.ORACLE : DatabaseEngine.POSTGRES
+                                        ));
         }
         catch (SQLException ex)
         {

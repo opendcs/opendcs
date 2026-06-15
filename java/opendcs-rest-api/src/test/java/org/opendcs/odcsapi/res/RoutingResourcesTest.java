@@ -49,7 +49,8 @@ final class RoutingResourcesTest
 		assertNotNull(apiRoutingRef);
 		assertEquals(apiRoutingRef.getRoutingId(), routingSpec.getId().getValue());
 		assertEquals(apiRoutingRef.getName(), routingSpec.getName());
-		assertEquals(apiRoutingRef.getDestination(), routingSpec.consumerArg);
+		assertEquals(routingSpec.consumerType + "(" + routingSpec.consumerArg + ")",
+				apiRoutingRef.getDestination());
 		assertEquals(apiRoutingRef.getDataSourceName(), routingSpec.dataSource.getName());
 		assertEquals(apiRoutingRef.getLastModified(), routingSpec.lastModifyTime);
 	}
@@ -412,6 +413,8 @@ final class RoutingResourcesTest
 		RoutingSpec routingSpec = new RoutingSpec();
 		routingSpec.setName("TestRoutingSpec");
 		routingSpec.setId(DbKey.createDbKey(1234L));
+		routingSpec.consumerType = "pipe";
+		routingSpec.consumerArg = "stdout";
 		routingSpec.outputTimeZone = TimeZone.getTimeZone("UTC");
 		routingSpec.lastModifyTime = Date.from(Instant.parse("2021-02-01T00:00:00Z"));
 		routingSpec.enableEquations = true;

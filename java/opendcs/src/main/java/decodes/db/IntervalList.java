@@ -27,7 +27,7 @@ public class IntervalList extends DatabaseObject
 	 * is public to enable some apps, like import program and editor to hold
 	 * a temporary instance.
 	 */
-	private IntervalList()
+	public IntervalList()
 	{
 		super();
 	}

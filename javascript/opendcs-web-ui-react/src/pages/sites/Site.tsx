@@ -70,12 +70,35 @@ const SITE_FIELDS = [
   "elevation",
   "elevationUnits",
   "nearestCity",
+  "timezone",
   "state",
   "country",
   "region",
   "publicName",
   "description",
 ] as const;
+
+const TIMEZONES: readonly string[] = [
+  "UTC",
+  "GMT",
+  "US/Eastern",
+  "US/Central",
+  "US/Mountain",
+  "US/Pacific",
+  "US/Alaska",
+  "US/Hawaii",
+  "US/Arizona",
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "America/Phoenix",
+  "America/Anchorage",
+  "America/Honolulu",
+  "America/Puerto_Rico",
+  "Europe/London",
+];
+const SITE_TIMEZONE_LIST_ID = "site-timezone-list";
 
 export const SiteSkeleton: React.FC<{ edit?: boolean; className?: string }> = ({
   edit = false,
@@ -243,6 +266,11 @@ export const Site: React.FC<SiteProperties> = ({
 
   return (
     <DetailFade skeleton={<SiteSkeleton edit={edit} />}>
+      <datalist id={SITE_TIMEZONE_LIST_ID}>
+        {TIMEZONES.map((tz) => (
+          <option key={tz} value={tz} />
+        ))}
+      </datalist>
       <Card
         className={["site-card", edit ? "site-card--edit" : null]
           .filter(Boolean)
@@ -353,6 +381,22 @@ export const Site: React.FC<SiteProperties> = ({
                     name="nearestCity"
                     readOnly={!edit}
                     defaultValue={localSite.nearestCity}
+                    onChange={inputChange}
+                  />
+                </Col>
+              </FormGroup>
+              <FormGroup as={Row} className="mb-3">
+                <Form.Label column sm={2} htmlFor="timezone">
+                  {t("timezone")}
+                </Form.Label>
+                <Col sm={10}>
+                  <Form.Control
+                    type="text"
+                    id="timezone"
+                    name="timezone"
+                    readOnly={!edit}
+                    list={SITE_TIMEZONE_LIST_ID}
+                    defaultValue={localSite.timezone ?? ""}
                     onChange={inputChange}
                   />
                 </Col>

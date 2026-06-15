@@ -2,17 +2,17 @@ import { PlatformsTable } from "./PlatformsTable";
 import {
   useDeletePlatformMutation,
   useFetchPlatform,
-  useFetchPlatformConfig,
   usePlatformsQuery,
   useSavePlatformMutation,
 } from "../../queries/platforms";
+import { useFetchConfig } from "../../queries/configs";
 import { useFetchSite } from "../../queries/sites";
 
 export const PlatformsPage: React.FC = () => {
   const { data: platforms = [], isFetching } = usePlatformsQuery();
   const fetchPlatform = useFetchPlatform();
   const fetchSite = useFetchSite();
-  const fetchConfig = useFetchPlatformConfig();
+  const fetchConfig = useFetchConfig();
   const savePlatform = useSavePlatformMutation();
   const deletePlatform = useDeletePlatformMutation();
 

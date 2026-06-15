@@ -13,6 +13,7 @@ import decodes.db.DataSource;
 import decodes.sql.DbKey;
 
 import static org.opendcs.database.model.mappers.PrefixRowMapper.addUnderscoreIfMissing;
+import static org.opendcs.utils.ExceptionUtil.wrappedComputeIfAbsent;
 
 public final class DataSourceAccumulator implements ResultSetAccumulator<Map<DbKey,DataSource>>
 {
@@ -38,33 +39,15 @@ public final class DataSourceAccumulator implements ResultSetAccumulator<Map<DbK
     {
         ColumnMapper<DbKey> dbKeyMapper = ctx.findColumnMapperFor(DbKey.class)
                                              .orElseThrow(() -> new SQLException("No mapper registered for DbKey class."));
-        var primaryId = dbKeyMapper.map(rs, primaryPrefix+GenericColumns.ID, ctx);
-        DataSource primaryDs = null;
-        try
-        {
-            primaryDs = previous.computeIfAbsent(primaryId, key ->
-            {
-                try
-                {
-                    return primaryMapper.map(rs, ctx);
-                }
-                catch (SQLException ex)
-                {
-                    // We have to use RuntimeException to escape the computeIfAbsent when there
-                    // is an error.
-                    throw new RuntimeException(ex); // NOSONAR
-                }
-            });
-        }
-        catch (RuntimeException ex)
-        {
-            if (ex.getCause() instanceof SQLException sqlException)
-            {
-                throw sqlException;
-            }
-            throw ex;
-        }
-        int sequence = rs.getInt(memberPrefix+"sequencenum");
+
+        final var primaryDs = wrappedComputeIfAbsent(
+                    previous,
+                    dbKeyMapper.map(rs, primaryMapper.column(DataSourceMapper.Columns.ID), ctx),
+                    newKey -> primaryMapper.map(rs, ctx),
+                    SQLException.class
+        );
+
+        int sequence = rs.getInt(memberMapper.column(DataSourceMapper.Columns.SEQUENCE_NUMBER));
         if (!rs.wasNull())
         {
             primaryDs.addGroupMember(sequence, memberMapper.map(rs, ctx));

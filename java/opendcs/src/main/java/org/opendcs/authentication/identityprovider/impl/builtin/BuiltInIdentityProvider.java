@@ -30,7 +30,7 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.dai.UsersDao;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.User;
 import org.opendcs.spi.authentication.IdentityProviderProvider;
@@ -141,7 +141,7 @@ public final class BuiltInIdentityProvider implements IdentityProvider
                     var pw = Password.check(creds.password, hashedPassword);
                     if (pw.withArgon2())
                     {
-                        var userDao = db.getDao(UserManagementDao.class)
+                        var userDao = db.getDao(UsersDao.class)
                                         .orElseThrow(() -> new OpenDcsAuthException("No User Management DAO is available."));
                         return userDao.getUser(tx, userId);
                     }
@@ -193,7 +193,7 @@ public final class BuiltInIdentityProvider implements IdentityProvider
                     // We should allow some control of these settings.
                     // However, the defaults are sane, it's easy to do wrong, and this PR is already large enough
                     var hashed = Password.hash(creds.password.getBytes()).addPepper().addRandomSalt().withArgon2();
-                    pwUpdate.define("dual", tx.getContext().getDatabase() == DatabaseEngine.ORACLE ? "from dual" : "")
+                    pwUpdate.define("dual", tx.getContext().getDatabaseEngine() == DatabaseEngine.ORACLE ? "from dual" : "")
                             .bind("id", user.id)
                             .bind("password", hashed.getResult())
                             .execute();
@@ -249,6 +249,13 @@ public final class BuiltInIdentityProvider implements IdentityProvider
         {
             return TYPE;
         }
+    }
+
+    @Override
+    public User register(OpenDcsDatabase db, DataTransaction tx, IdentityProviderCredentials credentials)
+            throws OpenDcsAuthException
+    {
+        throw new OpenDcsAuthException("User registration not yet supported.");
     }
 
 }

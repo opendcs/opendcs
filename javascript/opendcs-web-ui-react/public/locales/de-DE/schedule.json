@@ -1,0 +1,33 @@
+{
+  "title": "Zeitplan",
+  "header": {
+    "Id": "ID",
+    "Name": "Name",
+    "LoadingApp": "Ladeanwendung",
+    "RoutingSpec": "Routing-Spezifikation",
+    "Enabled": "Aktiviert",
+    "LastModified": "Zuletzt geändert"
+  },
+  "name": "Name",
+  "loading_app": "Ladeanwendung",
+  "routing_spec": "Routing-Spezifikation",
+  "enabled": "Aktiviert",
+  "start_time": "Startzeit",
+  "timezone": "Zeitzone",
+  "execution_schedule": "Ausführungsplan",
+  "run_continuously": "Fortlaufend ausführen",
+  "run_once": "Einmal ausführen",
+  "run_every": "Alle",
+  "run_amount": "Intervallwert",
+  "run_unit": "Intervalleinheit",
+  "unit_minute": "Minuten",
+  "unit_hour": "Stunden",
+  "unit_day": "Tage",
+  "select_routing": "Routing-Spezifikation auswählen",
+  "select_routing_none": "Keine Routing-Spezifikationen verfügbar.",
+  "add_schedule": "Zeitplaneintrag hinzufügen",
+  "edit_schedule": "Zeitplaneintrag {{id}} bearbeiten",
+  "delete_for": "Zeitplaneintrag {{id}} löschen",
+  "save_schedule": "Zeitplaneintrag {{id}} speichern",
+  "cancel_for": "Bearbeitung von Zeitplaneintrag {{id}} abbrechen"
+}

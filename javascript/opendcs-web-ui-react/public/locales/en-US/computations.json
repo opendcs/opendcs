@@ -27,7 +27,15 @@
     "copy_for": "Copy computation {{id}}",
     "delete_for": "Delete computation {{id}}",
     "cancel_for": "Cancel editing computation {{id}}",
-    "save_for": "Save computation {{id}}"
+    "save_for": "Save computation {{id}}",
+    "effective_start": "Effective Start",
+    "effective_end": "Effective End",
+    "last_modified": "Last Modified",
+    "no_limit": "No Limit",
+    "now": "Now",
+    "now_minus": "Now −",
+    "calendar": "Calendar",
+    "interval": "Interval"
   },
   "parms": {
     "title": "Parameters",

@@ -31,10 +31,10 @@ import decodes.db.Platform;
 import decodes.db.PlatformConfig;
 import decodes.db.PlatformSensor;
 import ilex.var.TimedVariable;
-import ktarbet.usgs.waterdata.Parameter;
-import ktarbet.usgs.waterdata.Statistic;
-import ktarbet.usgs.waterdata.TestSite;
-import ktarbet.usgs.waterdata.TimeSeriesMetadata;
+import org.opendcs.usgs.waterdata.Parameter;
+import org.opendcs.usgs.waterdata.Statistic;
+import org.opendcs.usgs.waterdata.TestSite;
+import org.opendcs.usgs.waterdata.TimeSeriesMetadata;
 
 /**
  * Tests for {@link UsgsWaterDataAdapter} using the in-memory

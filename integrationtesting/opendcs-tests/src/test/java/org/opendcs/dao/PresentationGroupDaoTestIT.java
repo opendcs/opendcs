@@ -1,0 +1,152 @@
+package org.opendcs.dao;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import org.junit.jupiter.api.Test;
+import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.dai.DataTypeDao;
+import org.opendcs.database.dai.PresentationGroupDao;
+import org.opendcs.fixtures.AppTestBase;
+import org.opendcs.fixtures.annotations.ConfiguredField;
+import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
+
+import decodes.db.DataPresentation;
+import decodes.db.DataType;
+import decodes.db.PresentationGroup;
+
+@EnableIfTsDb
+@DecodesConfigurationRequired({
+    "shared/test-sites.xml",
+    "SimpleDecodesTest/site-OKVI4.xml",
+    "SimpleDecodesTest/OKVI4-decodes.xml",
+    "presentationgroup/parent.xml",
+    "presentationgroup/child.xml"
+})
+class PresentationGroupDaoTestIT extends AppTestBase
+{
+    @ConfiguredField
+    OpenDcsDatabase db;
+
+
+    @Test
+    void test_retrieve_existing() throws Exception
+    {
+        final var dao = db.getDao(PresentationGroupDao.class).orElseThrow();
+
+
+        try (var tx = db.newTransaction())
+        {
+            var group = dao.getByName(tx, "CWMS-English")
+                           .orElseGet(() -> fail("Group was not retrieved"));
+
+            assertFalse(group.dataPresentations.isEmpty());
+        }
+    }
+
+    @Test
+    void test_retrieve_existing_with_parent_child_relation() throws Exception
+    {
+        final var dao = db.getDao(PresentationGroupDao.class).orElseThrow();
+
+
+        try (var tx = db.newTransaction())
+        {
+            var parentGroup = dao.getByName(tx, "parent")
+                           .orElseGet(() -> fail("Group was not retrieved"));
+
+            assertFalse(parentGroup.dataPresentations.isEmpty());
+            assertNull(parentGroup.parent);
+
+
+            var childGroup = dao.getByName(tx, "child")
+                           .orElseGet(() -> fail("Group was not retrieved"));
+
+            assertFalse(childGroup.dataPresentations.isEmpty());
+            assertNotNull(childGroup.parent);
+        }
+    }
+
+
+    @Test
+    void test_basic_operations() throws Exception
+    {
+        final var dao = db.getDao(PresentationGroupDao.class).orElseThrow();
+        final var dtDao = db.getDao(DataTypeDao.class).orElseThrow();
+
+        try (var tx = db.newTransaction())
+        {
+            final var parentDataPresentation1 = new DataPresentation();
+            parentDataPresentation1.setDataType(dtDao.lookup(tx, "CWMS", "Stage").orElseGet(() -> fail("no datatypes available")));
+            parentDataPresentation1.setMaxDecimals(3);
+            parentDataPresentation1.setUnitsAbbr("ft");
+
+            final var parentDataPresentation2 = new DataPresentation();
+            parentDataPresentation2.setDataType(dtDao.lookup(tx, "CWMS", "Flow").orElseGet(() -> fail("no datatypes available")));
+            parentDataPresentation2.setMaxDecimals(1);
+            parentDataPresentation2.setUnitsAbbr("cfs");
+
+            final var parentGroupIn = new PresentationGroup("newParent");
+            parentGroupIn.isProduction = true;
+            parentGroupIn.addDataPresentation(parentDataPresentation1);
+            parentGroupIn.addDataPresentation(parentDataPresentation2);
+
+            final var parentGroupOut = dao.save(tx, parentGroupIn);
+
+            assertEquals(parentGroupOut.groupName, parentGroupIn.groupName);
+            assertEquals(2, parentGroupOut.dataPresentations.size());
+
+
+            final var childGroupIn = new PresentationGroup("newChild");
+            childGroupIn.isProduction = false;
+            childGroupIn.parent = parentGroupOut;
+            parentDataPresentation1.setMaxDecimals(3);
+            childGroupIn.dataPresentations.add(parentDataPresentation1);
+
+            final var childGroupOut = dao.save(tx, childGroupIn);
+
+            assertEquals(1, childGroupOut.dataPresentations.size());
+            assertNotNull(childGroupOut.parent);
+            assertEquals(parentGroupOut.groupName, childGroupOut.parent.groupName);
+
+            dao.delete(tx, childGroupOut.getId());
+
+            var deletedGroup = dao.getById(tx, childGroupOut.getId());
+            assertTrue(deletedGroup.isEmpty());
+
+        }
+    }
+
+
+    /**
+     * As several presentation groups are already loaded by default, and the groups
+     * themselves are a bit obnoxious to setup, we're just relying on the existing
+     * groups to perform this test.
+     * @throws Exception
+     */
+    @Test
+    void test_pagination() throws Exception
+    {
+        final var dao = db.getDao(PresentationGroupDao.class).orElseThrow();
+
+        try (var tx = db.newTransaction())
+        {
+            var all = dao.getAll(tx, -1, -1);
+            assertFalse(all.isEmpty());
+
+            var few = dao.getAll(tx, 2, 0);
+            assertFalse(few.isEmpty());
+            assertEquals(all.getFirst().groupName, few.getFirst().groupName);
+
+            var nextFew = dao.getAll(tx, 2, 2);
+            assertFalse(nextFew.isEmpty());
+            assertEquals(all.get(2).groupName, nextFew.getFirst().groupName);
+
+        }
+    }
+}

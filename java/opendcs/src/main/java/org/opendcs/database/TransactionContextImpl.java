@@ -1,5 +1,6 @@
 package org.opendcs.database;
 
+import java.util.Map;
 import java.util.Optional;
 
 import org.opendcs.database.api.DatabaseEngine;
@@ -8,39 +9,25 @@ import org.opendcs.database.api.TransactionContext;
 import org.opendcs.settings.api.OpenDcsSettings;
 
 import decodes.sql.KeyGenerator;
-import decodes.util.DecodesSettings;
 
 public class TransactionContextImpl implements TransactionContext
 {
     private final KeyGenerator keyGenerator;
-    private final DecodesSettings settings;
     private final DatabaseEngine databaseEngine;
+    private final Map<Class<? extends OpenDcsSettings>, OpenDcsSettings> settingsMap;
 
-    public TransactionContextImpl(KeyGenerator keyGenerator, DecodesSettings settings, DatabaseEngine databaseEngine)
+    public TransactionContextImpl(KeyGenerator keyGenerator,
+            Map<Class<? extends OpenDcsSettings>, OpenDcsSettings> settingsMap, DatabaseEngine databaseEngine)
     {
         this.keyGenerator = keyGenerator;
-        this.settings = settings;
+        this. settingsMap = settingsMap;
         this.databaseEngine = databaseEngine;
     }
-
 
     public KeyGenerator getKeyGenerator()
     {
         return this.keyGenerator;
     }
-
-
-    public DecodesSettings getSettings()
-    {
-        return this.settings;
-    }
-
-
-    public DatabaseEngine getDatabaseEngine()
-    {
-        return this.databaseEngine;
-    }
-
 
     @SuppressWarnings("unchecked")
     @Override
@@ -61,19 +48,12 @@ public class TransactionContextImpl implements TransactionContext
     @Override
     public <T extends OpenDcsSettings> Optional<T> getSettings(Class<T> settingsClass)
     {
-        if (DecodesSettings.class.equals(settingsClass))
-        {
-            return Optional.of((T)settings);
-        }
-        else
-        {
-            return Optional.empty();
-        }
+        return Optional.ofNullable((T)settingsMap.get(settingsClass));
     }
 
 
     @Override
-    public DatabaseEngine getDatabase()
+    public DatabaseEngine getDatabaseEngine()
     {
         return this.databaseEngine;
     }

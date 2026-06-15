@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.Stack;
 import java.util.Vector;
 
-import org.jdbi.v3.core.argument.Arguments;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.stringtemplate4.StringTemplateEngine;
 import org.opendcs.annotations.api.InjectDao;
@@ -56,7 +55,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
                 """;
         try (var query = handle.createQuery(querySql))
         {
-            return query.bind(GenericColumns.ID, id)
+            return query.bind(GenericColumns.ID.column(), id)
                         .registerRowMapper(UnitConverterDb.class, UnitConverterMapper.withPrefix(""))
                         .mapTo(UnitConverterDb.class)
                         .findOne();
@@ -78,7 +77,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                 .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
         final String insertSql = """
@@ -98,7 +97,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
         {
             final DbKey id = unitConverter.idIsSet() ? unitConverter.getId() : keyGen.getKey("unitconverter", handle.getConnection());
             query.registerArgument(new NullableDoubleArgumentFactory())
-                 .bind(GenericColumns.ID, id)
+                 .bind(GenericColumns.ID.column(), id)
                  .bind("fromunitsabbr", unitConverter.fromAbbr)
                  .bind("tounitsabbr", unitConverter.toAbbr)
                  .bind("algorithm", unitConverter.algorithm)
@@ -125,7 +124,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
         final var deleteDataTypeSql = "delete from unitconverter where id = :id";
         try (var deleteDataType = handle.createUpdate(deleteDataTypeSql))
         {
-            deleteDataType.bind(GenericColumns.ID, id).execute();
+            deleteDataType.bind(GenericColumns.ID.column(), id).execute();
         }
     }
 
@@ -186,7 +185,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        var dbType = tx.getContext().getDatabase();
+        var dbType = tx.getContext().getDatabaseEngine();
 
         final String querySql = """
                 select uc.id, uc.fromunitsabbr, uc.tounitsabbr, uc.algorithm, uc.a,uc.b,uc.c,uc.d,uc.e,uc.f,

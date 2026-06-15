@@ -15,6 +15,10 @@
 */
 package org.opendcs.utils;
 
+import java.util.Map;
+
+import opendcs.util.functional.ThrowingFunction;
+
 /**
  * Utility methods for working with exceptions.
  */
@@ -45,5 +49,63 @@ public final class ExceptionUtil
             current = current.getCause();
         }
         return root.getMessage();
+    }
+
+    /**
+     * For situtations where the solution is to just forward the exception.
+     *
+     * If the exception thrown by the method matches the expected exception it
+     * will be unwrapped and thrown.
+     *
+     * If it does not match the created {@see WrappedException}, a RuntimeException,
+     * will be rethrown.
+     *
+     * @param <K> Map Key Type
+     * @param <T> Map value Type
+     * @param <E> Expected Exception
+     * @param collection collection on which to operate
+     * @param key the key
+     * @param supplier actually action to be performed on compute if absent
+     * @param exceptionType class instance of the type of exception
+     * @return
+     * @throws E
+     */
+    public static <K,T,E extends Exception> T wrappedComputeIfAbsent(Map<K,T> collection, K key, ThrowingFunction<K,T,E> supplier, Class<E> exceptionType) throws E
+    {
+        try
+        {
+            return collection.computeIfAbsent(key, newKey ->
+            {
+                try
+                {
+                    return supplier.accept(newKey);
+                }
+                catch (Exception ex) // NOSONAR
+                {
+                    throw new WrappedException(ex);
+                }
+            });
+        }
+        catch (RuntimeException ex)
+        {
+            if (exceptionType.isInstance(ex))
+            {
+                throw (E)ex.getCause();
+            }
+            else
+            {
+                throw ex;
+            }
+        }
+
+    }
+
+
+    private static class WrappedException extends RuntimeException
+    {
+        public WrappedException(Throwable cause)
+        {
+            super(cause);
+        }
     }
 }

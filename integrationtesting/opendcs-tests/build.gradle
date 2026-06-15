@@ -138,10 +138,12 @@ testEngines.each { engine ->
         def install = project(":install")
         def stageDir = install.layout.getBuildDirectory().dir("install/${install.distributions.main.distributionBaseName.get()}").get()
         def classPath = (project(':opendcs').jar.outputs.files
+                    + project(":opendcs-implementation").configurations.runtimeClasspath
+                    + project(":opendcs-implementation").jar.outputs.files
+                    + project(":cwms-implementation").configurations.runtimeClasspath
+                    + project(":cwms-implementation").jar.outputs.files
                     + project(":opendcs").configurations.runtimeClasspath
                     + configurations.extra
-                    + project(":opendcs-implementation").configurations.runtimeClasspath
-                    + project(":cwms-implementation").configurations.runtimeClasspath
                     ).asPath
         inputs.property "opendcs.test.engine", engine
 

@@ -12,8 +12,9 @@ import java.text.ParseException;
 import org.opendcs.authentication.OpenDcsAuthException;
 import org.opendcs.authentication.identityprovider.impl.oidc.AuthCodeCredentials;
 import org.opendcs.authentication.identityprovider.impl.oidc.JwtCredentials;
+import org.opendcs.authentication.identityprovider.impl.oidc.OidcIdentityProvider;
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.dai.IdentityProviderDao;
 import org.opendcs.database.model.User;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.res.OpenDcsResource;
@@ -59,7 +60,7 @@ public final class OidcCallback extends OpenDcsResource
     @Context
 	HttpServletRequest httpRequest;
 
-    
+
 
     @GET()
     @Path("oidc-callback")
@@ -133,7 +134,7 @@ public final class OidcCallback extends OpenDcsResource
 
                 try (var tx = db.newTransaction())
                 {
-                    var provider = db.getDao(UserManagementDao.class).orElseThrow()
+                    var provider = db.getDao(IdentityProviderDao.class).orElseThrow()
                                     .getIdentityProvider(tx, oidcProvider);
                     if (provider.isEmpty()) 
                     {
@@ -169,9 +170,9 @@ public final class OidcCallback extends OpenDcsResource
         catch (IOException ex)
         {
             log.atDebug().setCause(ex).log("Authentication failed as required information was available or incorrectly formatted.");
-            location = URI.create(String.format(defaultTarget, URLEncoder.encode("Unable to process required information.", StandardCharsets.UTF_8)));   
+            location = URI.create(String.format(defaultTarget, URLEncoder.encode("Unable to process required information.", StandardCharsets.UTF_8)));
         }
-        
+
         return response.status(Response.Status.FOUND).location(location).build();
     }
 
@@ -238,23 +239,46 @@ public final class OidcCallback extends OpenDcsResource
             {
                 jwt = SignedJWT.parse(accessToken);
                 var subject = jwt.getJWTClaimsSet().getSubject();
+
                 final var db = this.createDb();
                 try (var tx = db.newTransaction())
                 {
-                    var umDao = db.getDao(UserManagementDao.class).orElseThrow(() -> new OpenDcsDataException("UserManagement not currently supported."));
+                    var umDao = db.getDao(IdentityProviderDao.class).orElseThrow(() -> new OpenDcsDataException("UserManagement not currently supported."));
                     var idps = umDao.getIdentityProvidersForSubject(tx, subject);
                     if (!idps.isEmpty())
-                    {   
+                    {
                         for(var idp: idps)
                         {
-                            var userOpt = idp.login(db, tx, new JwtCredentials(accessToken));
-                            if (userOpt.isPresent())
+                            // A single Identity Provider may serve multiple clients, as in the case of our 
+                            // tests 'opendcs' and 'opendcs-public', both use the same subject id value
+                            // so we have to further distinguish between them.
+                            if (idp instanceof OidcIdentityProvider oidcIdp && oidcIdp.validFor(jwt))
                             {
-                                var user = userOpt.get();
-                                response = updateSessionWithUser(user, httpRequest);
-                                break;
+                                var userOpt = idp.login(db, tx, new JwtCredentials(accessToken));
+                                if (userOpt.isPresent())
+                                {
+                                    var user = userOpt.get();
+                                    response = updateSessionWithUser(user, httpRequest);
+                                    break;
+                                }
                             }
-                        }   
+                        }
+                    }
+                    else // we don't already know about this user so now we search
+                    {
+                        idps = umDao.getIdentityProviders(tx, -1, -1);
+                        for (var idp: idps)
+                        {
+                            if (idp instanceof OidcIdentityProvider oidcProvider &&
+                                oidcProvider.validFor(jwt) &&
+                                
+                                oidcProvider.canRegister())
+                            {
+                                    var user = oidcProvider.register(db, tx, new JwtCredentials(accessToken));
+                                    response = updateSessionWithUser(user, httpRequest);
+                                    break;
+                            }
+                        }
                     }
                 }
             }

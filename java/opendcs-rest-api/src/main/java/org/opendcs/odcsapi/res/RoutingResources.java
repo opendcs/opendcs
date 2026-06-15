@@ -137,7 +137,9 @@ public final class RoutingResources extends OpenDcsResource
 				ref.setRoutingId(DbKey.NullKey.getValue());
 			}
 			ref.setName(rs.getName());
-			ref.setDestination(rs.consumerArg);
+			String consumerType = rs.consumerType == null ? "" : rs.consumerType;
+			String consumerArg = rs.consumerArg == null ? "" : rs.consumerArg;
+			ref.setDestination(consumerType + "(" + consumerArg + ")");
 			if(rs.dataSource != null)
 			{
 				ref.setDataSourceName(rs.dataSource.getName());

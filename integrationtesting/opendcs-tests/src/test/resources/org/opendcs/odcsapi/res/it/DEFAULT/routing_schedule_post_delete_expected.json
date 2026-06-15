@@ -6,8 +6,8 @@
   "routingSpecId": 6,
   "routingSpecName": "Routing test",
   "enabled": true,
-  "lastModified": "2025-01-03T23:03:01.956Z[UTC]",
-  "startTime": "2025-01-03T19:25:39.000Z[UTC]",
+  "lastModified": "2025-01-03T23:03:01.956Z",
+  "startTime": "2025-01-03T19:25:39.000Z",
   "timeZone": "EST",
   "runInterval": "monthly"
 }

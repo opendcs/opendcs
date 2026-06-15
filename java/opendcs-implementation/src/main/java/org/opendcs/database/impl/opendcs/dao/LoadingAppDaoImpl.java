@@ -55,13 +55,13 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             return query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                         .define(SqlQueries.WHERE_CLAUSE, "where loading_application_id = :id")
                         .define(SqlQueries.LIMIT_CLAUSE, "")
-                        .bind(GenericColumns.ID, id)
+                        .bind(GenericColumns.ID.column(), id)
                         .registerRowMapper(CompAppInfoMapper.withPrefix("a"))
                         .registerRowMapper(PropertiesMapper.withPrefix("p", true))
                         .reduceRows(new CompAppInfoReducer())
@@ -76,13 +76,13 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             return query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                         .define(SqlQueries.WHERE_CLAUSE, "where upper(loading_application_name) = upper(:name)")
                         .define(SqlQueries.LIMIT_CLAUSE, "")
-                        .bind(GenericColumns.NAME, name)
+                        .bind(GenericColumns.NAME.column(), name)
                         .registerRowMapper(CompAppInfoMapper.withPrefix("a"))
                         .registerRowMapper(PropertiesMapper.withPrefix("p", true))
                         .reduceRows(new CompAppInfoReducer())
@@ -97,7 +97,7 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                 .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
         final String insertSql = """
@@ -133,23 +133,23 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
             }
             final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("hdb_loading_application", handle.getConnection());
 
-            mergeQuery.bind(GenericColumns.ID, bindKey)
-                 .bind(GenericColumns.NAME, appInfo.getAppName())
+            mergeQuery.bind(GenericColumns.ID.column(), bindKey)
+                 .bind(GenericColumns.NAME.column(), appInfo.getAppName())
                  .bind("manual_edit_app", appInfo.getManualEditApp() ? "Y" : "N")
                  .bind("comment", appInfo.getComment())
                  .execute();
 
-            deleteProps.bind(GenericColumns.ID, bindKey).execute();
+            deleteProps.bind(GenericColumns.ID.column(), bindKey).execute();
 
-            insertProps.bind(GenericColumns.ID, bindKey)
-                       .bind(GenericColumns.NAME, "LastModified")
+            insertProps.bind(GenericColumns.ID.column(), bindKey)
+                       .bind(GenericColumns.NAME.column(), "LastModified")
                        .bind("value", CompAppInfoReducer.LAST_MODIFIED_SDF.format(new Date().toInstant()))
                        .add();
             appInfo.getProperties()
                    .forEach((k,v) ->
                    {
-                        insertProps.bind(GenericColumns.ID, bindKey);
-                        insertProps.bind(GenericColumns.NAME, k.toString());
+                        insertProps.bind(GenericColumns.ID.column(), bindKey);
+                        insertProps.bind(GenericColumns.NAME.column(), k.toString());
                         var toSave = v != null ? v.toString() : "";
                         insertProps.bind("value", toSave);
                         insertProps.add();
@@ -173,8 +173,8 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
              var deleteProperties = handle.createUpdate(DELETE_APP_PROPERTIES)
             )
         {
-            deleteProperties.bind(GenericColumns.ID, id).execute();
-            deleteApp.bind(GenericColumns.ID, id).execute();
+            deleteProperties.bind(GenericColumns.ID.column(), id).execute();
+            deleteApp.bind(GenericColumns.ID.column(), id).execute();
         }
     }
 
@@ -184,7 +184,7 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabase();
+        var dbEngine = ctx.getDatabaseEngine();
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))

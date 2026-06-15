@@ -15,6 +15,7 @@ import {
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
 import { algorithmKeys } from "./keys";
+import { invalidateThenDelegate, normalizeNewId } from "./mutationHelpers";
 
 const useAlgorithmsApi = () => {
   const api = useApi();
@@ -78,18 +79,17 @@ export const useSaveAlgorithmMutation = (
   const { algorithmApi, org } = useAlgorithmsApi();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (algorithm: ApiAlgorithm) => {
-      const algorithmId =
-        algorithm.algorithmId && algorithm.algorithmId > 0
-          ? algorithm.algorithmId
-          : undefined;
-      return algorithmApi.postAlgorithm(org, { ...algorithm, algorithmId });
-    },
+    mutationFn: (algorithm: ApiAlgorithm) =>
+      algorithmApi.postAlgorithm(org, {
+        ...algorithm,
+        algorithmId: normalizeNewId(algorithm.algorithmId),
+      }),
     ...options,
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: algorithmKeys.all(org) });
-      options?.onSuccess?.(...args);
-    },
+    onSuccess: invalidateThenDelegate(
+      queryClient,
+      algorithmKeys.all(org),
+      options?.onSuccess,
+    ),
   });
 };
 
@@ -101,10 +101,11 @@ export const useDeleteAlgorithmMutation = (
   return useMutation({
     mutationFn: (algorithmId: number) => algorithmApi.deleteAlgorithm(org, algorithmId),
     ...options,
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: algorithmKeys.all(org) });
-      options?.onSuccess?.(...args);
-    },
+    onSuccess: invalidateThenDelegate(
+      queryClient,
+      algorithmKeys.all(org),
+      options?.onSuccess,
+    ),
   });
 };
 
@@ -149,11 +150,12 @@ export const useImportAlgorithmsMutation = (
         if (!res.ok) throw new Error(`Import failed: ${res.status}`);
       }),
     ...options,
-    onSuccess: (...args) => {
-      // Invalidate both the catalog (alreadyImported flags changed) and the
-      // algorithm list so the table reflects newly imported records.
-      queryClient.invalidateQueries({ queryKey: algorithmKeys.all(org) });
-      options?.onSuccess?.(...args);
-    },
+    // Invalidate the entity root (catalog + list) so the table reflects newly
+    // imported records and updated alreadyImported flags.
+    onSuccess: invalidateThenDelegate(
+      queryClient,
+      algorithmKeys.all(org),
+      options?.onSuccess,
+    ),
   });
 };

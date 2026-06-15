@@ -16,7 +16,7 @@
 package org.opendcs.odcsapi.res.it;
 
 import java.time.Instant;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -706,7 +706,7 @@ final class RoutingResourcesIT extends BaseApiIT
 		assertEquals(expected.getString("routingSpecName"), actual.getString("routingSpecName"));
 		assertEquals(expected.getString("enabled"), actual.getString("enabled"));
 		assertThat(ZonedDateTime.ofInstant(Instant.ofEpochMilli(expected.getLong("startTime")),
-						ZoneId.of("UTC")).toString(),
+						ZoneOffset.UTC).toString(),
 				anyOf(is(ZonedDateTime.parse(actual.getString("startTime")).plus(offsetInMilli, ChronoUnit.MILLIS).toString()),
 						is(ZonedDateTime.parse(actual.getString("startTime")).toString()),
 						is(ZonedDateTime.parse(actual.getString("startTime")).minus(offsetInMilli, ChronoUnit.MILLIS).toString())));

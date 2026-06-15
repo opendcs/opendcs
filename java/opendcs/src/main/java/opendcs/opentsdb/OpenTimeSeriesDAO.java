@@ -1016,7 +1016,7 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 
 		OffsetErrorAction offsetErrorAction = tsid.getOffsetErrorAction();
 		if (offsetErrorAction == null)
-			offsetErrorAction = OpenTsdbSettings.instance().offsetErrorActionEnum;
+			offsetErrorAction = OpenDcsDbSettings.instance().offsetErrorActionEnum;
 
 		// If (ignore) then just return true. Don't bother with checking.
 		if (offsetErrorAction == OffsetErrorAction.IGNORE)
@@ -1388,7 +1388,7 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		if (storageUnits == null)
 		{
 			decodes.db.Database db = decodes.db.Database.getDb();
-			String pgName = OpenTsdbSettings.instance().storagePresentationGroup;
+			String pgName = OpenDcsDbSettings.instance().storagePresentationGroup;
 			PresentationGroup dbpg = db.presentationGroupList.find(pgName);
 			if (dbpg == null)
 				throw new DbIoException("No such storagePresentationGroup '"

@@ -34,6 +34,25 @@ dependencies {
     implementation(libs.bundles.jdbi)
     implementation(libs.org.netbeans.lookup)
     implementation(libs.auto.service.annotations)
+
+    implementation(libs.cwms.db.jooq) {
+           exclude group: "org.jooq.pro", module: "jooq-meta"
+           exclude group: "org.jooq.pro", module: "jooq-codegen"
+           exclude group: "com.oracle.database.jdbc"
+           exclude group: "mil.army.usace.hec", module: "hec-monolith"
+    }
+    implementation(libs.cwms.db.codegen)
+    implementation(libs.cwms.db.aspects)
+    implementation(libs.cwms.db.dao) {
+        exclude group: "com.oracle.database.jdbc"
+        exclude group: "com.oracle.database.jdbc", module: "jmscommon"
+        exclude group: "mil.army.usace.hec", module: "hec-monolith"
+    }
+    implementation(libs.hec.db.jdbc) {
+        exclude group: "com.oracle.database.jdbc"
+        exclude group: "com.oracle.database.jdbc", module: "jmscommon"
+        exclude group: "mil.army.usace.hec", module: "hec-monolith"
+    }
 }
 
 

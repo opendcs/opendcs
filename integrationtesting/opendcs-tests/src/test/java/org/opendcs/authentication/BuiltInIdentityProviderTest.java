@@ -17,7 +17,8 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityProvider;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInProviderCredentials;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.database.dai.UserManagementDao;
+import org.opendcs.database.dai.IdentityProviderDao;
+import org.opendcs.database.dai.UsersDao;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.IdentityProviderMapping;
 import org.opendcs.database.model.User;
@@ -46,12 +47,14 @@ class BuiltInIdentityProviderTest extends AppTestBase
         {
             return;
         }
-        var userDao = db.getDao(UserManagementDao.class)
-                        .orElseGet(() -> fail("No user management DAO available."));
+        var userDao = db.getDao(UsersDao.class)
+                        .orElseGet(() -> fail("No user DAO available."));
+        var idpDao = db.getDao(IdentityProviderDao.class)
+                       .orElseGet(() -> fail("No idp DAO available."));
         provider = new BuiltInIdentityProvider(DbKey.NullKey, "builtin-idp-test", null, Map.of());
         try (var tx = db.newTransaction())
         {
-            provider = userDao.addIdentityProvider(tx, provider);
+            provider = idpDao.addIdentityProvider(tx, provider);
 
             var userIn = new UserBuilder().withEmail("test@example.com")
                                         .withIdentityMapping(new IdentityProviderMapping(provider, "test"))
@@ -72,19 +75,20 @@ class BuiltInIdentityProviderTest extends AppTestBase
         {
             return;
         }
-        var userDao = db.getDao(UserManagementDao.class).get();
+        var userDao = db.getDao(UsersDao.class).get();
+        var idpDao = db.getDao(IdentityProviderDao.class).get();
         try (var tx = db.newTransaction())
         {
             userDao.deleteUser(tx, user.id);
-            userDao.deleteIdentityProvider(tx, provider.getId());
+            idpDao.deleteIdentityProvider(tx, provider.getId());
 
-            var tmp = userDao.getIdentityProvider(tx, provider.getId());
+            var tmp = idpDao.getIdentityProvider(tx, provider.getId());
             assertFalse(tmp.isPresent());
         }
 
         try (var tx = db.newTransaction())
         {
-            var tmp = userDao.getIdentityProvider(tx, provider.getId());
+            var tmp = idpDao.getIdentityProvider(tx, provider.getId());
             assertFalse(tmp.isPresent());
         }
     }

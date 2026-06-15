@@ -10,10 +10,17 @@ export interface SideBarProps {
 export const SideBar = ({ open, onClose }: SideBarProps) => {
   const [t] = useTranslation([
     "platforms",
+    "configs",
     "sites",
+    "equipment",
     "algorithms",
     "computations",
     "loadingapps",
+    "routing",
+    "datasources",
+    "netlists",
+    "presentations",
+    "schedule",
   ]);
   const location = useLocation();
 
@@ -37,11 +44,67 @@ export const SideBar = ({ open, onClose }: SideBarProps) => {
           </Nav.Link>
           <Nav.Link
             as={Link}
+            to="/configs"
+            active={location.pathname === "/configs"}
+            onClick={onClose}
+          >
+            {t("configs:configsTitle")}
+          </Nav.Link>
+          <Nav.Link
+            as={Link}
             to="/sites"
             active={location.pathname === "/sites"}
             onClick={onClose}
           >
             {t("sites:title")}
+          </Nav.Link>
+          <Nav.Link
+            as={Link}
+            to="/equipment"
+            active={location.pathname === "/equipment"}
+            onClick={onClose}
+          >
+            {t("equipment:title")}
+          </Nav.Link>
+          <Nav.Link
+            as={Link}
+            to="/routing"
+            active={location.pathname === "/routing"}
+            onClick={onClose}
+          >
+            {t("routing:title")}
+          </Nav.Link>
+          <Nav.Link
+            as={Link}
+            to="/data-sources"
+            active={location.pathname === "/data-sources"}
+            onClick={onClose}
+          >
+            {t("datasources:title")}
+          </Nav.Link>
+          <Nav.Link
+            as={Link}
+            to="/netlists"
+            active={location.pathname === "/netlists"}
+            onClick={onClose}
+          >
+            {t("netlists:title")}
+          </Nav.Link>
+          <Nav.Link
+            as={Link}
+            to="/presentations"
+            active={location.pathname === "/presentations"}
+            onClick={onClose}
+          >
+            {t("presentations:title")}
+          </Nav.Link>
+          <Nav.Link
+            as={Link}
+            to="/schedule"
+            active={location.pathname === "/schedule"}
+            onClick={onClose}
+          >
+            {t("schedule:title")}
           </Nav.Link>
         </Nav>
 
