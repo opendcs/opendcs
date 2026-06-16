@@ -41,6 +41,18 @@ export const DetailFade: React.FC<DetailFadeProps> = ({ skeleton, children }) =>
     };
   }, [phase]);
 
+  useEffect(() => {
+    if (phase !== "fading") return;
+    const timer = setTimeout(() => setPhase("ready"), 400);
+    return () => clearTimeout(timer);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "ready" || hasEntered) return;
+    const timer = setTimeout(() => setHasEntered(true), 400);
+    return () => clearTimeout(timer);
+  }, [phase, hasEntered]);
+
   return (
     <div className="detail-appear">
       {phase !== "ready" && (
