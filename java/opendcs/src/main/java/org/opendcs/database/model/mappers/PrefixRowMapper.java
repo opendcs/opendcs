@@ -1,10 +1,14 @@
 package org.opendcs.database.model.mappers;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.EnumSet;
 
 import org.jdbi.v3.core.mapper.RowMapper;
+import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.sql.TableColumnDefinition;
+
+import ilex.util.Pair;
 
 /**
  * Helper class for row mappers to take a prefix.
@@ -21,18 +25,30 @@ import org.opendcs.database.sql.TableColumnDefinition;
 public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinition> implements RowMapper<T>
 {
     protected final String prefix;
+    protected final String tableName;
     
     private final EnumSet<E> columns;
 
-    protected PrefixRowMapper(String prefix, EnumSet<E> columns)
+    protected PrefixRowMapper(String prefix, String table, EnumSet<E> columns)
     {
         this.prefix = addUnderscoreIfMissing(prefix);
         this.columns = columns;
+        this.tableName = table;
     }
 
+    /**
+     * Placeholder until each Mapper is updated.
+     * @param prefix
+     * @param enumClass
+     */
     protected PrefixRowMapper(String prefix, Class<E> enumClass)
     {
-        this(prefix, EnumSet.allOf(enumClass));
+        this(prefix, null, EnumSet.allOf(enumClass));
+    }
+
+    protected PrefixRowMapper(String prefix, String table, Class<E> enumClass)
+    {
+        this(prefix, table, EnumSet.allOf(enumClass));
     }
 
     public static String addUnderscoreIfMissing(String prefix)
@@ -60,5 +76,44 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
             throw new SQLException("Column " + column + " does not exist for this table.");
         }
         return prefix + column.column();
+    }
+
+    /**
+     * Create the basic set of columns and required join definition to pull in data for this mapper.
+     * @param joinType type of join, without the word "join", can be null
+     * @param idColumn
+     * @param otherTable
+     * @param otherIdColumn
+     * @return
+     */
+    public Pair<String,String> columnsAndJoin(String joinType, E idColumn, String otherTable, String otherIdColumn)
+    {
+        if (tableName == null || tableName.isBlank())
+        {
+            throw new OpenDcsDataRuntimeException("Table name was not provided to this Mapper, we cannot build the join information.");
+        }
+
+        
+        final ArrayList<String> columnList = new ArrayList<>();
+        columns.forEach(c ->
+        {
+            try
+            {
+                columnList.add(String.format("%s.%s %s_%s", prefix, c.column(), column(c)));
+            }
+            catch (SQLException ex)
+            {
+                throw new OpenDcsDataRuntimeException("A very unlikely situtation has happened.", ex);
+            }
+        }
+        );
+
+        // example "left join transportmedium tm on tm.platformid = otherTable.otherIdColumn"
+        final var join = String.format("%s join %s %s on %s.%s = %s.%s", 
+                        joinType != null ? joinType : "", tableName, prefix, prefix, idColumn.column(), otherTable, otherIdColumn);
+
+        return Pair.of(String.join(",", columnList), join);
+        
+        
     }
 }
