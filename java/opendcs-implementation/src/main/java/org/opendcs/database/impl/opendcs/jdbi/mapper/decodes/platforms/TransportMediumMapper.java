@@ -1,0 +1,67 @@
+package org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import org.jdbi.v3.core.statement.StatementContext;
+import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.sql.TableColumnDefinition;
+
+import decodes.db.TransportMedium;
+
+public class TransportMediumMapper extends PrefixRowMapper<TransportMedium,TransportMediumMapper.Columns>
+{
+    protected TransportMediumMapper(String prefix)
+    {
+        super(prefix, "transportmedium", Columns.class);
+    }
+
+    @Override
+    public TransportMedium map(ResultSet rs, StatementContext ctx) throws SQLException
+    {
+        return null;
+    }
+
+    public static TransportMediumMapper withPrefix(String prefix)
+    {
+        return new TransportMediumMapper(prefix);
+    }
+
+    public enum Columns implements TableColumnDefinition
+    {
+        PLATFORM_ID("platformid"),
+        MEDIUM_TYPE("mediumtype"),
+        MEDIUM_ID("mediumid"),
+        SCRIPT_NAME("scriptname"),
+        CHANNEL_NUMBER("channel_num"),
+        ASSIGNED_TIME("assignedtime"),
+        TRANSMIT_WINDOW("transmitwindow"),
+        TRANSMIT_INTERVAL("transmitinterval"),
+        EQUIPMENT_ID("equipment_id"),
+        TIME_ADJUSTMENT("timeadjustment"),
+        PREAMPLE("preample"),
+        TIME_ZONE("timezone"),
+        LOGGER_TYPE("loggertype"),
+        BAUD("baud"),
+        STOP_BITS("stopbits"),
+        PARITY("parity"),
+        DATABITS("databits"),
+        DO_LOGIN("dologin"),
+        USERNAME("username"),
+        PASSWORD("password")
+        ;
+
+        private final String column;
+
+        Columns(String column)
+        {
+            this.column = column;
+        }
+
+        @Override
+        public String column()
+        {
+            return column;
+        }
+    }
+}
