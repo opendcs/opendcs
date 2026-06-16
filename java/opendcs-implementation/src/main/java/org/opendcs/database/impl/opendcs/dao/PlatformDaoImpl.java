@@ -3,7 +3,6 @@ package org.opendcs.database.impl.opendcs.dao;
 import static org.opendcs.utils.sql.SqlQueries.COLLATE_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.collateClauseFor;
 
-import java.lang.foreign.Linker.Option;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -18,6 +17,7 @@ import org.opendcs.database.dai.PlatformDao;
 import org.opendcs.database.dai.SiteDao;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.configs.DecodesConfigMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformMapper;
+import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformReducer;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.TransportMediumMapper;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.openide.util.lookup.ServiceProvider;
@@ -50,7 +50,7 @@ public class PlatformDaoImpl implements PlatformDao
                 <config_columns>
                 <site_columns>
             from platforms p
-            join transportmedium tm on tm.platformid = p.id <medium_filter>
+            left outer join transportmedium tm on tm.platformid = p.id <medium_filter>
             <config_join>
             <site_join>
 
@@ -96,11 +96,9 @@ public class PlatformDaoImpl implements PlatformDao
             return select.registerRowMapper(platformMapper)
                          .registerRowMapper(configMapper)
                          .registerRowMapper(mediumMapper)
-                         .reduceRows(null)
+                         .reduceRows(new PlatformReducer(platformMapper))
                          .findFirst();
-
         }
-        
     }
 
     @Override
