@@ -19,7 +19,17 @@ public class TransportMediumMapper extends PrefixRowMapper<TransportMedium,Trans
     @Override
     public TransportMedium map(ResultSet rs, StatementContext ctx) throws SQLException
     {
-        return null;
+        TransportMedium tm = null;
+        var mediumType = rs.getString(column(Columns.MEDIUM_TYPE));
+        if (!rs.wasNull())
+        {
+            tm = new TransportMedium(null);
+            tm.setMediumType(mediumType);
+            tm.setMediumId(rs.getString(column(Columns.MEDIUM_ID)));
+            tm.scriptName = rs.getString(column(Columns.SCRIPT_NAME));
+            tm.setTimeZone(rs.getString(column(Columns.TIME_ZONE)));            
+        }
+        return tm;
     }
 
     public static TransportMediumMapper withPrefix(String prefix)

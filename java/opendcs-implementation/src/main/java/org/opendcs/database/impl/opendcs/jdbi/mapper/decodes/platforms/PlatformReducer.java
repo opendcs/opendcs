@@ -8,6 +8,7 @@ import org.jdbi.v3.core.result.RowView;
 import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
 
 import decodes.db.Platform;
+import decodes.db.TransportMedium;
 
 public final class PlatformReducer implements LinkedHashMapRowReducer<Long,Platform>
 {
@@ -25,7 +26,14 @@ public final class PlatformReducer implements LinkedHashMapRowReducer<Long,Platf
         {
             final var key = view.getColumn(platformMapper.column(PlatformMapper.Columns.ID), Long.class);
 
-            container.computeIfAbsent(key, newKey -> view.getRow(Platform.class));
+            var platform = container.computeIfAbsent(key, newKey -> view.getRow(Platform.class));
+
+            var tm = view.getRow(TransportMedium.class);
+            if (tm != null)
+            {
+                tm.platform = platform;
+                platform.transportMedia.add(tm);
+            }
 
         }
         catch (SQLException ex)

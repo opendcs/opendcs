@@ -2,13 +2,17 @@ package org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Date;
 
+import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.model.mappers.PrefixRowMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
+import org.opendcs.utils.sql.SqlErrorMessages;
 
 import decodes.db.Platform;
+import decodes.sql.DbKey;
 
 public class PlatformMapper extends PrefixRowMapper<Platform,PlatformMapper.Columns>
 {
@@ -21,7 +25,18 @@ public class PlatformMapper extends PrefixRowMapper<Platform,PlatformMapper.Colu
     @Override
     public Platform map(ResultSet rs, StatementContext ctx) throws SQLException
     {
-        return null;
+        ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class)
+                                                    .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
+        ColumnMapper<Date> dateMapper = ctx.findColumnMapperFor(Date.class)
+                                .orElseThrow(() -> new SQLException(SqlErrorMessages.TIME_MAPPER_NOT_FOUND));        
+        var platform = new Platform(columnMapperForKey.map(rs, column(Columns.ID), ctx));
+        platform.setAgency(rs.getString(column(Columns.AGENCY)));
+        platform.setDescription(rs.getString(column(Columns.DESCRIPTION)));
+        platform.lastModifyTime = dateMapper.map(rs, column(Columns.LAST_MODIFY_TIME), ctx);
+        platform.expiration = dateMapper.map(rs, column(Columns.EXPIRATION), ctx);
+        platform.isProduction = rs.getBoolean(column(Columns.IS_PRODUCTION));
+        platform.setPlatformDesignator(rs.getString(column(Columns.DESIGNATOR)));
+        return platform;
     }
 
     public static PlatformMapper withPrefix(String prefix)
