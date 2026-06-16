@@ -8,6 +8,8 @@ import org.jdbi.v3.core.mapper.RowMapper;
 import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.sql.TableColumnDefinition;
 
+import ilex.util.Pair;
+
 /**
  * Helper class for row mappers to take a prefix.
  * If the provided prefix does not start end with an underscore (_)
@@ -24,9 +26,15 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
 {
     protected final String prefix;
     protected final String tableName;
+<<<<<<< HEAD
 
     protected final EnumSet<E> columns;
 
+=======
+    
+    private final EnumSet<E> columns;
+
+>>>>>>> 2689ee5a (initiual setup of DAO and Impl.)
     protected PrefixRowMapper(String prefix, String table, EnumSet<E> columns)
     {
         this.prefix = addUnderscoreIfMissing(prefix);
