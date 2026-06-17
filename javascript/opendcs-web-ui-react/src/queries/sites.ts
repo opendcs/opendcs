@@ -51,14 +51,22 @@ export const useSaveSiteMutation = (
 ) => {
   const { sitesApi, org } = useSitesApi();
   const queryClient = useQueryClient();
+  const invalidateList = invalidateThenDelegate(
+    queryClient,
+    siteKeys.all(org),
+    options?.onSuccess,
+  );
   return useMutation({
     mutationFn: (site: ApiSite) => sitesApi.postsite(org, site),
     ...options,
-    onSuccess: invalidateThenDelegate(
-      queryClient,
-      siteKeys.all(org),
-      options?.onSuccess,
-    ),
+    onSuccess: async (data, variables, context) => {
+      if (variables.siteId != null && variables.siteId > 0) {
+        queryClient.removeQueries({
+          queryKey: siteKeys.detail(org, variables.siteId),
+        });
+      }
+      await invalidateList(data, variables, context);
+    },
   });
 };
 
