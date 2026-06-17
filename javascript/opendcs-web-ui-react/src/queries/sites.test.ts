@@ -88,7 +88,7 @@ describe("save invalidation must refresh the imperatively-fetched detail", () =>
       queryFn: network,
     });
 
-  test("invalidateQueries alone leaves fetchQuery serving the stale detail", async () => {
+  test("invalidateQueries marks the detail invalidated so fetchQuery refetches", async () => {
     const client = new QueryClient({
       defaultOptions: { queries: { staleTime: 30_000 } },
     });
@@ -106,9 +106,10 @@ describe("save invalidation must refresh the imperatively-fetched detail", () =>
       return { siteId: 1, publicName: "Saved" };
     });
 
-    // BUG: served from cache, never hit the network, so the edit "reverted".
-    expect(networkCalled).toBe(false);
-    expect(result.publicName).toBe("Original");
+    // fetchQuery refetches an invalidated entry even while it is fresh by
+    // staleTime, so the committed values are served.
+    expect(networkCalled).toBe(true);
+    expect(result.publicName).toBe("Saved");
   });
 
   test("removeQueries on the detail key forces fetchQuery to reload committed data", async () => {
