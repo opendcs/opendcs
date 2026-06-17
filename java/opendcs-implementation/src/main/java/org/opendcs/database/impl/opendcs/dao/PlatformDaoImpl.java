@@ -1,6 +1,7 @@
 package org.opendcs.database.impl.opendcs.dao;
 
 import static org.opendcs.utils.sql.SqlQueries.COLLATE_CLAUSE;
+import static org.opendcs.utils.sql.SqlQueries.WHERE_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.collateClauseFor;
 
 import java.time.ZonedDateTime;
@@ -31,17 +32,18 @@ import decodes.sql.DbKey;
 @ServiceProviders({
     @ServiceProvider(service = PlatformDao.class, path = "dao/OpenDCS-Postgres"),
     @ServiceProvider(service = PlatformDao.class, path = "dao/OpenDCS-Oracle"),
-    @ServiceProvider(service = PlatformDao.class, path = "dao/OTSDB"),
+    @ServiceProvider(service = PlatformDao.class, path = "dao/OPENTSDB"),
 })
 public class PlatformDaoImpl implements PlatformDao
 {
     private static final String SELECT_SQL = """
-            with platforms(id, mediumtype, mediumid, designator, siteid) as (
-                select p.id id, tm.mediumtype, tm.mediumid , p.designator , p.siteid
+            with platforms(id, agency, isproduction, description, lastmodifytime, configid, expiration, mediumtype, mediumid, platformdesignator, siteid) as (
+                select p.id id, p.agency agency, p.isproduction isproduction, p.description description, p.lastmodifytime lastmodifytime, p.configid configid,
+                       p.expiration expiration, tm.mediumtype, tm.mediumid , p.platformdesignator , p.siteid
                  from platform p
                   join transportmedium tm on tm.platformid = p.id <medium_filter>
                 <where>
-                order by medium_type <collate> asc, medium_id <collate> asc, designator <collate> asc
+                order by mediumtype <collate> asc, mediumid <collate> asc, platformdesignator <collate> asc
             )
 
             select 
@@ -54,7 +56,7 @@ public class PlatformDaoImpl implements PlatformDao
             <config_join>
             <site_join>
 
-            order by medium_type <collate> asc, medium_id <collate> asc, , designator <collate> asc
+            order by p.mediumtype <collate> asc, p.mediumid <collate> asc, p.platformdesignator <collate> asc
             """;
 
     @InjectDao
@@ -86,16 +88,22 @@ public class PlatformDaoImpl implements PlatformDao
             var configMapper = DecodesConfigMapper.withPrefix("config");
             var mediumMapper = TransportMediumMapper.withPrefix("tm");
 
-            //var mediumJoin = mediumMapper.columnsAndJoin("left outer", TransportMediumMapper.Columns.PLATFORM_ID, "p", PlatformMapper.Columns.ID.column());
-            select.define("config_join", "")
+            select.define("platform_columns", platformMapper.columnsForSelect())
+                  .define("medium_columns", mediumMapper.columnsForSelect())
+                  .define("site_columns", "")
+                  .define("config_columns", "")
+                  .define("config_join", "")
                   .define("site_join", "")
                   .define(COLLATE_CLAUSE, collateClauseFor(dbEngine))
+                  .define("medium_filter", " and tm.mediumtype = :mediumtype and tm.mediumid = :mediumid")
+                  .define(WHERE_CLAUSE, "where mediumtype = :mediumtype and mediumid = :mediumid")
                   ;
-        
 
-            return select.registerRowMapper(platformMapper)
+            return select.registerRowMapper(platformMapper)                         
                          .registerRowMapper(configMapper)
                          .registerRowMapper(mediumMapper)
+                         .bind("mediumtype", mediumType)
+                         .bind("mediumid", mediumId)
                          .reduceRows(new PlatformReducer(platformMapper))
                          .findFirst();
         }
