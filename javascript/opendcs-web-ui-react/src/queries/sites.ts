@@ -51,7 +51,7 @@ export const useSaveSiteMutation = (
 ) => {
   const { sitesApi, org } = useSitesApi();
   const queryClient = useQueryClient();
-  const invalidateList = invalidateThenDelegate(
+  const invalidateList = invalidateThenDelegate<unknown, unknown, ApiSite>(
     queryClient,
     siteKeys.all(org),
     options?.onSuccess,
