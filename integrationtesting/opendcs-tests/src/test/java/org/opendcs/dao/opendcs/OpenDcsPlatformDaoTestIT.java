@@ -35,6 +35,8 @@ class OpenDcsPlatformDaoTestIT extends AppTestBase
 
             assertFalse(platform.transportMedia.isEmpty());
             assertNotNull(platform.getSite());
+            assertFalse(platform.getSite().getNameArray().isEmpty());
+            System.out.println(platform.getSite().toString());
         }
     }
 }

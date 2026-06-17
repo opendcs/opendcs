@@ -86,20 +86,15 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
      * @param otherIdColumn
      * @return
      */
-    public Pair<String,String> columnsAndJoin(String joinType, E idColumn, String otherTable, String otherIdColumn)
-    {
-        if (tableName == null || tableName.isBlank())
-        {
-            throw new OpenDcsDataRuntimeException("Table name was not provided to this Mapper, we cannot build the join information.");
-        }
-
-        
+    public String columnsForSelect()
+    {   
         final ArrayList<String> columnList = new ArrayList<>();
+        final String prefixNoUnderscore = prefix.substring(0, prefix.length() - 1);
         columns.forEach(c ->
         {
             try
             {
-                columnList.add(String.format("%s.%s %s_%s", prefix, c.column(), column(c)));
+                columnList.add(String.format("%s.%s %s", prefixNoUnderscore, c.column(), column(c)));
             }
             catch (SQLException ex)
             {
@@ -108,12 +103,19 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
         }
         );
 
-        // example "left join transportmedium tm on tm.platformid = otherTable.otherIdColumn"
-        final var join = String.format("%s join %s %s on %s.%s = %s.%s", 
-                        joinType != null ? joinType : "", tableName, prefix, prefix, idColumn.column(), otherTable, otherIdColumn);
+     
+        return String.join(",", columnList);
+    }
 
-        return Pair.of(String.join(",", columnList), join);
-        
-        
+    public String joinStatement(String joinType, E idColumn, String otherTable, String otherIdColumn)
+    {
+        if (tableName == null || tableName.isBlank())
+        {
+            throw new OpenDcsDataRuntimeException("Table name was not provided to this Mapper, we cannot build the join information.");
+        }
+           // example "left join transportmedium tm on tm.platformid = otherTable.otherIdColumn"
+        return String.format("%s join %s %s on %s.%s = %s.%s", 
+                joinType != null ? joinType : "", tableName, prefix, prefix, idColumn.column(), otherTable, otherIdColumn);
+
     }
 }
