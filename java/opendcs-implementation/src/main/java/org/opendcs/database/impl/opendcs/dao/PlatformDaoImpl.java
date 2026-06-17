@@ -5,11 +5,8 @@ import static org.opendcs.utils.sql.SqlQueries.LEFT_OUTER;
 import static org.opendcs.utils.sql.SqlQueries.WHERE_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.collateClauseFor;
 
-<<<<<<< HEAD
 import java.sql.SQLException;
 import java.time.ZoneId;
-=======
->>>>>>> 4a0f08b4 (test?)
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
@@ -388,7 +385,7 @@ public class PlatformDaoImpl implements PlatformDao
             }
             psBatch.execute();
             pspBatch.execute();
-        }        
+        }
     }
 
     private void insertTransportMediums(Handle handle, DbKey bindKey, Vector<TransportMedium> transportMedia)
