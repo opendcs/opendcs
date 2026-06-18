@@ -15,7 +15,9 @@ import org.opendcs.fixtures.annotations.EnableIfTsDb;
 @EnableIfTsDb({"OpenDCS-Postgres", "OpenDCS-Oracle"})
 @DecodesConfigurationRequired({
     "shared/test-sites.xml",
-    "SimpleDecodesTest/site-OKVI4.xml"
+    "SimpleDecodesTest/site-OKVI4.xml",
+    "SimpleDecodesTest/OKVI4-decodes.xml"
+
 })
 class OpenDcsPlatformDaoTestIT extends AppTestBase
 {
@@ -36,7 +38,6 @@ class OpenDcsPlatformDaoTestIT extends AppTestBase
             assertFalse(platform.transportMedia.isEmpty());
             assertNotNull(platform.getSite());
             assertFalse(platform.getSite().getNameArray().isEmpty());
-            System.out.println(platform.getSite().toString());
         }
     }
 }

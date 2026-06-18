@@ -14,11 +14,11 @@ import ilex.util.Pair;
  * Helper class for row mappers to take a prefix.
  * If the provided prefix does not start end with an underscore (_)
  * one will be added.
- * 
+ *
  * A enum of defined columns must also be provided. At this time only
  * the column name is handled. Future work will allow building a
  * <pre> table.column prefix_column</pre> list for joins.
- * 
+ *
  * @param <T> The type that the mapper will return
  * @param <E> A enum containing all columns. This enum must implement the {@link TableColumnDefinition} interface.
  */
@@ -26,7 +26,7 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
 {
     protected final String prefix;
     protected final String tableName;
-    
+
     private final EnumSet<E> columns;
 
     protected PrefixRowMapper(String prefix, String table, EnumSet<E> columns)
@@ -62,7 +62,7 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
         {
             return tmp.endsWith("_") ? tmp : (tmp + "_");
         }
-    }    
+    }
 
     /**
      * Return the requested column with the provided name
@@ -87,7 +87,7 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
      * @return
      */
     public String columnsForSelect()
-    {   
+    {
         final ArrayList<String> columnList = new ArrayList<>();
         final String prefixNoUnderscore = prefix.substring(0, prefix.length() - 1);
         columns.forEach(c ->
@@ -100,10 +100,8 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
             {
                 throw new OpenDcsDataRuntimeException("A very unlikely situtation has happened.", ex);
             }
-        }
-        );
+        });
 
-     
         return String.join(",", columnList);
     }
 
@@ -113,9 +111,9 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
         {
             throw new OpenDcsDataRuntimeException("Table name was not provided to this Mapper, we cannot build the join information.");
         }
-           // example "left join transportmedium tm on tm.platformid = otherTable.otherIdColumn"
-        return String.format("%s join %s %s on %s.%s = %s.%s", 
-                joinType != null ? joinType : "", tableName, prefix, prefix, idColumn.column(), otherTable, otherIdColumn);
-
+        final String prefixNoUnderscore = prefix.substring(0, prefix.length() - 1);
+        // example "left join transportmedium tm on tm.platformid = otherTable.otherIdColumn"
+        return String.format("%s join %s %s on %s.%s = %s.%s",
+                joinType != null ? joinType : "", tableName, prefixNoUnderscore, prefixNoUnderscore, idColumn.column(), otherTable, otherIdColumn);
     }
 }
