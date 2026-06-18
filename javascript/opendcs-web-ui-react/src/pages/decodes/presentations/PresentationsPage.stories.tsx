@@ -231,3 +231,167 @@ export const DeletePresentationRow: Story = {
     );
   },
 };
+
+// Shared handler factory for stories that need to inspect the POST body.
+const makeCapturingHandlers = () => {
+  let lastBody: unknown = null;
+  return {
+    ...baseHandlers,
+    postPresentation: http.post("/odcsapi/presentation", async ({ request }) => {
+      lastBody = await request.json();
+      return HttpResponse.json<ApiPresentationGroup>(lastBody as ApiPresentationGroup);
+    }),
+    getLastBody: () => lastBody,
+  };
+};
+
+// The POST body must include the existing element (units="ft"), not an empty array.
+export const SavePreservesExistingElement: Story = {
+  parameters: {
+    msw: { handlers: makeCapturingHandlers() },
+  },
+  play: async ({ mount, userEvent, parameters }) => {
+    const canvas = await mount();
+    const { i18n, msw } = parameters;
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("presentations:edit_presentation", { id: 1 }),
+    });
+    await act(async () => userEvent.click(editBtn));
+    const saveBtn = await canvas.findByRole("button", {
+      name: i18n.t("presentations:save_presentation", { id: 1 }),
+    });
+    await act(async () => userEvent.click(saveBtn));
+    await waitFor(() => {
+      const body = msw.handlers.getLastBody?.() as ApiPresentationGroup | null;
+      expect(body?.elements).toHaveLength(1);
+      expect((body?.elements?.[0] as ApiPresentationElement)?.units).toBe("ft");
+    });
+  },
+};
+
+// Regression: saving a brand-new presentation always sends elements: [] (not undefined/omitted).
+export const NewPresentationSendsEmptyElements: Story = {
+  parameters: {
+    msw: { handlers: makeCapturingHandlers() },
+  },
+  play: async ({ mount, userEvent, parameters }) => {
+    const canvas = await mount();
+    const { i18n, msw } = parameters;
+    const addBtn = await canvas.findByRole("button", {
+      name: i18n.t("presentations:add_presentation"),
+    });
+    await act(async () => userEvent.click(addBtn));
+    const nameInput = (await canvas.findByLabelText(
+      i18n.t("presentations:name"),
+    )) as HTMLInputElement;
+    await act(async () => {
+      await userEvent.clear(nameInput);
+      await userEvent.type(nameInput, "new-group");
+    });
+    const saveBtn = await canvas.findByRole("button", {
+      name: i18n.t("presentations:save_presentation", { id: undefined }),
+    });
+    await act(async () => userEvent.click(saveBtn));
+    await waitFor(() => {
+      const body = msw.handlers.getLastBody?.() as ApiPresentationGroup | null;
+      expect(body).not.toBeNull();
+      expect(Array.isArray(body?.elements)).toBe(true);
+    });
+  },
+};
+
+// Regression: adding an element and saving persists it in the POST body.
+export const AddAndSaveElement: Story = {
+  parameters: {
+    msw: { handlers: makeCapturingHandlers() },
+  },
+  play: async ({ mount, userEvent, parameters }) => {
+    const canvas = await mount();
+    const { i18n, msw } = parameters;
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("presentations:edit_presentation", { id: 1 }),
+    });
+    await act(async () => userEvent.click(editBtn));
+    const addElementBtn = await canvas.findByRole("button", {
+      name: i18n.t("presentations:elements.add"),
+    });
+    await act(async () => userEvent.click(addElementBtn));
+    const stdInput = (await canvas.findByRole("textbox", {
+      name: i18n.t("presentations:elements.dataTypeStd_input", { name: "" }),
+    })) as HTMLInputElement;
+    const codeInput = (await canvas.findByRole("textbox", {
+      name: i18n.t("presentations:elements.dataTypeCode_input", { name: "" }),
+    })) as HTMLInputElement;
+    await act(async () => {
+      await userEvent.type(stdInput, "SHEF-PE");
+      await userEvent.type(codeInput, "HP");
+    });
+    const saveElementBtn = await canvas.findByRole("button", {
+      name: i18n.t("presentations:elements.save_edit", { name: "" }),
+    });
+    await act(async () => userEvent.click(saveElementBtn));
+    await waitFor(() =>
+      expect(
+        canvas.queryByRole("button", {
+          name: i18n.t("presentations:elements.save_edit", { name: "HP" }),
+        }),
+      ).not.toBeInTheDocument(),
+    );
+    const savePresentationBtn = await canvas.findByRole("button", {
+      name: i18n.t("presentations:save_presentation", { id: 1 }),
+    });
+    await act(async () => userEvent.click(savePresentationBtn));
+    await waitFor(() => {
+      const body = msw.handlers.getLastBody?.() as ApiPresentationGroup | null;
+      expect(body?.elements).toHaveLength(2);
+    });
+  },
+};
+
+// Regression: adding an element with a duplicate dataTypeStd|dataTypeCode keeps
+// the row in edit mode and highlights the std/code inputs with border-warning.
+// The existing element's values (e.g. units="ft") must remain intact.
+export const AddDuplicateElementRejected: Story = {
+  parameters: { msw: { handlers: baseHandlers } },
+  play: async ({ mount, userEvent, parameters }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("presentations:edit_presentation", { id: 1 }),
+    });
+    await act(async () => userEvent.click(editBtn));
+    const addElementBtn = await canvas.findByRole("button", {
+      name: i18n.t("presentations:elements.add"),
+    });
+    await act(async () => userEvent.click(addElementBtn));
+    const stdInput = (await canvas.findByRole("textbox", {
+      name: i18n.t("presentations:elements.dataTypeStd_input", { name: "" }),
+    })) as HTMLInputElement;
+    const codeInput = (await canvas.findByRole("textbox", {
+      name: i18n.t("presentations:elements.dataTypeCode_input", { name: "" }),
+    })) as HTMLInputElement;
+    // Type the same std/code as the existing "HG" element.
+    await act(async () => {
+      await userEvent.type(stdInput, "SHEF-PE");
+      await userEvent.type(codeInput, "HG");
+    });
+    const saveElementBtn = await canvas.findByRole("button", {
+      name: i18n.t("presentations:elements.save_edit", { name: "HG" }),
+    });
+    await act(async () => userEvent.click(saveElementBtn));
+
+    // The duplicate fields must carry the warning border class.
+    expect(stdInput).toHaveClass("border-warning");
+    expect(codeInput).toHaveClass("border-warning");
+
+    // The save button is still present — row stays in edit mode.
+    expect(
+      canvas.getByRole("button", {
+        name: i18n.t("presentations:elements.save_edit", { name: "HG" }),
+      }),
+    ).toBeInTheDocument();
+
+    // The existing "HG" element's units value has not been wiped.
+    expect(canvas.getByText("ft")).toBeInTheDocument();
+  },
+};

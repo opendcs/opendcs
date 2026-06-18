@@ -140,7 +140,7 @@ export interface InlineEditConfig<T> {
    */
   onSave: (original: T, updated: T) => boolean | void;
   /** Commit a new (locally added) row. Return `false` to keep it in new mode. */
-  onAdd?: (created: T) => boolean | void;
+  onAdd?: (created: T, rowEl: HTMLTableRowElement) => false | "marked" | void;
   /** Delete a row. When present, a delete button shows in `"show"` mode. */
   onRemove?: (row: T) => void;
   /**
@@ -457,14 +457,13 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Live ref mirrors so drawCallback / click handlers read the latest values.
+  // Updated synchronously during render (not in effects) because DataTables'
+  // child-before-parent effect ordering means effects run too late — the draw
+  // callback fires in the child's effect and would see the previous render's values.
   const rowStateRef = useRef(rowState);
+  rowStateRef.current = rowState;
   const localItemsRef = useRef(localItems);
-  useEffect(() => {
-    rowStateRef.current = rowState;
-  }, [rowState]);
-  useEffect(() => {
-    localItemsRef.current = localItems;
-  }, [localItems]);
+  localItemsRef.current = localItems;
 
   // Child-row caches so in-progress edits survive redraws.
   const childModeRef = useRef<Record<string, RowMode>>({});
@@ -604,8 +603,12 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
       const id = idOf(row);
       const isNew = rowStateRef.current[id] === "new";
       if (isNew) {
-        if (inlineEdit.onAdd?.(updated) === false) {
+        const addResult = inlineEdit.onAdd?.(updated, rowEl);
+        if (addResult === false) {
           markInvalidInputs(rowEl);
+          return;
+        }
+        if (addResult === "marked") {
           return;
         }
         dropLocalNew(row, id);
@@ -759,7 +762,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   // --- DataTable options ----------------------------------------------------
   const options: DataTableProps["options"] = {
     paging: true,
-    responsive: true,
+    responsive: !hasInlineEdit,
     stateSave: true,
     processing: true,
     deferRender: true,
