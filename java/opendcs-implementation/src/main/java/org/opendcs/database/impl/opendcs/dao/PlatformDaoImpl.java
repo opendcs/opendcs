@@ -21,6 +21,9 @@ import org.opendcs.database.dai.SiteDao;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.configs.DecodesConfigMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformReducer;
+import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformSensorMapper;
+import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformSensorPropertyMapper;
+import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformSensorReducer;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.TransportMediumMapper;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteMapper;
@@ -60,6 +63,8 @@ public class PlatformDaoImpl implements PlatformDao
                 <site_name_columns>
                 <site_props>
                 <platform_props>
+                <platform_sensors>
+                <platform_sensor_props>
             from platforms p
             left outer join transportmedium tm on tm.platformid = p.id <medium_filter>
             <config_join>
@@ -67,6 +72,8 @@ public class PlatformDaoImpl implements PlatformDao
             <site_name_join>
             <site_props_join>
             <platform_props_join>
+            <platform_sensor_join>
+            <platform_sensor_property_join>
 
             order by p.mediumtype <collate> asc, p.mediumid <collate> asc, p.platformdesignator <collate> asc
             """;
@@ -103,13 +110,18 @@ public class PlatformDaoImpl implements PlatformDao
             var siteNameMapper = OpenDcsSiteNameMapper.withPrefix("sn");
             var siteReducer = new OpenDcsSiteReducer("s");
             var platformPropsMapper = PropertiesMapper.withPrefix("pp", true);
+            var platformSensorMapper = PlatformSensorMapper.withPrefix("ps");
+            var platformSensorPropertiesMapper = PlatformSensorPropertyMapper.withPrefix("psp");
+            var platformSensorReducder = new PlatformSensorReducer(platformSensorMapper);
 
             select.define("platform_columns", platformMapper.columnsForSelect())
                   .define("medium_columns", mediumMapper.columnsForSelect() + ",")
                   .define("site_columns", siteMapper.columnsForSelect() + ",")
                   .define("site_name_columns", siteNameMapper.columnsForSelect() + ",")
                   .define("site_props", "sp.prop_name sp_prop_name, sp.prop_value sp_prop_value,")
-                  .define("platform_props", platformPropsMapper.columnsForSelect())
+                  .define("platform_props", platformPropsMapper.columnsForSelect() + ",")
+                  .define("platform_sensors", platformSensorMapper.columnsForSelect() + ",")
+                  .define("platform_sensor_props", platformSensorPropertiesMapper.columnsForSelect())
                   .define("config_columns", "")
                   .define("config_join", "")
                   .define("site_join", siteMapper.joinStatement("left outer", OpenDcsSiteMapper.Columns.ID,
@@ -118,6 +130,10 @@ public class PlatformDaoImpl implements PlatformDao
                                                                               "p", PlatformMapper.Columns.SITE_ID.column()))
                   .define("site_props_join", "left outer join site_property sp on sp.site_id = p.siteid")
                   .define("platform_props_join", "left outer join platformproperty pp on pp.platformid = p.id")
+                  .define("platform_sensors_join", platformSensorMapper.joinStatement(
+                    "left outer", PlatformSensorMapper.Columns.PLATFORM_ID, "p", PlatformMapper.Columns.ID.column()))
+                  .define("platform_sensor_props_join", platformSensorPropertiesMapper.joinStatement(
+                    "left outer", PlatformSensorPropertyMapper.Columns.PLATFORM_ID, "p", PlatformMapper.Columns.ID.column()))
                   .define(COLLATE_CLAUSE, collateClauseFor(dbEngine))
                   .define("medium_filter", " and tm.mediumtype = :mediumtype and tm.mediumid = :mediumid")
                   .define(WHERE_CLAUSE, "where mediumtype = :mediumtype and mediumid = :mediumid")
@@ -144,7 +160,7 @@ public class PlatformDaoImpl implements PlatformDao
                          .registerRowMapper(PlatformReducer.PLATFORM_PROPERTIES, platformPropsMapper)
                          .bind("mediumtype", mediumType)
                          .bind("mediumid", mediumId)
-                         .reduceRows(new PlatformReducer(platformMapper, siteReducer))
+                         .reduceRows(new PlatformReducer(platformMapper, siteReducer, platformSensorReducder))
                          .findFirst();
         }
     }
