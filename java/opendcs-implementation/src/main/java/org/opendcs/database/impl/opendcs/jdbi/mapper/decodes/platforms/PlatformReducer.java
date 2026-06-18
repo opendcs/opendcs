@@ -11,6 +11,7 @@ import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteReducer;
 
 import decodes.db.Platform;
+import decodes.db.PlatformSensor;
 import decodes.db.Site;
 import decodes.db.TransportMedium;
 import ilex.util.Pair;
@@ -23,14 +24,17 @@ public final class PlatformReducer implements LinkedHashMapRowReducer<Long,Platf
 
     private final PlatformMapper platformMapper;
     private final OpenDcsSiteReducer siteReducer;
+    private final PlatformSensorReducer platformSensorReducer;
 
 
     private final LinkedHashMap<Long,Site> sites = new LinkedHashMap<>();
+    private final LinkedHashMap<Long,PlatformSensor> sensors = new LinkedHashMap<>();
 
-    public PlatformReducer(PlatformMapper platformMapper, OpenDcsSiteReducer siteReducer)
+    public PlatformReducer(PlatformMapper platformMapper, OpenDcsSiteReducer siteReducer, PlatformSensorReducer platformSensorReducer)
     {
         this.platformMapper = platformMapper;
         this.siteReducer = siteReducer;
+        this.platformSensorReducer = platformSensorReducer;
     }
 
     @Override
@@ -60,6 +64,9 @@ public final class PlatformReducer implements LinkedHashMapRowReducer<Long,Platf
             {
                 platform.setProperty(prop.first, prop.second);
             }
+
+            platformSensorReducer.accept(sensors, view);
+            // wait, need to setup a better key for this.
         }
         catch (SQLException ex)
         {
