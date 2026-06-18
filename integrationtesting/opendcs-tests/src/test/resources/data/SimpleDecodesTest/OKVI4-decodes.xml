@@ -5,6 +5,7 @@
     <Agency>MVR</Agency>
     <IsProduction>false</IsProduction>
     <LastModifyTime>08/25/2010 16:47:17</LastModifyTime>
+    <PlatformProperty PropertyName="SystemCheck">I'm here</PlatformProperty>
     <Site>
       <Latitude>N 42&#176;16&apos;22&quot;</Latitude>
       <Longitude>W 91&#176;03&apos;49&quot;</Longitude>

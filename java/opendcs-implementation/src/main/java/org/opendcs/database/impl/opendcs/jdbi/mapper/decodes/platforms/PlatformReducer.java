@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.jdbi.v3.core.generic.GenericType;
 import org.jdbi.v3.core.result.LinkedHashMapRowReducer;
 import org.jdbi.v3.core.result.RowView;
 import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
@@ -12,11 +13,17 @@ import org.opendcs.database.model.mappers.sites.OpenDcsSiteReducer;
 import decodes.db.Platform;
 import decodes.db.Site;
 import decodes.db.TransportMedium;
+import ilex.util.Pair;
 
 public final class PlatformReducer implements LinkedHashMapRowReducer<Long,Platform>
 {
+    public static final GenericType<Pair<String,String>> PLATFORM_PROPERTIES = new GenericType<>()
+    { /* marker */
+    };
+
     private final PlatformMapper platformMapper;
     private final OpenDcsSiteReducer siteReducer;
+
 
     private final LinkedHashMap<Long,Site> sites = new LinkedHashMap<>();
 
@@ -46,6 +53,12 @@ public final class PlatformReducer implements LinkedHashMapRowReducer<Long,Platf
             if (sites.containsKey(siteId))
             {
                 platform.setSite(sites.get(siteId));
+            }
+
+            var prop = view.getRow(PLATFORM_PROPERTIES);
+            if (prop != null && prop.first != null)
+            {
+                platform.setProperty(prop.first, prop.second);
             }
         }
         catch (SQLException ex)

@@ -1,5 +1,6 @@
 package org.opendcs.dao.opendcs;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -38,6 +39,7 @@ class OpenDcsPlatformDaoTestIT extends AppTestBase
             assertFalse(platform.transportMedia.isEmpty());
             assertNotNull(platform.getSite());
             assertFalse(platform.getSite().getNameArray().isEmpty());
+            assertEquals("I'm here", platform.getProperty("SystemCheck"));
         }
     }
 }
