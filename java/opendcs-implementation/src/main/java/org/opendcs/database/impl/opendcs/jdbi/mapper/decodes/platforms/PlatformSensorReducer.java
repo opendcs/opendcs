@@ -31,7 +31,7 @@ public class PlatformSensorReducer implements BiConsumer<Map<Long,Platform>, Row
             {
                 return;
             }
-            
+
             var platform = map.get(id);
             platform.addPlatformSensor(view.getRow(PlatformSensor.class));
             var sensorProp = view.getRow(PlatformSensorProperty.class);

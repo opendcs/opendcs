@@ -11,6 +11,7 @@ import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteReducer;
 
 import decodes.db.Platform;
+import decodes.db.PlatformSensor;
 import decodes.db.Site;
 import decodes.db.TransportMedium;
 import ilex.util.Pair;
