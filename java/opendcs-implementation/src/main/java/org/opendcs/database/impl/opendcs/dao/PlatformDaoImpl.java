@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
+import org.jdbi.v3.core.statement.SqlLogger;
+import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
@@ -20,6 +22,10 @@ import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.configs.DecodesConf
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformReducer;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.TransportMediumMapper;
+import org.opendcs.database.model.mappers.properties.PropertiesMapper;
+import org.opendcs.database.model.mappers.sites.OpenDcsSiteMapper;
+import org.opendcs.database.model.mappers.sites.OpenDcsSiteNameMapper;
+import org.opendcs.database.model.mappers.sites.OpenDcsSiteReducer;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.util.lookup.ServiceProviders;
@@ -46,15 +52,19 @@ public class PlatformDaoImpl implements PlatformDao
                 order by mediumtype <collate> asc, mediumid <collate> asc, platformdesignator <collate> asc
             )
 
-            select 
+            select
                 <platform_columns>,
                 <medium_columns>
                 <config_columns>
                 <site_columns>
+                <site_name_columns>
+                <site_props>
             from platforms p
             left outer join transportmedium tm on tm.platformid = p.id <medium_filter>
             <config_join>
             <site_join>
+            <site_name_join>
+            <site_props_join>
 
             order by p.mediumtype <collate> asc, p.mediumid <collate> asc, p.platformdesignator <collate> asc
             """;
@@ -87,24 +97,48 @@ public class PlatformDaoImpl implements PlatformDao
             var platformMapper = PlatformMapper.withPrefix("p");
             var configMapper = DecodesConfigMapper.withPrefix("config");
             var mediumMapper = TransportMediumMapper.withPrefix("tm");
+            var siteMapper = OpenDcsSiteMapper.withPrefix("s");
+            var siteNameMapper = OpenDcsSiteNameMapper.withPrefix("sn");
+            var siteReducer = new OpenDcsSiteReducer("s");
 
             select.define("platform_columns", platformMapper.columnsForSelect())
-                  .define("medium_columns", mediumMapper.columnsForSelect())
-                  .define("site_columns", "")
+                  .define("medium_columns", mediumMapper.columnsForSelect() + ",")
+                  .define("site_columns", siteMapper.columnsForSelect() + ",")
+                  .define("site_name_columns", siteNameMapper.columnsForSelect() + ",")
+                  .define("site_props", "sp.prop_name sp_prop_name, sp.prop_value sp_prop_value")
                   .define("config_columns", "")
                   .define("config_join", "")
-                  .define("site_join", "")
+                  .define("site_join", siteMapper.joinStatement("left outer", OpenDcsSiteMapper.Columns.ID,
+                                                                     "p", PlatformMapper.Columns.SITE_ID.column()))
+                  .define("site_name_join", siteNameMapper.joinStatement("left outer", OpenDcsSiteNameMapper.Columns.SITE_ID,
+                                                                              "p", PlatformMapper.Columns.SITE_ID.column()))
+                  .define("site_props_join", "left outer join site_property sp on sp.site_id = p.siteid")
                   .define(COLLATE_CLAUSE, collateClauseFor(dbEngine))
                   .define("medium_filter", " and tm.mediumtype = :mediumtype and tm.mediumid = :mediumid")
                   .define(WHERE_CLAUSE, "where mediumtype = :mediumtype and mediumid = :mediumid")
                   ;
 
-            return select.registerRowMapper(platformMapper)                         
+            /** Leaving in place for debugging for now.
+             * Default logging cutoff the sql which is somewhat... long.
+             */
+            select.setSqlLogger(new SqlLogger()
+            {
+                @Override
+                public void logBeforeExecution(StatementContext context)
+                {
+                    System.out.println(context.getRenderedSql());
+                }
+            });
+
+            return select.registerRowMapper(platformMapper)
                          .registerRowMapper(configMapper)
                          .registerRowMapper(mediumMapper)
+                         .registerRowMapper(siteMapper)
+                         .registerRowMapper(siteNameMapper)
+                         .registerRowMapper(PropertiesMapper.withPrefix("sp", true))
                          .bind("mediumtype", mediumType)
                          .bind("mediumid", mediumId)
-                         .reduceRows(new PlatformReducer(platformMapper))
+                         .reduceRows(new PlatformReducer(platformMapper, siteReducer))
                          .findFirst();
         }
     }
@@ -134,5 +168,5 @@ public class PlatformDaoImpl implements PlatformDao
     {
         return List.of();
     }
-    
+
 }

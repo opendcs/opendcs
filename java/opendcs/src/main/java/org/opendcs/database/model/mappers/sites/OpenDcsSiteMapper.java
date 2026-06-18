@@ -20,7 +20,7 @@ public class OpenDcsSiteMapper extends PrefixRowMapper<Site,OpenDcsSiteMapper.Co
 {
     protected OpenDcsSiteMapper(String prefix)
     {
-        super(prefix, Columns.class);
+        super(prefix, "site", Columns.class);
     }
 
     public static OpenDcsSiteMapper withPrefix(String prefix)
