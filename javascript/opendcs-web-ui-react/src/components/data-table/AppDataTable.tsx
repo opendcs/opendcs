@@ -461,8 +461,10 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   // child-before-parent effect ordering means effects run too late — the draw
   // callback fires in the child's effect and would see the previous render's values.
   const rowStateRef = useRef(rowState);
+  // eslint-disable-next-line react-hooks/refs
   rowStateRef.current = rowState;
   const localItemsRef = useRef(localItems);
+  // eslint-disable-next-line react-hooks/refs
   localItemsRef.current = localItems;
 
   // Child-row caches so in-progress edits survive redraws.

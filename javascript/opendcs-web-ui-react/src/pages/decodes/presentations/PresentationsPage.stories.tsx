@@ -1,7 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { act } from "react";
 import { http, HttpResponse } from "msw";
-import type { ApiPresentationGroup, ApiPresentationRef } from "opendcs-api";
+import type {
+  ApiPresentationElement,
+  ApiPresentationGroup,
+  ApiPresentationRef,
+} from "opendcs-api";
 import { expect, waitFor } from "storybook/test";
 import { PresentationsPage } from "./PresentationsPage";
 
@@ -281,15 +285,21 @@ export const NewPresentationSendsEmptyElements: Story = {
       name: i18n.t("presentations:add_presentation"),
     });
     await act(async () => userEvent.click(addBtn));
-    const nameInput = (await canvas.findByLabelText(
-      i18n.t("presentations:name"),
-    )) as HTMLInputElement;
-    await act(async () => {
-      await userEvent.clear(nameInput);
-      await userEvent.type(nameInput, "new-group");
+    // DetailFade hides the form during its enter animation; retry until focusable.
+    await waitFor(async () => {
+      await userEvent.clear(
+        canvas.getByLabelText(i18n.t("presentations:name")) as HTMLInputElement,
+      );
     });
+    await act(async () => {
+      await userEvent.type(
+        canvas.getByLabelText(i18n.t("presentations:name")) as HTMLInputElement,
+        "new-group",
+      );
+    });
+    // New presentation's groupId is a synthetic negative int; match by prefix.
     const saveBtn = await canvas.findByRole("button", {
-      name: i18n.t("presentations:save_presentation", { id: undefined }),
+      name: new RegExp(i18n.t("presentations:save_presentation", { id: "" }).trimEnd()),
     });
     await act(async () => userEvent.click(saveBtn));
     await waitFor(() => {
@@ -316,24 +326,33 @@ export const AddAndSaveElement: Story = {
       name: i18n.t("presentations:elements.add"),
     });
     await act(async () => userEvent.click(addElementBtn));
+    // New-row aria-labels include a counter suffix (e.g. "…for 1"); match by prefix.
     const stdInput = (await canvas.findByRole("textbox", {
-      name: i18n.t("presentations:elements.dataTypeStd_input", { name: "" }),
+      name: new RegExp(
+        i18n.t("presentations:elements.dataTypeStd_input", { name: "" }).trimEnd(),
+      ),
     })) as HTMLInputElement;
     const codeInput = (await canvas.findByRole("textbox", {
-      name: i18n.t("presentations:elements.dataTypeCode_input", { name: "" }),
+      name: new RegExp(
+        i18n.t("presentations:elements.dataTypeCode_input", { name: "" }).trimEnd(),
+      ),
     })) as HTMLInputElement;
     await act(async () => {
       await userEvent.type(stdInput, "SHEF-PE");
       await userEvent.type(codeInput, "HP");
     });
     const saveElementBtn = await canvas.findByRole("button", {
-      name: i18n.t("presentations:elements.save_edit", { name: "" }),
+      name: new RegExp(
+        i18n.t("presentations:elements.save_edit", { name: "" }).trimEnd(),
+      ),
     });
     await act(async () => userEvent.click(saveElementBtn));
     await waitFor(() =>
       expect(
         canvas.queryByRole("button", {
-          name: i18n.t("presentations:elements.save_edit", { name: "HP" }),
+          name: new RegExp(
+            i18n.t("presentations:elements.save_edit", { name: "" }).trimEnd(),
+          ),
         }),
       ).not.toBeInTheDocument(),
     );
@@ -364,19 +383,27 @@ export const AddDuplicateElementRejected: Story = {
       name: i18n.t("presentations:elements.add"),
     });
     await act(async () => userEvent.click(addElementBtn));
+    // New-row aria-labels include a counter suffix (e.g. "…for 1"); match by prefix.
     const stdInput = (await canvas.findByRole("textbox", {
-      name: i18n.t("presentations:elements.dataTypeStd_input", { name: "" }),
+      name: new RegExp(
+        i18n.t("presentations:elements.dataTypeStd_input", { name: "" }).trimEnd(),
+      ),
     })) as HTMLInputElement;
     const codeInput = (await canvas.findByRole("textbox", {
-      name: i18n.t("presentations:elements.dataTypeCode_input", { name: "" }),
+      name: new RegExp(
+        i18n.t("presentations:elements.dataTypeCode_input", { name: "" }).trimEnd(),
+      ),
     })) as HTMLInputElement;
     // Type the same std/code as the existing "HG" element.
     await act(async () => {
       await userEvent.type(stdInput, "SHEF-PE");
       await userEvent.type(codeInput, "HG");
     });
+    // Save button label is counter-based ("Save element 1"), not the typed code.
     const saveElementBtn = await canvas.findByRole("button", {
-      name: i18n.t("presentations:elements.save_edit", { name: "HG" }),
+      name: new RegExp(
+        i18n.t("presentations:elements.save_edit", { name: "" }).trimEnd(),
+      ),
     });
     await act(async () => userEvent.click(saveElementBtn));
 
@@ -387,7 +414,9 @@ export const AddDuplicateElementRejected: Story = {
     // The save button is still present — row stays in edit mode.
     expect(
       canvas.getByRole("button", {
-        name: i18n.t("presentations:elements.save_edit", { name: "HG" }),
+        name: new RegExp(
+          i18n.t("presentations:elements.save_edit", { name: "" }).trimEnd(),
+        ),
       }),
     ).toBeInTheDocument();
 
