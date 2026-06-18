@@ -6,6 +6,7 @@ import javax.sql.DataSource;
 
 import org.opendcs.database.AbstractJdbiOpenDcsDatabaseWrapper;
 import org.opendcs.settings.api.OpenDcsSettings;
+import org.opendcs.utils.sql.SqlQueries;
 
 import decodes.db.Database;
 import decodes.tsdb.TimeSeriesDb;
@@ -22,6 +23,6 @@ public class OpenDcsDatabaseWrapper extends AbstractJdbiOpenDcsDatabaseWrapper
     @Override
     protected void initialSetup()
     {
-        /* do nothing at this time. */
+        jdbi.define(SqlQueries.DUAL, SqlQueries.dualFor(this.dbEngine));
     }
 }
