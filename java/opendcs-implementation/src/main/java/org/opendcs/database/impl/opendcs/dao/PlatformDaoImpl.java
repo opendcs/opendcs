@@ -59,12 +59,14 @@ public class PlatformDaoImpl implements PlatformDao
                 <site_columns>
                 <site_name_columns>
                 <site_props>
+                <platform_props>
             from platforms p
             left outer join transportmedium tm on tm.platformid = p.id <medium_filter>
             <config_join>
             <site_join>
             <site_name_join>
             <site_props_join>
+            <platform_props_join>
 
             order by p.mediumtype <collate> asc, p.mediumid <collate> asc, p.platformdesignator <collate> asc
             """;
@@ -100,12 +102,14 @@ public class PlatformDaoImpl implements PlatformDao
             var siteMapper = OpenDcsSiteMapper.withPrefix("s");
             var siteNameMapper = OpenDcsSiteNameMapper.withPrefix("sn");
             var siteReducer = new OpenDcsSiteReducer("s");
+            var platformPropsMapper = PropertiesMapper.withPrefix("pp", true);
 
             select.define("platform_columns", platformMapper.columnsForSelect())
                   .define("medium_columns", mediumMapper.columnsForSelect() + ",")
                   .define("site_columns", siteMapper.columnsForSelect() + ",")
                   .define("site_name_columns", siteNameMapper.columnsForSelect() + ",")
-                  .define("site_props", "sp.prop_name sp_prop_name, sp.prop_value sp_prop_value")
+                  .define("site_props", "sp.prop_name sp_prop_name, sp.prop_value sp_prop_value,")
+                  .define("platform_props", platformPropsMapper.columnsForSelect())
                   .define("config_columns", "")
                   .define("config_join", "")
                   .define("site_join", siteMapper.joinStatement("left outer", OpenDcsSiteMapper.Columns.ID,
@@ -113,6 +117,7 @@ public class PlatformDaoImpl implements PlatformDao
                   .define("site_name_join", siteNameMapper.joinStatement("left outer", OpenDcsSiteNameMapper.Columns.SITE_ID,
                                                                               "p", PlatformMapper.Columns.SITE_ID.column()))
                   .define("site_props_join", "left outer join site_property sp on sp.site_id = p.siteid")
+                  .define("platform_props_join", "left outer join platformproperty pp on pp.platformid = p.id")
                   .define(COLLATE_CLAUSE, collateClauseFor(dbEngine))
                   .define("medium_filter", " and tm.mediumtype = :mediumtype and tm.mediumid = :mediumid")
                   .define(WHERE_CLAUSE, "where mediumtype = :mediumtype and mediumid = :mediumid")
@@ -136,6 +141,7 @@ public class PlatformDaoImpl implements PlatformDao
                          .registerRowMapper(siteMapper)
                          .registerRowMapper(siteNameMapper)
                          .registerRowMapper(PropertiesMapper.withPrefix("sp", true))
+                         .registerRowMapper(PlatformReducer.PLATFORM_PROPERTIES, platformPropsMapper)
                          .bind("mediumtype", mediumType)
                          .bind("mediumid", mediumId)
                          .reduceRows(new PlatformReducer(platformMapper, siteReducer))
