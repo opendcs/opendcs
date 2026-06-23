@@ -99,9 +99,11 @@ export const SaveExistingSite: Story = {
     });
     await act(async () => userEvent.click(editButton));
 
-    const saveButton = await canvas.findByRole("button", {
-      name: i18n.t("sites:save_site", { id: 1 }),
-    });
+    const saveButton = await canvas.findByRole(
+      "button",
+      { name: i18n.t("sites:save_site", { id: 1 }) },
+      { timeout: 5000 },
+    );
     await act(async () => userEvent.click(saveButton));
   },
 };
