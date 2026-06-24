@@ -25,8 +25,12 @@ export const Default: Story = {
       handlers: {
         sites: http.get("/odcsapi/siterefs", () => {
           return HttpResponse.json<ApiSiteRef[]>([
-            { siteId: 1, sitenames: { cwms: "Alder Springs" } },
-            { siteId: 2, sitenames: { cwms: "test" } },
+            {
+              siteId: 1,
+              sitenames: { cwms: "Alder Springs" },
+              publicName: "Alder Springs",
+            },
+            { siteId: 2, sitenames: { cwms: "test" }, publicName: "test" },
           ]);
         }),
         site: http.get("/odcsapi/site", ({ request }) => {

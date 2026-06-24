@@ -54,7 +54,7 @@ export const PlatformsTable: React.FC<PlatformsTableProperties> = ({
         className: "dt-left",
         type: "num",
       },
-      { data: "name", header: t("platforms:header.Platform"), type: "string" },
+      { data: "name", header: t("platforms:header.Site"), type: "string" },
       {
         data: "agency",
         header: t("platforms:header.Agency"),

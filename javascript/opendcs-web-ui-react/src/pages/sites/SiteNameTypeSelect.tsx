@@ -15,7 +15,7 @@ export const SiteNameTypeSelect: React.FC<SiteNameTypeSelectProperties> = ({
   existing = [],
 }) => {
   const { refList, ready } = useRefList();
-  const { t, i18n } = useTranslation(["sites"]);
+  const { t, i18n } = useTranslation(["sites", "translation"]);
   const siteNameTypes = refList(REFLIST_SITE_NAME_TYPE);
   return ready ? (
     <FormSelect
@@ -38,7 +38,7 @@ export const SiteNameTypeSelect: React.FC<SiteNameTypeSelectProperties> = ({
         : null}
     </FormSelect>
   ) : (
-    <p>{t("loading_reference_lists")}</p>
+    <p>{t("translation:loading_reference_lists")}</p>
   );
 };
 
