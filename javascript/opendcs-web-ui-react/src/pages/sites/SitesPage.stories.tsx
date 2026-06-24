@@ -31,7 +31,7 @@ export const Default: Story = {
         site: http.get("/odcsapi/site", ({ request }) => {
           const url = new URL(request.url);
           return HttpResponse.json<ApiSite>({
-            siteId: parseInt(url.searchParams.get("siteId") || "-2"),
+            siteId: parseInt(url.searchParams.get("siteid") || "-2"),
             sitenames: { cwms: "Alder Springs" },
             elevation: 5,
             elevUnits: "ft",
@@ -64,7 +64,7 @@ const sharedMswHandlers = {
   site: http.get("/odcsapi/site", ({ request }) => {
     const url = new URL(request.url);
     return HttpResponse.json<ApiSite>({
-      siteId: parseInt(url.searchParams.get("siteId") || "-2"),
+      siteId: parseInt(url.searchParams.get("siteid") || "-2"),
       sitenames: { cwms: "Alder Springs" },
       elevation: 5,
       elevUnits: "ft",

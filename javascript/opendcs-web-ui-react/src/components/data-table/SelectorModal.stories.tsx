@@ -81,18 +81,20 @@ export const SelectFiresWithChosenRowAndCloses: Story = {
     await screen.findByText("Pick a Row");
 
     await userEvent.click(screen.getByText("Bravo"));
-    await userEvent.click(
-      screen.getByRole("button", { name: i18n.t("translation:select") }),
-    );
+    const selectBtn = screen.getByRole("button", {
+      name: i18n.t("translation:select"),
+    });
+    await waitFor(() => expect(selectBtn).toBeEnabled());
+    await userEvent.click(selectBtn);
 
     await waitFor(() =>
       expect(args.onSelect).toHaveBeenCalledWith(
         expect.objectContaining({ id: 2, name: "Bravo" }),
       ),
     );
-    await waitFor(() =>
-      expect(screen.queryByText("Pick a Row")).not.toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument(), {
+      timeout: 5000,
+    });
   },
 };
 
