@@ -41,17 +41,14 @@ export const DetailFade: React.FC<DetailFadeProps> = ({ skeleton, children }) =>
     };
   }, [phase]);
 
+  // Fallback: if the skeleton's animationend never fires (reduced-motion,
+  // headless browser, zero-duration animation), advance to "ready" after
+  // slightly more than the CSS animation duration (0.25 s → 300 ms budget).
   useEffect(() => {
     if (phase !== "fading") return;
-    const timer = setTimeout(() => setPhase("ready"), 400);
+    const timer = setTimeout(() => setPhase("ready"), 300);
     return () => clearTimeout(timer);
   }, [phase]);
-
-  useEffect(() => {
-    if (phase !== "ready" || hasEntered) return;
-    const timer = setTimeout(() => setHasEntered(true), 400);
-    return () => clearTimeout(timer);
-  }, [phase, hasEntered]);
 
   return (
     <div className="detail-appear">

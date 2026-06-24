@@ -1,7 +1,7 @@
 {
   "title": "Sites",
   "site_id": "Site ID",
-  "site_name": "Site Name",
+  "site_name": "Site Names",
   "site_names": {
     "title": "Site Names",
     "select": "Site Name Type Selector",

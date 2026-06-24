@@ -164,7 +164,7 @@ export const OpenPlatformDetail: Story = {
     await act(async () => userEvent.click(alphaRow));
     // The siteId field is populated from the resolved site fetch.
     await waitFor(async () => {
-      const siteInput = await canvas.findByLabelText(i18n.t("platforms:site"));
+      const siteInput = await canvas.findByLabelText(i18n.t("platforms:public_name"));
       expect((siteInput as HTMLInputElement).value).toEqual("Alder Springs");
     });
   },
