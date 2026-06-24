@@ -297,10 +297,7 @@ public final class PresentationResources extends OpenDcsResource
         {
             DataPresentation dataPres = new DataPresentation();
             dataPres.setUnitsAbbr(ape.getUnits());
-            final var existingDt = dtDao.lookup(tx, ape.getDataTypeStd(), ape.getDataTypeCode());
-            final var dt = existingDt.isPresent()
-                    ? existingDt.get()
-                    : dtDao.save(tx, new DataType(ape.getDataTypeStd(), ape.getDataTypeCode()));
+            final var dt = dtDao.lookupOrCreate(tx, ape.getDataTypeStd(), ape.getDataTypeCode());
 
             dataPres.setDataType(dt);
             dataPres.setMaxDecimals(ape.getFractionalDigits());
