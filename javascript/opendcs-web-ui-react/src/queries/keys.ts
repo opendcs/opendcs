@@ -89,6 +89,11 @@ export const unitKeys = {
   conversions: (org: string) => [...unitKeys.all(org), "conversions"] as const,
 };
 
+export const dataTypeKeys = {
+  all: (org: string) => ["dataTypes", org] as const,
+  list: (org: string) => [...dataTypeKeys.all(org), "list"] as const,
+};
+
 export const intervalKeys = {
   all: (org: string) => ["intervals", org] as const,
   list: (org: string) => [...intervalKeys.all(org), "list"] as const,
