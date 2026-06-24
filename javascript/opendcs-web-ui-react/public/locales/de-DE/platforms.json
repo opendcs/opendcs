@@ -6,7 +6,7 @@
     "Description": "Beschreibung",
     "Expiration": "Ablauf",
     "Id": "Ausweis",
-    "Platform": "Plattform",
+    "Site": "Standort",
     "TransportId": "Transport-ID"
   },
   "name": "Name",

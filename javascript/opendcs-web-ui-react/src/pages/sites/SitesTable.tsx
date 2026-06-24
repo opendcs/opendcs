@@ -43,8 +43,12 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
       {
         data: null,
         header: t("sites:site_name"),
-        // hard-coded to cwms until a configured sitename preference exists
-        render: (_data, _type, row) => row.sitenames?.cwms ?? "",
+        render: (_data, _type, row) =>
+          row.sitenames
+            ? Object.entries(row.sitenames)
+                .map(([k, v]) => `${k}: ${v}`)
+                .join(", ")
+            : "",
       },
       { data: "publicName", header: t("sites:public_name"), type: "string" },
       { data: "description", header: t("sites:description"), type: "string" },
