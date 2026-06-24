@@ -657,7 +657,7 @@ public class LoadingAppDao extends DaoBase implements LoadingAppDAI
         final List<TsdbCompLock> ret;
         try
         {
-            ret = getResults(q, rs -> rs2lock(rs));
+            ret = getResults(q, this::rs2lock);
         }
         catch(SQLException ex)
         {
