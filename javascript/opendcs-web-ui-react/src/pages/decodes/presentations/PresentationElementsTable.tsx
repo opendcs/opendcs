@@ -241,8 +241,8 @@ export const PresentationElementsTable: React.FC<
                 const newKey = elementKey(created);
                 if (elements.some((e) => elementKey(e) === newKey)) {
                   rowEl
-                    .querySelectorAll<HTMLInputElement>(
-                      'input[name="dataTypeStd"], input[name="dataTypeCode"]',
+                    .querySelectorAll<HTMLElement>(
+                      'select[name="dataTypeStd"], input[name="dataTypeCode"]',
                     )
                     .forEach((el) => el.classList.add("border-warning"));
                   return "marked";

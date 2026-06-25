@@ -349,18 +349,19 @@ export const AddAndSaveElement: Story = {
     });
     await act(async () => userEvent.click(addElementBtn));
     // New-row aria-labels include a counter suffix (e.g. "…for 1"); match by prefix.
-    const stdInput = (await canvas.findByRole("textbox", {
+    // dataTypeStd renders as a <select> (role "combobox"); dataTypeCode is a text input.
+    const stdInput = (await canvas.findByRole("combobox", {
       name: new RegExp(
         i18n.t("presentations:elements.dataTypeStd_input", { name: "" }).trimEnd(),
       ),
-    })) as HTMLInputElement;
+    })) as HTMLSelectElement;
     const codeInput = (await canvas.findByRole("textbox", {
       name: new RegExp(
         i18n.t("presentations:elements.dataTypeCode_input", { name: "" }).trimEnd(),
       ),
     })) as HTMLInputElement;
     await act(async () => {
-      await userEvent.type(stdInput, "SHEF-PE");
+      await userEvent.selectOptions(stdInput, "SHEF-PE");
       await userEvent.type(codeInput, "HP");
     });
     const saveElementBtn = await canvas.findByRole("button", {
@@ -406,19 +407,20 @@ export const AddDuplicateElementRejected: Story = {
     });
     await act(async () => userEvent.click(addElementBtn));
     // New-row aria-labels include a counter suffix (e.g. "…for 1"); match by prefix.
-    const stdInput = (await canvas.findByRole("textbox", {
+    // dataTypeStd renders as a <select> (role "combobox"); dataTypeCode is a text input.
+    const stdInput = (await canvas.findByRole("combobox", {
       name: new RegExp(
         i18n.t("presentations:elements.dataTypeStd_input", { name: "" }).trimEnd(),
       ),
-    })) as HTMLInputElement;
+    })) as HTMLSelectElement;
     const codeInput = (await canvas.findByRole("textbox", {
       name: new RegExp(
         i18n.t("presentations:elements.dataTypeCode_input", { name: "" }).trimEnd(),
       ),
     })) as HTMLInputElement;
-    // Type the same std/code as the existing "HG" element.
+    // Select the same std/code as the existing "HG" element.
     await act(async () => {
-      await userEvent.type(stdInput, "SHEF-PE");
+      await userEvent.selectOptions(stdInput, "SHEF-PE");
       await userEvent.type(codeInput, "HG");
     });
     // Save button label is counter-based ("Save element 1"), not the typed code.
