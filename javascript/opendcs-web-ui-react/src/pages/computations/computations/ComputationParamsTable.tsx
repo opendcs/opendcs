@@ -151,6 +151,11 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
         header: t("computations:parms.dataType"),
         type: "string",
         defaultContent: "",
+        render: (data: unknown) => {
+          const s = typeof data === "string" ? data : "";
+          const colonIdx = s.indexOf(":");
+          return colonIdx >= 0 ? s.slice(colonIdx + 1) : s;
+        },
         edit: {
           render: (row, rowId) =>
             combobox(
