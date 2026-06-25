@@ -74,3 +74,65 @@ describe("siteKeys + QueryClient invalidation contract", () => {
     expect(client.getQueryData(siteKeys.detail(OTHER_ORG, 7))).toBeUndefined();
   });
 });
+
+describe("save invalidation must refresh the imperatively-fetched detail", () => {
+  // Mirrors useFetchSite: cache-hit when fresh, otherwise calls the network fn.
+  const fetchDetail = async (
+    client: QueryClient,
+    org: string,
+    siteId: number,
+    network: () => Promise<{ siteId: number; publicName: string }>,
+  ) =>
+    client.fetchQuery({
+      queryKey: siteKeys.detail(org, siteId),
+      queryFn: network,
+    });
+
+  test("invalidateQueries marks the detail invalidated so fetchQuery refetches", async () => {
+    const client = new QueryClient({
+      defaultOptions: { queries: { staleTime: 30_000 } },
+    });
+    // Detail was fetched when the user opened the row (fresh by staleTime).
+    client.setQueryData(siteKeys.detail(ORG, 1), {
+      siteId: 1,
+      publicName: "Original",
+    });
+
+    await client.invalidateQueries({ queryKey: siteKeys.all(ORG) });
+
+    let networkCalled = false;
+    const result = await fetchDetail(client, ORG, 1, async () => {
+      networkCalled = true;
+      return { siteId: 1, publicName: "Saved" };
+    });
+
+    // fetchQuery refetches an invalidated entry even while it is fresh by
+    // staleTime, so the committed values are served.
+    expect(networkCalled).toBe(true);
+    expect(result.publicName).toBe("Saved");
+  });
+
+  test("removeQueries on the detail key forces fetchQuery to reload committed data", async () => {
+    const client = new QueryClient({
+      defaultOptions: { queries: { staleTime: 30_000 } },
+    });
+    client.setQueryData(siteKeys.detail(ORG, 1), {
+      siteId: 1,
+      publicName: "Original",
+    });
+
+    // The fix: drop the detail entry on save success.
+    client.removeQueries({ queryKey: siteKeys.detail(ORG, 1) });
+    await client.invalidateQueries({ queryKey: siteKeys.all(ORG) });
+
+    let networkCalled = false;
+    const result = await fetchDetail(client, ORG, 1, async () => {
+      networkCalled = true;
+      return { siteId: 1, publicName: "Saved" };
+    });
+
+    // FIX: cache miss → network → committed values shown.
+    expect(networkCalled).toBe(true);
+    expect(result.publicName).toBe("Saved");
+  });
+});

@@ -34,8 +34,8 @@ export const invalidateThenDelegate =
   ): NonNullable<
     UseMutationOptions<TData, TError, TVariables, TContext>["onSuccess"]
   > =>
-  (...args) => {
-    queryClient.invalidateQueries({ queryKey: rootKey });
+  async (...args) => {
+    await queryClient.invalidateQueries({ queryKey: rootKey });
     onSuccess?.(...args);
   };
 
