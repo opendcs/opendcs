@@ -22,7 +22,6 @@ import java.util.Vector;
 
 import decodes.db.Constants;
 import decodes.db.DataPresentation;
-import decodes.db.DataType;
 import decodes.db.PresentationGroup;
 import decodes.sql.DbKey;
 import io.swagger.v3.oas.annotations.Operation;
