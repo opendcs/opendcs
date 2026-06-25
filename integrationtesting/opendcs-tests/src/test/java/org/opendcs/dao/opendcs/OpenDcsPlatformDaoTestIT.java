@@ -3,6 +3,7 @@ package org.opendcs.dao.opendcs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,20 @@ class OpenDcsPlatformDaoTestIT extends AppTestBase
             assertNotNull(platform.getSite());
             assertFalse(platform.getSite().getNameArray().isEmpty());
             assertEquals("I'm here", platform.getProperty("SystemCheck"));
+        }
+    }
+
+    @Test
+    void test_get_all_partial_data() throws Exception
+    {
+        var dao = db.getDao(PlatformDao.class).orElseThrow();
+
+        try (var tx = db.newTransaction())
+        {
+            var platforms = dao.getAll(tx, -1, -1, false);
+
+            assertFalse(platforms.isEmpty());
+            assertNull(platforms.get(0).getSite());
         }
     }
 }

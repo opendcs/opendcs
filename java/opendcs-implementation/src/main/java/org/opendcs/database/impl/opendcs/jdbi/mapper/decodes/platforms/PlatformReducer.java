@@ -52,20 +52,28 @@ public final class PlatformReducer implements LinkedHashMapRowReducer<Long,Platf
                 tm.platform = platform;
                 platform.transportMedia.add(tm);
             }
-            siteReducer.accept(sites, view);
-            var siteId = view.getColumn(platformMapper.column(PlatformMapper.Columns.SITE_ID), Long.class);
-            if (sites.containsKey(siteId))
+            if (siteReducer != null)
             {
-                platform.setSite(sites.get(siteId));
+                siteReducer.accept(sites, view);
+                var siteId = view.getColumn(platformMapper.column(PlatformMapper.Columns.SITE_ID), Long.class);
+                if (sites.containsKey(siteId))
+                {
+                    platform.setSite(sites.get(siteId));
+                }
             }
 
-            var prop = view.getRow(PLATFORM_PROPERTIES);
-            if (prop != null && prop.first != null)
+            if (siteReducer != null) // if this is null, we won't have properties either
             {
-                platform.setProperty(prop.first, prop.second);
+                var prop = view.getRow(PLATFORM_PROPERTIES);
+                if (prop != null && prop.first != null)
+                {
+                    platform.setProperty(prop.first, prop.second);
+                }
             }
-
-            platformSensorReducer.accept(sensors, view);
+            if (platformSensorReducer != null)
+            {
+                platformSensorReducer.accept(sensors, view);
+            }
             // wait, need to setup a better key for this.
         }
         catch (SQLException ex)
