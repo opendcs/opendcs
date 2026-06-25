@@ -445,6 +445,6 @@ export const AddDuplicateElementRejected: Story = {
     ).toBeInTheDocument();
 
     // The existing "HG" element's units value has not been wiped.
-    expect(canvas.getByRole("cell", { name: "ft" })).toBeInTheDocument();
+    expect(canvas.getByText("ft", { selector: "td" })).toBeInTheDocument();
   },
 };
