@@ -51,30 +51,29 @@ public class PlatformDaoImpl implements PlatformDao
                 select p.id id, p.agency agency, p.isproduction isproduction, p.description description, p.lastmodifytime lastmodifytime, p.configid configid,
                        p.expiration expiration, tm.mediumtype, tm.mediumid , p.platformdesignator , p.siteid
                  from platform p
-                  join transportmedium tm on tm.platformid = p.id <medium_filter>
-                <where>
+                  join transportmedium tm on tm.platformid = p.id <if(medium_filter)><medium_filter><endif>
+                <if(where)><where><endif>
                 order by mediumtype <collate> asc, mediumid <collate> asc, platformdesignator <collate> asc
             )
-
             select
-                <platform_columns>,
-                <medium_columns>
-                <if(config_columns)><config_columns><endif>
-                <site_columns>
-                <site_name_columns>
-                <site_props>
-                <platform_props>
-                <platform_sensors>
-                <platform_sensor_props>
+                <platform_columns>
+                <if(medium_columns)>,<medium_columns><endif>
+                <if(config_columns)>, <config_columns><endif>
+                <if(site_columns)>, <site_columns><endif>
+                <if(site_name_columns)>, <site_name_columns><endif>
+                <if(site_props)>, <site_props><endif>
+                <if(platform_props)>, <platform_props><endif>
+                <if(platform_sensors)>, <platform_sensors><endif>
+                <if(platform_sensor_props)>, <platform_sensor_props><endif>
             from platforms p
             left outer join transportmedium tm on tm.platformid = p.id <medium_filter>
-            <config_join>
-            <site_join>
-            <site_name_join>
-            <site_props_join>
-            <platform_props_join>
+            <if(config_join)><config_join><endif>
+            <if(site_join)><site_join><endif>
+            <if(site_name_join)><site_name_join><endif>
+            <if(site_props_join)><site_props_join><endif>
+            <if(platform_props_join)><platform_props_join><endif>
             <if(platform_sensor_join)><platform_sensor_join><endif>
-            <platform_sensor_props_join>
+            <if(platform_sensor_props_join)><platform_sensor_props_join><endif>
 
             order by p.mediumtype <collate> asc, p.mediumid <collate> asc, p.platformdesignator <collate> asc
             """;
@@ -117,15 +116,15 @@ public class PlatformDaoImpl implements PlatformDao
             var platformSensorReducder = new PlatformSensorReducer(platformSensorMapper);
 
             select.define("platform_columns", platformMapper.columnsForSelect())
-                  .define("medium_columns", mediumMapper.columnsForSelect() + ",")
-                  .define("site_columns", siteMapper.columnsForSelect() + ",")
-                  .define("site_name_columns", siteNameMapper.columnsForSelect() + ",")
-                  .define("site_props", "sp.prop_name sp_prop_name, sp.prop_value sp_prop_value,")
-                  .define("platform_props", platformPropsMapper.columnsForSelect() + ",")
-                  .define("platform_sensors", platformSensorMapper.columnsForSelect() + ",")
+                  .define("medium_columns", mediumMapper.columnsForSelect())
+                  .define("site_columns", siteMapper.columnsForSelect())
+                  .define("site_name_columns", siteNameMapper.columnsForSelect())
+                  .define("site_props", "sp.prop_name sp_prop_name, sp.prop_value sp_prop_value")
+                  .define("platform_props", platformPropsMapper.columnsForSelect())
+                  .define("platform_sensors", platformSensorMapper.columnsForSelect())
                   .define("platform_sensor_props", platformSensorPropertiesMapper.columnsForSelect())
-                  .define("config_columns", "")
-                  .define("config_join", "")
+                  //.define("config_columns", "")
+                  //.define("config_join", "")
                   .define("site_join", siteMapper.joinStatement("left outer", OpenDcsSiteMapper.Columns.ID,
                                                                      "p", PlatformMapper.Columns.SITE_ID.column()))
                   .define("site_name_join", siteNameMapper.joinStatement("left outer", OpenDcsSiteNameMapper.Columns.SITE_ID,
@@ -209,10 +208,6 @@ public class PlatformDaoImpl implements PlatformDao
                 select.define("medium_filter", " and tm.mediumtype = :mediumtype")
                       .define(WHERE_CLAUSE, "where mediumtype = :mediumtype")
                       .bind("mediumtype", mediumType);
-            }
-            else
-            {
-                select.define("medium_filter", "").define(WHERE_CLAUSE,"");
             }
 
             return select.registerRowMapper(platformMapper)
