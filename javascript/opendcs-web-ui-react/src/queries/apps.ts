@@ -93,13 +93,7 @@ export const useAppStatQuery = () => {
   const { monitorApi, org } = useAppMonitorApi();
   return useQuery<ApiAppStatus[]>({
     queryKey: appKeys.stat(org),
-    queryFn: async () => {
-      try {
-        return await monitorApi.getAppStat(org);
-      } catch {
-        return [];
-      }
-    },
+    queryFn: () => monitorApi.getAppStat(org),
     refetchInterval: 30_000,
   });
 };

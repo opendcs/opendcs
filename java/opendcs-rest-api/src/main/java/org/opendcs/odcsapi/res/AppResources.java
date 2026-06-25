@@ -444,7 +444,10 @@ public final class AppResources extends OpenDcsResource
 		{
 			for (TsdbCompLock lock : dai.getAllCompProcLocks())
 			{
-				ret.add(map(dai, lock));
+				if (!lock.isStale())
+				{
+					ret.add(map(dai, lock));
+				}
 			}
 			return Response.ok()
 					.entity(ret).build();
