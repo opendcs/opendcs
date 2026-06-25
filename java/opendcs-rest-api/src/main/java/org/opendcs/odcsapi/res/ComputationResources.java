@@ -353,24 +353,22 @@ public final class ComputationResources extends OpenDcsResource
 					{
 						MDC.setContextMap(contextMap);
 					}
-					try (ComputationExecution execution = new ComputationExecution(createDb()))
-					{
-						SseProgressListener listener = new SseProgressListener(eventSink, sse, compStatus, taskID);
-						ComputationExecution.CompResults results = execution.execute(List.of(comp), new DataCollection(), startDate, endDate, listener);
-
-						event = sse.newEventBuilder()
-								.name(compStatus)
-								.id(taskID)
-								.mediaType(MediaType.TEXT_PLAIN_TYPE)
-								.data(String.format("Computation executed with %d errors", results.numErrors()))
-								.build();
-						eventSink.send(event);
-
-						processOutput(outputList, taskID, sse, eventSink, startTime, endTime);
-					}
+					executeAndPublishResult(computationId, comp, startDate, endDate, sse, eventSink, compStatus, taskID);
+				}
+				catch (RuntimeException ex)
+				{
+					log.error("Unexpected error in computation async task for computation ID: {}", computationId, ex);
 				}
 				finally
 				{
+					try
+					{
+						processOutput(outputList, taskID, sse, eventSink, startTime, endTime);
+					}
+					catch (RuntimeException ex)
+					{
+						log.error("Error sending computation results for computation ID: {}", computationId, ex);
+					}
 					try
 					{
 						eventSink.close();
@@ -471,6 +469,35 @@ public final class ComputationResources extends OpenDcsResource
 			}
 		}
 		return outputList;
+	}
+
+	private void executeAndPublishResult(Long computationId, DbComputation comp, Date startDate, Date endDate,
+			Sse sse, SseEventSink eventSink, String compStatus, String taskID)
+	{
+		try (ComputationExecution execution = new ComputationExecution(createDb()))
+		{
+			SseProgressListener listener = new SseProgressListener(eventSink, sse, compStatus, taskID);
+			ComputationExecution.CompResults results = execution.execute(List.of(comp), new DataCollection(), startDate, endDate, listener);
+
+			OutboundSseEvent event = sse.newEventBuilder()
+					.name(compStatus)
+					.id(taskID)
+					.mediaType(MediaType.TEXT_PLAIN_TYPE)
+					.data(String.format("Computation executed with %d errors", results.numErrors()))
+					.build();
+			eventSink.send(event);
+		}
+		catch (RuntimeException ex)
+		{
+			log.error("Error during computation execution for computation ID: {}", computationId, ex);
+			OutboundSseEvent errEvent = sse.newEventBuilder()
+					.name(compStatus)
+					.id(taskID)
+					.mediaType(MediaType.TEXT_PLAIN_TYPE)
+					.data(String.format("Computation failed: %s", ex.getMessage()))
+					.build();
+			eventSink.send(errEvent);
+		}
 	}
 
 	private void processOutput(List<TimeSeriesIdentifier> outputList, String taskID, Sse sse,

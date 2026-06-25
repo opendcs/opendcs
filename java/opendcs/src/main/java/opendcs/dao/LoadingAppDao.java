@@ -654,10 +654,19 @@ public class LoadingAppDao extends DaoBase implements LoadingAppDAI
         throws DbIoException
     {
         String q = "SELECT loading_application_id,pid,hostname,heartbeat,cur_status from CP_COMP_PROC_LOCK";
+        final List<TsdbCompLock> ret;
         try
         {
-            final List<TsdbCompLock> ret = getResults(q,rs->rs2lock(rs));
-            q = "SELECT LOADING_APPLICATION_ID, LOADING_APPLICATION_NAME FROM HDB_LOADING_APPLICATION";
+            ret = getResults(q, this::rs2lock);
+        }
+        catch(SQLException ex)
+        {
+            log.atWarn().setCause(ex).log("Error querying comp proc locks with query '{}'", q);
+            return new ArrayList<>();
+        }
+        q = "SELECT LOADING_APPLICATION_ID, LOADING_APPLICATION_NAME FROM HDB_LOADING_APPLICATION";
+        try
+        {
             doQuery(q, rs ->
             {
                 DbKey appId = DbKey.createDbKey(rs, 1);
@@ -671,13 +680,12 @@ public class LoadingAppDao extends DaoBase implements LoadingAppDAI
                     }
                 }
             });
-            return ret;
         }
         catch(SQLException ex)
         {
-            log.atWarn().setCause(ex).log("Error iterating results for query '{}'", q);
-            return new ArrayList<>();
+            log.atWarn().setCause(ex).log("Error populating app names from query '{}'; lock statuses will be returned without names.", q);
         }
+        return ret;
     }
 
     @Override
