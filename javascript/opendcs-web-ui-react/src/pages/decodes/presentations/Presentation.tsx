@@ -12,6 +12,8 @@ import {
 } from "../../../components/forms";
 import type { CancelAction, SaveAction } from "../../../util/Actions";
 import { usePresentationRefsQuery } from "../../../queries/presentations";
+import { useDataTypeListQuery } from "../../../queries/dataTypes";
+import { useUnitListQuery } from "../../../queries/units";
 import {
   PresentationReducer,
   elementKey,
@@ -98,6 +100,9 @@ export const Presentation: React.FC<PresentationProperties> = ({
   const [local, dispatch] = useReducer(PresentationReducer, provided);
 
   const { data: groups = [] } = usePresentationRefsQuery();
+  // Prefetch so dropdowns in PresentationElementsTable render immediately.
+  useDataTypeListQuery();
+  useUnitListQuery();
   const parentOptions = useMemo(
     () =>
       groups

@@ -2,8 +2,12 @@ import { useMemo } from "react";
 import { Form } from "react-bootstrap";
 import { renderToString } from "react-dom/server";
 import { useTranslation } from "react-i18next";
+import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import type { ApiPresentationElement } from "opendcs-api";
 import { AppDataTable, type ColumnDef } from "../../../components/data-table";
+import UnitSelect from "../../../components/controls/UnitSelector";
+import { useUnitListQuery } from "../../../queries/units";
+import { useDataTypeListQuery } from "../../../queries/dataTypes";
 import { elementKey } from "./PresentationReducer";
 
 export interface PresentationElementsTableProperties {
@@ -29,6 +33,21 @@ export const PresentationElementsTable: React.FC<
   PresentationElementsTableProperties
 > = ({ elements, edit = false, onSave, onRemove }) => {
   const [t] = useTranslation(["presentations", "translation"]);
+  const { isSuccess: unitsReady } = useUnitListQuery();
+  const { data: dataTypes = [] } = useDataTypeListQuery();
+  const queryClient = useQueryClient();
+
+  const dataTypeStandards = useMemo(() => {
+    const stds = new Set<string>();
+    for (const dt of dataTypes) {
+      if (dt.standard) stds.add(dt.standard);
+    }
+    // Also include any standard already on existing elements so it always appears.
+    for (const el of elements) {
+      if (el.dataTypeStd) stds.add(el.dataTypeStd);
+    }
+    return Array.from(stds).sort((a, b) => a.localeCompare(b));
+  }, [dataTypes, elements]);
 
   const columns = useMemo<ColumnDef<ApiPresentationElement>[]>(
     () => [
@@ -40,19 +59,24 @@ export const PresentationElementsTable: React.FC<
         edit: {
           render: (row, rowId) =>
             renderToString(
-              <Form.Control
-                type="text"
+              <Form.Select
                 name="dataTypeStd"
                 defaultValue={row.dataTypeStd ?? ""}
                 aria-label={t("presentations:elements.dataTypeStd_input", {
                   name: elementDisplayName(row, rowId),
                 })}
-              />,
+              >
+                <option value="" />
+                {dataTypeStandards.map((std) => (
+                  <option key={std} value={std}>
+                    {std}
+                  </option>
+                ))}
+              </Form.Select>,
             ),
           read: (cell) =>
-            cell
-              .querySelector<HTMLInputElement>('input[name="dataTypeStd"]')
-              ?.value.trim() ?? "",
+            cell.querySelector<HTMLSelectElement>('select[name="dataTypeStd"]')
+              ?.value ?? "",
         },
       },
       {
@@ -85,18 +109,34 @@ export const PresentationElementsTable: React.FC<
         defaultContent: "",
         edit: {
           render: (row, rowId) =>
-            renderToString(
-              <Form.Control
-                type="text"
-                name="units"
-                defaultValue={row.units ?? ""}
-                aria-label={t("presentations:elements.units_input", {
-                  name: elementDisplayName(row, rowId),
-                })}
-              />,
-            ),
+            unitsReady
+              ? renderToString(
+                  // renderToString creates an isolated React tree; UnitSelect calls
+                  // useUnitListQuery, so re-provide the QueryClient explicitly.
+                  <QueryClientProvider client={queryClient}>
+                    <UnitSelect
+                      name="units"
+                      current={row.units ?? ""}
+                      aria-label={t("presentations:elements.units_input", {
+                        name: elementDisplayName(row, rowId),
+                      })}
+                    />
+                  </QueryClientProvider>,
+                )
+              : renderToString(
+                  <Form.Control
+                    type="text"
+                    name="units"
+                    defaultValue={row.units ?? ""}
+                    aria-label={t("presentations:elements.units_input", {
+                      name: elementDisplayName(row, rowId),
+                    })}
+                  />,
+                ),
           read: (cell) =>
-            cell.querySelector<HTMLInputElement>('input[name="units"]')?.value ?? "",
+            cell.querySelector<HTMLSelectElement | HTMLInputElement>(
+              'select[name="units"], input[name="units"]',
+            )?.value ?? "",
         },
       },
       {
@@ -175,7 +215,7 @@ export const PresentationElementsTable: React.FC<
         },
       },
     ],
-    [t],
+    [t, dataTypeStandards, unitsReady, queryClient],
   );
 
   return (

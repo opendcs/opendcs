@@ -2,7 +2,7 @@
   "platformsTitle": "Platforms",
   "header": {
     "Id": "Id",
-    "Platform": "Platform",
+    "Site": "Site",
     "Agency": "Agency",
     "TransportId": "Transport ID",
     "Config": "Config",
@@ -17,6 +17,7 @@
   "siteId": "Site Id",
   "configId": "Config Id",
   "site": "Site",
+  "public_name": "Public Name",
   "config": "Config",
   "none": "(none)",
   "lastModified": "Last Modified",

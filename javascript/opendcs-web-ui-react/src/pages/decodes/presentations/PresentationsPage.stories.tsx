@@ -2,9 +2,11 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { act } from "react";
 import { http, HttpResponse } from "msw";
 import type {
+  ApiDataType,
   ApiPresentationElement,
   ApiPresentationGroup,
   ApiPresentationRef,
+  ApiUnit,
 } from "opendcs-api";
 import { expect, waitFor } from "storybook/test";
 import { PresentationsPage } from "./PresentationsPage";
@@ -55,6 +57,20 @@ const FULL_PRESENTATIONS: Record<number, ApiPresentationGroup> = {
   },
 };
 
+const MOCK_DATA_TYPES: ApiDataType[] = [
+  { standard: "SHEF-PE", code: "HG", displayName: "Stage" },
+  { standard: "SHEF-PE", code: "QR", displayName: "Flow" },
+  { standard: "CWMS", code: "Stage", displayName: "Stage" },
+  { standard: "EPA", code: "00060", displayName: "Discharge" },
+];
+
+const MOCK_UNITS: Record<number, ApiUnit> = {
+  1: { abbr: "ft", name: "feet" },
+  2: { abbr: "m", name: "meters" },
+  3: { abbr: "cfs", name: "cubic feet per second" },
+  4: { abbr: "raw", name: "raw" },
+};
+
 const baseHandlers = {
   presentationRefs: http.get("/odcsapi/presentationrefs", () =>
     HttpResponse.json<ApiPresentationRef[]>(PRESENTATION_REFS),
@@ -70,6 +86,12 @@ const baseHandlers = {
     HttpResponse.json<ApiPresentationGroup>({}),
   ),
   deletePresentation: http.delete("/odcsapi/presentation", () => HttpResponse.json({})),
+  dataTypes: http.get("/odcsapi/datatypelist", () =>
+    HttpResponse.json<ApiDataType[]>(MOCK_DATA_TYPES),
+  ),
+  units: http.get("/odcsapi/unitlist", () =>
+    HttpResponse.json<Record<number, ApiUnit>>(MOCK_UNITS),
+  ),
 };
 
 const meta = {
