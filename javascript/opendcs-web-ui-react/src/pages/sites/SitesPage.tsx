@@ -41,7 +41,7 @@ export const SitesPage: React.FC = () => {
       loading={isFetching}
       getSite={fetchSite}
       actions={{
-        save: (site) => saveSite.mutate(site),
+        save: (site) => saveSite.mutateAsync(site),
         remove: (siteId) => deleteSite.mutate(siteId),
       }}
       tableRef={tableRef}

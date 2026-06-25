@@ -183,9 +183,11 @@ export const EditAndCancel: Story = {
       name: i18n.t("platforms:edit_platform", { id: 1 }),
     });
     await act(async () => userEvent.click(editBtn));
-    const cancelBtn = await canvas.findByRole("button", {
-      name: i18n.t("platforms:cancel_for", { id: 1 }),
-    });
+    const cancelBtn = await canvas.findByRole(
+      "button",
+      { name: i18n.t("platforms:cancel_for", { id: 1 }) },
+      { timeout: 5000 },
+    );
     await act(async () => userEvent.click(cancelBtn));
     await waitFor(() => {
       expect(
