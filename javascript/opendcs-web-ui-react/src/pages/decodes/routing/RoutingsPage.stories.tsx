@@ -494,9 +494,17 @@ export const RemovePlatformRow: Story = {
     });
     await act(async () => userEvent.click(editBtn));
     // Wait for the detail's fade-in to finish (the Save button becoming
-    // accessible confirms edit mode is interactive).
-    await canvas.findByRole("button", {
-      name: i18n.t("routing:save_routing", { id: 8 }),
+    // accessible confirms edit mode is interactive). Use waitFor (from
+    // storybook/test) rather than canvas.findByRole so the interaction
+    // inherits Storybook's longer default timeout, which is needed on
+    // slower CI machines where the Suspense + DetailFade sequence exceeds
+    // Testing Library's 1 s findByRole timeout.
+    await waitFor(() => {
+      expect(
+        canvas.getByRole("button", {
+          name: i18n.t("routing:save_routing", { id: 8 }),
+        }),
+      ).toBeInTheDocument();
     });
     // "Alpha" is attached by name and shows in the platforms table.
     expect(await canvas.findByText("Alpha")).toBeInTheDocument();
