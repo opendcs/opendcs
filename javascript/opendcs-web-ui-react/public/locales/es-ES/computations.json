@@ -35,7 +35,8 @@
     "now": "Ahora",
     "now_minus": "Ahora −",
     "calendar": "Calendario",
-    "interval": "Intervalo"
+    "interval": "Intervalo",
+    "save_error": "Error al guardar. Por favor verifique sus entradas e intente de nuevo."
   },
   "parms": {
     "title": "Parámetros",

@@ -35,7 +35,8 @@
     "now": "Jetzt",
     "now_minus": "Jetzt −",
     "calendar": "Kalender",
-    "interval": "Intervall"
+    "interval": "Intervall",
+    "save_error": "Speichern fehlgeschlagen. Bitte Eingaben prüfen und erneut versuchen."
   },
   "parms": {
     "title": "Parameter",

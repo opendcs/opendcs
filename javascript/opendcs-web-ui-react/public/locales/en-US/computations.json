@@ -35,7 +35,8 @@
     "now": "Now",
     "now_minus": "Now −",
     "calendar": "Calendar",
-    "interval": "Interval"
+    "interval": "Interval",
+    "save_error": "Save failed. Please check your entries and try again."
   },
   "parms": {
     "title": "Parameters",
