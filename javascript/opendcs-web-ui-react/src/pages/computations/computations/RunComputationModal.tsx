@@ -72,6 +72,141 @@ const lookupValue = (ts: ApiTimeSeriesData, time: Date): string => {
   return v?.value !== undefined ? String(v.value) : "–";
 };
 
+interface SseCallbacks {
+  onLog: (msg: string) => void;
+  onResults: (r: CompResults) => void;
+  onError: (msg: string) => void;
+}
+
+/** Read a text/event-stream response body and call callbacks for each event. */
+const readSseStream = async (
+  body: ReadableStream<Uint8Array>,
+  callbacks: SseCallbacks,
+): Promise<boolean> => {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let currentEvent = "";
+  let currentData = "";
+  let hadError = false;
+
+  const dispatch = () => {
+    if (!currentData) return;
+    if (currentEvent === "computation-status") {
+      callbacks.onLog(currentData);
+    } else if (currentEvent === "Results") {
+      try {
+        callbacks.onResults(JSON.parse(currentData) as CompResults);
+      } catch {
+        callbacks.onLog(`Results: ${currentData}`);
+      }
+    } else if (currentEvent === "ERROR") {
+      hadError = true;
+      callbacks.onLog(`Error: ${currentData}`);
+      callbacks.onError(currentData);
+    } else {
+      callbacks.onLog(currentData);
+    }
+    currentEvent = "";
+    currentData = "";
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      if (line === "") {
+        dispatch();
+      } else if (line.startsWith("event:")) {
+        currentEvent = line.slice(6).trim();
+      } else if (line.startsWith("data:")) {
+        const part = line.slice(5).trim();
+        currentData = currentData ? `${currentData}\n${part}` : part;
+      }
+    }
+  }
+  if (buffer) {
+    const line = buffer.trim();
+    if (line.startsWith("data:")) currentData = line.slice(5).trim();
+    dispatch();
+  }
+  return hadError;
+};
+
+interface ResultsSectionProps {
+  results: CompResults;
+  tsData: ApiTimeSeriesData[];
+  times: Date[];
+  hasValues: boolean;
+  status: RunStatus;
+  t: (key: string) => string;
+}
+
+const ResultsSection: React.FC<ResultsSectionProps> = ({
+  results,
+  tsData,
+  times,
+  hasValues,
+  status,
+  t,
+}) => {
+  if (results.tsIds.length === 0) {
+    return <p className="text-muted mt-1">{t("computations:run.no_outputs")}</p>;
+  }
+  if (hasValues) {
+    return (
+      <div className="mt-2" style={{ maxHeight: "22rem", overflowY: "auto" }}>
+        <Table
+          size="sm"
+          bordered
+          hover
+          className="font-monospace mb-0"
+          style={{ fontSize: "0.8rem" }}
+        >
+          <thead className="table-dark sticky-top">
+            <tr>
+              <th>{t("translation:date_time")}</th>
+              {tsData.map((ts, i) => (
+                <th key={i}>
+                  {ts.tsid?.uniqueString ??
+                    results.tsIds[i]?.uniqueString ??
+                    t("computations:run.unknown_ts")}
+                  {ts.tsid?.storageUnits ? ` (${ts.tsid.storageUnits})` : ""}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {times.map((time, ri) => (
+              <tr key={ri}>
+                <td className="text-nowrap">{time.toLocaleString()}</td>
+                {tsData.map((ts, ci) => (
+                  <td key={ci}>{lookupValue(ts, time)}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </div>
+    );
+  }
+  if (status === "success") {
+    return (
+      <p className="text-muted mt-1 font-monospace" style={{ fontSize: "0.85rem" }}>
+        {results.tsIds
+          .map((id) => id.uniqueString ?? t("computations:run.unknown_ts"))
+          .join(", ")}
+        {" — "}
+        {t("computations:run.no_data")}
+      </p>
+    );
+  }
+  return null;
+};
+
 export const RunComputationModal: React.FC<Props> = ({
   show,
   computationId,
@@ -121,7 +256,6 @@ export const RunComputationModal: React.FC<Props> = ({
     const url = ctx.getUrl();
 
     let parsedResults: CompResults | null = null;
-    let hadError = false;
 
     try {
       const response = await fetch(url, {
@@ -137,61 +271,20 @@ export const RunComputationModal: React.FC<Props> = ({
       }
       if (!response.body) throw new Error("No response body");
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let currentEvent = "";
-      let currentData = "";
-
-      const dispatch = () => {
-        if (!currentData) return;
-        if (currentEvent === "computation-status") {
-          appendLog(currentData);
-        } else if (currentEvent === "Results") {
-          try {
-            parsedResults = JSON.parse(currentData) as CompResults;
-            setResults(parsedResults);
-          } catch {
-            appendLog(`Results: ${currentData}`);
-          }
-        } else if (currentEvent === "ERROR") {
-          hadError = true;
-          appendLog(`Error: ${currentData}`);
+      const hadError = await readSseStream(response.body, {
+        onLog: appendLog,
+        onResults: (r) => {
+          parsedResults = r;
+          setResults(r);
+        },
+        onError: (msg) => {
           setStatus("error");
-          setErrorMsg(currentData);
-        } else if (currentData) {
-          appendLog(currentData);
-        }
-        currentEvent = "";
-        currentData = "";
-      };
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          if (line === "") {
-            dispatch();
-          } else if (line.startsWith("event:")) {
-            currentEvent = line.slice(6).trim();
-          } else if (line.startsWith("data:")) {
-            const part = line.slice(5).trim();
-            currentData = currentData ? `${currentData}\n${part}` : part;
-          }
-        }
-      }
-      if (buffer) {
-        const line = buffer.trim();
-        if (line.startsWith("data:")) currentData = line.slice(5).trim();
-        dispatch();
-      }
+          setErrorMsg(msg);
+        },
+      });
 
       if (hadError) return;
 
-      // Fetch computed values for each output time series
       if (parsedResults) {
         const validIds = (parsedResults as CompResults).tsIds.filter(
           (id) => id.key !== undefined && id.key > 0,
@@ -314,54 +407,14 @@ export const RunComputationModal: React.FC<Props> = ({
         {results && (
           <div className="mt-2">
             <strong>{t("computations:run.results_title")}</strong>
-            {results.tsIds.length === 0 ? (
-              <p className="text-muted mt-1">{t("computations:run.no_outputs")}</p>
-            ) : hasValues ? (
-              <div className="mt-2" style={{ maxHeight: "22rem", overflowY: "auto" }}>
-                <Table
-                  size="sm"
-                  bordered
-                  hover
-                  className="font-monospace mb-0"
-                  style={{ fontSize: "0.8rem" }}
-                >
-                  <thead className="table-dark sticky-top">
-                    <tr>
-                      <th>{t("translation:date_time")}</th>
-                      {tsData.map((ts, i) => (
-                        <th key={i}>
-                          {ts.tsid?.uniqueString ??
-                            results.tsIds[i]?.uniqueString ??
-                            t("computations:run.unknown_ts")}
-                          {ts.tsid?.storageUnits ? ` (${ts.tsid.storageUnits})` : ""}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {times.map((time, ri) => (
-                      <tr key={ri}>
-                        <td className="text-nowrap">{time.toLocaleString()}</td>
-                        {tsData.map((ts, ci) => (
-                          <td key={ci}>{lookupValue(ts, time)}</td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-            ) : status === "success" ? (
-              <p
-                className="text-muted mt-1 font-monospace"
-                style={{ fontSize: "0.85rem" }}
-              >
-                {results.tsIds
-                  .map((id) => id.uniqueString ?? t("computations:run.unknown_ts"))
-                  .join(", ")}
-                {" — "}
-                {t("computations:run.no_data")}
-              </p>
-            ) : null}
+            <ResultsSection
+              results={results}
+              tsData={tsData}
+              times={times}
+              hasValues={hasValues}
+              status={status}
+              t={t}
+            />
           </div>
         )}
       </Modal.Body>
