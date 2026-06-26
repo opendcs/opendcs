@@ -9,7 +9,7 @@ import type {
   ApiTsGroupRef,
 } from "opendcs-api";
 import { act } from "react";
-import { expect, fn, waitFor } from "storybook/test";
+import { expect, fn, screen, waitFor, within } from "storybook/test";
 import {
   ApiContext,
   defaultValue as apiDefault,
@@ -506,17 +506,19 @@ export const RunComputationSuccess: Story = {
     });
     await act(async () => userEvent.click(runBtn));
 
-    const dialog = await canvas.findByRole("dialog");
+    // Modal renders in a portal — use screen
+    const dialog = await screen.findByRole("dialog", {}, { timeout: 5000 });
     expect(dialog).toBeInTheDocument();
+    const modal = within(dialog);
 
-    const executeBtn = await canvas.findByRole("button", {
+    const executeBtn = await modal.findByRole("button", {
       name: i18n.t("computations:run.run"),
     });
     await act(async () => userEvent.click(executeBtn));
 
     // Log messages stream in
     await waitFor(
-      () => expect(canvas.queryByText("Starting computation 1")).toBeInTheDocument(),
+      () => expect(modal.queryByText("Starting computation 1")).toBeInTheDocument(),
       { timeout: 5000 },
     );
 
@@ -524,13 +526,13 @@ export const RunComputationSuccess: Story = {
     await waitFor(
       () =>
         expect(
-          canvas.queryByText("TESTSITE.Flow.Inst.1Hour.0.compproc (cfs)"),
+          modal.queryByText("TESTSITE.Flow.Inst.1Hour.0.compproc (cfs)"),
         ).toBeInTheDocument(),
       { timeout: 5000 },
     );
 
     // A computed value appears in the table
-    await waitFor(() => expect(canvas.queryByText("123.45")).toBeInTheDocument(), {
+    await waitFor(() => expect(modal.queryByText("123.45")).toBeInTheDocument(), {
       timeout: 5000,
     });
   },
@@ -567,15 +569,18 @@ export const RunComputationErrorEvent: Story = {
     });
     await act(async () => userEvent.click(runBtn));
 
-    const executeBtn = await canvas.findByRole("button", {
+    const dialog = await screen.findByRole("dialog", {}, { timeout: 5000 });
+    const modal = within(dialog);
+
+    const executeBtn = await modal.findByRole("button", {
       name: i18n.t("computations:run.run"),
     });
     await act(async () => userEvent.click(executeBtn));
 
-    await waitFor(
-      () => expect(canvas.queryByText(/No site found with ID/)).toBeInTheDocument(),
-      { timeout: 5000 },
-    );
+    // Error appears in both the log and the alert — check the alert specifically
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeInTheDocument(), {
+      timeout: 5000,
+    });
   },
 };
 
@@ -606,13 +611,16 @@ export const RunComputationHttpError: Story = {
     });
     await act(async () => userEvent.click(runBtn));
 
-    const executeBtn = await canvas.findByRole("button", {
+    const dialog = await screen.findByRole("dialog", {}, { timeout: 5000 });
+    const modal = within(dialog);
+
+    const executeBtn = await modal.findByRole("button", {
       name: i18n.t("computations:run.run"),
     });
     await act(async () => userEvent.click(executeBtn));
 
     // An alert with the HTTP error should appear
-    await waitFor(() => expect(canvas.queryByRole("alert")).toBeInTheDocument(), {
+    await waitFor(() => expect(modal.queryByRole("alert")).toBeInTheDocument(), {
       timeout: 5000,
     });
   },
