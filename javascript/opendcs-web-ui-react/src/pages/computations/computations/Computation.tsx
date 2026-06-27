@@ -279,6 +279,7 @@ export const Computation: React.FC<ComputationProperties> = ({
           parmList: localParms.map(prepareParmForSave),
         });
       } catch (err) {
+        console.warn("Computation save failed", err);
         setSaveError(t("computations:editor.save_error"));
       }
     },
