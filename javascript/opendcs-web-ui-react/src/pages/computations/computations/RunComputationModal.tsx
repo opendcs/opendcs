@@ -69,7 +69,7 @@ const pivotTimes = (tsData: ApiTimeSeriesData[]): Date[] => {
 /** Look up a value for a given series at a given timestamp. */
 const lookupValue = (ts: ApiTimeSeriesData, time: Date): string => {
   const v = ts.values?.find((v) => v.sampleTime?.getTime() === time.getTime());
-  return v?.value !== undefined ? String(v.value) : "–";
+  return v?.value === undefined ? "–" : String(v.value);
 };
 
 interface SseCallbacks {
@@ -77,6 +77,38 @@ interface SseCallbacks {
   onResults: (r: CompResults) => void;
   onError: (msg: string) => void;
 }
+
+interface LogEntry {
+  id: number;
+  text: string;
+}
+
+const appendSsePart = (current: string, part: string): string =>
+  current ? `${current}\n${part}` : part;
+
+const dispatchSseEvent = (
+  event: string,
+  data: string,
+  callbacks: SseCallbacks,
+): boolean => {
+  if (!data) return false;
+  if (event === "computation-status") {
+    callbacks.onLog(data);
+  } else if (event === "Results") {
+    try {
+      callbacks.onResults(JSON.parse(data) as CompResults);
+    } catch {
+      callbacks.onLog(`Results: ${data}`);
+    }
+  } else if (event === "ERROR") {
+    callbacks.onLog(`Error: ${data}`);
+    callbacks.onError(data);
+    return true;
+  } else {
+    callbacks.onLog(data);
+  }
+  return false;
+};
 
 /** Read a text/event-stream response body and call callbacks for each event. */
 const readSseStream = async (
@@ -90,27 +122,6 @@ const readSseStream = async (
   let currentData = "";
   let hadError = false;
 
-  const dispatch = () => {
-    if (!currentData) return;
-    if (currentEvent === "computation-status") {
-      callbacks.onLog(currentData);
-    } else if (currentEvent === "Results") {
-      try {
-        callbacks.onResults(JSON.parse(currentData) as CompResults);
-      } catch {
-        callbacks.onLog(`Results: ${currentData}`);
-      }
-    } else if (currentEvent === "ERROR") {
-      hadError = true;
-      callbacks.onLog(`Error: ${currentData}`);
-      callbacks.onError(currentData);
-    } else {
-      callbacks.onLog(currentData);
-    }
-    currentEvent = "";
-    currentData = "";
-  };
-
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -119,20 +130,19 @@ const readSseStream = async (
     buffer = lines.pop() ?? "";
     for (const line of lines) {
       if (line === "") {
-        dispatch();
+        hadError = dispatchSseEvent(currentEvent, currentData, callbacks) || hadError;
+        currentEvent = "";
+        currentData = "";
       } else if (line.startsWith("event:")) {
         currentEvent = line.slice(6).trim();
       } else if (line.startsWith("data:")) {
-        const part = line.slice(5).trim();
-        currentData = currentData ? `${currentData}\n${part}` : part;
+        currentData = appendSsePart(currentData, line.slice(5).trim());
       }
     }
   }
-  if (buffer) {
-    const line = buffer.trim();
-    if (line.startsWith("data:")) currentData = line.slice(5).trim();
-    dispatch();
-  }
+  const finalLine = buffer.trim();
+  if (finalLine.startsWith("data:")) currentData = finalLine.slice(5).trim();
+  hadError = dispatchSseEvent(currentEvent, currentData, callbacks) || hadError;
   return hadError;
 };
 
@@ -170,7 +180,7 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
             <tr>
               <th>{t("translation:date_time")}</th>
               {tsData.map((ts, i) => (
-                <th key={i}>
+                <th key={ts.tsid?.uniqueString ?? ts.tsid?.key}>
                   {ts.tsid?.uniqueString ??
                     results.tsIds[i]?.uniqueString ??
                     t("computations:run.unknown_ts")}
@@ -180,11 +190,13 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
             </tr>
           </thead>
           <tbody>
-            {times.map((time, ri) => (
-              <tr key={ri}>
+            {times.map((time) => (
+              <tr key={time.getTime()}>
                 <td className="text-nowrap">{time.toLocaleString()}</td>
-                {tsData.map((ts, ci) => (
-                  <td key={ci}>{lookupValue(ts, time)}</td>
+                {tsData.map((ts) => (
+                  <td key={ts.tsid?.uniqueString ?? ts.tsid?.key}>
+                    {lookupValue(ts, time)}
+                  </td>
                 ))}
               </tr>
             ))}
@@ -216,19 +228,21 @@ export const RunComputationModal: React.FC<Props> = ({
   const { t } = useTranslation(["computations", "translation"]);
   const { conf, org } = useApi();
   const abortRef = useRef<AbortController | null>(null);
+  const logCounterRef = useRef(0);
   const tsApi = useMemo(() => new TimeSeriesMethodsApi(conf), [conf]);
 
   const [startValue, setStartValue] = useState(defaultStart);
   const [endValue, setEndValue] = useState(defaultEnd);
   const [status, setStatus] = useState<RunStatus>("idle");
-  const [logs, setLogs] = useState<string[]>([]);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [results, setResults] = useState<CompResults | null>(null);
   const [tsData, setTsData] = useState<ApiTimeSeriesData[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   const appendLog = useCallback((msg: string) => {
-    setLogs((prev) => [...prev, msg]);
+    const id = logCounterRef.current++;
+    setLogs((prev) => [...prev, { id, text: msg }]);
     requestAnimationFrame(() => {
       logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
     });
@@ -388,8 +402,8 @@ export const RunComputationModal: React.FC<Props> = ({
             aria-label={t("computations:run.log_label")}
             aria-live="polite"
           >
-            {logs.map((line, i) => (
-              <div key={i}>{line}</div>
+            {logs.map((entry) => (
+              <div key={entry.id}>{entry.text}</div>
             ))}
             <div ref={logsEndRef} />
           </div>
