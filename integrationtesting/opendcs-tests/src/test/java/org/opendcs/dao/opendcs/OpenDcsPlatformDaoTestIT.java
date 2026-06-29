@@ -6,13 +6,22 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.dai.DecodesConfigDao;
 import org.opendcs.database.dai.PlatformDao;
+import org.opendcs.database.dai.SiteDao;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
+
+import decodes.db.Platform;
+import decodes.db.PlatformConfig;
+import decodes.db.SiteName;
+import decodes.db.TransportMedium;
 
 @EnableIfTsDb({"OpenDCS-Postgres", "OpenDCS-Oracle"})
 @DecodesConfigurationRequired({
@@ -51,6 +60,49 @@ class OpenDcsPlatformDaoTestIT extends AppTestBase
             assertFalse(shouldFail.isPresent());
 
             tx.rollback();
+        }
+    }
+
+    @Test
+    void test_create_update_platform() throws Exception
+    {
+        var dao = db.getDao(PlatformDao.class).orElseThrow();
+        var configDao = db.getDao(DecodesConfigDao.class).orElseThrow();
+        var siteDao = db.getDao(SiteDao.class).orElseThrow();
+
+        Platform platformIn = new Platform();
+        platformIn.agency = "OpenDcs Testing";
+        platformIn.isProduction = true;
+        platformIn.description = "A Test Platform";
+        
+        TransportMedium tm = new TransportMedium(platformIn);
+        tm.channelNum = 1;
+        tm.assignedTime = 5;
+        tm.scriptName = "TEST";
+        tm.setMediumType("logger");
+        tm.setMediumId("TestPlatform");
+
+        try (var tx = db.newTransaction())
+        {
+            var site = siteDao.getBySiteName(tx, new SiteName(null, "CWMS", "OKVI4")).orElseThrow();
+            platformIn.setSite(site);
+
+            var platformOut = dao.save(tx, platformIn);
+            assertFalse(platformOut.transportMedia.isEmpty());
+            assertNotNull(platformOut.getSite());
+            assertFalse(platformOut.getSite().getNameArray().isEmpty());
+
+            var config = configDao.getByName(tx, "OKVI4").orElseThrow(); // PlatformDao doesn't save the config
+            platformOut.setConfig(config);
+
+            var platformOut2 = dao.save(tx, platformOut);    
+
+            assertNotNull(platformOut2.getConfig());
+
+            dao.delete(tx, platformOut2.getId());
+
+            var shouldFail = dao.getById(tx, platformOut.getId());
+            assertFalse(shouldFail.isPresent());
         }
     }
 
