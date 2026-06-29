@@ -26,11 +26,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Objects;
 
 import ilex.util.EnvExpander;
+import ilex.util.HasProperties;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import decodes.db.Constants;
@@ -43,7 +45,7 @@ import decodes.launcher.Profile;
  * <p>
  * Singleton access can be gained through the instance() method.
  */
-public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
+public class DecodesSettings implements PropertiesOwner, OpenDcsSettings, HasProperties
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static DecodesSettings _instance = null;
@@ -843,5 +845,49 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
         DecodesSettings newSettings = new DecodesSettings();
         newSettings.loadFromProperties(props);
         return newSettings;
+    }
+
+    @Override
+    public void setProperty(String name, String value)
+    {
+        throw new UnsupportedOperationException("Unimplemented method 'setProperty'");
+    }
+
+    /** The logic here should be better, this is a stop gap for demonstration. */
+    @Override
+    public String getProperty(String name)
+    {
+        String ret = null;
+        Field[] fields = this.getClass().getDeclaredFields();
+        for (var field: fields)
+        {
+            if (field.getName().equals(name))
+            {
+                try
+                {
+                    ret = field.get(this).toString(); // no, the won't work for a lot of things.
+                    break;
+                }
+                catch (IllegalArgumentException | IllegalAccessException ex)
+                {
+                    throw new RuntimeException("Unable to retrieve data for field " + name, ex);
+                } 
+            }
+        }
+
+        return ret;
+    }
+
+    @Override
+    public Enumeration getPropertyNames()
+    {
+    
+        throw new UnsupportedOperationException("Unimplemented method 'getPropertyNames'");
+    }
+
+    @Override
+    public void rmProperty(String name)
+    {
+        throw new UnsupportedOperationException("Unimplemented method 'rmProperty'");
     }
 }

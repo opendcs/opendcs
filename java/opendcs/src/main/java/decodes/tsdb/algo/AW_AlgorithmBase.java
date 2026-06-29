@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import org.opendcs.algorithms.AlgorithmUtilties;
 import org.opendcs.utils.AnnotationHelpers;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.opendcs.utils.properties.Property;
 import org.slf4j.Logger;
 
 import ilex.util.TextUtil;
@@ -279,19 +280,17 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 		// so that _awAlgoType is set correctly:
 		
 		// Get the "aggLowerBoundClosed" boolean if there
-		t_string = comp.getProperty("aggLowerBoundClosed");
-		if (t_string != null) 
-			aggLowerBoundClosed = TextUtil.str2boolean(t_string);
-		else // default is true for regular aggregates, false for running aggregates.
-			aggLowerBoundClosed = 
-				_awAlgoType == AWAlgoType.RUNNING_AGGREGATE ? false : true;
+		aggLowerBoundClosed = Property.property("aggLowerBoundClosed", Boolean.class)
+									  .withSources(comp)
+									  .withExistingPropertyFirst(aggLowerBoundClosed)
+									  .withDefaultValue(_awAlgoType != AWAlgoType.RUNNING_AGGREGATE)
+									  .build();
 		
-		t_string = comp.getProperty("aggUpperBoundClosed");
-		if (t_string != null) 
-			aggUpperBoundClosed = TextUtil.str2boolean(t_string);
-		else // default is false for regular aggregates, true for running aggregates.
-			aggUpperBoundClosed = 
-				_awAlgoType == AWAlgoType.RUNNING_AGGREGATE ? true : false;
+		aggUpperBoundClosed = Property.property("aggUpperBoundClosed", Boolean.class)
+									  .withSources(comp)
+									  .withExistingPropertyFirst(aggUpperBoundClosed)
+									  .withDefaultValue(_awAlgoType == AWAlgoType.RUNNING_AGGREGATE)
+									  .build();
 
 		t_string = comp.getProperty("interpDeltas");
 		if (t_string != null)
@@ -566,7 +565,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 			aggCal.setTime(t);
 			aggCal.add(calIncr.getCalConstant(), calIncr.getCount());
 			while(aggCal.getTime().before(end)
-				|| (this.aggUpperBoundClosed && aggCal.equals(end)))
+				|| (this.aggUpperBoundClosed.get() && aggCal.equals(end)))
 			{
 				t = aggCal.getTime();
 				inputBaseTimes.add(t);
@@ -587,7 +586,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 			// If the following are all true, then we just did the lower period.
 			// Leave the base time alone and do the upper period.
 			if (baseTime != null
-			 && aggUpperBoundClosed && aggLowerBoundClosed
+			 && aggUpperBoundClosed.get() && aggLowerBoundClosed.get()
 			 && baseTime.equals(_aggregatePeriodEnd))
 			{
 				log.trace("Special processing for double-closed boundaries. Just did period ending {}",baseTime);
@@ -698,7 +697,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 				aggCal.add(Calendar.YEAR, -1);
 
 			lower = aggCal.getTimeInMillis();
-			if (aggUpperBoundClosed && lower == orig)
+			if (aggUpperBoundClosed.get() && lower == orig)
 			{
 				aggCal.add(Calendar.YEAR, -1);
 				lower = aggCal.getTimeInMillis();
@@ -776,7 +775,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 			// is to be considered as part of the April Aggregate.
 			// Thus, if the bottom of the period is the orig time then 
 			// drop back one interval.
-			if (aggUpperBoundClosed && lower == orig)
+			if (aggUpperBoundClosed.get() && lower == orig)
 			{
 				aggCal.add(calIncr.getCalConstant(), -calIncr.getCount());
 				lower = aggCal.getTimeInMillis();
@@ -1588,9 +1587,9 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 		if (v != null)
 			return v;
 		if (name.equalsIgnoreCase("aggUpperBoundClosed"))
-			return "" + aggUpperBoundClosed;
+			return "" + aggUpperBoundClosed.get();
 		else if (name.equalsIgnoreCase("aggLowerBoundClosed"))
-			return "" + aggLowerBoundClosed;
+			return "" + aggLowerBoundClosed.get();
 		else if (name.equalsIgnoreCase("aggregateTimeZone"))
 			return aggTZ.getID();
 		else if (name.equalsIgnoreCase("noAggregateFill"))

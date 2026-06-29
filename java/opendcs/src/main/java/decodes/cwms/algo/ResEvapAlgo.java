@@ -51,6 +51,7 @@ import org.opendcs.annotations.PropertyRequirements;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.model.cwms.CwmsSiteReferenceValue;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.opendcs.utils.properties.Property;
 import org.slf4j.Logger;
 
 
@@ -208,8 +209,21 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
         _awAlgoType = AWAlgoType.AGGREGATING;
         _aggPeriodVarRoleName = DAILY_EVAP_DEPTH;
         //aggPeriodInterval = IntervalCodes.int_one_day;
-        aggUpperBoundClosed = true;
-        aggLowerBoundClosed = false;
+        // So the below are actually backawards from what's desired.
+        // During the creation of the Property build setup that 
+        // the proprty init flow calls this method, then sets up the bounds
+        // based on either computation configured property or a default.
+        // so in all algorithms, the algorithm configured desired was just
+        // getting ignored.
+        // For ResEvap it would appear that has caused the test data to be
+        // basically "off by one" the whole time as the aggregate bounds weren't as expected.
+        // Might have an affect on the daylight savings processing as well.
+        aggUpperBoundClosed = Property.property("aggUpperBoundClosed", Boolean.class)
+									  .withDefaultValue(false) // true
+									  .build();
+        aggLowerBoundClosed = Property.property("aggLowerBoundClosed", Boolean.class)
+									  .withDefaultValue(true) // false
+									  .build();
     }
 
     //Initialized hourly water temperature profiles and return double[] of WTP of the previous timeSlice before base.

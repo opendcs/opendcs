@@ -22,6 +22,7 @@ import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.opendcs.utils.properties.Property;
 import org.slf4j.Logger;
 
 @Algorithm(description = "SumOverTimeAlgorithm sums single 'input' parameter to a single 'sum' \n" +
@@ -52,8 +53,12 @@ public class SumOverTimeAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	{
 		_awAlgoType = AWAlgoType.AGGREGATING;
 		_aggPeriodVarRoleName = "sum";
-		aggUpperBoundClosed = true;
-		aggLowerBoundClosed = false;
+		aggUpperBoundClosed = Property.property("aggUpperBoundClosed", Boolean.class)
+									  .withDefaultValue(true)
+									  .build();
+		aggLowerBoundClosed = Property.property("aggLowerBoundClosed", Boolean.class)
+									  .withDefaultValue(false)
+									  .build();
 	}
 	
 	/**
