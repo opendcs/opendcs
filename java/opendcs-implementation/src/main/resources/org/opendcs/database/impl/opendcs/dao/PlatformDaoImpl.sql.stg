@@ -1,0 +1,34 @@
+group PlatformDaoImpl;
+
+select :: = <<
+with platforms(id, agency, isproduction, description, lastmodifytime, configid, expiration, mediumtype, mediumid, platformdesignator, siteid)
+    as (
+        select p.id id, p.agency agency, p.isproduction isproduction, p.description description, p.lastmodifytime lastmodifytime, p.configid configid,
+                p.expiration expiration, tm.mediumtype, tm.mediumid , p.platformdesignator , p.siteid
+            from platform p
+            join transportmedium tm on tm.platformid = p.id <if(medium_filter)><medium_filter><endif>
+        <if(where)><where><endif>
+        order by mediumtype <collate> asc, mediumid <collate> asc, platformdesignator <collate> asc
+        )
+    select
+        <platform_columns>
+        <if(medium_columns)>,<medium_columns><endif>
+        <if(config_columns)>, <config_columns><endif>
+        <if(site_columns)>, <site_columns><endif>
+        <if(site_name_columns)>, <site_name_columns><endif>
+        <if(site_props)>, <site_props><endif>
+        <if(platform_props)>, <platform_props><endif>
+        <if(platform_sensors)>, <platform_sensors><endif>
+        <if(platform_sensor_props)>, <platform_sensor_props><endif>
+    from platforms p
+    left outer join transportmedium tm on tm.platformid = p.id <medium_filter>
+    <if(config_join)><config_join><endif>
+    <if(site_join)><site_join><endif>
+    <if(site_name_join)><site_name_join><endif>
+    <if(site_props_join)><site_props_join><endif>
+    <if(platform_props_join)><platform_props_join><endif>
+    <if(platform_sensor_join)><platform_sensor_join><endif>
+    <if(platform_sensor_props_join)><platform_sensor_props_join><endif>
+
+    order by p.mediumtype <collate> asc, p.mediumid <collate> asc, p.platformdesignator <collate> asc
+>>
