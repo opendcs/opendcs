@@ -9,7 +9,7 @@ import type {
   ApiTsGroupRef,
 } from "opendcs-api";
 import { act } from "react";
-import { expect, fn, waitFor } from "storybook/test";
+import { expect, fn, screen, waitFor, within } from "storybook/test";
 import {
   ApiContext,
   defaultValue as apiDefault,
@@ -433,5 +433,195 @@ export const DeleteFailureLogsError: Story = {
     await waitFor(() =>
       expect(canvas.queryByText("DailyStageMax")).toBeInTheDocument(),
     );
+  },
+};
+
+// Helper: build a text/event-stream ReadableStream from an array of SSE blocks.
+const makeSseStream = (events: string[]): ReadableStream<Uint8Array> => {
+  const encoder = new TextEncoder();
+  return new ReadableStream({
+    start(controller) {
+      for (const chunk of events) {
+        controller.enqueue(encoder.encode(chunk));
+      }
+      controller.close();
+    },
+  });
+};
+
+const mockTsData = {
+  tsid: {
+    uniqueString: "TESTSITE.Flow.Inst.1Hour.0.compproc",
+    key: 42,
+    storageUnits: "cfs",
+  },
+  values: [
+    { sampleTime: "2025-01-01T00:00:00.000Z", value: 123.45, flags: 0 },
+    { sampleTime: "2025-01-01T01:00:00.000Z", value: 124.67, flags: 0 },
+    { sampleTime: "2025-01-01T02:00:00.000Z", value: 119.83, flags: 0 },
+  ],
+};
+
+const sseSuccessHandler = http.get(
+  "/odcsapi/runcomputation",
+  () =>
+    new HttpResponse(
+      makeSseStream([
+        "event: computation-status\ndata: Starting computation 1\n\n",
+        "event: computation-status\ndata: Computation executed with 0 errors\n\n",
+        `event: Results\ndata: ${JSON.stringify({
+          tsIds: [{ uniqueString: "TESTSITE.Flow.Inst.1Hour.0.compproc", key: 42 }],
+          startTime: "2025-01-01T00:00:00Z",
+          endTime: "2025-01-02T00:00:00Z",
+        })}\n\n`,
+      ]),
+      { headers: { "Content-Type": "text/event-stream" } },
+    ),
+);
+
+const tsDataHandler = http.get("/odcsapi/tsdata", () => HttpResponse.json(mockTsData));
+
+export const RunComputationSuccess: Story = {
+  args: {},
+  parameters: {
+    msw: {
+      handlers: {
+        ...orgScopedHandlers,
+        runComputation: sseSuccessHandler,
+        tsData: tsDataHandler,
+      },
+    },
+  },
+  render: () => (
+    <WithOrg>
+      <Computations />
+    </WithOrg>
+  ),
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const runBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:run.run_for", { id: 1 }),
+    });
+    await act(async () => userEvent.click(runBtn));
+
+    // Modal renders in a portal — use screen
+    const dialog = await screen.findByRole("dialog", {}, { timeout: 5000 });
+    expect(dialog).toBeInTheDocument();
+    const modal = within(dialog);
+
+    const executeBtn = await modal.findByRole("button", {
+      name: i18n.t("computations:run.run"),
+    });
+    await act(async () => userEvent.click(executeBtn));
+
+    // Log messages stream in
+    await waitFor(
+      () => expect(modal.queryByText("Starting computation 1")).toBeInTheDocument(),
+      { timeout: 5000 },
+    );
+
+    // Data table header with column name and units appears
+    await waitFor(
+      () =>
+        expect(
+          modal.queryByText("TESTSITE.Flow.Inst.1Hour.0.compproc (cfs)"),
+        ).toBeInTheDocument(),
+      { timeout: 5000 },
+    );
+
+    // A computed value appears in the table
+    await waitFor(() => expect(modal.queryByText("123.45")).toBeInTheDocument(), {
+      timeout: 5000,
+    });
+  },
+};
+
+const sseErrorEventHandler = http.get(
+  "/odcsapi/runcomputation",
+  () =>
+    new HttpResponse(
+      makeSseStream([
+        "event: computation-status\ndata: Checking output parameters\n\n",
+        "event: ERROR\ndata: No site found with ID: 99\n\n",
+      ]),
+      { headers: { "Content-Type": "text/event-stream" } },
+    ),
+);
+
+export const RunComputationErrorEvent: Story = {
+  args: {},
+  parameters: {
+    msw: { handlers: { ...orgScopedHandlers, runComputation: sseErrorEventHandler } },
+  },
+  render: () => (
+    <WithOrg>
+      <Computations />
+    </WithOrg>
+  ),
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const runBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:run.run_for", { id: 1 }),
+    });
+    await act(async () => userEvent.click(runBtn));
+
+    const dialog = await screen.findByRole("dialog", {}, { timeout: 5000 });
+    const modal = within(dialog);
+
+    const executeBtn = await modal.findByRole("button", {
+      name: i18n.t("computations:run.run"),
+    });
+    await act(async () => userEvent.click(executeBtn));
+
+    // Error appears in both the log and the alert — check the alert specifically
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeInTheDocument(), {
+      timeout: 5000,
+    });
+  },
+};
+
+export const RunComputationHttpError: Story = {
+  args: {},
+  parameters: {
+    msw: {
+      handlers: {
+        ...orgScopedHandlers,
+        runComputation: http.get(
+          "/odcsapi/runcomputation",
+          () => new HttpResponse(null, { status: 500 }),
+        ),
+      },
+    },
+  },
+  render: () => (
+    <WithOrg>
+      <Computations />
+    </WithOrg>
+  ),
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const runBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:run.run_for", { id: 1 }),
+    });
+    await act(async () => userEvent.click(runBtn));
+
+    const dialog = await screen.findByRole("dialog", {}, { timeout: 5000 });
+    const modal = within(dialog);
+
+    const executeBtn = await modal.findByRole("button", {
+      name: i18n.t("computations:run.run"),
+    });
+    await act(async () => userEvent.click(executeBtn));
+
+    // An alert with the HTTP error should appear
+    await waitFor(() => expect(modal.queryByRole("alert")).toBeInTheDocument(), {
+      timeout: 5000,
+    });
   },
 };

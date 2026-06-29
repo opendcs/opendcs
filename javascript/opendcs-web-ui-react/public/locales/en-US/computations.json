@@ -81,5 +81,22 @@
     "none_found": "No algorithms available.",
     "add_selected": "Add {{count}} Computation(s)",
     "adding": "Adding..."
+  },
+  "run": {
+    "title": "Run Computation: {{name}}",
+    "start": "Start",
+    "end": "End",
+    "run": "Run",
+    "run_for": "Run computation {{id}}",
+    "stop": "Stop",
+    "running": "Running...",
+    "aborted": "Run cancelled.",
+    "log_label": "Computation log",
+    "results_title": "Output Time Series",
+    "no_outputs": "No output time series were identified.",
+    "unknown_ts": "(unknown)",
+    "fetching_data": "Fetching computed values...",
+    "no_data": "No values written in this time window.",
+    "fetch_warning": "Could not fetch computed values"
   }
 }

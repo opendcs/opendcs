@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
+import RunComputationModal from "./RunComputationModal";
 import { useTranslation } from "react-i18next";
 import type {
   ApiAlgorithm,
@@ -77,6 +78,10 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
 }) => {
   const [t] = useTranslation(["computations", "translation"]);
   const [showCheckNew, setShowCheckNew] = useState(false);
+  const [runTarget, setRunTarget] = useState<{
+    id: number;
+    name: string | undefined;
+  } | null>(null);
   const tableRef = useRef<AppDataTableHandle<TableComputationRef>>(null);
   const draftsRef = useRef<Record<number, UiComputation>>({});
 
@@ -128,6 +133,18 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
 
   const rowActions = useMemo<RowAction<TableComputationRef>[]>(
     () => [
+      {
+        key: "run",
+        icon: "bi-play-fill",
+        variant: "success",
+        show: (row) => (row.computationId ?? 0) > 0,
+        aria: (row) => t("computations:run.run_for", { id: row.computationId }),
+        onClick: ({ row }) => {
+          if (row.computationId !== undefined) {
+            setRunTarget({ id: row.computationId, name: row.name });
+          }
+        },
+      },
       {
         key: "edit",
         icon: "bi-pencil",
@@ -235,6 +252,12 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
         onSave={actions.save}
         caption={t("computations:computationsTitle")}
         tableId="computationTable"
+      />
+      <RunComputationModal
+        show={runTarget !== null}
+        computationId={runTarget?.id}
+        computationName={runTarget?.name}
+        onHide={() => setRunTarget(null)}
       />
       <AlgorithmSelectModal
         show={showCheckNew}
