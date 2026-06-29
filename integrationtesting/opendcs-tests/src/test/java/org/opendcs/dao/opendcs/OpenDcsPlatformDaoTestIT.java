@@ -42,6 +42,9 @@ class OpenDcsPlatformDaoTestIT extends AppTestBase
             assertFalse(platform.getSite().getNameArray().isEmpty());
             assertEquals("I'm here", platform.getProperty("SystemCheck"));
 
+
+            assertNotNull(platform.getConfig());
+
             dao.delete(tx, platform.getId());
 
             var shouldFail = dao.getById(tx, platform.getId());
@@ -49,7 +52,6 @@ class OpenDcsPlatformDaoTestIT extends AppTestBase
 
             tx.rollback();
         }
-        
     }
 
     @Test
