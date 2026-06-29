@@ -82,5 +82,22 @@
     "none_found": "No algorithms available.",
     "add_selected": "Add {{count}} Computation(s)",
     "adding": "Adding..."
+  },
+  "run": {
+    "title": "Berechnung ausführen: {{name}}",
+    "start": "Start",
+    "end": "Ende",
+    "run": "Ausführen",
+    "run_for": "Berechnung {{id}} ausführen",
+    "stop": "Stoppen",
+    "running": "Wird ausgeführt...",
+    "aborted": "Ausführung abgebrochen.",
+    "log_label": "Berechnungsprotokoll",
+    "results_title": "Ausgabe-Zeitreihen",
+    "no_outputs": "Keine Ausgabe-Zeitreihen identifiziert.",
+    "unknown_ts": "(unbekannt)",
+    "fetching_data": "Berechnete Werte werden abgerufen...",
+    "no_data": "In diesem Zeitfenster wurden keine Werte geschrieben.",
+    "fetch_warning": "Berechnete Werte konnten nicht abgerufen werden"
   }
 }

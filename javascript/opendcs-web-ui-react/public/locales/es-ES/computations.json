@@ -82,5 +82,22 @@
     "none_found": "No algorithms available.",
     "add_selected": "Add {{count}} Computation(s)",
     "adding": "Adding..."
+  },
+  "run": {
+    "title": "Ejecutar cálculo: {{name}}",
+    "start": "Inicio",
+    "end": "Fin",
+    "run": "Ejecutar",
+    "run_for": "Ejecutar cálculo {{id}}",
+    "stop": "Detener",
+    "running": "Ejecutando...",
+    "aborted": "Ejecución cancelada.",
+    "log_label": "Registro de cálculo",
+    "results_title": "Series de tiempo de salida",
+    "no_outputs": "No se identificaron series de tiempo de salida.",
+    "unknown_ts": "(desconocido)",
+    "fetching_data": "Obteniendo valores calculados...",
+    "no_data": "No se escribieron valores en esta ventana de tiempo.",
+    "fetch_warning": "No se pudieron obtener los valores calculados"
   }
 }
