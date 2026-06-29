@@ -8,6 +8,7 @@ import static org.opendcs.utils.sql.SqlQueries.collateClauseFor;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.statement.Query;
@@ -18,10 +19,10 @@ import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.dai.DecodesConfigDao;
 import org.opendcs.database.dai.EquipmentModelDao;
 import org.opendcs.database.dai.PlatformDao;
-import org.opendcs.database.dai.SiteDao;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.configs.DecodesConfigMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformReducer;
@@ -33,9 +34,11 @@ import org.opendcs.database.model.mappers.properties.PropertiesMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteNameMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteReducer;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.util.lookup.ServiceProviders;
+import org.slf4j.Logger;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 
@@ -51,6 +54,8 @@ import decodes.sql.DbKey;
 })
 public class PlatformDaoImpl implements PlatformDao
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
     private static final STGroup QUERIES = StringTemplateSqlLocator.findStringTemplateGroup(PlatformDaoImpl.class);
     private static final Mappers ALL_DATA = new Mappers(
         PlatformMapper.withPrefix("p"),
@@ -78,26 +83,39 @@ public class PlatformDaoImpl implements PlatformDao
         null,
         null);
 
+    private static final String SELECT = "select";
+    private static final String MERGE = "platformMerge";
+    private static final String DELETE_PLATFORM = "deletePlatform";
+    private static final String DELETE_PROPERTIES = "deleteProperties";
+    private static final String DELETE_PLATFORM_SENSORS = "deletePlatformSensor";
+    private static final String DELETE_PLATFORM_SENSOR_PROPERTIES = "deletePlatformSensorProperties";
+    private static final String DELETE_TRANSPORT_MEDIUM = "deleteTransportMedium";
+
+    /**
+     * It would be better to use the Config Mappers and columns
+     * directly in a join; however, there is a <b>lot</b> of columns
+     * involved and this will mostly be used when retrieving a single Platform
+     * so the performance differences shouldn't be all that large.
+     */
     @InjectDao
     DecodesConfigDao configDao;
 
     @InjectDao
     EquipmentModelDao equipmentDao;
 
-    @InjectDao
-    SiteDao siteDao;
-
-
-
     @Override
     public Optional<Platform> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
+        if (DbKey.isNull(id))
+        {
+            return Optional.empty();
+        }
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabaseEngine();
 
-        var selectTemplate = QUERIES.getInstanceOf("select");
+        var selectTemplate = QUERIES.getInstanceOf(SELECT);
 
         if (selectTemplate == null)
         {
@@ -110,8 +128,33 @@ public class PlatformDaoImpl implements PlatformDao
             return select.bind(PlatformMapper.Columns.ID.column(), id)
                          .reduceRows(new PlatformReducer(ALL_DATA.platformMapper, ALL_DATA.siteReducer(),
                                                          ALL_DATA.platformSensorReducer()))
+                         .map(p -> mapConfig(tx, p))
                          .findFirst();
         }
+    }
+
+    private Platform mapConfig(DataTransaction tx, Platform p) throws OpenDcsDataRuntimeException
+    {
+        if (p.getConfig() != null)
+        {
+            try
+            {
+                var config = configDao.getById(tx, p.getConfig()
+                                      .getId())
+                                      .orElseGet(() ->
+                                      {
+                                          log.atWarn().log("No config exists with id {}", p.getConfig().getId());
+                                          return null;
+                                      });
+                p.setConfig(config);
+            }
+            catch (OpenDcsDataException ex)
+            {
+                throw new OpenDcsDataRuntimeException("Unable to retrieve PlatformConfig.", ex);
+            }
+        }
+
+        return p;
     }
 
     @Override
@@ -123,7 +166,7 @@ public class PlatformDaoImpl implements PlatformDao
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabaseEngine();
 
-        var selectTemplate = QUERIES.getInstanceOf("select");
+        var selectTemplate = QUERIES.getInstanceOf(SELECT);
 
         if (selectTemplate == null)
         {
@@ -135,22 +178,11 @@ public class PlatformDaoImpl implements PlatformDao
         {
             registerMappers(select, ALL_DATA);
 
-            /** Leaving in place for debugging for now.
-             * Default logging cutoff the sql which is somewhat... long.
-             */
-            select.setSqlLogger(new SqlLogger()
-            {
-                @Override
-                public void logBeforeExecution(StatementContext context)
-                {
-                    System.out.println(context.getRenderedSql());
-                }
-            });
-
             return select.bind("mediumtype", mediumType)
                          .bind("mediumid", mediumId)
                          .reduceRows(new PlatformReducer(ALL_DATA.platformMapper, ALL_DATA.siteReducer(),
                                                          ALL_DATA.platformSensorReducer()))
+                         .map(p -> mapConfig(tx, p))
                          .findFirst();
         }
     }
@@ -230,7 +262,19 @@ public class PlatformDaoImpl implements PlatformDao
     @Override
     public Platform save(DataTransaction tx, Platform platform) throws OpenDcsDataException
     {
-        return null;
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var mergeTemplate = QUERIES.getInstanceOf(MERGE);
+        try (var merge = handle.createUpdate(mergeTemplate.render()))
+        {    // deletes
+            // merge
+
+
+            // delete executions
+            // reinserts
+
+            return null;
+        }
     }
 
     @Override
@@ -238,11 +282,11 @@ public class PlatformDaoImpl implements PlatformDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        var deletePlatformTemplate = QUERIES.getInstanceOf("deletePlatform");
-        var deletePlatformPropertiesTemplate = QUERIES.getInstanceOf("deleteProperties");
-        var deletePlatformSensorTemplate = QUERIES.getInstanceOf("deletePlatformSensor");
-        var deletePlatformSensorPropertiesTemplate = QUERIES.getInstanceOf("deletePlatformSensorProperties");
-        var deleteTransportMediumTemplate = QUERIES.getInstanceOf("deleteTransportMedium");
+        var deletePlatformTemplate = QUERIES.getInstanceOf(DELETE_PLATFORM);
+        var deletePlatformPropertiesTemplate = QUERIES.getInstanceOf(DELETE_PROPERTIES);
+        var deletePlatformSensorTemplate = QUERIES.getInstanceOf(DELETE_PLATFORM_SENSORS);
+        var deletePlatformSensorPropertiesTemplate = QUERIES.getInstanceOf(DELETE_PLATFORM_SENSOR_PROPERTIES);
+        var deleteTransportMediumTemplate = QUERIES.getInstanceOf(DELETE_TRANSPORT_MEDIUM);
 
         try (var deletePlatform = handle.createUpdate(deletePlatformTemplate.render());
              var deletePlatformProperties = handle.createUpdate(deletePlatformPropertiesTemplate.render());
@@ -266,7 +310,7 @@ public class PlatformDaoImpl implements PlatformDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabaseEngine();
-        var selectTemplate = QUERIES.getInstanceOf("select");
+        var selectTemplate = QUERIES.getInstanceOf(SELECT);
         if (mediumType != null && !mediumType.isBlank())
         {
             selectTemplate.add("medium_filter", " and tm.mediumtype = :mediumtype")
@@ -281,9 +325,11 @@ public class PlatformDaoImpl implements PlatformDao
             {
                 select.bind("mediumtype", mediumType);
             }
+            UnaryOperator<Platform> configMapper = fillAll ? (p -> mapConfig(tx, p)) : p -> p;
             return select.reduceRows(new PlatformReducer(mappers.platformMapper(),
                                                          mappers.siteReducer(),
                                                          mappers.platformSensorReducer()))
+                         .map(configMapper)
                          .toList();
         }
     }
