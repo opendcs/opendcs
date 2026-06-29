@@ -5,15 +5,15 @@ import static org.opendcs.utils.sql.SqlQueries.LEFT_OUTER;
 import static org.opendcs.utils.sql.SqlQueries.WHERE_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.collateClauseFor;
 
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.statement.Query;
-import org.jdbi.v3.core.statement.SqlLogger;
-import org.jdbi.v3.core.statement.StatementContext;
 import org.jdbi.v3.stringtemplate4.StringTemplateSqlLocator;
 import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.database.api.DataTransaction;
@@ -42,9 +42,12 @@ import org.slf4j.Logger;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 
+import decodes.db.DatabaseException;
 import decodes.db.Platform;
 import decodes.db.Site;
+import decodes.db.TransportMedium;
 import decodes.sql.DbKey;
+import decodes.sql.KeyGenerator;
 
 
 @ServiceProviders({
@@ -187,6 +190,19 @@ public class PlatformDaoImpl implements PlatformDao
         }
     }
 
+    private Optional<Platform> getByMediumIds(DataTransaction tx, Iterable<TransportMedium> mediums) throws OpenDcsDataException
+    {
+        for (var tm: mediums)
+        {
+            var p = getByMediumId(tx, tm.getMediumType(), tm.getMediumId());
+            if (p.isPresent())
+            {
+                return p;
+            }
+        }
+        return Optional.empty();
+    }
+
     private static Query registerMappers(Query select, Mappers mappers)
     {
         select.registerRowMapper(mappers.platformMapper())
@@ -264,16 +280,51 @@ public class PlatformDaoImpl implements PlatformDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        var mergeTemplate = QUERIES.getInstanceOf(MERGE);
-        try (var merge = handle.createUpdate(mergeTemplate.render()))
-        {    // deletes
-            // merge
+        var ctx = tx.getContext();
+        var dbEngine = ctx.getDatabaseEngine();
+        var keyGen = ctx.getGenerator(KeyGenerator.class)
+                .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
+        var mergeTemplate = QUERIES.getInstanceOf(MERGE)
+                                   .add("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
+        try (var merge = handle.createUpdate(mergeTemplate.render()).define("numeric_date", true))
+        {
+            DbKey id = platform.getId();
+            var existing = getByMediumIds(tx, platform.transportMedia );
+            if (existing.isPresent())
+            {
+                // If there's an existing app with this name, we'll just assume the provided id, if any, was in error
+                id = existing.get().getId();
+                log.trace("""
+                    Using ID from existing Platform, id={}, that was found. Provided ID was {}.
+                    """,
+                    id, platform.getId());
+            }
+            final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("platform", handle.getConnection());
+            merge.bind(PlatformMapper.Columns.ID.column(), bindKey)
+                 .bind(PlatformMapper.Columns.AGENCY.column(), platform.agency)
+                 .bindByType(PlatformMapper.Columns.CONFIG_ID.column(),
+                       platform.getConfig() != null ? platform.getConfig().getId() : null, DbKey.class)
+                 .bindByType(PlatformMapper.Columns.SITE_ID.column(),
+                       platform.getSite() != null ? platform.getSite().getId(): null, DbKey.class)
+                 .bind(PlatformMapper.Columns.DESCRIPTION.column(), platform.description)
+                 .bind(PlatformMapper.Columns.DESIGNATOR.column(), platform.getPlatformDesignator())
+                 .bind(PlatformMapper.Columns.LAST_MODIFY_TIME.column(),
+                       ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli())
+                 .bindByType(PlatformMapper.Columns.EXPIRATION.column(), platform.expiration, Date.class)
+                 .bind(PlatformMapper.Columns.IS_PRODUCTION.column(), platform.isProduction)
+                 .execute();
+
+
 
 
             // delete executions
             // reinserts
 
-            return null;
+            return getById(tx, bindKey).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Platform we just saved."));
+        }
+        catch (DatabaseException ex)
+        {
+            throw new OpenDcsDataException("Unable to generate key to save platform.", ex);
         }
     }
 

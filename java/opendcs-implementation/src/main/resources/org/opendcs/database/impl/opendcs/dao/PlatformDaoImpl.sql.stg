@@ -36,7 +36,7 @@ with platforms(id, agency, isproduction, description, lastmodifytime, configid, 
     order by p.mediumtype <collate> asc, p.mediumid <collate> asc, p.platformdesignator <collate> asc
 >>
 
-platformMerge() ::= <<
+platformMerge(dual) ::= <<
 merge into platform p
 using (select :id id, :agency agency, :isproduction isproduction, :siteid siteid, :configid configid, 
        :description description, :lastmodifytime lastmodifytime, :expiration expiration,
