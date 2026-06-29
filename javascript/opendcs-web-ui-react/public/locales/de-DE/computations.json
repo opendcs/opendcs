@@ -97,6 +97,13 @@
     "unknown_ts": "(unbekannt)",
     "fetching_data": "Berechnete Werte werden abgerufen...",
     "no_data": "In diesem Zeitfenster wurden keine Werte geschrieben.",
-    "fetch_warning": "Berechnete Werte konnten nicht abgerufen werden"
+    "fetch_warning": "Berechnete Werte konnten nicht abgerufen werden",
+    "group_select_label": "Eingabe-Zeitreihen auswählen",
+    "group_select_all": "Alle",
+    "group_select_none": "Keine",
+    "group_loading": "Gruppenmitglieder werden geladen...",
+    "group_load_error": "Gruppenmitglieder konnten nicht geladen werden",
+    "group_empty": "Keine Zeitreihen in dieser Gruppe gefunden.",
+    "group_running_for": "Wird ausgeführt für {{tsid}}"
   }
 }

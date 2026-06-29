@@ -764,6 +764,56 @@ public final class TimeSeriesResources extends OpenDcsResource
 		return ret;
 	}
 
+	@GET
+	@Path("expandgroup")
+	@Produces(MediaType.APPLICATION_JSON)
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
+	@Operation(
+			summary = "Expand a time series group to its full list of member time series identifiers.",
+			description = "Returns the fully-expanded list of time series identifiers that belong to the "
+					+ "specified group, including members from sub-groups, attribute-based filters, "
+					+ "and include/exclude/intersect relationships.  \n\n"
+					+ "Example URL:  \n\n    http://localhost:8080/odcsapi/expandgroup?groupid=9\n\n",
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Successfully expanded time series group",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									array = @ArraySchema(schema = @Schema(implementation = ApiTimeSeriesIdentifier.class)))),
+					@ApiResponse(responseCode = "400", description = "Invalid or missing group ID"),
+					@ApiResponse(responseCode = "404", description = "Time series group not found"),
+					@ApiResponse(responseCode = "500", description = "Database error occurred")
+			},
+			tags = {"Time Series Methods - Groups"}
+	)
+	public Response expandGroup(@Parameter(description = "Group ID to expand", required = true,
+			schema = @Schema(implementation = Long.class), example = "9")
+		@QueryParam("groupid") Long groupId)
+			throws WebAppException, DbException
+	{
+		if (groupId == null)
+		{
+			throw new MissingParameterException("Missing required groupid parameter.");
+		}
+		try (TsGroupDAI dai = getLegacyTimeseriesDB().makeTsGroupDAO())
+		{
+			TsGroup group = dai.getTsGroupById(DbKey.createDbKey(groupId));
+			if (group == null)
+			{
+				throw new DatabaseItemNotFoundException("Time series group with ID=" + groupId + " not found");
+			}
+			ArrayList<TimeSeriesIdentifier> expanded = getLegacyTimeseriesDB().expandTsGroup(group);
+			List<ApiTimeSeriesIdentifier> result = new ArrayList<>();
+			for (TimeSeriesIdentifier tsid : expanded)
+			{
+				result.add(mapTsId(tsid));
+			}
+			return Response.ok().entity(result).build();
+		}
+		catch (DbIoException ex)
+		{
+			throw new DbException("Unable to expand time series group by ID", ex);
+		}
+	}
+
 	@POST
 	@Path("tsgroup")
 	@Consumes(MediaType.APPLICATION_JSON)

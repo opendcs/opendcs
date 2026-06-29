@@ -36,6 +36,7 @@ import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DataCollection;
 import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbComputation;
+import decodes.tsdb.DbCompResolver;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.ProgressListener;
@@ -290,7 +291,8 @@ public final class ComputationResources extends OpenDcsResource
 	@Operation(
 			summary = "Execute an Existing OpenDCS Computation",
 			description = "Endpoint takes in a computation name and a list of timeseries IDs to execute a computation. "
-					+ "Optionally takes in a start and end date for a time window to use for the computation",
+					+ "Optionally takes in a start and end date for a time window to use for the computation. "
+					+ "For group computations, supply the tsid parameter to run against a specific input time series.",
 			tags = {"REST - Computation Methods"},
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Successfully initiated execution of computation",
@@ -311,7 +313,11 @@ public final class ComputationResources extends OpenDcsResource
 			@QueryParam("start") String start,
 			@Parameter(required = true, description = "Parameter to specify the end of the time range to execute the computation on",
 					schema = @Schema(implementation = Instant.class, example = "2025-10-25T12:00:00Z"))
-			@QueryParam("end") String end)
+			@QueryParam("end") String end,
+			@Parameter(description = "Time series key to use as the group computation input. "
+					+ "When provided the group computation is resolved against this specific time series.",
+					schema = @Schema(implementation = Long.class))
+			@QueryParam("tsid") Long tsId)
 			throws DbException, WebAppException
 	{
 		final String compStatus = "computation-status";
@@ -327,6 +333,13 @@ public final class ComputationResources extends OpenDcsResource
 		{
 			DbComputation comp = dai.getComputationById(DbKey.createDbKey(computationId));
 
+			if (tsId != null && comp.hasGroupInput())
+			{
+				TimeSeriesIdentifier inputTsid = tsDai.getTimeSeriesIdentifier(DbKey.createDbKey(tsId));
+				comp = DbCompResolver.makeConcrete(getLegacyTimeseriesDB(), tsDai, inputTsid, comp, true);
+			}
+
+			final DbComputation resolvedComp = comp;
 			String taskID = UUID.randomUUID().toString();
 
 			final Instant startTime = Instant.parse(start);
@@ -334,7 +347,7 @@ public final class ComputationResources extends OpenDcsResource
 			Date startDate = Date.from(startTime);
 			Date endDate = Date.from(endTime);
 
-			List<TimeSeriesIdentifier> outputList = processOutputTsIds(comp, tsDai, siteDai, computationId, taskID, sse, eventSink);
+			List<TimeSeriesIdentifier> outputList = processOutputTsIds(resolvedComp, tsDai, siteDai, computationId, taskID, sse, eventSink);
 
 			final var contextMap = MDC.getCopyOfContextMap();
 			CompletableFuture.runAsync(() ->
@@ -353,7 +366,7 @@ public final class ComputationResources extends OpenDcsResource
 					{
 						MDC.setContextMap(contextMap);
 					}
-					executeAndPublishResult(computationId, comp, startDate, endDate, sse, eventSink, compStatus, taskID);
+					executeAndPublishResult(computationId, resolvedComp, startDate, endDate, sse, eventSink, compStatus, taskID);
 				}
 				catch (RuntimeException ex)
 				{

@@ -39,6 +39,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.opendcs.odcsapi.util.DTOMappers.mapSite;
 
@@ -598,6 +599,78 @@ final class TimeSeriesResourcesIT extends BaseApiIT
 			}
 		}
 		assertEquals(expectedSiteList.size(), siteCount);
+	}
+
+	@Test
+	void testExpandGroup()
+	{
+		var response = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.queryParam("groupid", tsGroupId)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("expandgroup")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.OK.getStatusCode()))
+			.extract()
+		;
+
+		List<Map<String, Object>> expanded = response.body().jsonPath().getList("");
+		assertFalse(expanded.isEmpty(), "Expanded group should contain at least one time series");
+		// Every entry must have a uniqueString and a key
+		for (Map<String, Object> entry : expanded)
+		{
+			assertNotNull(entry.get("uniqueString"), "Each expanded TS must have a uniqueString");
+			assertNotNull(entry.get("key"), "Each expanded TS must have a key");
+		}
+		// The explicitly-listed active TS from the group fixture must appear in the expansion
+		String expectedTs = tsId.getUniqueString();
+		assertTrue(
+			expanded.stream().anyMatch(ts -> expectedTs.equals(ts.get("uniqueString"))),
+			"Active TS from group definition must appear in expanded list"
+		);
+	}
+
+	@Test
+	void testExpandGroupNotFound()
+	{
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.queryParam("groupid", Long.MAX_VALUE)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("expandgroup")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
+		;
+	}
+
+	@Test
+	void testExpandGroupMissingParam()
+	{
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("expandgroup")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.BAD_REQUEST.getStatusCode()))
+		;
 	}
 
 	@Test

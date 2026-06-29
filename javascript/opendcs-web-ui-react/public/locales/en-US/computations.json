@@ -97,6 +97,13 @@
     "unknown_ts": "(unknown)",
     "fetching_data": "Fetching computed values...",
     "no_data": "No values written in this time window.",
-    "fetch_warning": "Could not fetch computed values"
+    "fetch_warning": "Could not fetch computed values",
+    "group_select_label": "Select Input Time Series",
+    "group_select_all": "All",
+    "group_select_none": "None",
+    "group_loading": "Loading group members...",
+    "group_load_error": "Could not load group members",
+    "group_empty": "No time series found in this group.",
+    "group_running_for": "Running for {{tsid}}"
   }
 }
