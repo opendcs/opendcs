@@ -15,7 +15,6 @@ import java.util.Vector;
 import java.util.function.UnaryOperator;
 
 import org.jdbi.v3.core.Handle;
-import org.jdbi.v3.core.mapper.Mappers;
 import org.jdbi.v3.core.statement.Query;
 import org.jdbi.v3.stringtemplate4.StringTemplateSqlLocator;
 import org.opendcs.annotations.api.InjectDao;
