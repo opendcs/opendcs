@@ -748,7 +748,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
       cols.push({
         data: null,
         defaultContent: "",
-        className: undefined,
+        className: "all",
         name: "actions",
         orderable: false,
         searchable: false,
