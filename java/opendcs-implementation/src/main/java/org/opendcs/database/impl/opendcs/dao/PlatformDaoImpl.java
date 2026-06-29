@@ -1,6 +1,7 @@
 package org.opendcs.database.impl.opendcs.dao;
 
 import static org.opendcs.utils.sql.SqlQueries.COLLATE_CLAUSE;
+import static org.opendcs.utils.sql.SqlQueries.LEFT_OUTER;
 import static org.opendcs.utils.sql.SqlQueries.WHERE_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.collateClauseFor;
 
@@ -9,11 +10,13 @@ import java.util.List;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
+import org.jdbi.v3.core.statement.Query;
 import org.jdbi.v3.core.statement.SqlLogger;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.jdbi.v3.stringtemplate4.StringTemplateEngine;
 import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.DecodesConfigDao;
 import org.opendcs.database.dai.EquipmentModelDao;
@@ -77,6 +80,31 @@ public class PlatformDaoImpl implements PlatformDao
 
             order by p.mediumtype <collate> asc, p.mediumid <collate> asc, p.platformdesignator <collate> asc
             """;
+    private static final Mappers ALL_DATA = new Mappers(
+        PlatformMapper.withPrefix("p"),
+        DecodesConfigMapper.withPrefix("config"),
+        TransportMediumMapper.withPrefix("tm"),
+        OpenDcsSiteMapper.withPrefix("s"),
+        OpenDcsSiteNameMapper.withPrefix("sn"),
+        PropertiesMapper.withPrefix("sp", true),
+        new OpenDcsSiteReducer("s"),
+        PropertiesMapper.withPrefix("pp", true),
+        PlatformSensorMapper.withPrefix("ps"),
+        PlatformSensorPropertyMapper.withPrefix("psp")
+    );
+
+    private static final Mappers REF_DATA = new Mappers(
+        PlatformMapper.withPrefix("p"),
+        null,
+        TransportMediumMapper.withPrefix("tm"),
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null);
 
     @InjectDao
     DecodesConfigDao configDao;
@@ -101,44 +129,14 @@ public class PlatformDaoImpl implements PlatformDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabaseEngine();
+        
         try (var select = handle.createQuery(SELECT_SQL))
         {
             select.setTemplateEngine(new StringTemplateEngine());
-            var platformMapper = PlatformMapper.withPrefix("p");
-            var configMapper = DecodesConfigMapper.withPrefix("config");
-            var mediumMapper = TransportMediumMapper.withPrefix("tm");
-            var siteMapper = OpenDcsSiteMapper.withPrefix("s");
-            var siteNameMapper = OpenDcsSiteNameMapper.withPrefix("sn");
-            var siteReducer = new OpenDcsSiteReducer("s");
-            var platformPropsMapper = PropertiesMapper.withPrefix("pp", true);
-            var platformSensorMapper = PlatformSensorMapper.withPrefix("ps");
-            var platformSensorPropertiesMapper = PlatformSensorPropertyMapper.withPrefix("psp");
-            var platformSensorReducder = new PlatformSensorReducer(platformSensorMapper);
-
-            select.define("platform_columns", platformMapper.columnsForSelect())
-                  .define("medium_columns", mediumMapper.columnsForSelect())
-                  .define("site_columns", siteMapper.columnsForSelect())
-                  .define("site_name_columns", siteNameMapper.columnsForSelect())
-                  .define("site_props", "sp.prop_name sp_prop_name, sp.prop_value sp_prop_value")
-                  .define("platform_props", platformPropsMapper.columnsForSelect())
-                  .define("platform_sensors", platformSensorMapper.columnsForSelect())
-                  .define("platform_sensor_props", platformSensorPropertiesMapper.columnsForSelect())
-                  //.define("config_columns", "")
-                  //.define("config_join", "")
-                  .define("site_join", siteMapper.joinStatement("left outer", OpenDcsSiteMapper.Columns.ID,
-                                                                     "p", PlatformMapper.Columns.SITE_ID.column()))
-                  .define("site_name_join", siteNameMapper.joinStatement("left outer", OpenDcsSiteNameMapper.Columns.SITE_ID,
-                                                                              "p", PlatformMapper.Columns.SITE_ID.column()))
-                  .define("site_props_join", "left outer join site_property sp on sp.site_id = p.siteid")
-                  .define("platform_props_join", "left outer join platformproperty pp on pp.platformid = p.id")
-                  .define("platform_sensor_join", platformSensorMapper.joinStatement(
-                    "left outer", PlatformSensorMapper.Columns.PLATFORM_ID, "p", PlatformMapper.Columns.ID.column()))
-                  .define("platform_sensor_props_join", platformSensorPropertiesMapper.joinStatement(
-                    "left outer", PlatformSensorPropertyMapper.Columns.PLATFORM_ID, "p", PlatformMapper.Columns.ID.column()))
-                  .define(COLLATE_CLAUSE, collateClauseFor(dbEngine))
-                  .define("medium_filter", " and tm.mediumtype = :mediumtype and tm.mediumid = :mediumid")
-                  .define(WHERE_CLAUSE, "where mediumtype = :mediumtype and mediumid = :mediumid")
-                  ;
+            setDefines(select, dbEngine, ALL_DATA)
+                .define("medium_filter", " and tm.mediumtype = :mediumtype and tm.mediumid = :mediumid")                  
+                .define(WHERE_CLAUSE, "where mediumtype = :mediumtype and mediumid = :mediumid")
+            ;
 
             /** Leaving in place for debugging for now.
              * Default logging cutoff the sql which is somewhat... long.
@@ -152,20 +150,58 @@ public class PlatformDaoImpl implements PlatformDao
                 }
             });
 
-            return select.registerRowMapper(platformMapper)
-                         .registerRowMapper(configMapper)
-                         .registerRowMapper(mediumMapper)
-                         .registerRowMapper(siteMapper)
-                         .registerRowMapper(siteNameMapper)
-                         .registerRowMapper(platformSensorMapper)
-                         .registerRowMapper(platformSensorPropertiesMapper)
-                         .registerRowMapper(PropertiesMapper.withPrefix("sp", true))
-                         .registerRowMapper(PlatformReducer.PLATFORM_PROPERTIES, platformPropsMapper)
-                         .bind("mediumtype", mediumType)
+            return select.bind("mediumtype", mediumType)
                          .bind("mediumid", mediumId)
-                         .reduceRows(new PlatformReducer(platformMapper, siteReducer, platformSensorReducder))
+                         .reduceRows(new PlatformReducer(ALL_DATA.platformMapper, ALL_DATA.siteReducer(),
+                                                         ALL_DATA.platformSensorReducer()))
                          .findFirst();
         }
+    }
+
+    private static Query setDefines(Query select, DatabaseEngine dbEngine, Mappers mappers)
+    {
+        select.define("platform_columns", mappers.platformMapper().columnsForSelect())
+              .define("medium_columns", mappers.tmMapper().columnsForSelect())
+              .registerRowMapper(mappers.platformMapper())
+              .registerRowMapper(mappers.tmMapper())
+        ;
+        
+        if (mappers.siteMapper() != null)
+        {
+            select.define("site_columns", mappers.siteMapper().columnsForSelect())
+                  .define("site_name_columns", mappers.siteNameMapper().columnsForSelect())
+                  .define("site_props", "sp.prop_name sp_prop_name, sp.prop_value sp_prop_value")
+                  .define("site_join", mappers.siteMapper()
+                                                  .joinStatement(LEFT_OUTER, OpenDcsSiteMapper.Columns.ID,
+                                                                 "p", PlatformMapper.Columns.SITE_ID.column()))
+                  .define("site_name_join", mappers.siteNameMapper()
+                                                       .joinStatement(LEFT_OUTER, OpenDcsSiteNameMapper.Columns.SITE_ID,
+                                                                      "p", PlatformMapper.Columns.SITE_ID.column()))
+                  .define("site_props_join", "left outer join site_property sp on sp.site_id = p.siteid")
+                  .registerRowMapper(mappers.siteMapper())
+                  .registerRowMapper(mappers.siteNameMapper())
+                  .registerRowMapper(mappers.sitePropsMapper())
+                  ;
+        }
+        
+        if (mappers.platformPropsMapper() != null)
+        {
+            select.define("platform_props", mappers.platformPropsMapper().columnsForSelect())
+                  .define("platform_sensors", mappers.platformSensorMapper().columnsForSelect())
+                  .define("platform_sensor_props", mappers.platformSensorPropertiesMapper().columnsForSelect())
+                  .define("platform_props_join", "left outer join platformproperty pp on pp.platformid = p.id")
+                  .define("platform_sensor_join", mappers.platformSensorMapper().joinStatement(
+                    "left outer", PlatformSensorMapper.Columns.PLATFORM_ID, "p", PlatformMapper.Columns.ID.column()))
+                  .define("platform_sensor_props_join", mappers.platformSensorPropertiesMapper()
+                                                                   .joinStatement(LEFT_OUTER, 
+                                                                                  PlatformSensorPropertyMapper.Columns.PLATFORM_ID, 
+                                                                                  "p", PlatformMapper.Columns.ID.column()))
+                  .registerRowMapper(PlatformReducer.PLATFORM_PROPERTIES, mappers.platformPropsMapper())
+                  .registerRowMapper(mappers.platformSensorMapper)
+                  .registerRowMapper(mappers.platformSensorPropertiesMapper)
+                  ;
+        }
+        return select.define(COLLATE_CLAUSE, collateClauseFor(dbEngine));
     }
 
     @Override
@@ -198,10 +234,8 @@ public class PlatformDaoImpl implements PlatformDao
         try (var select = handle.createQuery(SELECT_SQL))
         {
             select.setTemplateEngine(new StringTemplateEngine());
-            var platformMapper = PlatformMapper.withPrefix("p");
-            var mediumMapper = TransportMediumMapper.withPrefix("tm");
-            select.define("platform_columns", platformMapper.columnsForSelect())
-                  .define("medium_columns", mediumMapper.columnsForSelect())
+            final var mappers = fillAll ? ALL_DATA : REF_DATA;
+            setDefines(select, dbEngine, mappers)
                   .define(COLLATE_CLAUSE, collateClauseFor(dbEngine));
             if (mediumType != null && !mediumType.isBlank())
             {
@@ -210,11 +244,31 @@ public class PlatformDaoImpl implements PlatformDao
                       .bind("mediumtype", mediumType);
             }
 
-            return select.registerRowMapper(platformMapper)
-                         .registerRowMapper(mediumMapper)
-                         .reduceRows(new PlatformReducer(platformMapper, null, null))
+            return select.reduceRows(new PlatformReducer(mappers.platformMapper(),
+                                                         mappers.siteReducer(),
+                                                         mappers.platformSensorReducer()))
                          .toList();
         }
     }
 
+
+    public static record Mappers(PlatformMapper platformMapper, DecodesConfigMapper configMapper,
+        TransportMediumMapper tmMapper, OpenDcsSiteMapper siteMapper, OpenDcsSiteNameMapper siteNameMapper,
+        PropertiesMapper sitePropsMapper,
+        OpenDcsSiteReducer siteReducer, PropertiesMapper platformPropsMapper, PlatformSensorMapper platformSensorMapper,
+        PlatformSensorPropertyMapper platformSensorPropertiesMapper, PlatformSensorReducer platformSensorReducer
+    )
+    {
+        public Mappers(PlatformMapper platformMapper, DecodesConfigMapper configMapper,
+                       TransportMediumMapper tmMapper, OpenDcsSiteMapper siteMapper,
+                       OpenDcsSiteNameMapper siteNameMapper, PropertiesMapper sitePropsMapper,
+                       OpenDcsSiteReducer siteReducer, PropertiesMapper platformPropsMapper,
+                       PlatformSensorMapper platformSensorMapper,
+                       PlatformSensorPropertyMapper platformSensorPropertiesMapper)
+        {
+            this(platformMapper, configMapper, tmMapper, siteMapper, siteNameMapper, sitePropsMapper, siteReducer,
+                platformPropsMapper, platformSensorMapper, platformSensorPropertiesMapper,
+                platformSensorMapper != null ?  new PlatformSensorReducer(platformSensorMapper) : null);
+        }
+    }
 }
