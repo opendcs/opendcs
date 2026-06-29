@@ -1,6 +1,9 @@
 group PlatformDaoImpl;
 
-select :: = <<
+select(platform_columns, medium_columns, config_columns, site_columns, site_name_columns,
+      site_props, platform_props, platform_sensors, platform_sensor_props,
+      config_join, site_join, site_name_join, site_props_join, platform_props_join,
+      platform_sensor_join, platform_sensor_props_join, collate, where, medium_filter) ::= <<
 with platforms(id, agency, isproduction, description, lastmodifytime, configid, expiration, mediumtype, mediumid, platformdesignator, siteid)
     as (
         select p.id id, p.agency agency, p.isproduction isproduction, p.description description, p.lastmodifytime lastmodifytime, p.configid configid,

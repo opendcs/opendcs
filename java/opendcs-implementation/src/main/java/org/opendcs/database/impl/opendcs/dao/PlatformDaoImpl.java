@@ -10,10 +10,11 @@ import java.util.List;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
+import org.jdbi.v3.core.mapper.Mappers;
 import org.jdbi.v3.core.statement.Query;
 import org.jdbi.v3.core.statement.SqlLogger;
 import org.jdbi.v3.core.statement.StatementContext;
-import org.jdbi.v3.stringtemplate4.StringTemplateEngine;
+import org.jdbi.v3.stringtemplate4.StringTemplateSqlLocator;
 import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
@@ -36,6 +37,8 @@ import org.opendcs.database.model.mappers.sites.OpenDcsSiteReducer;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.util.lookup.ServiceProviders;
+import org.stringtemplate.v4.ST;
+import org.stringtemplate.v4.STGroup;
 
 import decodes.db.Platform;
 import decodes.db.Site;
@@ -49,37 +52,7 @@ import decodes.sql.DbKey;
 })
 public class PlatformDaoImpl implements PlatformDao
 {
-    private static final String SELECT_SQL = """
-            with platforms(id, agency, isproduction, description, lastmodifytime, configid, expiration, mediumtype, mediumid, platformdesignator, siteid) as (
-                select p.id id, p.agency agency, p.isproduction isproduction, p.description description, p.lastmodifytime lastmodifytime, p.configid configid,
-                       p.expiration expiration, tm.mediumtype, tm.mediumid , p.platformdesignator , p.siteid
-                 from platform p
-                  join transportmedium tm on tm.platformid = p.id <if(medium_filter)><medium_filter><endif>
-                <if(where)><where><endif>
-                order by mediumtype <collate> asc, mediumid <collate> asc, platformdesignator <collate> asc
-            )
-            select
-                <platform_columns>
-                <if(medium_columns)>,<medium_columns><endif>
-                <if(config_columns)>, <config_columns><endif>
-                <if(site_columns)>, <site_columns><endif>
-                <if(site_name_columns)>, <site_name_columns><endif>
-                <if(site_props)>, <site_props><endif>
-                <if(platform_props)>, <platform_props><endif>
-                <if(platform_sensors)>, <platform_sensors><endif>
-                <if(platform_sensor_props)>, <platform_sensor_props><endif>
-            from platforms p
-            left outer join transportmedium tm on tm.platformid = p.id <medium_filter>
-            <if(config_join)><config_join><endif>
-            <if(site_join)><site_join><endif>
-            <if(site_name_join)><site_name_join><endif>
-            <if(site_props_join)><site_props_join><endif>
-            <if(platform_props_join)><platform_props_join><endif>
-            <if(platform_sensor_join)><platform_sensor_join><endif>
-            <if(platform_sensor_props_join)><platform_sensor_props_join><endif>
-
-            order by p.mediumtype <collate> asc, p.mediumid <collate> asc, p.platformdesignator <collate> asc
-            """;
+    private static final STGroup QUERIES = StringTemplateSqlLocator.findStringTemplateGroup(PlatformDaoImpl.class);
     private static final Mappers ALL_DATA = new Mappers(
         PlatformMapper.withPrefix("p"),
         DecodesConfigMapper.withPrefix("config"),
@@ -115,6 +88,8 @@ public class PlatformDaoImpl implements PlatformDao
     @InjectDao
     SiteDao siteDao;
 
+    
+
     @Override
     public Optional<Platform> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
@@ -130,13 +105,17 @@ public class PlatformDaoImpl implements PlatformDao
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabaseEngine();
         
-        try (var select = handle.createQuery(SELECT_SQL))
+        var selectTemplate = QUERIES.getInstanceOf("select");
+        
+        if (selectTemplate == null)
         {
-            select.setTemplateEngine(new StringTemplateEngine());
-            setDefines(select, dbEngine, ALL_DATA)
-                .define("medium_filter", " and tm.mediumtype = :mediumtype and tm.mediumid = :mediumid")                  
-                .define(WHERE_CLAUSE, "where mediumtype = :mediumtype and mediumid = :mediumid")
-            ;
+            throw new OpenDcsDataException("Could not find template");
+        }
+        selectTemplate.add("medium_filter", " and tm.mediumtype = :mediumtype and tm.mediumid = :mediumid")                  
+                      .add(WHERE_CLAUSE, "where mediumtype = :mediumtype and mediumid = :mediumid");
+        try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, ALL_DATA)))
+        {
+            registerMappers(select, ALL_DATA);
 
             /** Leaving in place for debugging for now.
              * Default logging cutoff the sql which is somewhat... long.
@@ -158,50 +137,69 @@ public class PlatformDaoImpl implements PlatformDao
         }
     }
 
-    private static Query setDefines(Query select, DatabaseEngine dbEngine, Mappers mappers)
+    private static Query registerMappers(Query select, Mappers mappers)
     {
-        select.define("platform_columns", mappers.platformMapper().columnsForSelect())
-              .define("medium_columns", mappers.tmMapper().columnsForSelect())
-              .registerRowMapper(mappers.platformMapper())
-              .registerRowMapper(mappers.tmMapper())
+        select.registerRowMapper(mappers.platformMapper())
+              .registerRowMapper(mappers.tmMapper());
+
+
+        if (mappers.siteMapper() != null)
+        {
+            select.registerRowMapper(mappers.siteMapper())
+                  .registerRowMapper(mappers.siteNameMapper())
+                  .registerRowMapper(mappers.sitePropsMapper())
+            ;
+        }
+
+        if (mappers.platformPropsMapper() != null)
+        {
+            select.registerRowMapper(PlatformReducer.PLATFORM_PROPERTIES, mappers.platformPropsMapper())
+                  .registerRowMapper(mappers.platformSensorMapper)
+                  .registerRowMapper(mappers.platformSensorPropertiesMapper)
+            ;
+        }
+        return select;
+    }
+
+    private static String setDefines(ST select, DatabaseEngine dbEngine, Mappers mappers)
+    {
+        select.add("platform_columns", mappers.platformMapper().columnsForSelect())
+              .add("medium_columns", mappers.tmMapper().columnsForSelect())
+        
         ;
         
         if (mappers.siteMapper() != null)
         {
-            select.define("site_columns", mappers.siteMapper().columnsForSelect())
-                  .define("site_name_columns", mappers.siteNameMapper().columnsForSelect())
-                  .define("site_props", "sp.prop_name sp_prop_name, sp.prop_value sp_prop_value")
-                  .define("site_join", mappers.siteMapper()
+            select.add("site_columns", mappers.siteMapper().columnsForSelect())
+                  .add("site_name_columns", mappers.siteNameMapper().columnsForSelect())
+                  .add("site_props", "sp.prop_name sp_prop_name, sp.prop_value sp_prop_value")
+                  .add("site_join", mappers.siteMapper()
                                                   .joinStatement(LEFT_OUTER, OpenDcsSiteMapper.Columns.ID,
                                                                  "p", PlatformMapper.Columns.SITE_ID.column()))
-                  .define("site_name_join", mappers.siteNameMapper()
+                  .add("site_name_join", mappers.siteNameMapper()
                                                        .joinStatement(LEFT_OUTER, OpenDcsSiteNameMapper.Columns.SITE_ID,
                                                                       "p", PlatformMapper.Columns.SITE_ID.column()))
-                  .define("site_props_join", "left outer join site_property sp on sp.site_id = p.siteid")
-                  .registerRowMapper(mappers.siteMapper())
-                  .registerRowMapper(mappers.siteNameMapper())
-                  .registerRowMapper(mappers.sitePropsMapper())
+                  .add("site_props_join", "left outer join site_property sp on sp.site_id = p.siteid")
+        
                   ;
         }
         
         if (mappers.platformPropsMapper() != null)
         {
-            select.define("platform_props", mappers.platformPropsMapper().columnsForSelect())
-                  .define("platform_sensors", mappers.platformSensorMapper().columnsForSelect())
-                  .define("platform_sensor_props", mappers.platformSensorPropertiesMapper().columnsForSelect())
-                  .define("platform_props_join", "left outer join platformproperty pp on pp.platformid = p.id")
-                  .define("platform_sensor_join", mappers.platformSensorMapper().joinStatement(
+            select.add("platform_props", mappers.platformPropsMapper().columnsForSelect())
+                  .add("platform_sensors", mappers.platformSensorMapper().columnsForSelect())
+                  .add("platform_sensor_props", mappers.platformSensorPropertiesMapper().columnsForSelect())
+                  .add("platform_props_join", "left outer join platformproperty pp on pp.platformid = p.id")
+                  .add("platform_sensor_join", mappers.platformSensorMapper().joinStatement(
                     "left outer", PlatformSensorMapper.Columns.PLATFORM_ID, "p", PlatformMapper.Columns.ID.column()))
-                  .define("platform_sensor_props_join", mappers.platformSensorPropertiesMapper()
+                  .add("platform_sensor_props_join", mappers.platformSensorPropertiesMapper()
                                                                    .joinStatement(LEFT_OUTER, 
                                                                                   PlatformSensorPropertyMapper.Columns.PLATFORM_ID, 
                                                                                   "p", PlatformMapper.Columns.ID.column()))
-                  .registerRowMapper(PlatformReducer.PLATFORM_PROPERTIES, mappers.platformPropsMapper())
-                  .registerRowMapper(mappers.platformSensorMapper)
-                  .registerRowMapper(mappers.platformSensorPropertiesMapper)
+                  
                   ;
         }
-        return select.define(COLLATE_CLAUSE, collateClauseFor(dbEngine));
+        return select.add(COLLATE_CLAUSE, collateClauseFor(dbEngine)).render();
     }
 
     @Override
@@ -231,19 +229,22 @@ public class PlatformDaoImpl implements PlatformDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabaseEngine();
-        try (var select = handle.createQuery(SELECT_SQL))
+        var selectTemplate = QUERIES.getInstanceOf("select");
+        if (mediumType != null && !mediumType.isBlank())
         {
-            select.setTemplateEngine(new StringTemplateEngine());
-            final var mappers = fillAll ? ALL_DATA : REF_DATA;
-            setDefines(select, dbEngine, mappers)
-                  .define(COLLATE_CLAUSE, collateClauseFor(dbEngine));
+            selectTemplate.add("medium_filter", " and tm.mediumtype = :mediumtype")
+                          .add(WHERE_CLAUSE, "where mediumtype = :mediumtype");
+            
+        }
+        final var mappers = fillAll ? ALL_DATA : REF_DATA;
+        try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, mappers)))
+        {
+            
+            registerMappers(select, mappers);
             if (mediumType != null && !mediumType.isBlank())
-            {
-                select.define("medium_filter", " and tm.mediumtype = :mediumtype")
-                      .define(WHERE_CLAUSE, "where mediumtype = :mediumtype")
-                      .bind("mediumtype", mediumType);
+            {   
+                select.bind("mediumtype", mediumType);
             }
-
             return select.reduceRows(new PlatformReducer(mappers.platformMapper(),
                                                          mappers.siteReducer(),
                                                          mappers.platformSensorReducer()))
