@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
-import org.jdbi.v3.core.mapper.Mappers;
 import org.jdbi.v3.core.statement.Query;
 import org.jdbi.v3.core.statement.SqlLogger;
 import org.jdbi.v3.core.statement.StatementContext;
@@ -88,12 +87,31 @@ public class PlatformDaoImpl implements PlatformDao
     @InjectDao
     SiteDao siteDao;
 
-    
+
 
     @Override
     public Optional<Platform> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
-        return Optional.empty();
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var ctx = tx.getContext();
+        var dbEngine = ctx.getDatabaseEngine();
+
+        var selectTemplate = QUERIES.getInstanceOf("select");
+
+        if (selectTemplate == null)
+        {
+            throw new OpenDcsDataException("Could not find template");
+        }
+        selectTemplate.add(WHERE_CLAUSE, "where p.id = :id");
+        try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, ALL_DATA)))
+        {
+            registerMappers(select, ALL_DATA);
+            return select.bind(PlatformMapper.Columns.ID.column(), id)
+                         .reduceRows(new PlatformReducer(ALL_DATA.platformMapper, ALL_DATA.siteReducer(),
+                                                         ALL_DATA.platformSensorReducer()))
+                         .findFirst();
+        }
     }
 
     @Override
@@ -104,14 +122,14 @@ public class PlatformDaoImpl implements PlatformDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabaseEngine();
-        
+
         var selectTemplate = QUERIES.getInstanceOf("select");
-        
+
         if (selectTemplate == null)
         {
             throw new OpenDcsDataException("Could not find template");
         }
-        selectTemplate.add("medium_filter", " and tm.mediumtype = :mediumtype and tm.mediumid = :mediumid")                  
+        selectTemplate.add("medium_filter", " and tm.mediumtype = :mediumtype and tm.mediumid = :mediumid")
                       .add(WHERE_CLAUSE, "where mediumtype = :mediumtype and mediumid = :mediumid");
         try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, ALL_DATA)))
         {
@@ -165,9 +183,9 @@ public class PlatformDaoImpl implements PlatformDao
     {
         select.add("platform_columns", mappers.platformMapper().columnsForSelect())
               .add("medium_columns", mappers.tmMapper().columnsForSelect())
-        
+
         ;
-        
+
         if (mappers.siteMapper() != null)
         {
             select.add("site_columns", mappers.siteMapper().columnsForSelect())
@@ -180,10 +198,10 @@ public class PlatformDaoImpl implements PlatformDao
                                                        .joinStatement(LEFT_OUTER, OpenDcsSiteNameMapper.Columns.SITE_ID,
                                                                       "p", PlatformMapper.Columns.SITE_ID.column()))
                   .add("site_props_join", "left outer join site_property sp on sp.site_id = p.siteid")
-        
+
                   ;
         }
-        
+
         if (mappers.platformPropsMapper() != null)
         {
             select.add("platform_props", mappers.platformPropsMapper().columnsForSelect())
@@ -193,10 +211,10 @@ public class PlatformDaoImpl implements PlatformDao
                   .add("platform_sensor_join", mappers.platformSensorMapper().joinStatement(
                     "left outer", PlatformSensorMapper.Columns.PLATFORM_ID, "p", PlatformMapper.Columns.ID.column()))
                   .add("platform_sensor_props_join", mappers.platformSensorPropertiesMapper()
-                                                                   .joinStatement(LEFT_OUTER, 
-                                                                                  PlatformSensorPropertyMapper.Columns.PLATFORM_ID, 
+                                                                   .joinStatement(LEFT_OUTER,
+                                                                                  PlatformSensorPropertyMapper.Columns.PLATFORM_ID,
                                                                                   "p", PlatformMapper.Columns.ID.column()))
-                  
+
                   ;
         }
         return select.add(COLLATE_CLAUSE, collateClauseFor(dbEngine)).render();
@@ -225,7 +243,7 @@ public class PlatformDaoImpl implements PlatformDao
         var deletePlatformSensorTemplate = QUERIES.getInstanceOf("deletePlatformSensor");
         var deletePlatformSensorPropertiesTemplate = QUERIES.getInstanceOf("deletePlatformSensorProperties");
         var deleteTransportMediumTemplate = QUERIES.getInstanceOf("deleteTransportMedium");
-        
+
         try (var deletePlatform = handle.createUpdate(deletePlatformTemplate.render());
              var deletePlatformProperties = handle.createUpdate(deletePlatformPropertiesTemplate.render());
              var deletePlatformSensor = handle.createUpdate(deletePlatformSensorTemplate.render());
@@ -253,14 +271,14 @@ public class PlatformDaoImpl implements PlatformDao
         {
             selectTemplate.add("medium_filter", " and tm.mediumtype = :mediumtype")
                           .add(WHERE_CLAUSE, "where mediumtype = :mediumtype");
-            
+
         }
         final var mappers = fillAll ? ALL_DATA : REF_DATA;
         try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, mappers)))
         {
             registerMappers(select, mappers);
             if (mediumType != null && !mediumType.isBlank())
-            {   
+            {
                 select.bind("mediumtype", mediumType);
             }
             return select.reduceRows(new PlatformReducer(mappers.platformMapper(),
