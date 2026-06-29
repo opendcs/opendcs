@@ -218,7 +218,26 @@ public class PlatformDaoImpl implements PlatformDao
     @Override
     public void delete(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
-        /* not yet */
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var deletePlatformTemplate = QUERIES.getInstanceOf("deletePlatform");
+        var deletePlatformPropertiesTemplate = QUERIES.getInstanceOf("deleteProperties");
+        var deletePlatformSensorTemplate = QUERIES.getInstanceOf("deletePlatformSensor");
+        var deletePlatformSensorPropertiesTemplate = QUERIES.getInstanceOf("deletePlatformSensorProperties");
+        var deleteTransportMediumTemplate = QUERIES.getInstanceOf("deleteTransportMedium");
+        
+        try (var deletePlatform = handle.createUpdate(deletePlatformTemplate.render());
+             var deletePlatformProperties = handle.createUpdate(deletePlatformPropertiesTemplate.render());
+             var deletePlatformSensor = handle.createUpdate(deletePlatformSensorTemplate.render());
+             var deletePlatformSensorProperties = handle.createUpdate(deletePlatformSensorPropertiesTemplate.render());
+             var deleteTransportMedium = handle.createUpdate(deleteTransportMediumTemplate.render()))
+        {
+            deleteTransportMedium.bind(PlatformMapper.Columns.ID.column(), id).execute();
+            deletePlatformSensorProperties.bind(PlatformMapper.Columns.ID.column(), id).execute();
+            deletePlatformSensor.bind(PlatformMapper.Columns.ID.column(), id).execute();
+            deletePlatformProperties.bind(PlatformMapper.Columns.ID.column(), id).execute();
+            deletePlatform.bind(PlatformMapper.Columns.ID.column(), id).execute();
+        }
     }
 
     @Override
@@ -239,7 +258,6 @@ public class PlatformDaoImpl implements PlatformDao
         final var mappers = fillAll ? ALL_DATA : REF_DATA;
         try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, mappers)))
         {
-            
             registerMappers(select, mappers);
             if (mediumType != null && !mediumType.isBlank())
             {   
@@ -251,7 +269,6 @@ public class PlatformDaoImpl implements PlatformDao
                          .toList();
         }
     }
-
 
     public static record Mappers(PlatformMapper platformMapper, DecodesConfigMapper configMapper,
         TransportMediumMapper tmMapper, OpenDcsSiteMapper siteMapper, OpenDcsSiteNameMapper siteNameMapper,
