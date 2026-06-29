@@ -113,7 +113,6 @@ class OpenDcsPlatformDaoTestIT extends AppTestBase
             var shouldFail = dao.getById(tx, platformOut.getId());
             assertFalse(shouldFail.isPresent());
         }
-
     }
 
     @Test
