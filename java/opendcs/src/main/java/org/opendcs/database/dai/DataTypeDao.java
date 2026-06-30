@@ -59,6 +59,12 @@ public interface DataTypeDao extends OpenDcsDao
       */
      Optional<DataType> lookup(DataTransaction tx, String standard, String dataTypeCode) throws OpenDcsDataException;
 
+    default DataType lookupOrCreate(DataTransaction tx, String standard, String code) throws OpenDcsDataException
+    {
+        final var existing = lookup(tx, standard, code);
+        return existing.isPresent() ? existing.get() : save(tx, new DataType(standard, code));
+    }
+
 	/**
      * Retrieve all DataTypes constrained to a limit and office if desired.
      * @param tx active transaction

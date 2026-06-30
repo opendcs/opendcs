@@ -234,9 +234,18 @@ export const PresentationElementsTable: React.FC<
                 }
                 onSave(original, updated);
               },
-              onAdd: (created) => {
+              onAdd: (created, rowEl) => {
                 if (!created.dataTypeStd?.trim() || !created.dataTypeCode?.trim()) {
                   return false;
+                }
+                const newKey = elementKey(created);
+                if (elements.some((e) => elementKey(e) === newKey)) {
+                  rowEl
+                    .querySelectorAll<HTMLElement>(
+                      'select[name="dataTypeStd"], input[name="dataTypeCode"]',
+                    )
+                    .forEach((el) => el.classList.add("border-warning"));
+                  return "marked";
                 }
                 onSave({}, created);
               },
@@ -275,6 +284,7 @@ export const PresentationElementsTable: React.FC<
       }
       dataTableOptions={{
         paging: false,
+        stateSave: false,
         scrollY: "calc(10 * 2rem)",
         scrollCollapse: true,
       }}
