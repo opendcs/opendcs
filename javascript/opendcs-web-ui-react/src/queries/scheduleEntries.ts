@@ -12,6 +12,7 @@ import {
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
 import { scheduleKeys } from "./keys";
+import { useTranslation } from "react-i18next";
 
 const useScheduleApi = () => {
   const api = useApi();
@@ -73,11 +74,17 @@ export const useSaveScheduleMutation = (
 export const useDeleteScheduleMutation = (
   options?: Omit<UseMutationOptions<unknown, unknown, number>, "mutationFn">,
 ) => {
+  const { t } = useTranslation("translation");
   const { scheduleApi, org } = useScheduleApi();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (schedEntryId: number) => scheduleApi.deleteSchedule(org, schedEntryId),
     ...options,
+    meta: {
+      successMessage: t("delete_success", { entity: "Schedule Entry" }),
+      errorContext: t("delete_error_context", { entity: "Schedule Entry" }),
+      ...(options?.meta ?? {}),
+    },
     onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: scheduleKeys.all(org) });
       options?.onSuccess?.(...args);

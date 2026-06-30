@@ -5,6 +5,7 @@ import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.DecodesConfigDao;
+import org.opendcs.database.impl.opendcs.SqlConstraintTranslator;
 import org.opendcs.database.dai.UnitConverterDao;
 import org.opendcs.database.model.mappers.datatype.DataTypeMapper;
 import org.opendcs.database.model.mappers.equipmentmodel.EquipmentModelMapper;
@@ -408,35 +409,42 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        try(var deleteConfigSensorProps = handle.createUpdate(DELETE_CONFIGSENSOR_PROPERTIES);
-            var deleteConfigSensorDataType = handle.createUpdate(DELETE_CONFIGSENSOR_DATATYPE);
-            var deleteConfigSensor = handle.createUpdate(DELETE_CONFIGSENSOR);
-            var deleteFormatStatements = handle.createUpdate(DELETE_FORMATSTATEMENTS);
-            var deleteScriptSensorUc = handle.prepareBatch(DELETE_UNITCONVERTER);
-            var getUnitConverterIds = handle.createQuery(GET_SCRIPTSENSOR_UC_ID);
-            var deleteScriptSensor = handle.createUpdate(DELETE_SCRIPTSENSOR);
-            var deleteScript = handle.createUpdate(DELETE_DECODESSCRIPT);
-            var deleteConfig = handle.createUpdate("delete from platformconfig where id = :id"))
+        try
         {
-            deleteConfigSensorProps.bind(GenericColumns.ID.column(), id).execute();
-            deleteConfigSensorDataType.bind(GenericColumns.ID.column(), id).execute();
-            deleteConfigSensor.bind(GenericColumns.ID.column(), id).execute();
-            var ucIds = getUnitConverterIds.bind(GenericColumns.ID.column(), id)
-                                           .mapTo(DbKey.class)
-                                           .collectIntoList();
-
-            deleteScriptSensor.bind(GenericColumns.ID.column(), id).execute();
-
-            for (var ucId: ucIds)
+            try(var deleteConfigSensorProps = handle.createUpdate(DELETE_CONFIGSENSOR_PROPERTIES);
+                var deleteConfigSensorDataType = handle.createUpdate(DELETE_CONFIGSENSOR_DATATYPE);
+                var deleteConfigSensor = handle.createUpdate(DELETE_CONFIGSENSOR);
+                var deleteFormatStatements = handle.createUpdate(DELETE_FORMATSTATEMENTS);
+                var deleteScriptSensorUc = handle.prepareBatch(DELETE_UNITCONVERTER);
+                var getUnitConverterIds = handle.createQuery(GET_SCRIPTSENSOR_UC_ID);
+                var deleteScriptSensor = handle.createUpdate(DELETE_SCRIPTSENSOR);
+                var deleteScript = handle.createUpdate(DELETE_DECODESSCRIPT);
+                var deleteConfig = handle.createUpdate("delete from platformconfig where id = :id"))
             {
-                deleteScriptSensorUc.bind(GenericColumns.ID.column(), ucId).add();
-            }
-            deleteScriptSensorUc.execute();
-            deleteFormatStatements.bind(GenericColumns.ID.column(), id).execute();
-            deleteScriptSensor.bind(GenericColumns.ID.column(), id).execute();
-            deleteScript.bind(GenericColumns.ID.column(), id).execute();
-            deleteConfig.bind(GenericColumns.ID.column(), id).execute();
+                deleteConfigSensorProps.bind(GenericColumns.ID.column(), id).execute();
+                deleteConfigSensorDataType.bind(GenericColumns.ID.column(), id).execute();
+                deleteConfigSensor.bind(GenericColumns.ID.column(), id).execute();
+                var ucIds = getUnitConverterIds.bind(GenericColumns.ID.column(), id)
+                                               .mapTo(DbKey.class)
+                                               .collectIntoList();
 
+                deleteScriptSensor.bind(GenericColumns.ID.column(), id).execute();
+
+                for (var ucId: ucIds)
+                {
+                    deleteScriptSensorUc.bind(GenericColumns.ID.column(), ucId).add();
+                }
+                deleteScriptSensorUc.execute();
+                deleteFormatStatements.bind(GenericColumns.ID.column(), id).execute();
+                deleteScriptSensor.bind(GenericColumns.ID.column(), id).execute();
+                deleteScript.bind(GenericColumns.ID.column(), id).execute();
+                deleteConfig.bind(GenericColumns.ID.column(), id).execute();
+            }
+        }
+        catch (RuntimeException ex)
+        {
+            var engine = tx.getContext().getDatabaseEngine();
+            throw SqlConstraintTranslator.translate("Config " + id + " is still used by one or more platforms and cannot be deleted", engine, ex);
         }
     }
 

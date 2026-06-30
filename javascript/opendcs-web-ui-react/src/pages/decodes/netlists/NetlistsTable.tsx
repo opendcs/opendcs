@@ -81,6 +81,7 @@ export const NetlistsTable: React.FC<NetlistsTableProperties> = ({
         variant: "danger",
         show: (row) => (row.netlistId ?? 0) > 0,
         aria: (row) => t("netlists:delete_for", { id: row.netlistId }),
+        confirm: () => t("translation:confirm_delete_prompt"),
         onClick: ({ row }) => {
           if (row.netlistId !== undefined) actions.remove?.(row.netlistId);
         },

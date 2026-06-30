@@ -178,6 +178,7 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
         variant: "danger",
         show: (row) => (row.computationId ?? 0) > 0,
         aria: (row) => t("computations:editor.delete_for", { id: row.computationId }),
+        confirm: () => t("translation:confirm_delete_prompt"),
         onClick: ({ row }) => {
           if (row.computationId !== undefined) actions.remove?.(row.computationId);
         },

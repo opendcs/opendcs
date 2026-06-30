@@ -14,6 +14,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { Button, Modal } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { dtLangs } from "../../lang";
 import { useContextWrapper } from "../../util/ContextWrapper";
@@ -94,7 +95,13 @@ export interface RowAction<T> {
   aria: (row: T) => string;
   /** Return `false` to omit this action for the given row. */
   show?: (row: T) => boolean;
-  /** Handler invoked when the button is clicked. */
+  /**
+   * When provided, clicking this action shows a confirmation modal with the
+   * returned message before invoking `onClick`. The actual `onClick` is only
+   * called after the user confirms.
+   */
+  confirm?: (row: T) => string;
+  /** Handler invoked when the button is clicked (after confirmation if `confirm` is set). */
   onClick: (ctx: RowActionContext<T>) => void;
 }
 
@@ -447,6 +454,11 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   // rowState is keyed by stringified row id so both consumer ids (TId) and
   // wrapper-generated synthetic ids (for inline-edit new rows) coexist.
   const [rowState, setRowState] = useState<Record<string, RowMode>>({});
+  // Pending confirmation dialog — set when a RowAction with `confirm` is clicked.
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
   // Fade the wrapper in once DataTables finishes its first init. React renders
   // the bare <table> (with <caption> + <thead>) before DataTables inserts the
   // top toolbar (buttons / search / page-length), which would otherwise flash
@@ -904,7 +916,17 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
         if (action && rowEl && rowData) {
           e.preventDefault();
           e.stopPropagation();
-          action.onClick({ row: rowData, rowEl, api: rowActionApi });
+          if (action.confirm) {
+            setPendingConfirm({
+              message: action.confirm(rowData),
+              onConfirm: () => {
+                setPendingConfirm(null);
+                action.onClick({ row: rowData, rowEl, api: rowActionApi });
+              },
+            });
+          } else {
+            action.onClick({ row: rowData, rowEl, api: rowActionApi });
+          }
           return;
         }
       }
@@ -1002,6 +1024,22 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
           </tr>
         </thead>
       </DataTable>
+      {pendingConfirm && (
+        <Modal show onHide={() => setPendingConfirm(null)} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Confirm Delete</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>{pendingConfirm.message}</Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setPendingConfirm(null)}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={pendingConfirm.onConfirm}>
+              Delete
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      )}
     </div>
   );
 }

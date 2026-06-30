@@ -22,6 +22,8 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
+import org.opendcs.database.api.OpenDcsDataConstraintException;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
@@ -48,6 +50,8 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 			case DbException dbException -> handle(dbException);
 			case WebApplicationException webApplicationException -> handle(webApplicationException);
 			case UnsupportedOperationException unsupportedOperationException -> handle(unsupportedOperationException);
+			case OpenDcsDataConstraintException constraintEx -> handleConstraint(constraintEx);
+			case OpenDcsDataException dataEx -> handle(dataEx);
 			case null, default -> handle(ex);
 		};
 	}
@@ -132,21 +136,24 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 
 	private static Response handle(ConstraintException dbex)
 	{
-		LoggingEventBuilder le = log.atWarn().setCause(dbex);
-		if(dbex.getCause() != null)
-		{
-			String tempCause = dbex.getCause().toString().toLowerCase();
-			if(tempCause.contains("duplicate key value violates unique constraint"))
-			{
-				le.log("There was an error saving this.  The most likely error is that there is a duplicate key value. " +
-					   "Please contact your system administrator for more information.");
-			}	
-		}
-		else
-		{
-			le.log("Violated constraint exception thrown from request");
-		}
-		return Response.status(Response.Status.BAD_REQUEST)
+		log.atWarn().setCause(dbex).log("Constraint violation on delete");
+		return Response.status(Response.Status.CONFLICT)
+				.entity(new Status(dbex.getMessage()))
+				.build();
+	}
+
+	private static Response handleConstraint(OpenDcsDataConstraintException ex)
+	{
+		log.atWarn().setCause(ex).log("Data constraint violation on delete");
+		return Response.status(Response.Status.CONFLICT)
+				.entity(new Status(ex.getMessage()))
+				.build();
+	}
+
+	private static Response handle(OpenDcsDataException ex)
+	{
+		log.atWarn().setCause(ex).log("Data exception");
+		return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 				.entity(new Status(INTERNAL_ERROR))
 				.build();
 	}

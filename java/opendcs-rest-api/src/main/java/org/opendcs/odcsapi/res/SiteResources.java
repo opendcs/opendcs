@@ -48,6 +48,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.opendcs.database.api.OpenDcsDataConstraintException;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.SiteDao;
 import org.opendcs.odcsapi.beans.ApiSite;
@@ -334,8 +335,15 @@ public final class SiteResources extends OpenDcsResource
 			tags = {"REST - DECODES Site Records"},
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Site deleted successfully"),
-					@ApiResponse(responseCode = "400", description = "Missing or invalid site ID parameter"),
-					@ApiResponse(responseCode = "500", description = "Internal server error - see error message for details")
+					@ApiResponse(responseCode = "400", description = "Missing or invalid site ID parameter",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class))),
+					@ApiResponse(responseCode = "409", description = "Site is in use and cannot be deleted",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class))),
+					@ApiResponse(responseCode = "500", description = "Internal server error - see error message for details",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class)))
 			}
 	)
 	public Response deleteSite(@Parameter(description = "id to delete", required = true, 
@@ -356,6 +364,10 @@ public final class SiteResources extends OpenDcsResource
 			return Response.noContent()
 					.entity("ID " + siteId + " deleted").build();
 
+		}
+		catch(OpenDcsDataConstraintException ex)
+		{
+			throw new WebAppException(Response.Status.CONFLICT.getStatusCode(), ex.getMessage(), ex);
 		}
 		catch(OpenDcsDataException ex)
 		{

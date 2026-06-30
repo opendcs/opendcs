@@ -1,110 +1,79 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type {
-  ApiAppRef,
-  ApiRoutingRef,
-  ApiScheduleEntry,
-  ApiScheduleEntryRef,
-} from "opendcs-api";
-import Schedule, { ScheduleSkeleton, type ScheduleDetails } from "./Schedule";
-import type { UiSchedule } from "./ScheduleReducer";
+  ApiSite,
+  ApiSiteRef,
+} from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
+import Site, { SiteSkeleton, type UiSite } from "./Site";
 import type { RemoveAction, SaveAction } from "../../util/Actions";
 import {
   AppDataTable,
+  type AppDataTableHandle,
   type ColumnDef,
   type RowAction,
 } from "../../components/data-table";
 
-export type TableScheduleRef = Partial<ApiScheduleEntryRef>;
+export type TableSiteRef = Partial<ApiSiteRef>;
 
-export interface SchedulesTableProperties {
-  schedules: TableScheduleRef[];
-  apps: ApiAppRef[];
-  routings: ApiRoutingRef[];
-  routingsLoading?: boolean;
-  getSchedule?: (schedEntryId: number) => Promise<ApiScheduleEntry>;
-  actions?: SaveAction<ApiScheduleEntry> & RemoveAction<number>;
+export interface SiteTableProperties {
+  sites: TableSiteRef[];
+  getSite?: (siteId: number) => Promise<ApiSite>;
+  actions?: SaveAction<ApiSite> & RemoveAction<number>;
   loading?: boolean;
+  tableRef?: React.Ref<AppDataTableHandle>;
 }
 
-export const SchedulesTable: React.FC<SchedulesTableProperties> = ({
-  schedules,
-  apps,
-  routings,
-  routingsLoading = false,
-  getSchedule,
+export const SitesTable: React.FC<SiteTableProperties> = ({
+  sites,
+  getSite,
   actions = {},
   loading = false,
+  tableRef,
 }) => {
-  const [t] = useTranslation(["schedule", "translation"]);
+  const [t] = useTranslation(["sites", "translation"]);
 
-  const columns = useMemo<ColumnDef<TableScheduleRef>[]>(
+  const columns = useMemo<ColumnDef<TableSiteRef>[]>(
     () => [
       {
-        data: "schedEntryId",
-        header: t("schedule:header.Id"),
+        data: "siteId",
+        header: t("sites:site_id"),
         defaultContent: "new",
-        className: "dt-left",
         type: "num",
       },
-      { data: "name", header: t("schedule:header.Name"), type: "string" },
       {
-        data: "appName",
-        header: t("schedule:header.LoadingApp"),
-        defaultContent: "",
-        type: "string",
+        data: null,
+        header: t("sites:site_name"),
+        render: (_data, _type, row) =>
+          row.sitenames
+            ? Object.entries(row.sitenames)
+                .map(([k, v]) => `${k}: ${v}`)
+                .join(", ")
+            : "",
       },
-      {
-        data: "routingSpecName",
-        header: t("schedule:header.RoutingSpec"),
-        defaultContent: "",
-        type: "string",
-      },
-      {
-        data: "enabled",
-        header: t("schedule:header.Enabled"),
-        defaultContent: "",
-        className: "dt-center",
-        type: "num",
-        render: (data: unknown, type: string) => {
-          const enabled = Boolean(data);
-          if (type !== "display") return enabled ? 1 : 0;
-          return enabled ? "✓" : "";
-        },
-      },
-      {
-        data: "lastModified",
-        header: t("schedule:header.LastModified"),
-        defaultContent: "",
-        type: "date",
-        render: (data: unknown, type: string) => {
-          if (type !== "display") return data;
-          if (!data) return "";
-          const d = data instanceof Date ? data : new Date(data as string);
-          return Number.isNaN(d.getTime()) ? "" : d.toLocaleString();
-        },
-      },
+      { data: "publicName", header: t("sites:public_name"), type: "string" },
+      { data: "description", header: t("sites:description"), type: "string" },
     ],
     [t],
   );
 
-  const rowActions = useMemo<RowAction<TableScheduleRef>[]>(
+  const rowActions = useMemo<RowAction<TableSiteRef>[]>(
     () => [
       {
         key: "edit",
         icon: "bi-pencil",
         variant: "warning",
-        aria: (row) => t("schedule:edit_schedule", { id: row.schedEntryId }),
+        aria: (row) => t("sites:edit_site", { id: row.siteId }),
         onClick: ({ row, api }) => api.setMode(row, "edit"),
       },
       {
         key: "delete",
         icon: "bi-trash",
         variant: "danger",
-        show: (row) => (row.schedEntryId ?? 0) > 0,
-        aria: (row) => t("schedule:delete_for", { id: row.schedEntryId }),
+        show: (row) => (row.siteId ?? 0) > 0,
+        aria: (row) => t("sites:delete_for", { id: row.siteId }),
+        confirm: () => t("translation:confirm_delete_prompt"),
         onClick: ({ row }) => {
-          if (row.schedEntryId !== undefined) actions.remove?.(row.schedEntryId);
+          if (row.siteId !== undefined) actions.remove?.(row.siteId);
         },
       },
     ],
@@ -112,28 +81,23 @@ export const SchedulesTable: React.FC<SchedulesTableProperties> = ({
   );
 
   return (
-    <AppDataTable<TableScheduleRef, number, ApiScheduleEntry>
-      data={schedules}
+    <AppDataTable<TableSiteRef, number, ApiSite>
+      data={sites}
       loading={loading}
-      getId={(s) => s.schedEntryId!}
+      getId={(s) => s.siteId!}
       columns={columns}
       actionsLabel={t("translation:actions")}
       rowActions={rowActions}
       renderDetail={({ row, mode, actions: detailActions }) => {
-        const detailsPromise: Promise<ScheduleDetails> =
-          row.schedEntryId && row.schedEntryId > 0 && getSchedule
-            ? getSchedule(row.schedEntryId).then((schedule) => ({ schedule }))
-            : Promise.resolve({
-                schedule: { schedEntryId: row.schedEntryId } as UiSchedule,
-              });
+        const sitePromise: Promise<UiSite> =
+          row.siteId && row.siteId > 0 && getSite
+            ? getSite(row.siteId)
+            : Promise.resolve({ siteId: row.siteId } as UiSite);
         return (
-          <Schedule
-            details={detailsPromise}
-            apps={apps}
-            routings={routings}
-            routingsLoading={routingsLoading}
+          <Site
+            site={sitePromise}
             actions={{
-              save: (s) => detailActions.save(s),
+              save: (site) => detailActions.save(site),
               cancel: () => detailActions.cancel(),
             }}
             edit={mode !== "show"}
@@ -141,17 +105,16 @@ export const SchedulesTable: React.FC<SchedulesTableProperties> = ({
         );
       }}
       renderSkeleton={({ mode }) => (
-        <ScheduleSkeleton edit={mode !== "show"} className="child-row-opening" />
+        <SiteSkeleton edit={mode !== "show"} className="child-row-opening" />
       )}
       addNew={{
-        template: (id) => ({ schedEntryId: id, enabled: false }),
-        ariaLabel: t("schedule:add_schedule"),
+        template: (id) => ({ siteId: id }),
+        ariaLabel: t("sites:add_site"),
       }}
       onSave={actions.save}
-      caption={t("schedule:title")}
-      tableId="schedulesTable"
+      caption={t("sites:title")}
+      tableId="siteTable"
+      ref={tableRef}
     />
   );
 };
-
-export default SchedulesTable;

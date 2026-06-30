@@ -10,20 +10,21 @@
 * Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations
-* under the License.
+* License for the specific language governing permissions and limitations under
+* the License.
 */
 package org.opendcs.database.api;
 
-public class OpenDcsDataException extends Exception
-{
-    public OpenDcsDataException(String msg)
-    {
+/**
+ * Thrown when a delete or save is rejected because the record is still
+ * referenced by another record in the database (foreign-key constraint
+ * violation).  Maps to HTTP 409 Conflict at the REST layer.
+ */
+public class OpenDcsDataConstraintException extends OpenDcsDataException {
+    public OpenDcsDataConstraintException(String msg) {
         super(msg);
     }
-
-    public OpenDcsDataException(String msg, Throwable cause)
-    {
+    public OpenDcsDataConstraintException(String msg, Throwable cause) {
         super(msg, cause);
     }
 }
