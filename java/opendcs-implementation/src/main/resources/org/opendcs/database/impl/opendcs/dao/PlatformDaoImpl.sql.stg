@@ -9,7 +9,7 @@ with platforms(id, agency, isproduction, description, lastmodifytime, configid, 
         select p.id id, p.agency agency, p.isproduction isproduction, p.description description, p.lastmodifytime lastmodifytime, p.configid configid,
                 p.expiration expiration, tm.mediumtype, tm.mediumid , p.platformdesignator , p.siteid
             from platform p
-            join transportmedium tm on tm.platformid = p.id <if(medium_filter)><medium_filter><endif>
+            left outer join transportmedium tm on tm.platformid = p.id <if(medium_filter)><medium_filter><endif>
         <if(where)><where><endif>
         order by mediumtype <collate> asc, mediumid <collate> asc, platformdesignator <collate> asc
         )
@@ -63,3 +63,16 @@ deletePlatformSensor() ::= "delete from platformsensor where platformid = :id"
 deletePlatformSensorProperties() ::= "delete from platformsensorproperty where platformid = :id"
 
 deleteTransportMedium() ::= "delete from transportmedium where platformid = :id"
+
+insertTransportMedium() ::= <<
+insert into transportmedium(
+    platformid, mediumtype, mediumid, scriptname, channelnum, assignedtime, transmitwindow, 
+    transmitinterval,equipmentid,timeadjustment, preamble, timezone, loggertype, baud, stopbits,
+    parity, databits, dologin, username, password
+)
+values (
+    :platformid, :mediumtype, :mediumid, :scriptname, :channelnum, :assignedtime, :transmitwindow,
+    :transmitinterval,:equipmentid,:timeadjustment, :preamble, :timezone, :loggertype, :baud, :stopbits,
+    :parity, :databits, :dologin, :username, :password
+)
+>>

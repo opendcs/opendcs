@@ -10,6 +10,7 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Vector;
 import java.util.function.UnaryOperator;
 
 import org.jdbi.v3.core.Handle;
@@ -23,6 +24,7 @@ import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.dai.DecodesConfigDao;
 import org.opendcs.database.dai.EquipmentModelDao;
 import org.opendcs.database.dai.PlatformDao;
+import org.opendcs.database.impl.opendcs.jdbi.arguments.decodes.TransportMediumArgumentFinder;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.configs.DecodesConfigMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformReducer;
@@ -93,6 +95,7 @@ public class PlatformDaoImpl implements PlatformDao
     private static final String DELETE_PLATFORM_SENSORS = "deletePlatformSensor";
     private static final String DELETE_PLATFORM_SENSOR_PROPERTIES = "deletePlatformSensorProperties";
     private static final String DELETE_TRANSPORT_MEDIUM = "deleteTransportMedium";
+    private static final String INSERT_TRANSPORT_MEDIUM = "insertTransportMedium";
 
     /**
      * It would be better to use the Config Mappers and columns
@@ -314,10 +317,12 @@ public class PlatformDaoImpl implements PlatformDao
                  .bind(PlatformMapper.Columns.IS_PRODUCTION.column(), platform.isProduction)
                  .execute();
 
+            deletePlatformProperties(handle, bindKey);
+            deleteTransportMediums(handle, bindKey);
+            deletePlatformSensors(handle, bindKey);
 
+            insertTransportMediums(handle, bindKey, platform.transportMedia);
 
-
-            // delete executions
             // reinserts
 
             return getById(tx, bindKey).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Platform we just saved."));
@@ -328,30 +333,70 @@ public class PlatformDaoImpl implements PlatformDao
         }
     }
 
+    private void insertTransportMediums(Handle handle, DbKey bindKey, Vector<TransportMedium> transportMedia)
+    {
+        var insertTM = QUERIES.getInstanceOf(INSERT_TRANSPORT_MEDIUM).render();
+        try (var tmBatch = handle.prepareBatch(insertTM))
+        {
+            for (var tm: transportMedia)
+            {
+                tmBatch.bindNamedArgumentFinder(new TransportMediumArgumentFinder(tm))
+                       .bind(TransportMediumMapper.Columns.PLATFORM_ID.column(), bindKey)
+                       .add();
+            }
+            
+
+            tmBatch.execute();
+        }
+    }
+
     @Override
     public void delete(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var deletePlatformTemplate = QUERIES.getInstanceOf(DELETE_PLATFORM);
-        var deletePlatformPropertiesTemplate = QUERIES.getInstanceOf(DELETE_PROPERTIES);
-        var deletePlatformSensorTemplate = QUERIES.getInstanceOf(DELETE_PLATFORM_SENSORS);
-        var deletePlatformSensorPropertiesTemplate = QUERIES.getInstanceOf(DELETE_PLATFORM_SENSOR_PROPERTIES);
-        var deleteTransportMediumTemplate = QUERIES.getInstanceOf(DELETE_TRANSPORT_MEDIUM);
 
-        try (var deletePlatform = handle.createUpdate(deletePlatformTemplate.render());
-             var deletePlatformProperties = handle.createUpdate(deletePlatformPropertiesTemplate.render());
-             var deletePlatformSensor = handle.createUpdate(deletePlatformSensorTemplate.render());
-             var deletePlatformSensorProperties = handle.createUpdate(deletePlatformSensorPropertiesTemplate.render());
-             var deleteTransportMedium = handle.createUpdate(deleteTransportMediumTemplate.render()))
+        deleteTransportMediums(handle, id);
+        deletePlatformSensors(handle, id);
+        deletePlatformProperties(handle, id);
+
+        try (var deletePlatform = handle.createUpdate(deletePlatformTemplate.render()))
         {
-            deleteTransportMedium.bind(PlatformMapper.Columns.ID.column(), id).execute();
-            deletePlatformSensorProperties.bind(PlatformMapper.Columns.ID.column(), id).execute();
-            deletePlatformSensor.bind(PlatformMapper.Columns.ID.column(), id).execute();
-            deletePlatformProperties.bind(PlatformMapper.Columns.ID.column(), id).execute();
             deletePlatform.bind(PlatformMapper.Columns.ID.column(), id).execute();
         }
     }
+
+    private static void deleteTransportMediums(Handle handle, DbKey id)
+    {
+        var deleteTransportMediumTemplate = QUERIES.getInstanceOf(DELETE_TRANSPORT_MEDIUM);
+        try(var deleteTransportMedium = handle.createUpdate(deleteTransportMediumTemplate.render()))
+        {
+            deleteTransportMedium.bind(PlatformMapper.Columns.ID.column(), id).execute();
+        }
+    }
+
+    private static void deletePlatformSensors(Handle handle, DbKey id)
+    {
+        var deletePlatformSensorTemplate = QUERIES.getInstanceOf(DELETE_PLATFORM_SENSORS);
+        var deletePlatformSensorPropertiesTemplate = QUERIES.getInstanceOf(DELETE_PLATFORM_SENSOR_PROPERTIES);
+        try (var deletePlatformSensor = handle.createUpdate(deletePlatformSensorTemplate.render());
+             var deletePlatformSensorProperties = handle.createUpdate(deletePlatformSensorPropertiesTemplate.render()))
+        {
+            deletePlatformSensorProperties.bind(PlatformMapper.Columns.ID.column(), id).execute();
+            deletePlatformSensor.bind(PlatformMapper.Columns.ID.column(), id).execute();
+        }
+    }
+
+    private static void deletePlatformProperties(Handle handle, DbKey id)
+    {
+        var deletePlatformPropertiesTemplate = QUERIES.getInstanceOf(DELETE_PROPERTIES);
+        try (var deletePlatformProperties = handle.createUpdate(deletePlatformPropertiesTemplate.render()))
+        {
+            deletePlatformProperties.bind(PlatformMapper.Columns.ID.column(), id).execute();
+        }
+    }
+
 
     @Override
     public List<Platform> getAll(DataTransaction tx, int limit, int offset, boolean fillAll, String mediumType)

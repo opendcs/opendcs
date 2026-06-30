@@ -52,7 +52,7 @@ public class PlatformMapper extends PrefixRowMapper<Platform,PlatformMapper.Colu
         return new PlatformMapper(prefix);
     }
     
-    public enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition 
     {
         ID(GenericColumns.ID),
         AGENCY("agency"),
