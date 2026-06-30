@@ -519,13 +519,16 @@ export const RemovePlatformRow: Story = {
     // inherits Storybook's longer default timeout, which is needed on
     // slower CI machines where the Suspense + DetailFade sequence exceeds
     // Testing Library's 1 s findByRole timeout.
-    await waitFor(() => {
-      expect(
-        canvas.getByRole("button", {
-          name: i18n.t("routing:save_routing", { id: 8 }),
-        }),
-      ).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(
+          canvas.getByRole("button", {
+            name: i18n.t("routing:save_routing", { id: 8 }),
+          }),
+        ).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
     // "Alpha" is attached by name and shows in the platforms table.
     expect(await canvas.findByText("Alpha")).toBeInTheDocument();
     // The remove button is injected into the nested DataTable by drawCallback;

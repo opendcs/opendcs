@@ -154,10 +154,8 @@ export const OpenScheduleDetail: Story = {
     const canvas = await mount();
     const { i18n } = parameters;
     await act(async () => userEvent.click((await canvas.findAllByText("goes1"))[0]));
-    await waitFor(async () => {
-      const nameInput = (await canvas.findByLabelText(
-        i18n.t("schedule:name"),
-      )) as HTMLInputElement;
+    await waitFor(() => {
+      const nameInput = canvas.getByLabelText(i18n.t("schedule:name")) as HTMLInputElement;
       expect(nameInput.value).toEqual("goes1");
     });
     await waitFor(() => {
@@ -186,13 +184,16 @@ export const EditMode: Story = {
       name: i18n.t("schedule:edit_schedule", { id: 9 }),
     });
     await act(async () => userEvent.click(editBtn));
-    await waitFor(() => {
-      expect(
-        canvas.getByRole("button", {
-          name: i18n.t("schedule:save_schedule", { id: 9 }),
-        }),
-      ).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(
+          canvas.getByRole("button", {
+            name: i18n.t("schedule:save_schedule", { id: 9 }),
+          }),
+        ).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
     const nameInput = canvas.getByLabelText(
       i18n.t("schedule:name"),
     ) as HTMLInputElement;
@@ -210,9 +211,15 @@ export const EditAndCancel: Story = {
       name: i18n.t("schedule:edit_schedule", { id: 9 }),
     });
     await act(async () => userEvent.click(editBtn));
-    const cancelBtn = await canvas.findByRole("button", {
-      name: i18n.t("schedule:cancel_for", { id: 9 }),
-    });
+    // Wait for the detail's fade-in to finish (the Cancel button becoming
+    // accessible confirms edit mode is interactive).
+    const cancelBtn = await waitFor(
+      () =>
+        canvas.getByRole("button", {
+          name: i18n.t("schedule:cancel_for", { id: 9 }),
+        }),
+      { timeout: 5000 },
+    );
     await act(async () => userEvent.click(cancelBtn));
     await waitFor(() => {
       expect(
@@ -234,13 +241,16 @@ export const AddNewScheduleRow: Story = {
       name: i18n.t("schedule:add_schedule"),
     });
     await act(async () => userEvent.click(addBtn));
-    await waitFor(() => {
-      const nameInput = canvas.getByLabelText(
-        i18n.t("schedule:name"),
-      ) as HTMLInputElement;
-      expect(nameInput.value).toEqual("");
-      expect(nameInput.readOnly).toBe(false);
-    });
+    await waitFor(
+      () => {
+        const nameInput = canvas.getByLabelText(
+          i18n.t("schedule:name"),
+        ) as HTMLInputElement;
+        expect(nameInput.value).toEqual("");
+        expect(nameInput.readOnly).toBe(false);
+      },
+      { timeout: 5000 },
+    );
   },
 };
 
