@@ -125,6 +125,25 @@ const dispatchSseEvent = (
   return false;
 };
 
+/**
+ * Extract a short, human-readable message from a non-OK response. The API's
+ * error bodies are JSON `{ message }`, but a container/proxy-level failure
+ * (e.g. a Tomcat error page) can return raw HTML instead — fall back to the
+ * status text rather than dumping that markup into the UI.
+ */
+const readErrorMessage = async (response: Response): Promise<string> => {
+  const contentType = response.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    try {
+      const body = (await response.json()) as { message?: string };
+      if (body.message) return body.message;
+    } catch {
+      // fall through to statusText below
+    }
+  }
+  return response.statusText || `status ${response.status}`;
+};
+
 /** Read a text/event-stream response body and call callbacks for each event. */
 const readSseStream = async (
   body: ReadableStream<Uint8Array>,
@@ -305,10 +324,17 @@ export const RunComputationModal: React.FC<Props> = ({
     isLoading: loadingGroup,
     error: groupQueryError,
   } = useQuery<ApiTimeSeriesIdentifier[]>({
-    queryKey: ["expandgroup", groupId, org],
+    queryKey: ["expandgroup", groupId, computationId, org],
     queryFn: async () => {
       const ctx = conf.baseServer.makeRequestContext("/expandgroup", HttpMethod.GET);
       ctx.setQueryParam("groupid", String(groupId));
+      // Filters the group's raw members down to ones that actually resolve against
+      // this computation's first input parm (datatype/interval can otherwise differ
+      // from what the group's site/datatype expansion alone implies) — mirrors the
+      // desktop client's Run Computation dialog.
+      if (computationId !== undefined) {
+        ctx.setQueryParam("computationid", String(computationId));
+      }
       const url = ctx.getUrl();
       const res = await fetch(url, {
         method: "GET",
@@ -381,8 +407,8 @@ export const RunComputationModal: React.FC<Props> = ({
         signal: abort.signal,
       });
       if (!response.ok) {
-        const text = await response.text().catch(() => response.statusText);
-        throw new Error(`HTTP ${response.status}: ${text}`);
+        const message = await readErrorMessage(response);
+        throw new Error(`HTTP ${response.status}: ${message}`);
       }
       if (!response.body) throw new Error("No response body");
       let parsedResults: CompResults | null = null;
@@ -665,7 +691,19 @@ export const RunComputationModal: React.FC<Props> = ({
           </div>
         )}
 
-        {status === "error" && errorMsg && <Alert variant="danger">{errorMsg}</Alert>}
+        {status === "error" && errorMsg && (
+          <Alert
+            variant="danger"
+            style={{
+              maxHeight: "16rem",
+              overflowY: "auto",
+              overflowWrap: "anywhere",
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {errorMsg}
+          </Alert>
+        )}
 
         {status === "fetching" && (
           <div className="d-flex align-items-center gap-2 text-muted mb-3">

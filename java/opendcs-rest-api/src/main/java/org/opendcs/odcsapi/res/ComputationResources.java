@@ -396,7 +396,13 @@ public final class ComputationResources extends OpenDcsResource
 		}
 		catch(NoSuchObjectException ex)
 		{
-			throw new DatabaseItemNotFoundException(String.format("Computation with ID %s not found", computationId), ex);
+			// NoSuchObjectException is also thrown by the group-input resolution above (unknown
+			// tsid, or a parm that can't be resolved against it) -- prefer that specific message
+			// over a generic "computation not found" when one is available.
+			String message = ex.getMessage() != null
+					? ex.getMessage()
+					: String.format("Computation with ID %s not found", computationId);
+			throw new DatabaseItemNotFoundException(message, ex);
 		}
 		catch(DbIoException ex)
 		{

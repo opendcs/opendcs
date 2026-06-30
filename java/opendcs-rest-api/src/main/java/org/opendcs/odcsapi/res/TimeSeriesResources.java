@@ -18,13 +18,17 @@ package org.opendcs.odcsapi.res;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
+import java.util.TreeSet;
 
 import decodes.cwms.CwmsTsId;
 import decodes.hdb.HdbTsId;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.DbComputation;
+import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.NoSuchObjectException;
@@ -53,6 +57,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import opendcs.dai.ComputationDAI;
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
@@ -773,27 +778,38 @@ public final class TimeSeriesResources extends OpenDcsResource
 			description = "Returns the fully-expanded list of time series identifiers that belong to the "
 					+ "specified group, including members from sub-groups, attribute-based filters, "
 					+ "and include/exclude/intersect relationships.  \n\n"
+					+ "When computationid is also supplied, each expanded member is transformed against "
+					+ "that computation's first input parameter -- the same filtering the desktop client's "
+					+ "Run Computation dialog performs before offering a group's members for selection -- "
+					+ "so only members the computation can actually resolve an input time series for are "
+					+ "returned.  \n\n"
 					+ "Example URL:  \n\n    http://localhost:8080/odcsapi/expandgroup?groupid=9\n\n",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Successfully expanded time series group",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
 									array = @ArraySchema(schema = @Schema(implementation = ApiTimeSeriesIdentifier.class)))),
 					@ApiResponse(responseCode = "400", description = "Invalid or missing group ID"),
-					@ApiResponse(responseCode = "404", description = "Time series group not found"),
+					@ApiResponse(responseCode = "404", description = "Time series group, or computation, not found"),
 					@ApiResponse(responseCode = "500", description = "Database error occurred")
 			},
 			tags = {"Time Series Methods - Groups"}
 	)
 	public Response expandGroup(@Parameter(description = "Group ID to expand", required = true,
 			schema = @Schema(implementation = Long.class), example = "9")
-		@QueryParam("groupid") Long groupId)
+		@QueryParam("groupid") Long groupId,
+			@Parameter(description = "Optional computation ID. When supplied, expanded members are "
+					+ "transformed against the computation's first input parameter and only the "
+					+ "members that resolve are returned.",
+					schema = @Schema(implementation = Long.class))
+		@QueryParam("computationid") Long computationId)
 			throws WebAppException, DbException
 	{
 		if (groupId == null)
 		{
 			throw new MissingParameterException("Missing required groupid parameter.");
 		}
-		try (TsGroupDAI dai = getLegacyTimeseriesDB().makeTsGroupDAO())
+		try (TsGroupDAI dai = getLegacyTimeseriesDB().makeTsGroupDAO();
+			TimeSeriesDAI tsDai = getLegacyTimeseriesDB().makeTimeSeriesDAO())
 		{
 			TsGroup group = dai.getTsGroupById(DbKey.createDbKey(groupId));
 			if (group == null)
@@ -801,8 +817,11 @@ public final class TimeSeriesResources extends OpenDcsResource
 				throw new DatabaseItemNotFoundException("Time series group with ID=" + groupId + " not found");
 			}
 			ArrayList<TimeSeriesIdentifier> expanded = getLegacyTimeseriesDB().expandTsGroup(group);
+			List<TimeSeriesIdentifier> candidates = computationId != null
+					? transformByFirstInput(expanded, computationId, tsDai)
+					: expanded;
 			List<ApiTimeSeriesIdentifier> result = new ArrayList<>();
-			for (TimeSeriesIdentifier tsid : expanded)
+			for (TimeSeriesIdentifier tsid : candidates)
 			{
 				result.add(mapTsId(tsid));
 			}
@@ -812,6 +831,59 @@ public final class TimeSeriesResources extends OpenDcsResource
 		{
 			throw new DbException("Unable to expand time series group by ID", ex);
 		}
+		catch (NoSuchObjectException ex)
+		{
+			throw new DatabaseItemNotFoundException(String.format("Computation with ID %s not found", computationId), ex);
+		}
+	}
+
+	/**
+	 * A group's raw expansion is typically broader than any single computation parameter needs
+	 * (it can span datatypes/intervals the parm doesn't use), so its members aren't all valid
+	 * run candidates as-is. Mirrors decodes.tsdb.comprungui.CompRunGuiFrame#buildComputationList:
+	 * transform each raw member through the computation's first input parameter, keeping only
+	 * the ones that resolve, deduplicated.
+	 */
+	private List<TimeSeriesIdentifier> transformByFirstInput(List<TimeSeriesIdentifier> expanded,
+			Long computationId, TimeSeriesDAI tsDai) throws DbIoException, NoSuchObjectException
+	{
+		DbCompParm firstInput = null;
+		try (ComputationDAI compDai = getLegacyTimeseriesDB().makeComputationDAO())
+		{
+			DbComputation comp = compDai.getComputationById(DbKey.createDbKey(computationId));
+			for (Iterator<DbCompParm> it = comp.getParms(); it.hasNext();)
+			{
+				DbCompParm parm = it.next();
+				if (parm.isInput())
+				{
+					firstInput = parm;
+					break;
+				}
+			}
+		}
+		if (firstInput == null)
+		{
+			return expanded;
+		}
+		TreeSet<TimeSeriesIdentifier> transformed = new TreeSet<>();
+		for (TimeSeriesIdentifier tsid : expanded)
+		{
+			try
+			{
+				TimeSeriesIdentifier candidate =
+						getLegacyTimeseriesDB().transformTsidByCompParm(tsDai, tsid, firstInput, false, false, "");
+				if (candidate != null)
+				{
+					transformed.add(candidate);
+				}
+			}
+			catch (NoSuchObjectException | BadTimeSeriesException ex)
+			{
+				// Member doesn't match the parm's site/datatype template; skip it, same as the
+				// desktop's Run Computation dialog does.
+			}
+		}
+		return new ArrayList<>(transformed);
 	}
 
 	@POST
