@@ -8,7 +8,7 @@ export const findResponsiveChildRowNode = (
   rowNode: HTMLTableRowElement,
 ): HTMLElement | null => {
   const sibling = rowNode.nextElementSibling as HTMLElement | null;
-  if (!sibling || !sibling.classList.contains("child")) return null;
+  if (!sibling?.classList.contains("child")) return null;
   return sibling;
 };
 

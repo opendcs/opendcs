@@ -29,7 +29,7 @@ export function TransportMediumReducer(
     // entered category-specific fields come back), then overlay the user's
     // latest common-field edits and the new mediumType.
     return {
-      ...(action.payload.restore ?? {}),
+      ...action.payload.restore,
       mediumType: action.payload.mediumType,
       mediumId: current.mediumId,
       scriptName: current.scriptName,

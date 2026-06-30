@@ -31,7 +31,7 @@ export function SelectorModal<T, TId extends string | number>({
   loading = false,
   getId,
   columns,
-}: SelectorModalProps<T, TId>): React.ReactElement {
+}: Readonly<SelectorModalProps<T, TId>>): React.ReactElement {
   const [t] = useTranslation(["translation"]);
   const [selectedIds, setSelectedIds] = useState<TId[]>([]);
   const [selecting, setSelecting] = useState(false);

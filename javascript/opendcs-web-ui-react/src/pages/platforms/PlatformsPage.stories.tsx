@@ -10,7 +10,7 @@ import {
 } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { act } from "react";
 import { expect, waitFor } from "storybook/test";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 
 // Shared fixture set used by the page-level stories. Tests pick subsets via
 // the MSW handlers below.

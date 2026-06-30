@@ -10,7 +10,7 @@ import {
 import type { RemoveAction } from "../../../util/Actions";
 import { DecodesScriptEditor } from "./DecodesScriptEditor";
 
-const SCRIPT_EDITOR_PLACEHOLDER: React.FC<{ className?: string }> = ({ className }) => (
+const ScriptEditorPlaceholder: React.FC<{ className?: string }> = ({ className }) => (
   <Card className={className}>
     <Card.Body>
       <Placeholder animation="glow" className="d-block mb-3">
@@ -152,7 +152,7 @@ export const ConfigScriptsTable: React.FC<ConfigScriptsTableProperties> = ({
           }}
         />
       )}
-      renderSkeleton={() => <SCRIPT_EDITOR_PLACEHOLDER className="child-row-opening" />}
+      renderSkeleton={() => <ScriptEditorPlaceholder className="child-row-opening" />}
       addNew={
         edit
           ? {

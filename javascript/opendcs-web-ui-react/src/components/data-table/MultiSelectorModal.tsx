@@ -58,7 +58,7 @@ export function MultiSelectorModal<T, TId extends string | number>({
   banner,
   confirmPending = false,
   closeOnConfirm = true,
-}: MultiSelectorModalProps<T, TId>): React.ReactElement {
+}: Readonly<MultiSelectorModalProps<T, TId>>): React.ReactElement {
   const [t] = useTranslation(["translation"]);
   const [selectedIds, setSelectedIds] = useState<TId[]>([]);
 
@@ -70,7 +70,7 @@ export function MultiSelectorModal<T, TId extends string | number>({
   }
 
   const available = useMemo(() => {
-    const taken = new Set(excludeIds.map((id) => String(id)));
+    const taken = new Set(excludeIds.map(String));
     return data.filter((d) => !taken.has(String(getId(d))));
   }, [data, excludeIds, getId]);
 

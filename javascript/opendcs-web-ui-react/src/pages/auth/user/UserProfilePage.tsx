@@ -7,15 +7,9 @@ import { useApi } from "../../../contexts/app/ApiContext";
 import { useCallback } from "react";
 import { UserOperationsApi } from "opendcs-api";
 
-export interface UserProfileProperties {}
-
-export const UserProfilePage: React.FC<UserProfileProperties> = ({}) => {
+export const UserProfilePage: React.FC = () => {
   const { user } = useAuth();
   const { conf } = useApi();
-
-  if (user === undefined) {
-    return;
-  }
 
   const updatePassword = useCallback(
     async (currentPassword: string, newPassword: string): Promise<boolean> => {
@@ -26,10 +20,17 @@ export const UserProfilePage: React.FC<UserProfileProperties> = ({}) => {
           newPassword: newPassword,
         })
         .then(() => true)
-        .catch((_err) => false); // TODO: proper error handling
+        .catch((err) => {
+          console.error("Failed to update password", err);
+          return false;
+        });
     },
     [conf],
   );
+
+  if (user === undefined) {
+    return;
+  }
 
   return (
     <Card>

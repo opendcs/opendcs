@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
+// eslint-disable-next-line storybook/use-storybook-testing-library
 import { act } from "@testing-library/react";
 import { expect, fn, screen, waitFor } from "storybook/test";
 import { CheckForNewModal } from "./CheckForNewModal";
