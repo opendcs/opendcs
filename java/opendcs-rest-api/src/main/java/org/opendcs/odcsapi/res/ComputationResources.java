@@ -64,6 +64,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.sse.OutboundSseEvent;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
+import opendcs.dai.CompDependsDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -292,7 +293,9 @@ public final class ComputationResources extends OpenDcsResource
 			summary = "Execute an Existing OpenDCS Computation",
 			description = "Endpoint takes in a computation name and a list of timeseries IDs to execute a computation. "
 					+ "Optionally takes in a start and end date for a time window to use for the computation. "
-					+ "For group computations, supply the tsid parameter to run against a specific input time series.",
+					+ "For group computations, supply the tsid parameter to run against a specific input time series. "
+					+ "If tsid is omitted for a group computation, the computation is expanded and run against "
+					+ "every time series that can currently trigger it.",
 			tags = {"REST - Computation Methods"},
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Successfully initiated execution of computation",
@@ -315,7 +318,9 @@ public final class ComputationResources extends OpenDcsResource
 					schema = @Schema(implementation = Instant.class, example = "2025-10-25T12:00:00Z"))
 			@QueryParam("end") String end,
 			@Parameter(description = "Time series key to use as the group computation input. "
-					+ "When provided the group computation is resolved against this specific time series.",
+					+ "When provided the group computation is resolved against this specific time series. "
+					+ "When omitted for a group computation, the computation is expanded against every "
+					+ "time series that can currently trigger it.",
 					schema = @Schema(implementation = Long.class))
 			@QueryParam("tsid") Long tsId)
 			throws DbException, WebAppException
@@ -329,17 +334,13 @@ public final class ComputationResources extends OpenDcsResource
 
 		try(ComputationDAI dai = getLegacyTimeseriesDB().makeComputationDAO();
 			TimeSeriesDAI tsDai = getLegacyTimeseriesDB().makeTimeSeriesDAO();
-			SiteDAI siteDai = getLegacyTimeseriesDB().makeSiteDAO())
+			SiteDAI siteDai = getLegacyTimeseriesDB().makeSiteDAO();
+			CompDependsDAI compDependsDai = getLegacyTimeseriesDB().makeCompDependsDAO())
 		{
 			DbComputation comp = dai.getComputationById(DbKey.createDbKey(computationId));
 
-			if (tsId != null && comp.hasGroupInput())
-			{
-				TimeSeriesIdentifier inputTsid = tsDai.getTimeSeriesIdentifier(DbKey.createDbKey(tsId));
-				comp = DbCompResolver.makeConcrete(getLegacyTimeseriesDB(), tsDai, inputTsid, comp, true);
-			}
+			List<DbComputation> resolvedComps = resolveComputations(comp, computationId, tsId, tsDai, compDependsDai);
 
-			final DbComputation resolvedComp = comp;
 			String taskID = UUID.randomUUID().toString();
 
 			final Instant startTime = Instant.parse(start);
@@ -347,7 +348,11 @@ public final class ComputationResources extends OpenDcsResource
 			Date startDate = Date.from(startTime);
 			Date endDate = Date.from(endTime);
 
-			List<TimeSeriesIdentifier> outputList = processOutputTsIds(resolvedComp, tsDai, siteDai, computationId, taskID, sse, eventSink);
+			List<TimeSeriesIdentifier> outputList = new ArrayList<>();
+			for(DbComputation resolvedComp : resolvedComps)
+			{
+				outputList.addAll(processOutputTsIds(resolvedComp, tsDai, siteDai, computationId, taskID, sse, eventSink));
+			}
 
 			final var contextMap = MDC.getCopyOfContextMap();
 			CompletableFuture.runAsync(() ->
@@ -366,7 +371,7 @@ public final class ComputationResources extends OpenDcsResource
 					{
 						MDC.setContextMap(contextMap);
 					}
-					executeAndPublishResult(computationId, resolvedComp, startDate, endDate, sse, eventSink, compStatus, taskID);
+					executeAndPublishResult(computationId, resolvedComps, startDate, endDate, sse, eventSink, compStatus, taskID);
 				}
 				catch (RuntimeException ex)
 				{
@@ -408,6 +413,49 @@ public final class ComputationResources extends OpenDcsResource
 		{
 			throw new DbException(String.format("Error retrieving computation to execute by ID: %s", computationId), ex);
 		}
+	}
+
+	/**
+	 * Resolves the computation(s) that should actually be executed. Non-group computations
+	 * run as-is. Group computations are made concrete against either the single supplied
+	 * tsid, or -- if none was supplied -- against every time series currently known to
+	 * trigger the computation, mirroring the expansion the thick-client comp-run tool performs.
+	 */
+	private List<DbComputation> resolveComputations(DbComputation comp, Long computationId, Long tsId,
+			TimeSeriesDAI tsDai, CompDependsDAI compDependsDai) throws DbIoException, NoSuchObjectException
+	{
+		if (!comp.hasGroupInput())
+		{
+			return List.of(comp);
+		}
+
+		if (tsId != null)
+		{
+			TimeSeriesIdentifier inputTsid = tsDai.getTimeSeriesIdentifier(DbKey.createDbKey(tsId));
+			return List.of(DbCompResolver.makeConcrete(getLegacyTimeseriesDB(), tsDai, inputTsid, comp, true));
+		}
+
+		DbCompResolver resolver = new DbCompResolver(getLegacyTimeseriesDB());
+		List<DbComputation> resolvedComps = new ArrayList<>();
+		for(TimeSeriesIdentifier trigger : compDependsDai.getTriggersFor(DbKey.createDbKey(computationId)))
+		{
+			try
+			{
+				DbComputation concrete = DbCompResolver.makeConcrete(getLegacyTimeseriesDB(), tsDai, trigger, comp, true);
+				resolver.addToResults(resolvedComps, concrete, null);
+			}
+			catch(NoSuchObjectException ex)
+			{
+				log.warn("Skipping trigger '{}' for group computation ID: {} -- {}",
+						trigger.getUniqueString(), computationId, ex.getMessage());
+			}
+		}
+		if (resolvedComps.isEmpty())
+		{
+			throw new NoSuchObjectException(
+					String.format("No resolvable input time series found for group computation ID: %s", computationId));
+		}
+		return resolvedComps;
 	}
 
 	private List<TimeSeriesIdentifier> processOutputTsIds(DbComputation comp, TimeSeriesDAI tsDai, SiteDAI siteDai,
@@ -490,13 +538,13 @@ public final class ComputationResources extends OpenDcsResource
 		return outputList;
 	}
 
-	private void executeAndPublishResult(Long computationId, DbComputation comp, Date startDate, Date endDate,
+	private void executeAndPublishResult(Long computationId, List<DbComputation> comps, Date startDate, Date endDate,
 			Sse sse, SseEventSink eventSink, String compStatus, String taskID)
 	{
 		try (ComputationExecution execution = new ComputationExecution(createDb()))
 		{
 			SseProgressListener listener = new SseProgressListener(eventSink, sse, compStatus, taskID);
-			ComputationExecution.CompResults results = execution.execute(List.of(comp), new DataCollection(), startDate, endDate, listener);
+			ComputationExecution.CompResults results = execution.execute(comps, new DataCollection(), startDate, endDate, listener);
 
 			OutboundSseEvent event = sse.newEventBuilder()
 					.name(compStatus)
