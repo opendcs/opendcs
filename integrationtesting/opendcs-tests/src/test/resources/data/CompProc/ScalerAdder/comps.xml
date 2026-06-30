@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+ <Computation name="Total_Outflow_2BP_1MG_1hr">
+    <Comment>Test for LRL data gap</Comment>
+    <Enabled>true</Enabled>
+    <CompProcName>compproc_regtest</CompProcName>
+    <AlgorithmName>ScalerAdder</AlgorithmName>
+    <LastModified>2025-10-28 14:07:52 UTC</LastModified>
+    <ValidStart>2020-11-01 00:00:00 UTC</ValidStart>
+    <GroupName>Lakes - 2BP 1MG</GroupName>
+    <CompProperty name="input5_MISSING">ignore</CompProperty>
+    <CompProperty name="input3_MISSING">FAIL</CompProperty>
+    <CompProperty name="input1_MISSING">FAIL</CompProperty>
+    <CompProperty name="coeff10">1.0</CompProperty>
+    <CompProperty name="input10_MISSING">ignore</CompProperty>
+    <CompProperty name="input9_MISSING">ignore</CompProperty>
+    <CompProperty name="input7_MISSING">ignore</CompProperty>
+    <CompProperty name="input6_MISSING">ignore</CompProperty>
+    <CompProperty name="input4_MISSING">ignore</CompProperty>
+    <CompProperty name="coeff9">1.0</CompProperty>
+    <CompProperty name="input2_MISSING">FAIL</CompProperty>
+    <CompProperty name="coeff8">1.0</CompProperty>
+    <CompProperty name="coeff7">1.0</CompProperty>
+    <CompProperty name="coeff6">1.0</CompProperty>
+    <CompProperty name="coeff5">1.0</CompProperty>
+    <CompProperty name="coeff4">1.0</CompProperty>
+    <CompProperty name="coeff3">1.0</CompProperty>
+    <CompProperty name="coeff2">1.0</CompProperty>
+    <CompProperty name="input1_EU">cfs</CompProperty>
+    <CompProperty name="coeff1">1.0</CompProperty>
+    <CompProperty name="output_EU">cfs</CompProperty>
+    <CompProperty name="input2_EU">cfs</CompProperty>
+    <CompProperty name="input8_MISSING">ignore</CompProperty>
+    <CompProperty name="input3_EU">cfs</CompProperty>
+    <CompParm roleName="input2">
+      <SiteDataType>
+        <DataType Standard="CWMS" code="Flow-BP2"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.lrldlb-comp..Flow-BP2</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="input3">
+      <SiteDataType>
+        <DataType Standard="CWMS" code="Flow-MG1"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.lrldlb-comp..Flow-MG1</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="output">
+      <SiteDataType>
+        <DataType Standard="CWMS" code="Flow-Outflow"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.lrldlb-comp..Flow-Outflow</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="input1">
+      <SiteDataType>
+        <DataType Standard="CWMS" code="Flow-BP1"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.lrldlb-comp..Flow-BP1</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+  </Computation>
+  <TsGroup name="Lakes - 2BP 1MG">
+    <GroupType>data-type</GroupType>
+    <Description></Description>
+    <SubGroup combine="add">Barren River</SubGroup>
+    <SubGroup combine="add">Green River</SubGroup>
+    <SubGroup combine="add">Nolin River</SubGroup>
+    <SubGroup combine="add">Rough River</SubGroup>
+    <SubGroup combine="add">CJBrown</SubGroup>
+    <SubGroup combine="add">Caesar Creek</SubGroup>
+    <SubGroup combine="add">WHHarsha</SubGroup>
+    <SubGroup combine="add">Carr Creek</SubGroup>
+    <SubGroup combine="add">Buckhorn</SubGroup>
+    <SubGroup combine="add">Cave Run</SubGroup>
+    <SubGroup combine="add">CMHarden</SubGroup>
+    <SubGroup combine="add">Monroe</SubGroup>
+    <SubGroup combine="add">Patoka</SubGroup>
+    <SubGroup combine="add">Brookville</SubGroup>
+    <SubGroup combine="add">Mississinewa</SubGroup>
+    <SubGroup combine="add">Salamonie</SubGroup>
+  </TsGroup>
+  <TsGroup name="Barren River">
+    <GroupType>project</GroupType>
+    <Description></Description>
+    <Member type="BaseLocation" value="Barren"/>
+  </TsGroup>
+  <TsGroup name="Green River">
+    <GroupType>project</GroupType>
+    <Description></Description>
+    <Member type="BaseLocation" value="Green"/>
+  </TsGroup>
+  <TsGroup name="Nolin River">
+    <GroupType>project</GroupType>
+    <Description></Description>
+    <Member type="BaseLocation" value="Nolin"/>
+  </TsGroup>
+  <TsGroup name="Rough River">
+    <GroupType>project</GroupType>
+    <Description></Description>
+    <SiteName>RoughRiverTW</SiteName>
+    <Member type="BaseLocation" value="Rough"/>
+  </TsGroup>
+  <TsGroup name="CJBrown">
+    <GroupType>project</GroupType>
+    <Description></Description>
+    <Member type="BaseLocation" value="CJBrown"/>
+  </TsGroup>
+  <TsGroup name="Caesar Creek">
+    <GroupType>project</GroupType>
+    <Description></Description>
+    <Member type="BaseLocation" value="CaesarCreek"/>
+  </TsGroup>
+  <TsGroup name="West Fork">
+    <GroupType>project</GroupType>
+    <Description></Description>
+    <Member type="BaseLocation" value="WestFork"/>
+  </TsGroup>
+  <TsGroup name="WHHarsha">
+    <GroupType>project</GroupType>
+    <Description></Description>
+    <SiteName>WHHarshaTW</SiteName>
+    <Member type="BaseLocation" value="WHHarsha"/>
+  </TsGroup>
+  <TsGroup name="Taylorsville">
+    <GroupType>project</GroupType>
+    <Description></Description>
+    <Member type="BaseLocation" value="Taylorsville"/>
+  </TsGroup>  
+  <TsGroup name="Carr Creek">
+    <GroupType>project</GroupType>
+    <Description></Description>
+    <SiteName>CarrFkLk</SiteName>
+    <Member type="BaseLocation" value="CarrCreek"/>
+  </TsGroup>
+  <TsGroup name="Buckhorn">
+    <GroupType>project</GroupType>
+    <Description></Description>
+    <Member type="BaseLocation" value="Buckhorn"/>
+  </TsGroup>
+  <TsGroup name="Cave Run">
+    <GroupType>project</GroupType>
+    <Description></Description>
+    <SiteName>CaveRunTW</SiteName>
+    <Member type="BaseLocation" value="CaveRun"/>
+  </TsGroup>  
+  <TsGroup name="CMHarden">
+    <GroupType>project</GroupType>
+    <Description></Description>
+    <Member type="BaseLocation" value="CMHarden"/>
+  </TsGroup>
+  <TsGroup name="Cagles Mill">
+    <GroupType>project</GroupType>
+    <Description></Description>
+    <Member type="BaseLocation" value="CaglesMill"/>
+  </TsGroup>
+  <TsGroup name="Monroe">
+    <GroupType>project</GroupType>
+    <Description></Description>
+    <Member type="BaseLocation" value="Monroe"/>
+  </TsGroup>
+  <TsGroup name="Patoka">
+    <GroupType>project</GroupType>
+    <Description></Description>
+    <Member type="BaseLocation" value="Patoka"/>
+  </TsGroup>
+  <TsGroup name="Brookville">
+    <GroupType>project</GroupType>
+    <Description></Description>
+    <SiteName>BrookvilleTW</SiteName>
+    <Member type="BaseLocation" value="Brookville"/>
+  </TsGroup>
+  <TsGroup name="JERoush">
+    <GroupType>project</GroupType>
+    <Description></Description>
+    <Member type="BaseLocation" value="JERoush"/>
+  </TsGroup>
+  <TsGroup name="Mississinewa">
+    <GroupType>project</GroupType>
+    <Description></Description>
+    <Member type="BaseLocation" value="Mississinewa"/>
+  </TsGroup>
+  <TsGroup name="Salamonie">
+    <GroupType>project</GroupType>
+    <Description></Description>
+    <Member type="BaseLocation" value="Salamonie"/>
+  </TsGroup>
+</CompMetaData>

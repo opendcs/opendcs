@@ -46,7 +46,7 @@ import opendcs.dao.DaoBase;
         "shared/presgrp-regtest.xml"
     })
 @ComputationConfigurationRequired("shared/loading-apps.xml")
-public class CompProcTestIT extends AppTestBase
+class CompProcTestIT extends AppTestBase
 {
     private static final Logger log = LoggerFactory.getLogger(CompProcTestIT.class);
 
@@ -64,7 +64,7 @@ public class CompProcTestIT extends AppTestBase
                                 //"TESTSITE2.Precip-Incr.Total.~1Month.1Month.test(TESTSITE2-PR-Mon)" };
 
     @BeforeAll
-    public void load_sites() throws Exception
+    void load_sites() throws Exception
     {
         if (!configuration.isTsdb())
         {
@@ -86,7 +86,7 @@ public class CompProcTestIT extends AppTestBase
     }
 
     @AfterAll
-    public void cleanup_timeseries() throws Exception
+    void cleanup_timeseries() throws Exception
     {
         if (!configuration.isTsdb())
         {
@@ -112,7 +112,7 @@ public class CompProcTestIT extends AppTestBase
     @Test
     @TsdbAppRequired(app = ComputationApp.class, appName="compproc_regtest")
     @ComputationConfigurationRequired({"shared/loading-apps.xml", "CompProc/Precip/comps.xml"})
-    public void test_incremental_precip() throws Exception
+    void test_incremental_precip() throws Exception
     {
         final Configuration config = this.configuration;
         final File logDir = config.getUserDir();
@@ -165,7 +165,7 @@ public class CompProcTestIT extends AppTestBase
     @ComputationConfigurationRequired({"shared/loading-apps.xml", "CompProc/Precip/comps.xml"})
     @Disabled("The tasklist table is not mapped to DAO that make this easy to run cross implementation. Remove the sourceid not null constraint on cp_comp_tasklist"
             + " and you can run it with OpenDCS Postgres implementation. Future work will enable this test.")
-    public void test_bad_recs_cleared() throws Exception
+    void test_bad_recs_cleared() throws Exception
     {
         /**
          * 1. insert into tasklist records with 0 computations enabled.
@@ -193,6 +193,94 @@ public class CompProcTestIT extends AppTestBase
                                              rs -> rs.getInt(1), -1,
                                              inputKey),
                          "Bad records were left in the tasklist.");
+        }
+    }
+
+    /**
+     * This is an attempt to test an issue with a data gap seen at LRL in USACE's cloud environment.
+     * Cause is not known at time of initial setup. Here we attempt to partially recreate conditions.
+     * @throws Exception
+     */
+    @Test
+    @TsdbAppRequired(app = ComputationApp.class, appName="compproc_regtest")
+    @DecodesConfigurationRequired("CompProc/ScalerAdder/sites.xml")
+    @ComputationConfigurationRequired({"shared/loading-apps.xml", "CompProc/ScalerAdder/comps.xml"})
+    void test_scaleradder_three_inputs() throws Exception
+    {
+
+        final String outputTsIds[] = new String[]
+        {
+            "Barren.Flow-Outflow.Inst.1Hour.0.lrldlb-comp(Barren)",
+            "Green.Flow-Outflow.Inst.1Hour.0.lrldlb-comp(Green)",
+            "Nolin.Flow-Outflow.Inst.1Hour.0.lrldlb-comp(Nolin)",
+            "Rough.Flow-Outflow.Inst.1Hour.0.lrldlb-comp(Rough)",
+            "CJBRown.Flow-Outflow.Inst.1Hour.0.lrldlb-comp(CJBrown)",
+            "CaesarCreek.Flow-Outflow.Inst.1Hour.0.lrldlb-comp(CaesarCreek)",
+            "WHHarsa.Flow-Outflow.Inst.1Hour.0.lrldlb-comp(WHHarsa)",
+            "CarrCreek.Flow-Outflow.Inst.1Hour.0.lrldlb-comp(CarrCreek)",
+            "Buckhorn.Flow-Outflow.Inst.1Hour.0.lrldlb-comp(Buckhorn)",
+            "CaveRun.Flow-Outflow.Inst.1Hour.0.lrldlb-comp(CaveRun)",
+            "CMHarden.Flow-Outflow.Inst.1Hour.0.lrldlb-comp(CMHarden)",
+            "Monroe.Flow-Outflow.Inst.1Hour.0.lrldlb-comp(Monroe)",
+            "Patoka.Flow-Outflow.Inst.1Hour.0.lrldlb-comp(Patoka)",
+            "Brookville.Flow-Outflow.Inst.1Hour.0.lrldlb-comp(Brookville)",
+            "Mississinewa.Flow-Outflow.Inst.1Hour.0.lrldlb-comp(Mississinewa)",
+            "Salamonie.Flow-Outflow.Inst.1Hour.0.lrldlb-comp(Salamonie)"
+        };
+
+        final Configuration config = this.configuration;
+        final File logDir = config.getUserDir();
+
+        final File goldenFile = new File(getResource(config, "CompProc/ScalerAdder/output.human-readable"));
+
+        Programs.ImportTs(
+            new File(config.getUserDir(),"/importTs.log"),
+            config.getPropertiesFile(),
+            environment, exit,
+            getResource(config, "CompProc/ScalerAdder/input.tsimport"));
+
+        BackgroundTsDbApp.waitForApp(CpCompDependsUpdater.class,
+                                     "compdepends_compproc",
+                                     configuration.getPropertiesFile(),
+                                     new File(configuration.getUserDir(),"compproctest-adder-update.log"),
+                                     environment, 60, TimeUnit.SECONDS, "-O");
+
+        // First import is to create time series so compdepends can be updated to use them.
+        // This import is to actually trigger the computation.
+        Programs.ImportTs(
+            new File(config.getUserDir(),"/importTs.log"),
+            config.getPropertiesFile(),
+            environment, exit,
+            getResource(config, "CompProc/ScalerAdder/input.tsimport"));
+
+        try
+        {
+            final String golden = IOUtils.toString(goldenFile.toURI().toURL().openStream(), "UTF8");
+            Waiting.assertResultWithinTimeFrame((t) ->
+            {
+                try
+                {
+                    final String output = Programs.OutputTs(new File(logDir,"/outputTs.log"), config.getPropertiesFile(),
+                                            environment, exit,
+                                            "07-June-2026/00:00", "08-Jun-2026/00:00", "UTC",
+                                            "regtest", outputTsIds);
+                    if (log.isTraceEnabled())
+                    {
+                        log.trace("Current Output TimeSeries: {}{}", System.lineSeparator(), output);
+                    }
+                    return golden.equals(output);
+                }
+                catch (Throwable ex)
+                {
+                    log.error("Test application had an unexpected error", ex);
+                    return false;
+                }
+            }, 3, TimeUnit.MINUTES, 5, TimeUnit.SECONDS
+            ,"Calculated results were not found within the expected time frame.");
+        }
+        catch(InterruptedException ex)
+        {
+            /* do nothing */
         }
     }
 }
