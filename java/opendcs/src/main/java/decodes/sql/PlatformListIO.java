@@ -844,6 +844,8 @@ public class PlatformListIO extends SqlDbObjIo
                 }
                 return;
             }
+            throw new DatabaseException("Cannot update platform " + p.getDisplayName()
+                + " in database: " + ex, ex);
         }
 
         // Now update the PlatformSensor and PlatformSensorProperty
@@ -918,6 +920,8 @@ public class PlatformListIO extends SqlDbObjIo
                 log.atWarn().setCause(ex).log("Cannot write platform {} to database: ", p.getDisplayName());
                 return;
             }
+            throw new DatabaseException("Cannot write platform " + p.getDisplayName()
+                + " to database: " + ex, ex);
         }
 
         // Write the PlatformSensor and PlatformSensorProperty entities

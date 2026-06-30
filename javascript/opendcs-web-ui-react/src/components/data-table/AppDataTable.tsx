@@ -4,6 +4,7 @@ import DataTable, {
 } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import dtButtons from "datatables.net-buttons-bs5";
+import { Alert } from "react-bootstrap";
 import {
   Suspense,
   useCallback,
@@ -440,10 +441,13 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
 
   const { toDom } = useContextWrapper();
   const table = useRef<DataTableRef>(null);
-  const [, i18n] = useTranslation();
+  const [t, i18n] = useTranslation();
 
   // --- State ----------------------------------------------------------------
   const [localItems, setLocalItems] = useState<T[]>([]);
+  // Set when a row's onSave rejects, so the failure is visible instead of
+  // silently discarded. Cleared on the next save attempt.
+  const [saveError, setSaveError] = useState<string | null>(null);
   // rowState is keyed by stringified row id so both consumer ids (TId) and
   // wrapper-generated synthetic ids (for inline-edit new rows) coexist.
   const [rowState, setRowState] = useState<Record<string, RowMode>>({});
@@ -701,11 +705,16 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
           // Await the consumer's save (if it's a Promise) before transitioning
           // so the follow-up `renderDetail` fetch reads committed data.
           // `await` works on thenables and passes through non-promises unchanged.
+          setSaveError(null);
           try {
             await onSave?.(updated);
-          } catch {
-            // Caller reported the error; don't swallow here, but also
-            // don't block the UI transition — close the row regardless.
+          } catch (err) {
+            // Surface the failure instead of silently closing the row as if
+            // it had succeeded — previously this masked failed creates and
+            // updates entirely, with no visible error and no row removed.
+            console.error("Failed to save row", err);
+            setSaveError(t("save_failed"));
+            return;
           }
           if (isNewLocal) pendingNavRef.current = true;
           setLocalItems((prev) => withoutId(prev, id, idOf));
@@ -724,7 +733,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
         </Suspense>,
       );
     },
-    [idOf, onSave, setModeByIdStr, toDom, renderDetail, renderSkeleton],
+    [idOf, onSave, setModeByIdStr, toDom, renderDetail, renderSkeleton, t],
   );
 
   // Stable ref so the drawCallback closure always sees the latest renderer.
@@ -980,6 +989,11 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
 
   return (
     <div style={{ opacity: isInitialized ? undefined : 0 }}>
+      {saveError && (
+        <Alert variant="danger" dismissible onClose={() => setSaveError(null)}>
+          {saveError}
+        </Alert>
+      )}
       <DataTable
         key={tableKey}
         id={tableId}
