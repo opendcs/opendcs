@@ -670,6 +670,10 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     ];
     return [...built, ...extras];
   }, [inlineEdit, rowActions, columns, idOf, setModeByIdStr]);
+  // rowActionsList's `show`/`onClick` closures read rowStateRef.current only
+  // when invoked later from DOM event handlers / drawCallback, never
+  // synchronously during this render; `.length` here only counts entries.
+  // eslint-disable-next-line react-hooks/refs
   const hasActionsCol = rowActionsList.length > 0;
 
   const rowActionApi = useMemo<RowActionApi<T>>(
@@ -708,8 +712,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
           setModeByIdStr(id, "show");
         },
         cancel: () => {
-          const local = localItemsRef.current.find((r) => idOf(r) === id);
-          if (local) {
+          if (localItemsRef.current.some((r) => idOf(r) === id)) {
             setLocalItems((prev) => withoutId(prev, id, idOf));
           }
           setModeByIdStr(id, undefined);
@@ -736,6 +739,10 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   // When inlineEdit is enabled, wrap each column's render to swap to the
   // `edit.render` output when the row is in "edit" / "new" mode.
   const dtColumns = useMemo(() => {
+    // makeColumnRender stores rowStateRef in the returned render closure,
+    // which DataTables invokes later during its own cell rendering, not
+    // synchronously here.
+    // eslint-disable-next-line react-hooks/refs
     const cols = columns.map((c) => ({
       data: c.data,
       defaultContent: c.defaultContent ?? "",

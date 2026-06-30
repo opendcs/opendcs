@@ -135,7 +135,7 @@ export const PlatformSensor: React.FC<PlatformSensorProperties> = ({
   const [local, dispatch] = useReducer(PlatformSensorReducer, override);
   const [showSiteModal, setShowSiteModal] = useState(false);
   const [siteName, setSiteName] = useState<string>(
-    local.actualSiteId !== undefined ? String(local.actualSiteId) : "",
+    local.actualSiteId === undefined ? "" : String(local.actualSiteId),
   );
 
   const handleSelectSite = useCallback((ref: ApiSiteRef) => {

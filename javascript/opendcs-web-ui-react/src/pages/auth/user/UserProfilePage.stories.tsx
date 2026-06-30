@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
 import { UserProfilePage } from "./UserProfilePage";
 import { fn } from "storybook/test";
 import {
@@ -17,15 +17,15 @@ const meta = {
         http.post("/odcsapi/user/updatePassword", async ({ request }) => {
           const json = await request.json();
           console.log(json);
-          const { currentPassword, newPassword } = json as {
+          const { currentPassword } = json as {
             currentPassword: string;
             newPassword: string;
           };
 
-          if (currentPassword !== "current password") {
-            return new HttpResponse(null, { status: 403, statusText: "Forbidden" });
-          } else {
+          if (currentPassword === "current password") {
             return new HttpResponse(null, { status: 200 });
+          } else {
+            return new HttpResponse(null, { status: 403, statusText: "Forbidden" });
           }
         }),
       ],
@@ -37,7 +37,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-const authDecorator = (Story: any) => (
+const authDecorator: Decorator = (Story) => (
   <ApiContext value={apiDefault}>
     <AuthContext
       value={{
