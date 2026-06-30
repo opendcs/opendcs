@@ -154,10 +154,7 @@ export function ChooserTable<T, TId extends string | number>(
   const [isInitialized, setIsInitialized] = useState(false);
 
   // --- Live refs so DataTables callbacks always read the latest values ------
-  const selectedSet = useMemo(
-    () => new Set(selectedIds.map((id) => String(id))),
-    [selectedIds],
-  );
+  const selectedSet = useMemo(() => new Set(selectedIds.map(String)), [selectedIds]);
   const selectedSetRef = useRef(selectedSet);
   useEffect(() => {
     selectedSetRef.current = selectedSet;

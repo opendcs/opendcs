@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
 
-export function Roles({ user }: UserProperties) {
+export function Roles({ user }: Readonly<UserProperties>) {
   const { t } = useTranslation(["user-data"]);
   return (
     <AppDataTable<Role, number, string>
