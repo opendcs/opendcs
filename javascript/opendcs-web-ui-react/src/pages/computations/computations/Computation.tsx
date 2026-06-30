@@ -118,7 +118,7 @@ export const ComputationSkeleton: React.FC<{ edit?: boolean }> = ({ edit = false
 
 export interface ComputationProperties {
   computation: Promise<UiComputation> | UiComputation;
-  algorithm?: Promise<ApiAlgorithm | undefined> | ApiAlgorithm | undefined;
+  algorithm?: Promise<ApiAlgorithm | undefined> | ApiAlgorithm;
   getAlgorithm?: (algorithmId: number) => Promise<ApiAlgorithm>;
   actions?: SaveAction<ApiComputation> & CancelAction<number>;
   edit?: boolean;

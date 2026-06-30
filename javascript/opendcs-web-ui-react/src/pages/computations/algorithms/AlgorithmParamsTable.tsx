@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Form } from "react-bootstrap";
 import { renderToString } from "react-dom/server";
-import { PARM_TYPES, parmTypeLabel, type ParmTypeOption } from "../common/parmTypes";
+import { PARM_TYPES, parmTypeLabel } from "../common/parmTypes";
 import { AppDataTable, type ColumnDef } from "../../../components/data-table";
 
 export type AlgoParm = { roleName: string; parmType: string };
@@ -10,7 +10,7 @@ export type AlgoParm = { roleName: string; parmType: string };
 // parmTypeLabel from here rather than from `common/parmTypes` directly.
 // eslint-disable-next-line react-refresh/only-export-components
 export { PARM_TYPES, parmTypeLabel };
-export type { ParmTypeOption };
+export type { ParmTypeOption } from "../common/parmTypes";
 
 export interface AlgorithmParamsTableProps {
   parms: AlgoParm[];

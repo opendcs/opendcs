@@ -1,6 +1,6 @@
 import { Button, Card, Col, Form, Row } from "react-bootstrap";
 import type UserProperties from "./UserProperties";
-import { useCallback, useEffect, useState, type ChangeEvent } from "react";
+import { useCallback, useState, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 
 export function PasswordChange({
@@ -15,54 +15,45 @@ export function PasswordChange({
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState<string>("");
   const [repeatPassword, setRepeatPassword] = useState<string>("");
-  const [passwordsMatch, setPasswordsMatch] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean | null>(null);
   const [validated, setValidated] = useState<boolean>(false);
   const { t } = useTranslation(["user-data"]);
 
-  useEffect(() => {
-    setPasswordsMatch(
-      newPassword === repeatPassword && newPassword !== "" && currentPassword !== "",
-    );
-  }, [newPassword, repeatPassword, currentPassword]);
-
-  useEffect(() => {
-    setValidated(passwordsMatch);
-  }, [passwordsMatch]);
-
-  useEffect(() => {
-    if (success === true) {
-      setCurrentPassword("");
-      setNewPassword("");
-      setRepeatPassword("");
-      setValidated(false);
-    } else if (success === false) {
-      setValidated(false);
-    }
-  }, [success]);
+  const passwordsMatch =
+    newPassword === repeatPassword && newPassword !== "" && currentPassword !== "";
 
   const updateCurrentPassword = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      setCurrentPassword(event.target.value);
+      const value = event.target.value;
+      setCurrentPassword(value);
       setSuccess(null);
+      setValidated(
+        newPassword === repeatPassword && newPassword !== "" && value !== "",
+      );
     },
-    [setNewPassword],
+    [newPassword, repeatPassword],
   );
 
   const updateNewPassword = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      setNewPassword(event.target.value);
+      const value = event.target.value;
+      setNewPassword(value);
       setSuccess(null);
+      setValidated(value === repeatPassword && value !== "" && currentPassword !== "");
     },
-    [setNewPassword],
+    [repeatPassword, currentPassword],
   );
 
   const updateRepeatPassword = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      setRepeatPassword(event.target.value);
+      const value = event.target.value;
+      setRepeatPassword(value);
       setSuccess(null);
+      setValidated(
+        newPassword === value && newPassword !== "" && currentPassword !== "",
+      );
     },
-    [setRepeatPassword],
+    [newPassword, currentPassword],
   );
 
   return (
@@ -77,9 +68,15 @@ export function PasswordChange({
               event.preventDefault();
               const form = event.currentTarget;
               if (form.checkValidity()) {
-                updatePassword(currentPassword, newPassword).then((value) =>
-                  setSuccess(value),
-                );
+                updatePassword(currentPassword, newPassword).then((value) => {
+                  setSuccess(value);
+                  if (value) {
+                    setCurrentPassword("");
+                    setNewPassword("");
+                    setRepeatPassword("");
+                  }
+                  setValidated(false);
+                });
               }
               setValidated(true);
             }}

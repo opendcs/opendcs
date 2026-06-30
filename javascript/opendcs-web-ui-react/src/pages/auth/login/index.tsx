@@ -36,6 +36,29 @@ export default function Login() {
     }
   }, [location.state]);
 
+  // Ensure every scheme has a query-param bucket to read/write from —
+  // defaulting OIDC query params to their first option (mirroring the
+  // unselected <Form.Select>'s own default) — without clobbering values the
+  // user already picked. Done in an effect (not during render) since this
+  // mutates the ref.
+  useEffect(() => {
+    if (!loginSchemes) return;
+    inputOptions.current = Object.fromEntries(
+      Object.entries(loginSchemes).map(([key, scheme]) => {
+        const existing = inputOptions.current[key] ?? {};
+        const defaults = scheme.queryParameters
+          ? Object.fromEntries(
+              Object.entries(scheme.queryParameters)
+                .map((qp) => [qp[0], qp[1]] as unknown as [string, string[]])
+                .filter(([, values]) => values.length > 0)
+                .map(([qp, values]) => [qp, values[0]]),
+            )
+          : {};
+        return [key, { ...defaults, ...existing }];
+      }),
+    );
+  }, [loginSchemes]);
+
   return (
     <Container className="odcs-login">
       <Container className="odcs-login__bg-image" />
@@ -48,10 +71,6 @@ export default function Login() {
               <p className="text-muted small">{t("login")}</p>
             </div>
             {Object.entries(loginSchemes ?? {}).map(([key, scheme]) => {
-              inputOptions.current = {
-                ...inputOptions.current,
-                [key]: {},
-              };
               if (scheme.formConfig as FormScheme) {
                 return (
                   <FormLogin
@@ -75,9 +94,8 @@ export default function Login() {
                 );
               } else {
                 return (
-                  <Container className="w-100 mt-2 mb-2 p-0">
+                  <Container key={key} className="w-100 mt-2 mb-2 p-0">
                     <Button
-                      key={key}
                       variant="primary"
                       className="w-100"
                       onClick={(event) => {
@@ -120,14 +138,8 @@ export default function Login() {
                         })
                         .map((qp) => [qp[0], qp[1]] as unknown as [string, string[]])
                         .map(([qp, values]) => {
-                          if (values.length >= 0) {
-                            inputOptions.current[key] = {
-                              ...inputOptions.current[key],
-                              [qp]: values[0],
-                            };
-                          }
                           return (
-                            <Form.Group className="mb-3">
+                            <Form.Group key={qp} className="mb-3">
                               <Form.Label>{qp}</Form.Label>
                               <Form.Select
                                 name={`${qp}`}

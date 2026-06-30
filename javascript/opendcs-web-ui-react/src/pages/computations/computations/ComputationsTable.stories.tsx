@@ -127,7 +127,7 @@ const getComputationFromList =
   (list: ApiComputation[]) =>
   async (id: number): Promise<ApiComputation> => {
     const comp = list.find((c) => c.computationId === id);
-    if (!comp) return Promise.reject(`No computation with id ${id}`);
+    if (!comp) throw new Error(`No computation with id ${id}`);
     return { ...comp };
   };
 
@@ -135,7 +135,7 @@ const getAlgorithmFromList =
   (list: ApiAlgorithm[]) =>
   async (id: number): Promise<ApiAlgorithm> => {
     const algo = list.find((a) => a.algorithmId === id);
-    if (!algo) return Promise.reject(`No algorithm with id ${id}`);
+    if (!algo) throw new Error(`No algorithm with id ${id}`);
     return { ...algo };
   };
 

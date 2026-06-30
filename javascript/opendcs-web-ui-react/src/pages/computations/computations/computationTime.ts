@@ -20,7 +20,7 @@ export const apiTimeToEditorValue = (
     case "Calendar": {
       if (!date) return undefined;
       const d = date instanceof Date ? date : new Date(date as unknown as string);
-      return isNaN(d.getTime()) ? undefined : formatAbsolute(d);
+      return Number.isNaN(d.getTime()) ? undefined : formatAbsolute(d);
     }
     default:
       return undefined; // "No Limit" or unset → empty → editor shows No Limit
