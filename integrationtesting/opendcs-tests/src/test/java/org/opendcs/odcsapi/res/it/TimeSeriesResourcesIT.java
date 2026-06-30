@@ -628,10 +628,14 @@ final class TimeSeriesResourcesIT extends BaseApiIT
 			assertNotNull(entry.get("uniqueString"), "Each expanded TS must have a uniqueString");
 			assertNotNull(entry.get("key"), "Each expanded TS must have a key");
 		}
-		// The explicitly-listed active TS from the group fixture must appear in the expansion
-		String expectedTs = tsId.getUniqueString();
+		// The explicitly-listed active TS from the group fixture must appear in the expansion.
+		// Compare by key rather than uniqueString: the group's TS member list is cached as-written
+		// by the tsgroup POST (see TsGroupDAO#writeTsGroup), so uniqueString reflects the fixture's
+		// placeholder value rather than the value recomputed from the live TS, but the key is authoritative.
+		long expectedKey = tsId.getKey().getValue();
 		assertTrue(
-			expanded.stream().anyMatch(ts -> expectedTs.equals(ts.get("uniqueString"))),
+			expanded.stream().anyMatch(ts -> ts.get("key") != null
+				&& ((Number) ts.get("key")).longValue() == expectedKey),
 			"Active TS from group definition must appear in expanded list"
 		);
 	}
