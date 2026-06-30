@@ -168,7 +168,8 @@ export const Presentation: React.FC<PresentationProperties> = ({
   );
 
   const savePresentation = useCallback(() => {
-    actions.save?.(local as ApiPresentationGroup);
+    const { lastModified: _omit, ...rest } = local;
+    actions.save?.({ ...rest, elements: rest.elements ?? [] } as ApiPresentationGroup);
   }, [actions, local]);
 
   const cancel = useCallback(() => {
