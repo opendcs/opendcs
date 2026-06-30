@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.Vector;
 
 import decodes.db.DataPresentation;
@@ -92,7 +91,7 @@ final class PresentationResourcesTest
 	void testPresentationElementMap() throws Exception
 	{
 		var dtDao = mock(DataTypeDao.class);
-		when(dtDao.lookup(null, "SHEF", "HG")).thenReturn(Optional.of(new DataType("SHEF", "HG")));
+		when(dtDao.lookupOrCreate(null, "SHEF", "HG")).thenReturn(new DataType("SHEF", "HG"));
 		PresentationGroup pg = new PresentationGroup();
 		pg.setId(DbKey.createDbKey(1234L));
 		pg.inheritsFrom = "Parent Presentation Group";
@@ -126,7 +125,7 @@ final class PresentationResourcesTest
 	void testApiPresentationGroupMap() throws Exception
 	{
 		var dtDao = mock(DataTypeDao.class);
-		when(dtDao.lookup(null, "CWMS", "Stage")).thenReturn(Optional.of(new DataType("CWMS", "Stage")));
+		when(dtDao.lookupOrCreate(null, "CWMS", "Stage")).thenReturn(new DataType("CWMS", "Stage"));
 		ApiPresentationGroup apiPresentationGroup = new ApiPresentationGroup();
 		apiPresentationGroup.setGroupId(1234L);
 		apiPresentationGroup.setInheritsFrom("Parent Presentation Group");
