@@ -49,6 +49,8 @@ class OpenDcsSiteDaoTestIT extends AppTestBase
             site.setPublicName("A site that exists to test the new DAO");
             site.setElevation(50.0);
             site.setElevationUnits("ft");
+            site.latitude = "50.5";
+            site.longitude = "-178.5";
 
             site.setProperty("test_prop_1", "test_value_1");
             site.setProperty("test_prop_2", "test_value_2");
@@ -59,6 +61,9 @@ class OpenDcsSiteDaoTestIT extends AppTestBase
 
             assertEquals("Bob's ville", site.nearestCity);
             assertTrue(siteOut.getLastModifyTime().getTime() >= timeSaved.getTime());
+
+            assertEquals(site.latitude, siteOut.latitude);
+            assertEquals(site.longitude, siteOut.longitude);
 
             final var siteByName2 = dao.getBySiteName(tx, siteName);
             assertTrue(siteByName2.isPresent());
@@ -71,6 +76,17 @@ class OpenDcsSiteDaoTestIT extends AppTestBase
             final var updateSiteOut = dao.save(tx, updateSiteIn);
             assertEquals("Bob's Town", updateSiteOut.nearestCity);
             assertEquals(updateSiteIn.getDisplayName(), updateSiteOut.getDisplayName());
+
+
+            var siteIn2 = new Site();
+            siteIn2.copyFrom(siteOut);
+
+            siteIn2.latitude = "15.5";
+
+            var siteUpdated = dao.save(tx, siteIn2);
+
+            assertEquals(siteIn2.latitude, siteUpdated.latitude);
+
 
             
             dao.delete(tx, siteOut.getId());
