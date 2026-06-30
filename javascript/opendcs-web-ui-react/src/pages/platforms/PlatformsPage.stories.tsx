@@ -212,6 +212,16 @@ export const EditSiteNavigatesToSites: Story = {
       name: i18n.t("platforms:edit_platform", { id: 1 }),
     });
     await act(async () => userEvent.click(editBtn));
+    // Wait for the detail's fade-in to finish before querying for buttons
+    // inside it — on slower CI machines the Suspense + DetailFade sequence
+    // can exceed Testing Library's 1 s findByRole timeout.
+    await waitFor(() => {
+      expect(
+        canvas.getByRole("button", {
+          name: i18n.t("platforms:save_platform", { id: 1 }),
+        }),
+      ).toBeInTheDocument();
+    });
     const editSiteBtn = await canvas.findByRole("button", {
       name: i18n.t("platforms:edit_site"),
     });
