@@ -444,14 +444,18 @@ export const AddPlatformViaModal: Story = {
     await act(async () => userEvent.click(editBtn));
     // Wait for the detail's fade-in to finish before querying for buttons
     // inside it — on slower CI machines the Suspense + DetailFade sequence
-    // can exceed Testing Library's 1 s findByRole timeout.
-    await waitFor(() => {
-      expect(
-        canvas.getByRole("button", {
-          name: i18n.t("routing:save_routing", { id: 8 }),
-        }),
-      ).toBeInTheDocument();
-    });
+    // can exceed the default 1 s asyncUtilTimeout that waitFor shares with
+    // findByRole, so an explicit longer timeout is required here.
+    await waitFor(
+      () => {
+        expect(
+          canvas.getByRole("button", {
+            name: i18n.t("routing:save_routing", { id: 8 }),
+          }),
+        ).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
     const addBtn = await canvas.findByRole("button", {
       name: i18n.t("routing:add_platforms"),
     });
@@ -480,14 +484,18 @@ export const AddNetlistViaModal: Story = {
     await act(async () => userEvent.click(editBtn));
     // Wait for the detail's fade-in to finish before querying for buttons
     // inside it — on slower CI machines the Suspense + DetailFade sequence
-    // can exceed Testing Library's 1 s findByRole timeout.
-    await waitFor(() => {
-      expect(
-        canvas.getByRole("button", {
-          name: i18n.t("routing:save_routing", { id: 8 }),
-        }),
-      ).toBeInTheDocument();
-    });
+    // can exceed the default 1 s asyncUtilTimeout that waitFor shares with
+    // findByRole, so an explicit longer timeout is required here.
+    await waitFor(
+      () => {
+        expect(
+          canvas.getByRole("button", {
+            name: i18n.t("routing:save_routing", { id: 8 }),
+          }),
+        ).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
     const addBtn = await canvas.findByRole("button", {
       name: i18n.t("routing:add_netlists"),
     });
@@ -514,18 +522,20 @@ export const RemovePlatformRow: Story = {
     });
     await act(async () => userEvent.click(editBtn));
     // Wait for the detail's fade-in to finish (the Save button becoming
-    // accessible confirms edit mode is interactive). Use waitFor (from
-    // storybook/test) rather than canvas.findByRole so the interaction
-    // inherits Storybook's longer default timeout, which is needed on
-    // slower CI machines where the Suspense + DetailFade sequence exceeds
-    // Testing Library's 1 s findByRole timeout.
-    await waitFor(() => {
-      expect(
-        canvas.getByRole("button", {
-          name: i18n.t("routing:save_routing", { id: 8 }),
-        }),
-      ).toBeInTheDocument();
-    });
+    // accessible confirms edit mode is interactive). waitFor shares the
+    // same default 1 s asyncUtilTimeout as findByRole, so an explicit
+    // longer timeout is needed on slower CI machines where the Suspense +
+    // DetailFade sequence can exceed it.
+    await waitFor(
+      () => {
+        expect(
+          canvas.getByRole("button", {
+            name: i18n.t("routing:save_routing", { id: 8 }),
+          }),
+        ).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
     // "Alpha" is attached by name and shows in the platforms table.
     expect(await canvas.findByText("Alpha")).toBeInTheDocument();
     // The remove button is injected into the nested DataTable by drawCallback;
