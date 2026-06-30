@@ -155,7 +155,9 @@ export const OpenScheduleDetail: Story = {
     const { i18n } = parameters;
     await act(async () => userEvent.click((await canvas.findAllByText("goes1"))[0]));
     await waitFor(() => {
-      const nameInput = canvas.getByLabelText(i18n.t("schedule:name")) as HTMLInputElement;
+      const nameInput = canvas.getByLabelText(
+        i18n.t("schedule:name"),
+      ) as HTMLInputElement;
       expect(nameInput.value).toEqual("goes1");
     });
     await waitFor(() => {
