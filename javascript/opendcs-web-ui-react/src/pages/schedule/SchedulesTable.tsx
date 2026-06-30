@@ -56,7 +56,8 @@ export const SchedulesTable: React.FC<ScheduleTableProperties> = ({
         data: "enabled",
         header: t("schedule:enabled"),
         type: "string",
-        render: (_data, _type, row) => (row.enabled ? t("translation:yes") : t("translation:no")),
+        render: (_data, _type, row) =>
+          row.enabled ? t("translation:yes") : t("translation:no"),
       },
     ],
     [t],
