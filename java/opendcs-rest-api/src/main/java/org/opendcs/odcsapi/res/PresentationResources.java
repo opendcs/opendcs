@@ -20,8 +20,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 
+import decodes.db.Constants;
 import decodes.db.DataPresentation;
-import decodes.db.DataType;
 import decodes.db.PresentationGroup;
 import decodes.sql.DbKey;
 import io.swagger.v3.oas.annotations.Operation;
@@ -281,7 +281,8 @@ public final class PresentationResources extends OpenDcsResource
             parentGroup.forceSetId(DbKey.createDbKey(presGrp.getInheritsFromId()));
             group.parent = parentGroup;
         }
-        group.dataPresentations = map(tx, dtDao, presGrp.getElements(), group);
+        group.dataPresentations = map(tx, dtDao,
+                presGrp.getElements() != null ? presGrp.getElements() : List.of(), group);
         group.lastModifyTime = new Date();
         return group;
     }
@@ -295,13 +296,12 @@ public final class PresentationResources extends OpenDcsResource
         {
             DataPresentation dataPres = new DataPresentation();
             dataPres.setUnitsAbbr(ape.getUnits());
-            final var dt = dtDao.lookup(tx, ape.getDataTypeStd(), ape.getDataTypeCode())
-                                .orElseGet(() -> new DataType(ape.getDataTypeStd(), ape.getDataTypeCode()));
+            final var dt = dtDao.lookupOrCreate(tx, ape.getDataTypeStd(), ape.getDataTypeCode());
 
             dataPres.setDataType(dt);
             dataPres.setMaxDecimals(ape.getFractionalDigits());
-            dataPres.setMinValue(ape.getMin());
-            dataPres.setMaxValue(ape.getMax());
+            dataPres.setMinValue(ape.getMin() != null ? ape.getMin() : Constants.undefinedDouble);
+            dataPres.setMaxValue(ape.getMax() != null ? ape.getMax() : Constants.undefinedDouble);
             dataPres.setGroup(group);
             ret.add(dataPres);
         }
