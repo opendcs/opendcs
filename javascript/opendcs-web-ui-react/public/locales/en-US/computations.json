@@ -84,9 +84,9 @@
     "adding": "Adding..."
   },
   "run": {
-    "title": "Run Computation: {{name}}",
-    "start": "Start",
-    "end": "End",
+    "title": "Select Time Range",
+    "start": "From:",
+    "end": "To:",
     "run": "Run",
     "run_for": "Run computation {{id}}",
     "stop": "Stop",

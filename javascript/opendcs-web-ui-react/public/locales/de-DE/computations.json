@@ -84,9 +84,9 @@
     "adding": "Adding..."
   },
   "run": {
-    "title": "Berechnung ausführen: {{name}}",
-    "start": "Start",
-    "end": "Ende",
+    "title": "Zeitbereich auswählen",
+    "start": "Von:",
+    "end": "Bis:",
     "run": "Ausführen",
     "run_for": "Berechnung {{id}} ausführen",
     "stop": "Stoppen",
