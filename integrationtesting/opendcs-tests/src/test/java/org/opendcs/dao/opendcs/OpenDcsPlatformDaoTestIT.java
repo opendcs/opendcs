@@ -82,6 +82,8 @@ class OpenDcsPlatformDaoTestIT extends AppTestBase
         tm.setMediumType("logger");
         tm.setMediumId("TestPlatform");
 
+        platformIn.transportMedia.add(tm);
+
         try (var tx = db.newTransaction())
         {
             var site = siteDao.getBySiteName(tx, new SiteName(null, "CWMS", "OKVI4")).orElseThrow();
