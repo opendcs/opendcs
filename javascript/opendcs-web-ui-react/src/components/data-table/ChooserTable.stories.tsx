@@ -127,7 +127,7 @@ export const CheckboxHeaderIsNotSortable: Story = {
     // sort-click delegate skips it entirely.
     const selectAll = screen.getByLabelText("Select all rows");
     const th = selectAll.closest("th");
-    expect(th?.getAttribute("data-dt-order")).toBe("disable");
+    expect(th?.dataset.dtOrder).toBe("disable");
   },
 };
 

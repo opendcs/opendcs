@@ -2,7 +2,7 @@ import { Col, Row } from "react-bootstrap";
 import type UserProperties from "./UserProperties";
 import { useTranslation } from "react-i18next";
 
-export default function TimeInfo({ user }: UserProperties) {
+export default function TimeInfo({ user }: Readonly<UserProperties>) {
   const { t } = useTranslation(["user-data"]);
   return (
     <Row sm="auto">

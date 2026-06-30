@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
 
 import { UserMenu } from "./UserMenu";
 import { expect, fn } from "storybook/test";
@@ -9,7 +9,6 @@ import {
 } from "../../../contexts/app/ApiContext";
 import { BasicUser } from "../../../../.storybook/mock/TestUsers";
 import { AuthContext } from "../../../contexts/app/AuthContext";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 const meta = {
   component: UserMenu,
@@ -19,7 +18,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-const authDecorator = (Story: any) => (
+const authDecorator: Decorator = (Story) => (
   <ApiContext value={apiDefault}>
     <AuthContext
       value={{
@@ -35,14 +34,6 @@ const authDecorator = (Story: any) => (
     </AuthContext>
   </ApiContext>
 );
-
-const routeDecorator = (Story: any) => {
-  return (
-    <Routes>
-      <Route path="/user/profile" element={<Story />} />
-    </Routes>
-  );
-};
 
 export const Default: Story = {
   args: {
