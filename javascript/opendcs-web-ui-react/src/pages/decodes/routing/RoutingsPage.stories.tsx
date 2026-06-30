@@ -442,6 +442,16 @@ export const AddPlatformViaModal: Story = {
       name: i18n.t("routing:edit_routing", { id: 8 }),
     });
     await act(async () => userEvent.click(editBtn));
+    // Wait for the detail's fade-in to finish before querying for buttons
+    // inside it — on slower CI machines the Suspense + DetailFade sequence
+    // can exceed Testing Library's 1 s findByRole timeout.
+    await waitFor(() => {
+      expect(
+        canvas.getByRole("button", {
+          name: i18n.t("routing:save_routing", { id: 8 }),
+        }),
+      ).toBeInTheDocument();
+    });
     const addBtn = await canvas.findByRole("button", {
       name: i18n.t("routing:add_platforms"),
     });
@@ -468,6 +478,16 @@ export const AddNetlistViaModal: Story = {
       name: i18n.t("routing:edit_routing", { id: 8 }),
     });
     await act(async () => userEvent.click(editBtn));
+    // Wait for the detail's fade-in to finish before querying for buttons
+    // inside it — on slower CI machines the Suspense + DetailFade sequence
+    // can exceed Testing Library's 1 s findByRole timeout.
+    await waitFor(() => {
+      expect(
+        canvas.getByRole("button", {
+          name: i18n.t("routing:save_routing", { id: 8 }),
+        }),
+      ).toBeInTheDocument();
+    });
     const addBtn = await canvas.findByRole("button", {
       name: i18n.t("routing:add_netlists"),
     });
