@@ -34,7 +34,7 @@ public class TransportMediumArgumentFinder implements NamedArgumentFinder
         this.tm = tm;
     }
 
-    
+
     @SuppressWarnings("java:S1142") // otherwise it just looks odd
     @Override
     public Optional<Argument> find(String name, StatementContext ctx)
@@ -77,7 +77,11 @@ public class TransportMediumArgumentFinder implements NamedArgumentFinder
                 return ctx.findArgumentFor(char.class, tm.getParity());
             case PASSWORD:
                 return ctx.findArgumentFor(String.class, tm.getPassword());
+<<<<<<< HEAD
             case PREAMBLE:
+=======
+            case PREAMPLE:
+>>>>>>> 2dd56139 (Additional platform data attempting to store.)
                 return ctx.findArgumentFor(char.class, tm.getPreamble());
             case SCRIPT_NAME:
                 return ctx.findArgumentFor(String.class, tm.scriptName);
@@ -94,7 +98,7 @@ public class TransportMediumArgumentFinder implements NamedArgumentFinder
             case USERNAME:
                 return ctx.findArgumentFor(String.class, tm.getUsername());
             default:
-                return Optional.empty(); 
+                return Optional.empty();
         }
     }
 
