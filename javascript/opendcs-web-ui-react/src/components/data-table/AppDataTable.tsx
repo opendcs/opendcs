@@ -709,12 +709,13 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
           try {
             await onSave?.(updated);
           } catch (err) {
-            // Surface the failure instead of silently closing the row as if
-            // it had succeeded — previously this masked failed creates and
-            // updates entirely, with no visible error and no row removed.
             console.error("Failed to save row", err);
+            // For new local items, re-throw so the renderDetail component can
+            // display the error and the row stays in edit mode (preserving user
+            // input). For existing server rows, closing is safe — they remain
+            // in the data list with their last-saved values.
+            if (isNewLocal) throw err;
             setSaveError(t("save_failed"));
-            return;
           }
           if (isNewLocal) pendingNavRef.current = true;
           setLocalItems((prev) => withoutId(prev, id, idOf));
