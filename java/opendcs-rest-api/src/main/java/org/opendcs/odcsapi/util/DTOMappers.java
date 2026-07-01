@@ -365,6 +365,11 @@ public final class DTOMappers
 		{
 			ref.setProcessId(DbKey.NullKey.getValue());
 		}
+		if (comp.getGroupId() != null && !DbKey.isNull(comp.getGroupId()))
+		{
+			ref.setGroupId(comp.getGroupId().getValue());
+			ref.setGroupName(comp.getGroupName());
+		}
 		return ref;
 	}
 
