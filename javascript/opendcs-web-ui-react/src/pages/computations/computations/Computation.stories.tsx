@@ -594,6 +594,50 @@ export const EditEffectiveStartToCalendar: Story = {
   },
 };
 
+export const SaveErrorShowsDismissibleAlert: Story = {
+  args: {
+    computation: sampleComputation,
+    edit: true,
+    processOptions: sampleProcessOptions,
+    groupOptions: sampleGroupOptions,
+  },
+  render: (args) => (
+    <Computation
+      computation={args.computation as ApiComputation}
+      algorithm={args.algorithm as ApiAlgorithm}
+      edit={true}
+      actions={{
+        save: async () => {
+          throw new Error("simulated save failure");
+        },
+      }}
+      processOptions={args.processOptions}
+      groupOptions={args.groupOptions}
+    />
+  ),
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const saveBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:editor.save_for", { id: 1 }),
+    });
+    await userEvent.click(saveBtn);
+
+    const alert = await canvas.findByText(i18n.t("computations:editor.save_error"));
+    expect(alert).toBeInTheDocument();
+
+    const dismissBtn = await canvas.findByRole("button", { name: /close/i });
+    await userEvent.click(dismissBtn);
+
+    await waitFor(() =>
+      expect(
+        canvas.queryByText(i18n.t("computations:editor.save_error")),
+      ).not.toBeInTheDocument(),
+    );
+  },
+};
+
 export const ComputationFromPromise: Story = {
   args: {
     computation: sampleComputation,
