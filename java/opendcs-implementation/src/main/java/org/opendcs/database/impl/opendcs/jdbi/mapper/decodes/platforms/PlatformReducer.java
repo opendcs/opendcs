@@ -47,7 +47,7 @@ public final class PlatformReducer implements LinkedHashMapRowReducer<Long,Platf
             var platform = container.computeIfAbsent(key, newKey -> view.getRow(Platform.class));
 
             var tm = view.getRow(TransportMedium.class);
-            if (tm != null)
+            if (tm != null && !platform.hasTmKey(tm.getTmKey()))
             {
                 tm.platform = platform;
                 platform.transportMedia.add(tm);
