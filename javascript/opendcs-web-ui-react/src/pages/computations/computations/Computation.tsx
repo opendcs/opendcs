@@ -302,6 +302,23 @@ export const Computation: React.FC<ComputationProperties> = ({
     [dispatch],
   );
 
+  // The backend persists the computation/group link by groupId (a DB foreign key),
+  // so selecting a group by name must also resolve and store its groupId.
+  const groupChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const groupName = event.target.value;
+      const match = groupOptions.find((g) => g.groupName === groupName);
+      dispatch({
+        type: "save",
+        payload: {
+          groupName: groupName || undefined,
+          groupId: groupName ? match?.groupId : undefined,
+        },
+      });
+    },
+    [dispatch, groupOptions],
+  );
+
   const enabledChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       dispatch({ type: "save", payload: { enabled: event.target.checked } });
@@ -406,7 +423,7 @@ export const Computation: React.FC<ComputationProperties> = ({
                       id="applicationName"
                       name="applicationName"
                       disabled={!edit}
-                      defaultValue={localComputation.applicationName ?? ""}
+                      value={localComputation.applicationName ?? ""}
                       onChange={selectChange}
                     >
                       <option value="" />
@@ -427,8 +444,8 @@ export const Computation: React.FC<ComputationProperties> = ({
                       id="groupName"
                       name="groupName"
                       disabled={!edit}
-                      defaultValue={localComputation.groupName ?? ""}
-                      onChange={selectChange}
+                      value={localComputation.groupName ?? ""}
+                      onChange={groupChange}
                     >
                       <option value="" />
                       {groupOptions.map((g) => (

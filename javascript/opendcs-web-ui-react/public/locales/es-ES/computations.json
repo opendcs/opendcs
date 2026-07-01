@@ -98,6 +98,13 @@
     "unknown_ts": "(desconocido)",
     "fetching_data": "Obteniendo valores calculados...",
     "no_data": "No se escribieron valores en esta ventana de tiempo.",
-    "fetch_warning": "No se pudieron obtener los valores calculados"
+    "fetch_warning": "No se pudieron obtener los valores calculados",
+    "group_select_label": "Seleccionar series de tiempo de entrada",
+    "group_select_all": "Todas",
+    "group_select_none": "Ninguna",
+    "group_loading": "Cargando miembros del grupo...",
+    "group_load_error": "No se pudieron cargar los miembros del grupo",
+    "group_empty": "No se encontraron series de tiempo en este grupo.",
+    "group_running_for": "Ejecutando para {{tsid}}"
   }
 }
