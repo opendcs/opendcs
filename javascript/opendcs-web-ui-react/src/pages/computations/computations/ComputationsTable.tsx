@@ -81,6 +81,7 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
   const [runTarget, setRunTarget] = useState<{
     id: number;
     name: string | undefined;
+    groupId: number | undefined;
   } | null>(null);
   const tableRef = useRef<AppDataTableHandle<TableComputationRef>>(null);
   const draftsRef = useRef<Record<number, UiComputation>>({});
@@ -141,7 +142,11 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
         aria: (row) => t("computations:run.run_for", { id: row.computationId }),
         onClick: ({ row }) => {
           if (row.computationId !== undefined) {
-            setRunTarget({ id: row.computationId, name: row.name });
+            setRunTarget({
+              id: row.computationId,
+              name: row.name,
+              groupId: row.groupId ?? undefined,
+            });
           }
         },
       },
@@ -258,6 +263,7 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
         show={runTarget !== null}
         computationId={runTarget?.id}
         computationName={runTarget?.name}
+        groupId={runTarget?.groupId}
         onHide={() => setRunTarget(null)}
       />
       <AlgorithmSelectModal

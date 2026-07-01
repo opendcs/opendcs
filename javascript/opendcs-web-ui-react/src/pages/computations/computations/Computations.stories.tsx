@@ -6,6 +6,7 @@ import type {
   ApiAppRef,
   ApiComputation,
   ApiComputationRef,
+  ApiTimeSeriesIdentifier,
   ApiTsGroupRef,
 } from "opendcs-api";
 import { act } from "react";
@@ -30,6 +31,7 @@ type Story = StoryObj<typeof meta>;
 
 const mockComputations: ApiComputation[] = [
   {
+    // Computation 1: no group — used by existing non-group run stories
     computationId: 1,
     name: "DailyFlowAve",
     algorithmId: 10,
@@ -38,19 +40,18 @@ const mockComputations: ApiComputation[] = [
     applicationName: "compproc",
     enabled: true,
     comment: "Computes daily average flow.",
-    groupId: 5,
-    groupName: "Daily",
     props: { output_units: "cfs" },
     parmList: [],
   },
   {
+    // Computation 2: has groupId — used by group computation run stories
     computationId: 2,
     name: "DailyStageMax",
     algorithmId: 11,
     algorithmName: "MaxToDate",
     appId: 200,
     applicationName: "compproc",
-    enabled: false,
+    enabled: true,
     comment: "Computes daily max stage.",
     groupId: 5,
     groupName: "Daily",
@@ -625,5 +626,225 @@ export const RunComputationHttpError: Story = {
     await waitFor(() => expect(modal.queryByRole("alert")).toBeInTheDocument(), {
       timeout: 5000,
     });
+  },
+};
+
+// ── Group computation stories ─────────────────────────────────────────────────
+
+const mockGroupTsIds: ApiTimeSeriesIdentifier[] = [
+  {
+    uniqueString: "SITE_A.Flow.Inst.1Hour.0.compproc",
+    key: 101,
+    storageUnits: "cfs",
+    active: true,
+  },
+  {
+    uniqueString: "SITE_B.Flow.Inst.1Hour.0.compproc",
+    key: 102,
+    storageUnits: "cfs",
+    active: true,
+  },
+];
+
+const expandGroupHandler = http.get("/odcsapi/expandgroup", () =>
+  HttpResponse.json<ApiTimeSeriesIdentifier[]>(mockGroupTsIds),
+);
+
+const groupSseSuccessHandlers = [
+  http.get("/odcsapi/runcomputation", ({ request }) => {
+    const url = new URL(request.url);
+    const tsid = url.searchParams.get("tsid");
+    const tsStr =
+      tsid === "101"
+        ? "SITE_A.Flow.Inst.1Hour.0.compproc"
+        : "SITE_B.Flow.Inst.1Hour.0.compproc";
+    return new HttpResponse(
+      makeSseStream([
+        `event: computation-status\ndata: Running for ${tsStr}\n\n`,
+        `event: Results\ndata: ${JSON.stringify({
+          tsIds: [{ uniqueString: `${tsStr}.out`, key: Number(tsid) + 200 }],
+          startTime: "2025-01-01T00:00:00Z",
+          endTime: "2025-01-02T00:00:00Z",
+        })}\n\n`,
+      ]),
+      { headers: { "Content-Type": "text/event-stream" } },
+    );
+  }),
+];
+
+export const RunGroupComputationShowsSelector: Story = {
+  args: {},
+  parameters: {
+    msw: {
+      handlers: {
+        ...orgScopedHandlers,
+        expandGroup: expandGroupHandler,
+      },
+    },
+  },
+  render: () => (
+    <WithOrg>
+      <Computations />
+    </WithOrg>
+  ),
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    // Computation 2 has groupId: 5
+    const runBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:run.run_for", { id: 2 }),
+    });
+    await act(async () => userEvent.click(runBtn));
+
+    const dialog = await screen.findByRole("dialog", {}, { timeout: 5000 });
+    const modal = within(dialog);
+
+    // The group TS selector label should appear
+    await waitFor(
+      () =>
+        expect(
+          modal.queryByText(i18n.t("computations:run.group_select_label")),
+        ).toBeInTheDocument(),
+      { timeout: 5000 },
+    );
+
+    // Both TS IDs should be listed as checkboxes, all pre-checked
+    await waitFor(
+      () =>
+        expect(
+          modal.queryByRole("checkbox", { name: "SITE_A.Flow.Inst.1Hour.0.compproc" }),
+        ).toBeInTheDocument(),
+      { timeout: 5000 },
+    );
+    expect(
+      modal.queryByRole("checkbox", { name: "SITE_B.Flow.Inst.1Hour.0.compproc" }),
+    ).toBeInTheDocument();
+
+    // Both are checked by default
+    const checkboxA = modal.getByRole("checkbox", {
+      name: "SITE_A.Flow.Inst.1Hour.0.compproc",
+    });
+    const checkboxB = modal.getByRole("checkbox", {
+      name: "SITE_B.Flow.Inst.1Hour.0.compproc",
+    });
+    expect(checkboxA).toBeChecked();
+    expect(checkboxB).toBeChecked();
+
+    // Uncheck one; Run should still be enabled
+    await act(async () => userEvent.click(checkboxA));
+    expect(checkboxA).not.toBeChecked();
+    const runBtnModal = modal.getByRole("button", {
+      name: i18n.t("computations:run.run"),
+    });
+    expect(runBtnModal).not.toBeDisabled();
+
+    // Uncheck the last one; Run should become disabled
+    await act(async () => userEvent.click(checkboxB));
+    expect(runBtnModal).toBeDisabled();
+  },
+};
+
+export const RunGroupComputationSuccess: Story = {
+  args: {},
+  parameters: {
+    msw: {
+      handlers: {
+        ...orgScopedHandlers,
+        expandGroup: expandGroupHandler,
+        ...Object.fromEntries(groupSseSuccessHandlers.map((h, i) => [String(i), h])),
+        tsData: http.get("/odcsapi/tsdata", () =>
+          HttpResponse.json({ tsid: {}, values: [] }),
+        ),
+      },
+    },
+  },
+  render: () => (
+    <WithOrg>
+      <Computations />
+    </WithOrg>
+  ),
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    // Computation 2 has groupId: 5
+    const runBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:run.run_for", { id: 2 }),
+    });
+    await act(async () => userEvent.click(runBtn));
+
+    const dialog = await screen.findByRole("dialog", {}, { timeout: 5000 });
+    const modal = within(dialog);
+
+    // Wait for group members to load
+    await waitFor(
+      () =>
+        expect(
+          modal.queryByRole("checkbox", { name: "SITE_A.Flow.Inst.1Hour.0.compproc" }),
+        ).toBeInTheDocument(),
+      { timeout: 5000 },
+    );
+
+    // Run with both selected (default) — click Run
+    const executeBtn = await modal.findByRole("button", {
+      name: i18n.t("computations:run.run"),
+    });
+    await act(async () => userEvent.click(executeBtn));
+
+    // The first sequential log header appears in the log panel
+    await waitFor(
+      () =>
+        expect(
+          modal.queryByText(
+            `--- ${i18n.t("computations:run.group_running_for", { tsid: "SITE_A.Flow.Inst.1Hour.0.compproc" })} ---`,
+          ),
+        ).toBeInTheDocument(),
+      { timeout: 8000 },
+    );
+  },
+};
+
+export const RunGroupComputationGroupLoadError: Story = {
+  args: {},
+  parameters: {
+    msw: {
+      handlers: {
+        ...orgScopedHandlers,
+        expandGroup: http.get(
+          "/odcsapi/expandgroup",
+          () => new HttpResponse(null, { status: 500 }),
+        ),
+      },
+    },
+  },
+  render: () => (
+    <WithOrg>
+      <Computations />
+    </WithOrg>
+  ),
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    // Computation 2 has groupId: 5
+    const runBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:run.run_for", { id: 2 }),
+    });
+    await act(async () => userEvent.click(runBtn));
+
+    const dialog = await screen.findByRole("dialog", {}, { timeout: 5000 });
+    const modal = within(dialog);
+
+    // Error alert appears quickly (retry: 0 means no retries on the query)
+    await waitFor(() => expect(modal.queryByRole("alert")).toBeInTheDocument(), {
+      timeout: 5000,
+    });
+
+    // Run button is disabled because no TS IDs loaded
+    const executeBtn = modal.getByRole("button", {
+      name: i18n.t("computations:run.run"),
+    });
+    expect(executeBtn).toBeDisabled();
   },
 };
