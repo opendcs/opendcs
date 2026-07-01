@@ -6,8 +6,7 @@ import {
   ApiSiteRef,
 } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { expect, userEvent, waitFor } from "storybook/test";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { act } from "react";
+import { act, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RemoveAction, SaveAction } from "../../util/Actions";
 import { ArgsStoryFn } from "storybook/internal/types";
 

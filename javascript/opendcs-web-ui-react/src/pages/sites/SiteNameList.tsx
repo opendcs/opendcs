@@ -170,10 +170,10 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
     if (table.current?.dt()) {
       const dt = table.current.dt()!;
       const visibleRows = dt.rows({ page: "current", search: "applied" });
-      visibleRows.every(function () {
-        const idx = (this.data() as SiteNameType).type;
+      visibleRows.every((rowIdx) => {
+        const idx = (dt.row(rowIdx).data() as SiteNameType).type;
         if (rowState[idx] !== undefined) {
-          this.invalidate().draw(false);
+          dt.row(rowIdx).invalidate().draw(false);
         }
       });
     }

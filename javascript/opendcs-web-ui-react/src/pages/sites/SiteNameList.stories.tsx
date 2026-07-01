@@ -2,8 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, Mock } from "storybook/test";
 import { SiteNameList, SiteNameType } from "./SiteNameList";
 import { WithRefLists } from "../../../.storybook/mock/WithRefLists";
-import { act } from "react";
-import { useState } from "react";
+import { act, useState } from "react";
 
 const meta = {
   component: SiteNameList,
@@ -48,11 +47,11 @@ const WithNamesInEditRender = ({
   };
   edit?: boolean;
 }) => {
-  const [names, updateNames] = useState<SiteNameType[]>(siteNames as SiteNameType[]);
+  const [names, setNames] = useState<SiteNameType[]>(siteNames as SiteNameType[]);
 
   const realSave = (item: SiteNameType) => {
     actions?.save?.(item);
-    updateNames((prev) => {
+    setNames((prev) => {
       const filtered = prev.filter((sn) => sn.type != item.type);
       return [...filtered, item];
     });
@@ -60,7 +59,7 @@ const WithNamesInEditRender = ({
 
   const realRemove = (item: SiteNameType) => {
     actions?.remove?.(item);
-    updateNames((prev) => {
+    setNames((prev) => {
       const filtered = prev.filter((sn) => sn.type != item.type);
       return [...filtered];
     });
