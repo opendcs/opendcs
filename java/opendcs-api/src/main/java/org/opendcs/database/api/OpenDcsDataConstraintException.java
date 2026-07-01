@@ -20,11 +20,15 @@ package org.opendcs.database.api;
  * referenced by another record in the database (foreign-key constraint
  * violation).  Maps to HTTP 409 Conflict at the REST layer.
  */
-public class OpenDcsDataConstraintException extends OpenDcsDataException {
-    public OpenDcsDataConstraintException(String msg) {
+public class OpenDcsDataConstraintException extends OpenDcsDataException
+{
+    public OpenDcsDataConstraintException(String msg)
+    {
         super(msg);
     }
-    public OpenDcsDataConstraintException(String msg, Throwable cause) {
+
+    public OpenDcsDataConstraintException(String msg, Throwable cause)
+    {
         super(msg, cause);
     }
 }

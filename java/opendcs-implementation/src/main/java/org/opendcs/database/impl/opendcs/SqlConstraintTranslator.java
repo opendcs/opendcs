@@ -25,9 +25,12 @@ import java.sql.SQLException;
  * Translates JDBI/JDBC exceptions into typed OpenDCS exceptions so callers
  * can return correct HTTP status codes without inspecting raw SQLExceptions.
  */
-public final class SqlConstraintTranslator {
+public final class SqlConstraintTranslator
+{
 
-    private SqlConstraintTranslator() {}
+    private SqlConstraintTranslator()
+    {
+    }
 
     /**
      * Wraps a JDBI RuntimeException (or any exception) into the most specific
@@ -41,39 +44,48 @@ public final class SqlConstraintTranslator {
      * @param engine         database engine enum (may assist engine-specific mapping)
      * @param ex             the exception thrown by JDBI or the underlying JDBC driver
      */
-    public static OpenDcsDataException translate(String contextMessage, DatabaseEngine engine, Exception ex) {
+    public static OpenDcsDataException translate(String contextMessage, DatabaseEngine engine, Exception ex)
+    {
         SQLException sqlEx = findSqlException(ex);
-        if (sqlEx != null && isConstraintViolation(engine, sqlEx)) {
+        if (sqlEx != null && isConstraintViolation(engine, sqlEx))
+        {
             return new OpenDcsDataConstraintException(contextMessage, ex);
         }
         return new OpenDcsDataException(contextMessage, ex);
     }
 
-    private static SQLException findSqlException(Throwable t) {
-        while (t != null) {
-            if (t instanceof SQLException) {
-                return (SQLException) t;
+    private static SQLException findSqlException(Throwable t)
+    {
+        while (t != null)
+        {
+            if (t instanceof SQLException sqlException)
+            {
+                return sqlException;
             }
             t = t.getCause();
         }
         return null;
     }
 
-    private static boolean isConstraintViolation(DatabaseEngine engine, SQLException ex) {
+    private static boolean isConstraintViolation(DatabaseEngine engine, SQLException ex)
+    {
         // ANSI SQL standard: class "23" = Integrity Constraint Violation.
         // Covers Postgres (23503 FK, 23505 unique), HSQLDB (23000, 23505),
         // H2 (23502, 23505), MySQL/ANSI (23000), SQLite (SQLITE_CONSTRAINT).
         String sqlState = ex.getSQLState();
-        if (sqlState != null && sqlState.startsWith("23")) {
+        if (sqlState != null && sqlState.startsWith("23"))
+        {
             return true;
         }
         // Oracle's JDBC driver may not always set standard SQLState; fall back
         // to vendor-specific error codes.
-        if (engine == DatabaseEngine.ORACLE) {
+        if (engine == DatabaseEngine.ORACLE)
+        {
             int errorCode = ex.getErrorCode();
             // ORA-02292: integrity constraint violated - child record found
             // ORA-02291: integrity constraint violated - parent key not found
-            if (errorCode == 2292 || errorCode == 2291) {
+            if (errorCode == 2292 || errorCode == 2291)
+            {
                 return true;
             }
         }

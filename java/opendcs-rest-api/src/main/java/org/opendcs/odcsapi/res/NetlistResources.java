@@ -322,14 +322,14 @@ public final class NetlistResources extends OpenDcsResource
 					@ApiResponse(responseCode = "204", description = "Successfully deleted network list"),
 					@ApiResponse(responseCode = "400", description = "Missing required netlistid parameter",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
-									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class))),
+									schema = @Schema(implementation = Status.class))),
 					@ApiResponse(responseCode = "409",
 							description = "Conflict - Network list is used by one or more routing specs",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
-									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class))),
+									schema = @Schema(implementation = Status.class))),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
-									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class)))
+									schema = @Schema(implementation = Status.class)))
 			},
 			tags = {"REST - Network Lists"}
 	)
