@@ -35,7 +35,8 @@
     "now": "Now",
     "now_minus": "Now −",
     "calendar": "Calendar",
-    "interval": "Interval"
+    "interval": "Interval",
+    "save_error": "Save failed. Please check your entries and try again."
   },
   "parms": {
     "title": "Parameters",
@@ -83,9 +84,9 @@
     "adding": "Adding..."
   },
   "run": {
-    "title": "Run Computation: {{name}}",
-    "start": "Start",
-    "end": "End",
+    "title": "Select Time Range",
+    "start": "From:",
+    "end": "To:",
     "run": "Run",
     "run_for": "Run computation {{id}}",
     "stop": "Stop",

@@ -35,7 +35,8 @@
     "now": "Ahora",
     "now_minus": "Ahora −",
     "calendar": "Calendario",
-    "interval": "Intervalo"
+    "interval": "Intervalo",
+    "save_error": "Error al guardar. Por favor verifique sus entradas e intente de nuevo."
   },
   "parms": {
     "title": "Parámetros",
@@ -83,9 +84,9 @@
     "adding": "Adding..."
   },
   "run": {
-    "title": "Ejecutar cálculo: {{name}}",
-    "start": "Inicio",
-    "end": "Fin",
+    "title": "Seleccionar intervalo de tiempo",
+    "start": "Desde:",
+    "end": "Hasta:",
     "run": "Ejecutar",
     "run_for": "Ejecutar cálculo {{id}}",
     "stop": "Detener",

@@ -35,7 +35,8 @@
     "now": "Jetzt",
     "now_minus": "Jetzt −",
     "calendar": "Kalender",
-    "interval": "Intervall"
+    "interval": "Intervall",
+    "save_error": "Speichern fehlgeschlagen. Bitte Eingaben prüfen und erneut versuchen."
   },
   "parms": {
     "title": "Parameter",
@@ -83,9 +84,9 @@
     "adding": "Adding..."
   },
   "run": {
-    "title": "Berechnung ausführen: {{name}}",
-    "start": "Start",
-    "end": "Ende",
+    "title": "Zeitbereich auswählen",
+    "start": "Von:",
+    "end": "Bis:",
     "run": "Ausführen",
     "run_for": "Berechnung {{id}} ausführen",
     "stop": "Stoppen",
