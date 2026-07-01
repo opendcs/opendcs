@@ -170,7 +170,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
     if (table.current?.dt()) {
       const dt = table.current.dt()!;
       const visibleRows = dt.rows({ page: "current", search: "applied" });
-      visibleRows.every(function (this: DataTables.RowMethods) {
+      visibleRows.every(function () {
         const idx = (this.data() as SiteNameType).type;
         if (rowState[idx] !== undefined) {
           this.invalidate().draw(false);
