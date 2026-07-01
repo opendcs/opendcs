@@ -204,6 +204,59 @@ const ComputationsTableWrapper: React.FC<{ initialComps: ApiComputation[] }> = (
   );
 };
 
+const ComputationsTableWrapperWithSaveControl: React.FC<{
+  initialComps: ApiComputation[];
+  shouldFail: (comp: ApiComputation) => boolean;
+}> = ({ initialComps, shouldFail }) => {
+  const [localComps, setLocalComps] = useState<ApiComputation[]>(initialComps);
+  const localCompsRef = useRef(localComps);
+
+  useEffect(() => {
+    localCompsRef.current = localComps;
+  }, [localComps]);
+
+  const computationRefs = useMemo(() => toComputationRefs(localComps), [localComps]);
+
+  const localGetComputation = useCallback(
+    (id: number) => getComputationFromList(localCompsRef.current)(id),
+    [],
+  );
+  const localGetAlgorithm = useCallback(
+    (id: number) => getAlgorithmFromList(sharedAlgorithms)(id),
+    [],
+  );
+
+  const saveComputation = useCallback(
+    async (comp: ApiComputation) => {
+      if (shouldFail(comp)) {
+        throw new Error("simulated save failure");
+      }
+      setLocalComps((prev) => {
+        if (comp.computationId! < 0) {
+          return [...prev, { ...comp, computationId: nextSavedId++ }];
+        }
+        return prev.map((c) => (c.computationId === comp.computationId ? comp : c));
+      });
+    },
+    [shouldFail],
+  );
+
+  const removeComputation = useCallback((computationId: number) => {
+    setLocalComps((prev) => prev.filter((c) => c.computationId !== computationId));
+  }, []);
+
+  return (
+    <ComputationsTable
+      computations={computationRefs}
+      getComputation={localGetComputation}
+      getAlgorithm={localGetAlgorithm}
+      actions={{ save: saveComputation, remove: removeComputation }}
+      processOptions={sampleProcessOptions}
+      groupOptions={sampleGroupOptions}
+    />
+  );
+};
+
 const StoryRender: ArgsStoryFn<ReactRenderer, StoryArgs> = (args) => {
   const initialComps = sharedComputations.filter((c) =>
     (args.computations as ApiComputationRef[]).some(
@@ -330,6 +383,104 @@ export const CopyComputation: Story = {
       },
       { timeout: 5000 },
     );
+  },
+};
+
+// New rows that fail to save stay open in edit mode with the error surfaced,
+// so the user doesn't lose what they typed (see AppDataTable's `isNewLocal`
+// rethrow and Computation's save-error Alert).
+export const AddComputationSaveFails: Story = {
+  args: { computations: toComputationRefs(sharedComputations) },
+  render: (args) => {
+    const initialComps = sharedComputations.filter((c) =>
+      (args.computations as ApiComputationRef[]).some(
+        (ref) => ref.computationId === c.computationId,
+      ),
+    );
+    return (
+      <ComputationsTableWrapperWithSaveControl
+        initialComps={initialComps}
+        shouldFail={(comp) => (comp.computationId ?? 0) < 0}
+      />
+    );
+  },
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const addBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:add_computation"),
+    });
+    await act(async () => userEvent.click(addBtn));
+
+    const nameInput = await canvas.findByRole(
+      "textbox",
+      { name: i18n.t("computations:editor.name") },
+      { timeout: 5000 },
+    );
+    await userEvent.type(nameInput, "NewComputation");
+
+    const saveBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:editor.save_for", { id: -1 }),
+    });
+    await act(async () => userEvent.click(saveBtn));
+
+    expect(
+      await canvas.findByText(i18n.t("computations:editor.save_error")),
+    ).toBeInTheDocument();
+
+    // Row stays in edit mode — the save button for id -1 is still present.
+    expect(
+      await canvas.findByRole("button", {
+        name: i18n.t("computations:editor.save_for", { id: -1 }),
+      }),
+    ).toBeInTheDocument();
+  },
+};
+
+// Existing rows that fail to save still close back to "show" mode — closing
+// is safe since the row keeps its last-saved values — so no error is shown.
+export const EditComputationSaveFails: Story = {
+  args: { computations: toComputationRefs(sharedComputations) },
+  render: (args) => {
+    const initialComps = sharedComputations.filter((c) =>
+      (args.computations as ApiComputationRef[]).some(
+        (ref) => ref.computationId === c.computationId,
+      ),
+    );
+    return (
+      <ComputationsTableWrapperWithSaveControl
+        initialComps={initialComps}
+        shouldFail={() => true}
+      />
+    );
+  },
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:editor.edit_for", { id: 1 }),
+    });
+    await act(async () => userEvent.click(editBtn));
+
+    const saveBtn = await canvas.findByRole(
+      "button",
+      { name: i18n.t("computations:editor.save_for", { id: 1 }) },
+      { timeout: 5000 },
+    );
+    await act(async () => userEvent.click(saveBtn));
+
+    await waitFor(async () => {
+      const editBtnAfter = await canvas.findByRole("button", {
+        name: i18n.t("computations:editor.edit_for", { id: 1 }),
+      });
+      expect(editBtnAfter).toBeInTheDocument();
+    });
+
+    expect(
+      canvas.queryByText(i18n.t("computations:editor.save_error")),
+    ).not.toBeInTheDocument();
   },
 };
 

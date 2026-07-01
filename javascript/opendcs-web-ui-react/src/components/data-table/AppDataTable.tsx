@@ -703,9 +703,12 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
           // `await` works on thenables and passes through non-promises unchanged.
           try {
             await onSave?.(updated);
-          } catch {
-            // Caller reported the error; don't swallow here, but also
-            // don't block the UI transition — close the row regardless.
+          } catch (err) {
+            // For new local items, re-throw so the caller can display the
+            // error and the row stays in edit mode (the user hasn't lost their
+            // work). For existing server rows, closing is safe — they remain
+            // in the data list with their last-saved values.
+            if (isNewLocal) throw err;
           }
           if (isNewLocal) pendingNavRef.current = true;
           setLocalItems((prev) => withoutId(prev, id, idOf));

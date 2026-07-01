@@ -1,4 +1,5 @@
 import {
+  Alert,
   Button,
   Card,
   Col,
@@ -211,6 +212,7 @@ export const Computation: React.FC<ComputationProperties> = ({
   );
   const [showAlgorithmModal, setShowAlgorithmModal] = useState(false);
   const [nameError, setNameError] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const handleAlgorithmSelected = useCallback(
     async (ref: ApiAlgorithmRef) => {
@@ -270,12 +272,18 @@ export const Computation: React.FC<ComputationProperties> = ({
         return;
       }
       setNameError(false);
-      actions.save?.({
-        ...(comp as ApiComputation),
-        parmList: localParms.map(prepareParmForSave),
-      });
+      setSaveError(null);
+      try {
+        await actions.save?.({
+          ...(comp as ApiComputation),
+          parmList: localParms.map(prepareParmForSave),
+        });
+      } catch (err) {
+        console.warn("Computation save failed", err);
+        setSaveError(t("computations:editor.save_error"));
+      }
     },
-    [actions, localParms],
+    [actions, localParms, t],
   );
 
   const inputChange = useCallback(
@@ -557,6 +565,16 @@ export const Computation: React.FC<ComputationProperties> = ({
             />
           </Col>
         </Row>
+        {saveError && (
+          <Alert
+            variant="danger"
+            dismissible
+            onClose={() => setSaveError(null)}
+            className="mt-3"
+          >
+            {saveError}
+          </Alert>
+        )}
         {edit && (
           <Row className="mt-3">
             <Col className="d-flex justify-content-end gap-2">
