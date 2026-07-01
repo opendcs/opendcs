@@ -294,6 +294,73 @@ final class PresentationResourcesIT extends BaseApiIT
 		;
 	}
 
+	@Test
+	void testSaveWithElementsPreservesElements() throws Exception
+	{
+		// Fetch the group that was created in setUp() — it should already have elements.
+		var response = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.contentType(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.queryParam("groupid", presentationId)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("presentation")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.OK.getStatusCode()))
+			.extract();
+
+		JsonPath fetched = response.jsonPath();
+		List<Map<String, Object>> originalElements = fetched.getList("elements");
+		assertNotEquals(0, originalElements.size(), "Test group must have at least one element");
+
+		// Re-save the group with the same elements (round-trip save).
+		ApiPresentationGroup groupWithSameElements = getDtoFromResource("presentation_insert_data.json",
+				ApiPresentationGroup.class);
+		groupWithSameElements.setGroupId(presentationId);
+		groupWithSameElements.setInheritsFromId(parentPresentationId);
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.contentType(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.body(MAPPER.writeValueAsString(groupWithSameElements))
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("presentation")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.CREATED.getStatusCode()));
+
+		// Elements must still be present after the round-trip save.
+		var afterResponse = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.contentType(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.queryParam("groupid", presentationId)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("presentation")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.OK.getStatusCode()))
+			.extract();
+
+		List<Map<String, Object>> elementsAfter = afterResponse.jsonPath().getList("elements");
+		assertEquals(originalElements.size(), elementsAfter.size(),
+			"Elements must be preserved after a round-trip save");
+	}
+
 	private void assertMatch(JsonPath expected, JsonPath actual)
 	{
 		Map<String, Object> actualItem = actual.getMap("");

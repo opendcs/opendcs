@@ -66,6 +66,14 @@ export const useSavePresentationMutation = (
     },
     ...options,
     onSuccess: (...args) => {
+      const variables = args[1];
+      // Force a cache miss on the detail so the next open always fetches fresh
+      // data from the server rather than serving a stale cached copy.
+      if (variables.groupId != null && variables.groupId > 0) {
+        queryClient.removeQueries({
+          queryKey: presentationKeys.detail(org, variables.groupId),
+        });
+      }
       queryClient.invalidateQueries({ queryKey: presentationKeys.all(org) });
       options?.onSuccess?.(...args);
     },

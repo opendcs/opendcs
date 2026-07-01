@@ -239,22 +239,24 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
         {
             deletePresentations.bind(GenericColumns.ID.column(), groupId).execute();
 
-            insertPresentations.registerArgument(new NullableDoubleArgumentFactory());
-            for (var dataPresentation: presentations)
+            if (!presentations.isEmpty())
             {
-                final var id = dataPresentation.idIsSet() ? dataPresentation.getId() : keyGen.getKey("datapresentation", handle.getConnection());
-                insertPresentations.bind(GenericColumns.ID.column(), id)
-                                   .bind("groupid", groupId)
-                                   .bind("datatypeid", dataPresentation.getDataType().getId())
-                                   .bind("unitabbr", dataPresentation.getUnitsAbbr())
-                                   .bindByType("equipmentid", null, DbKey.class) // not yet supported in code
-                                   .bind("maxdecimals", dataPresentation.getMaxDecimals())
-                                   .bind("max_value", dataPresentation.getMaxValue())
-                                   .bind("min_value", dataPresentation.getMinValue())
-                                   .add();
+                insertPresentations.registerArgument(new NullableDoubleArgumentFactory());
+                for (var dataPresentation: presentations)
+                {
+                    final var id = dataPresentation.idIsSet() ? dataPresentation.getId() : keyGen.getKey("datapresentation", handle.getConnection());
+                    insertPresentations.bind(GenericColumns.ID.column(), id)
+                                       .bind("groupid", groupId)
+                                       .bind("datatypeid", dataPresentation.getDataType().getId())
+                                       .bind("unitabbr", dataPresentation.getUnitsAbbr())
+                                       .bindByType("equipmentid", null, DbKey.class) // not yet supported in code
+                                       .bind("maxdecimals", dataPresentation.getMaxDecimals())
+                                       .bind("max_value", dataPresentation.getMaxValue())
+                                       .bind("min_value", dataPresentation.getMinValue())
+                                       .add();
+                }
+                insertPresentations.execute();
             }
-
-            insertPresentations.execute();
         }
     }
 
