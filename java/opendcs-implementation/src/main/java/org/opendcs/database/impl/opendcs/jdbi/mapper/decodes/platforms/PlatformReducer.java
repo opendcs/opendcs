@@ -28,7 +28,7 @@ public final class PlatformReducer implements LinkedHashMapRowReducer<Long,Platf
 
 
     private final LinkedHashMap<Long,Site> sites = new LinkedHashMap<>();
-    private final LinkedHashMap<Long,PlatformSensor> sensors = new LinkedHashMap<>();
+    private final LinkedHashMap<Long,Platform> sensors = new LinkedHashMap<>();
 
     public PlatformReducer(PlatformMapper platformMapper, OpenDcsSiteReducer siteReducer, PlatformSensorReducer platformSensorReducer)
     {
@@ -44,7 +44,11 @@ public final class PlatformReducer implements LinkedHashMapRowReducer<Long,Platf
         {
             final var key = view.getColumn(platformMapper.column(PlatformMapper.Columns.ID), Long.class);
 
-            var platform = container.computeIfAbsent(key, newKey -> view.getRow(Platform.class));
+            var platform = container.computeIfAbsent(key, newKey -> {
+                var p = view.getRow(Platform.class);
+                sensors.put(p.getId().getValue(), p);
+                return p;
+            });
 
             var tm = view.getRow(TransportMedium.class);
             if (tm != null && !platform.hasTmKey(tm.getTmKey()))

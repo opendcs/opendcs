@@ -39,7 +39,7 @@ public class PlatformSensorMapper extends PrefixRowMapper<PlatformSensor, Platfo
         PLATFORM_ID("platformid"),
         SITE_ID("siteid"),
         SENSOR_NUMBER("sensornumber"),
-        DD_NU("DD_NU")
+        DD_NU("dd_nu")
         ;
 
         private final String column;

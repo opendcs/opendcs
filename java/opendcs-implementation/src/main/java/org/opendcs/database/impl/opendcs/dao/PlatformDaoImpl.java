@@ -5,6 +5,7 @@ import static org.opendcs.utils.sql.SqlQueries.LEFT_OUTER;
 import static org.opendcs.utils.sql.SqlQueries.WHERE_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.collateClauseFor;
 
+import java.sql.SQLException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
@@ -46,6 +47,7 @@ import org.stringtemplate.v4.STGroup;
 
 import decodes.db.DatabaseException;
 import decodes.db.Platform;
+import decodes.db.PlatformSensor;
 import decodes.db.Site;
 import decodes.db.TransportMedium;
 import decodes.sql.DbKey;
@@ -96,6 +98,9 @@ public class PlatformDaoImpl implements PlatformDao
     private static final String DELETE_PLATFORM_SENSOR_PROPERTIES = "deletePlatformSensorProperties";
     private static final String DELETE_TRANSPORT_MEDIUM = "deleteTransportMedium";
     private static final String INSERT_TRANSPORT_MEDIUM = "insertTransportMedium";
+    private static final String INSERT_PLATFORM_SENSOR = "insertPlatformSensor";
+    private static final String INSERT_PLATFORM_SENSOR_PROPERTY = "insertPlatformSensorProperty";
+    private static final String INSERT_PLATFORM_PROPERTY = "insertPlatformProperty";
 
     /**
      * It would be better to use the Config Mappers and columns
@@ -289,7 +294,9 @@ public class PlatformDaoImpl implements PlatformDao
                 .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
         var mergeTemplate = QUERIES.getInstanceOf(MERGE)
                                    .add("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
-        try (var merge = handle.createUpdate(mergeTemplate.render()).define("numeric_date", true))
+        var insertPlatformProperties = QUERIES.getInstanceOf(INSERT_PLATFORM_PROPERTY).render();
+        try (var merge = handle.createUpdate(mergeTemplate.render()).define("numeric_date", true);
+             var insertProperties = handle.prepareBatch(insertPlatformProperties))
         {
             DbKey id = platform.getId();
             var existing = getByMediumIds(tx, platform.transportMedia );
@@ -322,15 +329,59 @@ public class PlatformDaoImpl implements PlatformDao
             deletePlatformSensors(handle, bindKey);
 
             insertTransportMediums(handle, bindKey, platform.transportMedia);
+            insertPlatformSensors(handle, bindKey, platform.platformSensors);
+            final var propMapper = ALL_DATA.platformPropsMapper;
+            final var propName = propMapper.column(PropertiesMapper.Columns.NAME);
+            final var propValue = propMapper.column(PropertiesMapper.Columns.VALUE);
+            platform.getProperties()
+                    .forEach((k,v) ->
+                        insertProperties.bind(PlatformMapper.Columns.ID.column(), bindKey)
+                                        .bind(propName, (String)k)
+                                        .bind(propValue, (String)v)
+                                        .add()
+                    );
 
-            // reinserts
-
+            insertProperties.execute();
             return getById(tx, bindKey).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Platform we just saved."));
+        }
+        catch (SQLException ex)
+        {
+            throw new OpenDcsDataException("Unable to retrieve proper column name", ex);
         }
         catch (DatabaseException ex)
         {
             throw new OpenDcsDataException("Unable to generate key to save platform.", ex);
         }
+    }
+
+    private void insertPlatformSensors(Handle handle, DbKey bindKey, Vector<PlatformSensor> platformSensors)
+    {
+        var insertPs = QUERIES.getInstanceOf(INSERT_PLATFORM_SENSOR).render();
+        var insertPsP = QUERIES.getInstanceOf(INSERT_PLATFORM_SENSOR_PROPERTY).render();
+        try (var psBatch = handle.prepareBatch(insertPs);
+             var pspBatch = handle.prepareBatch(insertPsP))
+        {
+            for (var ps: platformSensors)
+            {
+                psBatch.bind(PlatformSensorMapper.Columns.PLATFORM_ID.column(), bindKey)
+                       .bind(PlatformSensorMapper.Columns.SENSOR_NUMBER.column(), ps.sensorNumber)
+                       .bindByType(PlatformSensorMapper.Columns.SITE_ID.column(),
+                                   ps.site != null ? ps.site.getId() : null, DbKey.class)
+                       .bind(PlatformSensorMapper.Columns.DD_NU.column(), ps.getUsgsDdno())
+                       .add();
+
+                ps.getProperties()
+                  .forEach((k,v) ->
+                      pspBatch.bind(PlatformSensorPropertyMapper.Columns.PLATFORM_ID.column(), bindKey)
+                              .bind(PlatformSensorPropertyMapper.Columns.SENSOR_NUMBER.column(), ps.sensorNumber)
+                              .bind(PlatformSensorPropertyMapper.Columns.PROP_NAME.column(), (String)k)
+                              .bind(PlatformSensorPropertyMapper.Columns.PROP_VALUE.column(), (String)v)
+                              .add()
+                  );
+            }
+            psBatch.execute();
+            pspBatch.execute();
+        }        
     }
 
     private void insertTransportMediums(Handle handle, DbKey bindKey, Vector<TransportMedium> transportMedia)
@@ -344,7 +395,6 @@ public class PlatformDaoImpl implements PlatformDao
                        .bind(TransportMediumMapper.Columns.PLATFORM_ID.column(), bindKey)
                        .add();
             }
-            
 
             tmBatch.execute();
         }
