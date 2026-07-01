@@ -5,6 +5,7 @@
   <import class="ch.qos.logback.core.FileAppender"/>
   <import class="ch.qos.logback.classic.net.SocketAppender"/>
   <import class="ch.qos.logback.core.status.OnConsoleStatusListener"/>
+  <import class="io.opentelemetry.instrumentation.logback.mdc.v1_0.OpenTelemetryAppender"/>
   <statusListener class="OnConsoleStatusListener"/>
   <variable name="APP_NAME" value="${APP_NAME:-test-child}"/>
   <contextName>${APP_NAME}</contextName>
@@ -14,6 +15,11 @@
       <pattern>%date{ISO8601} %level [%thread] %contextName %logger %mdc %marker %kvp %msg %ex %n</pattern>
     </encoder>
   </appender>
+
+  <appender name="OTEL-FILE" class="OpenTelemetryAppender">
+    <appender-ref ref="FILE"/>
+  </appender>
+
   <!-- While this likely works, the receiving end currently does not configure itself correct. -->
   <appender name="SOCKET" class="SocketAppender">
     <remoteHost>localhost</remoteHost>
@@ -30,6 +36,6 @@
   <logger name="opendcs" level="trace"/>
   <root level="INFO">
     <!--<appender-ref ref="SOCKET"/>-->
-    <appender-ref ref="FILE"/>
+    <appender-ref ref="OTEL-FILE"/>
   </root>
 </configuration>
