@@ -96,19 +96,44 @@ public final class TimeSeriesResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "The tsrefs method returns a list of time series defined in the database.",
-			description = "You have the option to filter out inactive time series by passing 'active=true' argument.  \n"
-					+ "Examples:  \n\n    http://localhost:8080/odcsapi/tsrefs\n    "
-					+ "http://localhost:8080/odcsapi/tsrefs?active=true\n\n\n"
-					+ "This returns an array of Time Series Identifiers. The numeric Key of a time series identifier "
-					+ "may be used in subsequent calls to get the complete specification for the time series "
-					+ "(GET tsspec) or to retrieve time series data (GET tsdata). The format of the returned "
-					+ "data is as follows:  \n```\n[\n  {\n    \"uniqueString\": \"OKVI4.Stage.Inst.15Minutes.0.raw\","
-					+ "\n    \"key\": 1,\n    \"description\": null,\n    \"storageUnits\": \"ft\",\n    "
-					+ "\"active\": true\n  },\n  {\n    \"uniqueString\": \"OKVI4.Stage.Ave.1Day.1Day.CO\",\n    "
-					+ "\"key\": 2,\n    \"description\": null,\n    \"storageUnits\": \"ft\",\n    "
-					+ "\"active\": true\n  },\n  {\n    \"uniqueString\": \"OKVI4.Stage.Ave.1Day.1Day.CC\",\n    "
-					+ "\"key\": 4,\n    \"description\": null,\n    \"storageUnits\": \"ft\",\n    "
-					+ "\"active\": true\n  },\n. . .\n]\n```",
+			description = """
+					You have the option to filter out inactive time series by passing 'active=true' argument. \s
+					Examples: \s
+
+					    http://localhost:8080/odcsapi/tsrefs
+					    http://localhost:8080/odcsapi/tsrefs?active=true
+
+
+					This returns an array of Time Series Identifiers. The numeric Key of a time series identifier \
+					may be used in subsequent calls to get the complete specification for the time series \
+					(GET tsspec) or to retrieve time series data (GET tsdata). The format of the returned \
+					data is as follows: \s
+					```
+					[
+					  {
+					    "uniqueString": "OKVI4.Stage.Inst.15Minutes.0.raw",
+					    "key": 1,
+					    "description": null,
+					    "storageUnits": "ft",
+					    "active": true
+					  },
+					  {
+					    "uniqueString": "OKVI4.Stage.Ave.1Day.1Day.CO",
+					    "key": 2,
+					    "description": null,
+					    "storageUnits": "ft",
+					    "active": true
+					  },
+					  {
+					    "uniqueString": "OKVI4.Stage.Ave.1Day.1Day.CC",
+					    "key": 4,
+					    "description": null,
+					    "storageUnits": "ft",
+					    "active": true
+					  },
+					. . .
+					]
+					```""",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Success",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -194,8 +219,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
-			summary = "The tsspec method returns a complete specification for a time series "
-					+ "identified by the 'key' parameter.",
+			summary = "The tsspec method returns a complete specification for a time series identified by the 'key' parameter.",
 			description = "Example: \n\n    http://localhost:8080/odcsapi/tsspec?key=532",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Successfully retrieved time series specification",
@@ -306,22 +330,28 @@ public final class TimeSeriesResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "The tsdata method returns data for a time series over a specified time range.",
-			description = "The method takes 3 arguments:\n"
-					+ "* **tkey (required)** – the numeric key identifying the time series. "
-					+ "It is contained within a Time Series Identifier described above.\n"
-					+ "* **tstart** – Optionally specifies the start of the time range for retrieval. "
-					+ "If omitted, the oldest data in the database is returned. See below for time format.\n"
-					+ "* **tend** – Optionally specifies the end of the time range for retrieval. "
-					+ "If omitted, the newest data in the database is returned. See below for time format.  \n\n"
-					+ "The since and until arguments may have any of the following formats:\n"
-					+ "*\t**now-1day**\tThe word 'now' minus an increment times a unit. "
-					+ "Examples: now-1day, now-5hours, now-1week, etc.\n"
-					+ "*\t**now**\tThe current time that the web service call was made.\n"
-					+ "*\t**YYYY/DDD/HH:MM:SS**\tA complete Julian Year, Day-of-Year, and Time\n"
-					+ "*\t**YYYY/DDD/HH:MM**\tSeconds omitted means zero.\n"
-					+ "*\t**DDD/HH:MM:SS**\tAssume current year\n*\t**DDD/HH:MM**\t\n"
-					+ "*\t**HH:MM:SS**\tAssume current day\n*\t**HH:MM**  \n\n"
-					+ "Examples:  \n```http://localhost:8080/odcsapi/tsdata?key=12```",
+			description = """
+					The method takes 3 arguments:
+					* **tkey (required)** – the numeric key identifying the time series. \
+					It is contained within a Time Series Identifier described above.
+					* **tstart** – Optionally specifies the start of the time range for retrieval. \
+					If omitted, the oldest data in the database is returned. See below for time format.
+					* **tend** – Optionally specifies the end of the time range for retrieval. \
+					If omitted, the newest data in the database is returned. See below for time format. \s
+
+					The since and until arguments may have any of the following formats:
+					*\t**now-1day**\tThe word 'now' minus an increment times a unit. \
+					Examples: now-1day, now-5hours, now-1week, etc.
+					*\t**now**\tThe current time that the web service call was made.
+					*\t**YYYY/DDD/HH:MM:SS**\tA complete Julian Year, Day-of-Year, and Time
+					*\t**YYYY/DDD/HH:MM**\tSeconds omitted means zero.
+					*\t**DDD/HH:MM:SS**\tAssume current year
+					*\t**DDD/HH:MM**\t
+					*\t**HH:MM:SS**\tAssume current day
+					*\t**HH:MM** \s
+
+					Examples: \s
+					```http://localhost:8080/odcsapi/tsdata?key=12```""",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Successfully retrieved time series data",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -396,17 +426,35 @@ public final class TimeSeriesResources extends OpenDcsResource
 	@Path("intervals")
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
-	@Tag(name = "Time Series Methods - Interval Methods", description = "Time Intervals are stored in the database "
-			+ "for OpenTSDB. They are hardcoded for CWMS and HDB.")
+	@Tag(name = "Time Series Methods - Interval Methods", description = "Time Intervals are stored in the database for OpenTSDB. They are hardcoded for CWMS and HDB.")
 	@Operation(
 			summary = "Returns a list of time intervals defined in the database.",
-			description = "Example: \n\n    http://localhost:8080/odcsapi/intervals\n\n"
-					+ "An array of data structures representing all known time intervals will be returned as shown below.\n"
-					+ "```\n[\n  {\n    \"intervalId\": 1,\n    \"name\": \"irregular\",\n    \"calConstant\": \"minute\","
-					+ "\n    \"calMultilier\": 0\n  },\n  {\n    \"intervalId\": 2,\n    \"name\": \"2Minutes\","
-					+ "\n    \"calConstant\": \"minute\",\n    \"calMultilier\": 2\n  },\n. . .\n]\n```\n\n"
-					+ "For each interval the system stores a numeric ID, a name, a Java Calendar Constant "
-					+ "(one of second, minute, hour, day, week, month, year), and a multiplier for the constant.",
+			description = """
+					Example:
+
+					    http://localhost:8080/odcsapi/intervals
+
+					An array of data structures representing all known time intervals will be returned as shown below.
+					```
+					[
+					  {
+					    "intervalId": 1,
+					    "name": "irregular",
+					    "calConstant": "minute",
+					    "calMultilier": 0
+					  },
+					  {
+					    "intervalId": 2,
+					    "name": "2Minutes",
+					    "calConstant": "minute",
+					    "calMultilier": 2
+					  },
+					. . .
+					]
+					```
+
+					For each interval the system stores a numeric ID, a name, a Java Calendar Constant \
+					(one of second, minute, hour, day, week, month, year), and a multiplier for the constant.""",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Successfully retrieved intervals",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -442,17 +490,30 @@ public final class TimeSeriesResources extends OpenDcsResource
 	@Produces(MediaType.APPLICATION_JSON)
 	@Operation(
 			summary = "Create a new, or update an existing Time Interval",
-			description = "Example URL for POST:  \n\n    "
-					+ "http://localhost:8080/odcsapi/interval\n\n\n"
-					+ "The POST data should contain a single time interval record as described "
-					+ "above for the 'intervals' list.   \n\n"
-					+ "As with other POST methods, to create a new record, omit the numeric ID.  \n\n"
-					+ "To update an existing record, include the 'intervalId'.  \n\n"
-					+ "For example, to create a interval 'fortnight', the data could be:\n  "
-					+ "```\n  {\n    \"name\": \"fortnight\",\n    \"calConstant\": \"day\",\n    "
-					+ "\"calMultilier\": 14\n  }\n  ```\n\nThe returned data structure will be the "
-					+ "same as the data passed, except that if this is a new interval the "
-					+ "intervalId member will be added.",
+			description = """
+					Example URL for POST: \s
+
+					    http://localhost:8080/odcsapi/interval
+
+
+					The POST data should contain a single time interval record as described \
+					above for the 'intervals' list. \s
+
+					As with other POST methods, to create a new record, omit the numeric ID. \s
+
+					To update an existing record, include the 'intervalId'. \s
+
+					For example, to create a interval 'fortnight', the data could be:
+					  ```
+					  {
+					    "name": "fortnight",
+					    "calConstant": "day",
+					    "calMultilier": 14
+					  }
+					  ```
+
+					The returned data structure will be the same as the data passed, except that if this is a new interval the \
+					intervalId member will be added.""",
 			requestBody = @RequestBody(
 					description = "Engineering Unit Conversion",
 					required = true,
@@ -544,12 +605,18 @@ public final class TimeSeriesResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Delete an existing Time Interval record.",
-			description = "Example URL for DELETE:  \n\n    "
-					+ "http://localhost:8080/odcsapi/interval?intervalid=1459\n\n\n"
-					+ "This deletes the Time Interval with ID 1459.  \n\n"
-					+ "**Use care with this method**. The system needs to know about all of the 'interval' "
-					+ "and 'duration' specifiers used for time series IDs. \n\n"
-					+ "Deletion of intervals is currently unsupported!",
+			description = """
+					Example URL for DELETE: \s
+
+					    http://localhost:8080/odcsapi/interval?intervalid=1459
+
+
+					This deletes the Time Interval with ID 1459. \s
+
+					**Use care with this method**. The system needs to know about all of the 'interval' \
+					and 'duration' specifiers used for time series IDs.
+
+					Deletion of intervals is currently unsupported!""",
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Successfully deleted the interval"),
 					@ApiResponse(responseCode = "400", description = "Invalid parameters"),
@@ -573,27 +640,58 @@ public final class TimeSeriesResources extends OpenDcsResource
 	@Path("tsgrouprefs")
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
-	@Tag(name = "Time Series Methods - Groups", description = "Time Series Groups are used to define a "
-			+ "set of time series identifiers")
+	@Tag(name = "Time Series Methods - Groups", description = "Time Series Groups are used to define a set of time series identifiers")
 	@Operation(
 			summary = "Provide a list of all groups defined in the database.",
-			description = "Time Series Groups are used to define a set of time series identifiers. "
-					+ "Groups can contain:\n  \n*  Explicit list of time series identifiers  \n"
-					+ "*  A list of attributes to flexibly define a set of time series identifiers, "
-					+ "E.g. All time series at a particular with interval '30minutes'.  \n"
-					+ "*  A list of sub-groups that can be included, excluded, "
-					+ "or intersected with the group being defined.\n  \n"
-					+ "***\n  \nExample URL:  \n\n    http://localhost:8080/odcsapi/tsgrouprefs\n\n"
-					+ "The returned list has the following structure:\n  \n```\n  [\n    {\n      "
-					+ "\"groupId\": 8,\n      \"groupName\": \"topgroup\",\n      \"groupType\": \"basin\",\n      "
-					+ "\"description\": \"\"\n    },\n    {\n      \"groupId\": 7,\n      "
-					+ "\"groupName\": \"subgroup-x\",\n      \"groupType\": \"data type\",\n      "
-					+ "\"description\": \"testing for OPENDCS-15 issue\"\n    },\n    {\n      "
-					+ "\"groupId\": 2,\n      \"groupName\": \"regtest_017\",\n      "
-					+ "\"groupType\": \"data-type\",\n      \"description\": \"Group for regression test 017\"\n    },"
-					+ "\n    {\n      \"groupId\": 3,\n      \"groupName\": \"stageRate1Var\",\n      "
-					+ "\"groupType\": \"basin\",\n      \"description\": \"Collection of TS IDs with stage "
-					+ "to flow ratings\"\n    }\n  ]\n\n```\n\n  ",
+			description = """
+					Time Series Groups are used to define a set of time series identifiers. \
+					Groups can contain:
+					  \s
+					*  Explicit list of time series identifiers \s
+					*  A list of attributes to flexibly define a set of time series identifiers, \
+					E.g. All time series at a particular with interval '30minutes'. \s
+					*  A list of sub-groups that can be included, excluded, \
+					or intersected with the group being defined.
+					  \s
+					***
+					  \s
+					Example URL: \s
+
+					    http://localhost:8080/odcsapi/tsgrouprefs
+
+					The returned list has the following structure:
+					  \s
+					```
+					  [
+					    {
+					      "groupId": 8,
+					      "groupName": "topgroup",
+					      "groupType": "basin",
+					      "description": ""
+					    },
+					    {
+					      "groupId": 7,
+					      "groupName": "subgroup-x",
+					      "groupType": "data type",
+					      "description": "testing for OPENDCS-15 issue"
+					    },
+					    {
+					      "groupId": 2,
+					      "groupName": "regtest_017",
+					      "groupType": "data-type",
+					      "description": "Group for regression test 017"
+					    },
+					    {
+					      "groupId": 3,
+					      "groupName": "stageRate1Var",
+					      "groupType": "basin",
+					      "description": "Collection of TS IDs with stage to flow ratings"
+					    }
+					  ]
+
+					```
+
+					  """,
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Successfully retrieved time series group references",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -643,50 +741,116 @@ public final class TimeSeriesResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Provide a complete definition of a single group.",
-			description = "Example URL:  \n\n    http://localhost:8080/odcsapi-0-7/tsgroup?groupid=9\n\n"
-					+ "The returned list has the following structure:  \n  \n```\n  {\n    \"groupId\": 9,\n    "
-					+ "\"groupName\": \"junk\",\n    \"groupType\": \"basin\",\n    \"description\": \"\",\n    "
-					+ "\"tsIds\": [\n      {\n        \"uniqueString\": \"OKVI4.Stage.Inst.15Minutes.0.raw\",\n        "
-					+ "\"key\": 1,\n        \"description\": null,\n        \"storageUnits\": \"ft\",\n        "
-					+ "\"active\": true\n      },\n      {\n        \"uniqueString\": \"OKVI4.Stage.Ave.1Day.1Day.CO\","
-					+ "\n        \"key\": 2,\n        \"description\": null,\n        \"storageUnits\": \"ft\",\n        "
-					+ "\"active\": true\n      }\n    ],\n    \"includeGroups\": [\n      {\n        \"groupId\": 1,"
-					+ "\n        \"groupName\": \"MROI4-ROWI4-HG\",\n        \"groupType\": \"basin\",\n        "
-					+ "\"description\": \"This is a group for the MROI4-ROWI4-HG Regression Test\"\n      }\n    ],"
-					+ "\n    \"excludeGroups\": [\n      {\n        \"groupId\": 2,\n        "
-					+ "\"groupName\": \"regtest_017\",\n        \"groupType\": \"data-type\",\n        "
-					+ "\"description\": \"Group for regression test 017\"\n      }\n    ],\n    "
-					+ "\"intersectGroups\": [\n      {\n        \"groupId\": 7,\n        "
-					+ "\"groupName\": \"subgroup-x\",\n        \"groupType\": \"data type\",\n        "
-					+ "\"description\": \"testing for OPENDCS-15 issue\"\n      }\n    ],\n    "
-					+ "\"groupAttrs\": [\n      \"BaseLocation=TESTSITE2\",\n      \"BaseParam=ELEV\",\n      "
-					+ "\"BaseVersion=DCP\",\n      \"Duration=0\",\n      \"Interval=1Hour\",\n      "
-					+ "\"ParamType=Inst\",\n      \"SubLocation=Spillway2-Gate1\",\n      \"SubParam=PZ1B\",\n      "
-					+ "\"SubVersion=Raw\",\n      \"Version=DCP-Raw\"\n    ],\n    \"groupSites\": [\n      "
-					+ "{\n        \"siteId\": 2,\n        \"sitenames\": {\n          "
-					+ "\"CWMS\": \"ROWI4\",\n          \"USGS\": \"05449500\"\n        },\n        "
-					+ "\"publicName\": \"IOWA RIVER NEAR ROWAN\",\n        "
-					+ "\"description\": \"IOWA RIVER NEAR ROWAN 4NW\"\n      }\n    ],\n    "
-					+ "\"groupDataTypes\": [\n      {\n        \"id\": 224,\n        "
-					+ "\"standard\": \"CWMS\",\n        \"code\": \"ELEV-PZ2A\",\n        "
-					+ "\"displayName\": \"CWMS:ELEV-PZ2A\"\n      }\n    ]\n  }\n\n```\n  \n"
-					+ "**Notes**:  \n*  **tsIds** is a list of explicit time series identifiers "
-					+ "that are considered part of the group.  \n*  **includedGroups** is a list of "
-					+ "subgroups to be included in this group.  \n*  **excludedGroups** is a list of subgroups. "
-					+ "The TSIDs in the subgroup will be excluded from this group.  \n"
-					+ "*  **intersectedGroups** is a list of subgroups to be intersected with this group. "
-					+ "Only TSIDs in both groups are considered part of this group.  \n"
-					+ "*  **groupSites** is a list of Site records. TSIDs in these Sites are "
-					+ "considered members of this group.  \n*  **groupDataTypes** is a list of fully-specified "
-					+ "data types (a.k.a. 'Param' in CWMS and OpenTSDB databases). TSIDs with a matching data "
-					+ "type will be included in the group.  \n*  **groupAttrs** is a list of attributes "
-					+ "that are used to define the group. These are presented in 'name=value' pairs where "
-					+ "the name is one of the following:  \n\n    *  **BaseLocation** – only the first "
-					+ "part of Site (Location) before first hyphen  \n    *  **SubLocation** – only trailing "
-					+ "part of Site after first hyphen.  \n    *  **BaseParam** – only first part of data "
-					+ "type (Param) before first hyphen  \n    *  **SubParam** – only trailing part of data "
-					+ "type (Param) after first hyphen\n    *  **ParamType**  \n    *  **Interval**\n    "
-					+ "*  **Duration**  \n    *  **Version**  \n    *  **BaseVersion**\n    *  **SubVersion**",
+			description = """
+					Example URL: \s
+
+					    http://localhost:8080/odcsapi-0-7/tsgroup?groupid=9
+
+					The returned list has the following structure: \s
+					  \s
+					```
+					  {
+					    "groupId": 9,
+					    "groupName": "junk",
+					    "groupType": "basin",
+					    "description": "",
+					    "tsIds": [
+					      {
+					        "uniqueString": "OKVI4.Stage.Inst.15Minutes.0.raw",
+					        "key": 1,
+					        "description": null,
+					        "storageUnits": "ft",
+					        "active": true
+					      },
+					      {
+					        "uniqueString": "OKVI4.Stage.Ave.1Day.1Day.CO",
+					        "key": 2,
+					        "description": null,
+					        "storageUnits": "ft",
+					        "active": true
+					      }
+					    ],
+					    "includeGroups": [
+					      {
+					        "groupId": 1,
+					        "groupName": "MROI4-ROWI4-HG",
+					        "groupType": "basin",
+					        "description": "This is a group for the MROI4-ROWI4-HG Regression Test"
+					      }
+					    ],
+					    "excludeGroups": [
+					      {
+					        "groupId": 2,
+					        "groupName": "regtest_017",
+					        "groupType": "data-type",
+					        "description": "Group for regression test 017"
+					      }
+					    ],
+					    "intersectGroups": [
+					      {
+					        "groupId": 7,
+					        "groupName": "subgroup-x",
+					        "groupType": "data type",
+					        "description": "testing for OPENDCS-15 issue"
+					      }
+					    ],
+					    "groupAttrs": [
+					      "BaseLocation=TESTSITE2",
+					      "BaseParam=ELEV",
+					      "BaseVersion=DCP",
+					      "Duration=0",
+					      "Interval=1Hour",
+					      "ParamType=Inst",
+					      "SubLocation=Spillway2-Gate1",
+					      "SubParam=PZ1B",
+					      "SubVersion=Raw",
+					      "Version=DCP-Raw"
+					    ],
+					    "groupSites": [
+					      {
+					        "siteId": 2,
+					        "sitenames": {
+					          "CWMS": "ROWI4",
+					          "USGS": "05449500"
+					        },
+					        "publicName": "IOWA RIVER NEAR ROWAN",
+					        "description": "IOWA RIVER NEAR ROWAN 4NW"
+					      }
+					    ],
+					    "groupDataTypes": [
+					      {
+					        "id": 224,
+					        "standard": "CWMS",
+					        "code": "ELEV-PZ2A",
+					        "displayName": "CWMS:ELEV-PZ2A"
+					      }
+					    ]
+					  }
+
+					```
+					  \s
+					**Notes**: \s
+					*  **tsIds** is a list of explicit time series identifiers that are considered part of the group. \s
+					*  **includedGroups** is a list of subgroups to be included in this group. \s
+					*  **excludedGroups** is a list of subgroups. The TSIDs in the subgroup will be excluded from this group. \s
+					*  **intersectedGroups** is a list of subgroups to be intersected with this group. \
+					Only TSIDs in both groups are considered part of this group. \s
+					*  **groupSites** is a list of Site records. TSIDs in these Sites are considered members of this group. \s
+					*  **groupDataTypes** is a list of fully-specified data types (a.k.a. 'Param' in CWMS and OpenTSDB databases). \
+					TSIDs with a matching data type will be included in the group. \s
+					*  **groupAttrs** is a list of attributes that are used to define the group. \
+					These are presented in 'name=value' pairs where the name is one of the following:
+
+					    *  **BaseLocation** – only the first part of Site (Location) before first hyphen \s
+					    *  **SubLocation** – only trailing part of Site after first hyphen. \s
+					    *  **BaseParam** – only first part of data type (Param) before first hyphen \s
+					    *  **SubParam** – only trailing part of data type (Param) after first hyphen
+					    *  **ParamType** \s
+					    *  **Interval**
+					    *  **Duration** \s
+					    *  **Version** \s
+					    *  **BaseVersion**
+					    *  **SubVersion**""",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Successfully retrieved time series group details",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -775,15 +939,22 @@ public final class TimeSeriesResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Expand a time series group to its full list of member time series identifiers.",
-			description = "Returns the fully-expanded list of time series identifiers that belong to the "
-					+ "specified group, including members from sub-groups, attribute-based filters, "
-					+ "and include/exclude/intersect relationships.  \n\n"
-					+ "When computationid is also supplied, each expanded member is transformed against "
-					+ "that computation's first input parameter -- the same filtering the desktop client's "
-					+ "Run Computation dialog performs before offering a group's members for selection -- "
-					+ "so only members the computation can actually resolve an input time series for are "
-					+ "returned.  \n\n"
-					+ "Example URL:  \n\n    http://localhost:8080/odcsapi/expandgroup?groupid=9\n\n",
+			description = """
+					Returns the fully-expanded list of time series identifiers that belong to the \
+					specified group, including members from sub-groups, attribute-based filters, \
+					and include/exclude/intersect relationships. \s
+
+					When computationid is also supplied, each expanded member is transformed against \
+					that computation's first input parameter -- the same filtering the desktop client's \
+					Run Computation dialog performs before offering a group's members for selection -- \
+					so only members the computation can actually resolve an input time series for are \
+					returned. \s
+
+					Example URL: \s
+
+					    http://localhost:8080/odcsapi/expandgroup?groupid=9
+
+					""",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Successfully expanded time series group",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -797,9 +968,10 @@ public final class TimeSeriesResources extends OpenDcsResource
 	public Response expandGroup(@Parameter(description = "Group ID to expand", required = true,
 			schema = @Schema(implementation = Long.class), example = "9")
 		@QueryParam("groupid") Long groupId,
-			@Parameter(description = "Optional computation ID. When supplied, expanded members are "
-					+ "transformed against the computation's first input parameter and only the "
-					+ "members that resolve are returned.",
+			@Parameter(description = """
+					Optional computation ID. When supplied, expanded members are \
+					transformed against the computation's first input parameter and only the \
+					members that resolve are returned.""",
 					schema = @Schema(implementation = Long.class))
 		@QueryParam("computationid") Long computationId)
 			throws WebAppException, DbException
@@ -893,9 +1065,12 @@ public final class TimeSeriesResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Create a new, or update an existing time series group",
-			description = "Example URL for POST:  \n\n    "
-					+ "http://localhost:8080/odcsapi/tsgroup\n\n"
-					+ "The POST data is as described above for GET tsgroup",
+			description = """
+					Example URL for POST: \s
+
+					    http://localhost:8080/odcsapi/tsgroup
+
+					The POST data is as described above for GET tsgroup""",
 			requestBody = @RequestBody(
 					description = "Time Series Group",
 					required = true,
@@ -1026,9 +1201,12 @@ public final class TimeSeriesResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Delete Time Series Group",
-			description = "Example URL for DELETE:  \n\n    "
-					+ "http://localhost:8080/odcsapi/delete\n\n"
-					+ "This example deletes the Time series group with ID 9.",
+			description = """
+					Example URL for DELETE: \s
+
+					    http://localhost:8080/odcsapi/delete
+
+					This example deletes the Time series group with ID 9.""",
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Successfully deleted time series group"),
 					@ApiResponse(responseCode = "400", description = "Missing or invalid group ID"),

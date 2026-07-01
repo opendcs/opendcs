@@ -208,11 +208,14 @@ public final class ComputationResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Create or Overwrite Existing OpenDCS Computation",
-			description = "The Computation POST method takes a single OpenDCS Computation Record in JSON format,"
-					+ " as described above for GET.  \n\n"
-					+ "For creating a new record, leave computationId out of the passed data structure.  \n\n"
-					+ "For overwriting an existing one, include the computationId that was previously returned. "
-					+ "The computation in the database is replaced with the one sent.",
+			description = """
+					The Computation POST method takes a single OpenDCS Computation Record in JSON format, \
+					as described above for GET. \s
+
+					For creating a new record, leave computationId out of the passed data structure. \s
+
+					For overwriting an existing one, include the computationId that was previously returned. \
+					The computation in the database is replaced with the one sent.""",
 			tags = {"REST - Computation Methods"},
 			requestBody = @RequestBody(
 					description = "Computation",
@@ -291,11 +294,12 @@ public final class ComputationResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Execute an Existing OpenDCS Computation",
-			description = "Endpoint takes in a computation name and a list of timeseries IDs to execute a computation. "
-					+ "Optionally takes in a start and end date for a time window to use for the computation. "
-					+ "For group computations, supply the tsid parameter to run against a specific input time series. "
-					+ "If tsid is omitted for a group computation, the computation is expanded and run against "
-					+ "every time series that can currently trigger it.",
+			description = """
+					Endpoint takes in a computation name and a list of timeseries IDs to execute a computation. \
+					Optionally takes in a start and end date for a time window to use for the computation. \
+					For group computations, supply the tsid parameter to run against a specific input time series. \
+					If tsid is omitted for a group computation, the computation is expanded and run against \
+					every time series that can currently trigger it.""",
 			tags = {"REST - Computation Methods"},
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Successfully initiated execution of computation",
@@ -317,10 +321,11 @@ public final class ComputationResources extends OpenDcsResource
 			@Parameter(required = true, description = "Parameter to specify the end of the time range to execute the computation on",
 					schema = @Schema(implementation = Instant.class, example = "2025-10-25T12:00:00Z"))
 			@QueryParam("end") String end,
-			@Parameter(description = "Time series key to use as the group computation input. "
-					+ "When provided the group computation is resolved against this specific time series. "
-					+ "When omitted for a group computation, the computation is expanded against every "
-					+ "time series that can currently trigger it.",
+			@Parameter(description = """
+					Time series key to use as the group computation input. \
+					When provided the group computation is resolved against this specific time series. \
+					When omitted for a group computation, the computation is expanded against every \
+					time series that can currently trigger it.""",
 					schema = @Schema(implementation = Long.class))
 			@QueryParam("tsid") Long tsId)
 			throws DbException, WebAppException
