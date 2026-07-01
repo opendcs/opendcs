@@ -17,6 +17,7 @@ import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.db.Platform;
+import decodes.db.PlatformSensor;
 import decodes.db.SiteName;
 import decodes.db.TransportMedium;
 
@@ -94,9 +95,17 @@ class OpenDcsPlatformDaoTestIT extends AppTestBase
             var config = configDao.getByName(tx, "OKVI4").orElseThrow(); // PlatformDao doesn't save the config
             platformOut.setConfig(config);
 
+            var ps1 = new PlatformSensor(platformOut, 1);
+            ps1.setProperty("cwmsVersion", "atest");
+
+            platformOut.platformSensors.add(ps1);
+
             var platformOut2 = dao.save(tx, platformOut);    
 
             assertNotNull(platformOut2.getConfig());
+
+            assertFalse(platformOut2.platformSensors.isEmpty());
+            assertEquals("atest", platformOut2.platformSensors.get(0).getProperty("cwmsVersion"));
 
             dao.delete(tx, platformOut2.getId());
 

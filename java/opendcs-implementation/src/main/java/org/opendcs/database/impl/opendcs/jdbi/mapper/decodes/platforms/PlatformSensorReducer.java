@@ -8,9 +8,10 @@ import org.jdbi.v3.core.result.RowView;
 import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
 import org.opendcs.database.model.platforms.PlatformSensorProperty;
 
+import decodes.db.Platform;
 import decodes.db.PlatformSensor;
 
-public class PlatformSensorReducer implements BiConsumer<Map<Long,PlatformSensor>, RowView>
+public class PlatformSensorReducer implements BiConsumer<Map<Long,Platform>, RowView>
 {
 
     final PlatformSensorMapper psMapper;
@@ -21,15 +22,22 @@ public class PlatformSensorReducer implements BiConsumer<Map<Long,PlatformSensor
     }
 
     @Override
-    public void accept(Map<Long, PlatformSensor> map, RowView view)
+    public void accept(Map<Long, Platform> map, RowView view)
     {
         try
         {
             var id = view.getColumn(psMapper.column(PlatformSensorMapper.Columns.PLATFORM_ID), Long.class);
-            var sensor = map.computeIfAbsent(id, newId -> view.getRow(PlatformSensor.class));
+            if (id == null)
+            {
+                return;
+            }
+            
+            var platform = map.get(id);
+            platform.addPlatformSensor(view.getRow(PlatformSensor.class));
             var sensorProp = view.getRow(PlatformSensorProperty.class);
             if (sensorProp != null)
             {
+                var sensor = platform.getPlatformSensor(sensorProp.sensorNumber());
                 sensor.setProperty(sensorProp.propName(), sensorProp.propValue());
             }
         }
