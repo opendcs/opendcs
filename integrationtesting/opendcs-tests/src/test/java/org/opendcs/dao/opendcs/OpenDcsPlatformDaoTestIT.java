@@ -73,7 +73,6 @@ class OpenDcsPlatformDaoTestIT extends AppTestBase
         platformIn.isProduction = true;
         platformIn.description = "A Test Platform";
         platformIn.setPlatformDesignator("a");
-
         TransportMedium tm = new TransportMedium(platformIn);
         tm.channelNum = 1;
         tm.assignedTime = 5;
