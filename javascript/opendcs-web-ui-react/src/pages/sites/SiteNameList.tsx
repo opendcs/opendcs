@@ -102,6 +102,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
         return data;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [rowStateRef, rowInputRef, siteNamesRef],
   );
 
@@ -142,6 +143,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
         return data;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [rowState, rowStateRef, rowInputRef],
   );
 
@@ -150,6 +152,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
       { data: "type", render: renderEditableType, defaultContent: "" },
       { data: "name", render: renderEditableName, defaultContent: "" },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [rowStateRef],
   );
 
@@ -159,6 +162,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
   };
   const columns = useMemo(
     () => (edit ? [...columnsBase, actionColumn] : columnsBase),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [edit, columnsBase],
   );
 
@@ -166,18 +170,16 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
     if (table.current?.dt()) {
       const dt = table.current.dt()!;
       const visibleRows = dt.rows({ page: "current", search: "applied" });
-      visibleRows.every(function () {
-        const row = this;
-        const idx = (row.data() as SiteNameType).type;
+      visibleRows.every(function (this: DataTables.RowMethods) {
+        const idx = (this.data() as SiteNameType).type;
         if (rowState[idx] !== undefined) {
-          row.invalidate().draw(false);
+          this.invalidate().draw(false);
         }
       });
     }
   }, [rowState, siteNames, edit, rowStateRef]);
 
   const renderActions = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     (data: Partial<SiteNameType>, _row: SiteNameType) => {
       const inEdit = data.type === "-" || rowStateRef.current[data.type!] === "edit";
       return (
@@ -195,6 +197,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
                 });
                 delete rowInputRef.current[snt.type];
                 updateLocalSitenames((prev) => {
+                  // eslint-disable-next-line sonarjs/no-nested-functions
                   return [...prev.filter((sn) => sn.type !== data.type)];
                 });
                 updateRowState((prev) => {
@@ -240,6 +243,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
                 const snt = data as SiteNameType;
                 if (localSiteNamesRef.current?.find((sn) => sn.type === snt.type)) {
                   updateLocalSitenames((prev) => [
+                    // eslint-disable-next-line sonarjs/no-nested-functions
                     ...prev.filter((sn) => sn.type !== snt.type),
                   ]);
                 } else {
@@ -259,6 +263,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
         </>
       );
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [localSiteNamesRef, edit, i18n.language, rowStateRef],
   );
 
@@ -301,7 +306,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
       columns={columns}
       data={allSites}
       options={options}
-      slots={columns.length === 3 ? slots : undefined}
+      slots={edit ? slots : undefined}
       ref={table}
       className="table table-hover table-striped tablerow-cursor w-100 border"
     >
@@ -309,7 +314,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
         <tr>
           <th>{t("sites:site_names.name_type")}</th>
           <th>{t("translation:value")}</th>
-          {columns.length === 3 ? <th>{t("translation:actions")}</th> : null}
+          {edit ? <th>{t("translation:actions")}</th> : null}
         </tr>
       </thead>
     </DataTable>

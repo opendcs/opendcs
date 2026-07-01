@@ -21,6 +21,7 @@ export function SiteReducer(currentSite: UiSite, action: SiteAction): UiSite {
       };
     }
     case "delete_name": {
+      // eslint-disable-next-line sonarjs/no-unused-vars
       const { [action.payload.type]: _, ...names } = currentSite.sitenames!;
       return {
         ...currentSite,
@@ -39,6 +40,7 @@ export function SiteReducer(currentSite: UiSite, action: SiteAction): UiSite {
       };
     }
     case "delete_prop": {
+      // eslint-disable-next-line sonarjs/no-unused-vars
       const { [action.payload.name]: _, ...props } = currentSite.properties!;
       return {
         ...currentSite,

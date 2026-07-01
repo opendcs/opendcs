@@ -1,4 +1,4 @@
-import type { Decorator, Meta, ReactRenderer, StoryObj } from "@storybook/react-vite";
+import type { Meta, ReactRenderer, StoryObj } from "@storybook/react-vite";
 
 import { SitesTable, TableSiteRef } from "./SitesTable";
 import {
@@ -7,7 +7,7 @@ import {
 } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { expect, userEvent, waitFor } from "storybook/test";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { act } from "@testing-library/react";
+import { act } from "react";
 import { RemoveAction, SaveAction } from "../../util/Actions";
 import { ArgsStoryFn } from "storybook/internal/types";
 
@@ -95,42 +95,38 @@ const StoryRender: ArgsStoryFn<
         args.sites.map(async (sf: ApiSiteRef) => args.getSite!(sf.siteId!)),
       );
       const filtered = tmpSites.filter((s) => s !== undefined);
-      updateSites((_) => [...filtered]);
+      updateSites(() => [...filtered]);
     };
 
     setupSites();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const saveSite = useCallback(
-    (site: ApiSite) => {
-      updateSites((prev) => {
-        if (site.siteId! < 0) {
-          // new site
-          return [...prev, { ...site, siteId: Math.floor(Math.random() * 100) + 10 }];
-        } else {
-          return prev.map((prev) => {
-            if (prev.siteId === site.siteId) {
-              return {
-                ...site,
-              };
-            } else {
-              return prev;
-            }
-          });
-        }
-      });
-    },
-    [storySites],
-  );
+  const saveSite = useCallback((site: ApiSite) => {
+    updateSites((prev) => {
+      if (site.siteId! < 0) {
+        // new site
+        // eslint-disable-next-line sonarjs/pseudo-random
+        return [...prev, { ...site, siteId: Math.floor(Math.random() * 100) + 10 }];
+      } else {
+        return prev.map((prev) => {
+          if (prev.siteId === site.siteId) {
+            return {
+              ...site,
+            };
+          } else {
+            return prev;
+          }
+        });
+      }
+    });
+  }, []);
 
-  const removeSite = useCallback(
-    (siteId: number) => {
-      updateSites((prev) => {
-        return [...prev.filter((site) => site.siteId !== siteId)];
-      });
-    },
-    [storySites],
-  );
+  const removeSite = useCallback((siteId: number) => {
+    updateSites((prev) => {
+      return [...prev.filter((site) => site.siteId !== siteId)];
+    });
+  }, []);
 
   const localGetSite = useCallback(
     (id: number) => {
