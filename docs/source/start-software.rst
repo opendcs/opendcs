@@ -152,13 +152,13 @@ is installed.
 .. code-block:: batch
 
    > java -version
-   java version "1.8.0_391"
+   java version "21.0.11"
 
-If a java version (at least 1.8.##) is returned, then java is installed.
+If a java version (at least 21.##) is returned, then java is installed.
 Proceed with installing OpenDCS.
  
-If nothing is returned or the version is older than 1.8, then install
-Java 1.8 or up to java 17.
+If nothing is returned or the version is older than 21, then install
+Java 21 or higher.
 
 OpenDCS is tested with Java releases from https://adoptium.net/temurin/releases/.
 

@@ -72,6 +72,7 @@ class OpenDcsPlatformDaoTestIT extends AppTestBase
         platformIn.agency = "OpenDcs Testing";
         platformIn.isProduction = true;
         platformIn.description = "A Test Platform";
+        platformIn.setPlatformDesignator("a");
         
         TransportMedium tm = new TransportMedium(platformIn);
         tm.channelNum = 1;
