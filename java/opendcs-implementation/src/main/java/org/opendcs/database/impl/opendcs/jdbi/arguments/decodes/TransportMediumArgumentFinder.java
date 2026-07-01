@@ -16,6 +16,10 @@ import decodes.sql.DbKey;
 
 import static org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.TransportMediumMapper.Columns.*;
 
+/**
+ * Handles mapping of requested column names to the stored TransportMedium instance.
+ * TransportMediumArgumentFinder
+ */
 public class TransportMediumArgumentFinder implements NamedArgumentFinder
 {
     public static final List<String> COLUMNS = Arrays.asList(TransportMediumMapper.Columns.values())

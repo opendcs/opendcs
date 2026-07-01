@@ -6,8 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.DecodesConfigDao;
@@ -19,7 +17,6 @@ import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.db.Platform;
-import decodes.db.PlatformConfig;
 import decodes.db.SiteName;
 import decodes.db.TransportMedium;
 
