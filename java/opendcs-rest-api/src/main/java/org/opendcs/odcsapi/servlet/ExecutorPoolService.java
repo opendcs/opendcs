@@ -11,7 +11,7 @@ import jakarta.servlet.ServletContext;
  * ExecutorPoolService
  */
 @ApplicationScoped
-public final class ExecutorPoolService 
+public final class ExecutorPoolService
 {
     @Inject // NOSONAR. Needs to stay this way given "ApplicationScoped."
     private ServletContext context;
@@ -22,7 +22,6 @@ public final class ExecutorPoolService
      */
     public ExecutorService getComputationExecutor()
     {
-        return (ExecutorService)context.getAttribute(ExecutorPoolServiceListener.COMPUATION_SERVICE);
-    }    
-    
+        return (ExecutorService)context.getAttribute(ExecutorPoolServiceListener.COMPUTATION_SERVICE);
+    }
 }
