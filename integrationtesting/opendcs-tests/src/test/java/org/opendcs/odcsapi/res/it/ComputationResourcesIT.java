@@ -65,6 +65,7 @@ import org.opendcs.odcsapi.beans.ApiComputation;
 import org.opendcs.odcsapi.beans.ApiLoadingApp;
 import org.opendcs.odcsapi.beans.ApiSite;
 import org.opendcs.odcsapi.filters.LoggingFilter;
+import org.opendcs.odcsapi.filters.W3CTraceFilter;
 import org.opendcs.odcsapi.res.ComputationResources;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.slf4j.Logger;
@@ -663,12 +664,14 @@ final class ComputationResourcesIT extends BaseApiIT
 		assertFalse(expectedTsList.isEmpty(), "No time series found imported");
 
 		final var compTraceId = UUID.randomUUID().toString();
-
+		final var traceParent = "00-06df66e0fcc70c06ef71cf9ed9753bf8-12b7001e81b533ab-01";
 		ClientRequestFilter auth = ctx ->
 		{
-			ctx.getHeaders().putSingle(ApiConstants.ORGANIZATION_HEADER, organization);
-			ctx.getHeaders().putSingle("Cookie", getCookie());
-			ctx.getHeaders().putSingle(LoggingFilter.HEADER_TRACE_ID, compTraceId);
+			var hdrs = ctx.getHeaders();
+			hdrs.putSingle(ApiConstants.ORGANIZATION_HEADER, organization);
+			hdrs.putSingle("Cookie", getCookie());
+			hdrs.putSingle(LoggingFilter.HEADER_TRACE_ID, compTraceId);
+			hdrs.putSingle(W3CTraceFilter.TRACE_PARENT.toString(), traceParent);
 		};
 
 		URI baseURI = URI.create(String.format("%s:%d/%s", RestAssured.baseURI, RestAssured.port, RestAssured.basePath));
@@ -760,12 +763,15 @@ final class ComputationResourcesIT extends BaseApiIT
 		assertFalse(expectedTsList.isEmpty(), "No time series found imported");
 
 		final var compTraceId = UUID.randomUUID().toString();
+		final var traceParent = "00-06df66e0fcc70c06ef71cf9ed9753bf8-12b7001e81b533ab-01";
 		log.info("Computation is being run with Trace ID '{}'", compTraceId);
 		ClientRequestFilter auth = ctx ->
 		{
-			ctx.getHeaders().putSingle(ApiConstants.ORGANIZATION_HEADER, organization);
-			ctx.getHeaders().putSingle("Cookie", getCookie());
-			ctx.getHeaders().putSingle(LoggingFilter.HEADER_TRACE_ID, compTraceId);
+			var hdrs = ctx.getHeaders();
+			hdrs.putSingle(ApiConstants.ORGANIZATION_HEADER, organization);
+			hdrs.putSingle("Cookie", getCookie());
+			hdrs.putSingle(LoggingFilter.HEADER_TRACE_ID, compTraceId);
+			hdrs.putSingle(W3CTraceFilter.TRACE_PARENT.toString(), traceParent);
 		};
 
 		URI baseURI = URI.create(String.format("%s:%d/%s", RestAssured.baseURI, RestAssured.port, RestAssured.basePath));
@@ -784,6 +790,7 @@ final class ComputationResourcesIT extends BaseApiIT
 					.queryParam("computationid", tsCompId)
 					.queryParam("start", from)
 					.queryParam("end", to);
+
 
 			List<InboundSseEvent> events = new CopyOnWriteArrayList<>();
 			CountDownLatch done = new CountDownLatch(1);

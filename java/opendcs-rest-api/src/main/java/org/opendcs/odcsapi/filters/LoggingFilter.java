@@ -40,7 +40,7 @@ public final class LoggingFilter implements ContainerRequestFilter, ContainerRes
         }
         else
         {
-            traceId = validate(xTraceId); //well that needs some validation.
+            traceId = validate(xTraceId);
         }
         MDC.put(CONTEXT_TRACE_ID, traceId);
     }
@@ -53,7 +53,7 @@ public final class LoggingFilter implements ContainerRequestFilter, ContainerRes
         }
         else
         {
-            throw new IOException("Trace id '" + id + "' is not a valid UUIDish value.");
+            return UUID.randomUUID().toString();
         }
     }
 }

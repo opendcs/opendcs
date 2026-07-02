@@ -16,9 +16,8 @@ public class OtelInitListener implements ServletContextListener
                 .build();
 
     @Override
-    public void contextInitialized(ServletContextEvent sce) {
-        
-        
+    public void contextInitialized(ServletContextEvent sce)
+    {
         OpenTelemetrySdk.builder()
             .setTracerProvider(sdkTracerProvider)
             .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
@@ -26,7 +25,8 @@ public class OtelInitListener implements ServletContextListener
     }
 
     @Override
-    public void contextDestroyed(ServletContextEvent sce) {
+    public void contextDestroyed(ServletContextEvent sce)
+    {
         sdkTracerProvider.close();
     }
 }

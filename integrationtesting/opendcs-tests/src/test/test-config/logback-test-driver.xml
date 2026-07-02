@@ -24,6 +24,7 @@
     </appender>
 
     <appender name="JSONL" class="FileAppender">
+        <append>false</append>
         <file>${java.io.tmpdir}/tests.jsonl</file>
         <encoder class="JsonEncoder"/>
     </appender>
