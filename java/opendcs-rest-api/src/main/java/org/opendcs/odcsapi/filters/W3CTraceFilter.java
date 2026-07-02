@@ -50,7 +50,7 @@ public class W3CTraceFilter implements ContainerRequestFilter, ContainerResponse
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException
     {
-        var spanBuilder = GlobalOpenTelemetry.getTracer("cwms-data-api")
+        var spanBuilder = GlobalOpenTelemetry.getTracer("opendcs-api")
             // using the full URI here results in too high of cardinality so spans can't be grouped
             // endpoints can/should add the route as attributes to the current span.
             .spanBuilder(requestContext.getMethod())
