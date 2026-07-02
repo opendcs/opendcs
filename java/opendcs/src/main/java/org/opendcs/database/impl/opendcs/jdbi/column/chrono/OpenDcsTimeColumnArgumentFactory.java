@@ -63,5 +63,4 @@ public class OpenDcsTimeColumnArgumentFactory implements ArgumentFactory.Prepara
         }
         return Optional.empty();
     }
-
 }

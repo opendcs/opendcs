@@ -61,8 +61,4 @@ public class PlatformSensorPropertyMapper extends PrefixRowMapper<PlatformSensor
             return column;
         }
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 1ac112e3 (Initial setup to get platform sensors.)
