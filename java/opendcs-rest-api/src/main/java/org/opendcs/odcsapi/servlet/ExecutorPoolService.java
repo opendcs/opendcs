@@ -13,7 +13,7 @@ import jakarta.servlet.ServletContext;
 @ApplicationScoped
 public final class ExecutorPoolService 
 {
-    @Inject
+    @Inject // NOSONAR. Needs to stay this way given "ApplicationScoped."
     private ServletContext context;
 
     /**

@@ -22,7 +22,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
 
 import decodes.cwms.CwmsTimeSeriesDAO;
 import decodes.cwms.CwmsTsId;
@@ -94,8 +93,13 @@ public final class ComputationResources extends OpenDcsResource
 
 	@Context HttpHeaders httpHeaders;
 
+	private final ExecutorPoolService executors;
+
 	@Inject
-	ExecutorPoolService exectors;
+	protected ComputationResources(ExecutorPoolService executors)
+	{
+		this.executors = executors;
+	}
 
 	@GET
 	@Path("computationrefs")
@@ -409,7 +413,7 @@ public final class ComputationResources extends OpenDcsResource
 					}
 					MDC.clear();
 				}
-			}, exectors.getComputationExecutor());
+			}, executors.getComputationExecutor());
 		}
 		catch(NoSuchObjectException ex)
 		{
@@ -553,7 +557,7 @@ public final class ComputationResources extends OpenDcsResource
 	private void executeAndPublishResult(Long computationId, List<DbComputation> comps, Date startDate, Date endDate,
 			Sse sse, SseEventSink eventSink, String compStatus, String taskID)
 	{
-		try (ComputationExecution execution = new ComputationExecution(createDb(), exectors.getComputationExecutor()))
+		try (ComputationExecution execution = new ComputationExecution(createDb(), executors.getComputationExecutor()))
 		{
 			SseProgressListener listener = new SseProgressListener(eventSink, sse, compStatus, taskID);
 			ComputationExecution.CompResults results = execution.execute(comps, new DataCollection(), startDate, endDate, listener);
