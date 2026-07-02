@@ -60,6 +60,14 @@ public final class SimpleTransaction implements DataTransaction
     {
         try
         {
+            try
+            {
+                conn.rollback();
+            }
+            catch (SQLException rollbackEx)
+            {
+                // Best-effort rollback; still close the connection
+            }
             conn.close();
         }
         catch (SQLException ex)

@@ -333,7 +333,7 @@ public final class ConfigResources extends OpenDcsResource
 			var configIn = map(config, dataTypeDao, tx);
 
 			final var configOut =  dao.save(tx, configIn);
-
+			tx.commit();
 			return Response.status(Response.Status.CREATED)
 						   .entity(map(configOut))
 						   .build();
@@ -563,7 +563,7 @@ public final class ConfigResources extends OpenDcsResource
 			// but that should be generic to all deletes, not super specific.
 
 			dao.delete(tx, DbKey.createDbKey(configId));
-
+			tx.commit();
 			return Response.noContent()
 					.entity("Config with ID " + configId + " deleted")
 					.build();

@@ -189,9 +189,10 @@ public final class AppResources extends OpenDcsResource
 			final var appDao = db.getDao(LoadingAppDao.class)
 								   .orElseThrow(() -> UNABLE_TO_GET_APP_DAO);
 			CompAppInfo compApp = map(app);
-			
+			final var savedApp = appDao.save(tx, compApp);
+			tx.commit();
 			return Response.status(Response.Status.CREATED)
-					.entity(mapLoading(appDao.save(tx, compApp)))
+					.entity(mapLoading(savedApp))
 					.build();
 		}
 		catch (OpenDcsDataException ex)
@@ -260,6 +261,7 @@ public final class AppResources extends OpenDcsResource
 			final var appDao = db.getDao(LoadingAppDao.class)
 								   .orElseThrow(() -> UNABLE_TO_GET_APP_DAO);
 			appDao.delete(tx, DbKey.createDbKey(appId));
+			tx.commit();
 			return Response.noContent()
 					.entity("appId with ID " + appId + " deleted").build();
 		}

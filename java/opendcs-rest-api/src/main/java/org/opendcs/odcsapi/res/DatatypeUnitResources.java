@@ -240,6 +240,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 								   .orElseThrow(() -> UNABLE_TO_GET_EU_DAO);
 			EngineeringUnit unit = new EngineeringUnit(eu.getAbbr(), eu.getName(), eu.getFamily(), eu.getMeasures());
 			var unitOut = mapUnit(unitsDao.save(tx, unit));
+			tx.commit();
 			return Response.status(Response.Status.CREATED)
 					.entity(unitOut).build();
 		}
@@ -281,7 +282,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 			var unitsDao = db.getDao(EngineeringUnitDao.class)
 							 .orElseThrow(() -> UNABLE_TO_GET_EU_DAO);
 			unitsDao.delete(tx, abbr);
-
+			tx.commit();
 			return Response.noContent().entity("EU with abbr " + abbr + " deleted").build();
 		}
 		catch(OpenDcsDataException ex)
@@ -379,6 +380,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 						  .orElseThrow(() -> UNABLE_TO_GET_UC_DAO);
 			var ucDbIn = ucDbMap(euc);
 			var ucOut = ucDao.save(tx, ucDbIn);
+			tx.commit();
 			return Response.created(null).entity(map(ucOut)).build();
 		}
 		catch(OpenDcsDataException | DatabaseException | DbException ex)
@@ -502,6 +504,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 			var ucDao = db.getDao(UnitConverterDao.class)
 							 .orElseThrow(() -> UNABLE_TO_GET_UC_DAO);
 			ucDao.delete(tx, DbKey.createDbKey(id));
+			tx.commit();
 			return Response.noContent().build();
 		}
 		catch(OpenDcsDataException  ex)

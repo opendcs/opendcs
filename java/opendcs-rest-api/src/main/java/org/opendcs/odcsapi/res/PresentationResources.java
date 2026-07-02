@@ -246,6 +246,7 @@ public final class PresentationResources extends OpenDcsResource
             final var dao = db.getDao(PresentationGroupDao.class).orElseThrow(() -> UNABLE_TO_GET_PRESENTATIONGROUP_DAO);
             final var dtDao = db.getDao(DataTypeDao.class).orElseThrow(() -> DatatypeUnitResources.UNABLE_TO_GET_DT_DAO);
             final var group = dao.save(tx, map(tx, dtDao, presGrp));
+            tx.commit();
             return Response.status(Response.Status.CREATED)
                            .entity(map(group))
                            .build();
@@ -340,6 +341,7 @@ public final class PresentationResources extends OpenDcsResource
             final var dao = db.getDao(PresentationGroupDao.class).orElseThrow(() -> UNABLE_TO_GET_PRESENTATIONGROUP_DAO);
 
             dao.delete(tx, DbKey.createDbKey(groupId));
+            tx.commit();
             return Response.noContent()
                            .entity("Presentation Group with ID " + groupId + " deleted")
                            .build();

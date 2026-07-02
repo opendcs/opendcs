@@ -146,6 +146,7 @@ public final class OidcCallback extends OpenDcsResource
                         if (userOpt.isPresent())
                         {
                             var user = userOpt.get();
+                            tx.commit();
                             response =  updateSessionWithUser(user, httpRequest);
                             location = URI.create(redirectAfterAuth);
                         }
@@ -258,6 +259,7 @@ public final class OidcCallback extends OpenDcsResource
                                 if (userOpt.isPresent())
                                 {
                                     var user = userOpt.get();
+                                    tx.commit();
                                     response = updateSessionWithUser(user, httpRequest);
                                     break;
                                 }
@@ -275,6 +277,7 @@ public final class OidcCallback extends OpenDcsResource
                                 oidcProvider.canRegister())
                             {
                                     var user = oidcProvider.register(db, tx, new JwtCredentials(accessToken));
+                                    tx.commit();
                                     response = updateSessionWithUser(user, httpRequest);
                                     break;
                             }

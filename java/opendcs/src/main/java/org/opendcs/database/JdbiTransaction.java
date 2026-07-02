@@ -64,8 +64,17 @@ public final class JdbiTransaction implements DataTransaction
     @Override
     public void close() throws OpenDcsDataException
     {
-        commit();
-        jdbiHandle.close();
+        try
+        {
+            if (jdbiHandle.isInTransaction())
+            {
+                jdbiHandle.rollback();
+            }
+        }
+        finally
+        {
+            jdbiHandle.close();
+        }
     }
 
     @Override

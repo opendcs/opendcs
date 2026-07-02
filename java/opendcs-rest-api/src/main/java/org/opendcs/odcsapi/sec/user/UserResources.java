@@ -94,6 +94,7 @@ public final class UserResources extends OpenDcsResource
             if (idp.login(db, tx, new BuiltInProviderCredentials(sessionPrincipal.getName(), passwordChange.currentPassword())).isPresent())
             {
                 idp.updateUserCredentials(db, tx, sessionPrincipal.getUser(), new BuiltInProviderCredentials(sessionPrincipal.getName(), passwordChange.newPassword()));
+                tx.commit();
             }
             else
             {

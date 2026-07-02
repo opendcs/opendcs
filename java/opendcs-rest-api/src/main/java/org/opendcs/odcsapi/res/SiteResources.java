@@ -274,6 +274,7 @@ public final class SiteResources extends OpenDcsResource
 			final Site dbSite = map(site);
 			var savedSite = siteDao.save(tx, dbSite);
 			var apiSiteOut = map(savedSite, savedSite.getProperties());
+			tx.commit();
 			return Response.status(Response.Status.CREATED)
 					.entity(apiSiteOut).build();
 
@@ -353,6 +354,7 @@ public final class SiteResources extends OpenDcsResource
 			var siteDao = db.getDao(SiteDao.class)
 							.orElseThrow(() -> UNABLE_TO_GET_SITE_DAO);
 			siteDao.delete(tx, DbKey.createDbKey(siteId));
+			tx.commit();
 			return Response.noContent()
 					.entity("ID " + siteId + " deleted").build();
 
