@@ -8,8 +8,6 @@ import org.jdbi.v3.core.mapper.RowMapper;
 import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.sql.TableColumnDefinition;
 
-import ilex.util.Pair;
-
 /**
  * Helper class for row mappers to take a prefix.
  * If the provided prefix does not start end with an underscore (_)

@@ -1,6 +1,9 @@
 package org.opendcs.database.impl.opendcs.jdbi.column.chrono;
 
 import java.lang.reflect.Type;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Types;
 import java.util.Date;
 import java.util.Optional;
@@ -23,26 +26,32 @@ public class OpenDcsTimeColumnArgumentFactory implements ArgumentFactory.Prepara
                 {
                     final var tmp = (Boolean)ctx.getAttribute("numeric_date");
                     final var datesAreInt =  tmp != null && tmp;
-                    if (datesAreInt)
-                    {
-                        if (value == null)
-                        {   
-                            statement.setNull(position, Types.BIGINT);
-                        }
-                        else
-                        {
-                            statement.setLong(position, ((Date)value).getTime());
-                        }
-                    }
-                    else
-                    {
-                        statement.setDate(position, value == null ? null : new java.sql.Date(((Date)value).getTime()));
-                    }
+                    setDate(statement, position, datesAreInt, (Date)value);
                 });
         }
         else
         {
             return Optional.empty();
+        }
+    }
+
+    private static void setDate(PreparedStatement statement, int position, boolean datesAreInt, Date value)
+        throws SQLException
+    {
+        if (datesAreInt)
+        {
+            if (value == null)
+            {
+                statement.setNull(position, Types.BIGINT);
+            }
+            else
+            {
+                statement.setLong(position, value.getTime());
+            }
+        }
+        else
+        {
+            statement.setDate(position, value == null ? null : new java.sql.Date(value.getTime()));
         }
     }
 
