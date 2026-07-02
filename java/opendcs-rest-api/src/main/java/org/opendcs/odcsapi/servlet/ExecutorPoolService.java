@@ -22,7 +22,7 @@ public final class ExecutorPoolService
      */
     public ExecutorService getComputationExecutor()
     {
-        return (ExecutorService)context.getAttribute(ExecutorPoolLifeCycle.COMPUATION_SERVICE);
+        return (ExecutorService)context.getAttribute(ExecutorPoolServiceListener.COMPUATION_SERVICE);
     }    
     
 }

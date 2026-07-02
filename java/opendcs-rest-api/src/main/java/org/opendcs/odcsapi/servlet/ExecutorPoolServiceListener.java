@@ -20,7 +20,7 @@ import jakarta.servlet.annotation.WebListener;
  * to properly propagate trace contexts
  */
 @WebListener
-public class ExecutorPoolLifeCycle implements ServletContextListener
+public class ExecutorPoolServiceListener implements ServletContextListener
 {
     public static final String COMPUATION_SERVICE = "odcs.executors.computations";
 

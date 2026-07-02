@@ -9,7 +9,7 @@ import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
 
 @WebListener
-public class OtelInitListener implements ServletContextListener
+public class OpenTelemetryInitListener implements ServletContextListener
 {
     private static final SdkTracerProvider sdkTracerProvider =
             SdkTracerProvider.builder()
