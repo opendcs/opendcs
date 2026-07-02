@@ -214,14 +214,18 @@ export const EditSiteNavigatesToSites: Story = {
     await act(async () => userEvent.click(editBtn));
     // Wait for the detail's fade-in to finish before querying for buttons
     // inside it — on slower CI machines the Suspense + DetailFade sequence
-    // can exceed Testing Library's 1 s findByRole timeout.
-    await waitFor(() => {
-      expect(
-        canvas.getByRole("button", {
-          name: i18n.t("platforms:save_platform", { id: 1 }),
-        }),
-      ).toBeInTheDocument();
-    });
+    // can exceed the default 1 s asyncUtilTimeout that waitFor shares with
+    // findByRole, so an explicit longer timeout is required here.
+    await waitFor(
+      () => {
+        expect(
+          canvas.getByRole("button", {
+            name: i18n.t("platforms:save_platform", { id: 1 }),
+          }),
+        ).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
     const editSiteBtn = await canvas.findByRole("button", {
       name: i18n.t("platforms:edit_site"),
     });
@@ -229,5 +233,52 @@ export const EditSiteNavigatesToSites: Story = {
     await waitFor(() => {
       expect(canvas.queryByTestId("sites-page-stub")).toBeInTheDocument();
     });
+  },
+};
+
+// 6. Save fails with a 500 — AppDataTable catches the rejection and shows an
+//    error Alert, covering the new catch block and saveError state in AppDataTable.
+export const SavePlatformError: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        ...baseHandlers,
+        postPlatform: http.post("/odcsapi/platform", () =>
+          HttpResponse.json({ message: "Server error" }, { status: 500 }),
+        ),
+      },
+    },
+  },
+  play: async ({ mount, userEvent, parameters }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("platforms:edit_platform", { id: 1 }),
+    });
+    await act(async () => userEvent.click(editBtn));
+
+    await waitFor(
+      () => {
+        expect(
+          canvas.getByRole("button", {
+            name: i18n.t("platforms:save_platform", { id: 1 }),
+          }),
+        ).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
+
+    const saveBtn = canvas.getByRole("button", {
+      name: i18n.t("platforms:save_platform", { id: 1 }),
+    });
+    await act(async () => userEvent.click(saveBtn));
+
+    await waitFor(
+      () => {
+        expect(canvas.queryByRole("alert")).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
   },
 };

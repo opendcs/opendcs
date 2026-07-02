@@ -22,6 +22,7 @@
   "description": "Description",
   "cancel": "Cancel",
   "save": "Save",
+  "save_failed": "Failed to save changes. Please try again.",
   "select": "Select",
   "choose": "Choose",
   "loading_reference_lists": "Loading Reference Lists Data...",

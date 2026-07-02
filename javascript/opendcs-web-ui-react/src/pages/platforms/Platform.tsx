@@ -13,6 +13,7 @@ import { PropertiesTable, type Property } from "../../components/properties";
 import { use, useCallback, useMemo, useReducer, useState } from "react";
 import type {
   ApiConfigRef,
+  ApiConfigSensor,
   ApiPlatform,
   ApiPlatformConfig,
   ApiSite,
@@ -22,6 +23,7 @@ import { useTranslation } from "react-i18next";
 import type { CancelAction, CollectionActions, SaveAction } from "../../util/Actions";
 import { Save, X } from "react-bootstrap-icons";
 import { DetailFade } from "../../components/data-table";
+import { useFetchConfig } from "../../queries/configs";
 import { PlatformReducer } from "./PlatformReducer";
 import { SiteSelectModal } from "./SiteSelectModal";
 import { ConfigSelectModal } from "./ConfigSelectModal";
@@ -158,8 +160,16 @@ export const Platform: React.FC<PlatformProperties> = ({
     resolved.site ? siteDisplayName(resolved.site) : "",
   );
   const [configName, setConfigName] = useState<string>(resolved.config?.name ?? "");
+  // Mirrors configName: seeded from the resolved record, then refreshed when
+  // the user picks a different config so the Sensors table reflects it
+  // instead of staying pinned to whatever config (if any) the platform
+  // originally resolved with.
+  const [configSensors, setConfigSensors] = useState<ApiConfigSensor[]>(
+    resolved.config?.configSensors ?? [],
+  );
   const [showSiteModal, setShowSiteModal] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
+  const fetchConfig = useFetchConfig();
 
   const propertyActions: CollectionActions<Property, string> = edit
     ? {
@@ -193,11 +203,17 @@ export const Platform: React.FC<PlatformProperties> = ({
     setSiteName(siteDisplayName(ref));
   }, []);
 
-  const handleSelectConfig = useCallback((ref: ApiConfigRef) => {
-    if (ref.configId === undefined) return;
-    dispatch({ type: "save", payload: { configId: ref.configId } });
-    setConfigName(ref.name ?? String(ref.configId));
-  }, []);
+  const handleSelectConfig = useCallback(
+    (ref: ApiConfigRef) => {
+      if (ref.configId === undefined) return;
+      dispatch({ type: "save", payload: { configId: ref.configId } });
+      setConfigName(ref.name ?? String(ref.configId));
+      fetchConfig(ref.configId)
+        .then((config) => setConfigSensors(config.configSensors ?? []))
+        .catch(() => setConfigSensors([]));
+    },
+    [fetchConfig],
+  );
 
   return (
     <DetailFade skeleton={<PlatformSkeleton edit={edit} />}>
@@ -405,7 +421,7 @@ export const Platform: React.FC<PlatformProperties> = ({
           <Row className="mt-4">
             <Col md={6} style={edit ? { paddingTop: "2.25rem" } : undefined}>
               <PlatformSensorsTable
-                configSensors={resolved.config?.configSensors ?? []}
+                configSensors={configSensors}
                 platformSensors={localPlatform.platformSensors ?? []}
                 edit={edit}
                 actions={{

@@ -21,6 +21,7 @@
   "description": "Descripción",
   "cancel": "Cancelar",
   "save": "Guardar",
+  "save_failed": "No se pudieron guardar los cambios. Inténtelo de nuevo.",
   "select": "Seleccionar",
   "choose": "Elegir",
   "loading_reference_lists": "Cargando datos de listas de referencia...",
