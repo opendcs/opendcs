@@ -3,7 +3,6 @@ package org.opendcs.database.impl.opendcs.jdbi.column.chrono;
 import java.lang.reflect.Type;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Types;
 import java.util.Date;
 import java.util.Optional;
