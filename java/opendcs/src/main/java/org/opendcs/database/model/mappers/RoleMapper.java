@@ -18,7 +18,6 @@ package org.opendcs.database.model.mappers;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
-import java.util.EnumSet;
 
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
@@ -35,7 +34,7 @@ public final class RoleMapper extends PrefixRowMapper<Role,RoleMapper.Columns>
 
     private RoleMapper(String prefix)
     {
-        super(prefix, EnumSet.allOf(Columns.class));
+        super(prefix, Columns.class);
     }
 
     @Override
