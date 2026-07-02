@@ -13,7 +13,7 @@ import jakarta.servlet.annotation.WebListener;
 /**
  * Holds any thread pools. NOTE: future work will allow configuration of 
  * number of threads per pool. For now, defaulting to 20 for simplicity.
- * ExecutorPoolLifeCycle, allows for 10 computations (per computation
+ * ExecutorPoolServiceListener , allows for 10 computations (per computation
  * is 1 thread for the sse handler and 1 thread for the computation.)
  * 
  * Any executor pool added should be wrapped in Context.taskWrapping
@@ -22,20 +22,20 @@ import jakarta.servlet.annotation.WebListener;
 @WebListener
 public class ExecutorPoolServiceListener implements ServletContextListener
 {
-    public static final String COMPUATION_SERVICE = "odcs.executors.computations";
+    public static final String COMPUTATION_SERVICE = "odcs.executors.computations";
 
     @Override
     public void contextInitialized(ServletContextEvent sce)
     {
         var ctx = sce.getServletContext();
-        ctx.setAttribute(COMPUATION_SERVICE, Context.taskWrapping(Executors.newFixedThreadPool(10, new NamedThreadFactory("computations"))));
+        ctx.setAttribute(COMPUTATION_SERVICE, Context.taskWrapping(Executors.newFixedThreadPool(10, new NamedThreadFactory("computations"))));
     }
 
     @Override
     public void contextDestroyed(ServletContextEvent sce)
     {
         var ctx = sce.getServletContext();
-        var computationThreadPool = (ExecutorService)ctx.getAttribute(COMPUATION_SERVICE);
+        var computationThreadPool = (ExecutorService)ctx.getAttribute(COMPUTATION_SERVICE);
         if (computationThreadPool != null)
         {
             computationThreadPool.shutdown();
