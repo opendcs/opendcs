@@ -12,6 +12,7 @@ import {
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
 import { configKeys } from "./keys";
+import { useTranslation } from "react-i18next";
 
 const useConfigsApi = () => {
   const api = useApi();
@@ -73,11 +74,17 @@ export const useSaveConfigMutation = (
 export const useDeleteConfigMutation = (
   options?: Omit<UseMutationOptions<unknown, unknown, number>, "mutationFn">,
 ) => {
+  const { t } = useTranslation("translation");
   const { configApi, org } = useConfigsApi();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (configId: number) => configApi.deleteConfig(org, configId),
     ...options,
+    meta: {
+      successMessage: t("delete_success", { entity: "Config" }),
+      errorContext: t("delete_error_context", { entity: "Config" }),
+      ...(options?.meta ?? {}),
+    },
     onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: configKeys.all(org) });
       options?.onSuccess?.(...args);

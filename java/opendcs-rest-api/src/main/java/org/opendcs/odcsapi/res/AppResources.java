@@ -50,6 +50,7 @@ import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
+import org.opendcs.database.api.OpenDcsDataConstraintException;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.LoadingAppDao;
 
@@ -238,9 +239,18 @@ public final class AppResources extends OpenDcsResource
 					+ "an active CP_COMP_PROC_LOCK record.",
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Successfully deleted application"),
-					@ApiResponse(responseCode = "400", description = "Bad Request - Missing required appId parameter"),
-					@ApiResponse(responseCode = "404", description = "Not Found - No app found with the given ID"),
-					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+					@ApiResponse(responseCode = "400", description = "Bad Request - Missing required appId parameter",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class))),
+					@ApiResponse(responseCode = "404", description = "Not Found - No app found with the given ID",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class))),
+					@ApiResponse(responseCode = "409", description = "Application is in use and cannot be deleted",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class))),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class)))
 			},
 			tags = {"REST - Loading Application Records"}
 	)
@@ -262,6 +272,10 @@ public final class AppResources extends OpenDcsResource
 			appDao.delete(tx, DbKey.createDbKey(appId));
 			return Response.noContent()
 					.entity("appId with ID " + appId + " deleted").build();
+		}
+		catch (OpenDcsDataConstraintException ex)
+		{
+			throw new WebAppException(Response.Status.CONFLICT.getStatusCode(), ex.getMessage(), ex);
 		}
 		catch (OpenDcsDataException ex)
 		{

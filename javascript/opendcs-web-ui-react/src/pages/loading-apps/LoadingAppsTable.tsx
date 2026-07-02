@@ -87,6 +87,7 @@ export const LoadingAppsTable: React.FC<LoadingAppsTableProperties> = ({
         variant: "danger",
         show: (row) => (row.appId ?? 0) > 0,
         aria: (row) => t("loadingapps:delete_for", { id: row.appId }),
+        confirm: () => t("translation:confirm_delete_prompt"),
         onClick: ({ row }) => {
           if (row.appId !== undefined) actions.remove?.(row.appId);
         },

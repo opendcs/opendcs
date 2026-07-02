@@ -13,6 +13,7 @@ import {
 import { useApi } from "../contexts/app/ApiContext";
 import { computationKeys } from "./keys";
 import { invalidateThenDelegate, normalizeNewId } from "./mutationHelpers";
+import { useTranslation } from "react-i18next";
 
 const useComputationsApi = () => {
   const api = useApi();
@@ -72,12 +73,18 @@ export const useSaveComputationMutation = (
 export const useDeleteComputationMutation = (
   options?: Omit<UseMutationOptions<unknown, unknown, number>, "mutationFn">,
 ) => {
+  const { t } = useTranslation("translation");
   const { computationApi, org } = useComputationsApi();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (computationId: number) =>
       computationApi.deleteComputation(org, computationId),
     ...options,
+    meta: {
+      successMessage: t("delete_success", { entity: "Computation" }),
+      errorContext: t("delete_error_context", { entity: "Computation" }),
+      ...(options?.meta ?? {}),
+    },
     onSuccess: invalidateThenDelegate(
       queryClient,
       computationKeys.all(org),

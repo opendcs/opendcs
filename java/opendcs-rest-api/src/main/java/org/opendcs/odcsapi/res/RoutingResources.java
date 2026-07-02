@@ -537,8 +537,12 @@ public final class RoutingResources extends OpenDcsResource
 			tags = {"REST - DECODES Routing Spec Records"},
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Successfully deleted routing"),
-					@ApiResponse(responseCode = "400", description = "Missing required routingid parameter"),
-					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+					@ApiResponse(responseCode = "400", description = "Missing required routingid parameter",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class))),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class)))
 			}
 	)
 	public Response deleteRouting(@Parameter(description = "Routing Spec ID", required = true, example = "20",
@@ -812,8 +816,12 @@ public final class RoutingResources extends OpenDcsResource
 			tags = {"REST - Schedule Entry Methods"},
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Successfully deleted schedule"),
-					@ApiResponse(responseCode = "400", description = "Invalid schedule ID provided"),
-					@ApiResponse(responseCode = "500", description = "Default error sample response")
+					@ApiResponse(responseCode = "400", description = "Invalid schedule ID provided",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class))),
+					@ApiResponse(responseCode = "500", description = "Default error sample response",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class)))
 			}
 	)
 	public Response deleteSchedule(@Parameter(description = "Schedule ID", required = true,

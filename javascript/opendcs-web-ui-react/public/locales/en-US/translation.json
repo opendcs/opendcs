@@ -37,5 +37,9 @@
   "Close": "Close",
   "Organizations not defined": "Organizations not defined",
   "user pass incorrect": "Username and/or password is incorrect, or user does not have access to the selected organization.",
-  "Login Failed": "Login Failed"
+  "Login Failed": "Login Failed",
+  "delete_success": "{{entity}} deleted successfully",
+  "delete_error_context": "Failed to delete {{entity}}",
+  "confirm_delete_prompt": "Are you sure you want to delete this item?",
+  "confirm_delete_title": "Confirm Delete"
 }

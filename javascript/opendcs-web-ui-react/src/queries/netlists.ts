@@ -8,6 +8,7 @@ import {
 import { RESTNetworkListsApi, type ApiNetList, type ApiNetlistRef } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
 import { netlistKeys } from "./keys";
+import { useTranslation } from "react-i18next";
 
 const useNetlistsApi = () => {
   const api = useApi();
@@ -66,11 +67,17 @@ export const useSaveNetlistMutation = (
 export const useDeleteNetlistMutation = (
   options?: Omit<UseMutationOptions<unknown, unknown, number>, "mutationFn">,
 ) => {
+  const { t } = useTranslation("translation");
   const { netlistApi, org } = useNetlistsApi();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (netlistId: number) => netlistApi.deleteNetlist(org, netlistId),
     ...options,
+    meta: {
+      successMessage: t("delete_success", { entity: "Network List" }),
+      errorContext: t("delete_error_context", { entity: "Network List" }),
+      ...(options?.meta ?? {}),
+    },
     onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: netlistKeys.all(org) });
       options?.onSuccess?.(...args);

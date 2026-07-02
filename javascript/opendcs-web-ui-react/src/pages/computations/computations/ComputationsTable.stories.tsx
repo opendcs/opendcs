@@ -357,6 +357,8 @@ export const DeleteComputation: Story = {
       name: i18n.t("computations:editor.delete_for", { id: 2 }),
     });
     await act(async () => userEvent.click(deleteBtn));
+    const confirmBtn = await screen.findByRole("button", { name: "Delete" });
+    await act(async () => userEvent.click(confirmBtn));
 
     await waitFor(() => {
       expect(canvas.queryByText("DailyStageMax")).not.toBeInTheDocument();

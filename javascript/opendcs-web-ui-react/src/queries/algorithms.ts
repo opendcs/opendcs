@@ -16,6 +16,7 @@ import {
 import { useApi } from "../contexts/app/ApiContext";
 import { algorithmKeys } from "./keys";
 import { invalidateThenDelegate, normalizeNewId } from "./mutationHelpers";
+import { useTranslation } from "react-i18next";
 
 const useAlgorithmsApi = () => {
   const api = useApi();
@@ -96,11 +97,17 @@ export const useSaveAlgorithmMutation = (
 export const useDeleteAlgorithmMutation = (
   options?: Omit<UseMutationOptions<unknown, unknown, number>, "mutationFn">,
 ) => {
+  const { t } = useTranslation("translation");
   const { algorithmApi, org } = useAlgorithmsApi();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (algorithmId: number) => algorithmApi.deleteAlgorithm(org, algorithmId),
     ...options,
+    meta: {
+      successMessage: t("delete_success", { entity: "Algorithm" }),
+      errorContext: t("delete_error_context", { entity: "Algorithm" }),
+      ...(options?.meta ?? {}),
+    },
     onSuccess: invalidateThenDelegate(
       queryClient,
       algorithmKeys.all(org),
