@@ -88,6 +88,9 @@ dependencies {
     implementation(libs.com.password4j.password4j)
     implementation(libs.org.netbeans.lookup)
     implementation(libs.hec.lookup.compat)
+    implementation(libs.io.opentelemetry.api)
+    implementation(libs.io.opentelemetry.sdk)
+    implementation(libs.io.opentelemetry.instrumentation.java)
 
     implementation(libs.nimbus)
     implementation(libs.jwt)

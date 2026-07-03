@@ -33,27 +33,19 @@ public final class LoggingFilter implements ContainerRequestFilter, ContainerRes
     public void filter(ContainerRequestContext requestContext) throws IOException
     {
         var xTraceId = requestContext.getHeaderString(HEADER_TRACE_ID);
-        String traceId = null;
-        if (xTraceId == null || xTraceId.isBlank())
-        {
-            traceId = UUID.randomUUID().toString();
-        }
-        else
-        {
-            traceId = validate(xTraceId); //well that needs some validation.
-        }
+        String traceId = validate(xTraceId);
         MDC.put(CONTEXT_TRACE_ID, traceId);
     }
 
-    private static String validate(String id) throws IOException
+    private static String validate(String id)
     {
-        if (UUID_MATCHER.matcher(id).matches())
+        if (id != null && !id.isBlank() && UUID_MATCHER.matcher(id).matches())
         {
             return id;
         }
         else
         {
-            throw new IOException("Trace id '" + id + "' is not a valid UUIDish value.");
+            return UUID.randomUUID().toString();
         }
     }
 }

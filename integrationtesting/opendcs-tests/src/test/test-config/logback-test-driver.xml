@@ -4,8 +4,10 @@
     <import class="ch.qos.logback.classic.encoder.PatternLayoutEncoder"/>
     <import class="ch.qos.logback.core.FileAppender"/>
     <import class="ch.qos.logback.core.ConsoleAppender"/>
+    <import class="ch.qos.logback.classic.encoder.JsonEncoder"/>
     <import class="ch.qos.logback.classic.net.server.ServerSocketReceiver"/>
     <import class="ch.qos.logback.core.status.OnConsoleStatusListener"/>
+    <import class="io.opentelemetry.instrumentation.logback.mdc.v1_0.OpenTelemetryAppender"/>
     <statusListener class="OnConsoleStatusListener"/>
     <contextName>${APP_NAME}</contextName>
     <appender name="STDERR" class="ConsoleAppender">
@@ -20,6 +22,25 @@
             <pattern>%date{ISO8601} %level [%thread] %contextName %logger %mdc %marker %kvp %msg %ex %n</pattern>
         </encoder>
     </appender>
+
+    <appender name="JSONL" class="FileAppender">
+        <append>false</append>
+        <file>${java.io.tmpdir}/tests.jsonl</file>
+        <encoder class="JsonEncoder"/>
+    </appender>
+
+    <appender name="OTEL-STDERR" class="OpenTelemetryAppender">
+        <appender-ref ref="STDERR"/>
+    </appender>
+
+    <appender name="OTEL-FILE" class="OpenTelemetryAppender">
+        <appender-ref ref="FILE"/>
+    </appender>
+
+    <appender name="OTEL-JSONL" class="OpenTelemetryAppender">
+        <appender-ref ref="JSONL"/>
+    </appender>
+
     <logger name="covesw" level="trace"/>
     <logger name="decodes" level="trace"/>
     <logger name="ilex" level="trace"/>
@@ -28,8 +49,9 @@
     <logger name="org.opendcs" level="trace"/>
     <logger name="opendcs" level="trace"/>
     <root level="INFO">
-        <appender-ref ref="FILE"/>
-        <appender-ref ref="STDERR"/>
+        <appender-ref ref="OTEL-FILE"/>
+        <appender-ref ref="OTEL-STDERR"/>
+        <appender-ref ref="OTEL-JSONL"/>
     </root>
     <!-- note: doesn't work at the moment. See https://github.com/qos-ch/logback/pull/699 -->
     <receiver class="ServerSocketReceiver">
