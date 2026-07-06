@@ -72,6 +72,10 @@ dependencies {
     runtimeOnly(libs.com.faster.xml.jackson.annotations) // updated for swagger compatibility
     runtimeOnly(project(":opendcs-implementation"))
     runtimeOnly(project(":cwms-implementation"))
+    implementation(libs.io.opentelemetry.api)
+    implementation(libs.io.opentelemetry.sdk)
+    implementation(libs.io.opentelemetry.exporter.logging)
+    implementation(libs.io.opentelemetry.instrumentation.java)
 
     webjars(libs.swagger.ui)
 

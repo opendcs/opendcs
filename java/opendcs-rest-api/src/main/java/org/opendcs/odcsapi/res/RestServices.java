@@ -31,11 +31,14 @@ import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.servers.Server;
+
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.slf4j.Logger;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.IdentityProviderDao;
 import org.opendcs.odcsapi.dao.OpenDcsDatabaseFactory;
+import org.opendcs.odcsapi.servlet.ExecutorPoolService;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 import static org.opendcs.odcsapi.res.DataSourceContextCreator.DATA_SOURCE_ATTRIBUTE_KEY;
@@ -50,6 +53,16 @@ public final class RestServices extends ResourceConfig
         log.debug("Initializing odcsapi RestServices.");
         packages("org.opendcs.odcsapi");
         register(ObjectMapperContextResolver.class);
+        // register a binding of the ExecutorPoolService so that
+        // @Inject works within a given resource handler.
+        register(new AbstractBinder()
+        {
+            @Override
+            protected void configure()
+            {
+                bind(ExecutorPoolService.class).to(ExecutorPoolService.class);
+            }
+        });
         setupSwagger(servletContext);
     }
 
