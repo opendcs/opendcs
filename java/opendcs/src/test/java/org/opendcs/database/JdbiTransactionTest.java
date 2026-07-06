@@ -88,6 +88,7 @@ class JdbiTransactionTest
         {
             var h = tx.connection(Handle.class).get();
             h.createUpdate("create table simple_table(id integer, name varchar(200))").execute();
+            tx.commit();
         }
 
         try (DataTransaction tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
@@ -133,6 +134,7 @@ class JdbiTransactionTest
         {
             var h = tx.connection(Handle.class).get();
             h.createUpdate("create table delete_test(id integer, name varchar(200))").execute();
+            tx.commit();
         }
         try (DataTransaction tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
         {
@@ -180,6 +182,7 @@ class JdbiTransactionTest
         {
             var h = tx.connection(Handle.class).get();
             h.createUpdate("create table commit_test(id integer, name varchar(200))").execute();
+            tx.commit();
         }
 
         // Act: insert with explicit commit, then close

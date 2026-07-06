@@ -976,6 +976,7 @@ public class RefListFrame extends JFrame
 							publish("\t" + curEnum.enumName);
 							enumDao.writeEnum(tx, curEnum);
 						}
+						tx.commit();
 					}
 				}
 				if (unitsChanged || convertersChanged)
