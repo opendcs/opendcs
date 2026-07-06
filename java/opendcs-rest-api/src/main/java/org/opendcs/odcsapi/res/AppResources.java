@@ -186,14 +186,22 @@ public final class AppResources extends OpenDcsResource
 		final var db = createDb();
 		try (var tx = db.newTransaction())
 		{
-			final var appDao = db.getDao(LoadingAppDao.class)
-								   .orElseThrow(() -> UNABLE_TO_GET_APP_DAO);
-			CompAppInfo compApp = map(app);
-			final var savedApp = appDao.save(tx, compApp);
-			tx.commit();
-			return Response.status(Response.Status.CREATED)
-					.entity(mapLoading(savedApp))
-					.build();
+			try
+			{
+				final var appDao = db.getDao(LoadingAppDao.class)
+									   .orElseThrow(() -> UNABLE_TO_GET_APP_DAO);
+				CompAppInfo compApp = map(app);
+				final var savedApp = appDao.save(tx, compApp);
+				tx.commit();
+				return Response.status(Response.Status.CREATED)
+						.entity(mapLoading(savedApp))
+						.build();
+			}
+			catch (OpenDcsDataException ex)
+			{
+				rollbackQuietly(tx, ex);
+				throw ex;
+			}
 		}
 		catch (OpenDcsDataException ex)
 		{
@@ -258,12 +266,20 @@ public final class AppResources extends OpenDcsResource
 		final var db = createDb();
 		try (var tx = db.newTransaction())
 		{
-			final var appDao = db.getDao(LoadingAppDao.class)
-								   .orElseThrow(() -> UNABLE_TO_GET_APP_DAO);
-			appDao.delete(tx, DbKey.createDbKey(appId));
-			tx.commit();
-			return Response.noContent()
-					.entity("appId with ID " + appId + " deleted").build();
+			try
+			{
+				final var appDao = db.getDao(LoadingAppDao.class)
+									   .orElseThrow(() -> UNABLE_TO_GET_APP_DAO);
+				appDao.delete(tx, DbKey.createDbKey(appId));
+				tx.commit();
+				return Response.noContent()
+						.entity("appId with ID " + appId + " deleted").build();
+			}
+			catch (OpenDcsDataException ex)
+			{
+				rollbackQuietly(tx, ex);
+				throw ex;
+			}
 		}
 		catch (OpenDcsDataException ex)
 		{

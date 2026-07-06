@@ -163,11 +163,19 @@ public final class EquipmentResources extends OpenDcsResource
         final var db = createDb();
         try (var tx = db.newTransaction())
         {
-            final var dao = db.getDao(EquipmentModelDao.class)
-                              .orElseThrow(() -> UNABLE_TO_GET_EQUIPMENT_DAO);
-            final EquipmentModel saved = dao.saveEquipmentModel(tx, map(apiEquipmentModel));
-            tx.commit();
-            return Response.status(Response.Status.CREATED).entity(mapFull(saved)).build();
+            try
+            {
+                final var dao = db.getDao(EquipmentModelDao.class)
+                                  .orElseThrow(() -> UNABLE_TO_GET_EQUIPMENT_DAO);
+                final EquipmentModel saved = dao.saveEquipmentModel(tx, map(apiEquipmentModel));
+                tx.commit();
+                return Response.status(Response.Status.CREATED).entity(mapFull(saved)).build();
+            }
+            catch (OpenDcsDataException ex)
+            {
+                rollbackQuietly(tx, ex);
+                throw ex;
+            }
         }
         catch (OpenDcsDataException ex)
         {
@@ -204,11 +212,19 @@ public final class EquipmentResources extends OpenDcsResource
         final var db = createDb();
         try (var tx = db.newTransaction())
         {
-            final var dao = db.getDao(EquipmentModelDao.class)
-                              .orElseThrow(() -> UNABLE_TO_GET_EQUIPMENT_DAO);
-            dao.deleteEquipmentModel(tx, DbKey.createDbKey(equipmentId));
-            tx.commit();
-            return Response.noContent().build();
+            try
+            {
+                final var dao = db.getDao(EquipmentModelDao.class)
+                                  .orElseThrow(() -> UNABLE_TO_GET_EQUIPMENT_DAO);
+                dao.deleteEquipmentModel(tx, DbKey.createDbKey(equipmentId));
+                tx.commit();
+                return Response.noContent().build();
+            }
+            catch (OpenDcsDataException ex)
+            {
+                rollbackQuietly(tx, ex);
+                throw ex;
+            }
         }
         catch (OpenDcsDataException ex)
         {

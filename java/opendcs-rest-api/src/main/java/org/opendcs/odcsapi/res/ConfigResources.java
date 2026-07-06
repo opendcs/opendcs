@@ -328,15 +328,23 @@ public final class ConfigResources extends OpenDcsResource
 		final var db = createDb();
 		try (var tx = db.newTransaction())
 		{
-			final var dataTypeDao = db.getDao(DataTypeDao.class).orElseThrow();
-			final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
-			var configIn = map(config, dataTypeDao, tx);
+			try
+			{
+				final var dataTypeDao = db.getDao(DataTypeDao.class).orElseThrow();
+				final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
+				var configIn = map(config, dataTypeDao, tx);
 
-			final var configOut =  dao.save(tx, configIn);
-			tx.commit();
-			return Response.status(Response.Status.CREATED)
-						   .entity(map(configOut))
-						   .build();
+				final var configOut =  dao.save(tx, configIn);
+				tx.commit();
+				return Response.status(Response.Status.CREATED)
+							   .entity(map(configOut))
+							   .build();
+			}
+			catch (OpenDcsDataException ex)
+			{
+				rollbackQuietly(tx, ex);
+				throw ex;
+			}
 		}
 		catch (OpenDcsDataException ex)
 		{
@@ -556,17 +564,25 @@ public final class ConfigResources extends OpenDcsResource
 		final var db = createDb();
 		try (var tx = db.newTransaction())
 		{
-			final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
-			// no need to check if platforms use script, both the platform table
-			// has a foreign key on platformconfig that prevents deletion if used.
-			// will likely want to handle "foreign key errors" better
-			// but that should be generic to all deletes, not super specific.
+			try
+			{
+				final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
+				// no need to check if platforms use script, both the platform table
+				// has a foreign key on platformconfig that prevents deletion if used.
+				// will likely want to handle "foreign key errors" better
+				// but that should be generic to all deletes, not super specific.
 
-			dao.delete(tx, DbKey.createDbKey(configId));
-			tx.commit();
-			return Response.noContent()
-					.entity("Config with ID " + configId + " deleted")
-					.build();
+				dao.delete(tx, DbKey.createDbKey(configId));
+				tx.commit();
+				return Response.noContent()
+						.entity("Config with ID " + configId + " deleted")
+						.build();
+			}
+			catch (OpenDcsDataException ex)
+			{
+				rollbackQuietly(tx, ex);
+				throw ex;
+			}
 		}
 		catch (OpenDcsDataException ex)
 		{

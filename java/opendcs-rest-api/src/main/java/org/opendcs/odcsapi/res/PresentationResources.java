@@ -243,13 +243,21 @@ public final class PresentationResources extends OpenDcsResource
         final var db = createDb();
         try (var tx = db.newTransaction())
         {
-            final var dao = db.getDao(PresentationGroupDao.class).orElseThrow(() -> UNABLE_TO_GET_PRESENTATIONGROUP_DAO);
-            final var dtDao = db.getDao(DataTypeDao.class).orElseThrow(() -> DatatypeUnitResources.UNABLE_TO_GET_DT_DAO);
-            final var group = dao.save(tx, map(tx, dtDao, presGrp));
-            tx.commit();
-            return Response.status(Response.Status.CREATED)
-                           .entity(map(group))
-                           .build();
+            try
+            {
+                final var dao = db.getDao(PresentationGroupDao.class).orElseThrow(() -> UNABLE_TO_GET_PRESENTATIONGROUP_DAO);
+                final var dtDao = db.getDao(DataTypeDao.class).orElseThrow(() -> DatatypeUnitResources.UNABLE_TO_GET_DT_DAO);
+                final var group = dao.save(tx, map(tx, dtDao, presGrp));
+                tx.commit();
+                return Response.status(Response.Status.CREATED)
+                               .entity(map(group))
+                               .build();
+            }
+            catch (OpenDcsDataException ex)
+            {
+                rollbackQuietly(tx, ex);
+                throw ex;
+            }
         }
         catch (OpenDcsDataException ex)
         {
@@ -338,13 +346,21 @@ public final class PresentationResources extends OpenDcsResource
         final var db = createDb();
         try (var tx = db.newTransaction())
         {
-            final var dao = db.getDao(PresentationGroupDao.class).orElseThrow(() -> UNABLE_TO_GET_PRESENTATIONGROUP_DAO);
+            try
+            {
+                final var dao = db.getDao(PresentationGroupDao.class).orElseThrow(() -> UNABLE_TO_GET_PRESENTATIONGROUP_DAO);
 
-            dao.delete(tx, DbKey.createDbKey(groupId));
-            tx.commit();
-            return Response.noContent()
-                           .entity("Presentation Group with ID " + groupId + " deleted")
-                           .build();
+                dao.delete(tx, DbKey.createDbKey(groupId));
+                tx.commit();
+                return Response.noContent()
+                               .entity("Presentation Group with ID " + groupId + " deleted")
+                               .build();
+            }
+            catch (OpenDcsDataException ex)
+            {
+                rollbackQuietly(tx, ex);
+                throw ex;
+            }
         }
         catch (OpenDcsDataException ex)
         {

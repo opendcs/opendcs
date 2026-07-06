@@ -134,22 +134,30 @@ public final class OidcCallback extends OpenDcsResource
 
                 try (var tx = db.newTransaction())
                 {
-                    var provider = db.getDao(IdentityProviderDao.class).orElseThrow()
-                                    .getIdentityProvider(tx, oidcProvider);
-                    if (provider.isEmpty()) 
+                    try
                     {
-                        location = URI.create(String.format(defaultTarget, URLEncoder.encode("Unable to handle request.", StandardCharsets.UTF_8)));
-                    }
-                    else
-                    {
-                        var userOpt = provider.get().login(db, tx, new AuthCodeCredentials(code));
-                        if (userOpt.isPresent())
+                        var provider = db.getDao(IdentityProviderDao.class).orElseThrow()
+                                        .getIdentityProvider(tx, oidcProvider);
+                        if (provider.isEmpty())
                         {
-                            var user = userOpt.get();
-                            tx.commit();
-                            response =  updateSessionWithUser(user, httpRequest);
-                            location = URI.create(redirectAfterAuth);
+                            location = URI.create(String.format(defaultTarget, URLEncoder.encode("Unable to handle request.", StandardCharsets.UTF_8)));
                         }
+                        else
+                        {
+                            var userOpt = provider.get().login(db, tx, new AuthCodeCredentials(code));
+                            if (userOpt.isPresent())
+                            {
+                                var user = userOpt.get();
+                                tx.commit();
+                                response =  updateSessionWithUser(user, httpRequest);
+                                location = URI.create(redirectAfterAuth);
+                            }
+                        }
+                    }
+                    catch (OpenDcsAuthException | OpenDcsDataException ex)
+                    {
+                        rollbackQuietly(tx, ex);
+                        throw ex;
                     }
                 }
             }
@@ -244,44 +252,52 @@ public final class OidcCallback extends OpenDcsResource
                 final var db = this.createDb();
                 try (var tx = db.newTransaction())
                 {
-                    var umDao = db.getDao(IdentityProviderDao.class).orElseThrow(() -> new OpenDcsDataException("UserManagement not currently supported."));
-                    var idps = umDao.getIdentityProvidersForSubject(tx, subject);
-                    if (!idps.isEmpty())
+                    try
                     {
-                        for(var idp: idps)
+                        var umDao = db.getDao(IdentityProviderDao.class).orElseThrow(() -> new OpenDcsDataException("UserManagement not currently supported."));
+                        var idps = umDao.getIdentityProvidersForSubject(tx, subject);
+                        if (!idps.isEmpty())
                         {
-                            // A single Identity Provider may serve multiple clients, as in the case of our 
-                            // tests 'opendcs' and 'opendcs-public', both use the same subject id value
-                            // so we have to further distinguish between them.
-                            if (idp instanceof OidcIdentityProvider oidcIdp && oidcIdp.validFor(jwt))
+                            for(var idp: idps)
                             {
-                                var userOpt = idp.login(db, tx, new JwtCredentials(accessToken));
-                                if (userOpt.isPresent())
+                                // A single Identity Provider may serve multiple clients, as in the case of our
+                                // tests 'opendcs' and 'opendcs-public', both use the same subject id value
+                                // so we have to further distinguish between them.
+                                if (idp instanceof OidcIdentityProvider oidcIdp && oidcIdp.validFor(jwt))
                                 {
-                                    var user = userOpt.get();
-                                    tx.commit();
-                                    response = updateSessionWithUser(user, httpRequest);
-                                    break;
+                                    var userOpt = idp.login(db, tx, new JwtCredentials(accessToken));
+                                    if (userOpt.isPresent())
+                                    {
+                                        var user = userOpt.get();
+                                        tx.commit();
+                                        response = updateSessionWithUser(user, httpRequest);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        else // we don't already know about this user so now we search
+                        {
+                            idps = umDao.getIdentityProviders(tx, -1, -1);
+                            for (var idp: idps)
+                            {
+                                if (idp instanceof OidcIdentityProvider oidcProvider &&
+                                    oidcProvider.validFor(jwt) &&
+
+                                    oidcProvider.canRegister())
+                                {
+                                        var user = oidcProvider.register(db, tx, new JwtCredentials(accessToken));
+                                        tx.commit();
+                                        response = updateSessionWithUser(user, httpRequest);
+                                        break;
                                 }
                             }
                         }
                     }
-                    else // we don't already know about this user so now we search
+                    catch (OpenDcsAuthException | OpenDcsDataException ex)
                     {
-                        idps = umDao.getIdentityProviders(tx, -1, -1);
-                        for (var idp: idps)
-                        {
-                            if (idp instanceof OidcIdentityProvider oidcProvider &&
-                                oidcProvider.validFor(jwt) &&
-                                
-                                oidcProvider.canRegister())
-                            {
-                                    var user = oidcProvider.register(db, tx, new JwtCredentials(accessToken));
-                                    tx.commit();
-                                    response = updateSessionWithUser(user, httpRequest);
-                                    break;
-                            }
-                        }
+                        rollbackQuietly(tx, ex);
+                        throw ex;
                     }
                 }
             }

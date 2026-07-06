@@ -122,12 +122,12 @@ class JdbiTransactionTest
     }
 
     /**
-     * A DAO that does DELETE-then-INSERT in a single transaction should roll back the DELETE
-     * if the INSERT (or anything after it) throws before commit. Closing the transaction
-     * without committing must NOT permanently persist the DELETE.
+     * close() commits by default (matching Jdbi's commit-and-close happy path), so a DAO/resource
+     * that does DELETE-then-INSERT in a single transaction must explicitly roll back if the INSERT
+     * (or anything after it) throws before commit — relying on close() to undo it is no longer safe.
      */
     @Test
-    void test_close_without_commit_rolls_back_delete() throws Exception
+    void test_explicit_rollback_on_error_undoes_delete() throws Exception
     {
         // Arrange: create table and seed one row in auto-commit mode
         try (DataTransaction tx = new JdbiTransaction(jdbi.open(), dummyContext))
@@ -143,30 +143,38 @@ class JdbiTransactionTest
             tx.commit();
         }
 
-        // Act: simulate the delete-then-failed-insert pattern without commit
+        // Act: simulate the delete-then-failed-insert pattern, explicitly rolling back on failure
+        // — mirrors the try/catch(rollback)/throw pattern used by the REST resources
         assertThrows(Exception.class, () ->
         {
             try (DataTransaction tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
             {
-                var h = tx.connection(Handle.class).get();
-                // Step 1: DELETE (succeeds) — mirrors PresentationGroupDaoImpl.updateDataPresentations
-                h.createUpdate("delete from delete_test where id = 1").execute();
-                // Step 2: INSERT throws — mirrors a bad-data / constraint failure during re-insert
-                h.createUpdate("insert into delete_test(id,name) values (999, null)").execute(); // name is varchar, null OK
-                // Simulate a failure that would occur before tx.commit() is called
-                throw new RuntimeException("Simulated failure during insert batch");
-                // close() is called by try-with-resources here — MUST rollback, not commit
+                try
+                {
+                    var h = tx.connection(Handle.class).get();
+                    // Step 1: DELETE (succeeds) — mirrors PresentationGroupDaoImpl.updateDataPresentations
+                    h.createUpdate("delete from delete_test where id = 1").execute();
+                    // Step 2: INSERT throws — mirrors a bad-data / constraint failure during re-insert
+                    h.createUpdate("insert into delete_test(id,name) values (999, null)").execute(); // name is varchar, null OK
+                    // Simulate a failure that would occur before tx.commit() is called
+                    throw new RuntimeException("Simulated failure during insert batch");
+                }
+                catch (RuntimeException ex)
+                {
+                    tx.rollback();
+                    throw ex;
+                }
             }
         });
 
-        // Assert: the original row must still exist — DELETE was rolled back with the transaction
+        // Assert: the original row must still exist — DELETE was explicitly rolled back
         try (DataTransaction tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
         {
             var h = tx.connection(Handle.class).get();
             var count = h.createQuery("select count(*) from delete_test where id = 1")
                          .map(r -> r.getColumn(1, Integer.class))
                          .one();
-            assertEquals(1, count, "DELETE must be rolled back when transaction is closed without commit");
+            assertEquals(1, count, "DELETE must be rolled back when the caller explicitly rolls back on error");
         }
     }
 
