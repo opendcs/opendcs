@@ -17,6 +17,8 @@ package org.opendcs.odcsapi.res;
 
 import decodes.tsdb.ConstraintException;
 import decodes.tsdb.TsdbException;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
@@ -41,6 +43,9 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 	@Override
 	public Response toResponse(Throwable ex)
 	{
+		var span = Span.current();
+		span.recordException(ex);
+		span.setStatus(StatusCode.ERROR, ex.getMessage());
 		return switch(ex)
 		{
 			case WebAppException webAppException -> handle(webAppException);

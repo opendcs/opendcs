@@ -35,6 +35,8 @@ dependencies {
     }
 
     extra(libs.ch.qos.logback) // need to manually add this to classpath in test tasks
+    extra(libs.io.opentelemetry.instrumentation.logback.mdc)
+    testRuntimeOnly(libs.io.opentelemetry.instrumentation.logback.mdc)
 
     testImplementation project(":opendcs-schemas")
     testImplementation project(":opendcs-schemas-cwms-oracle")
