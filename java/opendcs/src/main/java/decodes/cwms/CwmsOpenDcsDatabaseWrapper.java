@@ -28,5 +28,6 @@ public class CwmsOpenDcsDatabaseWrapper extends AbstractJdbiOpenDcsDatabaseWrapp
                                                                                 .orElseThrow(() -> new OpenDcsDataRuntimeException("No Timeseries database available during initial setup."))));
         mapDao(SiteReferenceMetaData.class, wrapper);
         mapDao(CwmsLocationLevelDAO.class, wrapper);
+        this.jdbi.define("numeric_date", false);
     }
 }

@@ -21,7 +21,7 @@ import decodes.db.PlatformSensor;
 import decodes.db.SiteName;
 import decodes.db.TransportMedium;
 
-@EnableIfTsDb({"OpenDCS-Postgres", "OpenDCS-Oracle"})
+@EnableIfTsDb({"OpenDCS-Postgres", "OpenDCS-Oracle", "CWMS-Oracle"})
 @DecodesConfigurationRequired({
     "shared/test-sites.xml",
     "SimpleDecodesTest/site-OKVI4.xml",

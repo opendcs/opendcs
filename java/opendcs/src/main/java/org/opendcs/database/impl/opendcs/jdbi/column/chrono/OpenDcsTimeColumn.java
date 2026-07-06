@@ -38,7 +38,7 @@ public final class OpenDcsTimeColumn implements ColumnMapper<Date>
                 break;
             }
             
-            default: throw new SQLException("Unable to determine how to convert column " + meta.getColumnName(columnNumber) + " to a Date");
+            default: throw new SQLException("Unable to determine how to convert column " + meta.getColumnName(columnNumber) + "of type " + type + " to a Date");
         }
         return ret;
     }
