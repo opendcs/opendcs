@@ -75,6 +75,7 @@ dependencies {
     implementation(libs.io.opentelemetry.api)
     implementation(libs.io.opentelemetry.sdk)
     implementation(libs.io.opentelemetry.exporter.logging)
+    implementation(libs.io.opentelemetry.exporter.otlp)
     implementation(libs.io.opentelemetry.instrumentation.java)
 
     webjars(libs.swagger.ui)

@@ -118,7 +118,8 @@ org-eclipse-jetty-webapp = { module = "org.eclipse.jetty.ee11:jetty-ee11-webapp"
 io-opentelemetry-instrumentation-logback-mdc = { module = "io.opentelemetry.instrumentation:opentelemetry-logback-mdc-1.0", version.ref = "opentelemetry-java-logging" }
 io-opentelemetry-api = { module="io.opentelemetry:opentelemetry-api", version.ref = "opentelemetry" }
 io-opentelemetry-sdk = { module="io.opentelemetry:opentelemetry-sdk", version.ref = "opentelemetry" }
-io-opentelemetry-exporter-logging = { module="io.opentelemetry:opentelemetry-exporter-logging", version.ref="opentelemetry" }
+io-opentelemetry-exporter-logging = { module="io.opentelemetry:opentelemetry-exporter-logging", version.ref = "opentelemetry" }
+io-opentelemetry-exporter-otlp = { "io.opentelemetry:opentelemetry-exporter-otlp", version.ref = "opentelemetry" }
 io-opentelemetry-instrumentation-java = { module="io.opentelemetry.instrumentation:opentelemetry-instrumentation-api", version.ref = "opentelemetry-java" }
 
 
