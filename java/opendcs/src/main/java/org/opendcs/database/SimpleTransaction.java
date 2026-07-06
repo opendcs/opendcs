@@ -64,9 +64,12 @@ public final class SimpleTransaction implements DataTransaction
             {
                 conn.rollback();
             }
-            catch (SQLException rollbackEx)
+            catch (SQLException | RuntimeException rollbackEx)
             {
-                // Best-effort rollback; still close the connection
+                // Best-effort rollback; still close the connection. Some Connection
+                // implementations (e.g. XmlConnection, which backs the XML DECODES
+                // database and doesn't support real transactions) throw an unchecked
+                // UnsupportedOperationException instead of SQLException.
             }
             conn.close();
         }
