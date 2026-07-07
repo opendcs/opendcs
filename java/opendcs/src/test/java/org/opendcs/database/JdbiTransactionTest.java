@@ -3,6 +3,7 @@ package org.opendcs.database;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -13,6 +14,7 @@ import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.statement.SqlStatements;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,7 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.Generator;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.api.TransactionContext;
 import org.opendcs.settings.api.OpenDcsSettings;
 
@@ -52,6 +55,10 @@ class JdbiTransactionTest
     void create_db()
     {
         jdbi = Jdbi.create("jdbc:derby:memory:db;create=true");
+        jdbi.getConfig(SqlStatements.class).addExceptionHandler((ex, ctx) ->
+        {
+            throw new OpenDcsDataRuntimeException("Error during query operation", ex);
+        });
     }
 
     @AfterEach
@@ -129,7 +136,7 @@ class JdbiTransactionTest
         // getting thrown before we call commit. This is definitely expected behavior (and I suspect it's 
         // implementation dependent, this test is h2). So it would appear we need to expand on our 
         // mechanism of error handling. Perhaps something around https://jdbi.org/#_exception_handling
-        var dataException = assertThrows(OpenDcsDataException.class, () ->
+        var dataException = assertThrows(OpenDcsDataRuntimeException.class, () ->
         {
             try (var tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
             {
@@ -147,6 +154,6 @@ class JdbiTransactionTest
                  }
             }
         });
-        assertNotEquals(0, dataException.getSuppressed().length);
+        assertNotNull(dataException.getCause());
     }
 }
