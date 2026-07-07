@@ -50,7 +50,9 @@ import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
+import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.LoadingAppDao;
 
 /**
@@ -186,27 +188,32 @@ public final class AppResources extends OpenDcsResource
 		final var db = createDb();
 		try (var tx = db.newTransaction())
 		{
-			try
-			{
-				final var appDao = db.getDao(LoadingAppDao.class)
-									   .orElseThrow(() -> UNABLE_TO_GET_APP_DAO);
-				CompAppInfo compApp = map(app);
-				final var savedApp = appDao.save(tx, compApp);
-				tx.commit();
-				return Response.status(Response.Status.CREATED)
-						.entity(mapLoading(savedApp))
-						.build();
-			}
-			catch (OpenDcsDataException ex)
-			{
-				rollbackQuietly(tx, ex);
-				throw ex;
-			}
+			return doPostApp(db, tx, app);
 		}
 		catch (OpenDcsDataException ex)
 		{
 			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
 									  "Unable save Loading App", ex);
+		}
+	}
+
+	private Response doPostApp(OpenDcsDatabase db, DataTransaction tx, ApiLoadingApp app) throws OpenDcsDataException, WebAppException
+	{
+		try
+		{
+			final var appDao = db.getDao(LoadingAppDao.class)
+								   .orElseThrow(() -> UNABLE_TO_GET_APP_DAO);
+			CompAppInfo compApp = map(app);
+			final var savedApp = appDao.save(tx, compApp);
+			tx.commit();
+			return Response.status(Response.Status.CREATED)
+					.entity(mapLoading(savedApp))
+					.build();
+		}
+		catch (OpenDcsDataException ex)
+		{
+			rollbackQuietly(tx, ex);
+			throw ex;
 		}
 	}
 
@@ -266,25 +273,30 @@ public final class AppResources extends OpenDcsResource
 		final var db = createDb();
 		try (var tx = db.newTransaction())
 		{
-			try
-			{
-				final var appDao = db.getDao(LoadingAppDao.class)
-									   .orElseThrow(() -> UNABLE_TO_GET_APP_DAO);
-				appDao.delete(tx, DbKey.createDbKey(appId));
-				tx.commit();
-				return Response.noContent()
-						.entity("appId with ID " + appId + " deleted").build();
-			}
-			catch (OpenDcsDataException ex)
-			{
-				rollbackQuietly(tx, ex);
-				throw ex;
-			}
+			return doDeleteApp(db, tx, appId);
 		}
 		catch (OpenDcsDataException ex)
 		{
 			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
 									  "Unable to delete Loading APp", ex);
+		}
+	}
+
+	private Response doDeleteApp(OpenDcsDatabase db, DataTransaction tx, Long appId) throws OpenDcsDataException, WebAppException
+	{
+		try
+		{
+			final var appDao = db.getDao(LoadingAppDao.class)
+								   .orElseThrow(() -> UNABLE_TO_GET_APP_DAO);
+			appDao.delete(tx, DbKey.createDbKey(appId));
+			tx.commit();
+			return Response.noContent()
+					.entity("appId with ID " + appId + " deleted").build();
+		}
+		catch (OpenDcsDataException ex)
+		{
+			rollbackQuietly(tx, ex);
+			throw ex;
 		}
 	}
 

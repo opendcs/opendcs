@@ -46,6 +46,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.DataTypeDao;
 import org.opendcs.database.dai.PresentationGroupDao;
 import org.opendcs.odcsapi.beans.ApiPresentationElement;
@@ -243,26 +244,32 @@ public final class PresentationResources extends OpenDcsResource
         final var db = createDb();
         try (var tx = db.newTransaction())
         {
-            try
-            {
-                final var dao = db.getDao(PresentationGroupDao.class).orElseThrow(() -> UNABLE_TO_GET_PRESENTATIONGROUP_DAO);
-                final var dtDao = db.getDao(DataTypeDao.class).orElseThrow(() -> DatatypeUnitResources.UNABLE_TO_GET_DT_DAO);
-                final var group = dao.save(tx, map(tx, dtDao, presGrp));
-                tx.commit();
-                return Response.status(Response.Status.CREATED)
-                               .entity(map(group))
-                               .build();
-            }
-            catch (OpenDcsDataException ex)
-            {
-                rollbackQuietly(tx, ex);
-                throw ex;
-            }
+            return doPostPresentation(db, tx, presGrp);
         }
         catch (OpenDcsDataException ex)
         {
             throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
                                       "Unable to retrieve presentation group.", ex);
+        }
+    }
+
+    private Response doPostPresentation(OpenDcsDatabase db, DataTransaction tx, ApiPresentationGroup presGrp)
+            throws OpenDcsDataException, WebAppException
+    {
+        try
+        {
+            final var dao = db.getDao(PresentationGroupDao.class).orElseThrow(() -> UNABLE_TO_GET_PRESENTATIONGROUP_DAO);
+            final var dtDao = db.getDao(DataTypeDao.class).orElseThrow(() -> DatatypeUnitResources.UNABLE_TO_GET_DT_DAO);
+            final var group = dao.save(tx, map(tx, dtDao, presGrp));
+            tx.commit();
+            return Response.status(Response.Status.CREATED)
+                           .entity(map(group))
+                           .build();
+        }
+        catch (OpenDcsDataException ex)
+        {
+            rollbackQuietly(tx, ex);
+            throw ex;
         }
     }
 
@@ -346,32 +353,32 @@ public final class PresentationResources extends OpenDcsResource
         final var db = createDb();
         try (var tx = db.newTransaction())
         {
-            try
-            {
-                final var dao = db.getDao(PresentationGroupDao.class).orElseThrow(() -> UNABLE_TO_GET_PRESENTATIONGROUP_DAO);
-
-                dao.delete(tx, DbKey.createDbKey(groupId));
-                tx.commit();
-                return Response.noContent()
-                               .entity("Presentation Group with ID " + groupId + " deleted")
-                               .build();
-            }
-            catch (OpenDcsDataException ex)
-            {
-                rollbackQuietly(tx, ex);
-                throw ex;
-            }
+            return doDeletePresentation(db, tx, groupId);
         }
         catch (OpenDcsDataException ex)
         {
             throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
                                        "Unable to delete presentation group.", ex);
         }
+    }
 
-        // Left for reference when "foreign key conflicts" are handled better.
-        // return Response.status(Response.Status.METHOD_NOT_ALLOWED)
-        //         .entity(String.format("Cannot delete presentation group %s " +
-        //                 "because it is used by the following routing specs: %s", groupId, routeSpecs)).build();
+    private Response doDeletePresentation(OpenDcsDatabase db, DataTransaction tx, Long groupId)
+            throws OpenDcsDataException, WebAppException
+    {
+        try
+        {
+            final var dao = db.getDao(PresentationGroupDao.class).orElseThrow(() -> UNABLE_TO_GET_PRESENTATIONGROUP_DAO);
 
+            dao.delete(tx, DbKey.createDbKey(groupId));
+            tx.commit();
+            return Response.noContent()
+                           .entity("Presentation Group with ID " + groupId + " deleted")
+                           .build();
+        }
+        catch (OpenDcsDataException ex)
+        {
+            rollbackQuietly(tx, ex);
+            throw ex;
+        }
     }
 }

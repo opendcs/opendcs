@@ -48,7 +48,9 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.SiteDao;
 import org.opendcs.odcsapi.beans.ApiSite;
 import org.opendcs.odcsapi.beans.ApiSiteRef;
@@ -269,27 +271,32 @@ public final class SiteResources extends OpenDcsResource
 		final var db = createDb();
 		try (var tx = db.newTransaction())
 		{
-			try
-			{
-				var siteDao = db.getDao(SiteDao.class)
-								.orElseThrow(() -> UNABLE_TO_GET_SITE_DAO);
-				final Site dbSite = map(site);
-				var savedSite = siteDao.save(tx, dbSite);
-				var apiSiteOut = map(savedSite, savedSite.getProperties());
-				tx.commit();
-				return Response.status(Response.Status.CREATED)
-						.entity(apiSiteOut).build();
-			}
-			catch(OpenDcsDataException ex)
-			{
-				rollbackQuietly(tx, ex);
-				throw ex;
-			}
+			return doPostSite(db, tx, site);
 		}
 		catch(OpenDcsDataException ex)
 		{
 			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
 						 			  "Unable to save site ", ex);
+		}
+	}
+
+	private Response doPostSite(OpenDcsDatabase db, DataTransaction tx, ApiSite site) throws OpenDcsDataException, WebAppException
+	{
+		try
+		{
+			var siteDao = db.getDao(SiteDao.class)
+							.orElseThrow(() -> UNABLE_TO_GET_SITE_DAO);
+			final Site dbSite = map(site);
+			var savedSite = siteDao.save(tx, dbSite);
+			var apiSiteOut = map(savedSite, savedSite.getProperties());
+			tx.commit();
+			return Response.status(Response.Status.CREATED)
+					.entity(apiSiteOut).build();
+		}
+		catch(OpenDcsDataException ex)
+		{
+			rollbackQuietly(tx, ex);
+			throw ex;
 		}
 	}
 
@@ -358,20 +365,7 @@ public final class SiteResources extends OpenDcsResource
 		final var db = createDb();
 		try (var tx = db.newTransaction())
 		{
-			try
-			{
-				var siteDao = db.getDao(SiteDao.class)
-								.orElseThrow(() -> UNABLE_TO_GET_SITE_DAO);
-				siteDao.delete(tx, DbKey.createDbKey(siteId));
-				tx.commit();
-				return Response.noContent()
-						.entity("ID " + siteId + " deleted").build();
-			}
-			catch(OpenDcsDataException ex)
-			{
-				rollbackQuietly(tx, ex);
-				throw ex;
-			}
+			return doDeleteSite(db, tx, siteId);
 		}
 		catch(OpenDcsDataException ex)
 		{
@@ -379,5 +373,23 @@ public final class SiteResources extends OpenDcsResource
 						 			  "Unable to delete site ", ex);
 		}
 
+	}
+
+	private Response doDeleteSite(OpenDcsDatabase db, DataTransaction tx, Long siteId) throws OpenDcsDataException, WebAppException
+	{
+		try
+		{
+			var siteDao = db.getDao(SiteDao.class)
+							.orElseThrow(() -> UNABLE_TO_GET_SITE_DAO);
+			siteDao.delete(tx, DbKey.createDbKey(siteId));
+			tx.commit();
+			return Response.noContent()
+					.entity("ID " + siteId + " deleted").build();
+		}
+		catch(OpenDcsDataException ex)
+		{
+			rollbackQuietly(tx, ex);
+			throw ex;
+		}
 	}
 }

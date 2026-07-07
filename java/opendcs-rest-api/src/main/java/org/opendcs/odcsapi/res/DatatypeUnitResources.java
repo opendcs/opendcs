@@ -51,7 +51,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import opendcs.dai.DataTypeDAI;
 
+import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.EngineeringUnitDao;
 import org.opendcs.database.dai.UnitConverterDao;
 import org.opendcs.odcsapi.beans.ApiDataType;
@@ -236,25 +238,30 @@ public final class DatatypeUnitResources extends OpenDcsResource
 		final var db = createDb();
 		try (var tx = db.newTransaction())
 		{
-			try
-			{
-				final var unitsDao = db.getDao(EngineeringUnitDao.class)
-									   .orElseThrow(() -> UNABLE_TO_GET_EU_DAO);
-				EngineeringUnit unit = new EngineeringUnit(eu.getAbbr(), eu.getName(), eu.getFamily(), eu.getMeasures());
-				var unitOut = mapUnit(unitsDao.save(tx, unit));
-				tx.commit();
-				return Response.status(Response.Status.CREATED)
-						.entity(unitOut).build();
-			}
-			catch(OpenDcsDataException ex)
-			{
-				rollbackQuietly(tx, ex);
-				throw ex;
-			}
+			return doPostEU(db, tx, eu);
 		}
 		catch(OpenDcsDataException ex)
 		{
 			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to store Engineering Unit", ex);
+		}
+	}
+
+	private Response doPostEU(OpenDcsDatabase db, DataTransaction tx, ApiUnit eu) throws OpenDcsDataException, WebAppException
+	{
+		try
+		{
+			final var unitsDao = db.getDao(EngineeringUnitDao.class)
+								   .orElseThrow(() -> UNABLE_TO_GET_EU_DAO);
+			EngineeringUnit unit = new EngineeringUnit(eu.getAbbr(), eu.getName(), eu.getFamily(), eu.getMeasures());
+			var unitOut = mapUnit(unitsDao.save(tx, unit));
+			tx.commit();
+			return Response.status(Response.Status.CREATED)
+					.entity(unitOut).build();
+		}
+		catch(OpenDcsDataException ex)
+		{
+			rollbackQuietly(tx, ex);
+			throw ex;
 		}
 	}
 
@@ -287,23 +294,28 @@ public final class DatatypeUnitResources extends OpenDcsResource
 		final var db = createDb();
 		try (var tx = db.newTransaction())
 		{
-			try
-			{
-				var unitsDao = db.getDao(EngineeringUnitDao.class)
-								 .orElseThrow(() -> UNABLE_TO_GET_EU_DAO);
-				unitsDao.delete(tx, abbr);
-				tx.commit();
-				return Response.noContent().entity("EU with abbr " + abbr + " deleted").build();
-			}
-			catch(OpenDcsDataException ex)
-			{
-				rollbackQuietly(tx, ex);
-				throw ex;
-			}
+			return doDeleteEU(db, tx, abbr);
 		}
 		catch(OpenDcsDataException ex)
 		{
 			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to delete engineering unit", ex);
+		}
+	}
+
+	private Response doDeleteEU(OpenDcsDatabase db, DataTransaction tx, String abbr) throws OpenDcsDataException, WebAppException
+	{
+		try
+		{
+			var unitsDao = db.getDao(EngineeringUnitDao.class)
+							 .orElseThrow(() -> UNABLE_TO_GET_EU_DAO);
+			unitsDao.delete(tx, abbr);
+			tx.commit();
+			return Response.noContent().entity("EU with abbr " + abbr + " deleted").build();
+		}
+		catch(OpenDcsDataException ex)
+		{
+			rollbackQuietly(tx, ex);
+			throw ex;
 		}
 	}
 
@@ -392,24 +404,30 @@ public final class DatatypeUnitResources extends OpenDcsResource
 		final var db = createDb();
 		try (var tx = db.newTransaction())
 		{
-			try
-			{
-				var ucDao = db.getDao(UnitConverterDao.class)
-							  .orElseThrow(() -> UNABLE_TO_GET_UC_DAO);
-				var ucDbIn = ucDbMap(euc);
-				var ucOut = ucDao.save(tx, ucDbIn);
-				tx.commit();
-				return Response.created(null).entity(map(ucOut)).build();
-			}
-			catch(OpenDcsDataException | DatabaseException | DbException ex)
-			{
-				rollbackQuietly(tx, ex);
-				throw ex;
-			}
+			return doPostEUConv(db, tx, euc);
 		}
 		catch(OpenDcsDataException | DatabaseException | DbException ex)
 		{
 			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to save unit converter", ex);
+		}
+	}
+
+	private Response doPostEUConv(OpenDcsDatabase db, DataTransaction tx, ApiUnitConverter euc)
+			throws OpenDcsDataException, DatabaseException, DbException, WebAppException
+	{
+		try
+		{
+			var ucDao = db.getDao(UnitConverterDao.class)
+						  .orElseThrow(() -> UNABLE_TO_GET_UC_DAO);
+			var ucDbIn = ucDbMap(euc);
+			var ucOut = ucDao.save(tx, ucDbIn);
+			tx.commit();
+			return Response.created(null).entity(map(ucOut)).build();
+		}
+		catch(OpenDcsDataException | DatabaseException | DbException ex)
+		{
+			rollbackQuietly(tx, ex);
+			throw ex;
 		}
 	}
 
@@ -525,23 +543,28 @@ public final class DatatypeUnitResources extends OpenDcsResource
 		final var db = createDb();
 		try (var tx = db.newTransaction())
 		{
-			try
-			{
-				var ucDao = db.getDao(UnitConverterDao.class)
-								 .orElseThrow(() -> UNABLE_TO_GET_UC_DAO);
-				ucDao.delete(tx, DbKey.createDbKey(id));
-				tx.commit();
-				return Response.noContent().build();
-			}
-			catch(OpenDcsDataException  ex)
-			{
-				rollbackQuietly(tx, ex);
-				throw ex;
-			}
+			return doDeleteEUConv(db, tx, id);
 		}
 		catch(OpenDcsDataException  ex)
 		{
 			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to save unit conversion", ex);
+		}
+	}
+
+	private Response doDeleteEUConv(OpenDcsDatabase db, DataTransaction tx, Long id) throws OpenDcsDataException, WebAppException
+	{
+		try
+		{
+			var ucDao = db.getDao(UnitConverterDao.class)
+							 .orElseThrow(() -> UNABLE_TO_GET_UC_DAO);
+			ucDao.delete(tx, DbKey.createDbKey(id));
+			tx.commit();
+			return Response.noContent().build();
+		}
+		catch(OpenDcsDataException  ex)
+		{
+			rollbackQuietly(tx, ex);
+			throw ex;
 		}
 	}
 }

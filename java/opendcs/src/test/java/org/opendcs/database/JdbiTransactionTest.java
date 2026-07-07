@@ -143,29 +143,9 @@ class JdbiTransactionTest
             tx.commit();
         }
 
-        // Act: simulate the delete-then-failed-insert pattern, explicitly rolling back on failure
-        // — mirrors the try/catch(rollback)/throw pattern used by the REST resources
-        assertThrows(Exception.class, () ->
-        {
-            try (DataTransaction tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
-            {
-                try
-                {
-                    var h = tx.connection(Handle.class).get();
-                    // Step 1: DELETE (succeeds) — mirrors PresentationGroupDaoImpl.updateDataPresentations
-                    h.createUpdate("delete from delete_test where id = 1").execute();
-                    // Step 2: INSERT throws — mirrors a bad-data / constraint failure during re-insert
-                    h.createUpdate("insert into delete_test(id,name) values (999, null)").execute(); // name is varchar, null OK
-                    // Simulate a failure that would occur before tx.commit() is called
-                    throw new RuntimeException("Simulated failure during insert batch");
-                }
-                catch (RuntimeException ex)
-                {
-                    tx.rollback();
-                    throw ex;
-                }
-            }
-        });
+        // Act: simulate the delete-then-failed-insert pattern, explicitly rolling back on failure,
+        // the same shape as the REST resources' try/catch-and-rollback error path.
+        assertThrows(Exception.class, this::deleteThenFailInsert);
 
         // Assert: the original row must still exist — DELETE was explicitly rolled back
         try (DataTransaction tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
@@ -175,6 +155,30 @@ class JdbiTransactionTest
                          .map(r -> r.getColumn(1, Integer.class))
                          .one();
             assertEquals(1, count, "DELETE must be rolled back when the caller explicitly rolls back on error");
+        }
+    }
+
+    /**
+     * DELETE succeeds, then the INSERT fails before commit is reached; the catch block rolls
+     * back explicitly and rethrows, mirroring PresentationGroupDaoImpl.updateDataPresentations
+     * and the REST resources' error path.
+     */
+    private void deleteThenFailInsert() throws Exception
+    {
+        try (DataTransaction tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
+        {
+            try
+            {
+                var h = tx.connection(Handle.class).get();
+                h.createUpdate("delete from delete_test where id = 1").execute();
+                h.createUpdate("insert into delete_test(id,name) values (999, null)").execute();
+                throw new RuntimeException("Simulated failure during insert batch");
+            }
+            catch (RuntimeException ex)
+            {
+                tx.rollback();
+                throw ex;
+            }
         }
     }
 

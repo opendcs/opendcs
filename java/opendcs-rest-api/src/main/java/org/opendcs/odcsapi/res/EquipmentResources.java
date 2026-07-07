@@ -37,7 +37,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.EquipmentModelDao;
 import org.opendcs.odcsapi.beans.ApiEquipmentModel;
 import org.opendcs.odcsapi.beans.ApiEquipmentModelRef;
@@ -163,24 +165,30 @@ public final class EquipmentResources extends OpenDcsResource
         final var db = createDb();
         try (var tx = db.newTransaction())
         {
-            try
-            {
-                final var dao = db.getDao(EquipmentModelDao.class)
-                                  .orElseThrow(() -> UNABLE_TO_GET_EQUIPMENT_DAO);
-                final EquipmentModel saved = dao.saveEquipmentModel(tx, map(apiEquipmentModel));
-                tx.commit();
-                return Response.status(Response.Status.CREATED).entity(mapFull(saved)).build();
-            }
-            catch (OpenDcsDataException ex)
-            {
-                rollbackQuietly(tx, ex);
-                throw ex;
-            }
+            return doPostEquipment(db, tx, apiEquipmentModel);
         }
         catch (OpenDcsDataException ex)
         {
             throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
                                       "Unable to save equipment model.", ex);
+        }
+    }
+
+    private Response doPostEquipment(OpenDcsDatabase db, DataTransaction tx, ApiEquipmentModel apiEquipmentModel)
+            throws OpenDcsDataException, WebAppException
+    {
+        try
+        {
+            final var dao = db.getDao(EquipmentModelDao.class)
+                              .orElseThrow(() -> UNABLE_TO_GET_EQUIPMENT_DAO);
+            final EquipmentModel saved = dao.saveEquipmentModel(tx, map(apiEquipmentModel));
+            tx.commit();
+            return Response.status(Response.Status.CREATED).entity(mapFull(saved)).build();
+        }
+        catch (OpenDcsDataException ex)
+        {
+            rollbackQuietly(tx, ex);
+            throw ex;
         }
     }
 
@@ -212,24 +220,30 @@ public final class EquipmentResources extends OpenDcsResource
         final var db = createDb();
         try (var tx = db.newTransaction())
         {
-            try
-            {
-                final var dao = db.getDao(EquipmentModelDao.class)
-                                  .orElseThrow(() -> UNABLE_TO_GET_EQUIPMENT_DAO);
-                dao.deleteEquipmentModel(tx, DbKey.createDbKey(equipmentId));
-                tx.commit();
-                return Response.noContent().build();
-            }
-            catch (OpenDcsDataException ex)
-            {
-                rollbackQuietly(tx, ex);
-                throw ex;
-            }
+            return doDeleteEquipment(db, tx, equipmentId);
         }
         catch (OpenDcsDataException ex)
         {
             throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
                                       "Unable to delete equipment model.", ex);
+        }
+    }
+
+    private Response doDeleteEquipment(OpenDcsDatabase db, DataTransaction tx, Long equipmentId)
+            throws OpenDcsDataException, WebAppException
+    {
+        try
+        {
+            final var dao = db.getDao(EquipmentModelDao.class)
+                              .orElseThrow(() -> UNABLE_TO_GET_EQUIPMENT_DAO);
+            dao.deleteEquipmentModel(tx, DbKey.createDbKey(equipmentId));
+            tx.commit();
+            return Response.noContent().build();
+        }
+        catch (OpenDcsDataException ex)
+        {
+            rollbackQuietly(tx, ex);
+            throw ex;
         }
     }
 

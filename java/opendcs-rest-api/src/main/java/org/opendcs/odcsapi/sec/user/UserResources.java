@@ -3,7 +3,9 @@ package org.opendcs.odcsapi.sec.user;
 import org.opendcs.authentication.OpenDcsAuthException;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityProvider;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInProviderCredentials;
+import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.IdentityProviderDao;
 import org.opendcs.odcsapi.beans.ApiPasswordChange;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
@@ -75,46 +77,52 @@ public final class UserResources extends OpenDcsResource
         final var idpDao = db.getDao(IdentityProviderDao.class).orElseThrow(() -> UNABLE_TO_GET_IDP_DAO);
         try (var tx = db.newTransaction())
         {
-            try
-            {
-                var providers = idpDao.getIdentityProvidersForSubject(tx, sessionPrincipal.getName());
-                BuiltInIdentityProvider idp = null;
-                for (var provider: providers)
-                {
-                    if (provider.canUpdateCredentials() && (provider instanceof BuiltInIdentityProvider bidp))
-                    {
-                        idp = bidp;
-                        break;
-                    }
-                }
-                if (idp == null)
-                {
-                    throw new WebAppException(Response.Status.FORBIDDEN.getStatusCode(), "Unable to update password");
-                }
-
-                // check current password
-                if (idp.login(db, tx, new BuiltInProviderCredentials(sessionPrincipal.getName(), passwordChange.currentPassword())).isPresent())
-                {
-                    idp.updateUserCredentials(db, tx, sessionPrincipal.getUser(), new BuiltInProviderCredentials(sessionPrincipal.getName(), passwordChange.newPassword()));
-                    tx.commit();
-                }
-                else
-                {
-                    throw new WebAppException(Response.Status.FORBIDDEN.getStatusCode(), "Unable to update password");
-                }
-            }
-            catch (OpenDcsDataException | OpenDcsAuthException ex)
-            {
-                rollbackQuietly(tx, ex);
-                throw ex;
-            }
+            doUpdatePassword(db, tx, idpDao, sessionPrincipal, passwordChange);
         }
         catch (OpenDcsDataException | OpenDcsAuthException ex)
         {
             throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to process password change.", ex);
         }
 
-
         return Response.noContent().build();
+    }
+
+    private void doUpdatePassword(OpenDcsDatabase db, DataTransaction tx, IdentityProviderDao idpDao,
+            OpenDcsPrincipal sessionPrincipal, ApiPasswordChange passwordChange)
+            throws OpenDcsDataException, OpenDcsAuthException, WebAppException
+    {
+        try
+        {
+            var providers = idpDao.getIdentityProvidersForSubject(tx, sessionPrincipal.getName());
+            BuiltInIdentityProvider idp = null;
+            for (var provider: providers)
+            {
+                if (provider.canUpdateCredentials() && (provider instanceof BuiltInIdentityProvider bidp))
+                {
+                    idp = bidp;
+                    break;
+                }
+            }
+            if (idp == null)
+            {
+                throw new WebAppException(Response.Status.FORBIDDEN.getStatusCode(), "Unable to update password");
+            }
+
+            // check current password
+            if (idp.login(db, tx, new BuiltInProviderCredentials(sessionPrincipal.getName(), passwordChange.currentPassword())).isPresent())
+            {
+                idp.updateUserCredentials(db, tx, sessionPrincipal.getUser(), new BuiltInProviderCredentials(sessionPrincipal.getName(), passwordChange.newPassword()));
+                tx.commit();
+            }
+            else
+            {
+                throw new WebAppException(Response.Status.FORBIDDEN.getStatusCode(), "Unable to update password");
+            }
+        }
+        catch (OpenDcsDataException | OpenDcsAuthException ex)
+        {
+            rollbackQuietly(tx, ex);
+            throw ex;
+        }
     }
 }
