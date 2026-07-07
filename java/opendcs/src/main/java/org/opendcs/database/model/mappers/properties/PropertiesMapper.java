@@ -47,10 +47,7 @@ public final class PropertiesMapper extends PrefixRowMapper<Pair<String,String>,
 
     /**
      * Create the basic set of columns and required join definition to pull in data for this mapper.
-     * @param joinType type of join, without the word "join", can be null
-     * @param idColumn
-     * @param otherTable
-     * @param otherIdColumn
+
      * @return
      */
     @Override

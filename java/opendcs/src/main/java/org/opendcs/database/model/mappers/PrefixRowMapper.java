@@ -78,10 +78,7 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
 
     /**
      * Create the basic set of columns and required join definition to pull in data for this mapper.
-     * @param joinType type of join, without the word "join", can be null
-     * @param idColumn
-     * @param otherTable
-     * @param otherIdColumn
+
      * @return
      */
     public String columnsForSelect()

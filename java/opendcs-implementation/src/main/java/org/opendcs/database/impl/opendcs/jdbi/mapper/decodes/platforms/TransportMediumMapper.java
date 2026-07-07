@@ -49,7 +49,7 @@ public class TransportMediumMapper extends PrefixRowMapper<TransportMedium,Trans
         TRANSMIT_INTERVAL("transmitinterval"),
         EQUIPMENT_ID("equipmentid"),
         TIME_ADJUSTMENT("timeadjustment"),
-        PREAMPLE("preamble"),
+        PREAMBLE("preamble"),
         TIME_ZONE("timezone"),
         LOGGER_TYPE("loggertype"),
         BAUD("baud"),

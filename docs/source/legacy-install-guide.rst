@@ -940,7 +940,7 @@ OpenDCS Database under PostgreSQL
 -----------------------------------
 
 OPENDCS comes with the required files to install the schema into a PostgresSQL database.
-Testing has been done with PostgreSQL 15; PostgreSQL is the minimum version required.
+Testing has been done with PostgreSQL 15; the minimum version required.
 
 Previous versions of OpenDCS have made a distinction between the "DECODES" database and the Timeseries Database.
 For the Opendcs-Postgres version The schema now combines everything. You may set the `NUM_TS_TIMESERIES` and `NUM_TEXT_TIMESERIES` 

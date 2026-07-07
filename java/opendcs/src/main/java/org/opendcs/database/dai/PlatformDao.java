@@ -119,7 +119,7 @@ public interface PlatformDao extends OpenDcsDao
     }
 
     /**
-     * Retrieve list of platforms fro mthe database of the provided medium type.
+     * Retrieve list of platforms from the database of the provided medium type.
      * Optionally retrieving all additional data, such as the Platform Config and Equipment information.
      * @param tx
      * @param limit

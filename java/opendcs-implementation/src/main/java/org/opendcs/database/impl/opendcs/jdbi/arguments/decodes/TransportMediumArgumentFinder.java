@@ -77,7 +77,7 @@ public class TransportMediumArgumentFinder implements NamedArgumentFinder
                 return ctx.findArgumentFor(char.class, tm.getParity());
             case PASSWORD:
                 return ctx.findArgumentFor(String.class, tm.getPassword());
-            case PREAMPLE:
+            case PREAMBLE:
                 return ctx.findArgumentFor(char.class, tm.getPreamble());
             case SCRIPT_NAME:
                 return ctx.findArgumentFor(String.class, tm.scriptName);
