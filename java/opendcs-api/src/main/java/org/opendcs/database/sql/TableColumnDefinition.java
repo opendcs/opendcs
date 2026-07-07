@@ -17,16 +17,23 @@ public interface TableColumnDefinition
      */
     String column();
 
+    /**
+     *
+     * @param <T> Expected Enum type
+     * @param enumClass Class for the enum type
+     * @param input input string.
+     * @return Enum or empty if string matches one of the values in that enum, usses case-insenstitve compare
+     */
     static <T extends Enum<T> & TableColumnDefinition> Optional<Enum<T>> fromString(Class<T> enumClass, String input)
     {
         final var enums = (List<T>)Arrays.asList(enumClass.getEnumConstants());
         for (var e: enums)
         {
-            if (e.column().equals(input))
+            if (e.column().equalsIgnoreCase(input))
             {
                 return Optional.of(e);
             }
-        }   
+        }
         return Optional.empty();
     }
 }

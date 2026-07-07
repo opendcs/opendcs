@@ -168,6 +168,10 @@ public class PlatformDaoImpl implements PlatformDao
         return p;
     }
 
+    /**
+     * At this time effectiveFor is intentionally ignored. Additional testing of the design around expired
+     * platforms needs to be implemented before full implementation.
+     */
     @Override
     public Optional<Platform> getByMediumId(DataTransaction tx, String mediumType, String mediumId,
             ZonedDateTime effectiveFor) throws OpenDcsDataException

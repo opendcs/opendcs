@@ -28,6 +28,20 @@ public class TransportMediumMapper extends PrefixRowMapper<TransportMedium,Trans
             tm.setMediumId(rs.getString(column(Columns.MEDIUM_ID)));
             tm.scriptName = rs.getString(column(Columns.SCRIPT_NAME));
             tm.setTimeZone(rs.getString(column(Columns.TIME_ZONE)));            
+            tm.assignedTime = rs.getInt(column(Columns.ASSIGNED_TIME));
+            tm.channelNum = rs.getInt(column(Columns.CHANNEL_NUMBER));
+            tm.setBaud(rs.getInt(column(Columns.BAUD)));
+            tm.setDataBits(rs.getInt(column(Columns.DATABITS)));
+            tm.setStopBits(rs.getInt(column(Columns.STOP_BITS)));
+            tm.setUsername(rs.getString(column(Columns.USERNAME)));
+            tm.setPassword(rs.getString(column(Columns.PASSWORD)));
+            var preamble = rs.getString(column(Columns.PREAMBLE));
+            if (!rs.wasNull() && preamble.length() == 1)
+            {
+                tm.setPreamble(preamble.charAt(0));
+            }
+            tm.setLoggerType(rs.getString(column(Columns.LOGGER_TYPE)));
+            tm.setDoLogin(rs.getBoolean(column(Columns.DO_LOGIN)));
         }
         return tm;
     }
