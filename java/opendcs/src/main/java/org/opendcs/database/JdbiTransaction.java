@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
+import org.jdbi.v3.core.transaction.TransactionException;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.TransactionContext;
@@ -48,7 +49,14 @@ public final class JdbiTransaction implements DataTransaction
     {
         if (jdbiHandle.isInTransaction())
         {
-            jdbiHandle.commit();
+            try
+            {
+                jdbiHandle.commit();
+            }
+            catch (TransactionException ex)
+            {
+                throw new OpenDcsDataException("Unable to commit transaction.", ex);
+            }
         }
     }
 
@@ -57,7 +65,14 @@ public final class JdbiTransaction implements DataTransaction
     {
         if (jdbiHandle.isInTransaction())
         {
-            jdbiHandle.rollback();
+            try
+            {
+                jdbiHandle.rollback();
+            }
+            catch (TransactionException ex)
+            {
+                throw new OpenDcsDataException("Unable to rollback transaction.", ex);
+            }
         }
     }
 

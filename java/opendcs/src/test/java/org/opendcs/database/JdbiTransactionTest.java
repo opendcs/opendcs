@@ -2,6 +2,8 @@ package org.opendcs.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
@@ -17,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.Generator;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.TransactionContext;
 import org.opendcs.settings.api.OpenDcsSettings;
 
@@ -86,9 +89,11 @@ class JdbiTransactionTest
         try (DataTransaction tx = new JdbiTransaction(jdbi.open(), dummyContext))
         {
             var h = tx.connection(Handle.class).get();
-            h.createUpdate("create table simple_table(id integer, name varchar(200))").execute();
+            h.createUpdate("create table simple_table(id integer primary key, name varchar(200))").execute();
+            h.createUpdate("create table child_table(parent_id integer references simple_table(id), description varchar(100))").execute();
         }
 
+        // simple update
         try (DataTransaction tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
         {
             var h = tx.connection(Handle.class).get();
@@ -98,6 +103,7 @@ class JdbiTransactionTest
              .execute();
         }
 
+        // rollback
         try (DataTransaction tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
         {
             var h = tx.connection(Handle.class).get();
@@ -107,6 +113,7 @@ class JdbiTransactionTest
             tx.rollback();
         }
 
+        // verify data still present
         try (DataTransaction tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
         {
             var h = tx.connection(Handle.class).get();
@@ -116,5 +123,30 @@ class JdbiTransactionTest
             assertTrue(result.isPresent());
             assertEquals(1, result.get());
         }
+
+        // force a constraint error and verify we get the suppress transaction exception
+        // Currently not failing correctly. org.jdbi.v3.core.statement.UnableToExecuteStatementException is
+        // getting thrown before we call commit. This is definitely expected behavior (and I suspect it's 
+        // implementation dependent, this test is h2). So it would appear we need to expand on our 
+        // mechanism of error handling. Perhaps something around https://jdbi.org/#_exception_handling
+        var dataException = assertThrows(OpenDcsDataException.class, () ->
+        {
+            try (var tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
+            {
+                var h = tx.connection(Handle.class).get();
+
+                try(var good = h.createUpdate("insert into child_table(parent_id, description) values(:id, :text)")
+                                .bind("id", 1)
+                                .bind("text", "hello");
+                    var bad = h.createUpdate("insert into child_table(parent_id, description) values(:id, :text)")
+                               .bind("id", 2)
+                               .bind("text", "i will fail"))
+                 {
+                    good.execute();
+                    bad.execute();
+                 }
+            }
+        });
+        assertNotEquals(0, dataException.getSuppressed().length);
     }
 }
