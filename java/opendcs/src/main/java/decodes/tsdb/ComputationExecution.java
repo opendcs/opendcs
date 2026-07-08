@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import ilex.var.TimedVariable;
+import io.opentelemetry.context.Context;
 import opendcs.dai.TimeSeriesDAI;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.utils.logging.MDCTimer;
@@ -54,7 +55,7 @@ public final class ComputationExecution implements AutoCloseable
 	public ComputationExecution(OpenDcsDatabase db)
 	{
 		this.db = db;
-		this.executor = Executors.newSingleThreadExecutor();
+		this.executor = Context.taskWrapping(Executors.newSingleThreadExecutor());
 		this.ownsExecutor = true;
 	}
 
@@ -74,7 +75,7 @@ public final class ComputationExecution implements AutoCloseable
 	public ComputationExecution(OpenDcsDatabase db, ExecutorService executor)
 	{
 		this.db = db;
-		this.executor = executor;
+		this.executor = Context.taskWrapping(executor); // ::taskWrapping already checks if it is wrapped
 		this.ownsExecutor = false;
 	}
 

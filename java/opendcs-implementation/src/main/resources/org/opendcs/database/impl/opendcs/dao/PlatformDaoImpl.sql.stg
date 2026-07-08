@@ -1,0 +1,101 @@
+group PlatformDaoImpl;
+
+select(platform_columns, medium_columns, config_columns, site_columns, site_name_columns,
+      site_props, platform_props, platform_sensors, platform_sensor_props,
+      config_join, site_join, site_name_join, site_props_join, platform_props_join,
+      platform_sensor_join, platform_sensor_props_join, collate, where, medium_filter) ::= <<
+with platforms(id, agency, isproduction, description, lastmodifytime, configid, expiration, mediumtype, mediumid, platformdesignator, siteid)
+    as (
+        select p.id id, p.agency agency, p.isproduction isproduction, p.description description, p.lastmodifytime lastmodifytime, p.configid configid,
+                p.expiration expiration, tm.mediumtype, tm.mediumid , p.platformdesignator , p.siteid
+            from platform p
+            left outer join transportmedium tm on tm.platformid = p.id <if(medium_filter)><medium_filter><endif>
+        <if(where)><where><endif>
+        order by mediumtype <collate> asc, mediumid <collate> asc, platformdesignator <collate> asc
+        )
+    select
+        <platform_columns>
+        <if(medium_columns)>,<medium_columns><endif>
+        <if(config_columns)>, <config_columns><endif>
+        <if(site_columns)>, <site_columns><endif>
+        <if(site_name_columns)>, <site_name_columns><endif>
+        <if(site_props)>, <site_props><endif>
+        <if(platform_props)>, <platform_props><endif>
+        <if(platform_sensors)>, <platform_sensors><endif>
+        <if(platform_sensor_props)>, <platform_sensor_props><endif>
+    from platforms p
+    left outer join transportmedium tm on tm.platformid = p.id <medium_filter>
+    <if(config_join)><config_join><endif>
+    <if(site_join)><site_join><endif>
+    <if(site_name_join)><site_name_join><endif>
+    <if(site_props_join)><site_props_join><endif>
+    <if(platform_props_join)><platform_props_join><endif>
+    <if(platform_sensor_join)><platform_sensor_join><endif>
+    <if(platform_sensor_props_join)><platform_sensor_props_join><endif>
+
+    order by p.mediumtype <collate> asc, p.mediumid <collate> asc, p.platformdesignator <collate> asc
+>>
+
+platformMerge(dual) ::= <<
+merge into platform p
+using (select :id id, :agency agency, :isproduction isproduction, :siteid siteid, :configid configid, 
+       :description description, :lastmodifytime lastmodifytime, :expiration expiration,
+       :platformdesignator platformdesignator <dual>) input
+on (p.id = input.id)
+when matched then
+    update set agency = input.agency, isproduction = input.isproduction, siteid = input.siteid,
+        configid = input.configid, description = input.description, lastmodifytime = input.lastmodifytime,
+        expiration = input.expiration, platformdesignator = input.platformdesignator
+when not matched then
+    insert(id, agency, isproduction, siteid, configid, description, lastmodifytime, expiration,
+           platformdesignator)
+    values(input.id, input.agency, input.isproduction, input.siteid, input.configid, input.description,
+           input.lastmodifytime, input.expiration, input.platformdesignator)
+>>
+
+
+deletePlatform() ::= "delete from platform where id = :id"
+
+deleteProperties() ::= "delete from platformproperty where platformid = :id"
+
+deletePlatformSensor() ::= "delete from platformsensor where platformid = :id"
+
+deletePlatformSensorProperties() ::= "delete from platformsensorproperty where platformid = :id"
+
+deleteTransportMedium() ::= "delete from transportmedium where platformid = :id"
+
+insertTransportMedium() ::= <<
+insert into transportmedium(
+    platformid, mediumtype, mediumid, scriptname, channelnum, assignedtime, transmitwindow, 
+    transmitinterval,equipmentid,timeadjustment, preamble, timezone, loggertype, baud, stopbits,
+    parity, databits, dologin, username, password
+)
+values (
+    :platformid, :mediumtype, :mediumid, :scriptname, :channelnum, :assignedtime, :transmitwindow,
+    :transmitinterval,:equipmentid,:timeadjustment, :preamble, :timezone, :loggertype, :baud, :stopbits,
+    :parity, :databits, :dologin, :username, :password
+)
+>>
+
+
+insertPlatformSensor() ::= <<
+insert into platformsensor(
+    platformid, sensornumber, siteid, dd_nu
+)
+values (
+    :platformid, :sensornumber, :siteid, :dd_nu
+)
+>>
+
+insertPlatformSensorProperty() ::= <<
+insert into platformsensorproperty (
+    platformid, sensornumber, prop_name, prop_value
+)
+values (
+    :platformid, :sensornumber, :prop_name, :prop_value
+)
+>>
+
+insertPlatformProperty() ::= <<
+insert into platformproperty(platformid, prop_name, prop_value) values (:id, :prop_name, :prop_value)
+>>

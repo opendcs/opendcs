@@ -50,6 +50,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -76,6 +77,7 @@ import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
+import org.opendcs.odcsapi.servlet.ExecutorPoolService;
 import org.opendcs.odcsapi.util.APIStreamMapper;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.DTOMappers;
@@ -90,6 +92,14 @@ public final class ComputationResources extends OpenDcsResource
 	private static final Logger log = LoggerFactory.getLogger(ComputationResources.class);
 
 	@Context HttpHeaders httpHeaders;
+
+	private final ExecutorPoolService executors;
+
+	@Inject
+	protected ComputationResources(ExecutorPoolService executors)
+	{
+		this.executors = executors;
+	}
 
 	@GET
 	@Path("computationrefs")
@@ -372,6 +382,7 @@ public final class ComputationResources extends OpenDcsResource
 			}
 
 			final var contextMap = MDC.getCopyOfContextMap();
+			log.trace("Starting computation");
 			CompletableFuture.runAsync(() ->
 			{
 				OutboundSseEvent event = sse.newEventBuilder()
@@ -414,7 +425,7 @@ public final class ComputationResources extends OpenDcsResource
 					}
 					MDC.clear();
 				}
-			});
+			}, executors.getComputationExecutor());
 		}
 		catch(NoSuchObjectException ex)
 		{
@@ -558,7 +569,7 @@ public final class ComputationResources extends OpenDcsResource
 	private void executeAndPublishResult(Long computationId, List<DbComputation> comps, Date startDate, Date endDate,
 			Sse sse, SseEventSink eventSink, String compStatus, String taskID)
 	{
-		try (ComputationExecution execution = new ComputationExecution(createDb()))
+		try (ComputationExecution execution = new ComputationExecution(createDb(), executors.getComputationExecutor()))
 		{
 			SseProgressListener listener = new SseProgressListener(eventSink, sse, compStatus, taskID);
 			ComputationExecution.CompResults results = execution.execute(comps, new DataCollection(), startDate, endDate, listener);

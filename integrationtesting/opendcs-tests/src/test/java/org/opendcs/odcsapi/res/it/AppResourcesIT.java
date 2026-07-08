@@ -32,6 +32,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiAppStatus;
+import org.opendcs.odcsapi.filters.W3CTraceFilter;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -60,6 +61,7 @@ final class AppResourcesIT extends BaseApiIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
+			.header(W3CTraceFilter.TRACE_PARENT.toString(), "00-f64a0407859e1a735c1a89c5c5b4f47f-09d07b8aaba94e49-01")
 			.spec(authSpec)
 			.body(appJson)
 		.when()
