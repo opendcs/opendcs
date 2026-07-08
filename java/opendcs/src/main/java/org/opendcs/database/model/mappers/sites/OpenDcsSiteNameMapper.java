@@ -14,7 +14,7 @@ public class OpenDcsSiteNameMapper extends PrefixRowMapper<SiteName,OpenDcsSiteN
 
     protected OpenDcsSiteNameMapper(String prefix)
     {
-        super(prefix, Columns.class);
+        super(prefix, "sitename", Columns.class);
     }
 
     public static OpenDcsSiteNameMapper withPrefix(String prefix)
@@ -39,6 +39,7 @@ public class OpenDcsSiteNameMapper extends PrefixRowMapper<SiteName,OpenDcsSiteN
 
     public enum Columns implements TableColumnDefinition
     {
+        SITE_ID("siteid"),
         NAME_TYPE("nametype"),
         SITE_NAME("sitename"),
         AGENCY_CODE("agency_cd"),
