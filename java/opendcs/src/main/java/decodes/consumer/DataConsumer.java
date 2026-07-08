@@ -194,11 +194,11 @@ public abstract class DataConsumer
 			Class myClass = myType.getExecClass();
 			ret = (DataConsumer)myClass.newInstance();
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
 			throw new DataConsumerException(
 				"Cannot instantiate DataConsumer of type '" + type
-				+ "': " + e.toString());
+				+ "'", ex);
 		}
 		return ret;
 	}

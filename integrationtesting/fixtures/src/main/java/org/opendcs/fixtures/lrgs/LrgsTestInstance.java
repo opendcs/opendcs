@@ -12,6 +12,8 @@ import org.opendcs.logging.spi.LoggingEventProvider;
 import org.opendcs.tls.TlsMode;
 import org.opendcs.utils.logging.LoggingEventBuffer;
 
+import ilex.util.PasswordFile;
+import ilex.util.PasswordFileEntry;
 import ilex.util.QueueLogger;
 import lrgs.archive.MsgArchive;
 import lrgs.lrgsmain.LrgsConfig;
@@ -92,6 +94,11 @@ public class LrgsTestInstance
         "LRGS has not started within the expected time frame.");
 
         this.archive = lrgs.msgArchive;
+        var pwf = new PasswordFile(new File(lrgsHome, ".lrgs.passwd"));
+        var pwe = new PasswordFileEntry("anonymous");
+        pwe.assignRole("dds");
+        pwf.addEntry(pwe);
+        new File(lrgsHome, "users.local/anonymous").mkdirs();
     }
 
     public MsgArchive getArchive()

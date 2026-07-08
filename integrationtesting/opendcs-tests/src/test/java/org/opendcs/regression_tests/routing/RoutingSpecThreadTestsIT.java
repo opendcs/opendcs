@@ -1,6 +1,7 @@
 package org.opendcs.regression_tests.routing;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
@@ -19,12 +20,14 @@ import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import org.opendcs.fixtures.lrgs.LrgsTestInstance;
 import org.python.modules.thread.thread;
 
+import decodes.datasource.RawMessage;
 import decodes.db.DataSource;
 import decodes.db.Database;
 import decodes.db.RoutingSpec;
 import decodes.routing.RoutingScheduler;
 import decodes.routing.RoutingSpecThread;
 import decodes.tsdb.CompAppInfo;
+import lrgs.common.DcpMsg;
 
 @EnableIfTsDb({"OpenDCS-Postgres", "OpenDCS-Oracle", "CWMS-Oracle"})
 @DecodesConfigurationRequired({
@@ -32,19 +35,16 @@ import decodes.tsdb.CompAppInfo;
     "SimpleDecodesTest/site-OKVI4.xml"
 })
 @TestInstance(Lifecycle.PER_CLASS)
-class SchedulerTestsIT extends AppTestBase
+class RoutingSpecThreadTestsIT extends AppTestBase
 {
     private static final String REGRESSION_SCHEDULER = "regression-scheduler";
 
     LrgsTestInstance lrgs;
     RoutingScheduler scheduler;
-    //Thread schedulerThread;
-  
+
     @ConfiguredField
     OpenDcsDatabase db;
 
-    
-    
     @BeforeAll
     void setup() throws Exception
     {
@@ -63,38 +63,35 @@ class SchedulerTestsIT extends AppTestBase
             loadingDao.save(tx, appInfo);
         }
 
+        var decodesDb = db.getLegacyDatabase(Database.class).orElseThrow();
+        var consumers = decodesDb.enumList.getEnum("DataConsumer");
+        consumers.addValue("memory", "in memory consumer for testing",
+                        "org.opendcs.regression_tests.routing.SingletonMemoryConsumer", "");
+        consumers.write();
+        decodesDb.enumList.write();
+
         scheduler = new RoutingScheduler();
         scheduler.setNoExitAfterRunApp(true);
-        final String[] args = {"-P", this.configuration.getPropertiesFile().getAbsolutePath(), "-a", REGRESSION_SCHEDULER};
-        // schedulerThread = new Thread(() ->
-        // {
-        //     try
-        //     {
-        //         scheduler.execute(args);
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         throw new RuntimeException(ex);
-        //     }
-        // }, REGRESSION_SCHEDULER); 
-        // schedulerThread.setDaemon(true);
-        // schedulerThread.start();
-    }
 
-    @AfterAll
-    void teardown()
-    {
-        //schedulerThread.interrupt();
-    }
+        var msg = """
+4804F5C804011203139G31-5HN060W0000177:HG
+31#30+3.95500e+00+3.95700e+00+3.95700e+00+3.95700e+00+3.95700e+00+3.95700e+00:HG
+196#180+3.94900e+00:HG 206#180+3.96100e+00:VB
+31#60+1.18576e+01+1.18620e+01+1.18509e+01:ZL$
+            """.getBytes();
 
+        var dcpMsg = new DcpMsg(msg, msg.length, 0);
+        lrgs.getArchive().archiveMsg(dcpMsg, lrgs.getLrgsInputs().get(0));
+    }
 
     @Test
-    void test_lrgs_soure() throws Exception
+    void test_lrgs_source() throws Exception
     {
         var spec = new RoutingSpec("regression-spec-lrgs");
         spec.dataSource = new DataSource("regression-lrgs", "lrgs");
-        spec.dataSource.setDataSourceArg("hostname=localhost, port=" + lrgs.getDdsPort());
-        spec.consumerType = "null";
+        spec.dataSource.setDataSourceArg("hostname=localhost, username=anonymous, port=" + lrgs.getDdsPort());
+        spec.consumerType = "memory";
+        spec.outputFormat = "null";
 
         var decodesDb = db.getLegacyDatabase(Database.class).orElseThrow();
         decodesDb.dataSourceList.add(spec.dataSource);
@@ -103,8 +100,11 @@ class SchedulerTestsIT extends AppTestBase
         decodesDb.routingSpecList.write();
 
         spec.prepareForExec();
+        spec.dataSource.prepareForExec();
         var specThread = RoutingSpecThread.makeInstance(spec);
         specThread.run();
 
+        var messages = SingletonMemoryConsumer.messagesFor("4804F5C8");
+        assertFalse(messages.isEmpty());
     }
 }
