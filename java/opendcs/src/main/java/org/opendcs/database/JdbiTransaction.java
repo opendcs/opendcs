@@ -47,32 +47,35 @@ public final class JdbiTransaction implements DataTransaction
     @Override
     public void commit() throws OpenDcsDataException
     {
-        if (jdbiHandle.isInTransaction())
+        // Jdbi's LocalTransactionHandler already rolls back internally (suppressing any
+        // rollback failure onto the original cause) before throwing TransactionException, so
+        // there's nothing left for us to roll back here — just capture and propagate the failure.
+        try
         {
-            try
+            if (jdbiHandle.isInTransaction())
             {
                 jdbiHandle.commit();
             }
-            catch (TransactionException ex)
-            {
-                throw new OpenDcsDataException("Unable to commit transaction.", ex);
-            }
+        }
+        catch (TransactionException ex)
+        {
+            throw new OpenDcsDataException("Unable to commit transaction.", ex);
         }
     }
 
     @Override
     public void rollback() throws OpenDcsDataException
     {
-        if (jdbiHandle.isInTransaction())
+        try
         {
-            try
+            if (jdbiHandle.isInTransaction())
             {
                 jdbiHandle.rollback();
             }
-            catch (TransactionException ex)
-            {
-                throw new OpenDcsDataException("Unable to rollback transaction.", ex);
-            }
+        }
+        catch (TransactionException ex)
+        {
+            throw new OpenDcsDataException("Unable to rollback transaction.", ex);
         }
     }
 

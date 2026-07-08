@@ -96,9 +96,12 @@ public class OpenDcsResource
 
 	/**
 	 * Rolls back a transaction after a failure, preserving the original exception rather than
-	 * letting a rollback failure replace it. Call from the catch block that handles a failed
-	 * commit/DAO call within a {@code try (var tx = db.newTransaction())}; the caller is still
-	 * responsible for rethrowing {@code cause} afterward.
+	 * letting a rollback failure replace it. This must happen explicitly, before the exception
+	 * is rethrown, because {@code DataTransaction.close()} commits by default; skipping it would
+	 * mean exiting the try-with-resources block after a caught failure commits the transaction's
+	 * partial state instead of discarding it. Call from the catch block that handles a failed
+	 * commit/DAO call within a {@code try (var tx = db.newTransaction())} and rethrow
+	 * {@code cause} afterward.
 	 */
 	protected static void rollbackQuietly(DataTransaction tx, Exception cause)
 	{

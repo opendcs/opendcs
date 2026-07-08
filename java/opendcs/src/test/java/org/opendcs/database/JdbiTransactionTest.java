@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.Generator;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.TransactionContext;
 import org.opendcs.settings.api.OpenDcsSettings;
 
@@ -179,6 +180,49 @@ class JdbiTransactionTest
                 tx.rollback();
                 throw ex;
             }
+        }
+    }
+
+    /**
+     * When jdbiHandle.commit() fails, Jdbi's own LocalTransactionHandler already rolls back
+     * internally before throwing TransactionException — our commit() just needs to catch and
+     * propagate that failure as OpenDcsDataException rather than re-attempting a redundant
+     * rollback (or worse, letting it escape unwrapped). A deferred unique constraint lets both
+     * inserts succeed and only fail once checked at commit time, so this exercises a real
+     * commit-time failure without also breaking the connection.
+     */
+    @Test
+    void test_commit_failure_triggers_rollback_attempt() throws Exception
+    {
+        try (DataTransaction setup = new JdbiTransaction(jdbi.open(), dummyContext))
+        {
+            var setupHandle = setup.connection(Handle.class).get();
+            // A deferred unique constraint lets both inserts succeed now and fail only when
+            // checked at commit time, so the connection itself stays perfectly healthy —
+            // isolating the "commit fails, rollback must still be attempted" behavior without
+            // also breaking the connection rollback() would need to use.
+            setupHandle.createUpdate("create table commit_fail_test(id integer, "
+                    + "constraint commit_fail_uq unique(id) deferrable initially deferred)").execute();
+            setup.commit();
+        }
+
+        JdbiTransaction tx = new JdbiTransaction(jdbi.open().begin(), dummyContext);
+        var h = tx.connection(Handle.class).get();
+        h.createUpdate("insert into commit_fail_test(id) values (1)").execute();
+        h.createUpdate("insert into commit_fail_test(id) values (1)").execute();
+
+        OpenDcsDataException thrown = assertThrows(OpenDcsDataException.class, tx::commit);
+        assertTrue(thrown.getMessage().contains("commit"),
+                "must report the commit failure, not the follow-up rollback outcome");
+
+        try (DataTransaction check = new JdbiTransaction(jdbi.open().begin(), dummyContext))
+        {
+            var checkHandle = check.connection(Handle.class).get();
+            var count = checkHandle.createQuery("select count(*) from commit_fail_test")
+                    .map(r -> r.getColumn(1, Integer.class))
+                    .one();
+            assertEquals(0, count,
+                    "a failed commit must leave the transaction's inserts rolled back, not partially committed");
         }
     }
 
