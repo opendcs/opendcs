@@ -26,9 +26,27 @@ with platforms(id, agency, isproduction, description, lastmodifytime, configid, 
     from platforms p
     left outer join transportmedium tm on tm.platformid = p.id <medium_filter>
     <if(config_join)><config_join><endif>
-    <if(site_join)><site_join><endif>
-    <if(site_name_join)><site_name_join><endif>
-    <if(site_props_join)><site_props_join><endif>
+    <if(site_join)>
+        left outer join cwms_v_loc s on s.location_code = p.siteid and s.unit_system = 'SI'
+    <endif>
+    <if(site_name_join)>
+        left outer join (
+            select siteid, nametype, sitename, dbnum, agency_cd from sitename
+            union all
+            select location_code siteid, 'CWMS' nametype, location_id sitename, null dbnum, null agency_cd from cwms_v_loc where unit_system = 'SI'
+        ) sn on sn.siteid = p.siteid
+    <endif>
+    <if(site_props_join)>
+        left outer join (
+            select site_id, prop_name, prop_value from site_property
+            union all
+            select location_code siteid, 'horizontal_datum' prop_name, horizontal_datum prop_value from cwms_v_loc where unit_system = 'SI'
+            union all
+            select location_code siteid, 'vertical_datum' prop_name, vertical_datum prop_value from cwms_v_loc where unit_system = 'SI'
+            union all
+            select location_code siteid, 'bounding_office' prop_name, bounding_office_id prop_value from cwms_v_loc where unit_system = 'SI'
+        ) sp on sp.site_id = p.siteid
+    <endif>
     <if(platform_props_join)><platform_props_join><endif>
     <if(platform_sensor_join)><platform_sensor_join><endif>
     <if(platform_sensor_props_join)><platform_sensor_props_join><endif>

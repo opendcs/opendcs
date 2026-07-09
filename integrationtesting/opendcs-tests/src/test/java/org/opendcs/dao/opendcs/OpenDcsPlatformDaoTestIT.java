@@ -21,7 +21,7 @@ import decodes.db.PlatformSensor;
 import decodes.db.SiteName;
 import decodes.db.TransportMedium;
 
-@EnableIfTsDb({"OpenDCS-Postgres", "OpenDCS-Oracle"})
+@EnableIfTsDb({"OpenDCS-Postgres", "OpenDCS-Oracle", "CWMS-Oracle"})
 @DecodesConfigurationRequired({
     "shared/test-sites.xml",
     "SimpleDecodesTest/site-OKVI4.xml",
@@ -73,7 +73,6 @@ class OpenDcsPlatformDaoTestIT extends AppTestBase
         platformIn.isProduction = true;
         platformIn.description = "A Test Platform";
         platformIn.setPlatformDesignator("a");
-        
         TransportMedium tm = new TransportMedium(platformIn);
         tm.channelNum = 1;
         tm.assignedTime = 5;
@@ -101,7 +100,7 @@ class OpenDcsPlatformDaoTestIT extends AppTestBase
 
             platformOut.platformSensors.add(ps1);
 
-            var platformOut2 = dao.save(tx, platformOut);    
+            var platformOut2 = dao.save(tx, platformOut);
 
             assertNotNull(platformOut2.getConfig());
 
