@@ -55,6 +55,14 @@ class JdbiTransactionTest
     void create_db()
     {
         jdbi = Jdbi.create("jdbc:derby:memory:db;create=true");
+        // Idea is to move this to the Wrapper Implementations, default to this
+        // allow/exepect implementations to refine. Deriving things like
+        // constraint errors from Runtime exceptoin and passing them on.
+        // handlers are attempted in reverse order of operation: https://jdbi.org/#_exception_handling
+        // Does need to exist here due to not using the wrapper.
+        // I suggest we create at least a default Handler per target database engine
+        // that handles those elements with obvious error codes (like the actual ORA- PG- errors that are
+        // for say, foreign key constraints, etc)
         jdbi.getConfig(SqlStatements.class).addExceptionHandler((ex, ctx) ->
         {
             throw new OpenDcsDataRuntimeException("Error during query operation", ex);
@@ -155,5 +163,29 @@ class JdbiTransactionTest
             }
         });
         assertNotNull(dataException.getCause());
+
+        // do the same thing again, but using the new wrapper.
+        var dataException2 = assertThrows(OpenDcsDataException.class, () ->
+        {
+            try (var tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
+            {
+                var h = tx.connection(Handle.class).get();
+
+                tx.wrapErrors(() -> 
+                {
+                    try(var good = h.createUpdate("insert into child_table(parent_id, description) values(:id, :text)")
+                                    .bind("id", 1)
+                                    .bind("text", "hello");
+                        var bad = h.createUpdate("insert into child_table(parent_id, description) values(:id, :text)")
+                                .bind("id", 2)
+                                .bind("text", "i will fail"))
+                    {
+                        good.execute();
+                        bad.execute();
+                    }
+                 });
+            }
+        });
+        assertNotNull(dataException2.getCause());
     }
 }

@@ -31,12 +31,14 @@ import decodes.cwms.CwmsLocationLevelDAO;
 
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.JdbiException;
+import org.jdbi.v3.core.statement.SqlStatements;
 import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDaoConfigurationException;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.impl.opendcs.jdbi.column.chrono.OpenDcsTimeColumn;
 import org.opendcs.database.impl.opendcs.jdbi.column.chrono.OpenDcsTimeColumnArgumentFactory;
@@ -83,6 +85,15 @@ public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatab
             .registerColumnMapper(new DatabaseKeyColumnMapper())
             .registerArgument(new OpenDcsTimeColumnArgumentFactory())
             .registerColumnMapper(new OpenDcsTimeColumn());
+
+        // Default behavior
+        // allow/exepect implementations to refine. Deriving things like
+        // constraint errors the SQLException and passing them on as specific OpenDcsExceptions.
+        // handlers are attempted in reverse order of operation: https://jdbi.org/#_exception_handling
+        jdbi.getConfig(SqlStatements.class).addExceptionHandler((ex, ctx) ->
+        {
+            throw new OpenDcsDataRuntimeException("Error during query operation", ex);
+        });
 
         if (this.timeSeriesDb != null)
         {

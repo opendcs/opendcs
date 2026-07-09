@@ -88,5 +88,4 @@ public final class JdbiTransaction implements DataTransaction
     {
         return this.context;
     }
-    
 }

@@ -1,6 +1,9 @@
 package org.opendcs.database.api;
 
 import java.util.Optional;
+import java.util.concurrent.Callable;
+
+import org.opendcs.util.functional.ThrowingRunnable;
 
 /**
  * Instance of this class are used to hold appropriate connections
@@ -60,4 +63,65 @@ public interface DataTransaction extends AutoCloseable
      */
     @Override
     void close() throws OpenDcsDataException;
+
+
+    /**
+     * Convert any error in the call to a wrapped "OpenDcsDataException"
+     * @param <T> return type of action
+     * @param action wrapped code
+     * @return return value from action
+     * @throws OpenDcsDataException All errors, beyond just the provided expected error, are wrapped.
+     *                              {@link OpenDcsDataRuntimeException} is wrapped without message. All
+     *                              Other are wrapped with an additional message.
+     *                              {@link OpenDcsDataException} is rethrown as-is.
+     */
+    default <T> T wrapErrors(Callable<T> action) throws OpenDcsDataException
+    {
+        try
+        {
+            return action.call();
+        }
+        catch (OpenDcsDataRuntimeException ex)
+        {
+            throw new OpenDcsDataException(ex);
+        }
+        catch (Exception ex)
+        {
+            if (ex instanceof OpenDcsDataException odx)
+            {
+                throw odx;
+            }
+            throw new OpenDcsDataException("Other than OpenDCSDataRuntimeException.", ex);
+        }
+    }
+
+    /**
+     * Convert any error in the call to a wrapped "OpenDcsDataException"
+     *
+     * @param <E> expected error
+     * @param action wrapped Code
+     * @throws OpenDcsDataException All errors, beyond just the provided expected error, are wrapped.
+     *                              {@link OpenDcsDataRuntimeException} and {@link OpenDcsDataException}
+     *                              are wrapped without message. All Other are wrapped with an additional message.
+     *                              {@link OpenDcsDataException} is rethrown as-is.
+     */
+    default <E extends Exception> void wrapErrors(ThrowingRunnable<E> action) throws OpenDcsDataException
+    {
+        try
+        {
+            action.run();
+        }
+        catch (OpenDcsDataRuntimeException ex)
+        {
+            throw new OpenDcsDataException(ex);
+        }
+        catch (Exception ex)
+        {
+            if (ex instanceof OpenDcsDataException odx)
+            {
+                throw odx;
+            }
+            throw new OpenDcsDataException("Other than OpenDcsDataRuntimeException.", ex);
+        }
+    }
 }
