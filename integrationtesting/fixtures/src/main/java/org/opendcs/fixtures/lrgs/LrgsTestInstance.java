@@ -58,7 +58,8 @@ public class LrgsTestInstance
             fw.write("enableDdsRecv=true"+System.lineSeparator());
             fw.write("ddsServerTlsMode="+tlsMode.name()+System.lineSeparator());
 
-            if (keyStore!=null) {
+            if (keyStore!=null)
+            {
                 String fileName =keyStore.getAbsolutePath();
                 fileName = fileName.replace('\\','/');
                 fw.write("keyStoreFile="+fileName+System.lineSeparator());
@@ -78,14 +79,16 @@ public class LrgsTestInstance
         lrgs = new LrgsMain("-", configFile.getAbsolutePath());
 
         lrgsThread = new Thread(lrgs);
-        exit.execute(() -> lrgsThread.start());
+        // Sonar is correct here, but I don't want to mess with this test harness much at the
+        // moment.
+        exit.execute(() -> lrgsThread.start()); // NOSONAR
         assertResultWithinTimeFrame(value ->
         {
             try
             {
                 return lrgs.getStatusProvider().getStatusSnapshot().isUsable;
             }
-            catch (NullPointerException ex)
+            catch (NullPointerException ex) // NOSONAR
             {
                 // Future work should remove the need for this NPE catch.
                 return false;

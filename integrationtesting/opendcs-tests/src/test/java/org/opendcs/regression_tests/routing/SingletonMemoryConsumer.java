@@ -2,7 +2,6 @@ package org.opendcs.regression_tests.routing;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,20 +12,20 @@ import decodes.decoder.DecodedMessage;
 
 public class SingletonMemoryConsumer extends DataConsumer
  {
-    private final ConcurrentHashMap<String, List<DecodedMessage>> messages = new ConcurrentHashMap<>();
-
     private static final SingletonMemoryConsumer INSTANCE = new SingletonMemoryConsumer();    
+
+    private final ConcurrentHashMap<String, List<DecodedMessage>> messages = new ConcurrentHashMap<>();
 
     @Override
     public void open(String consumerArg, Properties props) throws DataConsumerException
     {
-    
+        /* no implemented */
     }
 
     @Override
     public void close() 
     {
-    
+        /* no implemented */
     }
 
     @Override
@@ -40,13 +39,13 @@ public class SingletonMemoryConsumer extends DataConsumer
     @Override
     public void println(String line)
     {
-    
+        /* no implemented */
     }
 
     @Override
     public void endMessage()
     {
-    
+        /* no implemented */
     }
 
     public static List<DecodedMessage> messagesFor(String address)
