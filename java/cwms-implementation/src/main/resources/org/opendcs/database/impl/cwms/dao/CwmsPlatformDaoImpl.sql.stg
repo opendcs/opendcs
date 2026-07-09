@@ -33,7 +33,7 @@ with platforms(id, agency, isproduction, description, lastmodifytime, configid, 
         left outer join (
             select siteid, nametype, sitename, dbnum, agency_cd from sitename
             union all
-            select location_code siteid, 'CWMS' nametype, location_id sitename, null dbnum, null agency_cd from cwms_v_loc
+            select location_code siteid, 'CWMS' nametype, location_id sitename, null dbnum, null agency_cd from cwms_v_loc where unit_system = 'SI'
         ) sn on sn.siteid = p.siteid
     <endif>
     <if(site_props_join)>
