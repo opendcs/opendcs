@@ -18,10 +18,6 @@ public class CwmsSiteMapper extends OpenDcsSiteMapper
 
     @Override
     /**
-     * @param joinType type of join, without the word "join", can be null
-     * @param idColumn
-     * @param otherTable
-     * @param otherIdColumn
      * @return
      */
     public String columnsForSelect()
