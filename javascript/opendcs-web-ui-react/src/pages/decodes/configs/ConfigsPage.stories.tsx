@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { act } from "react";
 import { http, HttpResponse } from "msw";
 import type { ApiConfigRef, ApiPlatformConfig } from "opendcs-api";
-import { expect, waitFor } from "storybook/test";
+import { expect, screen, waitFor } from "storybook/test";
 import { WithUnits } from "../../../../.storybook/mock/WithUnits";
 import { ConfigsPage } from "./ConfigsPage";
 
@@ -109,5 +109,78 @@ export const OpenConfigDetail: Story = {
       )) as HTMLInputElement;
       expect(nameInput.value).toEqual("Standard CFG");
     });
+  },
+};
+
+// Deleting a config fires the DELETE (after confirmation) and the row drops out after the refetch.
+export const DeleteConfig: Story = {
+  parameters: {
+    msw: {
+      handlers: (() => {
+        const list = [...CONFIG_REFS];
+        return {
+          ...baseHandlers,
+          configRefs: http.get("/odcsapi/configrefs", () =>
+            HttpResponse.json<ApiConfigRef[]>(list),
+          ),
+          deleteConfig: http.delete("/odcsapi/config", ({ request }) => {
+            const url = new URL(request.url);
+            const id = Number(url.searchParams.get("configid"));
+            const idx = list.findIndex((c) => c.configId === id);
+            if (idx >= 0) list.splice(idx, 1);
+            return HttpResponse.json({});
+          }),
+        };
+      })(),
+    },
+  },
+  play: async ({ mount, userEvent, parameters }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const deleteBtn = await waitFor(() =>
+      canvas.getByRole("button", {
+        name: i18n.t("configs:delete_for", { id: 101 }),
+      }),
+    );
+    await act(async () => userEvent.click(deleteBtn));
+    const confirmBtn = await screen.findByRole("button", { name: "Delete" });
+    await act(async () => userEvent.click(confirmBtn));
+
+    await waitFor(() => {
+      expect(canvas.queryByText("Standard CFG")).not.toBeInTheDocument();
+    });
+  },
+};
+
+// Dismissing the confirmation modal (Cancel button or the header close
+// button) must not delete the row.
+export const CancelDeleteConfig: Story = {
+  parameters: { msw: { handlers: baseHandlers } },
+  play: async ({ mount, userEvent, parameters }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const deleteBtn = await waitFor(() =>
+      canvas.getByRole("button", {
+        name: i18n.t("configs:delete_for", { id: 101 }),
+      }),
+    );
+
+    await act(async () => userEvent.click(deleteBtn));
+    const cancelBtn = await screen.findByRole("button", { name: "Cancel" });
+    await act(async () => userEvent.click(cancelBtn));
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
+    });
+    expect(canvas.getByText("Standard CFG")).toBeInTheDocument();
+
+    await act(async () => userEvent.click(deleteBtn));
+    const closeBtn = await screen.findByRole("button", { name: "Close" });
+    await act(async () => userEvent.click(closeBtn));
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Close" })).not.toBeInTheDocument();
+    });
+    expect(canvas.getByText("Standard CFG")).toBeInTheDocument();
   },
 };

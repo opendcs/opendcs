@@ -115,13 +115,22 @@ type Story = StoryObj<typeof meta>;
 // Default render: list comes back, all schedule entries show.
 export const Default: Story = {
   parameters: { msw: { handlers: baseHandlers } },
-  play: async ({ mount }) => {
+  play: async ({ mount, parameters }) => {
     const canvas = await mount();
+    const { i18n } = parameters;
     // Name and Routing Spec columns both render the entry's name when they
     // happen to match, so each appears twice — query with All*.
     expect((await canvas.findAllByText("goes1")).length).toBeGreaterThan(0);
     expect((await canvas.findAllByText("goes2")).length).toBeGreaterThan(0);
     expect(await canvas.findByText("no_app_assigned")).toBeInTheDocument();
+    // Enabled column renders a translated Yes/No — goes1 is enabled, the
+    // other two rows are not, so both branches of the render should show up.
+    expect(
+      (await canvas.findAllByText(i18n.t("translation:yes"))).length,
+    ).toBeGreaterThan(0);
+    expect(
+      (await canvas.findAllByText(i18n.t("translation:no"))).length,
+    ).toBeGreaterThan(0);
   },
 };
 
