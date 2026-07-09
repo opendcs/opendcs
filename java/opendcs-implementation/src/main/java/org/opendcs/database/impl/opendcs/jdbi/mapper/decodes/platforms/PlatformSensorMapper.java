@@ -15,7 +15,7 @@ public class PlatformSensorMapper extends PrefixRowMapper<PlatformSensor, Platfo
     {
         super(prefix, "platformsensor", Columns.class);
     }
-    
+
     @Override
     public PlatformSensor map(ResultSet rs, StatementContext ctx) throws SQLException
     {
@@ -35,7 +35,7 @@ public class PlatformSensorMapper extends PrefixRowMapper<PlatformSensor, Platfo
     }
 
     public enum Columns implements TableColumnDefinition
-    {        
+    {
         PLATFORM_ID("platformid"),
         SITE_ID("siteid"),
         SENSOR_NUMBER("sensornumber"),
@@ -54,7 +54,7 @@ public class PlatformSensorMapper extends PrefixRowMapper<PlatformSensor, Platfo
         {
             return column;
         }
-        
+
     }
 
 }

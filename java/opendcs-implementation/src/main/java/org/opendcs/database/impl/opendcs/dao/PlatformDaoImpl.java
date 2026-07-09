@@ -25,6 +25,7 @@ import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.dai.DecodesConfigDao;
 import org.opendcs.database.dai.EquipmentModelDao;
 import org.opendcs.database.dai.PlatformDao;
+import org.opendcs.database.dai.SiteDao;
 import org.opendcs.database.impl.opendcs.jdbi.arguments.decodes.TransportMediumArgumentFinder;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.configs.DecodesConfigMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformMapper;
@@ -63,33 +64,6 @@ public class PlatformDaoImpl implements PlatformDao
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
-    private static final STGroup QUERIES = StringTemplateSqlLocator.findStringTemplateGroup(PlatformDaoImpl.class);
-    private static final Mappers ALL_DATA = new Mappers(
-        PlatformMapper.withPrefix("p"),
-        DecodesConfigMapper.withPrefix("config"),
-        TransportMediumMapper.withPrefix("tm"),
-        OpenDcsSiteMapper.withPrefix("s"),
-        OpenDcsSiteNameMapper.withPrefix("sn"),
-        PropertiesMapper.withPrefix("sp", true),
-        new OpenDcsSiteReducer("s"),
-        PropertiesMapper.withPrefix("pp", true),
-        PlatformSensorMapper.withPrefix("ps"),
-        PlatformSensorPropertyMapper.withPrefix("psp")
-    );
-
-    private static final Mappers REF_DATA = new Mappers(
-        PlatformMapper.withPrefix("p"),
-        null,
-        TransportMediumMapper.withPrefix("tm"),
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null);
-
     private static final String SELECT = "select";
     private static final String MERGE = "platformMerge";
     private static final String DELETE_PLATFORM = "deletePlatform";
@@ -114,6 +88,52 @@ public class PlatformDaoImpl implements PlatformDao
     @InjectDao
     EquipmentModelDao equipmentDao;
 
+    @InjectDao
+    SiteDao siteDao;
+
+    private final Mappers allData;
+
+    private final Mappers refData;
+
+    private final STGroup queries;
+
+    public PlatformDaoImpl()
+    {
+        this(new Mappers(
+                PlatformMapper.withPrefix("p"),
+                DecodesConfigMapper.withPrefix("config"),
+                TransportMediumMapper.withPrefix("tm"),
+                OpenDcsSiteMapper.withPrefix("s"),
+                OpenDcsSiteNameMapper.withPrefix("sn"),
+                PropertiesMapper.withPrefix("sp", true),
+                new OpenDcsSiteReducer("s"),
+                PropertiesMapper.withPrefix("pp", true),
+                PlatformSensorMapper.withPrefix("ps"),
+                PlatformSensorPropertyMapper.withPrefix("psp")
+                ),
+            new Mappers(
+                PlatformMapper.withPrefix("p"),
+                null,
+                TransportMediumMapper.withPrefix("tm"),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null),
+            StringTemplateSqlLocator.findStringTemplateGroup(PlatformDaoImpl.class)
+        );
+    }
+
+    protected PlatformDaoImpl(Mappers allData, Mappers refData, STGroup templates)
+    {
+        this.allData = allData;
+        this.refData = refData;
+        this.queries = templates;
+    }
+
     @Override
     public Optional<Platform> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
@@ -126,19 +146,19 @@ public class PlatformDaoImpl implements PlatformDao
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabaseEngine();
 
-        var selectTemplate = QUERIES.getInstanceOf(SELECT);
+        var selectTemplate = queries.getInstanceOf(SELECT);
 
         if (selectTemplate == null)
         {
             throw new OpenDcsDataException("Could not find template");
         }
         selectTemplate.add(WHERE_CLAUSE, "where p.id = :id");
-        try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, ALL_DATA)))
+        try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, allData)))
         {
-            registerMappers(select, ALL_DATA);
+            registerMappers(select, allData);
             return select.bind(PlatformMapper.Columns.ID.column(), id)
-                         .reduceRows(new PlatformReducer(ALL_DATA.platformMapper, ALL_DATA.siteReducer(),
-                                                         ALL_DATA.platformSensorReducer()))
+                         .reduceRows(new PlatformReducer(allData.platformMapper, allData.siteReducer(),
+                                                         allData.platformSensorReducer()))
                          .map(p -> mapConfig(tx, p))
                          .findFirst();
         }
@@ -181,7 +201,7 @@ public class PlatformDaoImpl implements PlatformDao
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabaseEngine();
 
-        var selectTemplate = QUERIES.getInstanceOf(SELECT);
+        var selectTemplate = queries.getInstanceOf(SELECT);
 
         if (selectTemplate == null)
         {
@@ -189,14 +209,14 @@ public class PlatformDaoImpl implements PlatformDao
         }
         selectTemplate.add("medium_filter", " and tm.mediumtype = :mediumtype and tm.mediumid = :mediumid")
                       .add(WHERE_CLAUSE, "where mediumtype = :mediumtype and mediumid = :mediumid");
-        try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, ALL_DATA)))
+        try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, allData)))
         {
-            registerMappers(select, ALL_DATA);
+            registerMappers(select, allData);
 
             return select.bind("mediumtype", mediumType)
                          .bind("mediumid", mediumId)
-                         .reduceRows(new PlatformReducer(ALL_DATA.platformMapper, ALL_DATA.siteReducer(),
-                                                         ALL_DATA.platformSensorReducer()))
+                         .reduceRows(new PlatformReducer(allData.platformMapper, allData.siteReducer(),
+                                                         allData.platformSensorReducer()))
                          .map(p -> mapConfig(tx, p))
                          .findFirst();
         }
@@ -296,10 +316,10 @@ public class PlatformDaoImpl implements PlatformDao
         var dbEngine = ctx.getDatabaseEngine();
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                 .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
-        var mergeTemplate = QUERIES.getInstanceOf(MERGE)
+        var mergeTemplate = queries.getInstanceOf(MERGE)
                                    .add("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
-        var insertPlatformProperties = QUERIES.getInstanceOf(INSERT_PLATFORM_PROPERTY).render();
-        try (var merge = handle.createUpdate(mergeTemplate.render()).define("numeric_date", true);
+        var insertPlatformProperties = queries.getInstanceOf(INSERT_PLATFORM_PROPERTY).render();
+        try (var merge = handle.createUpdate(mergeTemplate.render());
              var insertProperties = handle.prepareBatch(insertPlatformProperties))
         {
             DbKey id = platform.getId();
@@ -322,8 +342,8 @@ public class PlatformDaoImpl implements PlatformDao
                        platform.getSite() != null ? platform.getSite().getId(): null, DbKey.class)
                  .bind(PlatformMapper.Columns.DESCRIPTION.column(), platform.description)
                  .bind(PlatformMapper.Columns.DESIGNATOR.column(), platform.getPlatformDesignator())
-                 .bind(PlatformMapper.Columns.LAST_MODIFY_TIME.column(),
-                       ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli())
+                 .bindByType(PlatformMapper.Columns.LAST_MODIFY_TIME.column(),
+                       ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli(), Date.class)
                  .bindByType(PlatformMapper.Columns.EXPIRATION.column(), platform.expiration, Date.class)
                  .bind(PlatformMapper.Columns.IS_PRODUCTION.column(), platform.isProduction)
                  .execute();
@@ -334,7 +354,7 @@ public class PlatformDaoImpl implements PlatformDao
 
             insertTransportMediums(handle, bindKey, platform.transportMedia);
             insertPlatformSensors(handle, bindKey, platform.platformSensors);
-            final var propMapper = ALL_DATA.platformPropsMapper;
+            final var propMapper = allData.platformPropsMapper;
             final var propName = propMapper.column(PropertiesMapper.Columns.NAME);
             final var propValue = propMapper.column(PropertiesMapper.Columns.VALUE);
             platform.getProperties()
@@ -360,8 +380,8 @@ public class PlatformDaoImpl implements PlatformDao
 
     private void insertPlatformSensors(Handle handle, DbKey bindKey, Vector<PlatformSensor> platformSensors)
     {
-        var insertPs = QUERIES.getInstanceOf(INSERT_PLATFORM_SENSOR).render();
-        var insertPsP = QUERIES.getInstanceOf(INSERT_PLATFORM_SENSOR_PROPERTY).render();
+        var insertPs = queries.getInstanceOf(INSERT_PLATFORM_SENSOR).render();
+        var insertPsP = queries.getInstanceOf(INSERT_PLATFORM_SENSOR_PROPERTY).render();
         try (var psBatch = handle.prepareBatch(insertPs);
              var pspBatch = handle.prepareBatch(insertPsP))
         {
@@ -385,12 +405,12 @@ public class PlatformDaoImpl implements PlatformDao
             }
             psBatch.execute();
             pspBatch.execute();
-        }        
+        }
     }
 
     private void insertTransportMediums(Handle handle, DbKey bindKey, Vector<TransportMedium> transportMedia)
     {
-        var insertTM = QUERIES.getInstanceOf(INSERT_TRANSPORT_MEDIUM).render();
+        var insertTM = queries.getInstanceOf(INSERT_TRANSPORT_MEDIUM).render();
         try (var tmBatch = handle.prepareBatch(insertTM))
         {
             for (var tm: transportMedia)
@@ -409,7 +429,7 @@ public class PlatformDaoImpl implements PlatformDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        var deletePlatformTemplate = QUERIES.getInstanceOf(DELETE_PLATFORM);
+        var deletePlatformTemplate = queries.getInstanceOf(DELETE_PLATFORM);
 
         deleteTransportMediums(handle, id);
         deletePlatformSensors(handle, id);
@@ -421,19 +441,19 @@ public class PlatformDaoImpl implements PlatformDao
         }
     }
 
-    private static void deleteTransportMediums(Handle handle, DbKey id)
+    private void deleteTransportMediums(Handle handle, DbKey id)
     {
-        var deleteTransportMediumTemplate = QUERIES.getInstanceOf(DELETE_TRANSPORT_MEDIUM);
+        var deleteTransportMediumTemplate = queries.getInstanceOf(DELETE_TRANSPORT_MEDIUM);
         try(var deleteTransportMedium = handle.createUpdate(deleteTransportMediumTemplate.render()))
         {
             deleteTransportMedium.bind(PlatformMapper.Columns.ID.column(), id).execute();
         }
     }
 
-    private static void deletePlatformSensors(Handle handle, DbKey id)
+    private void deletePlatformSensors(Handle handle, DbKey id)
     {
-        var deletePlatformSensorTemplate = QUERIES.getInstanceOf(DELETE_PLATFORM_SENSORS);
-        var deletePlatformSensorPropertiesTemplate = QUERIES.getInstanceOf(DELETE_PLATFORM_SENSOR_PROPERTIES);
+        var deletePlatformSensorTemplate = queries.getInstanceOf(DELETE_PLATFORM_SENSORS);
+        var deletePlatformSensorPropertiesTemplate = queries.getInstanceOf(DELETE_PLATFORM_SENSOR_PROPERTIES);
         try (var deletePlatformSensor = handle.createUpdate(deletePlatformSensorTemplate.render());
              var deletePlatformSensorProperties = handle.createUpdate(deletePlatformSensorPropertiesTemplate.render()))
         {
@@ -442,9 +462,9 @@ public class PlatformDaoImpl implements PlatformDao
         }
     }
 
-    private static void deletePlatformProperties(Handle handle, DbKey id)
+    private void deletePlatformProperties(Handle handle, DbKey id)
     {
-        var deletePlatformPropertiesTemplate = QUERIES.getInstanceOf(DELETE_PROPERTIES);
+        var deletePlatformPropertiesTemplate = queries.getInstanceOf(DELETE_PROPERTIES);
         try (var deletePlatformProperties = handle.createUpdate(deletePlatformPropertiesTemplate.render()))
         {
             deletePlatformProperties.bind(PlatformMapper.Columns.ID.column(), id).execute();
@@ -460,14 +480,13 @@ public class PlatformDaoImpl implements PlatformDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabaseEngine();
-        var selectTemplate = QUERIES.getInstanceOf(SELECT);
+        var selectTemplate = queries.getInstanceOf(SELECT);
         if (mediumType != null && !mediumType.isBlank())
         {
             selectTemplate.add("medium_filter", " and tm.mediumtype = :mediumtype")
                           .add(WHERE_CLAUSE, "where mediumtype = :mediumtype");
-
         }
-        final var mappers = fillAll ? ALL_DATA : REF_DATA;
+        final var mappers = fillAll ? allData : refData;
         try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, mappers)))
         {
             registerMappers(select, mappers);

@@ -24,7 +24,6 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
 {
     protected final String prefix;
     protected final String tableName;
-
     protected final EnumSet<E> columns;
 
     protected PrefixRowMapper(String prefix, String table, EnumSet<E> columns)

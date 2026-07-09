@@ -22,6 +22,6 @@ public class OpenDcsDatabaseWrapper extends AbstractJdbiOpenDcsDatabaseWrapper
     @Override
     protected void initialSetup()
     {
-        /* do nothing at this time. */
+        this.jdbi.define("numeric_date", true);
     }
 }

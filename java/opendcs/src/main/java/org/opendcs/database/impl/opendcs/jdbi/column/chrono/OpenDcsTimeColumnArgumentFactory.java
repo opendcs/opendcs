@@ -18,6 +18,7 @@ public class OpenDcsTimeColumnArgumentFactory implements ArgumentFactory.Prepara
     @Override
     public Optional<Argument> build(Type type, Object value, ConfigRegistry config)
     {
+        final var dateValue = convertValue(value);
         if (type == Date.class)
         {
             return Optional.of(
@@ -25,13 +26,28 @@ public class OpenDcsTimeColumnArgumentFactory implements ArgumentFactory.Prepara
                 {
                     final var tmp = (Boolean)ctx.getAttribute("numeric_date");
                     final var datesAreInt =  tmp != null && tmp;
-                    setDate(statement, position, datesAreInt, (Date)value);
+                    setDate(statement, position, datesAreInt, dateValue);
                 });
         }
         else
         {
             return Optional.empty();
         }
+    }
+
+    private static Date convertValue(Object value)
+    {
+        Date dateValue = null;
+        if (value instanceof Date date)
+        {
+            dateValue = date;
+        }
+        else if (value instanceof Long longDate)
+        {
+            dateValue = new Date(longDate);
+        }
+
+        return dateValue;
     }
 
     private static void setDate(PreparedStatement statement, int position, boolean datesAreInt, Date value)
@@ -63,5 +79,4 @@ public class OpenDcsTimeColumnArgumentFactory implements ArgumentFactory.Prepara
         }
         return Optional.empty();
     }
-
 }

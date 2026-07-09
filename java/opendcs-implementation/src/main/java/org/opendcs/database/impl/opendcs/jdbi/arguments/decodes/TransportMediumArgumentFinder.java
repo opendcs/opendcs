@@ -34,7 +34,7 @@ public class TransportMediumArgumentFinder implements NamedArgumentFinder
         this.tm = tm;
     }
 
-    
+
     @SuppressWarnings("java:S1142") // otherwise it just looks odd
     @Override
     public Optional<Argument> find(String name, StatementContext ctx)
@@ -94,7 +94,7 @@ public class TransportMediumArgumentFinder implements NamedArgumentFinder
             case USERNAME:
                 return ctx.findArgumentFor(String.class, tm.getUsername());
             default:
-                return Optional.empty(); 
+                return Optional.empty();
         }
     }
 

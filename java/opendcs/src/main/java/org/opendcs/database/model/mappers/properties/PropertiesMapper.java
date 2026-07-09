@@ -47,7 +47,6 @@ public final class PropertiesMapper extends PrefixRowMapper<Pair<String,String>,
 
     /**
      * Create the basic set of columns and required join definition to pull in data for this mapper.
-
      * @return
      */
     @Override
