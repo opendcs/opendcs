@@ -18,7 +18,6 @@ import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import org.opendcs.fixtures.lrgs.LrgsTestInstance;
-import org.python.modules.thread.thread;
 
 import decodes.datasource.RawMessage;
 import decodes.db.DataSource;
