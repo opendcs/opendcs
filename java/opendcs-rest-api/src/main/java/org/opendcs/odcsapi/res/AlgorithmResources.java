@@ -351,6 +351,9 @@ public final class AlgorithmResources extends OpenDcsResource
 					@ApiResponse(responseCode = "400", description = "Bad Request - Missing required parameter",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
 									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class))),
+					@ApiResponse(responseCode = "409", description = "Conflict - Algorithm is in use by one or more computations",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class))),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
 									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class)))

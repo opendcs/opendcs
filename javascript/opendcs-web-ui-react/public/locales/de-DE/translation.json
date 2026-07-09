@@ -21,6 +21,7 @@
   "description": "Beschreibung",
   "cancel": "Abbrechen",
   "save": "Speichern",
+  "delete": "Löschen",
   "save_failed": "Änderungen konnten nicht gespeichert werden. Bitte versuchen Sie es erneut.",
   "select": "Auswählen",
   "choose": "Wählen",
@@ -37,10 +38,10 @@
   "Organizations not defined": "Organisationen nicht definiert",
   "user pass incorrect": "Benutzername und/oder Passwort sind falsch, oder der Benutzer hat keinen Zugriff auf die ausgewählte Organisation.",
   "Login Failed": "Anmeldung fehlgeschlagen",
-  "delete_success": "{{entity}} deleted successfully",
-  "delete_error_context": "Failed to delete {{entity}}",
-  "confirm_delete_prompt": "Are you sure you want to delete this item?",
-  "confirm_delete_title": "Confirm Delete",
+  "delete_success": "{{entity}} erfolgreich gelöscht",
+  "delete_error_context": "Fehler beim Löschen von {{entity}}",
+  "confirm_delete_prompt": "Sind Sie sicher, dass Sie dieses Element löschen möchten?",
+  "confirm_delete_title": "Löschen bestätigen",
   "yes": "Ja",
   "no": "Nein"
 }

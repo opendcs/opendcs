@@ -1042,15 +1042,15 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
       {pendingConfirm && (
         <Modal show onHide={() => setPendingConfirm(null)} centered>
           <Modal.Header closeButton>
-            <Modal.Title>Confirm Delete</Modal.Title>
+            <Modal.Title>{t("confirm_delete_title")}</Modal.Title>
           </Modal.Header>
           <Modal.Body>{pendingConfirm.message}</Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setPendingConfirm(null)}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button variant="danger" onClick={pendingConfirm.onConfirm}>
-              Delete
+              {t("delete")}
             </Button>
           </Modal.Footer>
         </Modal>

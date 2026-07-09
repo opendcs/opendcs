@@ -354,13 +354,16 @@ public final class NetlistResources extends OpenDcsResource
 
 			StringBuilder errmsg = new StringBuilder();
 
-			for (RoutingSpec spec : routingSpecList.getList())
+			if (nl != null)
 			{
-				for (String listName : spec.networkListNames)
+				for (RoutingSpec spec : routingSpecList.getList())
 				{
-					if (listName.equalsIgnoreCase(nl.name))
+					for (String listName : spec.networkListNames)
 					{
-						errmsg.append((errmsg.length() > 0) ? ", " : "").append(spec.getName());
+						if (listName.equalsIgnoreCase(nl.name))
+						{
+							errmsg.append((errmsg.length() > 0) ? ", " : "").append(spec.getName());
+						}
 					}
 				}
 			}
