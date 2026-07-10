@@ -119,3 +119,9 @@ export const orgKeys = {
   all: () => ["orgs"] as const,
   list: () => [...orgKeys.all(), "list"] as const,
 };
+
+// Version is global (not scoped to an org) — it identifies the deployed
+// build, not any org's data.
+export const versionKeys = {
+  all: () => ["version"] as const,
+};
