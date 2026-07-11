@@ -87,6 +87,7 @@ final class AuthorizationTestIT extends BaseApiIT
 				.filter(e -> !e.getKey().equals("/login_jwt"))
 				.filter(e -> !e.getKey().equals("/logout"))
 				.filter(e -> !e.getKey().equals("/organizations"))
+				.filter(e -> !e.getKey().equals("/version"))
 				.filter(e -> !e.getKey().startsWith("/health"))
 				.filter(e -> !e.getKey().contains("/runcomputation"))
 				.flatMap(e ->
