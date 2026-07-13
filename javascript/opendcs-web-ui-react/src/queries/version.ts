@@ -6,13 +6,15 @@ export interface ApiVersion {
   commitHash: string;
 }
 
+export const fetchVersion = (): Promise<ApiVersion> =>
+  fetch("/odcsapi/version").then((res) => {
+    if (!res.ok) throw new Error(`Version fetch failed: ${res.status}`);
+    return res.json() as Promise<ApiVersion>;
+  });
+
 export const useVersionQuery = () =>
   useQuery<ApiVersion>({
     queryKey: versionKeys.all(),
-    queryFn: () =>
-      fetch("/odcsapi/version").then((res) => {
-        if (!res.ok) throw new Error(`Version fetch failed: ${res.status}`);
-        return res.json() as Promise<ApiVersion>;
-      }),
+    queryFn: fetchVersion,
     staleTime: Infinity,
   });
