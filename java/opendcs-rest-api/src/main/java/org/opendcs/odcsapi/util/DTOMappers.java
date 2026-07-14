@@ -156,10 +156,14 @@ public final class DTOMappers
 		DbCompParm ret = new DbCompParm(parm.getAlgoRoleName(),
 				parm.getDataTypeId() != null ? DbKey.createDbKey(parm.getDataTypeId()) : DbKey.NullKey,
 				parm.getInterval(), parm.getTableSelector(), parm.getDeltaT());
-		if (parm.getDataTypeId() != null || parm.getDataType() != null)
+		String dataTypeStr = parm.getDataType();
+		// dataTypeStr must be "standard:code" to build a DataType; a bare dataTypeId with
+		// no code text isn't enough to construct one, so only the parm's dataTypeId (set via
+		// the constructor above) carries through in that case.
+		if (dataTypeStr != null && !dataTypeStr.isEmpty())
 		{
-			String[] parts = parm.getDataType().split(":");
-			DataType dt = new DataType(parts[0], parts[1]);
+			String[] parts = dataTypeStr.split(":", 2);
+			DataType dt = parts.length == 2 ? new DataType(parts[0], parts[1]) : new DataType("", parts[0]);
 			if (parm.getDataTypeId() != null)
 			{
 				dt.setId(DbKey.createDbKey(parm.getDataTypeId()));
