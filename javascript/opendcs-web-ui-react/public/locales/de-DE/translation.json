@@ -36,5 +36,6 @@
   "Close": "Schließen",
   "Organizations not defined": "Organisationen nicht definiert",
   "user pass incorrect": "Benutzername und/oder Passwort sind falsch, oder der Benutzer hat keinen Zugriff auf die ausgewählte Organisation.",
-  "Login Failed": "Anmeldung fehlgeschlagen"
+  "Login Failed": "Anmeldung fehlgeschlagen",
+  "version": "Version"
 }
