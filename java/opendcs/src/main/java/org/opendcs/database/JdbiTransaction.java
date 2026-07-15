@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
+import org.jdbi.v3.core.HandleListener;
 import org.jdbi.v3.core.transaction.TransactionException;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
@@ -55,6 +56,14 @@ public final class JdbiTransaction implements DataTransaction
             }
             catch (TransactionException ex)
             {
+                try
+                {
+                    this.rollback();
+                }
+                catch (Exception rbEx)
+                {
+                    ex.addSuppressed(rbEx);
+                }
                 throw new OpenDcsDataException("Unable to commit transaction.", ex);
             }
         }

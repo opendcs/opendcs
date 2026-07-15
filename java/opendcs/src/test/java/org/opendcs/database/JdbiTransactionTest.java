@@ -171,6 +171,11 @@ class JdbiTransactionTest
                     good.execute();
                     bad.execute();
                  }
+                 catch (OpenDcsDataRuntimeException ex)
+                 {
+                    tx.rollback(); // manually rollback, as we aren't using the wrapper.
+                    throw ex;
+                 }
             }
         });
         assertNotNull(dataException.getCause());
