@@ -81,17 +81,28 @@ public interface DataTransaction extends AutoCloseable
         {
             return action.call();
         }
-        catch (OpenDcsDataRuntimeException ex)
-        {
-            throw new OpenDcsDataException(ex);
-        }
         catch (Exception ex)
         {
+            try
+            {
+                this.rollback();
+            }
+            catch (OpenDcsDataException | RuntimeException ex2)
+            {
+                ex.addSuppressed(ex2);
+            }
             if (ex instanceof OpenDcsDataException odx)
             {
                 throw odx;
             }
-            throw new OpenDcsDataException("Other than OpenDCSDataRuntimeException.", ex);
+            else if (ex instanceof OpenDcsDataRuntimeException ordx)
+            {
+                throw new OpenDcsDataException(ordx);
+            }
+            else
+            {
+                throw new OpenDcsDataException("Other than OpenDCSDataRuntimeException.", ex);
+            }
         }
     }
 
@@ -111,17 +122,28 @@ public interface DataTransaction extends AutoCloseable
         {
             action.run();
         }
-        catch (OpenDcsDataRuntimeException ex)
-        {
-            throw new OpenDcsDataException(ex);
-        }
         catch (Exception ex)
         {
+            try
+            {
+                this.rollback();
+            }
+            catch (OpenDcsDataException | RuntimeException ex2)
+            {
+                ex.addSuppressed(ex2);
+            }
             if (ex instanceof OpenDcsDataException odx)
             {
                 throw odx;
             }
-            throw new OpenDcsDataException("Other than OpenDcsDataRuntimeException.", ex);
+            else if (ex instanceof OpenDcsDataRuntimeException ordx)
+            {
+                throw new OpenDcsDataException(ordx);
+            }
+            else
+            {
+                throw new OpenDcsDataException("Other than OpenDCSDataRuntimeException.", ex);
+            }
         }
     }
 }

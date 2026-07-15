@@ -276,7 +276,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean, javax.sql
             {
                 conn = pool.getConnection();
                 conn.unwrap(oracle.jdbc.OracleConnection.class).setDefaultTimeZone(TimeZone.getTimeZone("UTC"));
-                conn.setAutoCommit(true);
+                conn.setAutoCommit(false);
                 setCtxDbOfficeId(conn, info);
                 final WrappedConnection wc = new WrappedConnection(conn,(c)->{
                     this.returnConnection(c);

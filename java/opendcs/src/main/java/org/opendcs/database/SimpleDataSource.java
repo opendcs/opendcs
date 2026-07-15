@@ -143,6 +143,7 @@ public class SimpleDataSource implements DataSource, ConnectionPoolMXBean
         requests.getAndIncrement();
         log.trace("connections requests/freed {}/{}", requests.get(),freed.get());
         connections.add(wc);
+        wc.setAutoCommit(false);
         return wc;
     }
 

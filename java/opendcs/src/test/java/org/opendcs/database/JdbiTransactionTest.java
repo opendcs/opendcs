@@ -8,12 +8,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.spi.JdbiPlugin;
 import org.jdbi.v3.core.statement.SqlStatements;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,6 +57,15 @@ class JdbiTransactionTest
     void create_db()
     {
         jdbi = Jdbi.create("jdbc:derby:memory:db;create=true");
+        jdbi.installPlugin(new JdbiPlugin()
+        {
+            @Override
+            public Connection customizeConnection(Connection c) throws SQLException
+            {
+                c.setAutoCommit(false);
+                return c;
+            }    
+        });
         // Idea is to move this to the Wrapper Implementations, default to this
         // allow/exepect implementations to refine. Deriving things like
         // constraint errors from Runtime exceptoin and passing them on.
@@ -105,7 +116,7 @@ class JdbiTransactionTest
         {
             var h = tx.connection(Handle.class).get();
             h.createUpdate("create table simple_table(id integer primary key, name varchar(200))").execute();
-            h.createUpdate("create table child_table(parent_id integer references simple_table(id), description varchar(100))").execute();
+            h.createUpdate("create table child_table(parent_id integer references simple_table(id) primary key, description varchar(100))").execute();
         }
 
         // simple update
@@ -163,6 +174,15 @@ class JdbiTransactionTest
             }
         });
         assertNotNull(dataException.getCause());
+        try (var tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
+        {
+            var h = tx.connection(Handle.class).get();
+            try (var readGood = h.createQuery("select description from child_table where parent_id = 1"))
+            {
+                var goodValue = readGood.mapTo(String.class).findOne();
+                assertFalse(goodValue.isPresent());
+            }
+        }
 
         // do the same thing again, but using the new wrapper.
         var dataException2 = assertThrows(OpenDcsDataException.class, () ->
@@ -187,5 +207,14 @@ class JdbiTransactionTest
             }
         });
         assertNotNull(dataException2.getCause());
+        try (var tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
+        {
+            var h = tx.connection(Handle.class).get();
+            try (var readGood = h.createQuery("select description from child_table where parent_id = 1"))
+            {
+                var goodValue = readGood.mapTo(String.class).findOne();
+                assertFalse(goodValue.isPresent());
+            }
+        }
     }
 }
