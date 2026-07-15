@@ -2,7 +2,6 @@ import { useState } from "react";
 import Accordion from "react-bootstrap/Accordion";
 import Alert from "react-bootstrap/Alert";
 import Spinner from "react-bootstrap/Spinner";
-import Stack from "react-bootstrap/Stack";
 import { useDcpMessages } from "../hooks/useDcpMessages";
 import type { DcpLocation } from "../types";
 import { DcpMessageTable } from "./DcpMessageTable";
@@ -22,19 +21,23 @@ export function DcpLocationAccordion({
 
   return (
     <Accordion
-      className="mb-2"
+      className="dcpmon-station-accordion mb-2"
       onSelect={(eventKey) => setIsOpen(eventKey === location.dcpAddress)}
     >
       <Accordion.Item eventKey={location.dcpAddress}>
         <Accordion.Header>
-          <Stack direction="horizontal" gap={3} className="w-100 me-3">
+          <span className="dcpmon-station-heading">
             <StatusBadge status={location.status} />
-            <span className="fw-semibold">{location.dcpAddress}</span>
-            <span className="text-secondary">{location.stationId}</span>
-            <span className="ms-auto text-secondary">
+            <span className="dcpmon-station-address fw-semibold">
+              {location.dcpAddress}
+            </span>
+            <span className="dcpmon-station-id text-secondary">
+              {location.stationId}
+            </span>
+            <span className="dcpmon-message-count text-secondary">
               {location.messagesTotal} / {totalHours}
             </span>
-          </Stack>
+          </span>
         </Accordion.Header>
         <Accordion.Body>
           <dl className="row mb-3">

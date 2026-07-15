@@ -7,10 +7,71 @@
   min-height: 112px;
 }
 
+.dcpmon-station-accordion .accordion-button {
+  min-height: 3.375rem;
+}
+
+.dcpmon-station-heading {
+  display: grid;
+  grid-template-columns: auto minmax(5.5rem, max-content) minmax(4rem, 1fr) max-content;
+  align-items: center;
+  column-gap: 1rem;
+  width: 100%;
+  min-width: 0;
+  padding-right: 0.75rem;
+}
+
+.dcpmon-station-address,
+.dcpmon-station-id,
+.dcpmon-message-count {
+  min-width: 0;
+}
+
+.dcpmon-station-id {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dcpmon-message-count {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
 .dcpmon-message-data {
   max-width: 34rem;
   max-height: 8rem;
   margin: 0;
   overflow: auto;
   white-space: pre-wrap;
+}
+
+@media (max-width: 575.98px) {
+  .dcpmon-station-accordion .accordion-button {
+    padding: 0.875rem;
+  }
+
+  .dcpmon-station-heading {
+    grid-template-columns: auto minmax(0, 1fr) max-content;
+    row-gap: 0.25rem;
+    column-gap: 0.75rem;
+    padding-right: 0.25rem;
+  }
+
+  .dcpmon-station-address {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dcpmon-station-id {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .dcpmon-message-count {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
 }
