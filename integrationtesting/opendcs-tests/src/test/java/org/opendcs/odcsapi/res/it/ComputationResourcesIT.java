@@ -658,9 +658,7 @@ final class ComputationResourcesIT extends BaseApiIT
 	void testPostComputationWithBareRoleOnlyParms() throws Exception
 	{
 		// Mirrors what the web UI's "Copy" action sends: an algorithm's required
-		// roles with no site/dataType attached yet (see Computation.tsx's
-		// mergeRequiredParms + prepareParmForSave). GitHub #2036/#2054 reported this
-		// shape failing to save with no usable error.
+		// roles with no site/dataType attached yet
 		ApiComputation comp = new ApiComputation();
 		comp.setName("BareRoleParmsCopy_" + UUID.randomUUID());
 		comp.setEnabled(true);
@@ -721,8 +719,7 @@ final class ComputationResourcesIT extends BaseApiIT
 	{
 		// A parm's Data Type field is free text in the web UI (ComputationParamsTable.tsx)
 		// with no "standard:code" format enforcement, so a bare code with no colon is a
-		// real user input. This used to NPE/AIOOBE unhandled inside DTOMappers.map, which
-		// surfaced as an opaque 500 with no usable message (GitHub #2036/#2054).
+		// real user input.
 		ApiComputation comp = new ApiComputation();
 		comp.setName("MalformedDataTypeCopy_" + UUID.randomUUID());
 		comp.setEnabled(true);
