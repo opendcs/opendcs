@@ -1,0 +1,66 @@
+[
+    {
+        "id": "SWT",
+        "display": "Tulsa District"
+    },
+    {
+        "id": "SCE",
+        "display": "Southern-California-Edison"
+    },
+    {
+        "id": "UBR",
+        "display": "US-Bureau-Reclamation"
+    },
+    {
+        "id": "wyseo",
+        "display": ""
+    },
+    {
+        "id": "NAB",
+        "display": "Baltimore District"
+    },
+    {
+        "id": "NAO",
+        "display": ""
+    },
+    {
+        "id": "NAP",
+        "display": ""
+    },
+    {
+        "id": "NWDP",
+        "display": ""
+    },
+    {
+        "id": "NWK",
+        "display": ""
+    },
+    {
+        "id": "NWO",
+        "display": ""
+    },
+    {
+        "id": "SAW",
+        "display": ""
+    },
+    {
+        "id": "SAM",
+        "display": ""
+    },
+    {
+        "id": "SPA",
+        "display": ""
+    },
+    {
+        "id": "SOCDWR",
+        "display": ""
+    },
+    {
+        "id": "wyoming_NOAA",
+        "display": ""
+    },
+    {
+        "id": "LRN-RIVERGAGES-DAS",
+        "display": ""
+    }
+]

@@ -1,0 +1,27 @@
+{
+  "total": 1,
+  "messages": [
+    {
+      "receiveTime": "2025-06-22T22:35:01Z",
+      "dataSource": {
+        "name": "Test Iridium Node",
+        "type": "Iridium",
+        "groupingKeys": {
+          "name": "region",
+          "description": "Testbed"
+        }
+      },
+      "imei": "000000000000000",
+      "timestampOffset": "22350143405",
+      "status": "00",
+      "mobileOriginated": "05593",
+      "mobileTerminated": "00000",
+      "cdrReference": "1F9D8EC7",
+      "latitude": 0.0,
+      "longitude": 0.0,
+      "radius": 3,
+      "payloadFormat": "IE:0200D0",
+      "data": "0:Batt 14 #15 12.59 12.57 12.61 12.60 :AT 14 #15 34.7 34.9 35.2 35.1 :RH 14 #15 100 100 100 100 :Stage 14 #15 1.36 1.36 1.36 1.36 :Dewpoint 14 #15 34.74 34.89 35.19 35.09 :YB 12.61 :YN Iridium Test :YD 221216142915"
+    }
+  ]
+}

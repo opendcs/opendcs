@@ -1,0 +1,18 @@
+[
+  {
+    "name": "NOAA-GOES",
+    "type": "GOES",
+    "groupingKeys": {
+      "name": "region",
+      "description": "Southwest"
+    }
+  },
+  {
+    "name": "Iridium-SAT",
+    "type": "Iridium",
+    "groupingKeys": {
+      "name": "orbital-sector",
+      "description": "Northern Hemisphere"
+    }
+  }
+]
