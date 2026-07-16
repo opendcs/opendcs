@@ -26,6 +26,8 @@ import org.opendcs.database.api.Generator;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.api.TransactionContext;
+import org.opendcs.database.impl.opendcs.jdbi.plugins.ConnectionAutoCommitOff;
+import org.opendcs.database.impl.opendcs.jdbi.plugins.OpenDcsBaseSqlExceptionHandler;
 import org.opendcs.settings.api.OpenDcsSettings;
 
 class JdbiTransactionTest
@@ -57,15 +59,7 @@ class JdbiTransactionTest
     void create_db()
     {
         jdbi = Jdbi.create("jdbc:derby:memory:db;create=true");
-        jdbi.installPlugin(new JdbiPlugin()
-        {
-            @Override
-            public Connection customizeConnection(Connection c) throws SQLException
-            {
-                c.setAutoCommit(false);
-                return c;
-            }    
-        });
+        jdbi.installPlugin(new ConnectionAutoCommitOff());
         // Idea is to move this to the Wrapper Implementations, default to this
         // allow/exepect implementations to refine. Deriving things like
         // constraint errors from Runtime exceptoin and passing them on.
@@ -74,10 +68,8 @@ class JdbiTransactionTest
         // I suggest we create at least a default Handler per target database engine
         // that handles those elements with obvious error codes (like the actual ORA- PG- errors that are
         // for say, foreign key constraints, etc)
-        jdbi.getConfig(SqlStatements.class).addExceptionHandler((ex, ctx) ->
-        {
-            throw new OpenDcsDataRuntimeException("Error during query operation", ex);
-        });
+        jdbi.getConfig(SqlStatements.class)
+            .addExceptionHandler(new OpenDcsBaseSqlExceptionHandler());
     }
 
     @AfterEach

@@ -44,6 +44,8 @@ import org.opendcs.database.impl.opendcs.jdbi.column.chrono.OpenDcsTimeColumn;
 import org.opendcs.database.impl.opendcs.jdbi.column.chrono.OpenDcsTimeColumnArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
+import org.opendcs.database.impl.opendcs.jdbi.plugins.ConnectionAutoCommitOff;
+import org.opendcs.database.impl.opendcs.jdbi.plugins.OpenDcsBaseSqlExceptionHandler;
 import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.utils.AnnotationHelpers;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -84,16 +86,15 @@ public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatab
         jdbi.registerArgument(new DatabaseKeyArgumentFactory())
             .registerColumnMapper(new DatabaseKeyColumnMapper())
             .registerArgument(new OpenDcsTimeColumnArgumentFactory())
-            .registerColumnMapper(new OpenDcsTimeColumn());
+            .registerColumnMapper(new OpenDcsTimeColumn())
+            .installPlugin(new ConnectionAutoCommitOff());
 
         // Default behavior
         // allow/exepect implementations to refine. Deriving things like
         // constraint errors the SQLException and passing them on as specific OpenDcsExceptions.
         // handlers are attempted in reverse order of operation: https://jdbi.org/#_exception_handling
-        jdbi.getConfig(SqlStatements.class).addExceptionHandler((ex, ctx) ->
-        {
-            throw new OpenDcsDataRuntimeException("Error during query operation", ex);
-        });
+        jdbi.getConfig(SqlStatements.class)
+            .addExceptionHandler(new OpenDcsBaseSqlExceptionHandler());
 
         if (this.timeSeriesDb != null)
         {
