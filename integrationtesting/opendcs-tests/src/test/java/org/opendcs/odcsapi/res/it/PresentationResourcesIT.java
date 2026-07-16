@@ -376,9 +376,6 @@ final class PresentationResourcesIT extends BaseApiIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(Response.Status.CONFLICT.getStatusCode()));
-			// Currently gets 500, error should be mapped from the SQL error to something
-			// Processable by the WebApp. From the JDBI Handler is should not be Webapp specific.
-
 	}
 
 	private void assertMatch(JsonPath expected, JsonPath actual)

@@ -46,6 +46,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.dai.DataTypeDao;
 import org.opendcs.database.dai.PresentationGroupDao;
 import org.opendcs.odcsapi.beans.ApiPresentationElement;
@@ -351,6 +352,10 @@ public final class PresentationResources extends OpenDcsResource
         }
         catch (OpenDcsDataException ex)
         {
+            if (ex.getCause() instanceof OpenDcsDataRuntimeException oRtEx)
+            {
+                throw oRtEx;
+            }
             throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
                                        "Unable to delete presentation group.", ex);
         }
