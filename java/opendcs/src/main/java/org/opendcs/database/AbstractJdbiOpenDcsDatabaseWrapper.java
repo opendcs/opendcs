@@ -27,8 +27,6 @@ import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
-import decodes.cwms.CwmsLocationLevelDAO;
-
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.JdbiException;
 import org.jdbi.v3.core.statement.SqlStatements;
@@ -38,13 +36,11 @@ import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDaoConfigurationException;
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.impl.opendcs.jdbi.column.chrono.OpenDcsTimeColumn;
 import org.opendcs.database.impl.opendcs.jdbi.column.chrono.OpenDcsTimeColumnArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
-import org.opendcs.database.impl.opendcs.jdbi.plugins.ConnectionAutoCommitOff;
 import org.opendcs.database.impl.opendcs.jdbi.plugins.OpenDcsBaseSqlExceptionHandler;
 import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.utils.AnnotationHelpers;
@@ -86,8 +82,7 @@ public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatab
         jdbi.registerArgument(new DatabaseKeyArgumentFactory())
             .registerColumnMapper(new DatabaseKeyColumnMapper())
             .registerArgument(new OpenDcsTimeColumnArgumentFactory())
-            .registerColumnMapper(new OpenDcsTimeColumn())
-            .installPlugin(new ConnectionAutoCommitOff());
+            .registerColumnMapper(new OpenDcsTimeColumn());
 
         // Default behavior
         // allow/exepect implementations to refine. Deriving things like

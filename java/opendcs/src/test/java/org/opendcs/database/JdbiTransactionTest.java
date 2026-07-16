@@ -2,20 +2,17 @@ package org.opendcs.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
-import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
-import org.jdbi.v3.core.spi.JdbiPlugin;
 import org.jdbi.v3.core.statement.SqlStatements;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,7 +23,6 @@ import org.opendcs.database.api.Generator;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.api.TransactionContext;
-import org.opendcs.database.impl.opendcs.jdbi.plugins.ConnectionAutoCommitOff;
 import org.opendcs.database.impl.opendcs.jdbi.plugins.OpenDcsBaseSqlExceptionHandler;
 import org.opendcs.settings.api.OpenDcsSettings;
 
@@ -59,7 +55,6 @@ class JdbiTransactionTest
     void create_db()
     {
         jdbi = Jdbi.create("jdbc:derby:memory:db;create=true");
-        jdbi.installPlugin(new ConnectionAutoCommitOff());
         // Idea is to move this to the Wrapper Implementations, default to this
         // allow/exepect implementations to refine. Deriving things like
         // constraint errors from Runtime exceptoin and passing them on.
