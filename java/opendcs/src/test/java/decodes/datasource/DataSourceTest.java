@@ -25,15 +25,23 @@ import org.opendcs.decodes.api.DataMessage;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.NetworkList;
 
-public class DataSourceTest
+class DataSourceTest
 {
 
     @Test
     void test_datasource_stream() throws Exception
     {
         TestDataSource testDS = new TestDataSource();
-        var results = testDS.stream().collect(Collectors.toList());
-        assertEquals(testDS.size(), results.size(), "All messages and the end marker have not been returned.");
+        final var results = testDS.stream().collect(Collectors.toList());
+        assertEquals(testDS.size() + 1 /* the end marker */, results.size(),  () ->
+            "All messages and the end marker have not been returned: " +
+                    String.join(",", results.stream()
+                                            .map(r -> r.isSuccess()
+                                                    ? r.getSuccess().toString()
+                                                    : r.getFailure().getMessage())
+                                            .toList()
+                    )
+        );
         assertArrayEquals("A message".getBytes(), ((RawMessage)results.get(0).getSuccess()).data, "Correct data was not returned.");
     }
 
@@ -98,10 +106,12 @@ public class DataSourceTest
             if (index > 0)
             {
                 /* outputting message with some delay to see the affects */
-                try {
+                try
+                {
                     Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
+                }
+                catch (InterruptedException e)
+                {
                     e.printStackTrace();
                 }
             }
@@ -140,7 +150,8 @@ public class DataSourceTest
          * be able to apply
          */
         @Override
-        public BinaryOperator<List<DataMessage>> combiner() {
+        public BinaryOperator<List<DataMessage>> combiner()
+        {
             return (left,right) ->
             {
                 System.out.println("Combining");
@@ -170,6 +181,5 @@ public class DataSourceTest
             set.add(Characteristics.UNORDERED);
             return set;
         }
-
     }
 }

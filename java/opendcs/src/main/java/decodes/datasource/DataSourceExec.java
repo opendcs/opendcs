@@ -20,9 +20,7 @@
 */
 package decodes.datasource;
 
-import java.util.Iterator;
 import java.util.Properties;
-import java.util.Spliterators;
 import java.util.Vector;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -36,6 +34,7 @@ import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import org.opendcs.decodes.api.DataMessage;
+import org.opendcs.decodes.datasources.DataSourceSpliterator;
 
 import decodes.db.DataSource;
 import decodes.db.Database;
@@ -280,43 +279,14 @@ public abstract class DataSourceExec implements PropertiesOwner
 	 * The stream provided by the default implementation closes only when the source throws DataSourceEndException.
 	 * Other Errors are provided in the Error Result so that callers can design how to handle errors.
 	 * 
+	 * Default implementation is not parallel. If a given implementation can determine number of messages
+	 * and allowed parallel it should override this method.
+	 * 
 	 * @return Either a valid DataMessage or the exception thrown by getSourceRawMessage.
-	 * @throws DataSourceException exception DataSourceEndException, which terminates the stream.
 	 */
-	public Stream<FailableResult<DataMessage,DataSourceException>> stream() throws DataSourceException
+	public Stream<FailableResult<DataMessage,DataSourceException>> stream()
 	{
-		return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new Iterator<FailableResult<DataMessage,DataSourceException>>()
-		{
-			private FailableResult<DataMessage,DataSourceException> nextMessage = null;
-			@Override
-			public boolean hasNext() 
-			{
-				try
-				{
-					nextMessage = FailableResult.success(getDataMessage());
-					if (nextMessage != null)
-					{
-						return true;
-					}
-				}
-				catch (DataSourceException ex)
-				{
-					if (!(ex instanceof DataSourceEndException))
-					{
-						nextMessage = FailableResult.failure(ex);
-						return true;
-					}
-				}
-				return false;
-			}
-
-			@Override
-			public FailableResult<DataMessage,DataSourceException> next()
-			{
-				return nextMessage;
-			}
-
-		}, 0), false );
+		return StreamSupport.stream(new DataSourceSpliterator(this), false);
 	}
 
 	/**
