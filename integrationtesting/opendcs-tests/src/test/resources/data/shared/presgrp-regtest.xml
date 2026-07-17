@@ -152,5 +152,11 @@
       <UnitsAbbr>in</UnitsAbbr>
       <MaxDecimals>2</MaxDecimals>
     </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Evap">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
   </PresentationGroup>
 </Database>
