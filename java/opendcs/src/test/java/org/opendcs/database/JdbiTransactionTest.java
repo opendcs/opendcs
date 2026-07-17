@@ -57,8 +57,8 @@ class JdbiTransactionTest
     {
         jdbi = Jdbi.create("jdbc:derby:memory:db;create=true");
         // Idea is to move this to the Wrapper Implementations, default to this
-        // allow/exepect implementations to refine. Deriving things like
-        // constraint errors from Runtime exceptoin and passing them on.
+        // allow/expect implementations to refine. Deriving things like
+        // constraint errors from Runtime exception and passing them on.
         // handlers are attempted in reverse order of operation: https://jdbi.org/#_exception_handling
         // Does need to exist here due to not using the wrapper.
         // I suggest we create at least a default Handler per target database engine
