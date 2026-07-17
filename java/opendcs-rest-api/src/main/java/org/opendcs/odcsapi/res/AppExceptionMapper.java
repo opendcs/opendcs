@@ -77,16 +77,17 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 
    private static Response handle(OpenDcsConstraintException ex)
    {
-      String msg = "Cannot peform operation cause ";
+      String msg = "Cannot perform operation because ";
       switch (ex)
       {
-         case RelatedDataConstraintException related -> msg = msg + " data is use.";
+         case RelatedDataConstraintException related -> msg = msg + " data in use.";
          case UniqueConstraintViolationException unique -> msg = msg + " data already exists.";
          case null, default -> msg = msg + " cannot perform operation due to constraint.";
       }
-
+log.atInfo().setCause(ex).log(msg);
       return Response.status(Response.Status.CONFLICT)
-                     .entity(msg)
+                   .entity(new Status(msg))
+                   .type(MediaType.APPLICATION_JSON)
                   .build();
    }
 
