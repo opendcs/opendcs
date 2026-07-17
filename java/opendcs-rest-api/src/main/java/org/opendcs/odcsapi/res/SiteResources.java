@@ -49,7 +49,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.dai.SiteDao;
 import org.opendcs.odcsapi.beans.ApiSite;
 import org.opendcs.odcsapi.beans.ApiSiteRef;

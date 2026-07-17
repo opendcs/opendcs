@@ -5,6 +5,7 @@ package org.opendcs.database.api.exceptions.data;
  * the intent is not to be super specific to relational database terms.
  * RelatedDataConstraintException
  */
+@SuppressWarnings("java:S110")
 public class RelatedDataConstraintException extends OpenDcsConstraintException
 {
 

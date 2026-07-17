@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
-import org.jdbi.v3.core.HandleListener;
 import org.jdbi.v3.core.transaction.TransactionException;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
@@ -60,7 +59,9 @@ public final class JdbiTransaction implements DataTransaction
                 {
                     this.rollback();
                 }
-                catch (Exception rbEx)
+                // We specifically want to catch *any* error error to propagate it up and report it where
+                // appropriate.
+                catch (Exception rbEx) // NOSONAR.
                 {
                     ex.addSuppressed(rbEx);
                 }

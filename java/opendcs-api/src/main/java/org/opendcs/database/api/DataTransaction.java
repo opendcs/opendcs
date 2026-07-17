@@ -81,28 +81,9 @@ public interface DataTransaction extends AutoCloseable
         {
             return action.call();
         }
-        catch (Exception ex)
+        catch (Exception ex) // NOSONAR. Generic catch is intentional
         {
-            try
-            {
-                this.rollback();
-            }
-            catch (OpenDcsDataException | RuntimeException ex2)
-            {
-                ex.addSuppressed(ex2);
-            }
-            if (ex instanceof OpenDcsDataException odx)
-            {
-                throw odx;
-            }
-            else if (ex instanceof OpenDcsDataRuntimeException ordx)
-            {
-                throw new OpenDcsDataException(ordx);
-            }
-            else
-            {
-                throw new OpenDcsDataException("Other than OpenDCSDataRuntimeException.", ex);
-            }
+            throw handleException(this, ex);
         }
     }
 
@@ -122,28 +103,34 @@ public interface DataTransaction extends AutoCloseable
         {
             action.run();
         }
-        catch (Exception ex)
+        catch (Exception ex) // NOSONAR. Generic catch is intentional
         {
-            try
-            {
-                this.rollback();
-            }
-            catch (OpenDcsDataException | RuntimeException ex2)
-            {
-                ex.addSuppressed(ex2);
-            }
-            if (ex instanceof OpenDcsDataException odx)
-            {
-                throw odx;
-            }
-            else if (ex instanceof OpenDcsDataRuntimeException ordx)
-            {
-                throw new OpenDcsDataException(ordx);
-            }
-            else
-            {
-                throw new OpenDcsDataException("Other than OpenDCSDataRuntimeException.", ex);
-            }
+            throw handleException(this, ex);
         }
+    }
+
+    /**
+     * Throw the required exception.
+     *
+     * @param tx The transaction at hand so rollback can be called.
+     * @param ex The original cause
+     * @return An OpenDcsDataException wrapping the origin, or the original if it was already an OpenDcsDataException
+     */
+    private static OpenDcsDataException handleException(DataTransaction tx, Throwable ex)
+    {
+        try
+        {
+            tx.rollback();
+        }
+        catch (OpenDcsDataException | RuntimeException ex2)
+        {
+            ex.addSuppressed(ex2);
+        }
+        return switch (ex)
+        {
+            case OpenDcsDataException odx -> odx;
+            case OpenDcsDataRuntimeException ordx -> new OpenDcsDataException(ordx);
+            default ->  new OpenDcsDataException("Other than OpenDCSDataRuntimeException.", ex);
+        };
     }
 }

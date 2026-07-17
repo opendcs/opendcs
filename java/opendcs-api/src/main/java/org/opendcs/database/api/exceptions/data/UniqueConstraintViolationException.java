@@ -1,5 +1,6 @@
 package org.opendcs.database.api.exceptions.data;
 
+@SuppressWarnings("java:S110")
 public class UniqueConstraintViolationException extends OpenDcsConstraintException
 {
 

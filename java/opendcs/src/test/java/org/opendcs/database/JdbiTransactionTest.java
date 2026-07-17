@@ -28,6 +28,7 @@ import org.opendcs.settings.api.OpenDcsSettings;
 
 class JdbiTransactionTest
 {
+    private static final String INSERT_INTO_CHILD_TABLE = "insert into child_table(parent_id, description) values(:id, :text)";
     Jdbi jdbi;
     final TransactionContext dummyContext = new TransactionContext()
     {
@@ -148,10 +149,10 @@ class JdbiTransactionTest
             {
                 var h = tx.connection(Handle.class).get();
 
-                try(var good = h.createUpdate("insert into child_table(parent_id, description) values(:id, :text)")
+                try(var good = h.createUpdate(INSERT_INTO_CHILD_TABLE)
                                 .bind("id", 1)
                                 .bind("text", "hello");
-                    var bad = h.createUpdate("insert into child_table(parent_id, description) values(:id, :text)")
+                    var bad = h.createUpdate(INSERT_INTO_CHILD_TABLE)
                                .bind("id", 2)
                                .bind("text", "i will fail"))
                  {
@@ -185,10 +186,10 @@ class JdbiTransactionTest
 
                 tx.wrapErrors(() -> 
                 {
-                    try(var good = h.createUpdate("insert into child_table(parent_id, description) values(:id, :text)")
+                    try(var good = h.createUpdate(INSERT_INTO_CHILD_TABLE)
                                     .bind("id", 1)
                                     .bind("text", "hello");
-                        var bad = h.createUpdate("insert into child_table(parent_id, description) values(:id, :text)")
+                        var bad = h.createUpdate(INSERT_INTO_CHILD_TABLE)
                                 .bind("id", 2)
                                 .bind("text", "i will fail"))
                     {
