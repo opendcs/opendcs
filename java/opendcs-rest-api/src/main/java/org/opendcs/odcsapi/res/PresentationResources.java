@@ -46,6 +46,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.dai.DataTypeDao;
 import org.opendcs.database.dai.PresentationGroupDao;
 import org.opendcs.odcsapi.beans.ApiPresentationElement;
@@ -241,19 +242,22 @@ public final class PresentationResources extends OpenDcsResource
     {
 
         final var db = createDb();
+        final var dao = db.getDao(PresentationGroupDao.class).orElseThrow(() -> UNABLE_TO_GET_PRESENTATIONGROUP_DAO);
+        final var dtDao = db.getDao(DataTypeDao.class).orElseThrow(() -> DatatypeUnitResources.UNABLE_TO_GET_DT_DAO);
         try (var tx = db.newTransaction())
         {
-            final var dao = db.getDao(PresentationGroupDao.class).orElseThrow(() -> UNABLE_TO_GET_PRESENTATIONGROUP_DAO);
-            final var dtDao = db.getDao(DataTypeDao.class).orElseThrow(() -> DatatypeUnitResources.UNABLE_TO_GET_DT_DAO);
-            final var group = dao.save(tx, map(tx, dtDao, presGrp));
-            return Response.status(Response.Status.CREATED)
-                           .entity(map(group))
-                           .build();
+            return tx.wrapErrors(() ->
+            {
+                final var group = dao.save(tx, map(tx, dtDao, presGrp));
+                return Response.status(Response.Status.CREATED)
+                            .entity(map(group))
+                            .build();
+            });
         }
         catch (OpenDcsDataException ex)
         {
             throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-                                      "Unable to retrieve presentation group.", ex);
+                                      "Unable to save presentation group.", ex);
         }
     }
 
@@ -338,14 +342,20 @@ public final class PresentationResources extends OpenDcsResource
         try (var tx = db.newTransaction())
         {
             final var dao = db.getDao(PresentationGroupDao.class).orElseThrow(() -> UNABLE_TO_GET_PRESENTATIONGROUP_DAO);
-
-            dao.delete(tx, DbKey.createDbKey(groupId));
-            return Response.noContent()
-                           .entity("Presentation Group with ID " + groupId + " deleted")
-                           .build();
+            return tx.wrapErrors(() -> 
+            {
+                dao.delete(tx, DbKey.createDbKey(groupId));
+                return Response.noContent()
+                            .entity("Presentation Group with ID " + groupId + " deleted")
+                            .build();
+            });
         }
         catch (OpenDcsDataException ex)
         {
+            if (ex.getCause() instanceof OpenDcsDataRuntimeException oRtEx)
+            {
+                throw oRtEx;
+            }
             throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
                                        "Unable to delete presentation group.", ex);
         }
