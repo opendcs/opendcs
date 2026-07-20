@@ -17,6 +17,7 @@
   "description": "Beschreibung",
   "add_site": "Neuen Standort hinzufügen",
   "enter_region": "Region",
+  "region_tooltip": "Für CWMS-Benutzer entspricht dieses Feld dem Landkreis",
   "enter_country": "Land angeben",
   "use_decimal_format": "Wert im Dezimalformat angeben",
   "nearestCity": "Nächstgelegene Stadt",
