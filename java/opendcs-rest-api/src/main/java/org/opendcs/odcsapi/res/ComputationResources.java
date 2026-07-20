@@ -277,14 +277,14 @@ public final class ComputationResources extends OpenDcsResource
 					@ApiResponse(responseCode = "204", description = "Successfully deleted computation"),
 					@ApiResponse(responseCode = "400", description = "Missing required computationid parameter",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
-									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class))),
+									schema = @Schema(implementation = Status.class))),
 					@ApiResponse(responseCode = "409",
 							description = "Computation cannot be deleted — constraint violation",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
-									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class))),
+									schema = @Schema(implementation = Status.class))),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
-									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class)))
+									schema = @Schema(implementation = Status.class)))
 			}
 	)
 	public Response deleteComputation(@Parameter(required = true, description = "Unique Computation ID",

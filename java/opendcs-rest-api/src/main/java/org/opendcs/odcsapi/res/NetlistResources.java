@@ -352,23 +352,9 @@ public final class NetlistResources extends OpenDcsResource
 			RoutingSpecList routingSpecList = new RoutingSpecList();
 			dbIo.readRoutingSpecList(routingSpecList);
 
-			StringBuilder errmsg = new StringBuilder();
+			String errmsg = findReferencingRoutingSpecs(nl, routingSpecList);
 
-			if (nl != null)
-			{
-				for (RoutingSpec spec : routingSpecList.getList())
-				{
-					for (String listName : spec.networkListNames)
-					{
-						if (listName.equalsIgnoreCase(nl.name))
-						{
-							errmsg.append((errmsg.length() > 0) ? ", " : "").append(spec.getName());
-						}
-					}
-				}
-			}
-
-			if (errmsg.length() > 0)
+			if (!errmsg.isEmpty())
 			{
 				return Response.status(Response.Status.CONFLICT)
 						.entity(new Status("Cannot delete network list with ID " + netlistId
@@ -391,6 +377,26 @@ public final class NetlistResources extends OpenDcsResource
 		{
 			dbIo.close();
 		}
+	}
+
+	static String findReferencingRoutingSpecs(NetworkList nl, RoutingSpecList routingSpecList)
+	{
+		StringBuilder errmsg = new StringBuilder();
+		if (nl == null)
+		{
+			return errmsg.toString();
+		}
+		for (RoutingSpec spec : routingSpecList.getList())
+		{
+			for (String listName : spec.networkListNames)
+			{
+				if (listName.equalsIgnoreCase(nl.name))
+				{
+					errmsg.append((errmsg.length() > 0) ? ", " : "").append(spec.getName());
+				}
+			}
+		}
+		return errmsg.toString();
 	}
 
 	@POST
