@@ -218,7 +218,7 @@ public final class AppResources extends OpenDcsResource
 		ret.setProperties(app.getProperties());
 		ret.setManualEditApp(app.isManualEditingApp());
 		String appType = app.getProperties().getProperty("appType");
-		if (appType == null)
+		if (appType == null && app.getAppType() != null)
 		{
 			ret.setProperty("appType", app.getAppType());
 		}
