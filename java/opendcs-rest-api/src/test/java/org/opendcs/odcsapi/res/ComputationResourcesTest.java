@@ -7,6 +7,7 @@ import java.util.List;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.DbCompAlgorithm;
+import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.TsGroup;
 import org.junit.jupiter.api.Test;
@@ -104,6 +105,50 @@ final class ComputationResourcesTest
 		assertEquals(APIStreamMapper.mapList(apiComp.getParmList(), ApiCompParm.class),
 				dbComp.getParmList());
 		assertEquals(apiComp.getAlgorithmId(), dbComp.getAlgorithm().getId().getValue());
+	}
+
+	@Test
+	void testMapWithBareRoleParmNoDataType() throws Exception
+	{
+		ApiComputation apiComp = new ApiComputation();
+		apiComp.setComputationId(-1L);
+		apiComp.setName("Jessica_TestCopy");
+		apiComp.setAlgorithmName("CopyAlgorithm");
+		apiComp.setAlgorithmId(500L);
+		apiComp.setAppId(200L);
+		apiComp.setGroupId(300L);
+		apiComp.setGroupName("Raw-NRCS");
+		ApiCompParm input = new ApiCompParm();
+		input.setAlgoRoleName("input");
+		input.setAlgoParmType("i");
+		input.setDeltaT(0);
+		ApiCompParm output = new ApiCompParm();
+		output.setAlgoRoleName("output");
+		output.setAlgoParmType("o");
+		output.setDeltaT(0);
+		apiComp.setParmList(List.of(input, output));
+
+		DbComputation dbComp = DTOMappers.map(apiComp);
+		assertNotNull(dbComp);
+	}
+
+	@Test
+	void testMapWithDataTypeMissingColonDoesNotThrow() throws Exception
+	{
+		ApiComputation apiComp = new ApiComputation();
+		apiComp.setComputationId(-1L);
+		apiComp.setName("Jessica_TestCopy");
+		ApiCompParm input = new ApiCompParm();
+		input.setAlgoRoleName("input");
+		input.setAlgoParmType("i");
+		input.setDataType("HG");
+		apiComp.setParmList(List.of(input));
+
+		DbComputation dbComp = DTOMappers.map(apiComp);
+
+		assertNotNull(dbComp);
+		DbCompParm mappedParm = dbComp.getParms().next();
+		assertEquals("HG", mappedParm.getDataType().getCode());
 	}
 
 	@Test
