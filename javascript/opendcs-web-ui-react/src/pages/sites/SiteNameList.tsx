@@ -28,9 +28,18 @@ interface SiteNameListProperties {
   edit?: boolean;
 }
 
+// Stable reference so components that don't pass `actions` don't force
+// every memoized callback that depends on it to recompute every render.
+const EMPTY_ACTIONS: CollectionActions<SiteNameType> = {};
+
+const ACTION_COLUMN = {
+  data: null,
+  name: "actions",
+};
+
 export const SiteNameList: React.FC<SiteNameListProperties> = ({
   siteNames,
-  actions = {},
+  actions = EMPTY_ACTIONS,
   edit = false,
 }) => {
   const { toDom } = useContextWrapper();
@@ -102,8 +111,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
         return data;
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rowStateRef, rowInputRef, siteNamesRef],
+    [rowInputRef, siteNamesRef, refList, toDom],
   );
 
   const renderEditableName = useCallback(
@@ -143,8 +151,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
         return data;
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rowState, rowStateRef, rowInputRef],
+    [rowStateRef, rowInputRef, toDom, t],
   );
 
   const columnsBase = useMemo(
@@ -152,17 +159,11 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
       { data: "type", render: renderEditableType, defaultContent: "" },
       { data: "name", render: renderEditableName, defaultContent: "" },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rowStateRef],
+    [renderEditableType, renderEditableName],
   );
 
-  const actionColumn = {
-    data: null,
-    name: "actions",
-  };
   const columns = useMemo(
-    () => (edit ? [...columnsBase, actionColumn] : columnsBase),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    () => (edit ? [...columnsBase, ACTION_COLUMN] : columnsBase),
     [edit, columnsBase],
   );
 
@@ -263,8 +264,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
         </>
       );
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [localSiteNamesRef, edit, i18n.language, rowStateRef],
+    [localSiteNamesRef, edit, rowStateRef, actions, t],
   );
 
   const slots = {
