@@ -1,9 +1,8 @@
 import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
 import { PropertiesTable, PropertiesTableProps, type Property } from "./Properties";
-import { expect, fn, waitFor, within } from "storybook/test";
-import { useCallback, useState } from "storybook/internal/preview-api";
-import { act } from "@testing-library/react";
-import { useReducer } from "react";
+import { expect, fn, waitFor } from "storybook/test";
+import { useCallback } from "storybook/internal/preview-api";
+import { act, useReducer } from "react";
 import { PropertiesReducer } from "./PropertiesReducer";
 
 const WithActions: Decorator<PropertiesTableProps> = (Story, context) => {
@@ -136,7 +135,7 @@ export const EmptyAddThenSaveThenRemove: Story = {
     ...StartEmpty.args,
   },
   decorators: [WithActions],
-  play: async ({ canvasElement, step, mount, parameters, userEvent }) => {
+  play: async ({ step, mount, parameters, userEvent }) => {
     const canvas = await mount();
     const { i18n } = parameters;
 

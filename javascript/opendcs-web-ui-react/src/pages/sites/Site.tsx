@@ -170,13 +170,13 @@ export interface SiteProperties {
 }
 
 const elevationUnits = [
-  { units: "m", name: "M (Meters)" },
   { units: "cm", name: "cM (Centimeters)" },
   { units: "ft", name: "ft (Feet)" },
   { units: "in", name: "in (Inches)" },
   { units: "km", name: "kM (Kilometers)" },
-  { units: "mm", name: "mM (Millimeters)" },
+  { units: "m", name: "M (Meters)" },
   { units: "mi", name: "mi (Miles)" },
+  { units: "mm", name: "mM (Millimeters)" },
   { units: "nmi", name: "nmi (Nautical Miles)" },
   { units: "um", name: "uM (Micrometers)" },
   { units: "yd", name: "yd (Yards)" },
@@ -205,9 +205,9 @@ export const Site: React.FC<SiteProperties> = ({
   // need an initial set of the units if it isn't defined as it's a required field in the database.
   useEffect(() => {
     if (providedSite.elevUnits === undefined) {
-      dispatch({ type: "save", payload: { elevUnits: elevationUnits[0].units } });
+      dispatch({ type: "save", payload: { elevUnits: "m" } });
     }
-  }, []);
+  }, [providedSite.elevUnits]);
 
   const propertyActions: CollectionActions<Property, string> = edit
     ? {
@@ -244,9 +244,12 @@ export const Site: React.FC<SiteProperties> = ({
     });
   }, [localSite.sitenames]);
 
-  const saveSite = useCallback((site: UiSite) => {
-    actions.save!(site as ApiSite);
-  }, []);
+  const saveSite = useCallback(
+    (site: UiSite) => {
+      actions.save!(site as ApiSite);
+    },
+    [actions.save],
+  );
 
   const inputChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -433,7 +436,12 @@ export const Site: React.FC<SiteProperties> = ({
                 </Col>
               </FormGroup>
               <FormGroup as={Row} className="mb-3">
-                <Form.Label column sm={2} htmlFor="region">
+                <Form.Label
+                  column
+                  sm={2}
+                  htmlFor="region"
+                  title={t("sites:region_tooltip")}
+                >
                   {t("region")}
                 </Form.Label>
                 <Col sm={10}>

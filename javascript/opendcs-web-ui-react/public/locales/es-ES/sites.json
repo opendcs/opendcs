@@ -17,6 +17,7 @@
   "description": "Descripción",
   "add_site": "Agregar nuevo sitio",
   "enter_region": "Región",
+  "region_tooltip": "Para usuarios de CWMS, este campo corresponde al Condado",
   "enter_country": "Indicar país",
   "use_decimal_format": "Indicar el valor en formato decimal",
   "nearestCity": "Ciudad más cercana",
