@@ -1,4 +1,4 @@
-import { Suspense, use, type ReactNode } from "react";
+import { Suspense, use, useCallback, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import RefListContext from "../contexts/data/RefListContext";
 import { I18nextProvider, useTranslation } from "react-i18next";
@@ -35,8 +35,8 @@ export function useContextWrapper(): Wrappers {
   const queryClient = useQueryClient();
   const { i18n } = useTranslation();
 
-  return {
-    toDom: (children: ReactNode): Node => {
+  const toDom = useCallback(
+    (children: ReactNode): Node => {
       const container = document.createElement("div");
       const root = createRoot(container);
       // The DataTables-rendered subtree gets a fresh React root, so contexts
@@ -60,5 +60,8 @@ export function useContextWrapper(): Wrappers {
       );
       return container;
     },
-  };
+    [i18n, themeContext, apiContext, authContext, refContext, queryClient],
+  );
+
+  return { toDom };
 }
