@@ -28,9 +28,18 @@ interface SiteNameListProperties {
   edit?: boolean;
 }
 
+// Stable reference so components that don't pass `actions` don't force
+// every memoized callback that depends on it to recompute every render.
+const EMPTY_ACTIONS: CollectionActions<SiteNameType> = {};
+
+const ACTION_COLUMN = {
+  data: null,
+  name: "actions",
+};
+
 export const SiteNameList: React.FC<SiteNameListProperties> = ({
   siteNames,
-  actions = {},
+  actions = EMPTY_ACTIONS,
   edit = false,
 }) => {
   const { toDom } = useContextWrapper();
@@ -102,7 +111,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
         return data;
       }
     },
-    [rowStateRef, rowInputRef, siteNamesRef],
+    [rowInputRef, siteNamesRef, refList, toDom],
   );
 
   const renderEditableName = useCallback(
@@ -142,7 +151,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
         return data;
       }
     },
-    [rowState, rowStateRef, rowInputRef],
+    [rowStateRef, rowInputRef, toDom, t],
   );
 
   const columnsBase = useMemo(
@@ -150,15 +159,11 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
       { data: "type", render: renderEditableType, defaultContent: "" },
       { data: "name", render: renderEditableName, defaultContent: "" },
     ],
-    [rowStateRef],
+    [renderEditableType, renderEditableName],
   );
 
-  const actionColumn = {
-    data: null,
-    name: "actions",
-  };
   const columns = useMemo(
-    () => (edit ? [...columnsBase, actionColumn] : columnsBase),
+    () => (edit ? [...columnsBase, ACTION_COLUMN] : columnsBase),
     [edit, columnsBase],
   );
 
@@ -166,18 +171,16 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
     if (table.current?.dt()) {
       const dt = table.current.dt()!;
       const visibleRows = dt.rows({ page: "current", search: "applied" });
-      visibleRows.every(function () {
-        const row = this;
-        const idx = (row.data() as SiteNameType).type;
+      visibleRows.every((rowIdx) => {
+        const idx = (dt.row(rowIdx).data() as SiteNameType).type;
         if (rowState[idx] !== undefined) {
-          row.invalidate().draw(false);
+          dt.row(rowIdx).invalidate().draw(false);
         }
       });
     }
   }, [rowState, siteNames, edit, rowStateRef]);
 
   const renderActions = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     (data: Partial<SiteNameType>, _row: SiteNameType) => {
       const inEdit = data.type === "-" || rowStateRef.current[data.type!] === "edit";
       return (
@@ -195,6 +198,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
                 });
                 delete rowInputRef.current[snt.type];
                 updateLocalSitenames((prev) => {
+                  // eslint-disable-next-line sonarjs/no-nested-functions
                   return [...prev.filter((sn) => sn.type !== data.type)];
                 });
                 updateRowState((prev) => {
@@ -240,6 +244,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
                 const snt = data as SiteNameType;
                 if (localSiteNamesRef.current?.find((sn) => sn.type === snt.type)) {
                   updateLocalSitenames((prev) => [
+                    // eslint-disable-next-line sonarjs/no-nested-functions
                     ...prev.filter((sn) => sn.type !== snt.type),
                   ]);
                 } else {
@@ -259,7 +264,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
         </>
       );
     },
-    [localSiteNamesRef, edit, i18n.language, rowStateRef],
+    [localSiteNamesRef, edit, rowStateRef, actions, t],
   );
 
   const slots = {
@@ -301,7 +306,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
       columns={columns}
       data={allSites}
       options={options}
-      slots={columns.length === 3 ? slots : undefined}
+      slots={edit ? slots : undefined}
       ref={table}
       className="table table-hover table-striped tablerow-cursor w-100 border"
     >
@@ -309,7 +314,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
         <tr>
           <th>{t("sites:site_names.name_type")}</th>
           <th>{t("translation:value")}</th>
-          {columns.length === 3 ? <th>{t("translation:actions")}</th> : null}
+          {edit ? <th>{t("translation:actions")}</th> : null}
         </tr>
       </thead>
     </DataTable>

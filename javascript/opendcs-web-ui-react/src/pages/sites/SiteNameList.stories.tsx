@@ -1,9 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, fn, Mock, MockedFunction } from "storybook/test";
+import { expect, fn, Mock } from "storybook/test";
 import { SiteNameList, SiteNameType } from "./SiteNameList";
 import { WithRefLists } from "../../../.storybook/mock/WithRefLists";
-import { act } from "@testing-library/react";
-import { useEffect, useState } from "react";
+import { act, useState } from "react";
 
 const meta = {
   component: SiteNameList,
@@ -35,6 +34,46 @@ export const WithNames: Story = {
   },
 };
 
+const WithNamesInEditRender = ({
+  siteNames = [],
+  actions,
+  edit,
+}: {
+  siteNames?: SiteNameType[];
+  actions?: {
+    add?: () => void;
+    save?: (item: SiteNameType) => void;
+    remove?: (item: SiteNameType) => void;
+  };
+  edit?: boolean;
+}) => {
+  const [names, setNames] = useState<SiteNameType[]>(siteNames as SiteNameType[]);
+
+  const realSave = (item: SiteNameType) => {
+    actions?.save?.(item);
+    setNames((prev) => {
+      const filtered = prev.filter((sn) => sn.type != item.type);
+      return [...filtered, item];
+    });
+  };
+
+  const realRemove = (item: SiteNameType) => {
+    actions?.remove?.(item);
+    setNames((prev) => {
+      const filtered = prev.filter((sn) => sn.type != item.type);
+      return [...filtered];
+    });
+  };
+
+  return (
+    <SiteNameList
+      siteNames={names}
+      actions={{ save: realSave, remove: realRemove }}
+      edit={edit}
+    />
+  );
+};
+
 export const WithNamesInEdit: Story = {
   args: {
     siteNames: [
@@ -48,42 +87,11 @@ export const WithNamesInEdit: Story = {
     },
     edit: true,
   },
-  render: (args) => {
-    const { siteNames, actions, edit } = args;
-    const [names, updateNames] = useState<SiteNameType[]>([]);
-
-    useEffect(() => {
-      updateNames(siteNames as SiteNameType[]);
-    }, []);
-
-    const realSave = (item: SiteNameType) => {
-      actions?.save?.(item);
-      updateNames((prev) => {
-        const filtered = prev.filter((sn) => sn.type != item.type);
-        return [...filtered, item];
-      });
-    };
-
-    const realRemove = (item: SiteNameType) => {
-      actions?.remove?.(item);
-      updateNames((prev) => {
-        const filtered = prev.filter((sn) => sn.type != item.type);
-        return [...filtered];
-      });
-    };
-
-    return (
-      <SiteNameList
-        siteNames={names}
-        actions={{ save: realSave, remove: realRemove }}
-        edit={edit}
-      />
-    );
-  },
+  render: (args) => <WithNamesInEditRender {...args} />,
   play: async ({ mount, userEvent, parameters, args }) => {
     const canvas = await mount();
     const { i18n } = parameters;
-    const saveFn = args.actions?.save! as Mock;
+    const saveFn = args.actions?.save as Mock;
 
     const editButton = await canvas.findByRole("button", {
       name: i18n.t("sites:site_names.edit_for", {
