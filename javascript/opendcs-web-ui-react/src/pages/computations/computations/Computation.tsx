@@ -11,6 +11,7 @@ import {
 } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../../components/properties";
 import { use, useCallback, useMemo, useReducer, useState } from "react";
+import { ApiException } from "opendcs-api";
 import type {
   ApiAlgorithm,
   ApiAlgorithmRef,
@@ -175,6 +176,18 @@ const requiredParmsFromAlgorithm = (algorithm?: ApiAlgorithm): ApiCompParm[] =>
 const assignedId = (value: number | undefined): number | undefined =>
   value !== undefined && value > 0 ? value : undefined;
 
+// The generated client only parses a response body for status codes the
+// OpenAPI spec declares a schema for; when it does, ApiException.body carries
+// the server's `Status` message (see AppExceptionMapper) instead of a generic
+// "Internal Server Error" string.
+const saveErrorMessage = (err: unknown, fallback: string): string => {
+  if (err instanceof ApiException && err.body && typeof err.body === "object") {
+    const message = (err.body as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim().length > 0) return message;
+  }
+  return fallback;
+};
+
 const prepareParmForSave = (parm: ApiCompParm): ApiCompParm => {
   const dataType = parm.dataType?.trim();
   return {
@@ -280,7 +293,7 @@ export const Computation: React.FC<ComputationProperties> = ({
         });
       } catch (err) {
         console.warn("Computation save failed", err);
-        setSaveError(t("computations:editor.save_error"));
+        setSaveError(saveErrorMessage(err, t("computations:editor.save_error")));
       }
     },
     [actions, localParms, t],

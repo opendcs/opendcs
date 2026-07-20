@@ -265,7 +265,7 @@ public final class SiteResources extends OpenDcsResource
 		{
 			throw new MissingParameterException("Missing required site parameter.");
 		}
-	
+
 		final var db = createDb();
 		try (var tx = db.newTransaction())
 		{
@@ -338,7 +338,7 @@ public final class SiteResources extends OpenDcsResource
 					@ApiResponse(responseCode = "500", description = "Internal server error - see error message for details")
 			}
 	)
-	public Response deleteSite(@Parameter(description = "id to delete", required = true, 
+	public Response deleteSite(@Parameter(description = "id to delete", required = true,
 			example = "3", schema = @Schema(type = "long"))
 		@QueryParam("siteid") Long siteId) throws WebAppException
 	{
@@ -362,6 +362,5 @@ public final class SiteResources extends OpenDcsResource
 			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
 						 			  "Unable to delete site ", ex);
 		}
-
 	}
 }

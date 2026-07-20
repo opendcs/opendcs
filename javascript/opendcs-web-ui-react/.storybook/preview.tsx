@@ -14,6 +14,7 @@ import { WithTheme } from "./mock/WithTheme";
 import { WithUnits } from "./mock/WithUnits";
 import { WithQueryClient } from "./mock/WithQueryClient";
 import { WithOrganization } from "./mock/WithOrganization";
+import { WithVersion } from "./mock/WithVersion";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 // MSW setup
@@ -70,6 +71,7 @@ const preview: Preview = {
     WithOrganization,
     WithRefLists,
     WithUnits,
+    WithVersion,
     WithQueryClient,
     routerDecorator,
   ],
