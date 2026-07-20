@@ -492,6 +492,18 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   const newRowIdsRef = useRef<WeakMap<object, string>>(new WeakMap());
   const newRowCounterRef = useRef(0);
 
+  const nextNumericIdRef = useRef<number | null>(null);
+  const nextNumericId = useCallback(
+    (existing: T[]): number => {
+      nextNumericIdRef.current =
+        nextNumericIdRef.current === null
+          ? nextAddNewId(existing, getId)
+          : nextNumericIdRef.current - 1;
+      return nextNumericIdRef.current;
+    },
+    [getId],
+  );
+
   // Stringify a row's id, preferring a synthetic id if the row is a pending
   // inline-edit new row. Used for every rowState / cache lookup internally.
   const idOf = useCallback(
@@ -564,14 +576,14 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   const appendLocalItem = useCallback(
     (template: (nextId: number) => T, mode: RowMode = "new") => {
       setLocalItems((prev) => {
-        const newId = nextAddNewId(prev, getId);
+        const newId = nextNumericId(prev);
         const newItem = template(newId);
         const newIdStr = String(getId(newItem));
         setRowState((prevRS) => ({ ...prevRS, [newIdStr]: mode }));
         return [...prev, newItem];
       });
     },
-    [getId],
+    [getId, nextNumericId],
   );
 
   // --- Expose imperative handle --------------------------------------------
@@ -858,7 +870,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
                         }
                       }
                       setLocalItems((prev) => {
-                        const newItem = addNew.template(nextAddNewId(prev, getId));
+                        const newItem = addNew.template(nextNumericId(prev));
                         const newId = String(getId(newItem));
                         setRowState((prevRS) => ({ ...prevRS, [newId]: "new" }));
                         return [...prev, newItem];

@@ -43,5 +43,6 @@
   "confirm_delete_prompt": "Sind Sie sicher, dass Sie dieses Element löschen möchten?",
   "confirm_delete_title": "Löschen bestätigen",
   "yes": "Ja",
-  "no": "Nein"
+  "no": "Nein",
+  "version": "Version"
 }

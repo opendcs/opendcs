@@ -27,6 +27,10 @@ import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import org.opendcs.database.api.OpenDcsDataConstraintException;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.OpenDcsDataRuntimeException;
+import org.opendcs.database.api.exceptions.data.OpenDcsConstraintException;
+import org.opendcs.database.api.exceptions.data.RelatedDataConstraintException;
+import org.opendcs.database.api.exceptions.data.UniqueConstraintViolationException;
 import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
@@ -52,12 +56,14 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 		{
 			case WebAppException webAppException -> handle(webAppException);
 			case ConstraintException constraintException -> handle(constraintException);
+			case OpenDcsConstraintException constraintException -> handle(constraintException);
 			case TsdbException tsdbException -> handle(tsdbException);
 			case DbException dbException -> handle(dbException);
 			case WebApplicationException webApplicationException -> handle(webApplicationException);
 			case UnsupportedOperationException unsupportedOperationException -> handle(unsupportedOperationException);
 			case OpenDcsDataConstraintException constraintEx -> handleConstraint(constraintEx);
 			case OpenDcsDataException dataEx -> handle(dataEx);
+			case OpenDcsDataRuntimeException odcs -> toResponse(odcs.getCause());
 			case null, default -> handle(ex);
 		};
 	}
@@ -68,6 +74,22 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 		Status status = new Status("Bad Request.  There was an issue with the request, please try again or contact your system administrator.");
 		return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 				.entity(status)
+				.type(MediaType.APPLICATION_JSON)
+				.build();
+	}
+
+	private static Response handle(OpenDcsConstraintException ex)
+	{
+		String msg = "Cannot perform operation because ";
+		switch (ex)
+		{
+			case RelatedDataConstraintException related -> msg = msg + " data in use.";
+			case UniqueConstraintViolationException unique -> msg = msg + " data already exists.";
+			case null, default -> msg = msg + " cannot perform operation due to constraint.";
+		}
+		log.atInfo().setCause(ex).log(msg);
+		return Response.status(Response.Status.CONFLICT)
+				.entity(new Status(msg))
 				.type(MediaType.APPLICATION_JSON)
 				.build();
 	}
@@ -136,7 +158,7 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 			{
 				le.log("Unexpected DbIoException thrown from request");
 			}
-			
+
 		}
 
 		return Response.status(Response.Status.INTERNAL_SERVER_ERROR)

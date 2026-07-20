@@ -1,6 +1,9 @@
 package org.opendcs.database.api;
 
 import java.util.Optional;
+import java.util.concurrent.Callable;
+
+import org.opendcs.util.functional.ThrowingRunnable;
 
 /**
  * Instance of this class are used to hold appropriate connections
@@ -60,4 +63,74 @@ public interface DataTransaction extends AutoCloseable
      */
     @Override
     void close() throws OpenDcsDataException;
+
+
+    /**
+     * Convert any error in the call to a wrapped "OpenDcsDataException"
+     * @param <T> return type of action
+     * @param action wrapped code
+     * @return return value from action
+     * @throws OpenDcsDataException All errors, beyond just the provided expected error, are wrapped.
+     *                              {@link OpenDcsDataRuntimeException} is wrapped without message. All
+     *                              Other are wrapped with an additional message.
+     *                              {@link OpenDcsDataException} is rethrown as-is.
+     */
+    default <T> T wrapErrors(Callable<T> action) throws OpenDcsDataException
+    {
+        try
+        {
+            return action.call();
+        }
+        catch (Exception ex) // NOSONAR. Generic catch is intentional
+        {
+            throw handleException(this, ex);
+        }
+    }
+
+    /**
+     * Convert any error in the call to a wrapped "OpenDcsDataException"
+     *
+     * @param <E> expected error
+     * @param action wrapped Code
+     * @throws OpenDcsDataException All errors, beyond just the provided expected error, are wrapped.
+     *                              {@link OpenDcsDataRuntimeException} and {@link OpenDcsDataException}
+     *                              are wrapped without message. All Other are wrapped with an additional message.
+     *                              {@link OpenDcsDataException} is rethrown as-is.
+     */
+    default <E extends Exception> void wrapErrors(ThrowingRunnable<E> action) throws OpenDcsDataException
+    {
+        try
+        {
+            action.run();
+        }
+        catch (Exception ex) // NOSONAR. Generic catch is intentional
+        {
+            throw handleException(this, ex);
+        }
+    }
+
+    /**
+     * Throw the required exception.
+     *
+     * @param tx The transaction at hand so rollback can be called.
+     * @param ex The original cause
+     * @return An OpenDcsDataException wrapping the origin, or the original if it was already an OpenDcsDataException
+     */
+    private static OpenDcsDataException handleException(DataTransaction tx, Throwable ex)
+    {
+        try
+        {
+            tx.rollback();
+        }
+        catch (OpenDcsDataException | RuntimeException ex2)
+        {
+            ex.addSuppressed(ex2);
+        }
+        return switch (ex)
+        {
+            case OpenDcsDataException odx -> odx;
+            case OpenDcsDataRuntimeException ordx -> new OpenDcsDataException(ordx);
+            default ->  new OpenDcsDataException("Other than OpenDCSDataRuntimeException.", ex);
+        };
+    }
 }

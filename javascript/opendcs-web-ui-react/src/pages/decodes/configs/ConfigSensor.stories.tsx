@@ -79,6 +79,42 @@ export const EditAndSave: Story = {
   },
 };
 
+// Entering a sensor number already used by a sibling sensor blocks the save
+// and shows an inline error instead of silently discarding the edit.
+export const DuplicateSensorNumberBlocksSave: Story = {
+  args: {
+    sensor: stage,
+    edit: true,
+    otherSensorNumbers: [2],
+    actions: { save: fn(), cancel: fn() },
+  },
+  play: async ({ mount, parameters, userEvent, args }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const numberInput = (await waitFor(() => {
+      const el = canvas.getByLabelText(
+        i18n.t("configs:sensor_num"),
+      ) as HTMLInputElement;
+      expect(el).toBeVisible();
+      return el;
+    })) as HTMLInputElement;
+
+    await userEvent.clear(numberInput);
+    await userEvent.type(numberInput, "2");
+
+    const saveBtn = canvas.getByRole("button", {
+      name: i18n.t("configs:save_sensor", { id: 1 }),
+    });
+    await userEvent.click(saveBtn);
+
+    await waitFor(() =>
+      expect(canvas.getByText(i18n.t("configs:duplicate_sensor_number"))).toBeVisible(),
+    );
+    expect(args.actions!.save).not.toHaveBeenCalled();
+  },
+};
+
 // The data-types caption is "Data Types", proving the new caption override
 // on PropertiesTable. We assert "Properties" still appears for the other
 // table below — both tables coexist with distinct titles.

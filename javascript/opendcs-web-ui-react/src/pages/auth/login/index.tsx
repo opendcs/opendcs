@@ -15,6 +15,7 @@ import {
 } from "../../../util/login-providers/Scheme.types";
 import { oidcConfigToClient, type ParamMap } from "../../../util/login-providers";
 import type { SigninRequest } from "oidc-client-ts";
+import { AppVersion } from "../../../components/AppVersion";
 
 export default function Login() {
   const { t } = useTranslation();
@@ -204,6 +205,7 @@ export default function Login() {
             </Button>
           </Modal.Footer>
         </Modal>
+        <AppVersion className="odcs-login__version" />
       </Container>
     </Container>
   );

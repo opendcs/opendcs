@@ -18,8 +18,10 @@ package org.opendcs.odcsapi.res;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import decodes.db.ConfigSensor;
@@ -346,7 +348,8 @@ public final class ConfigResources extends OpenDcsResource
 		}
 	}
 
-	static PlatformConfig map(ApiPlatformConfig config, DataTypeDao dataTypeDao, DataTransaction tx) throws OpenDcsDataException
+	static PlatformConfig map(ApiPlatformConfig config, DataTypeDao dataTypeDao, DataTransaction tx)
+			throws OpenDcsDataException, WebAppException
 	{
 		try
 		{
@@ -364,8 +367,14 @@ public final class ConfigResources extends OpenDcsResource
 
 			pc.configName = config.getName();
 			pc.decodesScripts = map(config.getScripts(), pc);
+			Set<Integer> seenSensorNumbers = new HashSet<>();
 			for (ApiConfigSensor sensor : config.getConfigSensors())
 			{
+				if (!seenSensorNumbers.add(sensor.getSensorNumber()))
+				{
+					throw new WebAppException(Response.Status.BAD_REQUEST.getStatusCode(),
+							"Duplicate sensor number: " + sensor.getSensorNumber());
+				}
 				ConfigSensor configSensor = new ConfigSensor(null, sensor.getSensorNumber());
 				configSensor.sensorName = sensor.getSensorName();
 				configSensor.platformConfig = pc;
