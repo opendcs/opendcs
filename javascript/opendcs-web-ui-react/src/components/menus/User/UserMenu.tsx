@@ -3,6 +3,7 @@ import { Button, Dropdown } from "react-bootstrap";
 import { PersonGear } from "react-bootstrap-icons";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import { AppVersion } from "../../AppVersion";
 
 const UserToggle: React.FC = ({ ...args }) => {
   return (
@@ -29,6 +30,10 @@ export const UserMenu: React.FC<UserMenuProperties> = ({ logout }) => {
         <Dropdown.Item>Admin</Dropdown.Item>
         <Dropdown.Divider />
         <Dropdown.Item onClick={logout}>{t("translation:logout")}</Dropdown.Item>
+        <Dropdown.Divider />
+        <Dropdown.ItemText>
+          <AppVersion className="text-muted small" />
+        </Dropdown.ItemText>
       </Dropdown.Menu>
     </Dropdown>
   );

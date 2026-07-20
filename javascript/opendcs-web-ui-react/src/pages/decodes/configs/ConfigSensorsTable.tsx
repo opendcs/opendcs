@@ -118,6 +118,10 @@ export const ConfigSensorsTable: React.FC<ConfigSensorsTableProperties> = ({
         <ConfigSensor
           sensor={row}
           edit={mode !== "show"}
+          otherSensorNumbers={sensors
+            .filter((s) => s.sensorNumber !== row.sensorNumber)
+            .map((s) => s.sensorNumber)
+            .filter((n): n is number => n !== undefined)}
           actions={{
             save: (sensor) => {
               actions.save?.(sensor, row.sensorNumber);
@@ -138,7 +142,6 @@ export const ConfigSensorsTable: React.FC<ConfigSensorsTableProperties> = ({
             }
           : undefined
       }
-      onSave={(sensor) => actions.save?.(sensor)}
       caption={t("configs:config_sensors")}
       tableId="configSensorsTable"
       dataTableOptions={{ stateSave: false }}

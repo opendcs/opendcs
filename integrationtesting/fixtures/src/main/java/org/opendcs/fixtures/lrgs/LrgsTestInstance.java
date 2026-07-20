@@ -12,6 +12,8 @@ import org.opendcs.logging.spi.LoggingEventProvider;
 import org.opendcs.tls.TlsMode;
 import org.opendcs.utils.logging.LoggingEventBuffer;
 
+import ilex.util.PasswordFile;
+import ilex.util.PasswordFileEntry;
 import ilex.util.QueueLogger;
 import lrgs.archive.MsgArchive;
 import lrgs.lrgsmain.LrgsConfig;
@@ -56,7 +58,8 @@ public class LrgsTestInstance
             fw.write("enableDdsRecv=true"+System.lineSeparator());
             fw.write("ddsServerTlsMode="+tlsMode.name()+System.lineSeparator());
 
-            if (keyStore!=null) {
+            if (keyStore!=null)
+            {
                 String fileName =keyStore.getAbsolutePath();
                 fileName = fileName.replace('\\','/');
                 fw.write("keyStoreFile="+fileName+System.lineSeparator());
@@ -76,14 +79,16 @@ public class LrgsTestInstance
         lrgs = new LrgsMain("-", configFile.getAbsolutePath());
 
         lrgsThread = new Thread(lrgs);
-        exit.execute(() -> lrgsThread.start());
+        // Sonar is correct here, but I don't want to mess with this test harness much at the
+        // moment.
+        exit.execute(() -> lrgsThread.start()); // NOSONAR
         assertResultWithinTimeFrame(value ->
         {
             try
             {
                 return lrgs.getStatusProvider().getStatusSnapshot().isUsable;
             }
-            catch (NullPointerException ex)
+            catch (NullPointerException ex) // NOSONAR
             {
                 // Future work should remove the need for this NPE catch.
                 return false;
@@ -92,6 +97,11 @@ public class LrgsTestInstance
         "LRGS has not started within the expected time frame.");
 
         this.archive = lrgs.msgArchive;
+        var pwf = new PasswordFile(new File(lrgsHome, ".lrgs.passwd"));
+        var pwe = new PasswordFileEntry("anonymous");
+        pwe.assignRole("dds");
+        pwf.addEntry(pwe);
+        new File(lrgsHome, "users.local/anonymous").mkdirs();
     }
 
     public MsgArchive getArchive()

@@ -15,7 +15,6 @@ import com.google.auto.service.AutoService;
 import decodes.cwms.CwmsConnectionInfo;
 import decodes.cwms.CwmsConnectionPool;
 import decodes.cwms.CwmsDatabaseQuerySettings;
-import decodes.cwms.CwmsOpenDcsDatabaseWrapper;
 import decodes.cwms.CwmsSqlDatabaseIO;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.db.Database;
