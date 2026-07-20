@@ -18,8 +18,10 @@ package org.opendcs.odcsapi.res;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import decodes.db.ConfigSensor;
@@ -326,27 +328,18 @@ public final class ConfigResources extends OpenDcsResource
 	public Response postConfig(ApiPlatformConfig config) throws WebAppException
 	{
 		final var db = createDb();
+		final var dataTypeDao = db.getDao(DataTypeDao.class).orElseThrow();
+		final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
 		try (var tx = db.newTransaction())
 		{
-			try
+			return tx.wrapErrors(() ->
 			{
-				final var dataTypeDao = db.getDao(DataTypeDao.class).orElseThrow();
-				final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
 				var configIn = map(config, dataTypeDao, tx);
-
 				final var configOut =  dao.save(tx, configIn);
-				tx.commit();
 				return Response.status(Response.Status.CREATED)
 							   .entity(map(configOut))
 							   .build();
-			}
-			catch (OpenDcsDataException ex)
-			{
-				final var wex = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-							 			  "Unable to save config", ex);
-				rollbackQuietly(tx, wex);
-				throw wex;
-			}
+			});
 		}
 		catch (OpenDcsDataException ex)
 		{
@@ -355,7 +348,8 @@ public final class ConfigResources extends OpenDcsResource
 		}
 	}
 
-	static PlatformConfig map(ApiPlatformConfig config, DataTypeDao dataTypeDao, DataTransaction tx) throws OpenDcsDataException
+	static PlatformConfig map(ApiPlatformConfig config, DataTypeDao dataTypeDao, DataTransaction tx)
+			throws OpenDcsDataException, WebAppException
 	{
 		try
 		{
@@ -373,8 +367,14 @@ public final class ConfigResources extends OpenDcsResource
 
 			pc.configName = config.getName();
 			pc.decodesScripts = map(config.getScripts(), pc);
+			Set<Integer> seenSensorNumbers = new HashSet<>();
 			for (ApiConfigSensor sensor : config.getConfigSensors())
 			{
+				if (!seenSensorNumbers.add(sensor.getSensorNumber()))
+				{
+					throw new WebAppException(Response.Status.BAD_REQUEST.getStatusCode(),
+							"Duplicate sensor number: " + sensor.getSensorNumber());
+				}
 				ConfigSensor configSensor = new ConfigSensor(null, sensor.getSensorNumber());
 				configSensor.sensorName = sensor.getSensorName();
 				configSensor.platformConfig = pc;
@@ -564,29 +564,20 @@ public final class ConfigResources extends OpenDcsResource
 
 
 		final var db = createDb();
+		final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
 		try (var tx = db.newTransaction())
 		{
-			try
+			// no need to check if platforms use script, both the platform table
+			// has a foreign key on platformconfig that prevents deletion if used.
+			// will likely want to handle "foreign key errors" better
+			// but that should be generic to all deletes, not super specific.
+			return tx.wrapErrors(() ->
 			{
-				final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
-				// no need to check if platforms use script, both the platform table
-				// has a foreign key on platformconfig that prevents deletion if used.
-				// will likely want to handle "foreign key errors" better
-				// but that should be generic to all deletes, not super specific.
-
 				dao.delete(tx, DbKey.createDbKey(configId));
-				tx.commit();
 				return Response.noContent()
 						.entity("Config with ID " + configId + " deleted")
 						.build();
-			}
-			catch (OpenDcsDataException ex)
-			{
-				final var wex = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-							 			  "Unable to delete config", ex);
-				rollbackQuietly(tx, wex);
-				throw wex;
-			}
+			});
 		}
 		catch (OpenDcsDataException ex)
 		{

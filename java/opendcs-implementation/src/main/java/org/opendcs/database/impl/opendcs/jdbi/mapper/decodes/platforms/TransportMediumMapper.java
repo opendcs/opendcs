@@ -27,7 +27,7 @@ public class TransportMediumMapper extends PrefixRowMapper<TransportMedium,Trans
             tm.setMediumType(mediumType);
             tm.setMediumId(rs.getString(column(Columns.MEDIUM_ID)));
             tm.scriptName = rs.getString(column(Columns.SCRIPT_NAME));
-            tm.setTimeZone(rs.getString(column(Columns.TIME_ZONE)));            
+            tm.setTimeZone(rs.getString(column(Columns.TIME_ZONE)));
             tm.assignedTime = rs.getInt(column(Columns.ASSIGNED_TIME));
             tm.channelNum = rs.getInt(column(Columns.CHANNEL_NUMBER));
             tm.setBaud(rs.getInt(column(Columns.BAUD)));

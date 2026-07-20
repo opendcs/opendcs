@@ -26,6 +26,7 @@ public final class PlatformReducer implements LinkedHashMapRowReducer<Long,Platf
     private final PlatformSensorReducer platformSensorReducer;
 
 
+
     private final LinkedHashMap<Long,Site> sites = new LinkedHashMap<>();
     private final LinkedHashMap<Long,Platform> sensors = new LinkedHashMap<>();
 

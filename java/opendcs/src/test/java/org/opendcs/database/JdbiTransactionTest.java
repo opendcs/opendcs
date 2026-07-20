@@ -2,6 +2,7 @@ package org.opendcs.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -12,6 +13,7 @@ import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.statement.SqlStatements;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,11 +21,14 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.Generator;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.api.TransactionContext;
+import org.opendcs.database.impl.opendcs.jdbi.plugins.OpenDcsBaseSqlExceptionHandler;
 import org.opendcs.settings.api.OpenDcsSettings;
 
 class JdbiTransactionTest
 {
+    private static final String INSERT_INTO_CHILD_TABLE = "insert into child_table(parent_id, description) values(:id, :text)";
     Jdbi jdbi;
     final TransactionContext dummyContext = new TransactionContext()
     {
@@ -51,6 +56,16 @@ class JdbiTransactionTest
     void create_db()
     {
         jdbi = Jdbi.create("jdbc:derby:memory:db;create=true");
+        // Idea is to move this to the Wrapper Implementations, default to this
+        // allow/expect implementations to refine. Deriving things like
+        // constraint errors from Runtime exception and passing them on.
+        // handlers are attempted in reverse order of operation: https://jdbi.org/#_exception_handling
+        // Does need to exist here due to not using the wrapper.
+        // I suggest we create at least a default Handler per target database engine
+        // that handles those elements with obvious error codes (like the actual ORA- PG- errors that are
+        // for say, foreign key constraints, etc)
+        jdbi.getConfig(SqlStatements.class)
+            .addExceptionHandler(new OpenDcsBaseSqlExceptionHandler());
     }
 
     @AfterEach
@@ -88,10 +103,11 @@ class JdbiTransactionTest
         try (DataTransaction tx = new JdbiTransaction(jdbi.open(), dummyContext))
         {
             var h = tx.connection(Handle.class).get();
-            h.createUpdate("create table simple_table(id integer, name varchar(200))").execute();
-            tx.commit();
+            h.createUpdate("create table simple_table(id integer primary key, name varchar(200))").execute();
+            h.createUpdate("create table child_table(parent_id integer references simple_table(id) primary key, description varchar(100))").execute();
         }
 
+        // simple update
         try (DataTransaction tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
         {
             var h = tx.connection(Handle.class).get();
@@ -102,6 +118,7 @@ class JdbiTransactionTest
             tx.commit();
         }
 
+        // rollback
         try (DataTransaction tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
         {
             var h = tx.connection(Handle.class).get();
@@ -111,6 +128,7 @@ class JdbiTransactionTest
             tx.rollback();
         }
 
+        // verify data still present
         try (DataTransaction tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
         {
             var h = tx.connection(Handle.class).get();
@@ -119,6 +137,78 @@ class JdbiTransactionTest
                           .findOne();
             assertTrue(result.isPresent());
             assertEquals(1, result.get());
+        }
+
+        // force a constraint error and verify we get the suppress transaction exception
+        // Currently not failing correctly. org.jdbi.v3.core.statement.UnableToExecuteStatementException is
+        // getting thrown before we call commit. This is definitely expected behavior (and I suspect it's 
+        // implementation dependent, this test is h2). So it would appear we need to expand on our 
+        // mechanism of error handling. Perhaps something around https://jdbi.org/#_exception_handling
+        var dataException = assertThrows(OpenDcsDataRuntimeException.class, () ->
+        {
+            try (var tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
+            {
+                var h = tx.connection(Handle.class).get();
+
+                try(var good = h.createUpdate(INSERT_INTO_CHILD_TABLE)
+                                .bind("id", 1)
+                                .bind("text", "hello");
+                    var bad = h.createUpdate(INSERT_INTO_CHILD_TABLE)
+                               .bind("id", 2)
+                               .bind("text", "i will fail"))
+                 {
+                    good.execute();
+                    bad.execute();
+                 }
+                 catch (OpenDcsDataRuntimeException ex)
+                 {
+                    tx.rollback(); // manually rollback, as we aren't using the wrapper.
+                    throw ex;
+                 }
+            }
+        });
+        assertNotNull(dataException.getCause());
+        try (var tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
+        {
+            var h = tx.connection(Handle.class).get();
+            try (var readGood = h.createQuery("select description from child_table where parent_id = 1"))
+            {
+                var goodValue = readGood.mapTo(String.class).findOne();
+                assertFalse(goodValue.isPresent());
+            }
+        }
+
+        // do the same thing again, but using the new wrapper.
+        var dataException2 = assertThrows(OpenDcsDataException.class, () ->
+        {
+            try (var tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
+            {
+                var h = tx.connection(Handle.class).get();
+
+                tx.wrapErrors(() -> 
+                {
+                    try(var good = h.createUpdate(INSERT_INTO_CHILD_TABLE)
+                                    .bind("id", 1)
+                                    .bind("text", "hello");
+                        var bad = h.createUpdate(INSERT_INTO_CHILD_TABLE)
+                                .bind("id", 2)
+                                .bind("text", "i will fail"))
+                    {
+                        good.execute();
+                        bad.execute();
+                    }
+                 });
+            }
+        });
+        assertNotNull(dataException2.getCause());
+        try (var tx = new JdbiTransaction(jdbi.open().begin(), dummyContext))
+        {
+            var h = tx.connection(Handle.class).get();
+            try (var readGood = h.createQuery("select description from child_table where parent_id = 1"))
+            {
+                var goodValue = readGood.mapTo(String.class).findOne();
+                assertFalse(goodValue.isPresent());
+            }
         }
     }
 

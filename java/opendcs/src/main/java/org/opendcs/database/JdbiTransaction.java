@@ -47,35 +47,42 @@ public final class JdbiTransaction implements DataTransaction
     @Override
     public void commit() throws OpenDcsDataException
     {
-        // Jdbi's LocalTransactionHandler already rolls back internally (suppressing any
-        // rollback failure onto the original cause) before throwing TransactionException, so
-        // there's nothing left for us to roll back here — just capture and propagate the failure.
-        try
+        if (jdbiHandle.isInTransaction())
         {
-            if (jdbiHandle.isInTransaction())
+            try
             {
                 jdbiHandle.commit();
             }
-        }
-        catch (TransactionException ex)
-        {
-            throw new OpenDcsDataException("Unable to commit transaction.", ex);
+            catch (TransactionException ex)
+            {
+                try
+                {
+                    this.rollback();
+                }
+                // We specifically want to catch *any* error error to propagate it up and report it where
+                // appropriate.
+                catch (Exception rbEx) // NOSONAR.
+                {
+                    ex.addSuppressed(rbEx);
+                }
+                throw new OpenDcsDataException("Unable to commit transaction.", ex);
+            }
         }
     }
 
     @Override
     public void rollback() throws OpenDcsDataException
     {
-        try
+        if (jdbiHandle.isInTransaction())
         {
-            if (jdbiHandle.isInTransaction())
+            try
             {
                 jdbiHandle.rollback();
             }
-        }
-        catch (TransactionException ex)
-        {
-            throw new OpenDcsDataException("Unable to rollback transaction.", ex);
+            catch (TransactionException ex)
+            {
+                throw new OpenDcsDataException("Unable to rollback transaction.", ex);
+            }
         }
     }
 
@@ -91,5 +98,4 @@ public final class JdbiTransaction implements DataTransaction
     {
         return this.context;
     }
-    
 }

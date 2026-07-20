@@ -36,5 +36,6 @@
   "Close": "Cerrar",
   "Organizations not defined": "Organizaciones no definidas",
   "user pass incorrect": "El nombre de usuario y/o contraseña son incorrectos, o el usuario no tiene acceso a la organización seleccionada.",
-  "Login Failed": "Login fallido"
+  "Login Failed": "Login fallido",
+  "version": "Versión"
 }

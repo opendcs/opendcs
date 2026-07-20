@@ -1,5 +1,6 @@
 import type { Meta, ReactRenderer, StoryObj } from "@storybook/react-vite";
 import { ComputationsTable, type TableComputationRef } from "./ComputationsTable";
+import { ApiException } from "opendcs-api";
 import type {
   ApiAlgorithm,
   ApiAppRef,
@@ -207,7 +208,12 @@ const ComputationsTableWrapper: React.FC<{ initialComps: ApiComputation[] }> = (
 const ComputationsTableWrapperWithSaveControl: React.FC<{
   initialComps: ApiComputation[];
   shouldFail: (comp: ApiComputation) => boolean;
-}> = ({ initialComps, shouldFail }) => {
+  makeError?: () => unknown;
+}> = ({
+  initialComps,
+  shouldFail,
+  makeError = () => new Error("simulated save failure"),
+}) => {
   const [localComps, setLocalComps] = useState<ApiComputation[]>(initialComps);
   const localCompsRef = useRef(localComps);
 
@@ -229,7 +235,7 @@ const ComputationsTableWrapperWithSaveControl: React.FC<{
   const saveComputation = useCallback(
     async (comp: ApiComputation) => {
       if (shouldFail(comp)) {
-        throw new Error("simulated save failure");
+        throw makeError();
       }
       setLocalComps((prev) => {
         if (comp.computationId! < 0) {
@@ -238,7 +244,7 @@ const ComputationsTableWrapperWithSaveControl: React.FC<{
         return prev.map((c) => (c.computationId === comp.computationId ? comp : c));
       });
     },
-    [shouldFail],
+    [shouldFail, makeError],
   );
 
   const removeComputation = useCallback((computationId: number) => {
@@ -313,6 +319,33 @@ export const AddComputationThenCancel: Story = {
     await waitFor(() => {
       expect(canvas.queryByText("-1")).not.toBeInTheDocument();
     });
+  },
+};
+
+export const AddMultipleComputations: Story = {
+  args: { computations: toComputationRefs(sharedComputations) },
+  render: StoryRender,
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const addBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:add_computation"),
+    });
+
+    await act(async () => userEvent.click(addBtn));
+    await waitFor(() => {
+      expect(canvas.queryByText("-1")).toBeInTheDocument();
+    });
+
+    await act(async () => userEvent.click(addBtn));
+    await waitFor(() => {
+      expect(canvas.queryByText("-2")).toBeInTheDocument();
+    });
+
+    // Both new rows coexist with distinct ids — no collision between them.
+    expect(canvas.queryByText("-1")).toBeInTheDocument();
+    expect(canvas.queryByText("-2")).toBeInTheDocument();
   },
 };
 
@@ -434,6 +467,104 @@ export const AddComputationSaveFails: Story = {
       await canvas.findByRole("button", {
         name: i18n.t("computations:editor.save_for", { id: -1 }),
       }),
+    ).toBeInTheDocument();
+  },
+};
+
+export const AddComputationSaveFailsWithApiExceptionMessage: Story = {
+  args: { computations: toComputationRefs(sharedComputations) },
+  render: (args) => {
+    const initialComps = sharedComputations.filter((c) =>
+      (args.computations as ApiComputationRef[]).some(
+        (ref) => ref.computationId === c.computationId,
+      ),
+    );
+    return (
+      <ComputationsTableWrapperWithSaveControl
+        initialComps={initialComps}
+        shouldFail={(comp) => (comp.computationId ?? 0) < 0}
+        makeError={() =>
+          new ApiException(
+            409,
+            "Conflict",
+            { message: "Computation name already in use" },
+            {},
+          )
+        }
+      />
+    );
+  },
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const addBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:add_computation"),
+    });
+    await act(async () => userEvent.click(addBtn));
+
+    const nameInput = await canvas.findByRole(
+      "textbox",
+      { name: i18n.t("computations:editor.name") },
+      { timeout: 5000 },
+    );
+    await userEvent.type(nameInput, "NewComputation");
+
+    const saveBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:editor.save_for", { id: -1 }),
+    });
+    await act(async () => userEvent.click(saveBtn));
+
+    expect(
+      await canvas.findByText("Computation name already in use"),
+    ).toBeInTheDocument();
+    expect(
+      canvas.queryByText(i18n.t("computations:editor.save_error")),
+    ).not.toBeInTheDocument();
+  },
+};
+
+// A structured Status body without a usable `message` field falls back to
+// the generic save-error string, same as a plain Error.
+export const AddComputationSaveFailsWithApiExceptionNoMessage: Story = {
+  args: { computations: toComputationRefs(sharedComputations) },
+  render: (args) => {
+    const initialComps = sharedComputations.filter((c) =>
+      (args.computations as ApiComputationRef[]).some(
+        (ref) => ref.computationId === c.computationId,
+      ),
+    );
+    return (
+      <ComputationsTableWrapperWithSaveControl
+        initialComps={initialComps}
+        shouldFail={(comp) => (comp.computationId ?? 0) < 0}
+        makeError={() => new ApiException(500, "Internal Server Error", {}, {})}
+      />
+    );
+  },
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const addBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:add_computation"),
+    });
+    await act(async () => userEvent.click(addBtn));
+
+    const nameInput = await canvas.findByRole(
+      "textbox",
+      { name: i18n.t("computations:editor.name") },
+      { timeout: 5000 },
+    );
+    await userEvent.type(nameInput, "NewComputation");
+
+    const saveBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:editor.save_for", { id: -1 }),
+    });
+    await act(async () => userEvent.click(saveBtn));
+
+    expect(
+      await canvas.findByText(i18n.t("computations:editor.save_error")),
     ).toBeInTheDocument();
   },
 };

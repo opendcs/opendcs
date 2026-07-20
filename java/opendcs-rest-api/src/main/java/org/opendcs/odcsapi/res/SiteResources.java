@@ -265,28 +265,20 @@ public final class SiteResources extends OpenDcsResource
 		{
 			throw new MissingParameterException("Missing required site parameter.");
 		}
-	
+
 		final var db = createDb();
+		var siteDao = db.getDao(SiteDao.class)
+						.orElseThrow(() -> UNABLE_TO_GET_SITE_DAO);
 		try (var tx = db.newTransaction())
 		{
-			try
+			return tx.wrapErrors(() ->
 			{
-				var siteDao = db.getDao(SiteDao.class)
-								.orElseThrow(() -> UNABLE_TO_GET_SITE_DAO);
 				final Site dbSite = map(site);
 				var savedSite = siteDao.save(tx, dbSite);
 				var apiSiteOut = map(savedSite, savedSite.getProperties());
-				tx.commit();
 				return Response.status(Response.Status.CREATED)
 						.entity(apiSiteOut).build();
-			}
-			catch(OpenDcsDataException ex)
-			{
-				final var wex = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-							 			  "Unable to save site ", ex);
-				rollbackQuietly(tx, wex);
-				throw wex;
-			}
+			});
 		}
 		catch(OpenDcsDataException ex)
 		{
@@ -348,7 +340,7 @@ public final class SiteResources extends OpenDcsResource
 					@ApiResponse(responseCode = "500", description = "Internal server error - see error message for details")
 			}
 	)
-	public Response deleteSite(@Parameter(description = "id to delete", required = true, 
+	public Response deleteSite(@Parameter(description = "id to delete", required = true,
 			example = "3", schema = @Schema(type = "long"))
 		@QueryParam("siteid") Long siteId) throws WebAppException
 	{
@@ -358,30 +350,21 @@ public final class SiteResources extends OpenDcsResource
 		}
 
 		final var db = createDb();
+		var siteDao = db.getDao(SiteDao.class)
+						.orElseThrow(() -> UNABLE_TO_GET_SITE_DAO);
 		try (var tx = db.newTransaction())
 		{
-			try
+			return tx.wrapErrors(() ->
 			{
-				var siteDao = db.getDao(SiteDao.class)
-								.orElseThrow(() -> UNABLE_TO_GET_SITE_DAO);
 				siteDao.delete(tx, DbKey.createDbKey(siteId));
-				tx.commit();
 				return Response.noContent()
 						.entity("ID " + siteId + " deleted").build();
-			}
-			catch(OpenDcsDataException ex)
-			{
-				final var wex = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-							 			  "Unable to delete site ", ex);
-				rollbackQuietly(tx, wex);
-				throw wex;
-			}
+			});
 		}
 		catch(OpenDcsDataException ex)
 		{
 			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
 						 			  "Unable to delete site ", ex);
 		}
-
 	}
 }

@@ -25,7 +25,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiPresentationGroup;
 
@@ -33,6 +32,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 final class PresentationResourcesIT extends BaseApiIT
 {
@@ -128,7 +128,6 @@ final class PresentationResourcesIT extends BaseApiIT
 		;
 	}
 
-	@Disabled("Will get fixed with PR: https://github.com/opendcs/opendcs/pull/928")
 	@Test
 	void testGetPresentationRefs()
 	{
@@ -162,7 +161,7 @@ final class PresentationResourcesIT extends BaseApiIT
 				assertEquals(expectedItem1.get("name"), actualItem.get("name"));
 				assertEquals(expectedItem1.get("inheritsFrom"), actualItem.get("inheritsFrom"));
 				assertEquals(expectedItem1.get("production"), actualItem.get("production"));
-				assertEquals(expectedItem1.get("lastModified"), actualItem.get("lastModified"));
+				assertNotNull(actualItem.get("lastModified")); // update date is controlled by the database, not the DTO
 				assertEquals(-1, actualItem.get("inheritsFromId"));
 			}
 			else if (actualItem.get("name").equals(expectedItem2.get("name")))
@@ -170,7 +169,7 @@ final class PresentationResourcesIT extends BaseApiIT
 				assertEquals(expectedItem2.get("name"), actualItem.get("name"));
 				assertEquals(expectedItem2.get("inheritsFrom"), actualItem.get("inheritsFrom"));
 				assertEquals(expectedItem2.get("production"), actualItem.get("production"));
-				assertEquals(expectedItem2.get("lastModified"), actualItem.get("lastModified"));
+				assertNotNull(actualItem.get("lastModified")); // update date is controlled by the database, not the DTO
 				assertNotEquals(-1, actualItem.get("inheritsFromId"));
 				assertEquals((int) actualItem.get("inheritsFromId"), parentPresentationId.intValue());
 			}
@@ -209,7 +208,6 @@ final class PresentationResourcesIT extends BaseApiIT
 		assertMatch(expected, actual);
 	}
 
-	@Disabled("Will get fixed with PR: https://github.com/opendcs/opendcs/pull/928")
 	@Test
 	void testPostAndDeletePresentation() throws Exception
 	{
@@ -359,6 +357,25 @@ final class PresentationResourcesIT extends BaseApiIT
 		List<Map<String, Object>> elementsAfter = afterResponse.jsonPath().getList("elements");
 		assertEquals(originalElements.size(), elementsAfter.size(),
 			"Elements must be preserved after a round-trip save");
+	}
+
+	@Test
+	void testDeleteUsedFails() throws Exception
+	{
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.contentType(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.queryParam("groupid", parentPresentationId)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("presentation")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.CONFLICT.getStatusCode()));
 	}
 
 	private void assertMatch(JsonPath expected, JsonPath actual)
