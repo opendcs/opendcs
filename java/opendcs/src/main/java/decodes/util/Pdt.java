@@ -49,7 +49,7 @@ public class Pdt
 	private PdtLoadListener pdtLoadListener = null;
 
 	/** For singleton, use instance() method. */
-	public Pdt()
+	Pdt()
 	{
 		pdtMap = new HashMap<DcpAddress, PdtEntry>();
 	}
