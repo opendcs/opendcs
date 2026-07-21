@@ -336,9 +336,11 @@ final class PlatformResourcesIT extends BaseApiIT
 		.assertThat()
 			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
-		;
+		;		
 
 		JsonPath actual = response.body().jsonPath();
+		log.info(expected.prettyPrint());
+		log.info(actual.prettyPrint());
 		assertNotNull(actual);
 		var nameAndDesignator = expected.getString("name") + "-" + expected.getString("designator");
 		final var actualPlatform = actual.setRootPath("find { it -> it.name == '" + nameAndDesignator + "'}");
