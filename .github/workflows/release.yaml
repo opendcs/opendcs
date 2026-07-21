@@ -45,11 +45,11 @@ jobs:
         packages: write
     steps:
       - name: checkout code
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v7.0.1
         with:
           ref: ${{inputs.branch}}
       - name: setup java
-        uses: actions/setup-java@v5.2.0
+        uses: actions/setup-java@v5.6.0
         with:
           distribution: 'temurin'
           # 17 is used as it still supports targeting Java 8 for the build
@@ -69,16 +69,16 @@ jobs:
       - name: show version
         run: echo ${VERSION}
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c
       - name: Log in to the Container registry
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.token != null && secrets.token || secrets.GITHUB_TOKEN }}
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302
         with:
           tags: |
             type=sha
@@ -88,7 +88,7 @@ jobs:
             type=schedule,pattern=${{inputs.branch}}-{{date 'YYYY.MM.DD-hhmmss'}}
       - name: Create and Push Docker images
         id: baked
-        uses: docker/bake-action@a66e1c87e2eca0503c343edf1d208c716d54b8a8
+        uses: docker/bake-action@d3418bd7d0e9324001bca92fa8ba175ea7e6dc9b
         with:
           source: .
           set: |
