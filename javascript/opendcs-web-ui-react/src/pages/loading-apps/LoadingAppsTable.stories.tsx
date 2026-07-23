@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { LoadingAppsTable, type TableAppRef } from "./LoadingAppsTable";
 import type { ApiAppRef, ApiLoadingApp } from "opendcs-api";
-import { expect, waitFor } from "storybook/test";
+import { expect, spyOn, waitFor } from "storybook/test";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RemoveAction, SaveAction } from "../../util/Actions";
 
@@ -225,6 +225,84 @@ export const EditAppSave: Story = {
       { timeout: 5000 },
     );
     expect(editBtnAfter).toBeInTheDocument();
+  },
+};
+
+export const CopyAppNoHandler: Story = {
+  args: { apps: toAppRefs(sharedApps) },
+  render: (args) => <LoadingAppsTable apps={args.apps as TableAppRef[]} />,
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const copyBtn = await waitFor(
+      () =>
+        canvas.getByRole("button", {
+          name: i18n.t("loadingapps:copy_for", { id: 1 }),
+        }),
+      { timeout: 5000 },
+    );
+    // No getApp handler was supplied — the click should silently no-op.
+    await userEvent.click(copyBtn);
+    expect(canvas.queryByText("-1")).not.toBeInTheDocument();
+  },
+};
+
+export const CopyApp: Story = {
+  args: { apps: toAppRefs(sharedApps) },
+  render: StoryRender,
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const copyBtn = await waitFor(
+      () =>
+        canvas.getByRole("button", {
+          name: i18n.t("loadingapps:copy_for", { id: 1 }),
+        }),
+      { timeout: 5000 },
+    );
+    await userEvent.click(copyBtn);
+
+    // A new draft row (-1) opens for editing, pre-filled from the source app.
+    const newRow = await waitFor(() => canvas.queryByText("-1"));
+    expect(newRow).toBeInTheDocument();
+
+    const appTypeInput = await canvas.findByDisplayValue(
+      "computationprocess",
+      {},
+      { timeout: 5000 },
+    );
+    expect(appTypeInput).toBeInTheDocument();
+  },
+};
+
+export const CopyAppFailure: Story = {
+  args: { apps: toAppRefs(sharedApps) },
+  render: (args) => (
+    <LoadingAppsTable
+      apps={args.apps as TableAppRef[]}
+      getApp={async () => Promise.reject(new Error("boom"))}
+    />
+  ),
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+    const warnSpy = spyOn(console, "warn").mockImplementation(() => {});
+
+    const copyBtn = await waitFor(
+      () =>
+        canvas.getByRole("button", {
+          name: i18n.t("loadingapps:copy_for", { id: 1 }),
+        }),
+      { timeout: 5000 },
+    );
+    await userEvent.click(copyBtn);
+
+    await waitFor(() => expect(warnSpy).toHaveBeenCalled());
+    expect(canvas.queryByText("-1")).not.toBeInTheDocument();
+
+    warnSpy.mockRestore();
   },
 };
 
