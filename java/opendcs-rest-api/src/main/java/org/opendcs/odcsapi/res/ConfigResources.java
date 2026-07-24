@@ -328,17 +328,18 @@ public final class ConfigResources extends OpenDcsResource
 	public Response postConfig(ApiPlatformConfig config) throws WebAppException
 	{
 		final var db = createDb();
+		final var dataTypeDao = db.getDao(DataTypeDao.class).orElseThrow();
+		final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
 		try (var tx = db.newTransaction())
 		{
-			final var dataTypeDao = db.getDao(DataTypeDao.class).orElseThrow();
-			final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
-			var configIn = map(config, dataTypeDao, tx);
-
-			final var configOut =  dao.save(tx, configIn);
-
-			return Response.status(Response.Status.CREATED)
-						   .entity(map(configOut))
-						   .build();
+			return tx.wrapErrors(() ->
+			{
+				var configIn = map(config, dataTypeDao, tx);
+				final var configOut =  dao.save(tx, configIn);
+				return Response.status(Response.Status.CREATED)
+							   .entity(map(configOut))
+							   .build();
+			});
 		}
 		catch (OpenDcsDataException ex)
 		{
@@ -563,19 +564,20 @@ public final class ConfigResources extends OpenDcsResource
 
 
 		final var db = createDb();
+		final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
 		try (var tx = db.newTransaction())
 		{
-			final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
 			// no need to check if platforms use script, both the platform table
 			// has a foreign key on platformconfig that prevents deletion if used.
 			// will likely want to handle "foreign key errors" better
 			// but that should be generic to all deletes, not super specific.
-
-			dao.delete(tx, DbKey.createDbKey(configId));
-
-			return Response.noContent()
-					.entity("Config with ID " + configId + " deleted")
-					.build();
+			return tx.wrapErrors(() ->
+			{
+				dao.delete(tx, DbKey.createDbKey(configId));
+				return Response.noContent()
+						.entity("Config with ID " + configId + " deleted")
+						.build();
+			});
 		}
 		catch (OpenDcsDataException ex)
 		{

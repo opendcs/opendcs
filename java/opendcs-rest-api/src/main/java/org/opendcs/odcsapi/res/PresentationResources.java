@@ -339,10 +339,10 @@ public final class PresentationResources extends OpenDcsResource
         }
 
         final var db = createDb();
+        final var dao = db.getDao(PresentationGroupDao.class).orElseThrow(() -> UNABLE_TO_GET_PRESENTATIONGROUP_DAO);
         try (var tx = db.newTransaction())
         {
-            final var dao = db.getDao(PresentationGroupDao.class).orElseThrow(() -> UNABLE_TO_GET_PRESENTATIONGROUP_DAO);
-            return tx.wrapErrors(() -> 
+            return tx.wrapErrors(() ->
             {
                 dao.delete(tx, DbKey.createDbKey(groupId));
                 return Response.noContent()
@@ -359,11 +359,5 @@ public final class PresentationResources extends OpenDcsResource
             throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
                                        "Unable to delete presentation group.", ex);
         }
-
-        // Left for reference when "foreign key conflicts" are handled better.
-        // return Response.status(Response.Status.METHOD_NOT_ALLOWED)
-        //         .entity(String.format("Cannot delete presentation group %s " +
-        //                 "because it is used by the following routing specs: %s", groupId, routeSpecs)).build();
-
     }
 }

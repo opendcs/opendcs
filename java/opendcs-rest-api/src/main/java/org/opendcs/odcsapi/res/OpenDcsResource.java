@@ -28,6 +28,8 @@ import decodes.db.DatabaseIO;
 import decodes.tsdb.TimeSeriesDb;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
+import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.odcsapi.dao.OpenDcsDatabaseFactory;
 
@@ -90,5 +92,26 @@ public class OpenDcsResource
 		getLegacyDatabase(); // make sure Database.setDb is called because way too many things use it.
 		return createDb().getLegacyDatabase(TimeSeriesDb.class)
 				.orElseThrow(() -> new UnsupportedOperationException(UNSUPPORTED_OPERATION_MESSAGE));
+	}
+
+	/**
+	 * Rolls back a transaction after a failure, preserving the original exception rather than
+	 * letting a rollback failure replace it. This must happen explicitly, before the exception
+	 * is rethrown, because {@code DataTransaction.close()} commits by default; skipping it would
+	 * mean exiting the try-with-resources block after a caught failure commits the transaction's
+	 * partial state instead of discarding it. Call from the catch block that handles a failed
+	 * commit/DAO call within a {@code try (var tx = db.newTransaction())} and rethrow
+	 * {@code cause} afterward.
+	 */
+	protected static void rollbackQuietly(DataTransaction tx, Exception cause)
+	{
+		try
+		{
+			tx.rollback();
+		}
+		catch (OpenDcsDataException rollbackEx)
+		{
+			cause.addSuppressed(rollbackEx);
+		}
 	}
 }
