@@ -34,7 +34,6 @@ import decodes.db.RoutingSpec;
 import decodes.db.ScheduleEntry;
 import decodes.db.Site;
 import decodes.db.TransportMedium;
-import decodes.db.ValueNotFoundException;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -61,6 +60,7 @@ import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.dai.PlatformDao;
 import org.opendcs.odcsapi.beans.ApiPlatform;
 import org.opendcs.odcsapi.beans.ApiPlatformRef;
@@ -140,27 +140,37 @@ public final class PlatformResources extends OpenDcsResource
 	{
 		ApiPlatformRef ref = new ApiPlatformRef();
 		ref.setName(plat.getDisplayName());
-		if (plat.getId() != null) {
+		if (plat.getId() != null)
+		{
 			ref.setPlatformId(plat.getId().getValue());
-		} else {
+		}
+		else
+		{
 			ref.setPlatformId(DbKey.NullKey.getValue());
 		}
 		ref.setAgency(plat.getAgency());
 		ref.setConfig(plat.getConfigName());
 		ref.setDescription(plat.getDescription());
-		if (plat.getConfig() != null && plat.getConfig().getId() != null) {
+		if (plat.getConfig() != null && plat.getConfig().getId() != null)
+		{
 			ref.setConfigId(plat.getConfig().getId().getValue());
-		} else {
+		}
+		else
+		{
 			ref.setConfigId(DbKey.NullKey.getValue());
 		}
-		if (plat.getSite() != null) {
+		if (plat.getSite() != null)
+		{
 			ref.setSiteId(plat.getSite().getId().getValue());
-		} else {
+		}
+		else
+		{
 			ref.setSiteId(DbKey.NullKey.getValue());
 		}
 		Properties transportProps = new Properties();
 		transportProps.putAll(plat.getProperties());
-		for (Iterator<TransportMedium> it = plat.getTransportMedia(); it.hasNext();) {
+		for (Iterator<TransportMedium> it = plat.getTransportMedia(); it.hasNext();)
+		{
 			final TransportMedium medium = it.next();
 			transportProps.setProperty(medium.getMediumType(), medium.getMediumId());
 		}
@@ -270,6 +280,10 @@ public final class PlatformResources extends OpenDcsResource
 		}
 		catch (OpenDcsDataException ex)
 		{
+			if (ex.getCause() instanceof WebAppException ordx)
+			{
+				throw ordx;
+			}
 			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to retrieve Platform", ex);
 		}		
 	}
