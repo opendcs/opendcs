@@ -250,6 +250,48 @@ final class AppResourcesIT extends BaseApiIT
 	}
 
 	@Test
+	void testPostAppWithoutAppType() throws Exception
+	{
+		// Regression test for issue #2075: creating a new process (Loading App) via
+		// the web UI without touching the "App Type" field omits appType from the
+		// POST body entirely, which previously NPE'd in AppResources#map.
+		String appJson = getJsonFromResource("app_post_no_apptype_insert_data.json");
+
+		var response = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.contentType(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.body(appJson)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("app")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
+			.extract();
+
+		Long appId = response.body().jsonPath().getLong("appId");
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.queryParam("appid", appId)
+			.spec(authSpec)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("app")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
+		;
+	}
+
+	@Test
 	void testGetAppStatus() throws Exception
 	{
 		ApiAppStatus status = getDtoFromResource("app_stat_expected.json", ApiAppStatus.class);
