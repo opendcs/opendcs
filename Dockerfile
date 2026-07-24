@@ -97,11 +97,11 @@ RUN apk --no-cache upgrade && \
 
 RUN mkdir /download && \
     cd /download && \
-    wget https://archive.apache.org/dist/tomcat/tomcat-11/v11.0.22/bin/apache-tomcat-11.0.22.tar.gz && \
-    echo "4ee77f604009daeab50d015835f221707f64a03756c6e5ac8736a6947cd60f6796315ceb255428765017038d79d466988582eb8b986dc48d3649bbc35bdd8bd7 *apache-tomcat-11.0.22.tar.gz" > checksum.txt && \
+    wget https://archive.apache.org/dist/tomcat/tomcat-11/v11.0.24/bin/apache-tomcat-11.0.24.tar.gz && \
+    echo "a2fb1bd511735bd3d135b87f628d2b1f71a43aed7c4d7511e770092e571bad6d5ad9e97a580852119770477fd86d7ed156d83d3cee2854bce260725ce48934d0 *apache-tomcat-11.0.24.tar.gz" > checksum.txt && \
     sha512sum -c checksum.txt && \
     tar xzf apache-tomcat-*tar.gz && \
-    mv apache-tomcat-11.0.22 /usr/local/tomcat/ && \
+    mv apache-tomcat-11.0.24 /usr/local/tomcat/ && \
     cd / && \
     rm -rf /download && \
     rm -rf /usr/local/tomcat/webapps/*
