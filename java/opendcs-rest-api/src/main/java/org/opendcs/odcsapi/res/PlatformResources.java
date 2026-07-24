@@ -610,30 +610,29 @@ public final class PlatformResources extends OpenDcsResource
 	public Response deletePlatform(@Parameter(description = "Platform ID", required = true,
 			schema = @Schema(implementation = Long.class, example = "5"))
 		@QueryParam("platformid") Long platformId)
-			throws DbException, WebAppException
+			throws WebAppException
 	{
 		if (platformId == null)
 		{
 			throw new MissingParameterException("Missing required platformid parameter.");
 		}
 
-		DatabaseIO dbIo = getLegacyDatabase();
-		try
+		var db = createDb();
+		var dao = db.getDao(PlatformDao.class).orElseThrow(() -> NO_PLATFORM_DAO);
+
+		try (var tx = db.newTransaction())
 		{
-			Platform plat = new Platform();
-			plat.setId(DbKey.createDbKey(platformId));
-			dbIo.deletePlatform(plat);
-			return Response.noContent()
-					.entity("Platform with ID " + platformId + " deleted")
-					.build();
+			return tx.wrapErrors(() ->
+			{
+				dao.delete(tx, DbKey.createDbKey(platformId));
+				return Response.noContent()
+						.entity("Platform with ID " + platformId + " deleted")
+						.build();
+			});
 		}
-		catch (DatabaseException ex)
+		catch (OpenDcsDataException ex)
 		{
-			throw new DbException(String.format("Unable to delete platform with ID: %s", platformId), ex);
-		}
-		finally
-		{
-			dbIo.close();
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to retrieve Platform", ex);
 		}
 	}
 
