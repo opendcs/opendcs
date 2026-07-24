@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { ApiAppRef, ApiLoadingApp } from "opendcs-api";
 import LoadingApp, { LoadingAppSkeleton, type UiLoadingApp } from "./LoadingApp";
 import type { RemoveAction, SaveAction } from "../../util/Actions";
 import {
   AppDataTable,
+  type AppDataTableHandle,
   type ColumnDef,
   type RowAction,
 } from "../../components/data-table";
@@ -22,6 +23,20 @@ export interface LoadingAppsTableProperties {
   loading?: boolean;
 }
 
+const toTableRef = (app: UiLoadingApp): TableAppRef => ({
+  appId: app.appId,
+  appName: app.appName,
+  appType: app.appType,
+  comment: app.comment,
+});
+
+const copiedApp = (source: ApiLoadingApp, newId: number): UiLoadingApp => ({
+  ...source,
+  appId: newId,
+  appName: "",
+  lastModified: undefined,
+});
+
 export const LoadingAppsTable: React.FC<LoadingAppsTableProperties> = ({
   apps,
   getApp,
@@ -29,6 +44,8 @@ export const LoadingAppsTable: React.FC<LoadingAppsTableProperties> = ({
   loading = false,
 }) => {
   const [t] = useTranslation(["loadingapps", "translation"]);
+  const tableRef = useRef<AppDataTableHandle<TableAppRef>>(null);
+  const draftsRef = useRef<Record<number, UiLoadingApp>>({});
 
   const columns = useMemo<ColumnDef<TableAppRef>[]>(
     () => [
@@ -82,6 +99,26 @@ export const LoadingAppsTable: React.FC<LoadingAppsTableProperties> = ({
         onClick: ({ row, api }) => api.setMode(row, "edit"),
       },
       {
+        key: "copy",
+        icon: "bi-files",
+        variant: "info",
+        show: (row) => (row.appId ?? 0) > 0,
+        aria: (row) => t("loadingapps:copy_for", { id: row.appId }),
+        onClick: async ({ row }) => {
+          if (!getApp || !row.appId) return;
+          try {
+            const source = await getApp(row.appId);
+            tableRef.current?.appendLocalItem((newId) => {
+              const draft = copiedApp(source, newId);
+              draftsRef.current[newId] = draft;
+              return toTableRef(draft);
+            }, "new");
+          } catch (err) {
+            console.warn(`Failed to copy loading app ${row.appId}`, err);
+          }
+        },
+      },
+      {
         key: "delete",
         icon: "bi-trash",
         variant: "danger",
@@ -92,11 +129,12 @@ export const LoadingAppsTable: React.FC<LoadingAppsTableProperties> = ({
         },
       },
     ],
-    [t, actions],
+    [t, getApp, actions],
   );
 
   return (
     <AppDataTable<TableAppRef, number, ApiLoadingApp>
+      ref={tableRef}
       data={apps}
       loading={loading}
       getId={(a) => a.appId!}
@@ -107,7 +145,10 @@ export const LoadingAppsTable: React.FC<LoadingAppsTableProperties> = ({
         const appPromise: Promise<UiLoadingApp> =
           row.appId && row.appId > 0 && getApp
             ? getApp(row.appId)
-            : Promise.resolve({ appId: row.appId } as UiLoadingApp);
+            : Promise.resolve(
+                draftsRef.current[row.appId ?? 0] ??
+                  ({ appId: row.appId } as UiLoadingApp),
+              );
         return (
           <LoadingApp
             app={appPromise}
