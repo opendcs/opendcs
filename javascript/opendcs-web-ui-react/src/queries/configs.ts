@@ -12,7 +12,7 @@ import {
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
 import { configKeys } from "./keys";
-import { invalidateThenDelegate } from "./mutationHelpers";
+import { invalidateThenDelegate, removeDetailOnSave } from "./mutationHelpers";
 
 const useConfigsApi = () => {
   const api = useApi();
@@ -71,11 +71,11 @@ export const useSaveConfigMutation = (
     ...options,
     onSuccess: async (...args) => {
       const variables = args[1];
-      if (variables.configId != null && variables.configId > 0) {
-        queryClient.removeQueries({
-          queryKey: configKeys.detail(org, variables.configId),
-        });
-      }
+      removeDetailOnSave(
+        queryClient,
+        configKeys.detail(org, variables.configId ?? -1),
+        variables.configId,
+      );
       await invalidateList(...args);
     },
   });
