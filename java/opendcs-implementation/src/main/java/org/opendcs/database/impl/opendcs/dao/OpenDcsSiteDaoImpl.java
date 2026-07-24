@@ -14,6 +14,7 @@ import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.SiteDao;
+import org.opendcs.database.impl.opendcs.SqlConstraintTranslator;
 import org.opendcs.database.exceptions.RequiredSiteNameMissingException;
 import org.opendcs.database.impl.opendcs.jdbi.column.numeric.NullableDoubleArgumentFactory;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
@@ -296,13 +297,21 @@ public class OpenDcsSiteDaoImpl implements SiteDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        try (var deleteNames = handle.createUpdate(DELETE_NAMES);
-             var deleteProps = handle.createUpdate(DELETE_PROPS);
-             var deleteSite = handle.createUpdate("delete from site where id = :id"))
+        try
         {
-            deleteNames.bind(GenericColumns.ID.column(), id).execute();
-            deleteProps.bind(GenericColumns.ID.column(), id).execute();
-            deleteSite.bind(GenericColumns.ID.column(), id).execute();
+            try (var deleteNames = handle.createUpdate(DELETE_NAMES);
+                 var deleteProps = handle.createUpdate(DELETE_PROPS);
+                 var deleteSite = handle.createUpdate("delete from site where id = :id"))
+            {
+                deleteNames.bind(GenericColumns.ID.column(), id).execute();
+                deleteProps.bind(GenericColumns.ID.column(), id).execute();
+                deleteSite.bind(GenericColumns.ID.column(), id).execute();
+            }
+        }
+        catch (RuntimeException ex)
+        {
+            var engine = tx.getContext().getDatabaseEngine();
+            throw SqlConstraintTranslator.translate("Site " + id + " is still referenced by other records and cannot be deleted", engine, ex);
         }
     }
 

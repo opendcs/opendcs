@@ -34,8 +34,12 @@ dependencies {
     implementation(libs.org.netbeans.lookup)
     implementation(libs.auto.service.annotations)
     // implementation(libs.jwt)
-    
+
     // implementation(libs.com.password4j.password4j)
+
+    testImplementation enforcedPlatform(libs.junit.bom)
+    testImplementation(libs.bundles.junit)
+    testRuntimeOnly(libs.bundles.junit.platform)
 }
 
 

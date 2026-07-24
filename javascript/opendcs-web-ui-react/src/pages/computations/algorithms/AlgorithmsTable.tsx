@@ -74,6 +74,7 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
         variant: "danger",
         show: (row) => (row.algorithmId ?? 0) > 0,
         aria: (row) => t("algorithms:editor.delete_for", { id: row.algorithmId }),
+        confirm: () => t("translation:confirm_delete_prompt"),
         onClick: ({ row }) => {
           if (row.algorithmId !== undefined) actions.remove?.(row.algorithmId);
         },

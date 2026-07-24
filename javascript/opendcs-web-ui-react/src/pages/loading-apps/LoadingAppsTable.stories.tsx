@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { LoadingAppsTable, type TableAppRef } from "./LoadingAppsTable";
 import type { ApiAppRef, ApiLoadingApp } from "opendcs-api";
-import { expect, waitFor } from "storybook/test";
+import { expect, screen, waitFor } from "storybook/test";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RemoveAction, SaveAction } from "../../util/Actions";
 
@@ -243,6 +243,8 @@ export const DeleteApp: Story = {
       { timeout: 5000 },
     );
     await userEvent.click(deleteBtn);
+    const confirmBtn = await screen.findByRole("button", { name: "Delete" });
+    await userEvent.click(confirmBtn);
 
     await waitFor(() => {
       expect(canvas.queryByText("routing")).not.toBeInTheDocument();

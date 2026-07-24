@@ -5,7 +5,7 @@ import {
   ApiSite,
   ApiSiteRef,
 } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
-import { expect, userEvent, waitFor } from "storybook/test";
+import { expect, screen, userEvent, waitFor } from "storybook/test";
 import { act, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RemoveAction, SaveAction } from "../../util/Actions";
 import { ArgsStoryFn } from "storybook/internal/types";
@@ -230,6 +230,8 @@ export const WithExistingAddNewSiteThenCancel: Story = {
       name: i18n.t("sites:delete_for", { id: 1 }),
     });
     await act(async () => userEvent.click(deleteButton));
+    const confirmBtn = await screen.findByRole("button", { name: "Delete" });
+    await act(async () => userEvent.click(confirmBtn));
     await waitFor(() => {
       expect(canvas.queryByText("TEST SITE 1")).not.toBeInTheDocument();
     });

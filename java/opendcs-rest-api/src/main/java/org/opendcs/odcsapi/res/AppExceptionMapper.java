@@ -25,7 +25,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-
+import org.opendcs.database.api.OpenDcsDataConstraintException;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.api.exceptions.data.OpenDcsConstraintException;
 import org.opendcs.database.api.exceptions.data.RelatedDataConstraintException;
@@ -42,164 +43,170 @@ import org.slf4j.spi.LoggingEventBuilder;
 public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 {
 
-   private static final Logger log = OpenDcsLoggerFactory.getLogger();
-   private static final String INTERNAL_ERROR = "There was an error.  Please contact your sys admin.";
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static final String INTERNAL_ERROR = "There was an error.  Please contact your sys admin.";
 
-   @Override
-   public Response toResponse(Throwable ex)
-   {
-      var span = Span.current();
-      span.recordException(ex);
-      span.setStatus(StatusCode.ERROR, ex.getMessage());
-      return switch(ex)
-      {
-         case WebAppException webAppException -> handle(webAppException);
-         case ConstraintException constraintException -> handle(constraintException);
-         case OpenDcsConstraintException constraintException -> handle(constraintException);
-         case TsdbException tsdbException -> handle(tsdbException);
-         case DbException dbException -> handle(dbException);
-         case WebApplicationException webApplicationException -> handle(webApplicationException);
-         case UnsupportedOperationException unsupportedOperationException -> handle(unsupportedOperationException);
-         case OpenDcsDataRuntimeException odcs -> toResponse(odcs.getCause());
-         case null, default -> handle(ex);
-      };
-   }
+	@Override
+	public Response toResponse(Throwable ex)
+	{
+		var span = Span.current();
+		span.recordException(ex);
+		span.setStatus(StatusCode.ERROR, ex.getMessage());
+		return switch(ex)
+		{
+			case WebAppException webAppException -> handle(webAppException);
+			case ConstraintException constraintException -> handle(constraintException);
+			case OpenDcsConstraintException constraintException -> handle(constraintException);
+			case TsdbException tsdbException -> handle(tsdbException);
+			case DbException dbException -> handle(dbException);
+			case WebApplicationException webApplicationException -> handle(webApplicationException);
+			case UnsupportedOperationException unsupportedOperationException -> handle(unsupportedOperationException);
+			case OpenDcsDataConstraintException constraintEx -> handleConstraint(constraintEx);
+			case OpenDcsDataException dataEx -> handle(dataEx);
+			case OpenDcsDataRuntimeException odcs -> toResponse(odcs.getCause());
+			case null, default -> handle(ex);
+		};
+	}
 
-   private static Response handle(Throwable ex)
-   {
-      log.atWarn().setCause(ex).log("Unknown Error");
-      Status status = new Status("Bad Request.  There was an issue with the request, please try again or contact your system administrator.");
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-            .entity(status)
-            .type(MediaType.APPLICATION_JSON)
-            .build();
-   }
+	private static Response handle(Throwable ex)
+	{
+		log.atWarn().setCause(ex).log("Unknown Error");
+		Status status = new Status("Bad Request.  There was an issue with the request, please try again or contact your system administrator.");
+		return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+				.entity(status)
+				.type(MediaType.APPLICATION_JSON)
+				.build();
+	}
 
-   private static Response handle(OpenDcsConstraintException ex)
-   {
-      String msg = "Cannot perform operation because ";
-      switch (ex)
-      {
-         case RelatedDataConstraintException related -> msg = msg + " data in use.";
-         case UniqueConstraintViolationException unique -> msg = msg + " data already exists.";
-         case null, default -> msg = msg + " cannot perform operation due to constraint.";
-      }
-log.atInfo().setCause(ex).log(msg);
-      return Response.status(Response.Status.CONFLICT)
-                   .entity(new Status(msg))
-                   .type(MediaType.APPLICATION_JSON)
-                  .build();
-   }
+	private static Response handle(OpenDcsConstraintException ex)
+	{
+		String msg = "Cannot perform operation because ";
+		switch (ex)
+		{
+			case RelatedDataConstraintException related -> msg = msg + " data in use.";
+			case UniqueConstraintViolationException unique -> msg = msg + " data already exists.";
+			case null, default -> msg = msg + " cannot perform operation due to constraint.";
+		}
+		log.atInfo().setCause(ex).log(msg);
+		return Response.status(Response.Status.CONFLICT)
+				.entity(new Status(msg))
+				.type(MediaType.APPLICATION_JSON)
+				.build();
+	}
 
-   private static Response handle(UnsupportedOperationException wae)
-   {
-      log.atWarn().setCause(wae).log("Unsupported endpoint");
-      return Response.status(Response.Status.NOT_IMPLEMENTED)
-            .entity(new Status(wae.getMessage()))
-            .type(MediaType.APPLICATION_JSON)
-            .build();
-   }
+	private static Response handle(UnsupportedOperationException wae)
+	{
+		log.atWarn().setCause(wae).log("Unsupported endpoint");
+		return Response.status(Response.Status.NOT_IMPLEMENTED)
+				.entity(new Status(wae.getMessage()))
+				.type(MediaType.APPLICATION_JSON)
+				.build();
+	}
 
-   private static Response handle(WebApplicationException wae)
-   {
-      log.atWarn().setCause(wae).log("Error in request");
-      String message = wae.getMessage();
-      if(wae instanceof InternalServerErrorException)
-      {
-         message = "Internal Server Error";
-      }
-      int status = wae.getResponse().getStatus();
-      return Response.status(status)
-            .entity(new Status(message))
-            .type(MediaType.APPLICATION_JSON)
-            .build();
-   }
+	private static Response handle(WebApplicationException wae)
+	{
+		log.atWarn().setCause(wae).log("Error in request");
+		String message = wae.getMessage();
+		if(wae instanceof InternalServerErrorException)
+		{
+			message = "Internal Server Error";
+		}
+		int status = wae.getResponse().getStatus();
+		return Response.status(status)
+				.entity(new Status(message))
+				.type(MediaType.APPLICATION_JSON)
+				.build();
+	}
 
-   private static Response handle(DbException dbex)
-   {
-      String returnErrMsg = INTERNAL_ERROR;
-      if(dbex.getCause() != null)
-      {
-         String tempCause = dbex.getCause().toString().toLowerCase();
-         if(tempCause.contains("duplicate key value violates unique constraint"))
-         {
-            returnErrMsg = "There was an error saving this.  The most likely error is that there is a duplicate key value.  Please contact your system administrator for more information.";
-         }
-         else if(tempCause.contains("value too long"))
-         {
-            returnErrMsg = "There was an error saving this.  " +
-                  "The most likely error is that there is an attempt to save a value that exceeds the allowed length.  " +
-                  "Please contact your system administrator for more information.";
-         }
-      }
-      log.atWarn().setCause(dbex).log(returnErrMsg);
-      return Response.status(Response.Status.BAD_REQUEST)
-            .entity(new Status(returnErrMsg))
-            .type(MediaType.APPLICATION_JSON)
-            .build();
-   }
+	private static Response handle(DbException dbex)
+	{
+		String returnErrMsg = INTERNAL_ERROR;
+		if(dbex.getCause() != null)
+		{
+			String tempCause = dbex.getCause().toString().toLowerCase();
+			if(tempCause.contains("duplicate key value violates unique constraint"))
+			{
+				returnErrMsg = "There was an error saving this.  The most likely error is that there is a duplicate key value.  Please contact your system administrator for more information.";
+			}
+			else if(tempCause.contains("value too long"))
+			{
+				returnErrMsg = "There was an error saving this.  " +
+						"The most likely error is that there is an attempt to save a value that exceeds the allowed length.  " +
+						"Please contact your system administrator for more information.";
+			}
+		}
+		log.atWarn().setCause(dbex).log(returnErrMsg);
+		return Response.status(Response.Status.BAD_REQUEST)
+				.entity(new Status(returnErrMsg))
+				.type(MediaType.APPLICATION_JSON)
+				.build();
+	}
 
-   private static Response handle(TsdbException dbex)
-   {
-      LoggingEventBuilder le = log.atWarn().setCause(dbex);
-      if(dbex.getCause() != null)
-      {
-         String tempCause = dbex.getCause().toString().toLowerCase();
-         if(tempCause.contains("value too long"))
-         {
-            le.log("There was an error saving this.  " +
-                  "The most likely error is that there is an attempt to save a value that exceeds the allowed length.  " +
-                  "Please contact your system administrator for more information.");
-         }
-         else
-         {
-            le.log("Unexpected DbIoException thrown from request");
-         }
-      }
+	private static Response handle(TsdbException dbex)
+	{
+		LoggingEventBuilder le = log.atWarn().setCause(dbex);
+		if(dbex.getCause() != null)
+		{
+			String tempCause = dbex.getCause().toString().toLowerCase();
+			if(tempCause.contains("value too long"))
+			{
+				le.log("There was an error saving this.  " +
+						"The most likely error is that there is an attempt to save a value that exceeds the allowed length.  " +
+						"Please contact your system administrator for more information.");
+			}
+			else
+			{
+				le.log("Unexpected DbIoException thrown from request");
+			}
 
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-            .entity(new Status(INTERNAL_ERROR))
-            .type(MediaType.APPLICATION_JSON)
-            .build();
-   }
+		}
 
-   private static Response handle(ConstraintException dbex)
-   {
-      LoggingEventBuilder le = log.atWarn().setCause(dbex);
-      if(dbex.getCause() != null)
-      {
-         String tempCause = dbex.getCause().toString().toLowerCase();
-         if(tempCause.contains("duplicate key value violates unique constraint"))
-         {
-            le.log("There was an error saving this.  The most likely error is that there is a duplicate key value. " +
-                  "Please contact your system administrator for more information.");
-         }
-      }
-      else
-      {
-         le.log("Violated constraint exception thrown from request");
-      }
-      return Response.status(Response.Status.BAD_REQUEST)
-            .entity(new Status(INTERNAL_ERROR))
-            .type(MediaType.APPLICATION_JSON)
-            .build();
-   }
+		return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+				.entity(new Status(INTERNAL_ERROR))
+				.type(MediaType.APPLICATION_JSON)
+				.build();
+	}
 
-   private static Response handle(WebAppException wae)
-   {
-      LoggingEventBuilder le = (wae.getStatus() >= 500 ? log.atWarn() : log.atInfo() ).setCause(wae);
-      if(wae.getStatus() >= 500)
-      {
-         le.log("Server error");
-      }
-      else
-      {
-         le.log("Client error");
-      }
-      return Response.status(wae.getStatus())
-            .entity(new Status(wae.getMessage()))
-            .type(MediaType.APPLICATION_JSON)
-            .build();
-   }
+	private static Response handle(ConstraintException dbex)
+	{
+		log.atWarn().setCause(dbex).log("Constraint violation on delete");
+		return Response.status(Response.Status.CONFLICT)
+				.entity(new Status(dbex.getMessage()))
+				.build();
+	}
+
+	private static Response handleConstraint(OpenDcsDataConstraintException ex)
+	{
+		log.atWarn().setCause(ex).log("Data constraint violation on delete");
+		return Response.status(Response.Status.CONFLICT)
+				.entity(new Status(ex.getMessage()))
+				.build();
+	}
+
+	private static Response handle(OpenDcsDataException ex)
+	{
+		log.atWarn().setCause(ex).log("Data exception");
+		return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+				.entity(new Status(INTERNAL_ERROR))
+				.type(MediaType.APPLICATION_JSON)
+				.build();
+	}
+
+	private static Response handle(WebAppException wae)
+	{
+		LoggingEventBuilder le = (wae.getStatus() >= 500 ? log.atWarn() : log.atInfo() ).setCause(wae);
+		if(wae.getStatus() >= 500)
+		{
+			le.log("Server error");
+		}
+		else
+		{
+			le.log("Client error");
+		}
+		return Response.status(wae.getStatus())
+				.entity(new Status(wae.getMessage()))
+				.type(MediaType.APPLICATION_JSON)
+				.build();
+	}
 
 }

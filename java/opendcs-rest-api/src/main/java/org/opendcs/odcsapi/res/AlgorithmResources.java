@@ -348,8 +348,15 @@ public final class AlgorithmResources extends OpenDcsResource
 			tags = {"REST - Algorithm Methods"},
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Successfully deleted algorithm"),
-					@ApiResponse(responseCode = "400", description = "Bad Request - Missing required parameter"),
-					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+					@ApiResponse(responseCode = "400", description = "Bad Request - Missing required parameter",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class))),
+					@ApiResponse(responseCode = "409", description = "Conflict - Algorithm is in use by one or more computations",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class))),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class)))
 			}
 	)
 	public Response deleteAlgorithm(@Parameter(description = "ID of the algorithm to delete", required = true,

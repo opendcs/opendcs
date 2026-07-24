@@ -9,6 +9,7 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.LoadingAppDao;
+import org.opendcs.database.impl.opendcs.SqlConstraintTranslator;
 import org.opendcs.database.model.mappers.compapp.CompAppInfoMapper;
 import org.opendcs.database.model.mappers.compapp.CompAppInfoReducer;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
@@ -169,12 +170,20 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        try (var deleteApp = handle.createUpdate("delete from hdb_loading_application where loading_application_id = :id");
-             var deleteProperties = handle.createUpdate(DELETE_APP_PROPERTIES)
-            )
+        try
         {
-            deleteProperties.bind(GenericColumns.ID.column(), id).execute();
-            deleteApp.bind(GenericColumns.ID.column(), id).execute();
+            try (var deleteApp = handle.createUpdate("delete from hdb_loading_application where loading_application_id = :id");
+                 var deleteProperties = handle.createUpdate(DELETE_APP_PROPERTIES)
+                )
+            {
+                deleteProperties.bind(GenericColumns.ID.column(), id).execute();
+                deleteApp.bind(GenericColumns.ID.column(), id).execute();
+            }
+        }
+        catch (RuntimeException ex)
+        {
+            var engine = tx.getContext().getDatabaseEngine();
+            throw SqlConstraintTranslator.translate("Loading app " + id + " is still used by computations or schedule entries and cannot be deleted", engine, ex);
         }
     }
 

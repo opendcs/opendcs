@@ -54,6 +54,7 @@ import jakarta.ws.rs.core.Response;
 import org.opendcs.odcsapi.beans.ApiNetList;
 import org.opendcs.odcsapi.beans.ApiNetListItem;
 import org.opendcs.odcsapi.beans.ApiNetlistRef;
+import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
@@ -319,10 +320,16 @@ public final class NetlistResources extends OpenDcsResource
 					"a message containing the name of the routing specs using the referenced netlist.",
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Successfully deleted network list"),
+					@ApiResponse(responseCode = "400", description = "Missing required netlistid parameter",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = Status.class))),
 					@ApiResponse(responseCode = "409",
-							description = "Conflict - Network list is used by one or more routing specs"),
-					@ApiResponse(responseCode = "400", description = "Missing required netlistid parameter"),
-					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+							description = "Conflict - Network list is used by one or more routing specs",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = Status.class))),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = Status.class)))
 			},
 			tags = {"REST - Network Lists"}
 	)
@@ -345,25 +352,14 @@ public final class NetlistResources extends OpenDcsResource
 			RoutingSpecList routingSpecList = new RoutingSpecList();
 			dbIo.readRoutingSpecList(routingSpecList);
 
-			StringBuilder errmsg = new StringBuilder();
+			String errmsg = findReferencingRoutingSpecs(nl, routingSpecList);
 
-			for (RoutingSpec spec : routingSpecList.getList())
-			{
-				for (NetworkList list : spec.networkLists)
-				{
-					if (list.getId().equals(nl.getId()))
-					{
-						errmsg.append((errmsg.length() > 0) ? ", " : "").append(spec.getName());
-					}
-				}
-			}
-
-			if (errmsg.length() > 0)
+			if (!errmsg.isEmpty())
 			{
 				return Response.status(Response.Status.CONFLICT)
-						.entity(" Cannot delete network list with ID " + netlistId
+						.entity(new Status("Cannot delete network list with ID " + netlistId
 								+ " because it is used by the following routing specs: "
-								+ errmsg).build();
+								+ errmsg)).build();
 			}
 			if (nl == null)
 			{
@@ -381,6 +377,26 @@ public final class NetlistResources extends OpenDcsResource
 		{
 			dbIo.close();
 		}
+	}
+
+	static String findReferencingRoutingSpecs(NetworkList nl, RoutingSpecList routingSpecList)
+	{
+		StringBuilder errmsg = new StringBuilder();
+		if (nl == null)
+		{
+			return errmsg.toString();
+		}
+		for (RoutingSpec spec : routingSpecList.getList())
+		{
+			for (String listName : spec.networkListNames)
+			{
+				if (listName.equalsIgnoreCase(nl.name))
+				{
+					errmsg.append((errmsg.length() > 0) ? ", " : "").append(spec.getName());
+				}
+			}
+		}
+		return errmsg.toString();
 	}
 
 	@POST

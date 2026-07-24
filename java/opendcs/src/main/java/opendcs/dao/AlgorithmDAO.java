@@ -453,6 +453,10 @@ public class AlgorithmDAO extends DaoBase implements AlgorithmDAI
                 doModify(q, id);
             });
         }
+        catch(ConstraintException ex)
+        {
+            throw ex;
+        }
         catch(Exception ex)
         {
             String msg = "Error deleting algorithm with ID=" + id;

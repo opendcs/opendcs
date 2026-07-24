@@ -8,6 +8,8 @@ import java.util.List;
 import decodes.db.NetworkList;
 import decodes.db.NetworkListEntry;
 import decodes.db.NetworkListList;
+import decodes.db.RoutingSpec;
+import decodes.db.RoutingSpecList;
 import decodes.sql.DbKey;
 import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiNetList;
@@ -16,6 +18,7 @@ import org.opendcs.odcsapi.beans.ApiNetlistRef;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.opendcs.odcsapi.res.NetlistResources.findReferencingRoutingSpecs;
 import static org.opendcs.odcsapi.res.NetlistResources.map;
 
 final class NetlistResourcesTest
@@ -126,5 +129,64 @@ final class NetlistResourcesTest
 		input = "goes-self-timed{}";
 		output = NetlistResources.getSingleWord(input);
 		assertEquals("goes-self-timed", output);
+	}
+
+	@Test
+	void testFindReferencingRoutingSpecsReturnsEmptyWhenNetworkListIsNull()
+	{
+		RoutingSpecList routingSpecList = new RoutingSpecList();
+		routingSpecList.add(new RoutingSpec("SomeRoutingSpec"));
+
+		String result = findReferencingRoutingSpecs(null, routingSpecList);
+
+		assertEquals("", result);
+	}
+
+	@Test
+	void testFindReferencingRoutingSpecsReturnsEmptyWhenNoSpecReferencesTheList()
+	{
+		NetworkList nl = new NetworkList("MyList");
+
+		RoutingSpec spec = new RoutingSpec("SomeRoutingSpec");
+		spec.addNetworkListName("SomeOtherList");
+		RoutingSpecList routingSpecList = new RoutingSpecList();
+		routingSpecList.add(spec);
+
+		String result = findReferencingRoutingSpecs(nl, routingSpecList);
+
+		assertEquals("", result);
+	}
+
+	@Test
+	void testFindReferencingRoutingSpecsMatchesCaseInsensitively()
+	{
+		NetworkList nl = new NetworkList("MyList");
+
+		RoutingSpec spec = new RoutingSpec("SomeRoutingSpec");
+		spec.addNetworkListName("mylist");
+		RoutingSpecList routingSpecList = new RoutingSpecList();
+		routingSpecList.add(spec);
+
+		String result = findReferencingRoutingSpecs(nl, routingSpecList);
+
+		assertEquals("SomeRoutingSpec", result);
+	}
+
+	@Test
+	void testFindReferencingRoutingSpecsJoinsMultipleMatchesWithCommas()
+	{
+		NetworkList nl = new NetworkList("MyList");
+
+		RoutingSpec spec1 = new RoutingSpec("FirstSpec");
+		spec1.addNetworkListName("MyList");
+		RoutingSpec spec2 = new RoutingSpec("SecondSpec");
+		spec2.addNetworkListName("MyList");
+		RoutingSpecList routingSpecList = new RoutingSpecList();
+		routingSpecList.add(spec1);
+		routingSpecList.add(spec2);
+
+		String result = findReferencingRoutingSpecs(nl, routingSpecList);
+
+		assertEquals("FirstSpec, SecondSpec", result);
 	}
 }
