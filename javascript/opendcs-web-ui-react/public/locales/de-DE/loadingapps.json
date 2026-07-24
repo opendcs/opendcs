@@ -11,6 +11,7 @@
   "save_app": "Ladeanwendung {{id}} speichern",
   "cancel_for": "Bearbeitung von Ladeanwendung {{id}} abbrechen",
   "delete_for": "Ladeanwendung {{id}} löschen",
+  "save_error": "Speichern fehlgeschlagen. Bitte Eingaben prüfen und erneut versuchen.",
   "status": "Status",
   "status_running": "Läuft",
   "status_inactive": "Inaktiv"
