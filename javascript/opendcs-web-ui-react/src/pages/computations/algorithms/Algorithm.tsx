@@ -1,4 +1,13 @@
-import { Button, Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
+import {
+  Alert,
+  Button,
+  Card,
+  Col,
+  Form,
+  FormGroup,
+  Placeholder,
+  Row,
+} from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../../components/properties";
 import { use, useCallback, useMemo, useReducer, useState } from "react";
 import type { ApiAlgorithm, ApiPropSpec } from "opendcs-api";
@@ -12,6 +21,7 @@ import { AlgorithmReducer } from "./AlgorithmReducer";
 import { Save, X } from "react-bootstrap-icons";
 import { AlgorithmParamsTable, type AlgoParm } from "./AlgorithmParamsTable";
 import { DetailFade } from "../../../components/data-table";
+import { apiErrorMessage } from "../../../util/ApiError";
 
 export type UiAlgorithm = Partial<ApiAlgorithm>;
 
@@ -199,6 +209,7 @@ export const Algorithm: React.FC<AlgorithmProperties> = ({
   else resolvedParms = initialParms;
   const [localAlgorithm, dispatch] = useReducer(AlgorithmReducer, providedAlgorithm);
   const [localParms, setLocalParms] = useState<AlgoParm[]>(resolvedParms);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const props = useMemo(() => {
     const saved = localAlgorithm.props || {};
@@ -231,10 +242,16 @@ export const Algorithm: React.FC<AlgorithmProperties> = ({
     : {};
 
   const saveAlgorithm = useCallback(
-    (algo: UiAlgorithm) => {
-      actions.save!({ ...algo, parms: localParms });
+    async (algo: UiAlgorithm) => {
+      setSaveError(null);
+      try {
+        await actions.save?.({ ...algo, parms: localParms } as ApiAlgorithm);
+      } catch (err) {
+        console.warn("Algorithm save failed", err);
+        setSaveError(apiErrorMessage(err, t("algorithms:editor.save_error")));
+      }
     },
-    [actions, localParms],
+    [actions, localParms, t],
   );
 
   const inputChange = useCallback(
@@ -334,6 +351,16 @@ export const Algorithm: React.FC<AlgorithmProperties> = ({
               />
             </Col>
           </Row>
+          {saveError && (
+            <Alert
+              variant="danger"
+              dismissible
+              onClose={() => setSaveError(null)}
+              className="mt-3"
+            >
+              {saveError}
+            </Alert>
+          )}
           {edit && (
             <Row className="mt-3">
               <Col className="d-flex justify-content-end gap-2">
@@ -349,7 +376,9 @@ export const Algorithm: React.FC<AlgorithmProperties> = ({
                   <X /> {t("translation:cancel")}
                 </Button>
                 <Button
-                  onClick={() => saveAlgorithm(localAlgorithm)}
+                  onClick={async () => {
+                    await saveAlgorithm(localAlgorithm);
+                  }}
                   variant="primary"
                   aria-label={t("algorithms:editor.save_for", {
                     id: localAlgorithm.algorithmId,

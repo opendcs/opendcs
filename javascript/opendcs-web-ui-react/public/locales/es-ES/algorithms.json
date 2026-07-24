@@ -15,7 +15,8 @@
     "edit_for": "Editar algoritmo {{id}}",
     "delete_for": "Eliminar algoritmo {{id}}",
     "cancel_for": "Cancelar edición del algoritmo {{id}}",
-    "save_for": "Guardar algoritmo {{id}}"
+    "save_for": "Guardar algoritmo {{id}}",
+    "save_error": "Error al guardar. Por favor verifique sus entradas e intente de nuevo."
   },
   "check_new": {
     "button": "Buscar Nuevos",

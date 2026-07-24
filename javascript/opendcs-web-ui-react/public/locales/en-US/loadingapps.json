@@ -11,6 +11,7 @@
   "save_app": "Save loading app with id {{id}}",
   "cancel_for": "Cancel editing loading app with id {{id}}",
   "delete_for": "Delete loading app with id {{id}}",
+  "save_error": "Save failed. Please check your entries and try again.",
   "status": "Status",
   "status_running": "Running",
   "status_inactive": "Inactive"
