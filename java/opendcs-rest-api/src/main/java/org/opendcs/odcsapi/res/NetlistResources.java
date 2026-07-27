@@ -108,15 +108,17 @@ public final class NetlistResources extends OpenDcsResource
         try (var tx = db.newTransaction())
         {
             return tx.wrapErrors(() ->
-                Response.ok()
-                        .entity(
-                            dao.getAll(tx, -1, -1, tmtype, false)
-                                .stream()
-                                .map(nl -> mapRef(nl))
-                                .toList()
-                        )
-                        .build()
-            );
+            {
+                return Response.ok()
+                               .entity(
+                                    dao.getAll(tx, -1, -1, tmtype, false)
+                                       .stream()
+                                       .map(nl -> mapRef(nl))
+                                       .toList()
+                                )
+                               .build();
+
+            });
         }
         catch (OpenDcsDataException ex)
         {
