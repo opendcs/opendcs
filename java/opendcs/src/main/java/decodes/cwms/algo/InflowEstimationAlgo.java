@@ -316,11 +316,30 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 	}
 
 	@Override
-	public void afterAllTimeSlices()
+	public void alwaysAfterTimeSlices()
 	{
-		tsdb.freeConnection(conn);
-		ratingDao.close();
-		timeSeriesDAO.close();
+		// closing connection and releasing resources here as this hook runs even when computation fails.
+		if(conn != null)
+		{
+			try
+			{
+				// connection object returned by getConnection will be a WrappedConnection that correctly
+				// handles if the instance needs to be closed or not
+				conn.close();
+			}
+			catch(SQLException ex)
+			{
+				log.atWarn().setCause(ex).log("Unable to close inflow-estimation connection");
+			}
+		}
+		if(ratingDao != null)
+		{
+			ratingDao.close();
+		}
+		if(timeSeriesDAO != null)
+		{
+			timeSeriesDAO.close();
+		}
 	}
 
 	private void aggregateAllTimeSeries(List<Double> constituents)
@@ -345,7 +364,8 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 					|| utcOffset == HecConstants.UNDEFINED_UTC_OFFSET
 					|| utcOffset == HecConstants.NO_UTC_OFFSET)
 			{
-				// Required CWMS save-batch fix: choose one offset for an otherwise undefined output TS.
+				// A new CWMS output does not yet have a persisted offset. Select the
+				// first eligible one so all values saved in this run use one offset.
 				int candidateOffset = IntervalOffsetUtil.getIntervalOffsetForTime(
 						IntervalCodes.getInterval(timeSeries.getInterval()), date);
 				if(effectiveOutputOffsetSeconds == null)
@@ -473,7 +493,7 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 		Long next = values.ceilingKey(time.getTime());
 		if(next == null)
 		{
-			throw new NotEnoughDataException("No previous value found for time: " + time);
+			throw new NotEnoughDataException("No next value found for time: " + time);
 		}
 		long timeRange = next - prev;
 		if(timeRange == 0)
@@ -481,7 +501,7 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 			return values.get(time.getTime());
 		}
 
-		// Required correctness fix: fraction of the way from the preceding sample to the requested time.
+		// Fraction of the interval from the preceding sample to the requested time.
 		double pos = (double) (time.getTime() - prev) / (double) timeRange;
 
 		double prevVal = values.get(prev);
