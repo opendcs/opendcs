@@ -4,18 +4,18 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.Properties;
 
-import decodes.sql.DbKey;
-import decodes.tsdb.CompAppInfo;
-import decodes.tsdb.TsdbCompLock;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiAppRef;
 import org.opendcs.odcsapi.beans.ApiAppStatus;
 import org.opendcs.odcsapi.beans.ApiLoadingApp;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.opendcs.odcsapi.res.AppResources.map;
 import static org.opendcs.odcsapi.res.AppResources.mapLoading;
+
+import decodes.sql.DbKey;
+import decodes.tsdb.CompAppInfo;
+import decodes.tsdb.TsdbCompLock;
 
 final class AppResourcesTest
 {
@@ -67,6 +67,20 @@ final class AppResourcesTest
 		assertEquals(app.getLastModified(), compAppInfo.getLastModified());
 		assertEquals(app.isManualEditingApp(), compAppInfo.getManualEditApp());
 		assertEquals(app.getProperties(), compAppInfo.getProperties());
+	}
+
+	@Test
+	void testCompAppMapNewAppNoAppType()
+	{
+		// Creating a new process without setting the
+		// "App Type" field must not NPE when syncing appType into properties.
+		ApiLoadingApp app = new ApiLoadingApp();
+		app.setAppName("New application");
+
+		CompAppInfo compAppInfo = map(app);
+
+		assertNotNull(compAppInfo);
+		assertEquals(app.getAppName(), compAppInfo.getAppName());
 	}
 
 	@Test
