@@ -2,7 +2,7 @@ import type { Meta, ReactRenderer, StoryObj } from "@storybook/react-vite";
 import { AlgorithmsTable, type TableAlgorithmRef } from "./AlgorithmsTable";
 import type { ApiAlgorithm, ApiAlgorithmRef, ApiPropSpec } from "opendcs-api";
 import { act } from "@testing-library/react";
-import { expect, screen, waitFor } from "storybook/test";
+import { expect, screen, spyOn, waitFor } from "storybook/test";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ArgsStoryFn } from "storybook/internal/types";
 import type { RemoveAction, SaveAction } from "../../../util/Actions";
@@ -237,6 +237,87 @@ export const DeleteAlgorithm: Story = {
     await waitFor(() => {
       expect(canvas.queryByText("ScalerAdder")).not.toBeInTheDocument();
     });
+  },
+};
+
+export const CopyAlgorithmNoHandler: Story = {
+  args: { algorithms: toAlgoRefs(sharedAlgorithms) },
+  render: (args) => (
+    <AlgorithmsTable algorithms={args.algorithms as TableAlgorithmRef[]} />
+  ),
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const copyBtn = await waitFor(
+      () =>
+        canvas.getByRole("button", {
+          name: i18n.t("algorithms:editor.copy_for", { id: 1 }),
+        }),
+      { timeout: 5000 },
+    );
+    // No getAlgorithm handler was supplied — the click should silently no-op.
+    await act(async () => userEvent.click(copyBtn));
+    expect(canvas.queryByText("-1")).not.toBeInTheDocument();
+  },
+};
+
+export const CopyAlgorithm: Story = {
+  args: { algorithms: toAlgoRefs(sharedAlgorithms) },
+  render: StoryRender,
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const copyBtn = await waitFor(
+      () =>
+        canvas.getByRole("button", {
+          name: i18n.t("algorithms:editor.copy_for", { id: 1 }),
+        }),
+      { timeout: 5000 },
+    );
+    await act(async () => userEvent.click(copyBtn));
+
+    // A new draft row (-1) opens for editing, pre-filled from the source algorithm.
+    const newRow = await waitFor(() => canvas.queryByText("-1"));
+    expect(newRow).toBeInTheDocument();
+
+    const execClassInput = await canvas.findByDisplayValue(
+      "decodes.comp.CopyAlgorithm",
+      {},
+      { timeout: 5000 },
+    );
+    expect(execClassInput).toBeInTheDocument();
+  },
+};
+
+export const CopyAlgorithmFailure: Story = {
+  args: { algorithms: toAlgoRefs(sharedAlgorithms) },
+  render: (args) => (
+    <AlgorithmsTable
+      algorithms={args.algorithms as TableAlgorithmRef[]}
+      getAlgorithm={async () => Promise.reject(new Error("boom"))}
+      getPropSpecs={getPropSpecs}
+    />
+  ),
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+    const warnSpy = spyOn(console, "warn").mockImplementation(() => {});
+
+    const copyBtn = await waitFor(
+      () =>
+        canvas.getByRole("button", {
+          name: i18n.t("algorithms:editor.copy_for", { id: 1 }),
+        }),
+      { timeout: 5000 },
+    );
+    await act(async () => userEvent.click(copyBtn));
+
+    await waitFor(() => expect(warnSpy).toHaveBeenCalled());
+    expect(canvas.queryByText("-1")).not.toBeInTheDocument();
+
+    warnSpy.mockRestore();
   },
 };
 

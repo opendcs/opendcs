@@ -10,6 +10,7 @@
   "edit_app": "Edit loading app with id {{id}}",
   "save_app": "Save loading app with id {{id}}",
   "cancel_for": "Cancel editing loading app with id {{id}}",
+  "copy_for": "Copy loading app with id {{id}}",
   "delete_for": "Delete loading app with id {{id}}",
   "status": "Status",
   "status_running": "Running",
