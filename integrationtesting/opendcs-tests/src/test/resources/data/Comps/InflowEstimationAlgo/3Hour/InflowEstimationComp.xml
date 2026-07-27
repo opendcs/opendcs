@@ -50,6 +50,9 @@
     <LastModified>2025-08-15 15:15:19 PDT</LastModified>
     <ValidStart>2024-01-03 00:15:00 UTC</ValidStart>
     <ValidEnd>2024-01-05 00:00:00 UTC</ValidEnd>
+    <CompProperty name="outflowTsId1_MISSING">IGNORE</CompProperty>
+    <CompProperty name="releaseTsId_MISSING">IGNORE</CompProperty>
+    <CompProperty name="storageTsId_MISSING">IGNORE</CompProperty>
     <CompParm roleName="outflowTsId1">
       <SiteDataType>
         <SiteName NameType="CWMS">BLU</SiteName>

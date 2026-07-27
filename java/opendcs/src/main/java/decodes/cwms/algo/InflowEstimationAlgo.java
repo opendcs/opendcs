@@ -17,7 +17,6 @@ import decodes.cwms.rating.CwmsRatingDao;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.IntervalCodes;
-import decodes.tsdb.MissingAction;
 import decodes.tsdb.ParmRef;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.algo.AWAlgoType;
@@ -129,13 +128,14 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 	@Override
 	protected void beforeTimeSlices() throws DbCompException
 	{
-		log.atDebug().log("InflowEstimationAlgo::beforeTimeSlices");
+		// No per-time-slice initialization is required.
 	}
 
 	@Override
 	protected void doAWTimeSlice() throws DbCompException
 	{
-		log.atDebug().log("InflowEstimationAlgo::doAWTimeSlice");
+		// Intentionally left blank. The inflow calculation is performed in afterTimeSlices() to ensure that
+		// all time slices are available for the aggregation.
 	}
 
 	private void validateOutput() throws DbCompException
@@ -179,19 +179,9 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 		ParmRef tailwaterTsid = getParmRef("tailwaterTsId");
 		ParmRef stagePoolTsid = getParmRef("stagePoolTsId");
 		ParmRef storageTsid = getParmRef("storageTsId");
-		// Required: unused alternative/optional roles are omitted from the computation XML.
-		// In that case getParmRef returns null. The original direct calls below would
-		// throw before the existing alternative-input validation can run.
-		setMissingActionIgnore(outflow1);
-		setMissingActionIgnore(outflow2);
-		setMissingActionIgnore(outflow3);
-		setMissingActionIgnore(outflow4);
-		setMissingActionIgnore(outflow5);
-		setMissingActionIgnore(outflow6);
-		setMissingActionIgnore(releaseTsid);
-		setMissingActionIgnore(tailwaterTsid);
-		setMissingActionIgnore(stagePoolTsid);
-		setMissingActionIgnore(storageTsid);
+		// Alternative roles may be omitted from the computation XML. In that case
+		// getParmRef returns null; the null-safe getTimeSeries calls below allow the
+		// alternative-input validation to report a useful configuration error.
 		inflowTs = getParmRef("inflow").timeSeries;
 		outflowTs1 = getTimeSeries(outflow1);
 		outflowTs2 = getTimeSeries(outflow2);
@@ -230,18 +220,6 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 		}
 		aggPeriodInterval = timeSeriesIdentifier.getInterval();
 		durationPeriod = ((CwmsTsId) timeSeriesIdentifier).getDuration();
-	}
-
-	/**
-	 * Preserves the original IGNORE behavior when an optional role is assigned,
-	 * while allowing the role to be omitted from a computation definition.
-	 */
-	private void setMissingActionIgnore(ParmRef parmRef)
-	{
-		if(parmRef != null)
-		{
-			parmRef.setMissingAction(MissingAction.IGNORE);
-		}
 	}
 
 	/** Returns no series for an omitted optional role rather than dereferencing a null ParmRef. */
