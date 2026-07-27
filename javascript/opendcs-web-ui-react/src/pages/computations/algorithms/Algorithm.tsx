@@ -180,6 +180,44 @@ export const AlgorithmSkeleton: React.FC<{ edit?: boolean; className?: string }>
   </Card>
 );
 
+const AlgorithmField: React.FC<{
+  id: string;
+  label: string;
+  name: string;
+  defaultValue?: string;
+  edit: boolean;
+  onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  textarea?: boolean;
+}> = ({ id, label, name, defaultValue, edit, onChange, textarea = false }) => (
+  <FormGroup as={Row} className="mb-3">
+    <Form.Label column lg={3} htmlFor={id}>
+      {label}
+    </Form.Label>
+    <Col lg={9}>
+      {textarea ? (
+        <Form.Control
+          as="textarea"
+          rows={3}
+          id={id}
+          name={name}
+          readOnly={!edit}
+          defaultValue={defaultValue}
+          onChange={onChange}
+        />
+      ) : (
+        <Form.Control
+          type="text"
+          id={id}
+          name={name}
+          readOnly={!edit}
+          defaultValue={defaultValue}
+          onChange={onChange}
+        />
+      )}
+    </Col>
+  </FormGroup>
+);
+
 export interface AlgorithmProperties {
   algorithm: Promise<UiAlgorithm> | UiAlgorithm;
   propSpecs?: Promise<ApiPropSpec[]> | ApiPropSpec[];
@@ -274,55 +312,34 @@ export const Algorithm: React.FC<AlgorithmProperties> = ({
             {/* Left column — Name, ExecClass, Parameters table */}
             <Row>
               <Col>
-                <FormGroup as={Row} className="mb-3">
-                  <Form.Label column lg={3} htmlFor="algoName">
-                    {t("algorithms:editor.name")}
-                  </Form.Label>
-                  <Col lg={9}>
-                    <Form.Control
-                      type="text"
-                      id="algoName"
-                      name="name"
-                      readOnly={!edit}
-                      defaultValue={localAlgorithm.name}
-                      onChange={inputChange}
-                    />
-                  </Col>
-                </FormGroup>
-                <FormGroup as={Row} className="mb-3">
-                  <Form.Label column lg={3} htmlFor="execClass">
-                    {t("algorithms:editor.execClass")}
-                  </Form.Label>
-                  <Col lg={9}>
-                    <Form.Control
-                      type="text"
-                      id="execClass"
-                      name="execClass"
-                      readOnly={!edit}
-                      defaultValue={localAlgorithm.execClass}
-                      onChange={inputChange}
-                    />
-                  </Col>
-                </FormGroup>
+                <AlgorithmField
+                  id="algoName"
+                  label={t("algorithms:editor.name")}
+                  name="name"
+                  defaultValue={localAlgorithm.name}
+                  edit={edit}
+                  onChange={inputChange}
+                />
+                <AlgorithmField
+                  id="execClass"
+                  label={t("algorithms:editor.execClass")}
+                  name="execClass"
+                  defaultValue={localAlgorithm.execClass}
+                  edit={edit}
+                  onChange={inputChange}
+                />
               </Col>
               {/* Right column — Description, Properties table */}
               <Col>
-                <FormGroup as={Row} className="mb-3">
-                  <Form.Label column lg={3} htmlFor="algoDescription">
-                    {t("algorithms:editor.description")}
-                  </Form.Label>
-                  <Col lg={9}>
-                    <Form.Control
-                      as="textarea"
-                      rows={3}
-                      id="algoDescription"
-                      name="description"
-                      readOnly={!edit}
-                      defaultValue={localAlgorithm.description}
-                      onChange={inputChange}
-                    />
-                  </Col>
-                </FormGroup>
+                <AlgorithmField
+                  id="algoDescription"
+                  label={t("algorithms:editor.description")}
+                  name="description"
+                  defaultValue={localAlgorithm.description}
+                  edit={edit}
+                  onChange={inputChange}
+                  textarea
+                />
               </Col>
             </Row>
             <Col>
