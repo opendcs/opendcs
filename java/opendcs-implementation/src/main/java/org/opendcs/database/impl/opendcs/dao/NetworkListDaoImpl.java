@@ -16,11 +16,14 @@ import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.statement.Query;
+import org.jdbi.v3.core.statement.SqlLogger;
+import org.jdbi.v3.core.statement.StatementContext;
 import org.jdbi.v3.stringtemplate4.StringTemplateSqlLocator;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.NetworkListDao;
+import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListEntryMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListReducer;
@@ -83,12 +86,12 @@ public class NetworkListDaoImpl implements NetworkListDao
         {
             throw new OpenDcsDataException("Could not find template");
         }
-        selectTemplate.add(WHERE_CLAUSE, "where nl.id = :id");
-        try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, listEntryMapper)))
+        selectTemplate.add(WHERE_CLAUSE, "where id = :id");
+        try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, listMapper, listEntryMapper)))
         {
             registerMappers(select, listMapper, listEntryMapper);
             return select.bind(NetworkListMapper.Columns.ID.column(), id)
-                         .reduceRows(new NetworkListReducer(listMapper))
+                         .reduceRows(new NetworkListReducer(listMapper, listEntryMapper))
                          .findFirst();
         }
     }
@@ -111,12 +114,12 @@ public class NetworkListDaoImpl implements NetworkListDao
         {
             throw new OpenDcsDataException("Could not find template");
         }
-        selectTemplate.add(WHERE_CLAUSE, "where upper(nl.name) = upper(:name)");
-        try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, listEntryMapper)))
+        selectTemplate.add(WHERE_CLAUSE, "where upper(name) = upper(:name)");
+        try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, listMapper, listEntryMapper)))
         {
             registerMappers(select, listMapper, listEntryMapper);
             return select.bind(NetworkListMapper.Columns.NAME.column(), name)
-                         .reduceRows(new NetworkListReducer(listMapper))
+                         .reduceRows(new NetworkListReducer(listMapper, listEntryMapper))
                          .findFirst();
         }
     }
@@ -171,7 +174,7 @@ public class NetworkListDaoImpl implements NetworkListDao
                 insertListEntry.execute();
             }
 
-            return getById(tx, id).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve network list we just saved."));
+            return getById(tx, bindKey).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve network list we just saved."));
         }
         catch (DatabaseException ex)
         {
@@ -197,7 +200,7 @@ public class NetworkListDaoImpl implements NetworkListDao
         deleteEntries(handle, id);
         try (var deleteList = handle.createUpdate(deleteTemplate.render()))
         {
-            deleteList.bind(NetworkListMapper.Columns.ID.column(), id);
+            deleteList.bind(NetworkListMapper.Columns.ID.column(), id).execute();
         }
     }
 
@@ -210,7 +213,7 @@ public class NetworkListDaoImpl implements NetworkListDao
         }
         try (var deleteEntry = handle.createUpdate(deleteEntryTemplate.render()))
         {
-            deleteEntry.bind(NetworkListEntryMapper.Columns.NETWORKLIST_ID.column(), id);
+            deleteEntry.bind(NetworkListEntryMapper.Columns.NETWORKLIST_ID.column(), id).execute();
         }
     }
 
@@ -241,7 +244,7 @@ public class NetworkListDaoImpl implements NetworkListDao
         
         if (mediumSearch != null)
         {
-            selectTemplate.add("medium_filter", "where upper(nl.name) = upper(:name)");
+            selectTemplate.add("medium_filter", mediumSearch);
         }
 
         var limitClause = addLimitOffset(limit, offset);
@@ -250,7 +253,7 @@ public class NetworkListDaoImpl implements NetworkListDao
             selectTemplate.add("limit", limitClause);
         }
 
-        try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, includeEntries ? listEntryMapper : null)))
+        try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, listMapper, includeEntries ? listEntryMapper : null)))
         {
             if (includeEntries)
             {
@@ -277,7 +280,7 @@ public class NetworkListDaoImpl implements NetworkListDao
                     select.bind(SqlKeywords.OFFSET, offset);
                 }
             }
-            return select.reduceRows(new NetworkListReducer(listMapper))
+            return select.reduceRows(new NetworkListReducer(listMapper, includeEntries ? listEntryMapper : null))
                          .toList();
         }
     }
@@ -291,13 +294,14 @@ public class NetworkListDaoImpl implements NetworkListDao
         return query;
     }
 
-    private static String setDefines(ST select, DatabaseEngine dbEngine, NetworkListEntryMapper listEntryMapper)
+    private static String setDefines(ST select, DatabaseEngine dbEngine, NetworkListMapper listMapper, NetworkListEntryMapper listEntryMapper)
     {
+        select.add("list_columns", listMapper.columnsForSelect());
         if (listEntryMapper != null)
         {
             select.add("entry_columns", listEntryMapper.columnsForSelect());
             select.add("entry_join", listEntryMapper.joinStatement(LEFT_OUTER, 
-                                                                         NetworkListEntryMapper.Columns.TRANSPORT_ID,
+                                                                         NetworkListEntryMapper.Columns.NETWORKLIST_ID,
                                                                          "nl",
                                                                          NetworkListMapper.Columns.ID.column()));
         }

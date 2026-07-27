@@ -20,7 +20,11 @@ public final class NetworkListEntryMapper extends PrefixRowMapper<NetworkListEnt
     @Override
     public NetworkListEntry map(ResultSet rs, StatementContext ctx) throws SQLException
     {
-        var transportId = rs.getString(column(Columns.PLATFORM_NAME));
+        var transportId = rs.getString(column(Columns.TRANSPORT_ID));
+        if (rs.wasNull())
+        {
+            return null;
+        }
         var entry = new NetworkListEntry(null, transportId);
         entry.setDescription(rs.getString(column(Columns.DESCRIPTION)));
         entry.setPlatformName(rs.getString(column(Columns.PLATFORM_NAME)));
