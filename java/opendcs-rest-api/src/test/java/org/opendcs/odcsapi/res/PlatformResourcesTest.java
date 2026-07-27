@@ -14,7 +14,6 @@ import decodes.db.DecodesScript;
 import decodes.db.EquipmentModel;
 import decodes.db.Platform;
 import decodes.db.PlatformConfig;
-import decodes.db.PlatformList;
 import decodes.db.PlatformSensor;
 import decodes.db.PlatformStatus;
 import decodes.db.RoutingSpec;
@@ -45,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
+import static org.opendcs.odcsapi.res.PlatformResources.map;
 import static org.opendcs.odcsapi.res.PlatformResources.mapRef;
 import static org.opendcs.odcsapi.res.PlatformResources.statusListMap;
 
