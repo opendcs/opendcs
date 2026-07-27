@@ -147,9 +147,13 @@ public class TraceDialog extends JDialog
 
 			private void setPosition()
 			{
-				if (autoScroll.isEnabled())
+				if (autoScroll.isSelected())
 				{
-					eventArea.ensureIndexIsVisible(eventArea.getModel().getSize()-1);
+					int size = eventArea.getModel().getSize();
+					if (size > 0)
+					{
+						eventArea.ensureIndexIsVisible(size - 1);
+					}
 				}
 			}
 		});

@@ -7,36 +7,36 @@
       based on the output time series duration.
     </Comment>
     <ExecClass>decodes.cwms.algo.InflowEstimationAlgo</ExecClass>
-    <AlgoProperty name="stagepool_storage_rating"></AlgoProperty>
-    <AlgoProperty name="tailwater_to_release_rating"></AlgoProperty>
-    <AlgoParm roleName="tailwater_tsid">
+    <AlgoProperty name="stagePoolStorageRating"></AlgoProperty>
+    <AlgoProperty name="tailwaterToReleaseRating"></AlgoProperty>
+    <AlgoParm roleName="tailwaterTsId">
       <ParmType>i</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="storage_tsid">
+    <AlgoParm roleName="storageTsId">
       <ParmType>i</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="stage_pool_tsid">
+    <AlgoParm roleName="stagePoolTsId">
       <ParmType>i</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="release_tsid">
+    <AlgoParm roleName="releaseTsId">
       <ParmType>i</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="outflow_1">
+    <AlgoParm roleName="outflowTsId1">
       <ParmType>i</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="outflow_2">
+    <AlgoParm roleName="outflowTsId2">
       <ParmType>i</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="outflow_3">
+    <AlgoParm roleName="outflowTsId3">
       <ParmType>i</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="outflow_4">
+    <AlgoParm roleName="outflowTsId4">
       <ParmType>i</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="outflow_5">
+    <AlgoParm roleName="outflowTsId5">
       <ParmType>i</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="outflow_6">
+    <AlgoParm roleName="outflowTsId6">
       <ParmType>i</ParmType>
     </AlgoParm>
     <AlgoParm roleName="inflow">
@@ -50,10 +50,7 @@
     <LastModified>2025-08-15 15:15:19 PDT</LastModified>
     <ValidStart>2024-01-03 00:15:00 UTC</ValidStart>
     <ValidEnd>2024-01-05 00:00:00 UTC</ValidEnd>
-    <CompProperty name="stagepool_storage_rating">
-      BLU.Elev-Forebay;Area.Standard.CENWP
-    </CompProperty>
-    <CompParm roleName="outflow_1">
+    <CompParm roleName="outflowTsId1">
       <SiteDataType>
         <SiteName NameType="CWMS">BLU</SiteName>
         <DataType Standard="CWMS" code="Flow-Evap"/>
@@ -63,37 +60,7 @@
       <DeltaT>0</DeltaT>
       <DeltaTUnits>Seconds</DeltaTUnits>
     </CompParm>
-    <CompParm roleName="outflow_2">
-      <SiteDataType></SiteDataType>
-      <Interval></Interval>
-      <TableSelector></TableSelector>
-      <DeltaT></DeltaT>
-    </CompParm>
-    <CompParm roleName="outflow_3">
-      <SiteDataType></SiteDataType>
-      <Interval></Interval>
-      <TableSelector></TableSelector>
-      <DeltaT></DeltaT>
-    </CompParm>
-    <CompParm roleName="outflow_4">
-      <SiteDataType></SiteDataType>
-      <Interval></Interval>
-      <TableSelector></TableSelector>
-      <DeltaT></DeltaT>
-    </CompParm>
-    <CompParm roleName="outflow_5">
-      <SiteDataType></SiteDataType>
-      <Interval></Interval>
-      <TableSelector></TableSelector>
-      <DeltaT></DeltaT>
-    </CompParm>
-    <CompParm roleName="outflow_6">
-      <SiteDataType></SiteDataType>
-      <Interval></Interval>
-      <TableSelector></TableSelector>
-      <DeltaT></DeltaT>
-    </CompParm>
-    <CompParm roleName="release_tsid">
+    <CompParm roleName="releaseTsId">
       <SiteDataType>
         <SiteName NameType="CWMS">BLU</SiteName>
         <DataType Standard="CWMS" code="Flow-Out"/>
@@ -103,13 +70,7 @@
       <DeltaT>0</DeltaT>
       <DeltaTUnits>Seconds</DeltaTUnits>
     </CompParm>
-    <CompParm roleName="stage_pool_tsid">
-      <SiteDataType></SiteDataType>
-      <Interval></Interval>
-      <TableSelector></TableSelector>
-      <DeltaT></DeltaT>
-    </CompParm>
-    <CompParm roleName="storage_tsid">
+    <CompParm roleName="storageTsId">
       <SiteDataType>
         <SiteName NameType="CWMS">BLU</SiteName>
         <DataType Standard="cwms" code="Stor"/>
@@ -118,12 +79,6 @@
       <TableSelector>Inst.0.MIXED-COMPUTED-REV</TableSelector>
       <DeltaT>0</DeltaT>
       <DeltaTUnits>Seconds</DeltaTUnits>
-    </CompParm>
-    <CompParm roleName="tailwater_tsid">
-      <SiteDataType></SiteDataType>
-      <Interval></Interval>
-      <TableSelector></TableSelector>
-      <DeltaT></DeltaT>
     </CompParm>
     <CompParm roleName="inflow">
       <SiteDataType>

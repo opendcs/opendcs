@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.TimeZone;
 
 import decodes.cwms.CwmsTsId;
+import decodes.cwms.HecConstants;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.TimeSeriesIdentifier;
@@ -35,7 +36,7 @@ final class IntervalOffsetUtil
 		throw new AssertionError("Utility class cannot be instantiated.");
 	}
 
-	private static int getIntervalOffsetForTime(Interval intv, Date time)
+	static int getIntervalOffsetForTime(Interval intv, Date time)
 	{
 		Calendar utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		utcCal.setTime(time);
@@ -172,5 +173,38 @@ final class IntervalOffsetUtil
 			}
 		}
 		return !violation;
+	}
+
+	/**
+	 * Applies the output-boundary policy used by {@link InflowEstimationAlgo}.
+	 *
+	 * <p>New CWMS output series do not yet have a persisted UTC offset. In that
+	 * case the caller supplies the offset selected for the current computation
+	 * run and this method accepts only period ends with that offset. Established
+	 * series continue to use the general CWMS interval-offset rules.</p>
+	 *
+	 * @param timeSeries output time series being evaluated
+	 * @param date candidate period end
+	 * @param effectiveOffsetSeconds offset selected for this computation run, or
+	 *                               {@code null} before the first eligible end
+	 * @return whether the candidate period end may produce an output value
+	 */
+	static boolean matchesInflowIntervalOffset(CTimeSeries timeSeries, Date date,
+			Integer effectiveOffsetSeconds)
+	{
+		TimeSeriesIdentifier identifier = timeSeries.getTimeSeriesIdentifier();
+		if(identifier instanceof CwmsTsId)
+		{
+			Integer utcOffset = ((CwmsTsId) identifier).getUtcOffset();
+			if(utcOffset == null
+					|| utcOffset == HecConstants.UNDEFINED_UTC_OFFSET
+					|| utcOffset == HecConstants.NO_UTC_OFFSET)
+			{
+				int candidateOffset = getIntervalOffsetForTime(
+						IntervalCodes.getInterval(timeSeries.getInterval()), date);
+				return effectiveOffsetSeconds == null || effectiveOffsetSeconds == candidateOffset;
+			}
+		}
+		return matchesIntervalOffset(timeSeries, date);
 	}
 }
