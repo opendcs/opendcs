@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
@@ -124,7 +125,8 @@ class OpenDcsPlatformDaoTestIT extends AppTestBase
             var platforms = dao.getAll(tx, -1, -1, false);
 
             assertFalse(platforms.isEmpty());
-            assertNull(platforms.get(0).getSite());
+            assertNotNull(platforms.get(0).getSite());
+            assertTrue(platforms.get(0).platformSensors.isEmpty());
         }
     }
 }
