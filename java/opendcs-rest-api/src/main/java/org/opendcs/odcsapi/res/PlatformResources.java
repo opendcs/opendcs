@@ -60,7 +60,6 @@ import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.dai.PlatformDao;
 import org.opendcs.odcsapi.beans.ApiPlatform;
 import org.opendcs.odcsapi.beans.ApiPlatformRef;
@@ -178,56 +177,6 @@ public final class PlatformResources extends OpenDcsResource
 		ref.setDesignator(plat.getPlatformDesignator());
 	
 		return ref;
-	}
-
-	static List<ApiPlatformRef> map(PlatformList platformList)
-	{
-		List<ApiPlatformRef> ret = new ArrayList<>();
-		Iterator<Platform> platform = platformList.iterator();
-		while (platform.hasNext())
-		{
-			ApiPlatformRef ref = new ApiPlatformRef();
-			Platform plat = platform.next();
-			ref.setName(plat.getDisplayName());
-			if (plat.getId() != null)
-			{
-				ref.setPlatformId(plat.getId().getValue());
-			}
-			else
-			{
-				ref.setPlatformId(DbKey.NullKey.getValue());
-			}
-			ref.setAgency(plat.getAgency());
-			ref.setConfig(plat.getConfigName());
-			ref.setDescription(plat.getDescription());
-			if (plat.getConfig() != null && plat.getConfig().getId() != null)
-			{
-				ref.setConfigId(plat.getConfig().getId().getValue());
-			}
-			else
-			{
-				ref.setConfigId(DbKey.NullKey.getValue());
-			}
-			if (plat.getSite() != null)
-			{
-				ref.setSiteId(plat.getSite().getId().getValue());
-			}
-			else
-			{
-				ref.setSiteId(DbKey.NullKey.getValue());
-			}
-			Properties transportProps = new Properties();
-			transportProps.putAll(plat.getProperties());
-			for(Iterator<TransportMedium> it = plat.getTransportMedia(); it.hasNext(); )
-			{
-				final TransportMedium medium = it.next();
-				transportProps.setProperty(medium.getMediumType(), medium.getMediumId());
-			}
-			ref.setTransportMedia(transportProps);
-			ref.setDesignator(plat.getPlatformDesignator());
-			ret.add(ref);
-		}
-		return ret;
 	}
 
 	@GET

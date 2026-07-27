@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
-import static org.opendcs.odcsapi.res.PlatformResources.map;
+import static org.opendcs.odcsapi.res.PlatformResources.mapRef;
 import static org.opendcs.odcsapi.res.PlatformResources.statusListMap;
 
 @ExtendWith(MockitoExtension.class)
@@ -62,7 +62,7 @@ final class PlatformResourcesTest
 	{
 		DbKey platId1 = DbKey.createDbKey(556774L);
 		DbKey platId2 = DbKey.createDbKey(557774L);
-		PlatformList platformList = new PlatformList();
+		ArrayList<Platform> platformList = new ArrayList<>();
 		Platform plat1 = new Platform();
 		plat1.setAgency("USGS");
 		plat1.setDescription("Platform 1");
@@ -173,7 +173,7 @@ final class PlatformResourcesTest
 		platformList.add(plat1);
 		platformList.add(plat2);
 
-		List<ApiPlatformRef> platRefs = map(platformList);
+		List<ApiPlatformRef> platRefs = platformList.stream().map(p -> mapRef(p)).toList();
 
 		assertNotNull(platRefs);
 		assertFalse(platRefs.isEmpty());
