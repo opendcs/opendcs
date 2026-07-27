@@ -22,6 +22,21 @@ export interface AlgorithmsTableProperties {
   loading?: boolean;
 }
 
+const toTableRef = (algo: UiAlgorithm): TableAlgorithmRef => ({
+  algorithmId: algo.algorithmId,
+  algorithmName: algo.name,
+  execClass: algo.execClass,
+  numCompsUsing: 0,
+  description: algo.description,
+});
+
+const copiedAlgorithm = (source: ApiAlgorithm, newId: number): UiAlgorithm => ({
+  ...source,
+  algorithmId: newId,
+  name: "",
+  numCompsUsing: 0,
+});
+
 export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
   algorithms,
   getAlgorithm,
@@ -31,7 +46,8 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
 }) => {
   const [t] = useTranslation(["algorithms", "translation"]);
   const [showCheckNew, setShowCheckNew] = useState(false);
-  const tableRef = useRef<AppDataTableHandle>(null);
+  const tableRef = useRef<AppDataTableHandle<TableAlgorithmRef>>(null);
+  const draftsRef = useRef<Record<number, UiAlgorithm>>({});
 
   const columns = useMemo<ColumnDef<TableAlgorithmRef>[]>(
     () => [
@@ -69,6 +85,26 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
         onClick: ({ row, api }) => api.setMode(row, "edit"),
       },
       {
+        key: "copy",
+        icon: "bi-files",
+        variant: "info",
+        show: (row) => (row.algorithmId ?? 0) > 0,
+        aria: (row) => t("algorithms:editor.copy_for", { id: row.algorithmId }),
+        onClick: async ({ row }) => {
+          if (!getAlgorithm || !row.algorithmId) return;
+          try {
+            const source = await getAlgorithm(row.algorithmId);
+            tableRef.current?.appendLocalItem((newId) => {
+              const draft = copiedAlgorithm(source, newId);
+              draftsRef.current[newId] = draft;
+              return toTableRef(draft);
+            }, "new");
+          } catch (err) {
+            console.warn(`Failed to copy algorithm ${row.algorithmId}`, err);
+          }
+        },
+      },
+      {
         key: "delete",
         icon: "bi-trash",
         variant: "danger",
@@ -79,7 +115,7 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
         },
       },
     ],
-    [t, actions],
+    [t, getAlgorithm, actions],
   );
 
   return (
@@ -96,9 +132,10 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
           const algorithmPromise: Promise<UiAlgorithm> =
             row.algorithmId && row.algorithmId > 0 && getAlgorithm
               ? getAlgorithm(row.algorithmId)
-              : Promise.resolve({
-                  algorithmId: row.algorithmId,
-                } as UiAlgorithm);
+              : Promise.resolve(
+                  draftsRef.current[row.algorithmId ?? 0] ??
+                    ({ algorithmId: row.algorithmId } as UiAlgorithm),
+                );
           const parmsPromise: Promise<AlgoParm[]> = algorithmPromise.then(
             (algo) => (algo.parms ?? []) as AlgoParm[],
           );

@@ -13,6 +13,7 @@
     "execClass": "Clase de Ejecución",
     "description": "Descripción",
     "edit_for": "Editar algoritmo {{id}}",
+    "copy_for": "Copiar algoritmo {{id}}",
     "delete_for": "Eliminar algoritmo {{id}}",
     "cancel_for": "Cancelar edición del algoritmo {{id}}",
     "save_for": "Guardar algoritmo {{id}}"
