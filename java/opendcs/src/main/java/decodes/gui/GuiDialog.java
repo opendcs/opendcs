@@ -31,8 +31,6 @@ import javax.swing.*;
 
 import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
-import decodes.dbeditor.DbEditorFrame;
-import decodes.platwiz.PlatformWizard;
 import decodes.util.DecodesSettings;
 import decodes.util.ResourceFactory;
 
@@ -113,19 +111,19 @@ public class GuiDialog extends JDialog
 		return Integer.parseInt(s);
 	}
 
-	public static TopFrame getDbEditFrame()
-	{
-		TopFrame jf = DbEditorFrame.instance();
-		if (jf == null)
-		{
-			PlatformWizard pw = PlatformWizard.instance();
-			if (pw != null && pw.getPlatwizFrame() != null)
-				jf = pw.getPlatwizFrame();
-			else
-			jf = TopFrame.instance();
-		}
-		return jf;
-	}
+	// public static TopFrame getDbEditFrame()
+	// {
+	// 	TopFrame jf = DbEditorFrame.instance();
+	// 	if (jf == null)
+	// 	{
+	// 		PlatformWizard pw = PlatformWizard.instance();
+	// 		if (pw != null && pw.getPlatwizFrame() != null)
+	// 			jf = pw.getPlatwizFrame();
+	// 		else
+	// 		jf = TopFrame.instance();
+	// 	}
+	// 	return jf;
+	// }
 	
 	public void trackChanges(String frameTitle)
 	{

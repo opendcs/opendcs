@@ -5,10 +5,13 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.*;
+
+import decodes.util.DecodesSettings;
+import ilex.util.LoadResourceBundle;
+
 import java.util.ResourceBundle;
 import java.util.regex.Pattern;
 
-import decodes.dbeditor.DbEditorFrame;
 
 /**
  * SearchPanel is used to filter a TableModel
@@ -19,7 +22,11 @@ import decodes.dbeditor.DbEditorFrame;
 public class SearchPanel extends JPanel
 {
     private static String allColumns ;
-    private static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
+    private static ResourceBundle genericLabels = 
+		LoadResourceBundle.getLabelDescriptions(
+                "decodes/resources/generic",
+				DecodesSettings.instance().language
+			);
 	private final JTextField filterField = new JTextField();
 	private final JLabel filterStatusLabel = new JLabel("0/0");
 
