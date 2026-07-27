@@ -21,6 +21,8 @@ import java.io.File;
 import java.util.ResourceBundle;
 
 import javax.swing.*;
+
+import decodes.gui.AboutBox;
 import decodes.util.ResourceFactory;
 
 public class NetlistEditFrame extends JFrame {
@@ -327,7 +329,7 @@ public class NetlistEditFrame extends JFrame {
     /**Help | About action performed*/
     public void jMenuHelpAbout_actionPerformed(ActionEvent e)
 	{
-		JDialog dlg = ResourceFactory.instance().getAboutDialog(
+		JDialog dlg = new AboutBox(
 			this, "NLEdit", "LRGS Netlist Editor");
 
         Dimension dlgSize = dlg.getPreferredSize();

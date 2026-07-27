@@ -8,7 +8,6 @@ import java.awt.Dimension;
 
 import decodes.db.IdDatabaseObject;
 import decodes.gui.TopFrame;
-import decodes.platwiz.PlatformWizard;
 
 /**
 Base class for editor tabs.
@@ -49,22 +48,7 @@ public abstract class DbEditorTab extends JPanel
 	public void launchDialog(JDialog dlg)
 	{
 		dlg.validate();
-		dlg.setLocationRelativeTo(getParentFrame());
 		dlg.setVisible(true);
-	}
-	
-	protected JFrame getParentFrame()
-	{
-		JFrame jf = DbEditorFrame.instance();
-		if (jf == null)
-		{
-			PlatformWizard pw = PlatformWizard.instance();
-			if (pw != null && pw.getPlatwizFrame() != null)
-				jf = pw.getPlatwizFrame();
-			else
-				jf = TopFrame.instance();
-		}
-		return jf;
 	}
 
 	/**
