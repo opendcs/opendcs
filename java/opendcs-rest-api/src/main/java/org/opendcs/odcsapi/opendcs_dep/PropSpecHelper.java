@@ -25,7 +25,6 @@ import decodes.datasource.WebDirectoryDataSource;
 import decodes.db.ConfigSensor;
 import decodes.db.DataSource;
 import decodes.db.Database;
-import decodes.dbeditor.RoutingSpecEditPanel;
 import decodes.tsdb.algo.PythonAlgorithm;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
@@ -248,9 +247,8 @@ public final class PropSpecHelper
 				new PropertySpec("urlTimeZone", PropertySpec.STRING,
 						"(default = UTC) Time Zone for the time within the directory and file names")
 			};
-
 		}
-		else if (RoutingSpecEditPanel.class.getName().equalsIgnoreCase(className))
+		else if ("decodes.dbeditor.RoutingSpecEditPanel".equalsIgnoreCase(className))
 		{
 			// Properties implemented directly by RoutingSpecThread:
 			return new PropertySpec[]{

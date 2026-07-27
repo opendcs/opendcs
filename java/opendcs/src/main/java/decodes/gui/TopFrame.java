@@ -40,8 +40,6 @@ import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 import javax.swing.border.BevelBorder;
 
-import decodes.dbeditor.DbEditorFrame;
-import decodes.platwiz.PlatformWizard;
 import decodes.sql.SqlDatabaseIO;
 import decodes.util.DecodesSettings;
 import decodes.util.ResourceFactory;
@@ -186,25 +184,7 @@ public class TopFrame extends JFrame
 		dlg.validate();
 		dlg.setLocationRelativeTo(this);
 		dlg.setVisible(true);
-	}
-
-	public static TopFrame getDbEditFrame()
-	{
-		TopFrame jf = DbEditorFrame.instance();
-		if (jf == null)
-		{
-			PlatformWizard pw = PlatformWizard.instance();
-			if (pw != null && pw.getPlatwizFrame() != null)
-			{
-				jf = pw.getPlatwizFrame();
-			}
-			else
-			{
-				jf = TopFrame.instance();
-			}
-		}
-		return jf;
-	}
+	}	
 
 	/** @return the tabbed pane for TS Groups */
 	public JTabbedPane getTsGroupsListTabbedPane() { return null; }

@@ -24,6 +24,9 @@ import org.opendcs.gui.GuiHelpers;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import decodes.util.DecodesSettings;
+import ilex.util.LoadResourceBundle;
+
 
 /**
  * All of the 'xxxListPanel.java' objects display a ListOpsPanel at the bottom.
@@ -31,8 +34,16 @@ import org.slf4j.Logger;
 public class ListOpsPanel extends JPanel
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
-	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
-	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
+	static ResourceBundle genericLabels = 
+		LoadResourceBundle.getLabelDescriptions(
+                "decodes/resources/generic",
+				DecodesSettings.instance().language
+			);
+	static ResourceBundle dbeditLabels =  
+		LoadResourceBundle.getLabelDescriptions(
+                "decodes/resources/dbedit",
+				DecodesSettings.instance().language
+			);
 
 	private JButton openButton = new JButton();
 	private JButton newButton = new JButton();
