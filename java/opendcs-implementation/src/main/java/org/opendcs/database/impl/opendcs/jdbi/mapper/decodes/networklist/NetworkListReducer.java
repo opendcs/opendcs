@@ -14,12 +14,10 @@ public final class NetworkListReducer implements LinkedHashMapRowReducer<Long,Ne
 {
 
     private final NetworkListMapper listMapper;
-    private final NetworkListEntryMapper listEntryMapper;
 
-    public NetworkListReducer(NetworkListMapper listMapper, NetworkListEntryMapper listEntryMapper)
+    public NetworkListReducer(NetworkListMapper listMapper)
     {
         this.listMapper = listMapper;
-        this.listEntryMapper = listEntryMapper;
     }
 
     @Override
@@ -30,15 +28,12 @@ public final class NetworkListReducer implements LinkedHashMapRowReducer<Long,Ne
             final var key = view.getColumn(listMapper.column(NetworkListMapper.Columns.ID), Long.class);
             var list = container.computeIfAbsent(key, newKey -> view.getRow(NetworkList.class));
 
-            if (listEntryMapper != null)
-            {
-                var entry = view.getRow(NetworkListEntry.class);
+            var entry = view.getRow(NetworkListEntry.class);
 
-                if (entry != null)
-                {
-                    entry.parent = list;
-                    list.addEntry(entry);
-                }
+            if (entry != null)
+            {
+                entry.parent = list;
+                list.addEntry(entry);
             }
         }
         catch (SQLException ex)

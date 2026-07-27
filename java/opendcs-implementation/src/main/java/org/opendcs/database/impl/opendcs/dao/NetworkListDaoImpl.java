@@ -1,19 +1,5 @@
-/*
-* Where Applicable, Copyright 2026 OpenDCS Consortium and/or its contributors
-* 
-* Licensed under the Apache License, Version 2.0 (the "License"); you may not
-* use this file except in compliance with the License. You may obtain a copy
-* of the License at
-* 
-*   http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software 
-* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
-* under the License.
-*/
 package org.opendcs.database.impl.opendcs.dao;
+
 
 import static org.opendcs.utils.sql.SqlQueries.COLLATE_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.LEFT_OUTER;
@@ -40,7 +26,6 @@ import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.Network
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListReducer;
 import org.opendcs.database.model.mappers.PrefixRowMapper;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
-import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.openide.util.lookup.ServiceProvider;
@@ -54,12 +39,11 @@ import decodes.db.NetworkList;
 import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
 
-@SuppressWarnings("java:S2143")
 @ServiceProviders({
     @ServiceProvider(service = NetworkListDao.class, path = "dao/OpenDCS-Postgres"),
     @ServiceProvider(service = NetworkListDao.class, path = "dao/OpenDCS-Oracle"),
     @ServiceProvider(service = NetworkListDao.class, path = "dao/OPENTSDB"),
-    @ServiceProvider(service = NetworkListDao.class)
+    @ServiceProvider(service = NetworkListDao.class, path = "default")
 })
 public class NetworkListDaoImpl implements NetworkListDao
 {
@@ -88,21 +72,6 @@ public class NetworkListDaoImpl implements NetworkListDao
         {
             return Optional.empty();
         }
-        return get(tx, "where id = :id", GenericColumns.ID.column(), id);
-    }
-
-    @Override
-    public Optional<NetworkList> getByName(DataTransaction tx, String name) throws OpenDcsDataException
-    {
-        if (name == null || name.isBlank())
-        {
-            return Optional.empty();
-        }
-        return get(tx, "where upper(name) = Upper(:name)", GenericColumns.NAME.column(), name);
-    }
-
-    private Optional<NetworkList> get(DataTransaction tx, String where, String searchColumn, Object searchBy) throws OpenDcsDataException
-    {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
@@ -114,12 +83,40 @@ public class NetworkListDaoImpl implements NetworkListDao
         {
             throw new OpenDcsDataException("Could not find template");
         }
-        selectTemplate.add(WHERE_CLAUSE, where);
-        try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, listMapper, listEntryMapper)))
+        selectTemplate.add(WHERE_CLAUSE, "where nl.id = :id");
+        try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, listEntryMapper)))
         {
             registerMappers(select, listMapper, listEntryMapper);
-            return select.bind(searchColumn, searchBy)
-                         .reduceRows(new NetworkListReducer(listMapper, listEntryMapper))
+            return select.bind(NetworkListMapper.Columns.ID.column(), id)
+                         .reduceRows(new NetworkListReducer(listMapper))
+                         .findFirst();
+        }
+    }
+
+    @Override
+    public Optional<NetworkList> getByName(DataTransaction tx, String name) throws OpenDcsDataException
+    {
+        if (name == null || name.isBlank())
+        {
+            return Optional.empty();
+        }
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var ctx = tx.getContext();
+        var dbEngine = ctx.getDatabaseEngine();
+
+        var selectTemplate = queries.getInstanceOf(SELECT);
+
+        if (selectTemplate == null)
+        {
+            throw new OpenDcsDataException("Could not find template");
+        }
+        selectTemplate.add(WHERE_CLAUSE, "where upper(nl.name) = upper(:name)");
+        try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, listEntryMapper)))
+        {
+            registerMappers(select, listMapper, listEntryMapper);
+            return select.bind(NetworkListMapper.Columns.NAME.column(), name)
+                         .reduceRows(new NetworkListReducer(listMapper))
                          .findFirst();
         }
     }
@@ -151,7 +148,7 @@ public class NetworkListDaoImpl implements NetworkListDao
                     """,
                     id, networkList.getId());
             }
-            final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("networklist", handle.getConnection());
+            final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("platform", handle.getConnection());
             merge.bind(NetworkListMapper.Columns.ID.column(), bindKey)
                  .bind(NetworkListMapper.Columns.NAME.column(), networkList.name)
                  .bind(NetworkListMapper.Columns.TRANSPORT_MEDIUM_TYPE.column(), networkList.transportMediumType)
@@ -174,7 +171,7 @@ public class NetworkListDaoImpl implements NetworkListDao
                 insertListEntry.execute();
             }
 
-            return getById(tx, bindKey).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve network list we just saved."));
+            return getById(tx, id).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve network list we just saved."));
         }
         catch (DatabaseException ex)
         {
@@ -200,7 +197,7 @@ public class NetworkListDaoImpl implements NetworkListDao
         deleteEntries(handle, id);
         try (var deleteList = handle.createUpdate(deleteTemplate.render()))
         {
-            deleteList.bind(NetworkListMapper.Columns.ID.column(), id).execute();
+            deleteList.bind(NetworkListMapper.Columns.ID.column(), id);
         }
     }
 
@@ -213,7 +210,7 @@ public class NetworkListDaoImpl implements NetworkListDao
         }
         try (var deleteEntry = handle.createUpdate(deleteEntryTemplate.render()))
         {
-            deleteEntry.bind(NetworkListEntryMapper.Columns.NETWORKLIST_ID.column(), id).execute();
+            deleteEntry.bind(NetworkListEntryMapper.Columns.NETWORKLIST_ID.column(), id);
         }
     }
 
@@ -244,7 +241,7 @@ public class NetworkListDaoImpl implements NetworkListDao
         
         if (mediumSearch != null)
         {
-            selectTemplate.add("medium_filter", mediumSearch);
+            selectTemplate.add("medium_filter", "where upper(nl.name) = upper(:name)");
         }
 
         var limitClause = addLimitOffset(limit, offset);
@@ -253,7 +250,7 @@ public class NetworkListDaoImpl implements NetworkListDao
             selectTemplate.add("limit", limitClause);
         }
 
-        try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, listMapper, includeEntries ? listEntryMapper : null)))
+        try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, includeEntries ? listEntryMapper : null)))
         {
             if (includeEntries)
             {
@@ -280,7 +277,7 @@ public class NetworkListDaoImpl implements NetworkListDao
                     select.bind(SqlKeywords.OFFSET, offset);
                 }
             }
-            return select.reduceRows(new NetworkListReducer(listMapper, includeEntries ? listEntryMapper : null))
+            return select.reduceRows(new NetworkListReducer(listMapper))
                          .toList();
         }
     }
@@ -294,14 +291,13 @@ public class NetworkListDaoImpl implements NetworkListDao
         return query;
     }
 
-    private static String setDefines(ST select, DatabaseEngine dbEngine, NetworkListMapper listMapper, NetworkListEntryMapper listEntryMapper)
+    private static String setDefines(ST select, DatabaseEngine dbEngine, NetworkListEntryMapper listEntryMapper)
     {
-        select.add("list_columns", listMapper.columnsForSelect());
         if (listEntryMapper != null)
         {
             select.add("entry_columns", listEntryMapper.columnsForSelect());
             select.add("entry_join", listEntryMapper.joinStatement(LEFT_OUTER, 
-                                                                         NetworkListEntryMapper.Columns.NETWORKLIST_ID,
+                                                                         NetworkListEntryMapper.Columns.TRANSPORT_ID,
                                                                          "nl",
                                                                          NetworkListMapper.Columns.ID.column()));
         }

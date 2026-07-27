@@ -1,11 +1,11 @@
 group NetworkListDaoImpl;
 
-select(where, medium_filter, collate, list_columns, entry_columns, entry_join, limit) ::= <<
+select(where_clause, medium_filter, collate, list_columns, entry_columns, entry_join, limit) ::= <<
 with networklist_filtered(id, name, transportmediumtype, sitenametypepreference, lastmodifytime) as (
     select id, name, transportmediumtype, sitenametypepreference, lastmodifytime
       from networklist
     <if(where)><where><endif>
-    <if(medium_filter)>
+    <if(medium_filter>)
         <if(where)> and <else> where <endif>
         <medium_filter>
     <endif>
@@ -16,11 +16,9 @@ with networklist_filtered(id, name, transportmediumtype, sitenametypepreference,
 select 
     <list_columns>
     <if(entry_columns)>, <entry_columns><endif>
-from networklist_filtered nl
+from networklist nl
 <if(entry_join)><entry_join><endif>
-order by nl.name <collate> asc
-<if(entry_join)>, nle.transportid <collate> asc <endif>
-
+order by nl.name <collate> asc, nle.transportid <collate> asc
 >>
 
 
@@ -28,7 +26,7 @@ networkListMerge(dual) ::= <<
 merge into networklist nl
 using (select :id id, :name name, :transportmediumtype transportmediumtype, 
        :sitenametypepreference sitenametypepreference, :lastmodifytime lastmodifytime <dual>) input
-on (nl.id = input.id)
+on (nl.id = p.id)
 when matched then
     update set name = input.name, transportmediumtype = input.transportmediumtype,
         sitenametypepreference = input.sitenametypepreference, lastmodifytime = input.lastmodifytime
@@ -40,7 +38,6 @@ when not matched then
 
 deleteNetworkList() ::= "delete from networklist where id = :id"
 deleteNetworkListEntry() ::= "delete from networklistentry where networklistid = :networklistid"
-
 insertNetworkListEntry() ::= <<
 insert into networklistentry(networklistid, transportid, platform_name, description)
 values (:networklistid, :transportid, :platform_name, :description)
