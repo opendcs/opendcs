@@ -23,27 +23,27 @@ Inputs, Outputs, and Properties
 +-----------+----------------------------+--------------------------------------------------------------------------+
 | Role      | Name                       | Description                                                              |
 +===========+============================+==========================================================================+
-| Input     | tailwater_tsid             | Tailwater stage series. If provided, also set ``tailwater_to_release_``  |
-|           |                            | ``rating``. Can be regular or irregular. Example:                        |
+| Input     | tailwaterTsId              | Tailwater stage series. If provided, also set                            |
+|           |                            | ``tailwaterToReleaseRating``. Can be regular or irregular. Example:      |
 |           |                            | ``<LOC>.Elev-Tailwater.Inst.0.0.<SOURCE>``                               |
 +-----------+----------------------------+--------------------------------------------------------------------------+
-| Input     | release_tsid               | Alternative to tailwater input. Direct release flow series.              |
+| Input     | releaseTsId                | Alternative to tailwater input. Direct release flow series.              |
 |           |                            | Example: ``<LOC>.Flow-Out.Inst.0.0.<SOURCE>``                            |
 +-----------+----------------------------+--------------------------------------------------------------------------+
-| Input     | stage_pool_tsid            | Pool elevation series. If provided, also set                             |
-|           |                            | ``stage_pool_storage_rating``. Can be regular or irregular.              |
+| Input     | stagePoolTsId              | Pool elevation series. If provided, also set                             |
+|           |                            | ``stagePoolStorageRating``. Can be regular or irregular.                 |
 +-----------+----------------------------+--------------------------------------------------------------------------+
-| Input     | storage_tsid               | Alternative to stage input. Direct storage series (volume).              |
+| Input     | storageTsId                | Alternative to stage input. Direct storage series (volume).              |
 +-----------+----------------------------+--------------------------------------------------------------------------+
-| Input     | outflow_1 … outflow_6      | Additional outflow series to include in the inflow balance. Optional.    |
+| Input     | outflowTsId1-6             | Additional outflow series to include in the inflow balance. Optional.    |
 |           |                            | Example: ``<LOC>.Flow-<Something>.Inst.0.0.<SOURCE>``                    |
 +-----------+----------------------------+--------------------------------------------------------------------------+
 | Output    | inflow                     | Period inflow rate (e.g., cms).                                          |
 +-----------+----------------------------+--------------------------------------------------------------------------+
-| Property  | tailwater_to_release_rating| Rating spec for converting tailwater stage to release flow.              |
+| Property  | tailwaterToReleaseRating   | Rating spec for converting tailwater stage to release flow.              |
 |           |                            | Example format: ``<PROJ>.Stage;Flow.Linear.<AGENCY>``                    |
 +-----------+----------------------------+--------------------------------------------------------------------------+
-| Property  | stage_pool_storage_rating  | Rating spec for converting pool elevation to storage.                    |
+| Property  | stagePoolStorageRating     | Rating spec for converting pool elevation to storage.                    |
 |           |                            | Example format: ``<PROJ>.Elev;Stor.Linear.<AGENCY>``                     |
 +-----------+----------------------------+--------------------------------------------------------------------------+
 
@@ -61,11 +61,11 @@ The algorithm checks:
   - Regular interval (no irregular outputs)
   - Non-zero duration (e.g., 1Hour, 1Day)
 - At least one of these pairs must be provided:
-  - tailwater_tsid + tailwater_to_release_rating, or
-  - release_tsid
+  - tailwaterTsId + tailwaterToReleaseRating, or
+  - releaseTsId
 - At least one of these pairs must be provided:
-  - stage_pool_tsid + stage_pool_storage_rating, or
-  - storage_tsid
+  - stagePoolTsId + stagePoolStorageRating, or
+  - storageTsId
 
 Aggregation window and boundaries
 ---------------------------------
@@ -78,15 +78,17 @@ Aggregation window and boundaries
 Units and ratings
 -----------------
 
-- stage_pool_tsid → rated to storage using ``stage_pool_storage_rating`` (dependent units expected as m^3).
-- tailwater_tsid → rated to release using ``tailwater_to_release_rating`` (dependent units expected as a flow unit, e.g., cms).
-- release_tsid and outflow_1…outflow_6 are treated as flows and period-averaged to the output units.
+- stagePoolTsId → rated to storage using ``stagePoolStorageRating`` (dependent units expected as m^3).
+- tailwaterTsId → rated to release using ``tailwaterToReleaseRating`` (dependent units expected as a flow unit,
+  e.g., cms).
+- releaseTsId and outflowTsId1…outflowTsId6 are treated as flows and period-averaged to the output units.
 - Storage-based holdout term d(Storage)/dt is converted to a flow rate using the aggregate period duration.
 
 Insufficient data
 -----------------
 
-If there are not enough samples within the period to perform averaging or endpoint interpolation, the algorithm will skip output for that period.
+If there are not enough samples within the period to perform averaging or endpoint interpolation, the algorithm will
+skip output for that period.
 
 
 How data averaging works
@@ -105,7 +107,7 @@ When averaging an irregular input over the period:
 
 This applies to:
 - Rated release from tailwater (if provided and irregular),
-- Direct release_tsid (if irregular),
+- Direct releaseTsId (if irregular),
 - Each additional outflow series (if irregular).
 
 Storage change over the period (holdout term)
@@ -113,7 +115,7 @@ Storage change over the period (holdout term)
 
 To compute d(Storage)/dt as a flow:
 
-1. Convert or rate the input to storage (m^3) if using stage_pool_tsid; otherwise use storage_tsid directly.
+1. Convert or rate the input to storage (m^3) if using stagePoolTsId; otherwise use storageTsId directly.
 2. Determine storage at the period end and at one duration earlier:
    - If exact samples do not exist at those endpoints, linearly interpolate between the adjacent samples.
 3. Compute delta-storage: Stor_end − Stor_prev.
@@ -134,15 +136,17 @@ For each aggregate period:
 Configuration tips
 ==================
 
-- Choose a regular average output series (e.g., 15Minutes+AVE, 1Hour+AVE, 1Day+AVE) and specify a non-zero duration that matches your desired averaging window.
-- If your input release is measured as tailwater stage, provide a suitable rating spec via ``tailwater_to_release_rating``.
-- If you use pool elevation, provide ``stage_pool_storage_rating`` for Elev→Storage conversion.
+- Choose a regular average output series (e.g., 15Minutes+AVE, 1Hour+AVE, 1Day+AVE) and specify a non-zero duration
+  that matches your desired averaging window.
+- If your input release is measured as tailwater stage, provide a suitable rating spec via ``tailwaterToReleaseRating``.
+- If you use pool elevation, provide ``stagePoolStorageRating`` for Elev→Storage conversion.
 
 Example property values (illustrative)
 --------------------------------------
 
-- tailwater_to_release_rating: ``<LOC>.Stage;Flow.Linear.<VERSION>``
-- stage_pool_storage_rating: ``<LOC>.Elev;Stor.Linear.<VERSION>``
+- tailwaterToReleaseRating: ``<LOC>.Stage;Flow.Linear.<VERSION>``
+- stagePoolStorageRating: ``<LOC>.Elev;Stor.Linear.<VERSION>``
 
 .. note::
-   The algorithm only publishes an output on period boundaries that match the output series’ interval and offset. If inputs do not sufficiently cover the window or ratings are missing, no value will be written for that period.
+   The algorithm only publishes an output on period boundaries that match the output series’ interval and offset. If
+   inputs do not sufficiently cover the window or ratings are missing, no value will be written for that period.

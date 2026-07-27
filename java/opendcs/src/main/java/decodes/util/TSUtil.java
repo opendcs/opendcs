@@ -15,11 +15,13 @@
 */
 package decodes.util;
 
+import decodes.tsdb.*;
 import ilex.util.TextUtil;
 import ilex.var.IFlags;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 
+import opendcs.dai.TimeSeriesDAI;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -28,9 +30,8 @@ import decodes.db.EngineeringUnit;
 import decodes.db.UnitConverter;
 import decodes.decoder.TimeSeries;
 import decodes.sql.DbKey;
-import decodes.tsdb.CTimeSeries;
-import decodes.tsdb.IntervalCodes;
-import decodes.tsdb.VarFlags;
+
+import java.util.Date;
 
 public class TSUtil
 {
@@ -149,5 +150,22 @@ public class TSUtil
 			ts.addSample(cts.sampleAt(i));
 		}
 		return ts;
+	}
+
+
+	public static void extendTimeSeries(TimeSeriesDAI timeSeriesDAI, CTimeSeries timeSeries, Date start, Date end) throws DbCompException
+	{
+		if(timeSeries.findWithin(start, 0) != null && timeSeries.findWithin(end, 0) != null)
+		{
+			return;
+		}
+		try
+		{
+			timeSeriesDAI.fillTimeSeries(timeSeries, start, end);
+		}
+		catch(DbIoException | BadTimeSeriesException e)
+		{
+			throw new DbCompException("Could not retrieve time series: " + timeSeries.getTimeSeriesIdentifier(), e);
+		}
 	}
 }

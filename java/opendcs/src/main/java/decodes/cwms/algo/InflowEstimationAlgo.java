@@ -29,7 +29,6 @@ import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 import opendcs.dai.TimeSeriesDAI;
 import org.opendcs.algorithms.NotEnoughDataException;
-import org.opendcs.algorithms.TimeSeriesUtil;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
@@ -443,7 +442,7 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 	private void extendTimeSeries(CTimeSeries timeSeries) throws DbCompException
 	{
 		Date start = Date.from(_aggregatePeriodEnd.toInstant().minusSeconds(IntervalCodes.getIntervalSeconds(durationPeriod)));
-		TimeSeriesUtil.extendTimeSeries(timeSeriesDAO, timeSeries, start, _aggregatePeriodEnd);
+		TSUtil.extendTimeSeries(timeSeriesDAO, timeSeries, start, _aggregatePeriodEnd);
 	}
 
 	private double calculateHoldout() throws DbCompException, NotEnoughDataException, NoConversionException
