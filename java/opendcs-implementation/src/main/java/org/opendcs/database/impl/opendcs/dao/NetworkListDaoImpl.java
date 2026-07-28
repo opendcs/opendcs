@@ -16,14 +16,11 @@ import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.statement.Query;
-import org.jdbi.v3.core.statement.SqlLogger;
-import org.jdbi.v3.core.statement.StatementContext;
 import org.jdbi.v3.stringtemplate4.StringTemplateSqlLocator;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.NetworkListDao;
-import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListEntryMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListReducer;
@@ -46,7 +43,7 @@ import decodes.sql.KeyGenerator;
     @ServiceProvider(service = NetworkListDao.class, path = "dao/OpenDCS-Postgres"),
     @ServiceProvider(service = NetworkListDao.class, path = "dao/OpenDCS-Oracle"),
     @ServiceProvider(service = NetworkListDao.class, path = "dao/OPENTSDB"),
-    @ServiceProvider(service = NetworkListDao.class, path = "default")
+    @ServiceProvider(service = NetworkListDao.class)
 })
 public class NetworkListDaoImpl implements NetworkListDao
 {
