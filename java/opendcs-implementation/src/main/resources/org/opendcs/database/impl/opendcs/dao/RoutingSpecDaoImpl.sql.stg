@@ -1,0 +1,43 @@
+group RoutingSpecDaoImpl;
+
+select(where, limit, collate, spec_columns, prop_columns, prop_join, list_columns, list_join) ::= <<
+with routingspec_limit (id, name, datasourceid, enableequations, useperformancemeasurements,
+                     outputformat, outputtimezone, presentationgroupname, sincetime, untiltime,
+                     consumertype, consumerarg, lastmodifytime, isproduction)
+     as (
+        select id, name, datasourceid, enableequations, useperformancemeasurements,
+               outputformat, outputtimezone, presentationgroupname, sincetime, untiltime,
+               consumertype, consumerarg, lastmodifytime, isproduction
+          from routingspec
+        <if(where)><where><endif>
+        order by name <collate> asc
+        <if(limit)><limit><endif>
+)
+select 
+    <spec_columns>
+    <if(list_columns)>, <list_columns> <endif>
+    <if(prop_columns)>, <prop_columns> <endif>
+from routingspec_limit rs
+<if(list_join)> <list_join> <endif>
+<if(prop_join)> <prop_join> <endif>
+order by rs.name <collate> asc
+>>
+
+
+mergeSpec(dual) ::= <<
+
+>>
+
+deleteSpec() ::= "delete from routingspec where id = :id"
+
+deleteSpecProps() ::= "delete from routingspecproperty where routingspecid = :id"
+insertSpecProps() ::= <<
+insert into routingspecproperty(routingspecid, prop_name, prop_value)
+values (:routingspecid, :prop_name, :prop_value)
+>>
+
+deleteSpecLists() ::= "delete from routingspecnetworklist where routingspecid = :id"
+insertSpecList() ::= <<
+insert into routingspecnetworklist(routingspecid, networklistname)
+values(:routingspecid, :networklistname)
+>>

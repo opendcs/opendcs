@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2026 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.routing;
 
 import java.sql.SQLException;
@@ -39,16 +54,22 @@ public final class RoutingSpecReducer implements LinkedHashMapRowReducer<Long, R
             var specId = rowView.getColumn(routingSpecMapper.column(RoutingSpecMapper.Columns.ID), Long.class);
             var spec = container.computeIfAbsent(specId, id -> rowView.getRow(RoutingSpec.class));
 
-            var list = rowView.getRow(RoutingSpecNetworkListMapper.ROUTING_SPEC_LIST);
-            if (list != null)
+            if (networkListMapper != null)
             {
-                spec.addNetworkListName(list.second);
+                var list = rowView.getRow(RoutingSpecNetworkListMapper.ROUTING_SPEC_LIST);
+                if (list != null)
+                {
+                    spec.addNetworkListName(list.second);
+                }
             }
 
-            var prop = rowView.getRow(ROUTING_SPEC_PROPERTIES);
-            if (prop != null && prop.first != null && prop.second != null)
+            if (routingSpecPropertiesMapper != null)
             {
-                spec.setProperty(prop.first, prop.second);
+                var prop = rowView.getRow(ROUTING_SPEC_PROPERTIES);
+                if (prop != null && prop.first != null && prop.second != null)
+                {
+                    spec.setProperty(prop.first, prop.second);
+                }
             }
         }
         catch (SQLException ex)
