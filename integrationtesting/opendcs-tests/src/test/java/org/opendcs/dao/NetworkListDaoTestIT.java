@@ -14,10 +14,12 @@ import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.NetworkListDao;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.db.NetworkList;
 import decodes.db.NetworkListEntry;
 
+@EnableIfTsDb
 class NetworkListDaoTestIT extends AppTestBase
 {
     @ConfiguredField
