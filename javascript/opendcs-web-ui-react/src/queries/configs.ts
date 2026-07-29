@@ -73,7 +73,7 @@ export const useSaveConfigMutation = (
       const variables = args[1];
       removeDetailOnSave(
         queryClient,
-        configKeys.detail(org, variables.configId ?? -1),
+        (id) => configKeys.detail(org, id),
         variables.configId,
       );
       await invalidateList(...args);

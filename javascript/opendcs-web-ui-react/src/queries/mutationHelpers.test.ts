@@ -5,10 +5,12 @@ import { normalizeNewId, removeDetailOnSave } from "./mutationHelpers";
 const fakeClient = () => ({ removeQueries: vi.fn() }) as unknown as QueryClient;
 
 describe("removeDetailOnSave", () => {
+  const detailKeyFor = (id: number) => ["configs", "acme", "detail", id] as const;
+
   test("removes the detail entry when the saved record has a persisted id", () => {
     const client = fakeClient();
 
-    removeDetailOnSave(client, ["configs", "acme", "detail", 1], 1);
+    removeDetailOnSave(client, detailKeyFor, 1);
 
     expect(client.removeQueries).toHaveBeenCalledWith({
       queryKey: ["configs", "acme", "detail", 1],
@@ -18,7 +20,7 @@ describe("removeDetailOnSave", () => {
   test("does nothing for a new record with no id yet", () => {
     const client = fakeClient();
 
-    removeDetailOnSave(client, ["configs", "acme", "detail", -1], undefined);
+    removeDetailOnSave(client, detailKeyFor, undefined);
 
     expect(client.removeQueries).not.toHaveBeenCalled();
   });
@@ -26,7 +28,7 @@ describe("removeDetailOnSave", () => {
   test("does nothing for a non-positive id", () => {
     const client = fakeClient();
 
-    removeDetailOnSave(client, ["configs", "acme", "detail", 0], 0);
+    removeDetailOnSave(client, detailKeyFor, 0);
 
     expect(client.removeQueries).not.toHaveBeenCalled();
   });
@@ -34,7 +36,7 @@ describe("removeDetailOnSave", () => {
   test("does nothing for a transient negative id", () => {
     const client = fakeClient();
 
-    removeDetailOnSave(client, ["configs", "acme", "detail", -5], -5);
+    removeDetailOnSave(client, detailKeyFor, -5);
 
     expect(client.removeQueries).not.toHaveBeenCalled();
   });

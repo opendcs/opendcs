@@ -53,10 +53,10 @@ export const normalizeNewId = (id: number | undefined): number | undefined =>
 
 export const removeDetailOnSave = (
   queryClient: QueryClient,
-  detailKey: readonly unknown[],
+  detailKeyFor: (id: number) => readonly unknown[],
   id: number | undefined,
 ): void => {
   if (id != null && id > 0) {
-    queryClient.removeQueries({ queryKey: detailKey });
+    queryClient.removeQueries({ queryKey: detailKeyFor(id) });
   }
 };
