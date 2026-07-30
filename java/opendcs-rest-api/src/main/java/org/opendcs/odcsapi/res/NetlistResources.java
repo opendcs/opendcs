@@ -1,5 +1,5 @@
 /*
- *  Copyright 2025 OpenDCS Consortium and its Contributors
+ *  Copyright 2025-2026 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -17,18 +17,12 @@ package org.opendcs.odcsapi.res;
 
 import java.io.LineNumberReader;
 import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
 import decodes.db.DatabaseException;
-import decodes.db.DatabaseIO;
 import decodes.db.NetworkList;
 import decodes.db.NetworkListEntry;
-import decodes.db.NetworkListList;
-import decodes.db.RoutingSpec;
-import decodes.db.RoutingSpecList;
 import decodes.sql.DbKey;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -58,7 +52,6 @@ import org.opendcs.database.dai.NetworkListDao;
 import org.opendcs.odcsapi.beans.ApiNetList;
 import org.opendcs.odcsapi.beans.ApiNetListItem;
 import org.opendcs.odcsapi.beans.ApiNetlistRef;
-import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
@@ -115,17 +108,15 @@ public final class NetlistResources extends OpenDcsResource
         try (var tx = db.newTransaction())
         {
             return tx.wrapErrors(() ->
-            {
-                return Response.ok()
-                               .entity(
-                                    dao.getAll(tx, -1, -1, tmtype, false)
-                                       .stream()
-                                       .map(nl -> mapRef(nl))
-                                       .toList()
-                                )
-                               .build();
-
-            });
+                Response.ok()
+                        .entity(
+                            dao.getAll(tx, -1, -1, tmtype, false)
+                                .stream()
+                                .map(nl -> mapRef(nl))
+                                .toList()
+                        )
+                        .build()
+            );
         }
         catch (OpenDcsDataException ex)
         {
