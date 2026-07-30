@@ -30,7 +30,12 @@ configurations {
     pmd
 }
 
+def libs = extensions.getByType(org.gradle.api.artifacts.VersionCatalogsExtension).named("libs")
+
 dependencies {
+    // Aligns on the `jackson` version in gradle/libs.versions.toml.
+    // for configurations that extend implementation/api
+    api platform(libs.findLibrary("com-faster-xml-jackson-bom").get())
     pmd 'net.sourceforge.pmd:pmd-core:6.55.0'
     pmd 'net.sourceforge.pmd:pmd-doc:6.55.0'
     pmd 'net.sourceforge.pmd:pmd-java:6.55.0'
