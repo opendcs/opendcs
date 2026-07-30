@@ -30,7 +30,7 @@ cwms-ratings = "1.1.0"
 nucleus = "4.10.0"
 flogger = "0.7.4"  # used by hec-monolith
 usgs-waterdata-api = "0.3.3"
-jdbi = "3.53.0"
+jdbi = "3.54.0"
 flywaydb = "11.20.1"
 sun-mailapi="2.0.2"
 ayza = "10.0.0"
@@ -46,12 +46,12 @@ org-netbeans = "RELEASE280"
 hec-lookup-compat = "4.0.0"
 
 # API deps
-swagger = "2.2.42"
+swagger = "2.2.52"
 swagger-ui = "5.18.3"
-swagger-parser = "2.1.25"
+swagger-parser = "2.1.45"
 rs-api = "4.0.0"
-jackson = "2.21.5"
-jackson-annotations = "2.21"
+jackson = "2.22.1"
+jackson-annotations = "2.22"
 selenium = "4.45.0"
 nimbus = "10.7"
 jwt = "4.4.0"
@@ -137,6 +137,7 @@ swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations-jakarta
 
 swagger-codegen = { module = "io.swagger.codegen.v3:swagger-codegen-cli", version.ref = "swagger-codegen" }
 com-google-jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "jsr305" }
+com-faster-xml-jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson" }
 com-faster-xml-jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
 com-faster-xml-jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson-annotations" }
 com-faster-xml-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }

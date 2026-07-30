@@ -14,6 +14,8 @@ dependencies {
     api(libs.bundles.testcontainers)
     api(libs.hec.testcontainers.cwms)
     api(libs.bundles.jdbi)
+    implementation(libs.com.faster.xml.jackson.core) // imported in source, not just inherited from jdbi
+    implementation(libs.com.faster.xml.jackson.databind) // imported in source, not just inherited from jdbi
     api(libs.rest.assured)
     api(libs.hamcrest)
     compileOnly(libs.jakarta.servlet)
