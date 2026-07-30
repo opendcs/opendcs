@@ -1,6 +1,7 @@
 package org.opendcs.database.dai;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import ilex.util.Pair;
@@ -13,12 +14,12 @@ import org.opendcs.utils.FailableResult;
 import decodes.db.DataType;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
-import decodes.tsdb.DbCompParm;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
 
 public interface TimeSeriesIdentifierDao extends OpenDcsDao
 {
+    String TSID_NULL_ERROR = "A valid TimeSeriesIdentifier instance must be provided";
     /**
 	 * Each Database Implementation has some kind of unique string that
 	 * can represent a time-series. This method uses that string to look
@@ -30,7 +31,37 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
 	 * @throws DbIoException if SQL exception occurs during operation
 	 * @throws NoSuchObjectException if no matching time series exists.
 	 */
-	Optional<TimeSeriesIdentifier> getByUniqueString(DataTransaction tx, String uniqueString) throws BadTimeSeriesException, OpenDcsDataException;
+	default Optional<TimeSeriesIdentifier> getByUniqueString(DataTransaction tx, String uniqueString) throws BadTimeSeriesException, OpenDcsDataException
+    {
+        var ret = findBy(tx, uniqueString);
+        if (ret.isSuccess())
+        {
+            return ret.getSuccess();
+        }
+        else if (ret.getFailure().getCause() instanceof BadTimeSeriesException btse)
+        {
+            throw btse;
+        }
+        else
+        {
+            throw ret.getFailure();
+        }
+    }
+
+    /**
+     * Given a likely partially built TimeSeriesIdentifier instance, call {@see getByUniqueString}
+     * after calling getUniqueString on the provided TimeSeriesIdentifier instance.
+     *
+     * @param tx
+     * @param tsId
+     * @return
+     * @throws OpenDcsDataException
+     */
+    default Optional<TimeSeriesIdentifier> getByTimeSeriesIdentifier(DataTransaction tx, TimeSeriesIdentifier tsId) throws BadTimeSeriesException, OpenDcsDataException
+    {
+        return getByUniqueString(tx, Objects.requireNonNull(tsId, TSID_NULL_ERROR)
+                                            .getUniqueString());
+    }
 
     /**
 	 * Retrieve a time series identifier by unique surrogate key.
@@ -40,7 +71,22 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
 	 * @throws DbIoException on SQL errors
 	 * @throws NoSuchObjectException if no such time series
 	 */
-	Optional<TimeSeriesIdentifier> getById(DataTransaction tx, DbKey key) throws BadTimeSeriesException, OpenDcsDataException;
+	default Optional<TimeSeriesIdentifier> getById(DataTransaction tx, DbKey key) throws BadTimeSeriesException, OpenDcsDataException
+    {
+        var ret = findBy(tx, key);
+        if (ret.isSuccess())
+        {
+            return ret.getSuccess();
+        }
+        else if (ret.getFailure().getCause() instanceof BadTimeSeriesException btse)
+        {
+            throw btse;
+        }
+        else
+        {
+            throw ret.getFailure();
+        }
+    }
 
     /**
      * Retrieve by unique string, but return failure cause instead of throwing.
@@ -62,6 +108,19 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
      * @return
      */
 	FailableResult<Optional<TimeSeriesIdentifier>,OpenDcsDataException> findBy(DataTransaction tx, DbKey key);
+
+    /**
+     * As findBy by uniqueString. Returns filled out TimeSeriesIdentifier object if found, or the error
+     * encountered.
+     * @param tx
+     * @param key
+     * @return
+     */
+	default FailableResult<Optional<TimeSeriesIdentifier>,OpenDcsDataException> findBy(DataTransaction tx, TimeSeriesIdentifier tsId)
+    {
+        return findBy(tx, Objects.requireNonNull(tsId, TSID_NULL_ERROR)
+                                 .getUniqueString());
+    }
 
     /**
      * Validates and save, returning a complete instance with DbKey, the provided TimeSeriesIdentifier
