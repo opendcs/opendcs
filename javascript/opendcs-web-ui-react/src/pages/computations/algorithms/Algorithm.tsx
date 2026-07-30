@@ -25,6 +25,11 @@ import { apiErrorMessage } from "../../../util/ApiError";
 
 export type UiAlgorithm = Partial<ApiAlgorithm>;
 
+const algorithmCardClassName = (edit: boolean, className?: string) =>
+  ["algorithm-card", edit ? "algorithm-card--edit" : null, className]
+    .filter(Boolean)
+    .join(" ");
+
 const INPUT_H = { height: "2.25rem" };
 const LABEL_H = { height: "1rem" };
 const SEARCH_H = { height: "1.875rem" };
@@ -103,11 +108,7 @@ export const AlgorithmSkeleton: React.FC<{ edit?: boolean; className?: string }>
   edit = false,
   className,
 }) => (
-  <Card
-    className={["algorithm-card", edit ? "algorithm-card--edit" : null, className]
-      .filter(Boolean)
-      .join(" ")}
-  >
+  <Card className={algorithmCardClassName(edit, className)}>
     <Card.Body>
       <Row>
         {/* Top band — Name/ExecClass (left) | Description (right) */}
@@ -302,11 +303,7 @@ export const Algorithm: React.FC<AlgorithmProperties> = ({
 
   return (
     <DetailFade skeleton={<AlgorithmSkeleton edit={edit} />}>
-      <Card
-        className={["algorithm-card", edit ? "algorithm-card--edit" : null]
-          .filter(Boolean)
-          .join(" ")}
-      >
+      <Card className={algorithmCardClassName(edit)}>
         <Card.Body>
           <Row>
             {/* Left column — Name, ExecClass, Parameters table */}
