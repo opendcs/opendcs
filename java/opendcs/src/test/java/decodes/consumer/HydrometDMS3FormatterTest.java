@@ -68,8 +68,9 @@ class HydrometDMS3FormatterTest
 
         formatter.formatMessage(message, consumer);
         final String expected = String.format(
-            "yyyyMMMdd hhmm cbtt     PC        NewValue   OldValue   Flag user:%s # DECODES output%n" + //
-            "2026JUL21 0000 TESTSITE HG        5.00       998877.00  -01%n", System.getProperty("user.name"));
+            "yyyyMMMdd hhmm cbtt     PC        NewValue   OldValue   Flag user:%s # DECODES output\n" + //
+            "2026JUL21 0000 TESTSITE HG        5.00       998877.00  -01\n",
+            System.getProperty("user.name"));
         assertEquals(expected, consumer.getOutput());
     }
 }
