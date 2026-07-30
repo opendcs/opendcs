@@ -41,7 +41,7 @@ public final class DataSourceMapper extends PrefixRowMapper<DataSource,DataSourc
         return ds;
     }
 
-    public enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition<Columns>
     {
         ID(GenericColumns.ID),
         NAME(GenericColumns.NAME),
@@ -66,6 +66,12 @@ public final class DataSourceMapper extends PrefixRowMapper<DataSource,DataSourc
         public String column()
         {
             return column;
+        }
+
+        @Override
+        public Columns getIdColumn()
+        {
+            return ID;
         }
     }
 }

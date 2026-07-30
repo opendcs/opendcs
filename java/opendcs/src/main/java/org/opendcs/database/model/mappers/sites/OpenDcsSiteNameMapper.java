@@ -37,7 +37,7 @@ public class OpenDcsSiteNameMapper extends PrefixRowMapper<SiteName,OpenDcsSiteN
         return ret;
     }
 
-    public enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition<Columns>
     {
         SITE_ID("siteid"),
         NAME_TYPE("nametype"),
@@ -57,6 +57,12 @@ public class OpenDcsSiteNameMapper extends PrefixRowMapper<SiteName,OpenDcsSiteN
         public String column()
         {
             return this.column;
+        }
+
+        @Override
+        public Columns getIdColumn()
+        {
+            return SITE_ID;
         }
     }
 }

@@ -94,7 +94,7 @@ public final class UnitConverterMapper extends PrefixRowMapper<UnitConverterDb,U
         return converter;
     }
 
-    public enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition<Columns>
     {
         ID(GenericColumns.ID),
         FROM_UNITS_ABBR("fromunitsabbr"),
@@ -124,6 +124,12 @@ public final class UnitConverterMapper extends PrefixRowMapper<UnitConverterDb,U
         public String column()
         {
             return column;
+        }
+
+        @Override
+        public Columns getIdColumn()
+        {
+            return ID;
         }
     }
 }

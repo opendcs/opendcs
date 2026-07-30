@@ -36,7 +36,7 @@ public final class NetworkListEntryMapper extends PrefixRowMapper<NetworkListEnt
         return new NetworkListEntryMapper(prefix);
     }
     
-    public enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition<Columns>
     {
         NETWORKLIST_ID("networklistid"),
         TRANSPORT_ID("transportid"),
@@ -59,6 +59,12 @@ public final class NetworkListEntryMapper extends PrefixRowMapper<NetworkListEnt
         public String column()
         {
             return this.column;
+        }
+
+        @Override
+        public Enum<Columns> getIdColumn()
+        {
+            return null;
         }
         
     }    

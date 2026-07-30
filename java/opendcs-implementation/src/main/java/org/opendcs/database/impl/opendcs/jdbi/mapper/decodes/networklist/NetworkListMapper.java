@@ -43,7 +43,7 @@ public final class NetworkListMapper extends PrefixRowMapper<NetworkList, Networ
         return new NetworkListMapper(prefix);
     }
     
-    public enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition<Columns>
     {
         ID(GenericColumns.ID),
         NAME(GenericColumns.NAME),
@@ -68,6 +68,12 @@ public final class NetworkListMapper extends PrefixRowMapper<NetworkList, Networ
         public String column()
         {
             return this.column;
+        }
+
+        @Override
+        public Columns getIdColumn()
+        {
+            return ID;
         }
     }
 }

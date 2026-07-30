@@ -7,6 +7,7 @@ import java.util.EnumSet;
 import org.jdbi.v3.core.mapper.RowMapper;
 import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.sql.TableColumnDefinition;
+import org.opendcs.database.sql.TableDefinition;
 
 /**
  * Helper class for row mappers to take a prefix.
@@ -20,7 +21,7 @@ import org.opendcs.database.sql.TableColumnDefinition;
  * @param <T> The type that the mapper will return
  * @param <E> A enum containing all columns. This enum must implement the {@link TableColumnDefinition} interface.
  */
-public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinition> implements RowMapper<T>
+public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinition<E>> implements RowMapper<T>, TableDefinition<E>
 {
     protected final String prefix;
     protected final String tableName;
@@ -109,5 +110,29 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
         // example "left join transportmedium tm on tm.platformid = otherTable.otherIdColumn"
         return String.format("%s join %s %s on %s.%s = %s.%s",
                 joinType != null ? joinType : "", tableName, prefixNoUnderscore, prefixNoUnderscore, idColumn.column(), otherTable, otherIdColumn);
+    }
+
+    @Override
+    public String getTableName()
+    {
+        return tableName;
+    }
+
+    @Override
+    public String getTablePrefix()
+    {
+        return prefix;
+    }
+
+    @Override
+    public Enum<E> getIdColumn()
+    {
+        Enum<E> ret = null;
+        var  tmp = this.columns.iterator().next();
+        if (tmp != null)
+        {
+            ret = tmp.getIdColumn();
+        }
+        return ret;
     }
 }

@@ -56,7 +56,7 @@ public final class RoleMapper extends PrefixRowMapper<Role,RoleMapper.Columns>
         return new RoleMapper(prefix);
     }
 
-    public enum Columns implements TableColumnDefinition
+    public enum Columns implements TableColumnDefinition<Columns>
     {
         ID(GenericColumns.ID),
         NAME(GenericColumns.NAME),

@@ -9,7 +9,7 @@ import java.util.Optional;
  * information about a column. At this time we are only dealing with the column name.
  * Future work will likely start including additional informaiton, such as types.
  */
-public interface TableColumnDefinition
+public interface TableColumnDefinition<E extends Enum<E>>
 {
     /**
      * Returns the column name.
@@ -18,13 +18,32 @@ public interface TableColumnDefinition
     String column();
 
     /**
+     * if this column is the ID column for things like joins
+     * @return
+     */
+    default boolean isId()
+    {
+        return this == getIdColumn();
+    }
+
+    /**
+     * Return which column in this set represents the ID column.
+     * Or null if there isn't one.
+     * @return
+     */
+    default Enum<E> getIdColumn()
+    {
+        return null;
+    }
+
+    /**
      *
      * @param <T> Expected Enum type
      * @param enumClass Class for the enum type
      * @param input input string.
      * @return Enum or empty if string matches one of the values in that enum, usses case-insenstitve compare
      */
-    static <T extends Enum<T> & TableColumnDefinition> Optional<Enum<T>> fromString(Class<T> enumClass, String input)
+    static <T extends Enum<T> & TableColumnDefinition<T>> Optional<Enum<T>> fromString(Class<T> enumClass, String input)
     {
         final var enums = (List<T>)Arrays.asList(enumClass.getEnumConstants());
         for (var e: enums)
