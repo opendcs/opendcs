@@ -19,6 +19,7 @@ import static org.opendcs.utils.sql.SqlQueries.LEFT_OUTER;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.TimeZone;
 
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.statement.Query;
@@ -122,7 +123,11 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
             return select.bind(RoutingSpecMapper.Columns.NAME.column(), specName)
                          .reduceRows(new RoutingSpecReducer(allData.specMapper, allData.listMapper,
                                                             allData.specPropertiesMapper))
-                         .map(rs -> rs)
+                         .map(rs ->
+                         {
+                            rs.outputTimeZone = TimeZone.getTimeZone(rs.outputTimeZoneAbbr);
+                            return rs;
+                         })
                          .findFirst();
         }
     }

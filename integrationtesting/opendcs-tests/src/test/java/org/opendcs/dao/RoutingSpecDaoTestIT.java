@@ -1,5 +1,6 @@
 package org.opendcs.dao;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,8 @@ class RoutingSpecDaoTestIT extends AppTestBase
         try (var tx = db.newTransaction())
         {
             var spec = dao.getByName(tx, "OKVI4-input").orElseGet(() -> fail("could not find spec OKVI4-input"));
+
+            assertTrue(spec.isPrepared());
         }
     }    
 }
