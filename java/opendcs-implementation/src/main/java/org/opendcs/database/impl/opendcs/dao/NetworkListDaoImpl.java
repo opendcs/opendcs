@@ -26,6 +26,7 @@ import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.Network
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListReducer;
 import org.opendcs.database.model.mappers.PrefixRowMapper;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.openide.util.lookup.ServiceProvider;
@@ -72,25 +73,7 @@ public class NetworkListDaoImpl implements NetworkListDao
         {
             return Optional.empty();
         }
-        var handle = tx.connection(Handle.class)
-                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabaseEngine();
-
-        var selectTemplate = queries.getInstanceOf(SELECT);
-
-        if (selectTemplate == null)
-        {
-            throw new OpenDcsDataException("Could not find template");
-        }
-        selectTemplate.add(WHERE_CLAUSE, "where id = :id");
-        try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, listMapper, listEntryMapper)))
-        {
-            registerMappers(select, listMapper, listEntryMapper);
-            return select.bind(NetworkListMapper.Columns.ID.column(), id)
-                         .reduceRows(new NetworkListReducer(listMapper, listEntryMapper))
-                         .findFirst();
-        }
+        return get(tx, "where id = :id", GenericColumns.ID.column(), id);
     }
 
     @Override
@@ -100,6 +83,11 @@ public class NetworkListDaoImpl implements NetworkListDao
         {
             return Optional.empty();
         }
+        return get(tx, "where upper(name) = Upper(:name)", GenericColumns.NAME.column(), name);
+    }
+
+    private Optional<NetworkList> get(DataTransaction tx, String where, String searchColumn, Object searchBy) throws OpenDcsDataException
+    {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
@@ -111,11 +99,11 @@ public class NetworkListDaoImpl implements NetworkListDao
         {
             throw new OpenDcsDataException("Could not find template");
         }
-        selectTemplate.add(WHERE_CLAUSE, "where upper(name) = upper(:name)");
+        selectTemplate.add(WHERE_CLAUSE, where);
         try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, listMapper, listEntryMapper)))
         {
             registerMappers(select, listMapper, listEntryMapper);
-            return select.bind(NetworkListMapper.Columns.NAME.column(), name)
+            return select.bind(searchColumn, searchBy)
                          .reduceRows(new NetworkListReducer(listMapper, listEntryMapper))
                          .findFirst();
         }
@@ -148,7 +136,7 @@ public class NetworkListDaoImpl implements NetworkListDao
                     """,
                     id, networkList.getId());
             }
-            final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("platform", handle.getConnection());
+            final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("networklist", handle.getConnection());
             merge.bind(NetworkListMapper.Columns.ID.column(), bindKey)
                  .bind(NetworkListMapper.Columns.NAME.column(), networkList.name)
                  .bind(NetworkListMapper.Columns.TRANSPORT_MEDIUM_TYPE.column(), networkList.transportMediumType)
