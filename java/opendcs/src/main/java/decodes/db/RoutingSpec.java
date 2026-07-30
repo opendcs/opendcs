@@ -382,4 +382,9 @@ public class RoutingSpec extends IdDatabaseObject
 	{
 		this.name = name;
 	}
+
+	public void forceSetPrepared()
+	{
+		this._isPrepared = true;
+	}
 }

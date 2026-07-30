@@ -1,6 +1,7 @@
 group RoutingSpecDaoImpl;
 
-select(where, limit, collate, spec_columns, prop_columns, prop_join, list_columns, list_join) ::= <<
+select(where, limit, collate, spec_columns, prop_columns, prop_join, spec_list_columns, spec_list_join,
+       list_columns, list_join, list_entry_columns, list_entry_join) ::= <<
 with routingspec_limit (id, name, datasourceid, enableequations, useperformancemeasurements,
                      outputformat, outputtimezone, presentationgroupname, sincetime, untiltime,
                      consumertype, consumerarg, lastmodifytime, isproduction)
@@ -15,11 +16,15 @@ with routingspec_limit (id, name, datasourceid, enableequations, useperformancem
 )
 select 
     <spec_columns>
-    <if(list_columns)>, <list_columns> <endif>
+    <if(spec_list_columns)>, <spec_list_columns> <endif>
     <if(prop_columns)>, <prop_columns> <endif>
+    <if(list_columns)>, <list_columns> <endif>
+    <if(list_entry_columns)>, <list_entry_columns> <endif>
 from routingspec_limit rs
-<if(list_join)> <list_join> <endif>
+<if(spec_list_join)> <spec_list_join> <endif>
 <if(prop_join)> <prop_join> <endif>
+<if(list_join)> <list_join> <endif>
+<if(list_entry_join)> <list_entry_join> <endif>
 order by rs.name <collate> asc
 >>
 

@@ -16,6 +16,7 @@
 package org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.routing;
 
 import java.sql.SQLException;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.jdbi.v3.core.generic.GenericType;
@@ -24,7 +25,9 @@ import org.jdbi.v3.core.result.RowView;
 import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
 
+import decodes.db.NetworkList;
 import decodes.db.RoutingSpec;
+import decodes.db.RoutingSpecList;
 import ilex.util.Pair;
 
 public final class RoutingSpecReducer implements LinkedHashMapRowReducer<Long, RoutingSpec>
@@ -33,16 +36,12 @@ public final class RoutingSpecReducer implements LinkedHashMapRowReducer<Long, R
     { /* marker class */
     };
 
-    private final RoutingSpecMapper routingSpecMapper;
-    private final RoutingSpecNetworkListMapper networkListMapper;
-    private final PropertiesMapper routingSpecPropertiesMapper;
+    private final RoutingSpecMappers mappers;    
+    private final LinkedHashMap<Long, NetworkList> networkLists = new LinkedHashMap<>();
 
-    public RoutingSpecReducer(RoutingSpecMapper routingSpecMapper, RoutingSpecNetworkListMapper networkListMapper, 
-                              PropertiesMapper routingSpecPropertiesMapper)
+    public RoutingSpecReducer(RoutingSpecMappers mappers)
     {
-        this.routingSpecMapper = routingSpecMapper;
-        this.networkListMapper = networkListMapper;
-        this.routingSpecPropertiesMapper = routingSpecPropertiesMapper;
+        this.mappers = mappers;
     }
 
 
@@ -51,24 +50,30 @@ public final class RoutingSpecReducer implements LinkedHashMapRowReducer<Long, R
     {
         try
         {
-            var specId = rowView.getColumn(routingSpecMapper.column(RoutingSpecMapper.Columns.ID), Long.class);
+            var specId = rowView.getColumn(mappers.specMapper().column(RoutingSpecMapper.Columns.ID), Long.class);
             var spec = container.computeIfAbsent(specId, id -> rowView.getRow(RoutingSpec.class));
 
-            if (networkListMapper != null)
-            {
-                var list = rowView.getRow(RoutingSpecNetworkListMapper.ROUTING_SPEC_LIST);
-                if (list != null)
-                {
-                    spec.addNetworkListName(list.second);
-                }
-            }
-
-            if (routingSpecPropertiesMapper != null)
+            if (mappers.specPropertiesMapper() != null)
             {
                 var prop = rowView.getRow(ROUTING_SPEC_PROPERTIES);
                 if (prop != null && prop.first != null && prop.second != null)
                 {
                     spec.setProperty(prop.first, prop.second);
+                }
+            }
+
+            if (mappers.listReducer() != null)
+            {
+                mappers.listReducer().accumulate(networkLists, rowView);
+                var specList = rowView.getRow(RoutingSpecNetworkListMapper.ROUTING_SPEC_LIST);
+                if (specList != null)
+                {
+                    var list = this.networkLists.get(specList.first);
+                    if (list != null && !spec.networkLists.contains(list))
+                    {
+                        spec.networkLists.add(list);
+                        spec.networkListNames.add(specList.second);
+                    }
                 }
             }
         }

@@ -27,7 +27,10 @@ import org.jdbi.v3.stringtemplate4.StringTemplateSqlLocator;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.RoutingSpecDao;
+import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListEntryMapper;
+import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.routing.RoutingSpecMapper;
+import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.routing.RoutingSpecMappers;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.routing.RoutingSpecNetworkListMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.routing.RoutingSpecReducer;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
@@ -52,8 +55,8 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
     private static final String SELECT = "select";
 
     private final STGroup queries;
-    private final Mappers allData;
-    private final Mappers specOnlyData;
+    private final RoutingSpecMappers allData;
+    private final RoutingSpecMappers specOnlyData;
     
 
     public RoutingSpecDaoImpl()
@@ -61,13 +64,15 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
         STGroup.verbose = true;
         queries = StringTemplateSqlLocator.findStringTemplateGroup(RoutingSpecDaoImpl.class);
         
-        allData = new Mappers(
+        allData = new RoutingSpecMappers(
             RoutingSpecMapper.withPrefix("rs"),
             RoutingSpecNetworkListMapper.withPrefix("rnl"),
-            PropertiesMapper.withPrefix("rp", true)
+            PropertiesMapper.withPrefix("rp", true),
+            NetworkListMapper.withPrefix("nl"),
+            NetworkListEntryMapper.withPrefix("nle")
         );
 
-        specOnlyData = new Mappers(allData.specMapper(), null, null);
+        specOnlyData = new RoutingSpecMappers(allData.specMapper(), null, null, null, null);
     }
 
     @Override
@@ -92,8 +97,7 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
         {
             registerMappers(select, allData);
             return select.bind(RoutingSpecMapper.Columns.ID.column(), id)
-                         .reduceRows(new RoutingSpecReducer(allData.specMapper, allData.listMapper,
-                                                            allData.specPropertiesMapper))
+                         .reduceRows(new RoutingSpecReducer(allData))
                          .map(rs -> rs)
                          .findFirst();
         }
@@ -121,50 +125,75 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
         {
             registerMappers(select, allData);
             return select.bind(RoutingSpecMapper.Columns.NAME.column(), specName)
-                         .reduceRows(new RoutingSpecReducer(allData.specMapper, allData.listMapper,
-                                                            allData.specPropertiesMapper))
+                         .reduceRows(new RoutingSpecReducer(allData))
                          .map(rs ->
                          {
                             rs.outputTimeZone = TimeZone.getTimeZone(rs.outputTimeZoneAbbr);
+                            rs.setProperty("RoutingSpecName", rs.getName());
+                            rs.forceSetPrepared();
                             return rs;
                          })
                          .findFirst();
         }
     }
 
-    private static Query registerMappers(Query select, Mappers mappers)
+    private static Query registerMappers(Query select, RoutingSpecMappers mappers)
     {
         select.registerRowMapper(mappers.specMapper());
 
-        if (mappers.listMapper() != null)
+        if (mappers.specListMapper() != null)
         {
-            select.registerRowMapper(mappers.listMapper());
+            select.registerRowMapper(mappers.specListMapper());
         }
 
         if (mappers.specPropertiesMapper() != null)
         {
             select.registerRowMapper(RoutingSpecReducer.ROUTING_SPEC_PROPERTIES, mappers.specPropertiesMapper());
         }
+        if (mappers.listMapper() != null)
+        {
+            select.registerRowMapper(mappers.listMapper());
+            select.registerRowMapper(mappers.listEntryMapper());
+        }
         return select;
     }
 
-    private static String setDefines(ST select, Mappers mappers)
+    private static String setDefines(ST select, RoutingSpecMappers mappers)
     {
         select.add("spec_columns", mappers.specMapper().columnsForSelect());
 
-        if (mappers.listMapper != null)
+        if (mappers.specListMapper() != null)
         {
-            select.add("list_columns", mappers.listMapper.columnsForSelect());
-            select.add("list_join", mappers.listMapper
-                                                 .joinStatement(LEFT_OUTER, RoutingSpecNetworkListMapper.Columns.ROUTING_SPEC_ID, "rs", "id")
-                                                );
+            select.add("spec_list_columns", mappers.specListMapper().columnsForSelect());
+            select.add("spec_list_join",
+                       mappers.specListMapper()
+                              .joinStatement(LEFT_OUTER, RoutingSpecNetworkListMapper.Columns.ROUTING_SPEC_ID, "rs", "id")
+            );
         }
 
-        if (mappers.specPropertiesMapper != null)
+        if (mappers.specPropertiesMapper() != null)
         {
-            select.add("prop_columns", mappers.specPropertiesMapper.columnsForSelect());
+            select.add("prop_columns", mappers.specPropertiesMapper().columnsForSelect());
             select.add("prop_join", "left outer join routingspecproperty rp on rp.routingspecid = rs.id");
         }
+
+
+        if (mappers.listMapper() != null)
+        {
+            select.add("list_columns", mappers.listMapper().columnsForSelect())
+                  .add("list_entry_columns", mappers.listEntryMapper().columnsForSelect());
+            
+            select.add("list_join",
+                       mappers.listMapper()
+                              .joinStatement(LEFT_OUTER, NetworkListMapper.Columns.ID,
+                                 "rs", "id")
+                        );
+            select.add("list_entry_join",
+                        mappers.listEntryMapper().joinStatement(LEFT_OUTER,
+                            NetworkListEntryMapper.Columns.NETWORKLIST_ID, "nl", "id")
+            );
+        }
+
         return select.render();
     }
 
@@ -186,11 +215,5 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
             throws OpenDcsDataException
     {
         return List.of();
-    }
-
-
-    public static record Mappers(RoutingSpecMapper specMapper, RoutingSpecNetworkListMapper listMapper, 
-                                 PropertiesMapper specPropertiesMapper) 
-    {
-    }
+    }    
 }
