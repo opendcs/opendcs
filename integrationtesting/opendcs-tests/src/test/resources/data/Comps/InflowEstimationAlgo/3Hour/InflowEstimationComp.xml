@@ -9,34 +9,34 @@
     <ExecClass>decodes.cwms.algo.InflowEstimationAlgo</ExecClass>
     <AlgoProperty name="stagePoolStorageRating"></AlgoProperty>
     <AlgoProperty name="tailwaterToReleaseRating"></AlgoProperty>
-    <AlgoParm roleName="tailwaterTsId">
+    <AlgoParm roleName="tailwaterStage">
       <ParmType>i</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="storageTsId">
+    <AlgoParm roleName="storageVolume">
       <ParmType>i</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="stagePoolTsId">
+    <AlgoParm roleName="poolStage">
       <ParmType>i</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="releaseTsId">
+    <AlgoParm roleName="releaseFlow">
       <ParmType>i</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="outflowTsId1">
+    <AlgoParm roleName="additionalOutflow1">
       <ParmType>i</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="outflowTsId2">
+    <AlgoParm roleName="additionalOutflow2">
       <ParmType>i</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="outflowTsId3">
+    <AlgoParm roleName="additionalOutflow3">
       <ParmType>i</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="outflowTsId4">
+    <AlgoParm roleName="additionalOutflow4">
       <ParmType>i</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="outflowTsId5">
+    <AlgoParm roleName="additionalOutflow5">
       <ParmType>i</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="outflowTsId6">
+    <AlgoParm roleName="additionalOutflow6">
       <ParmType>i</ParmType>
     </AlgoParm>
     <AlgoParm roleName="inflow">
@@ -50,10 +50,10 @@
     <LastModified>2025-08-15 15:15:19 PDT</LastModified>
     <ValidStart>2024-01-03 00:15:00 UTC</ValidStart>
     <ValidEnd>2024-01-05 00:00:00 UTC</ValidEnd>
-    <CompProperty name="outflowTsId1_MISSING">IGNORE</CompProperty>
-    <CompProperty name="releaseTsId_MISSING">IGNORE</CompProperty>
-    <CompProperty name="storageTsId_MISSING">IGNORE</CompProperty>
-    <CompParm roleName="outflowTsId1">
+    <CompProperty name="additionalOutflow1_MISSING">IGNORE</CompProperty>
+    <CompProperty name="releaseFlow_MISSING">IGNORE</CompProperty>
+    <CompProperty name="storageVolume_MISSING">IGNORE</CompProperty>
+    <CompParm roleName="additionalOutflow1">
       <SiteDataType>
         <SiteName NameType="CWMS">BLU</SiteName>
         <DataType Standard="CWMS" code="Flow-Evap"/>
@@ -63,7 +63,7 @@
       <DeltaT>0</DeltaT>
       <DeltaTUnits>Seconds</DeltaTUnits>
     </CompParm>
-    <CompParm roleName="releaseTsId">
+    <CompParm roleName="releaseFlow">
       <SiteDataType>
         <SiteName NameType="CWMS">BLU</SiteName>
         <DataType Standard="CWMS" code="Flow-Out"/>
@@ -73,7 +73,7 @@
       <DeltaT>0</DeltaT>
       <DeltaTUnits>Seconds</DeltaTUnits>
     </CompParm>
-    <CompParm roleName="storageTsId">
+    <CompParm roleName="storageVolume">
       <SiteDataType>
         <SiteName NameType="CWMS">BLU</SiteName>
         <DataType Standard="cwms" code="Stor"/>

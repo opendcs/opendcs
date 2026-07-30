@@ -42,6 +42,7 @@ import hec.data.cwmsRating.RatingSet;
 		description = "Reservoir Inflow calculation based on an algorithm developed by NWP," +
 				" Which utilizes storage change, releases, and additional outflows to calculate release " +
 				" based on the output time series duration.")
+
 public final class InflowEstimationAlgo extends AW_AlgorithmBase
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
@@ -50,53 +51,52 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 	private Connection conn;
 	private TimeSeriesDAI timeSeriesDAO;
 
-	// Required: the annotated role name and Java field name must match.
-	@Output(name = "inflow", description = "Inflow rate")
+	@Output(description = "Calculated inflow rate")
 	public NamedVariable inflow = new NamedVariable("inflow", "");
 
-	// Required: AW_AlgorithmBase accepts primitive input fields. The time series
-	// themselves are obtained below from the matching ParmRefs.
-	@Input(name = "tailwaterTsId",
-			description = "tailwater timeseries id. If provided, the tailwater_to_release_rating rating curve must be supplied. Can be regular or irregular. " +
-					"If irregular, values will be averaged by weighting each irregular timestep to the second. Data evaluated as end of period. " +
-					"Example: ARDB.Elev-Tailwater.Inst.0.0.BCHYDRO-RAW")
-	public double tailwaterTsId;
-	@org.opendcs.annotations.PropertySpec(name = "tailwaterToReleaseRating", propertySpecType = PropertySpec.STRING,
-			description = "Rating Curve specification for tailwater/release curve, Example: BLUO.Stage;Flow.Linear.USGS-NWIS")
-	public String tailwaterToReleaseRating;
-	@Input(name = "releaseTsId",
-			description = "Time Series Identifier for release time series. Can be used instead of the tailwater_tsid and tailwater_to_release_rating, " +
-					"Example: BLU.Flow-Out.Inst.0.0.MIXED-COMPUTED-REV")
-	public double releaseTsId;
-	@Input(name = "stagePoolTsId",
-			description = "The elevation timeseries id. If provided, the elevation stage_pool_storage_rating rating curve must be supplied. " +
-					"Can be regular or irregular. If irregular, values will be averaged by weighting each irregular timestep to the second. Data evaluated as end of period.")
-	public double stagePoolTsId;
-	@org.opendcs.annotations.PropertySpec(name = "stagePoolStorageRating", propertySpecType = PropertySpec.STRING,
-			description = "Rating Curve specification for stage stag pool/release curve, Example: BLUO.Stage;Flow.Linear.USGS-NWIS")
-	public String stagePoolStorageRating;
-	@Input(name = "storageTsId",
-			description = "The time series id for reservoir storage. If stage pool time series is provided, this parameter is optional. Data evaluated as end of period.")
-	public double storageTsId;
+	// AW_AlgorithmBase binds one numeric time-series sample to each @Input field.
+	// The complete configured input series is obtained from the matching ParmRef below.
+	@Input(description = "Tailwater-stage input series (for example, <LOC>.Elev-Tailwater.Inst.0.0.<SOURCE>). "
+			+ "Requires tailwaterToReleaseRating.")
+	public double tailwaterStage;
+	@Input(description = "Direct release-flow input series; alternative to tailwaterStage (for example, "
+			+ "<LOC>.Flow-Out.Inst.0.0.<SOURCE>).")
+	public double releaseFlow;
+	@Input(description = "Pool-stage input series (for example, <LOC>.Elev-Pool.Inst.0.0.<SOURCE>). "
+			+ "Requires stagePoolStorageRating.")
+	public double poolStage;
+	@Input(description = "Direct reservoir-storage-volume input series; alternative to poolStage (for example, "
+			+ "<LOC>.Stor.Inst.0.0.<SOURCE>).")
+	public double storageVolume;
+	@Input(description = "Optional additional-outflow input series 1 (for example, "
+			+ "<LOC>.Flow-<PURPOSE>.Inst.0.0.<SOURCE>).")
+	public double additionalOutflow1;
+	@Input(description = "Optional additional-outflow input series 2 (for example, "
+			+ "<LOC>.Flow-<PURPOSE>.Inst.0.0.<SOURCE>).")
+	public double additionalOutflow2;
+	@Input(description = "Optional additional-outflow input series 3 (for example, "
+			+ "<LOC>.Flow-<PURPOSE>.Inst.0.0.<SOURCE>).")
+	public double additionalOutflow3;
+	@Input(description = "Optional additional-outflow input series 4 (for example, "
+			+ "<LOC>.Flow-<PURPOSE>.Inst.0.0.<SOURCE>).")
+	public double additionalOutflow4;
+	@Input(description = "Optional additional-outflow input series 5 (for example, "
+			+ "<LOC>.Flow-<PURPOSE>.Inst.0.0.<SOURCE>).")
+	public double additionalOutflow5;
+	@Input(description = "Optional additional-outflow input series 6 (for example, "
+			+ "<LOC>.Flow-<PURPOSE>.Inst.0.0.<SOURCE>).")
+	public double additionalOutflow6;
 
-	@Input(name = "outflowTsId1",
-			description = "Time Series Identifier for additional outflow time series, Example FTPK.Flow-Evap.Inst.0.0.Rev-NWO-Evap")
-	public double outflowTsId1;
-	@Input(name = "outflowTsId2",
-			description = "Time Series Identifier for additional outflow time series, Example FTPK.Flow-Evap.Inst.0.0.Rev-NWO-Evap")
-	public double outflowTsId2;
-	@Input(name = "outflowTsId3",
-			description = "Time Series Identifier for additional outflow time series, Example FTPK.Flow-Evap.Inst.0.0.Rev-NWO-Evap")
-	public double outflowTsId3;
-	@Input(name = "outflowTsId4",
-			description = "Time Series Identifier for additional outflow time series, Example FTPK.Flow-Evap.Inst.0.0.Rev-NWO-Evap")
-	public double outflowTsId4;
-	@Input(name = "outflowTsId5",
-			description = "Time Series Identifier for additional outflow time series, Example FTPK.Flow-Evap.Inst.0.0.Rev-NWO-Evap")
-	public double outflowTsId5;
-	@Input(name = "outflowTsId6",
-			description = "Time Series Identifier for additional outflow time series, Example FTPK.Flow-Evap.Inst.0.0.Rev-NWO-Evap")
-	public double outflowTsId6;
+
+	@org.opendcs.annotations.PropertySpec(name = "stagePoolStorageRating", propertySpecType = PropertySpec.STRING,
+			description = "Rating curve specification for the pool-stage to storage conversion, " +
+					"Example: BLUO.Stage;Flow.Linear.USGS-NWIS")
+	public String stagePoolStorageRating;
+
+	@org.opendcs.annotations.PropertySpec(name = "tailwaterToReleaseRating", propertySpecType = PropertySpec.STRING,
+			description = "Rating Curve specification for tailwater/release curve, " +
+					"Example: BLUO.Stage;Flow.Linear.USGS-NWIS")
+	public String tailwaterToReleaseRating;
 
 	private CTimeSeries inflowTs;
 	private CTimeSeries outflowTs1;
@@ -134,8 +134,7 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 	@Override
 	protected void doAWTimeSlice() throws DbCompException
 	{
-		// Intentionally left blank. The inflow calculation is performed in afterTimeSlices() to ensure that
-		// all time slices are available for the aggregation.
+		// Calculated in afterTimeSlices after the period end is known.
 	}
 
 	private void validateOutput() throws DbCompException
@@ -163,25 +162,23 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 			throw new DbCompException("InflowEstimationAlgo cannot calculate inflow for a zero duration period");
 		}
 		aggPeriodInterval = cwmsTsId.getInterval();
-		// A computation instance can be reused; do not carry a previous run's selected offset forward.
+		// Do not reuse the offset selected for a previous run.
 		effectiveOutputOffsetSeconds = null;
 	}
 
 	private void validateInputs() throws DbCompException
 	{
-		ParmRef outflow1 = getParmRef("outflowTsId1");
-		ParmRef outflow2 = getParmRef("outflowTsId2");
-		ParmRef outflow3 = getParmRef("outflowTsId3");
-		ParmRef outflow4 = getParmRef("outflowTsId4");
-		ParmRef outflow5 = getParmRef("outflowTsId5");
-		ParmRef outflow6 = getParmRef("outflowTsId6");
-		ParmRef releaseTsid = getParmRef("releaseTsId");
-		ParmRef tailwaterTsid = getParmRef("tailwaterTsId");
-		ParmRef stagePoolTsid = getParmRef("stagePoolTsId");
-		ParmRef storageTsid = getParmRef("storageTsId");
-		// Alternative roles may be omitted from the computation XML. In that case
-		// getParmRef returns null; the null-safe getTimeSeries calls below allow the
-		// alternative-input validation to report a useful configuration error.
+		ParmRef outflow1 = getParmRef("additionalOutflow1");
+		ParmRef outflow2 = getParmRef("additionalOutflow2");
+		ParmRef outflow3 = getParmRef("additionalOutflow3");
+		ParmRef outflow4 = getParmRef("additionalOutflow4");
+		ParmRef outflow5 = getParmRef("additionalOutflow5");
+		ParmRef outflow6 = getParmRef("additionalOutflow6");
+		ParmRef releaseFlowRef = getParmRef("releaseFlow");
+		ParmRef tailwaterStageRef = getParmRef("tailwaterStage");
+		ParmRef poolStageRef = getParmRef("poolStage");
+		ParmRef storageVolumeRef = getParmRef("storageVolume");
+		// Alternative roles may be omitted from the computation XML.
 		inflowTs = getParmRef("inflow").timeSeries;
 		outflowTs1 = getTimeSeries(outflow1);
 		outflowTs2 = getTimeSeries(outflow2);
@@ -189,29 +186,29 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 		outflowTs4 = getTimeSeries(outflow4);
 		outflowTs5 = getTimeSeries(outflow5);
 		outflowTs6 = getTimeSeries(outflow6);
-		releaseTs = getTimeSeries(releaseTsid);
-		tailwaterTs = getTimeSeries(tailwaterTsid);
-		stagePoolTs = getTimeSeries(stagePoolTsid);
-		storageTs = getTimeSeries(storageTsid);
+		releaseTs = getTimeSeries(releaseFlowRef);
+		tailwaterTs = getTimeSeries(tailwaterStageRef);
+		stagePoolTs = getTimeSeries(poolStageRef);
+		storageTs = getTimeSeries(storageVolumeRef);
 
 		if((tailwaterTs == null || tailwaterTs.getTimeSeriesIdentifier() == null)
 				&& (releaseTs == null || releaseTs.getTimeSeriesIdentifier() == null))
 		{
-			throw new DbCompException("InflowEstimationAlgo requires either tailwaterTsId or releaseTsId to be set");
+			throw new DbCompException("InflowEstimationAlgo requires either tailwaterStage or releaseFlow to be configured");
 		}
 		if((tailwaterTs != null && tailwaterTs.getTimeSeriesIdentifier() != null)
 				&& tailwaterToReleaseRating == null)
 		{
-			throw new DbCompException("InflowEstimationAlgo requires tailwaterToReleaseRating to be set when tailwaterTsId is set");
+			throw new DbCompException("InflowEstimationAlgo requires tailwaterToReleaseRating when tailwaterStage is configured");
 		}
 		if((stagePoolTs == null || stagePoolTs.getTimeSeriesIdentifier() == null)
 				&& (storageTs == null || storageTs.getTimeSeriesIdentifier() == null))
 		{
-			throw new DbCompException("InflowEstimationAlgo requires either stagePoolTsId or storageTsId to be set");
+			throw new DbCompException("InflowEstimationAlgo requires either poolStage or storageVolume to be configured");
 		}
 		if(stagePoolTs != null && stagePoolTs.getTimeSeriesIdentifier() != null && stagePoolStorageRating == null)
 		{
-			throw new DbCompException("InflowEstimationAlgo requires stagePoolStorageRating to be set when stagePoolTsId is set");
+			throw new DbCompException("InflowEstimationAlgo requires stagePoolStorageRating when poolStage is configured");
 		}
 		TimeSeriesIdentifier timeSeriesIdentifier = inflowTs.getTimeSeriesIdentifier();
 		if(!(timeSeriesIdentifier instanceof CwmsTsId))
@@ -274,13 +271,15 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 	}
 
 	/**
-	 * This method is called once after iterating all time slices.
+	 * Calculates one inflow value for an eligible candidate output period.
+	 * Uses the output duration as the look-back window.
+	 * This method is called once after iterating all time slices
 	 */
 	@Override
 	protected void afterTimeSlices()
 			throws DbCompException
 	{
-		log.atDebug().log("InflowEstimationAlgo::afterTimeSlices");
+		// Input timestamps are candidate period ends; publish only on output boundaries.
 		if(!matchesInflowIntervalOffset(inflowTs, _aggregatePeriodEnd))
 		{
 			return;
@@ -364,9 +363,8 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 					|| utcOffset == HecConstants.UNDEFINED_UTC_OFFSET
 					|| utcOffset == HecConstants.NO_UTC_OFFSET)
 			{
-				// A new CWMS output does not yet have a persisted offset. Select the
-				// first eligible one so all values saved in this run use one offset.
-				int candidateOffset = IntervalOffsetUtil.getIntervalOffsetForTime(
+				// New outputs use the first eligible offset for the current run.
+				int candidateOffset = TSUtil.getIntervalOffsetForTime(
 						IntervalCodes.getInterval(timeSeries.getInterval()), date);
 				if(effectiveOutputOffsetSeconds == null)
 				{
@@ -375,8 +373,7 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 							+ "the first eligible period end {} for this computation run.",
 							cwmsTsId.getUniqueString(), effectiveOutputOffsetSeconds, date);
 				}
-				boolean matches = IntervalOffsetUtil.matchesInflowIntervalOffset(timeSeries, date,
-						effectiveOutputOffsetSeconds);
+				boolean matches = effectiveOutputOffsetSeconds.equals(candidateOffset);
 				if(!matches)
 				{
 					log.trace("Skipping period end {} with interval offset={} seconds; run offset={} seconds.",
@@ -385,18 +382,21 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 				return matches;
 			}
 		}
-		return IntervalOffsetUtil.matchesInflowIntervalOffset(timeSeries, date, effectiveOutputOffsetSeconds);
+		// CWMS supplies the stored offset and DST policy.
+		CwmsTsId cwmsTsId = (CwmsTsId) timeSeriesIdentifier;
+		return TSUtil.matchesIntervalOffset(IntervalCodes.getInterval(timeSeries.getInterval()), date,
+				cwmsTsId.getUtcOffset(), cwmsTsId.isAllowDstOffsetVariation());
 	}
 
 	private double averageOverTimestep(NavigableMap<Long, Double> values) throws NotEnoughDataException
 	{
+		// Flow samples are end-of-period stepped values.
 		return averageEndOfPeriodValues(values, _aggregatePeriodEnd,
 				IntervalCodes.getIntervalSeconds(durationPeriod));
 	}
 
 	/**
-	 * Calculates a duration-weighted average of end-of-period stepped values.
-	 * Each sample applies from the preceding sample through its timestamp.
+	 * Calculates a duration-weighted average of end-of-period values.
 	 */
 	static double averageEndOfPeriodValues(NavigableMap<Long, Double> values, Date windowEnd,
 			long durationSeconds) throws NotEnoughDataException
@@ -407,7 +407,7 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 		long windowEndMs = windowEnd.getTime();
 		long durationMs = durationSeconds * 1000L;
 		long windowStart = windowEndMs - durationMs;
-		//Calculate as end-of-period stepped
+		// //Calculate as end-of-period stepped, keep the part of each sample interval within the window.
 		Long s = values.ceilingKey(windowStart);
 		while(s != null)
 		{
@@ -439,6 +439,7 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 
 	private void extendTimeSeries(CTimeSeries timeSeries) throws DbCompException
 	{
+		// Extend the role's series for the current output window.
 		Date start = Date.from(_aggregatePeriodEnd.toInstant().minusSeconds(IntervalCodes.getIntervalSeconds(durationPeriod)));
 		TSUtil.extendTimeSeries(timeSeriesDAO, timeSeries, start, _aggregatePeriodEnd);
 	}
@@ -460,7 +461,7 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 			storageRaw = getValues(storageTs);
 			log.atDebug().log(_aggregatePeriodEnd + ": storage ts: " + storageRaw);
 		}
-		//Units are in m3 - calculated to cms
+		// Units are in m3 - calculated to cms.  Convert storage change to flow rate.
 		double holdout = calculateHoldout(storageRaw);
 		log.atDebug().log(_aggregatePeriodEnd + ": averaged holdout: " + holdout);
 		return holdout;
@@ -473,7 +474,7 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 
 	}
 
-	/** Calculates the storage-change contribution to inflow in cubic metres per second. */
+	/** Returns storage change over the window as a flow rate. */
 	static double calculateStorageChangeRate(NavigableMap<Long, Double> values, Date windowEnd,
 			long durationSeconds) throws NotEnoughDataException
 	{
@@ -501,7 +502,6 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 			return values.get(time.getTime());
 		}
 
-		// Fraction of the interval from the preceding sample to the requested time.
 		double pos = (double) (time.getTime() - prev) / (double) timeRange;
 
 		double prevVal = values.get(prev);
@@ -567,7 +567,7 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 				values[i] = timedVariable.getDoubleValue();
 			}
 			//Should be faster to iterate twice over the data set and rate the whole block
-			//than rating each value at a time
+			//rather than rating each value at a time
 			double[] rate = ratingSet.rate(conn, times, values);
 			for(int i = 0; i < times.length; i++)
 			{
