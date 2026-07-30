@@ -119,44 +119,6 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         """;
 
     @Override
-    public Optional<TimeSeriesIdentifier> getByUniqueString(DataTransaction tx, String uniqueString)
-            throws BadTimeSeriesException, OpenDcsDataException
-    {
-        var ret = findBy(tx, uniqueString);
-        if (ret.isSuccess())
-        {
-            return ret.getSuccess();
-        }
-        else if (ret.getFailure().getCause() instanceof BadTimeSeriesException btse)
-        {
-            throw btse;
-        }
-        else
-        {
-            throw ret.getFailure();
-        }
-    }
-
-    @Override
-    public Optional<TimeSeriesIdentifier> getById(DataTransaction tx, DbKey key)
-            throws BadTimeSeriesException, OpenDcsDataException
-    {
-        var ret = findBy(tx, key);
-        if (ret.isSuccess())
-        {
-            return ret.getSuccess();
-        }
-        else if (ret.getFailure().getCause() instanceof BadTimeSeriesException btse)
-        {
-            throw btse;
-        }
-        else
-        {
-            throw ret.getFailure();
-        }
-    }
-
-    @Override
     public FailableResult<Optional<TimeSeriesIdentifier>, OpenDcsDataException> findBy(DataTransaction tx,
             String uniqueString)
     {
