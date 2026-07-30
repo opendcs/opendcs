@@ -1,11 +1,22 @@
 import { Suspense, use, useCallback, type ReactNode } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
 import RefListContext from "../contexts/data/RefListContext";
 import { I18nextProvider, useTranslation } from "react-i18next";
 import { AuthContext } from "../contexts/app/AuthContext";
 import { ThemeContext } from "../contexts/app/ThemeContext";
 import { ApiContext } from "../contexts/app/ApiContext";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+
+const rootsByContainer = new WeakMap<Node, Root>();
+
+/** Unmount the React root created by `toDom` for `node`, if any. Safe to
+ *  call on nodes that were never a `toDom` container. */
+export function unmountToDom(node: Node): void {
+  const root = rootsByContainer.get(node);
+  if (!root) return;
+  rootsByContainer.delete(node);
+  root.unmount();
+}
 
 export interface Wrappers {
   /**
@@ -39,6 +50,7 @@ export function useContextWrapper(): Wrappers {
     (children: ReactNode): Node => {
       const container = document.createElement("div");
       const root = createRoot(container);
+      rootsByContainer.set(container, root);
       // The DataTables-rendered subtree gets a fresh React root, so contexts
       // from the parent tree don't flow in automatically. Re-wrap with the
       // same context values (and the same QueryClient) so any TanStack hooks
