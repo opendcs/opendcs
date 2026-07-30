@@ -31,15 +31,10 @@ dependencies {
     api(libs.org.slf4j.api)
 
     implementation(libs.bundles.jdbi)
+    implementation(libs.com.faster.xml.jackson.core) // imported in source, not just inherited from jdbi
+    implementation(libs.com.faster.xml.jackson.databind) // imported in source, not just inherited from jdbi
     implementation(libs.org.netbeans.lookup)
     implementation(libs.auto.service.annotations)
-    // implementation(libs.jwt)
-
-    // implementation(libs.com.password4j.password4j)
-
-    testImplementation enforcedPlatform(libs.junit.bom)
-    testImplementation(libs.bundles.junit)
-    testRuntimeOnly(libs.bundles.junit.platform)
 }
 
 

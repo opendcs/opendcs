@@ -18,7 +18,7 @@ import {
 import { Button, Modal } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { dtLangs } from "../../lang";
-import { useContextWrapper } from "../../util/ContextWrapper";
+import { unmountToDom, useContextWrapper } from "../../util/ContextWrapper";
 import { useTableProcessing } from "./useTableProcessing";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -371,6 +371,8 @@ function syncChildRow<T>(
   if (state === undefined) {
     if (!isShown) return;
     row.child(false);
+    const closedNode = refs.childNodesRef.current[id];
+    if (closedNode) unmountToDom(closedNode);
     delete refs.childModeRef.current[id];
     delete refs.childNodesRef.current[id];
     return;
@@ -381,6 +383,10 @@ function syncChildRow<T>(
 
   if (isShown) row.child.hide();
   const cached = prevMode === state ? refs.childNodesRef.current[id] : undefined;
+  if (!cached) {
+    const replaced = refs.childNodesRef.current[id];
+    if (replaced) unmountToDom(replaced);
+  }
   const node = cached ?? buildDetailNode(rowData, state);
   refs.childNodesRef.current[id] = node;
   refs.childModeRef.current[id] = state;
@@ -486,6 +492,12 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   // Child-row caches so in-progress edits survive redraws.
   const childModeRef = useRef<Record<string, RowMode>>({});
   const childNodesRef = useRef<Record<string, Node>>({});
+
+  useEffect(() => {
+    return () => {
+      Object.values(childNodesRef.current).forEach(unmountToDom);
+    };
+  }, []);
 
   // Synthetic ids for inline-edit new rows (row object → synthetic string).
   // WeakMap so GC can reclaim rows that leave `localItems`.
