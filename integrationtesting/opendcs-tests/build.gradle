@@ -128,6 +128,10 @@ testEngines.each { engine ->
         dependsOn(":opendcs-web-ui-react:war")
         dependsOn genConfig
         useJUnitPlatform()
+        testLogging {
+            showStandardStreams = true
+            exceptionFormat = 'full'
+        }
 
         // with gradle 9.2 it seems we need to set these manually
         testClassesDirs = sourceSets.test.output.classesDirs
