@@ -20,7 +20,7 @@ public class CwmsSiteMapper extends OpenDcsSiteMapper
     /**
      * @return
      */
-    public String columnsForSelect()
+    public String columnsForSelect(OpenDcsSiteMapper.Columns... excluding)
     {
         final ArrayList<String> columnList = new ArrayList<>();
         columns.forEach(c ->

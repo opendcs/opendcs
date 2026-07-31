@@ -17,6 +17,7 @@ import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.db.NetworkList;
 import decodes.db.RoutingSpec;
+import decodes.sql.DbKey;
 
 @EnableIfTsDb
 @DecodesConfigurationRequired({
@@ -61,9 +62,9 @@ class RoutingSpecDaoTestIT extends AppTestBase
 
         try (var tx = db.newTransaction())
         {
-            // for this test we don't actually care which data source
-            final var dataSource = dataSourceDao.getDataSources(tx, 1, 0).getFirst();
-                                                  
+            final var dataSource = dataSourceDao.getDataSource(tx, "OKVI4")
+                                                .orElseGet(() -> fail("no data source configured named OKVI4"));
+            assertFalse(DbKey.isNull(dataSource.getId()));
             final var specIn = new RoutingSpec("Simple-Test-Spec");
             specIn.consumerType = "pipe";
             specIn.dataSource = dataSource;

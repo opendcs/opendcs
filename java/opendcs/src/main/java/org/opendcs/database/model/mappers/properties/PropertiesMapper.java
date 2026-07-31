@@ -50,7 +50,7 @@ public final class PropertiesMapper extends PrefixRowMapper<Pair<String,String>,
      * @return
      */
     @Override
-    public String columnsForSelect()
+    public String columnsForSelect(PropertiesMapper.Columns... excluding)
     {
         final ArrayList<String> columnList = new ArrayList<>();
         final String prefixNoUnderscore = prefix.substring(0, prefix.length() - 1);

@@ -3,6 +3,7 @@ package org.opendcs.database.model.mappers;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.function.Predicate;
 
 import org.jdbi.v3.core.mapper.RowMapper;
 import org.opendcs.database.api.OpenDcsDataRuntimeException;
@@ -80,14 +81,36 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
 
      * @return
      */
-    public String columnsForSelect()
+    public String columnsForSelect(@SuppressWarnings("unchecked") E... excluding)
     {
         final ArrayList<String> columnList = new ArrayList<>();
         final String prefixNoUnderscore = prefix.substring(0, prefix.length() - 1);
+        final Predicate<E> excludeColumn = column ->
+        {
+            if (excluding == null || excluding.length == 0)
+            {
+                return false;
+            }
+            else
+            {
+                for (var c: excluding)
+                {
+                    if (column == c)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        };
         columns.forEach(c ->
         {
             try
             {
+                if (excludeColumn.test(c))
+                {
+                    return;
+                }
                 columnList.add(String.format("%s.%s %s", prefixNoUnderscore, c.column(), column(c)));
             }
             catch (SQLException ex)

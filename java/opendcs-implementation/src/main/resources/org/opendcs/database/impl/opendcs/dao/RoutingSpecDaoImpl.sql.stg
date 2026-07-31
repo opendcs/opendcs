@@ -1,7 +1,8 @@
 group RoutingSpecDaoImpl;
 
 select(where, limit, collate, spec_columns, prop_columns, prop_join, spec_list_columns, spec_list_join,
-       list_columns, list_join, list_entry_columns, list_entry_join) ::= <<
+       list_columns, list_join, list_entry_columns, list_entry_join, datasource_columns,
+       datasource_member_columns, datasource_join, datasource_member_join) ::= <<
 with routingspec_limit (id, name, datasourceid, enableequations, useperformancemeasurements,
                      outputformat, outputtimezone, presentationgroupname, sincetime, untiltime,
                      consumertype, consumerarg, lastmodifytime, isproduction)
@@ -20,11 +21,21 @@ select
     <if(prop_columns)>, <prop_columns> <endif>
     <if(list_columns)>, <list_columns> <endif>
     <if(list_entry_columns)>, <list_entry_columns> <endif>
+    <if(datasource_columns)>, 
+        <datasource_columns>,
+        <datasource_member_columns>,
+        dsgm.sequencenum as dsm_sequencenum
+    <endif>
 from routingspec_limit rs
 <if(spec_list_join)> <spec_list_join> <endif>
 <if(prop_join)> <prop_join> <endif>
 <if(list_join)> <list_join> <endif>
 <if(list_entry_join)> <list_entry_join> <endif>
+<if(datasource_join)>
+<datasource_join>
+<datasource_member_join>
+left outer join datasourcegroupmember dsgm on ds.id = dsgm.groupid
+<endif>
 order by rs.name <collate> asc
 >>
 

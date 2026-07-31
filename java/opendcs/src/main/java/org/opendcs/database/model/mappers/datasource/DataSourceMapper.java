@@ -16,7 +16,7 @@ public final class DataSourceMapper extends PrefixRowMapper<DataSource,DataSourc
 {
     private DataSourceMapper(String prefix)
     {
-        super(prefix, Columns.class);
+        super(prefix, "datasource", Columns.class);
     }
 
     public static DataSourceMapper withPrefix(String prefix)

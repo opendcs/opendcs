@@ -38,6 +38,8 @@ import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.routing.RoutingSpec
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.routing.RoutingSpecMappers;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.routing.RoutingSpecNetworkListMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.routing.RoutingSpecReducer;
+import org.opendcs.database.model.mappers.datasource.DataSourceAccumulator;
+import org.opendcs.database.model.mappers.datasource.DataSourceMapper;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.SqlErrorMessages;
@@ -47,6 +49,7 @@ import org.slf4j.Logger;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 
+import decodes.db.DataSource;
 import decodes.db.DatabaseException;
 import decodes.db.RoutingSpec;
 import decodes.sql.DbKey;
@@ -85,10 +88,14 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
             RoutingSpecNetworkListMapper.withPrefix("rnl"),
             PropertiesMapper.withPrefix("rp", true),
             NetworkListMapper.withPrefix("nl"),
-            NetworkListEntryMapper.withPrefix("nle")
+            NetworkListEntryMapper.withPrefix("nle"),
+            new DataSourceAccumulator(DataSourceMapper.withPrefix("ds"), 
+                                      DataSourceMapper.withPrefix("dsm"))
         );
 
-        specOnlyData = new RoutingSpecMappers(allData.specMapper(), null, null, null, null);
+        specOnlyData = new RoutingSpecMappers(
+            allData.specMapper(), null, null,
+            null, null, null);
     }
 
     @Override
@@ -125,6 +132,7 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
         var selectSql = setDefines(selectTemplate, allData);
         try (var select = handle.createQuery(selectSql))
         {
+            select.setSqlLogger(new DetailSqlLogger(log));
             registerMappers(select, allData);
             return select.bind(whereKey, whereBind)
                          .reduceRows(new RoutingSpecReducer(allData))
@@ -157,6 +165,11 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
         {
             select.registerRowMapper(mappers.listMapper());
             select.registerRowMapper(mappers.listEntryMapper());
+        }
+        if (mappers.dataSourceAccumulator() != null)
+        {
+            select.registerRowMapper(DataSource.class, mappers.dataSourceAccumulator().primaryMapper);
+            select.registerRowMapper(DataSourceAccumulator.MEMBER_SOURCE, mappers.dataSourceAccumulator().memberMapper);
         }
         return select;
     }
@@ -194,6 +207,24 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
             select.add("list_entry_join",
                         mappers.listEntryMapper().joinStatement(LEFT_OUTER,
                             NetworkListEntryMapper.Columns.NETWORKLIST_ID, "nl", "id")
+            );
+        }
+
+        if (mappers.dataSourceAccumulator() != null)
+        {
+            var sourceMapper = mappers.dataSourceAccumulator().primaryMapper;
+            var memberMapper = mappers.dataSourceAccumulator().memberMapper;
+            select.add("datasource_columns",
+                       sourceMapper.columnsForSelect(DataSourceMapper.Columns.SEQUENCE_NUMBER))
+                  .add("datasource_member_columns",
+                       memberMapper.columnsForSelect(DataSourceMapper.Columns.SEQUENCE_NUMBER));
+
+            select.add("datasource_join",
+                sourceMapper.joinStatement(LEFT_OUTER, DataSourceMapper.Columns.ID, "rs", "datasourceid")
+            );
+
+            select.add("datasource_member_join",
+                memberMapper.joinStatement(LEFT_OUTER, DataSourceMapper.Columns.ID, "ds", "id")
             );
         }
 
