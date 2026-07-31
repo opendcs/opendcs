@@ -51,11 +51,19 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 	private Connection conn;
 	private TimeSeriesDAI timeSeriesDAO;
 
+	/**
+	 * This is the calculated result. Keep its name matched to the "inflow"
+	 * output role in Comp.xml so OpenDCS knows where to save it.
+	 */
 	@Output(description = "Calculated inflow rate")
 	public NamedVariable inflow = new NamedVariable("inflow", "");
 
-	// AW_AlgorithmBase binds one numeric time-series sample to each @Input field.
-	// The complete configured input series is obtained from the matching ParmRef below.
+	/**
+	 * These are input roles, not TSID strings. The matching role in Comp.xml
+	 * selects the actual time series. The doubles hold the current value supplied
+	 * by OpenDCS; this algorithm uses the configured series when it needs a full
+	 * time window.
+	 */
 	@Input(description = "Tailwater-stage input series (for example, <LOC>.Elev-Tailwater.Inst.0.0.<SOURCE>). "
 			+ "Requires tailwaterToReleaseRating.")
 	public double tailwaterStage;
@@ -87,7 +95,10 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 			+ "<LOC>.Flow-<PURPOSE>.Inst.0.0.<SOURCE>).")
 	public double additionalOutflow6;
 
-
+	/**
+	 * These are setup values from Comp.xml, such as rating IDs. They are not
+	 * time-series inputs. Keep each property name matched to Comp.xml.
+	 */
 	@org.opendcs.annotations.PropertySpec(name = "stagePoolStorageRating", propertySpecType = PropertySpec.STRING,
 			description = "Rating curve specification for the pool-stage to storage conversion, " +
 					"Example: BLUO.Stage;Flow.Linear.USGS-NWIS")
