@@ -23,11 +23,10 @@ import org.jdbi.v3.core.generic.GenericType;
 import org.jdbi.v3.core.result.LinkedHashMapRowReducer;
 import org.jdbi.v3.core.result.RowView;
 import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
-import org.opendcs.database.model.mappers.properties.PropertiesMapper;
+import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListMapper;
 
 import decodes.db.NetworkList;
 import decodes.db.RoutingSpec;
-import decodes.db.RoutingSpecList;
 import ilex.util.Pair;
 
 public final class RoutingSpecReducer implements LinkedHashMapRowReducer<Long, RoutingSpec>
@@ -65,14 +64,14 @@ public final class RoutingSpecReducer implements LinkedHashMapRowReducer<Long, R
             if (mappers.listReducer() != null)
             {
                 mappers.listReducer().accumulate(networkLists, rowView);
-                var specList = rowView.getRow(RoutingSpecNetworkListMapper.ROUTING_SPEC_LIST);
-                if (specList != null)
+                var listId = rowView.getColumn(mappers.listMapper().column(NetworkListMapper.Columns.ID), Long.class);
+                if (listId != null)
                 {
-                    var list = this.networkLists.get(specList.first);
+                    var list = this.networkLists.get(listId);
                     if (list != null && !spec.networkLists.contains(list))
                     {
                         spec.networkLists.add(list);
-                        spec.networkListNames.add(specList.second);
+                        spec.networkListNames.add(list.name);
                     }
                 }
             }

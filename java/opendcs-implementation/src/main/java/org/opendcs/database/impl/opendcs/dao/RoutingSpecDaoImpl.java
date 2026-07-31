@@ -185,8 +185,8 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
             
             select.add("list_join",
                        mappers.listMapper()
-                              .joinStatement(LEFT_OUTER, NetworkListMapper.Columns.ID,
-                                 "rs", "id")
+                              .joinStatement(LEFT_OUTER, NetworkListMapper.Columns.NAME,
+                                 "rnl", "networklistname")
                         );
             select.add("list_entry_join",
                         mappers.listEntryMapper().joinStatement(LEFT_OUTER,
