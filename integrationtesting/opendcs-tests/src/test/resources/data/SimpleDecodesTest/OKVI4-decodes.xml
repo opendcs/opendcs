@@ -123,10 +123,4 @@
     <ConsumerArg></ConsumerArg>
     <RoutingSpecNetworkList Name="&lt;all&gt;"/>
   </RoutingSpec>
-  
-    <NetworkList name="&lt;all&gt;">
-        <TransportMediumType>goes</TransportMediumType>
-        <SiteNameTypePreference>CWMS</SiteNameTypePreference>
-    </NetworkList>
-  
 </Database>

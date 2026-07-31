@@ -35,7 +35,7 @@ public final class RoutingSpecReducer implements LinkedHashMapRowReducer<Long, R
     { /* marker class */
     };
 
-    private final RoutingSpecMappers mappers;    
+    private final RoutingSpecMappers mappers;
     private final LinkedHashMap<Long, NetworkList> networkLists = new LinkedHashMap<>();
 
     public RoutingSpecReducer(RoutingSpecMappers mappers)
@@ -64,6 +64,23 @@ public final class RoutingSpecReducer implements LinkedHashMapRowReducer<Long, R
             if (mappers.listReducer() != null)
             {
                 mappers.listReducer().accumulate(networkLists, rowView);
+                var specList = rowView.getRow(RoutingSpecNetworkListMapper.ROUTING_SPEC_LIST);
+
+                /**
+                 * Special case NetworkList that "always exists" but is not present in the
+                 * tables... which explain why there's no normalization and foreign keys on
+                 * those tables. Future work should have a "NetworkList" in the database
+                 * for <all>, and either have no entries, or automatically add entries
+                 * to the list. With the latter prefered as it would reduce special cases
+                 * in the downstream components.
+                 */
+                if (specList != null &&
+                    "<all>".equalsIgnoreCase(specList.second) &&
+                    !spec.networkLists.contains(NetworkList.dummy_all))
+                {
+                    spec.networkListNames.add("<all>");
+                    spec.networkLists.add(NetworkList.dummy_all);
+                }
                 var listId = rowView.getColumn(mappers.listMapper().column(NetworkListMapper.Columns.ID), Long.class);
                 if (listId != null)
                 {
@@ -80,5 +97,5 @@ public final class RoutingSpecReducer implements LinkedHashMapRowReducer<Long, R
         {
             throw new UnableToExecuteStatementException("Unable to process row", ex, null);
         }
-    }   
+    }
 }

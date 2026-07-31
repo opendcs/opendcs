@@ -5,15 +5,15 @@ import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.Network
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListReducer;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
 
-public record RoutingSpecMappers(RoutingSpecMapper specMapper, RoutingSpecNetworkListMapper specListMapper, 
+public record RoutingSpecMappers(RoutingSpecMapper specMapper, RoutingSpecNetworkListMapper specListMapper,
                                  PropertiesMapper specPropertiesMapper, NetworkListMapper listMapper,
-                                 NetworkListEntryMapper listEntryMapper, NetworkListReducer listReducer) 
-{   
-    public RoutingSpecMappers(RoutingSpecMapper specMapper, RoutingSpecNetworkListMapper specListMapper, 
+                                 NetworkListEntryMapper listEntryMapper, NetworkListReducer listReducer)
+{
+    public RoutingSpecMappers(RoutingSpecMapper specMapper, RoutingSpecNetworkListMapper specListMapper,
                                  PropertiesMapper specPropertiesMapper, NetworkListMapper listMapper,
-                                 NetworkListEntryMapper listEntryMapper) 
+                                 NetworkListEntryMapper listEntryMapper)
     {
-        this(specMapper, specListMapper, specPropertiesMapper, 
+        this(specMapper, specListMapper, specPropertiesMapper,
              listMapper, listEntryMapper,
              listMapper != null ? new NetworkListReducer(listMapper, listEntryMapper) : null);
     }

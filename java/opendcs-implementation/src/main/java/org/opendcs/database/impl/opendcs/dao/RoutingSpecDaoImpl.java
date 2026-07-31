@@ -27,6 +27,7 @@ import org.jdbi.v3.stringtemplate4.StringTemplateSqlLocator;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.RoutingSpecDao;
+import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListEntryMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.routing.RoutingSpecMapper;
@@ -34,9 +35,11 @@ import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.routing.RoutingSpec
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.routing.RoutingSpecNetworkListMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.routing.RoutingSpecReducer;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.util.lookup.ServiceProviders;
+import org.slf4j.Logger;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 
@@ -52,18 +55,19 @@ import decodes.sql.DbKey;
 
 public class RoutingSpecDaoImpl implements RoutingSpecDao
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static final String SELECT = "select";
 
     private final STGroup queries;
     private final RoutingSpecMappers allData;
     private final RoutingSpecMappers specOnlyData;
-    
+
 
     public RoutingSpecDaoImpl()
     {
         STGroup.verbose = true;
         queries = StringTemplateSqlLocator.findStringTemplateGroup(RoutingSpecDaoImpl.class);
-        
+
         allData = new RoutingSpecMappers(
             RoutingSpecMapper.withPrefix("rs"),
             RoutingSpecNetworkListMapper.withPrefix("rnl"),
@@ -82,25 +86,7 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
         {
             return Optional.empty();
         }
-
-        var handle = tx.connection(Handle.class)
-                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-
-        var selectTemplate = queries.getInstanceOf(SELECT);
-        if (selectTemplate == null)
-        {
-            throw new OpenDcsDataException("No Instance of Select query is available.");
-        }
-        selectTemplate.add("where", " where id = :id ");
-        var selectSql = setDefines(selectTemplate, allData);
-        try (var select = handle.createQuery(selectSql))
-        {
-            registerMappers(select, allData);
-            return select.bind(RoutingSpecMapper.Columns.ID.column(), id)
-                         .reduceRows(new RoutingSpecReducer(allData))
-                         .map(rs -> rs)
-                         .findFirst();
-        }
+        return get(tx, " where id = :id", "id", id);
     }
 
     @Override
@@ -110,8 +96,12 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
         {
             return Optional.empty();
         }
+        return get(tx, " where name = :name ", "name", specName);
+    }
 
-        var handle = tx.connection(Handle.class)
+    private Optional<RoutingSpec> get(DataTransaction tx, String whereClause, String whereKey, Object whereBind) throws OpenDcsDataException
+    {
+                var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
 
         var selectTemplate = queries.getInstanceOf(SELECT);
@@ -119,12 +109,13 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
         {
             throw new OpenDcsDataException("No Instance of Select query is available.");
         }
-        selectTemplate.add("where", " where name = :name ");
+        selectTemplate.add("where", whereClause);
         var selectSql = setDefines(selectTemplate, allData);
         try (var select = handle.createQuery(selectSql))
         {
+            select.setSqlLogger(new DetailSqlLogger(log));
             registerMappers(select, allData);
-            return select.bind(RoutingSpecMapper.Columns.NAME.column(), specName)
+            return select.bind(whereKey, whereBind)
                          .reduceRows(new RoutingSpecReducer(allData))
                          .map(rs ->
                          {
@@ -135,6 +126,7 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
                          })
                          .findFirst();
         }
+
     }
 
     private static Query registerMappers(Query select, RoutingSpecMappers mappers)
@@ -182,7 +174,7 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
         {
             select.add("list_columns", mappers.listMapper().columnsForSelect())
                   .add("list_entry_columns", mappers.listEntryMapper().columnsForSelect());
-            
+
             select.add("list_join",
                        mappers.listMapper()
                               .joinStatement(LEFT_OUTER, NetworkListMapper.Columns.NAME,
@@ -215,5 +207,5 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
             throws OpenDcsDataException
     {
         return List.of();
-    }    
+    }
 }

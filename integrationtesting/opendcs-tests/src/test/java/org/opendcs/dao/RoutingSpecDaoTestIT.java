@@ -1,5 +1,6 @@
 package org.opendcs.dao;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -25,17 +26,23 @@ class RoutingSpecDaoTestIT extends AppTestBase
     OpenDcsDatabase db;
 
     @Test
-    void test_routing_spec_operations() throws Exception
+    void test_routing_spec_operations_existing() throws Exception
     {
         var dao = db.getDao(RoutingSpecDao.class).orElseThrow();
 
         try (var tx = db.newTransaction())
         {
-            var spec = dao.getByName(tx, "OKVI4-input").orElseGet(() -> fail("could not find spec OKVI4-input"));
+            var spec = dao.getByName(tx, "OKVI4-input")
+                          .orElseGet(() -> fail("could not find spec OKVI4-input"));
 
             assertTrue(spec.isPrepared());
             assertFalse(spec.networkLists.isEmpty());
-            assertFalse(spec.networkLists.getFirst().networkListEntries.isEmpty());
+            assertEquals("<all>", spec.networkLists.getFirst().name);
+
+
+            var specById = dao.getById(tx, spec.getId())
+                              .orElseGet(() -> fail("could not find spec by id " + spec.getId()));
+            assertEquals(spec, specById);
         }
-    }    
+    }
 }

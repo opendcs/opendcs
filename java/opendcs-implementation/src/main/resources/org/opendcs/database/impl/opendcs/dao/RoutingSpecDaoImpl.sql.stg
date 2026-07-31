@@ -14,7 +14,7 @@ with routingspec_limit (id, name, datasourceid, enableequations, useperformancem
         order by name <collate> asc
         <if(limit)><limit><endif>
 )
-select 
+select
     <spec_columns>
     <if(spec_list_columns)>, <spec_list_columns> <endif>
     <if(prop_columns)>, <prop_columns> <endif>
