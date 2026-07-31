@@ -17,6 +17,9 @@ package org.opendcs.database.impl.opendcs.dao;
 
 import static org.opendcs.utils.sql.SqlQueries.LEFT_OUTER;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.TimeZone;
@@ -25,6 +28,7 @@ import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.statement.Query;
 import org.jdbi.v3.stringtemplate4.StringTemplateSqlLocator;
 import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.RoutingSpecDao;
 import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
@@ -43,8 +47,10 @@ import org.slf4j.Logger;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 
+import decodes.db.DatabaseException;
 import decodes.db.RoutingSpec;
 import decodes.sql.DbKey;
+import decodes.sql.KeyGenerator;
 
 @ServiceProviders({
     @ServiceProvider(service = RoutingSpecDao.class, path = "dao/OpenDCS-Postgres"),
@@ -57,6 +63,12 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static final String SELECT = "select";
+    private static final String MERGE = "mergeSpec";
+    private static final String DELETE_SPEC = "deleteSpec";
+    private static final String DELETE_SPEC_LISTS = "deleteSpecLists";
+    private static final String DELETE_SPEC_PROPS = "deleteSpecProps";
+    private static final String INSERT_SPEC_LIST = "insertSpecList";
+    private static final String INSERT_SPEC_PROPS = "insertSpecProps";
 
     private final STGroup queries;
     private final RoutingSpecMappers allData;
@@ -101,7 +113,7 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
 
     private Optional<RoutingSpec> get(DataTransaction tx, String whereClause, String whereKey, Object whereBind) throws OpenDcsDataException
     {
-                var handle = tx.connection(Handle.class)
+        var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
 
         var selectTemplate = queries.getInstanceOf(SELECT);
@@ -113,7 +125,6 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
         var selectSql = setDefines(selectTemplate, allData);
         try (var select = handle.createQuery(selectSql))
         {
-            select.setSqlLogger(new DetailSqlLogger(log));
             registerMappers(select, allData);
             return select.bind(whereKey, whereBind)
                          .reduceRows(new RoutingSpecReducer(allData))
@@ -191,15 +202,118 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
 
 
     @Override
-    public RoutingSpec save(DataTransaction arg0, RoutingSpec arg1) throws OpenDcsDataException
+    public RoutingSpec save(DataTransaction tx, RoutingSpec spec) throws OpenDcsDataException
     {
-        return null;
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var ctx = tx.getContext();
+        var dbEngine = ctx.getDatabaseEngine();
+        var keyGen = ctx.getGenerator(KeyGenerator.class)
+                .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
+        var mergeTemplate = queries.getInstanceOf(MERGE)
+                                   .add("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
+        var insertPropsTemplate = queries.getInstanceOf(INSERT_SPEC_PROPS);
+        var insertSpecListTemplate = queries.getInstanceOf(INSERT_SPEC_LIST);
+        try (var merge = handle.createUpdate(mergeTemplate.render());
+             var insertProps = handle.prepareBatch(insertPropsTemplate.render());
+             var insertSpecList = handle.prepareBatch(insertSpecListTemplate.render()))
+        {
+            merge.setSqlLogger(new DetailSqlLogger(log));
+            DbKey id = spec.getId();
+            var existing = getByName(tx, spec.getName());
+            if (existing.isPresent())
+            {
+                // If there's an existing app with this name, we'll just assume the provided id, if any, was in error
+                id = existing.get().getId();
+                log.trace("""
+                    Using ID from existing Routing, id={}, that was found. Provided ID was {}.
+                    """,
+                    id, spec.getId());
+            }
+            final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("routingspec", handle.getConnection());
+            merge.bind(RoutingSpecMapper.Columns.ID.column(), bindKey)
+                 .bind(RoutingSpecMapper.Columns.NAME.column(), spec.getName())
+                 .bind(RoutingSpecMapper.Columns.DATA_SOURCE_ID.column(), spec.dataSource.getId())
+                 .bind(RoutingSpecMapper.Columns.ENABLE_EQUATIONS.column(), spec.enableEquations)
+                 .bind(RoutingSpecMapper.Columns.USE_PERFORMANCE_MEASUREMENTS.column(), spec.usePerformanceMeasurements)
+                 .bind(RoutingSpecMapper.Columns.OUTPUT_FORMAT.column(), spec.outputFormat)
+                 .bind(RoutingSpecMapper.Columns.OUTPUT_TIME_ZONE.column(), spec.outputTimeZoneAbbr)
+                 .bind(RoutingSpecMapper.Columns.PRESENTATION_GROUP_NAME.column(), spec.presentationGroupName)
+                 .bind(RoutingSpecMapper.Columns.SINCE_TIME.column(), spec.sinceTime)
+                 .bind(RoutingSpecMapper.Columns.UNTIL_TIME.column(), spec.untilTime)
+                 .bind(RoutingSpecMapper.Columns.CONSUMER_TYPE.column(), spec.consumerType)
+                 .bind(RoutingSpecMapper.Columns.CONSUMER_ARGS.column(), spec.consumerArg)
+                 .bindByType(RoutingSpecMapper.Columns.LAST_MODIFY_TIME.column(),
+                       ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli(), Date.class)
+                 .bind(RoutingSpecMapper.Columns.IS_PRODUCTION.column(), spec.isProduction)
+                 .execute();
+
+            deleteProps(handle, bindKey);
+            deleteSpecLists(handle, id);
+
+            if (!spec.networkLists.isEmpty())
+            {
+                for (var nl: spec.networkLists)
+                {
+                    insertSpecList.bind(RoutingSpecNetworkListMapper.Columns.ROUTING_SPEC_ID.column(), bindKey)
+                                  .bind(RoutingSpecNetworkListMapper.Columns.NETWORK_LIST_NAME.column(), nl.name)
+                                  .add();
+                }
+                insertSpecList.execute();
+            }
+
+            final var props = spec.getProperties();
+            if (!props.isEmpty())
+            {
+                props.forEach((k,v) ->
+                    insertProps.bind("routingspecid", bindKey)
+                               .bind("prop_name", k)
+                               .bind("prop_value", v)
+                               .add()
+                );
+                insertProps.execute();
+            }
+
+
+            return getById(tx, bindKey)
+                    .orElseThrow(() -> new OpenDcsDataException("Unable to retrieve RoutingSpec we just saved."));
+        }
+        catch (DatabaseException ex)
+        {
+            throw new OpenDcsDataException("Unable to generate key to save routing spec.", ex);
+        }
+    }
+
+    private void deleteProps(Handle handle, DbKey specId) throws OpenDcsDataException
+    {
+        final var deletePropTemplate = queries.getInstanceOf(DELETE_SPEC_PROPS);
+        try (var deleteProps = handle.createUpdate(deletePropTemplate.render()))
+        {
+            deleteProps.bind(RoutingSpecMapper.Columns.ID.column(), specId).execute();
+        }
+    }
+
+    private void deleteSpecLists(Handle handle, DbKey specId) throws OpenDcsDataException
+    {
+        final var deleteSpecListTemplate = queries.getInstanceOf(DELETE_SPEC_LISTS);
+        try (var deleteSpecList = handle.createUpdate(deleteSpecListTemplate.render()))
+        {
+            deleteSpecList.bind(RoutingSpecMapper.Columns.ID.column(), specId).execute();
+        }
     }
 
     @Override
     public void delete(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
-        /* empty */
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var deleteSpecTemplate = queries.getInstanceOf(DELETE_SPEC);
+        deleteProps(handle, id);
+        deleteSpecLists(handle, id);
+        try (var deleteSpec = handle.createUpdate(deleteSpecTemplate.render()))
+        {
+            deleteSpec.bind(RoutingSpecMapper.Columns.ID.column(), id).execute();
+        }
     }
 
     @Override

@@ -30,7 +30,26 @@ order by rs.name <collate> asc
 
 
 mergeSpec(dual) ::= <<
-
+merge into routingspec rs
+using (select :id id, :name name, :datasourceid datasourceid, :enableequations enableequations,
+       :useperformancemeasurements useperformancemeasurements, :outputformat outputformat,
+       :outputtimezone outputtimezone, :presentationgroupname presentationgroupname,
+       :sincetime sincetime, :untiltime untiltime, :consumertype consumertype, :consumerarg consumerarg,
+       :lastmodifytime lastmodifytime, :isproduction isproduction
+        <dual>) input
+on (rs.id = input.id)
+when matched then
+    update set name = input.name, datasourceid = input.datasourceid, enableequations = input.enableequations,
+        useperformancemeasurements = input.useperformancemeasurements, outputformat = input.outputformat,
+        outputtimezone = input.outputtimezone, presentationgroupname = input.presentationgroupname,
+        sincetime = input.sincetime, untiltime = input.untiltime, consumertype = input.consumertype, 
+        consumerarg = input.consumerarg, lastmodifytime = input.lastmodifytime, isproduction = input.isproduction
+when not matched then
+insert(id, name, datasourceid, enableequations, useperformancemeasurements, outputformat, outputtimezone, 
+       presentationgroupname, sincetime, untiltime, consumertype, consumerarg, lastmodifytime, isproduction)
+values(input.id, input.name, input.datasourceid, input.enableequations, input.useperformancemeasurements,
+       input.outputformat, input.outputtimezone, input.presentationgroupname, input.sincetime, input.untiltime,
+       input.consumertype, input.consumerarg, input.lastmodifytime, input.isproduction)
 >>
 
 deleteSpec() ::= "delete from routingspec where id = :id"

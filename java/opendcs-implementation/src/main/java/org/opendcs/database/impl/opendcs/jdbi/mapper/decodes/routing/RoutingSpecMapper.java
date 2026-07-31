@@ -72,6 +72,7 @@ public final class RoutingSpecMapper extends PrefixRowMapper<RoutingSpec, Routin
     {
         ID(GenericColumns.ID),
         NAME(GenericColumns.NAME),
+        DATA_SOURCE_ID("datasourceid"),
         ENABLE_EQUATIONS("enableequations"),
         USE_PERFORMANCE_MEASUREMENTS("useperformancemeasurements"),
         OUTPUT_FORMAT("outputformat"),
