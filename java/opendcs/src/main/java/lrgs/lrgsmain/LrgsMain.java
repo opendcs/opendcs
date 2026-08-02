@@ -82,7 +82,6 @@ import lrgs.lrit.LritDamsNtReceiver;
 import lrgs.networkdcp.NetworkDcpRecv;
 import lrgs.noaaportrecv.NoaaportRecv;
 import lrgs.statusxml.LrgsStatusSnapshotExt;
-import opendcs.dai.LoadingAppDAI;
 
 /**
 Main class for LRGS process.

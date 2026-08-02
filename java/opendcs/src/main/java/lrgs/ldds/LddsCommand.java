@@ -5,6 +5,8 @@ package lrgs.ldds;
 
 import java.io.IOException;
 
+import org.opendcs.lrgs.dds.DdsMessageSender;
+
 import lrgs.common.*;
 
 /**
@@ -23,7 +25,7 @@ public abstract class LddsCommand
 	  @throws ArchiveException on request processing error.
 	  @throws IOException if error returning response to user (hangup).
 	*/
-	public abstract int execute(LddsThread ldds)
+	public abstract int execute(DdsMessageSender ldds)
 		throws ArchiveException, IOException;
 
 	/**

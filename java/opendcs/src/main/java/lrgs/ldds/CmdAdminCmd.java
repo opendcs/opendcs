@@ -17,6 +17,7 @@ package lrgs.ldds;
 
 import java.io.IOException;
 
+import org.opendcs.lrgs.dds.DdsMessageSender;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -43,11 +44,20 @@ public abstract class CmdAdminCmd extends LddsCommand
 	  Instead, they must implement 'executeAdmin(LddsThread ldds)'.
 	  @param ldds the server thread object
 	*/
-	public int execute(LddsThread ldds)
+	public int execute(DdsMessageSender ldds)
 		throws ArchiveException, IOException
 	{
-		checkAdminPriviledge(ldds);
-		return executeAdmin(ldds);
+		if (ldds instanceof LddsThread lddst)
+		{
+			checkAdminPriviledge(lddst);
+			return executeAdmin(lddst);
+		}
+		else
+		{
+			throw new IllegalStateException(
+				"Dds message sender provided to this method should be of type " + LddsThread.class.getName()
+			);
+		}
 	}
 
 	public static final void checkAdminPriviledge(LddsThread ldds)
