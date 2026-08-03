@@ -1,13 +1,4 @@
-import {
-  Alert,
-  Button,
-  Card,
-  Col,
-  Form,
-  FormGroup,
-  Placeholder,
-  Row,
-} from "react-bootstrap";
+import { Alert, Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../../components/properties";
 import { use, useCallback, useMemo, useReducer, useState } from "react";
 import type { ApiAlgorithm, ApiPropSpec } from "opendcs-api";
@@ -18,10 +9,16 @@ import type {
   SaveAction,
 } from "../../../util/Actions";
 import { AlgorithmReducer } from "./AlgorithmReducer";
-import { Save, X } from "react-bootstrap-icons";
 import { AlgorithmParamsTable, type AlgoParm } from "./AlgorithmParamsTable";
 import { DetailFade } from "../../../components/data-table";
 import { apiErrorMessage } from "../../../util/ApiError";
+import {
+  CancelButton,
+  EditFormActions,
+  INPUT_H,
+  LABEL_H,
+  SaveButton,
+} from "../../../components/forms";
 
 export type UiAlgorithm = Partial<ApiAlgorithm>;
 
@@ -30,8 +27,6 @@ const algorithmCardClassName = (edit: boolean, className?: string) =>
     .filter(Boolean)
     .join(" ");
 
-const INPUT_H = { height: "2.25rem" };
-const LABEL_H = { height: "1rem" };
 const SEARCH_H = { height: "1.875rem" };
 const INFO_H = { height: "0.8rem" };
 
@@ -160,22 +155,14 @@ export const AlgorithmSkeleton: React.FC<{ edit?: boolean; className?: string }>
 
       {/* Edit-mode footer */}
       {edit && (
-        <Row className="mt-3">
-          <Col className="d-flex justify-content-end gap-2">
-            <Placeholder animation="glow">
-              <Placeholder
-                className="rounded"
-                style={{ ...INPUT_H, width: "5.5rem" }}
-              />
-            </Placeholder>
-            <Placeholder animation="glow">
-              <Placeholder
-                className="rounded"
-                style={{ ...INPUT_H, width: "4.5rem" }}
-              />
-            </Placeholder>
-          </Col>
-        </Row>
+        <EditFormActions>
+          <Placeholder animation="glow">
+            <Placeholder className="rounded" style={{ ...INPUT_H, width: "5.5rem" }} />
+          </Placeholder>
+          <Placeholder animation="glow">
+            <Placeholder className="rounded" style={{ ...INPUT_H, width: "4.5rem" }} />
+          </Placeholder>
+        </EditFormActions>
       )}
     </Card.Body>
   </Card>
@@ -376,32 +363,24 @@ export const Algorithm: React.FC<AlgorithmProperties> = ({
             </Alert>
           )}
           {edit && (
-            <Row className="mt-3">
-              <Col className="d-flex justify-content-end gap-2">
-                <Button
-                  onClick={() => {
-                    actions.cancel?.(providedAlgorithm.algorithmId!);
-                  }}
-                  variant="secondary"
-                  aria-label={t("algorithms:editor.cancel_for", {
-                    id: providedAlgorithm.algorithmId,
-                  })}
-                >
-                  <X /> {t("translation:cancel")}
-                </Button>
-                <Button
-                  onClick={async () => {
-                    await saveAlgorithm(localAlgorithm);
-                  }}
-                  variant="primary"
-                  aria-label={t("algorithms:editor.save_for", {
-                    id: localAlgorithm.algorithmId,
-                  })}
-                >
-                  <Save /> {t("translation:save")}
-                </Button>
-              </Col>
-            </Row>
+            <EditFormActions>
+              <CancelButton
+                onClick={() => {
+                  actions.cancel?.(providedAlgorithm.algorithmId!);
+                }}
+                aria-label={t("algorithms:editor.cancel_for", {
+                  id: providedAlgorithm.algorithmId,
+                })}
+              />
+              <SaveButton
+                onClick={async () => {
+                  await saveAlgorithm(localAlgorithm);
+                }}
+                aria-label={t("algorithms:editor.save_for", {
+                  id: localAlgorithm.algorithmId,
+                })}
+              />
+            </EditFormActions>
           )}
         </Card.Body>
       </Card>
