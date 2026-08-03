@@ -18,6 +18,7 @@ import decodes.sql.DbKey;
 
 public final class DataSourceAccumulator implements LinkedHashMapRowReducer<DbKey,DataSource>
 {
+    // NOTE, this doesn't actually work due to type erasure.
     public static final GenericType<DataSource> PRIMARY_SOURCE = new GenericType<>()
     {
         /* marker type */    
