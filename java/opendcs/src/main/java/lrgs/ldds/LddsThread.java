@@ -25,7 +25,6 @@ import java.util.Date;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
-import org.opendcs.lrgs.dds.DdsMessageSender;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.spi.LoggingEventBuilder;
@@ -35,7 +34,6 @@ import ilex.util.QueueLogger;
 
 import lrgs.common.*;
 import lrgs.db.DdsConnectionStats;
-import lrgs.ddsserver.DdsServer;
 import lrgs.ddsserver.MessageArchiveRetriever;
 
 
@@ -48,7 +46,7 @@ For the legacy Linux LRGS, these interfaces use JNI to communicate with
 C modules via shared memory and semaphores. For the Java-Only-Archive,
 these interfaces are 100% pure Java.
 */
-public abstract class LddsThread extends BasicSvrThread implements DdsMessageSender
+public abstract class LddsThread extends BasicSvrThread
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /** The input stream for building protocol messages. */

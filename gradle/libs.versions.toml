@@ -36,6 +36,7 @@ sun-mailapi="2.0.2"
 ayza = "10.0.0"
 auto-service = "1.1.1"
 password4j = "1.8.4"
+netty = "4.2.16.Final"
 
 opentelemetry = "1.63.0"
 opentelemetry-java = "2.29.0"
@@ -114,6 +115,8 @@ org-eclipse-jetty-server = { module = "org.eclipse.jetty:jetty-server", version.
 org-eclipse-jetty-servlets = { module = "org.eclipse.jetty.ee11:jetty-ee11-servlets", version.ref="jetty" }
 org-eclipse-jetty-webapp = { module = "org.eclipse.jetty.ee11:jetty-ee11-webapp", version.ref="jetty" }
 # end jetty (lrgs-web)
+
+io-netty = { module = "io.netty:netty-all", version.ref = "netty" }
 
 io-opentelemetry-instrumentation-logback-mdc = { module = "io.opentelemetry.instrumentation:opentelemetry-logback-mdc-1.0", version.ref = "opentelemetry-java-logging" }
 io-opentelemetry-api = { module="io.opentelemetry:opentelemetry-api", version.ref = "opentelemetry" }

@@ -15,27 +15,25 @@
 */
 package org.opendcs.lrgs.dds;
 
-import java.util.List;
-
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.MessageToMessageDecoder;
-import lrgs.ldds.CmdFactory;
+import io.netty.handler.codec.MessageToByteEncoder;
 import lrgs.ldds.LddsMessage;
 
 /**
  *
- * LddsCommandDecoder
+ * LddsMessageEncoder
  *
- * Given the LddsMessage that should've been previosly created, create an
- * appropriate {@link lrgs.ldds.LddsCommand} instance
+ * Takes the given LddsMessage and writes the bytes out to the socket.
+ * Conviently very simple as LddsMessage already handles it's own mapping to a byte array.
  */
-public class LddsCommandDecoder extends MessageToMessageDecoder<LddsMessage>
+public class LddsMessageEncoder extends MessageToByteEncoder<LddsMessage>
 {
-    private static final CmdFactory factory = new CmdFactory();
 
     @Override
-    protected void decode(ChannelHandlerContext ctx, LddsMessage msg, List<Object> out) throws Exception
+    protected void encode(ChannelHandlerContext ctx, LddsMessage msg, ByteBuf out) throws Exception
     {
-        out.add(factory.makeCommand(msg));
+        out.writeBytes(msg.getBytes());
     }
+
 }

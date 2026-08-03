@@ -43,9 +43,9 @@ Data is returned in compressed XML blocks as follows:
 			<BinaryMsg> (DOMSAT Header and BASE64 msg data) </BinaryMsg>
 			[<CarrierStart>YYYY/DDD HH:MM:SS.mmm</CarrierStart>]
 			[<CarrierStop>YYYY/DDD HH:MM:SS.mmm</CarrierStop>]
-			[<DomsatTime>YYYY/DDD HH:MM:SS.mmm</domsatTime>]
-			[<DomsatSeq>NNNNN</domsatSeq>]
-			[<Baud>NNNN</baud>]
+			[<DomsatTime>YYYY/DDD HH:MM:SS.mmm</DomsatTime>]
+			[<DomsatSeq>NNNNN</DomsatSeq>]
+			[<Baud>NNNN</Baud>]
 		</DcpMsg>
 		...
 	</MsgBlock>

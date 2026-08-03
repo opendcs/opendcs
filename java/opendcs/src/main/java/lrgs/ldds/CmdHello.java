@@ -68,6 +68,11 @@ public class CmdHello extends LddsCommand
 		return "CmdHello";
 	}
 
+	public String getUserName()
+	{
+		return username;
+	}
+
 	/**
 	  Executes the command.
 	  Attach to LRGS as the specified user.
