@@ -29,7 +29,6 @@ import java.util.Vector;
 import java.util.stream.Collectors;
 
 import decodes.db.DataSource;
-import decodes.db.DataSourceList;
 import decodes.db.DatabaseException;
 import decodes.db.DatabaseIO;
 import decodes.db.RoutingSpec;
@@ -374,7 +373,6 @@ public final class RoutingResources extends OpenDcsResource
 		try
 		{
 			RoutingSpec spec = map(routing);
-			resolveDataSource(spec, routing, dbIo);
 			dbIo.writeRoutingSpec(spec);
 			return Response.status(Response.Status.CREATED).entity(map(spec)).build();
 		}
@@ -386,33 +384,6 @@ public final class RoutingResources extends OpenDcsResource
 		{
 			dbIo.close();
 		}
-	}
-
-	/**
-	 * the XML DAO's routing spec parser.
-	 */
-	static void resolveDataSource(RoutingSpec spec, ApiRouting routing, DatabaseIO dbIo)
-			throws DatabaseException
-	{
-		if (spec.dataSource != null)
-		{
-			return;
-		}
-		String dataSourceName = routing.getDataSourceName();
-		if (dataSourceName == null || dataSourceName.trim().isEmpty())
-		{
-			return;
-		}
-		DataSourceList dsl = new DataSourceList();
-		dbIo.readDataSourceList(dsl);
-		DataSource dataSource = dsl.get(dataSourceName);
-		if (dataSource == null)
-		{
-			dataSource = new DataSource();
-			dataSource.setName(dataSourceName);
-			dbIo.writeDataSource(dataSource);
-		}
-		spec.dataSource = dataSource;
 	}
 
 	static RoutingSpec map(ApiRouting routing) throws DbException

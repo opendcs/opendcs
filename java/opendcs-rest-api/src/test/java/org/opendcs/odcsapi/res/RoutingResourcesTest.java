@@ -10,8 +10,6 @@ import java.util.TimeZone;
 import java.util.Vector;
 
 import decodes.db.DataSource;
-import decodes.db.DataSourceList;
-import decodes.db.DatabaseIO;
 import decodes.db.RoutingSpec;
 import decodes.db.RoutingSpecList;
 import decodes.db.RoutingStatus;
@@ -20,9 +18,6 @@ import decodes.db.ScheduleEntryStatus;
 import decodes.polling.DacqEvent;
 import decodes.sql.DbKey;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.opendcs.odcsapi.beans.ApiDacqEvent;
 import org.opendcs.odcsapi.beans.ApiRouting;
 import org.opendcs.odcsapi.beans.ApiRoutingExecStatus;
@@ -35,23 +30,12 @@ import static ilex.util.TextUtil.str2boolean;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.opendcs.odcsapi.res.RoutingResources.map;
-import static org.opendcs.odcsapi.res.RoutingResources.resolveDataSource;
 import static org.opendcs.odcsapi.res.RoutingResources.statusMap;
 
-@ExtendWith(MockitoExtension.class)
 final class RoutingResourcesTest
 {
-	@Mock
-	DatabaseIO dbIo;
-
 	@Test
 	void testRoutingRefListMap() throws Exception
 	{
@@ -238,71 +222,6 @@ final class RoutingResourcesTest
 		assertTrue(str2boolean(routingSpec.getProperty("sc:SOURCE_0")));
 		assertEquals("W", routingSpec.getProperty("sc:SPACECRAFT"));
 
-	}
-
-	@Test
-	void testResolveDataSourceLeavesExistingDataSourceUntouched() throws Exception
-	{
-		RoutingSpec spec = new RoutingSpec();
-		DataSource existing = new DataSource();
-		existing.setId(DbKey.createDbKey(42L));
-		existing.setName("AlreadyResolved");
-		spec.dataSource = existing;
-
-		ApiRouting routing = new ApiRouting();
-		routing.setDataSourceName("SomeOtherName");
-
-		resolveDataSource(spec, routing, dbIo);
-
-		assertSame(existing, spec.dataSource);
-	}
-
-	@Test
-	void testResolveDataSourceNoNameLeavesNull() throws Exception
-	{
-		RoutingSpec spec = new RoutingSpec();
-		ApiRouting routing = new ApiRouting();
-
-		resolveDataSource(spec, routing, dbIo);
-
-		assertNull(spec.dataSource);
-		verify(dbIo, never()).readDataSourceList(any(DataSourceList.class));
-	}
-
-	@Test
-	void testResolveDataSourceFindsExistingByName() throws Exception
-	{
-		RoutingSpec spec = new RoutingSpec();
-		ApiRouting routing = new ApiRouting();
-		routing.setDataSourceName("USGS-LRGS");
-
-		DataSource existing = new DataSource();
-		existing.setId(DbKey.createDbKey(50L));
-		existing.setName("USGS-LRGS");
-		doAnswer(invocation -> {
-			DataSourceList dsl = invocation.getArgument(0);
-			dsl.add(existing);
-			return null;
-		}).when(dbIo).readDataSourceList(any(DataSourceList.class));
-
-		resolveDataSource(spec, routing, dbIo);
-
-		assertSame(existing, spec.dataSource);
-		verify(dbIo, never()).writeDataSource(any(DataSource.class));
-	}
-
-	@Test
-	void testResolveDataSourceCreatesWhenMissing() throws Exception
-	{
-		RoutingSpec spec = new RoutingSpec();
-		ApiRouting routing = new ApiRouting();
-		routing.setDataSourceName("BrandNewSource");
-
-		resolveDataSource(spec, routing, dbIo);
-
-		assertNotNull(spec.dataSource);
-		assertEquals("BrandNewSource", spec.dataSource.getName());
-		verify(dbIo).writeDataSource(spec.dataSource);
 	}
 
 	@Test
