@@ -395,6 +395,51 @@ export const AddNewRoutingRow: Story = {
   },
 };
 
+// Changing the data source dropdown emits the full ref (name + id), and that
+// id travels through to the saved payload — not just the name.
+export const ChangeDataSourceSelection: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        ...baseHandlers,
+        postRouting: http.post("/odcsapi/routing", async ({ request }) => {
+          const body = (await request.json()) as ApiRouting;
+          expect(body.dataSourceName).toEqual("lrgs-main");
+          expect(body.dataSourceId).toEqual(13);
+          return HttpResponse.json<ApiRouting>(body);
+        }),
+      },
+    },
+  },
+  play: async ({ mount, userEvent, parameters }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("routing:edit_routing", { id: 8 }),
+    });
+    await act(async () => userEvent.click(editBtn));
+    await waitFor(
+      () => {
+        expect(
+          canvas.getByRole("button", {
+            name: i18n.t("routing:save_routing", { id: 8 }),
+          }),
+        ).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
+    const dataSource = canvas.getByRole("combobox", {
+      name: i18n.t("routing:data_source"),
+    }) as HTMLSelectElement;
+    await act(async () => userEvent.selectOptions(dataSource, "lrgs-main"));
+    expect(dataSource.value).toEqual("lrgs-main");
+    const saveBtn = canvas.getByRole("button", {
+      name: i18n.t("routing:save_routing", { id: 8 }),
+    });
+    await act(async () => userEvent.click(saveBtn));
+  },
+};
+
 // Deleting a routing fires the DELETE and the row drops out after the refetch.
 export const DeleteRoutingRow: Story = {
   parameters: {
