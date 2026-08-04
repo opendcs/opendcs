@@ -1,9 +1,13 @@
 ---
-name: Test aarch64 Docker Build
+name: Cross Platform Build Smoke Tests
 on:
+  pull_request:
+    branches:
+      - "7.0"
+    types: [opened, synchronize, reopened]
   push:
     branches:
-      - chore/7.0-aarch64-docker-images
+      - "7.0"
   workflow_dispatch: {}
 
 jobs:
