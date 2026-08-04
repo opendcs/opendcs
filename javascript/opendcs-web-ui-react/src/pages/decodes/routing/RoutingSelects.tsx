@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Form } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
+import type { ApiDataSourceRef } from "opendcs-api";
 import { useRefList } from "../../../contexts/data/RefListContext";
 import { useDataSourceRefsQuery } from "../../../queries/dataSources";
 import { usePresentationRefsQuery } from "../../../queries/presentations";
@@ -59,8 +60,12 @@ export const RefListSelect: React.FC<RefListSelectProps> = ({
   );
 };
 
-// --- Data source select (by name) ---
-export const DataSourceSelect: React.FC<BaseSelectProps> = ({
+// --- Data source select (by name; emits the full ref so the id travels with it) ---
+interface DataSourceSelectProps extends Omit<BaseSelectProps, "onChange"> {
+  onChange: (dataSource: ApiDataSourceRef | undefined) => void;
+}
+
+export const DataSourceSelect: React.FC<DataSourceSelectProps> = ({
   id,
   value,
   edit = true,
@@ -84,7 +89,10 @@ export const DataSourceSelect: React.FC<BaseSelectProps> = ({
       aria-label={ariaLabel}
       value={value ?? ""}
       disabled={!edit}
-      onChange={(e) => onChange(e.currentTarget.value)}
+      onChange={(e) => {
+        const name = e.currentTarget.value;
+        onChange(dataSources.find((d) => d.name === name));
+      }}
     >
       <option value="" />
       {allNames.map((n) => (
