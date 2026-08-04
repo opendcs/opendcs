@@ -123,6 +123,7 @@ export const PlatformsTable: React.FC<PlatformsTableProperties> = ({
 
   return (
     <AppDataTable<TablePlatformRef, number, ApiPlatform>
+      key={siteNameType.preferredType}
       data={platforms}
       loading={loading}
       getId={(p) => p.platformId!}
