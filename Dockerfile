@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # Depends on having buildx available for the --mount feature
 # use buildplatform for the builder, since we're building a java application
 # it's already cross platform.
