@@ -1,0 +1,39 @@
+---
+name: Test aarch64 Docker Build
+on:
+  push:
+    branches:
+      - chore/7.0-aarch64-docker-images
+  workflow_dispatch: {}
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v6.0.2
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
+        with:
+          platforms: arm64
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf
+        with:
+          tags: |
+            type=raw,value=ci-test
+      - name: Build multi-arch images (no push, no load)
+        uses: docker/bake-action@a66e1c87e2eca0503c343edf1d208c716d54b8a8
+        with:
+          source: .
+          set: |
+            *.cache-from=type=gha
+            *.cache-to=type=gha,mode=max
+            *.output=type=cacheonly
+          files: |
+            ./docker-bake.hcl
+            cwd://${{ steps.meta.outputs.bake-file }}
+          targets: lrgs,compproc,compdepends,routingscheduler
+          push: false
