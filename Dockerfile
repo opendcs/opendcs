@@ -1,5 +1,7 @@
 # Depends on having buildx available for the --mount feature
-FROM eclipse-temurin:17-jdk-jammy AS builder
+# use buildplatform for the builder, since we're building a java application
+# it's already cross platform.
+FROM --platform=$BUILDPLATFORM eclipse-temurin:17-jdk-jammy AS builder
 
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && apt-get -y upgrade && \
@@ -11,6 +13,9 @@ COPY . .
 RUN --mount=type=cache,target=/root \
     ./gradlew installDist -Dno.docs=true
 # end initial build
+
+FROM --platform=$BUILDPLATFORM scratch AS export
+COPY --from=builder --parents /app .
 
 FROM eclipse-temurin:17-jre-alpine AS opendcs_base
 
