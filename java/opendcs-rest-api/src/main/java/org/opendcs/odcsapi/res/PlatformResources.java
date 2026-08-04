@@ -27,7 +27,6 @@ import decodes.db.DatabaseException;
 import decodes.db.DatabaseIO;
 import decodes.db.Platform;
 import decodes.db.PlatformConfig;
-import decodes.db.PlatformList;
 import decodes.db.PlatformSensor;
 import decodes.db.PlatformStatus;
 import decodes.db.RoutingSpec;
@@ -203,7 +202,7 @@ public final class PlatformResources extends OpenDcsResource
 					required = true,
 					schema = @Schema(implementation = Long.class, example = "5"))
 			@QueryParam("platformid") Long platformId)
-			throws WebAppException, DbException
+			throws WebAppException
 	{
 		if (platformId == null)
 		{
