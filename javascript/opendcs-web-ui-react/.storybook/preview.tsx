@@ -11,6 +11,7 @@ import { initialize, mswLoader } from "msw-storybook-addon";
 import { WithI18next } from "./mock/WithI18Next";
 import i18n from "../src/i18n";
 import { WithTheme } from "./mock/WithTheme";
+import { WithSiteNameType } from "./mock/WithSiteNameType";
 import { WithUnits } from "./mock/WithUnits";
 import { WithQueryClient } from "./mock/WithQueryClient";
 import { WithOrganization } from "./mock/WithOrganization";
@@ -68,6 +69,7 @@ const preview: Preview = {
   decorators: [
     WithI18next,
     WithTheme,
+    WithSiteNameType,
     WithOrganization,
     WithRefLists,
     WithUnits,

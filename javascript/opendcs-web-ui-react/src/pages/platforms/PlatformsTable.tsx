@@ -18,6 +18,8 @@ import {
   type ColumnDef,
   type RowAction,
 } from "../../components/data-table";
+import { useSiteNameType } from "../../contexts/app/SiteNameTypeContext";
+import { preferredPlatformName } from "./preferredPlatformName";
 
 export type TablePlatformRef = Partial<ApiPlatformRef>;
 
@@ -40,6 +42,7 @@ export const PlatformsTable: React.FC<PlatformsTableProperties> = ({
 }) => {
   const [t] = useTranslation(["platforms", "translation"]);
   const navigate = useNavigate();
+  const { siteNameType } = useSiteNameType();
   const onEditSite = useCallback(
     (siteId: number) => navigate(`/sites?siteId=${siteId}`),
     [navigate],
@@ -54,7 +57,18 @@ export const PlatformsTable: React.FC<PlatformsTableProperties> = ({
         className: "dt-left",
         type: "num",
       },
-      { data: "name", header: t("platforms:header.Site"), type: "string" },
+      {
+        data: "name",
+        header: t("platforms:header.Site"),
+        type: "string",
+        render: (_data, _type, row) =>
+          preferredPlatformName(
+            row.sitenames,
+            row.designator,
+            siteNameType.preferredType,
+            row.name,
+          ),
+      },
       {
         data: "agency",
         header: t("platforms:header.Agency"),
@@ -81,7 +95,7 @@ export const PlatformsTable: React.FC<PlatformsTableProperties> = ({
         type: "string",
       },
     ],
-    [t],
+    [t, siteNameType.preferredType],
   );
 
   const rowActions = useMemo<RowAction<TablePlatformRef>[]>(

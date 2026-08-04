@@ -161,6 +161,7 @@ public final class PlatformResources extends OpenDcsResource
 			if (plat.getSite() != null)
 			{
 				ref.setSiteId(plat.getSite().getId().getValue());
+				ref.setSitenames(SiteResources.mapSiteNames(plat.getSite()));
 			}
 			else
 			{
