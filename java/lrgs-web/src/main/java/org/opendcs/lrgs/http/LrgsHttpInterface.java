@@ -73,9 +73,11 @@ public class LrgsHttpInterface implements LoadableLrgsInputInterface
 		server.setHandler(ctx);
         var serHol = ctx.addServlet(ServletContainer.class, "/*");
 		serHol.setInitOrder(1);
-		serHol.setInitParameter("jersey.config.server.provider.packages", "org.opendcs.lrgs.http");
+        // TODO: make the webhook optional (e.g if not enabled, don't even load it.)
+		serHol.setInitParameter("jersey.config.server.provider.packages", "org.opendcs.lrgs.http, org.opendcs.lrgs.webhook");
         ctx.setAttribute("lrgs", this.lrgs);
         ctx.setAttribute("archive", this.archive);
+        ctx.setAttribute("input", this);
 
         ServerConnector connector = new ServerConnector(server);
         connector.setPort(this.port);
