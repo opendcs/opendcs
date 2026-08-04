@@ -17,14 +17,14 @@ RUN --mount=type=cache,target=/root \
 FROM --platform=$BUILDPLATFORM scratch AS export
 COPY --from=builder --parents /app .
 
-FROM eclipse-temurin:17-jre-jammy AS opendcs_base
+FROM alpine:3.23 AS opendcs_base
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    apt-get update && apt-get -y upgrade && \
-    apt-get install -y bash && \
-    rm -rf /var/lib/apt/lists/*
+RUN apk upgrade --no-cache
+RUN apk add --no-cache \
+    openjdk17-jre \
+    bash
 RUN addgroup opendcs && \
-    adduser --disabled-password --gecos "" --ingroup opendcs opendcs
+    adduser -D opendcs -G opendcs
 WORKDIR /opt/opendcs
 COPY --from=builder /app/install/build/install/opendcs/ /opt/opendcs
 COPY docker_scripts/env.sh /opt/opendcs/
