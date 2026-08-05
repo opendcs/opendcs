@@ -79,7 +79,7 @@ public class TimeSeries	implements decodes.comp.ITimeSeries
 	static
 	{
 		defaultNumberFormat = NumberFormat.getNumberInstance();
-		defaultNumberFormat.setMaximumFractionDigits(5);
+		defaultNumberFormat.setMaximumFractionDigits(3);
 		defaultNumberFormat.setGroupingUsed(false);
 	}
 	
