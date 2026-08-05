@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
 
+import jakarta.data.repository.Query;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,11 +16,14 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.opendcs.data.goes.SpaceCraft;
 import org.opendcs.lrgs.http.dto.DataSource;
+import org.opendcs.lrgs.messages.MessageRetrieval;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
@@ -26,6 +31,7 @@ import org.slf4j.MDC.MDCCloseable;
 
 import lrgs.apistatus.AttachedProcess;
 import lrgs.archive.MsgArchive;
+import lrgs.common.ArchiveException;
 import lrgs.common.ArchiveUnavailableException;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
@@ -44,11 +50,15 @@ public class DdsHttp
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
+    private static final Function<List<org.opendcs.lrgs.http.dto.DcpMsg>, Response> handleArchiveError = 
+        (messages) -> messages.isEmpty() ? Response.noContent().header("Retry-After", "10").build()
+                                         : Response.ok().entity(messages).build(); 
+
     @Context
     ServletContext servletContext;
 
     @GET
-    @Path("/next")
+    @Path("/data/next")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getNext(@Context HttpServletRequest request)
     { 
@@ -57,55 +67,31 @@ public class DdsHttp
         try (MDCCloseable diagId = MDC.putCloseable("trace-id", UUID.randomUUID().toString()))
         {
             MessageArchiveRetriever mar = null;
-            try {
+            try
+            {
                 mar = getMar(lrgs, session);
-            } catch (Exception e) {
-                log.error("can't get messages= archive retriever", e);
+            }
+            catch (Exception ex)
+            {
+                log.error("can't get messages= archive retriever", ex);
                     return Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
                                 .entity("\"Failed to get messages\"")
                                 .build();
             }
             if (mar != null)
             {
-                final ArrayList<org.opendcs.lrgs.http.dto.DcpMsg> messages = new ArrayList<>();
-                try {
-                    final DcpMsgIndex dmi = new DcpMsgIndex();
-                    
-                    int idx = mar.getNextPassingIndex(dmi, System.currentTimeMillis() + 500);
-                    while(idx != -1 && messages.size() < 1000)
-                    {
-                        final DcpMsg msgOut = dmi.getDcpMsg();
-                        if (msgOut != null)
-                        {
-                            
-                            final String type = "" + lrgs.getLrgsInputById(msgOut.getDataSourceId()).getType();
-                            
-                            final org.opendcs.lrgs.http.dto.DcpMsg msg = 
-                                new org.opendcs.lrgs.http.dto.DcpMsg(
-                                    new DataSource(msgOut.getSource(), type),
-                                    ZonedDateTime.ofInstant(msgOut.getLocalReceiveTime().toInstant(), ZoneId.of("UTC")),
-                                    Base64.getEncoder().encodeToString(msgOut.getData())
-                                    );
-                            messages.add(msg);
-                        }
-                        idx = mar.getNextPassingIndex(dmi, System.currentTimeMillis() + 500);
-                    }
-                    return Response.ok().entity(messages).build();
-                }
-                catch (ArchiveUnavailableException e)
+
+                var result = MessageRetrieval.getMessages(mar, lrgs, 1000);                
+                return switch (result.ex())
                 {
-                    return Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
+                    case UntilReachedException ur -> handleArchiveError.apply(result.messages());
+                    case SearchTimeoutException st -> handleArchiveError.apply(result.messages());
+                    case EndOfArchiveException ea ->  handleArchiveError.apply(result.messages());
+                    case null -> Response.ok().entity(result.messages()).build();
+                    default -> Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
                                 .entity("\"Failed to get messages\"")
                                 .build();
-                }
-                catch ( UntilReachedException | SearchTimeoutException| EndOfArchiveException ex)
-                {
-                    if (messages.isEmpty())
-                    {
-                        return Response.noContent().header("Retry-After", "10").build();
-                    }
-                    return Response.ok().entity(messages).build();
-                }
+                };
             }
             else
             {
@@ -116,14 +102,64 @@ public class DdsHttp
         }
     }
 
+    @GET
+    @Path("/data/query")
+    public Response queryData(@Context HttpServletRequest request,
+                              @QueryParam("dcpName") List<String> dcpNames,
+                              @QueryParam("dcpAddress") List<String> dcpAddresses,
+                              @QueryParam("since") String since, @QueryParam("until") String until,
+                              @QueryParam("ascending") boolean ascending, @QueryParam("spacecraft") SpaceCraft spaceCraft,
+                              @QueryParam("source") List<String> sources, @QueryParam("single") boolean single
+                              )
+    {
+        LrgsMain lrgs = (LrgsMain)servletContext.getAttribute("lrgs");
+        var session = request.getSession(false);
+        try
+        {
+            var mar = getMar(lrgs, session);
+            final var sc = new SearchCriteria();
+            sc.clear();
+            sc.DcpNames.addAll(dcpNames);
+            sc.ExplicitDcpAddrs.addAll(dcpAddresses.stream().map(DcpAddress::new).toList());
+            sc.setAscendingTimeOnly(ascending);
+            sc.single = single;
+            sc.setLrgsUntil(until);
+            sc.setLrgsSince(since);
+            sc.spacecraft = spaceCraft.toChar();
+            mar.setSearchCriteria(sc);
+            sources.forEach(
+                s -> lrgs.getInputs()
+                         .stream()
+                         .filter(input -> input.getInputName().equals(s))
+                         .map(i -> i.getSlot())
+                         .forEach(i -> sc.addSource(i))
+            );
+
+            var result = MessageRetrieval.getMessages(mar, lrgs, Integer.MAX_VALUE);
+
+            return Response.ok().entity(result.messages()).build();
+        }
+        catch (Exception ex)
+        {
+            log.error("can't get messages= archive retriever", ex);
+                return Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
+                            .entity("\"Failed to get messages\"")
+                            .build();
+        }
+    }
+
 
     private MessageArchiveRetriever getMar(LrgsMain lrgs, HttpSession session) throws Exception
     {
-        log.info(session.toString());
-        MessageArchiveRetriever mar = (MessageArchiveRetriever)session.getAttribute("mar");
-        if (mar != null)
+        MessageArchiveRetriever mar = null;
+        if (session != null)
         {
-            return mar;
+            log.info(session.toString());
+            mar = (MessageArchiveRetriever)session.getAttribute("mar");
+            if (mar != null)
+            {
+                return mar;
+            }
         }
         if (lrgs != null && lrgs.getDdsServer().statusProvider.getStatusSnapshot().isUsable)
         {
@@ -145,7 +181,10 @@ public class DdsHttp
             });
             mar.setSearchCriteria(sc);
             log.trace("Set message archive retriever.");
-            session.setAttribute("mar", mar);
+            if (session != null)
+            {
+                session.setAttribute("mar", mar);
+            }
             return mar;
         }
         log.info("Unable to retrieve message archive retriever");
