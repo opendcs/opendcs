@@ -1,5 +1,8 @@
+# syntax=docker/dockerfile:1
 # Depends on having buildx available for the --mount feature
-FROM eclipse-temurin:17-jdk-jammy AS builder
+# use buildplatform for the builder, since we're building a java application
+# it's already cross platform.
+FROM --platform=$BUILDPLATFORM eclipse-temurin:17-jdk-jammy AS builder
 
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && apt-get -y upgrade && \
@@ -12,10 +15,14 @@ RUN --mount=type=cache,target=/root \
     ./gradlew installDist -Dno.docs=true
 # end initial build
 
-FROM eclipse-temurin:17-jre-alpine AS opendcs_base
+FROM --platform=$BUILDPLATFORM scratch AS export
+COPY --from=builder --parents /app .
+
+FROM alpine:3.23 AS opendcs_base
 
 RUN apk upgrade --no-cache
 RUN apk add --no-cache \
+    openjdk17-jre \
     bash
 RUN addgroup opendcs && \
     adduser -D opendcs -G opendcs
