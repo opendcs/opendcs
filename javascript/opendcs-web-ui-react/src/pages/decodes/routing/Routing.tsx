@@ -237,7 +237,15 @@ export const Routing: React.FC<RoutingProperties> = ({
                     value={local.dataSourceName}
                     edit={edit}
                     ariaLabel={t("routing:data_source")}
-                    onChange={(v) => setField("dataSourceName", v)}
+                    onChange={(dataSource) =>
+                      dispatch({
+                        type: "save",
+                        payload: {
+                          dataSourceName: dataSource?.name,
+                          dataSourceId: dataSource?.dataSourceId,
+                        },
+                      })
+                    }
                   />
                 </Col>
               </FormGroup>

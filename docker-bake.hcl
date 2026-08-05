@@ -4,6 +4,7 @@ target "all" {
 
 target "docker-metadata-action" {
    tags = ["latest"]
+   platforms = ["linux/amd64", "linux/arm64"]
 }
 
 target "build" {
