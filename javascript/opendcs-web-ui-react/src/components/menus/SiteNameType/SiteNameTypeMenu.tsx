@@ -28,7 +28,7 @@ export const SiteNameTypeMenu = () => {
     : t("default");
 
   return (
-    <Dropdown drop="start">
+    <Dropdown drop="end">
       <Dropdown.Toggle
         as={SiteNameTypeToggle}
         id="site-name-type"

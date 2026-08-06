@@ -6,7 +6,7 @@ import { useApi } from "../../contexts/app/ApiContext.ts";
 import ChangeOrgMenu from "../menus/ChangeOrg/ChangeOrgMenu";
 import { useOrganizations } from "../../contexts/app/OrganizationsContext.ts";
 
-import { ColorModes, SiteNameTypeMenu } from "../";
+import { ColorModes } from "../";
 import LangPicker from "../menus/Language/LangPicker";
 import UserMenu from "../menus/User/UserMenu";
 import { Button, Container } from "react-bootstrap";
@@ -44,9 +44,6 @@ export function TopBar({ onToggleSidebar, sidebarOpen }: TopBarProps) {
           </Nav.Item>
           <Nav.Item>
             <ColorModes />
-          </Nav.Item>
-          <Nav.Item>
-            <SiteNameTypeMenu />
           </Nav.Item>
           {orgList.length > 0 && user ? (
             <Nav.Item>
