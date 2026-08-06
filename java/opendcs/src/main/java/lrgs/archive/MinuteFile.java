@@ -61,7 +61,7 @@ public class MinuteFile
 			long t = System.currentTimeMillis();
 			if ((t % (24L * 3600000L)) > 60000L) // after 1st minute of day?
 			{
-				log.atWarn().setCause(ex).log("{} - Error reading '{}'", MsgArchive.EVT_BAD_MINUTE_FILE, fn);
+				log.atWarn().setCause(ex).log("{} - Error reading '{}'", XmlMsgArchive.EVT_BAD_MINUTE_FILE, fn);
 			}
 			throw ex;
 		}
@@ -88,7 +88,7 @@ public class MinuteFile
 		}
 		catch(IOException ex)
 		{
-			log.atWarn().setCause(ex).log("{} - Error writing '", MsgArchive.EVT_BAD_MINUTE_FILE, fn);
+			log.atWarn().setCause(ex).log("{} - Error writing '", XmlMsgArchive.EVT_BAD_MINUTE_FILE, fn);
 			throw ex;
 		}
 	}

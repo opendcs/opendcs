@@ -17,6 +17,7 @@ package lrgs.archive;
 
 import java.util.Date;
 
+import org.opendcs.lrgs.dao.MsgArchive;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -143,8 +144,7 @@ public class MergeFilter
 		while(fileStartTime != 0)
 		{
 			// Retrieve the index
-			MsgPeriodArchive mpa =
-				msgArchive.getPeriodArchive(fileStartTime, false);
+			MsgPeriodArchive mpa = ((XmlMsgArchive)msgArchive).getPeriodArchive(fileStartTime, false);
 			if (mpa == null || fileStartTime != mpa.startTime)
 			{
 				if (isDapsStatus)
