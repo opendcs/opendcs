@@ -511,7 +511,21 @@ public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedule
 				});
 		}
 
-		routsched.execute(args);
+		// there may be a few non-daemon threads about that haven't been corrected yet
+		// So whether there is failure or not, forcibly exit the JVM so systems
+		// can detected and restart properly.
+		try
+		{
+			routsched.execute(args);
+			System.exit(0);
+		}
+		catch (Exception ex)
+		{
+			log.atError()
+			   .setCause(ex)
+			   .log("Fatal error during execution. Forcibly exiting JVM.");
+			System.exit(1);
+		}
 	}
 
 	@Override
