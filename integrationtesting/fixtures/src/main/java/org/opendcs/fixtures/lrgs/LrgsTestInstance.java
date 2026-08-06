@@ -32,10 +32,20 @@ public class LrgsTestInstance
 
     public LrgsTestInstance(File lrgsHome) throws Exception
     {
-        this(lrgsHome, null, null, TlsMode.NONE);
+        this(lrgsHome, null);
+    }
+
+    public LrgsTestInstance(File lrgsHome, String additionalConfig) throws Exception
+    {
+        this(lrgsHome, null, null, TlsMode.NONE, additionalConfig);
     }
 
     public LrgsTestInstance(File lrgsHome, File keyStore, String keyStorePassword, TlsMode tlsMode) throws Exception
+    {
+        this(lrgsHome, keyStore, keyStorePassword, tlsMode, null);
+    }
+
+    public LrgsTestInstance(File lrgsHome, File keyStore, String keyStorePassword, TlsMode tlsMode, String additionalConfig) throws Exception
     {
         if (!lrgsHome.canRead())
         {
@@ -65,6 +75,14 @@ public class LrgsTestInstance
                 fw.write("keyStoreFile="+fileName+System.lineSeparator());
                 fw.write("keyStorePassword="+keyStorePassword+System.lineSeparator());
             }
+
+            if (additionalConfig != null)
+            {
+                fw.write(System.lineSeparator());
+                fw.write(additionalConfig);
+                fw.write(System.lineSeparator());
+            }
+
             fw.flush();
         }
         new File(lrgsHome,"netlist").mkdirs();
