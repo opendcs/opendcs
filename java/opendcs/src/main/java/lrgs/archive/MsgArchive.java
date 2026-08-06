@@ -50,7 +50,7 @@ import lrgs.lrgsmain.LrgsInputInterface;
 /**
 Top-level archive for the DCS Toolkit.
 */
-public class MsgArchive implements MsgValidatee
+public class MsgArchive
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Used for log messages. */
@@ -400,12 +400,13 @@ public class MsgArchive implements MsgValidatee
 
 		if (LrgsConfig.instance().getDoPdtValidation())
 		{
-			validator.validateMsg(msg, src, now);
+			var vm = validator.validateMsg(msg, src, now);
+			useValidationResults(vm.failureCode(), vm.explanation(), vm.msg(), vm.src(), vm.t(), vm.pdtEntry());
 		}
 	}
 
 	/** Callback for MsgValidator */
-	public void useValidationResults(char failureCode, String explanation,
+	private void useValidationResults(char failureCode, String explanation,
 			DcpMsg msg, LrgsInputInterface src, Date t, PdtEntry pdtEntry)
 	{
 		if (failureCode == 'M' && msg.isGoesMessage())

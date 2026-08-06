@@ -40,7 +40,8 @@ import lrgs.lrgsmain.LrgsInputInterface;
  */
 public class MsgValidator
 {
-	private MsgValidatee caller;
+	//private MsgValidatee caller;
+	private MsgArchive archive;
 	private Pdt pdt;
 	private ChannelMap channelMap;
 
@@ -89,9 +90,9 @@ public class MsgValidator
 	private LinkedList<ExpectedMsg> expectedMsgList = new LinkedList<ExpectedMsg>();
 
 
-	public MsgValidator(MsgValidatee caller, Pdt pdt, ChannelMap channelMap)
+	public MsgValidator(MsgArchive archive, Pdt pdt, ChannelMap channelMap)
 	{
-		setCaller(caller);
+		this.archive = archive;
 		this.pdt = pdt;
 		this.channelMap = channelMap;
 		domsatDateFmt = new SimpleDateFormat("yyDDDHHmmss");
@@ -103,32 +104,37 @@ public class MsgValidator
 		lenFormat.setGroupingUsed(false);
 	}
 
-	public synchronized void setCaller(MsgValidatee caller)
-	{
-		this.caller = caller;
-	}
-
 	/**
 	 * Validate a message, issuing callbacks for any problems found.
 	 * @param msg The message to validate
 	 * @param src from a DRGS this is original address, null for other apps.
 	 * @param localRecvTime message local receive-time
 	 */
-	public synchronized void validateMsg(DcpMsg msg,
+	public synchronized MessageValidatorResult validateMsg(DcpMsg msg,
 		LrgsInputInterface src, Date localRecvTime)
 	{
 		if (!pdt.isLoaded())
-			return;
+		{
+			return new MessageValidatorResult('\0', null, msg, src, localRecvTime, null);
+		}
+
+		
 
 		lastXmitWindow = null;
 		DcpAddress dcpAddress = msg.getDcpAddress();
 		PdtEntry pdtEntry = pdt.find(dcpAddress);
 		if (pdtEntry == null)
 		{
-			caller.useValidationResults('I',
+			return new MessageValidatorResult('I',
 				"Invalid DCP Address " + dcpAddress.toString(),
 				msg, src, localRecvTime, null);
-			return;
+		}
+		String msgData = msg.getDataStr();
+		if (msgData != null && msgData.contains("Missing message from "))
+		{
+			int start = msgData.indexOf("Missing message from");
+			return new MessageValidatorResult('M', msgData.substring(start), msg,
+				 	(LrgsInputInterface)null, msg.getDapsTime(), pdtEntry);
 		}
 
 		int chan = msg.getGoesChannel();
@@ -136,7 +142,7 @@ public class MsgValidator
 			pdtEntry.rd_channel : pdtEntry.st_channel;
 		if (chan != expChan)
 		{
-			caller.useValidationResults('W',
+			return new MessageValidatorResult('W',
 				"Wrong channel -- expected " + expChan, msg, src,
 				localRecvTime, pdtEntry);
 		}
@@ -158,9 +164,11 @@ public class MsgValidator
 
 		if ((msg.flagbits & DcpMsgFlag.ADDR_CORRECTED) != 0
 		 && msg.getOrigAddress() != null)
-			caller.useValidationResults('A',
+		{
+			return new MessageValidatorResult('A',
 				"Address corrected, original=" + msg.getOrigAddress(),
 				msg, src, localRecvTime, pdtEntry);
+		}
 
 		int xi = pdtEntry.st_xmit_interval;
 		if (!isRandom && xi != 0)
@@ -211,12 +219,12 @@ public class MsgValidator
 						+ IDateFormat.printSecondOfDay(expected_start_tt, true)
 						+ "-"
 						+ IDateFormat.printSecondOfDay(expected_end_tt, true);
-					caller.useValidationResults('U', errmsg,
+					return new MessageValidatorResult('U', errmsg,
 						msg, src, localRecvTime, pdtEntry);
 				}
 				else
 				{
-					caller.useValidationResults('T',
+					return new MessageValidatorResult('T',
 						"Early: Expected window is "
 						+ IDateFormat.printSecondOfDay(expected_start_tt, true)
 						+ "-"
@@ -228,7 +236,7 @@ public class MsgValidator
 			{
 				if (end_msec > expected_end_tt*1000L) // Ended late
 				{
-					caller.useValidationResults('T',
+					return new MessageValidatorResult('T',
 						"Late: Expected window is "
 						+ IDateFormat.printSecondOfDay(expected_start_tt, true)
 						+ "-"
@@ -246,12 +254,14 @@ public class MsgValidator
 					+ IDateFormat.printSecondOfDay(expected_start_tt, true)
 					+ "-"
 					+ IDateFormat.printSecondOfDay(expected_end_tt, true);
-				caller.useValidationResults('U', errmsg,
+				return new MessageValidatorResult('U', errmsg,
 					msg, src, localRecvTime, pdtEntry);
 			}
 	 	}
 		if (!_extraChecks)
-			return;
+		{
+			return new MessageValidatorResult('\0', null, msg, src, localRecvTime, pdtEntry);
+		}
 
 		Date xmitTime = msg.getXmitTime();
 		Date cstart = msg.getCarrierStart();
@@ -259,36 +269,47 @@ public class MsgValidator
 		{
 			long carrierMsec = xmitTime.getTime() - cstart.getTime();
 			if (carrierMsec > maxCarrierMS)
-				caller.useValidationResults('C',
+			{
+				return new MessageValidatorResult('C',
 					"Excessive carrier: " + carrierMsec + " ms."
 					+ ", xmitTime=" + xmitTime + ", carrierStart=" + cstart,
 					msg, src, localRecvTime, pdtEntry);
+			}
 		}
 
 		int ss = msg.getSignalStrength();
 		if (ss < minSignalStrength)
-			caller.useValidationResults('S',
+		{
+			return new MessageValidatorResult('S',
 				"Low signal strength: " + ss + " dB.",
 				msg, src, localRecvTime, pdtEntry);
+		}
 
 		int fo = msg.getFrequencyOffset();
 		if (fo > maxFreqOffset || fo < -maxFreqOffset)
-			caller.useValidationResults('F',
+		{
+			return new MessageValidatorResult('F',
 				"Excessive Frequency Offset: " + fo + " ("
 				+ (fo*50) + " Hz.)",
 				msg, src, localRecvTime, pdtEntry);
+		}
 
 		char mi = msg.getModulationIndex();
 		if (mi != 'N')
-			caller.useValidationResults('X',
+		{
+			return new MessageValidatorResult('X',
 				"Bad modulation index code: " + mi,
 				msg, src, localRecvTime, pdtEntry);
+		}
 
 		double bv = msg.getBattVolt();
 		if (bv < -.1 || (bv > .1 && bv < minBattVolt))
-			caller.useValidationResults('V',
+		{
+			return new MessageValidatorResult('V',
 				"Low battery voltage: " + bv,
 				msg, src, localRecvTime, pdtEntry);
+		}
+		return new MessageValidatorResult('\0', null, msg, src, cstart, pdtEntry);
 	}
 
 
@@ -336,6 +357,11 @@ public class MsgValidator
 		if (!pdt.isLoaded())
 			return;
 
+		if (archive == null)
+		{
+			return;
+		}
+
 		for(Iterator<ExpectedMsg> expit = expectedMsgList.iterator();
 			expit.hasNext(); )
 		{
@@ -358,9 +384,8 @@ public class MsgValidator
 				byte[] md = msgData.getBytes();
 				DcpMsg msg = new DcpMsg(md, md.length, 0);
 				msg.setBaud(expected.pdtEntry.baud);
-
-				caller.useValidationResults('M', body, msg,
-					(LrgsInputInterface)null, msgTime, expected.pdtEntry);
+				msg.setXmitTime(msgTime);
+				archive.archiveMsg(msg, null);
 				expit.remove();
 			}
 		}
@@ -493,52 +518,52 @@ public class MsgValidator
     {
 	    return minBattVolt;
     }
-}
 
-
-class CheckMissingThread
-	extends Thread
-{
-	MsgValidator validator;
-	boolean shutdown = false;
-	public CheckMissingThread(MsgValidator validator)
+	public static class CheckMissingThread extends Thread
 	{
-		this.validator = validator;
-	}
-	public void run()
-	{
-		int lastMin = -1;
-		long lastPoll = System.currentTimeMillis();
-		while(!shutdown)
+		MsgValidator validator;
+		boolean shutdown = false;
+		public CheckMissingThread(MsgValidator validator)
 		{
-			long now = System.currentTimeMillis();
-
-			/*
-			  At each new minute, generate MISSING stat messages for
-			  anything expected by one minute ago. Then add expectations
-			  for one minute from now.
-			*/
-			int min = (int)((now/60000L) % (60*24));
-			if (min != lastMin)
-			{
-				lastMin = min;
-
-				int daynum = (int)(now / DrgsRecv.MS_PER_DAY);
-				int prevMin = min - 1;
-				if (prevMin <= 0)
-				{
-					prevMin += (60*24);
-					daynum--;
-				}
-				validator.genMissingFor(prevMin*60, daynum);
-
-				int nextMin = (min+1) % (60*24);
-				validator.findExpectedBy(nextMin*60);
-			}
-			try { sleep(1000L); }
-			catch(InterruptedException ex) {}
+			this.validator = validator;
 		}
+		public void run()
+		{
+			int lastMin = -1;
+			long lastPoll = System.currentTimeMillis();
+			while(!shutdown)
+			{
+				long now = System.currentTimeMillis();
+
+				/*
+				At each new minute, generate MISSING stat messages for
+				anything expected by one minute ago. Then add expectations
+				for one minute from now.
+				*/
+				int min = (int)((now/60000L) % (60*24));
+				if (min != lastMin)
+				{
+					lastMin = min;
+
+					int daynum = (int)(now / DrgsRecv.MS_PER_DAY);
+					int prevMin = min - 1;
+					if (prevMin <= 0)
+					{
+						prevMin += (60*24);
+						daynum--;
+					}
+					validator.genMissingFor(prevMin*60, daynum);
+
+					int nextMin = (min+1) % (60*24);
+					validator.findExpectedBy(nextMin*60);
+				}
+				try { sleep(1000L); }
+				catch(InterruptedException ex) {}
+			}
+		}
+
+
 	}
-
-
 }
+
+
