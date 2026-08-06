@@ -7,6 +7,7 @@ plugins {
 
 dependencies {
     implementation project(":opendcs")
+    implementation project(":lrgs-web")
     implementation project(":testing:fixtures")
     implementation (libs.bundles.junit.platform)
     implementation(libs.bundles.junit)
