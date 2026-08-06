@@ -6,11 +6,12 @@ The following versions are supported.
 
 | Version  | Supported          |
 | -------  | ------------------ |
-| 7.5.x    | :white_check_mark: - not production ready |
+| 8.0.x    | :white_check_mark: - except local operations. |
 | 7.0.x    | :white_check_mark: |
-| > 6.8.14 | :white_check_mark: |
+| 6.8.14   | :white_check_mark: - only the most egregious issues will be addressed. |
 
-8.0 is in development and if you are attempting to use that we welcome reports but responses will likely be delayed.
+8.0 is in development and we are making some drastic changes. Security issues will be addressed promptly. There are no formal 8.0 releases at this time.
+All of the deployed (to ghcr.io) container images tagged with `main-*` are the current development that will be 8.0.x.
 
 ## Reporting a Vulnerability
 
