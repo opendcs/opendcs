@@ -50,8 +50,12 @@ public class DdsHttp
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
+
+    private static final String MESSAGE_RETRIEVE_FAILED = "\"Failed to get messages\"";
+    private static final String INACTIVE = "\"Inactive\"";
+
     private static final Function<List<org.opendcs.lrgs.http.dto.DcpMsg>, Response> handleArchiveError = 
-        (messages) -> messages.isEmpty() ? Response.noContent().header("Retry-After", "10").build()
+        messages -> messages.isEmpty() ? Response.noContent().header("Retry-After", "10").build()
                                          : Response.ok().entity(messages).build(); 
 
     @Context
@@ -75,7 +79,7 @@ public class DdsHttp
             {
                 log.error("can't get messages= archive retriever", ex);
                     return Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
-                                .entity("\"Failed to get messages\"")
+                                .entity(MESSAGE_RETRIEVE_FAILED)
                                 .build();
             }
             if (mar != null)
@@ -89,14 +93,14 @@ public class DdsHttp
                     case EndOfArchiveException ea ->  handleArchiveError.apply(result.messages());
                     case null -> Response.ok().entity(result.messages()).build();
                     default -> Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
-                                .entity("\"Failed to get messages\"")
+                                .entity(MESSAGE_RETRIEVE_FAILED)
                                 .build();
                 };
             }
             else
             {
                 return Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
-                            .entity("\"Inactive\"")
+                            .entity(INACTIVE)
                             .build();
             }
         }
@@ -143,7 +147,7 @@ public class DdsHttp
         {
             log.error("can't get messages= archive retriever", ex);
                 return Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
-                            .entity("\"Failed to get messages\"")
+                            .entity(MESSAGE_RETRIEVE_FAILED)
                             .build();
         }
     }
