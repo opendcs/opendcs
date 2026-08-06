@@ -13,6 +13,7 @@ public final class LoggingEventListModel extends AbstractListModel<LoggingEvent>
 {
     LoggingEventBuffer buffer;
     List<LoggingEvent> events;
+    private volatile int previousSize = 0;
 
     public LoggingEventListModel()
     {
@@ -22,14 +23,27 @@ public final class LoggingEventListModel extends AbstractListModel<LoggingEvent>
             .withProvider(LoggingEventProvider.getProvider())
             .build();
         events = buffer.getEvents();
+        previousSize = events.size();
         final Thread t = new Thread(() -> 
         {
             while (true)
             {
                 try
                 {
-                    final int size = getSize();
-                    SwingUtilities.invokeLater(() -> this.fireIntervalAdded(this, 0, size));
+                    final int currentSize = getSize();
+                    if (currentSize > previousSize)
+                    {
+                        final int start = previousSize;
+                        final int end = currentSize - 1;
+                        SwingUtilities.invokeLater(() -> this.fireIntervalAdded(this, start, end));
+                    }
+                    else if (currentSize < previousSize)
+                    {
+                        final int start = currentSize;
+                        final int end = previousSize - 1;
+                        SwingUtilities.invokeLater(() -> this.fireIntervalRemoved(this, start, end));
+                    }
+                    previousSize = currentSize;
                     Thread.sleep(500);
                 }
                 catch (InterruptedException ex)
