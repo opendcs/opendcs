@@ -18,18 +18,22 @@ package org.opendcs.lrgs.dds;
 import java.io.ByteArrayOutputStream;
 import java.util.zip.GZIPOutputStream;
 
+import org.opendcs.lrgs.dds.dds14.DdsProtocol14Handler;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import lrgs.common.LrgsErrorCode;
 import lrgs.ldds.CmdGetMsgBlockExt;
 import lrgs.ldds.CmdGoodbye;
 import lrgs.ldds.CmdHello;
+import lrgs.ldds.DdsInternalException;
 import lrgs.ldds.DdsVersion;
 import lrgs.ldds.LddsCommand;
 import lrgs.ldds.LddsMessage;
+import lrgs.ldds.ServerError;
 
 /**
  *
@@ -47,7 +51,7 @@ import lrgs.ldds.LddsMessage;
  * taking an {@link lrgs.ldds.LddsCommand} and returning an appropriate {@link lrgs.ldds.LddsMessage} to send back
  * to the client.
  */
-public class LddsCommandHandler extends ChannelInboundHandlerAdapter
+public class LddsHelloHandler extends ChannelInboundHandlerAdapter
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
@@ -71,7 +75,14 @@ public class LddsCommandHandler extends ChannelInboundHandlerAdapter
         if (msg instanceof CmdHello hello)
         {
             log.info("hello msg");
-            var res = new LddsMessage(LddsMessage.IdHello, hello.getUserName() + " " + DdsVersion.DdsVersionNum);
+            if (hello.getDdsVersion() != 14)
+            {
+                throw new ServerError("Only DDS Protcoll Version 14 is supported on this system.", LrgsErrorCode.DDDSFATAL, 0);
+            }
+            var res = new LddsMessage(LddsMessage.IdHello, hello.getUserName() + " " + hello.getDdsVersion());
+
+            ctx.pipeline().remove("hellohandler");
+            ctx.pipeline().addLast("dds14handler", new DdsProtocol14Handler());
             ctx.writeAndFlush(res);
         }
         else if (msg instanceof CmdGetMsgBlockExt)

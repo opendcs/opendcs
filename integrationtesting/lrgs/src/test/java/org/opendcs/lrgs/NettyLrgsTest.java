@@ -13,7 +13,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.lrgs.LrgsTestInstance;
 import org.opendcs.lrgs.dds.LddsCommandDecoder;
-import org.opendcs.lrgs.dds.LddsCommandHandler;
+import org.opendcs.lrgs.dds.LddsHelloHandler;
 import org.opendcs.lrgs.dds.LddsMessageDecoder;
 import org.opendcs.lrgs.dds.LddsMessageEncoder;
 
@@ -62,7 +62,7 @@ class NettyLrgsTest
                     new LddsMessageDecoder(),
                     new LddsCommandDecoder(),
                     new LddsMessageEncoder(),
-                    new LddsCommandHandler()
+                    new LddsHelloHandler()
             );
             }   
          })
