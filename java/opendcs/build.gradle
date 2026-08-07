@@ -107,7 +107,7 @@ dependencies {
     testImplementation(libs.greenmail)
     testRuntimeOnly(libs.ch.qos.logback)
     testImplementation(project(":opendcs-api"))
-
+    implementation(libs.io.netty)
 }
 
 test
