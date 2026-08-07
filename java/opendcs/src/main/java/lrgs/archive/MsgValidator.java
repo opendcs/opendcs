@@ -42,7 +42,6 @@ import lrgs.lrgsmain.LrgsInputInterface;
  */
 public class MsgValidator
 {
-	//private MsgValidatee caller;
 	private MsgArchive archive;
 	private Pdt pdt;
 	private ChannelMap channelMap;

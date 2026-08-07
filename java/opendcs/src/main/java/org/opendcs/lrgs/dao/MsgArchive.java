@@ -18,7 +18,7 @@ public interface MsgArchive
     void archiveMsg(DcpMsg msg, LrgsInputInterface src);
 
     /**
-     * Search for the next batch of max messages.
+     * Search for the next batch of messages.
      * Place retrieved indexes (each containing a message)
      * In the array stored in the passed handle.
      *
