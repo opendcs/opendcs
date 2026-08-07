@@ -22,12 +22,12 @@ import java.io.File;
 import java.util.Date;
 import java.util.Iterator;
 
+import org.opendcs.lrgs.dao.MsgArchive;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
 import org.slf4j.MDC.MDCCloseable;
 
-import lrgs.archive.MsgArchive;
 import lrgs.common.BadConfigException;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;

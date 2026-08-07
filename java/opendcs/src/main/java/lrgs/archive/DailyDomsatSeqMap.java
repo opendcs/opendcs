@@ -18,6 +18,8 @@ package lrgs.archive;
 import java.util.ArrayList;
 import java.util.Date;
 
+import org.opendcs.lrgs.dao.MsgArchive;
+
 import lrgs.common.ArchiveUnavailableException;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
@@ -192,7 +194,7 @@ public class DailyDomsatSeqMap
 		throws ArchiveUnavailableException
 	{
 		int startTT = (int)dayNum * SPD;
-		MsgPeriodArchive mpa = msgArchive.getPeriodArchive(startTT, false);
+		MsgPeriodArchive mpa = ((XmlMsgArchive)msgArchive).getPeriodArchive(startTT, false);
 		if (mpa == null || mpa.startTime != startTT)
 			return null;
 		DcpMsgIndex dmi = mpa.getIndexEntrySync(indexNum);

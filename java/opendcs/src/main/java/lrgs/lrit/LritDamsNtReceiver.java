@@ -17,11 +17,11 @@ package lrgs.lrit;
 
 import java.util.Date;
 
+import org.opendcs.lrgs.dao.MsgArchive;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import ilex.util.ByteUtil;
-import lrgs.archive.MsgArchive;
 import lrgs.common.DcpMsg;
 import lrgs.drgs.DrgsConnectCfg;
 import lrgs.drgsrecv.DrgsRecv;

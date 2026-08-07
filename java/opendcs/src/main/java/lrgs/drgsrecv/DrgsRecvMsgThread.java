@@ -24,12 +24,12 @@ import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.Vector;
 
+import org.opendcs.lrgs.dao.MsgArchive;
+
 import ilex.net.BasicClient;
 import ilex.util.ByteUtil;
 import ilex.util.EnvExpander;
 import ilex.util.IDateFormat;
-
-import lrgs.archive.MsgArchive;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
