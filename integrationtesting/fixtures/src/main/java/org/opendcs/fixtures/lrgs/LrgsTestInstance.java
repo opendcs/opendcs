@@ -9,13 +9,13 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.opendcs.logging.spi.LoggingEventProvider;
+import org.opendcs.lrgs.dao.MsgArchive;
 import org.opendcs.tls.TlsMode;
 import org.opendcs.utils.logging.LoggingEventBuffer;
 
 import ilex.util.PasswordFile;
 import ilex.util.PasswordFileEntry;
 import ilex.util.QueueLogger;
-import lrgs.archive.MsgArchive;
 import lrgs.lrgsmain.LrgsConfig;
 import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.lrgsmain.LrgsMain;
@@ -32,10 +32,20 @@ public class LrgsTestInstance
 
     public LrgsTestInstance(File lrgsHome) throws Exception
     {
-        this(lrgsHome, null, null, TlsMode.NONE);
+        this(lrgsHome, null);
+    }
+
+    public LrgsTestInstance(File lrgsHome, String additionalConfig) throws Exception
+    {
+        this(lrgsHome, null, null, TlsMode.NONE, additionalConfig);
     }
 
     public LrgsTestInstance(File lrgsHome, File keyStore, String keyStorePassword, TlsMode tlsMode) throws Exception
+    {
+        this(lrgsHome, keyStore, keyStorePassword, tlsMode, null);
+    }
+
+    public LrgsTestInstance(File lrgsHome, File keyStore, String keyStorePassword, TlsMode tlsMode, String additionalConfig) throws Exception
     {
         if (!lrgsHome.canRead())
         {
@@ -65,6 +75,14 @@ public class LrgsTestInstance
                 fw.write("keyStoreFile="+fileName+System.lineSeparator());
                 fw.write("keyStorePassword="+keyStorePassword+System.lineSeparator());
             }
+
+            if (additionalConfig != null)
+            {
+                fw.write(System.lineSeparator());
+                fw.write(additionalConfig);
+                fw.write(System.lineSeparator());
+            }
+
             fw.flush();
         }
         new File(lrgsHome,"netlist").mkdirs();

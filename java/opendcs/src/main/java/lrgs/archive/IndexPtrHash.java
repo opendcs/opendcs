@@ -56,7 +56,7 @@ public class IndexPtrHash
 	 * Saves the hash map of index pointers.
 	 */
 	public synchronized void saveIndexPtrHash(String filePath,
-		MsgArchive msgArchive)
+		XmlMsgArchive msgArchive)
 	{
 
 
@@ -102,7 +102,7 @@ public class IndexPtrHash
 		}
 		catch(IOException ex)
 		{
-			log.atWarn().setCause(ex).log("{} - Cannot save index pointer hash", MsgArchive.EVT_BAD_HASH);
+			log.atWarn().setCause(ex).log("{} - Cannot save index pointer hash", XmlMsgArchive.EVT_BAD_HASH);
 		}
 	}
 
@@ -135,7 +135,7 @@ public class IndexPtrHash
 		catch(IOException ex)
 		{
 			log.warn("{}- Error loading index pointer hash ({} elements loaded): ",
-					 MsgArchive.EVT_BAD_HASH, theHash.size());
+					 XmlMsgArchive.EVT_BAD_HASH, theHash.size());
 		}
 		log.info("loaded index pointer hash ({} elements loaded) from {}", theHash.size(), hashFile.getPath());
 	}

@@ -217,7 +217,7 @@ public class MsgPeriodArchive
 		}
 		catch(IOException ioex)
 		{
-			log.atWarn().setCause(ioex).log("{}- Could not add message to archive: ", MsgArchive.EVT_BAD_INDEX);
+			log.atWarn().setCause(ioex).log("{}- Could not add message to archive: ", XmlMsgArchive.EVT_BAD_INDEX);
 		}
 		return -1;
 	}
@@ -232,7 +232,7 @@ public class MsgPeriodArchive
 		DcpMsgIndex idx = getIndexEntry(indexNum);
 		if (idx == null)
 		{
-			log.warn("{}- deletemsg(indexNum={}) Could not read index.", MsgArchive.EVT_BAD_INDEX, indexNum);
+			log.warn("{}- deletemsg(indexNum={}) Could not read index.", XmlMsgArchive.EVT_BAD_INDEX, indexNum);
 			return;
 		}
 
@@ -243,7 +243,7 @@ public class MsgPeriodArchive
 			log.atWarn()
 			   .setCause(ioex)
 			   .log("{}- deletemsg(indexNum={}) Could not write deleted index.",
-			   		MsgArchive.EVT_BAD_INDEX, indexNum);
+			   		XmlMsgArchive.EVT_BAD_INDEX, indexNum);
 			return;
 		}
 
@@ -255,7 +255,7 @@ public class MsgPeriodArchive
 			log.atWarn()
 			   .setCause(ioex)
 			   .log("{}- deletemsg(indexNum={}) Could not mark message deleted at offset={}",
-			   		MsgArchive.EVT_BAD_INDEX, indexNum, idx.getOffset());
+			   		XmlMsgArchive.EVT_BAD_INDEX, indexNum, idx.getOffset());
 		}
 	}
 
@@ -280,7 +280,7 @@ public class MsgPeriodArchive
 			log.atWarn()
 			   .setCause(ioex)
 			   .log("{}- Index File for '{}' Could not add Domsat Seq# to index number {}",
-			   		MsgArchive.EVT_BAD_INDEX, rootPath, indexNum);
+			   		XmlMsgArchive.EVT_BAD_INDEX, rootPath, indexNum);
 		}
 		try
 		{
@@ -298,7 +298,7 @@ public class MsgPeriodArchive
 			log.atWarn()
 			   .setCause(ioex)
 			   .log("{}- Msg File for '{}' Could not add Domsat Seq# to index number {}",
-			   		MsgArchive.EVT_BAD_INDEX, rootPath, indexNum);
+			   		XmlMsgArchive.EVT_BAD_INDEX, rootPath, indexNum);
 		}
 	}
 
@@ -316,7 +316,7 @@ public class MsgPeriodArchive
 			log.atError()
 			   .setCause(ioex)
 			   .log("{}- Cannot save index number {} index file will be corrupt: ",
-			   		MsgArchive.EVT_BAD_INDEX, indexNum);
+			   		XmlMsgArchive.EVT_BAD_INDEX, indexNum);
 		}
 		cache.add(idx);
 		updateIndexMinute(indexNum,
@@ -504,12 +504,12 @@ public class MsgPeriodArchive
 
 	/**
 	 * Efficiently read a bunch of indexes from this archive, delegated
-	 * from MsgArchive. This method handles the forward index-file search
+	 * from XmlMsgArchive. This method handles the forward index-file search
 	 * algorithm.
 	 * @param handle the search handle
 	 * @param stopSearchMsec time to stop searching.
-	 * @return one of the SEARCH_RESULT codes defined in MsgArchive.
-	 * @see lrgs.archive.MsgArchive.search(SearchHandle handle)
+	 * @return one of the SEARCH_RESULT codes defined in XmlMsgArchive.
+	 * @see lrgs.archive.XmlMsgArchive.search(SearchHandle handle)
 	 */
 		public synchronized int searchIndex(SearchHandle handle, long stopSearchMsec)
 		throws ArchiveUnavailableException, SearchTimeoutException
@@ -578,7 +578,7 @@ public class MsgPeriodArchive
 			catch(IOException ex)
 			{
 				String msg = myname + " Corrupt index file.";
-				log.atError().setCause(ex).log("{}- {}", MsgArchive.EVT_BAD_INDEX, msg);
+				log.atError().setCause(ex).log("{}- {}", XmlMsgArchive.EVT_BAD_INDEX, msg);
 				throw new ArchiveUnavailableException(msg, LrgsErrorCode.DARCFILEIO, ex);
 			}
 			long now = System.currentTimeMillis();
@@ -634,19 +634,19 @@ public class MsgPeriodArchive
 		// Fell through: Either handle-full or End of this archive reached.
 		if (handle.capacity() == 0)
 		{
-			return MsgArchive.SEARCH_RESULT_MORE;
+			return XmlMsgArchive.SEARCH_RESULT_MORE;
 		}
 
 		// Out of time & must return results to client.
 		if (System.currentTimeMillis() >= stopSearchMsec)
 		{
-			return MsgArchive.SEARCH_RESULT_TIMELIMIT;
+			return XmlMsgArchive.SEARCH_RESULT_TIMELIMIT;
 		}
 
 		if (settlingDelayHit)
 		{
 			// No until specified -- tell caller to pause before trying again.
-			return MsgArchive.SEARCH_RESULT_PAUSE;
+			return XmlMsgArchive.SEARCH_RESULT_PAUSE;
 		}
 
 		// Otherwise, I hit the end of this file.
@@ -658,7 +658,7 @@ public class MsgPeriodArchive
 			handle.nextIndexNum = 0;
 			handle.minIdx = 0;
 
-			return MsgArchive.SEARCH_RESULT_MORE;
+			return XmlMsgArchive.SEARCH_RESULT_MORE;
 		}
 
 		// Otherwise, end of current archive.
@@ -668,16 +668,16 @@ public class MsgPeriodArchive
 			if (untilTt == Integer.MAX_VALUE)
 			{
 				// No until specified -- tell caller to pause before trying again.
-				return MsgArchive.SEARCH_RESULT_PAUSE;
+				return XmlMsgArchive.SEARCH_RESULT_PAUSE;
 			}
 			else
 			{
-				return MsgArchive.SEARCH_RESULT_DONE;
+				return XmlMsgArchive.SEARCH_RESULT_DONE;
 			}
 		}
 		else
 		{
-			return MsgArchive.SEARCH_RESULT_MORE;
+			return XmlMsgArchive.SEARCH_RESULT_MORE;
 		}
 
 /*
