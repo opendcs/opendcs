@@ -30,7 +30,21 @@ public interface MsgArchive
     int search(SearchHandle handle, long stopSearchMsec)
             throws ArchiveUnavailableException, SearchTimeoutException;
 
+    /**
+     * Retrieve total number of messages stored
+     * @return count of messages
+     */
     int getTotalMessageCount();
+
+    /**
+     * Unix Epoch time (in seconds) of earliest message stored
+     * @return 32 bit unix_t time.
+     */
     int getOldestDapsTime();
+
+    /**
+     * Status Provider implemntation to keep updated.
+     * @param statusProvider implementation of LrgsStatusProvider
+     */
     void setStatusProvider(LrgsStatusProvider statusProvider);
 }
