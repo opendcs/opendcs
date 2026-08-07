@@ -26,7 +26,7 @@ import lrgs.ldds.LddsMessage;
  *
  * LddsCommandDecoder
  *
- * Given the LddsMessage that should've been previosly created, create an
+ * Given the LddsMessage that should've been previously created, create an
  * appropriate {@link lrgs.ldds.LddsCommand} instance
  */
 public class LddsCommandDecoder extends MessageToMessageDecoder<LddsMessage>

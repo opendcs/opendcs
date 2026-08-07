@@ -35,10 +35,10 @@ import lrgs.ldds.LddsMessage;
  *
  * LddsCommandHandler
  *
- * Given an {@link lrgs.ldds.LddsCommand instance} process the message appropriate.
+ * Given an {@link lrgs.ldds.LddsCommand instance} process the message appropriately.
  *
- * NOTE: This also where things like establishing session specific objects, like a MessageArchiveRetriever
- * or an implementation similar to {@link lrgs.ldds.LddsThread} (though far more generic) that wraps those instanced.
+ * NOTE: This is also where things like establishing session specific objects, like a MessageArchiveRetriever
+ * or an implementation similar to {@link lrgs.ldds.LddsThread} (though far more generic) that wraps those instances.
  *
  * NOTE: DDS <b>is</b> a stateful protocol and that won't change so there are long running connections and state data
  * for that connection.
@@ -59,7 +59,7 @@ public class LddsCommandHandler extends ChannelInboundHandlerAdapter
 
     /**
      * The command reponse implementation details here present as placeholders to verify the generic request/response
-     * handling with the origin LddsClient works. The idea is not to implement the entire functionally here.
+     * handling with the original LddsClient works. The idea is not to implement the entire functionality here.
      * Due the the tight integration with The BasicServerThread concept directly, it was not pratical
      * to reuse the existing implementations. Next step is extracting the operations code from the LddsCommand
      * implementations so that that logic can be reused where appropriate and creating new Dds IO operations
@@ -112,7 +112,7 @@ public class LddsCommandHandler extends ChannelInboundHandlerAdapter
         }
         else
         {
-            log.atInfo().log("did not recieve an LddsCommand instance, was " + msg.getClass().getName());
+            log.atInfo().log("did not receive an LddsCommand instance, was " + msg.getClass().getName());
             super.channelRead(ctx, msg);
         }
     }
