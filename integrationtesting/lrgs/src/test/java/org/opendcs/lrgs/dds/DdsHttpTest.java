@@ -1,6 +1,6 @@
 package org.opendcs.lrgs.dds;
 
-class final DdsHttpTest
+final class DdsHttpTest
 {
     
 }
