@@ -9,13 +9,13 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.opendcs.logging.spi.LoggingEventProvider;
+import org.opendcs.lrgs.dao.MsgArchive;
 import org.opendcs.tls.TlsMode;
 import org.opendcs.utils.logging.LoggingEventBuffer;
 
 import ilex.util.PasswordFile;
 import ilex.util.PasswordFileEntry;
 import ilex.util.QueueLogger;
-import lrgs.archive.MsgArchive;
 import lrgs.lrgsmain.LrgsConfig;
 import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.lrgsmain.LrgsMain;

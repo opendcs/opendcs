@@ -22,14 +22,15 @@ import java.util.Date;
 import java.util.TimeZone;
 import java.util.zip.GZIPOutputStream;
 
+import org.opendcs.lrgs.dao.MsgArchive;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import java.text.SimpleDateFormat;
 
 import ilex.xml.XmlOutputStream;
+import lrgs.archive.XmlMsgArchive;
 import lrgs.common.*;
-import lrgs.archive.MsgArchive;
 import lrgs.ddsserver.DdsServer;
 
 /**
@@ -138,7 +139,7 @@ public class CmdGetMsgBlockExt extends LddsCommand
 			if (ldds.seqNumMsgBuf == null)
 			{
 				DdsServer ddsServer = (DdsServer)ldds.getParent();
-				MsgArchive marc = ddsServer.msgArchive;
+				var marc = (XmlMsgArchive)ddsServer.msgArchive;
 				ldds.seqNumMsgBuf = new ArrayList<DcpMsg>();
 				int n = marc.getMsgsBySeqNum(since.getTime(),
 					until.getTime(), sc.seqStart,

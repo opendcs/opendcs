@@ -18,10 +18,10 @@ package lrgs.noaaportrecv;
 import java.io.IOException;
 import java.util.Date;
 
+import org.opendcs.lrgs.dao.MsgArchive;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
-import lrgs.archive.MsgArchive;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
 import lrgs.lrgsmain.LrgsConfig;

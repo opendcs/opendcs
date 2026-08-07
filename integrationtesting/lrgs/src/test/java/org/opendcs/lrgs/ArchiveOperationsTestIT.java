@@ -22,9 +22,9 @@ import org.opendcs.fixtures.extensions.lrgs.LrgsTestExtension;
 import org.opendcs.fixtures.lrgs.LrgsTestInstance;
 
 import lrgs.apistatus.AttachedProcess;
-import lrgs.archive.MsgArchive;
 import lrgs.archive.MsgFilter;
 import lrgs.archive.SearchHandle;
+import lrgs.archive.XmlMsgArchive;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
@@ -44,7 +44,7 @@ public class ArchiveOperationsTestIT
     {
         // Store message
         assertNotNull(lrgs);
-        final MsgArchive archive = lrgs.getArchive();
+        final var archive = (XmlMsgArchive)lrgs.getArchive();
         final String msgData = "Test String.";
         final DcpMsg msgIn = new DcpMsg(DcpMsgFlag.MSG_TYPE_OTHER, msgData.getBytes(Charset.forName("UTF8")),msgData.length(),0);
         msgIn.setXmitTime(new Date());

@@ -18,6 +18,8 @@ package lrgs.ddsrecv;
 import java.util.ArrayList;
 import java.util.Date;
 
+import org.opendcs.lrgs.dao.MsgArchive;
+
 import ilex.util.IDateFormat;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
@@ -25,7 +27,6 @@ import lrgs.common.SearchCriteria;
 import lrgs.lrgsmain.LrgsConfig;
 import lrgs.lrgsmain.LrgsMain;
 import lrgs.lrgsmain.LrgsInputInterface;
-import lrgs.archive.MsgArchive;
 import lrgs.db.Outage;
 import lrgs.db.LrgsDatabaseThread;
 import lrgs.db.LrgsConstants;

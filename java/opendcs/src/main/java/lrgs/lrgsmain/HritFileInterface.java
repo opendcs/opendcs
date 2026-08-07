@@ -21,13 +21,13 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 
+import org.opendcs.lrgs.dao.MsgArchive;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import ilex.util.DirectoryMonitorThread;
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
-import lrgs.archive.MsgArchive;
 import lrgs.common.DcpMsg;
 import lritdcs.HritDcsFileReader;
 import lritdcs.HritException;
