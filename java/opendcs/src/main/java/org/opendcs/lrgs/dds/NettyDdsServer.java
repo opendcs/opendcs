@@ -39,11 +39,20 @@ public final class NettyDdsServer
         this.bindPort = bindPort;
     }
 
-    public void start()
+    /**
+     * Start listening on the given port. The Netty channel future is returned if the caller needs
+     * to wait for the startup to finish.
+     * @return Netty ChannelFuture for the server.
+     */
+    public ChannelFuture start()
     {
         channel = boostrap.bind(bindAddress, bindPort);
+        return channel;
     }
 
+    /**
+     * Shutdown the socket and stop listening. Returns immediately.
+     */
     public void stop()
     {
         try 
@@ -52,10 +61,15 @@ public final class NettyDdsServer
         }
         catch (InterruptedException ex)
         {
-            log.
+            log.atError().setCause(ex).log("Exception thrown, that shouldn't have been.");
         }
     }
 
+    /**
+     * Shutdown the socket and stop listening. Optionally waiting for the operation to finish.
+     * @param wait whether to wait until shutdown is complete.
+     * @throws InterruptedException if there are any issues waiting.
+     */
     public void stop(boolean wait) throws InterruptedException
     {
         this.worker.shutdownGracefully();
@@ -65,8 +79,21 @@ public final class NettyDdsServer
             channel.sync();
         }
     }
-    
 
+    public int getBindPort()
+    {
+        return this.bindPort;
+    }
+
+    public InetAddress getBindAddress()
+    {
+        return bindAddress;
+    }
+
+    /**
+     * Builder to assign or override various components of the LRGS server
+     * Builder
+     */
     public static class Builder
     {
         int port = 16003;
@@ -96,7 +123,6 @@ public final class NettyDdsServer
             return this;
         }
 
-
         public NettyDdsServer build()
         {
             EventLoopGroup boss = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
@@ -113,9 +139,8 @@ public final class NettyDdsServer
                         .addLast(
                         new LddsMessageDecoder(),
                         new LddsCommandDecoder(),
-                        new LddsMessageEncoder(),
-                        new LddsHelloHandler()
-                );
+                        new LddsMessageEncoder())
+                        .addLast(LddsHelloHandler.HANDLER_NAME, new LddsHelloHandler());
                 }   
             })
             .option(ChannelOption.SO_BACKLOG, 5)

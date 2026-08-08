@@ -16,6 +16,7 @@ import org.opendcs.lrgs.dds.LddsCommandDecoder;
 import org.opendcs.lrgs.dds.LddsHelloHandler;
 import org.opendcs.lrgs.dds.LddsMessageDecoder;
 import org.opendcs.lrgs.dds.LddsMessageEncoder;
+import org.opendcs.lrgs.dds.NettyDdsServer;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -30,10 +31,7 @@ import lrgs.ldds.LddsClient;
 class NettyLrgsTest
 {
     private static LrgsTestInstance lrgs = null;
-    private static EventLoopGroup boss = new NioEventLoopGroup();
-    private static EventLoopGroup worker = new NioEventLoopGroup();
-    private static ChannelFuture channel;
-    private static int port;
+    private static NettyDdsServer ddsServer = null;
 
     @BeforeAll
     static void setup() throws Exception
@@ -46,38 +44,15 @@ class NettyLrgsTest
             lrgs = new LrgsTestInstance(lrgsHome);
         });
 
-        // This should be part of a more formal "Updated Dds Server" class
-        // it is placed here for ease of initial setup and testing.
-    
-        ServerBootstrap b = new ServerBootstrap();
-        b.group(boss, worker)
-         .channel(NioServerSocketChannel.class)
-         .childHandler(new ChannelInitializer<SocketChannel>() 
-         {
-            @Override
-            protected void initChannel(SocketChannel ch) throws Exception
-            {
-                ch.pipeline()
-                    .addLast(
-                    new LddsMessageDecoder(),
-                    new LddsCommandDecoder(),
-                    new LddsMessageEncoder(),
-                    new LddsHelloHandler()
-            );
-            }   
-         })
-         .option(ChannelOption.SO_BACKLOG, 5)
-         .childOption(ChannelOption.SO_KEEPALIVE, true);
-
-         channel = b.bind(0).sync();
-         port = ((InetSocketAddress)channel.channel().localAddress()).getPort();
+        ddsServer = new NettyDdsServer.Builder().build();
+        ddsServer.start().sync();
          
     }
 
     @Test
     void test_netty_server() throws Exception
     {
-        LddsClient client = new LddsClient("127.0.0.1", port);
+        LddsClient client = new LddsClient("127.0.0.1", ddsServer.getBindPort());
         client.connect();
         client.sendHello("anonymous");
         var ret = client.getMsgBlockExt(0);
