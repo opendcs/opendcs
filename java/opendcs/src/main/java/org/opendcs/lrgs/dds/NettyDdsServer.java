@@ -3,6 +3,7 @@ package org.opendcs.lrgs.dds;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Objects;
 
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -16,10 +17,14 @@ import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.AttributeKey;
+import lrgs.lrgsmain.LrgsMain;
 
 public final class NettyDdsServer
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
+    public static final AttributeKey<LrgsMain> LRGS_INSTANCE = AttributeKey.valueOf("lrgs");
 
     private final EventLoopGroup boss;
     private final EventLoopGroup worker;
@@ -27,16 +32,18 @@ public final class NettyDdsServer
     private final InetAddress bindAddress;
     private final int bindPort;
     private final ServerBootstrap boostrap;
+    private final LrgsMain lrgs;
 
 
     private NettyDdsServer(EventLoopGroup boss, EventLoopGroup worker, ServerBootstrap bootstrap,
-                           InetAddress bindAddress, int bindPort)
+                           InetAddress bindAddress, int bindPort, LrgsMain lrgs)
     {
         this.boss = boss;
         this.worker = worker;
         this.bindAddress = bindAddress;
         this.boostrap = bootstrap;
         this.bindPort = bindPort;
+        this.lrgs = Objects.requireNonNull(lrgs, ":rgs instance is required");
     }
 
     /**
@@ -98,6 +105,7 @@ public final class NettyDdsServer
     {
         int port = 16003;
         InetAddress bindAddr;
+        LrgsMain lrgs = null;
 
         public Builder()
         {
@@ -123,6 +131,12 @@ public final class NettyDdsServer
             return this;
         }
 
+        public Builder withLrgs(LrgsMain lrgs)
+        {
+            this.lrgs = lrgs;
+            return this;
+        }
+
         public NettyDdsServer build()
         {
             EventLoopGroup boss = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
@@ -130,6 +144,7 @@ public final class NettyDdsServer
             ServerBootstrap b = new ServerBootstrap();
             b.group(boss, worker)
             .channel(NioServerSocketChannel.class)
+            .childAttr(LRGS_INSTANCE, lrgs)
             .childHandler(new ChannelInitializer<SocketChannel>() 
             {
                 @Override
@@ -137,16 +152,17 @@ public final class NettyDdsServer
                 {
                     ch.pipeline()
                         .addLast(
-                        new LddsMessageDecoder(),
-                        new LddsCommandDecoder(),
-                        new LddsMessageEncoder())
-                        .addLast(LddsHelloHandler.HANDLER_NAME, new LddsHelloHandler());
+                            new LddsMessageDecoder(),
+                            new LddsCommandDecoder(),
+                            new LddsMessageEncoder())
+                        .addLast(LddsHelloHandler.HANDLER_NAME, new LddsHelloHandler())
+                        .addLast(new LddsErrorHandler());
                 }   
             })
             .option(ChannelOption.SO_BACKLOG, 5)
             .childOption(ChannelOption.SO_KEEPALIVE, true);
             
-            return new NettyDdsServer(boss, worker, b, bindAddr, port);
+            return new NettyDdsServer(boss, worker, b, bindAddr, port, lrgs);
         }
     }
 }

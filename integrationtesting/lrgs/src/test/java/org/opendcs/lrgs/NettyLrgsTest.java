@@ -44,7 +44,7 @@ class NettyLrgsTest
             lrgs = new LrgsTestInstance(lrgsHome);
         });
 
-        ddsServer = new NettyDdsServer.Builder().build();
+        ddsServer = new NettyDdsServer.Builder().withLrgs(lrgs.getLrgsMain()).build();
         ddsServer.start().sync();
          
     }
