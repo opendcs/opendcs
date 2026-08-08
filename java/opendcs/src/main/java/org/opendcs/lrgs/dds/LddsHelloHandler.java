@@ -59,7 +59,6 @@ public class LddsHelloHandler extends ChannelInboundHandlerAdapter
     {
         if (msg instanceof CmdHello hello)
         {
-            log.info("hello msg");
             if (hello.getDdsVersion() != 14)
             {
                 throw new ServerError("Only DDS Protcoll Version 14 is supported on this system.", LrgsErrorCode.DDDSFATAL, 0);
@@ -75,12 +74,5 @@ public class LddsHelloHandler extends ChannelInboundHandlerAdapter
             log.atInfo().log("did not receive an LddsCommand instance, was " + msg.getClass().getName());
             super.channelRead(ctx, msg);
         }
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
-    {
-        log.atError().setCause(cause).log("Unable to process DDS Message");
-        ctx.close();
     }
 }
