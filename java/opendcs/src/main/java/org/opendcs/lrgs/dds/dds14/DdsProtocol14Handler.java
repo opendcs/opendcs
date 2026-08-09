@@ -9,6 +9,7 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.opentelemetry.api.trace.Span;
+import lrgs.common.ArchiveException;
 import lrgs.common.LrgsErrorCode;
 import lrgs.ldds.CmdGetMsgBlockExt;
 import lrgs.ldds.CmdGoodbye;
@@ -49,6 +50,21 @@ public class DdsProtocol14Handler extends ChannelInboundHandlerAdapter
             {
                 super.channelRead(ctx, msg);
             }
+        }
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
+    {
+        var res = new LddsMessage(LddsMessage.IdDcpBlockExt, cause.getMessage());
+        var future = ctx.writeAndFlush(res);
+        if (cause instanceof ArchiveException aex && aex.getHangup() == false)
+        {
+            return;
+        }
+        else
+        {
+            future.addListener(ChannelFutureListener.CLOSE);
         }
     }
 }
