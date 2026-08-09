@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.net.InetSocketAddress;
@@ -55,9 +57,12 @@ class NettyLrgsTest
         msgIn.setDcpAddress(addrIn);
         lrgs.getArchive().archiveMsg(msgIn, dataSource);
         ((XmlMsgArchive)lrgs.getArchive()).checkpoint();
-
+        var sp = lrgs.getArchive().getStatusProvider();
+        assertNotNull(sp);
+        assertTrue(sp.isUsable());
         LddsClient client = new LddsClient("127.0.0.1", ddsServer.getBindPort());
         client.connect();
+        client.getSocket().setSoTimeout(0);
         client.sendHello("anonymous");
         var ret = client.getMsgBlockExt(500);
         assertNotNull(ret);

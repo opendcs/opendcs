@@ -3,14 +3,17 @@ package org.opendcs.lrgs.dds.dds14;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.zip.GZIPOutputStream;
 
+import org.opendcs.lrgs.dds.DdsSession;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import ilex.xml.XmlOutputStream;
+import lrgs.archive.XmlMsgArchive;
 import lrgs.common.ArchiveException;
 import lrgs.common.ArchiveUnavailableException;
 import lrgs.common.DcpMsg;
@@ -23,6 +26,7 @@ import lrgs.common.NoSuchMessageException;
 import lrgs.common.SearchCriteria;
 import lrgs.common.SearchTimeoutException;
 import lrgs.common.UntilReachedException;
+import lrgs.ddsserver.DdsServer;
 import lrgs.ldds.CmdGetMsgBlockExt;
 import lrgs.ldds.ExtBlockXmlParser;
 import lrgs.ldds.LddsMessage;
@@ -34,8 +38,12 @@ public final class GetMsgBlockEx
     private static final int MAX_SIZE = 20000;
     private static final int MAX_MSGS = 100;
 
-    public static final LddsMessage process(CmdGetMsgBlockExt cmd, DcpMsgRetriever msgRetriever, int ddsVersion) throws Exception
+    public static final LddsMessage process(CmdGetMsgBlockExt cmd, DdsSession session) throws Exception
     {
+        var msgRetriever = session.msgRetriever();
+        var ddsVersion = session.ddsVersion();
+        var seqNumMsgBuf = session.sequenceMessageBuf();
+        var seqNumMsgBufIdx = session.seqNumMsgBufIdx();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy/DDD HH:mm:ss.SSS");
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 	    ExtBlockXmlParser myXmlParser = new ExtBlockXmlParser(DcpMsgFlag.SRC_DDS);;
@@ -44,31 +52,64 @@ public final class GetMsgBlockEx
         // Use XML_OS ( GZIP_OS ( BA_OS ) ) to build response body.
 		ByteArrayOutputStream baos = new ByteArrayOutputStream(MAX_SIZE+1000);
 
-
-		// Special Case - client is doing a DOMSAT Sequence Range Retrieval.
-		SearchCriteria sc = msgRetriever.getCrit();
-		Date since, until;
-		int numMessages = 0;
-		boolean didSeqSearch = false;
-		boolean bufDone = false;
-		String conName = "con(-1)";
-        if (sc.getLrgsSince() == null)
-        {
-            sc.setLrgsSince("now - 2 hours");
-        }
-		// Get message, every 5 seconds, check for stop message.
-		DcpMsgIndex idx = new DcpMsgIndex();
-		long start = System.currentTimeMillis();
-		long stopSearchMsec = start + 45000L;
-		int maxMsgs = MAX_MSGS;
-		if (sc.single)
-        {
-			maxMsgs = 1;
-        }
         try (GZIPOutputStream gzos = new GZIPOutputStream(baos))
         {
             XmlOutputStream xos = new XmlOutputStream(gzos, ExtBlockXmlParser.MsgBlockElem);
             xos.startElement(ExtBlockXmlParser.MsgBlockElem);
+
+            // Special Case - client is doing a DOMSAT Sequence Range Retrieval.
+            SearchCriteria sc = msgRetriever.getCrit();
+            Date since, until;
+            int numMessages = 0;
+            boolean didSeqSearch = false;
+            boolean bufDone = false;
+            String conName = "con(-1)";
+            if (sc != null && sc.seqStart >= 0 && sc.seqEnd >= 0
+            && (since = sc.evaluateLrgsSinceTime()) != null
+            && (until = sc.evaluateLrgsUntilTime()) != null)
+            {
+                didSeqSearch = true;
+
+                if (seqNumMsgBuf.isEmpty())
+                {
+                    var marc = (XmlMsgArchive)session.archive();
+                    int n = marc.getMsgsBySeqNum(since.getTime(),
+                        until.getTime(), sc.seqStart,
+                        sc.seqEnd, seqNumMsgBuf);
+                    seqNumMsgBufIdx = 0;
+                }
+                int sz = seqNumMsgBuf.size();
+                while(seqNumMsgBufIdx < sz && numMessages < MAX_MSGS)
+                {
+                    if (myXmlParser.addMsg(xos,
+                        seqNumMsgBuf.get(seqNumMsgBufIdx++), conName))
+                        numMessages++;
+                }
+                if (seqNumMsgBufIdx >= sz)
+                {
+                    seqNumMsgBuf.clear();
+                    
+                    // Modify searchcrit so it won't search seq nums again.
+                    sc.seqStart = -1;
+                    sc.seqEnd = -1;
+                }
+                if (numMessages >= MAX_MSGS)
+                    bufDone = true;
+            }
+            if (numMessages == 0)
+            {
+                didSeqSearch = false;
+            }
+            // Get message, every 5 seconds, check for stop message.
+            DcpMsgIndex idx = new DcpMsgIndex();
+            long start = System.currentTimeMillis();
+            long stopSearchMsec = start + 45000L;
+            int maxMsgs = MAX_MSGS;
+            if (sc.single)
+            {
+                maxMsgs = 1;
+            }
+
             while(!bufDone)
             {
                 try

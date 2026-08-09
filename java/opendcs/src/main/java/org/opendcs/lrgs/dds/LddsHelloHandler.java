@@ -91,8 +91,10 @@ public class LddsHelloHandler extends ChannelInboundHandlerAdapter
             var ap = new AttachedProcess();
             ap.user = user.getName();
             var retriever = new MessageArchiveRetriever((XmlMsgArchive)lrgs.msgArchive, ap);
+            retriever.attachSource();
+            retriever.setDcpMsgSource(retriever);
             retriever.init();
-            var session = new DdsSession(retriever);
+            var session = new DdsSession(retriever, hello.getDdsVersion(), lrgs.msgArchive);
             ctx.channel().attr(DDS_SESSION).set(session);
 
             ctx.pipeline().addLast("dds14handler", new DdsProtocol14Handler());

@@ -33,7 +33,7 @@ public class DdsProtocol14Handler extends ChannelInboundHandlerAdapter
         {
             if (msg instanceof CmdGetMsgBlockExt cmd)
             {
-                var res = GetMsgBlockEx.process(cmd, session.msgRetriever(), user.getDdsVersion());
+                var res = GetMsgBlockEx.process(cmd, session);
                 ctx.writeAndFlush(res);
             }
             else if (msg instanceof CmdGoodbye)

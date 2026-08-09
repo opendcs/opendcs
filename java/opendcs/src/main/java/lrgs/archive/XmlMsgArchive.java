@@ -21,6 +21,7 @@ import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
@@ -183,6 +184,12 @@ public class XmlMsgArchive implements org.opendcs.lrgs.dao.MsgArchive
 		{
 			log.atWarn().log("cannot use LrgsStatusProvider of type {}", sp.getClass().getName());
 		}
+	}
+
+	@Override
+	public LrgsStatusProvider getStatusProvider()
+	{
+		return this.statusProvider;
 	}
 
 	/**
@@ -959,7 +966,7 @@ public class XmlMsgArchive implements org.opendcs.lrgs.dao.MsgArchive
 	 * @return number of messages stored.
 	 */
 	public int getMsgsBySeqNum(long fromDomsatTime, long untilDomsatTime,
-		int seqStart, int seqEnd, ArrayList<DcpMsg> msgs)
+		int seqStart, int seqEnd, List<DcpMsg> msgs)
 		throws ArchiveUnavailableException
 	{
 		int r = 0;
