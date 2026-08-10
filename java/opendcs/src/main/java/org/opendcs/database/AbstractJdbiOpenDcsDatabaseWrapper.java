@@ -42,6 +42,7 @@ import org.opendcs.database.impl.opendcs.jdbi.column.chrono.OpenDcsTimeColumnArg
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
 import org.opendcs.database.impl.opendcs.jdbi.plugins.OpenDcsBaseSqlExceptionHandler;
+import org.opendcs.database.impl.opendcs.jdbi.plugins.OpenDcsConstraintSqlExceptionHandler;
 import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.utils.AnnotationHelpers;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -106,6 +107,12 @@ public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatab
         {
             throw new IllegalStateException("Unable to determine database type", ex);
         }
+
+        // Registered after the base handler so it runs first (handlers are
+        // attempted in reverse order of registration); anything it doesn't
+        // recognize as a constraint violation falls through to the base handler.
+        jdbi.getConfig(SqlStatements.class)
+            .addExceptionHandler(new OpenDcsConstraintSqlExceptionHandler(dbEngine));
 
         DecodesSettings decodesSettings = (DecodesSettings)settingsMap.get(DecodesSettings.class);
         try

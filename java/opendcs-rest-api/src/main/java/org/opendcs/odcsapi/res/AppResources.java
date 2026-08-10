@@ -50,7 +50,6 @@ import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
-import org.opendcs.database.api.OpenDcsDataConstraintException;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.LoadingAppDao;
 
@@ -272,10 +271,6 @@ public final class AppResources extends OpenDcsResource
 			appDao.delete(tx, DbKey.createDbKey(appId));
 			return Response.noContent()
 					.entity("appId with ID " + appId + " deleted").build();
-		}
-		catch (OpenDcsDataConstraintException ex)
-		{
-			throw new WebAppException(Response.Status.CONFLICT.getStatusCode(), ex.getMessage(), ex);
 		}
 		catch (OpenDcsDataException ex)
 		{

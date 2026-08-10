@@ -63,7 +63,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.opendcs.database.api.DataTransaction;
-import org.opendcs.database.api.OpenDcsDataConstraintException;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.DataTypeDao;
 import org.opendcs.database.dai.DecodesConfigDao;
@@ -584,10 +583,6 @@ public final class ConfigResources extends OpenDcsResource
 			return Response.noContent()
 					.entity("Config with ID " + configId + " deleted")
 					.build();
-		}
-		catch (OpenDcsDataConstraintException ex)
-		{
-			throw new WebAppException(Response.Status.CONFLICT.getStatusCode(), ex.getMessage(), ex);
 		}
 		catch (OpenDcsDataException ex)
 		{

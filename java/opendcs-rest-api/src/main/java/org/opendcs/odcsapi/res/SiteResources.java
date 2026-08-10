@@ -48,7 +48,6 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import org.opendcs.database.api.OpenDcsDataConstraintException;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.SiteDao;
 import org.opendcs.odcsapi.beans.ApiSite;
@@ -364,10 +363,6 @@ public final class SiteResources extends OpenDcsResource
 			return Response.noContent()
 					.entity("ID " + siteId + " deleted").build();
 
-		}
-		catch(OpenDcsDataConstraintException ex)
-		{
-			throw new WebAppException(Response.Status.CONFLICT.getStatusCode(), ex.getMessage(), ex);
 		}
 		catch(OpenDcsDataException ex)
 		{

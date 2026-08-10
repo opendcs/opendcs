@@ -25,7 +25,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-import org.opendcs.database.api.OpenDcsDataConstraintException;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.api.exceptions.data.OpenDcsConstraintException;
@@ -61,7 +60,6 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 			case DbException dbException -> handle(dbException);
 			case WebApplicationException webApplicationException -> handle(webApplicationException);
 			case UnsupportedOperationException unsupportedOperationException -> handle(unsupportedOperationException);
-			case OpenDcsDataConstraintException constraintEx -> handleConstraint(constraintEx);
 			case OpenDcsDataException dataEx -> handle(dataEx);
 			case OpenDcsDataRuntimeException odcs -> toResponse(odcs.getCause());
 			case null, default -> handle(ex);
@@ -172,14 +170,6 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 		log.atWarn().setCause(dbex).log("Constraint violation on delete");
 		return Response.status(Response.Status.CONFLICT)
 				.entity(new Status(dbex.getMessage()))
-				.build();
-	}
-
-	private static Response handleConstraint(OpenDcsDataConstraintException ex)
-	{
-		log.atWarn().setCause(ex).log("Data constraint violation on delete");
-		return Response.status(Response.Status.CONFLICT)
-				.entity(new Status(ex.getMessage()))
 				.build();
 	}
 

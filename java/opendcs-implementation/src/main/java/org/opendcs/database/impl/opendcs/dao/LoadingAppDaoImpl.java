@@ -8,8 +8,8 @@ import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.exceptions.data.OpenDcsConstraintException;
 import org.opendcs.database.dai.LoadingAppDao;
-import org.opendcs.database.impl.opendcs.SqlConstraintTranslator;
 import org.opendcs.database.model.mappers.compapp.CompAppInfoMapper;
 import org.opendcs.database.model.mappers.compapp.CompAppInfoReducer;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
@@ -180,10 +180,13 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
                 deleteApp.bind(GenericColumns.ID.column(), id).execute();
             }
         }
+        catch (OpenDcsConstraintException ex)
+        {
+            throw ex;
+        }
         catch (RuntimeException ex)
         {
-            var engine = tx.getContext().getDatabaseEngine();
-            throw SqlConstraintTranslator.translate("Loading app " + id + " is still used by computations or schedule entries and cannot be deleted", engine, ex);
+            throw new OpenDcsDataException("Loading app " + id + " is still used by computations or schedule entries and cannot be deleted", ex);
         }
     }
 

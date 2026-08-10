@@ -4,8 +4,8 @@ import org.jdbi.v3.core.Handle;
 import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.exceptions.data.OpenDcsConstraintException;
 import org.opendcs.database.dai.DecodesConfigDao;
-import org.opendcs.database.impl.opendcs.SqlConstraintTranslator;
 import org.opendcs.database.dai.UnitConverterDao;
 import org.opendcs.database.model.mappers.datatype.DataTypeMapper;
 import org.opendcs.database.model.mappers.equipmentmodel.EquipmentModelMapper;
@@ -441,10 +441,13 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                 deleteConfig.bind(GenericColumns.ID.column(), id).execute();
             }
         }
+        catch (OpenDcsConstraintException ex)
+        {
+            throw ex;
+        }
         catch (RuntimeException ex)
         {
-            var engine = tx.getContext().getDatabaseEngine();
-            throw SqlConstraintTranslator.translate("Config " + id + " is still used by one or more platforms and cannot be deleted", engine, ex);
+            throw new OpenDcsDataException("Config " + id + " is still used by one or more platforms and cannot be deleted", ex);
         }
     }
 

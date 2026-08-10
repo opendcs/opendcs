@@ -7,7 +7,6 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
-import org.opendcs.database.api.OpenDcsDataConstraintException;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.api.exceptions.data.RelatedDataConstraintException;
@@ -24,18 +23,6 @@ final class AppExceptionMapperTest
 	private final AppExceptionMapper mapper = new AppExceptionMapper();
 
 	@Test
-	void testOpenDcsDataConstraintExceptionMapsTo409()
-	{
-		OpenDcsDataConstraintException ex = new OpenDcsDataConstraintException("Site 5 is still referenced");
-
-		Response response = mapper.toResponse(ex);
-
-		assertEquals(Response.Status.CONFLICT.getStatusCode(), response.getStatus());
-		Status status = assertInstanceOf(Status.class, response.getEntity());
-		assertEquals("Site 5 is still referenced", status.getMessage());
-	}
-
-	@Test
 	void testOpenDcsDataExceptionMapsTo500WithGenericMessage()
 	{
 		OpenDcsDataException ex = new OpenDcsDataException("some internal detail that shouldn't leak");
@@ -50,14 +37,14 @@ final class AppExceptionMapperTest
 	@Test
 	void testOpenDcsDataRuntimeExceptionDelegatesToCause()
 	{
-		OpenDcsDataConstraintException cause = new OpenDcsDataConstraintException("wrapped constraint failure");
+		RelatedDataConstraintException cause = new RelatedDataConstraintException("wrapped constraint failure");
 		OpenDcsDataRuntimeException ex = new OpenDcsDataRuntimeException(cause);
 
 		Response response = mapper.toResponse(ex);
 
 		assertEquals(Response.Status.CONFLICT.getStatusCode(), response.getStatus());
 		Status status = assertInstanceOf(Status.class, response.getEntity());
-		assertEquals("wrapped constraint failure", status.getMessage());
+		assertEquals("Cannot perform operation because  data in use.", status.getMessage());
 	}
 
 	@Test

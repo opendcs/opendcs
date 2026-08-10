@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 import decodes.sql.DbKey;
+import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbAlgoParm;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbCompAlgorithmScript;
@@ -373,6 +374,17 @@ public final class AlgorithmResources extends OpenDcsResource
 			dai.deleteAlgorithm(DbKey.createDbKey(algorithmId));
 			return Response.noContent()
 					.build();
+		}
+		catch(DbIoException ex)
+		{
+			// AlgorithmDAO wraps the ConstraintException it throws when the algorithm is
+			// still in use, rather than letting it escape directly. Unwrap it here so it
+			// maps to 409 Conflict instead of the generic 500 for DbIoException.
+			if (ex.getCause() instanceof ConstraintException constraintException)
+			{
+				throw constraintException;
+			}
+			throw ex;
 		}
 	}
 }

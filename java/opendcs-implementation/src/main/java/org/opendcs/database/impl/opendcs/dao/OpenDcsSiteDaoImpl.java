@@ -13,8 +13,8 @@ import java.util.regex.Pattern;
 import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.exceptions.data.OpenDcsConstraintException;
 import org.opendcs.database.dai.SiteDao;
-import org.opendcs.database.impl.opendcs.SqlConstraintTranslator;
 import org.opendcs.database.exceptions.RequiredSiteNameMissingException;
 import org.opendcs.database.impl.opendcs.jdbi.column.numeric.NullableDoubleArgumentFactory;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
@@ -308,10 +308,13 @@ public class OpenDcsSiteDaoImpl implements SiteDao
                 deleteSite.bind(GenericColumns.ID.column(), id).execute();
             }
         }
+        catch (OpenDcsConstraintException ex)
+        {
+            throw ex;
+        }
         catch (RuntimeException ex)
         {
-            var engine = tx.getContext().getDatabaseEngine();
-            throw SqlConstraintTranslator.translate("Site " + id + " is still referenced by other records and cannot be deleted", engine, ex);
+            throw new OpenDcsDataException("Site " + id + " is still referenced by other records and cannot be deleted", ex);
         }
     }
 
