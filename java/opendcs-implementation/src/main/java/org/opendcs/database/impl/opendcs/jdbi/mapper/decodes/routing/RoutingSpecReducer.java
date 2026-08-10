@@ -25,6 +25,7 @@ import org.jdbi.v3.core.result.RowView;
 import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListMapper;
 import org.opendcs.database.model.mappers.datasource.DataSourceMapper;
+import org.opendcs.database.model.mappers.properties.PropertiesMapper;
 
 import decodes.db.DataSource;
 import decodes.db.NetworkList;
@@ -56,63 +57,76 @@ public final class RoutingSpecReducer implements LinkedHashMapRowReducer<Long, R
             var specId = rowView.getColumn(mappers.specMapper().column(RoutingSpecMapper.Columns.ID), Long.class);
             var spec = container.computeIfAbsent(specId, id -> rowView.getRow(RoutingSpec.class));
 
-            if (mappers.specPropertiesMapper() != null)
-            {
-                var prop = rowView.getRow(ROUTING_SPEC_PROPERTIES);
-                if (prop != null && prop.first != null && prop.second != null)
-                {
-                    spec.setProperty(prop.first, prop.second);
-                }
-            }
-
-            if (mappers.dataSourceAccumulator() != null)
-            {
-                mappers.dataSourceAccumulator().accumulate(datasSources, rowView);
-                var dsId = rowView.getColumn(
-                    mappers.dataSourceAccumulator()
-                           .primaryMapper
-                           .column(DataSourceMapper.Columns.ID), DbKey.class);
-                if (spec.dataSource == null && dsId != null)
-                {
-                    spec.dataSource = datasSources.get(dsId);
-                }
-            }
-
-            if (mappers.listReducer() != null)
-            {
-                mappers.listReducer().accumulate(networkLists, rowView);
-                var specList = rowView.getRow(RoutingSpecNetworkListMapper.ROUTING_SPEC_LIST);
-
-                /**
-                 * Special case NetworkList that "always exists" but is not present in the
-                 * tables... which explain why there's no normalization and foreign keys on
-                 * those tables. Future work should have a "NetworkList" in the database
-                 * for <all>, and either have no entries, or automatically add entries
-                 * to the list. With the latter prefered as it would reduce special cases
-                 * in the downstream components.
-                 */
-                if (specList != null &&
-                    "<all>".equalsIgnoreCase(specList.second) &&
-                    !spec.networkLists.contains(NetworkList.dummy_all))
-                {
-                    spec.networkListNames.add("<all>");
-                    spec.networkLists.add(NetworkList.dummy_all);
-                }
-                var listId = rowView.getColumn(mappers.listMapper().column(NetworkListMapper.Columns.ID), Long.class);
-                if (listId != null)
-                {
-                    var list = this.networkLists.get(listId);
-                    if (list != null && !spec.networkLists.contains(list))
-                    {
-                        spec.networkLists.add(list);
-                        spec.networkListNames.add(list.name);
-                    }
-                }
-            }
+            mapProps(spec, rowView);
+            mapDataSources(spec, rowView);
+            mapNetworkLists(spec, rowView);
         }
         catch (SQLException ex)
         {
             throw new UnableToExecuteStatementException("Unable to process row", ex, null);
+        }
+    }
+
+    private void mapProps(RoutingSpec spec, RowView rowView)
+    {
+        if (mappers.specPropertiesMapper() != null)
+        {
+            var prop = rowView.getRow(ROUTING_SPEC_PROPERTIES);
+            if (prop != null && prop.first != null && prop.second != null)
+            {
+                spec.setProperty(prop.first, prop.second);
+            }
+        }
+    }
+
+    private void mapDataSources(RoutingSpec spec, RowView rowView) throws SQLException
+    {
+        if (mappers.dataSourceAccumulator() != null)
+        {
+            mappers.dataSourceAccumulator().accumulate(datasSources, rowView);
+            var dsId = rowView.getColumn(
+                mappers.dataSourceAccumulator()
+                        .primaryMapper
+                        .column(DataSourceMapper.Columns.ID), DbKey.class);
+            if (spec.dataSource == null && dsId != null)
+            {
+                spec.dataSource = datasSources.get(dsId);
+            }
+        }
+    }
+
+    private void mapNetworkLists(RoutingSpec spec, RowView rowView) throws SQLException
+    {
+        if (mappers.listReducer() != null)
+        {
+            mappers.listReducer().accumulate(networkLists, rowView);
+            var specList = rowView.getRow(RoutingSpecNetworkListMapper.ROUTING_SPEC_LIST);
+
+            /**
+             * Special case NetworkList that "always exists" but is not present in the
+             * tables... which explain why there's no normalization and foreign keys on
+             * those tables. Future work should have a "NetworkList" in the database
+             * for <all>, and either have no entries, or automatically add entries
+             * to the list. With the latter prefered as it would reduce special cases
+             * in the downstream components.
+             */
+            if (specList != null &&
+                "<all>".equalsIgnoreCase(specList.second) &&
+                !spec.networkLists.contains(NetworkList.dummy_all))
+            {
+                spec.networkListNames.add("<all>");
+                spec.networkLists.add(NetworkList.dummy_all);
+            }
+            var listId = rowView.getColumn(mappers.listMapper().column(NetworkListMapper.Columns.ID), Long.class);
+            if (listId != null)
+            {
+                var list = this.networkLists.get(listId);
+                if (list != null && !spec.networkLists.contains(list))
+                {
+                    spec.networkLists.add(list);
+                    spec.networkListNames.add(list.name);
+                }
+            }
         }
     }
 }

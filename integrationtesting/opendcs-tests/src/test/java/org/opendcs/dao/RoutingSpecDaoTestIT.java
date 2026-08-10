@@ -99,7 +99,7 @@ class RoutingSpecDaoTestIT extends AppTestBase
 
             dao.delete(tx, specOut.getId());
 
-            dao.getById(tx, specOut.getId()).ifPresent((s) -> fail("Spec was not deleted"));
+            dao.getById(tx, specOut.getId()).ifPresent(s -> fail("Spec was not deleted"));
         }
     }
 
@@ -165,7 +165,7 @@ class RoutingSpecDaoTestIT extends AppTestBase
         }
     }
 
-    private RoutingSpec createSpec(int idx, DataSource ds) throws Exception
+    private RoutingSpec createSpec(int idx, DataSource ds)
     {
         String name = String.format("000-spec-%03d", idx);
         var spec = new RoutingSpec(name);

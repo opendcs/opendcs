@@ -112,7 +112,7 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
             {
                 for (var c: excluding)
                 {
-                    if (column == c)
+                    if (column.equals(c))
                     {
                         return true;
                     }

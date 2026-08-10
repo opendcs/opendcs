@@ -64,7 +64,7 @@ import decodes.sql.KeyGenerator;
     @ServiceProvider(service = RoutingSpecDao.class, path = "dao/OPENTSDB"),
     @ServiceProvider(service = RoutingSpecDao.class)
 })
-
+@SuppressWarnings("java:S2143") // to be fixed at a later date
 public class RoutingSpecDaoImpl implements RoutingSpecDao
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
@@ -317,7 +317,7 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
         }
     }
 
-    private void deleteProps(Handle handle, DbKey specId) throws OpenDcsDataException
+    private void deleteProps(Handle handle, DbKey specId)
     {
         final var deletePropTemplate = queries.getInstanceOf(DELETE_SPEC_PROPS);
         try (var deleteProps = handle.createUpdate(deletePropTemplate.render()))
@@ -326,7 +326,7 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
         }
     }
 
-    private void deleteSpecLists(Handle handle, DbKey specId) throws OpenDcsDataException
+    private void deleteSpecLists(Handle handle, DbKey specId)
     {
         final var deleteSpecListTemplate = queries.getInstanceOf(DELETE_SPEC_LISTS);
         try (var deleteSpecList = handle.createUpdate(deleteSpecListTemplate.render()))

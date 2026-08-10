@@ -29,6 +29,7 @@ import org.opendcs.utils.sql.SqlErrorMessages;
 import decodes.db.RoutingSpec;
 import decodes.sql.DbKey;
 
+@SuppressWarnings("java:S2143") // to be fixed at a later date
 public final class RoutingSpecMapper extends PrefixRowMapper<RoutingSpec, RoutingSpecMapper.Columns>
 {
     private RoutingSpecMapper(String prefix)
