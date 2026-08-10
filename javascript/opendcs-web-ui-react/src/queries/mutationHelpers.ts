@@ -50,3 +50,13 @@ export const invalidateThenDelegate =
  */
 export const normalizeNewId = (id: number | undefined): number | undefined =>
   id && id > 0 ? id : undefined;
+
+export const removeDetailOnSave = (
+  queryClient: QueryClient,
+  detailKeyFor: (id: number) => readonly unknown[],
+  id: number | undefined,
+): void => {
+  if (id != null && id > 0) {
+    queryClient.removeQueries({ queryKey: detailKeyFor(id) });
+  }
+};

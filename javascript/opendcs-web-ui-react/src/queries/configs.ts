@@ -12,6 +12,7 @@ import {
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
 import { configKeys } from "./keys";
+import { invalidateThenDelegate, removeDetailOnSave } from "./mutationHelpers";
 import { useTranslation } from "react-i18next";
 
 const useConfigsApi = () => {
@@ -57,6 +58,11 @@ export const useSaveConfigMutation = (
 ) => {
   const { configApi, org } = useConfigsApi();
   const queryClient = useQueryClient();
+  const invalidateList = invalidateThenDelegate<unknown, unknown, ApiPlatformConfig>(
+    queryClient,
+    configKeys.all(org),
+    options?.onSuccess,
+  );
   return useMutation({
     mutationFn: (config: ApiPlatformConfig) => {
       const configId =
@@ -64,9 +70,14 @@ export const useSaveConfigMutation = (
       return configApi.postConfig(org, { ...config, configId });
     },
     ...options,
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: configKeys.all(org) });
-      options?.onSuccess?.(...args);
+    onSuccess: async (...args) => {
+      const variables = args[1];
+      removeDetailOnSave(
+        queryClient,
+        (id) => configKeys.detail(org, id),
+        variables.configId,
+      );
+      await invalidateList(...args);
     },
   });
 };
