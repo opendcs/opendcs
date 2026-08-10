@@ -111,3 +111,66 @@ export const OpenConfigDetail: Story = {
     });
   },
 };
+
+// Editing an existing config's name, saving, then reopening the row must show
+// the value the server actually persisted rather than the pre-edit snapshot.
+export const EditExistingConfigPersistsAfterSave: Story = {
+  parameters: {
+    msw: {
+      handlers: (() => {
+        let saved: ApiPlatformConfig | null = null;
+        return {
+          ...baseHandlers,
+          config: http.get("/odcsapi/config", ({ request }) => {
+            const url = new URL(request.url);
+            const id = Number(url.searchParams.get("configid"));
+            if (id === 101 && saved) return HttpResponse.json<ApiPlatformConfig>(saved);
+            return HttpResponse.json<ApiPlatformConfig>(FULL_CONFIGS[id] ?? {});
+          }),
+          postConfig: http.post("/odcsapi/config", async ({ request }) => {
+            saved = (await request.json()) as ApiPlatformConfig;
+            return HttpResponse.json<ApiPlatformConfig>(saved);
+          }),
+        };
+      })(),
+    },
+  },
+  play: async ({ mount, userEvent, parameters }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("configs:edit_config", { id: 101 }),
+    });
+    await act(async () => userEvent.click(editBtn));
+
+    const nameInput = (await waitFor(() => {
+      const el = canvas.getByLabelText(i18n.t("configs:name")) as HTMLInputElement;
+      expect(el).toBeVisible();
+      return el;
+    })) as HTMLInputElement;
+
+    await userEvent.clear(nameInput);
+    await userEvent.type(nameInput, "Renamed CFG");
+
+    const saveBtn = canvas.getByRole("button", {
+      name: i18n.t("configs:save_config", { id: 101 }),
+    });
+    await act(async () => userEvent.click(saveBtn));
+
+    // Row collapses back to "show" once the save resolves.
+    await waitFor(() =>
+      expect(canvas.queryByLabelText(i18n.t("configs:name"))).toBeNull(),
+    );
+
+    const editBtnAgain = await canvas.findByRole("button", {
+      name: i18n.t("configs:edit_config", { id: 101 }),
+    });
+    await act(async () => userEvent.click(editBtnAgain));
+
+    await waitFor(() => {
+      const el = canvas.getByLabelText(i18n.t("configs:name")) as HTMLInputElement;
+      expect(el.value).toEqual("Renamed CFG");
+    });
+  },
+};
