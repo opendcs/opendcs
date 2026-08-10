@@ -81,7 +81,7 @@ public class LddsHelloHandler extends ChannelInboundHandlerAdapter
             var res = new LddsMessage(LddsMessage.IdHello, hello.getUserName() + " " + hello.getDdsVersion());
             user = new DdsUserPrincipal(hello.getUserName());
             ctx.channel().attr(DDS_USER).set(user);
-            
+
             var lrgs = ctx.channel().attr(NettyDdsServer.LRGS_INSTANCE).get();
             var ap = new AttachedProcess();
             ap.user = user.getName();
