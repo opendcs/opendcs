@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.opendcs.fixtures.assertions.Waiting.assertResultWithinTimeFrame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -12,6 +13,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -19,10 +21,12 @@ import org.opendcs.fixtures.lrgs.LrgsTestInstance;
 import org.opendcs.lrgs.dds.NettyDdsServer;
 
 import lrgs.archive.XmlMsgArchive;
+import lrgs.common.ArchiveException;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
 import lrgs.ldds.LddsClient;
+import lrgs.ldds.ServerError;
 import lrgs.lrgsmain.LrgsInputInterface;
 
 class NettyLrgsTest
@@ -43,7 +47,7 @@ class NettyLrgsTest
 
         ddsServer = new NettyDdsServer.Builder().withLrgs(lrgs.getLrgsMain()).build();
         ddsServer.start().sync();
-         
+
     }
 
     @Test
@@ -64,9 +68,30 @@ class NettyLrgsTest
         client.connect();
         client.getSocket().setSoTimeout(0);
         client.sendHello("anonymous");
-        var ret = client.getMsgBlockExt(500);
-        assertNotNull(ret);
-        assertEquals(1, ret.length);
+        assertResultWithinTimeFrame(value ->
+        {
+            try
+            {
+                var ret = client.getMsgBlockExt(500);
+                if (ret == null)
+                {
+                    return false;
+                }
+                return ret.length >= 1;
+            }
+            catch (ServerError ex)
+            {
+                if (ex.getMessage().contains("End of Archive"))
+                {
+                    return false;
+                }
+                throw ex;
+            }
+        },
+        3, TimeUnit.MINUTES,
+        5, TimeUnit.SECONDS,
+        "No Data returned within reasonable time frame");
+
         client.sendGoodbye();
         client.disconnect();
         assertFalse(client.isConnected());

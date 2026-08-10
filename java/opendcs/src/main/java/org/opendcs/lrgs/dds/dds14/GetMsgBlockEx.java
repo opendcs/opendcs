@@ -1,9 +1,23 @@
+/*
+* Where Applicable, Copyright ? - 2026 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package org.opendcs.lrgs.dds.dds14;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.zip.GZIPOutputStream;
@@ -19,18 +33,26 @@ import lrgs.common.ArchiveUnavailableException;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
 import lrgs.common.DcpMsgIndex;
-import lrgs.common.DcpMsgRetriever;
 import lrgs.common.EndOfArchiveException;
 import lrgs.common.LrgsErrorCode;
 import lrgs.common.NoSuchMessageException;
 import lrgs.common.SearchCriteria;
 import lrgs.common.SearchTimeoutException;
 import lrgs.common.UntilReachedException;
-import lrgs.ddsserver.DdsServer;
 import lrgs.ldds.CmdGetMsgBlockExt;
 import lrgs.ldds.ExtBlockXmlParser;
 import lrgs.ldds.LddsMessage;
 
+/**
+ * At the moment consider this a place holder. Intention is to move the
+ * LddsCommand logic out of the commands themselves. This intentionally dupplicates {@link lrgs.ldds.CmdGetMsgBlockExt}
+ * in order to start isolating the "session" components that would be required.
+ *
+ * After a few more command implementations and rearrangments of the Netty Channel Pipeline we should
+ * have a better sense of what should be where.
+ *
+ * GetMsgBlockEx
+ */
 public final class GetMsgBlockEx
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
@@ -38,8 +60,9 @@ public final class GetMsgBlockEx
     private static final int MAX_SIZE = 20000;
     private static final int MAX_MSGS = 100;
 
-    public static final LddsMessage process(CmdGetMsgBlockExt cmd, DdsSession session) throws Exception
+    public static LddsMessage process(CmdGetMsgBlockExt cmd, DdsSession session) throws Exception
     {
+        log.info("Getting message " + session.toString());
         var msgRetriever = session.msgRetriever();
         var ddsVersion = session.ddsVersion();
         var seqNumMsgBuf = session.sequenceMessageBuf();
@@ -88,7 +111,7 @@ public final class GetMsgBlockEx
                 if (seqNumMsgBufIdx >= sz)
                 {
                     seqNumMsgBuf.clear();
-                    
+
                     // Modify searchcrit so it won't search seq nums again.
                     sc.seqStart = -1;
                     sc.seqEnd = -1;
@@ -192,7 +215,7 @@ public final class GetMsgBlockEx
             }
             return new LddsMessage(cmd.getCommandCode(), rs);
         }
-
+        log.info("returning data.");
         // end of while loop...
         LddsMessage lm = new LddsMessage(LddsMessage.IdDcpBlockExt, "");
         lm.MsgData = baos.toByteArray();

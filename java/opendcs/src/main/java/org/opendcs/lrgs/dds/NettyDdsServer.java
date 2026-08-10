@@ -1,6 +1,20 @@
+/*
+* Where Applicable, Copyright 2026 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package org.opendcs.lrgs.dds;
 
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Objects;
@@ -34,7 +48,6 @@ public final class NettyDdsServer
     private final ServerBootstrap boostrap;
     private final LrgsMain lrgs;
 
-
     private NettyDdsServer(EventLoopGroup boss, EventLoopGroup worker, ServerBootstrap bootstrap,
                            InetAddress bindAddress, int bindPort, LrgsMain lrgs)
     {
@@ -50,48 +63,46 @@ public final class NettyDdsServer
      * Start listening on the given port. The Netty channel future is returned if the caller needs
      * to wait for the startup to finish.
      * @return Netty ChannelFuture for the server.
+     * @throws IllegalStateException if called after the server was previously shutdown.
      */
     public ChannelFuture start()
     {
+        if (worker.isShutdown() || worker.isShuttingDown() || worker.isTerminated() ||
+            boss.isShutdown() || boss.isShutdown() || boss.isTerminated())
+        {
+            throw new IllegalStateException("This instance is not usable, it has been previously shutdown.");
+        }
+        log.info("Starting DdsServer on {}:{}", bindAddress, bindPort);
         channel = boostrap.bind(bindAddress, bindPort);
         return channel;
     }
 
     /**
      * Shutdown the socket and stop listening. Returns immediately.
+     * If you wish to wait for shutdown call .sync() on the returned ChannelFuture.
+     * @return the ChannelFuture of this server;
      */
-    public void stop()
+    public ChannelFuture stop()
     {
-        try 
-        {
-            stop(false);
-        }
-        catch (InterruptedException ex)
-        {
-            log.atError().setCause(ex).log("Exception thrown, that shouldn't have been.");
-        }
+        log.info("Stoping DdsServer on {}:{}", bindAddress, bindPort);
+        this.worker.shutdownGracefully();
+        this.boss.shutdownGracefully();
+        return channel;
     }
 
     /**
-     * Shutdown the socket and stop listening. Optionally waiting for the operation to finish.
-     * @param wait whether to wait until shutdown is complete.
-     * @throws InterruptedException if there are any issues waiting.
+     * Retrieve port this DdsServer is bound to.
+     * @return
      */
-    public void stop(boolean wait) throws InterruptedException
-    {
-        this.worker.shutdownGracefully();
-        this.boss.shutdownGracefully();        
-        if (wait)
-        {
-            channel.sync();
-        }
-    }
-
     public int getBindPort()
     {
         return this.bindPort;
     }
 
+    /**
+     * Return Address this DdsServer is bound to.
+     * @return
+     */
     public InetAddress getBindAddress()
     {
         return bindAddress;
@@ -111,7 +122,7 @@ public final class NettyDdsServer
         {
             try
             {
-                bindAddr = Inet4Address.getByAddress(new byte[]{0,0,0,0});
+                bindAddr = InetAddress.getByAddress(new byte[]{0,0,0,0});
             }
             catch (UnknownHostException ex)
             {
@@ -119,12 +130,22 @@ public final class NettyDdsServer
             }
         }
 
+        /**
+         * Port to bind this DdsServer to. Default is <code>16003</code>
+         * @param port
+         * @return
+         */
         public Builder withPort(int port)
         {
             this.port = port;
             return this;
         }
 
+        /**
+         * Address to bind this DdsServer to. Default is <code>0.0.0.0</code>
+         * @param bindAddress
+         * @return
+         */
         public Builder bindTo(InetAddress bindAddress)
         {
             this.bindAddr = bindAddress;
@@ -137,6 +158,10 @@ public final class NettyDdsServer
             return this;
         }
 
+        /**
+         * Initialize DdsServer. Returned NettyDdsServer is ready to start when this returns, but has not been started.
+         * @return
+         */
         public NettyDdsServer build()
         {
             EventLoopGroup boss = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
@@ -145,7 +170,7 @@ public final class NettyDdsServer
             b.group(boss, worker)
             .channel(NioServerSocketChannel.class)
             .childAttr(LRGS_INSTANCE, lrgs)
-            .childHandler(new ChannelInitializer<SocketChannel>() 
+            .childHandler(new ChannelInitializer<SocketChannel>()
             {
                 @Override
                 protected void initChannel(SocketChannel ch) throws Exception
@@ -157,14 +182,12 @@ public final class NettyDdsServer
                             new LddsMessageEncoder())
                         .addLast(LddsHelloHandler.HANDLER_NAME, new LddsHelloHandler())
                         .addLast(new LddsErrorHandler());
-                }   
+                }
             })
             .option(ChannelOption.SO_BACKLOG, 5)
             .childOption(ChannelOption.SO_KEEPALIVE, true);
-            
+
             return new NettyDdsServer(boss, worker, b, bindAddr, port, lrgs);
         }
     }
 }
-
-

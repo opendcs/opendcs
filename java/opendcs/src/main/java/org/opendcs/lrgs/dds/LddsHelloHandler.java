@@ -16,8 +16,6 @@
 package org.opendcs.lrgs.dds;
 
 import java.io.File;
-import java.security.Principal;
-
 import org.opendcs.lrgs.dds.dds14.DdsProtocol14Handler;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -27,16 +25,13 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.AttributeKey;
-import io.netty.util.concurrent.GenericFutureListener;
 import lrgs.apistatus.AttachedProcess;
 import lrgs.archive.XmlMsgArchive;
 import lrgs.common.LrgsErrorCode;
 import lrgs.common.NetlistDcpNameMapper;
 import lrgs.ddsserver.MessageArchiveRetriever;
 import lrgs.ldds.CmdHello;
-import lrgs.ldds.DdsUser;
 import lrgs.ldds.LddsMessage;
-import lrgs.ldds.LddsUser;
 import lrgs.ldds.ServerError;
 import lrgs.lrgsmain.LrgsConfig;
 
@@ -65,12 +60,8 @@ public class LddsHelloHandler extends ChannelInboundHandlerAdapter
     }
 
     /**
-     * The command reponse implementation details here present as placeholders to verify the generic request/response
-     * handling with the original LddsClient works. The idea is not to implement the entire functionality here.
-     * Due the the tight integration with The BasicServerThread concept directly, it was not pratical
-     * to reuse the existing implementations. Next step is extracting the operations code from the LddsCommand
-     * implementations so that that logic can be reused where appropriate and creating new Dds IO operations
-     * classes that can then be used by both this handler and the original implementation.
+     * Handle the "hello" messages that this DdsServer will respond to and then setup the
+     * pipeline appropriately with the required data instances and additional/changed pipeline handlers.
      */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception
@@ -88,7 +79,7 @@ public class LddsHelloHandler extends ChannelInboundHandlerAdapter
                 throw new ServerError("Only DDS Protcoll Version 14 is supported on this system.", LrgsErrorCode.DDDSFATAL, 0);
             }
             var res = new LddsMessage(LddsMessage.IdHello, hello.getUserName() + " " + hello.getDdsVersion());
-            user = new DdsUserPrincipal(hello.getUserName(), hello.getDdsVersion());
+            user = new DdsUserPrincipal(hello.getUserName());
             ctx.channel().attr(DDS_USER).set(user);
             
             var lrgs = ctx.channel().attr(NettyDdsServer.LRGS_INSTANCE).get();
