@@ -391,7 +391,7 @@ public final class PlatformResources extends OpenDcsResource
 		}
 		catch (OpenDcsDataException ex)
 		{
-			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to retrieve Platform", ex);
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to save Platform", ex);
 		}
 	}
 
@@ -580,7 +580,7 @@ public final class PlatformResources extends OpenDcsResource
 		}
 		catch (OpenDcsDataException ex)
 		{
-			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to retrieve Platform", ex);
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to delete Platform", ex);
 		}
 	}
 
