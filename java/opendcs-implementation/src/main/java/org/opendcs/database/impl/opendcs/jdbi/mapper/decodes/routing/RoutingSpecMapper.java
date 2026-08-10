@@ -35,7 +35,6 @@ public final class RoutingSpecMapper extends PrefixRowMapper<RoutingSpec, Routin
     {
         super(prefix, "routingspec", Columns.class);
     }
-
     
     @Override
     public RoutingSpec map(ResultSet rs, StatementContext ctx) throws SQLException
@@ -56,7 +55,7 @@ public final class RoutingSpecMapper extends PrefixRowMapper<RoutingSpec, Routin
         ret.sinceTime = rs.getString(column(Columns.SINCE_TIME));
         ret.untilTime = rs.getString(column(Columns.UNTIL_TIME));
         ret.consumerType = rs.getString(column(Columns.CONSUMER_TYPE));
-        ret.consumerType = rs.getString(column(Columns.CONSUMER_ARGS));
+        ret.consumerArg = rs.getString(column(Columns.CONSUMER_ARGS));
         ret.lastModifyTime = dateMapper.map(rs, column(Columns.LAST_MODIFY_TIME), ctx);
         ret.isProduction = rs.getBoolean(column(Columns.IS_PRODUCTION));
 

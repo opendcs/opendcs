@@ -6,6 +6,7 @@ import java.util.EnumSet;
 import java.util.function.Predicate;
 
 import org.jdbi.v3.core.mapper.RowMapper;
+import org.jdbi.v3.core.result.RowView;
 import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.sql.TableColumnDefinition;
 
@@ -32,7 +33,7 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
         this.prefix = addUnderscoreIfMissing(prefix);
         this.columns = columns;
         this.tableName = table;
-    }
+    }    
 
     /**
      * Placeholder until each Mapper is updated.
@@ -47,6 +48,22 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
     protected PrefixRowMapper(String prefix, String table, Class<E> enumClass)
     {
         this(prefix, table, EnumSet.allOf(enumClass));
+    }
+
+    /**
+     * For the case were we are using this mapper in a RowReducer or other mechanism that takes
+     * only a row view, map the row element.
+     *
+     * NOTE: should https://github.com/jdbi/jdbi/pull/2942 or a similar change get merged into JDBI
+     * that should be used instead. This simply allows not having to turn everything into a ResultSet
+     * based Jdbi3 Accumulator until that happens. For the moment consider this a stop gap.
+     *
+     * @param view {@link org.jdbi.v3.core.result.RowView} instance we are targetting
+     * @return instance of T or null if it can't be made. Default implementation returns null. Override as needed.
+     */
+    public T mapView(RowView view)
+    {
+        return null;
     }
 
     public static String addUnderscoreIfMissing(String prefix)

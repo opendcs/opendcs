@@ -4,7 +4,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.jdbi.v3.core.mapper.ColumnMapper;
+import org.jdbi.v3.core.result.RowView;
 import org.jdbi.v3.core.statement.StatementContext;
+import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
 import org.opendcs.database.model.mappers.PrefixRowMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
@@ -39,6 +41,30 @@ public final class DataSourceMapper extends PrefixRowMapper<DataSource,DataSourc
         ds.forceSetId(id);
         ds.setDataSourceArg(dataSourceArg);
         return ds;
+    }
+
+    @Override
+    public DataSource mapView(RowView view)
+    {
+        try
+        {
+            final var id = view.getColumn(column(Columns.ID), DbKey.class);
+            if (id == null)
+            {
+                return null;
+            }
+            final String name = view.getColumn(column(Columns.NAME), String.class);
+            final String dataSourceType = view.getColumn(column(Columns.SOURCE_TYPE), String.class);
+            final String dataSourceArg = view.getColumn(column(Columns.SOURCE_ARGS), String.class);
+            final var ds = new DataSource(name, dataSourceType);
+            ds.forceSetId(id);
+            ds.setDataSourceArg(dataSourceArg);
+            return ds;
+        }
+        catch (SQLException ex)
+        {
+            throw new UnableToExecuteStatementException("unable to retrieve column value.", ex, null);
+        }
     }
 
     public enum Columns implements TableColumnDefinition
