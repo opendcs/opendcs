@@ -124,14 +124,19 @@ public final class GetMsgBlockEx
 
                     DcpMsg msg = msgRetriever.readMsg(idx);
                     if (msg.getData() == null)
+                    {
                         continue;
+                    }
 
                     if (myXmlParser.addMsg(xos, msg, conName))
+                    {
                         numMessages++;
-
-                    if (baos.size() >= MAX_SIZE         // byte size limit reached
-                    || numMessages >= maxMsgs)         // # msg limit reached
+                    }
+                    // byte size limit reached   # msg limit reached
+                    if (baos.size() >= MAX_SIZE || numMessages >= maxMsgs)
+                    {
                         bufDone = true;
+                    }
                 }
                 catch(NoSuchMessageException nsme)
                 {

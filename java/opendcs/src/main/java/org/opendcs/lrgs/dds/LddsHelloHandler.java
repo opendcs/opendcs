@@ -15,12 +15,14 @@
 */
 package org.opendcs.lrgs.dds;
 
+import java.io.File;
 import java.security.Principal;
 
 import org.opendcs.lrgs.dds.dds14.DdsProtocol14Handler;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import ilex.util.EnvExpander;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -29,12 +31,14 @@ import io.netty.util.concurrent.GenericFutureListener;
 import lrgs.apistatus.AttachedProcess;
 import lrgs.archive.XmlMsgArchive;
 import lrgs.common.LrgsErrorCode;
+import lrgs.common.NetlistDcpNameMapper;
 import lrgs.ddsserver.MessageArchiveRetriever;
 import lrgs.ldds.CmdHello;
 import lrgs.ldds.DdsUser;
 import lrgs.ldds.LddsMessage;
 import lrgs.ldds.LddsUser;
 import lrgs.ldds.ServerError;
+import lrgs.lrgsmain.LrgsConfig;
 
 /**
  *
@@ -93,6 +97,9 @@ public class LddsHelloHandler extends ChannelInboundHandlerAdapter
             var retriever = new MessageArchiveRetriever((XmlMsgArchive)lrgs.msgArchive, ap);
             retriever.attachSource();
             retriever.setDcpMsgSource(retriever);
+            retriever.setDcpNameMapper(new NetlistDcpNameMapper(
+                new File(EnvExpander.expand(LrgsConfig.instance().ddsNetlistDir)),
+            null));
             retriever.init();
             var session = new DdsSession(retriever, hello.getDdsVersion(), lrgs.msgArchive);
             ctx.channel().attr(DDS_SESSION).set(session);
