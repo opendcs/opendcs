@@ -27,9 +27,9 @@ import org.slf4j.Logger;
 
 import ilex.net.*;
 import lrgs.apistatus.AttachedProcess;
+import lrgs.archive.XmlMsgArchive;
 import lrgs.common.*;
 import lrgs.ldds.LddsThread;
-import lrgs.archive.MsgArchive;
 import lrgs.lrgsmain.LrgsConfig;
 
 
@@ -40,7 +40,7 @@ public class JLddsThread extends LddsThread
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /** The one and only archive object. */
-    private MsgArchive msgArchive;
+    private XmlMsgArchive msgArchive;
 
     /** The global name mapper. */
     private DcpNameMapper globalMapper;
@@ -59,7 +59,7 @@ public class JLddsThread extends LddsThread
       @throws IOException
     */
     public JLddsThread(BasicServer parent, Socket socket, int id, SSLSocketFactory socketFactory,
-        MsgArchive msgArchive, DcpNameMapper globalMapper, AttachedProcess ap)
+        XmlMsgArchive msgArchive, DcpNameMapper globalMapper, AttachedProcess ap)
         throws IOException
     {
         super(parent, socket, id, socketFactory);

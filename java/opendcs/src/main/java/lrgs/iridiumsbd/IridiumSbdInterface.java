@@ -18,13 +18,13 @@ package lrgs.iridiumsbd;
 import java.io.*;
 import java.util.Date;
 
+import org.opendcs.lrgs.dao.MsgArchive;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import java.net.Socket;
 
 import ilex.net.*;
-import lrgs.archive.MsgArchive;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
 import lrgs.db.LrgsDatabaseThread;

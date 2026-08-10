@@ -18,10 +18,10 @@ package org.opendcs.lrgs.http;
 import org.eclipse.jetty.ee11.servlet.ServletContextHandler;
 import org.eclipse.jetty.server.ServerConnector;
 import org.glassfish.jersey.servlet.ServletContainer;
+import org.opendcs.lrgs.dao.MsgArchive;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
-import lrgs.archive.MsgArchive;
 import lrgs.lrgsmain.LoadableLrgsInputInterface;
 import lrgs.lrgsmain.LrgsInputException;
 import lrgs.lrgsmain.LrgsInputInterface;

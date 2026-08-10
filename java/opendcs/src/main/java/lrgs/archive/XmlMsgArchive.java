@@ -23,7 +23,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
+import org.opendcs.utils.FailableResult;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -39,6 +42,8 @@ import lrgs.common.DcpMsgFlag;
 import lrgs.common.DcpMsgIndex;
 import lrgs.common.DcpAddress;
 import lrgs.common.LrgsErrorCode;
+import lrgs.common.LrgsStatusProvider;
+import lrgs.common.ArchiveException;
 import lrgs.common.ArchiveUnavailableException;
 import lrgs.common.SearchTimeoutException;
 
@@ -50,7 +55,7 @@ import lrgs.lrgsmain.LrgsInputInterface;
 /**
 Top-level archive for the DCS Toolkit.
 */
-public class MsgArchive implements MsgValidatee
+public class XmlMsgArchive implements org.opendcs.lrgs.dao.MsgArchive
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Used for log messages. */
@@ -142,7 +147,7 @@ public class MsgArchive implements MsgValidatee
 	 * Constructor -- set defaults.
 	 * @param archiveDirName name of archive directory (may contain $env-var)
 	 */
-	public MsgArchive(String archiveDirName)
+	public XmlMsgArchive(String archiveDirName)
 	{
 		archiveDir = new File(EnvExpander.expand(archiveDirName));
 		setPeriodParams(31);		// default is 31 day-files
@@ -167,9 +172,17 @@ public class MsgArchive implements MsgValidatee
 	 * Sets the status provider.
 	 * @param sp the status provider.
 	 */
-	public void setStatusProvider(JavaLrgsStatusProvider sp)
+	@Override
+	public void setStatusProvider(LrgsStatusProvider sp)
 	{
-		statusProvider = sp;
+		if (sp instanceof JavaLrgsStatusProvider jlsp)
+		{
+			statusProvider = jlsp;
+		}
+		else
+		{
+			log.atWarn().log("cannot use LrgsStatusProvider of type {}", sp.getClass().getName());
+		}
 	}
 
 	/**
@@ -364,6 +377,7 @@ public class MsgArchive implements MsgValidatee
 	 * @param src the input device that generated the msg.
 	 * @return true if message was archived, false if it was discarded.
 	 */
+	@Override
 	public synchronized void archiveMsg( DcpMsg msg, LrgsInputInterface src)
 	{
 		// If this is an APR, and we're doing our own validation, discard it.
@@ -400,12 +414,13 @@ public class MsgArchive implements MsgValidatee
 
 		if (LrgsConfig.instance().getDoPdtValidation())
 		{
-			validator.validateMsg(msg, src, now);
+			var vm = validator.validateMsg(msg, src, now);
+			useValidationResults(vm.failureCode(), vm.explanation(), vm.msg(), vm.src(), vm.t(), vm.pdtEntry());
 		}
 	}
 
 	/** Callback for MsgValidator */
-	public void useValidationResults(char failureCode, String explanation,
+	private void useValidationResults(char failureCode, String explanation,
 			DcpMsg msg, LrgsInputInterface src, Date t, PdtEntry pdtEntry)
 	{
 		if (failureCode == 'M' && msg.isGoesMessage())
@@ -781,6 +796,7 @@ public class MsgArchive implements MsgValidatee
 	 * @throws ArchiveUnavailableException if can't init search criteria
 	 * @throws SearchTimeoutException if searchStopMsec reached with no results.
 	 */
+	@Override
 	public int search(SearchHandle handle, long stopSearchMsec)
 		throws ArchiveUnavailableException, SearchTimeoutException
 	{
@@ -798,7 +814,7 @@ public class MsgArchive implements MsgValidatee
 			{
 				int result;
 				while((result = mpa.searchIndex(handle, stopSearchMsec))
-					== MsgArchive.SEARCH_RESULT_MORE
+					== XmlMsgArchive.SEARCH_RESULT_MORE
 					&& handle.capacity() > 0)
 				{
 					mpa = getPeriodArchive(handle.periodStartTime, true);
@@ -986,33 +1002,32 @@ public class MsgArchive implements MsgValidatee
 		ret.setLocalReceiveTime(origMsg.getLocalReceiveTime());
 		return ret;
 	}
-
-}
-
-class CheckpointThread extends Thread
-{
-	private static final Logger log = OpenDcsLoggerFactory.getLogger();
-	boolean shutdown;
-	MsgArchive archive;
-
-	CheckpointThread(MsgArchive ma)
+		
+	public static class CheckpointThread extends Thread
 	{
-		super();
-		shutdown = false;
-		archive = ma;
-		this.setName("MsgArchive-Checkpoint Thread");
-		this.setDaemon(true);
-	}
+		private static final Logger log = OpenDcsLoggerFactory.getLogger();
+		boolean shutdown;
+		XmlMsgArchive archive;
 
-	public void run()
-	{
-		log.debug("MsgArchive checkpoint thread starting.");
-		while(!shutdown)
+		CheckpointThread(XmlMsgArchive ma)
 		{
-			try{ sleep(60000L); }
-			catch(InterruptedException ignore) {}
-			if (!shutdown)
-				archive.checkpoint();
+			super();
+			shutdown = false;
+			archive = ma;
+			this.setName("MsgArchive-Checkpoint Thread");
+			this.setDaemon(true);
 		}
-	}
+
+		public void run()
+		{
+			log.debug("MsgArchive checkpoint thread starting.");
+			while(!shutdown)
+			{
+				try{ sleep(60000L); }
+				catch(InterruptedException ignore) {}
+				if (!shutdown)
+					archive.checkpoint();
+			}
+		}
+}
 }

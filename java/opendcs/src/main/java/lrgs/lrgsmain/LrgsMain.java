@@ -39,6 +39,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 
 import org.opendcs.logging.spi.LoggingEventProvider;
+import org.opendcs.lrgs.dao.MsgArchive;
 import org.opendcs.tls.TlsMode;
 import org.opendcs.utils.logging.LoggingEventBuffer;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -66,7 +67,7 @@ import ilex.util.QueueLogger;
 import ilex.util.ServerLock;
 import ilex.util.ServerLockable;
 import lrgs.archive.InvalidArchiveException;
-import lrgs.archive.MsgArchive;
+import lrgs.archive.XmlMsgArchive;
 import lrgs.db.LrgsDatabaseThread;
 import lrgs.ddsrecv.DdsRecv;
 import lrgs.ddsserver.DdsServer;
@@ -82,7 +83,6 @@ import lrgs.lrit.LritDamsNtReceiver;
 import lrgs.networkdcp.NetworkDcpRecv;
 import lrgs.noaaportrecv.NoaaportRecv;
 import lrgs.statusxml.LrgsStatusSnapshotExt;
-import opendcs.dai.LoadingAppDAI;
 
 /**
 Main class for LRGS process.
@@ -236,7 +236,7 @@ public class LrgsMain implements Runnable, ServerLockable, SignalHandler, ProcWa
             int day = (int)(now / (3600L * 24 * 1000));
             if (lastDay != day)
             {
-                msgArchive.doCheckCurrentArchive();
+                ((XmlMsgArchive)msgArchive).doCheckCurrentArchive();
                 lastDay = day;
             }
             if (now - lastStatusSnapshot > cfg.htmlStatusSeconds * 1000L)
@@ -620,9 +620,9 @@ public class LrgsMain implements Runnable, ServerLockable, SignalHandler, ProcWa
     private void initArchive(LrgsConfig cfg)
         throws InvalidArchiveException
     {
-        msgArchive = new MsgArchive(cfg.archiveDir);
-        msgArchive.setPeriodParams(cfg.numDayFiles);
-        msgArchive.init();
+        msgArchive = new XmlMsgArchive(cfg.archiveDir);
+        ((XmlMsgArchive)msgArchive).setPeriodParams(cfg.numDayFiles);
+        ((XmlMsgArchive)msgArchive).init();
     }
 
     /**
