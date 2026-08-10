@@ -20,6 +20,7 @@ dependencies {
     testImplementation(libs.apache.derby)
     testImplementation(libs.io.github.hakky54)
     testImplementation(libs.webcompere.system.stubs.jupiter)
+    testImplementation(libs.io.netty)
 }
 
 test {
