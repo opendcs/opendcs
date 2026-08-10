@@ -34,7 +34,6 @@ import ilex.util.QueueLogger;
 
 import lrgs.common.*;
 import lrgs.db.DdsConnectionStats;
-import lrgs.ddsserver.DdsServer;
 import lrgs.ddsserver.MessageArchiveRetriever;
 
 
