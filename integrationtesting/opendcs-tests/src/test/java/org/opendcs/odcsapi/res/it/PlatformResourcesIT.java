@@ -31,6 +31,7 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.opendcs.odcsapi.filters.W3CTraceFilter;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -336,9 +337,11 @@ final class PlatformResourcesIT extends BaseApiIT
 		.assertThat()
 			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
-		;
+		;		
 
 		JsonPath actual = response.body().jsonPath();
+		log.info(expected.prettyPrint());
+		log.info(actual.prettyPrint());
 		assertNotNull(actual);
 		var nameAndDesignator = expected.getString("name") + "-" + expected.getString("designator");
 		final var actualPlatform = actual.setRootPath("find { it -> it.name == '" + nameAndDesignator + "'}");
