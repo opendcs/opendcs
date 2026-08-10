@@ -25,7 +25,6 @@ import org.jdbi.v3.core.result.RowView;
 import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListMapper;
 import org.opendcs.database.model.mappers.datasource.DataSourceMapper;
-import org.opendcs.database.model.mappers.properties.PropertiesMapper;
 
 import decodes.db.DataSource;
 import decodes.db.NetworkList;
