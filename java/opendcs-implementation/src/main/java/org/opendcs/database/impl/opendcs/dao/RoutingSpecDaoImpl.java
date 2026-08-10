@@ -16,6 +16,9 @@
 package org.opendcs.database.impl.opendcs.dao;
 
 import static org.opendcs.utils.sql.SqlQueries.LEFT_OUTER;
+import static org.opendcs.utils.sql.SqlQueries.LIMIT_CLAUSE;
+import static org.opendcs.utils.sql.SqlQueries.OFFSET_CLAUSE;
+import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -89,7 +92,7 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
             PropertiesMapper.withPrefix("rp", true),
             NetworkListMapper.withPrefix("nl"),
             NetworkListEntryMapper.withPrefix("nle"),
-            new DataSourceAccumulator(DataSourceMapper.withPrefix("ds"), 
+            new DataSourceAccumulator(DataSourceMapper.withPrefix("ds"),
                                       DataSourceMapper.withPrefix("dsm"))
         );
 
@@ -132,7 +135,6 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
         var selectSql = setDefines(selectTemplate, allData);
         try (var select = handle.createQuery(selectSql))
         {
-            select.setSqlLogger(new DetailSqlLogger(log));
             registerMappers(select, allData);
             return select.bind(whereKey, whereBind)
                          .reduceRows(new RoutingSpecReducer(allData))
@@ -223,9 +225,10 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
                 sourceMapper.joinStatement(LEFT_OUTER, DataSourceMapper.Columns.ID, "rs", "datasourceid")
             );
 
-            select.add("datasource_member_join",
-                memberMapper.joinStatement(LEFT_OUTER, DataSourceMapper.Columns.ID, "ds", "id")
-            );
+            select.add("datasource_member_join", """
+                    left outer join datasourcegroupmember dsgm on ds.id = dsgm.groupid
+                    left outer join datasource dsm on dsm.id = dsgm.memberid
+                    """);
         }
 
         return select.render();
@@ -249,7 +252,6 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
              var insertProps = handle.prepareBatch(insertPropsTemplate.render());
              var insertSpecList = handle.prepareBatch(insertSpecListTemplate.render()))
         {
-            merge.setSqlLogger(new DetailSqlLogger(log));
             DbKey id = spec.getId();
             var existing = getByName(tx, spec.getName());
             if (existing.isPresent())
@@ -351,6 +353,52 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
     public List<RoutingSpec> getAll(DataTransaction tx, int limit, int offset, boolean includeAll, String forSchedule)
             throws OpenDcsDataException
     {
-        return List.of();
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+
+        var selectTemplate = queries.getInstanceOf(SELECT);
+        if (selectTemplate == null)
+        {
+            throw new OpenDcsDataException("No Instance of Select query is available.");
+        }
+
+        var mappers = includeAll ? allData : specOnlyData;
+        selectTemplate.add(LIMIT_CLAUSE, addLimitOffset(limit, offset));
+        if (forSchedule != null)
+        {
+            selectTemplate.add("schedule",
+                        "id in (select id from schedule_entry where upper(name) = upper(:scheduleName))");
+        }
+        var selectSql = setDefines(selectTemplate, mappers);
+        try (var select = handle.createQuery(selectSql))
+        {
+            select.setSqlLogger(new DetailSqlLogger(log));
+            registerMappers(select, mappers);
+
+            if (limit > -1)
+            {
+                select.bind(LIMIT_CLAUSE, limit);
+            }
+
+            if (offset > -1)
+            {
+                select.bind(OFFSET_CLAUSE, offset);
+            }
+
+            if (forSchedule != null)
+            {
+                select.bind("scheduleName", forSchedule);
+            }
+
+            return select.reduceRows(new RoutingSpecReducer(mappers))
+                         .map(rs ->
+                         {
+                            rs.outputTimeZone = TimeZone.getTimeZone(rs.outputTimeZoneAbbr);
+                            rs.setProperty("RoutingSpecName", rs.getName());
+                            rs.forceSetPrepared();
+                            return rs;
+                         })
+                         .toList();
+        }
     }
 }

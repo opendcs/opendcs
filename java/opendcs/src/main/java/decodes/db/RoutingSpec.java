@@ -18,6 +18,9 @@ import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import java.util.Date;
 import java.util.Vector;
+
+import org.python.google.common.base.Objects;
+
 import java.util.Iterator;
 import java.util.Properties;
 
@@ -198,6 +201,7 @@ public class RoutingSpec extends IdDatabaseObject
 	  Returns true if this routing spec equals the passed one.
 	  Note: SQL ID is not checked for equality.
 	*/
+	@Override
 	public boolean equals(Object ob)
 	{
 		if (!(ob instanceof RoutingSpec))
@@ -245,6 +249,29 @@ public class RoutingSpec extends IdDatabaseObject
 		if (!PropertiesUtil.propertiesEqual(getProperties(), rs.getProperties()))
 			return false;
 		return true;
+	}
+
+	/**
+	 * As equals, doesn't include the id.
+	 */
+	@Override
+	public int hashCode()
+	{
+		return Objects.hashCode(this.name,
+								this.networkListNames,
+								this.dataSource,
+								this.networkLists,
+								this.outputFormat,
+								this.consumerType,
+								this.consumerArg,
+								this.enableEquations,
+								this.isProduction,
+								this.outputTimeZoneAbbr,
+								this.presentationGroupName,
+								this.sinceTime,
+								this.untilTime,
+								this.usePerformanceMeasurements,
+								this.properties);
 	}
 
 	/**
