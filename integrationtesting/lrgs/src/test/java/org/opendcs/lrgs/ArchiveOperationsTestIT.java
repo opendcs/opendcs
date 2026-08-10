@@ -36,7 +36,7 @@ class ArchiveOperationsTestIT
     private static final String MSG_DATA = "Test String.";
 
     @BeforeAll
-    static void setup(LrgsTestInstance lrgs) throws Exception
+    static void setup(LrgsTestInstance lrgs)
     {
         // Store message
         assertNotNull(lrgs);

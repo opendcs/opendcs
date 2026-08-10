@@ -17,6 +17,7 @@ package org.opendcs.lrgs.dds.dds14;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.rmi.ServerError;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
@@ -60,16 +61,22 @@ public final class GetMsgBlockEx
     private static final int MAX_SIZE = 20000;
     private static final int MAX_MSGS = 100;
 
-    public static LddsMessage process(CmdGetMsgBlockExt cmd, DdsSession session) throws Exception
+    private GetMsgBlockEx()
     {
-        log.info("Getting message " + session.toString());
+        /* utility class */
+    }
+
+    @SuppressWarnings({"java:S3776", "java:S138"}) // to be dealt with in future cleanup.
+    public static LddsMessage process(CmdGetMsgBlockExt cmd, DdsSession session) throws IOException
+    {
+        log.info("Getting message {}", session);
         var msgRetriever = session.msgRetriever();
         var ddsVersion = session.ddsVersion();
         var seqNumMsgBuf = session.sequenceMessageBuf();
         var seqNumMsgBufIdx = session.seqNumMsgBufIdx();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy/DDD HH:mm:ss.SSS");
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-	    ExtBlockXmlParser myXmlParser = new ExtBlockXmlParser(DcpMsgFlag.SRC_DDS);;
+	    ExtBlockXmlParser myXmlParser = new ExtBlockXmlParser(DcpMsgFlag.SRC_DDS);
         myXmlParser.setDdsVersion(ddsVersion);
 
         // Use XML_OS ( GZIP_OS ( BA_OS ) ) to build response body.
@@ -82,7 +89,8 @@ public final class GetMsgBlockEx
 
             // Special Case - client is doing a DOMSAT Sequence Range Retrieval.
             SearchCriteria sc = msgRetriever.getCrit();
-            Date since, until;
+            Date since;
+            Date until;
             int numMessages = 0;
             boolean didSeqSearch = false;
             boolean bufDone = false;
@@ -96,7 +104,7 @@ public final class GetMsgBlockEx
                 if (seqNumMsgBuf.isEmpty())
                 {
                     var marc = (XmlMsgArchive)session.archive();
-                    int n = marc.getMsgsBySeqNum(since.getTime(),
+                    marc.getMsgsBySeqNum(since.getTime(),
                         until.getTime(), sc.seqStart,
                         sc.seqEnd, seqNumMsgBuf);
                     seqNumMsgBufIdx = 0;
@@ -105,7 +113,7 @@ public final class GetMsgBlockEx
                 while(seqNumMsgBufIdx < sz && numMessages < MAX_MSGS)
                 {
                     if (myXmlParser.addMsg(xos,
-                        seqNumMsgBuf.get(seqNumMsgBufIdx++), conName))
+                        seqNumMsgBuf.get(seqNumMsgBufIdx++), conName)) // NOSONAR
                         numMessages++;
                 }
                 if (seqNumMsgBufIdx >= sz)
@@ -133,9 +141,9 @@ public final class GetMsgBlockEx
                 maxMsgs = 1;
             }
 
-            while(!bufDone)
+            while(!bufDone) // NOSONAR
             {
-                try
+                try // NOSONAR
                 {
                     msgRetriever.getNextPassingIndex(idx, stopSearchMsec);
 
@@ -164,7 +172,6 @@ public final class GetMsgBlockEx
                 catch(NoSuchMessageException nsme)
                 {
                     log.atWarn().setCause(nsme).log("Bad message skipped. idx.Offset = {}", idx.getOffset());
-                    continue;
                 }
                 catch(UntilReachedException urex)
                 {

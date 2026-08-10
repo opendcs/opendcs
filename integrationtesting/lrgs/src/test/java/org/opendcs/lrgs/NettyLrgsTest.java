@@ -1,13 +1,11 @@
 package org.opendcs.lrgs;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.opendcs.fixtures.assertions.Waiting.assertResultWithinTimeFrame;
 import java.io.File;
-import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.Date;
@@ -16,10 +14,10 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.lrgs.LrgsTestInstance;
+import org.opendcs.lrgs.dds.NettyDdsServerBuilder;
 import org.opendcs.lrgs.dds.NettyDdsServer;
 
 import lrgs.archive.XmlMsgArchive;
-import lrgs.common.ArchiveException;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
@@ -43,7 +41,7 @@ class NettyLrgsTest
             lrgs = new LrgsTestInstance(lrgsHome);
         });
 
-        ddsServer = new NettyDdsServer.Builder().withLrgs(lrgs.getLrgsMain()).build();
+        ddsServer = new NettyDdsServerBuilder().withLrgs(lrgs.getLrgsMain()).build();
         ddsServer.start().sync();
 
     }
