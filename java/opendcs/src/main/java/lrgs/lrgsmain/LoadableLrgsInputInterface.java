@@ -1,6 +1,6 @@
 package lrgs.lrgsmain;
 
-import lrgs.archive.MsgArchive;
+import org.opendcs.lrgs.dao.MsgArchive;
 
 public interface LoadableLrgsInputInterface extends LrgsInputInterface
 {

@@ -22,6 +22,7 @@ import java.util.Iterator;
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 
+import org.opendcs.lrgs.dao.MsgArchive;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -33,8 +34,8 @@ import ilex.util.Pair;
 import ilex.util.QueueLogger;
 import ilex.util.SimpleCounter;
 import lrgs.apistatus.AttachedProcess;
+import lrgs.archive.XmlMsgArchive;
 import lrgs.common.ArchiveUnavailableException;
-import lrgs.archive.MsgArchive;
 import lrgs.common.NetlistDcpNameMapper;
 import lrgs.ldds.GetHostnameThread;
 import lrgs.ldds.LddsLoggerThread;
@@ -253,7 +254,7 @@ public class DdsServer extends BasicServer implements Runnable
             }
             id = conIdCounter.getNextValue();
             //End work around
-            LddsThread ret = new JLddsThread(this, sock, id, this.socketFactory, msgArchive,
+            LddsThread ret = new JLddsThread(this, sock, id, this.socketFactory, (XmlMsgArchive)msgArchive,
                 globalMapper, ap);
             ret.statLogger = statLoggerThread;
             ret.setQueueLogger(qlog);

@@ -16,12 +16,15 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.opendcs.fixtures.extensions.lrgs.LrgsConfig;
+import org.opendcs.fixtures.extensions.lrgs.LrgsTestExtension;
 import org.opendcs.fixtures.lrgs.LrgsTestInstance;
 
 import lrgs.apistatus.AttachedProcess;
-import lrgs.archive.MsgArchive;
 import lrgs.archive.MsgFilter;
 import lrgs.archive.SearchHandle;
+import lrgs.archive.XmlMsgArchive;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
@@ -32,29 +35,16 @@ import lrgs.common.SearchCriteria;
 import lrgs.ddsserver.MessageArchiveRetriever;
 import lrgs.lrgsmain.LrgsInputInterface;
 
+@ExtendWith(LrgsTestExtension.class)
+@LrgsConfig("noTimeout=true")
 public class ArchiveOperationsTestIT
 {
-
-    private static LrgsTestInstance lrgs = null;
-
-    @BeforeAll
-    public static void setup() throws Exception
-    {
-        System.out.println("Before");
-        assertDoesNotThrow(() ->
-        {
-            File lrgsHome = Files.createTempDirectory("lrgshome").toFile();
-            lrgsHome.mkdirs();
-            lrgs = new LrgsTestInstance(lrgsHome);
-        });
-    }
-
     @Test
-    public void test_save_and_read_back() throws Exception
+    public void test_save_and_read_back(LrgsTestInstance lrgs) throws Exception
     {
         // Store message
         assertNotNull(lrgs);
-        final MsgArchive archive = lrgs.getArchive();
+        final var archive = (XmlMsgArchive)lrgs.getArchive();
         final String msgData = "Test String.";
         final DcpMsg msgIn = new DcpMsg(DcpMsgFlag.MSG_TYPE_OTHER, msgData.getBytes(Charset.forName("UTF8")),msgData.length(),0);
         msgIn.setXmitTime(new Date());

@@ -21,6 +21,7 @@ import java.io.FileOutputStream;
 import java.util.Iterator;
 import java.util.ArrayList;
 
+import org.opendcs.lrgs.dao.MsgArchive;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.w3c.dom.Document;
@@ -35,7 +36,6 @@ import lrgs.lrgsmain.LrgsMain;
 import lrgs.lrgsmain.LrgsConfig;
 import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.lrgsmain.LrgsInputException;
-import lrgs.archive.MsgArchive;
 import lrgs.drgs.DrgsConnectCfg;
 import lrgs.drgs.DrgsInputSettings;
 import lrgs.drgsrecv.DrgsRecvMsgThread;
