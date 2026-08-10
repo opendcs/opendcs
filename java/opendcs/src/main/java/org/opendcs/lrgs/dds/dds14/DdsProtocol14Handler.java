@@ -73,11 +73,7 @@ public class DdsProtocol14Handler extends ChannelInboundHandlerAdapter
     {
         var res = new LddsMessage(LddsMessage.IdDcpBlockExt, cause.getMessage());
         var future = ctx.writeAndFlush(res);
-        if (cause instanceof ArchiveException aex && aex.getHangup() == false)
-        {
-            return;
-        }
-        else
+        if (!(cause instanceof ArchiveException aex) || aex.getHangup())
         {
             future.addListener(ChannelFutureListener.CLOSE);
         }
