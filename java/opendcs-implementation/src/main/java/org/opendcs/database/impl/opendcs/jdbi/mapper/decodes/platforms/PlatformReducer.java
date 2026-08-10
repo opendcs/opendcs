@@ -69,7 +69,7 @@ public final class PlatformReducer implements LinkedHashMapRowReducer<Long,Platf
             if (siteReducer != null) // if this is null, we won't have properties either
             {
                 var prop = view.getRow(PLATFORM_PROPERTIES);
-                if (prop != null && prop.first != null)
+                if (prop != null && prop.first != null && prop.second != null)
                 {
                     platform.setProperty(prop.first, prop.second);
                 }
