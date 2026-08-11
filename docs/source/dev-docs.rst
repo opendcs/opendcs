@@ -986,6 +986,34 @@ avoid special processing (beyond throwing a "standard" exception) where the erro
 In addition to the limited scale of what the current implementation maps, there are likely some additional members
 to the exceptions that may be useful to properly reports. Don't be afraid to add them as needed.
 
+DataTransaction
+===============
+
+`DataTransaction` is the wrapper class for any interaction with a data source. It contains what it would need to correctly connect to some source. And, if possible
+handle situtations regarding data transactions.
+
+In the case of a pure JDBC connection the `::connection(Class<T extends AutoClosable> connectionType)` would only return a non-null value if `java.sql.Connection.class`
+was the input.
+
+In the current Implementations (OpenDCS and CWMS) Jdbi3 is used so a prepared `org.jdbiv.3.core.Handle` can also be retrieved.
+
+Except for requiring something that implements `AutoClosable` the DataTransaction interface makes no assumptions about what types of objects should be returned
+and it is up to implementations to provide appropriate options and use them.
+
+For example, future CWMS work will create a `CWMS-CDA` variant of the CWMS Implementation where Location (Site), Time Series, and Ratings are retrieved from the
+CWMS-Data-API while OpenDCS data is retrieved from an OpenDCS specific Relational Database. In this case the future `CwmsDataTransaction` implementation would need
+to supply an appropriate Http "Connection" that the `CWMS-CDA` DAOs can use to contact the API.
+
+
+To help with Transaction operations `DataTransaction` provides the usual commit and rollback handlers. With commit being called by default on close.
+To help with error handling to variants of `wrapErrors` are provided, one that allows returning a value and one that does not return a value. Should any error occur
+`::rollback` will be called and the original exception rethrown. If there are issues with the rollback itself, the Rollback exception is added as a suppressed exception to the 
+original exception.
+
+The `wrapErrors` call does not provide the transaction instance as a parameter, it can be wrapped into the callback directly. (NOTE: after typing this, we should probably change that
+but will handle in a follow up.)
+
+
 Using OpenDCS Jars in your project
 ==================================
 
