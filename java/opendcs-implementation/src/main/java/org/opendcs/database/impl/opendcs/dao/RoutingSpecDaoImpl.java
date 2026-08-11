@@ -34,7 +34,6 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.RoutingSpecDao;
-import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListEntryMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.routing.RoutingSpecMapper;
@@ -83,7 +82,6 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
 
     public RoutingSpecDaoImpl()
     {
-        STGroup.verbose = true;
         queries = StringTemplateSqlLocator.findStringTemplateGroup(RoutingSpecDaoImpl.class);
 
         allData = new RoutingSpecMappers(
@@ -367,12 +365,11 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
         if (forSchedule != null)
         {
             selectTemplate.add("schedule",
-                        "id in (select id from schedule_entry where upper(name) = upper(:scheduleName))");
+                        "id in (select routingpec_id from schedule_entry where upper(name) = upper(:scheduleName))");
         }
         var selectSql = setDefines(selectTemplate, mappers);
         try (var select = handle.createQuery(selectSql))
         {
-            select.setSqlLogger(new DetailSqlLogger(log));
             registerMappers(select, mappers);
 
             if (limit > -1)

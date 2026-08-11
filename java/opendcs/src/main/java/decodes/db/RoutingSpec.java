@@ -19,9 +19,8 @@ import ilex.util.TextUtil;
 import java.util.Date;
 import java.util.Vector;
 
-import org.python.google.common.base.Objects;
-
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -257,21 +256,21 @@ public class RoutingSpec extends IdDatabaseObject
 	@Override
 	public int hashCode()
 	{
-		return Objects.hashCode(this.name,
-								this.networkListNames,
-								this.dataSource,
-								this.networkLists,
-								this.outputFormat,
-								this.consumerType,
-								this.consumerArg,
-								this.enableEquations,
-								this.isProduction,
-								this.outputTimeZoneAbbr,
-								this.presentationGroupName,
-								this.sinceTime,
-								this.untilTime,
-								this.usePerformanceMeasurements,
-								this.properties);
+		return Objects.hash(this.name,
+							this.networkListNames,
+							this.dataSource,
+							this.networkLists,
+							this.outputFormat,
+							this.consumerType,
+							this.consumerArg,
+							this.enableEquations,
+							this.isProduction,
+							this.outputTimeZoneAbbr,
+							this.presentationGroupName,
+							this.sinceTime,
+							this.untilTime,
+							this.usePerformanceMeasurements,
+							this.properties);
 	}
 
 	/**
