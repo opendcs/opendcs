@@ -1,6 +1,6 @@
-import { Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
+import { Alert, Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../components/properties";
-import { use, useCallback, useMemo, useReducer } from "react";
+import { use, useCallback, useMemo, useReducer, useState } from "react";
 import type { ApiLoadingApp } from "opendcs-api";
 import { useTranslation } from "react-i18next";
 import type { CancelAction, CollectionActions, SaveAction } from "../../util/Actions";
@@ -13,6 +13,7 @@ import {
   LABEL_H,
   SaveButton,
 } from "../../components/forms";
+import { apiErrorMessage } from "../../util/ApiError";
 
 const APP_FIELDS = ["appName", "appType", "comment"] as const;
 
@@ -94,6 +95,7 @@ export const LoadingApp: React.FC<LoadingAppProperties> = ({
   const { t } = useTranslation(["loadingapps", "translation"]);
   const providedApp = app instanceof Promise ? use(app) : app;
   const [localApp, dispatch] = useReducer(LoadingAppReducer, providedApp);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const props = useMemo<Property[]>(
     () =>
@@ -118,9 +120,15 @@ export const LoadingApp: React.FC<LoadingAppProperties> = ({
       }
     : {};
 
-  const saveApp = useCallback(() => {
-    actions.save?.(localApp as ApiLoadingApp);
-  }, [actions, localApp]);
+  const saveApp = useCallback(async () => {
+    setSaveError(null);
+    try {
+      await actions.save?.(localApp as ApiLoadingApp);
+    } catch (err) {
+      console.warn("Loading app save failed", err);
+      setSaveError(apiErrorMessage(err, t("loadingapps:save_error")));
+    }
+  }, [actions, localApp, t]);
 
   const inputChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -226,6 +234,17 @@ export const LoadingApp: React.FC<LoadingAppProperties> = ({
             </Col>
           </Row>
 
+          {saveError && (
+            <Alert
+              variant="danger"
+              dismissible
+              onClose={() => setSaveError(null)}
+              className="mt-3"
+            >
+              {saveError}
+            </Alert>
+          )}
+
           {edit && (
             <EditFormActions>
               <CancelButton
@@ -235,7 +254,9 @@ export const LoadingApp: React.FC<LoadingAppProperties> = ({
                 aria-label={t("loadingapps:cancel_for", { id: providedApp.appId })}
               />
               <SaveButton
-                onClick={saveApp}
+                onClick={() => {
+                  void saveApp();
+                }}
                 aria-label={t("loadingapps:save_app", { id: localApp.appId })}
               />
             </EditFormActions>
