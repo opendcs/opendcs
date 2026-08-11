@@ -353,60 +353,13 @@ public final class ConfigResources extends OpenDcsResource
 		try
 		{
 			PlatformConfig pc = new PlatformConfig(config.getName());
-			if (config.getConfigId() != null)
-			{
-				pc.setId(DbKey.createDbKey(config.getConfigId()));
-			}
-			else
-			{
-				pc.setId(DbKey.NullKey);
-			}
+			pc.setId(config.getConfigId() != null ? DbKey.createDbKey(config.getConfigId()) : DbKey.NullKey);
 			pc.description = config.getDescription();
 			pc.numPlatformsUsing = config.getNumPlatforms();
 
 			pc.configName = config.getName();
 			pc.decodesScripts = map(config.getScripts(), pc);
-			Set<Integer> seenSensorNumbers = new HashSet<>();
-			for (ApiConfigSensor sensor : config.getConfigSensors())
-			{
-				if (!seenSensorNumbers.add(sensor.getSensorNumber()))
-				{
-					throw new WebAppException(Response.Status.BAD_REQUEST.getStatusCode(),
-							"Duplicate sensor number: " + sensor.getSensorNumber());
-				}
-				ConfigSensor configSensor = new ConfigSensor(null, sensor.getSensorNumber());
-				configSensor.sensorName = sensor.getSensorName();
-				configSensor.platformConfig = pc;
-				Double absoluteMax = sensor.getAbsoluteMax();
-				if(absoluteMax != null)
-				{
-					configSensor.absoluteMax = absoluteMax;
-				}
-				Double absoluteMin = sensor.getAbsoluteMin();
-				if(absoluteMin != null)
-				{
-					configSensor.absoluteMin = absoluteMin;
-				}
-				configSensor.recordingInterval = sensor.getRecordingInterval();
-				configSensor.timeOfFirstSample = sensor.getTimeOfFirstSample();
-				configSensor.recordingMode = sensor.getRecordingMode().getCode();
-				configSensor.setUsgsStatCode(sensor.getUsgsStatCode());
-				for (Map.Entry<String, String> entry : sensor.getDataTypes().entrySet())
-				{
-					DataType dt = dataTypeDao.lookup(tx, entry.getKey(), entry.getValue())
-											 .orElse(null);
-					if(dt == null )
-					{
-						dt = new DataType(entry.getKey(), entry.getValue());
-					}
-					configSensor.addDataType(dt);
-				}
-				for (String name : sensor.getProperties().stringPropertyNames())
-				{
-					configSensor.setProperty(name, sensor.getProperties().getProperty(name));
-				}
-				pc.addSensor(configSensor);
-			}
+			mapSensors(config.getConfigSensors(), pc, dataTypeDao, tx);
 
 			return pc;
 		}
@@ -414,6 +367,58 @@ public final class ConfigResources extends OpenDcsResource
 		{
 			throw new OpenDcsDataException("Error mapping platform config", ex);
 		}
+	}
+
+	private static void mapSensors(List<ApiConfigSensor> sensors, PlatformConfig pc, DataTypeDao dataTypeDao,
+			DataTransaction tx) throws OpenDcsDataException, WebAppException
+	{
+		Set<Integer> seenSensorNumbers = new HashSet<>();
+		for (ApiConfigSensor sensor : sensors)
+		{
+			if (!seenSensorNumbers.add(sensor.getSensorNumber()))
+			{
+				throw new WebAppException(Response.Status.BAD_REQUEST.getStatusCode(),
+						"Duplicate sensor number: " + sensor.getSensorNumber());
+			}
+			pc.addSensor(mapSensor(sensor, pc, dataTypeDao, tx));
+		}
+	}
+
+	private static ConfigSensor mapSensor(ApiConfigSensor sensor, PlatformConfig pc, DataTypeDao dataTypeDao,
+			DataTransaction tx) throws OpenDcsDataException
+	{
+		ConfigSensor configSensor = new ConfigSensor(null, sensor.getSensorNumber());
+		configSensor.sensorName = sensor.getSensorName();
+		configSensor.platformConfig = pc;
+		Double absoluteMax = sensor.getAbsoluteMax();
+		if(absoluteMax != null)
+		{
+			configSensor.absoluteMax = absoluteMax;
+		}
+		Double absoluteMin = sensor.getAbsoluteMin();
+		if(absoluteMin != null)
+		{
+			configSensor.absoluteMin = absoluteMin;
+		}
+		configSensor.recordingInterval = sensor.getRecordingInterval();
+		configSensor.timeOfFirstSample = sensor.getTimeOfFirstSample();
+		configSensor.recordingMode = sensor.getRecordingMode().getCode();
+		configSensor.setUsgsStatCode(sensor.getUsgsStatCode());
+		for (Map.Entry<String, String> entry : sensor.getDataTypes().entrySet())
+		{
+			DataType dt = dataTypeDao.lookup(tx, entry.getKey(), entry.getValue())
+									 .orElse(null);
+			if(dt == null )
+			{
+				dt = new DataType(entry.getKey(), entry.getValue());
+			}
+			configSensor.addDataType(dt);
+		}
+		for (String name : sensor.getProperties().stringPropertyNames())
+		{
+			configSensor.setProperty(name, sensor.getProperties().getProperty(name));
+		}
+		return configSensor;
 	}
 
 	static Vector<DecodesScript> map(List<ApiConfigScript> scripts, PlatformConfig config) throws DbException

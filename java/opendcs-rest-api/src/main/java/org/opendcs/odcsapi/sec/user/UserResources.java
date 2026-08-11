@@ -33,7 +33,7 @@ public final class UserResources extends OpenDcsResource
     private static final WebAppException UNABLE_TO_GET_IDP_DAO = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "No IdentityProvider DAO available.");
 
     @Context
-	HttpServletRequest request;
+	HttpServletRequest httpRequest;
 
     @POST
     @Path("updatePassword")
@@ -58,7 +58,7 @@ public final class UserResources extends OpenDcsResource
     public Response updatePassword(ApiPasswordChange passwordChange) throws WebAppException
     {
         //Security filters will ensure this method is only accessible via an authenticated client
-		var session = request.getSession(false);
+		var session = httpRequest.getSession(false);
 
         if (session == null)
         {
