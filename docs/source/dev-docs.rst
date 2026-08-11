@@ -980,7 +980,7 @@ Add in additional mappings as required.
 For the REST API there is `AppExceptionMapper`, this allows the request handler code to focus on
 the "happy path" leaving error mapping details to a central location.
 
-In all cases, prefer direct exception handling be dealt with in these mappers. Unless there's really now to avoid it,
+In all cases, prefer direct exception handling be dealt with in these mappers. Unless there's really no way to avoid it,
 avoid special processing (beyond throwing a "standard" exception) where the error might happen.
 
 In addition to the limited scale of what the current implementation maps, there are likely some additional members
@@ -1006,7 +1006,7 @@ to supply an appropriate Http "Connection" that the `CWMS-CDA` DAOs can use to c
 
 
 To help with Transaction operations `DataTransaction` provides the usual commit and rollback handlers. With commit being called by default on close.
-To help with error handling to variants of `wrapErrors` are provided, one that allows returning a value and one that does not return a value. Should any error occur
+To help with error handling two variants of `wrapErrors` are provided, one that allows returning a value and one that does not return a value. Should any error occur
 `::rollback` will be called and the original exception rethrown. If there are issues with the rollback itself, the Rollback exception is added as a suppressed exception to the 
 original exception.
 
