@@ -45,6 +45,7 @@ import opendcs.dai.LoadingAppDAI;
 import org.opendcs.odcsapi.beans.ApiAppRef;
 import org.opendcs.odcsapi.beans.ApiAppStatus;
 import org.opendcs.odcsapi.beans.ApiLoadingApp;
+import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
@@ -176,7 +177,9 @@ public final class AppResources extends OpenDcsResource
 					@ApiResponse(responseCode = "201", description = "Successfully stored application",
 							content = @Content(schema = @Schema(implementation = ApiLoadingApp.class),
 									mediaType = MediaType.APPLICATION_JSON)),
-					@ApiResponse(responseCode = "500", description = "Database error occurred")
+					@ApiResponse(responseCode = "500", description = "Database error occurred",
+							content = @Content(schema = @Schema(implementation = Status.class),
+									mediaType = MediaType.APPLICATION_JSON))
 			},
 			tags = {"REST - Loading Application Records"}
 	)

@@ -55,6 +55,7 @@ import org.opendcs.odcsapi.beans.ApiAlgorithm;
 import org.opendcs.odcsapi.beans.ApiAlgorithmRef;
 import org.opendcs.odcsapi.beans.ApiAlgorithmScript;
 import org.opendcs.odcsapi.beans.ApiAvailableAlgorithm;
+import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
@@ -214,7 +215,9 @@ public final class AlgorithmResources extends OpenDcsResource
 					@ApiResponse(responseCode = "201", description = "Successfully Created",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
 									schema = @Schema(implementation = ApiAlgorithm.class))),
-					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+					@ApiResponse(responseCode = "500", description = "Internal Server Error",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = Status.class)))
 			}
 	)
 	public Response postAlgorithm(ApiAlgorithm algo) throws DbIoException
