@@ -244,6 +244,10 @@ public final class ComputationResources extends OpenDcsResource
 					@ApiResponse(responseCode = "201", description = "Successfully stored computation",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
 									schema = @Schema(implementation = ApiComputation.class))),
+					@ApiResponse(responseCode = "400", description = "Bad Request - e.g. a constraint violation "
+							+ "such as a duplicate computation name",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = Status.class))),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
 									schema = @Schema(implementation = Status.class)))
