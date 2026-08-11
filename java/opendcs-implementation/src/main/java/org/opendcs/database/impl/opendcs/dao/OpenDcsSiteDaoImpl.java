@@ -13,7 +13,6 @@ import java.util.regex.Pattern;
 import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.database.api.exceptions.data.OpenDcsConstraintException;
 import org.opendcs.database.dai.SiteDao;
 import org.opendcs.database.exceptions.RequiredSiteNameMissingException;
 import org.opendcs.database.impl.opendcs.jdbi.column.numeric.NullableDoubleArgumentFactory;
@@ -297,24 +296,18 @@ public class OpenDcsSiteDaoImpl implements SiteDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        try
+        // A constraint violation surfaces as an unchecked OpenDcsConstraintException (see
+        // OpenDcsConstraintSqlExceptionHandler / OpenDcsExceptionHandler) and is left to
+        // propagate as-is so callers can map it to the correct HTTP status; we don't catch
+        // and rewrap it here, since any other RuntimeException is not necessarily caused by
+        // the site still being referenced.
+        try (var deleteNames = handle.createUpdate(DELETE_NAMES);
+             var deleteProps = handle.createUpdate(DELETE_PROPS);
+             var deleteSite = handle.createUpdate("delete from site where id = :id"))
         {
-            try (var deleteNames = handle.createUpdate(DELETE_NAMES);
-                 var deleteProps = handle.createUpdate(DELETE_PROPS);
-                 var deleteSite = handle.createUpdate("delete from site where id = :id"))
-            {
-                deleteNames.bind(GenericColumns.ID.column(), id).execute();
-                deleteProps.bind(GenericColumns.ID.column(), id).execute();
-                deleteSite.bind(GenericColumns.ID.column(), id).execute();
-            }
-        }
-        catch (OpenDcsConstraintException ex)
-        {
-            throw ex;
-        }
-        catch (RuntimeException ex)
-        {
-            throw new OpenDcsDataException("Site " + id + " is still referenced by other records and cannot be deleted", ex);
+            deleteNames.bind(GenericColumns.ID.column(), id).execute();
+            deleteProps.bind(GenericColumns.ID.column(), id).execute();
+            deleteSite.bind(GenericColumns.ID.column(), id).execute();
         }
     }
 

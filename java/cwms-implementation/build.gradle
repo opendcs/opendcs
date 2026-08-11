@@ -53,6 +53,10 @@ dependencies {
         exclude group: "com.oracle.database.jdbc", module: "jmscommon"
         exclude group: "mil.army.usace.hec", module: "hec-monolith"
     }
+
+    testImplementation enforcedPlatform(libs.junit.bom)
+    testImplementation(libs.bundles.junit)
+    testRuntimeOnly (libs.bundles.junit.platform)
 }
 
 

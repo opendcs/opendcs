@@ -112,7 +112,7 @@ public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatab
         // attempted in reverse order of registration); anything it doesn't
         // recognize as a constraint violation falls through to the base handler.
         jdbi.getConfig(SqlStatements.class)
-            .addExceptionHandler(new OpenDcsConstraintSqlExceptionHandler(dbEngine));
+            .addExceptionHandler(new OpenDcsConstraintSqlExceptionHandler());
 
         DecodesSettings decodesSettings = (DecodesSettings)settingsMap.get(DecodesSettings.class);
         try

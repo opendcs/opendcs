@@ -8,7 +8,6 @@ import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.database.api.exceptions.data.OpenDcsConstraintException;
 import org.opendcs.database.dai.LoadingAppDao;
 import org.opendcs.database.model.mappers.compapp.CompAppInfoMapper;
 import org.opendcs.database.model.mappers.compapp.CompAppInfoReducer;
@@ -170,23 +169,17 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        try
+        // A constraint violation surfaces as an unchecked OpenDcsConstraintException (see
+        // OpenDcsConstraintSqlExceptionHandler / OpenDcsExceptionHandler) and is left to
+        // propagate as-is so callers can map it to the correct HTTP status; we don't catch
+        // and rewrap it here, since any other RuntimeException is not necessarily caused by
+        // the app still being used.
+        try (var deleteApp = handle.createUpdate("delete from hdb_loading_application where loading_application_id = :id");
+             var deleteProperties = handle.createUpdate(DELETE_APP_PROPERTIES)
+            )
         {
-            try (var deleteApp = handle.createUpdate("delete from hdb_loading_application where loading_application_id = :id");
-                 var deleteProperties = handle.createUpdate(DELETE_APP_PROPERTIES)
-                )
-            {
-                deleteProperties.bind(GenericColumns.ID.column(), id).execute();
-                deleteApp.bind(GenericColumns.ID.column(), id).execute();
-            }
-        }
-        catch (OpenDcsConstraintException ex)
-        {
-            throw ex;
-        }
-        catch (RuntimeException ex)
-        {
-            throw new OpenDcsDataException("Loading app " + id + " is still used by computations or schedule entries and cannot be deleted", ex);
+            deleteProperties.bind(GenericColumns.ID.column(), id).execute();
+            deleteApp.bind(GenericColumns.ID.column(), id).execute();
         }
     }
 

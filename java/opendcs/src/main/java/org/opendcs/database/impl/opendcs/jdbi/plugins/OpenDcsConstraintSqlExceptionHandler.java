@@ -19,7 +19,6 @@ import java.sql.SQLException;
 
 import org.jdbi.v3.core.statement.SqlExceptionHandler;
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.exceptions.data.OpenDcsConstraintException;
 import org.opendcs.database.api.exceptions.data.RelatedDataConstraintException;
 import org.opendcs.database.api.exceptions.data.UniqueConstraintViolationException;
@@ -30,8 +29,12 @@ import org.opendcs.database.api.exceptions.data.UniqueConstraintViolationExcepti
  * {@link OpenDcsConstraintException} subtype so callers can return correct HTTP
  * status codes without inspecting raw SQLExceptions.
  *
- * Detected via ANSI SQLState class "23" (Postgres, HSQLDB, H2, MySQL, SQLite), or
- * by Oracle vendor error code as a fallback when the driver doesn't set SQLState.
+ * Detected via ANSI SQLState class "23" (Postgres, HSQLDB, H2, MySQL, SQLite).
+ * This handler is intentionally engine-agnostic and only recognizes standard
+ * SQLStates. Drivers that don't reliably set SQLState (e.g. Oracle) or that
+ * layer their own error codes on top (e.g. CWMS) need a per-implementation
+ * handler registered after this one -- see {@code OpenDcsExceptionHandler} in
+ * opendcs-implementation and {@code CwmsExceptionMapper} in cwms-implementation.
  *
  * If the exception isn't recognized as a constraint violation, this handler
  * returns without throwing so the next handler in the chain (ultimately
@@ -39,13 +42,6 @@ import org.opendcs.database.api.exceptions.data.UniqueConstraintViolationExcepti
  */
 public final class OpenDcsConstraintSqlExceptionHandler implements SqlExceptionHandler
 {
-    private final DatabaseEngine engine;
-
-    public OpenDcsConstraintSqlExceptionHandler(DatabaseEngine engine)
-    {
-        this.engine = engine;
-    }
-
     @Override
     public void handle(SQLException ex, StatementContext ctx)
     {
@@ -53,12 +49,6 @@ public final class OpenDcsConstraintSqlExceptionHandler implements SqlExceptionH
         if (sqlState != null && sqlState.startsWith("23"))
         {
             throwForSqlState(sqlState, ex);
-        }
-        // Oracle's JDBC driver may not always set standard SQLState; fall back
-        // to vendor-specific error codes.
-        if (engine == DatabaseEngine.ORACLE)
-        {
-            throwForOracleErrorCode(ex.getErrorCode(), ex);
         }
         // Not a constraint violation we recognize; let the next handler in the
         // chain decide what to do with it.
@@ -74,20 +64,6 @@ public final class OpenDcsConstraintSqlExceptionHandler implements SqlExceptionH
             case "23503": throw new RelatedDataConstraintException(ex);
             // Other class "23" integrity constraint violations (not-null, check, etc.)
             default: throw new OpenDcsConstraintException(ex);
-        }
-    }
-
-    private static void throwForOracleErrorCode(int errorCode, SQLException ex)
-    {
-        switch (errorCode)
-        {
-            // ORA-00001: unique constraint violated
-            case 1: throw new UniqueConstraintViolationException(ex);
-            // ORA-02292: integrity constraint violated - child record found
-            // ORA-02291: integrity constraint violated - parent key not found
-            case 2292:
-            case 2291: throw new RelatedDataConstraintException(ex);
-            default: // not a constraint code we recognize
         }
     }
 }
