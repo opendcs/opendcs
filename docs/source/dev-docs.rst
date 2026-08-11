@@ -960,6 +960,32 @@ While the actual versioned migrations *MUST* stay the same, the other organizati
 if you think you have a superior organization for these data.
 
 
+
+Database/Rest API Error handling
+================================
+
+As we start making more use of the new Database DAOs based on Jdbi3 and the Rest API we have standard
+mechanisms for organizing error handling. With Jdbi there is a `SqlExceptionHandler` concept. By default Jdbi 
+wraps any `SQLException` not explicitly declared in one of it's methods `throws` clauses in a `EnableToExecuteJdbiStatement`
+which is a runtime exception. Recent version have added the `SqlExceptionHandler` interface (https://jdbi.org/#_exception_handling)
+If any implementations are registered, and they throw an exception, that is what is seen by the application.
+
+For our DAOs if it makes sense to throw a specific exception from a DAO method do so. Otherwise favor
+writing additional mapping code in appropriate `SqlExceptionHandler` instances, mapping `SQLExceptions`
+to appropriate `OpenDcsDataRuntimeException`, most likely something derived from `OpenDcsDataConstraintException`.
+
+At this time only minimal mappings exist for these implementations, just enough to get the concept started.
+Add in additional mappings as required.
+
+For the REST API there is `AppExceptionMapper`, this allows the request handler code to focus on
+the "happy path" leaving error mapping details to a central location.
+
+In all cases, prefer direct exception handling be dealt with in these mappers. Unless there's really now to avoid it,
+avoid special processing (beyond throwing a "standard" exception) where the error might happen.
+
+In addition to the limited scale of what the current implementation maps, there are likely some additional members
+to the exceptions that may be useful to properly reports. Don't be afraid to add them as needed.
+
 Using OpenDCS Jars in your project
 ==================================
 
