@@ -52,6 +52,7 @@ import org.opendcs.database.dai.NetworkListDao;
 import org.opendcs.odcsapi.beans.ApiNetList;
 import org.opendcs.odcsapi.beans.ApiNetListItem;
 import org.opendcs.odcsapi.beans.ApiNetlistRef;
+import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
@@ -309,10 +310,16 @@ public final class NetlistResources extends OpenDcsResource
                     "a message containing the name of the routing specs using the referenced netlist.",
             responses = {
                     @ApiResponse(responseCode = "204", description = "Successfully deleted network list"),
+                    @ApiResponse(responseCode = "400", description = "Missing required netlistid parameter",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = Status.class))),
                     @ApiResponse(responseCode = "409",
-                            description = "Conflict - Network list is used by one or more routing specs"),
-                    @ApiResponse(responseCode = "400", description = "Missing required netlistid parameter"),
-                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+                            description = "Conflict - Network list is used by one or more routing specs",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = Status.class))),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = Status.class)))
             },
             tags = {"REST - Network Lists"}
     )
@@ -342,9 +349,9 @@ public final class NetlistResources extends OpenDcsResource
             if (ex.getCause() instanceof OpenDcsConstraintException)
             {
                 return Response.status(Response.Status.CONFLICT)
-                                  .entity(" Cannot delete network list with ID " + netlistId
+                                  .entity(new Status("Cannot delete network list with ID " + netlistId
                                      + " because it is used by at least one routing spec"
-                                ).build();
+                                )).build();
             }
             throw ex;
         }

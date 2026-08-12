@@ -296,6 +296,11 @@ public class OpenDcsSiteDaoImpl implements SiteDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        // A constraint violation surfaces as an unchecked OpenDcsConstraintException (see
+        // OpenDcsConstraintSqlExceptionHandler / OpenDcsExceptionHandler) and is left to
+        // propagate as-is so callers can map it to the correct HTTP status; we don't catch
+        // and rewrap it here, since any other RuntimeException is not necessarily caused by
+        // the site still being referenced.
         try (var deleteNames = handle.createUpdate(DELETE_NAMES);
              var deleteProps = handle.createUpdate(DELETE_PROPS);
              var deleteSite = handle.createUpdate("delete from site where id = :id"))

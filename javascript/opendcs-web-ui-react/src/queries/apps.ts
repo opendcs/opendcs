@@ -15,6 +15,7 @@ import {
 import { useApi } from "../contexts/app/ApiContext";
 import { appKeys } from "./keys";
 import { invalidateThenDelegate, normalizeNewId } from "./mutationHelpers";
+import { useTranslation } from "react-i18next";
 
 const useAppsApi = () => {
   const api = useApi();
@@ -76,11 +77,17 @@ export const useSaveAppMutation = (
 export const useDeleteAppMutation = (
   options?: Omit<UseMutationOptions<unknown, unknown, number>, "mutationFn">,
 ) => {
+  const { t } = useTranslation("translation");
   const { appApi, org } = useAppsApi();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (appId: number) => appApi.deleteApp(org, appId),
     ...options,
+    meta: {
+      successMessage: t("delete_success", { entity: "Loading App" }),
+      errorContext: t("delete_error_context", { entity: "Loading App" }),
+      ...(options?.meta ?? {}),
+    },
     onSuccess: invalidateThenDelegate(
       queryClient,
       appKeys.all(org),

@@ -545,9 +545,16 @@ public final class ConfigResources extends OpenDcsResource
 			},
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Successfully deleted the configuration"),
-					@ApiResponse(responseCode = "400", description = "Missing or invalid configid parameter"),
-					@ApiResponse(responseCode = "405", description = "Configuration is in use and cannot be deleted"),
-					@ApiResponse(responseCode = "500", description = "Database error occurred")
+					@ApiResponse(responseCode = "400", description = "Missing or invalid configid parameter",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class))),
+					@ApiResponse(responseCode = "409",
+							description = "Configuration is in use by one or more platforms and cannot be deleted",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class))),
+					@ApiResponse(responseCode = "500", description = "Database error occurred",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = org.opendcs.odcsapi.beans.Status.class)))
 			},
 			tags = {"REST - DECODES Platform Configurations"}
 	)

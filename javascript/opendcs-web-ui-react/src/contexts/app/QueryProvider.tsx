@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { QueryErrorBoundary } from "../../components/QueryErrorBoundary";
+import { onMutationError, onMutationSuccess } from "./mutationToasts";
 
 interface ProviderProps {
   children: ReactNode;
@@ -33,7 +34,10 @@ export const QueryProvider = ({ children }: ProviderProps) => {
           },
         },
         queryCache: new QueryCache({ onError: logError("query") }),
-        mutationCache: new MutationCache({ onError: logError("mutation") }),
+        mutationCache: new MutationCache({
+          onError: onMutationError,
+          onSuccess: onMutationSuccess,
+        }),
       }),
   );
 

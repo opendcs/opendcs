@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { act } from "react";
 import { http, HttpResponse } from "msw";
 import type { ApiNetList, ApiNetlistRef } from "opendcs-api";
-import { expect, waitFor } from "storybook/test";
+import { expect, screen, waitFor } from "storybook/test";
 import { NetlistsPage } from "./NetlistsPage";
 
 const NETLIST_REFS: ApiNetlistRef[] = [
@@ -227,6 +227,8 @@ export const DeleteNetlistRow: Story = {
       name: i18n.t("netlists:delete_for", { id: 4 }),
     });
     await act(async () => userEvent.click(deleteBtn));
+    const confirmBtn = await screen.findByRole("button", { name: "Delete" });
+    await act(async () => userEvent.click(confirmBtn));
     await waitFor(() =>
       expect(canvas.queryByText("USGS-Sites")).not.toBeInTheDocument(),
     );

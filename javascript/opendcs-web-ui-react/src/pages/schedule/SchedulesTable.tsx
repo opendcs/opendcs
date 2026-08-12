@@ -6,8 +6,7 @@ import type {
   ApiScheduleEntry,
   ApiScheduleEntryRef,
 } from "opendcs-api";
-import Schedule, { ScheduleSkeleton, type ScheduleDetails } from "./Schedule";
-import type { UiSchedule } from "./ScheduleReducer";
+import Schedule, { ScheduleSkeleton } from "./Schedule";
 import type { RemoveAction, SaveAction } from "../../util/Actions";
 import {
   AppDataTable,
@@ -17,7 +16,7 @@ import {
 
 export type TableScheduleRef = Partial<ApiScheduleEntryRef>;
 
-export interface SchedulesTableProperties {
+export interface ScheduleTableProperties {
   schedules: TableScheduleRef[];
   apps: ApiAppRef[];
   routings: ApiRoutingRef[];
@@ -27,7 +26,7 @@ export interface SchedulesTableProperties {
   loading?: boolean;
 }
 
-export const SchedulesTable: React.FC<SchedulesTableProperties> = ({
+export const SchedulesTable: React.FC<ScheduleTableProperties> = ({
   schedules,
   apps,
   routings,
@@ -42,47 +41,23 @@ export const SchedulesTable: React.FC<SchedulesTableProperties> = ({
     () => [
       {
         data: "schedEntryId",
-        header: t("schedule:header.Id"),
+        header: t("schedule:id"),
         defaultContent: "new",
-        className: "dt-left",
         type: "num",
       },
-      { data: "name", header: t("schedule:header.Name"), type: "string" },
-      {
-        data: "appName",
-        header: t("schedule:header.LoadingApp"),
-        defaultContent: "",
-        type: "string",
-      },
+      { data: "name", header: t("schedule:name"), type: "string" },
+      { data: "appName", header: t("schedule:loading_app"), type: "string" },
       {
         data: "routingSpecName",
-        header: t("schedule:header.RoutingSpec"),
-        defaultContent: "",
+        header: t("schedule:routing_spec"),
         type: "string",
       },
       {
         data: "enabled",
-        header: t("schedule:header.Enabled"),
-        defaultContent: "",
-        className: "dt-center",
-        type: "num",
-        render: (data: unknown, type: string) => {
-          const enabled = Boolean(data);
-          if (type !== "display") return enabled ? 1 : 0;
-          return enabled ? "✓" : "";
-        },
-      },
-      {
-        data: "lastModified",
-        header: t("schedule:header.LastModified"),
-        defaultContent: "",
-        type: "date",
-        render: (data: unknown, type: string) => {
-          if (type !== "display") return data;
-          if (!data) return "";
-          const d = data instanceof Date ? data : new Date(data as string);
-          return Number.isNaN(d.getTime()) ? "" : d.toLocaleString();
-        },
+        header: t("schedule:enabled"),
+        type: "string",
+        render: (_data, _type, row) =>
+          row.enabled ? t("translation:yes") : t("translation:no"),
       },
     ],
     [t],
@@ -103,6 +78,7 @@ export const SchedulesTable: React.FC<SchedulesTableProperties> = ({
         variant: "danger",
         show: (row) => (row.schedEntryId ?? 0) > 0,
         aria: (row) => t("schedule:delete_for", { id: row.schedEntryId }),
+        confirm: () => t("translation:confirm_delete_prompt"),
         onClick: ({ row }) => {
           if (row.schedEntryId !== undefined) actions.remove?.(row.schedEntryId);
         },
@@ -120,12 +96,10 @@ export const SchedulesTable: React.FC<SchedulesTableProperties> = ({
       actionsLabel={t("translation:actions")}
       rowActions={rowActions}
       renderDetail={({ row, mode, actions: detailActions }) => {
-        const detailsPromise: Promise<ScheduleDetails> =
+        const detailsPromise =
           row.schedEntryId && row.schedEntryId > 0 && getSchedule
             ? getSchedule(row.schedEntryId).then((schedule) => ({ schedule }))
-            : Promise.resolve({
-                schedule: { schedEntryId: row.schedEntryId } as UiSchedule,
-              });
+            : Promise.resolve({ schedule: { schedEntryId: row.schedEntryId } });
         return (
           <Schedule
             details={detailsPromise}
@@ -133,8 +107,10 @@ export const SchedulesTable: React.FC<SchedulesTableProperties> = ({
             routings={routings}
             routingsLoading={routingsLoading}
             actions={{
-              save: (s) => detailActions.save(s),
-              cancel: () => detailActions.cancel(),
+              save: (schedule) => detailActions.save(schedule),
+              cancel: () => {
+                if (row.schedEntryId !== undefined) detailActions.cancel();
+              },
             }}
             edit={mode !== "show"}
           />
@@ -144,14 +120,12 @@ export const SchedulesTable: React.FC<SchedulesTableProperties> = ({
         <ScheduleSkeleton edit={mode !== "show"} className="child-row-opening" />
       )}
       addNew={{
-        template: (id) => ({ schedEntryId: id, enabled: false }),
+        template: (id) => ({ schedEntryId: id }),
         ariaLabel: t("schedule:add_schedule"),
       }}
       onSave={actions.save}
       caption={t("schedule:title")}
-      tableId="schedulesTable"
+      tableId="scheduleTable"
     />
   );
 };
-
-export default SchedulesTable;

@@ -21,6 +21,7 @@
   "description": "Descripción",
   "cancel": "Cancelar",
   "save": "Guardar",
+  "delete": "Eliminar",
   "save_failed": "No se pudieron guardar los cambios. Inténtelo de nuevo.",
   "select": "Seleccionar",
   "choose": "Elegir",
@@ -37,5 +38,11 @@
   "Organizations not defined": "Organizaciones no definidas",
   "user pass incorrect": "El nombre de usuario y/o contraseña son incorrectos, o el usuario no tiene acceso a la organización seleccionada.",
   "Login Failed": "Login fallido",
+  "delete_success": "{{entity}} eliminado correctamente",
+  "delete_error_context": "Error al eliminar {{entity}}",
+  "confirm_delete_prompt": "¿Está seguro de que desea eliminar este elemento?",
+  "confirm_delete_title": "Confirmar eliminación",
+  "yes": "Sí",
+  "no": "No",
   "version": "Versión"
 }

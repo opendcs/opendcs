@@ -15,6 +15,7 @@ import { BrowserRouter } from "react-router-dom";
 
 import "./i18n";
 import { RefListProvider } from "./contexts/data/RefListProvider.tsx";
+import { ToastStack } from "./components/notifications";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -27,6 +28,7 @@ createRoot(document.getElementById("root")!).render(
                 <OrganizationsProvider>
                   <RefListProvider>
                     <App />
+                    <ToastStack />
                   </RefListProvider>
                 </OrganizationsProvider>
               </QueryProvider>

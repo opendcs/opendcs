@@ -9,6 +9,7 @@ import { RESTDECODESSiteRecordsApi, type ApiSite, type ApiSiteRef } from "opendc
 import { useApi } from "../contexts/app/ApiContext";
 import { siteKeys } from "./keys";
 import { invalidateThenDelegate } from "./mutationHelpers";
+import { useTranslation } from "react-i18next";
 
 const useSitesApi = () => {
   const api = useApi();
@@ -74,11 +75,17 @@ export const useSaveSiteMutation = (
 export const useDeleteSiteMutation = (
   options?: Omit<UseMutationOptions<unknown, unknown, number>, "mutationFn">,
 ) => {
+  const { t } = useTranslation("translation");
   const { sitesApi, org } = useSitesApi();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (siteId: number) => sitesApi.deletesite(org, siteId),
     ...options,
+    meta: {
+      successMessage: t("delete_success", { entity: "Site" }),
+      errorContext: t("delete_error_context", { entity: "Site" }),
+      ...(options?.meta ?? {}),
+    },
     onSuccess: invalidateThenDelegate(
       queryClient,
       siteKeys.all(org),

@@ -71,6 +71,7 @@ export const ConfigsTable: React.FC<ConfigsTableProperties> = ({
         variant: "danger",
         show: (row) => (row.configId ?? 0) > 0,
         aria: (row) => t("configs:delete_for", { id: row.configId }),
+        confirm: () => t("translation:confirm_delete_prompt"),
         onClick: ({ row }) => {
           if (row.configId !== undefined) actions.remove?.(row.configId);
         },

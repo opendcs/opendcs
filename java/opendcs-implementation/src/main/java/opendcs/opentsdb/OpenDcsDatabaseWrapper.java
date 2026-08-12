@@ -26,6 +26,6 @@ public class OpenDcsDatabaseWrapper extends AbstractJdbiOpenDcsDatabaseWrapper
     {
         this.jdbi.define("numeric_date", true);
         this.jdbi.getConfig(SqlStatements.class)
-                 .addExceptionHandler(new OpenDcsExceptionHandler());
+                 .addExceptionHandler(new OpenDcsExceptionHandler(dbEngine));
     }
 }

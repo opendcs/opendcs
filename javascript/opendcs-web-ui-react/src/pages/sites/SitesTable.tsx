@@ -71,6 +71,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
         variant: "danger",
         show: (row) => (row.siteId ?? 0) > 0,
         aria: (row) => t("sites:delete_for", { id: row.siteId }),
+        confirm: () => t("translation:confirm_delete_prompt"),
         onClick: ({ row }) => {
           if (row.siteId !== undefined) actions.remove?.(row.siteId);
         },

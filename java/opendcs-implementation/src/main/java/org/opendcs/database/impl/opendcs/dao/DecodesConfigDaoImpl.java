@@ -408,6 +408,11 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        // A constraint violation surfaces as an unchecked OpenDcsConstraintException (see
+        // OpenDcsConstraintSqlExceptionHandler / OpenDcsExceptionHandler) and is left to
+        // propagate as-is so callers can map it to the correct HTTP status; we don't catch
+        // and rewrap it here, since any other RuntimeException is not necessarily caused by
+        // the config still being in use.
         try(var deleteConfigSensorProps = handle.createUpdate(DELETE_CONFIGSENSOR_PROPERTIES);
             var deleteConfigSensorDataType = handle.createUpdate(DELETE_CONFIGSENSOR_DATATYPE);
             var deleteConfigSensor = handle.createUpdate(DELETE_CONFIGSENSOR);
@@ -436,7 +441,6 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
             deleteScriptSensor.bind(GenericColumns.ID.column(), id).execute();
             deleteScript.bind(GenericColumns.ID.column(), id).execute();
             deleteConfig.bind(GenericColumns.ID.column(), id).execute();
-
         }
     }
 

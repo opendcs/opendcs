@@ -233,6 +233,8 @@ export const DeleteAlgorithm: Story = {
       { timeout: 5000 },
     );
     await act(async () => userEvent.click(deleteBtn));
+    const confirmBtn = await screen.findByRole("button", { name: "Delete" });
+    await act(async () => userEvent.click(confirmBtn));
 
     await waitFor(() => {
       expect(canvas.queryByText("ScalerAdder")).not.toBeInTheDocument();

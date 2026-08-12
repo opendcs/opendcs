@@ -169,6 +169,11 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        // A constraint violation surfaces as an unchecked OpenDcsConstraintException (see
+        // OpenDcsConstraintSqlExceptionHandler / OpenDcsExceptionHandler) and is left to
+        // propagate as-is so callers can map it to the correct HTTP status; we don't catch
+        // and rewrap it here, since any other RuntimeException is not necessarily caused by
+        // the app still being used.
         try (var deleteApp = handle.createUpdate("delete from hdb_loading_application where loading_application_id = :id");
              var deleteProperties = handle.createUpdate(DELETE_APP_PROPERTIES)
             )
