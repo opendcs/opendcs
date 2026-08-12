@@ -1,7 +1,7 @@
 [versions]
 #General/Shared Versions
 oracle = { strictly = "23.26.1.0.0" }
-postgres = "42.7.11"
+postgres = "42.7.13"
 commons-logging = "1.3.6"
 commons-net = "3.13.0"
 dom4j = { strictly = "2.1.4" }
@@ -29,7 +29,7 @@ monolith = { strictly = "7.0.5" }
 cwms-ratings = "1.1.0"
 nucleus = "4.10.0"
 flogger = "0.7.4"  # used by hec-monolith
-usgs-waterdata-api = "0.3.3"
+usgs-waterdata-api = "0.3.6"
 jdbi = "3.54.0"
 flywaydb = "11.20.1"
 sun-mailapi="2.0.2"
@@ -53,7 +53,7 @@ swagger-parser = "2.1.45"
 rs-api = "4.0.0"
 jackson = "2.22.1"
 jackson-annotations = "2.22"
-selenium = "4.45.0"
+selenium = "4.47.0"
 nimbus = "10.7"
 jwt = "4.4.0"
 jaxb = "4.0.0"
