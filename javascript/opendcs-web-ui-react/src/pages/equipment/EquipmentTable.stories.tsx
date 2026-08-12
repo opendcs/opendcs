@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { EquipmentTable, type TableEquipmentRef } from "./EquipmentTable";
 import type { ApiEquipmentModel, ApiEquipmentModelRef } from "opendcs-api";
-import { expect, waitFor } from "storybook/test";
+import { expect, screen, waitFor } from "storybook/test";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RemoveAction, SaveAction } from "../../util/Actions";
 
@@ -220,6 +220,11 @@ export const DeleteEquipment: Story = {
       { timeout: 5000 },
     );
     await userEvent.click(deleteBtn);
+
+    const confirmBtn = await screen.findByRole("button", {
+      name: i18n.t("translation:delete"),
+    });
+    await userEvent.click(confirmBtn);
 
     await waitFor(() => {
       expect(canvas.queryByText("Iridium-SBD-1")).not.toBeInTheDocument();

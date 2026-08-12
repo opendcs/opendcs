@@ -72,6 +72,7 @@ export const DataSourcesTable: React.FC<DataSourcesTableProperties> = ({
         key: "delete",
         icon: "bi-trash",
         variant: "danger",
+        confirm: true,
         show: (row) => (row.dataSourceId ?? 0) > 0,
         aria: (row) => t("datasources:delete_for", { id: row.dataSourceId }),
         onClick: ({ row }) => {

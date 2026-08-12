@@ -234,6 +234,11 @@ export const DeleteAlgorithm: Story = {
     );
     await act(async () => userEvent.click(deleteBtn));
 
+    const confirmBtn = await screen.findByRole("button", {
+      name: i18n.t("translation:delete"),
+    });
+    await act(async () => userEvent.click(confirmBtn));
+
     await waitFor(() => {
       expect(canvas.queryByText("ScalerAdder")).not.toBeInTheDocument();
     });

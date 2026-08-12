@@ -91,6 +91,7 @@ export const RoutingsTable: React.FC<RoutingsTableProperties> = ({
         key: "delete",
         icon: "bi-trash",
         variant: "danger",
+        confirm: true,
         show: (row) => (row.routingId ?? 0) > 0,
         aria: (row) => t("routing:delete_for", { id: row.routingId }),
         onClick: ({ row }) => {
