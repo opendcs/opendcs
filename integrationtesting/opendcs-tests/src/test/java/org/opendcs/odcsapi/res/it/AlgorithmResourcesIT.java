@@ -30,6 +30,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 
 final class AlgorithmResourcesIT extends BaseApiIT
 {
@@ -218,5 +219,130 @@ final class AlgorithmResourcesIT extends BaseApiIT
 				;
 			}
 		}
+	}
+
+	@Test
+	void catalogImportUnknownExecClassReturnsNotFound()
+	{
+		String bogusExecClass = "not.a.real.algo.ClassName";
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.contentType(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.body(List.of(bogusExecClass))
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("algorithmcatalog")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
+			.body("message", notNullValue())
+		;
+	}
+
+	@Test
+	void catalogImportAfterDeleteRoundTrip()
+	{
+		String copyAlgoExecClass = "decodes.tsdb.algo.CopyAlgorithm";
+
+		// Import CopyAlgorithm...
+		Long algorithmId = importCopyAlgorithm(copyAlgoExecClass);
+
+		// ...delete it...
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.queryParam("algorithmid", algorithmId)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("algorithm")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
+		;
+
+		// ...and confirm it is once again offered (and re-importable) via the catalog.
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("algorithmcatalog")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.OK.getStatusCode()))
+			.body("findAll { it.execClass == '" + copyAlgoExecClass + "' }[0].alreadyImported", is(false))
+		;
+
+		Long reimportedId = importCopyAlgorithm(copyAlgoExecClass);
+		try
+		{
+			given()
+				.log().ifValidationFails(LogDetail.ALL, true)
+				.accept(MediaType.APPLICATION_JSON)
+				.spec(authSpec)
+				.queryParam("algorithmid", reimportedId)
+			.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.get("algorithm")
+			.then()
+				.log().ifValidationFails(LogDetail.ALL, true)
+			.assertThat()
+				.statusCode(is(Response.Status.OK.getStatusCode()))
+			;
+		}
+		finally
+		{
+			given()
+				.log().ifValidationFails(LogDetail.ALL, true)
+				.accept(MediaType.APPLICATION_JSON)
+				.spec(authSpec)
+				.queryParam("algorithmid", reimportedId)
+			.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.delete("algorithm")
+			.then()
+				.log().ifValidationFails(LogDetail.ALL, true)
+			.assertThat()
+				.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
+			;
+		}
+	}
+
+	private Long importCopyAlgorithm(String execClass)
+	{
+		List<ApiAlgorithm> imported = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.contentType(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.body(List.of(execClass))
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("algorithmcatalog")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
+			.body("execClass", hasItem(execClass))
+			.extract()
+			.body()
+			.jsonPath()
+			.getList(".", ApiAlgorithm.class)
+		;
+		return imported.get(0).getAlgorithmId();
 	}
 }
