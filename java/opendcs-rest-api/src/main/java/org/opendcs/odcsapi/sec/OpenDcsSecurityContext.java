@@ -39,13 +39,16 @@ public final class OpenDcsSecurityContext implements SecurityContext
 	}
 
 	@Override
-	public boolean isUserInRole(String role)
+	public boolean isUserInRole(String orgAndRole)
 	{
-		return principal.getRoles()
+		var idx = orgAndRole.indexOf("/");
+		final var org = orgAndRole.substring(0, idx);
+		final var role = orgAndRole.substring(idx+1);
+		return principal.getRoles().entrySet()
 				.stream()
 				.anyMatch(e ->
 				{
-					final String r = e.getRole();
+					final String r = e.getValue().getRole();
 					return r.equals(role);
 				});
 	}

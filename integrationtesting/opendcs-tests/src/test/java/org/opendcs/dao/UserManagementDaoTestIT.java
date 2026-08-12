@@ -61,15 +61,15 @@ class UserManagementDaoTestIT extends AppTestBase
         try (DataTransaction tx = db.newTransaction())
         {
             Role role = dao.addRole(tx, new Role(DbKey.NullKey, "user", "a test", null));
-            assertEquals("user", role.name);
-            assertNotEquals(DbKey.NullKey, role.id);
-            id = role.id;
+            assertEquals("user", role.name());
+            assertNotEquals(DbKey.NullKey, role.id());
+            id = role.id();
         }
 
         try (DataTransaction tx = db.newTransaction())
         {
             Role role = dao.getRole(tx, id).orElseGet(() -> fail("could not retrieve role"));
-            assertEquals("user", role.name);
+            assertEquals("user", role.name());
 
             Role updated = new Role(null, "test", "a test2", null);
             dao.updateRole(tx, id, updated);
@@ -98,11 +98,11 @@ class UserManagementDaoTestIT extends AppTestBase
 
             List<Role> rolesLimit = dao.getRoles(tx, 10, 0);
             assertEquals(10, rolesLimit.size());
-            assertEquals("arole006", rolesLimit.get(rolesLimit.size()-1).name);
+            assertEquals("arole006", rolesLimit.get(rolesLimit.size()-1).name());
 
             List<Role> rolesLimitOffset = dao.getRoles(tx, 10, 10);
             assertEquals(10, rolesLimitOffset.size());
-            assertEquals("arole016", rolesLimitOffset.get(rolesLimitOffset.size()-1).name);
+            assertEquals("arole016", rolesLimitOffset.get(rolesLimitOffset.size()-1).name());
 
         }
     }

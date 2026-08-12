@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import decodes.db.DatabaseException;
@@ -156,7 +157,7 @@ public class BaseApiIT extends AppTestBase
 		if(session == null) {
 			throw new RuntimeException("Test Session Manager is unusable.");
 		}
-		OpenDcsPrincipal mcup = new OpenDcsPrincipal(new UserBuilder().withEmail(username).build(), EnumSet.allOf(OpenDcsApiRoles.class));
+		OpenDcsPrincipal mcup = new OpenDcsPrincipal(new UserBuilder().withEmail(username).build(), Map.of(DbKey.NullKey, EnumSet.allOf(OpenDcsApiRoles.class).stream().toList()));
 		session.setAuthType("CLIENT-CERT");
 		session.setPrincipal(mcup);
 		session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, mcup);

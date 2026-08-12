@@ -33,7 +33,11 @@ import jakarta.ws.rs.ext.Provider;
 
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import org.slf4j.Logger;
+
+import decodes.sql.DbKey;
+
 import org.opendcs.database.model.UserBuilder;
+import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 @Provider
@@ -76,7 +80,7 @@ public final class SecurityFilter implements ContainerRequestFilter
 		{
 			log.trace("Public endpoint identified: {}", resourceInfo.getResourceMethod().toGenericString());
 		}
-		OpenDcsPrincipal principal = new OpenDcsPrincipal(new UserBuilder().withEmail("guest").build(), Collections.singleton(OpenDcsApiRoles.ODCS_API_GUEST));
+		OpenDcsPrincipal principal = new OpenDcsPrincipal(new UserBuilder().withEmail("guest").build(), Collections.singletonMap(DbKey.NullKey, OpenDcsApiRoles.ODCS_API_GUEST));
 		requestContext.setSecurityContext(new OpenDcsSecurityContext(principal,
 				httpServletRequest.isSecure(), ""));
 		
@@ -87,6 +91,7 @@ public final class SecurityFilter implements ContainerRequestFilter
 		SecurityContext securityContext = requestContext.getSecurityContext();
 		RolesAllowed annotation = resourceInfo.getResourceMethod().getAnnotation(RolesAllowed.class);
 		String endpoint = requestContext.getMethod() + " " + requestContext.getUriInfo().getPath();
+		var org = requestContext.getHeaderString(ApiConstants.ORGANIZATION_HEADER);
 		if (!resourceInfo.getResourceClass().equals(OpenApiResource.class))
 		{
 			if(annotation == null)
@@ -96,7 +101,7 @@ public final class SecurityFilter implements ContainerRequestFilter
 			String[] value = annotation.value();
 			for(String role : value)
 			{
-				if(securityContext.isUserInRole(role))
+				if(securityContext.isUserInRole(org + "/" + role))
 				{
 					return;
 				}

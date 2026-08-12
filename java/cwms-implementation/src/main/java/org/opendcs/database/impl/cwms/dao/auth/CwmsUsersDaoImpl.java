@@ -50,7 +50,7 @@ public class CwmsUsersDaoImpl implements UsersDao
                 )
             select u.id u_id, u.preferences u_preferences, u.email u_email,
                 u.created_at u_created_at, u.updated_at u_updated_at,
-                r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
+                ur.office_code r_org_id, r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
                 uip.identity_provider_id i_id, uip.subject i_subject,
                 idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config
             from user_cte u
@@ -104,22 +104,28 @@ public class CwmsUsersDaoImpl implements UsersDao
         }
 
         try (PreparedBatch roleBatch = handle.prepareBatch(
-                    "insert into user_roles(user_id, role_id) values (:user_id, :role_id)"))
+                    "insert into user_roles(office_code, user_id, role_id) values (:office_code, :user_id, :role_id)"))
         {
-            for (Role role: user.roles)
+            for (var entry: user.roles.entrySet())
             {
-                var roleId = role.id;
-                if (DbKey.isNull(role.id))
+                var orgId = entry.getKey();
+                var roles = entry.getValue();
+                for (var role: roles)
                 {
-                    roleId = rolesDao.getRoleByName(tx, role.name)
-                                     .orElseThrow(() -> new OpenDcsDataException("Request to map role '" + role.name +
-                                                                                 "' that doesn't exist."))
-                                     .id;
+                    var roleId = role.id();
+                    if (DbKey.isNull(role.id()))
+                    {
+                        roleId = rolesDao.getRoleByName(tx, role.name())
+                                        .orElseThrow(() -> new OpenDcsDataException("Request to map role '" + role.name() +
+                                                                                    "' that doesn't exist."))
+                                        .id();
+                    }
+                    roleBatch.bind("office_code", orgId)
+                            .bind(UserBuilderMapper.USER_ID, id)
+                            .bind(RoleMapper.ROLE_ID, roleId)
+                            .add();
                 }
-                roleBatch.bind(UserBuilderMapper.USER_ID, id)
-                        .bind(RoleMapper.ROLE_ID, roleId)
-                        .add();
-            }
+            };
             roleBatch.execute();
         }
 
@@ -151,7 +157,7 @@ public class CwmsUsersDaoImpl implements UsersDao
             """
               select u.id u_id, u.preferences u_preferences, u.email u_email,
                    u.created_at u_created_at, u.updated_at u_updated_at,
-                   r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
+                   ur.office_code r_org_id, r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
                    uip.identity_provider_id i_id, uip.subject i_subject,
                    idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config
               from opendcs_user u
@@ -195,13 +201,19 @@ public class CwmsUsersDaoImpl implements UsersDao
             deleteRoles.bind(GenericColumns.ID.column(), id).execute();
         }
         try (PreparedBatch roleBatch = handle.prepareBatch(
-            "insert into user_roles(user_id, role_id) values (:user_id, :role_id)"))
+            "insert into user_roles(office_code, user_id, role_id) values (:office_code, :user_id, :role_id)"))
         {
-            for (var role: user.roles)
+            for (var entry: user.roles.entrySet())
             {
-                roleBatch.bind(UserBuilderMapper.USER_ID, id)
-                        .bind(RoleMapper.ROLE_ID, role.id)
-                        .add();
+                var orgId = entry.getKey();
+                var roles = entry.getValue();
+                for (var role: roles)
+                {
+                    roleBatch.bind("office_code", orgId)
+                            .bind(UserBuilderMapper.USER_ID, id)
+                            .bind(RoleMapper.ROLE_ID, role.id())
+                            .add();
+                }
             }
             roleBatch.execute();
         }
