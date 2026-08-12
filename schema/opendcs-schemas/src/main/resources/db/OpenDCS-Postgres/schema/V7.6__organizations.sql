@@ -13,7 +13,7 @@ create table organization (
 
 
 insert into org_type(id, name, description) OVERRIDING SYSTEM VALUE
-    values(0, '<default>', 'Basic organization with not distinct attributes');
+    values(0, '<default>', 'Basic organization with no distinct attributes');
 insert into organization(id, name, org_type, parent_id) OVERRIDING SYSTEM VALUE
     values (0, 'Default', 0, null);
 
