@@ -47,4 +47,6 @@ public interface MsgArchive
      * @param statusProvider implementation of LrgsStatusProvider
      */
     void setStatusProvider(LrgsStatusProvider statusProvider);
+
+    LrgsStatusProvider getStatusProvider();
 }
