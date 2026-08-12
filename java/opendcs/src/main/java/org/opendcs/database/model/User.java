@@ -40,7 +40,7 @@ public final class User
     public final String email;
     public final ZonedDateTime createdAt;
     public final ZonedDateTime updatedAt;
-    public final List<Role> roles;
+    public final Map<DbKey,List<Role>> roles;
     /**
      * List of external identity providers that are tied to this user account.
      */
@@ -54,7 +54,7 @@ public final class User
         this.email = builder.email;
         this.createdAt = builder.createdAt;
         this.updatedAt = builder.updatedAt;
-        this.roles = Collections.unmodifiableList(builder.roles);
+        this.roles = Collections.unmodifiableMap(builder.roles);
         this.identityProviders = Collections.unmodifiableList(builder.idpMap);
     }
 }

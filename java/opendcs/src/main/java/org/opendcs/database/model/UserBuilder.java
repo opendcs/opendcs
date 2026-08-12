@@ -28,7 +28,7 @@ public class UserBuilder
     DbKey id = DbKey.NullKey;
     String email = null;
     ArrayList<IdentityProviderMapping> idpMap = new ArrayList<>();
-    ArrayList<Role> roles = new ArrayList<>();
+    HashMap<DbKey, List<Role>> roles = new HashMap<>();
     ZonedDateTime createdAt = null;
     ZonedDateTime updatedAt = null;
     HashMap<String, Object> preferences = new HashMap<>();
@@ -44,7 +44,7 @@ public class UserBuilder
         this.id = original.id;
         this.email = original.email;
         this.idpMap.addAll(original.identityProviders);
-        this.roles.addAll(original.roles);
+        this.roles.putAll(original.roles);
         this.preferences.putAll(original.preferences);
         // we don't edit created at and updated at is automatic
     }
@@ -90,15 +90,15 @@ public class UserBuilder
         return this;
     }
 
-    public UserBuilder withRoles(List<Role> roles)
+    public UserBuilder withRoles(Map<DbKey,List<Role>> roles)
     {
-        this.roles.addAll(roles);
+        this.roles.putAll(roles);
         return this;
     }
 
-    public UserBuilder withRole(Role role)
+    public UserBuilder withRole(DbKey orgId, Role role)
     {
-        this.roles.add(role);
+        this.roles.computeIfAbsent(orgId, tmp -> new ArrayList<>()).add(role);
         return this;
     }
 

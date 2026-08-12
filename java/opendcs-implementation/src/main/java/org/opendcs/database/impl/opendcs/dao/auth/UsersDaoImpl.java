@@ -63,18 +63,21 @@ public class UsersDaoImpl implements UsersDao
 
         try (PreparedBatch roleBatch = handle.prepareBatch("insert into user_roles(user_id, role_id) values (:user_id, :role_id)"))
         {
-            for (Role role: user.roles)
+            for (var roles: user.roles.values())
             {
-                var roleId = role.id;
-                if (DbKey.isNull(role.id))
+                for (var role: roles)
                 {
-                    roleId = rolesDao.getRoleByName(tx, role.name)
-                                .orElseThrow(() -> new OpenDcsDataException("Request to map role '" + role.name + "' that doesn't exist."))
-                                .id;
+                    var roleId = role.id();
+                    if (DbKey.isNull(role.id()))
+                    {
+                        roleId = rolesDao.getRoleByName(tx, role.name())
+                                    .orElseThrow(() -> new OpenDcsDataException("Request to map role '" + role.name() + "' that doesn't exist."))
+                                    .id();
+                    }
+                    roleBatch.bind(UserBuilderMapper.USER_ID, id)
+                            .bind(RoleMapper.ROLE_ID, roleId)
+                            .add();
                 }
-                roleBatch.bind(UserBuilderMapper.USER_ID, id)
-                        .bind(RoleMapper.ROLE_ID, roleId)
-                        .add();
             }
             roleBatch.execute();
         }
@@ -106,7 +109,7 @@ public class UsersDaoImpl implements UsersDao
         try (var user = handle.createQuery(
             "select u.id u_id, u.preferences::text u_preferences, u.email u_email," +
             "       u.created_at u_created_at, u.updated_at u_updated_at, " +
-            "       r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at," +
+            "       0 r_org_id, r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at," +
             "       uip.identity_provider_id i_id, uip.subject i_subject,  " +
             "       idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config::text i_config" +
             "  from opendcs_user u" +
@@ -150,11 +153,14 @@ public class UsersDaoImpl implements UsersDao
         }
         try (PreparedBatch roleBatch = handle.prepareBatch("insert into user_roles(user_id, role_id) values (:user_id, :role_id)"))
         {
-            for (Role role: user.roles)
+            for (var roles: user.roles.values()) // no org id column mapping yet
             {
-                roleBatch.bind(UserBuilderMapper.USER_ID, id)
-                        .bind(RoleMapper.ROLE_ID, role.id)
-                        .add();
+                for (var role: roles)
+                {
+                    roleBatch.bind(UserBuilderMapper.USER_ID, id)
+                            .bind(RoleMapper.ROLE_ID, role.id())
+                            .add();
+                }
             }
             roleBatch.execute();
         }

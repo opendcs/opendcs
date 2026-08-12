@@ -8,6 +8,9 @@ import java.util.function.BiConsumer;
 import org.jdbi.v3.core.result.RowView;
 import org.opendcs.database.model.UserBuilder;
 import org.opendcs.utils.sql.GenericColumns;
+
+import decodes.sql.DbKey;
+
 import org.opendcs.database.model.IdentityProviderMapping;
 import org.opendcs.database.model.Role;
 
@@ -48,10 +51,11 @@ public class UserBuilderReducer implements BiConsumer<Map<Long, UserBuilder>, Ro
                 qid -> rowView.getRow(UserBuilder.class)
         );
         Long roleId = rowView.getColumn(rolePrefix + GenericColumns.ID, Long.class);
+        var orgId = rowView.getColumn(rolePrefix + "org_id", DbKey.class);
         if (roleId != null)
         {
             Role r = rowView.getRow(Role.class);
-            ub.withRole(r);
+            ub.withRole(orgId, r);
         }
         String subject = rowView.getColumn(idpPrefix + GenericColumns.SUBJECT, String.class);
         if (subject != null)
