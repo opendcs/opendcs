@@ -28,6 +28,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
+import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -160,7 +161,13 @@ public class OpenTsdb extends TimeSeriesDb
 	@Override
 	public void postConInit(Connection conn) throws SQLException
 	{
-		/* currently we don't need to do anything */
+		if (conn.getMetaData().getDatabaseProductName().contains(DatabaseEngine.POSTGRES.getProductString()))
+		{
+			try (var stmt = conn.prepareStatement("set opendcs.org_id=0"))
+			{
+				stmt.execute();
+			}
+		}
 	}
 
 	@Override

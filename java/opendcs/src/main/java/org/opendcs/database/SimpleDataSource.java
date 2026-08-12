@@ -18,6 +18,7 @@ import javax.management.ObjectName;
 import javax.management.openmbean.OpenDataException;
 import javax.sql.DataSource;
 
+import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.jmx.ConnectionPoolMXBean;
 import org.opendcs.jmx.JmxUtils;
 import org.opendcs.jmx.WrappedConnectionMBean;
@@ -141,6 +142,7 @@ public class SimpleDataSource implements DataSource, ConnectionPoolMXBean
             },
             SqlSettings.TRACE_CONNECTIONS);
         requests.getAndIncrement();
+        init(wc);
         log.trace("connections requests/freed {}/{}", requests.get(),freed.get());
         connections.add(wc);
         // existing usages expect autocommit, Jdbi DatabaseWrapper will override when required.
@@ -163,10 +165,22 @@ public class SimpleDataSource implements DataSource, ConnectionPoolMXBean
             SqlSettings.TRACE_CONNECTIONS
         );
         requests.getAndIncrement();
+        init(wc);
         log.trace("connections requeste/freed {}/{}", requests.get(),freed.get());
         connections.add(wc);
         wc.setAutoCommit(true);
         return wc;
+    }
+
+    private void init(Connection conn) throws SQLException
+    {
+        if (conn.getMetaData().getDatabaseProductName().contains(DatabaseEngine.POSTGRES.getProductString()))
+		{
+			try (var stmt = conn.prepareStatement("set opendcs.org_id=0"))
+			{
+				stmt.execute();
+			}
+		}
     }
 
     @Override

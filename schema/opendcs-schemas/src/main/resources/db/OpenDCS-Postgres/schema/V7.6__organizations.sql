@@ -36,11 +36,11 @@ begin
                 from information_schema.tables
                where table_schema = 'public'   -- These tables are "global"
                  and lower(table_name) not in ('org_type', 'opendcs_user', 'opendcs_user_password',
-                                               'opendcs_role', 'user_identity_provider', 'organization',
-                                               'flyway_schema_history', 'tsdb_database_version',
+                                               'opendcs_role', 'identity_provider', 'user_identity_provider',
+                                               'organization', 'flyway_schema_history', 'tsdb_database_version',
                                                'decodesdatabaseversion')) loop
-        -- execute format('alter table %I add column org_id bigint not null default current_organization()', r.table_name);
-        -- execute format('alter table %I enable row level security', r.table_name);
+        execute format('alter table %I add column org_id bigint not null default current_organization()', r.table_name);
+        execute format('alter table %I enable row level security', r.table_name);
         execute format('drop policy if exists org_read_isolation on %I', r.table_name);
         execute format('drop policy if exists org_insert_isolation on %I', r.table_name);
         execute format('drop policy if exists org_update_isolation on %I', r.table_name);
@@ -53,18 +53,18 @@ begin
                        r.table_name);
         execute format('create policy org_update_isolation on %I for insert with check (org_id = current_organization())',
                        r.table_name);
-        raise notice '%', r.table_name;
+        --raise notice '%', r.table_name;
     end loop; 
 end $$;
 
-raise notice 'The following will wait for indexes to be constructed. It is possible there could be some long waits.';
+--raise notice 'The following will wait for indexes to be constructed. It is possible there could be some long waits.';
 -- it would be nice to just loop through the data dictionary but given the various
 -- unique contraints that have been built over time it would be difficult to get right
 -- additonal instead of plain unique constraints, primary key constraints were (reasonably) used.
 -- While correct, it does make the sequence of events a bit more difficult.
 
-create unique index concurrently configsensor_pkey_idx on configsensor(org_id, configid, sensornumber);
-begin;
+create unique index /*concurrently*/ configsensor_pkey_idx on configsensor(org_id, configid, sensornumber);
+--begin;
 
 alter table configsensorproperty drop CONSTRAINT configsensorproperty_configid_sensornumber_fkey;
 alter table configsensordatatype drop constraint configsensordatatype_configid_sensornumber_fkey;
@@ -86,4 +86,4 @@ alter table configsensordatatype
     on delete restrict
 ;
 
-end;
+--end;

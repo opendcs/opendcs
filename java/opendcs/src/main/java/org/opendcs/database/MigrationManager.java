@@ -56,6 +56,7 @@ public final class MigrationManager
         flywayConfig = Flyway.configure()
                              .loggers("org.opendcs.database.logging.MigrationLogCreator")
                              .dataSource(ds)
+                             //.mixed(true)
                              .schemas(migrationProvider.schemas().toArray(new String[0]))
                              .createSchemas(migrationProvider.createSchemas())
                              .locations("db/"+implementation)
