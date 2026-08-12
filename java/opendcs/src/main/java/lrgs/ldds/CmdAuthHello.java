@@ -480,4 +480,9 @@ public class CmdAuthHello extends LddsCommand
 
 	/** @return the code associated with this command. */
 	public char getCommandCode() { return LddsMessage.IdAuthHello; }
+
+	public int getDdsVersion()
+	{
+		return this.ddsVersion != null ? Integer.parseInt(this.ddsVersion) : -1;
+	}
 }
