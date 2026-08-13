@@ -86,6 +86,7 @@ public class NettyDdsServerBuilder
                         new LddsCommandDecoder(),
                         new LddsMessageEncoder())
                     .addLast(LddsHelloHandler.HANDLER_NAME, new LddsHelloHandler())
+                    .addLast(DdsNoOpHandler.NAME, new DdsNoOpHandler())
                     .addLast(new LddsErrorHandler());
             }
         })
