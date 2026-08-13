@@ -13,18 +13,26 @@
  *  limitations under the License.
  */
 
-package org.opendcs.odcsapi.dao;
+package org.opendcs.database.dai;
 
 import java.util.List;
 
+import org.opendcs.data.Organization;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
-import org.opendcs.odcsapi.beans.ApiOrganization;
-
+import org.opendcs.database.api.OpenDcsDataException;
 /**
  * Data about what organizations this implementations handles data for
  */
 public interface OrganizationDao extends OpenDcsDao
 {
-	List<ApiOrganization> retrieveOrganizationIds(DataTransaction tx, int limit, int offset) throws DbException;
+	/**
+	 * Retrieve all organizations in this database
+	 * @param tx
+	 * @param limit
+	 * @param offset
+	 * @return
+	 * @throws OpenDcsDataException
+	 */
+	List<Organization> getAll(DataTransaction tx, int limit, int offset) throws OpenDcsDataException;
 }

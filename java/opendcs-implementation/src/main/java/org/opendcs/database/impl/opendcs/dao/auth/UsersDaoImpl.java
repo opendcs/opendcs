@@ -217,7 +217,7 @@ public class UsersDaoImpl implements UsersDao
                 )
             select u.id u_id, u.preferences u_preferences, u.email u_email,
                 u.created_at u_created_at, u.updated_at u_updated_at,
-                r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
+                0 r_org_id, r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
                 uip.identity_provider_id i_id, uip.subject i_subject,
                 idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config
             from user_cte u
