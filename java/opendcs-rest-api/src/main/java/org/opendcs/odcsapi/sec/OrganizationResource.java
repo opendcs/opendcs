@@ -31,12 +31,14 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import org.opendcs.data.Organization;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.dai.OrganizationDao;
 import org.opendcs.odcsapi.beans.ApiOrganization;
 import org.opendcs.odcsapi.dao.DbException;
-import org.opendcs.odcsapi.dao.OrganizationDao;
 import org.opendcs.odcsapi.res.OpenDcsResource;
 import org.opendcs.odcsapi.util.ApiConstants;
 
@@ -68,7 +70,16 @@ public final class OrganizationResource extends OpenDcsResource
 			try(DataTransaction tx = db.newTransaction())
 			{
 				var orgDao = orgDaoOpt.get();
-				List<ApiOrganization> organizations = orgDao.retrieveOrganizationIds(tx, limit, offset);
+				List<ApiOrganization> organizations = orgDao.getAll(tx, limit, offset)
+										  .stream()										  
+										  .map(org ->
+										  {
+											var reportsTo = org.getReportsToOffice();
+											return new ApiOrganization(org.getName(),
+																	   org.getDisplayName(),
+																	   reportsTo != null ? reportsTo.getName() : null);
+										  }
+										  ).toList();
 				//Using basic/faster hash instead of more complex hashing (SHA-256/Base64/CRC32).
 				//Not really worried about hash collisions, and the list is very static
 				String etagString = Integer.toHexString(organizations.hashCode());
