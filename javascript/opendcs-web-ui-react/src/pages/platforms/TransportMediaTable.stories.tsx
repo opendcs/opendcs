@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import type { ApiRefList, ApiTransportMedium } from "opendcs-api";
-import { expect, waitFor } from "storybook/test";
+import { expect, screen, waitFor } from "storybook/test";
 import { TransportMediaTable } from "./TransportMediaTable";
 
 const SAMPLE: ApiTransportMedium[] = [
@@ -128,6 +128,11 @@ export const DeleteFiresRemove: Story = {
       }),
     );
     await userEvent.click(deleteBtn);
+
+    const confirmBtn = await screen.findByRole("button", {
+      name: i18n.t("translation:delete"),
+    });
+    await userEvent.click(confirmBtn);
 
     await waitFor(() => expect(removed).toEqual(["goes-self-timed::CE31D030"]));
   },

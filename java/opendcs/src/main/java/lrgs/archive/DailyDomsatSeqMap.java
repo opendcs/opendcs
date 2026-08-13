@@ -17,6 +17,7 @@ package lrgs.archive;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.opendcs.lrgs.dao.MsgArchive;
 
@@ -146,7 +147,7 @@ public class DailyDomsatSeqMap
 	 * @return number of messages stored.
 	 */
 	public synchronized int getMsgsBySeqNum(long fromDomsatMsec,
-		long toDomsatMsec, int seqStart, int seqEnd, ArrayList<DcpMsg> msgs)
+		long toDomsatMsec, int seqStart, int seqEnd, List<DcpMsg> msgs)
 		throws ArchiveUnavailableException
 	{
 		// Search from 15 seconds before/after the approx time.

@@ -127,6 +127,11 @@ public class LrgsTestInstance
         return archive;
     }
 
+    public LrgsMain getLrgsMain()
+    {
+        return lrgs;
+    }
+
     public int getDdsPort()
     {
         return lrgs.getDdsServer().getPort();

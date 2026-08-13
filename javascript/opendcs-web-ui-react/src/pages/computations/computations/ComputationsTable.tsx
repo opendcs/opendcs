@@ -181,6 +181,7 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
         key: "delete",
         icon: "bi-trash",
         variant: "danger",
+        confirm: true,
         show: (row) => (row.computationId ?? 0) > 0,
         aria: (row) => t("computations:editor.delete_for", { id: row.computationId }),
         onClick: ({ row }) => {

@@ -528,6 +528,11 @@ export const AddAndRemoveProperty: Story = {
     });
     await userEvent.click(deletePropBtn);
 
+    const confirmBtn = await screen.findByRole("button", {
+      name: i18n.t("translation:delete"),
+    });
+    await userEvent.click(confirmBtn);
+
     await waitFor(() => expect(canvas.queryByText("new_prop")).not.toBeInTheDocument());
   },
 };

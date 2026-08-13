@@ -12,6 +12,7 @@
   "cancel_for": "Cancelar edición de aplicación de carga con id {{id}}",
   "copy_for": "Copiar aplicación de carga con id {{id}}",
   "delete_for": "Eliminar aplicación de carga con id {{id}}",
+  "save_error": "Error al guardar. Por favor verifique sus entradas e intente de nuevo.",
   "status": "Estado",
   "status_running": "Ejecutando",
   "status_inactive": "Inactivo"
