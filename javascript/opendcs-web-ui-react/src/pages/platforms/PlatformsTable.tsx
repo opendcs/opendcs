@@ -97,6 +97,7 @@ export const PlatformsTable: React.FC<PlatformsTableProperties> = ({
         key: "delete",
         icon: "bi-trash",
         variant: "danger",
+        confirm: true,
         show: (row) => (row.platformId ?? 0) > 0,
         aria: (row) => t("platforms:delete_for", { id: row.platformId }),
         onClick: ({ row }) => {

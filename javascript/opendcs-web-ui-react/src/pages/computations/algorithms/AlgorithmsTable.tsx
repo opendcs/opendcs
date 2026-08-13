@@ -108,6 +108,7 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
         key: "delete",
         icon: "bi-trash",
         variant: "danger",
+        confirm: true,
         show: (row) => (row.algorithmId ?? 0) > 0,
         aria: (row) => t("algorithms:editor.delete_for", { id: row.algorithmId }),
         onClick: ({ row }) => {

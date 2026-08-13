@@ -100,6 +100,7 @@ export const DataSourceMembersTable: React.FC<DataSourceMembersTableProperties> 
         key: "remove",
         icon: "bi-trash",
         variant: "danger",
+        confirm: true,
         aria: (row) => t("datasources:remove_member", { name: row.name }),
         onClick: ({ row }) => onRemove(row.name),
       },

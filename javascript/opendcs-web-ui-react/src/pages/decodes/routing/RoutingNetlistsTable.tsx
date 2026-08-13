@@ -81,6 +81,7 @@ export const RoutingNetlistsTable: React.FC<RoutingNetlistsTableProperties> = ({
         key: "remove",
         icon: "bi-trash",
         variant: "danger",
+        confirm: true,
         aria: (row) => t("routing:remove_netlist", { name: row.name }),
         onClick: ({ row }) => onRemove(row.name),
       },
