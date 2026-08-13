@@ -1,6 +1,7 @@
 package org.opendcs.lrgs.dds.dds14;
 
 import org.opendcs.lrgs.dds.LddsHelloHandler;
+import org.opendcs.lrgs.dds.commands.GetMsgBlockEx;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 

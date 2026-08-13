@@ -42,6 +42,7 @@ public class DdsProtocol14Handler extends ChannelInboundHandlerAdapter
         ctx.channel()
            .pipeline()
            .addAfter(NAME, "msgblockext", new GetMessageBlockExHandler())
+           .addAfter(NAME, "goodbyte", new GoodByeHandler())
            // add the rest of the appropriate handlers
         ;
     }
@@ -52,16 +53,9 @@ public class DdsProtocol14Handler extends ChannelInboundHandlerAdapter
         var user = ctx.channel().attr(LddsHelloHandler.DDS_USER).get();
         try (var span = Span.current().setAttribute("ddsUser", user.getName()).makeCurrent())
         {
-            if (msg instanceof CmdGoodbye)
-            {
-                var res = new LddsMessage(LddsMessage.IdGoodbye, "Command not supported");
-                ctx.writeAndFlush(res).addListener(ChannelFutureListener.CLOSE);
-                ReferenceCountUtil.release(msg);
-            }
-            else
-            {
-                ctx.fireChannelRead(msg);
-            }
+            
+            ctx.fireChannelRead(msg);
+            
         }
     }
 

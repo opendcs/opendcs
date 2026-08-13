@@ -13,11 +13,10 @@
 * License for the specific language governing permissions and limitations
 * under the License.
 */
-package org.opendcs.lrgs.dds.dds14;
+package org.opendcs.lrgs.dds.commands;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.rmi.ServerError;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
