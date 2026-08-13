@@ -4,7 +4,7 @@ import DataTable, {
 } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import dtButtons from "datatables.net-buttons-bs5";
-import { Alert } from "react-bootstrap";
+import { Alert, Button, Modal } from "react-bootstrap";
 import {
   Suspense,
   useCallback,
@@ -95,7 +95,13 @@ export interface RowAction<T> {
   aria: (row: T) => string;
   /** Return `false` to omit this action for the given row. */
   show?: (row: T) => boolean;
-  /** Handler invoked when the button is clicked. */
+  /**
+   * When set, clicking the button first shows a confirmation dialog and
+   * `onClick` only runs if the user confirms — for destructive actions like
+   * delete. Pass `true` for the generic confirmation message, or a function
+   * returning a row-specific message.
+   */
+  confirm?: boolean | ((row: T) => string);
   onClick: (ctx: RowActionContext<T>) => void;
 }
 
@@ -457,6 +463,10 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   // rowState is keyed by stringified row id so both consumer ids (TId) and
   // wrapper-generated synthetic ids (for inline-edit new rows) coexist.
   const [rowState, setRowState] = useState<Record<string, RowMode>>({});
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    action: RowAction<T>;
+    ctx: RowActionContext<T>;
+  } | null>(null);
   // Fade the wrapper in once DataTables finishes its first init. React renders
   // the bare <table> (with <caption> + <thead>) before DataTables inserts the
   // top toolbar (buttons / search / page-length), which would otherwise flash
@@ -675,6 +685,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
               variant: "danger",
               show: inShowMode,
               aria: (row: T) => labels.remove?.(row, idOf(row)) ?? "Delete",
+              confirm: true,
               onClick: ({ row }: RowActionContext<T>) => inlineEdit.onRemove!(row),
             } as RowAction<T>,
           ]
@@ -938,7 +949,12 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
         if (action && rowEl && rowData) {
           e.preventDefault();
           e.stopPropagation();
-          action.onClick({ row: rowData, rowEl, api: rowActionApi });
+          const ctx = { row: rowData, rowEl, api: rowActionApi };
+          if (action.confirm) {
+            setPendingConfirm({ action, ctx });
+          } else {
+            action.onClick(ctx);
+          }
           return;
         }
       }
@@ -995,6 +1011,13 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     dt.draw(false);
   }, [rowState, hasInlineEdit]);
 
+  // --- Confirmation dialog for `confirm`-flagged row actions ----------------
+  const handleConfirmAccept = useCallback(() => {
+    if (pendingConfirm) pendingConfirm.action.onClick(pendingConfirm.ctx);
+    setPendingConfirm(null);
+  }, [pendingConfirm]);
+  const handleConfirmCancel = useCallback(() => setPendingConfirm(null), []);
+
   // --- Processing overlay while loading -------------------------------------
   useTableProcessing(table, loading);
 
@@ -1041,6 +1064,25 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
           </tr>
         </thead>
       </DataTable>
+      <Modal show={pendingConfirm !== null} onHide={handleConfirmCancel} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>{t("confirm_delete_title")}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {pendingConfirm &&
+            (typeof pendingConfirm.action.confirm === "function"
+              ? pendingConfirm.action.confirm(pendingConfirm.ctx.row)
+              : t("confirm_delete_message"))}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleConfirmCancel}>
+            {t("cancel")}
+          </Button>
+          <Button variant="danger" onClick={handleConfirmAccept}>
+            {t("delete")}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

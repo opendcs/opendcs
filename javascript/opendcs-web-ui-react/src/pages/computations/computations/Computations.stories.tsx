@@ -397,6 +397,11 @@ export const DeleteSuccess: Story = {
     });
     await act(async () => userEvent.click(deleteBtn));
 
+    const confirmBtn = await screen.findByRole("button", {
+      name: i18n.t("translation:delete"),
+    });
+    await act(async () => userEvent.click(confirmBtn));
+
     await waitFor(() =>
       expect(canvas.queryByText("DailyStageMax")).not.toBeInTheDocument(),
     );
@@ -429,6 +434,11 @@ export const DeleteFailureLogsError: Story = {
       name: i18n.t("computations:editor.delete_for", { id: 2 }),
     });
     await act(async () => userEvent.click(deleteBtn));
+
+    const confirmBtn = await screen.findByRole("button", {
+      name: i18n.t("translation:delete"),
+    });
+    await act(async () => userEvent.click(confirmBtn));
 
     // Row remains because delete failed; error is logged.
     await waitFor(() =>

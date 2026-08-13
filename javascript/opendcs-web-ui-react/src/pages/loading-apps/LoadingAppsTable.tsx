@@ -122,6 +122,7 @@ export const LoadingAppsTable: React.FC<LoadingAppsTableProperties> = ({
         key: "delete",
         icon: "bi-trash",
         variant: "danger",
+        confirm: true,
         show: (row) => (row.appId ?? 0) > 0,
         aria: (row) => t("loadingapps:delete_for", { id: row.appId }),
         onClick: ({ row }) => {
