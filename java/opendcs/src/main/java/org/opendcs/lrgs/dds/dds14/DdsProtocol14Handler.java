@@ -15,23 +15,15 @@
 */
 package org.opendcs.lrgs.dds.dds14;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.opendcs.lrgs.dds.LddsHelloHandler;
-import org.opendcs.lrgs.dds.commands.CommandProcessor;
 
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.util.ReferenceCountUtil;
 import io.opentelemetry.api.trace.Span;
-import lrgs.common.ArchiveException;
-import lrgs.common.LrgsErrorCode;
-import lrgs.ldds.CmdGetMsgBlockExt;
 import lrgs.ldds.CmdGoodbye;
-import lrgs.ldds.LddsCommand;
 import lrgs.ldds.LddsMessage;
-import lrgs.ldds.ServerError;
 
 /**
  * Handles clients using DdsProtocol 14.
@@ -42,32 +34,33 @@ import lrgs.ldds.ServerError;
  */
 public class DdsProtocol14Handler extends ChannelInboundHandlerAdapter
 {
-    private static final Map<Class<? extends LddsCommand>, ? extends CommandProcessor<?>> commandHandlers = new HashMap<>();
+    public static final String NAME = "dds14Handler";
+
+    @Override
+    public void handlerAdded(ChannelHandlerContext ctx) throws Exception
+    {
+        ctx.channel()
+           .pipeline()
+           .addAfter(NAME, "msgblockext", new GetMessageBlockExHandler())
+           // add the rest of the appropriate handlers
+        ;
+    }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception
     {
         var user = ctx.channel().attr(LddsHelloHandler.DDS_USER).get();
-        var session = ctx.channel().attr(LddsHelloHandler.DDS_SESSION).get();
         try (var span = Span.current().setAttribute("ddsUser", user.getName()).makeCurrent())
         {
-            if (msg instanceof LddsCommand cmd)
+            if (msg instanceof CmdGoodbye)
             {
-                var handler = commandHandlers.get(msg.getClass());
-                if (handler != null)
-                {
-                   // var res = handler.process(cmd, session);
-                    ctx.writeAndFlush(null);
-                }
-                else
-                {
-                    var res = new LddsMessage(LddsMessage.IdGoodbye, "Command not supported");
-                    ctx.writeAndFlush(res).addListener(ChannelFutureListener.CLOSE);
-                }
+                var res = new LddsMessage(LddsMessage.IdGoodbye, "Command not supported");
+                ctx.writeAndFlush(res).addListener(ChannelFutureListener.CLOSE);
+                ReferenceCountUtil.release(msg);
             }
             else
             {
-                super.channelRead(ctx, msg);
+                ctx.fireChannelRead(msg);
             }
         }
     }
@@ -75,11 +68,7 @@ public class DdsProtocol14Handler extends ChannelInboundHandlerAdapter
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
     {
-        var res = new LddsMessage(LddsMessage.IdDcpBlockExt, cause.getMessage());
-        var future = ctx.writeAndFlush(res);
-        if (!(cause instanceof ArchiveException aex) || aex.getHangup())
-        {
-            future.addListener(ChannelFutureListener.CLOSE);
-        }
+        var res = new LddsMessage(LddsMessage.IdGoodbye, cause.getMessage());
+        ctx.writeAndFlush(res).addListener(ChannelFutureListener.CLOSE);
     }
 }

@@ -24,7 +24,6 @@ import java.util.TimeZone;
 import java.util.zip.GZIPOutputStream;
 
 import org.opendcs.lrgs.dds.DdsSession;
-import org.opendcs.lrgs.dds.commands.CommandProcessor;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -41,7 +40,6 @@ import lrgs.common.NoSuchMessageException;
 import lrgs.common.SearchCriteria;
 import lrgs.common.SearchTimeoutException;
 import lrgs.common.UntilReachedException;
-import lrgs.lddc.GetDcpMessages;
 import lrgs.ldds.CmdGetMsgBlockExt;
 import lrgs.ldds.ExtBlockXmlParser;
 import lrgs.ldds.LddsMessage;
@@ -56,7 +54,7 @@ import lrgs.ldds.LddsMessage;
  *
  * GetMsgBlockEx
  */
-public final class GetMsgBlockEx implements CommandProcessor<CmdGetMsgBlockExt>
+public final class GetMsgBlockEx
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
@@ -69,7 +67,7 @@ public final class GetMsgBlockEx implements CommandProcessor<CmdGetMsgBlockExt>
     }
 
     @SuppressWarnings({"java:S3776", "java:S138"}) // to be dealt with in future cleanup.
-    public LddsMessage process(CmdGetMsgBlockExt cmd, DdsSession session) throws IOException
+    public static LddsMessage process(CmdGetMsgBlockExt cmd, DdsSession session) throws IOException, ArchiveException
     {
         log.info("Getting message {}", session);
         var msgRetriever = session.msgRetriever();
@@ -212,17 +210,6 @@ public final class GetMsgBlockEx implements CommandProcessor<CmdGetMsgBlockExt>
 
             xos.endElement(ExtBlockXmlParser.MsgBlockElem);
             gzos.finish();
-        }
-        catch (ArchiveException ex)
-        {
-            String rs = "?" + ex.getErrorCode() + ",0," + ex.getMessage();
-            if (!(ex instanceof UntilReachedException))
-            {
-                log.atTrace()
-                   .setCause(ex)
-                   .log("ArchiveException on Response='{}'", rs);
-            }
-            return new LddsMessage(cmd.getCommandCode(), rs);
         }
         log.info("returning data.");
         // end of while loop...

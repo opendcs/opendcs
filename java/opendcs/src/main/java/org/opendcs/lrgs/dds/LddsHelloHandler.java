@@ -95,7 +95,7 @@ public class LddsHelloHandler extends ChannelInboundHandlerAdapter
             var session = new DdsSession(retriever, hello.getDdsVersion(), lrgs.msgArchive);
             ctx.channel().attr(DDS_SESSION).set(session);
 
-            ctx.pipeline().replace(DdsNoOpHandler.NAME, "dds14handler", new DdsProtocol14Handler());
+            ctx.pipeline().replace(DdsNoOpHandler.NAME, DdsProtocol14Handler.NAME, new DdsProtocol14Handler());
             ctx.writeAndFlush(res);
         }
         else
