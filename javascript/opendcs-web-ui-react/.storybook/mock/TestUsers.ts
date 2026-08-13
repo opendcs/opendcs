@@ -5,14 +5,16 @@ export const BasicUser: User = {
   email: "BasicUser@noreply.com",
   createdAt: new Date("2026-05-06T00:00:00Z"),
   updatedAt: new Date("2026-05-07T00:00:00Z"),
-  roles: [
-    {
-      id: { value: 1 },
-      name: "TestRole",
-      description: "A simple role to validate UI behavior",
-      updatedAt: new Date("2026-05-01T00:00:00Z"),
-    },
-  ],
+  roles: {
+    "-1": [
+      {
+        id: { value: 1 },
+        name: "TestRole",
+        description: "A simple role to validate UI behavior",
+        updatedAt: new Date("2026-05-01T00:00:00Z"),
+      },
+    ],
+  },
   identityProviders: [
     {
       provider: { id: { value: 1 }, name: "builtin", type: "BuiltIn" },

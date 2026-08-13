@@ -17,6 +17,7 @@ package org.opendcs.odcsapi.sec;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 import org.opendcs.database.model.User;
@@ -108,14 +109,14 @@ public final class SessionResource
 
 	public static ResponseBuilder updateSessionWithUser(User user, HttpServletRequest httpRequest)
 	{
-		var roles = new HashMap<DbKey, OpenDcsApiRoles>();
-		user.roles.forEach((orgId, role) ->
+		var roleMap = new HashMap<DbKey, List<OpenDcsApiRoles>>();
+		user.roles.forEach((orgId, roles) ->
 		{
-			roles.put(orgId, OpenDcsApiRoles.valueOf(role.name()));
+			roleMap.put(orgId, roles.stream().map(role -> OpenDcsApiRoles.valueOf(role.name())).toList());
 		});
 		
-		roles.put(DbKey.NullKey, OpenDcsApiRoles.ODCS_API_REGISTERED);
-		OpenDcsPrincipal principal = new OpenDcsPrincipal(user, roles);
+		roleMap.put(DbKey.NullKey, List.of(OpenDcsApiRoles.ODCS_API_REGISTERED));
+		OpenDcsPrincipal principal = new OpenDcsPrincipal(user, roleMap);
 		HttpSession oldSession = httpRequest.getSession(false);
 		if(oldSession != null)
 		{

@@ -16,6 +16,8 @@
 package org.opendcs.odcsapi.sec;
 
 import java.util.Collections;
+import java.util.List;
+
 import jakarta.annotation.Priority;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.servlet.http.HttpServletRequest;
@@ -80,7 +82,8 @@ public final class SecurityFilter implements ContainerRequestFilter
 		{
 			log.trace("Public endpoint identified: {}", resourceInfo.getResourceMethod().toGenericString());
 		}
-		OpenDcsPrincipal principal = new OpenDcsPrincipal(new UserBuilder().withEmail("guest").build(), Collections.singletonMap(DbKey.NullKey, OpenDcsApiRoles.ODCS_API_GUEST));
+		OpenDcsPrincipal principal = new OpenDcsPrincipal(new UserBuilder().withEmail("guest").build(),
+														  Collections.singletonMap(DbKey.NullKey, List.of(OpenDcsApiRoles.ODCS_API_GUEST)));
 		requestContext.setSecurityContext(new OpenDcsSecurityContext(principal,
 				httpServletRequest.isSecure(), ""));
 		
