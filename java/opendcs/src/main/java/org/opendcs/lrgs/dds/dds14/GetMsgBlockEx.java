@@ -24,6 +24,7 @@ import java.util.TimeZone;
 import java.util.zip.GZIPOutputStream;
 
 import org.opendcs.lrgs.dds.DdsSession;
+import org.opendcs.lrgs.dds.commands.CommandProcessor;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -40,6 +41,7 @@ import lrgs.common.NoSuchMessageException;
 import lrgs.common.SearchCriteria;
 import lrgs.common.SearchTimeoutException;
 import lrgs.common.UntilReachedException;
+import lrgs.lddc.GetDcpMessages;
 import lrgs.ldds.CmdGetMsgBlockExt;
 import lrgs.ldds.ExtBlockXmlParser;
 import lrgs.ldds.LddsMessage;
@@ -54,7 +56,7 @@ import lrgs.ldds.LddsMessage;
  *
  * GetMsgBlockEx
  */
-public final class GetMsgBlockEx
+public final class GetMsgBlockEx implements CommandProcessor<CmdGetMsgBlockExt>
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
@@ -67,7 +69,7 @@ public final class GetMsgBlockEx
     }
 
     @SuppressWarnings({"java:S3776", "java:S138"}) // to be dealt with in future cleanup.
-    public static LddsMessage process(CmdGetMsgBlockExt cmd, DdsSession session) throws IOException
+    public LddsMessage process(CmdGetMsgBlockExt cmd, DdsSession session) throws IOException
     {
         log.info("Getting message {}", session);
         var msgRetriever = session.msgRetriever();

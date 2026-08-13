@@ -15,7 +15,11 @@
 */
 package org.opendcs.lrgs.dds.dds14;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.opendcs.lrgs.dds.LddsHelloHandler;
+import org.opendcs.lrgs.dds.commands.CommandProcessor;
 
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -38,6 +42,7 @@ import lrgs.ldds.ServerError;
  */
 public class DdsProtocol14Handler extends ChannelInboundHandlerAdapter
 {
+    private static final Map<Class<? extends LddsCommand>, ? extends CommandProcessor<?>> commandHandlers = new HashMap<>();
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception
@@ -46,20 +51,19 @@ public class DdsProtocol14Handler extends ChannelInboundHandlerAdapter
         var session = ctx.channel().attr(LddsHelloHandler.DDS_SESSION).get();
         try (var span = Span.current().setAttribute("ddsUser", user.getName()).makeCurrent())
         {
-            if (msg instanceof CmdGetMsgBlockExt cmd)
+            if (msg instanceof LddsCommand cmd)
             {
-                var res = GetMsgBlockEx.process(cmd, session);
-                ctx.writeAndFlush(res);
-            }
-            else if (msg instanceof CmdGoodbye)
-            {
-                var res = new LddsMessage(LddsMessage.IdGoodbye, "");
-                ctx.writeAndFlush(res).addListener(ChannelFutureListener.CLOSE);
-            }
-            else if (msg instanceof LddsCommand cmd)
-            {
-                throw new ServerError("Invalid command sent " + cmd.getCommandCode(),
-                                    LrgsErrorCode.DPARSEERROR, 0);
+                var handler = commandHandlers.get(msg.getClass());
+                if (handler != null)
+                {
+                   // var res = handler.process(cmd, session);
+                    ctx.writeAndFlush(null);
+                }
+                else
+                {
+                    var res = new LddsMessage(LddsMessage.IdGoodbye, "Command not supported");
+                    ctx.writeAndFlush(res).addListener(ChannelFutureListener.CLOSE);
+                }
             }
             else
             {
