@@ -438,7 +438,7 @@ public final class TomcatServer implements AutoCloseable
 			final var ub = new UserBuilder();
 			String[] roles = new String[] {"ODCS_API_USER", "ODCS_API_ADMIN"};
 			for (var role: roles) {
-				ub.withRole(new Role(DbKey.NullKey, role, null, null));
+				ub.withRole(DbKey.NullKey, new Role(DbKey.NullKey, role, null, null));
 			}
 			final String userName = "test_user";
 			ub.withEmail(userName);
