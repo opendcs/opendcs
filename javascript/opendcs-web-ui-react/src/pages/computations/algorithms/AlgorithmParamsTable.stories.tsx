@@ -4,7 +4,7 @@ import {
   type AlgoParm,
   type AlgorithmParamsTableProps,
 } from "./AlgorithmParamsTable";
-import { expect, waitFor } from "storybook/test";
+import { expect, screen, waitFor } from "storybook/test";
 import { useCallback, useState } from "react";
 import { act } from "@testing-library/react";
 import type { ArgsStoryFn } from "storybook/internal/types";
@@ -202,6 +202,11 @@ export const DeleteParm: Story = {
       name: i18n.t("algorithms:parms.delete_for", { name: "output1" }),
     });
     await act(async () => userEvent.click(deleteBtn));
+
+    const confirmBtn = await screen.findByRole("button", {
+      name: i18n.t("translation:delete"),
+    });
+    await act(async () => userEvent.click(confirmBtn));
 
     await waitFor(
       () => {

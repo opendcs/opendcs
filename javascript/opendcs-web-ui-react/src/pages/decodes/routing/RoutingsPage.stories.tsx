@@ -470,6 +470,10 @@ export const DeleteRoutingRow: Story = {
       name: i18n.t("routing:delete_for", { id: 9 }),
     });
     await act(async () => userEvent.click(deleteBtn));
+    const confirmBtn = await screen.findByRole("button", {
+      name: i18n.t("translation:delete"),
+    });
+    await act(async () => userEvent.click(confirmBtn));
     await waitFor(() =>
       expect(canvas.queryByText("GOES-Hourly")).not.toBeInTheDocument(),
     );
@@ -595,6 +599,10 @@ export const RemovePlatformRow: Story = {
       return btn;
     });
     await act(async () => userEvent.click(removeBtn));
+    const confirmBtn = await screen.findByRole("button", {
+      name: i18n.t("translation:delete"),
+    });
+    await act(async () => userEvent.click(confirmBtn));
     await waitFor(() => expect(canvas.queryByText("Alpha")).not.toBeInTheDocument());
   },
 };

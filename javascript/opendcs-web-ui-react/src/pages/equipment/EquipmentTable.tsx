@@ -60,6 +60,7 @@ export const EquipmentTable: React.FC<EquipmentTableProperties> = ({
         key: "delete",
         icon: "bi-trash",
         variant: "danger",
+        confirm: true,
         show: (row) => (row.equipmentId ?? 0) > 0,
         aria: (row) => t("equipment:delete_for", { id: row.equipmentId }),
         onClick: ({ row }) => {
