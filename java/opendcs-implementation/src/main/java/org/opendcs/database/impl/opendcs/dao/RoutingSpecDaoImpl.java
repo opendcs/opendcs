@@ -365,7 +365,7 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
         if (forSchedule != null)
         {
             selectTemplate.add("schedule",
-                        "id in (select routingpec_id from schedule_entry where upper(name) = upper(:scheduleName))");
+                        "id in (select routingspec_id from schedule_entry where upper(name) = upper(:scheduleName))");
         }
         var selectSql = setDefines(selectTemplate, mappers);
         try (var select = handle.createQuery(selectSql))
