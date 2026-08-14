@@ -14,6 +14,10 @@
  */
 package org.opendcs.database.impl.opendcs.dao;
 
+import static org.opendcs.utils.sql.SqlQueries.LIMIT_CLAUSE;
+import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
+
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,8 +38,6 @@ import decodes.tsdb.TsdbCompLock;
 
 public final class CompLockDaoImpl implements CompLockDao
 {
-    private final CompLockMapper lockMapper = CompLockMapper.withPrefix(null);
-
     private static final ST SELECT = new ST("""
         select loading_application_id, pid, hostname, heartbeat, cur_status
           from cp_comp_proc_lock
@@ -44,26 +46,62 @@ public final class CompLockDaoImpl implements CompLockDao
         <if(limit)> <limit> <endif>
     """);
 
+    private final CompLockMapper lockMapper = CompLockMapper.withPrefix(null);
+
     @Override
     public void releaseLock(DataTransaction tx, TsdbCompLock lock) throws OpenDcsDataException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'releaseLock'");
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        try (var delete = handle.createUpdate("delete from cp_comp_proc_lock where loading_application_id = :id"))
+        {
+            delete.bind(GenericColumns.ID.column(), lock.getAppId()).execute();
+        }
     }
 
     @Override
     public Optional<LockBusyException> checkLock(DataTransaction tx, TsdbCompLock lock) throws OpenDcsDataException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'checkLock'");
+        var tlock = getLock(tx, lock.getAppId()).orElse(null);
+        if (tlock != null)
+        {
+            if (lock.getPID() != tlock.getPID()
+                || !lock.getHost().equalsIgnoreCase(tlock.getHost()))
+            {
+                return Optional.of(new LockBusyException(
+                    "Lock for app ID " + lock.getAppId()
+                    + " has been stolen by PID " + tlock.getPID()
+                    + " on host '" + tlock.getHost() + "'"
+                    + ", my PID=" + lock.getPID()
+                    + ", my host='" + lock.getHost() + "'"));
+            }
+            lock.setHeartbeat(new Date());
+            saveLock(tx, lock);
+        }
+        else
+        {
+            return Optional.of(new LockBusyException("Lock for app ID " + lock.getAppId() + " has been deleted."));
+        }
+        return Optional.empty();
     }
 
     @Override
     public List<TsdbCompLock> getAll(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
-    
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getAll'");
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        try (var select = handle.createQuery(SELECT.add(LIMIT_CLAUSE, addLimitOffset(limit, offset)).render()))
+        {
+            if (limit >= 0)
+            {
+                select.bind(LIMIT_CLAUSE, limit);
+            }
+            if (offset >= 0)
+            {
+                select.bind("offset", offset);
+            }
+            return select.map(lockMapper).list();
+        }
     }
 
     @Override
@@ -83,15 +121,64 @@ public final class CompLockDaoImpl implements CompLockDao
     public FailableResult<TsdbCompLock, LockBusyException> obtainLock(DataTransaction tx, CompAppInfo appInfo, int pid,
             String host) throws OpenDcsDataException
     {
-        var existing = getLock(tx, appInfo.getAppId());
-        if (existing.isPresent())
+        var lock = getLock(tx, appInfo.getAppId()).orElse(null);
+        if (lock != null)
         {
-            var lock = existing.get();
             if (lock.getPID() == pid)
             {
-                return 
+                var check = checkLock(tx, lock);
+                if (check.isEmpty())
+                {
+                    return FailableResult.success(lock);
+                }
+                else
+                {
+                    return FailableResult.failure(check.get());
+                }
             }
+            else if (!lock.isStale())
+            {
+                String msg =
+                        "Cannot obtain lock for app ID " + appInfo.getAppId()
+                        + ". Currently owned by PID " + lock.getPID()
+                        + " on host '" + lock.getHost() + "'";
+                return FailableResult.failure( new LockBusyException(msg));
+            }
+
+            releaseLock(tx, lock);
         }
+
+
+        
+        return FailableResult.success(saveLock(tx,new TsdbCompLock(appInfo.getAppId(), pid, host, new Date(), "Starting")));        
     }
     
+
+    private TsdbCompLock saveLock(DataTransaction tx, TsdbCompLock lock) throws OpenDcsDataException
+    {
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        try (var merge = handle.createUpdate("""
+                merge into cp_comp_proc_lock lock
+                using (:loading_application_id loading_application_id, :pid pid, :hostname hostname,
+                       :heartbeat heartbeat, :cur_status cur_status <dual>) input
+                on (lock.loading_application_id = input.loading_application_id)
+                when matched then
+                    update set pid = input.pid, hostname = input.hostname, heartbeat = input.heartbeat
+                            cur_status = input.cur_status
+                when not matched then
+                insert(loading_application_id, pid, hostname, heartbeat, cur_status)
+                values(input.loading_application_id, input.pid, input.hostname, input.heartbeat, input.cur_status)
+                """))
+        {
+            merge.bind(CompLockMapper.Columns.APP_ID.column(), lock.getAppId())
+                  .bind(CompLockMapper.Columns.PID.column(), lock.getPID())
+                  .bind(CompLockMapper.Columns.HOSTNAME.column(), lock.getHost())
+                  .bindByType(CompLockMapper.Columns.HEARTBEAT.column(), lock.getHeartbeat(), Date.class)
+                  .bind(CompLockMapper.Columns.STATUS.column(), lock.getStatus())
+                  .execute();
+            return getLock(tx, lock.getAppId())
+                    .orElseThrow(() -> new OpenDcsDataException("Unable to retrieve lock we just saved."));
+        }
+    }
 }
