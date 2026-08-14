@@ -53,9 +53,7 @@ public class DdsProtocol14Handler extends ChannelInboundHandlerAdapter
         var user = ctx.channel().attr(LddsHelloHandler.DDS_USER).get();
         try (var span = Span.current().setAttribute("ddsUser", user.getName()).makeCurrent())
         {
-            
             ctx.fireChannelRead(msg);
-            
         }
     }
 

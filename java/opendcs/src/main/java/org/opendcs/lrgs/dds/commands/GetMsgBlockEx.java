@@ -44,9 +44,11 @@ import lrgs.ldds.ExtBlockXmlParser;
 import lrgs.ldds.LddsMessage;
 
 /**
- * At the moment consider this a place holder. Intention is to move the
- * LddsCommand logic out of the commands themselves. This intentionally dupplicates {@link lrgs.ldds.CmdGetMsgBlockExt}
+ * This intentionally duplicates {@link lrgs.ldds.CmdGetMsgBlockExt}
  * in order to start isolating the "session" components that would be required.
+ *
+ * Goal is to get the actual retrieve/build message logic into a central handler that is shared by
+ * both the new and original DdsServer implementations.
  *
  * After a few more command implementations and rearrangments of the Netty Channel Pipeline we should
  * have a better sense of what should be where.

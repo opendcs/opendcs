@@ -26,12 +26,12 @@ public class GetMessageBlockExHandler extends SimpleChannelInboundHandler<CmdGet
         ctx.writeAndFlush(res);
         ReferenceCountUtil.release(msg);
     }
-    
+
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
     {
         if (cause instanceof ArchiveException ex)
-        {        
+        {
             String rs = "?" + ex.getErrorCode() + ",0," + ex.getMessage();
             if (!(ex instanceof UntilReachedException))
             {
