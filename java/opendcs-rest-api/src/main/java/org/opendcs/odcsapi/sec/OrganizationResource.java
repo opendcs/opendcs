@@ -45,60 +45,63 @@ import org.opendcs.odcsapi.util.ApiConstants;
 @Path("/")
 public final class OrganizationResource extends OpenDcsResource
 {
-	@GET
-	@Path("organizations")
-	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST, ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
-	@Operation(
-			summary = "Request the list of valid organizations",
-			description = "Organizations are used by queries to filter to a subset of data that a user is authorized for.",
-			responses = {
-					@ApiResponse(responseCode = "200", description = "A list of organizations will be returned.",
-								 content = @Content(mediaType = MediaType.APPLICATION_JSON,
-									array = @ArraySchema(schema = @Schema(implementation = ApiOrganization.class)))
-					)
-			},
-			tags = {"REST - Authentication and Authorization"}
-	)
-	public Response getOrganizations(@QueryParam("limit") @DefaultValue("-1") int limit,
-									 @QueryParam("offset") @DefaultValue("0") int offset) throws DbException
-	{
-		final OpenDcsDatabase db = createDb();
-		final var orgDaoOpt = db.getDao(OrganizationDao.class);
-		if (orgDaoOpt.isPresent())
-		{
-			try(DataTransaction tx = db.newTransaction())
-			{
-				var orgDao = orgDaoOpt.get();
-				List<ApiOrganization> organizations = orgDao.getAll(tx, limit, offset)
-										  .stream()										  
-										  .map(org ->
-										  {
-											var reportsTo = org.getReportsToOffice();
-											return new ApiOrganization(org.getName(),
-																	   org.getDisplayName(),
-																	   reportsTo != null ? reportsTo.getName() : null);
-										  }
-										  ).toList();
-				//Using basic/faster hash instead of more complex hashing (SHA-256/Base64/CRC32).
-				//Not really worried about hash collisions, and the list is very static
-				String etagString = Integer.toHexString(organizations.hashCode());
-				EntityTag etag = new EntityTag(etagString);
-				Response.ResponseBuilder precheck = request.getRequest().evaluatePreconditions(etag);
-				if (precheck != null)
-				{
-					return precheck.build();
-				}
-				return Response.ok()
-						.entity(organizations)
-						.header("Cache-Control", "public, max-age=86400")
-						.build();
-			}
-			catch(OpenDcsDataException ex)
-			{
-				throw new DbException("Error establishing connection to the database.", ex);
-			}
-		}
-		return Response.ok().entity(List.of()).build();
-	}
+    @GET
+    @Path("organizations")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({ApiConstants.ODCS_API_GUEST, ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
+    @Operation(
+            summary = "Request the list of valid organizations",
+            description = "Organizations are used by queries to filter to a subset of data that a user is authorized for.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "A list of organizations will be returned.",
+                                 content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                    array = @ArraySchema(schema = @Schema(implementation = ApiOrganization.class)))
+                    )
+            },
+            tags = {"REST - Authentication and Authorization"}
+    )
+    public Response getOrganizations(@QueryParam("limit") @DefaultValue("-1") int limit,
+                                     @QueryParam("offset") @DefaultValue("0") int offset) throws DbException
+    {
+        final OpenDcsDatabase db = createDb();
+        final var orgDaoOpt = db.getDao(OrganizationDao.class);
+        if (orgDaoOpt.isPresent())
+        {
+            try(DataTransaction tx = db.newTransaction())
+            {
+                var orgDao = orgDaoOpt.get();
+                List<ApiOrganization> organizations = orgDao.getAll(tx, limit, offset)
+                                          .stream()
+                                          .map(OrganizationResource::map)
+                                          .toList();
+                //Using basic/faster hash instead of more complex hashing (SHA-256/Base64/CRC32).
+                //Not really worried about hash collisions, and the list is very static
+                String etagString = Integer.toHexString(organizations.hashCode());
+                EntityTag etag = new EntityTag(etagString);
+                Response.ResponseBuilder precheck = request.getRequest().evaluatePreconditions(etag);
+                if (precheck != null)
+                {
+                    return precheck.build();
+                }
+                return Response.ok()
+                        .entity(organizations)
+                        .header("Cache-Control", "public, max-age=86400")
+                        .build();
+            }
+            catch(OpenDcsDataException ex)
+            {
+                throw new DbException("Error establishing connection to the database.", ex);
+            }
+        }
+        return Response.ok().entity(List.of()).build();
+    }
+
+
+    public static ApiOrganization map(Organization org)
+    {
+        var reportsTo = org.getReportsToOffice();
+        return new ApiOrganization(org.getName(),
+                                     org.getDisplayName(),
+                                   reportsTo != null ? reportsTo.getName() : null);
+    }
 }

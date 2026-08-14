@@ -20,6 +20,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.opendcs.data.Organization;
+
 import decodes.sql.DbKey;
 
 /**
@@ -40,7 +42,7 @@ public final class User
     public final String email;
     public final ZonedDateTime createdAt;
     public final ZonedDateTime updatedAt;
-    public final Map<DbKey,List<Role>> roles;
+    public final Map<Organization,List<Role>> roles;
     /**
      * List of external identity providers that are tied to this user account.
      */

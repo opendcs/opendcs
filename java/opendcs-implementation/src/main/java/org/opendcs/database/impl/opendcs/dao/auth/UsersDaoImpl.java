@@ -1,12 +1,17 @@
 package org.opendcs.database.impl.opendcs.dao.auth;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
+import org.jdbi.v3.core.mapper.RowMapper;
 import org.jdbi.v3.core.statement.PreparedBatch;
+import org.jdbi.v3.core.statement.StatementContext;
 import org.jdbi.v3.jackson2.Jackson2Plugin;
 import org.opendcs.annotations.api.InjectDao;
+import org.opendcs.data.Organization;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.RolesDao;
@@ -42,6 +47,16 @@ public class UsersDaoImpl implements UsersDao
 {
     @InjectDao
     RolesDao rolesDao;
+
+    /** Placeholder until implemented */
+    private static final RowMapper<Organization> orgMapper = new RowMapper<>()
+    {
+        @Override
+        public Organization map(ResultSet rs, StatementContext ctx) throws SQLException
+        {
+            return Organization.NULL_ORG;
+        }   
+    };
 
     @Override
     public User addUser(DataTransaction tx, User user) throws OpenDcsDataException
@@ -124,6 +139,7 @@ public class UsersDaoImpl implements UsersDao
               .registerRowMapper(UserBuilder.class, UserBuilderMapper.withPrefix("u"))
               .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
               .registerRowMapper(IdentityProviderMapping.class, IdentityProviderMappingMapper.withPrefix("i"))
+              .registerRowMapper(Organization.class, orgMapper)
               .reduceRows(UserBuilderReducer.USER_BUILDER_REDUCER)
               .map(UserBuilder::build)
               .findFirst()
@@ -243,6 +259,7 @@ public class UsersDaoImpl implements UsersDao
             return q.registerRowMapper(UserBuilder.class, UserBuilderMapper.withPrefix("u"))
                 .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
                 .registerRowMapper(IdentityProviderMapping.class, IdentityProviderMappingMapper.withPrefix("i"))
+                .registerRowMapper(Organization.class, orgMapper)
                 .reduceRows(UserBuilderReducer.USER_BUILDER_REDUCER)
                 .map(UserBuilder::build)
                 .toList();

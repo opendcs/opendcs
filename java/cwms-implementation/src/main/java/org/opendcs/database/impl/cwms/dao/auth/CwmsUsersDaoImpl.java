@@ -7,10 +7,12 @@ import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.statement.PreparedBatch;
 import org.jdbi.v3.jackson2.Jackson2Plugin;
 import org.opendcs.annotations.api.InjectDao;
+import org.opendcs.data.Organization;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.RolesDao;
 import org.opendcs.database.dai.UsersDao;
+import org.opendcs.database.impl.cwms.jdbi.mapper.CwmsOfficeMapper;
 import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigColumnMapper;
 import org.opendcs.database.model.IdentityProviderMapping;
@@ -33,9 +35,11 @@ import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 @ServiceProvider(service = UsersDao.class, path ="dao/CWMS-Oracle")
 public class CwmsUsersDaoImpl implements UsersDao
 {
+    private static final CwmsOfficeMapper officeMapper = CwmsOfficeMapper.withPrefix("ofc");
+
     @InjectDao
     RolesDao rolesDao;
-    
+
     @Override
     public List<User> getUsers(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
@@ -53,11 +57,14 @@ public class CwmsUsersDaoImpl implements UsersDao
                 ur.office_code r_org_id, r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
                 uip.identity_provider_id i_id, uip.subject i_subject,
                 idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config
+            """ + officeMapper.columnsForSelect() +
+            """
             from user_cte u
             left join user_roles ur on ur.user_id = u.id
             left join opendcs_role r on r.id = ur.role_id
             left join user_identity_provider uip on uip.user_id = u.id
             left join identity_provider idp on idp.id = uip.identity_provider_id
+            left join cwms_v_office ofc on ofc.office_code = ur.office_code
             order by u.email asc
             """;
 
@@ -76,6 +83,7 @@ public class CwmsUsersDaoImpl implements UsersDao
             return q.registerRowMapper(UserBuilder.class, UserBuilderMapper.withPrefix("u"))
                 .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
                 .registerRowMapper(IdentityProviderMapping.class, IdentityProviderMappingMapper.withPrefix("i"))
+                .registerRowMapper(Organization.class, officeMapper)
                 .reduceRows(UserBuilderReducer.USER_BUILDER_REDUCER)
                 .map(UserBuilder::build)
                 .toList();
@@ -92,7 +100,7 @@ public class CwmsUsersDaoImpl implements UsersDao
         try (var addUser = handle.createUpdate(
                     """
                         insert into opendcs_user(email, preferences)
-                        values (:email, :preferences)               
+                        values (:email, :preferences)
                     """
             ))
         {
@@ -129,7 +137,7 @@ public class CwmsUsersDaoImpl implements UsersDao
             roleBatch.execute();
         }
 
-        try (PreparedBatch idpBatch = 
+        try (PreparedBatch idpBatch =
                 handle.prepareBatch(
                     "insert into user_identity_provider (user_id, identity_provider_id, subject) " +
                                                 "values (:user_id, :identity_provider_id, :subject)"))
@@ -145,7 +153,7 @@ public class CwmsUsersDaoImpl implements UsersDao
         }
 
         return getUser(tx, id).orElseThrow(() -> new OpenDcsDataException("Created User could not be retrieved."));
-    
+
     }
 
     @Override
@@ -159,12 +167,17 @@ public class CwmsUsersDaoImpl implements UsersDao
                    u.created_at u_created_at, u.updated_at u_updated_at,
                    ur.office_code r_org_id, r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
                    uip.identity_provider_id i_id, uip.subject i_subject,
-                   idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config
+                   idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config,
+            """ +
+            officeMapper.columnsForSelect() +
+            """
+
               from opendcs_user u
               left join user_roles ur on ur.user_id = u.id
               left join opendcs_role r on r.id = ur.role_id
               left join user_identity_provider uip on uip.user_id = u.id
               left join identity_provider idp on idp.id = uip.identity_provider_id
+              left join cwms_v_office ofc on ofc.office_code = ur.office_code
               where u.id = :id
             """
             ))
@@ -173,6 +186,7 @@ public class CwmsUsersDaoImpl implements UsersDao
               .registerRowMapper(UserBuilder.class, UserBuilderMapper.withPrefix("u"))
               .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
               .registerRowMapper(IdentityProviderMapping.class, IdentityProviderMappingMapper.withPrefix("i"))
+              .registerRowMapper(Organization.class, officeMapper)
               .reduceRows(UserBuilderReducer.USER_BUILDER_REDUCER)
               .map(UserBuilder::build)
               .findFirst()
@@ -186,7 +200,7 @@ public class CwmsUsersDaoImpl implements UsersDao
     public User updateUser(DataTransaction tx, DbKey id, User user) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        
+
         try (var userUpdate =handle.createUpdate(
             "update opendcs_user set email = :email, preferences = :preferences " +
             "where id = :id"))
@@ -224,7 +238,7 @@ public class CwmsUsersDaoImpl implements UsersDao
             deleteProviders.bind(GenericColumns.ID.column(), id).execute();
         }
 
-        try (PreparedBatch idpBatch = 
+        try (PreparedBatch idpBatch =
                 handle.prepareBatch("insert into user_identity_provider (user_id, identity_provider_id, subject) " +
                                                                 "values (:user_id, :identity_provider_id, :subject)"))
         {
