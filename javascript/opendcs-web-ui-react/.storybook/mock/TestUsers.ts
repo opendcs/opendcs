@@ -6,7 +6,7 @@ export const BasicUser: User = {
   createdAt: new Date("2026-05-06T00:00:00Z"),
   updatedAt: new Date("2026-05-07T00:00:00Z"),
   roles: {
-    "-1": [
+    "": [
       {
         id: { value: 1 },
         name: "TestRole",
@@ -21,4 +21,32 @@ export const BasicUser: User = {
       subject: "BasicUser@noreply.com",
     },
   ],
+};
+
+export const CwmsUser: User = {
+  ...BasicUser,
+  roles: {
+    SPK: [
+      {
+        id: { value: 1 },
+        name: "User",
+        description: "User Role",
+        updatedAt: new Date("2026-05-01T00:00:00Z"),
+      },
+      {
+        id: { value: 2 },
+        name: "Admin",
+        description: "Admin Role",
+        updatedAt: new Date("2026-05-01T00:00:00Z"),
+      },
+    ],
+    SWT: [
+      {
+        id: { value: 1 },
+        name: "User",
+        description: "User Role",
+        updatedAt: new Date("2026-05-01T00:00:00Z"),
+      },
+    ],
+  },
 };
