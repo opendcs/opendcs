@@ -50,8 +50,10 @@ public class CompLockMapper extends PrefixRowMapper<TsdbCompLock, CompLockMapper
         var hostName = rs.getString(column(Columns.HOSTNAME));
         var heartBeat = dateMapper.map(rs, column(Columns.HEARTBEAT), ctx);
         var status = rs.getString(column(Columns.STATUS));
-
-        return new TsdbCompLock(appId, pid, hostName, heartBeat, status);
+        var name = rs.getString(column(Columns.APP_NAME));
+        var ret = new TsdbCompLock(appId, pid, hostName, heartBeat, status);
+        ret.setAppName(name);
+        return ret;
     }
 
 
@@ -63,6 +65,10 @@ public class CompLockMapper extends PrefixRowMapper<TsdbCompLock, CompLockMapper
     public enum Columns implements TableColumnDefinition
     {
         APP_ID("loading_application_id"),
+        // NOTE: the name is pulled from the joined loading_application_name table
+        // and not specifically on this time. Didn't make sense to pull in the whole
+        // LoadingAppDao, or table, just to get the name column
+        APP_NAME("loading_application_name"),
         PID("pid"),
         HOSTNAME("hostname"),
         HEARTBEAT("heartbeat"),
