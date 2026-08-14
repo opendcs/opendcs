@@ -13,16 +13,19 @@ export function Roles({ user }: Readonly<UserProperties>) {
   return Object.keys(user.roles || {}).map((org) => {
     const roles = user.roles![org];
     return (
-      <AppDataTable<Role, number, string>
-        data={roles || []}
-        columns={[
-          { header: t("role"), data: "name" },
-          { header: t("translation:description"), data: "description" },
-        ]}
-        getId={function (row: Role): number {
-          return row.id!.value!;
-        }}
-      ></AppDataTable>
+      <div key={org}>
+        For {org !== "" ? org : "Default"}
+        <AppDataTable<Role, number, string>
+          data={roles || []}
+          columns={[
+            { header: t("role"), data: "name" },
+            { header: t("translation:description"), data: "description" },
+          ]}
+          getId={function (row: Role): number {
+            return row.id!.value!;
+          }}
+        />
+      </div>
     );
   });
 }
