@@ -19,7 +19,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.jdbi.v3.core.Handle;
-import org.jdbi.v3.stringtemplate4.StringTemplateEngine;
 import org.opendcs.cwms.data.CwmsOfficeBuilder;
 import org.opendcs.data.Organization;
 import org.opendcs.database.api.DataTransaction;
@@ -29,6 +28,7 @@ import org.opendcs.database.impl.cwms.jdbi.mapper.CwmsOfficeMapper;
 import org.opendcs.database.impl.cwms.jdbi.mapper.office.CwmsOfficeReducer;
 import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.opendcs.utils.sql.SqlQueries;
 import org.openide.util.lookup.ServiceProvider;
 import org.slf4j.Logger;
 import org.stringtemplate.v4.ST;
@@ -42,23 +42,28 @@ public final class CwmsOrganizationDao implements OrganizationDao
               from cwms_v_office p
              left outer join cwms_v_office rt on rt.office_code = p.report_to_office_code
                                              and rt.office_code != p.office_code
+             order by p.office_id <collate> asc
             <if(limit_clause)><limit_clause><endif>
+
         """;
-    
+
     private CwmsOfficeMapper officeMapper = CwmsOfficeMapper.withPrefix("p");
-	private CwmsOfficeMapper reportsToMapper = CwmsOfficeMapper.withPrefix("rt");
+    private CwmsOfficeMapper reportsToMapper = CwmsOfficeMapper.withPrefix("rt");
 
     @Override
     public List<Organization> getAll(DataTransaction tx, int limit, int offset)
             throws OpenDcsDataException
-    {        
+    {
         ST template = new ST(SELECT);
         Handle handle = tx.connection(Handle.class).orElseThrow();
+        var ctx = tx.getContext();
+        var dbEngine = ctx.getDatabaseEngine();
         template.add("primary", officeMapper.columnsForSelect())
-                .add("reports_to", reportsToMapper.columnsForSelect());
+                .add("reports_to", reportsToMapper.columnsForSelect())
+                .add(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine));
         try(var query = handle.createQuery(template.render()))
         {
-            
+
 
             if (limit > 0)
             {
@@ -72,12 +77,12 @@ public final class CwmsOrganizationDao implements OrganizationDao
             }
             query.setSqlLogger(new DetailSqlLogger(log));
             return query.registerRowMapper(officeMapper)
-                        .reduceResultSet(new LinkedHashMap<>(), new CwmsOfficeReducer(reportsToMapper, officeMapper))
+                        .reduceResultSet(new LinkedHashMap<>(), new CwmsOfficeReducer(officeMapper, reportsToMapper))
                         .values()
                         .stream()
                         .map(CwmsOfficeBuilder::build)
                         .map(o -> (Organization)o)
                         .toList();
-        }    
+        }
     }
 }
