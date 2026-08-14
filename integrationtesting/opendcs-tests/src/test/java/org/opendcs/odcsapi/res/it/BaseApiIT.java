@@ -162,7 +162,8 @@ public class BaseApiIT extends AppTestBase
 		}
 
 		var user = new UserBuilder().withEmail(username).build();
-		var roles = Map.of(OrganizationResource.map(Organization.NULL_ORG), EnumSet.allOf(OpenDcsApiRoles.class).stream().toList());
+		var roles = Map.of(OrganizationResource.map(this.configuration.getDefaultOrganization()),
+						   EnumSet.allOf(OpenDcsApiRoles.class).stream().toList());
 		OpenDcsPrincipal mcup = new OpenDcsPrincipal(user, roles);
 		session.setAuthType("CLIENT-CERT");
 		session.setPrincipal(mcup);
