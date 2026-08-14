@@ -50,6 +50,7 @@ import org.jdbi.v3.core.Handle;
 import org.opendcs.authentication.OpenDcsAuthException;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityProvider;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInProviderCredentials;
+import org.opendcs.data.Organization;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
@@ -377,8 +378,8 @@ public final class TomcatServer implements AutoCloseable
 		try
 		{
 			Profile srcProfile = Profile.getProfile(config.getPropertiesFile());
-			File tmp = Files.createTempFile("dcsseed", ".profile").toFile();
-			tmp.deleteOnExit();
+			File tmp = Files.createTempFile("dcsseed", ".profile").toFile(); // NOSONAR - we change tmpdir to the build directory
+			tmp.deleteOnExit(); // NOSONAR
 			Profile tmpProfile = Profile.getProfile(tmp);
 			DecodesSettings settings = DecodesSettings.fromProfile(srcProfile);
 			settings.DbAuthFile = "java-auth-source:password=DCS_PASS,username=DCS_USER";
@@ -438,7 +439,7 @@ public final class TomcatServer implements AutoCloseable
 			final var ub = new UserBuilder();
 			String[] roles = new String[] {"ODCS_API_USER", "ODCS_API_ADMIN"};
 			for (var role: roles) {
-				ub.withRole(DbKey.NullKey, new Role(DbKey.NullKey, role, null, null));
+				ub.withRole(Organization.NULL_ORG, new Role(DbKey.NullKey, role, null, null));
 			}
 			final String userName = "test_user";
 			ub.withEmail(userName);

@@ -51,14 +51,17 @@ import org.apache.catalina.session.StandardSession;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.opendcs.fixtures.spi.Configuration;
+import org.opendcs.odcsapi.beans.ApiOrganization;
 import org.opendcs.odcsapi.beans.ApiSite;
 import org.opendcs.fixtures.TomcatServer;
 import org.opendcs.odcsapi.res.ObjectMapperContextResolver;
 import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
 import org.opendcs.odcsapi.sec.OpenDcsPrincipal;
+import org.opendcs.odcsapi.sec.OrganizationResource;
 import org.opendcs.odcsapi.sec.basicauth.Credentials;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
+import org.opendcs.data.Organization;
 import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
 import org.opendcs.database.model.UserBuilder;
 import org.opendcs.fixtures.AppTestBase;
@@ -157,7 +160,10 @@ public class BaseApiIT extends AppTestBase
 		if(session == null) {
 			throw new RuntimeException("Test Session Manager is unusable.");
 		}
-		OpenDcsPrincipal mcup = new OpenDcsPrincipal(new UserBuilder().withEmail(username).build(), Map.of(DbKey.NullKey, EnumSet.allOf(OpenDcsApiRoles.class).stream().toList()));
+
+		var user = new UserBuilder().withEmail(username).build();
+		var roles = Map.of(OrganizationResource.map(Organization.NULL_ORG), EnumSet.allOf(OpenDcsApiRoles.class).stream().toList());
+		OpenDcsPrincipal mcup = new OpenDcsPrincipal(user, roles);
 		session.setAuthType("CLIENT-CERT");
 		session.setPrincipal(mcup);
 		session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, mcup);

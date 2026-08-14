@@ -22,8 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.opendcs.database.model.User;
-
-import decodes.sql.DbKey;
+import org.opendcs.odcsapi.beans.ApiOrganization;
 
 public final class OpenDcsPrincipal implements Principal, Serializable
 {
@@ -31,9 +30,9 @@ public final class OpenDcsPrincipal implements Principal, Serializable
 	private static final long serialVersionUID = -2116796045388257540L;
 	private final User user;
 
-	private final Map<DbKey, List<OpenDcsApiRoles>> roles;
+	private final Map<ApiOrganization, List<OpenDcsApiRoles>> roles;
 
-	public OpenDcsPrincipal(User user, Map<DbKey, List<OpenDcsApiRoles>> roles)
+	public OpenDcsPrincipal(User user, Map<ApiOrganization, List<OpenDcsApiRoles>> roles)
 	{
 		this.user = user;
 		this.roles = Collections.unmodifiableMap(roles);
@@ -50,7 +49,7 @@ public final class OpenDcsPrincipal implements Principal, Serializable
 		return this.user;
 	}
 
-	public Map<DbKey, List<OpenDcsApiRoles>> getRoles()
+	public Map<ApiOrganization, List<OpenDcsApiRoles>> getRoles()
 	{
 		return roles;
 	}

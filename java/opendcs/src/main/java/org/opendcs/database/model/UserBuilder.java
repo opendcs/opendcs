@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.opendcs.data.Organization;
+
 import decodes.sql.DbKey;
 
 public class UserBuilder
@@ -28,7 +30,7 @@ public class UserBuilder
     DbKey id = DbKey.NullKey;
     String email = null;
     ArrayList<IdentityProviderMapping> idpMap = new ArrayList<>();
-    HashMap<DbKey, List<Role>> roles = new HashMap<>();
+    HashMap<Organization, List<Role>> roles = new HashMap<>();
     ZonedDateTime createdAt = null;
     ZonedDateTime updatedAt = null;
     HashMap<String, Object> preferences = new HashMap<>();
@@ -90,13 +92,13 @@ public class UserBuilder
         return this;
     }
 
-    public UserBuilder withRoles(Map<DbKey,List<Role>> roles)
+    public UserBuilder withRoles(Map<Organization,List<Role>> roles)
     {
         this.roles.putAll(roles);
         return this;
     }
 
-    public UserBuilder withRole(DbKey orgId, Role role)
+    public UserBuilder withRole(Organization orgId, Role role)
     {
         this.roles.computeIfAbsent(orgId, tmp -> new ArrayList<>()).add(role);
         return this;

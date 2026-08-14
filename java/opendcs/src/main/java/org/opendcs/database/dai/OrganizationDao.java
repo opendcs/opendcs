@@ -21,13 +21,19 @@ import org.opendcs.data.Organization;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
+
 /**
- * Data about what organizations this implementations handles data for
+ * Data about what organizations this implementations handles data for.
+ *
+ * NOTE: Only CWMS Current supposed organizations and its list is read-only
+ * At such time as OpenDCS-* implements organizations we will need to
+ * determine an appropriate way to deal with that different.
+ *
  */
 public interface OrganizationDao extends OpenDcsDao
 {
 	/**
-	 * Retrieve all organizations in this database
+	 * Retrieve all organizations in this database.
 	 * @param tx
 	 * @param limit
 	 * @param offset
