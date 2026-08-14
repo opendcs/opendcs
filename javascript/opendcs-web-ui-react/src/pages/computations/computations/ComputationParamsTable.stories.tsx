@@ -4,7 +4,7 @@ import {
   type CompParm,
   type ComputationParamsTableProps,
 } from "./ComputationParamsTable";
-import { expect, waitFor } from "storybook/test";
+import { expect, screen, waitFor } from "storybook/test";
 import { useCallback, useState } from "react";
 // eslint-disable-next-line storybook/use-storybook-testing-library
 import { act } from "@testing-library/react";
@@ -230,6 +230,11 @@ export const DeleteParm: Story = {
       name: i18n.t("computations:parms.delete_for", { name: "output1" }),
     });
     await act(async () => userEvent.click(deleteBtn));
+
+    const confirmBtn = await screen.findByRole("button", {
+      name: i18n.t("translation:delete"),
+    });
+    await act(async () => userEvent.click(confirmBtn));
 
     await waitFor(
       () => {

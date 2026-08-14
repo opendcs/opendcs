@@ -1,39 +1,34 @@
 package org.opendcs.lrgs;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.opendcs.fixtures.assertions.Waiting.assertResultWithinTimeFrame;
 import java.io.File;
-import java.net.InetSocketAddress;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.lrgs.LrgsTestInstance;
-import org.opendcs.lrgs.dds.LddsCommandDecoder;
-import org.opendcs.lrgs.dds.LddsCommandHandler;
-import org.opendcs.lrgs.dds.LddsMessageDecoder;
-import org.opendcs.lrgs.dds.LddsMessageEncoder;
+import org.opendcs.lrgs.dds.NettyDdsServerBuilder;
+import org.opendcs.lrgs.dds.NettyDdsServer;
 
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
+import lrgs.archive.XmlMsgArchive;
+import lrgs.common.DcpAddress;
+import lrgs.common.DcpMsg;
+import lrgs.common.DcpMsgFlag;
 import lrgs.ldds.LddsClient;
+import lrgs.ldds.ServerError;
+import lrgs.lrgsmain.LrgsInputInterface;
 
 class NettyLrgsTest
 {
     private static LrgsTestInstance lrgs = null;
-    private static EventLoopGroup boss = new NioEventLoopGroup();
-    private static EventLoopGroup worker = new NioEventLoopGroup();
-    private static ChannelFuture channel;
-    private static int port;
+    private static NettyDdsServer ddsServer = null;
 
     @BeforeAll
     static void setup() throws Exception
@@ -46,43 +41,53 @@ class NettyLrgsTest
             lrgs = new LrgsTestInstance(lrgsHome);
         });
 
-        // This should be part of a more formal "Updated Dds Server" class
-        // it is placed here for ease of initial setup and testing.
-    
-        ServerBootstrap b = new ServerBootstrap();
-        b.group(boss, worker)
-         .channel(NioServerSocketChannel.class)
-         .childHandler(new ChannelInitializer<SocketChannel>() 
-         {
-            @Override
-            protected void initChannel(SocketChannel ch) throws Exception
-            {
-                ch.pipeline()
-                    .addLast(
-                    new LddsMessageDecoder(),
-                    new LddsCommandDecoder(),
-                    new LddsMessageEncoder(),
-                    new LddsCommandHandler()
-            );
-            }   
-         })
-         .option(ChannelOption.SO_BACKLOG, 5)
-         .childOption(ChannelOption.SO_KEEPALIVE, true);
+        ddsServer = new NettyDdsServerBuilder().withLrgs(lrgs.getLrgsMain()).build();
+        ddsServer.start().sync();
 
-         channel = b.bind(0).sync();
-         port = ((InetSocketAddress)channel.channel().localAddress()).getPort();
-         
     }
 
     @Test
     void test_netty_server() throws Exception
     {
-        LddsClient client = new LddsClient("127.0.0.1", port);
+        final String msgData = "Test String.";
+        final DcpMsg msgIn = new DcpMsg(DcpMsgFlag.MSG_TYPE_OTHER, msgData.getBytes(Charset.forName("UTF8")),msgData.length(),0);
+        msgIn.setXmitTime(new Date());
+        final DcpAddress addrIn = new DcpAddress("TEST");
+        final LrgsInputInterface dataSource = lrgs.getLrgsInputs().get(0);
+        msgIn.setDcpAddress(addrIn);
+        lrgs.getArchive().archiveMsg(msgIn, dataSource);
+        ((XmlMsgArchive)lrgs.getArchive()).checkpoint();
+        var sp = lrgs.getArchive().getStatusProvider();
+        assertNotNull(sp);
+        assertTrue(sp.isUsable());
+        LddsClient client = new LddsClient("127.0.0.1", ddsServer.getBindPort());
         client.connect();
+        client.getSocket().setSoTimeout(0);
         client.sendHello("anonymous");
-        var ret = client.getMsgBlockExt(0);
-        assertNotNull(ret);
-        assertEquals(1, ret.length);
+        assertResultWithinTimeFrame(value ->
+        {
+            try
+            {
+                var ret = client.getMsgBlockExt(500);
+                if (ret == null)
+                {
+                    return false;
+                }
+                return ret.length >= 1;
+            }
+            catch (ServerError ex)
+            {
+                if (ex.getMessage().contains("End of Archive"))
+                {
+                    return false;
+                }
+                throw ex;
+            }
+        },
+        3, TimeUnit.MINUTES,
+        5, TimeUnit.SECONDS,
+        "No Data returned within reasonable time frame");
+
         client.sendGoodbye();
         client.disconnect();
         assertFalse(client.isConnected());

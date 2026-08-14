@@ -233,6 +233,10 @@ export const DeleteDataSourceRow: Story = {
       name: i18n.t("datasources:delete_for", { id: 13 }),
     });
     await act(async () => userEvent.click(deleteBtn));
+    const confirmBtn = await screen.findByRole("button", {
+      name: i18n.t("translation:delete"),
+    });
+    await act(async () => userEvent.click(confirmBtn));
     await waitFor(() =>
       expect(canvas.queryByText("lrgs-main")).not.toBeInTheDocument(),
     );

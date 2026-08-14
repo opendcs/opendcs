@@ -96,6 +96,7 @@ export const ConfigSensorsTable: React.FC<ConfigSensorsTableProperties> = ({
               key: "delete",
               icon: "bi-trash",
               variant: "danger",
+              confirm: true,
               show: (row) => row.sensorNumber !== undefined,
               aria: (row) => t("configs:delete_sensor_for", { id: row.sensorNumber }),
               onClick: ({ row }) => {
