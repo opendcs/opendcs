@@ -43,7 +43,7 @@ public final class OpenDcsSecurityContext implements SecurityContext
 	{
 		var idx = orgAndRole.indexOf("/");
 		final var org = orgAndRole.substring(0, idx);
-		final var role = orgAndRole.substring(idx+1);
+		final var role = orgAndRole.substring(idx+1); // skip the "/" separator
 		return principal.getRoles().entrySet()
 				.stream()
 				.flatMap(e -> e.getValue().stream())
