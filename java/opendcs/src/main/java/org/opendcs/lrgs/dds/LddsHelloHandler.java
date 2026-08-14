@@ -25,12 +25,12 @@ import org.slf4j.Logger;
 import ilex.util.EnvExpander;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 import lrgs.apistatus.AttachedProcess;
 import lrgs.archive.XmlMsgArchive;
+import lrgs.common.ArchiveException;
 import lrgs.common.DcpMsgRetriever;
 import lrgs.common.LrgsErrorCode;
 import lrgs.common.NetlistDcpNameMapper;
@@ -100,7 +100,7 @@ public class LddsHelloHandler extends SimpleChannelInboundHandler<CmdHello>
         ReferenceCountUtil.release(hello);
     }
 
-    private DcpMsgRetriever setupRetriever(DdsUserPrincipal user, LrgsMain lrgs) throws Exception
+    private DcpMsgRetriever setupRetriever(DdsUserPrincipal user, LrgsMain lrgs) throws IOException, ArchiveException
     {
         var ap = new AttachedProcess();
         ap.user = user.getName();

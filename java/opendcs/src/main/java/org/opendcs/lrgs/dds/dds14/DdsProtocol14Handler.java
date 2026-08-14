@@ -20,9 +20,7 @@ import org.opendcs.lrgs.dds.LddsHelloHandler;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.util.ReferenceCountUtil;
 import io.opentelemetry.api.trace.Span;
-import lrgs.ldds.CmdGoodbye;
 import lrgs.ldds.LddsMessage;
 
 /**
