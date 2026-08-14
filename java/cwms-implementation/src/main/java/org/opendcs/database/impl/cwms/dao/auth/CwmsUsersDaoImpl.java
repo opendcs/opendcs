@@ -1,12 +1,17 @@
 package org.opendcs.database.impl.cwms.dao.auth;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
+import org.jdbi.v3.core.mapper.RowMapper;
 import org.jdbi.v3.core.statement.PreparedBatch;
+import org.jdbi.v3.core.statement.StatementContext;
 import org.jdbi.v3.jackson2.Jackson2Plugin;
 import org.opendcs.annotations.api.InjectDao;
+import org.opendcs.cwms.data.CwmsOffice;
 import org.opendcs.data.Organization;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
@@ -35,7 +40,21 @@ import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 @ServiceProvider(service = UsersDao.class, path ="dao/CWMS-Oracle")
 public class CwmsUsersDaoImpl implements UsersDao
 {
-    private static final CwmsOfficeMapper officeMapper = CwmsOfficeMapper.withPrefix("ofc");
+    private static final CwmsOfficeMapper officeBuilderMapper = CwmsOfficeMapper.withPrefix("ofc");
+    /**
+     * At this time we don't care about the reports to office in User roles, so we
+     * wrap the builderMapper to immediately build the office instead of introducing
+     * reducer logic.
+     */
+    private static final RowMapper<CwmsOffice> officeMapper = new RowMapper<>()
+    {
+
+        @Override
+        public CwmsOffice map(ResultSet rs, StatementContext ctx) throws SQLException
+        {
+            return officeBuilderMapper.map(rs, ctx).build();
+        }
+    };
 
     @InjectDao
     RolesDao rolesDao;
@@ -57,7 +76,7 @@ public class CwmsUsersDaoImpl implements UsersDao
                 ur.office_code r_org_id, r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
                 uip.identity_provider_id i_id, uip.subject i_subject,
                 idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config
-            """ + officeMapper.columnsForSelect() +
+            """ + officeBuilderMapper.columnsForSelect() +
             """
             from user_cte u
             left join user_roles ur on ur.user_id = u.id
@@ -116,7 +135,7 @@ public class CwmsUsersDaoImpl implements UsersDao
         {
             for (var entry: user.roles.entrySet())
             {
-                var orgId = entry.getKey();
+                var org = entry.getKey();
                 var roles = entry.getValue();
                 for (var role: roles)
                 {
@@ -128,7 +147,7 @@ public class CwmsUsersDaoImpl implements UsersDao
                                                                                     "' that doesn't exist."))
                                         .id();
                     }
-                    roleBatch.bind("office_code", orgId)
+                    roleBatch.bindByType("office_code", org.getId(), DbKey.class)
                             .bind(UserBuilderMapper.USER_ID, id)
                             .bind(RoleMapper.ROLE_ID, roleId)
                             .add();
@@ -169,7 +188,7 @@ public class CwmsUsersDaoImpl implements UsersDao
                    uip.identity_provider_id i_id, uip.subject i_subject,
                    idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config,
             """ +
-            officeMapper.columnsForSelect() +
+            officeBuilderMapper.columnsForSelect() +
             """
 
               from opendcs_user u
@@ -219,11 +238,11 @@ public class CwmsUsersDaoImpl implements UsersDao
         {
             for (var entry: user.roles.entrySet())
             {
-                var orgId = entry.getKey();
+                var org = entry.getKey();
                 var roles = entry.getValue();
                 for (var role: roles)
                 {
-                    roleBatch.bind("office_code", orgId)
+                    roleBatch.bind("office_code", org.getId())
                             .bind(UserBuilderMapper.USER_ID, id)
                             .bind(RoleMapper.ROLE_ID, role.id())
                             .add();

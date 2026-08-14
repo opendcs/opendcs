@@ -66,6 +66,7 @@ public final class CwmsOfficeBuilder
     public CwmsOffice build()
     {
         
-        return new CwmsOffice(id, name, reportsTo != this ? reportsTo.build() : null, longName, eroc, type);
+        return new CwmsOffice(id, name,
+                             (reportsTo != null && reportsTo != this) ? reportsTo.build() : null, longName, eroc, type);
     }
 }

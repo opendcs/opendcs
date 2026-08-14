@@ -306,7 +306,7 @@ public final class TomcatServer implements AutoCloseable
 
 		try
 		{
-			setupTestUser(config.getOpenDcsDatabase());
+			setupTestUser(config.getOpenDcsDatabase(), config);
 		}
 		catch (Throwable ex)
 		{
@@ -413,7 +413,7 @@ public final class TomcatServer implements AutoCloseable
 		}
 	}
 
-	public static void setupTestUser(OpenDcsDatabase db) throws OpenDcsDataException
+	public static void setupTestUser(OpenDcsDatabase db, Configuration config) throws OpenDcsDataException
 	{
 
 		var idpDao = db.getDao(IdentityProviderDao.class)
@@ -438,8 +438,9 @@ public final class TomcatServer implements AutoCloseable
 			}
 			final var ub = new UserBuilder();
 			String[] roles = new String[] {"ODCS_API_USER", "ODCS_API_ADMIN"};
+
 			for (var role: roles) {
-				ub.withRole(Organization.NULL_ORG, new Role(DbKey.NullKey, role, null, null));
+				ub.withRole(config.getDefaultOrganization(), new Role(DbKey.NullKey, role, null, null));
 			}
 			final String userName = "test_user";
 			ub.withEmail(userName);
