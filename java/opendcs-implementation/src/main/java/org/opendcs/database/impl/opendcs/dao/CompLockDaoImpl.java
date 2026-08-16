@@ -23,14 +23,19 @@ import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.CompLockDao;
+import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.apps.CompLockMapper;
 import org.opendcs.utils.FailableResult;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.openide.util.lookup.ServiceProvider;
+import org.slf4j.Logger;
 import org.stringtemplate.v4.ST;
+import org.stringtemplate.v4.STGroup;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
@@ -40,15 +45,23 @@ import decodes.tsdb.TsdbCompLock;
 @ServiceProvider(service = CompLockDao.class)
 public final class CompLockDaoImpl implements CompLockDao
 {
-    private static final ST SELECT = new ST("""
-        select lock.loading_application_id, la.loading_application_name, lock.pid, lock.hostname, 
-               lock.heartbeat, lock.cur_status
-          from cp_comp_proc_lock lock
-          left outer join hdb_loading_application la on ld.loading_application_id = lock.loading_application_id
-          <if(where)> <where> <endif>
-        order by lock.loading_application_id asc
-        <if(limit)> <limit> <endif>
-    """);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
+    private static final String SELECT = "select";
+    private static final STGroup queries = new STGroup();
+
+    static
+    {
+        queries.defineTemplate(SELECT, "limit,where",
+            """
+                select lock.loading_application_id, la.loading_application_name, lock.pid, lock.hostname,
+                        lock.heartbeat, lock.cur_status
+                    from cp_comp_proc_lock lock
+                    left outer join hdb_loading_application la on la.loading_application_id = lock.loading_application_id
+                    <if(where)> <where> <endif>
+                order by lock.loading_application_id asc
+                <if(limit)> <limit> <endif>
+            """);
+    }
 
     private final CompLockMapper lockMapper = CompLockMapper.withPrefix(null);
 
@@ -94,7 +107,7 @@ public final class CompLockDaoImpl implements CompLockDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        try (var select = handle.createQuery(SELECT.add(LIMIT_CLAUSE, addLimitOffset(limit, offset)).render()))
+        try (var select = handle.createQuery(queries.getInstanceOf(SELECT).add(LIMIT_CLAUSE, addLimitOffset(limit, offset)).render()))
         {
             if (limit >= 0)
             {
@@ -113,8 +126,12 @@ public final class CompLockDaoImpl implements CompLockDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        try (var select = handle.createQuery(SELECT.add("where", "where lock.loading_application_id = :id").render()))
+        try (var select = handle.createQuery(
+                            queries.getInstanceOf(SELECT)
+                                  .add("where", " where lock.loading_application_id = :id ")
+                                  .render()))
         {
+            select.setSqlLogger(new DetailSqlLogger(log));
             return select.bind(GenericColumns.ID.column(), appId)
                          .map(lockMapper)
                          .findOne();
@@ -162,19 +179,22 @@ public final class CompLockDaoImpl implements CompLockDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var ctx = tx.getContext();
+        var dbEngine = ctx.getDatabaseEngine();
         try (var merge = handle.createUpdate("""
                 merge into cp_comp_proc_lock lock
-                using (:loading_application_id loading_application_id, :pid pid, :hostname hostname,
+                using (select :loading_application_id loading_application_id, :pid pid, :hostname hostname,
                        :heartbeat heartbeat, :cur_status cur_status <dual>) input
                 on (lock.loading_application_id = input.loading_application_id)
                 when matched then
-                    update set pid = input.pid, hostname = input.hostname, heartbeat = input.heartbeat
+                    update set pid = input.pid, hostname = input.hostname, heartbeat = input.heartbeat,
                             cur_status = input.cur_status
                 when not matched then
                 insert(loading_application_id, pid, hostname, heartbeat, cur_status)
                 values(input.loading_application_id, input.pid, input.hostname, input.heartbeat, input.cur_status)
                 """))
         {
+            merge.define("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
             merge.bind(CompLockMapper.Columns.APP_ID.column(), lock.getAppId())
                   .bind(CompLockMapper.Columns.PID.column(), lock.getPID())
                   .bind(CompLockMapper.Columns.HOSTNAME.column(), lock.getHost())
