@@ -113,7 +113,7 @@ public final class CompLockDaoImpl implements CompLockDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        try (var select = handle.createQuery(SELECT.add("where", " lock.loading_application_id = :id").render()))
+        try (var select = handle.createQuery(SELECT.add("where", "where lock.loading_application_id = :id").render()))
         {
             return select.bind(GenericColumns.ID.column(), appId)
                          .map(lockMapper)
