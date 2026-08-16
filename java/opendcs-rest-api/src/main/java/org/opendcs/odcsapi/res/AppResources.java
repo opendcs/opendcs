@@ -15,13 +15,10 @@
 
 package org.opendcs.odcsapi.res;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbCompLock;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -41,7 +38,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import opendcs.dai.LoadingAppDAI;
 import org.opendcs.odcsapi.beans.ApiAppRef;
 import org.opendcs.odcsapi.beans.ApiAppStatus;
 import org.opendcs.odcsapi.beans.ApiLoadingApp;
@@ -52,6 +48,7 @@ import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.dai.CompLockDao;
 import org.opendcs.database.dai.LoadingAppDao;
 
 /**
@@ -446,28 +443,31 @@ public final class AppResources extends OpenDcsResource
 			},
 			tags = {"OpenDCS Process Monitor and Control (APP)"}
 	)
-	public Response getAppStat() throws DbException
+	public Response getAppStat() throws WebAppException
 	{
-		List<ApiAppStatus> ret = new ArrayList<>();
-		try (LoadingAppDAI dai = getLegacyDatabase().makeLoadingAppDAO())
+		var db = createDb();
+		var dao = db.getDao(CompLockDao.class).orElseThrow(); 
+		try (var tx = db.newTransaction())
 		{
-			for (TsdbCompLock lock : dai.getAllCompProcLocks())
-			{
-				if (!lock.isStale())
-				{
-					ret.add(map(dai, lock));
-				}
-			}
 			return Response.ok()
-					.entity(ret).build();
+					.entity(
+						tx.wrapErrors(() ->
+						{
+						return dao.getAll(tx, -1, -1)
+								.stream()
+								.filter(l -> l.isStale())
+								.map(l -> map(l))
+								.toList();
+						}))
+					.build();
 		}
-		catch (DbIoException ex)
+		catch (OpenDcsDataException ex)
 		{
-			throw new DbException("Unable to retrieve app status", ex);
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to retrieve comp locks.", ex);
 		}
 	}
 
-	static ApiAppStatus map(LoadingAppDAI dai, TsdbCompLock lock) throws DbIoException
+	static ApiAppStatus map(TsdbCompLock lock)
 	{
 		ApiAppStatus ret = new ApiAppStatus();
 		ret.setAppId(lock.getAppId().getValue());
@@ -476,21 +476,7 @@ public final class AppResources extends OpenDcsResource
 		ret.setPid((long) lock.getPID());
 		ret.setHeartbeat(lock.getHeartbeat());
 		ret.setStatus(lock.getStatus());
-		if (dai != null)
-		{
-			try {
-				ApiLoadingApp app = mapLoading(dai.getComputationApp(lock.getAppId()));
-				if (app.getProperties() != null && app.getProperties().getProperty("EventPort") != null)
-				{
-					ret.setEventPort(Integer.parseInt(app.getProperties().getProperty("EventPort")));
-				}
-				ret.setAppType(app.getAppType());
-			}
-			catch (DbIoException | NoSuchObjectException | NumberFormatException ex)
-			{
-				throw new DbIoException("Error mapping app status", ex);
-			}
-		}
+		// Event port is not longer supported, don't propgate the data in new systems.
 		return ret;
 	}
 

@@ -94,7 +94,7 @@ final class AppResourcesTest
 		TsdbCompLock compLock = new TsdbCompLock(appId, pid, host, heartbeat, status);
 		compLock.setAppName("Computation Application");
 
-		ApiAppStatus appStatus = map(null, compLock);
+		ApiAppStatus appStatus = map(compLock);
 
 		assertNotNull(appStatus);
 		assertEquals(compLock.getAppId().getValue(), appStatus.getAppId());

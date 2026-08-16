@@ -31,6 +31,8 @@ import opendcs.dai.LoadingAppDAI;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.dai.CompLockDao;
 import org.opendcs.odcsapi.beans.ApiAppStatus;
 import org.opendcs.odcsapi.filters.W3CTraceFilter;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -331,7 +333,6 @@ final class AppResourcesIT extends BaseApiIT
 		assertNotNull(actual.get("appId"), "Application status was not returned.");
 		// ID not compared as we don't actually care what it is.
 		assertEquals(host, actual.get("hostname"));
-		assertEquals(expected.get("eventPort"), (Integer)actual.get("eventPort"));
 		assertEquals(expected.get("status"), (String)actual.get("status"));
 		assertEquals(expected.get("appName"), (String)actual.get("appName"));
 		assertEquals(expected.get("pid"), (Integer)actual.get("pid"));
@@ -357,23 +358,41 @@ final class AppResourcesIT extends BaseApiIT
 		;
 	}
 
-	TsdbCompLock getCompLock(CompAppInfo compAppInfo, int pid, String host) throws DatabaseException
+	TsdbCompLock getCompLock(CompAppInfo compAppInfo, int pid, String host) throws Exception
 	{
-		try (LoadingAppDAI dai = getTsdb().makeLoadingAppDAO())
+		try
 		{
-			return dai.obtainCompProcLock(compAppInfo, pid, host);
+			var db = getConfig().getOpenDcsDatabase();
+			var dao = db.getDao(CompLockDao.class).orElseThrow();
+			try (var tx = db.newTransaction())
+			{
+				var lock = dao.obtainLock(tx, compAppInfo, pid, host);
+				if (lock.isSuccess())
+				{
+					return lock.getSuccess();
+				}
+				else
+				{
+					throw lock.getFailure();
+				}
+			}
 		}
 		catch (Throwable thr)
 		{
-			throw new DatabaseException("Error getting comp lock", thr);
+			throw new OpenDcsDataException("Error getting comp lock", thr);
 		}
 	}
 
-	void releaseCompLock(TsdbCompLock compLock) throws DatabaseException
+	void releaseCompLock(TsdbCompLock compLock) throws Exception
 	{
-		try (LoadingAppDAI dai = getTsdb().makeLoadingAppDAO())
+		try
 		{
-			dai.releaseCompProcLock(compLock);
+		var db = getConfig().getOpenDcsDatabase();
+			var dao = db.getDao(CompLockDao.class).orElseThrow();
+			try (var tx = db.newTransaction())
+			{
+				dao.releaseLock(tx, compLock);
+			}
 		}
 		catch (Throwable thr)
 		{
